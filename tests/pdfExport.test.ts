@@ -5,7 +5,6 @@ import { exportProjectPdf } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
 import {
-  LABEL_EXPORT_SCALE,
   LABEL_PRIMARY_SIZE,
   LABEL_SECONDARY_SIZE,
 } from "../src/model/label";
@@ -161,9 +160,9 @@ describe("flattened PDF export", () => {
     const area = items.find((item) => item.text.includes("m²"));
     const perimeter = items.find((item) => item.text.startsWith("Perimeter"));
 
-    expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
-    expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
-    expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE * LABEL_EXPORT_SCALE, 1);
+    expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
+    expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
+    expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
 
     const calibrationProject = makeProject();
     for (const layer of calibrationProject.layers) layer.items.length = 0;
@@ -172,7 +171,7 @@ describe("flattened PDF export", () => {
     ).filter((item) => item.text.trim());
     expect(calibrationItems.length).toBeGreaterThan(0);
     for (const item of calibrationItems) {
-      expect(item.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
+      expect(item.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     }
   });
 

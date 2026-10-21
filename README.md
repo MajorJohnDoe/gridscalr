@@ -131,6 +131,8 @@ The floating strip beside the editor sets font size (0.5–300 pt), colour, and 
 
 Measurement labels are single-line editable. Double-click a measurement label, type a name, and press `Enter`; the computed length, perimeter, area, or calibration value remains read-only beside it. Double-clicking the calibration label reopens the calibration dialog with its current value instead of opening the label editor.
 
+Labels use paper-space sizes and scale strictly with the drawing rather than staying a fixed number of screen pixels. Large rooms keep the full label centered inside the area. Smaller rooms shrink the label down to a minimum readable paper size. If it still does not fit, the label moves outside the area and a thin leader line connects it to the room. The same placement is used by canvas rendering, label hit-testing, inline editing, and PDF export.
+
 The Markups list supports renaming without changing the drawing text: double-click a row label or select a row and press `F2`. Renaming a text item changes its list/export label, not its text body. The project name in the top bar also supports double-click rename.
 
 ### 5. Resize and rotate

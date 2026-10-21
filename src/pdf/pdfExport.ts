@@ -13,16 +13,13 @@ import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
+import type { LabelLayout } from "../model/labelLayout";
 import {
-  labelAnchorForPoints,
-  labelBox,
-  LABEL_EXPORT_SCALE,
-  LABEL_PRIMARY_SIZE,
-  LABEL_SECONDARY_SIZE,
-  measurementLabelParts,
-} from "../model/label";
+  CALIBRATION_LABEL_ID,
+  layoutPageLabels,
+  pageLabelSources,
+} from "../model/labelLayout";
 import { textItemLayout } from "../model/text";
-import { formatNumber } from "../model/units";
 import type { MarkupItem, Point, Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
 
@@ -57,20 +54,23 @@ export async function exportProjectPdf(
     const pdfPage = pages[index];
     const pdfjsPage = await renderer.getPage(pageNumber);
     const viewport = pdfjsPage.getViewport({ scale: 1 });
+    const labels = layoutPageLabels(pageLabelSources(project, pageNumber), {
+      pageSize: { width: viewport.width, height: viewport.height },
+      measure: (text, size, weight) =>
+        (weight === "bold" ? fonts.bold : fonts.regular).widthOfTextAtSize(text, size),
+    });
 
     for (const layer of project.layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
       for (const item of layer.items) {
         if (item.page !== pageNumber || item.visible === false) continue;
-        drawItem(pdfPage, viewport, item, layer.opacity, fonts, project);
+        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels);
       }
     }
 
-    if (project.settings.showCalibration) {
-      const calibration = project.pages[String(pageNumber)]?.calibration;
-      if (calibration) {
-        drawCalibrationLabel(pdfPage, viewport, calibration, fonts);
-      }
+    const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);
+    if (calibrationLabel) {
+      drawLabel(pdfPage, viewport, calibrationLabel, 1, fonts);
     }
   }
 
@@ -107,7 +107,7 @@ function drawItem(
   item: MarkupItem,
   layerOpacity: number,
   fonts: ExportFonts,
-  project: Project,
+  labels: Map<string, LabelLayout>,
 ): void {
   const color = pdfColor(item.color);
   const width = Math.max(0.35, item.strokeWidth);
@@ -163,10 +163,8 @@ function drawItem(
       break;
   }
 
-  if (item.kind === "length" || item.kind === "area") {
-    const parts = measurementLabelParts(item, project);
-    if (parts) drawLabel(page, viewport, item, parts.text, parts.secondary, opacity, fonts);
-  }
+  const label = labels.get(item.id);
+  if (label) drawLabel(page, viewport, label, opacity, fonts);
 }
 
 function drawTextItem(
@@ -263,39 +261,31 @@ function drawEllipseItem(
 function drawLabel(
   page: PDFPage,
   viewport: PageViewport,
-  item: MarkupItem,
-  text: string,
-  secondary: string | undefined,
+  layout: LabelLayout,
   opacity: number,
   fonts: ExportFonts,
 ): void {
-  const anchor = labelAnchorForPoints(item, item.points);
-  const primarySize = LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE;
-  const secondarySize = LABEL_SECONDARY_SIZE * LABEL_EXPORT_SCALE;
-  const primaryWidth = fonts.bold.widthOfTextAtSize(text, primarySize);
-  const secondaryWidth = secondary
-    ? fonts.regular.widthOfTextAtSize(secondary, secondarySize)
-    : 0;
-  const box = labelBox(anchor, primaryWidth, secondaryWidth, secondary, LABEL_EXPORT_SCALE);
-  drawLabelBackground(page, viewport, box, item.color, opacity);
+  const centerX = layout.box.x + layout.box.width / 2;
+  drawLeader(page, viewport, layout, opacity);
+  drawLabelBackground(page, viewport, layout, opacity);
 
   drawCenteredText(
     page,
     viewport,
-    text,
-    { x: anchor.x, y: box.primaryY },
-    primarySize,
+    layout.text,
+    { x: centerX, y: layout.box.primaryCenterY },
+    layout.metrics.primarySize,
     fonts.bold,
     INK,
     opacity,
   );
-  if (secondary) {
+  if (layout.secondary) {
     drawCenteredText(
       page,
       viewport,
-      secondary,
-      { x: anchor.x, y: box.secondaryY ?? box.y + 24 * LABEL_EXPORT_SCALE },
-      secondarySize,
+      layout.secondary,
+      { x: centerX, y: layout.box.secondaryCenterY ?? layout.box.primaryCenterY },
+      layout.metrics.secondarySize,
       fonts.regular,
       rgb(0.824, 0.871, 0.89),
       opacity * 0.72,
@@ -303,56 +293,66 @@ function drawLabel(
   }
 }
 
-function drawCalibrationLabel(
+function drawLeader(
   page: PDFPage,
   viewport: PageViewport,
-  calibration: { p1: Point; p2: Point; knownLength: number; unit: string },
-  fonts: ExportFonts,
+  layout: LabelLayout,
+  opacity: number,
 ): void {
-  const mid = midpoint(calibration.p1, calibration.p2);
-  const anchor = { x: mid.x, y: mid.y - 16 };
-  const primarySize = LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE;
-  const text = `${formatNumber(calibration.knownLength, 2)} ${calibration.unit} reference`;
-  const width = fonts.bold.widthOfTextAtSize(text, primarySize);
-  const box = labelBox(anchor, width, 0, undefined, LABEL_EXPORT_SCALE);
-  drawLabelBackground(page, viewport, box, "#a78bfa", 1);
-  drawCenteredText(
-    page,
-    viewport,
-    text,
-    { x: anchor.x, y: box.primaryY },
-    primarySize,
-    fonts.bold,
-    INK,
-    1,
-  );
+  if (!layout.leader) return;
+  page.drawLine({
+    start: toPdfPoint(viewport, layout.leader.from),
+    end: toPdfPoint(viewport, layout.leader.to),
+    thickness: layout.metrics.leaderWidth,
+    color: pdfColor(layout.color),
+    opacity: clamp(opacity * 0.55, 0, 1),
+    lineCap: LineCapStyle.Round,
+  });
 }
 
 function drawLabelBackground(
   page: PDFPage,
   viewport: PageViewport,
-  box: ReturnType<typeof labelBox>,
-  color: string,
+  layout: LabelLayout,
   opacity: number,
 ): void {
-  const rect = pdfRectFromCorners(viewport, [
-    { x: box.x, y: box.y },
-    { x: box.x + box.width, y: box.y },
-    { x: box.x + box.width, y: box.y + box.height },
-    { x: box.x, y: box.y + box.height },
-  ]);
-  page.drawRectangle({
-    x: rect.x,
-    y: rect.y,
-    width: rect.width,
-    height: rect.height,
-    rotate: degrees(rect.angle),
+  const path = roundedRectSvgPath(viewport, layout.box, layout.metrics.radius);
+  page.drawSvgPath(path, {
+    x: 0,
+    y: 0,
     color: LABEL_BG,
     opacity: opacity * 0.88,
-    borderColor: pdfColor(color),
-    borderWidth: 1,
+    borderColor: pdfColor(layout.color),
+    borderWidth: layout.metrics.borderWidth,
     borderOpacity: opacity * 0.6,
   });
+}
+
+function roundedRectSvgPath(
+  viewport: PageViewport,
+  box: { x: number; y: number; width: number; height: number },
+  radius: number,
+): string {
+  const r = Math.max(0, Math.min(radius, box.width / 2, box.height / 2));
+  const right = box.x + box.width;
+  const bottom = box.y + box.height;
+  const k = r * 0.5522847498;
+  const point = (x: number, y: number) => {
+    const pdfPoint = toPdfPoint(viewport, { x, y });
+    return `${pdfPoint.x} ${-pdfPoint.y}`;
+  };
+  return [
+    `M ${point(box.x + r, box.y)}`,
+    `L ${point(right - r, box.y)}`,
+    `C ${point(right - r + k, box.y)} ${point(right, box.y + r - k)} ${point(right, box.y + r)}`,
+    `L ${point(right, bottom - r)}`,
+    `C ${point(right, bottom - r + k)} ${point(right - r + k, bottom)} ${point(right - r, bottom)}`,
+    `L ${point(box.x + r, bottom)}`,
+    `C ${point(box.x + r - k, bottom)} ${point(box.x, bottom - r + k)} ${point(box.x, bottom - r)}`,
+    `L ${point(box.x, box.y + r)}`,
+    `C ${point(box.x, box.y + r - k)} ${point(box.x + r - k, box.y)} ${point(box.x + r, box.y)}`,
+    "Z",
+  ].join(" ");
 }
 
 function drawCenteredText(

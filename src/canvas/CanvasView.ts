@@ -23,12 +23,23 @@ import {
 } from "../model/geometry";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
-  labelAnchorForPoints,
   labelBox,
-  LABEL_PRIMARY_SIZE,
-  LABEL_SECONDARY_SIZE,
-  measurementLabelParts,
+  labelMetrics,
+  LABEL_CALIBRATION_OFFSET,
+  LABEL_LINE_OFFSET,
+  type LabelBox,
 } from "../model/label";
+import {
+  CALIBRATION_LABEL_ID,
+  layoutPageLabels,
+  pageLabelSources,
+  type LabelLayout,
+} from "../model/labelLayout";
+import {
+  ensureLabelFonts,
+  LABEL_FONT_STACK,
+  measureLabelText,
+} from "../model/labelFont";
 import {
   addItem,
   ensureActiveLayer,
@@ -141,7 +152,6 @@ interface LabelEditSession {
 interface LabelHit {
   layer: Layer;
   item: MarkupItem;
-  box: ReturnType<typeof labelBox>;
 }
 
 interface PanState {
@@ -231,6 +241,11 @@ export class CanvasView {
 
     this.unsubscribe = store.subscribe((reason) => this.onStoreChange(reason));
     this.resize();
+    void ensureLabelFonts().then(() => {
+      if (!store.project) return;
+      this.drawContent();
+      this.drawInteraction();
+    });
   }
 
   private onStoreChange(reason: string): void {
@@ -386,6 +401,33 @@ export class CanvasView {
     return {
       x: page.x * store.ui.zoom + store.ui.panX,
       y: page.y * store.ui.zoom + store.ui.panY,
+    };
+  }
+
+  private pageLabelLayouts(): Map<string, LabelLayout> {
+    const project = store.project;
+    const size = this.pageSize();
+    if (!project || !size) return new Map();
+    return layoutPageLabels(pageLabelSources(project, store.ui.page), {
+      pageSize: size,
+      measure: measureLabelText,
+    });
+  }
+
+  private screenLabelBox(box: LabelBox): LabelBox {
+    const zoom = store.ui.zoom;
+    const x = box.x * zoom + store.ui.panX;
+    const y = box.y * zoom + store.ui.panY;
+    return {
+      x,
+      y,
+      width: box.width * zoom,
+      height: box.height * zoom,
+      primaryCenterY: box.primaryCenterY * zoom + store.ui.panY,
+      secondaryCenterY:
+        box.secondaryCenterY === undefined
+          ? undefined
+          : box.secondaryCenterY * zoom + store.ui.panY,
     };
   }
 
@@ -1660,20 +1702,9 @@ export class CanvasView {
     if (!edit || edit.closing || !store.project) return;
     const found = findItem(store.project, edit.itemId);
     if (!found) return;
-    const parts = measurementLabelParts(found.item, store.project);
-    if (!parts) return;
-    const anchor = this.toScreen(labelAnchorForPoints(found.item, found.item.points));
-    const ctx = this.contentCtx;
-    ctx.save();
-    ctx.font = `600 ${LABEL_PRIMARY_SIZE}px ${FONT_STACK}`;
-    const primaryWidth = ctx.measureText(parts.text).width;
-    let secondaryWidth = 0;
-    if (parts.secondary) {
-      ctx.font = `500 ${LABEL_SECONDARY_SIZE}px ${FONT_STACK}`;
-      secondaryWidth = ctx.measureText(parts.secondary).width;
-    }
-    ctx.restore();
-    const box = labelBox(anchor, primaryWidth, secondaryWidth, parts.secondary);
+    const layout = this.pageLabelLayouts().get(found.item.id);
+    if (!layout) return;
+    const box = this.screenLabelBox(layout.box);
     const width = Math.max(150, box.width + 42);
     edit.container.style.left = `${Math.max(6, Math.min(this.width - width - 6, box.x - 20))}px`;
     edit.container.style.top = `${Math.max(6, box.y)}px`;
@@ -1723,7 +1754,7 @@ export class CanvasView {
   private measurementLabelHit(screen: Point): LabelHit | null {
     const project = store.project;
     if (!project) return null;
-    const ctx = this.contentCtx;
+    const layouts = this.pageLabelLayouts();
     for (let l = project.layers.length - 1; l >= 0; l--) {
       const layer = project.layers[l];
       if (!layer.visible || layer.opacity <= 0) continue;
@@ -1731,21 +1762,10 @@ export class CanvasView {
         const item = layer.items[i];
         if (item.page !== store.ui.page || item.visible === false) continue;
         if (item.kind !== "length" && item.kind !== "area") continue;
-        const parts = measurementLabelParts(item, project);
-        if (!parts) continue;
-        const anchor = this.toScreen(labelAnchorForPoints(item, item.points));
-        ctx.save();
-        ctx.font = `600 ${LABEL_PRIMARY_SIZE}px ${FONT_STACK}`;
-        const primaryWidth = ctx.measureText(parts.text).width;
-        let secondaryWidth = 0;
-        if (parts.secondary) {
-          ctx.font = `500 ${LABEL_SECONDARY_SIZE}px ${FONT_STACK}`;
-          secondaryWidth = ctx.measureText(parts.secondary).width;
-        }
-        ctx.restore();
-        const box = labelBox(anchor, primaryWidth, secondaryWidth, parts.secondary);
-        if (pointInBox(screen, box.x, box.y, box.width, box.height)) {
-          return { layer, item, box };
+        const layout = layouts.get(item.id);
+        if (!layout) continue;
+        if (this.hitLabelBox(screen, this.screenLabelBox(layout.box))) {
+          return { layer, item };
         }
       }
     }
@@ -1755,20 +1775,22 @@ export class CanvasView {
   private calibrationLabelHit(screen: Point): boolean {
     const project = store.project;
     if (!project || !project.settings.showCalibration) return false;
-    const calibration = pageCalibration(project, store.ui.page);
-    if (!calibration) return false;
-    const p1 = this.toScreen(calibration.p1);
-    const p2 = this.toScreen(calibration.p2);
-    const mid = midpoint(p1, p2);
-    const anchor = { x: mid.x, y: mid.y - 16 };
-    const text = `${formatNumber(calibration.knownLength, 2)} ${calibration.unit} reference`;
-    const ctx = this.contentCtx;
-    ctx.save();
-    ctx.font = `600 ${LABEL_PRIMARY_SIZE}px ${FONT_STACK}`;
-    const width = ctx.measureText(text).width;
-    ctx.restore();
-    const box = labelBox(anchor, width, 0);
-    return pointInBox(screen, box.x, box.y, box.width, box.height);
+    const layout = this.pageLabelLayouts().get(CALIBRATION_LABEL_ID);
+    if (!layout) return false;
+    return this.hitLabelBox(screen, this.screenLabelBox(layout.box));
+  }
+
+  private hitLabelBox(screen: Point, box: LabelBox): boolean {
+    const minHit = 12;
+    const paddingX = Math.max(0, (minHit - box.width) / 2);
+    const paddingY = Math.max(0, (minHit - box.height) / 2);
+    return pointInBox(
+      screen,
+      box.x - paddingX,
+      box.y - paddingY,
+      box.width + paddingX * 2,
+      box.height + paddingY * 2,
+    );
   }
 
   private onDocumentPointerDown = (event: PointerEvent): void => {
@@ -2103,6 +2125,7 @@ export class CanvasView {
     const size = this.pageSize();
     if (!size) return;
     const page = store.ui.page;
+    const labels = this.pageLabelLayouts();
 
     for (const layer of project.layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
@@ -2110,7 +2133,7 @@ export class CanvasView {
       ctx.globalAlpha = layer.opacity;
       for (const item of layer.items) {
         if (item.page !== page || item.visible === false) continue;
-        this.drawItem(ctx, item);
+        this.drawItem(ctx, item, labels);
       }
       ctx.restore();
     }
@@ -2136,19 +2159,18 @@ export class CanvasView {
           ctx.fill();
           ctx.stroke();
         }
-        const mid = midpoint(p1, p2);
-        this.drawLabel(
-          ctx,
-          `${formatNumber(calibration.knownLength, 2)} ${calibration.unit} reference`,
-          { x: mid.x, y: mid.y - 16 },
-          CALIBRATION_COLOR,
-        );
+        const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);
+        if (calibrationLabel) this.drawLabelLayout(ctx, calibrationLabel);
         ctx.restore();
       }
     }
   }
 
-  private drawItem(ctx: CanvasRenderingContext2D, item: MarkupItem): void {
+  private drawItem(
+    ctx: CanvasRenderingContext2D,
+    item: MarkupItem,
+    labels: Map<string, LabelLayout>,
+  ): void {
     if (this.editingItemId === item.id) return;
     const zoom = store.ui.zoom;
     const points = item.points.map((p) => this.toScreen(p));
@@ -2281,10 +2303,9 @@ export class CanvasView {
     ctx.restore();
 
     if (item.kind === "length" || item.kind === "area") {
-      const parts = measurementLabelParts(item, store.project!);
-      if (parts && this.editingLabelId !== item.id) {
-        const anchor = this.toScreen(labelAnchorForPoints(item, item.points));
-        this.drawLabel(ctx, parts.text, anchor, item.color, parts.secondary);
+      const layout = labels.get(item.id);
+      if (layout && this.editingLabelId !== item.id) {
+        this.drawLabelLayout(ctx, layout);
       }
     }
   }
@@ -2304,44 +2325,74 @@ export class CanvasView {
     ctx.restore();
   }
 
-  private drawLabel(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    point: Point,
-    color: string,
-    secondary?: string,
-  ): void {
-    const primarySize = LABEL_PRIMARY_SIZE;
-    const secondarySize = LABEL_SECONDARY_SIZE;
+  private drawLabelLayout(ctx: CanvasRenderingContext2D, layout: LabelLayout): void {
+    const zoom = store.ui.zoom;
+    const box = this.screenLabelBox(layout.box);
     ctx.save();
-    ctx.font = `600 ${primarySize}px ${FONT_STACK}`;
-    const primaryWidth = ctx.measureText(text).width;
-    let secondaryWidth = 0;
-    if (secondary) {
-      ctx.font = `500 ${secondarySize}px ${FONT_STACK}`;
-      secondaryWidth = ctx.measureText(secondary).width;
+
+    if (layout.leader) {
+      const from = this.toScreen(layout.leader.from);
+      const to = this.toScreen(layout.leader.to);
+      ctx.strokeStyle = hexAlpha(layout.color, 0.5);
+      ctx.lineWidth = Math.max(0.5, layout.metrics.leaderWidth * zoom);
+      ctx.beginPath();
+      ctx.moveTo(from.x, from.y);
+      ctx.lineTo(to.x, to.y);
+      ctx.stroke();
     }
-    const box = labelBox(point, primaryWidth, secondaryWidth, secondary);
-    const { x, y, width, height } = box;
 
     ctx.fillStyle = "rgba(12, 16, 18, 0.88)";
-    ctx.strokeStyle = hexAlpha(color, 0.6);
-    ctx.lineWidth = 1;
-    roundRect(ctx, x, y, width, height, 5);
+    ctx.strokeStyle = hexAlpha(layout.color, 0.6);
+    ctx.lineWidth = Math.max(0.4, layout.metrics.borderWidth * zoom);
+    roundRect(
+      ctx,
+      box.x,
+      box.y,
+      box.width,
+      box.height,
+      Math.max(0.5, layout.metrics.radius * zoom),
+    );
     ctx.fill();
     ctx.stroke();
 
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#edf3f5";
-    ctx.font = `600 ${primarySize}px ${FONT_STACK}`;
-    ctx.fillText(text, point.x, box.primaryY);
-    if (secondary) {
+    ctx.font = `700 ${Math.max(0.1, layout.metrics.primarySize * zoom)}px ${LABEL_FONT_STACK}`;
+    ctx.fillText(layout.text, box.x + box.width / 2, box.primaryCenterY);
+    if (layout.secondary) {
       ctx.fillStyle = "rgba(210, 222, 227, 0.72)";
-      ctx.font = `500 ${secondarySize}px ${FONT_STACK}`;
-      ctx.fillText(secondary, point.x, box.secondaryY ?? y + 24);
+      ctx.font = `400 ${Math.max(0.1, layout.metrics.secondarySize * zoom)}px ${LABEL_FONT_STACK}`;
+      ctx.fillText(
+        layout.secondary,
+        box.x + box.width / 2,
+        box.secondaryCenterY ?? box.primaryCenterY,
+      );
     }
     ctx.restore();
+  }
+
+  private drawPreviewLabel(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    anchor: Point,
+    color: string,
+    secondary?: string,
+  ): void {
+    const metrics = labelMetrics(1);
+    const primaryWidth = measureLabelText(text, metrics.primarySize, "bold");
+    const secondaryWidth = secondary
+      ? measureLabelText(secondary, metrics.secondarySize, "regular")
+      : 0;
+    this.drawLabelLayout(ctx, {
+      id: "preview",
+      text,
+      secondary,
+      color,
+      box: labelBox(anchor, primaryWidth, secondaryWidth, secondary),
+      metrics,
+      placement: "center",
+    });
   }
 
   private drawInteraction(): void {
@@ -2535,27 +2586,44 @@ export class CanvasView {
         ctx.fill();
         ctx.restore();
         if (preview.length >= 3) {
-          this.drawLabel(
+          this.drawPreviewLabel(
             ctx,
             formatArea(polygonArea(preview), scale, areaUnit),
-            this.toScreen(polygonCentroid(preview)),
+            polygonCentroid(preview),
             ACCENT,
           );
         }
       } else if (this.draft.kind === "length" && points.length >= 1) {
         const preview = [...this.draft.points, this.draft.cursor];
-        this.drawLabel(
+        const a = preview[preview.length - 2];
+        const b = preview[preview.length - 1];
+        const mid = midpoint(a, b);
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const length = Math.hypot(dx, dy) || 1;
+        this.drawPreviewLabel(
           ctx,
           formatLength(polylineLength(preview), scale, unit),
-          { x: (last.x + cursor.x) / 2, y: (last.y + cursor.y) / 2 - 16 },
+          {
+            x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
+            y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
+          },
           ACCENT,
         );
       } else if (this.draft.kind === "calibrate") {
-        const d = distance(this.draft.points[0], this.draft.cursor);
-        this.drawLabel(
+        const a = this.draft.points[0];
+        const b = this.draft.cursor;
+        const mid = midpoint(a, b);
+        const dx = b.x - a.x;
+        const dy = b.y - a.y;
+        const length = Math.hypot(dx, dy) || 1;
+        this.drawPreviewLabel(
           ctx,
-          `${formatNumber(d, 1)} pt`,
-          { x: (last.x + cursor.x) / 2, y: (last.y + cursor.y) / 2 - 16 },
+          `${formatNumber(distance(a, b), 1)} pt`,
+          {
+            x: mid.x + (dy / length) * LABEL_CALIBRATION_OFFSET,
+            y: mid.y - (dx / length) * LABEL_CALIBRATION_OFFSET,
+          },
           CALIBRATION_COLOR,
         );
       }

@@ -12,20 +12,71 @@ export interface LabelBox {
   y: number;
   width: number;
   height: number;
-  primaryY: number;
-  secondaryY?: number;
+  primaryCenterY: number;
+  secondaryCenterY?: number;
 }
 
-export const LABEL_PRIMARY_SIZE = 11;
-export const LABEL_SECONDARY_SIZE = 9.5;
-export const LABEL_PADDING_X = 7;
+export interface LabelMetrics {
+  primarySize: number;
+  secondarySize: number;
+  paddingX: number;
+  paddingY: number;
+  primaryLine: number;
+  secondaryLine: number;
+  rowGap: number;
+  radius: number;
+  borderWidth: number;
+  leaderWidth: number;
+  gap: number;
+}
+
+export type LabelWeight = "regular" | "bold";
+export type LabelMeasure = (text: string, size: number, weight: LabelWeight) => number;
 
 /**
- * Screen labels are fixed-size UI elements measured in CSS pixels. PDF labels
- * are paper-space annotations, where the screen size is too large for the
- * drawing. Scale the whole label (text, padding, and box) down for export.
+ * Labels are paper-space annotations. The same point values are used for the
+ * interactive canvas (multiplied by the viewport zoom) and for PDF export.
+ * Keeping the source values in points prevents labels from growing relative
+ * to the drawing when the user zooms or when the page is printed.
  */
-export const LABEL_EXPORT_SCALE = 0.7;
+export const LABEL_PRIMARY_SIZE = 8;
+export const LABEL_SECONDARY_SIZE = 7;
+export const LABEL_MIN_PRIMARY_SIZE = 6.5;
+export const LABEL_MIN_SECONDARY_SIZE = 5.7;
+export const LABEL_PADDING_X = 5.2;
+export const LABEL_PADDING_Y = 3.2;
+export const LABEL_ROW_GAP = 0.5;
+export const LABEL_RADIUS = 2.8;
+export const LABEL_BORDER_WIDTH = 0.75;
+export const LABEL_LEADER_WIDTH = 0.75;
+export const LABEL_GAP = 6.4;
+export const LABEL_LINE_OFFSET = 14;
+export const LABEL_CALIBRATION_OFFSET = 16;
+export const LABEL_MIN_SCALE = Math.max(
+  LABEL_MIN_PRIMARY_SIZE / LABEL_PRIMARY_SIZE,
+  LABEL_MIN_SECONDARY_SIZE / LABEL_SECONDARY_SIZE,
+);
+export const LABEL_INSIDE_MARGIN = 1.5;
+export const LABEL_PAGE_MARGIN = 1.5;
+export const LABEL_COLLISION_GAP = 1.5;
+
+export function labelMetrics(scale = 1): LabelMetrics {
+  const primarySize = LABEL_PRIMARY_SIZE * scale;
+  const secondarySize = LABEL_SECONDARY_SIZE * scale;
+  return {
+    primarySize,
+    secondarySize,
+    paddingX: LABEL_PADDING_X * scale,
+    paddingY: LABEL_PADDING_Y * scale,
+    primaryLine: primarySize * 1.15,
+    secondaryLine: secondarySize * 1.15,
+    rowGap: LABEL_ROW_GAP * scale,
+    radius: LABEL_RADIUS * scale,
+    borderWidth: LABEL_BORDER_WIDTH,
+    leaderWidth: LABEL_LEADER_WIDTH,
+    gap: LABEL_GAP * scale,
+  };
+}
 
 /** Label anchor in the same coordinate space as the supplied item points. */
 export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
@@ -44,7 +95,10 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
     const dx = b.x - a.x;
     const dy = b.y - a.y;
     const length = Math.hypot(dx, dy) || 1;
-    return { x: mid.x - (dy / length) * 14, y: mid.y + (dx / length) * 14 };
+    return {
+      x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
+      y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
+    };
   }
   return points[0];
 }
@@ -62,7 +116,9 @@ export function measurementLabelParts(
 }
 
 /**
- * Builds a label box around a centered anchor.
+ * Builds a label box around a centered anchor. All measurements are in paper
+ * points when used for layout; the canvas scales the result by the viewport
+ * zoom before drawing.
  *
  * `scale` shrinks padding, row heights, and baselines together. Text widths
  * must already be measured at the correspondingly scaled font size.
@@ -74,16 +130,23 @@ export function labelBox(
   secondary?: string,
   scale = 1,
 ): LabelBox {
-  const width = Math.max(primaryWidth, secondaryWidth) + LABEL_PADDING_X * scale * 2;
-  const height = (secondary ? 34 : 20) * scale;
+  const metrics = labelMetrics(scale);
+  const width = Math.max(primaryWidth, secondaryWidth) + metrics.paddingX * 2;
+  const height =
+    metrics.paddingY * 2 +
+    metrics.primaryLine +
+    (secondary ? metrics.rowGap + metrics.secondaryLine : 0);
   const x = anchor.x - width / 2;
   const y = anchor.y - height / 2;
+  const primaryCenterY = y + metrics.paddingY + metrics.primaryLine / 2;
   return {
     x,
     y,
     width,
     height,
-    primaryY: secondary ? y + 11 * scale : anchor.y + 0.5 * scale,
-    secondaryY: secondary ? y + 24 * scale : undefined,
+    primaryCenterY,
+    secondaryCenterY: secondary
+      ? primaryCenterY + metrics.primaryLine / 2 + metrics.rowGap + metrics.secondaryLine / 2
+      : undefined,
   };
 }
