@@ -3,11 +3,11 @@
 ## Status
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
-- **Etapp 2 – Mängddata och beställningsunderlag:** nästa etapp.
+- **Etapp 2 – Mängddata och beställningsunderlag:** plan fastställd 2026-10-21, implementation återstår.
 - **Etapp 3 – Mätverktyg, skala och export:** planerad, detaljplaneras efter Etapp 2.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
-Etapp 2-planen finns i `etapp-2-mangddata.md` och är ett förslag som ska fastställas innan implementation. Etapp 1-filen `etapp-1-lager-urval.md` lämnas orörd som historik.
+Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 ## Produktprinciper
 
@@ -28,8 +28,8 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | Etapp | Mål | Status | Beroenden | Risk |
 |---|---|---|---|---|
 | 1 | Lager, urval och objektkontroll | Klar | – | Medel |
-| 2A | Kategorier, antal, avdrag och summering | Nästa | Etapp 1 | Medel |
-| 2B | Svinn, avrundning och mängdförteckning | Efter 2A | Etapp 2A | Medel |
+| 2A | Kategorier, antal, avdrag och summering | Plan klar | Etapp 1 | Medel |
+| 2B | Svinn, avrundning och mängdförteckning | Plan klar | Etapp 2A | Medel |
 | 3 | Snabbarea, manuell skala, snap och exportdialog | Senare | Etapp 2 | Hög |
 | 4 | Bilder | Sist | Etapp 2–3 | Hög |
 
@@ -58,11 +58,12 @@ Etapp 2 delas i två leveranser för att minska risken och få nytta tidigt.
 
 ### Etapp 2A – Mängdmodell och summering
 
-- Kategori per mätning: Golv, Vägg, Tak, Fasad, Yttertak, Mark, Övrigt.
-- Rum/plats som fritext med autocomplete.
+- Användardefinierade kategorier per projekt, med standarduppsättningen Floor, Wall, Ceiling, Facade, Roof, Ground och Other.
+- Exakt en kategori per mätning, obligatorisk.
+- Rum som fritext med autocomplete.
 - Generiskt antalsverktyg för dörr, fönster, radiator, armatur och övrigt.
-- Avdragsarea med `add`/`subtract`.
-- Nettomängd och summering per kategori och rum.
+- Avdragsarea med `add`/`subtract`, netto klampat till noll med varning.
+- Nettomängd och summering per kategori och rum i en Quantities-flik.
 - Lager och sida används som filter, inte som obligatoriska rapportdimensioner.
 - Fler areaenheter, exempelvis `yd²`.
 - Schema v3 med migrering från v1/v2.
@@ -70,9 +71,9 @@ Etapp 2 delas i två leveranser för att minska risken och få nytta tidigt.
 ### Etapp 2B – Beställningsunderlag
 
 - Svinn per projekt och kategori.
-- Avrundningssteg per projekt och kategori.
+- Avrundningssteg per projekt och kategori, alltid uppåt.
 - Beställningsmängd = avrundad nettomängd inklusive svinn.
-- Mängdförteckning som CSV och utskriftsvänlig PDF.
+- Mängdförteckning som CSV och utskriftsvänlig PDF byggd med `pdf-lib`.
 - Excel/XLSX är en separat fråga och införs först om CSV inte räcker.
 - Tydlig separation mellan mängdförteckning och PDF-export av själva ritningen.
 
@@ -164,23 +165,16 @@ Kvar att överväga: branch protection eller krav på grön CI innan merge när 
 
 ## Öppna beslut
 
-Följande beslut ska fastställas innan respektive etapp:
+Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Följande återstår inför senare etapper:
 
-- Fast kategori-lista eller användardefinierade kategorier i Etapp 2?
-- Ska kategori vara obligatorisk på alla mätningar eller defaulta till “Övrigt”?
-- Ska avdragsarea kunna ge negativt netto, eller ska nettot klampas till noll per grupp?
-- Exakt formel för svinn och avrundning.
-- CSV först eller XLSX direkt?
-- Vad betyder “valt område” i exportdialogen?
-- Ska bilder bäddas in eller ligga som externa assets?
+- Vad betyder “valt område” i exportdialogen i Etapp 3?
+- Ska bilder bäddas in eller ligga som externa assets i Etapp 4?
 - Full z-order eller endast bakgrund/annotation för bilder?
 - Ska GitHub-repot vara privat eller publikt, och vem äger det?
 
 ## Rekommenderad nästa ordning
 
-1. Fastställ Etapp 2-planen, särskilt datamodell och avdragsregler.
-2. Skapa GitHub-repo och CI med Windows-bygge.
-3. Genomför Etapp 2A.
-4. Genomför Etapp 2B.
-5. Planera Etapp 3 i detalj, med PDF-snap som separat spike.
-6. Genomför Etapp 4 sist.
+1. Genomför Etapp 2A enligt stegordningen i `etapp-2-mangddata.md`.
+2. Genomför Etapp 2B.
+3. Planera Etapp 3 i detalj, med PDF-snap som separat spike.
+4. Genomför Etapp 4 sist.

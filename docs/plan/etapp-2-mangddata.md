@@ -1,12 +1,17 @@
 # Etapp 2 – Mängddata och beställningsunderlag
 
-## Mål
+**Status:** planen är fastställd 2026-10-21. Ingen Etapp 2-kod är skriven ännu. Nästa steg är Etapp 2A steg 1.
+
+Dokumentet ersätter den tidigare förslagsversionen. Alla beslut som krävdes innan implementation är nu låsta och listade i avsnitt 2. Om koden och planen hamnar i konflikt ska konflikten lösas uttryckligen, inte tyst.
+
+## 1. Mål
 
 Göra GridScalr användbart för tekniska förvaltare som ska ta fram ett beställningsunderlag från PDF-ritningar.
 
 Etappen ska ge:
 
-- kategori och rum per mätning
+- användardefinierade kategorier per projekt
+- rum som fritext med autocomplete
 - antalsverktyg för dörrar, fönster, radiatorer, armaturer och liknande
 - avdragsarea med add/subtract
 - summering per kategori och rum
@@ -16,59 +21,77 @@ Etappen ska ge:
 
 Etappen delas i **2A – modell och summering** och **2B – beställningsunderlag**.
 
-## Avgränsning
+## 2. Fastställda beslut
+
+| Fråga | Beslut | Följd |
+|---|---|---|
+| Kategorilista | Användardefinierad per projekt | Kategori blir projektdata med stabila id:n, inte en enum |
+| Kategori obligatorisk | Ja, exakt en kategori per mätning | Ingen null-hantering i rapport, filter eller CSV |
+| Avdragsnetto | `max(0, add - subtract)` med varning | Rapport och CSV visar brutto, avdrag och netto så felet kan rättas |
+| Rum | Fritext med autocomplete | Inget rumsregister, gruppering skiftlägesokänslig |
+| PDF-rapport | Byggs direkt i `pdf-lib` | Full kontroll på tabeller, sidbrytning och testbarhet |
+| CSV-format | Komma som avgränsare, UTF-8 med BOM | Öppnas korrekt i Excel; numeriska värden med punkt som decimaltecken |
+| Standardkategorier | Engelska namn: Floor, Wall, Ceiling, Facade, Roof, Ground, Other | Matchar appens engelska UI; namnen är redigerbara användardata |
+| Mängdpanel | Fjärde fliken i vänster dock | Ingen separat rapportvy i Etapp 2 |
+| Svinn | Procent per projekt och per kategori | Ingen fast mängd i Etapp 2 |
+| Avrundning | Alltid uppåt, steg `> 0`, `0` = ingen avrundning | Beställningsmängd kan aldrig understiga netto |
+| Count-typer | Fast lista i Etapp 2 | Användardefinierade typer skjuts framåt |
+| Count-enhet | `pcs` | Matchar appens engelska UI; ingen enhetsväljare |
+| XLSX | Utanför Etapp 2 | CSV först, utvärderas efter 2B |
+
+Standardkategorierna skapas i denna ordning och är även rapportens standardordning:
+
+```text
+Floor, Wall, Ceiling, Facade, Roof, Ground, Other
+```
+
+Användaren kan byta namn, lägga till, ta bort och sortera om dem. Ordningen i `project.categories` är den ordning som används i rapporten.
+
+## 3. Avgränsning
 
 Ingår inte i Etapp 2:
 
+- användardefinierade count-typer
 - fullständigt rumsregister med ritningskoppling
-- användardefinierade kategorier och kategorihantering
+- anteckningsfält per objekt
 - avancerade hålpolygoner eller boolean-geometri
 - PDF-geometrisnapp
 - manuell skala och skalningslåsning
 - bildobjekt
 - full z-order
 - molnsynk eller samarbete
-- XLSX om CSV visar sig räcka
+- XLSX
 
 Antalsverktyget ska vara generiskt. Det ska inte byggas separata objektstyper för varje inventarietyp.
 
-## 1. Datamodell
+## 4. Datamodell
 
-### Nya begrepp
+### 4.1 Category
 
 ```ts
-export type MeasurementCategory =
-  | "floor"
-  | "wall"
-  | "ceiling"
-  | "facade"
-  | "roof"
-  | "ground"
-  | "other";
-
-export type CountType =
-  | "door"
-  | "window"
-  | "radiator"
-  | "fixture"
-  | "other";
-
-export type AreaMode = "add" | "subtract";
+export interface Category {
+  /** Stabilt id, till exempel "cat_3f9a". Återanvänds aldrig. */
+  id: string;
+  /** Redigerbart visningsnamn. Unikt per projekt, skiftlägesokänsligt. */
+  name: string;
+  /** 2B: överstyr projektets svinn. */
+  wastePercent?: number;
+  /** 2B: överstyr projektets avrundningssteg. */
+  roundingStep?: number;
+}
 ```
 
-Svenska UI-labels:
+Regler:
 
-| Kod | Label |
-|---|---|
-| `floor` | Golv |
-| `wall` | Vägg |
-| `ceiling` | Tak |
-| `facade` | Fasad |
-| `roof` | Yttertak |
-| `ground` | Mark |
-| `other` | Övrigt |
+- `project.categories` är en ordnad lista. Index är rapportordning.
+- Listan måste alltid innehålla minst en kategori.
+- Namn trimmas, får inte vara tomt och är högst 40 tecken.
+- Namn är unika skiftlägesokänsligt inom projektet.
+- Kategorier är projektglobala och gäller alla sidor och alla mätlager.
+- Kategorier påverkar inte färg, lagertillhörighet eller geometri.
+- Svinn och avrundning ligger på kategorin i stället för i en separat `categoryOverrides`-map. Det gör att inställningar försvinner automatiskt när en kategori tas bort och att det inte kan uppstå orphan-nycklar.
 
-### MarkupItem
+### 4.2 MarkupItem
 
 Nya fält:
 
@@ -76,9 +99,9 @@ Nya fält:
 export interface MarkupItem {
   // befintliga fält
 
-  /** Endast mätningar. */
-  category?: MeasurementCategory;
-  /** Endast mätningar. Fritext, exempelvis "Rum 101". */
+  /** Endast mätningar. Måste peka på en kategori i projektet. */
+  categoryId?: string;
+  /** Endast mätningar. Trimmad fritext, tom sträng sparas som undefined. */
   room?: string;
   /** Endast area. Standard är add. */
   areaMode?: AreaMode;
@@ -89,54 +112,62 @@ export interface MarkupItem {
 
 Regler:
 
-- `category` gäller `length`, `area` och `count`.
-- Ritobjekt ska inte ha kategori eller rum.
-- `room` trimmas och tom sträng sparas som `undefined`.
-- Rumsgruppering ska vara skiftlägesokänslig men behålla första visade skrivning.
+- `categoryId` gäller `length`, `area` och `count`.
+- Ritobjekt (`pen`, `line`, `arrow`, `rect`, `ellipse`, `highlight`, `text`) ska aldrig ha `categoryId`, `room`, `areaMode` eller `countType`. Normaliseraren tar bort dem.
+- `room` trimmas. Tom sträng sparas som `undefined`.
+- Rumsgruppering är skiftlägesokänslig. Visningsnamnet är den skrivning som först påträffas i dokumentordning.
 - `areaMode` gäller endast `area`.
-- Äldre mätningar utan kategori normaliseras till `other`.
-- Äldre areaobjekt utan `areaMode` normaliseras till `add`.
+- `countType` gäller endast `count`.
+- Kopiering, duplicering och inklistring behåller `categoryId`, `room`, `areaMode` och `countType`.
+- Om ett objekt flyttas mellan mätlager behålls kategorin, eftersom kategorier är projektglobala.
+- Ett objekt vars `categoryId` inte finns i projektet faller tillbaka på projektets standardkategori vid inläsning.
 
-### Ny item-kind: count
-
-`MeasurementKind` utökas:
+Typer:
 
 ```ts
+export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
+export type AreaMode = "add" | "subtract";
 export type MeasurementKind = "length" | "area" | "count";
 ```
+
+### 4.3 Ny item-kind: count
 
 `count`:
 
 - har exakt en punkt som anger placering
 - har `countType`
-- räknas som `measure` i `layerKindForItem`
+- räknas som `measure` i `layerKindForItem` och `toolLayerKind`
 - renderas som en inbyggd vektorsymbol, inte som en bild
 - får etikett och rum precis som andra mätningar
-- har metriken `1 count` per objekt
+- har metriken `1 pcs` per objekt
+- har aldrig `areaMode`; normaliseraren tar bort fältet om det skulle finnas
 
-Ingen ny lagertyp införs. Mätningar och ritobjekt ska fortsatt vara separerade.
+Ingen ny lagertyp införs. Mätningar och ritobjekt är fortsatt separerade.
 
-### Units
+### 4.4 Units
 
-`AreaUnit` utökas med `yd2`.
+`AreaUnit` utökas med `yd2`:
 
-Count visas som `st` i UI. Ingen ny användarvald count-enhet behövs i Etapp 2.
+```ts
+export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
+```
 
-### ProjectSettings
+- `yd2` får `squareMeters: 0.9144 * 0.9144`.
+- Label: `yd²`.
+- `yd2` ska fungera i areaetiketter, Properties, PDF-export av ritning, mängdpanel och CSV.
 
-Lägg till ett kvantitetsavsnitt:
+Count visas som `pcs` i UI och i rapporten. Ingen användarvald count-enhet behövs i Etapp 2.
+
+### 4.5 ProjectSettings
 
 ```ts
 export interface QuantitySettings {
-  defaultCategory: MeasurementCategory;
+  /** Måste peka på en kategori i project.categories. */
+  defaultCategoryId: string;
+  /** 0–100. Projektstandard, används när kategorin saknar egen överstyrning. */
   wastePercent: number;
+  /** 0 = ingen avrundning. Annars steg i radens egen enhet. */
   roundingStep: number;
-  categoryOverrides?: Partial<
-    Record<MeasurementCategory, {
-      wastePercent?: number;
-      roundingStep?: number;
-    }>
-  >;
 }
 
 export interface ProjectSettings {
@@ -145,9 +176,11 @@ export interface ProjectSettings {
 }
 ```
 
-Fälten införs i schema v3 även om själva svinn-/avrundnings-UI:t levereras först i 2B.
+Defaults: `wastePercent: 0`, `roundingStep: 0`. `defaultCategoryId` sätts till kategorin `Other` när ett projekt skapas.
 
-### Härledda värden
+Fälten införs i schema v3 även om själva svinn- och avrundnings-UI:t levereras först i 2B. Det gör att 2B inte behöver en ny schemaändring.
+
+### 4.6 Härledda värden
 
 Följande ska **inte** sparas i projektfilen:
 
@@ -155,93 +188,133 @@ Följande ska **inte** sparas i projektfilen:
 - svinnmängd
 - beställningsmängd
 - summering per kategori eller rum
+- antal objekt per grupp
 
 De beräknas alltid från aktuell objektdata. Det förhindrar att rapporten visar gamla värden efter en ändring.
 
-## 2. Schema v3 och migrering
+## 5. Schema v3 och migrering
 
-- Bumpa `SCHEMA_VERSION` till 3.
-- Normalisera v1, v2 och v3.
-- v1/v2-mätningar får `category: "other"`.
+- `SCHEMA_VERSION` blir `3`.
+- Normaliseraren hanterar v1, v2 och v3.
+- Nya projekt får standardkategorierna och `defaultCategoryId` = `Other`.
+- v1/v2-projekt får standardkategorierna automatiskt. Alla mätningar får `categoryId` = `Other`.
 - v1/v2-areaobjekt får `areaMode: "add"`.
-- Nya settings får säkra defaults om de saknas.
-- Okända kategorier eller count-typer faller tillbaka till `other`.
-- Rita inte om `createdAt`, `updatedAt` eller ID:n vid migrering.
+- v1/v2-mätningar får `room: undefined`.
+- Saknade `settings.quantity` får defaults. Ogiltig `defaultCategoryId` ersätts av första kategorin.
+- Okänt `categoryId` ersätts av standardkategorin.
+- Okänt `countType` faller tillbaka på `other`. Ogiltig `areaMode` faller tillbaka på `add`.
+- Kategorier som läses in trimmas och namn som är tomma eller dubbletter får ett unikt namn i stället för att kastas.
+- `createdAt`, `updatedAt` och id:n skrivs inte om vid migrering, förutom att saknade id:n genereras med `makeId`.
+- Migrerade projekt skrivs med `schemaVersion: 3` först när användaren sparar.
 
-Migreringstester ska minst täcka:
+Migreringstabell:
 
-- v1-projekt utan `visible`/`locked`
-- v2-projekt med `visible`/`locked`
-- v2-mätning utan kategori
-- v2-area utan `areaMode`
+| Källa | Resultat |
+|---|---|
+| schema v1 | kategori `Other`, `visible: true`, `locked: false`, `areaMode: add` |
+| schema v2 | `visible`/`locked` bevaras, kategori `Other`, `areaMode: add` |
+| schema v3 utan kategorilista | standardkategorier skapas, mätningar får `Other` |
+| schema v3 med okänt `categoryId` | standardkategorin |
+| schema v3 med dubblettnamn | namn görs unikt, id:n bevaras |
+| ritobjekt med mätfält | fälten tas bort |
+
+Migreringstester ska minst täcka raderna ovan samt:
+
+- v2-mätning utan kategori och utan `areaMode`
 - v3-projekt med count-objekt
+- v3-projekt där `defaultCategoryId` pekar på en borttagen kategori
 
-## 3. Kategori och rum
+## 6. Kategori- och rumshantering
 
-### Skapande
+### 6.1 Skapande av mätning
 
 När ett mätverktyg är aktivt visas kategori och rum i kontextraden:
 
 ```text
-[Kategori: Golv ▾] [Rum: ____________]
+[Category: Floor ▾] [Room: ____________]
 ```
 
-- Kategori defaultar till projektets `defaultCategory`, annars `other`.
-- Senast använda kategori kan hållas kvar under sessionen.
-- Rum är fritext med autocomplete från redan använda rum.
-- Tomt rum är tillåtet.
+- Kategorivalet listar `project.categories` i projektets ordning.
+- Kategori defaultar till senast använda kategori i sessionen, annars projektets `defaultCategoryId`.
+- Rum är fritext med autocomplete från alla rum som redan används i projektet, skiftlägesokänsligt.
+- Kategori och rum är "sticky" under sessionen: de behålls till nästa mätning tills användaren ändrar dem, och nollställs när ett projekt öppnas.
+- Rum kan tömmas med en clear-knapp. Tomt rum är tillåtet.
 - När ett objekt skapas sparas aktuell kategori och aktuellt rum.
 
-### Redigering
+### 6.2 Redigering
 
 I Properties för en mätning:
 
-- kategori-väljare
-- rum-fält
+- kategoriväljare
+- rumfält med autocomplete
 - för area: add/subtract
 - för count: count-typ
+
+Låsta objekt visar värden men kan inte ändras. Dolda objekt kan redigeras när de är markerade, enligt befintlig regel.
+
+### 6.3 Massredigering
 
 Vid flerval av endast mätningar:
 
 - massändra kategori
 - massändra rum
-- massändra areaMode om alla är area
-- massändra countType om alla är count
+- massändra `areaMode` om alla är area
+- massändra `countType` om alla är count
 
-Blandade mätningar och ritobjekt ska inte erbjuda kategori/rum för hela selectionen. En massändring av kategori/rum ska vara ett undo-steg.
+Blandade mätningar och ritobjekt ska inte erbjuda kategori eller rum för hela selectionen. En massändring ska vara ett enda undo-steg, även när den rör flera lager.
 
-## 4. Antalsverktyg
+### 6.4 Kategorihantering
 
-Lägg till ett `count`-verktyg i verktygsraden.
+Kategorier hanteras i projektinställningarna. Panelen innehåller:
+
+- lista med namn, upp/ner för ordning, radera
+- "Add category"
+- val av standardkategori
+- i 2B: svinn och avrundningssteg per kategori
+
+Regler:
+
+- Alla kategorioperationer går genom `Store` och blir ett undo-steg var.
+- Namnändring behåller id:t, så alla objekt följer med.
+- En kategori som används får bara raderas om användaren väljer en mottagarkategori. Alla objekt flyttas i samma undo-steg som raderingen.
+- Den sista kategorin kan inte raderas.
+- Standardkategorin kan inte raderas utan att en ny standard väljs först.
+- Att ta bort en kategori tar även bort dess svinn- och avrundningsöverstyrning.
+
+## 7. Antalsverktyg
+
+Verktygsraden får ett `Count`-verktyg.
 
 Flöde:
 
 1. Välj Count.
-2. Välj count-typ i kontextraden.
+2. Välj count-typ och kategori i kontextraden.
 3. Klicka på ritningen.
 4. Ett count-objekt skapas på den valda punkten.
 
 Rendering:
 
-- inbyggd symbol per count-typ
-- tydlig färg från lagret eller objektet
-- etikett och count-typ i Markups-listan
+- inbyggd vektorsymbol per count-typ
+- färg från lagret eller objektet, samma regler som övriga mätningar
+- etikett via befintlig etikettpipeline: primär text `1 pcs`, sekundär text är count-typens namn
+- Markups-listan visar count-typ och rum
 - hidden/locked följer samma regler som övriga objekt
 
 Hit-test:
 
-- count träffas inom en fast radie i PDF-punkter, skalad med zoom
+- count träffas inom en fast radie i PDF-punkter, skalad med zoom så träffytan blir konstant på skärmen
 - dolda count-objekt träffas inte
 - låsta count-objekt kan markeras men inte flyttas eller raderas
+- count-objekt kan flyttas med samma flyttlogik som andra objekt
 
 Export:
 
-- count ritas som vektor i PDF-exporten
+- count ritas som vektor i PDF-exporten av ritningen
 - count ingår i PNG-exporten
 - count ingår i mängdförteckningen
 - hidden/locked följer befintliga exportregler
 
-## 5. Avdragsarea
+## 8. Avdragsarea
 
 Area får en `areaMode`:
 
@@ -252,164 +325,174 @@ UI:
 
 - toggle i Properties
 - toggle i kontextraden när Area-verktyget är aktivt
-- tydlig visuell skillnad i Markups-listan, exempelvis “Avdrag”
-- canvas kan visa areaobjektet med samma färg men med en diskret markering eller etikett
+- tydlig markering i Markups-listan, exempelvis `Deduction`
+- canvas visar areaobjektet med samma färg men med diskret markering i etiketten
 
 Beräkning per grupp:
 
 ```text
-grossAdd = sum(area där areaMode = add)
-grossSubtract = sum(area där areaMode = subtract)
-net = grossAdd - grossSubtract
+grossAdd      = sum(area där areaMode = add)
+grossDeduct   = sum(area där areaMode = subtract)
+net           = max(0, grossAdd - grossDeduct)
+clamped       = grossDeduct > grossAdd
 ```
 
-För beställningsunderlag rekommenderas:
+- `net` klampas alltid till noll eller högre.
+- När `clamped` är sant visar mängdpanelen, CSV:n och PDF-rapporten brutto, avdrag, netto och en varning.
+- Avdraget påverkar bara arearader i samma kategori och rum. Det läcker inte mellan grupper.
+- Avdrag påverkar inte längd- eller count-rader.
 
-```text
-net = max(0, grossAdd - grossSubtract)
-```
+## 9. Summering
 
-Om `grossSubtract > grossAdd` ska rapporten visa en varning och både brutto, avdrag och netto, så att användaren kan rätta underlaget.
+Ny flik i vänsterpanelen: **Quantities**.
 
-Detta är ett beslut som ska fastställas innan implementation.
+### 9.1 Rapportrader
 
-## 6. Summering
+En rad per `kategori + rum + mängdtyp`:
 
-Lägg till en ny flik i vänsterpanelen: **Mängder**.
+- Category
+- Room
+- Type: length, area eller count
+- Unit
+- Gross
+- Deduction
+- Net
+- Items (antal objekt)
 
-### Standardgruppering
+Lager och sida är filter, inte raddimensioner.
 
-Rapportrader:
+### 9.2 Filter
 
-- kategori
-- rum
-- mängdtyp: längd, area eller antal
+- Page: current page / all pages
+- Layer: en eller flera valda lager, eller alla
+- Category: en vald kategori, eller alla
+- Room: fritextfilter, skiftlägesokänsligt
+- Include hidden: av som standard
 
-Det ger en hanterbar rapport. Lager och sida ska i första hand vara filter, inte egna raddimensioner.
+### 9.3 Synlighet
 
-Filter:
-
-- sida: aktuell sida / alla sidor
-- lager
-- kategori
-- rum
-- endast synliga objekt
-
-### Synlighet
-
-Summeringen ska som standard använda samma synlighetsregler som export:
+Summeringen använder samma regler som export:
 
 - dolda objekt räknas inte
-- dolda lager räknas inte
+- objekt i dolda lager räknas inte
 - låsta objekt räknas
+- när dolda objekt exkluderas visas en diskret notis i panelen
 
-Om dolda objekt exkluderas ska panelen visa en diskret information om att dolda mängder inte ingår.
+### 9.4 Summering och sortering
 
-### Visning
-
-Per rad:
-
-- kategori
-- rum
-- mängdtyp
-- enhet
-- brutto
-- avdrag
-- netto
-- antal objekt
-
-Summering:
-
-- per kategori
-- per rum
+- delsumma per kategori
+- delsumma per rum
 - totalsumma per mängdtyp
+- sortering: projektets kategoriordning, sedan rum alfabetiskt (tomt rum sist), sedan längd, area, count
+- visning använder projektets längd- och areaenheter
+- count visas alltid i `pcs`
 
-Sortering:
+Beräkningen ska vara en ren funktion över projektdata, utan sidoeffekter, så den kan testas och återanvändas av CSV och PDF.
 
-1. fast kategoriordning
-2. rum alfabetiskt
-3. mängdtyp längd, area, antal
+### 9.5 Prestanda
 
-## 7. Svinn och avrundning – Etapp 2B
+- Summeringen görs i ett svep över synliga objekt och memoiseras per projektrevision.
+- Panelen får inte räkna om allt vid varje musklick eller textinmatning i ett filter.
 
-Projektstandard:
+## 10. Svinn och avrundning – Etapp 2B
 
-- `wastePercent`
-- `roundingStep`
+Effektiva värden per rad:
 
-Kategoriöverstyrning:
-
-- samma två fält per kategori
+```text
+wastePercent = kategori.wastePercent ?? settings.quantity.wastePercent
+roundingStep = kategori.roundingStep ?? settings.quantity.roundingStep
+```
 
 Formel:
 
 ```text
-wasteQuantity = net * (wastePercent / 100)
+net              = max(0, grossAdd - grossDeduct)
+wasteQuantity    = net * (wastePercent / 100)
 rawOrderQuantity = net + wasteQuantity
-orderQuantity = ceil(rawOrderQuantity / roundingStep) * roundingStep
+orderQuantity    = roundingStep > 0
+                     ? ceil(rawOrderQuantity / roundingStep) * roundingStep
+                     : rawOrderQuantity
 ```
 
-Rekommendation:
+Regler:
 
-- avrunda alltid uppåt för beställningsmängd
-- `roundingStep` ska vara större än noll
-- count avrundas till hela styck
-- visa netto, svinn och beställningsmängd separat
-- rapporten ska aldrig visa en beställningsmängd som är lägre än nettomängden
+- Avrundning sker alltid uppåt.
+- `roundingStep` får vara `0` (ingen avrundning) eller större än noll. Negativa värden avvisas.
+- `wastePercent` ligger mellan 0 och 100.
+- `ceil` använder en tolerans så att `3.0000000001` inte blir `4`.
+- Count avrundas alltid till hela styck, oavsett `roundingStep`.
+- Beställningsmängden får aldrig understiga nettomängden.
+- Netto, svinn och beställningsmängd visas separat.
+- Ändrade svinn- eller avrundningsvärden är undo-steg och kräver ingen omräkning av sparade data.
 
-## 8. Mängdförteckning
+## 11. Mängdförteckning
 
-### CSV
+### 11.1 CSV
 
-CSV ska vara första exportformat.
-
-Kolumner:
+Kolumner, i denna ordning:
 
 ```text
-category
-room
-quantity_type
-unit
-gross
-deduction
-net
-waste_percent
-waste_quantity
-rounding_step
-order_quantity
-item_count
-notes
+category,room,quantity_type,unit,gross,deduction,net,waste_percent,waste_quantity,rounding_step,order_quantity,item_count
 ```
-
-En rad per kategori + rum + mängdtyp.
 
 Krav:
 
-- UTF-8 med BOM om Excel-kompatibilitet behövs
-- semikolon eller komma enligt vald standard
-- belopp och mängder med stabil decimalformatering
+- UTF-8 med BOM
+- komma som avgränsare
+- CRLF som radbrytning
+- numeriska värden med punkt som decimaltecken och utan tusentalsavgränsare
+- längd och area med tre decimaler, count som heltal
+- fält som innehåller komma, citattecken eller radbrytning omges av citattecken, och inre citattecken dubbleras
 - dolda objekt och dolda lager utesluts
-- projektmetadata och PDF-referens finns med i filen eller i en separat metadata-sektion
+- en rad per kategori + rum + mängdtyp
 
-### PDF
+Efter tabellen följer två tomma rader och en metadatasektion med nyckel/värde:
 
-Utskriftsvänlig rapport med:
+```text
+project,Example
+document,plan.pdf
+document_sha256,…
+generated_at,2026-10-21T12:00:00.000Z
+hidden_excluded,true
+```
 
-- projektnamn
-- PDF-filnamn
-- datum
-- eventuell källa till skala
-- tabell per kategori/rum
-- netto, svinn och beställningsmängd
-- notering om dolda objekt uteslutits
+Tabellen ligger först så att den kan läsas maskinellt genom att läsa till första tomma raden. Metadata ligger sist så att den inte stör importverktyg som letar efter rubrikraden först.
 
-PDF-rapporten är en separat funktion från PDF-exporten av ritningen. Den senare ligger i Etapp 3.
+Filnamn: `<projektnamn>-quantities.csv`.
 
-### XLSX
+### 11.2 PDF
+
+Utskriftsvänlig rapport byggd direkt med `pdf-lib`.
+
+- A4 porträtt, 48 pt marginal
+- sidhuvud: projektnamn, PDF-filnamn, datum, skalans källa
+- tabell per kategori med rum, typ, enhet, brutto, avdrag, netto, svinn och beställningsmängd
+- delsumma per kategori och totalsumma per mängdtyp
+- varning när avdrag överstiger brutto
+- notis när dolda objekt uteslutits
+- sidnummer och upprepad tabellrubrik vid sidbrytning
+- Helvetica som standardteckensnitt, vilket täcker å, ä och ö
+
+Rapporten är en separat funktion från PDF-exporten av ritningen. Den senare ligger i Etapp 3.
+
+Filnamn: `<projektnamn>-quantities.pdf`.
+
+### 11.3 XLSX
 
 XLSX införs endast om CSV inte räcker. Det kräver ny dependency och mer arbete med formatering, formler och underhåll. CSV kan öppnas direkt i Excel och är därför första val.
 
-## 9. Filer som påverkas
+## 12. Filer som påverkas
+
+Nya moduler:
+
+- `src/model/categories.ts` – skapande, validering, namnregler, standarduppsättning
+- `src/model/quantity.ts` – gruppering, brutto/avdrag/netto, svinn och avrundning
+- `src/report/reportModel.ts` – rapportrader, filter och summering
+- `src/report/csv.ts` – CSV-serialisering
+- `src/pdf/reportPdf.ts` – utskriftsvänlig PDF
+- `src/ui/quantityPanel.ts` – Quantities-fliken
+
+Befintliga filer:
 
 - `src/model/types.ts`
 - `src/model/measure.ts`
@@ -417,80 +500,127 @@ XLSX införs endast om CSV inte räcker. Det kräver ny dependency och mer arbet
 - `src/model/hitTest.ts`
 - `src/model/geometry.ts`
 - `src/model/units.ts`
+- `src/model/label.ts` och `src/model/labelLayout.ts`
 - `src/state/store.ts`
 - `src/canvas/CanvasView.ts`
 - `src/app/App.ts`
 - `src/ui/panels.ts`
 - `src/ui/shell.ts`
+- `src/ui/dialogs.ts`
 - `src/ui/icons.ts`
+- `src/ui/toolDefs.ts`
 - `src/styles.css`
 - `src/io/projectFile.ts`
-- `src/io/csvExport.ts` eller motsvarande
+- `src/io/platform.ts` vid behov för exportdialog
 - `src/pdf/pdfExport.ts`
-- `src/model/quantity.ts` (ny)
-- `src/model/report.ts` (ny)
-- tester för mängdberäkning, migrering och export
+- `tests/`
 - `README.md`
 
-## 10. Genomförandeordning
+## 13. Genomförandeordning
 
-### 2A
+Varje steg ska vara en fokuserad commit som passerar alla kontroller. Ett steg får inte lämna halvfärdig UI som kan spara ogiltig data.
 
-1. Datamodell, schema v3 och migrering
-2. Kategori och rum på mätningar
-3. Count-typ, verktyg, rendering och hit-test
-4. Avdragsarea
-5. Summeringsmodell och Mängder-panel
-6. Massredigering av kategori, rum, areaMode och countType
-7. `yd²`
-8. Tester och dokumentation
+### Etapp 2A
 
-### 2B
+1. **Kategorimodell och schema v3**
+   - `Category`, `QuantitySettings`, nya item-fält
+   - standardkategorier och validering
+   - normalisering och migrering v1/v2/v3
+   - kategorihantering i projektinställningarna
+   - migreringstester
+2. **Kategori och rum på mätningar**
+   - kontextrad vid skapande
+   - Properties-fält
+   - Markups-listan visar kategori och rum
+   - tillåtna värden och fallback
+3. **Count-verktyg**
+   - `MeasurementKind`, `CountType`
+   - verktyg, symboler, etikett, hit-test
+   - PNG- och PDF-export av symboler
+4. **Avdragsarea**
+   - `areaMode`, toggle i Properties och kontextrad
+   - markering i Markups-listan och på canvas
+5. **Quantities-panel och `yd²`**
+   - ren beräkningsmodul med tester
+   - panel med filter, gruppering och delsummor
+   - `yd2` i enheter, Properties, export och rapport
+6. **Massredigering och polish**
+   - massändring av kategori, rum, `areaMode` och `countType`
+   - ett undo-steg per massåtgärd
+   - tomma tillstånd, tangentbord och tillgänglighet i nya vyer
 
-1. Svinn och avrundning i settings
-2. Beräkning av beställningsmängd
-3. CSV-export
-4. Utskriftsvänlig PDF-rapport
-5. Exportfilter och metadata
-6. Tester, README och slutvalidering
+### Etapp 2B
 
-## 11. Acceptanskriterier
+7. **Svinn och avrundning**
+   - inställningar per projekt och kategori
+   - beställningsmängd enligt formeln
+   - varning vid klampning
+8. **CSV-export**
+   - rapportrader, escaping, BOM och metadata
+9. **PDF-rapport**
+   - tabeller, sidbrytning, delsummor och metadata
+10. **Dokumentation och slutvalidering**
+    - README, planstatus, fullständig kontrollkörning och Tauri-build
 
-- En mätning kan tilldelas kategori och rum.
+## 14. Testplan
+
+Enhetstester:
+
+- kategorivalidering: trim, tomt namn, dubbletter, maxlängd, ordning
+- migrering enligt tabellen i avsnitt 5
+- `categoryId`-fallback och borttagning av mätfält på ritobjekt
+- count: skapande, etikett, hit-test, låst och dold
+- area: add/subtract, klampning, varning
+- gruppering: skiftlägesokänsliga rum, tomt rum, kategoriordning
+- synlighet: dolda objekt och dolda lager utesluts, låsta ingår
+- svinn och avrundning: steg 0, steg > 0, tolerans, count till hela styck
+- `yd2` i konvertering och formatering
+- CSV: escaping, BOM, decimaltecken, metadata
+- PDF-rapport: radgenerering, delsummor och sidbrytning
+
+Regressionstester som måste fortsätta gälla:
+
+- undo/redo för massåtgärder
+- låsning och synlighet i canvas, listor och export
+- projektfil tur och retur för v1, v2 och v3
+- PNG- och PDF-export av ritning
+
+## 15. Acceptanskriterier
+
+- Ett projekt har en användardefinierad kategorilista som kan ändras, sorteras om och raderas enligt reglerna i avsnitt 6.4.
+- Varje mätning har exakt en kategori och kan ha ett rum.
 - Kategori och rum kan massredigeras på flera mätningar i ett undo-steg.
 - Count-objekt kan skapas, markeras, flyttas och raderas enligt samma synlighets- och låsregler som andra objekt.
-- Count-objekt ritas och exporteras korrekt.
-- Area kan markeras som add eller subtract.
+- Count-objekt ritas och exporteras korrekt i PNG, PDF och mängdförteckning.
+- Area kan markeras som add eller subtract, och netto klampas med varning.
 - Nettomängd beräknas korrekt per kategori och rum.
-- Avdrag och brutto visas separat.
-- Mängder-panelen exkluderar dolda objekt och dolda lager.
-- Låsta objekt ingår i summeringen men kan inte redigeras.
-- `yd²` fungerar i beräkningar och export.
-- v1- och v2-projekt kan öppnas och migreras till v3.
+- Brutto, avdrag och netto visas separat.
+- Quantities-panelen exkluderar dolda objekt och dolda lager, och inkluderar låsta objekt.
+- `yd²` fungerar i beräkningar, Properties, export och rapport.
+- v1- och v2-projekt kan öppnas och migreras till v3 utan att id:n eller tidsstämplar skrivs om.
 - Svinn och avrundning ger en beställningsmängd som aldrig understiger nettomängden.
-- CSV innehåller netto, svinn och beställningsmängd.
+- CSV innehåller netto, svinn och beställningsmängd samt metadata.
 - PDF-rapporten går att skriva ut och innehåller projektmetadata.
 - Alla befintliga tester fortsätter att gå igenom.
 - `npx tsc --noEmit`, `npm test -- --run`, `npm run build`, `cargo fmt --check`, `cargo check` och Tauri-build går igenom.
 
-## 12. Risker
+## 16. Risker
 
-- **Scope:** Etapp 2 är stor. Delningen i 2A/2B är viktig.
-- **Avdragsregler:** otydliga regler ger fel beställningsunderlag. Fastställ klampning och varning tidigt.
-- **Rapportgruppering:** för många dimensioner gör rapporten svårläst. Använd kategori + rum som rader och lager/sida som filter.
-- **Enheter:** count, längd och area måste hållas tydligt åtskilda i summering och export.
-- **Migrering:** äldre mätningar saknar kategori och areaMode. Testa v1 och v2.
-- **Excel:** XLSX kan bli en onödig stor dependency. CSV först.
+- **Kategori som projektdata:** id-baserade referenser kräver att radering och migrering hanteras strikt, annars uppstår orphan-objekt. Migrering och radering måste testas först.
+- **Scope:** Etapp 2 är stor. Delningen i 2A/2B är viktig och varje steg ska vara användbart i sig.
+- **Avdragsregler:** otydliga regler ger fel beställningsunderlag. Klampning och varning är nu fastställda men måste synas i alla tre ytor: panel, CSV och PDF.
+- **Rapportgruppering:** för många dimensioner gör rapporten svårläst. Kategori + rum som rader och lager/sida som filter är fastställt.
+- **Enheter:** count, längd och area måste hållas tydligt åtskilda i summering, CSV och PDF.
+- **Prestanda:** stora projekt med många objekt får inte göra panelen eller rapporten långsam. Memoisering per revision krävs.
+- **Excel:** BOM och komma är fastställt, men Excel-inställningar på användarens maskin kan fortfarande påverka tolkningen. README ska beskriva förväntat resultat.
 - **Synlighet:** summering och export måste använda exakt samma regler som canvas.
 
-## 13. Öppna beslut
+## 17. Kvarstående beslut
 
-1. Ska kategorilistan vara fast eller användarredigerbar?
-2. Ska kategori vara obligatorisk från första början?
-3. Ska avdragsarea klampas till noll per grupp?
-4. Ska svinn vara procent eller fast mängd per kategori?
-5. Ska avrundning alltid ske uppåt?
-6. Ska `room` vara helt fritt eller väljas från en lista med skapade rum?
-7. Ska Mängder-panelen ligga i vänster dock eller i en egen rapportvy?
-8. Ska PDF-rapporten byggas med HTML-utskrift eller direkt i pdf-lib?
-9. Ska CSV använda komma eller semikolon som avgränsare?
+Inga beslut blockerar Etapp 2A. Följande är medvetet uppskjutna:
+
+1. Användardefinierade count-typer – utvärderas efter Etapp 2.
+2. Anteckningsfält per objekt och i CSV – utvärderas om behovet uppstår.
+3. Kategorifärger för snabb visuell igenkänning – utanför Etapp 2.
+4. Rumsregister med koppling till ritning – utanför Etapp 2.
+5. XLSX – endast om CSV visar sig otillräckligt.
