@@ -8,9 +8,91 @@
       content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1420 http://localhost:1420"
     />
     <title>GridScalr</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        min-height: 100%;
+        background: #14181b;
+        color: #e8eef1;
+        font-family: Inter, "Segoe UI", system-ui, sans-serif;
+      }
+
+      #app {
+        min-height: 100vh;
+      }
+
+      .boot-fallback {
+        box-sizing: border-box;
+        display: grid;
+        min-height: 100vh;
+        padding: 24px;
+        place-items: center;
+      }
+
+      .boot-card {
+        box-sizing: border-box;
+        width: min(680px, 100%);
+        padding: 28px 32px;
+        border: 1px solid #30383d;
+        border-radius: 10px;
+        background: #1e2428;
+        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+      }
+
+      .boot-brand {
+        color: #f7fbfc;
+        font-size: 22px;
+        font-weight: 650;
+      }
+
+      .boot-brand span {
+        color: #35c2a1;
+      }
+
+      .boot-status {
+        margin: 14px 0 6px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+
+      .boot-hint {
+        margin: 0;
+        color: #9aa8ae;
+        font-size: 13px;
+        line-height: 1.55;
+      }
+
+      .boot-error {
+        max-height: 280px;
+        overflow: auto;
+        margin: 18px 0 0;
+        padding: 12px;
+        border: 1px solid #4a3030;
+        border-radius: 6px;
+        background: #241b1b;
+        color: #ffb4b4;
+        font-size: 12px;
+        line-height: 1.45;
+        white-space: pre-wrap;
+        user-select: text;
+      }
+    </style>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <div class="boot-fallback" data-boot-fallback>
+        <div class="boot-card">
+          <div class="boot-brand">Grid<span>Scalr</span></div>
+          <p class="boot-status" data-boot-status>Starting…</p>
+          <p class="boot-hint">
+            If this message stays visible, the interface failed to load. Restart the app and make
+            sure Microsoft Edge WebView2 is up to date.
+          </p>
+          <pre class="boot-error" data-boot-error hidden></pre>
+        </div>
+      </div>
+    </div>
     <input id="browser-file-input" type="file" hidden />
     <script type="module" src="/src/main.ts"></script>
   </body>

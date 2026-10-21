@@ -3,6 +3,9 @@ import { defineConfig } from "vitest/config";
 const host = process.env.TAURI_DEV_HOST;
 
 export default defineConfig({
+  // Tauri serves the production frontend from a custom protocol. Relative
+  // asset URLs work on every platform and keep the built index.html portable.
+  base: "./",
   clearScreen: false,
   server: {
     port: 1420,
