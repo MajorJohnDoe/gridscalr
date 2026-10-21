@@ -1,0 +1,63 @@
+import { describe, expect, it } from "vitest";
+import {
+  areaInUnit,
+  areaUnitToSquareMeters,
+  calibrationToScale,
+  formatArea,
+  formatCoordinate,
+  formatLength,
+  formatNumber,
+  formatScale,
+  lengthInUnit,
+  unitLabel,
+  unitToMeters,
+} from "../src/model/units";
+import type { Calibration } from "../src/model/types";
+
+const calibration: Calibration = {
+  id: "cal_test",
+  p1: { x: 0, y: 0 },
+  p2: { x: 1000, y: 0 },
+  knownLength: 10,
+  unit: "m",
+  pointsPerMeter: 100,
+  createdAt: "2026-01-01T00:00:00.000Z",
+};
+
+describe("units", () => {
+  it("converts real-world length and area units", () => {
+    expect(unitToMeters("mm")).toBe(0.001);
+    expect(unitToMeters("ft")).toBeCloseTo(0.3048);
+    expect(areaUnitToSquareMeters("m2")).toBe(1);
+    expect(areaUnitToSquareMeters("ft2")).toBeCloseTo(0.09290304);
+  });
+
+  it("converts points into project units using a scale", () => {
+    expect(lengthInUnit(1000, 100, "m")).toBe(10);
+    expect(lengthInUnit(1000, 100, "cm")).toBe(1000);
+    expect(areaInUnit(10_000, 100, "m2")).toBe(1);
+    expect(areaInUnit(10_000, 100, "ft2")).toBeCloseTo(10.7639, 4);
+  });
+
+  it("formats calibrated and uncalibrated values", () => {
+    const scale = calibrationToScale(calibration);
+    expect(formatLength(1000, scale, "m")).toBe("10 m");
+    expect(formatLength(123, null, "m")).toBe("123 pt");
+    expect(formatArea(10_000, scale, "m2")).toBe("1 m²");
+    expect(formatArea(10_000, null, "m2")).toBe("10,000 pt²");
+  });
+
+  it("formats scale and cursor coordinates", () => {
+    const scale = calibrationToScale(calibration);
+    expect(formatScale(scale)).toBe("1 pt = 10 mm");
+    expect(formatScale(null)).toBe("Not calibrated");
+    expect(formatCoordinate(500, scale, "m")).toBe("5");
+    expect(formatCoordinate(500, null, "m")).toBe("500");
+  });
+
+  it("formats numbers compactly and labels area units", () => {
+    expect(formatNumber(1234.567, 1)).toBe("1,234.6");
+    expect(formatNumber(Number.NaN)).toBe("–");
+    expect(unitLabel("m2")).toBe("m²");
+  });
+});

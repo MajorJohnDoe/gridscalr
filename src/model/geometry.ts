@@ -1,0 +1,285 @@
+import { textItemLayout } from "./text";
+import type { MarkupItem, Point } from "./types";
+
+export function distance(a: Point, b: Point): number {
+  return Math.hypot(b.x - a.x, b.y - a.y);
+}
+
+export function distanceSquared(a: Point, b: Point): number {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  return dx * dx + dy * dy;
+}
+
+export function polylineLength(points: Point[], closed = false): number {
+  if (points.length < 2) return 0;
+  let total = 0;
+  for (let i = 1; i < points.length; i++) total += distance(points[i - 1], points[i]);
+  if (closed) total += distance(points[points.length - 1], points[0]);
+  return total;
+}
+
+export function polygonArea(points: Point[]): number {
+  if (points.length < 3) return 0;
+  let sum = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    sum += a.x * b.y - b.x * a.y;
+  }
+  return Math.abs(sum) / 2;
+}
+
+export function polygonPerimeter(points: Point[]): number {
+  return polylineLength(points, true);
+}
+
+export function polygonCentroid(points: Point[]): Point {
+  if (points.length === 0) return { x: 0, y: 0 };
+  if (points.length < 3) return averagePoint(points);
+  let cx = 0;
+  let cy = 0;
+  let areaFactor = 0;
+  for (let i = 0; i < points.length; i++) {
+    const a = points[i];
+    const b = points[(i + 1) % points.length];
+    const cross = a.x * b.y - b.x * a.y;
+    areaFactor += cross;
+    cx += (a.x + b.x) * cross;
+    cy += (a.y + b.y) * cross;
+  }
+  if (Math.abs(areaFactor) < 1e-9) return averagePoint(points);
+  return { x: cx / (3 * areaFactor), y: cy / (3 * areaFactor) };
+}
+
+export function averagePoint(points: Point[]): Point {
+  let x = 0;
+  let y = 0;
+  for (const p of points) {
+    x += p.x;
+    y += p.y;
+  }
+  return { x: x / points.length, y: y / points.length };
+}
+
+export function midpoint(a: Point, b: Point): Point {
+  return { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+}
+
+export function boundingBox(points: Point[]): { min: Point; max: Point } {
+  if (points.length === 0) return { min: { x: 0, y: 0 }, max: { x: 0, y: 0 } };
+  let minX = Infinity;
+  let minY = Infinity;
+  let maxX = -Infinity;
+  let maxY = -Infinity;
+  for (const p of points) {
+    minX = Math.min(minX, p.x);
+    minY = Math.min(minY, p.y);
+    maxX = Math.max(maxX, p.x);
+    maxY = Math.max(maxY, p.y);
+  }
+  return { min: { x: minX, y: minY }, max: { x: maxX, y: maxY } };
+}
+
+export function pointToSegmentDistance(p: Point, a: Point, b: Point): number {
+  const lengthSq = distanceSquared(a, b);
+  if (lengthSq === 0) return distance(p, a);
+  let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / lengthSq;
+  t = Math.max(0, Math.min(1, t));
+  return distance(p, { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) });
+}
+
+export function nearestPointOnSegment(p: Point, a: Point, b: Point): Point {
+  const lengthSq = distanceSquared(a, b);
+  if (lengthSq === 0) return { ...a };
+  let t = ((p.x - a.x) * (b.x - a.x) + (p.y - a.y) * (b.y - a.y)) / lengthSq;
+  t = Math.max(0, Math.min(1, t));
+  return { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+}
+
+export function pointInPolygon(p: Point, polygon: Point[]): boolean {
+  let inside = false;
+  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+    const a = polygon[i];
+    const b = polygon[j];
+    const intersects =
+      a.y > p.y !== b.y > p.y &&
+      p.x < ((b.x - a.x) * (p.y - a.y)) / (b.y - a.y || Number.EPSILON) + a.x;
+    if (intersects) inside = !inside;
+  }
+  return inside;
+}
+
+export function distanceToPolyline(p: Point, points: Point[], closed = false): number {
+  if (points.length === 0) return Infinity;
+  if (points.length === 1) return distance(p, points[0]);
+  let best = Infinity;
+  for (let i = 1; i < points.length; i++) {
+    best = Math.min(best, pointToSegmentDistance(p, points[i - 1], points[i]));
+  }
+  if (closed) best = Math.min(best, pointToSegmentDistance(p, points[points.length - 1], points[0]));
+  return best;
+}
+
+export function closestVertex(p: Point, points: Point[], maxDistance: number): number {
+  let best = -1;
+  let bestDistance = maxDistance;
+  points.forEach((candidate, index) => {
+    const d = distance(p, candidate);
+    if (d <= bestDistance) {
+      bestDistance = d;
+      best = index;
+    }
+  });
+  return best;
+}
+
+export function constrainAngle(from: Point, to: Point): Point {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length === 0) return to;
+  const angle = Math.atan2(dy, dx);
+  const step = Math.PI / 4;
+  const snapped = Math.round(angle / step) * step;
+  return { x: from.x + Math.cos(snapped) * length, y: from.y + Math.sin(snapped) * length };
+}
+
+export function simplifyPolyline(points: Point[], tolerance: number): Point[] {
+  if (points.length <= 2) return points;
+  const sqTolerance = tolerance * tolerance;
+
+  const getSqSegDist = (p: Point, a: Point, b: Point): number => {
+    let x = a.x;
+    let y = a.y;
+    let dx = b.x - x;
+    let dy = b.y - y;
+    if (dx !== 0 || dy !== 0) {
+      const t = ((p.x - x) * dx + (p.y - y) * dy) / (dx * dx + dy * dy);
+      if (t > 1) {
+        x = b.x;
+        y = b.y;
+      } else if (t > 0) {
+        x += dx * t;
+        y += dy * t;
+      }
+    }
+    dx = p.x - x;
+    dy = p.y - y;
+    return dx * dx + dy * dy;
+  };
+
+  const simplifyStep = (first: number, last: number, output: Point[]): void => {
+    let maxSqDist = sqTolerance;
+    let index = -1;
+    for (let i = first + 1; i < last; i++) {
+      const sqDist = getSqSegDist(points[i], points[first], points[last]);
+      if (sqDist > maxSqDist) {
+        index = i;
+        maxSqDist = sqDist;
+      }
+    }
+    if (index > 0) {
+      if (index - first > 1) simplifyStep(first, index, output);
+      output.push(points[index]);
+      if (last - index > 1) simplifyStep(index, last, output);
+    }
+  };
+
+  const simplified: Point[] = [points[0]];
+  simplifyStep(0, points.length - 1, simplified);
+  simplified.push(points[points.length - 1]);
+  return simplified;
+}
+
+export function translatePoints(points: Point[], dx: number, dy: number): Point[] {
+  return points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
+}
+
+export function expandRect(a: Point, b: Point): { x: number; y: number; width: number; height: number } {
+  return {
+    x: Math.min(a.x, b.x),
+    y: Math.min(a.y, b.y),
+    width: Math.abs(b.x - a.x),
+    height: Math.abs(b.y - a.y),
+  };
+}
+
+export interface Bounds {
+  min: Point;
+  max: Point;
+}
+
+export function normalizeDegrees(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  const wrapped = value % 360;
+  return wrapped < 0 ? wrapped + 360 : wrapped;
+}
+
+export function rotatePoint(point: Point, center: Point, degrees: number): Point {
+  const radians = (degrees * Math.PI) / 180;
+  return rotatePointRadians(point, center, radians);
+}
+
+export function rotatePointRadians(point: Point, center: Point, radians: number): Point {
+  if (radians === 0) return { x: point.x, y: point.y };
+  const cos = Math.cos(radians);
+  const sin = Math.sin(radians);
+  const dx = point.x - center.x;
+  const dy = point.y - center.y;
+  return {
+    x: center.x + dx * cos - dy * sin,
+    y: center.y + dx * sin + dy * cos,
+  };
+}
+
+export function itemRotation(item: MarkupItem): number {
+  return Number.isFinite(item.rotation) ? (item.rotation as number) : 0;
+}
+
+/** Unrotated item bounds in page coordinates. */
+export function itemLocalBounds(item: MarkupItem): Bounds {
+  if (item.kind === "text") {
+    const anchor = item.points[0] ?? { x: 0, y: 0 };
+    const layout = textItemLayout(item);
+    return {
+      min: { x: anchor.x, y: anchor.y },
+      max: { x: anchor.x + layout.width, y: anchor.y + layout.height },
+    };
+  }
+  return boundingBox(item.points);
+}
+
+export function itemCenter(item: MarkupItem): Point {
+  const bounds = itemLocalBounds(item);
+  return midpoint(bounds.min, bounds.max);
+}
+
+/** Clockwise corners: top-left, top-right, bottom-right, bottom-left. */
+export function itemCorners(item: MarkupItem): [Point, Point, Point, Point] {
+  const bounds = itemLocalBounds(item);
+  const center = midpoint(bounds.min, bounds.max);
+  const rotation = itemRotation(item);
+  return [
+    rotatePoint(bounds.min, center, rotation),
+    rotatePoint({ x: bounds.max.x, y: bounds.min.y }, center, rotation),
+    rotatePoint(bounds.max, center, rotation),
+    rotatePoint({ x: bounds.min.x, y: bounds.max.y }, center, rotation),
+  ];
+}
+
+export function itemBounds(item: MarkupItem): Bounds {
+  return boundingBox(itemCorners(item));
+}
+
+export function pointToItemLocal(item: MarkupItem, point: Point): Point {
+  return rotatePoint(point, itemCenter(item), -itemRotation(item));
+}
+
+export function itemLocalToPage(item: MarkupItem, point: Point): Point {
+  return rotatePoint(point, itemCenter(item), itemRotation(item));
+}
+
+export function rotatePointsAround(points: Point[], center: Point, degrees: number): Point[] {
+  return points.map((point) => rotatePoint(point, center, degrees));
+}
