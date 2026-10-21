@@ -16,6 +16,7 @@ import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import {
   labelAnchorForPoints,
   labelBox,
+  LABEL_EXPORT_SCALE,
   LABEL_PRIMARY_SIZE,
   LABEL_SECONDARY_SIZE,
   measurementLabelParts,
@@ -269,11 +270,13 @@ function drawLabel(
   fonts: ExportFonts,
 ): void {
   const anchor = labelAnchorForPoints(item, item.points);
-  const primaryWidth = fonts.bold.widthOfTextAtSize(text, LABEL_PRIMARY_SIZE);
+  const primarySize = LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE;
+  const secondarySize = LABEL_SECONDARY_SIZE * LABEL_EXPORT_SCALE;
+  const primaryWidth = fonts.bold.widthOfTextAtSize(text, primarySize);
   const secondaryWidth = secondary
-    ? fonts.regular.widthOfTextAtSize(secondary, LABEL_SECONDARY_SIZE)
+    ? fonts.regular.widthOfTextAtSize(secondary, secondarySize)
     : 0;
-  const box = labelBox(anchor, primaryWidth, secondaryWidth, secondary);
+  const box = labelBox(anchor, primaryWidth, secondaryWidth, secondary, LABEL_EXPORT_SCALE);
   drawLabelBackground(page, viewport, box, item.color, opacity);
 
   drawCenteredText(
@@ -281,7 +284,7 @@ function drawLabel(
     viewport,
     text,
     { x: anchor.x, y: box.primaryY },
-    LABEL_PRIMARY_SIZE,
+    primarySize,
     fonts.bold,
     INK,
     opacity,
@@ -291,8 +294,8 @@ function drawLabel(
       page,
       viewport,
       secondary,
-      { x: anchor.x, y: box.secondaryY ?? box.y + 24 },
-      LABEL_SECONDARY_SIZE,
+      { x: anchor.x, y: box.secondaryY ?? box.y + 24 * LABEL_EXPORT_SCALE },
+      secondarySize,
       fonts.regular,
       rgb(0.824, 0.871, 0.89),
       opacity * 0.72,
@@ -308,16 +311,17 @@ function drawCalibrationLabel(
 ): void {
   const mid = midpoint(calibration.p1, calibration.p2);
   const anchor = { x: mid.x, y: mid.y - 16 };
+  const primarySize = LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE;
   const text = `${formatNumber(calibration.knownLength, 2)} ${calibration.unit} reference`;
-  const width = fonts.bold.widthOfTextAtSize(text, LABEL_PRIMARY_SIZE);
-  const box = labelBox(anchor, width, 0);
+  const width = fonts.bold.widthOfTextAtSize(text, primarySize);
+  const box = labelBox(anchor, width, 0, undefined, LABEL_EXPORT_SCALE);
   drawLabelBackground(page, viewport, box, "#a78bfa", 1);
   drawCenteredText(
     page,
     viewport,
     text,
     { x: anchor.x, y: box.primaryY },
-    LABEL_PRIMARY_SIZE,
+    primarySize,
     fonts.bold,
     INK,
     1,

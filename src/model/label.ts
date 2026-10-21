@@ -20,6 +20,13 @@ export const LABEL_PRIMARY_SIZE = 11;
 export const LABEL_SECONDARY_SIZE = 9.5;
 export const LABEL_PADDING_X = 7;
 
+/**
+ * Screen labels are fixed-size UI elements measured in CSS pixels. PDF labels
+ * are paper-space annotations, where the screen size is too large for the
+ * drawing. Scale the whole label (text, padding, and box) down for export.
+ */
+export const LABEL_EXPORT_SCALE = 0.7;
+
 /** Label anchor in the same coordinate space as the supplied item points. */
 export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
   if (item.kind === "area") {
@@ -54,14 +61,21 @@ export function measurementLabelParts(
   };
 }
 
+/**
+ * Builds a label box around a centered anchor.
+ *
+ * `scale` shrinks padding, row heights, and baselines together. Text widths
+ * must already be measured at the correspondingly scaled font size.
+ */
 export function labelBox(
   anchor: Point,
   primaryWidth: number,
   secondaryWidth: number,
   secondary?: string,
+  scale = 1,
 ): LabelBox {
-  const width = Math.max(primaryWidth, secondaryWidth) + LABEL_PADDING_X * 2;
-  const height = secondary ? 34 : 20;
+  const width = Math.max(primaryWidth, secondaryWidth) + LABEL_PADDING_X * scale * 2;
+  const height = (secondary ? 34 : 20) * scale;
   const x = anchor.x - width / 2;
   const y = anchor.y - height / 2;
   return {
@@ -69,7 +83,7 @@ export function labelBox(
     y,
     width,
     height,
-    primaryY: secondary ? y + 11 : anchor.y + 0.5,
-    secondaryY: secondary ? y + 24 : undefined,
+    primaryY: secondary ? y + 11 * scale : anchor.y + 0.5 * scale,
+    secondaryY: secondary ? y + 24 * scale : undefined,
   };
 }

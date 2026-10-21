@@ -189,7 +189,7 @@ Locked items remain visible and exportable, but group moves, nudges, deletes, re
 - **Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
 - **Export → View as PNG** exports the rendered page and markup layers at the current view.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported. The PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. The PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
 
 ## Project files
 

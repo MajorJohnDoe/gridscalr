@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
+import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument, degrees } from "pdf-lib";
 import { exportProjectPdf } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
+import {
+  LABEL_EXPORT_SCALE,
+  LABEL_PRIMARY_SIZE,
+  LABEL_SECONDARY_SIZE,
+} from "../src/model/label";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 
@@ -110,6 +116,30 @@ async function contentBytes(bytes: Uint8Array): Promise<number> {
   return total;
 }
 
+async function textItems(bytes: Uint8Array): Promise<Array<{ text: string; size: number }>> {
+  const task = pdfjs.getDocument({
+    data: bytes.slice(),
+    useSystemFonts: true,
+    disableFontFace: true,
+  });
+  const document = await task.promise;
+  const items: Array<{ text: string; size: number }> = [];
+  for (let index = 1; index <= document.numPages; index++) {
+    const page = await document.getPage(index);
+    const content = await page.getTextContent();
+    for (const item of content.items) {
+      if ("str" in item && item.str.trim()) {
+        items.push({
+          text: item.str,
+          size: Math.hypot(item.transform[2], item.transform[3]),
+        });
+      }
+    }
+  }
+  await task.destroy();
+  return items;
+}
+
 describe("flattened PDF export", () => {
   it("keeps all source pages and adds vector markups", async () => {
     const renderer = await makeRenderer();
@@ -120,6 +150,30 @@ describe("flattened PDF export", () => {
     const output = await PDFDocument.load(bytes);
     expect(output.getPageCount()).toBe(2);
     expect(output.getPage(0).getRotation().angle).toBe(90);
+  });
+
+  it("uses paper-space label sizes that do not dominate the drawing", async () => {
+    const renderer = await makeRenderer();
+    const bytes = await exportProjectPdf(makeProject(), renderer);
+    const items = await textItems(bytes);
+
+    const length = items.find((item) => item.text.startsWith("Wall A"));
+    const area = items.find((item) => item.text.includes("m²"));
+    const perimeter = items.find((item) => item.text.startsWith("Perimeter"));
+
+    expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
+    expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
+    expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE * LABEL_EXPORT_SCALE, 1);
+
+    const calibrationProject = makeProject();
+    for (const layer of calibrationProject.layers) layer.items.length = 0;
+    const calibrationItems = (
+      await textItems(await exportProjectPdf(calibrationProject, renderer))
+    ).filter((item) => item.text.trim());
+    expect(calibrationItems.length).toBeGreaterThan(0);
+    for (const item of calibrationItems) {
+      expect(item.size).toBeCloseTo(LABEL_PRIMARY_SIZE * LABEL_EXPORT_SCALE, 1);
+    }
   });
 
   it("omits hidden items and hidden layers from the flattened PDF", async () => {
