@@ -99,6 +99,8 @@ After changing the Rust crate version, run `cargo check` and commit the resultin
 
 The project-file `schemaVersion` is independent of the app version. Do not bump the schema merely because the app version changes.
 
+Do not create or push a release tag, publish a GitHub Release, or bump the version for a release without explicit approval. Routine feature work does not need a version bump.
+
 To create a Windows release build:
 
 1. Update the three app-version fields.
