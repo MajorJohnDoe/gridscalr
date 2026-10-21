@@ -1,7 +1,7 @@
 import { itemScale } from "./calibration";
 import { polygonArea, polygonPerimeter, polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
-import { formatArea, formatLength } from "./units";
+import { formatArea, formatLength, formatLengthCompact } from "./units";
 
 export interface ItemMetrics {
   primary: string;
@@ -31,7 +31,7 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
     const perimeter = polygonPerimeter(item.points);
     return {
       primary: formatArea(area, scale, project.settings.areaUnit),
-      secondary: `Perimeter ${formatLength(perimeter, scale, project.settings.lengthUnit)}`,
+      secondary: `Perimeter ${formatLengthCompact(perimeter, scale, project.settings.lengthUnit)}`,
       rawPoints: area,
       scale,
       unit: scale ? project.settings.areaUnit : "pt²",

@@ -288,7 +288,7 @@ function drawLabel(
       layout.metrics.secondarySize,
       fonts.regular,
       rgb(0.824, 0.871, 0.89),
-      opacity * 0.72,
+      opacity * 0.68,
     );
   }
 }
@@ -321,10 +321,10 @@ function drawLabelBackground(
     x: 0,
     y: 0,
     color: LABEL_BG,
-    opacity: opacity * 0.88,
+    opacity: opacity * 0.82,
     borderColor: pdfColor(layout.color),
     borderWidth: layout.metrics.borderWidth,
-    borderOpacity: opacity * 0.6,
+    borderOpacity: opacity * 0.5,
   });
 }
 

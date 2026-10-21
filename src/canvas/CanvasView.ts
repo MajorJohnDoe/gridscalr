@@ -28,6 +28,7 @@ import {
   LABEL_CALIBRATION_OFFSET,
   LABEL_LINE_OFFSET,
   type LabelBox,
+  type LabelMetrics,
 } from "../model/label";
 import {
   CALIBRATION_LABEL_ID,
@@ -165,6 +166,13 @@ const ACCENT = "#35c2a1";
 const CALIBRATION_COLOR = "#a78bfa";
 const FONT_STACK = TEXT_FONT_STACK;
 const HANDLE_SIZE = 8;
+/**
+ * Screen-space ceiling for canvas measurement labels. Paper-space labels keep
+ * their true scale in exported PDFs, but at high zoom they would otherwise
+ * cover the area the user is drawing. The cap keeps the label readable while
+ * leaving the plan visible.
+ */
+const CANVAS_LABEL_MAX_PRIMARY_PX = 16;
 
 export class CanvasView {
   readonly host: HTMLElement;
@@ -414,20 +422,32 @@ export class CanvasView {
     });
   }
 
-  private screenLabelBox(box: LabelBox): LabelBox {
+  private labelScreenScale(metrics: LabelMetrics): number {
+    return Math.min(
+      store.ui.zoom,
+      CANVAS_LABEL_MAX_PRIMARY_PX / Math.max(0.1, metrics.primarySize),
+    );
+  }
+
+  private screenLabelBox(box: LabelBox, metrics: LabelMetrics): LabelBox {
     const zoom = store.ui.zoom;
-    const x = box.x * zoom + store.ui.panX;
-    const y = box.y * zoom + store.ui.panY;
+    const scale = this.labelScreenScale(metrics);
+    const centerX = box.x + box.width / 2;
+    const centerY = box.y + box.height / 2;
+    const width = box.width * scale;
+    const height = box.height * scale;
+    const x = centerX * zoom + store.ui.panX - width / 2;
+    const y = centerY * zoom + store.ui.panY - height / 2;
     return {
       x,
       y,
-      width: box.width * zoom,
-      height: box.height * zoom,
-      primaryCenterY: box.primaryCenterY * zoom + store.ui.panY,
+      width,
+      height,
+      primaryCenterY: y + (box.primaryCenterY - box.y) * scale,
       secondaryCenterY:
         box.secondaryCenterY === undefined
           ? undefined
-          : box.secondaryCenterY * zoom + store.ui.panY,
+          : y + (box.secondaryCenterY - box.y) * scale,
     };
   }
 
@@ -1704,7 +1724,7 @@ export class CanvasView {
     if (!found) return;
     const layout = this.pageLabelLayouts().get(found.item.id);
     if (!layout) return;
-    const box = this.screenLabelBox(layout.box);
+    const box = this.screenLabelBox(layout.box, layout.metrics);
     const width = Math.max(150, box.width + 42);
     edit.container.style.left = `${Math.max(6, Math.min(this.width - width - 6, box.x - 20))}px`;
     edit.container.style.top = `${Math.max(6, box.y)}px`;
@@ -1764,7 +1784,7 @@ export class CanvasView {
         if (item.kind !== "length" && item.kind !== "area") continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
-        if (this.hitLabelBox(screen, this.screenLabelBox(layout.box))) {
+        if (this.hitLabelBox(screen, this.screenLabelBox(layout.box, layout.metrics))) {
           return { layer, item };
         }
       }
@@ -1777,7 +1797,7 @@ export class CanvasView {
     if (!project || !project.settings.showCalibration) return false;
     const layout = this.pageLabelLayouts().get(CALIBRATION_LABEL_ID);
     if (!layout) return false;
-    return this.hitLabelBox(screen, this.screenLabelBox(layout.box));
+    return this.hitLabelBox(screen, this.screenLabelBox(layout.box, layout.metrics));
   }
 
   private hitLabelBox(screen: Point, box: LabelBox): boolean {
@@ -2326,31 +2346,33 @@ export class CanvasView {
   }
 
   private drawLabelLayout(ctx: CanvasRenderingContext2D, layout: LabelLayout): void {
-    const zoom = store.ui.zoom;
-    const box = this.screenLabelBox(layout.box);
+    const screenScale = this.labelScreenScale(layout.metrics);
+    const box = this.screenLabelBox(layout.box, layout.metrics);
+    const borderWidth = Math.max(0.5, Math.min(1, layout.metrics.borderWidth * screenScale));
+    const leaderWidth = Math.max(0.5, Math.min(1, layout.metrics.leaderWidth * screenScale));
     ctx.save();
 
     if (layout.leader) {
-      const from = this.toScreen(layout.leader.from);
       const to = this.toScreen(layout.leader.to);
+      const from = closestPointOnBox(box, to);
       ctx.strokeStyle = hexAlpha(layout.color, 0.5);
-      ctx.lineWidth = Math.max(0.5, layout.metrics.leaderWidth * zoom);
+      ctx.lineWidth = leaderWidth;
       ctx.beginPath();
       ctx.moveTo(from.x, from.y);
       ctx.lineTo(to.x, to.y);
       ctx.stroke();
     }
 
-    ctx.fillStyle = "rgba(12, 16, 18, 0.88)";
-    ctx.strokeStyle = hexAlpha(layout.color, 0.6);
-    ctx.lineWidth = Math.max(0.4, layout.metrics.borderWidth * zoom);
+    ctx.fillStyle = "rgba(12, 16, 18, 0.82)";
+    ctx.strokeStyle = hexAlpha(layout.color, 0.55);
+    ctx.lineWidth = borderWidth;
     roundRect(
       ctx,
       box.x,
       box.y,
       box.width,
       box.height,
-      Math.max(0.5, layout.metrics.radius * zoom),
+      Math.max(0.5, layout.metrics.radius * screenScale),
     );
     ctx.fill();
     ctx.stroke();
@@ -2358,11 +2380,11 @@ export class CanvasView {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.fillStyle = "#edf3f5";
-    ctx.font = `700 ${Math.max(0.1, layout.metrics.primarySize * zoom)}px ${LABEL_FONT_STACK}`;
+    ctx.font = `700 ${Math.max(0.1, layout.metrics.primarySize * screenScale)}px ${LABEL_FONT_STACK}`;
     ctx.fillText(layout.text, box.x + box.width / 2, box.primaryCenterY);
     if (layout.secondary) {
-      ctx.fillStyle = "rgba(210, 222, 227, 0.72)";
-      ctx.font = `400 ${Math.max(0.1, layout.metrics.secondarySize * zoom)}px ${LABEL_FONT_STACK}`;
+      ctx.fillStyle = "rgba(210, 222, 227, 0.68)";
+      ctx.font = `400 ${Math.max(0.1, layout.metrics.secondarySize * screenScale)}px ${LABEL_FONT_STACK}`;
       ctx.fillText(
         layout.secondary,
         box.x + box.width / 2,
@@ -2824,6 +2846,13 @@ function rotatedAabb(
 
 function pointInBox(point: Point, x: number, y: number, width: number, height: number): boolean {
   return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
+}
+
+function closestPointOnBox(box: LabelBox, point: Point): Point {
+  return {
+    x: Math.max(box.x, Math.min(box.x + box.width, point.x)),
+    y: Math.max(box.y, Math.min(box.y + box.height, point.y)),
+  };
 }
 
 function roundTo(value: number, digits: number): number {

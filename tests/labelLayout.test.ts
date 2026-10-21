@@ -4,7 +4,11 @@ import {
   type LabelSource,
 } from "../src/model/labelLayout";
 import type { Bounds } from "../src/model/geometry";
-import type { LabelMeasure } from "../src/model/label";
+import {
+  LABEL_MIN_PRIMARY_SIZE,
+  LABEL_PRIMARY_SIZE,
+  type LabelMeasure,
+} from "../src/model/label";
 import type { PageSize } from "../src/model/types";
 
 const page: PageSize = { width: 300, height: 200 };
@@ -51,7 +55,7 @@ describe("measurement label placement", () => {
 
     expect(layout.placement).toBe("center");
     expect(layout.leader).toBeUndefined();
-    expect(layout.metrics.primarySize).toBe(8);
+    expect(layout.metrics.primarySize).toBe(LABEL_PRIMARY_SIZE);
     expect(layout.box.x).toBeGreaterThanOrEqual(100);
     expect(layout.box.y).toBeGreaterThanOrEqual(70);
     expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(200);
@@ -59,11 +63,11 @@ describe("measurement label placement", () => {
   });
 
   it("shrinks a label before moving it outside a smaller area", () => {
-    const layout = layoutOne(areaSource("medium", 100, 90, 160, 120));
+    const layout = layoutOne(areaSource("medium", 100, 94, 145, 116));
 
     expect(layout.placement).toBe("center");
-    expect(layout.metrics.primarySize).toBeLessThan(8);
-    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(6.5);
+    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(LABEL_MIN_PRIMARY_SIZE);
     expect(layout.leader).toBeUndefined();
     expect(layout.box.x).toBeGreaterThanOrEqual(100);
     expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(160);
@@ -135,6 +139,6 @@ describe("measurement label placement", () => {
 
     expect(layout.placement).toBe("line");
     expect(layout.leader).toBeUndefined();
-    expect(layout.metrics.primarySize).toBe(8);
+    expect(layout.metrics.primarySize).toBe(LABEL_PRIMARY_SIZE);
   });
 });

@@ -69,6 +69,21 @@ export function formatLength(
   return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, unit), 2)} ${unit}`;
 }
 
+/**
+ * Compact length for secondary label text. Millimetres do not need hundredths
+ * of a millimetre on a drawing annotation, and fewer digits keep the label
+ * from stretching across the plan.
+ */
+export function formatLengthCompact(
+  points: number,
+  scale: ScaleSnapshot | null | undefined,
+  unit: LengthUnit,
+): string {
+  if (!scale) return `${formatNumber(points, 1)} pt`;
+  const decimals = unit === "mm" ? 0 : unit === "cm" ? 1 : 2;
+  return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, unit), decimals)} ${unit}`;
+}
+
 export function formatArea(
   pointArea: number,
   scale: ScaleSnapshot | null | undefined,

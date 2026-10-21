@@ -6,6 +6,7 @@ import {
   formatArea,
   formatCoordinate,
   formatLength,
+  formatLengthCompact,
   formatNumber,
   formatScale,
   lengthInUnit,
@@ -43,6 +44,10 @@ describe("units", () => {
     const scale = calibrationToScale(calibration);
     expect(formatLength(1000, scale, "m")).toBe("10 m");
     expect(formatLength(123, null, "m")).toBe("123 pt");
+    expect(formatLengthCompact(1001, scale, "mm")).toBe("10,010 mm");
+    expect(formatLengthCompact(1001, scale, "cm")).toBe("1,001 cm");
+    expect(formatLengthCompact(1001, scale, "m")).toBe("10.01 m");
+    expect(formatLengthCompact(123, null, "m")).toBe("123 pt");
     expect(formatArea(10_000, scale, "m2")).toBe("1 m²");
     expect(formatArea(10_000, null, "m2")).toBe("10,000 pt²");
   });

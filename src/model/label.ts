@@ -38,20 +38,24 @@ export type LabelMeasure = (text: string, size: number, weight: LabelWeight) => 
  * interactive canvas (multiplied by the viewport zoom) and for PDF export.
  * Keeping the source values in points prevents labels from growing relative
  * to the drawing when the user zooms or when the page is printed.
+ *
+ * Keep these compact: measurement labels are annotations on top of the plan,
+ * not headings. The canvas additionally caps their on-screen size while the
+ * user draws; PDF export always uses the true paper-space values below.
  */
-export const LABEL_PRIMARY_SIZE = 8;
-export const LABEL_SECONDARY_SIZE = 7;
-export const LABEL_MIN_PRIMARY_SIZE = 6.5;
-export const LABEL_MIN_SECONDARY_SIZE = 5.7;
-export const LABEL_PADDING_X = 5.2;
-export const LABEL_PADDING_Y = 3.2;
-export const LABEL_ROW_GAP = 0.5;
-export const LABEL_RADIUS = 2.8;
-export const LABEL_BORDER_WIDTH = 0.75;
-export const LABEL_LEADER_WIDTH = 0.75;
-export const LABEL_GAP = 6.4;
-export const LABEL_LINE_OFFSET = 14;
-export const LABEL_CALIBRATION_OFFSET = 16;
+export const LABEL_PRIMARY_SIZE = 6;
+export const LABEL_SECONDARY_SIZE = 5;
+export const LABEL_MIN_PRIMARY_SIZE = 5;
+export const LABEL_MIN_SECONDARY_SIZE = 4.2;
+export const LABEL_PADDING_X = 4.2;
+export const LABEL_PADDING_Y = 2.6;
+export const LABEL_ROW_GAP = 0.4;
+export const LABEL_RADIUS = 2.2;
+export const LABEL_BORDER_WIDTH = 0.6;
+export const LABEL_LEADER_WIDTH = 0.6;
+export const LABEL_GAP = 5;
+export const LABEL_LINE_OFFSET = 11;
+export const LABEL_CALIBRATION_OFFSET = 13;
 export const LABEL_MIN_SCALE = Math.max(
   LABEL_MIN_PRIMARY_SIZE / LABEL_PRIMARY_SIZE,
   LABEL_MIN_SECONDARY_SIZE / LABEL_SECONDARY_SIZE,
