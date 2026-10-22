@@ -12,6 +12,7 @@ import {
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
 import type {
+  AreaMode,
   Category,
   CountType,
   LayerKind,
@@ -61,6 +62,8 @@ export interface UIState {
   measureRoom: string;
   /** Sticky object type for new count measurements. */
   measureCountType: CountType;
+  /** Sticky add/subtract mode for new area measurements. */
+  measureAreaMode: AreaMode;
 }
 
 export type ChangeReason =
@@ -126,6 +129,7 @@ function defaultUI(): UIState {
     measureCategoryId: null,
     measureRoom: "",
     measureCountType: "other",
+    measureAreaMode: "add",
   };
 }
 
@@ -173,6 +177,7 @@ export class Store {
     this.ui.measureCategoryId = null;
     this.ui.measureRoom = "";
     this.ui.measureCountType = "other";
+    this.ui.measureAreaMode = "add";
     this.emit("project");
     this.scheduleAutosave();
   }
@@ -295,6 +300,12 @@ export class Store {
   setMeasureCountType(type: CountType): void {
     if (this.ui.measureCountType === type) return;
     this.ui.measureCountType = type;
+    this.emit("cursor");
+  }
+
+  setMeasureAreaMode(mode: AreaMode): void {
+    if (this.ui.measureAreaMode === mode) return;
+    this.ui.measureAreaMode = mode;
     this.emit("cursor");
   }
 

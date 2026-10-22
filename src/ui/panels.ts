@@ -22,6 +22,7 @@ import {
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
+  AreaMode,
   AreaUnit,
   CountType,
   Layer,
@@ -676,7 +677,7 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
         const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
         if (query) {
           const haystack =
-            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""}`.toLowerCase();
+            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "Deduction" : ""}`.toLowerCase();
           if (!haystack.includes(query)) continue;
         }
         rows.push({ item, layer, layerId: layer.id, layerName: layer.name, color: layer.color });
@@ -711,13 +712,15 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
       const category = isMeasurementKind(row.item.kind) ? categoryForItem(project, row.item) : undefined;
       const countType =
         row.item.kind === "count" ? countTypeLabel(row.item.countType) : undefined;
+      const deduction = row.item.kind === "area" && row.item.areaMode === "subtract";
       const metaParts = category
-        ? [category.name, countType, row.item.room].filter(Boolean)
+        ? [category.name, countType, deduction ? "Deduction" : undefined, row.item.room].filter(Boolean)
         : [itemKindLabel(row.item.kind), row.layerName];
       const meta = el("span", "markup-meta", metaParts.join(" · "));
       meta.title = category
         ? [itemKindLabel(row.item.kind), ...metaParts, row.layerName].join(" · ")
         : metaParts.join(" · ");
+      itemRow.classList.toggle("is-deduction", deduction);
       const page = el("span", "markup-page", `p.${row.item.page}`);
       const rowActions = el("span", "markup-actions");
       const eye = layerAction(
@@ -940,6 +943,22 @@ function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
       );
       typeField.append(typeSelect);
       controls.append(typeField, el("div", "divider-v"));
+    }
+    if (store.ui.activeTool === "area") {
+      const modeField = el("label", "context-field");
+      modeField.title = "Add the area or deduct it from its category and room";
+      modeField.append(el("span", "context-field-label", "Area"));
+      const modeSelect = el("select", "select context-select");
+      modeSelect.setAttribute("aria-label", "Area mode for new measurements");
+      modeSelect.append(
+        option("add", "Add", store.ui.measureAreaMode === "add"),
+        option("subtract", "Deduct", store.ui.measureAreaMode === "subtract"),
+      );
+      modeSelect.addEventListener("change", () =>
+        store.setMeasureAreaMode(modeSelect.value as AreaMode),
+      );
+      modeField.append(modeSelect);
+      controls.append(modeField, el("div", "divider-v"));
     }
     const pendingCategory = measurementCategory(project, store.ui.measureCategoryId);
     const categoryField = el("label", "context-field");
@@ -1474,6 +1493,28 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     });
     categoryField.append(categorySelect);
     section.append(categoryField);
+
+    if (item.kind === "area") {
+      const modeField = el("label", "field");
+      modeField.append(el("span", "field-label", "Area mode"));
+      const modeSelect = el("select", "select");
+      modeSelect.append(
+        option("add", "Add to area", (item.areaMode ?? "add") === "add"),
+        option("subtract", "Deduct from area", item.areaMode === "subtract"),
+      );
+      modeSelect.disabled = locked;
+      modeSelect.title = locked
+        ? "Unlock the layer to edit this markup."
+        : "Deducted areas are subtracted from their category and room";
+      modeSelect.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (target) target.areaMode = modeSelect.value as AreaMode;
+        }, "change");
+      });
+      modeField.append(modeSelect);
+      section.append(modeField);
+    }
 
     const roomField = el("label", "field");
     roomField.append(el("span", "field-label", "Room"));

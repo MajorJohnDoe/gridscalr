@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
 - Current project-file schema: `3`.
-- Etapp 1 is complete. Etapp 2A is in progress: categories, rooms, and the count tool are implemented; deduction areas and the quantity panel remain.
+- Etapp 1 is complete. Etapp 2A is in progress: categories, rooms, the count tool, and deduction areas are implemented; the quantity panel and bulk edits remain.
 
 ## Read before changing code
 
@@ -154,7 +154,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 ## Etapp status
 
 - **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
-- **Etapp 2A:** in progress — categories, rooms, default category, schema v3 and migration, and the count tool are implemented; deduction areas, quantity panel and bulk edits remain.
+- **Etapp 2A:** in progress — categories, rooms, default category, schema v3 and migration, the count tool, and deduction areas are implemented; quantity panel and bulk edits remain.
 - **Etapp 2B:** planned — waste, rounding, CSV and print-friendly quantity reports.
 - **Etapp 3:** planned — quick area tools, manual scale/lock, snapping, drawing-export dialog.
 - **Etapp 4:** planned — image objects and image-aware PDF export.

@@ -1879,6 +1879,10 @@ textarea:disabled {
   grid-column: 2;
 }
 
+.markup-row.is-deduction .markup-meta {
+  color: var(--amber);
+}
+
 .markup-page {
   font-size: 9px;
   color: var(--muted-2);

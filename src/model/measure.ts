@@ -30,9 +30,10 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
   if (item.kind === "area") {
     const area = polygonArea(item.points);
     const perimeter = polygonPerimeter(item.points);
+    const deduction = item.areaMode === "subtract" ? "Deduction · " : "";
     return {
       primary: formatArea(area, scale, project.settings.areaUnit),
-      secondary: `Perimeter ${formatLengthCompact(perimeter, scale, project.settings.lengthUnit)}`,
+      secondary: `${deduction}Perimeter ${formatLengthCompact(perimeter, scale, project.settings.lengthUnit)}`,
       rawPoints: area,
       scale,
       unit: scale ? project.settings.areaUnit : "pt²",

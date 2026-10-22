@@ -1,6 +1,6 @@
 # Etapp 2 – Mängddata och beställningsunderlag
 
-**Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1–3 (kategorier, schema v3, migrering, rum på mätningar och antalsverktyg) är genomförda. Nästa steg är Etapp 2A steg 4 (avdragsarea).
+**Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1–4 (kategorier, schema v3, migrering, rum på mätningar, antalsverktyg och avdragsarea) är genomförda. Nästa steg är Etapp 2A steg 5 (Quantities-panel och `yd²`).
 
 Dokumentet ersätter den tidigare förslagsversionen. Alla beslut som krävdes innan implementation är nu låsta och listade i avsnitt 2. Om koden och planen hamnar i konflikt ska konflikten lösas uttryckligen, inte tyst.
 

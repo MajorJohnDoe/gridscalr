@@ -1880,7 +1880,7 @@ export class CanvasView {
           scale: isMeasure && scale ? { ...scale } : null,
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
-          areaMode: kind === "area" ? "add" : undefined,
+          areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
           countType: kind === "count" ? store.ui.measureCountType : undefined,
           createdAt: now,
           updatedAt: now,
