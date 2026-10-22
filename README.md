@@ -24,9 +24,9 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The context bar keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
-- Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, and project units including yd².
+- Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
-- Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, or the current view as PNG.
+- Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
 - Undo/redo, autosave, recent files, and a shortcut reference.
 - No account, cloud service, or network access required.
 
@@ -195,18 +195,27 @@ The internal clipboard is in-memory only and is not shared with the operating sy
 
 Locked items remain visible and exportable, but group moves, nudges, deletes, resize/rotate, and property edits skip them. Hidden items are not rendered, cannot be hit-tested on the canvas, and are excluded from PDF, PNG, and CSV exports. Both states are stored per item, while layer visibility and locking still take precedence.
 
-### 8. Quantities
+### 8. Quantities and procurement reports
 
-Open the **Quantities** tab to summarise the measurements that are currently visible. Each row covers one category, room, and measurement type, and shows gross, deduction, net, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
+Open the **Quantities** tab to summarise the measurements that are currently visible. Each row covers one category, room, and measurement type, and shows gross, deduction, net, waste, order quantity, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
 
 - Filter by current or all pages, one category, a room substring, or any combination of measurement layers.
-- Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included. Enable **Include hidden items and layers** to count them.
+- Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included. Enable **Include hidden items and layers** to allow counting them in the live panel.
 - Area deductions are subtracted inside the same category and room only. If a deduction exceeds its gross area, the net is clamped to zero and the row shows a warning. Length and count rows are never reduced by area deductions.
 - Length and area values use the project units, including yd², and counts always use pcs.
 - Measurements without a scale are excluded and counted in a note. Calibrate their page to include them.
 - Quantities are derived from the current items every time the data changes and are never stored in the project file.
 
-Waste, rounding, order quantities, and separate quantity CSV/PDF reports are planned for Etapp 2B.
+Waste and rounding turn net quantities into order quantities:
+
+- Set project defaults under **Properties → Categories → Waste / Round up**. Waste is a percentage of net, from 0 to 100. A rounding step of 0 means no rounding.
+- A category can override either value in **Manage categories**. Leave a field empty to inherit the project default. Both settings are stored in the project file and changes are undoable.
+- Rounding always goes up. Counts always round to whole pcs even when the project uses a different step. Order quantity is never lower than net.
+- The row shows net, waste quantity, and order quantity separately. The waste percentage is part of the waste label.
+
+The **CSV** and **PDF** buttons in the Quantities footer, and **Export → Quantities to CSV / Quantity report (PDF)**, create the procurement report. Reports cover every page and every category, excluding hidden items and hidden layers, and include locked items. The live panel filters only affect the on-screen summary, not the exported report. Reports are generated on demand and never stored in the project file.
+
+The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for count quantities. It contains one row per category, room, and quantity type, followed by two blank lines and project metadata. `hidden_excluded` is `true` only when at least one hidden measurement was actually left out. The PDF report is A4 portrait with 48 pt margins, category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
 ### 9. Save and export
 
@@ -214,16 +223,18 @@ Waste, rounding, order quantities, and separate quantity CSV/PDF reports are pla
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
 - **Export → Flattened PDF** writes all original PDF pages with the visible markup layers rendered as vectors to a new `<project>-markups.pdf` file. Text, shapes, arrows, highlights, measurement labels, and calibration labels are included. The source PDF is never modified, and the save flow refuses to overwrite it.
 - **Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
+- **Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
+- **Export → Quantity report (PDF)** writes `<project>-quantities.pdf`, a print-friendly procurement report separate from the flattened drawing export.
 - **Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
 - **Export → View as PNG** exports the rendered page and markup layers at the current view.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported. The PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
 
 ## Project files
 
 A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, and markup items. The PDF itself is **not** embedded.
 
-Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 adds project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Version 1 and 2 projects load normally: measurements are assigned to the `Other` category, areas default to `add`, and missing quantity settings get safe defaults.
+Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 adds project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Version 1 and 2 projects load normally: measurements are assigned to the `Other` category, areas default to `add`, and missing quantity settings get safe defaults. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults.
 
 ```json
 {
@@ -250,7 +261,7 @@ Schema version 2 added optional per-item `visible` and `locked` flags. Schema ve
     }
   },
   "categories": [
-    { "id": "cat_...", "name": "Floor" },
+    { "id": "cat_...", "name": "Floor", "wastePercent": 10, "roundingStep": 0.5 },
     { "id": "cat_...", "name": "Other" }
   ],
   "pages": {
@@ -315,6 +326,9 @@ src/
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
+  pdf/reportPdf.ts       print-friendly A4 quantity report built with pdf-lib
+  report/reportModel.ts  pure quantity report model shared by CSV and PDF
+  report/csv.ts          quantity CSV serialization with BOM and metadata
   ui/                    shell, tool rail, panels, quantity panel, inspector, dialogs, status bar
   io/projectFile.ts      project schema normalization, serialization, relative paths
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
@@ -366,4 +380,4 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Form fields and embedded PDF annotations are not editable.
 - Area measurement uses the active page's calibration; a single calibration can be applied to all pages with the same drawing scale.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
-- The Quantities panel does not yet include waste, rounding, order quantities, or separate quantity reports; these arrive in Etapp 2B.
+- XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

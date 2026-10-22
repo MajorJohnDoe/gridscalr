@@ -3,11 +3,11 @@
 ## Status
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
-- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A är genomförd (kategorier, schema v3, rum på mätningar, antalsverktyg, avdragsarea, Quantities-panel och massredigering). Nästa steg är Etapp 2B.
-- **Etapp 3 – Mätverktyg, skala och export:** planerad, detaljplaneras efter Etapp 2.
+- **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
+- **Etapp 3 – Mätverktyg, skala och export:** planerad, nästa etapp.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
-Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen och massredigeringen är införda enligt steg 1–6 i genomförandeordningen. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
+Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 ## Produktprinciper
 
@@ -28,9 +28,9 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | Etapp | Mål | Status | Beroenden | Risk |
 |---|---|---|---|---|
 | 1 | Lager, urval och objektkontroll | Klar | – | Medel |
-| 2A | Kategorier, antal, avdrag och summering | Pågår (steg 1–5 klara) | Etapp 1 | Medel |
-| 2B | Svinn, avrundning och mängdförteckning | Plan klar | Etapp 2A | Medel |
-| 3 | Snabbarea, manuell skala, snap och exportdialog | Senare | Etapp 2 | Hög |
+| 2A | Kategorier, antal, avdrag och summering | Klar | Etapp 1 | Medel |
+| 2B | Svinn, avrundning och mängdförteckning | Klar | Etapp 2A | Medel |
+| 3 | Snabbarea, manuell skala, snap och exportdialog | Nästa | Etapp 2 | Hög |
 | 4 | Bilder | Sist | Etapp 2–3 | Hög |
 
 ## Etapp 1 – genomförd
@@ -67,7 +67,7 @@ Etapp 2 delas i två leveranser för att minska risken och få nytta tidigt.
 - Fler areaenheter, exempelvis `yd²`.
 - Schema v3 med migrering från v1/v2.
 
-### Etapp 2B – Beställningsunderlag
+### Etapp 2B – Beställningsunderlag (genomförd)
 
 - Svinn per projekt och kategori.
 - Avrundningssteg per projekt och kategori, alltid uppåt.
@@ -173,7 +173,5 @@ Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.
 
 ## Rekommenderad nästa ordning
 
-1. Genomför Etapp 2A enligt stegordningen i `etapp-2-mangddata.md`.
-2. Genomför Etapp 2B.
-3. Planera Etapp 3 i detalj, med PDF-snap som separat spike.
-4. Genomför Etapp 4 sist.
+1. Planera Etapp 3 i detalj, med PDF-snap som separat spike.
+2. Genomför Etapp 3 och därefter Etapp 4.

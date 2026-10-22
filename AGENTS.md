@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
 - Current project-file schema: `3`.
-- Etapp 1 is complete. Etapp 2A is complete: categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits are implemented. Etapp 2B is next.
+- Etapp 1 and Etapp 2 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3 is next.
 
 ## Read before changing code
 
@@ -132,6 +132,8 @@ src/model/                 types, geometry, labels, units, calibration, layers, 
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/pdfExport.ts       flattened vector PDF export
+src/pdf/reportPdf.ts       print-friendly A4 quantity report
+src/report/                pure report model and CSV serialization
 src/ui/                    shell, tool rail, panels, inspector, dialogs, status bar
 src/io/projectFile.ts      schema normalization, migration, serialization, relative paths
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
@@ -155,7 +157,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 
 - **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
 - **Etapp 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
-- **Etapp 2B:** planned — waste, rounding, CSV and print-friendly quantity reports.
+- **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
 - **Etapp 3:** planned — quick area tools, manual scale/lock, snapping, drawing-export dialog.
 - **Etapp 4:** planned — image objects and image-aware PDF export.
 - XLSX is deferred until CSV proves insufficient.
