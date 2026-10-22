@@ -1,7 +1,7 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
 import { TOOLS } from "./toolDefs";
-import { store } from "../state/store";
+import { store, type LeftTab } from "../state/store";
 
 export interface ShellRefs {
   root: HTMLElement;
@@ -136,10 +136,11 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const dock = el("aside", "left-dock");
   const dockTabs = el("div", "dock-tabs");
-  const tabDefs: Array<{ id: "pages" | "layers" | "markups"; icon: string; label: string }> = [
+  const tabDefs: Array<{ id: LeftTab; icon: string; label: string }> = [
     { id: "pages", icon: "pages", label: "Pages" },
     { id: "layers", icon: "layers", label: "Layers" },
     { id: "markups", icon: "markups", label: "Markups" },
+    { id: "quantities", icon: "quantities", label: "Quantities" },
   ];
   const dockTabButtons: HTMLElement[] = [];
   for (const tab of tabDefs) {

@@ -36,7 +36,7 @@ export type ToolId =
   | "highlight"
   | "text";
 
-export type LeftTab = "pages" | "layers" | "markups";
+export type LeftTab = "pages" | "layers" | "markups" | "quantities";
 
 export interface DrawStyle {
   color: string;
@@ -138,6 +138,8 @@ export class Store {
   ui: UIState = defaultUI();
   projectPath: string | null = null;
   dirty = false;
+  /** Increments whenever project data changes, including undo and redo. */
+  revision = 0;
   private listeners = new Set<Listener>();
   private undoStack: string[] = [];
   private redoStack: string[] = [];
@@ -165,6 +167,7 @@ export class Store {
     this.project = project;
     this.projectPath = projectPath;
     this.dirty = dirty;
+    this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
     this.gestureSnapshot = null;
@@ -186,6 +189,7 @@ export class Store {
     this.project = null;
     this.projectPath = null;
     this.dirty = false;
+    this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
     this.ui = defaultUI();
@@ -399,6 +403,7 @@ export class Store {
       this.redoStack = [];
     }
     mutator(this.project);
+    this.revision += 1;
     if (options.dirty !== false) this.dirty = true;
     this.emit(reason);
     if (options.autosave !== false) this.scheduleAutosave();
@@ -455,6 +460,7 @@ export class Store {
 
   private afterHistoryRestore(): void {
     if (!this.project) return;
+    this.revision += 1;
     this.dirty = true;
     this.ui.selection = this.ui.selection.filter((ref) => {
       const found = findItem(this.project!, ref.itemId);

@@ -45,6 +45,7 @@ import type { AutosavePayload } from "../state/store";
 import { clear, el, option } from "./dom";
 import { confirmDialog, textDialog } from "./dialogs";
 import { openCategoriesDialog } from "./categoriesDialog";
+import { renderQuantities } from "./quantityPanel";
 import { icon } from "./icons";
 import type { ShellRefs } from "./shell";
 import { TOOL_BY_ID } from "./toolDefs";
@@ -276,6 +277,9 @@ export function renderDock(refs: ShellRefs, actions: PanelActions): void {
       break;
     case "markups":
       renderMarkups(refs, actions);
+      break;
+    case "quantities":
+      renderQuantities(refs);
       break;
   }
 }

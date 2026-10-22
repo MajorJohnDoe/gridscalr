@@ -24,6 +24,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The context bar keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
+- Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, and project units including yd².
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
 - Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, or the current view as PNG.
 - Undo/redo, autosave, recent files, and a shortcut reference.
@@ -188,7 +189,20 @@ The internal clipboard is in-memory only and is not shared with the operating sy
 
 Locked items remain visible and exportable, but group moves, nudges, deletes, resize/rotate, and property edits skip them. Hidden items are not rendered, cannot be hit-tested on the canvas, and are excluded from PDF, PNG, and CSV exports. Both states are stored per item, while layer visibility and locking still take precedence.
 
-### 8. Save and export
+### 8. Quantities
+
+Open the **Quantities** tab to summarise the measurements that are currently visible. Each row covers one category, room, and measurement type, and shows gross, deduction, net, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
+
+- Filter by current or all pages, one category, a room substring, or any combination of measurement layers.
+- Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included. Enable **Include hidden items and layers** to count them.
+- Area deductions are subtracted inside the same category and room only. If a deduction exceeds its gross area, the net is clamped to zero and the row shows a warning. Length and count rows are never reduced by area deductions.
+- Length and area values use the project units, including yd², and counts always use pcs.
+- Measurements without a scale are excluded and counted in a note. Calibrate their page to include them.
+- Quantities are derived from the current items every time the data changes and are never stored in the project file.
+
+Waste, rounding, order quantities, and separate quantity CSV/PDF reports are planned for Etapp 2B.
+
+### 9. Save and export
 
 - **Save project** (`Ctrl/Cmd+S`) writes a `.gridscalr` JSON file.
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
@@ -291,11 +305,11 @@ Layer IDs, item IDs, calibration points, timestamps, style values, category IDs,
 src/
   app/App.ts             application wiring, file flows, shortcuts, exports
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
-  model/                 project types, geometry, text layout, labels, units, calibration, layers, metrics, selection, clipboard
+  model/                 project types, geometry, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
-  ui/                    shell, tool rail, panels, inspector, dialogs, status bar
+  ui/                    shell, tool rail, panels, quantity panel, inspector, dialogs, status bar
   io/projectFile.ts      project schema normalization, serialization, relative paths
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/sha256.ts           dependency-free SHA-256 fallback
@@ -303,7 +317,7 @@ src-tauri/
   src/commands.rs        atomic text/binary writes, reads, and path checks
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
-tests/                   geometry, text layout, calibration, layers, selection/clipboard, hit-testing, project files, PDF export, SHA-256
+tests/                   geometry, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256
 scripts/make-fixture.mjs reproducible sample PDF generator
 ```
 
@@ -346,3 +360,4 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Form fields and embedded PDF annotations are not editable.
 - Area measurement uses the active page's calibration; a single calibration can be applied to all pages with the same drawing scale.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
+- The Quantities panel does not yet include waste, rounding, order quantities, or separate quantity reports; these arrive in Etapp 2B.
