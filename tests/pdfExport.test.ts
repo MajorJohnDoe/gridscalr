@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument, degrees } from "pdf-lib";
-import { exportProjectPdf } from "../src/pdf/pdfExport";
+import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
 import {
@@ -123,7 +123,10 @@ async function contentBytes(bytes: Uint8Array): Promise<number> {
   return total;
 }
 
-async function textItems(bytes: Uint8Array): Promise<Array<{ text: string; size: number }>> {
+async function textItems(
+  bytes: Uint8Array,
+  onlyPage?: number,
+): Promise<Array<{ text: string; size: number }>> {
   const task = pdfjs.getDocument({
     data: bytes.slice(),
     useSystemFonts: true,
@@ -131,7 +134,9 @@ async function textItems(bytes: Uint8Array): Promise<Array<{ text: string; size:
   });
   const document = await task.promise;
   const items: Array<{ text: string; size: number }> = [];
-  for (let index = 1; index <= document.numPages; index++) {
+  const first = onlyPage ?? 1;
+  const last = onlyPage ?? document.numPages;
+  for (let index = first; index <= last; index++) {
     const page = await document.getPage(index);
     const content = await page.getTextContent();
     for (const item of content.items) {
@@ -250,5 +255,128 @@ describe("flattened PDF export", () => {
     expect(visibleSize).toBeGreaterThan(0);
     expect(hiddenSize).toBeLessThan(visibleSize);
     expect(hiddenLayerSize).toBeLessThan(visibleSize);
+  });
+
+  it("exports only selected pages and selected visible layers", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      pages: [2, 1, 2],
+      layerIds: [draw.id],
+      includeLabels: true,
+      includeCalibration: true,
+      includeLegend: false,
+    });
+    const output = await PDFDocument.load(bytes);
+    expect(output.getPageCount()).toBe(2);
+    const text = await textItems(bytes);
+    expect(text.some((item) => item.text === "Plan note")).toBe(true);
+    expect(text.some((item) => item.text.startsWith("Wall A"))).toBe(false);
+    expect(text.some((item) => item.text.includes("10 m reference"))).toBe(true);
+    expect(measure.visible).toBe(true);
+  });
+
+  it("turns generated labels and the calibration line off independently", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const withBoth = await textItems(await exportProjectPdf(project, renderer, {
+      pages: [1],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: true,
+      includeCalibration: true,
+      includeLegend: false,
+    }));
+    expect(withBoth.some((item) => item.text.startsWith("Wall A"))).toBe(true);
+    expect(withBoth.some((item) => item.text.includes("10 m reference"))).toBe(true);
+
+    const withoutBoth = await textItems(await exportProjectPdf(project, renderer, {
+      pages: [1],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: false,
+      includeCalibration: false,
+      includeLegend: false,
+    }));
+    expect(withoutBoth.some((item) => item.text.startsWith("Wall A"))).toBe(false);
+    expect(withoutBoth.some((item) => item.text.includes("10 m reference"))).toBe(false);
+    expect(withoutBoth.some((item) => item.text === "Plan note")).toBe(true);
+  });
+
+  it("maps the same relative crop onto rotated and unrotated pages", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const options = {
+      pages: [1, 2],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: false,
+      includeCalibration: false,
+      includeLegend: false,
+      crop: { x: 0.25, y: 0.25, width: 0.5, height: 0.5 },
+    };
+    const output = await PDFDocument.load(await exportProjectPdf(project, renderer, options));
+    expect(output.getPageCount()).toBe(2);
+    expect(output.getPage(0).getCropBox()).toEqual({ x: 50, y: 30, width: 100, height: 60 });
+    expect(output.getPage(0).getMediaBox()).toEqual({ x: 50, y: 30, width: 100, height: 60 });
+    expect(output.getPage(1).getCropBox()).toEqual({ x: 75, y: 50, width: 150, height: 100 });
+  });
+
+  it("clips a crop against an existing CropBox and rejects tiny intersections", () => {
+    const viewport = {
+      width: 200,
+      height: 100,
+      rotation: 0,
+      convertToPdfPoint: (x: number, y: number) => [x, 100 - y] as [number, number],
+    };
+    const box = pdfCropBoxForViewport(
+      viewport,
+      { x: 0, y: 0, width: 0.5, height: 0.5 },
+      { x: 20, y: 20, width: 60, height: 60 },
+    );
+    expect(box).toEqual({ x: 20, y: 50, width: 60, height: 30 });
+    expect(() =>
+      pdfCropBoxForViewport(
+        viewport,
+        { x: 0, y: 0, width: 0.05, height: 0.05 },
+        { x: 100, y: 0, width: 100, height: 100 },
+      ),
+    ).toThrow(/too small/i);
+  });
+
+  it("adds a separate A4 legend page only when requested and counts exported content", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const withLegend = await exportProjectPdf(project, renderer, {
+      pages: [1],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: false,
+      includeCalibration: false,
+      includeLegend: true,
+    });
+    const output = await PDFDocument.load(withLegend);
+    expect(output.getPageCount()).toBe(2);
+    const legend = await textItems(withLegend, 2);
+    expect(legend.some((item) => item.text === "Drawing legend")).toBe(true);
+    expect(legend.some((item) => item.text === "Markups")).toBe(true);
+    expect(legend.some((item) => item.text === "Measurements")).toBe(true);
+    expect(legend.some((item) => item.text === "Door")).toBe(true);
+    expect(legend.some((item) => item.text === "1 pcs")).toBe(true);
+
+    const count = project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.kind === "count")!;
+    count.visible = false;
+    const withoutHiddenCount = await textItems(
+      await exportProjectPdf(project, renderer, {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: false,
+        includeCalibration: false,
+        includeLegend: true,
+      }),
+      2,
+    );
+    expect(withoutHiddenCount.some((item) => item.text === "Door")).toBe(false);
   });
 });

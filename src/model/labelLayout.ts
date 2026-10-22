@@ -60,6 +60,15 @@ export interface LabelLayoutOptions {
   measure: LabelMeasure;
 }
 
+export interface LabelSourceOptions {
+  /** Layers selected for a drawing export. Omit to use every visible layer. */
+  layerIds?: ReadonlySet<string>;
+  /** False leaves generated measurement labels out of an export. */
+  includeLabels?: boolean;
+  /** Overrides the project's on-canvas calibration visibility when provided. */
+  includeCalibration?: boolean;
+}
+
 export const CALIBRATION_LABEL_ID = "calibration";
 
 const LABEL_SCALES = [
@@ -71,35 +80,45 @@ const LABEL_SCALES = [
 ].filter((scale, index, values) => values.indexOf(scale) === index);
 
 /** Collects every visible measurement/calibration label in render order. */
-export function pageLabelSources(project: Project, page: number): LabelSource[] {
+export function pageLabelSources(
+  project: Project,
+  page: number,
+  options: LabelSourceOptions = {},
+): LabelSource[] {
   const sources: LabelSource[] = [];
+  const includeLabels = options.includeLabels !== false;
+  const includeCalibration =
+    options.includeCalibration ?? project.settings.showCalibration;
 
-  for (const layer of project.layers) {
-    if (!layer.visible || layer.opacity <= 0) continue;
-    for (const item of layer.items) {
-      if (item.page !== page || item.visible === false) continue;
-      if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
-      const parts = measurementLabelParts(item, project);
-      if (!parts) continue;
-      sources.push({
-        id: item.id,
-        kind: item.kind,
-        parts,
-        anchor: labelAnchorForPoints(item, item.points),
-        obstacle:
-          item.kind === "count" && item.points[0]
-            ? countSymbolBounds(item.points[0])
-            : itemBounds(item),
-        polygon:
-          item.kind === "area"
-            ? areaOutline(item.points, areaShapeOf(item))
-            : undefined,
-        color: item.color,
-      });
+  if (includeLabels) {
+    for (const layer of project.layers) {
+      if (!layer.visible || layer.opacity <= 0) continue;
+      if (options.layerIds && !options.layerIds.has(layer.id)) continue;
+      for (const item of layer.items) {
+        if (item.page !== page || item.visible === false) continue;
+        if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
+        const parts = measurementLabelParts(item, project);
+        if (!parts) continue;
+        sources.push({
+          id: item.id,
+          kind: item.kind,
+          parts,
+          anchor: labelAnchorForPoints(item, item.points),
+          obstacle:
+            item.kind === "count" && item.points[0]
+              ? countSymbolBounds(item.points[0])
+              : itemBounds(item),
+          polygon:
+            item.kind === "area"
+              ? areaOutline(item.points, areaShapeOf(item))
+              : undefined,
+          color: item.color,
+        });
+      }
     }
   }
 
-  if (project.settings.showCalibration) {
+  if (includeCalibration) {
     const calibration = pageCalibration(project, page);
     if (calibration && isReferenceCalibration(calibration)) {
       sources.push({

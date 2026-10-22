@@ -12,8 +12,15 @@ import {
 import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
-import { countSymbol } from "../model/countSymbols";
+import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
 import { areaShapeOf } from "../model/area";
+import { isReferenceCalibration, pageCalibration } from "../model/calibration";
+import {
+  formatPageList,
+  pageRectFromCrop,
+  type DrawingExportOptions,
+  type NormalizedCrop,
+} from "../model/export";
 import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import type { LabelLayout } from "../model/labelLayout";
 import {
@@ -22,7 +29,7 @@ import {
   pageLabelSources,
 } from "../model/labelLayout";
 import { textItemLayout } from "../model/text";
-import type { MarkupItem, Point, Project } from "../model/types";
+import type { CountType, MarkupItem, Point, Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
 
 interface ExportFonts {
@@ -44,6 +51,7 @@ const LABEL_BG = rgb(0.047, 0.063, 0.071);
 export async function exportProjectPdf(
   project: Project,
   renderer: PdfRenderer,
+  options?: DrawingExportOptions,
 ): Promise<Uint8Array> {
   const source = await renderer.document.getData();
   const pdf = await PDFDocument.load(source);
@@ -51,32 +59,344 @@ export async function exportProjectPdf(
   const fonts = await embedFonts(pdf);
 
   const pages = pdf.getPages();
-  for (let index = 0; index < pages.length; index++) {
-    const pageNumber = index + 1;
-    const pdfPage = pages[index];
+  const selectedPages = normalizeExportPages(options?.pages, pages.length);
+  const selectedLayers = new Set(
+    options?.layerIds ?? project.layers.filter((layer) => layer.visible).map((layer) => layer.id),
+  );
+  const includeLabels = options?.includeLabels !== false;
+  const includeCalibration = options?.includeCalibration !== false;
+  const includeLegend = options?.includeLegend === true;
+  const crop = normalizeCrop(options?.crop);
+
+  for (const pageNumber of selectedPages) {
+    const pdfPage = pages[pageNumber - 1];
     const pdfjsPage = await renderer.getPage(pageNumber);
     const viewport = pdfjsPage.getViewport({ scale: 1 });
-    const labels = layoutPageLabels(pageLabelSources(project, pageNumber), {
-      pageSize: { width: viewport.width, height: viewport.height },
-      measure: (text, size, weight) =>
-        (weight === "bold" ? fonts.bold : fonts.regular).widthOfTextAtSize(text, size),
-    });
+    const labels = layoutPageLabels(
+      pageLabelSources(project, pageNumber, {
+        layerIds: selectedLayers,
+        includeLabels,
+        includeCalibration,
+      }),
+      {
+        pageSize: { width: viewport.width, height: viewport.height },
+        measure: (text, size, weight) =>
+          (weight === "bold" ? fonts.bold : fonts.regular).widthOfTextAtSize(text, size),
+      },
+    );
 
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (!layer.visible || layer.opacity <= 0 || !selectedLayers.has(layer.id)) continue;
       for (const item of layer.items) {
         if (item.page !== pageNumber || item.visible === false) continue;
         drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels);
       }
     }
 
-    const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);
-    if (calibrationLabel) {
-      drawLabel(pdfPage, viewport, calibrationLabel, 1, fonts);
+    if (includeCalibration) {
+      const calibration = pageCalibration(project, pageNumber);
+      if (calibration && isReferenceCalibration(calibration)) {
+        drawCalibrationLine(pdfPage, viewport, calibration.p1, calibration.p2);
+        const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);
+        if (calibrationLabel) drawLabel(pdfPage, viewport, calibrationLabel, 1, fonts);
+      }
     }
+
+    if (crop) applyCrop(pdfPage, viewport, crop);
+  }
+
+  const keep = new Set(selectedPages);
+  for (let index = pages.length - 1; index >= 0; index--) {
+    if (!keep.has(index + 1)) pdf.removePage(index);
+  }
+
+  if (includeLegend) {
+    drawLegendPage(pdf, fonts, project, selectedPages, selectedLayers);
   }
 
   return pdf.save();
+}
+
+function normalizeExportPages(pages: readonly number[] | undefined, pageCount: number): number[] {
+  if (pageCount < 1) throw new Error("The source PDF has no pages.");
+  if (!pages) return Array.from({ length: pageCount }, (_, index) => index + 1);
+  const selected = [...new Set(
+    pages
+      .filter((page) => Number.isInteger(page) && page >= 1 && page <= pageCount)
+      .map((page) => Math.round(page)),
+  )].sort((a, b) => a - b);
+  if (!selected.length) throw new Error("Select at least one page to export.");
+  return selected;
+}
+
+function normalizeCrop(crop: NormalizedCrop | undefined): NormalizedCrop | undefined {
+  if (!crop) return undefined;
+  const values = [crop.x, crop.y, crop.width, crop.height];
+  if (!values.every(Number.isFinite)) return undefined;
+  const x = clamp(crop.x, 0, 1);
+  const y = clamp(crop.y, 0, 1);
+  const width = Math.min(clamp(crop.width, 0, 1), 1 - x);
+  const height = Math.min(clamp(crop.height, 0, 1), 1 - y);
+  if (width <= 0 || height <= 0) return undefined;
+  return { x, y, width, height };
+}
+
+export interface PdfCropBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Maps a relative view crop onto the page's PDF coordinate space, then clips it
+ * against the existing CropBox so a source document can never reveal hidden
+ * content. The viewport handles page rotation.
+ */
+export function pdfCropBoxForViewport(
+  viewport: Pick<PageViewport, "width" | "height" | "rotation" | "convertToPdfPoint">,
+  crop: NormalizedCrop,
+  existingCrop: PdfCropBox,
+): PdfCropBox {
+  const rotationValue = Number.isFinite(viewport.rotation) ? viewport.rotation : 0;
+  const rotation = ((rotationValue % 360) + 360) % 360;
+  if (rotation % 90 !== 0) {
+    throw new Error("The page rotation is not a multiple of 90°, so the export area cannot be applied safely.");
+  }
+  const rect = pageRectFromCrop(crop, {
+    width: viewport.width,
+    height: viewport.height,
+  });
+  const corners = [
+    viewport.convertToPdfPoint(rect.x, rect.y),
+    viewport.convertToPdfPoint(rect.x + rect.width, rect.y),
+    viewport.convertToPdfPoint(rect.x, rect.y + rect.height),
+    viewport.convertToPdfPoint(rect.x + rect.width, rect.y + rect.height),
+  ];
+  const xs = corners.map((point) => point[0]);
+  const ys = corners.map((point) => point[1]);
+  const box = {
+    x: Math.min(...xs),
+    y: Math.min(...ys),
+    width: Math.max(...xs) - Math.min(...xs),
+    height: Math.max(...ys) - Math.min(...ys),
+  };
+  const clipped = intersectBoxes(box, existingCrop);
+  if (clipped.width < 1 || clipped.height < 1) {
+    throw new Error("The selected export area is too small or lies outside the page's visible area.");
+  }
+  return clipped;
+}
+
+function applyCrop(page: PDFPage, viewport: PageViewport, crop: NormalizedCrop): void {
+  const box = pdfCropBoxForViewport(viewport, crop, page.getCropBox());
+  page.setCropBox(box.x, box.y, box.width, box.height);
+  page.setMediaBox(box.x, box.y, box.width, box.height);
+}
+
+function intersectBoxes(first: PdfCropBox, second: PdfCropBox): PdfCropBox {
+  const left = Math.max(first.x, second.x);
+  const bottom = Math.max(first.y, second.y);
+  const right = Math.min(first.x + first.width, second.x + second.width);
+  const top = Math.min(first.y + first.height, second.y + second.height);
+  return {
+    x: left,
+    y: bottom,
+    width: Math.max(0, right - left),
+    height: Math.max(0, top - bottom),
+  };
+}
+
+function drawCalibrationLine(
+  page: PDFPage,
+  viewport: PageViewport,
+  p1: Point,
+  p2: Point,
+): void {
+  const color = pdfColor("#a78bfa");
+  const start = toPdfPoint(viewport, p1);
+  const end = toPdfPoint(viewport, p2);
+  page.drawLine({
+    start,
+    end,
+    thickness: 1.5,
+    color,
+    opacity: 1,
+    dashArray: [6, 4],
+    lineCap: LineCapStyle.Round,
+  });
+  for (const point of [start, end]) {
+    page.drawCircle({
+      x: point.x,
+      y: point.y,
+      size: 4.5,
+      color: rgb(0.102, 0.125, 0.141),
+      borderColor: color,
+      borderWidth: 1,
+    });
+  }
+}
+
+function drawLegendPage(
+  pdf: PDFDocument,
+  fonts: ExportFonts,
+  project: Project,
+  pages: readonly number[],
+  selectedLayerIds: ReadonlySet<string>,
+): void {
+  const page = pdf.addPage([595.28, 841.89]);
+  const margin = 48;
+  const width = page.getWidth() - margin * 2;
+  const ink = rgb(0.1, 0.13, 0.15);
+  const muted = rgb(0.38, 0.45, 0.49);
+  const rule = rgb(0.78, 0.82, 0.84);
+  let y = page.getHeight() - margin;
+
+  page.drawText("Drawing legend", {
+    x: margin,
+    y: y - 20,
+    size: 22,
+    font: fonts.bold,
+    color: ink,
+  });
+  y -= 36;
+  page.drawText(truncateText(fonts.regular, project.name, 10, width), {
+    x: margin,
+    y,
+    size: 10,
+    font: fonts.regular,
+    color: muted,
+  });
+  y -= 14;
+  page.drawText(
+    `${pages.length === 1 ? "Page" : "Pages"} ${formatPageList(pages)} · only selected, visible content is included`,
+    { x: margin, y, size: 9, font: fonts.regular, color: muted },
+  );
+  y -= 28;
+
+  page.drawText("Layers", {
+    x: margin,
+    y,
+    size: 12,
+    font: fonts.bold,
+    color: ink,
+  });
+  y -= 8;
+  page.drawLine({
+    start: { x: margin, y },
+    end: { x: margin + width, y },
+    thickness: 0.7,
+    color: rule,
+  });
+  y -= 18;
+
+  const layers = project.layers.filter(
+    (layer) => layer.visible && layer.opacity > 0 && selectedLayerIds.has(layer.id),
+  );
+  if (!layers.length) {
+    page.drawText("No layers selected.", {
+      x: margin,
+      y,
+      size: 10,
+      font: fonts.regular,
+      color: muted,
+    });
+    y -= 24;
+  } else {
+    for (const layer of layers) {
+      page.drawRectangle({
+        x: margin,
+        y: y - 2,
+        width: 11,
+        height: 11,
+        color: pdfColor(layer.color),
+        opacity: clamp(layer.opacity, 0, 1),
+        borderColor: rule,
+        borderWidth: 0.5,
+      });
+      page.drawText(truncateText(fonts.bold, layer.name, 11, width - 120), {
+        x: margin + 19,
+        y,
+        size: 11,
+        font: fonts.bold,
+        color: ink,
+      });
+      page.drawText(layer.kind === "measure" ? "Measurement layer" : "Drawing layer", {
+        x: margin + width - 110,
+        y,
+        size: 9,
+        font: fonts.regular,
+        color: muted,
+      });
+      y -= 23;
+    }
+  }
+
+  const counts = exportedCounts(project, pages, selectedLayerIds);
+  if (counts.size) {
+    y -= 14;
+    page.drawText("Counted objects", {
+      x: margin,
+      y,
+      size: 12,
+      font: fonts.bold,
+      color: ink,
+    });
+    y -= 8;
+    page.drawLine({
+      start: { x: margin, y },
+      end: { x: margin + width, y },
+      thickness: 0.7,
+      color: rule,
+    });
+    y -= 18;
+    for (const type of COUNT_TYPES) {
+      const total = counts.get(type) ?? 0;
+      if (!total) continue;
+      page.drawText(COUNT_TYPE_LABELS[type], {
+        x: margin,
+        y,
+        size: 10.5,
+        font: fonts.regular,
+        color: ink,
+      });
+      page.drawText(`${total} pcs`, {
+        x: margin + width - 80,
+        y,
+        size: 10.5,
+        font: fonts.bold,
+        color: ink,
+      });
+      y -= 20;
+    }
+  }
+}
+
+function exportedCounts(
+  project: Project,
+  pages: readonly number[],
+  selectedLayerIds: ReadonlySet<string>,
+): Map<CountType, number> {
+  const pageSet = new Set(pages);
+  const counts = new Map<CountType, number>();
+  for (const layer of project.layers) {
+    if (!layer.visible || layer.opacity <= 0 || !selectedLayerIds.has(layer.id)) continue;
+    for (const item of layer.items) {
+      if (item.kind !== "count" || item.visible === false || !pageSet.has(item.page)) continue;
+      const type = item.countType ?? "other";
+      counts.set(type, (counts.get(type) ?? 0) + 1);
+    }
+  }
+  return counts;
+}
+
+function truncateText(font: PDFFont, text: string, size: number, maxWidth: number): string {
+  if (font.widthOfTextAtSize(text, size) <= maxWidth) return text;
+  let value = text;
+  while (value.length > 1 && font.widthOfTextAtSize(`${value}…`, size) > maxWidth) {
+    value = value.slice(0, -1);
+  }
+  return `${value}…`;
 }
 
 async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
