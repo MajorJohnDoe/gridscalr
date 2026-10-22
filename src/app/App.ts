@@ -8,12 +8,23 @@ import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/cl
 import {
   createProject,
   findItem,
+  isMeasurementKind,
+  itemIsLocked,
   itemIsVisible,
   moveItemsToLayer,
 } from "../model/layers";
+import { applyMeasurementBulkEdit } from "../model/bulkEdit";
+import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { itemKindLabel, itemMetrics } from "../model/measure";
 import { resolveSelection } from "../model/selection";
-import type { PageSize, Project, RecentEntry, SelectionRef } from "../model/types";
+import type {
+  AreaMode,
+  CountType,
+  PageSize,
+  Project,
+  RecentEntry,
+  SelectionRef,
+} from "../model/types";
 import {
   parseProject,
   relativeDocumentPath,
@@ -119,6 +130,10 @@ export class App {
       setSelectionVisible: (visible) => this.setSelectionVisible(visible),
       setSelectionLocked: (locked) => this.setSelectionLocked(locked),
       setSelectionColor: (color) => this.setSelectionColor(color),
+      setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
+      setSelectionRoom: (room) => this.setSelectionRoom(room),
+      setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
+      setSelectionCountType: (type) => this.setSelectionCountType(type),
       goToPage: (page, fit = true) => void this.goToPage(page, fit),
       navigateToItem: (page, layerId, itemId) => void this.navigateToItem(page, layerId, itemId),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
@@ -867,6 +882,53 @@ export class App {
       },
       "change",
     );
+  }
+
+  private bulkEditMeasurementSelection(patch: MeasurementBulkPatch): void {
+    const project = store.project;
+    if (!project || !store.ui.selection.length) return;
+    const editable = resolveSelection(project, store.ui.selection).filter(
+      (entry) => isMeasurementKind(entry.item.kind) && !itemIsLocked(entry.item, entry.layer),
+    );
+    if (!editable.length) {
+      toast("The selected measurements are locked.", "warning");
+      return;
+    }
+    let result: MeasurementBulkResult = {
+      updated: 0,
+      skippedLocked: 0,
+      skippedNonMeasurement: 0,
+    };
+    store.mutate(
+      (project) => {
+        result = applyMeasurementBulkEdit(project, store.ui.selection, patch);
+      },
+      "change",
+    );
+    if (result.updated && result.skippedLocked) {
+      toast(
+        `${result.updated} measurement${result.updated === 1 ? "" : "s"} updated. ${result.skippedLocked} locked skipped.`,
+        "warning",
+      );
+    }
+  }
+
+  private setSelectionCategory(categoryId: string): void {
+    const project = store.project;
+    if (!project?.categories.some((category) => category.id === categoryId)) return;
+    this.bulkEditMeasurementSelection({ categoryId });
+  }
+
+  private setSelectionRoom(room: string): void {
+    this.bulkEditMeasurementSelection({ room });
+  }
+
+  private setSelectionAreaMode(mode: AreaMode): void {
+    this.bulkEditMeasurementSelection({ areaMode: mode });
+  }
+
+  private setSelectionCountType(type: CountType): void {
+    this.bulkEditMeasurementSelection({ countType: type });
   }
 
   private async saveProjectFlow(saveAs: boolean): Promise<void> {

@@ -68,6 +68,10 @@ export interface PanelActions {
   setSelectionVisible: (visible: boolean) => void;
   setSelectionLocked: (locked: boolean) => void;
   setSelectionColor: (color: string) => void;
+  setSelectionCategory: (categoryId: string) => void;
+  setSelectionRoom: (room: string) => void;
+  setSelectionAreaMode: (mode: AreaMode) => void;
+  setSelectionCountType: (type: CountType) => void;
   goToPage: (page: number, fit?: boolean) => void;
   navigateToItem: (page: number, layerId: string, itemId: string) => void;
   ensurePageSize: (page: number) => void;
@@ -206,7 +210,9 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
 
 function renderToolRail(refs: ShellRefs): void {
   for (const btn of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool]")) {
-    btn.classList.toggle("is-active", btn.dataset.tool === store.ui.activeTool);
+    const active = btn.dataset.tool === store.ui.activeTool;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
   }
 }
 
@@ -258,7 +264,9 @@ function chip(text: string, kind: "calibrated" | "warning"): HTMLElement {
 
 export function renderDock(refs: ShellRefs, actions: PanelActions): void {
   for (const tab of refs.dockTabs) {
-    tab.classList.toggle("is-active", tab.dataset.tab === store.ui.leftTab);
+    const active = tab.dataset.tab === store.ui.leftTab;
+    tab.classList.toggle("is-active", active);
+    tab.setAttribute("aria-pressed", String(active));
   }
   clear(refs.dockBody);
   clear(refs.dockFooter);
@@ -1805,6 +1813,149 @@ function multiSelectionSection(
     });
     layerField.append(layerSelect);
     if (layerSelect.options.length > 1) section.append(layerField);
+  }
+
+  if (kind === "measure") {
+    const measurements = resolved.filter((entry) => isMeasurementKind(entry.item.kind));
+    const editable = measurements.filter((entry) => !entry.locked);
+    const allLocked = editable.length === 0;
+    if (measurements.length) {
+      const firstCategory = categoryForItem(project, measurements[0].item)?.id ?? "";
+      const commonCategory = measurements.every(
+        (entry) => (categoryForItem(project, entry.item)?.id ?? "") === firstCategory,
+      )
+        ? firstCategory
+        : "";
+      const categoryField = el("label", "field");
+      categoryField.append(el("span", "field-label", "Category"));
+      const categorySelect = el("select", "select");
+      categorySelect.append(option("", "Set category…", !commonCategory));
+      for (const category of project.categories) {
+        categorySelect.append(
+          option(category.id, category.name, category.id === commonCategory),
+        );
+      }
+      categorySelect.disabled = allLocked;
+      categorySelect.setAttribute("aria-label", "Category for selected measurements");
+      categorySelect.title = allLocked
+        ? "Unlock the selected measurements to edit them."
+        : "Apply one category to the selected measurements";
+      categorySelect.addEventListener("change", () => {
+        if (categorySelect.value) actions.setSelectionCategory(categorySelect.value);
+      });
+      categoryField.append(categorySelect);
+      section.append(categoryField);
+
+      const firstRoom = (measurements[0].item.room ?? "").trim();
+      const commonRoom = measurements.every(
+        (entry) => (entry.item.room ?? "").trim() === firstRoom,
+      )
+        ? firstRoom
+        : "";
+      const roomField = el("div", "field");
+      roomField.append(el("span", "field-label", "Room"));
+      const roomRow = el("div", "input-row");
+      const roomInput = el("input", "input");
+      roomInput.type = "text";
+      roomInput.value = commonRoom;
+      roomInput.placeholder = "Set room…";
+      roomInput.disabled = allLocked;
+      roomInput.title = allLocked
+        ? "Unlock the selected measurements to edit them."
+        : "Set one room for the selected measurements. Leave empty to clear their rooms.";
+      roomInput.setAttribute("aria-label", "Room for selected measurements");
+      const roomList = el("datalist");
+      roomList.id = "multi-selection-room-options";
+      for (const room of allRooms(project)) roomList.append(option(room, room));
+      roomInput.setAttribute("list", roomList.id);
+      const applyRoom = () => actions.setSelectionRoom(roomInput.value);
+      roomInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applyRoom();
+        }
+      });
+      const roomButton = el("button", "btn btn-small", "Apply");
+      roomButton.type = "button";
+      roomButton.disabled = allLocked;
+      roomButton.addEventListener("click", applyRoom);
+      roomRow.append(roomInput, roomButton);
+      roomField.append(roomRow, roomList);
+      section.append(roomField);
+
+      if (measurements.every((entry) => entry.item.kind === "area")) {
+        const firstMode = measurements[0].item.areaMode ?? "add";
+        const commonMode = measurements.every(
+          (entry) => (entry.item.areaMode ?? "add") === firstMode,
+        )
+          ? firstMode
+          : "";
+        const modeField = el("label", "field");
+        modeField.append(el("span", "field-label", "Area mode"));
+        const modeSelect = el("select", "select");
+        modeSelect.append(option("", "Set area mode…", !commonMode));
+        modeSelect.append(
+          option("add", "Add to area", commonMode === "add"),
+          option("subtract", "Deduct from area", commonMode === "subtract"),
+        );
+        modeSelect.disabled = allLocked;
+        modeSelect.setAttribute("aria-label", "Area mode for selected measurements");
+        modeSelect.title = allLocked
+          ? "Unlock the selected measurements to edit them."
+          : "Apply one area mode to the selected areas";
+        modeSelect.addEventListener("change", () => {
+          if (modeSelect.value) {
+            actions.setSelectionAreaMode(modeSelect.value as AreaMode);
+          }
+        });
+        modeField.append(modeSelect);
+        section.append(modeField);
+      }
+
+      if (measurements.every((entry) => entry.item.kind === "count")) {
+        const firstType = measurements[0].item.countType ?? "other";
+        const commonType = measurements.every(
+          (entry) => (entry.item.countType ?? "other") === firstType,
+        )
+          ? firstType
+          : "";
+        const countField = el("label", "field");
+        countField.append(el("span", "field-label", "Object type"));
+        const countSelect = el("select", "select");
+        countSelect.append(option("", "Set object type…", !commonType));
+        for (const type of COUNT_TYPES) {
+          countSelect.append(
+            option(type, COUNT_TYPE_LABELS[type], type === commonType),
+          );
+        }
+        countSelect.disabled = allLocked;
+        countSelect.setAttribute("aria-label", "Object type for selected counts");
+        countSelect.title = allLocked
+          ? "Unlock the selected measurements to edit them."
+          : "Apply one object type to the selected counts";
+        countSelect.addEventListener("change", () => {
+          if (countSelect.value) {
+            actions.setSelectionCountType(countSelect.value as CountType);
+          }
+        });
+        countField.append(countSelect);
+        section.append(countField);
+      }
+
+      if (allLocked) {
+        section.append(
+          el(
+            "div",
+            "empty-note small",
+            "All selected measurements are locked. Unlock them to use bulk edits.",
+          ),
+        );
+      } else if (lockedCount > 0) {
+        section.append(
+          el("div", "empty-note small", "Locked measurements are skipped by bulk edits."),
+        );
+      }
+    }
   }
 
   const colorField = el("label", "field");

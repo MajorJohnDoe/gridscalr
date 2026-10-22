@@ -106,7 +106,8 @@ function renderRows(summary: QuantitySummary): HTMLElement {
   const list = el("div", "quantity-list");
   if (!summary.rows.length) {
     const empty = el("div", "empty-note quantity-empty");
-    empty.innerHTML = `${icon("quantities", 24)}<div>No visible measurements match the filters.</div>`;
+    empty.setAttribute("role", "status");
+    empty.innerHTML = `${icon("quantities", 24)}<div>No measurements match the filters. Draw a length, area or count, or reset the filters.</div>`;
     list.append(empty);
     return list;
   }
@@ -203,6 +204,7 @@ function renderFilters(): HTMLElement {
   const pageField = el("label", "quantity-field");
   pageField.append(el("span", "field-label", "Page"));
   const pageSelect = el("select", "select");
+  pageSelect.setAttribute("aria-label", "Filter quantities by page");
   pageSelect.append(
     option("current", `Current page (${store.ui.page})`, pageFilter === "current"),
     option("all", "All pages", pageFilter === "all"),
@@ -216,6 +218,7 @@ function renderFilters(): HTMLElement {
   const categoryField = el("label", "quantity-field");
   categoryField.append(el("span", "field-label", "Category"));
   const categorySelect = el("select", "select");
+  categorySelect.setAttribute("aria-label", "Filter quantities by category");
   categorySelect.append(option("", "All categories", !categoryFilter));
   for (const category of project.categories) {
     categorySelect.append(
@@ -243,6 +246,7 @@ function renderFilters(): HTMLElement {
 
   const layers = project.layers.filter((layer) => layer.kind === "measure");
   const layerDetails = el("details", "quantity-layers quantity-field-wide");
+  layerDetails.setAttribute("aria-label", "Filter quantities by measurement layer");
   layerDetails.open = layersOpen;
   layerDetails.addEventListener("toggle", () => {
     layersOpen = layerDetails.open;
@@ -341,6 +345,7 @@ function renderNotice(summary: QuantitySummary): HTMLElement | null {
   }
   if (!notes.length) return null;
   const notice = el("div", "quantity-notice");
+  notice.setAttribute("role", "status");
   notice.innerHTML = `${icon("info", 12)}<span>${notes.join(" · ")}</span>`;
   return notice;
 }

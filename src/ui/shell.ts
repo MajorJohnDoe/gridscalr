@@ -113,6 +113,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
   toolRail.setAttribute("aria-label", "Tools");
+  toolRail.setAttribute("role", "toolbar");
+  toolRail.setAttribute("aria-orientation", "vertical");
   let lastGroup = "";
   for (const tool of TOOLS) {
     if (lastGroup && tool.group !== lastGroup) {
@@ -147,6 +149,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     const btn = el("button", "dock-tab");
     btn.type = "button";
     btn.dataset.tab = tab.id;
+    btn.setAttribute("aria-pressed", "false");
     btn.innerHTML = `${icon(tab.icon, 14)}<span>${tab.label}</span>`;
     btn.addEventListener("click", () => store.setLeftTab(tab.id));
     dockTabs.append(btn);

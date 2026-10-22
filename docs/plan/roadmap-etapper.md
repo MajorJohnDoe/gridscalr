@@ -3,11 +3,11 @@
 ## Status
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
-- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A steg 1–5 (kategorier, schema v3, rum på mätningar, antalsverktyg, avdragsarea och Quantities-panel) är genomförda; massredigering och polish återstår.
+- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A är genomförd (kategorier, schema v3, rum på mätningar, antalsverktyg, avdragsarea, Quantities-panel och massredigering). Nästa steg är Etapp 2B.
 - **Etapp 3 – Mätverktyg, skala och export:** planerad, detaljplaneras efter Etapp 2.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
-Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea och Quantities-panelen är införda enligt steg 1–5 i genomförandeordningen. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
+Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen och massredigeringen är införda enligt steg 1–6 i genomförandeordningen. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 ## Produktprinciper
 
@@ -48,7 +48,6 @@ Etapp 1 gav:
 
 Följande idéer från den ursprungliga diskussionen är **inte** genomförda och ska inte räknas som klara:
 
-- kategorier i massredigering – kategorier finns först i Etapp 2
 - obligatoriskt “Notes”-lager för textverktyget
 - inklistring vid markören – nuvarande regel är 12 pt offset på samma sida och bibehållna koordinater mellan sidor
 

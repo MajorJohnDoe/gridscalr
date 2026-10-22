@@ -18,7 +18,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
-- Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action.
+- Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Use right-click context menus on the canvas, Markups list, and layers for the same actions.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
@@ -183,7 +183,13 @@ With more than one item selected, Properties offers bulk actions for:
 - Locking or unlocking the selection.
 - Duplicating or deleting the selection.
 
-Every bulk action is a single undo step. Mixed measurement-and-drawing selections can share colour, visibility, lock, duplicate, and delete actions, but cannot be moved to one layer because layers are type-specific.
+When every selected item is a measurement, Properties also offers:
+
+- Setting one category or one room for the selection. Leave the room field empty and choose **Apply** to clear the rooms.
+- Setting `Add` or `Deduct` when every selected measurement is an area.
+- Setting one object type when every selected measurement is a count.
+
+Category and room are not offered for selections that mix measurements and drawings. `areaMode` and `countType` are only offered when the whole selection has that measurement kind. Locked measurements are skipped by bulk edits and reported in a toast. Every bulk action is a single undo step, even across layers. Mixed measurement-and-drawing selections can share colour, visibility, lock, duplicate, and delete actions, but cannot be moved to one layer because layers are type-specific.
 
 The internal clipboard is in-memory only and is not shared with the operating system. `Ctrl/Cmd+C`, `X`, and `V` copy, cut, and paste markups. Pasting on another page keeps the original PDF coordinates; pasting on the same page offsets the copy by 12 pt. Duplicate uses the same 12 pt offset.
 
