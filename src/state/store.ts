@@ -385,6 +385,12 @@ export class Store {
 
   setQuantityDefaults(patch: { wastePercent?: number; roundingStep?: number }): boolean {
     if (!this.project) return false;
+    if (
+      (patch.wastePercent !== undefined && !Number.isFinite(patch.wastePercent)) ||
+      (patch.roundingStep !== undefined && !Number.isFinite(patch.roundingStep))
+    ) {
+      return false;
+    }
     const quantity = this.project.settings.quantity;
     const wastePercent =
       patch.wastePercent === undefined
@@ -414,8 +420,9 @@ export class Store {
   ): boolean {
     const project = this.project;
     if (!project || !findCategory(project, id)) return false;
+    if (value !== null && !Number.isFinite(value)) return false;
     const normalized =
-      value === null || !Number.isFinite(value)
+      value === null
         ? undefined
         : field === "wastePercent"
           ? Math.max(0, Math.min(100, value))

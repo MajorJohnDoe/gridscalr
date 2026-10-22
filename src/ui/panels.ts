@@ -55,7 +55,9 @@ export interface PanelActions {
   openPdf: () => void;
   openProject: () => void;
   saveProject: () => void;
-  exportAs: (kind: "csv" | "json" | "png" | "pdf") => void;
+  exportAs: (
+    kind: "csv" | "json" | "png" | "pdf" | "quantity-csv" | "quantity-pdf",
+  ) => void;
   startCalibration: () => void;
   clearCalibration: () => void;
   deleteSelection: () => void;
@@ -287,7 +289,7 @@ export function renderDock(refs: ShellRefs, actions: PanelActions): void {
       renderMarkups(refs, actions);
       break;
     case "quantities":
-      renderQuantities(refs);
+      renderQuantities(refs, actions);
       break;
   }
 }
@@ -2286,6 +2288,8 @@ export function showExportMenu(anchor: HTMLElement, actions: PanelActions): void
     { label: "Flattened PDF", icon: "file", action: () => actions.exportAs("pdf") },
     { label: "View as PNG", icon: "image", action: () => actions.exportAs("png") },
     { label: "Markups to CSV", icon: "csv", action: () => actions.exportAs("csv") },
+    { label: "Quantities to CSV", icon: "csv", action: () => actions.exportAs("quantity-csv") },
+    { label: "Quantity report (PDF)", icon: "file", action: () => actions.exportAs("quantity-pdf") },
     { label: "Project to JSON", icon: "file", action: () => actions.exportAs("json") },
   ]);
 }

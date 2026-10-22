@@ -58,6 +58,28 @@ describe("project files", () => {
     });
   });
 
+  it("round-trips category waste and rounding overrides", () => {
+    const project = makeProject();
+    project.categories[0].wastePercent = 12.5;
+    project.categories[0].roundingStep = 0.25;
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.categories[0]).toMatchObject({
+      wastePercent: 12.5,
+      roundingStep: 0.25,
+    });
+  });
+
+  it("clamps invalid category waste and rounding overrides", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.categories = [
+      { id: "cat_x", name: "X", wastePercent: 400, roundingStep: -2 },
+    ];
+    raw.settings.quantity.defaultCategoryId = "cat_x";
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.categories[0].wastePercent).toBe(100);
+    expect(parsed.categories[0].roundingStep).toBe(0);
+  });
+
   it("round-trips per-item visibility and locking", () => {
     const project = makeProject();
     const measure = project.layers.find((layer) => layer.kind === "measure")!;

@@ -9,6 +9,7 @@ import { store } from "../state/store";
 import { clear, el, option } from "./dom";
 import { icon } from "./icons";
 import type { ShellRefs } from "./shell";
+import type { PanelActions } from "./panels";
 
 let pageFilter: "current" | "all" = "current";
 let categoryFilter = "";
@@ -159,7 +160,13 @@ function renderRows(summary: QuantitySummary): HTMLElement {
           const stat = el("div", `quantity-stat ${className}`.trim());
           stat.append(
             el("span", "quantity-stat-label", label),
-            el("span", "quantity-stat-value", formatValue(value, row.type)),
+            el(
+              "span",
+              "quantity-stat-value",
+              className === "is-waste"
+                ? formatNumber(value, 2)
+                : formatValue(value, row.type),
+            ),
           );
           if (className === "is-order") {
             stat.title =
@@ -382,7 +389,7 @@ function renderQuantitiesBody(body: HTMLElement): void {
   body.append(panel);
 }
 
-export function renderQuantities(refs: ShellRefs): void {
+export function renderQuantities(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   if (!project) return;
   const identity = `${project.id}\u0000${project.document.sha256}`;
@@ -391,4 +398,15 @@ export function renderQuantities(refs: ShellRefs): void {
     resetFilters();
   }
   renderQuantitiesBody(refs.dockBody);
+  const exportCsv = el("button", "btn btn-small btn-ghost", "Export quantity CSV");
+  exportCsv.type = "button";
+  exportCsv.innerHTML = `${icon("csv", 13)}<span>CSV</span>`;
+  exportCsv.title = "Export the quantity report as CSV";
+  exportCsv.addEventListener("click", () => actions.exportAs("quantity-csv"));
+  const exportPdf = el("button", "btn btn-small btn-ghost", "Export quantity PDF");
+  exportPdf.type = "button";
+  exportPdf.innerHTML = `${icon("file", 13)}<span>PDF</span>`;
+  exportPdf.title = "Export a print-friendly quantity report as PDF";
+  exportPdf.addEventListener("click", () => actions.exportAs("quantity-pdf"));
+  refs.dockFooter.append(exportCsv, exportPdf);
 }

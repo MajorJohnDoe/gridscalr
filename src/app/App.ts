@@ -54,6 +54,9 @@ import {
   PdfRenderer,
 } from "../pdf/pdfRenderer";
 import { exportProjectPdf } from "../pdf/pdfExport";
+import { exportQuantityReportPdf } from "../pdf/reportPdf";
+import { serializeQuantityCsv } from "../report/csv";
+import { buildQuantityReport } from "../report/reportModel";
 import { store, type ToolId } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { confirmDialog, messageDialog, passwordDialog } from "../ui/dialogs";
@@ -72,6 +75,7 @@ import { toast } from "../ui/toast";
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
 const JSON_FILTERS = [{ name: "JSON project", extensions: ["json"] }];
 const CSV_FILTERS = [{ name: "CSV markups", extensions: ["csv"] }];
+const QUANTITY_CSV_FILTERS = [{ name: "Quantity CSV", extensions: ["csv"] }];
 const PNG_FILTERS = [{ name: "PNG image", extensions: ["png"] }];
 const PDF_FILTERS = [{ name: "PDF document", extensions: ["pdf"] }];
 
@@ -1020,7 +1024,9 @@ export class App {
     name.addEventListener("blur", onBlur);
   }
 
-  private async exportAs(kind: "csv" | "json" | "png" | "pdf"): Promise<void> {
+  private async exportAs(
+    kind: "csv" | "json" | "png" | "pdf" | "quantity-csv" | "quantity-pdf",
+  ): Promise<void> {
     const project = store.project;
     if (!project) return;
     const safe = project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
@@ -1049,6 +1055,30 @@ export class App {
         const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
         const path = await saveTextFile(csv, `${safe}-markups.csv`, CSV_FILTERS);
         if (path) toast("Markups exported to CSV.", "success");
+        return;
+      }
+
+      if (kind === "quantity-csv") {
+        const csv = serializeQuantityCsv(buildQuantityReport(project));
+        const path = await saveTextFile(
+          csv,
+          `${safe}-quantities.csv`,
+          QUANTITY_CSV_FILTERS,
+        );
+        if (path) toast("Quantity report exported to CSV.", "success");
+        return;
+      }
+
+      if (kind === "quantity-pdf") {
+        const bytes = await exportQuantityReportPdf(buildQuantityReport(project));
+        const path = await saveBinaryFile(
+          bytes,
+          `${safe}-quantities.pdf`,
+          PDF_FILTERS,
+          "application/pdf",
+          project.document.path,
+        );
+        if (path) toast("Quantity report exported to PDF.", "success");
         return;
       }
 
