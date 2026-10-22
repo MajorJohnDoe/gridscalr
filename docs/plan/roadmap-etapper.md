@@ -3,11 +3,11 @@
 ## Status
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
-- **Etapp 2 – Mängddata och beställningsunderlag:** plan fastställd 2026-10-21, implementation återstår.
+- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A steg 1 (kategorier, schema v3 och migrering) är genomfört; rum, antalsverktyg, avdragsarea och summering återstår.
 - **Etapp 3 – Mätverktyg, skala och export:** planerad, detaljplaneras efter Etapp 2.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
-Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
+Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Kategorimodellen och schema v3 är införda enligt steg 1 i genomförandeordningen. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 ## Produktprinciper
 
@@ -28,7 +28,7 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | Etapp | Mål | Status | Beroenden | Risk |
 |---|---|---|---|---|
 | 1 | Lager, urval och objektkontroll | Klar | – | Medel |
-| 2A | Kategorier, antal, avdrag och summering | Plan klar | Etapp 1 | Medel |
+| 2A | Kategorier, antal, avdrag och summering | Pågår (steg 1 klar) | Etapp 1 | Medel |
 | 2B | Svinn, avrundning och mängdförteckning | Plan klar | Etapp 2A | Medel |
 | 3 | Snabbarea, manuell skala, snap och exportdialog | Senare | Etapp 2 | Hög |
 | 4 | Bilder | Sist | Etapp 2–3 | Hög |

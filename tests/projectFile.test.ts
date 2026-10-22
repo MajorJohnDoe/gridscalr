@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createCalibration } from "../src/model/calibration";
+import { findCategory } from "../src/model/categories";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
-import type { MarkupItem } from "../src/model/types";
+import type { MarkupItem, Project } from "../src/model/types";
 import {
   parseProject,
   relativeDocumentPath,
@@ -10,7 +11,7 @@ import {
   suggestedProjectName,
 } from "../src/io/projectFile";
 
-function makeProject() {
+function makeProject(): Project {
   const project = createProject(defaultDocument("Floor Plan.pdf", 2), createDefaultLayers());
   const measure = project.layers.find((layer) => layer.kind === "measure")!;
   const now = "2026-01-01T00:00:00.000Z";
@@ -213,5 +214,231 @@ describe("project files", () => {
     const project = makeProject();
     project.name = 'Floor: Plan / Rev "A"';
     expect(suggestedProjectName(project)).toBe("Floor Plan  Rev A.gridscalr");
+  });
+
+  it("migrates schema v1 and v2 projects into the default category model", () => {
+    for (const schemaVersion of [1, 2]) {
+      const raw = {
+        schemaVersion,
+        id: "project_legacy",
+        name: "Legacy",
+        document: defaultDocument("Legacy.pdf", 1),
+        settings: { lengthUnit: "m", areaUnit: "m2" },
+        pages: {},
+        layers: [
+          {
+            id: "measure_1",
+            name: "Measurements",
+            kind: "measure",
+            items: [
+              {
+                id: "item_length",
+                page: 1,
+                kind: "length",
+                points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+                color: "#4cc9f0",
+                strokeWidth: 2,
+              },
+              {
+                id: "item_area",
+                page: 1,
+                kind: "area",
+                points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+                color: "#4cc9f0",
+                strokeWidth: 2,
+              },
+            ],
+          },
+        ],
+      };
+      const parsed = parseProject(JSON.stringify(raw));
+      expect(parsed.schemaVersion).toBe(3);
+      expect(parsed.categories.map((entry) => entry.name)).toEqual([
+        "Floor",
+        "Wall",
+        "Ceiling",
+        "Facade",
+        "Roof",
+        "Ground",
+        "Other",
+      ]);
+      const other = parsed.categories.find((entry) => entry.name === "Other")!;
+      expect(parsed.settings.quantity).toEqual({
+        defaultCategoryId: other.id,
+        wastePercent: 0,
+        roundingStep: 0,
+      });
+
+      const items = parsed.layers.flatMap((layer) => layer.items);
+      const length = items.find((item) => item.id === "item_length")!;
+      const area = items.find((item) => item.id === "item_area")!;
+      expect(length.categoryId).toBe(other.id);
+      expect(length.room).toBeUndefined();
+      expect(length.areaMode).toBeUndefined();
+      expect(area.categoryId).toBe(other.id);
+      expect(area.areaMode).toBe("add");
+    }
+  });
+
+  it("repairs unknown category references and strips measurement fields from drawings", () => {
+    const raw = {
+      schemaVersion: 3,
+      document: defaultDocument("Plan.pdf", 1),
+      categories: [
+        { id: "cat_keep", name: "Keep" },
+        { id: "cat_other", name: "Other" },
+      ],
+      settings: { quantity: { defaultCategoryId: "cat_other", wastePercent: 10, roundingStep: 0.5 } },
+      layers: [
+        {
+          id: "measure_1",
+          kind: "measure",
+          items: [
+            {
+              id: "orphan",
+              page: 1,
+              kind: "length",
+              points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+              color: "#4cc9f0",
+              strokeWidth: 2,
+              categoryId: "cat_deleted",
+              room: "  Room 5  ",
+            },
+          ],
+        },
+        {
+          id: "draw_1",
+          kind: "draw",
+          items: [
+            {
+              id: "drawing",
+              page: 1,
+              kind: "rect",
+              points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+              color: "#f2a93b",
+              strokeWidth: 2,
+              categoryId: "cat_keep",
+              room: "Room 5",
+              areaMode: "subtract",
+              countType: "door",
+            },
+          ],
+        },
+      ],
+    };
+    const parsed = parseProject(JSON.stringify(raw));
+    const measureItem = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "orphan")!;
+    expect(measureItem.categoryId).toBe("cat_other");
+    expect(measureItem.room).toBe("Room 5");
+
+    const drawing = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "drawing")!;
+    expect(drawing.categoryId).toBeUndefined();
+    expect(drawing.room).toBeUndefined();
+    expect(drawing.areaMode).toBeUndefined();
+    expect(drawing.countType).toBeUndefined();
+
+    expect(parsed.settings.quantity.wastePercent).toBe(10);
+    expect(parsed.settings.quantity.roundingStep).toBe(0.5);
+  });
+
+  it("round-trips count items with a single anchor point", () => {
+    const project = makeProject();
+    const category = project.categories[0];
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      id: "item_count",
+      page: 1,
+      kind: "count",
+      points: [{ x: 30, y: 40 }],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      categoryId: category.id,
+      room: "Room 101",
+      countType: "door",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_count")!;
+    expect(item.kind).toBe("count");
+    expect(item.points).toEqual([{ x: 30, y: 40 }]);
+    expect(item.categoryId).toBe(category.id);
+    expect(item.room).toBe("Room 101");
+    expect(item.countType).toBe("door");
+    expect(item.areaMode).toBeUndefined();
+  });
+
+  it("normalizes duplicate and empty category names while keeping ids", () => {
+    const parsed = parseProject(
+      JSON.stringify({
+        schemaVersion: 3,
+        document: defaultDocument("Plan.pdf", 1),
+        categories: [
+          { id: "cat_a", name: " Floor " },
+          { id: "cat_b", name: "floor" },
+          { id: "cat_c", name: "   " },
+          { id: "cat_d", name: "Other" },
+          { id: "cat_d", name: "Duplicate id" },
+        ],
+        settings: { quantity: { defaultCategoryId: "cat_d" } },
+        layers: [],
+      }),
+    );
+
+    expect(parsed.categories.map((entry) => entry.name)).toEqual(["Floor", "floor 2", "Other", "Duplicate id"]);
+    expect(new Set(parsed.categories.map((entry) => entry.id)).size).toBe(4);
+    expect(findCategory(parsed, "cat_a")?.name).toBe("Floor");
+    expect(findCategory(parsed, "cat_b")?.name).toBe("floor 2");
+    expect(parsed.settings.quantity.defaultCategoryId).toBe("cat_d");
+  });
+
+  it("repairs an invalid default category and unknown count types", () => {
+    const parsed = parseProject(
+      JSON.stringify({
+        schemaVersion: 3,
+        document: defaultDocument("Plan.pdf", 1),
+        categories: [{ id: "cat_a", name: "Floor" }],
+        settings: { quantity: { defaultCategoryId: "cat_gone", wastePercent: 400, roundingStep: -2 } },
+        layers: [
+          {
+            id: "measure_1",
+            kind: "measure",
+            items: [
+              {
+                id: "count_bad",
+                page: 1,
+                kind: "count",
+                points: [{ x: 1, y: 2 }, { x: 3, y: 4 }],
+                color: "#4cc9f0",
+                strokeWidth: 2,
+                countType: "spaceship",
+              },
+            ],
+          },
+        ],
+      }),
+    );
+
+    expect(parsed.settings.quantity.defaultCategoryId).toBe("cat_a");
+    expect(parsed.settings.quantity.wastePercent).toBe(100);
+    expect(parsed.settings.quantity.roundingStep).toBe(0);
+    const item = parsed.layers.flatMap((layer) => layer.items)[0];
+    expect(item.countType).toBe("other");
+    expect(item.points).toHaveLength(1);
+    expect(item.categoryId).toBe("cat_a");
+  });
+
+  it("accepts the square yard area unit", () => {
+    const project = makeProject();
+    project.settings.areaUnit = "yd2";
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.settings.areaUnit).toBe("yd2");
   });
 });

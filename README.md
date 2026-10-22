@@ -21,6 +21,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Use right-click context menus on the canvas, Markups list, and layers for the same actions.
+- Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
 - Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, or the current view as PNG.
 - Undo/redo, autosave, recent files, and a shortcut reference.
@@ -197,11 +198,11 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, and markup items. The PDF itself is **not** embedded.
 
-Schema version 2 adds optional per-item `visible` and `locked` flags. Version 1 projects load normally; missing flags are normalized to `visible: true` and `locked: false`.
+Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 adds project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Version 1 and 2 projects load normally: measurements are assigned to the `Other` category, areas default to `add`, and missing quantity settings get safe defaults.
 
 ```json
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "name": "Level 01",
   "document": {
     "name": "Level 01.pdf",
@@ -216,8 +217,17 @@ Schema version 2 adds optional per-item `visible` and `locked` flags. Version 1 
     "areaUnit": "m2",
     "showGrid": false,
     "showCalibration": true,
-    "snapToGeometry": true
+    "snapToGeometry": true,
+    "quantity": {
+      "defaultCategoryId": "cat_...",
+      "wastePercent": 0,
+      "roundingStep": 0
+    }
   },
+  "categories": [
+    { "id": "cat_...", "name": "Floor" },
+    { "id": "cat_...", "name": "Other" }
+  ],
   "pages": {
     "1": {
       "calibration": {
@@ -238,7 +248,7 @@ Schema version 2 adds optional per-item `visible` and `locked` flags. Version 1 
 
 On desktop, GridScalr tries the stored absolute PDF path first, then a path relative to the project file. If the PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. The project file is designed to stay useful when a project folder is moved without the drawing it references.
 
-Layer IDs, item IDs, calibration points, timestamps, style values, and per-item visibility/lock flags are preserved in the file. Reading validates the schema, normalizes version 1 projects, and drops items that do not match their layer kind.
+Layer IDs, item IDs, calibration points, timestamps, style values, category IDs, and per-item visibility/lock flags are preserved in the file. Reading validates the schema, normalizes version 1 and 2 projects, repairs category references, and drops items that do not match their layer kind.
 
 ## Keyboard shortcuts
 

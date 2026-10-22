@@ -31,6 +31,7 @@ describe("units", () => {
     expect(unitToMeters("ft")).toBeCloseTo(0.3048);
     expect(areaUnitToSquareMeters("m2")).toBe(1);
     expect(areaUnitToSquareMeters("ft2")).toBeCloseTo(0.09290304);
+    expect(areaUnitToSquareMeters("yd2")).toBeCloseTo(0.83612736);
   });
 
   it("converts points into project units using a scale", () => {
@@ -49,6 +50,7 @@ describe("units", () => {
     expect(formatLengthCompact(1001, scale, "m")).toBe("10.01 m");
     expect(formatLengthCompact(123, null, "m")).toBe("123 pt");
     expect(formatArea(10_000, scale, "m2")).toBe("1 m²");
+    expect(formatArea(10_000, scale, "yd2")).toBe("1.2 yd²");
     expect(formatArea(10_000, null, "m2")).toBe("10,000 pt²");
   });
 
@@ -64,5 +66,6 @@ describe("units", () => {
     expect(formatNumber(1234.567, 1)).toBe("1,234.6");
     expect(formatNumber(Number.NaN)).toBe("–");
     expect(unitLabel("m2")).toBe("m²");
+    expect(unitLabel("yd2")).toBe("yd²");
   });
 });

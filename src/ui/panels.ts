@@ -3,6 +3,7 @@ import { hasClipboard } from "../model/clipboard";
 import {
   duplicateLayer,
   findItem,
+  isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
   layersForKind,
@@ -34,6 +35,7 @@ import { store, toolLayerKind } from "../state/store";
 import type { AutosavePayload } from "../state/store";
 import { clear, el, option } from "./dom";
 import { confirmDialog, textDialog } from "./dialogs";
+import { openCategoriesDialog } from "./categoriesDialog";
 import { icon } from "./icons";
 import type { ShellRefs } from "./shell";
 import { TOOL_BY_ID } from "./toolDefs";
@@ -661,7 +663,7 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
     for (const layer of project.layers) {
       for (const item of layer.items) {
         if (markupPageFilter === "current" && item.page !== store.ui.page) continue;
-        const kindGroup = item.kind === "length" || item.kind === "area" ? "measure" : "draw";
+        const kindGroup = isMeasurementKind(item.kind) ? "measure" : "draw";
         if (markupKindFilter !== "all" && kindGroup !== markupKindFilter) continue;
         if (query) {
           const haystack = `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""}`.toLowerCase();
@@ -817,6 +819,8 @@ function markupIcon(kind: MarkupItem["kind"]): string {
       return "length";
     case "area":
       return "area";
+    case "count":
+      return "count";
     case "pen":
       return "pen";
     case "line":
@@ -1016,6 +1020,7 @@ function renderInspector(refs: ShellRefs, actions: PanelActions): void {
 
   refs.inspector.append(scaleSection(project, actions));
   refs.inspector.append(unitsSection(project));
+  refs.inspector.append(categoriesSection(project));
   refs.inspector.append(activeLayerSection(project, actions));
   refs.inspector.append(selectionSection(project, actions));
 }
@@ -1121,6 +1126,33 @@ function unitsSection(project: NonNullable<typeof store.project>): HTMLElement {
       }, "change");
     }),
   );
+  return section;
+}
+
+function categoriesSection(project: NonNullable<typeof store.project>): HTMLElement {
+  const section = el("section", "inspector-section");
+  section.append(el("h3", "", "Categories"));
+
+  const field = el("label", "field");
+  field.append(el("span", "field-label", "Default for new measurements"));
+  const select = el("select", "select");
+  for (const category of project.categories) {
+    select.append(
+      option(
+        category.id,
+        category.name,
+        category.id === project.settings.quantity.defaultCategoryId,
+      ),
+    );
+  }
+  select.addEventListener("change", () => store.setDefaultCategory(select.value));
+  field.append(select);
+
+  const manage = el("button", "btn btn-small", `Manage categories (${project.categories.length})`);
+  manage.type = "button";
+  manage.addEventListener("click", () => openCategoriesDialog());
+
+  section.append(field, manage);
   return section;
 }
 

@@ -1,4 +1,5 @@
 import { makeId } from "./calibration";
+import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
 import { SCHEMA_VERSION } from "./types";
 import type {
   DocumentRef,
@@ -19,9 +20,12 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   showGrid: false,
   showCalibration: true,
   snapToGeometry: true,
+  // Replaced by createProject and the project normalizer, which know the
+  // project's category ids.
+  quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },
 };
 
-const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set(["length", "area"]);
+const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set(["length", "area", "count"]);
 
 export function isMeasurementKind(kind: ItemKind): boolean {
   return MEASURE_KINDS.has(kind);
@@ -67,12 +71,14 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
   const now = new Date().toISOString();
   const actualLayers = layers?.length ? layers : createDefaultLayers();
   const measureLayer = actualLayers.find((l) => l.kind === "measure");
+  const categories = createDefaultCategories();
   return {
     schemaVersion: SCHEMA_VERSION,
     id: makeId("project"),
     name: document.name.replace(/\.pdf$/i, "") || "Untitled",
     document,
-    settings: { ...DEFAULT_SETTINGS },
+    settings: { ...DEFAULT_SETTINGS, quantity: createDefaultQuantitySettings(categories) },
+    categories,
     pages: {},
     layers: normalizeLayerOrder(actualLayers),
     activeLayerId: measureLayer?.id ?? actualLayers[0].id,

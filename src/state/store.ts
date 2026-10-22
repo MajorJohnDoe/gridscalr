@@ -1,6 +1,17 @@
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
+import {
+  addCategory as addCategoryToProject,
+  categoryNameError,
+  countCategoryItems,
+  findCategory,
+  moveCategory as moveCategoryInProject,
+  removeCategory as removeCategoryFromProject,
+  renameCategory as renameCategoryInProject,
+  setDefaultCategory as setDefaultCategoryInProject,
+} from "../model/categories";
+import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
-import type { LayerKind, Point, Project, SelectionRef } from "../model/types";
+import type { Category, LayerKind, Point, Project, SelectionRef } from "../model/types";
 
 export type ToolId =
   | "select"
@@ -254,6 +265,62 @@ export class Store {
     this.mutate((project) => {
       addLayer(project, kind);
     }, "layers");
+  }
+
+  addCategory(name: string): Category | null {
+    if (!this.project) return null;
+    if (categoryNameError(this.project.categories, name)) return null;
+    let created: Category | null = null;
+    this.mutate((project) => {
+      created = addCategoryToProject(project, name);
+    }, "change");
+    return created;
+  }
+
+  renameCategory(id: string, name: string): boolean {
+    if (!this.project) return false;
+    if (!findCategory(this.project, id)) return false;
+    if (categoryNameError(this.project.categories, name, id)) return false;
+    this.mutate((project) => {
+      renameCategoryInProject(project, id, name);
+    }, "change");
+    return true;
+  }
+
+  moveCategory(id: string, direction: -1 | 1): boolean {
+    if (!this.project) return false;
+    const index = this.project.categories.findIndex((category) => category.id === id);
+    if (index < 0) return false;
+    const target = index + direction;
+    if (target < 0 || target >= this.project.categories.length) return false;
+    this.mutate((project) => {
+      moveCategoryInProject(project, id, direction);
+    }, "change");
+    return true;
+  }
+
+  removeCategory(id: string, targetId?: string): RemoveCategoryResult {
+    if (!this.project) return { removed: false, moved: 0, reason: "missing" };
+    if (!findCategory(this.project, id)) return { removed: false, moved: 0, reason: "missing" };
+    if (this.project.categories.length <= 1) return { removed: false, moved: 0, reason: "last" };
+    let result: RemoveCategoryResult = { removed: false, moved: 0 };
+    this.mutate((project) => {
+      result = removeCategoryFromProject(project, id, targetId);
+    }, "change");
+    return result;
+  }
+
+  setDefaultCategory(id: string): boolean {
+    if (!this.project || !findCategory(this.project, id)) return false;
+    if (this.project.settings.quantity.defaultCategoryId === id) return true;
+    this.mutate((project) => {
+      setDefaultCategoryInProject(project, id);
+    }, "change");
+    return true;
+  }
+
+  categoryItemCount(id: string): number {
+    return this.project ? countCategoryItems(this.project, id) : 0;
   }
 
   private snapshot(): string | null {

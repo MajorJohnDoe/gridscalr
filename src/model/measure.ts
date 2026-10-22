@@ -54,6 +54,8 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Length";
     case "area":
       return "Area";
+    case "count":
+      return "Count";
     case "pen":
       return "Pen";
     case "line":

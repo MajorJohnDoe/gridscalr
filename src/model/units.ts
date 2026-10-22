@@ -23,6 +23,7 @@ export const AREA_UNITS: ReadonlyArray<{
   { id: "m2", label: "m²", squareMeters: 1 },
   { id: "in2", label: "in²", squareMeters: 0.0254 * 0.0254 },
   { id: "ft2", label: "ft²", squareMeters: 0.3048 * 0.3048 },
+  { id: "yd2", label: "yd²", squareMeters: 0.9144 * 0.9144 },
 ];
 
 export function unitToMeters(unit: LengthUnit): number {

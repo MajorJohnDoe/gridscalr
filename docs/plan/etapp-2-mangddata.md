@@ -1,6 +1,6 @@
 # Etapp 2 – Mängddata och beställningsunderlag
 
-**Status:** planen är fastställd 2026-10-21. Ingen Etapp 2-kod är skriven ännu. Nästa steg är Etapp 2A steg 1.
+**Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1 (kategorier, schema v3 och migrering) är genomfört. Nästa steg är Etapp 2A steg 2.
 
 Dokumentet ersätter den tidigare förslagsversionen. Alla beslut som krävdes innan implementation är nu låsta och listade i avsnitt 2. Om koden och planen hamnar i konflikt ska konflikten lösas uttryckligen, inte tyst.
 
@@ -200,7 +200,7 @@ De beräknas alltid från aktuell objektdata. Det förhindrar att rapporten visa
 - v1/v2-projekt får standardkategorierna automatiskt. Alla mätningar får `categoryId` = `Other`.
 - v1/v2-areaobjekt får `areaMode: "add"`.
 - v1/v2-mätningar får `room: undefined`.
-- Saknade `settings.quantity` får defaults. Ogiltig `defaultCategoryId` ersätts av första kategorin.
+- Saknade `settings.quantity` får defaults. Ogiltig `defaultCategoryId` ersätts av kategorin `Other` om den finns, annars av första kategorin.
 - Okänt `categoryId` ersätts av standardkategorin.
 - Okänt `countType` faller tillbaka på `other`. Ogiltig `areaMode` faller tillbaka på `add`.
 - Kategorier som läses in trimmas och namn som är tomma eller dubbletter får ett unikt namn i stället för att kastas.

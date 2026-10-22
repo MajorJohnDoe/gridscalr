@@ -9,6 +9,8 @@ const paths: Record<string, string> = {
     '<path d="M4 17 20 7"/><circle cx="4" cy="17" r="2.2"/><circle cx="20" cy="7" r="2.2"/><path d="M9 12h6" opacity=".55"/>',
   area:
     '<path d="m4 16 3-10 10-2 3 10-8 5-8-3Z"/><circle cx="7" cy="6" r="1.4" fill="currentColor"/><circle cx="17" cy="4" r="1.4" fill="currentColor"/><circle cx="20" cy="14" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/>',
+  count:
+    '<circle cx="8" cy="8" r="2.2"/><circle cx="16" cy="8" r="2.2"/><circle cx="8" cy="16" r="2.2"/><circle cx="16" cy="16" r="2.2"/>',
   pen:
     '<path d="m4 20 1.5-5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18 4 20Z"/><path d="m14.5 6 3 3"/>',
   line: '<path d="M5 19 19 5"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/>',

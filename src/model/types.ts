@@ -1,10 +1,12 @@
-export const SCHEMA_VERSION = 2 as const;
+export const SCHEMA_VERSION = 3 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
-export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2";
+export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
 export type LayerKind = "measure" | "draw";
 
-export type MeasurementKind = "length" | "area";
+export type MeasurementKind = "length" | "area" | "count";
+export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
+export type AreaMode = "add" | "subtract";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -56,6 +58,14 @@ export interface MarkupItem {
   locked?: boolean;
   /** Measurement scale captured when the item was created. */
   scale?: ScaleSnapshot | null;
+  /** Measurements only. References a category in the project. */
+  categoryId?: string;
+  /** Measurements only. Trimmed free text, omitted when empty. */
+  room?: string;
+  /** Areas only. Defaults to add. */
+  areaMode?: AreaMode;
+  /** Count items only. */
+  countType?: CountType;
   createdAt: string;
   updatedAt: string;
 }
@@ -95,6 +105,28 @@ export interface ProjectSettings {
   showGrid: boolean;
   showCalibration: boolean;
   snapToGeometry: boolean;
+  quantity: QuantitySettings;
+}
+
+/** A user-defined grouping label for measurements. Order in the project is report order. */
+export interface Category {
+  /** Stable id such as "cat_3f9a". Never reused. */
+  id: string;
+  /** Editable display name, unique per project, case-insensitive. */
+  name: string;
+  /** Overrides the project waste percentage. Reserved for Etapp 2B. */
+  wastePercent?: number;
+  /** Overrides the project rounding step. Reserved for Etapp 2B. */
+  roundingStep?: number;
+}
+
+export interface QuantitySettings {
+  /** Always references a category in the project. */
+  defaultCategoryId: string;
+  /** 0-100. Project default, used when the category has no override. */
+  wastePercent: number;
+  /** 0 means no rounding. Otherwise a step in the row's own unit. */
+  roundingStep: number;
 }
 
 export interface Project {
@@ -103,6 +135,8 @@ export interface Project {
   name: string;
   document: DocumentRef;
   settings: ProjectSettings;
+  /** Ordered category list. At least one category always exists. */
+  categories: Category[];
   pages: Record<string, PageState>;
   layers: Layer[];
   activeLayerId: string;

@@ -1,3 +1,10 @@
+import { makeId } from "../model/calibration";
+import {
+  createDefaultCategories,
+  createDefaultQuantitySettings,
+  normalizeCategoryName,
+  CATEGORY_NAME_MAX_LENGTH,
+} from "../model/categories";
 import {
   createDefaultLayers,
   createLayer,
@@ -8,8 +15,11 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
 import type {
+  AreaMode,
   AreaUnit,
   Calibration,
+  Category,
+  CountType,
   ItemKind,
   Layer,
   LayerKind,
@@ -18,11 +28,13 @@ import type {
   Point,
   Project,
   ProjectSettings,
+  QuantitySettings,
 } from "../model/types";
 
 const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "length",
   "area",
+  "count",
   "pen",
   "line",
   "arrow",
@@ -32,8 +44,16 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "text",
 ]);
 
+const COUNT_TYPES: ReadonlySet<CountType> = new Set([
+  "door",
+  "window",
+  "radiator",
+  "fixture",
+  "other",
+]);
+
 const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
-const AREA_UNITS = new Set<AreaUnit>(["mm2", "cm2", "m2", "in2", "ft2"]);
+const AREA_UNITS = new Set<AreaUnit>(["mm2", "cm2", "m2", "in2", "ft2", "yd2"]);
 
 function isPoint(value: unknown): value is Point {
   return (
@@ -65,7 +85,51 @@ function normalizeCalibration(value: unknown): Calibration | undefined {
   };
 }
 
-function normalizeSettings(value: Partial<ProjectSettings> | undefined): ProjectSettings {
+function uniqueCategoryName(categories: Category[], wanted: string): string {
+  const exists = (candidate: string) =>
+    categories.some((category) => category.name.toLowerCase() === candidate.toLowerCase());
+  if (!exists(wanted)) return wanted;
+  let index = 2;
+  for (;;) {
+    const suffix = ` ${index++}`;
+    const candidate = `${wanted.slice(0, CATEGORY_NAME_MAX_LENGTH - suffix.length).trim()}${suffix}`;
+    if (!exists(candidate)) return candidate;
+  }
+}
+
+function normalizeCategories(value: unknown): Category[] {
+  const categories: Category[] = [];
+  if (Array.isArray(value)) {
+    for (const entry of value) {
+      if (typeof entry !== "object" || entry === null) continue;
+      const raw = entry as Partial<Category>;
+      const name = typeof raw.name === "string" ? normalizeCategoryName(raw.name) : "";
+      if (!name) continue;
+      const clipped = name.slice(0, CATEGORY_NAME_MAX_LENGTH).trim();
+      let id = typeof raw.id === "string" && raw.id ? raw.id : makeId("cat");
+      if (categories.some((category) => category.id === id)) {
+        id = makeId("cat");
+      }
+      const category: Category = { id, name: uniqueCategoryName(categories, clipped) };
+      if (typeof raw.wastePercent === "number" && Number.isFinite(raw.wastePercent)) {
+        category.wastePercent = Math.max(0, Math.min(100, raw.wastePercent));
+      }
+      if (typeof raw.roundingStep === "number" && Number.isFinite(raw.roundingStep)) {
+        category.roundingStep = Math.max(0, raw.roundingStep);
+      }
+      categories.push(category);
+    }
+  }
+  return categories.length ? categories : createDefaultCategories();
+}
+
+function normalizeSettings(
+  value: Partial<ProjectSettings> | undefined,
+  categories: Category[],
+): ProjectSettings {
+  const rawQuantity = (value?.quantity ?? {}) as Partial<QuantitySettings>;
+  const ids = new Set(categories.map((category) => category.id));
+  const fallbackQuantity = createDefaultQuantitySettings(categories);
   return {
     lengthUnit: LENGTH_UNITS.has(value?.lengthUnit as LengthUnit)
       ? (value!.lengthUnit as LengthUnit)
@@ -76,10 +140,29 @@ function normalizeSettings(value: Partial<ProjectSettings> | undefined): Project
     showGrid: value?.showGrid ?? DEFAULT_SETTINGS.showGrid,
     showCalibration: value?.showCalibration ?? DEFAULT_SETTINGS.showCalibration,
     snapToGeometry: value?.snapToGeometry ?? DEFAULT_SETTINGS.snapToGeometry,
+    quantity: {
+      defaultCategoryId:
+        typeof rawQuantity.defaultCategoryId === "string" && ids.has(rawQuantity.defaultCategoryId)
+          ? rawQuantity.defaultCategoryId
+          : fallbackQuantity.defaultCategoryId,
+      wastePercent:
+        typeof rawQuantity.wastePercent === "number" && Number.isFinite(rawQuantity.wastePercent)
+          ? Math.max(0, Math.min(100, rawQuantity.wastePercent))
+          : fallbackQuantity.wastePercent,
+      roundingStep:
+        typeof rawQuantity.roundingStep === "number" && Number.isFinite(rawQuantity.roundingStep)
+          ? Math.max(0, rawQuantity.roundingStep)
+          : fallbackQuantity.roundingStep,
+    },
   };
 }
 
-function normalizeItem(value: unknown, layerKind: LayerKind): MarkupItem | null {
+function normalizeItem(
+  value: unknown,
+  layerKind: LayerKind,
+  categoryIds: ReadonlySet<string>,
+  fallbackCategoryId: string,
+): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
   if (!raw.kind || !ITEM_KINDS.has(raw.kind)) return null;
@@ -88,11 +171,13 @@ function normalizeItem(value: unknown, layerKind: LayerKind): MarkupItem | null 
   if (raw.points.length === 0) return null;
   const now = new Date().toISOString();
   const scale = raw.scale;
+  const isMeasure = isMeasurementKind(raw.kind);
+  const room = typeof raw.room === "string" ? raw.room.trim() : "";
   return {
     id: typeof raw.id === "string" ? raw.id : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
     kind: raw.kind,
-    points: raw.points.map((p) => ({ x: p.x, y: p.y })),
+    points: raw.kind === "count" ? [{ x: raw.points[0].x, y: raw.points[0].y }] : raw.points.map((p) => ({ x: p.x, y: p.y })),
     color: typeof raw.color === "string" ? raw.color : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
@@ -123,12 +208,30 @@ function normalizeItem(value: unknown, layerKind: LayerKind): MarkupItem | null 
                 : "mm",
             }
           : null,
+    categoryId: isMeasure
+      ? typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId)
+        ? raw.categoryId
+        : fallbackCategoryId
+      : undefined,
+    room: isMeasure && room ? room : undefined,
+    areaMode:
+      raw.kind === "area" ? (raw.areaMode === "subtract" ? ("subtract" as AreaMode) : "add") : undefined,
+    countType:
+      raw.kind === "count"
+        ? COUNT_TYPES.has(raw.countType as CountType)
+          ? (raw.countType as CountType)
+          : "other"
+        : undefined,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : now,
   };
 }
 
-function normalizeLayers(rawLayers: unknown): Layer[] {
+function normalizeLayers(
+  rawLayers: unknown,
+  categoryIds: ReadonlySet<string>,
+  fallbackCategoryId: string,
+): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
     for (const value of rawLayers) {
@@ -147,7 +250,7 @@ function normalizeLayers(rawLayers: unknown): Layer[] {
       };
       if (Array.isArray(raw.items)) {
         for (const item of raw.items) {
-          const normalized = normalizeItem(item, layer.kind);
+          const normalized = normalizeItem(item, layer.kind, categoryIds, fallbackCategoryId);
           if (normalized) layer.items.push(normalized);
         }
       }
@@ -205,14 +308,21 @@ export function parseProject(text: string): Project {
         : 0,
   };
   const base = createProject(doc, createDefaultLayers());
+  const categories = normalizeCategories(raw.categories);
+  const settings = normalizeSettings(raw.settings, categories);
   const project: Project = {
     ...base,
     id: typeof raw.id === "string" ? raw.id : base.id,
     name: typeof raw.name === "string" && raw.name.trim() ? raw.name : base.name,
     document: doc,
-    settings: normalizeSettings(raw.settings),
+    settings,
+    categories,
     pages: {},
-    layers: normalizeLayers(raw.layers),
+    layers: normalizeLayers(
+      raw.layers,
+      new Set(categories.map((category) => category.id)),
+      settings.quantity.defaultCategoryId,
+    ),
     activeLayerId: typeof raw.activeLayerId === "string" ? raw.activeLayerId : base.activeLayerId,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : base.createdAt,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : base.updatedAt,

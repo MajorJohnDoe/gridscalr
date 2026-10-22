@@ -9,8 +9,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
-- Current project-file schema: `2`. Etapp 2 will introduce schema `3`.
-- Etapp 1 is complete. Etapp 2 is planned but not implemented.
+- Current project-file schema: `3`.
+- Etapp 1 is complete. Etapp 2A is in progress: categories and schema v3 are implemented; count, deduction areas, and the quantity panel remain.
 
 ## Read before changing code
 
@@ -154,7 +154,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 ## Etapp status
 
 - **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
-- **Etapp 2A:** planned — categories, rooms, count tool, deduction areas, summary, schema v3.
+- **Etapp 2A:** in progress — categories, default category, schema v3 and migration are implemented; rooms, count tool, deduction areas, quantity panel and bulk edits remain.
 - **Etapp 2B:** planned — waste, rounding, CSV and print-friendly quantity reports.
 - **Etapp 3:** planned — quick area tools, manual scale/lock, snapping, drawing-export dialog.
 - **Etapp 4:** planned — image objects and image-aware PDF export.
