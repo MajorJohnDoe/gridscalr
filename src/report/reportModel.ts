@@ -50,7 +50,14 @@ function describeScale(project: Project): string {
     .filter((entry) => entry.calibration)
     .sort((a, b) => a.page - b.page);
   if (!calibrated.length) return "No page calibration";
-  const unique = new Set(calibrated.map((entry) => entry.calibration?.pointsPerMeter));
+  const unique = new Set(
+    calibrated.map((entry) => {
+      const calibration = entry.calibration!;
+      return calibration.source === "manual"
+        ? `manual:${calibration.ratio}`
+        : `reference:${calibration.pointsPerMeter}`;
+    }),
+  );
   if (unique.size > 1) {
     return `Per-page calibration (${calibrated.length} page${calibrated.length === 1 ? "" : "s"})`;
   }
@@ -62,5 +69,11 @@ function describeScale(project: Project): string {
       : `Page${calibrated.length === 1 ? "" : "s"} ${calibrated
           .map((entry) => entry.page)
           .join(", ")}`;
-  return `${pages} · ${formatScale({ pointsPerMeter: calibration.pointsPerMeter, sourceUnit: calibration.unit })}`;
+  return `${pages} · ${formatScale(
+    {
+      pointsPerMeter: calibration.pointsPerMeter,
+      sourceUnit: calibration.source === "manual" ? "m" : calibration.unit,
+    },
+    calibration,
+  )}`;
 }

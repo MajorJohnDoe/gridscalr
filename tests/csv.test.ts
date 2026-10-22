@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { createManualCalibration } from "../src/model/calibration";
 import {
   addItem,
   createDefaultLayers,
@@ -56,6 +57,14 @@ function categoryId(project: Project, name: string): string {
 }
 
 describe("quantity CSV", () => {
+  it("reports a manual drawing scale as 1:N", () => {
+    const project = makeProject();
+    project.pages["1"] = { calibration: createManualCalibration(100) };
+    project.pages["2"] = { calibration: createManualCalibration(100) };
+    const report = buildQuantityReport(project, { generatedAt: GENERATED });
+    expect(report.scaleSummary).toBe("All pages · 1:100");
+  });
+
   it("writes the specified columns, decimal formats, and escaping", () => {
     const project = makeProject();
     const floor = categoryId(project, "Floor");

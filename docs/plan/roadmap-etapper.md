@@ -4,12 +4,12 @@
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
 - **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
-- **Etapp 3 – Mätverktyg, skala och export:** planerad, nästa etapp.
+- **Etapp 3 – Mätverktyg, skala och export:** pågår. 3A är genomförd med snabbarea, manuell skala, skallås och snap; 3B exportdialog är nästa steg.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
-Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md`. Den är ett utkast för godkännande. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst; resten av planen ska godkännas innan implementation.
+Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A är genomförd; 3B återstår enligt planens genomförandeordning. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst.
 
 ## Produktprinciper
 
@@ -32,7 +32,7 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | 1 | Lager, urval och objektkontroll | Klar | – | Medel |
 | 2A | Kategorier, antal, avdrag och summering | Klar | Etapp 1 | Medel |
 | 2B | Svinn, avrundning och mängdförteckning | Klar | Etapp 2A | Medel |
-| 3 | Snabbarea, manuell skala, snap och exportdialog | Nästa | Etapp 2 | Hög |
+| 3 | Snabbarea, manuell skala, snap och exportdialog | Pågår (3A klar) | Etapp 2 | Hög |
 | 4 | Bilder | Sist | Etapp 2–3 | Hög |
 
 ## Etapp 1 – genomförd
@@ -82,13 +82,18 @@ Detaljer finns i `etapp-2-mangddata.md`.
 
 ## Etapp 3 – Mätverktyg, skala och export
 
-Planen finns i `etapp-3-matverktyg-skala-export.md` och är ett utkast för godkännande.
+Planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd.
+
+**3A – genomförd:**
 
 - Rektangel- och ellipsarea som snabbarea.
 - Manuell skala med preset 1:50, 1:100, 1:200, 1:400 och egen ratio.
 - Låsning av kalibrerad skala per sida.
 - Snap till ändpunkt, mittpunkt, skärning mellan markup-segment och ortogonal låsning.
 - Tröskelvärde i pixlar.
+
+**3B – återstår:**
+
 - PDF-geometrisnapp som separat utredning/spike. Det kräver extrahering och indexering av vektorgeometri och ska inte blandas in i första snapleveransen.
 - Exportdialog för ritning:
   - aktuell sida, alla sidor eller sidintervall

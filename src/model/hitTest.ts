@@ -1,9 +1,13 @@
 import {
+  distanceToAreaShape,
+  areaShapeOf,
+  pointInAreaShape,
+} from "./area";
+import {
   distanceToPolyline,
   itemBounds,
   itemLocalBounds,
   itemLocalToPage,
-  pointInPolygon,
   pointToItemLocal,
   pointToSegmentDistance,
 } from "./geometry";
@@ -40,8 +44,9 @@ function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitRes
   }
 
   if (item.kind === "area") {
-    const inside = pointInPolygon(localPoint, item.points);
-    const edgeDistance = distanceToPolyline(localPoint, item.points, true);
+    const shape = areaShapeOf(item);
+    const inside = pointInAreaShape(localPoint, item.points, shape);
+    const edgeDistance = distanceToAreaShape(localPoint, item.points, shape);
     if (inside || edgeDistance <= tolerance) {
       return { distance: inside ? 0 : edgeDistance, vertexIndex: -1, segmentIndex: -1 };
     }

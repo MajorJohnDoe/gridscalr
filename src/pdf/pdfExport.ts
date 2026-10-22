@@ -13,6 +13,7 @@ import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { countSymbol } from "../model/countSymbols";
+import { areaShapeOf } from "../model/area";
 import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import type { LabelLayout } from "../model/labelLayout";
 import {
@@ -120,10 +121,46 @@ function drawItem(
       drawEndpoints(page, viewport, item.points, color, opacity);
       break;
     case "area": {
-      const path = svgPolygon(viewport, item.points);
-      page.drawSvgPath(path, { x: 0, y: 0, color, opacity: opacity * 0.14 });
-      drawPolyline(page, viewport, item.points, color, width, opacity, true);
-      drawEndpoints(page, viewport, item.points, color, opacity);
+      const shape = areaShapeOf(item);
+      if (shape === "rectangle") {
+        const corners = itemRectCorners(item);
+        const rect = pdfRectFromCorners(viewport, corners);
+        page.drawRectangle({
+          x: rect.x,
+          y: rect.y,
+          width: rect.width,
+          height: rect.height,
+          rotate: degrees(rect.angle),
+          color,
+          opacity: opacity * 0.14,
+          borderColor: color,
+          borderWidth: width,
+          borderOpacity: opacity,
+        });
+        drawEndpoints(page, viewport, corners, color, opacity);
+      } else if (shape === "ellipse") {
+        const corners = itemRectCorners(item);
+        const center = midpoint(corners[0], corners[2]);
+        const centerPdf = toPdfPoint(viewport, center);
+        const rect = pdfRectFromCorners(viewport, corners);
+        page.drawEllipse({
+          x: centerPdf.x,
+          y: centerPdf.y,
+          xScale: Math.max(0.1, rect.width / 2),
+          yScale: Math.max(0.1, rect.height / 2),
+          rotate: degrees(rect.angle),
+          color,
+          opacity: opacity * 0.14,
+          borderColor: color,
+          borderWidth: width,
+          borderOpacity: opacity,
+        });
+      } else {
+        const path = svgPolygon(viewport, item.points);
+        page.drawSvgPath(path, { x: 0, y: 0, color, opacity: opacity * 0.14 });
+        drawPolyline(page, viewport, item.points, color, width, opacity, true);
+        drawEndpoints(page, viewport, item.points, color, opacity);
+      }
       break;
     }
     case "count":

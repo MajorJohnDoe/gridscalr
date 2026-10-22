@@ -11,8 +11,6 @@ import {
   midpoint,
   nearestPointOnSegment,
   normalizeDegrees,
-  polygonArea,
-  polygonCentroid,
   polylineLength,
   pointToItemLocal,
   rotatePoint,
@@ -21,6 +19,13 @@ import {
   translatePoints,
   type Bounds,
 } from "../model/geometry";
+import {
+  areaCentroid,
+  areaOutline,
+  areaShapeOf,
+  areaValue,
+  rectangleCorners,
+} from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
@@ -53,15 +58,29 @@ import {
 import { itemMetrics } from "../model/measure";
 import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
-import { createCalibration, pageScale, pageCalibration, setPageCalibration } from "../model/calibration";
+import {
+  createCalibration,
+  isReferenceCalibration,
+  pageCalibration,
+  pageScale,
+  pageScaleLocked,
+  setPageCalibration,
+} from "../model/calibration";
 import { makeId } from "../model/calibration";
+import {
+  collectSnapCandidates,
+  findSnap,
+  type SnapCandidate,
+  type SnapKind,
+  type SnapResult,
+} from "../model/snap";
 import {
   clampTextSize,
   measureTextWidth,
   TEXT_FONT_STACK,
   textItemLayout,
 } from "../model/text";
-import type { ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
+import type { AreaShape, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -85,7 +104,9 @@ type Draft =
   | { kind: "line"; start: Point; current: Point }
   | { kind: "arrow"; start: Point; current: Point }
   | { kind: "rect"; start: Point; current: Point }
-  | { kind: "ellipse"; start: Point; current: Point };
+  | { kind: "ellipse"; start: Point; current: Point }
+  | { kind: "area-rect"; start: Point; current: Point }
+  | { kind: "area-ellipse"; start: Point; current: Point };
 
 type BoxHandleRole = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
 type HandleRole = BoxHandleRole | "rotate" | "vertex";
@@ -201,7 +222,8 @@ export class CanvasView {
   private marquee: MarqueeState | null = null;
   private pan: PanState | null = null;
   private pointerScreen: Point | null = null;
-  private snap: Point | null = null;
+  private snap: SnapResult | null = null;
+  private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
   private spaceDown = false;
   private renderedPage = 0;
   private editorLayer: HTMLDivElement;
@@ -532,6 +554,19 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "area" && store.ui.measureAreaShape !== "polygon") {
+      if (event.detail > 1) return;
+      const snapped = this.snapPoint(page);
+      this.draft = {
+        kind: store.ui.measureAreaShape === "rectangle" ? "area-rect" : "area-ellipse",
+        start: snapped,
+        current: snapped,
+      };
+      this.capturePointer(event.pointerId);
+      this.drawInteraction();
+      return;
+    }
+
     if (tool === "length" || tool === "area") {
       if (event.detail > 1) {
         this.finishDraft();
@@ -539,7 +574,14 @@ export class CanvasView {
       }
       let snapped = this.snapPoint(page);
       if (this.draft && this.draft.kind === tool && this.draft.points.length) {
-        if (event.shiftKey) snapped = constrainAngle(this.draft.points[this.draft.points.length - 1], snapped);
+        if (event.shiftKey) {
+          const constrained = constrainAngle(
+            this.draft.points[this.draft.points.length - 1],
+            snapped,
+          );
+          if (distance(constrained, snapped) > 1e-6) this.snap = null;
+          snapped = constrained;
+        }
       }
       if (!this.draft || this.draft.kind !== tool) {
         this.draft = { kind: tool, points: [snapped], cursor: snapped };
@@ -555,7 +597,6 @@ export class CanvasView {
         if (distance(last, snapped) > 0.001) this.draft.points.push(snapped);
         this.draft.cursor = snapped;
       }
-      this.snap = snapped;
       this.drawInteraction();
       return;
     }
@@ -568,7 +609,9 @@ export class CanvasView {
     }
 
     if (tool === "line" || tool === "arrow" || tool === "rect" || tool === "ellipse") {
-      const snapped = this.snapPoint(page);
+      const snaps = tool === "line" || tool === "arrow";
+      const snapped = snaps ? this.snapPoint(page) : page;
+      if (!snaps) this.snap = null;
       this.draft = { kind: tool, start: snapped, current: snapped };
       this.capturePointer(event.pointerId);
       this.drawInteraction();
@@ -590,7 +633,6 @@ export class CanvasView {
       if (event.detail > 1) return;
       const snapped = this.snapPoint(page);
       this.createItem("count", [snapped]);
-      this.snap = snapped;
       this.drawInteraction();
     }
   };
@@ -855,22 +897,27 @@ export class CanvasView {
 
     const tool = store.ui.activeTool;
     if (this.draft) {
-      if (this.draft.kind === "line" || this.draft.kind === "arrow" || this.draft.kind === "rect" || this.draft.kind === "ellipse") {
-        let current = page;
+      if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
+        let current = this.snapPoint(page);
         if (event.shiftKey) {
-          if (this.draft.kind === "line" || this.draft.kind === "arrow") {
-            current = constrainAngle(this.draft.start, page);
-          } else {
-            const dx = page.x - this.draft.start.x;
-            const dy = page.y - this.draft.start.y;
-            const size = Math.max(Math.abs(dx), Math.abs(dy));
-            current = {
-              x: this.draft.start.x + Math.sign(dx || 1) * size,
-              y: this.draft.start.y + Math.sign(dy || 1) * size,
-            };
-          }
+          const constrained = constrainSquare(this.draft.start, current);
+          if (distance(constrained, current) > 1e-6) this.snap = null;
+          current = constrained;
         }
         this.draft.current = current;
+      } else if (this.draft.kind === "line" || this.draft.kind === "arrow") {
+        let current = this.snapPoint(page);
+        if (event.shiftKey) {
+          const constrained = constrainAngle(this.draft.start, current);
+          if (distance(constrained, current) > 1e-6) this.snap = null;
+          current = constrained;
+        }
+        this.draft.current = current;
+      } else if (this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+        this.snap = null;
+        this.draft.current = event.shiftKey
+          ? constrainSquare(this.draft.start, page)
+          : page;
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
         if (distance(last, page) > 1.4 / store.ui.zoom) {
@@ -879,10 +926,18 @@ export class CanvasView {
         this.draft.cursor = page;
       } else {
         let snapped = this.snapPoint(page);
-        if (event.shiftKey && (this.draft.kind === "length" || this.draft.kind === "area") && this.draft.points.length) {
-          snapped = constrainAngle(this.draft.points[this.draft.points.length - 1], snapped);
+        if (
+          event.shiftKey &&
+          (this.draft.kind === "length" || this.draft.kind === "area") &&
+          this.draft.points.length
+        ) {
+          const constrained = constrainAngle(
+            this.draft.points[this.draft.points.length - 1],
+            snapped,
+          );
+          if (distance(constrained, snapped) > 1e-6) this.snap = null;
+          snapped = constrained;
         }
-        this.snap = snapped;
         this.draft.cursor = snapped;
       }
       this.drawInteraction();
@@ -942,7 +997,6 @@ export class CanvasView {
         item.points[index] = localTarget;
         item.updatedAt = new Date().toISOString();
         this.drag.moved = true;
-        this.snap = target;
       }
     } else if (this.drag.mode === "resize") {
       this.applyResize(item, page, shiftKey);
@@ -1069,6 +1123,8 @@ export class CanvasView {
     if (this.draft) {
       if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         this.finishPen();
+      } else if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
+        this.finishQuickArea();
       } else if (this.draft.kind === "line" || this.draft.kind === "arrow" || this.draft.kind === "rect" || this.draft.kind === "ellipse") {
         this.finishShape();
       }
@@ -1168,7 +1224,11 @@ export class CanvasView {
       7 / store.ui.zoom,
       hit.item.kind === "area" || hit.item.kind === "rect" || hit.item.kind === "ellipse",
     );
-    if (segment && ["length", "area", "pen"].includes(hit.item.kind)) {
+    if (
+      segment &&
+      ["length", "area", "pen"].includes(hit.item.kind) &&
+      (hit.item.kind !== "area" || areaShapeOf(hit.item) === "polygon")
+    ) {
       const insert = nearestPointOnSegment(
         pointToItemLocal(hit.item, page),
         hit.item.points[segment.index],
@@ -1219,50 +1279,53 @@ export class CanvasView {
     store.setView(store.ui.zoom, store.ui.panX - dx, store.ui.panY - dy);
   };
 
+  private snapCandidates(): readonly SnapCandidate[] {
+    const project = store.project;
+    if (!project) return [];
+    if (
+      !this.snapCache ||
+      this.snapCache.revision !== store.revision ||
+      this.snapCache.page !== store.ui.page
+    ) {
+      this.snapCache = {
+        revision: store.revision,
+        page: store.ui.page,
+        candidates: collectSnapCandidates(project, store.ui.page),
+      };
+    }
+    return this.snapCache.candidates;
+  }
+
   private snapPoint(point: Point, excludeItemId?: string): Point {
     const project = store.project;
     this.snap = null;
     if (!project || !project.settings.snapToGeometry) return point;
-    const tolerance = 8 / store.ui.zoom;
-    let best = point;
-    let bestDistance = tolerance;
-    let snapped = false;
-
-    for (const layer of project.layers) {
-      if (!layer.visible) continue;
-      for (const item of layer.items) {
-        if (item.page !== store.ui.page || item.id === excludeItemId || item.visible === false) continue;
-        for (const vertex of item.points) {
-          const d = distance(point, vertex);
-          if (d < bestDistance) {
-            bestDistance = d;
-            best = vertex;
-            snapped = true;
-          }
-        }
-      }
-    }
-
-    const calibration = pageCalibration(project, store.ui.page);
-    if (calibration) {
-      for (const vertex of [calibration.p1, calibration.p2]) {
-        const d = distance(point, vertex);
-        if (d < bestDistance) {
-          bestDistance = d;
-          best = vertex;
-          snapped = true;
-        }
-      }
-    }
-
-    if (snapped) this.snap = best;
-    return snapped ? { ...best } : point;
+    const candidates = excludeItemId
+      ? this.snapCandidates().filter(
+          (candidate) => !candidate.itemIds?.includes(excludeItemId),
+        )
+      : this.snapCandidates();
+    const result = findSnap(
+      point,
+      candidates,
+      project.settings.snapTolerancePx ?? 8,
+      store.ui.zoom,
+    );
+    if (!result) return point;
+    this.snap = result;
+    return { ...result.point };
   }
 
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {
     const project = store.project;
     if (!project) return;
     const page = store.ui.page;
+    if (pageScaleLocked(project, page)) {
+      this.draft = null;
+      toast("This page scale is locked. Unlock it before calibrating.", "warning");
+      this.drawInteraction();
+      return;
+    }
     const pagesAffected = project.layers.some(
       (layer) =>
         layer.kind === "measure" &&
@@ -1279,9 +1342,10 @@ export class CanvasView {
       return;
     }
     const calibration = createCalibration(p1, p2, result.knownLength, result.unit);
+    let changed: number[] = [];
     store.mutate(
       (project) => {
-        setPageCalibration(project, page, calibration, {
+        changed = setPageCalibration(project, page, calibration, {
           applyToAll: result.applyToAll,
           updateMeasurements: result.updateMeasurements,
           pageCount: project.document.pageCount,
@@ -1289,10 +1353,20 @@ export class CanvasView {
       },
       "change",
     );
+    if (!changed.length) {
+      toast("No unlocked pages were available for this calibration.", "warning");
+      this.drawInteraction();
+      return;
+    }
     store.setTool("select");
+    const lockedSkipped = result.applyToAll
+      ? project.document.pageCount - changed.length
+      : 0;
     toast(
       result.applyToAll
-        ? `Scale set from a ${formatNumber(result.knownLength, 2)} ${result.unit} reference on all pages.`
+        ? `Scale set from a ${formatNumber(result.knownLength, 2)} ${result.unit} reference on ${
+            changed.length === 1 ? "1 page" : `${changed.length} pages`
+          }${lockedSkipped > 0 ? ` · ${lockedSkipped} locked skipped` : ""}.`
         : `Scale set at ${formatNumber(result.knownLength, 2)} ${result.unit}.`,
       "success",
     );
@@ -1306,6 +1380,14 @@ export class CanvasView {
     const page = store.ui.page;
     const calibration = pageCalibration(project, page);
     if (!calibration) return;
+    if (pageScaleLocked(project, page)) {
+      toast("This page scale is locked. Unlock it before editing.", "warning");
+      return;
+    }
+    if (!isReferenceCalibration(calibration)) {
+      toast("This page uses a manual scale. Use Manual scale to change it.", "info");
+      return;
+    }
     const pagesAffected = project.layers.some(
       (layer) =>
         layer.kind === "measure" &&
@@ -1833,7 +1915,12 @@ export class CanvasView {
     this.commitActiveEditors();
   };
 
-  private createItem(kind: ItemKind, points: Point[], text?: string): void {
+  private createItem(
+    kind: ItemKind,
+    points: Point[],
+    text?: string,
+    areaShape?: AreaShape,
+  ): void {
     const project = store.project;
     if (!project) return;
     const layerKind = layerKindForItem(kind);
@@ -1881,6 +1968,7 @@ export class CanvasView {
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
           areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
+          areaShape: kind === "area" ? (areaShape ?? "polygon") : undefined,
           countType: kind === "count" ? store.ui.measureCountType : undefined,
           createdAt: now,
           updatedAt: now,
@@ -1920,6 +2008,7 @@ export class CanvasView {
     }
     const { kind, start, current } = this.draft;
     this.draft = null;
+    this.snap = null;
     if (distance(start, current) < 3 / store.ui.zoom) {
       this.drawInteraction();
       return;
@@ -1928,9 +2017,30 @@ export class CanvasView {
     this.drawInteraction();
   }
 
+  private finishQuickArea(): void {
+    if (
+      !this.draft ||
+      (this.draft.kind !== "area-rect" && this.draft.kind !== "area-ellipse")
+    ) {
+      return;
+    }
+    const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
+    const { start, current } = this.draft;
+    this.draft = null;
+    this.snap = null;
+    if (distance(start, current) < 3 / store.ui.zoom) {
+      this.drawInteraction();
+      return;
+    }
+    this.createItem("area", [start, current], undefined, shape);
+    this.drawInteraction();
+  }
+
   public finishDraft(): void {
     if (!this.draft) return;
-    if (this.draft.kind === "length" || this.draft.kind === "area") {
+    if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
+      this.finishQuickArea();
+    } else if (this.draft.kind === "length" || this.draft.kind === "area") {
       this.draft.points = dedupeLast(this.draft.points);
       const points = this.draft.points;
       const kind = this.draft.kind;
@@ -1962,7 +2072,15 @@ export class CanvasView {
   }
 
   public removeLastPoint(): boolean {
-    if (!this.draft || this.draft.kind === "line" || this.draft.kind === "arrow" || this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+    if (
+      !this.draft ||
+      this.draft.kind === "line" ||
+      this.draft.kind === "arrow" ||
+      this.draft.kind === "rect" ||
+      this.draft.kind === "ellipse" ||
+      this.draft.kind === "area-rect" ||
+      this.draft.kind === "area-ellipse"
+    ) {
       return false;
     }
     if (this.draft.points.length <= 1) {
@@ -2178,7 +2296,7 @@ export class CanvasView {
 
     if (project.settings.showCalibration) {
       const calibration = pageCalibration(project, page);
-      if (calibration) {
+      if (calibration && isReferenceCalibration(calibration)) {
         const p1 = this.toScreen(calibration.p1);
         const p2 = this.toScreen(calibration.p2);
         ctx.save();
@@ -2239,18 +2357,22 @@ export class CanvasView {
         break;
       }
       case "area": {
+        const shape = areaShapeOf(item);
+        const outline = areaOutline(item.points, shape).map((point) =>
+          this.toScreen(itemLocalToPage(item, point)),
+        );
         ctx.save();
         ctx.globalAlpha *= 0.14;
         ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         ctx.closePath();
         ctx.fill();
         ctx.restore();
         ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         ctx.closePath();
         ctx.stroke();
-        this.drawEndpoints(ctx, points, item.color);
+        if (shape !== "ellipse") this.drawEndpoints(ctx, outline, item.color);
         break;
       }
       case "count": {
@@ -2546,7 +2668,7 @@ export class CanvasView {
     if (this.draft) this.drawDraft(ctx);
 
     if (this.snap) {
-      const p = this.toScreen(this.snap);
+      const p = this.toScreen(this.snap.point);
       ctx.save();
       ctx.strokeStyle = ACCENT;
       ctx.fillStyle = "rgba(53,194,161,0.18)";
@@ -2561,6 +2683,22 @@ export class CanvasView {
       ctx.moveTo(p.x, p.y - 10);
       ctx.lineTo(p.x, p.y + 10);
       ctx.stroke();
+
+      const label = snapLabel(this.snap.kind);
+      ctx.font = `600 10px ${FONT_STACK}`;
+      const width = ctx.measureText(label).width + 10;
+      const x = p.x + 12;
+      const y = p.y - 26;
+      ctx.fillStyle = "rgba(12,16,18,0.9)";
+      ctx.strokeStyle = hexAlpha(ACCENT, 0.65);
+      ctx.lineWidth = 1;
+      roundRect(ctx, x, y, width, 17, 4);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#edf3f5";
+      ctx.textAlign = "left";
+      ctx.textBaseline = "middle";
+      ctx.fillText(label, x + 5, y + 8.5);
       ctx.restore();
     }
 
@@ -2602,13 +2740,21 @@ export class CanvasView {
       );
       return;
     }
-    if (item.kind === "length" || item.kind === "area") {
+    if (item.kind === "length") {
       item.points.forEach((point, index) => {
         const screen = this.toScreen(itemLocalToPage(item, point));
         if (index === 0) ctx.moveTo(screen.x, screen.y);
         else ctx.lineTo(screen.x, screen.y);
       });
-      if (item.kind === "area") ctx.closePath();
+      return;
+    }
+    if (item.kind === "area") {
+      areaOutline(item.points, areaShapeOf(item)).forEach((point, index) => {
+        const screen = this.toScreen(itemLocalToPage(item, point));
+        if (index === 0) ctx.moveTo(screen.x, screen.y);
+        else ctx.lineTo(screen.x, screen.y);
+      });
+      ctx.closePath();
       return;
     }
     const corners = itemCorners(item).map((point) => this.toScreen(point));
@@ -2666,8 +2812,8 @@ export class CanvasView {
         if (preview.length >= 3) {
           this.drawPreviewLabel(
             ctx,
-            formatArea(polygonArea(preview), scale, areaUnit),
-            polygonCentroid(preview),
+            formatArea(areaValue(preview, "polygon"), scale, areaUnit),
+            areaCentroid(preview, "polygon"),
             ACCENT,
           );
         }
@@ -2714,6 +2860,41 @@ export class CanvasView {
         ctx.fill();
         ctx.stroke();
       }
+      ctx.restore();
+      return;
+    }
+
+    if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
+      const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
+      const pagePoints = [this.draft.start, this.draft.current];
+      const outline = areaOutline(pagePoints, shape).map((point) => this.toScreen(point));
+      ctx.save();
+      ctx.strokeStyle = ACCENT;
+      ctx.fillStyle = hexAlpha(ACCENT, 0.1);
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      outline.forEach((point, index) =>
+        index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+      );
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+      if (shape !== "ellipse") {
+        const corners = rectangleCorners(pagePoints).map((point) => this.toScreen(point));
+        ctx.fillStyle = "#f7fbfc";
+        for (const point of corners) {
+          ctx.beginPath();
+          ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.stroke();
+        }
+      }
+      this.drawPreviewLabel(
+        ctx,
+        formatArea(areaValue(pagePoints, shape), scale, areaUnit),
+        areaCentroid(pagePoints, shape),
+        ACCENT,
+      );
       ctx.restore();
       return;
     }
@@ -2800,6 +2981,22 @@ export class CanvasView {
     this.interaction.removeEventListener("wheel", this.onWheel);
     this.interaction.removeEventListener("contextmenu", this.onContextMenu);
   }
+}
+
+function constrainSquare(start: Point, point: Point): Point {
+  const dx = point.x - start.x;
+  const dy = point.y - start.y;
+  const size = Math.max(Math.abs(dx), Math.abs(dy));
+  return {
+    x: start.x + Math.sign(dx || 1) * size,
+    y: start.y + Math.sign(dy || 1) * size,
+  };
+}
+
+function snapLabel(kind: SnapKind): string {
+  if (kind === "endpoint") return "Endpoint";
+  if (kind === "midpoint") return "Midpoint";
+  return "Intersection";
 }
 
 function cursorForRole(role: BoxHandleRole): string {

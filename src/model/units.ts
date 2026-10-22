@@ -37,7 +37,7 @@ export function areaUnitToSquareMeters(unit: AreaUnit): number {
 export function calibrationToScale(cal: Calibration): ScaleSnapshot {
   return {
     pointsPerMeter: cal.pointsPerMeter,
-    sourceUnit: cal.unit,
+    sourceUnit: cal.source === "manual" ? "m" : cal.unit,
   };
 }
 
@@ -98,8 +98,14 @@ export function unitLabel(unit: AreaUnit): string {
   return AREA_UNITS.find((u) => u.id === unit)?.label ?? unit;
 }
 
-export function formatScale(scale: ScaleSnapshot | null | undefined): string {
+export function formatScale(
+  scale: ScaleSnapshot | null | undefined,
+  calibration?: Calibration | null,
+): string {
   if (!scale) return "Not calibrated";
+  if (calibration?.source === "manual") {
+    return `1:${formatNumber(calibration.ratio, 6)}`;
+  }
   const mmPerPoint = (1 / scale.pointsPerMeter) * 1000;
   return `1 pt = ${formatNumber(mmPerPoint, 3)} mm`;
 }

@@ -1,4 +1,4 @@
-import { pageCalibration, pageScale } from "../model/calibration";
+import { isManualCalibration, pageCalibration, pageScale, pageScaleLocked } from "../model/calibration";
 import {
   allRooms,
   categoryForItem,
@@ -23,6 +23,7 @@ import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
   AreaMode,
+  AreaShape,
   AreaUnit,
   CountType,
   Layer,
@@ -60,6 +61,8 @@ export interface PanelActions {
   ) => void;
   startCalibration: () => void;
   clearCalibration: () => void;
+  openManualScale: () => void;
+  setScaleLock: (locked: boolean) => void;
   deleteSelection: () => void;
   editSelectedText: () => void;
   copySelection: () => void;
@@ -238,9 +241,13 @@ function renderStatus(refs: ShellRefs): void {
 
   const calibration = pageCalibration(project, store.ui.page);
   const scale = pageScale(project, store.ui.page);
+  const scaleLocked = pageScaleLocked(project, store.ui.page);
   refs.statusCalibration.append(
     calibration
-      ? chip(`Calibrated · ${formatScale(scale)}`, "calibrated")
+      ? chip(
+          `${scaleLocked ? "Scale locked" : "Calibrated"} · ${formatScale(scale, calibration)}`,
+          "calibrated",
+        )
       : chip("No scale on this page", "warning"),
   );
 
@@ -620,6 +627,9 @@ function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (project.pages[String(page)]?.calibration) {
       badges.append(el("span", "page-badge is-calibrated", "Calibrated"));
     }
+    if (project.pages[String(page)]?.scaleLocked) {
+      badges.append(el("span", "page-badge", "Scale locked"));
+    }
     const itemCount = project.layers.reduce(
       (count, layer) => count + layer.items.filter((item) => item.page === page).length,
       0,
@@ -959,6 +969,22 @@ function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
       controls.append(typeField, el("div", "divider-v"));
     }
     if (store.ui.activeTool === "area") {
+      const shapeField = el("label", "context-field");
+      shapeField.title = "Quick areas use two opposite corners; polygon is click-by-click";
+      shapeField.append(el("span", "context-field-label", "Shape"));
+      const shapeSelect = el("select", "select context-select");
+      shapeSelect.setAttribute("aria-label", "Area shape for new measurements");
+      shapeSelect.append(
+        option("polygon", "Polygon", store.ui.measureAreaShape === "polygon"),
+        option("rectangle", "Rectangle", store.ui.measureAreaShape === "rectangle"),
+        option("ellipse", "Ellipse", store.ui.measureAreaShape === "ellipse"),
+      );
+      shapeSelect.addEventListener("change", () =>
+        store.setMeasureAreaShape(shapeSelect.value as AreaShape),
+      );
+      shapeField.append(shapeSelect);
+      controls.append(shapeField, el("div", "divider-v"));
+
       const modeField = el("label", "context-field");
       modeField.title = "Add the area or deduct it from its category and room";
       modeField.append(el("span", "context-field-label", "Area"));
@@ -1142,14 +1168,16 @@ function renderInspector(refs: ShellRefs, actions: PanelActions): void {
 
 function scaleSection(project: NonNullable<typeof store.project>, actions: PanelActions): HTMLElement {
   const section = el("section", "inspector-section");
+  const page = store.ui.page;
   const head = el("div", "section-head");
   head.append(el("h3", "", "Scale"));
-  const calibration = pageCalibration(project, store.ui.page);
+  const calibration = pageCalibration(project, page);
+  const locked = pageScaleLocked(project, page);
   head.append(
     el(
       "span",
       `status-chip${calibration ? " is-calibrated" : " is-warning"}`,
-      calibration ? "Calibrated" : "No scale",
+      calibration ? (locked ? "Locked" : "Calibrated") : "No scale",
     ),
   );
   section.append(head);
@@ -1157,29 +1185,62 @@ function scaleSection(project: NonNullable<typeof store.project>, actions: Panel
   const card = el("div", `scale-card${calibration ? " is-calibrated" : ""}`);
   const status = el("div", "scale-status");
   const dot = el("span", "dot");
-  status.append(dot, el("span", "", `Page ${store.ui.page}`));
+  status.append(dot, el("span", "", `Page ${page}`));
   card.append(status);
   if (calibration) {
     const detail = el("div", "scale-detail");
-    detail.innerHTML = `Reference: <strong>${formatNumber(calibration.knownLength, 2)} ${calibration.unit}</strong><br>${formatScale(pageScale(project, store.ui.page))}<br>All measurements on this page use this scale.`;
+    if (isManualCalibration(calibration)) {
+      detail.innerHTML = `Manual scale: <strong>1:${formatNumber(calibration.ratio, 6)}</strong><br>${formatScale(
+        pageScale(project, page),
+        calibration,
+      )}<br>Uses the physical PDF page size. Measurements on this page use this scale.`;
+    } else {
+      detail.innerHTML = `Reference: <strong>${formatNumber(calibration.knownLength, 2)} ${calibration.unit}</strong><br>${formatScale(
+        pageScale(project, page),
+        calibration,
+      )}<br>All measurements on this page use this scale.`;
+    }
+    if (locked) {
+      detail.append(
+        el(
+          "div",
+          "empty-note small",
+          "This scale is locked. Unlock it to recalibrate, set a manual scale, or clear it.",
+        ),
+      );
+    }
     card.append(detail);
   } else {
     card.append(
       el(
         "div",
         "scale-detail",
-        "Draw a line over a known dimension to unlock real-world lengths and areas.",
+        "Draw a line over a known dimension, or enter the printed 1:N ratio.",
       ),
     );
   }
   const buttons = el("div", "scale-actions");
   const calibrate = el("button", "btn btn-small", calibration ? "Recalibrate" : "Calibrate");
   calibrate.type = "button";
+  calibrate.disabled = locked;
+  calibrate.title = locked ? "Unlock the page scale first." : "Draw a reference line";
   calibrate.addEventListener("click", actions.startCalibration);
-  buttons.append(calibrate);
+  const manual = el("button", "btn btn-small", "Manual scale…");
+  manual.type = "button";
+  manual.disabled = locked;
+  manual.title = locked ? "Unlock the page scale first." : "Enter a printed 1:N ratio";
+  manual.addEventListener("click", actions.openManualScale);
+  buttons.append(calibrate, manual);
   if (calibration) {
+    const lock = el("button", "btn btn-small btn-ghost", locked ? "Unlock scale" : "Lock scale");
+    lock.type = "button";
+    lock.addEventListener("click", () => actions.setScaleLock(!locked));
+    buttons.append(lock);
+
     const clearBtn = el("button", "btn btn-small btn-ghost", "Clear");
     clearBtn.type = "button";
+    clearBtn.disabled = locked;
+    clearBtn.title = locked ? "Unlock the page scale first." : "Clear the page scale";
     clearBtn.addEventListener("click", actions.clearCalibration);
     buttons.append(clearBtn);
   }
@@ -1223,6 +1284,32 @@ function unitsSection(project: NonNullable<typeof store.project>): HTMLElement {
   });
   areaField.append(areaSelect);
   section.append(lengthField, areaField);
+
+  const snapField = el("label", "field");
+  const snapHead = el("div", "section-head");
+  snapHead.style.marginBottom = "4px";
+  snapHead.append(el("span", "field-label", "Snap distance"));
+  const snapValue = el("span", "range-value", `${formatNumber(project.settings.snapTolerancePx, 0)} px`);
+  snapHead.append(snapValue);
+  const snapRange = el("input");
+  snapRange.type = "range";
+  snapRange.min = "2";
+  snapRange.max = "24";
+  snapRange.step = "1";
+  snapRange.value = String(project.settings.snapTolerancePx);
+  snapRange.setAttribute("aria-label", "Snap distance in screen pixels");
+  snapRange.title = "How close the pointer must be to a snap point, in screen pixels";
+  snapRange.addEventListener("input", () => {
+    snapValue.textContent = `${snapRange.value} px`;
+  });
+  snapRange.addEventListener("change", () => {
+    const value = Math.max(2, Math.min(24, Math.round(Number(snapRange.value))));
+    store.mutate((project) => {
+      project.settings.snapTolerancePx = value;
+    }, "change");
+  });
+  snapField.append(snapHead, snapRange);
+  section.append(snapField);
 
   section.append(
     checkRow("Snap to geometry", project.settings.snapToGeometry, (checked) => {

@@ -1,4 +1,4 @@
-import { makeId } from "../model/calibration";
+import { makeId, isValidManualRatio, manualPointsPerMeter } from "../model/calibration";
 import {
   createDefaultCategories,
   createDefaultQuantitySettings,
@@ -16,6 +16,7 @@ import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
 import type {
   AreaMode,
+  AreaShape,
   AreaUnit,
   Calibration,
   Category,
@@ -68,21 +69,53 @@ function isPoint(value: unknown): value is Point {
 
 function normalizeCalibration(value: unknown): Calibration | undefined {
   if (typeof value !== "object" || value === null) return undefined;
-  const cal = value as Partial<Calibration>;
+  const cal = value as Record<string, unknown>;
+  const id = typeof cal.id === "string" && cal.id ? cal.id : makeId("cal");
+  const createdAt =
+    typeof cal.createdAt === "string" ? cal.createdAt : new Date().toISOString();
+
+  if (cal.source === "manual") {
+    const ratio = typeof cal.ratio === "number" ? cal.ratio : NaN;
+    if (!isValidManualRatio(ratio)) return undefined;
+    if (
+      typeof cal.pointsPerMeter !== "number" ||
+      !Number.isFinite(cal.pointsPerMeter) ||
+      cal.pointsPerMeter <= 0
+    ) {
+      return undefined;
+    }
+    return {
+      id,
+      source: "manual",
+      ratio,
+      pointsPerMeter: manualPointsPerMeter(ratio),
+      createdAt,
+    };
+  }
+
   if (!isPoint(cal.p1) || !isPoint(cal.p2)) return undefined;
   if (typeof cal.knownLength !== "number" || cal.knownLength <= 0) return undefined;
-  if (typeof cal.pointsPerMeter !== "number" || !Number.isFinite(cal.pointsPerMeter) || cal.pointsPerMeter <= 0) {
+  if (
+    typeof cal.pointsPerMeter !== "number" ||
+    !Number.isFinite(cal.pointsPerMeter) ||
+    cal.pointsPerMeter <= 0
+  ) {
     return undefined;
   }
   return {
-    id: typeof cal.id === "string" ? cal.id : `cal_${Date.now()}`,
+    id,
+    source: "reference",
     p1: cal.p1,
     p2: cal.p2,
     knownLength: cal.knownLength,
     unit: LENGTH_UNITS.has(cal.unit as LengthUnit) ? (cal.unit as LengthUnit) : "mm",
     pointsPerMeter: cal.pointsPerMeter,
-    createdAt: typeof cal.createdAt === "string" ? cal.createdAt : new Date().toISOString(),
+    createdAt,
   };
+}
+
+function normalizeAreaShape(value: unknown): AreaShape {
+  return value === "rectangle" || value === "ellipse" ? value : "polygon";
 }
 
 function uniqueCategoryName(categories: Category[], wanted: string): string {
@@ -140,6 +173,10 @@ function normalizeSettings(
     showGrid: value?.showGrid ?? DEFAULT_SETTINGS.showGrid,
     showCalibration: value?.showCalibration ?? DEFAULT_SETTINGS.showCalibration,
     snapToGeometry: value?.snapToGeometry ?? DEFAULT_SETTINGS.snapToGeometry,
+    snapTolerancePx:
+      typeof value?.snapTolerancePx === "number" && Number.isFinite(value.snapTolerancePx)
+        ? Math.max(2, Math.min(24, value.snapTolerancePx))
+        : DEFAULT_SETTINGS.snapTolerancePx,
     quantity: {
       defaultCategoryId:
         typeof rawQuantity.defaultCategoryId === "string" && ids.has(rawQuantity.defaultCategoryId)
@@ -173,11 +210,22 @@ function normalizeItem(
   const scale = raw.scale;
   const isMeasure = isMeasurementKind(raw.kind);
   const room = typeof raw.room === "string" ? raw.room.trim() : "";
+  const points =
+    raw.kind === "count"
+      ? [{ x: raw.points[0].x, y: raw.points[0].y }]
+      : raw.points.map((p) => ({ x: p.x, y: p.y }));
+  const areaShape = raw.kind === "area" ? normalizeAreaShape(raw.areaShape) : undefined;
+  if (areaShape === "rectangle" || areaShape === "ellipse") {
+    // Quick areas are defined by exactly two opposite points. Trim malformed
+    // legacy data instead of inventing a different shape or geometry.
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+  }
   return {
     id: typeof raw.id === "string" ? raw.id : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
     kind: raw.kind,
-    points: raw.kind === "count" ? [{ x: raw.points[0].x, y: raw.points[0].y }] : raw.points.map((p) => ({ x: p.x, y: p.y })),
+    points,
     color: typeof raw.color === "string" ? raw.color : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
@@ -216,6 +264,7 @@ function normalizeItem(
     room: isMeasure && room ? room : undefined,
     areaMode:
       raw.kind === "area" ? (raw.areaMode === "subtract" ? ("subtract" as AreaMode) : "add") : undefined,
+    areaShape,
     countType:
       raw.kind === "count"
         ? COUNT_TYPES.has(raw.countType as CountType)
@@ -332,8 +381,13 @@ export function parseProject(text: string): Project {
     for (const [key, value] of Object.entries(raw.pages)) {
       const page = Number(key);
       if (!Number.isInteger(page) || page < 1) continue;
-      const cal = normalizeCalibration((value as { calibration?: unknown } | null)?.calibration);
-      if (cal) project.pages[key] = { calibration: cal };
+      const rawPage = value as { calibration?: unknown; scaleLocked?: unknown } | null;
+      const cal = normalizeCalibration(rawPage?.calibration);
+      if (cal) {
+        project.pages[key] = { calibration: cal };
+        // A lock without a scale is meaningless and is discarded.
+        if (rawPage?.scaleLocked === true) project.pages[key].scaleLocked = true;
+      }
     }
   }
 

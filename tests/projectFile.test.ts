@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { createCalibration } from "../src/model/calibration";
+import { createCalibration, createManualCalibration, manualPointsPerMeter } from "../src/model/calibration";
 import { findCategory } from "../src/model/categories";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
@@ -274,7 +274,7 @@ describe("project files", () => {
         ],
       };
       const parsed = parseProject(JSON.stringify(raw));
-      expect(parsed.schemaVersion).toBe(3);
+      expect(parsed.schemaVersion).toBe(4);
       expect(parsed.categories.map((entry) => entry.name)).toEqual([
         "Floor",
         "Wall",
@@ -299,6 +299,7 @@ describe("project files", () => {
       expect(length.areaMode).toBeUndefined();
       expect(area.categoryId).toBe(other.id);
       expect(area.areaMode).toBe("add");
+      expect(area.areaShape).toBe("polygon");
     }
   });
 
@@ -455,6 +456,152 @@ describe("project files", () => {
     expect(item.countType).toBe("other");
     expect(item.points).toHaveLength(1);
     expect(item.categoryId).toBe("cat_a");
+  });
+
+  it("round-trips manual scales, scale locks, quick areas, and snap tolerance", () => {
+    const project = makeProject();
+    project.pages["1"] = {
+      calibration: createManualCalibration(100),
+      scaleLocked: true,
+    };
+    project.settings.snapTolerancePx = 12;
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      id: "item_quick_area",
+      page: 1,
+      kind: "area",
+      points: [{ x: 10, y: 20 }, { x: 110, y: 70 }],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      areaMode: "add",
+      areaShape: "rectangle",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.settings.snapTolerancePx).toBe(12);
+    expect(parsed.pages["1"].scaleLocked).toBe(true);
+    const calibration = parsed.pages["1"].calibration;
+    expect(calibration?.source).toBe("manual");
+    if (calibration?.source === "manual") {
+      expect(calibration.ratio).toBe(100);
+      expect(calibration.pointsPerMeter).toBeCloseTo(manualPointsPerMeter(100), 6);
+    }
+    const area = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "item_quick_area")!;
+    expect(area.areaShape).toBe("rectangle");
+  });
+
+  it("normalizes a source-less reference calibration from schema v3", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 3;
+    delete raw.pages["1"].calibration.source;
+
+    const parsed = parseProject(JSON.stringify(raw));
+    const calibration = parsed.pages["1"].calibration;
+    expect(calibration?.source).toBe("reference");
+    if (calibration?.source !== "manual") {
+      expect(calibration?.p1).toEqual({ x: 0, y: 0 });
+      expect(calibration?.knownLength).toBe(5);
+    }
+  });
+
+  it("normalizes v3 snap settings, manual scales, locks, and malformed quick areas", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 3;
+    raw.settings.snapTolerancePx = 1;
+    raw.pages["1"] = {
+      calibration: {
+        id: "cal_manual",
+        source: "manual",
+        ratio: 200,
+        pointsPerMeter: 999,
+        createdAt: "2026-01-01T00:00:00.000Z",
+      },
+      scaleLocked: true,
+    };
+    raw.pages["2"] = {
+      calibration: {
+        id: "cal_invalid_manual",
+        source: "manual",
+        ratio: 100,
+        pointsPerMeter: 0,
+      },
+      scaleLocked: true,
+    };
+    const measure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
+    measure.items.push(
+      {
+        id: "bad_rectangle",
+        page: 1,
+        kind: "area",
+        points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+        color: "#4cc9f0",
+        strokeWidth: 2,
+        areaShape: "rectangle",
+      },
+      {
+        id: "unknown_shape",
+        page: 1,
+        kind: "area",
+        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        color: "#4cc9f0",
+        strokeWidth: 2,
+        areaShape: "triangle",
+      },
+      {
+        id: "undersized_ellipse",
+        page: 1,
+        kind: "area",
+        points: [{ x: 0, y: 0 }],
+        color: "#4cc9f0",
+        strokeWidth: 2,
+        areaShape: "ellipse",
+      },
+    );
+    const draw = raw.layers.find((layer: { kind: string }) => layer.kind === "draw");
+    draw.items.push({
+      id: "drawing_with_shape",
+      page: 1,
+      kind: "rect",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      color: "#f2a93b",
+      strokeWidth: 2,
+      areaShape: "ellipse",
+    });
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.settings.snapTolerancePx).toBe(2);
+    expect(parsed.pages["2"]).toBeUndefined();
+
+    const calibration = parsed.pages["1"].calibration;
+    expect(calibration?.source).toBe("manual");
+    if (calibration?.source === "manual") {
+      expect(calibration.pointsPerMeter).toBeCloseTo(manualPointsPerMeter(200), 6);
+    }
+
+    const badRectangle = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "bad_rectangle")!;
+    expect(badRectangle.areaShape).toBe("rectangle");
+    expect(badRectangle.points).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }]);
+    const unknownShape = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "unknown_shape")!;
+    expect(unknownShape.areaShape).toBe("polygon");
+    expect(
+      parsed.layers
+        .flatMap((layer) => layer.items)
+        .some((item) => item.id === "undersized_ellipse"),
+    ).toBe(false);
+    const drawing = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "drawing_with_shape")!;
+    expect(drawing.areaShape).toBeUndefined();
   });
 
   it("accepts the square yard area unit", () => {

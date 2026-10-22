@@ -2,7 +2,11 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { CanvasView } from "../canvas/CanvasView";
 import {
   clearPageCalibration,
+  createManualCalibration,
   pageCalibration,
+  pageScaleLocked,
+  setPageCalibration,
+  setPageScaleLocked,
 } from "../model/calibration";
 import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
 import {
@@ -59,7 +63,7 @@ import { serializeQuantityCsv } from "../report/csv";
 import { buildQuantityReport } from "../report/reportModel";
 import { store, type ToolId } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
-import { confirmDialog, messageDialog, passwordDialog } from "../ui/dialogs";
+import { confirmDialog, manualScaleDialog, messageDialog, passwordDialog } from "../ui/dialogs";
 import {
   renderChrome,
   renderTopbar,
@@ -124,6 +128,8 @@ export class App {
       exportAs: (kind) => void this.exportAs(kind),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
+      openManualScale: () => void this.openManualScaleFlow(),
+      setScaleLock: (locked) => this.setScaleLock(locked),
       deleteSelection: () => this.canvas.deleteSelection(),
       editSelectedText: () => this.canvas.editSelectedText(),
       copySelection: () => this.copySelection(),
@@ -387,8 +393,79 @@ export class App {
 
   private startCalibration(): void {
     if (!store.project) return;
+    const page = store.ui.page;
+    if (pageScaleLocked(store.project, page)) {
+      toast("This page scale is locked. Unlock it before calibrating.", "warning");
+      return;
+    }
     store.setTool("calibrate");
     toast("Calibration: click the two ends of a known dimension.", "info");
+  }
+
+  private async openManualScaleFlow(): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    const page = store.ui.page;
+    if (pageScaleLocked(project, page)) {
+      toast("This page scale is locked. Unlock it before setting a manual scale.", "warning");
+      return;
+    }
+    const current = pageCalibration(project, page);
+    const hasMeasurements = project.layers.some(
+      (layer) => layer.kind === "measure" && layer.items.length > 0,
+    );
+    const result = await manualScaleDialog({
+      currentPage: page,
+      pageCount: project.document.pageCount,
+      hasMeasurements,
+      initialRatio: current?.source === "manual" ? current.ratio : undefined,
+    });
+    if (!result) return;
+    const calibration = createManualCalibration(result.ratio);
+    let changed: number[] = [];
+    store.mutate(
+      (project) => {
+        changed = setPageCalibration(project, page, calibration, {
+          applyToAll: result.applyToAll,
+          updateMeasurements: result.updateMeasurements,
+          pageCount: project.document.pageCount,
+        });
+      },
+      "change",
+    );
+    if (!changed.length) {
+      toast("No unlocked pages were available for this scale.", "warning");
+      return;
+    }
+    const lockedSkipped = result.applyToAll
+      ? project.document.pageCount - changed.length
+      : 0;
+    toast(
+      `Manual scale 1:${calibration.ratio} set on ${
+        changed.length === 1 ? `page ${changed[0]}` : `${changed.length} pages`
+      }${lockedSkipped > 0 ? ` · ${lockedSkipped} locked page${lockedSkipped === 1 ? "" : "s"} skipped` : ""}.`,
+      "success",
+    );
+  }
+
+  private setScaleLock(locked: boolean): void {
+    const project = store.project;
+    if (!project) return;
+    const page = store.ui.page;
+    if (!pageCalibration(project, page)) {
+      toast("Set a scale before locking the page.", "warning");
+      return;
+    }
+    store.mutate(
+      (project) => {
+        setPageScaleLocked(project, page, locked);
+      },
+      "change",
+    );
+    toast(
+      locked ? `Scale locked on page ${page}.` : `Scale unlocked on page ${page}.`,
+      locked ? "success" : "info",
+    );
   }
 
   private async clearCalibrationFlow(): Promise<void> {
@@ -396,20 +473,25 @@ export class App {
     if (!project) return;
     const page = store.ui.page;
     if (!pageCalibration(project, page)) return;
+    if (pageScaleLocked(project, page)) {
+      toast("This page scale is locked. Unlock it before clearing.", "warning");
+      return;
+    }
     const confirmed = await confirmDialog(
       "Clear scale",
-      `Remove the calibration from page ${page}? Existing measurements keep the scale they were created with, but new measurements will be uncalibrated.`,
+      `Remove the scale from page ${page}? Existing measurements keep the scale they were created with, but new measurements will be uncalibrated.`,
       "Clear scale",
       { danger: true },
     );
     if (!confirmed) return;
+    let cleared = false;
     store.mutate(
       (project) => {
-        clearPageCalibration(project, page);
+        cleared = clearPageCalibration(project, page);
       },
       "change",
     );
-    toast("Page scale cleared.", "info");
+    toast(cleared ? "Page scale cleared." : "The page scale could not be cleared.", cleared ? "info" : "warning");
   }
 
   private async openPdfFlow(): Promise<void> {

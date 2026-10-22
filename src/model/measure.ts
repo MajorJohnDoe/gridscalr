@@ -1,6 +1,7 @@
 import { itemScale } from "./calibration";
+import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
-import { polygonArea, polygonPerimeter, polylineLength } from "./geometry";
+import { polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
 import { formatArea, formatLength, formatLengthCompact } from "./units";
 
@@ -28,8 +29,9 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
     };
   }
   if (item.kind === "area") {
-    const area = polygonArea(item.points);
-    const perimeter = polygonPerimeter(item.points);
+    const shape = areaShapeOf(item);
+    const area = areaValue(item.points, shape);
+    const perimeter = areaPerimeter(item.points, shape);
     const deduction = item.areaMode === "subtract" ? "Deduction · " : "";
     return {
       primary: formatArea(area, scale, project.settings.areaUnit),

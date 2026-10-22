@@ -20,6 +20,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   showGrid: false,
   showCalibration: true,
   snapToGeometry: true,
+  snapTolerancePx: 8,
   // Replaced by createProject and the project normalizer, which know the
   // project's category ids.
   quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },

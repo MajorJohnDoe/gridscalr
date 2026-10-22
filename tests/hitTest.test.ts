@@ -56,4 +56,36 @@ describe("hit testing", () => {
       hitTest(project, 1, { x: 50, y: 10 }, 5, { includeLocked: true })?.item.id,
     ).toBe("item_a");
   });
+
+  it("hit-tests rectangle and ellipse quick areas by their shape", () => {
+    const project = makeProject();
+    const layer = layersForKind(project, "measure")[0];
+    addItem(
+      project,
+      layer.id,
+      makeItem({
+        id: "rect_area",
+        kind: "area",
+        areaShape: "rectangle",
+        points: [{ x: 10, y: 10 }, { x: 110, y: 60 }],
+      }),
+    );
+    addItem(
+      project,
+      layer.id,
+      makeItem({
+        id: "ellipse_area",
+        kind: "area",
+        areaShape: "ellipse",
+        points: [{ x: 200, y: 10 }, { x: 300, y: 60 }],
+      }),
+    );
+
+    expect(hitTest(project, 1, { x: 60, y: 35 }, 2)?.item.id).toBe("rect_area");
+    expect(
+      hitTest(project, 1, { x: 10, y: 10 }, 2, { includeLocked: true })?.item.id,
+    ).toBe("rect_area");
+    expect(hitTest(project, 1, { x: 250, y: 35 }, 2)?.item.id).toBe("ellipse_area");
+    expect(hitTest(project, 1, { x: 202, y: 12 }, 1)).toBeNull();
+  });
 });

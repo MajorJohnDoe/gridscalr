@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 3 as const;
+export const SCHEMA_VERSION = 4 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -7,6 +7,8 @@ export type LayerKind = "measure" | "draw";
 export type MeasurementKind = "length" | "area" | "count";
 export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
 export type AreaMode = "add" | "subtract";
+/** Polygon is the original click-by-click area. Rectangle and ellipse use two opposite points. */
+export type AreaShape = "polygon" | "rectangle" | "ellipse";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -28,8 +30,10 @@ export interface ScaleSnapshot {
   sourceUnit: LengthUnit;
 }
 
-export interface Calibration {
+export interface ReferenceCalibration {
   id: string;
+  /** Older project files omit this and are normalized to "reference". */
+  source?: "reference";
   p1: Point;
   p2: Point;
   knownLength: number;
@@ -37,6 +41,17 @@ export interface Calibration {
   pointsPerMeter: number;
   createdAt: string;
 }
+
+export interface ManualCalibration {
+  id: string;
+  source: "manual";
+  /** The N in a 1:N drawing scale. */
+  ratio: number;
+  pointsPerMeter: number;
+  createdAt: string;
+}
+
+export type Calibration = ReferenceCalibration | ManualCalibration;
 
 export interface MarkupItem {
   id: string;
@@ -64,6 +79,8 @@ export interface MarkupItem {
   room?: string;
   /** Areas only. Defaults to add. */
   areaMode?: AreaMode;
+  /** Areas only. Missing means polygon. */
+  areaShape?: AreaShape;
   /** Count items only. */
   countType?: CountType;
   createdAt: string;
@@ -88,6 +105,8 @@ export interface Layer {
 
 export interface PageState {
   calibration?: Calibration;
+  /** Only valid when the page has a calibration. */
+  scaleLocked?: boolean;
 }
 
 export interface DocumentRef {
@@ -105,6 +124,8 @@ export interface ProjectSettings {
   showGrid: boolean;
   showCalibration: boolean;
   snapToGeometry: boolean;
+  /** Markup snap distance in screen pixels. Defaults to 8. */
+  snapTolerancePx: number;
   quantity: QuantitySettings;
 }
 

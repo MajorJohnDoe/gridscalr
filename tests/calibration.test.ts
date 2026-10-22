@@ -2,10 +2,15 @@ import { describe, expect, it } from "vitest";
 import {
   clearPageCalibration,
   createCalibration,
+  createManualCalibration,
   itemScale,
+  MANUAL_SCALE_POINTS_PER_METER,
+  manualPointsPerMeter,
   pageCalibration,
   pageScale,
+  pageScaleLocked,
   setPageCalibration,
+  setPageScaleLocked,
 } from "../src/model/calibration";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem } from "../src/model/types";
@@ -130,5 +135,83 @@ describe("calibration", () => {
     expect(pageCalibration(project, 1)).toBeUndefined();
     expect(measureLayer.items).toHaveLength(1);
     expect(itemScale(item, project)).toBeNull();
+  });
+
+  it("creates a manual 1:N scale from the physical page size", () => {
+    const calibration = createManualCalibration(100);
+    expect(calibration.source).toBe("manual");
+    expect(calibration.ratio).toBe(100);
+    expect(calibration.pointsPerMeter).toBeCloseTo(
+      MANUAL_SCALE_POINTS_PER_METER / 100,
+      9,
+    );
+    expect(manualPointsPerMeter(200)).toBeCloseTo(
+      MANUAL_SCALE_POINTS_PER_METER / 200,
+      9,
+    );
+
+    const project = makeProject(1);
+    setPageCalibration(project, 1, calibration, { pageCount: 1 });
+    expect(pageScale(project, 1)).toEqual({
+      pointsPerMeter: calibration.pointsPerMeter,
+      sourceUnit: "m",
+    });
+  });
+
+  it("locks a page scale and prevents calibration changes until unlocked", () => {
+    const project = makeProject(1);
+    const reference = createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m");
+    setPageCalibration(project, 1, reference, { pageCount: 1 });
+    expect(setPageScaleLocked(project, 1, true)).toBe(true);
+    expect(pageScaleLocked(project, 1)).toBe(true);
+
+    const changed = setPageCalibration(project, 1, createManualCalibration(50), {
+      pageCount: 1,
+    });
+    expect(changed).toEqual([]);
+    expect(pageCalibration(project, 1)?.pointsPerMeter).toBe(20);
+    expect(clearPageCalibration(project, 1)).toBe(false);
+    expect(pageCalibration(project, 1)?.pointsPerMeter).toBe(20);
+
+    expect(setPageScaleLocked(project, 1, false)).toBe(true);
+    expect(pageScaleLocked(project, 1)).toBe(false);
+    expect(clearPageCalibration(project, 1)).toBe(true);
+    expect(pageCalibration(project, 1)).toBeUndefined();
+  });
+
+  it("skips locked pages when applying a scale to all pages", () => {
+    const project = makeProject(3);
+    const measureLayer = project.layers.find((layer) => layer.kind === "measure")!;
+    const first = makeMeasurement(1);
+    const third = makeMeasurement(3);
+    measureLayer.items.push(first, third);
+    const reference = createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m");
+    setPageCalibration(project, 1, reference, { applyToAll: true, pageCount: 3 });
+    setPageScaleLocked(project, 3, true);
+
+    const manual = createManualCalibration(100);
+    const changed = setPageCalibration(project, 1, manual, {
+      applyToAll: true,
+      updateMeasurements: true,
+      pageCount: 3,
+    });
+
+    expect(changed).toEqual([1, 2]);
+    expect(pageCalibration(project, 1)?.pointsPerMeter).toBeCloseTo(
+      manualPointsPerMeter(100),
+      9,
+    );
+    expect(pageCalibration(project, 2)?.pointsPerMeter).toBeCloseTo(
+      manualPointsPerMeter(100),
+      9,
+    );
+    expect(pageCalibration(project, 3)?.pointsPerMeter).toBe(20);
+    expect(pageScaleLocked(project, 3)).toBe(true);
+    expect(first.scale).toEqual({
+      pointsPerMeter: manualPointsPerMeter(100),
+      sourceUnit: "m",
+    });
+    expect(third.scale).toBeUndefined();
+    expect(itemScale(third, project)?.pointsPerMeter).toBe(20);
   });
 });

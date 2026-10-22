@@ -1,7 +1,8 @@
 import { categoryForItem, normalizeRoom } from "./categories";
+import { areaShapeOf, areaValue } from "./area";
 import { itemScaleForDisplay } from "./measure";
 import { areaInUnit, lengthInUnit, unitLabel } from "./units";
-import { polygonArea, polylineLength } from "./geometry";
+import { polylineLength } from "./geometry";
 import type { MarkupItem, Project } from "./types";
 
 export type QuantityType = "length" | "area" | "count";
@@ -205,7 +206,11 @@ export function calculateQuantities(
         if (type === "length") {
           gross = lengthInUnit(polylineLength(item.points), scale.pointsPerMeter, lengthUnit);
         } else {
-          const area = areaInUnit(polygonArea(item.points), scale.pointsPerMeter, areaUnit);
+          const area = areaInUnit(
+            areaValue(item.points, areaShapeOf(item)),
+            scale.pointsPerMeter,
+            areaUnit,
+          );
           if (item.areaMode === "subtract") deduction = area;
           else gross = area;
         }

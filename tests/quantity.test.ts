@@ -266,6 +266,29 @@ describe("quantity rows", () => {
     expect(summary.rows[0].net).toBeCloseTo(2);
   });
 
+  it("uses the quick-area shape when calculating quantities", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    areaItem(project, {
+      categoryId: floor,
+      room: "Rect",
+      areaShape: "rectangle",
+      points: [{ x: 0, y: 0 }, { x: 100, y: 50 }],
+    });
+    areaItem(project, {
+      categoryId: floor,
+      room: "Ellipse",
+      areaShape: "ellipse",
+      points: [{ x: 0, y: 0 }, { x: 100, y: 50 }],
+    });
+
+    const summary = calculateQuantities(project, { page: "all" });
+    const rectangle = summary.rows.find((row) => row.room === "Rect");
+    const ellipse = summary.rows.find((row) => row.room === "Ellipse");
+    expect(rectangle?.net).toBeCloseTo(0.5);
+    expect(ellipse?.net).toBeCloseTo((Math.PI * 100 * 50) / 4 / 10000);
+  });
+
   it("uses yd² for area quantities and keeps counts in pcs", () => {
     const project = makeProject();
     project.settings.areaUnit = "yd2";

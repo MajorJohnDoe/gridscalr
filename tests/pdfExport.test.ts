@@ -159,6 +159,31 @@ describe("flattened PDF export", () => {
     expect(output.getPage(0).getRotation().angle).toBe(90);
   });
 
+  it("exports rectangle and ellipse quick areas as vector content", async () => {
+    const renderer = await makeRenderer();
+    const baseline = await contentBytes(await exportProjectPdf(makeProject(), renderer));
+    const project = makeProject();
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push(
+      makeItem({
+        id: "quick_rect",
+        kind: "area",
+        areaShape: "rectangle",
+        points: [{ x: 140, y: 20 }, { x: 190, y: 60 }],
+        scale: { pointsPerMeter: 10, sourceUnit: "m" },
+      }),
+      makeItem({
+        id: "quick_ellipse",
+        kind: "area",
+        areaShape: "ellipse",
+        points: [{ x: 140, y: 70 }, { x: 190, y: 110 }],
+        scale: { pointsPerMeter: 10, sourceUnit: "m" },
+      }),
+    );
+    const withQuickAreas = await contentBytes(await exportProjectPdf(project, renderer));
+    expect(withQuickAreas).toBeGreaterThan(baseline);
+  });
+
   it("uses paper-space label sizes that do not dominate the drawing", async () => {
     const renderer = await makeRenderer();
     const bytes = await exportProjectPdf(makeProject(), renderer);

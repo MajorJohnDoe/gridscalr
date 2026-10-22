@@ -1,6 +1,6 @@
 # Etapp 3 – Mätverktyg, skala och export
 
-**Status:** utkast för godkännande 2026-10-22. Besluten om att ”valt område” är en användardragen rektangulär beskärningsruta och att samma relativa område används vid export av flera sidor är låsta. Övriga detaljer i planen är föreslagna och ska godkännas innan implementation.
+**Status:** godkänd 2026-10-22. **3A – mätverktyg, skala och snap** är genomförd. **3B – exportdialogen** återstår. Besluten om att ”valt område” är en användardragen rektangulär beskärningsruta och att samma relativa område används vid export av flera sidor är låsta.
 
 Dokumentet kompletterar `roadmap-etapper.md` och `etapp-2-mangddata.md`. Om koden och planen hamnar i konflikt ska konflikten lösas uttryckligen, inte tyst.
 

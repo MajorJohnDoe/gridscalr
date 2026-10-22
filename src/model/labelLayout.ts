@@ -1,4 +1,5 @@
-import { pageCalibration } from "./calibration";
+import { isReferenceCalibration, pageCalibration } from "./calibration";
+import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
 import {
   boundingBox,
@@ -89,7 +90,10 @@ export function pageLabelSources(project: Project, page: number): LabelSource[] 
           item.kind === "count" && item.points[0]
             ? countSymbolBounds(item.points[0])
             : itemBounds(item),
-        polygon: item.kind === "area" ? item.points : undefined,
+        polygon:
+          item.kind === "area"
+            ? areaOutline(item.points, areaShapeOf(item))
+            : undefined,
         color: item.color,
       });
     }
@@ -97,7 +101,7 @@ export function pageLabelSources(project: Project, page: number): LabelSource[] 
 
   if (project.settings.showCalibration) {
     const calibration = pageCalibration(project, page);
-    if (calibration) {
+    if (calibration && isReferenceCalibration(calibration)) {
       sources.push({
         id: CALIBRATION_LABEL_ID,
         kind: "calibration",

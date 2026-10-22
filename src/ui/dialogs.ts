@@ -1,5 +1,6 @@
 import type { LengthUnit } from "../model/types";
-import { LENGTH_UNITS } from "../model/units";
+import { manualPointsPerMeter } from "../model/calibration";
+import { formatNumber, LENGTH_UNITS } from "../model/units";
 import { el, option } from "./dom";
 import { icon } from "./icons";
 
@@ -269,6 +270,112 @@ export function calibrationDialog(options: {
           knownLength: Number(lengthInput.value),
           unit: unitSelect.value as LengthUnit,
           applyToAll: editing ? false : allCheck.checked,
+          updateMeasurements: updateCheck.checked,
+        }
+      : null,
+  );
+}
+
+export interface ManualScaleDialogResult {
+  ratio: number;
+  applyToAll: boolean;
+  updateMeasurements: boolean;
+}
+
+export function manualScaleDialog(options: {
+  currentPage: number;
+  pageCount: number;
+  hasMeasurements: boolean;
+  initialRatio?: number;
+}): Promise<ManualScaleDialogResult | null> {
+  const body = el("div", "form-stack");
+  body.append(
+    el(
+      "p",
+      "modal-message",
+      "Set a manual 1:N drawing scale from the physical PDF page size. This replaces any reference calibration on the affected pages; no reference line is added.",
+    ),
+  );
+
+  const field = el("label", "field");
+  field.append(el("span", "field-label", "Scale ratio (1:N)"));
+  const ratioInput = el("input", "input");
+  ratioInput.type = "number";
+  ratioInput.min = "0.0001";
+  ratioInput.step = "any";
+  ratioInput.placeholder = "e.g. 100";
+  if (options.initialRatio && options.initialRatio > 0) {
+    ratioInput.value = String(options.initialRatio);
+  }
+  field.append(ratioInput);
+  body.append(field);
+
+  const preview = el("p", "modal-message");
+  preview.style.margin = "0";
+  const updatePreview = () => {
+    const ratio = Number(ratioInput.value);
+    if (!Number.isFinite(ratio) || ratio <= 0) {
+      preview.textContent = "Enter a ratio greater than zero.";
+      return;
+    }
+    const points = manualPointsPerMeter(ratio);
+    preview.textContent = `1 m on paper = ${formatNumber(ratio, 6)} m in the real world · ${formatNumber(points, 3)} pt per metre`;
+  };
+  ratioInput.addEventListener("input", updatePreview);
+  updatePreview();
+  body.append(preview);
+
+  const presets = el("div", "field-row");
+  for (const ratio of [50, 100, 200, 400]) {
+    const button = el("button", "btn", `1:${ratio}`);
+    button.type = "button";
+    button.addEventListener("click", () => {
+      ratioInput.value = String(ratio);
+      updatePreview();
+      ratioInput.focus();
+    });
+    presets.append(button);
+  }
+  body.append(presets);
+
+  const allCheck = el("input");
+  allCheck.type = "checkbox";
+  if (options.pageCount > 1) {
+    const allLabel = el("label", "check-row");
+    allLabel.append(allCheck, el("span", "", `Apply this scale to all ${options.pageCount} pages`));
+    body.append(allLabel);
+  }
+
+  const updateCheck = el("input");
+  updateCheck.type = "checkbox";
+  updateCheck.checked = true;
+  if (options.hasMeasurements) {
+    const updateLabel = el("label", "check-row");
+    updateLabel.append(
+      updateCheck,
+      el("span", "", "Also update measurements already created on the affected pages"),
+    );
+    body.append(updateLabel);
+  }
+
+  return showModal({
+    title: `Manual scale · page ${options.currentPage}`,
+    subtitle: "Use the printed drawing ratio",
+    body,
+    actions: [
+      { label: "Cancel", value: "__cancel__" },
+      { label: "Set scale", value: "apply", primary: true },
+    ],
+    onValidate: () => {
+      const ratio = Number(ratioInput.value);
+      if (!Number.isFinite(ratio) || ratio <= 0) return "Enter a scale ratio greater than zero.";
+      return null;
+    },
+  }).then((value) =>
+    value === "apply"
+      ? {
+          ratio: Number(ratioInput.value),
+          applyToAll: allCheck.checked,
           updateMeasurements: updateCheck.checked,
         }
       : null,

@@ -9,8 +9,9 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 ## Highlights
 
 - Open PDF plans locally with PDF.js.
-- Calibrate each page against a known dimension, apply a scale to all pages, and recalibrate later.
-- Measure multi-segment lengths and polygon areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
+- Calibrate each page against a known dimension, enter a printed 1:N scale, apply a scale to all pages, and lock a page scale against changes.
+- Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
+- Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
@@ -100,24 +101,32 @@ Use **Open PDF**, drag a PDF onto the window, or choose it from the welcome scre
 
 Opening a PDF creates a new project. To continue previous work, open its `.gridscalr` file instead.
 
-### 2. Calibrate the page
+### 2. Set the page scale
+
+Use **Calibrate** for a reference dimension:
 
 1. Press **K** or choose **Calibrate**.
 2. Click the two ends of a dimension with a known real-world length.
 3. Enter the length and choose its unit (mm, cm, m, in, ft, or yd).
 4. Optionally apply the scale to every page and update existing measurements.
 
-The calibration is stored per page. Recalibrating a page can either preserve the scale snapshots on existing measurements or update them. Clearing a page scale does not delete the measurements.
+Alternatively, choose **Manual scale…** in Properties and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are provided, along with a free ratio field. Manual scale assumes the PDF page is at its physical paper size: 1 mm on paper equals N mm in the real world. It replaces a reference calibration on the affected pages and draws no reference line or calibration label.
 
-Measurements created while a page is calibrated capture a scale snapshot. If a page is later recalibrated with **Update existing measurements** disabled, those items keep their original values. Measurements with no scale are shown in PDF points (`pt` / `pt²`).
+The scale is stored per page. Recalibrating a page or setting a manual scale can either preserve existing measurement scale snapshots or update them. **Apply to all pages** copies the scale but not the lock, and skips locked pages.
+
+Once a page has a scale, **Lock scale** prevents changing the scale through calibration, manual scale, editing, or clearing. The lock is stored in the project, is undoable, and does not affect existing measurements, exports, zoom, or page navigation. Use **Unlock scale** before changing the scale again.
+
+Clearing a page scale does not delete the measurements. Measurements created while a page is calibrated capture a scale snapshot. If a page is later recalibrated with **Update existing measurements** disabled, those items keep their original values. Measurements with no scale are shown in PDF points (`pt` / `pt²`).
 
 ### 3. Measure
 
 - **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle.
-- **Area (A):** click around the perimeter, then click the first vertex or press **Enter** to close the polygon. Areas use the unit selected in Properties. Choose **Add** or **Deduct** in the context bar before drawing, or change an existing area in Properties.
+- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the context bar. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in Properties. Choose **Add** or **Deduct** in the context bar before drawing, or change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates.
+
+When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Set the snap distance in **Properties → Units** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
 While the Length, Area, or Count tool is active, the context bar shows the category and room for new measurements. The Count tool also shows the object type, and the Area tool shows the add/deduct mode. These stay selected for the next measurement together with the category and room until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
@@ -149,7 +158,7 @@ Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal i
 - Drag a corner or edge handle to resize. Text corner handles scale the font size.
 - Drag the round handle above the selection to rotate. Hold **Shift** to snap to 15° increments.
 - Line, arrow, pen, and highlight rotation is baked into their points; text, rectangles, and ellipses store a rotation angle.
-- Measurement geometry stays vertex-editable from its points rather than being box-scaled, so its computed values remain trustworthy.
+- Measurement geometry stays vertex-editable from its points rather than being box-scaled, so its computed values remain trustworthy. Rectangle and ellipse quick areas expose their two opposite defining points and have no rotation handle.
 
 Each drag or inline edit is one undo step.
 
@@ -234,11 +243,13 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, and markup items. The PDF itself is **not** embedded.
 
-Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 adds project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Version 1 and 2 projects load normally: measurements are assigned to the `Other` category, areas default to `add`, and missing quantity settings get safe defaults. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults.
+Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 adds quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting.
+
+Version 1, 2, and 3 projects load normally. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults.
 
 ```json
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "name": "Level 01",
   "document": {
     "name": "Level 01.pdf",
@@ -254,6 +265,7 @@ Schema version 2 added optional per-item `visible` and `locked` flags. Schema ve
     "showGrid": false,
     "showCalibration": true,
     "snapToGeometry": true,
+    "snapTolerancePx": 8,
     "quantity": {
       "defaultCategoryId": "cat_...",
       "wastePercent": 0,
@@ -268,12 +280,23 @@ Schema version 2 added optional per-item `visible` and `locked` flags. Schema ve
     "1": {
       "calibration": {
         "id": "cal_...",
+        "source": "reference",
         "p1": { "x": 120, "y": 460 },
         "p2": { "x": 420, "y": 460 },
         "knownLength": 10,
         "unit": "m",
         "pointsPerMeter": 30,
         "createdAt": "2026-10-20T18:41:05.215Z"
+      },
+      "scaleLocked": true
+    },
+    "2": {
+      "calibration": {
+        "id": "cal_...",
+        "source": "manual",
+        "ratio": 100,
+        "pointsPerMeter": 28.34645669,
+        "createdAt": "2026-10-20T18:42:11.031Z"
       }
     }
   },
@@ -284,7 +307,7 @@ Schema version 2 added optional per-item `visible` and `locked` flags. Schema ve
 
 On desktop, GridScalr tries the stored absolute PDF path first, then a path relative to the project file. If the PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. The project file is designed to stay useful when a project folder is moved without the drawing it references.
 
-Layer IDs, item IDs, calibration points, timestamps, style values, category IDs, and per-item visibility/lock flags are preserved in the file. Reading validates the schema, normalizes version 1 and 2 projects, repairs category references, and drops items that do not match their layer kind.
+Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, and snap settings are preserved in the file. Reading validates the schema, normalizes version 1–3 projects, repairs category references, and drops items that do not match their layer kind.
 
 ## Keyboard shortcuts
 
@@ -322,7 +345,7 @@ Layer IDs, item IDs, calibration points, timestamps, style values, category IDs,
 src/
   app/App.ts             application wiring, file flows, shortcuts, exports
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
-  model/                 project types, geometry, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard
+  model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
@@ -337,7 +360,7 @@ src-tauri/
   src/commands.rs        atomic text/binary writes, reads, and path checks
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
-tests/                   geometry, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256
+tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256
 scripts/make-fixture.mjs reproducible sample PDF generator
 ```
 
@@ -378,6 +401,8 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Text notes do not wrap inside a fixed text box; use `Shift+Enter` for an explicit line break.
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
-- Area measurement uses the active page's calibration; a single calibration can be applied to all pages with the same drawing scale.
+- Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
+- Snapping targets markup endpoints, midpoints, and intersections only. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

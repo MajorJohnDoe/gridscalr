@@ -9,15 +9,16 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
-- Current project-file schema: `3`.
-- Etapp 1 and Etapp 2 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3 is next.
+- Current project-file schema: `4`.
+- Etapp 1 and Etapp 2 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B is next.
 
 ## Read before changing code
 
 1. `README.md` — user-facing behaviour, architecture, shortcuts, and file format.
 2. `docs/plan/roadmap-etapper.md` — Etapp 1–4 scope, product invariants, and open decisions.
 3. `docs/plan/etapp-2-mangddata.md` — detailed Etapp 2A/2B plan.
-4. The relevant source and tests for the area being changed.
+4. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
+5. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -158,7 +159,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 - **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
 - **Etapp 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
 - **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
-- **Etapp 3:** planned — quick area tools, manual scale/lock, snapping, drawing-export dialog.
+- **Etapp 3:** in progress — 3A complete with quick areas, manual scale/lock, and markup snapping; 3B drawing-export dialog is next.
 - **Etapp 4:** planned — image objects and image-aware PDF export.
 - XLSX is deferred until CSV proves insufficient.
 

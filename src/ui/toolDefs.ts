@@ -47,7 +47,7 @@ export const TOOLS: ToolDef[] = [
     label: "Area",
     icon: "area",
     shortcut: "A",
-    hint: "Click around the perimeter · click the first point or press Enter to close",
+    hint: "Polygon: click each point · Rectangle/Ellipse: drag · Shift makes a square/circle",
     group: "measure",
   },
   {
