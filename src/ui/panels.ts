@@ -1265,7 +1265,57 @@ function categoriesSection(project: NonNullable<typeof store.project>): HTMLElem
   manage.type = "button";
   manage.addEventListener("click", () => openCategoriesDialog());
 
-  section.append(field, manage);
+  const quantityFields = el("div", "field-row");
+  const wasteField = el("label", "field");
+  wasteField.append(el("span", "field-label", "Waste"));
+  const wasteRow = el("div", "input-row");
+  const wasteInput = el("input", "input");
+  wasteInput.type = "number";
+  wasteInput.min = "0";
+  wasteInput.max = "100";
+  wasteInput.step = "0.5";
+  wasteInput.value = String(project.settings.quantity.wastePercent);
+  wasteInput.setAttribute("aria-label", "Project waste percentage");
+  wasteInput.addEventListener("change", () => {
+    const value = Number(wasteInput.value);
+    if (wasteInput.value.trim() === "" || !Number.isFinite(value) || value < 0 || value > 100) {
+      wasteInput.value = String(project.settings.quantity.wastePercent);
+      toast("Waste must be between 0 and 100 percent.", "warning");
+      return;
+    }
+    store.setQuantityDefaults({ wastePercent: value });
+  });
+  wasteRow.append(wasteInput, el("span", "context-unit", "%"));
+  wasteField.append(wasteRow);
+
+  const roundingField = el("label", "field");
+  roundingField.append(el("span", "field-label", "Round up"));
+  const roundingInput = el("input", "input");
+  roundingInput.type = "number";
+  roundingInput.min = "0";
+  roundingInput.step = "0.01";
+  roundingInput.value = String(project.settings.quantity.roundingStep);
+  roundingInput.setAttribute("aria-label", "Project rounding step");
+  roundingInput.title = "Order quantities round up to this step in each row's own unit. Counts always round to whole pcs.";
+  roundingInput.addEventListener("change", () => {
+    const value = Number(roundingInput.value);
+    if (roundingInput.value.trim() === "" || !Number.isFinite(value) || value < 0) {
+      roundingInput.value = String(project.settings.quantity.roundingStep);
+      toast("Rounding step must be zero or greater.", "warning");
+      return;
+    }
+    store.setQuantityDefaults({ roundingStep: value });
+  });
+  roundingField.append(roundingInput);
+  quantityFields.append(wasteField, roundingField);
+
+  const hint = el(
+    "div",
+    "empty-note small",
+    "Waste and rounding apply to order quantities. Categories can override both; 0 means no rounding, and counts always round to whole pcs.",
+  );
+
+  section.append(field, quantityFields, hint, manage);
   return section;
 }
 

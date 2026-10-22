@@ -92,7 +92,7 @@ function totalsChips(totals: QuantityTypeTotal[], label: string): HTMLElement {
   wrap.append(el("span", "quantity-chips-label", label));
   for (const total of totals) {
     const chip = el("span", "quantity-chip", formatTotal(total));
-    chip.title = `${typeLabel(total.type)} · gross ${formatValue(total.gross, total.type)} ${total.unit} · deduction ${formatValue(total.deduction, total.type)} ${total.unit} · net ${formatValue(total.net, total.type)} ${total.unit}`;
+    chip.title = `${typeLabel(total.type)} · gross ${formatValue(total.gross, total.type)} ${total.unit} · deduction ${formatValue(total.deduction, total.type)} ${total.unit} · net ${formatValue(total.net, total.type)} ${total.unit} · waste ${formatValue(total.wasteQuantity, total.type)} ${total.unit} · order ${formatValue(total.orderQuantity, total.type)} ${total.unit}`;
     if (total.clamped) {
       chip.classList.add("is-clamped");
       chip.title += " · deduction exceeds gross";
@@ -153,12 +153,23 @@ function renderRows(summary: QuantitySummary): HTMLElement {
           ["Gross", row.gross, ""],
           ["Deduct", row.deduction, "is-deduction"],
           ["Net", row.net, "is-net"],
+          [`Waste ${formatNumber(row.wastePercent, 1)}%`, row.wasteQuantity, "is-waste"],
+          ["Order", row.orderQuantity, "is-order"],
         ] as const) {
           const stat = el("div", `quantity-stat ${className}`.trim());
           stat.append(
             el("span", "quantity-stat-label", label),
             el("span", "quantity-stat-value", formatValue(value, row.type)),
           );
+          if (className === "is-order") {
+            stat.title =
+              row.roundingStep > 0
+                ? `Rounded up to steps of ${formatNumber(row.roundingStep, 2)} ${row.unit}`
+                : "No rounding step";
+          }
+          if (className === "is-waste") {
+            stat.title = `Waste ${formatNumber(row.wastePercent, 2)}% of net`;
+          }
           values.append(stat);
         }
         rowEl.append(values);

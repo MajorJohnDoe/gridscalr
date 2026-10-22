@@ -293,4 +293,82 @@ describe("quantity rows", () => {
     expect(summary.rows.map((row) => row.type)).toEqual(["count"]);
     expect(summary.uncalibratedExcluded).toBe(2);
   });
+
+  it("applies project waste and rounding defaults", () => {
+    const project = makeProject();
+    project.settings.quantity.wastePercent = 10;
+    project.settings.quantity.roundingStep = 0.5;
+    const floor = categoryId(project, "Floor");
+    areaItem(project, { categoryId: floor, room: "A" });
+
+    const row = calculateQuantities(project, { page: "all" }).rows[0];
+    expect(row.net).toBeCloseTo(1);
+    expect(row.wastePercent).toBe(10);
+    expect(row.wasteQuantity).toBeCloseTo(0.1);
+    expect(row.roundingStep).toBe(0.5);
+    expect(row.orderQuantity).toBeCloseTo(1.5);
+  });
+
+  it("lets a category override project waste and rounding", () => {
+    const project = makeProject();
+    project.settings.quantity.wastePercent = 10;
+    project.settings.quantity.roundingStep = 0.5;
+    const floor = project.categories.find((category) => category.name === "Floor");
+    const wall = categoryId(project, "Wall");
+    if (!floor) throw new Error("Missing Floor");
+    floor.wastePercent = 25;
+    floor.roundingStep = 1;
+    areaItem(project, { categoryId: floor.id, room: "A" });
+    areaItem(project, { categoryId: wall, room: "A" });
+
+    const summary = calculateQuantities(project, { page: "all" });
+    const floorRow = summary.rows.find((row) => row.categoryName === "Floor");
+    const wallRow = summary.rows.find((row) => row.categoryName === "Wall");
+    expect(floorRow?.wastePercent).toBe(25);
+    expect(floorRow?.orderQuantity).toBeCloseTo(2);
+    expect(wallRow?.wastePercent).toBe(10);
+    expect(wallRow?.roundingStep).toBe(0.5);
+    expect(wallRow?.orderQuantity).toBeCloseTo(1.5);
+    expect(summary.totals.find((total) => total.type === "area")?.orderQuantity).toBeCloseTo(3.5);
+  });
+
+  it("always rounds count orders up to whole pieces", () => {
+    const project = makeProject();
+    project.settings.quantity.wastePercent = 10;
+    project.settings.quantity.roundingStep = 5;
+    const floor = categoryId(project, "Floor");
+    countItem(project, { categoryId: floor, room: "A" });
+
+    const row = calculateQuantities(project, { page: "all" }).rows[0];
+    expect(row.net).toBe(1);
+    expect(row.wasteQuantity).toBeCloseTo(0.1);
+    expect(row.orderQuantity).toBe(2);
+  });
+
+  it("tolerates floating-point noise when rounding up", () => {
+    const project = makeProject();
+    project.settings.quantity.roundingStep = 0.1;
+    const floor = categoryId(project, "Floor");
+    lengthItem(project, {
+      categoryId: floor,
+      room: "A",
+      points: [{ x: 10, y: 10 }, { x: 40, y: 10 }],
+    });
+
+    const row = calculateQuantities(project, { page: "all" }).rows[0];
+    expect(row.net).toBeCloseTo(0.3);
+    expect(row.orderQuantity).toBeCloseTo(0.3);
+  });
+
+  it("keeps order quantity equal to net when waste and rounding are off", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    areaItem(project, { categoryId: floor, room: "A" });
+
+    const row = calculateQuantities(project, { page: "all" }).rows[0];
+    expect(row.wasteQuantity).toBe(0);
+    expect(row.roundingStep).toBe(0);
+    expect(row.orderQuantity).toBeCloseTo(row.net);
+  });
+
 });

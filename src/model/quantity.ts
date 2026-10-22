@@ -31,6 +31,14 @@ export interface QuantityRow {
   /** Area deductions. Always zero for length and count. */
   deduction: number;
   net: number;
+  /** Effective waste percentage inherited from the category or project. */
+  wastePercent: number;
+  /** net * wastePercent / 100. */
+  wasteQuantity: number;
+  /** Effective rounding step inherited from the category or project. */
+  roundingStep: number;
+  /** Net plus waste, rounded up. Counts always use whole pieces. */
+  orderQuantity: number;
   items: number;
   /** True when deduction exceeds gross for this category and room. */
   clamped: boolean;
@@ -42,6 +50,8 @@ export interface QuantityTypeTotal {
   gross: number;
   deduction: number;
   net: number;
+  wasteQuantity: number;
+  orderQuantity: number;
   items: number;
   clamped: boolean;
 }
@@ -77,6 +87,8 @@ interface GroupAccumulator {
   gross: number;
   deduction: number;
   items: number;
+  wastePercent: number;
+  roundingStep: number;
 }
 
 const TYPE_ORDER: Record<QuantityType, number> = {
@@ -84,6 +96,17 @@ const TYPE_ORDER: Record<QuantityType, number> = {
   area: 1,
   count: 2,
 };
+
+const ROUND_TOLERANCE = 1e-9;
+
+/** Rounds up to a step, ignoring floating-point noise just above a multiple. */
+function roundUpToStep(value: number, step: number): number {
+  if (!(step > 0)) return value;
+  const units = value / step;
+  const nearest = Math.round(units);
+  if (Math.abs(units - nearest) <= ROUND_TOLERANCE) return nearest * step;
+  return Math.ceil(units) * step;
+}
 
 function quantityType(item: MarkupItem): QuantityType | null {
   if (item.kind === "length" || item.kind === "area" || item.kind === "count") return item.kind;
@@ -112,6 +135,8 @@ function addTypeTotal(
       gross: 0,
       deduction: 0,
       net: 0,
+      wasteQuantity: 0,
+      orderQuantity: 0,
       items: 0,
       clamped: false,
     };
@@ -120,6 +145,8 @@ function addTypeTotal(
   total.gross += row.gross;
   total.deduction += row.deduction;
   total.net += row.net;
+  total.wasteQuantity += row.wasteQuantity;
+  total.orderQuantity += row.orderQuantity;
   total.items += row.items;
   total.clamped ||= row.clamped;
 }
@@ -195,6 +222,8 @@ export function calculateQuantities(
           gross: 0,
           deduction: 0,
           items: 0,
+          wastePercent: category.wastePercent ?? project.settings.quantity.wastePercent,
+          roundingStep: category.roundingStep ?? project.settings.quantity.roundingStep,
         };
         groups.set(key, group);
       }
@@ -206,6 +235,14 @@ export function calculateQuantities(
 
   const rows: QuantityRow[] = [...groups.values()].map((group) => {
     const net = Math.max(0, group.gross - group.deduction);
+    const wasteQuantity = net * (group.wastePercent / 100);
+    const rawOrder = net + wasteQuantity;
+    const orderQuantity = Math.max(
+      net,
+      group.type === "count"
+        ? roundUpToStep(rawOrder, 1)
+        : roundUpToStep(rawOrder, group.roundingStep),
+    );
     return {
       categoryId: group.categoryId,
       categoryName: group.categoryName,
@@ -220,6 +257,10 @@ export function calculateQuantities(
       gross: group.gross,
       deduction: group.deduction,
       net,
+      wastePercent: group.wastePercent,
+      wasteQuantity,
+      roundingStep: group.roundingStep,
+      orderQuantity,
       items: group.items,
       clamped: group.type === "area" && group.deduction > group.gross,
     };

@@ -1,4 +1,5 @@
 import { categoryNameError, normalizeCategoryName } from "../model/categories";
+import { formatNumber } from "../model/units";
 import type { Category } from "../model/types";
 import { store } from "../state/store";
 import { showModal } from "./dialogs";
@@ -29,7 +30,7 @@ export function openCategoriesDialog(): void {
     el(
       "p",
       "modal-message",
-      "Categories group measurements in the quantity report. Names must be unique. Use the arrows to set report order.",
+      "Categories group measurements in the quantity report. Names must be unique. Use the arrows to set report order. Waste and rounding overrides are optional; leave a field empty to inherit the project defaults in Properties.",
     ),
   );
 
@@ -221,7 +222,67 @@ export function openCategoriesDialog(): void {
       actions.append(up, down, remove);
 
       row.append(name, meta, actions);
-      list.append(row);
+
+      const overrides = el("div", "category-overrides");
+      const wasteWrap = el("label", "category-override");
+      wasteWrap.append(el("span", "", "Waste"));
+      const wasteInput = el("input", "input category-override-input");
+      wasteInput.type = "number";
+      wasteInput.min = "0";
+      wasteInput.max = "100";
+      wasteInput.step = "0.5";
+      wasteInput.value =
+        category.wastePercent === undefined ? "" : String(category.wastePercent);
+      wasteInput.placeholder = `Default ${formatNumber(project.settings.quantity.wastePercent, 1)}`;
+      wasteInput.title = "Leave empty to inherit the project waste percentage.";
+      wasteInput.setAttribute("aria-label", `Waste percentage override for ${category.name}`);
+      wasteInput.addEventListener("change", () => {
+        const raw = wasteInput.value.trim();
+        const value = raw === "" ? null : Number(raw);
+        if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) {
+          wasteInput.value =
+            category.wastePercent === undefined ? "" : String(category.wastePercent);
+          toast("Waste must be between 0 and 100 percent.", "warning");
+          return;
+        }
+        store.setCategoryQuantityOverride(category.id, "wastePercent", value);
+        render();
+      });
+      wasteWrap.append(wasteInput, el("span", "category-override-unit", "%"));
+
+      const roundingWrap = el("label", "category-override");
+      roundingWrap.append(el("span", "", "Round up"));
+      const roundingInput = el("input", "input category-override-input");
+      roundingInput.type = "number";
+      roundingInput.min = "0";
+      roundingInput.step = "0.01";
+      roundingInput.value =
+        category.roundingStep === undefined ? "" : String(category.roundingStep);
+      roundingInput.placeholder = `Default ${formatNumber(project.settings.quantity.roundingStep, 2)}`;
+      roundingInput.title =
+        "Leave empty to inherit the project rounding step. The step uses each row's unit; counts always round to whole pcs.";
+      roundingInput.setAttribute(
+        "aria-label",
+        `Rounding step override for ${category.name}`,
+      );
+      roundingInput.addEventListener("change", () => {
+        const raw = roundingInput.value.trim();
+        const value = raw === "" ? null : Number(raw);
+        if (value !== null && (!Number.isFinite(value) || value < 0)) {
+          roundingInput.value =
+            category.roundingStep === undefined ? "" : String(category.roundingStep);
+          toast("Rounding step must be zero or greater.", "warning");
+          return;
+        }
+        store.setCategoryQuantityOverride(category.id, "roundingStep", value);
+        render();
+      });
+      roundingWrap.append(roundingInput);
+
+      overrides.append(wasteWrap, roundingWrap);
+      const item = el("div", "category-item");
+      item.append(row, overrides);
+      list.append(item);
     });
 
     clear(defaultSelect);

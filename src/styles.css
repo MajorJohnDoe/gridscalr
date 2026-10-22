@@ -2159,10 +2159,49 @@ textarea:disabled {
   overflow-y: auto;
 }
 
+.category-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-soft);
+}
+
+.category-item:last-child {
+  border-bottom: 0;
+}
+
 .category-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.category-overrides {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding-left: 2px;
+}
+
+.category-override {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted-2);
+  font-size: 10.5px;
+}
+
+.category-override-input {
+  width: 76px;
+  padding: 3px 5px;
+  font-size: 10.5px;
+}
+
+.category-override-unit {
+  color: var(--muted-2);
+  font-size: 10.5px;
 }
 
 .category-name {
@@ -2589,6 +2628,16 @@ textarea:disabled {
 
 .quantity-stat.is-net .quantity-stat-value {
   color: var(--jade-bright);
+}
+
+.quantity-stat.is-order {
+  border-color: rgba(53, 194, 161, 0.32);
+  background: rgba(53, 194, 161, 0.06);
+}
+
+.quantity-stat.is-order .quantity-stat-value {
+  color: var(--jade-bright);
+  font-weight: 600;
 }
 
 .quantity-warning {

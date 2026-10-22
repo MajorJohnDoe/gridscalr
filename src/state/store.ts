@@ -383,6 +383,55 @@ export class Store {
     return this.project ? countCategoryItems(this.project, id) : 0;
   }
 
+  setQuantityDefaults(patch: { wastePercent?: number; roundingStep?: number }): boolean {
+    if (!this.project) return false;
+    const quantity = this.project.settings.quantity;
+    const wastePercent =
+      patch.wastePercent === undefined
+        ? quantity.wastePercent
+        : Math.max(0, Math.min(100, patch.wastePercent));
+    const roundingStep =
+      patch.roundingStep === undefined
+        ? quantity.roundingStep
+        : Math.max(0, patch.roundingStep);
+    if (
+      wastePercent === quantity.wastePercent &&
+      roundingStep === quantity.roundingStep
+    ) {
+      return true;
+    }
+    this.mutate((project) => {
+      project.settings.quantity.wastePercent = wastePercent;
+      project.settings.quantity.roundingStep = roundingStep;
+    }, "change");
+    return true;
+  }
+
+  setCategoryQuantityOverride(
+    id: string,
+    field: "wastePercent" | "roundingStep",
+    value: number | null,
+  ): boolean {
+    const project = this.project;
+    if (!project || !findCategory(project, id)) return false;
+    const normalized =
+      value === null || !Number.isFinite(value)
+        ? undefined
+        : field === "wastePercent"
+          ? Math.max(0, Math.min(100, value))
+          : Math.max(0, value);
+    const category = findCategory(project, id);
+    if (!category) return false;
+    if (category[field] === normalized) return true;
+    this.mutate((project) => {
+      const target = findCategory(project, id);
+      if (!target) return;
+      if (normalized === undefined) delete target[field];
+      else target[field] = normalized;
+    }, "change");
+    return true;
+  }
+
   private snapshot(): string | null {
     return this.project ? JSON.stringify(this.project) : null;
   }
