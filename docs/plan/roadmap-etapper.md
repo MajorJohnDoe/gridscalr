@@ -9,6 +9,8 @@
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
+Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md`. Den är ett utkast för godkännande. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst; resten av planen ska godkännas innan implementation.
+
 ## Produktprinciper
 
 Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut:
@@ -80,7 +82,7 @@ Detaljer finns i `etapp-2-mangddata.md`.
 
 ## Etapp 3 – Mätverktyg, skala och export
 
-Planeras i detalj efter Etapp 2.
+Planen finns i `etapp-3-matverktyg-skala-export.md` och är ett utkast för godkännande.
 
 - Rektangel- och ellipsarea som snabbarea.
 - Manuell skala med preset 1:50, 1:100, 1:200, 1:400 och egen ratio.
@@ -94,6 +96,10 @@ Planeras i detalj efter Etapp 2.
   - teckenförklaring
   - etiketter och kalibreringslinje
   - val av synliga lager
+
+Beslut om valt område: användaren ritar en rektangulär beskärningsruta kring den detalj som ska exporteras. Rutan klipper allt innehåll utanför sig och sparas som ett relativt område. Vid export av flera sidor används samma relativa område på varje vald sida, så att olika sidstorlekar och rotation hanteras.
+
+Etapp 3 höjer projektformatet till schema v4 eftersom snabbarea och manuell skala inte kan tolkas säkert av äldre versioner. Etapp 4 blir därmed sannolikt schema v5.
 
 Viktigt: Etapp 3 får inte införa möjligheten att exportera dolda objekt om inte Etapp 1-regeln ändras genom ett uttryckligt beslut.
 
@@ -119,7 +125,8 @@ Rekommendation att utreda i Etapp 4:
 ### Schema och migrering
 
 - Etapp 2: schema v3.
-- Etapp 4: sannolikt schema v4.
+- Etapp 3: schema v4 för snabbarea, manuell skala och skallåsning.
+- Etapp 4: sannolikt schema v5.
 - Varje migrering ska ha tester för minst aktuell och närmast föregående version.
 
 ### Test och kvalitet
@@ -164,14 +171,14 @@ Kvar att överväga: branch protection eller krav på grön CI innan merge när 
 
 ## Öppna beslut
 
-Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Följande återstår inför senare etapper:
+Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Etapp 3-planen är ett utkast i `etapp-3-matverktyg-skala-export.md`. Följande återstår inför senare etapper:
 
-- Vad betyder “valt område” i exportdialogen i Etapp 3?
 - Ska bilder bäddas in eller ligga som externa assets i Etapp 4?
 - Full z-order eller endast bakgrund/annotation för bilder?
 - Ska GitHub-repot vara privat eller publikt, och vem äger det?
 
 ## Rekommenderad nästa ordning
 
-1. Planera Etapp 3 i detalj, med PDF-snap som separat spike.
-2. Genomför Etapp 3 och därefter Etapp 4.
+1. Godkänn Etapp 3-planen, med PDF-snap som separat spike.
+2. Genomför Etapp 3A och 3B i den ordning planen anger.
+3. Genomför därefter Etapp 4.
