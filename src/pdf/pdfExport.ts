@@ -12,6 +12,7 @@ import {
 import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
+import { countSymbol } from "../model/countSymbols";
 import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import type { LabelLayout } from "../model/labelLayout";
 import {
@@ -125,6 +126,9 @@ function drawItem(
       drawEndpoints(page, viewport, item.points, color, opacity);
       break;
     }
+    case "count":
+      drawCountSymbol(page, viewport, item, color, width, opacity);
+      break;
     case "pen":
       drawPolyline(page, viewport, item.points, color, width, opacity, false);
       break;
@@ -381,6 +385,39 @@ function drawCenteredText(
     opacity: clamp(opacity, 0, 1),
     rotate: degrees(pdfAngle(viewport, 0)),
   });
+}
+
+function drawCountSymbol(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  color: RGB,
+  width: number,
+  opacity: number,
+): void {
+  const anchor = item.points[0];
+  if (!anchor) return;
+  const symbol = countSymbol(item.countType);
+  for (const path of symbol.paths) {
+    const points = path.points.map((point) => ({
+      x: anchor.x + point.x,
+      y: anchor.y + point.y,
+    }));
+    drawPolyline(page, viewport, points, color, width, opacity, path.closed);
+  }
+  for (const dot of symbol.dots) {
+    const center = toPdfPoint(viewport, {
+      x: anchor.x + dot.center.x,
+      y: anchor.y + dot.center.y,
+    });
+    page.drawCircle({
+      x: center.x,
+      y: center.y,
+      size: dot.radius,
+      color,
+      opacity: clamp(opacity, 0, 1),
+    });
+  }
 }
 
 function drawPolyline(

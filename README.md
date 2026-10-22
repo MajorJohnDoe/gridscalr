@@ -10,7 +10,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 
 - Open PDF plans locally with PDF.js.
 - Calibrate each page against a known dimension, apply a scale to all pages, and recalibrate later.
-- Measure multi-segment lengths and polygon areas with live unit conversion.
+- Measure multi-segment lengths and polygon areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
@@ -113,10 +113,11 @@ Measurements created while a page is calibrated capture a scale snapshot. If a p
 
 - **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle.
 - **Area (A):** click around the perimeter, then click the first vertex or press **Enter** to close the polygon. Areas use the unit selected in Properties.
+- **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates.
 
-While the Length or Area tool is active, the context bar shows the category and room for new measurements. Both stay selected until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category and room, and both can be changed later in Properties. An empty room is allowed and is not stored.
+While the Length, Area, or Count tool is active, the context bar shows the category and room for new measurements. The Count tool also shows the object type, which stays selected for the next count. The category and room stay selected until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category, count type, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 
@@ -259,7 +260,7 @@ Layer IDs, item IDs, calibration points, timestamps, style values, category IDs,
 | --- | --- |
 | Select / Pan | `V` / `H` |
 | Calibrate | `K` |
-| Length / Area | `L` / `A` |
+| Length / Area / Count | `L` / `A` / `C` |
 | Pen / Line / Arrow | `P` / `I` / `U` |
 | Rectangle / Ellipse | `R` / `O` |
 | Highlight / Text note | `G` / `T` |
@@ -343,3 +344,4 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
 - Area measurement uses the active page's calibration; a single calibration can be applied to all pages with the same drawing scale.
+- Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.

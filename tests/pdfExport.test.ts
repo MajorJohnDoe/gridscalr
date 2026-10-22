@@ -64,6 +64,14 @@ function makeProject(): Project {
       ],
       scale: { pointsPerMeter: 10, sourceUnit: "m" },
     }),
+    makeItem({
+      id: "item_count",
+      kind: "count",
+      points: [{ x: 100, y: 30 }],
+      countType: "door",
+      categoryId: project.settings.quantity.defaultCategoryId,
+      scale: { pointsPerMeter: 10, sourceUnit: "m" },
+    }),
   );
   return project;
 }
@@ -159,10 +167,14 @@ describe("flattened PDF export", () => {
     const length = items.find((item) => item.text.startsWith("Wall A"));
     const area = items.find((item) => item.text.includes("m²"));
     const perimeter = items.find((item) => item.text.startsWith("Perimeter"));
+    const count = items.find((item) => item.text === "1 pcs");
+    const countType = items.find((item) => item.text === "Door");
 
     expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
+    expect(count?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
+    expect(countType?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
 
     const calibrationProject = makeProject();
     for (const layer of calibrationProject.layers) layer.items.length = 0;
@@ -173,6 +185,20 @@ describe("flattened PDF export", () => {
     for (const item of calibrationItems) {
       expect(item.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     }
+  });
+
+  it("draws count symbols and omits hidden counts", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const count = project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.kind === "count")!;
+
+    const visibleSize = await contentBytes(await exportProjectPdf(project, renderer));
+    count.visible = false;
+    const hiddenSize = await contentBytes(await exportProjectPdf(project, renderer));
+
+    expect(hiddenSize).toBeLessThan(visibleSize);
   });
 
   it("omits hidden items and hidden layers from the flattened PDF", async () => {

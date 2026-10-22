@@ -21,6 +21,7 @@ import {
   translatePoints,
   type Bounds,
 } from "../model/geometry";
+import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
   labelBox,
@@ -46,6 +47,7 @@ import {
   ensureActiveLayer,
   findItem,
   itemIsLocked,
+  layerKindForItem,
   removeItem,
 } from "../model/layers";
 import { itemMetrics } from "../model/measure";
@@ -581,6 +583,15 @@ export class CanvasView {
       } else {
         this.startNewText(page);
       }
+      return;
+    }
+
+    if (tool === "count") {
+      if (event.detail > 1) return;
+      const snapped = this.snapPoint(page);
+      this.createItem("count", [snapped]);
+      this.snap = snapped;
+      this.drawInteraction();
     }
   };
 
@@ -741,6 +752,7 @@ export class CanvasView {
   }
 
   private selectionHandles(item: MarkupItem): Handle[] {
+    if (item.kind === "count") return [];
     if (item.kind === "length" || item.kind === "area") {
       return item.points.slice(0, 80).map((point, index) => ({
         role: "vertex" as const,
@@ -1782,7 +1794,7 @@ export class CanvasView {
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
         if (item.page !== store.ui.page || item.visible === false) continue;
-        if (item.kind !== "length" && item.kind !== "area") continue;
+        if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
         if (this.hitLabelBox(screen, this.screenLabelBox(layout.box, layout.metrics))) {
@@ -1824,7 +1836,7 @@ export class CanvasView {
   private createItem(kind: ItemKind, points: Point[], text?: string): void {
     const project = store.project;
     if (!project) return;
-    const layerKind = kind === "length" || kind === "area" ? "measure" : "draw";
+    const layerKind = layerKindForItem(kind);
     const active = project.layers.find(
       (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
     );
@@ -1869,6 +1881,7 @@ export class CanvasView {
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
           areaMode: kind === "area" ? "add" : undefined,
+          countType: kind === "count" ? store.ui.measureCountType : undefined,
           createdAt: now,
           updatedAt: now,
         };
@@ -2240,6 +2253,31 @@ export class CanvasView {
         this.drawEndpoints(ctx, points, item.color);
         break;
       }
+      case "count": {
+        const anchorPage = item.points[0];
+        if (!anchorPage) break;
+        const symbol = countSymbol(item.countType);
+        for (const path of symbol.paths) {
+          ctx.beginPath();
+          path.points.forEach((point, index) => {
+            const screen = this.toScreen({ x: anchorPage.x + point.x, y: anchorPage.y + point.y });
+            if (index === 0) ctx.moveTo(screen.x, screen.y);
+            else ctx.lineTo(screen.x, screen.y);
+          });
+          if (path.closed) ctx.closePath();
+          ctx.stroke();
+        }
+        for (const dot of symbol.dots) {
+          const center = this.toScreen({
+            x: anchorPage.x + dot.center.x,
+            y: anchorPage.y + dot.center.y,
+          });
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, Math.max(0.6, dot.radius * zoom), 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      }
       case "pen": {
         ctx.beginPath();
         points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
@@ -2327,7 +2365,7 @@ export class CanvasView {
     }
     ctx.restore();
 
-    if (item.kind === "length" || item.kind === "area") {
+    if (item.kind === "length" || item.kind === "area" || item.kind === "count") {
       const layout = labels.get(item.id);
       if (layout && this.editingLabelId !== item.id) {
         this.drawLabelLayout(ctx, layout);
@@ -2443,7 +2481,7 @@ export class CanvasView {
 
       if (selected.length === 1 && !selected[0].locked) {
         const item = selected[0].item;
-        const measured = item.kind === "length" || item.kind === "area";
+        const measured = item.kind === "length" || item.kind === "area" || item.kind === "count";
         const handles = this.selectionHandles(item);
         const rotation = handles.find((handle) => handle.role === "rotate");
         ctx.save();
@@ -2551,6 +2589,19 @@ export class CanvasView {
 
   private traceItemOutline(ctx: CanvasRenderingContext2D, item: MarkupItem): void {
     ctx.beginPath();
+    if (item.kind === "count") {
+      const anchor = item.points[0];
+      if (!anchor) return;
+      const screen = this.toScreen(anchor);
+      ctx.arc(
+        screen.x,
+        screen.y,
+        Math.max(6, (COUNT_SYMBOL_RADIUS + 2) * store.ui.zoom),
+        0,
+        Math.PI * 2,
+      );
+      return;
+    }
     if (item.kind === "length" || item.kind === "area") {
       item.points.forEach((point, index) => {
         const screen = this.toScreen(itemLocalToPage(item, point));

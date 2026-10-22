@@ -1,4 +1,5 @@
 import { itemScale } from "./calibration";
+import { countTypeLabel } from "./countSymbols";
 import { polygonArea, polygonPerimeter, polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
 import { formatArea, formatLength, formatLengthCompact } from "./units";
@@ -35,6 +36,15 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
       rawPoints: area,
       scale,
       unit: scale ? project.settings.areaUnit : "pt²",
+    };
+  }
+  if (item.kind === "count") {
+    return {
+      primary: "1 pcs",
+      secondary: countTypeLabel(item.countType),
+      rawPoints: 1,
+      scale: null,
+      unit: "pcs",
     };
   }
   return null;

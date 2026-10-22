@@ -51,6 +51,14 @@ export const TOOLS: ToolDef[] = [
     group: "measure",
   },
   {
+    id: "count",
+    label: "Count",
+    icon: "count",
+    shortcut: "C",
+    hint: "Choose a type, category and room · click to place one count",
+    group: "measure",
+  },
+  {
     id: "pen",
     label: "Pen",
     icon: "pen",

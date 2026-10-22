@@ -30,6 +30,15 @@ function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitRes
 
   const localPoint = pointToItemLocal(item, point);
 
+  if (item.kind === "count") {
+    const anchor = item.points[0];
+    if (!anchor) return null;
+    const distance = Math.hypot(localPoint.x - anchor.x, localPoint.y - anchor.y);
+    return distance <= tolerance
+      ? { distance, vertexIndex: -1, segmentIndex: -1 }
+      : null;
+  }
+
   if (item.kind === "area") {
     const inside = pointInPolygon(localPoint, item.points);
     const edgeDistance = distanceToPolyline(localPoint, item.points, true);

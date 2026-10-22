@@ -1,4 +1,5 @@
 import { polygonCentroid } from "./geometry";
+import { COUNT_LABEL_OFFSET } from "./countSymbols";
 import { itemMetrics } from "./measure";
 import type { MarkupItem, Point, Project } from "./types";
 
@@ -86,6 +87,9 @@ export function labelMetrics(scale = 1): LabelMetrics {
 export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
   if (item.kind === "area") {
     return polygonCentroid(item.points);
+  }
+  if (item.kind === "count" && points.length === 1) {
+    return { x: points[0].x, y: points[0].y - COUNT_LABEL_OFFSET };
   }
   if (points.length === 1) return points[0];
   if (item.kind === "rect" || item.kind === "ellipse") {

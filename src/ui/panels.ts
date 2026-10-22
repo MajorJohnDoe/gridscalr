@@ -6,6 +6,7 @@ import {
   normalizeRoom,
 } from "../model/categories";
 import { hasClipboard } from "../model/clipboard";
+import { COUNT_TYPES, COUNT_TYPE_LABELS, countTypeLabel } from "../model/countSymbols";
 import {
   duplicateLayer,
   findItem,
@@ -22,6 +23,7 @@ import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
   AreaUnit,
+  CountType,
   Layer,
   LengthUnit,
   MarkupItem,
@@ -674,7 +676,7 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
         const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
         if (query) {
           const haystack =
-            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""}`.toLowerCase();
+            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""}`.toLowerCase();
           if (!haystack.includes(query)) continue;
         }
         rows.push({ item, layer, layerId: layer.id, layerName: layer.name, color: layer.color });
@@ -707,13 +709,15 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
       label.title = `${row.item.text ?? fallbackLabel} — double-click to rename`;
       const value = el("span", "markup-value", metrics?.primary ?? "");
       const category = isMeasurementKind(row.item.kind) ? categoryForItem(project, row.item) : undefined;
-      const metaText = category
-        ? `${category.name}${row.item.room ? ` · ${row.item.room}` : ""}`
-        : `${itemKindLabel(row.item.kind)} · ${row.layerName}`;
-      const meta = el("span", "markup-meta", metaText);
+      const countType =
+        row.item.kind === "count" ? countTypeLabel(row.item.countType) : undefined;
+      const metaParts = category
+        ? [category.name, countType, row.item.room].filter(Boolean)
+        : [itemKindLabel(row.item.kind), row.layerName];
+      const meta = el("span", "markup-meta", metaParts.join(" · "));
       meta.title = category
-        ? `${itemKindLabel(row.item.kind)} · ${category.name}${row.item.room ? ` · ${row.item.room}` : ""} · ${row.layerName}`
-        : `${itemKindLabel(row.item.kind)} · ${row.layerName}`;
+        ? [itemKindLabel(row.item.kind), ...metaParts, row.layerName].join(" · ")
+        : metaParts.join(" · ");
       const page = el("span", "markup-page", `p.${row.item.page}`);
       const rowActions = el("span", "markup-actions");
       const eye = layerAction(
@@ -915,8 +919,28 @@ function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
     controls.append(layerTarget, el("div", "divider-v"));
   }
 
-  const measureTool = store.ui.activeTool === "length" || store.ui.activeTool === "area";
+  const measureTool =
+    store.ui.activeTool === "length" ||
+    store.ui.activeTool === "area" ||
+    store.ui.activeTool === "count";
   if (measureTool) {
+    if (store.ui.activeTool === "count") {
+      const typeField = el("label", "context-field");
+      typeField.title = "Object type for new counts";
+      typeField.append(el("span", "context-field-label", "Type"));
+      const typeSelect = el("select", "select context-select");
+      typeSelect.setAttribute("aria-label", "Object type for new counts");
+      for (const type of COUNT_TYPES) {
+        typeSelect.append(
+          option(type, COUNT_TYPE_LABELS[type], type === store.ui.measureCountType),
+        );
+      }
+      typeSelect.addEventListener("change", () =>
+        store.setMeasureCountType(typeSelect.value as CountType),
+      );
+      typeField.append(typeSelect);
+      controls.append(typeField, el("div", "divider-v"));
+    }
     const pendingCategory = measurementCategory(project, store.ui.measureCategoryId);
     const categoryField = el("label", "context-field");
     categoryField.title = "Category for new measurements";
@@ -1395,7 +1419,7 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     section.append(el("div", "empty-note small", "This markup is hidden."));
   }
 
-  if (metrics && !metrics.scale) {
+  if (metrics && !metrics.scale && item.kind !== "count") {
     section.append(
       el(
         "div",
@@ -1406,6 +1430,29 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
   }
 
   if (isMeasurementKind(item.kind)) {
+    if (item.kind === "count") {
+      const typeField = el("label", "field");
+      typeField.append(el("span", "field-label", "Object type"));
+      const typeSelect = el("select", "select");
+      for (const type of COUNT_TYPES) {
+        typeSelect.append(
+          option(type, COUNT_TYPE_LABELS[type], type === (item.countType ?? "other")),
+        );
+      }
+      typeSelect.disabled = locked;
+      typeSelect.title = locked
+        ? "Unlock the layer to edit this markup."
+        : "Count symbol and label type";
+      typeSelect.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (target) target.countType = typeSelect.value as CountType;
+        }, "change");
+      });
+      typeField.append(typeSelect);
+      section.append(typeField);
+    }
+
     const categoryField = el("label", "field");
     categoryField.append(el("span", "field-label", "Category"));
     const categorySelect = el("select", "select");

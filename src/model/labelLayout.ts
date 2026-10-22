@@ -1,4 +1,5 @@
 import { pageCalibration } from "./calibration";
+import { countSymbolBounds } from "./countSymbols";
 import {
   boundingBox,
   itemBounds,
@@ -28,7 +29,7 @@ export type LabelPlacement = "center" | "outside" | "line";
 
 export interface LabelSource {
   id: string;
-  kind: "area" | "length" | "calibration";
+  kind: "area" | "length" | "count" | "calibration";
   parts: LabelParts;
   anchor: Point;
   obstacle: Bounds;
@@ -76,7 +77,7 @@ export function pageLabelSources(project: Project, page: number): LabelSource[] 
     if (!layer.visible || layer.opacity <= 0) continue;
     for (const item of layer.items) {
       if (item.page !== page || item.visible === false) continue;
-      if (item.kind !== "length" && item.kind !== "area") continue;
+      if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
       const parts = measurementLabelParts(item, project);
       if (!parts) continue;
       sources.push({
@@ -84,7 +85,10 @@ export function pageLabelSources(project: Project, page: number): LabelSource[] 
         kind: item.kind,
         parts,
         anchor: labelAnchorForPoints(item, item.points),
-        obstacle: itemBounds(item),
+        obstacle:
+          item.kind === "count" && item.points[0]
+            ? countSymbolBounds(item.points[0])
+            : itemBounds(item),
         polygon: item.kind === "area" ? item.points : undefined,
         color: item.color,
       });

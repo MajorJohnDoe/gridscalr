@@ -11,7 +11,14 @@ import {
 } from "../model/categories";
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
-import type { Category, LayerKind, Point, Project, SelectionRef } from "../model/types";
+import type {
+  Category,
+  CountType,
+  LayerKind,
+  Point,
+  Project,
+  SelectionRef,
+} from "../model/types";
 
 export type ToolId =
   | "select"
@@ -19,6 +26,7 @@ export type ToolId =
   | "calibrate"
   | "length"
   | "area"
+  | "count"
   | "pen"
   | "line"
   | "arrow"
@@ -51,6 +59,8 @@ export interface UIState {
   measureCategoryId: string | null;
   /** Sticky room for new measurements, trimmed when an item is created. */
   measureRoom: string;
+  /** Sticky object type for new count measurements. */
+  measureCountType: CountType;
 }
 
 export type ChangeReason =
@@ -80,6 +90,7 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
   switch (tool) {
     case "length":
     case "area":
+    case "count":
     case "calibrate":
       return "measure";
     case "pen":
@@ -114,6 +125,7 @@ function defaultUI(): UIState {
     },
     measureCategoryId: null,
     measureRoom: "",
+    measureCountType: "other",
   };
 }
 
@@ -160,6 +172,7 @@ export class Store {
     this.ui.leftTab = "layers";
     this.ui.measureCategoryId = null;
     this.ui.measureRoom = "";
+    this.ui.measureCountType = "other";
     this.emit("project");
     this.scheduleAutosave();
   }
@@ -276,6 +289,12 @@ export class Store {
   setMeasureRoom(room: string): void {
     if (this.ui.measureRoom === room) return;
     this.ui.measureRoom = room;
+    this.emit("cursor");
+  }
+
+  setMeasureCountType(type: CountType): void {
+    if (this.ui.measureCountType === type) return;
+    this.ui.measureCountType = type;
     this.emit("cursor");
   }
 

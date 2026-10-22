@@ -70,6 +70,7 @@ const TOOL_KEYS: Record<string, ToolId> = {
   k: "calibrate",
   l: "length",
   a: "area",
+  c: "count",
   p: "pen",
   i: "line",
   u: "arrow",
@@ -358,7 +359,7 @@ export class App {
       event.preventDefault();
       void messageDialog(
         "Keyboard shortcuts",
-        "Tools: V select · H pan · K calibrate · L length · A area · P pen · I line · U arrow · R rectangle · O ellipse · G highlight · T text. " +
+        "Tools: V select · H pan · K calibrate · L length · A area · C count · P pen · I line · U arrow · R rectangle · O ellipse · G highlight · T text. " +
           "Editing: Enter finish · Esc cancel/clear · Delete remove · arrows nudge · Ctrl+C/X/V copy, cut and paste · Ctrl+Z undo · Ctrl+Shift+Z redo. " +
           "View: Ctrl+wheel zoom · Space+drag pan · Ctrl+0 fit · Ctrl+1 actual size · PageUp/PageDown change page.",
       );
