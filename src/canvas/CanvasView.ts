@@ -49,6 +49,7 @@ import {
   removeItem,
 } from "../model/layers";
 import { itemMetrics } from "../model/measure";
+import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
 import { createCalibration, pageScale, pageCalibration, setPageCalibration } from "../model/calibration";
 import { makeId } from "../model/calibration";
@@ -1844,6 +1845,7 @@ export class CanvasView {
         const now = new Date().toISOString();
         const style = store.ui.style;
         const isMeasure = layerKind === "measure";
+        const category = isMeasure ? measurementCategory(project, store.ui.measureCategoryId) : undefined;
         const item: MarkupItem = {
           id: makeId("item"),
           page: projectPage,
@@ -1864,6 +1866,9 @@ export class CanvasView {
           text,
           fontSize: kind === "text" ? style.fontSize : undefined,
           scale: isMeasure && scale ? { ...scale } : null,
+          categoryId: category?.id,
+          room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
+          areaMode: kind === "area" ? "add" : undefined,
           createdAt: now,
           updatedAt: now,
         };

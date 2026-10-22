@@ -75,6 +75,23 @@ export function categoryForItem(project: Project, item: MarkupItem): Category | 
   return findCategory(project, item.categoryId) ?? defaultCategory(project);
 }
 
+/**
+ * Resolves the category for the next measurement. A stale or missing preferred
+ * id falls back to the project default instead of blocking creation.
+ */
+export function measurementCategory(
+  project: Project,
+  preferredId?: string | null,
+): Category | undefined {
+  return findCategory(project, preferredId ?? undefined) ?? defaultCategory(project);
+}
+
+/** Rooms are trimmed free text; an empty room is stored as undefined. */
+export function normalizeRoom(value: string): string | undefined {
+  const room = value.trim();
+  return room || undefined;
+}
+
 export function addCategory(project: Project, name: string): Category | null {
   if (categoryNameError(project.categories, name)) return null;
   const category: Category = {

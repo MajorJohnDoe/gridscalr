@@ -9,8 +9,10 @@ import {
   createDefaultQuantitySettings,
   defaultCategory,
   findCategory,
+  measurementCategory,
   moveCategory,
   normalizeCategoryName,
+  normalizeRoom,
   removeCategory,
   renameCategory,
   setDefaultCategory,
@@ -176,6 +178,25 @@ describe("categories", () => {
     expect(categoryForItem(project, item)?.name).toBe("Other");
     item.categoryId = categoryId(project, "Roof");
     expect(categoryForItem(project, item)?.name).toBe("Roof");
+  });
+
+  it("resolves the next measurement category and falls back when it is gone", () => {
+    const project = makeProject();
+    const roofId = categoryId(project, "Roof");
+    expect(measurementCategory(project)?.name).toBe("Other");
+    expect(measurementCategory(project, null)?.name).toBe("Other");
+    expect(measurementCategory(project, roofId)?.name).toBe("Roof");
+    expect(measurementCategory(project, "deleted")?.name).toBe("Other");
+
+    removeCategory(project, roofId);
+    expect(measurementCategory(project, roofId)?.name).toBe("Other");
+  });
+
+  it("trims room names and treats an empty room as undefined", () => {
+    expect(normalizeRoom("  Room 101 ")).toBe("Room 101");
+    expect(normalizeRoom("Room  101")).toBe("Room  101");
+    expect(normalizeRoom("   ")).toBeUndefined();
+    expect(normalizeRoom("")).toBeUndefined();
   });
 
   it("only accepts real categories as the default", () => {

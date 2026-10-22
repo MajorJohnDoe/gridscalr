@@ -22,6 +22,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Use right-click context menus on the canvas, Markups list, and layers for the same actions.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
+- Tag measurements with a category and a free-text room. The context bar keeps the last category and room for the next measurement, and room names autocomplete from rooms already used in the project.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
 - Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, or the current view as PNG.
 - Undo/redo, autosave, recent files, and a shortcut reference.
@@ -114,6 +115,8 @@ Measurements created while a page is calibrated capture a scale snapshot. If a p
 - **Area (A):** click around the perimeter, then click the first vertex or press **Enter** to close the polygon. Areas use the unit selected in Properties.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates.
+
+While the Length or Area tool is active, the context bar shows the category and room for new measurements. Both stay selected until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category and room, and both can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 

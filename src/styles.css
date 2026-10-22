@@ -689,6 +689,45 @@ textarea:disabled {
   letter-spacing: 0;
 }
 
+.context-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted-2);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  white-space: nowrap;
+}
+
+.context-select {
+  max-width: 150px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.context-room {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.context-room-input {
+  width: 118px;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.context-room-clear {
+  width: 20px;
+  height: 20px;
+  color: var(--muted-2);
+}
+
+.context-room-clear:hover {
+  color: var(--text);
+}
+
 .select,
 .input {
   height: 28px;

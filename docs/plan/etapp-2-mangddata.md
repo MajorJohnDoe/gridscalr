@@ -1,6 +1,6 @@
 # Etapp 2 – Mängddata och beställningsunderlag
 
-**Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1 (kategorier, schema v3 och migrering) är genomfört. Nästa steg är Etapp 2A steg 2.
+**Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1–2 (kategorier, schema v3, migrering och rum på mätningar) är genomförda. Nästa steg är Etapp 2A steg 3.
 
 Dokumentet ersätter den tidigare förslagsversionen. Alla beslut som krävdes innan implementation är nu låsta och listade i avsnitt 2. Om koden och planen hamnar i konflikt ska konflikten lösas uttryckligen, inte tyst.
 

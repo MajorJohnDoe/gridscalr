@@ -1,4 +1,10 @@
 import { pageCalibration, pageScale } from "../model/calibration";
+import {
+  allRooms,
+  categoryForItem,
+  measurementCategory,
+  normalizeRoom,
+} from "../model/categories";
 import { hasClipboard } from "../model/clipboard";
 import {
   duplicateLayer,
@@ -665,8 +671,10 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
         if (markupPageFilter === "current" && item.page !== store.ui.page) continue;
         const kindGroup = isMeasurementKind(item.kind) ? "measure" : "draw";
         if (markupKindFilter !== "all" && kindGroup !== markupKindFilter) continue;
+        const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
         if (query) {
-          const haystack = `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""}`.toLowerCase();
+          const haystack =
+            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""}`.toLowerCase();
           if (!haystack.includes(query)) continue;
         }
         rows.push({ item, layer, layerId: layer.id, layerName: layer.name, color: layer.color });
@@ -698,7 +706,14 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
       const label = el("span", "markup-label", fallbackLabel);
       label.title = `${row.item.text ?? fallbackLabel} — double-click to rename`;
       const value = el("span", "markup-value", metrics?.primary ?? "");
-      const meta = el("span", "markup-meta", `${itemKindLabel(row.item.kind)} · ${row.layerName}`);
+      const category = isMeasurementKind(row.item.kind) ? categoryForItem(project, row.item) : undefined;
+      const metaText = category
+        ? `${category.name}${row.item.room ? ` · ${row.item.room}` : ""}`
+        : `${itemKindLabel(row.item.kind)} · ${row.layerName}`;
+      const meta = el("span", "markup-meta", metaText);
+      meta.title = category
+        ? `${itemKindLabel(row.item.kind)} · ${category.name}${row.item.room ? ` · ${row.item.room}` : ""} · ${row.layerName}`
+        : `${itemKindLabel(row.item.kind)} · ${row.layerName}`;
       const page = el("span", "markup-page", `p.${row.item.page}`);
       const rowActions = el("span", "markup-actions");
       const eye = layerAction(
@@ -898,6 +913,49 @@ function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
       layerTarget.append(warning);
     }
     controls.append(layerTarget, el("div", "divider-v"));
+  }
+
+  const measureTool = store.ui.activeTool === "length" || store.ui.activeTool === "area";
+  if (measureTool) {
+    const pendingCategory = measurementCategory(project, store.ui.measureCategoryId);
+    const categoryField = el("label", "context-field");
+    categoryField.title = "Category for new measurements";
+    categoryField.append(el("span", "context-field-label", "Category"));
+    const categorySelect = el("select", "select context-select");
+    categorySelect.setAttribute("aria-label", "Category for new measurements");
+    for (const category of project.categories) {
+      categorySelect.append(option(category.id, category.name, category.id === pendingCategory?.id));
+    }
+    categorySelect.addEventListener("change", () => store.setMeasureCategory(categorySelect.value));
+    categoryField.append(categorySelect);
+
+    const roomField = el("label", "context-field");
+    roomField.title = "Room for new measurements";
+    roomField.append(el("span", "context-field-label", "Room"));
+    const roomWrap = el("span", "context-room");
+    const roomInput = el("input", "input context-room-input");
+    roomInput.type = "text";
+    roomInput.value = store.ui.measureRoom;
+    roomInput.placeholder = "Room";
+    roomInput.setAttribute("aria-label", "Room for new measurements");
+    const roomList = el("datalist");
+    roomList.id = "context-room-options";
+    for (const room of allRooms(project)) roomList.append(option(room, room));
+    roomInput.setAttribute("list", roomList.id);
+    roomInput.addEventListener("input", () => store.setMeasureRoom(roomInput.value));
+    const clearRoom = el("button", "icon-btn context-room-clear");
+    clearRoom.type = "button";
+    clearRoom.title = "Clear room";
+    clearRoom.setAttribute("aria-label", "Clear room");
+    clearRoom.innerHTML = icon("close", 11);
+    clearRoom.addEventListener("click", () => {
+      roomInput.value = "";
+      store.setMeasureRoom("");
+      roomInput.focus();
+    });
+    roomWrap.append(roomInput, clearRoom);
+    roomField.append(roomWrap, roomList);
+    controls.append(categoryField, roomField, el("div", "divider-v"));
   }
 
   if (store.ui.activeTool === "pen" || store.ui.activeTool === "line" || store.ui.activeTool === "arrow" || store.ui.activeTool === "rect" || store.ui.activeTool === "ellipse" || store.ui.activeTool === "highlight" || store.ui.activeTool === "text") {
@@ -1345,6 +1403,57 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
         "This measurement has no scale. Calibrate its page to show real-world values.",
       ),
     );
+  }
+
+  if (isMeasurementKind(item.kind)) {
+    const categoryField = el("label", "field");
+    categoryField.append(el("span", "field-label", "Category"));
+    const categorySelect = el("select", "select");
+    const currentCategory = categoryForItem(project, item);
+    for (const category of project.categories) {
+      categorySelect.append(
+        option(category.id, category.name, category.id === currentCategory?.id),
+      );
+    }
+    categorySelect.disabled = locked;
+    categorySelect.title = locked
+      ? "Unlock the layer to edit this markup."
+      : "Grouping used by the quantity report";
+    categorySelect.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) target.categoryId = categorySelect.value;
+      }, "change");
+    });
+    categoryField.append(categorySelect);
+    section.append(categoryField);
+
+    const roomField = el("label", "field");
+    roomField.append(el("span", "field-label", "Room"));
+    const roomInput = el("input", "input");
+    roomInput.type = "text";
+    roomInput.value = item.room ?? "";
+    roomInput.placeholder = "Optional";
+    roomInput.disabled = locked;
+    roomInput.title = locked
+      ? "Unlock the layer to edit this markup."
+      : "Free text; suggestions come from rooms already used in the project";
+    const roomList = el("datalist");
+    roomList.id = "selection-room-options";
+    for (const room of allRooms(project)) roomList.append(option(room, room));
+    roomInput.setAttribute("list", roomList.id);
+    roomInput.addEventListener("change", () => {
+      const room = normalizeRoom(roomInput.value);
+      roomInput.value = room ?? "";
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (room) target.room = room;
+        else delete target.room;
+      }, "change");
+    });
+    roomField.append(roomInput, roomList);
+    section.append(roomField);
   }
 
   const labelField = el("label", "field");

@@ -47,6 +47,10 @@ export interface UIState {
   cursor: Point | null;
   leftTab: LeftTab;
   style: DrawStyle;
+  /** Category for new measurements. null means the project default. */
+  measureCategoryId: string | null;
+  /** Sticky room for new measurements, trimmed when an item is created. */
+  measureRoom: string;
 }
 
 export type ChangeReason =
@@ -108,6 +112,8 @@ function defaultUI(): UIState {
       fillOpacity: 0.15,
       fontSize: 12,
     },
+    measureCategoryId: null,
+    measureRoom: "",
   };
 }
 
@@ -152,6 +158,8 @@ export class Store {
     this.ui.activeTool = "select";
     this.ui.cursor = null;
     this.ui.leftTab = "layers";
+    this.ui.measureCategoryId = null;
+    this.ui.measureRoom = "";
     this.emit("project");
     this.scheduleAutosave();
   }
@@ -251,6 +259,24 @@ export class Store {
   setStyle(style: Partial<DrawStyle>): void {
     this.ui.style = { ...this.ui.style, ...style };
     this.emit("tool");
+  }
+
+  /**
+   * Pending category and room are session state, not project data: they emit
+   * "cursor" so typing a room name does not rebuild the panels and steal focus.
+   */
+  setMeasureCategory(categoryId: string | null): void {
+    if (!this.project) return;
+    if (categoryId !== null && !findCategory(this.project, categoryId)) return;
+    if (this.ui.measureCategoryId === categoryId) return;
+    this.ui.measureCategoryId = categoryId;
+    this.emit("cursor");
+  }
+
+  setMeasureRoom(room: string): void {
+    if (this.ui.measureRoom === room) return;
+    this.ui.measureRoom = room;
+    this.emit("cursor");
   }
 
   setActiveLayer(layerId: string): void {

@@ -3,7 +3,7 @@
 ## Status
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
-- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A steg 1 (kategorier, schema v3 och migrering) är genomfört; rum, antalsverktyg, avdragsarea och summering återstår.
+- **Etapp 2 – Mängddata och beställningsunderlag:** pågår. Etapp 2A steg 1–2 (kategorier, schema v3, rum på mätningar) är genomförda; antalsverktyg, avdragsarea och summering återstår.
 - **Etapp 3 – Mätverktyg, skala och export:** planerad, detaljplaneras efter Etapp 2.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
