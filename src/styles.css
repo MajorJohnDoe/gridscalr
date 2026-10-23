@@ -894,6 +894,28 @@ textarea:disabled {
   overflow: hidden;
 }
 
+.canvas-crop-bar {
+  position: absolute;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px 8px 14px;
+  background: rgba(20, 26, 29, 0.94);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  box-shadow: var(--shadow);
+  white-space: nowrap;
+}
+
+.canvas-crop-hint {
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
 .canvas-text-editor {
   position: absolute;
   inset: 0;
@@ -2147,6 +2169,145 @@ textarea:disabled {
   margin: 2px 0 0;
   color: var(--danger);
   font-size: 11.5px;
+}
+
+/* ---------- Drawing export dialog ---------- */
+
+.export-form {
+  gap: 14px;
+  max-height: min(58vh, 520px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.export-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.export-section-title {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.export-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.export-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.export-radio {
+  margin-top: 0;
+  padding: 5px 7px;
+  border-radius: 5px;
+}
+
+.export-radio:hover {
+  background: var(--panel-hover);
+}
+
+.export-note {
+  margin: 0;
+  color: var(--muted-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.export-actions-row {
+  flex: 0 0 auto;
+}
+
+.export-actions-row > * {
+  flex: 0 0 auto;
+}
+
+.export-range-field {
+  max-width: 210px;
+}
+
+.export-layer-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  max-height: 152px;
+  overflow-y: auto;
+  padding: 3px;
+  background: rgba(0, 0, 0, 0.14);
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.export-layer-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 7px;
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.export-layer-row:hover {
+  background: var(--panel-hover);
+}
+
+.export-layer-row.is-disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.export-layer-swatch {
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.export-layer-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.export-hidden-tag {
+  flex: 0 0 auto;
+  padding: 1px 4px;
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  color: var(--muted-2);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.export-check {
+  margin-top: 0;
+}
+
+.export-check-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.export-check-note {
+  color: var(--muted-2);
+  font-size: 11px;
 }
 
 /* ---------- Category manager ---------- */

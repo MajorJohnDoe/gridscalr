@@ -9,6 +9,7 @@ import {
   setPageScaleLocked,
 } from "../model/calibration";
 import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
+import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import {
   createProject,
   findItem,
@@ -63,7 +64,7 @@ import { serializeQuantityCsv } from "../report/csv";
 import { buildQuantityReport } from "../report/reportModel";
 import { store, type ToolId } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
-import { confirmDialog, manualScaleDialog, messageDialog, passwordDialog } from "../ui/dialogs";
+import { confirmDialog, drawingExportDialog, manualScaleDialog, messageDialog, passwordDialog } from "../ui/dialogs";
 import {
   renderChrome,
   renderTopbar,
@@ -247,6 +248,7 @@ export class App {
     if (this.disposed) return;
     if (document.querySelector(".modal-backdrop")) return;
     if (isEditableTarget(event.target)) return;
+    if (this.canvas.isCropping && event.key !== "Escape" && event.key !== "Enter") return;
 
     const mod = event.ctrlKey || event.metaKey;
     const key = event.key.toLowerCase();
@@ -1106,8 +1108,40 @@ export class App {
     name.addEventListener("blur", onBlur);
   }
 
+  private async chooseDrawingExport(project: Project): Promise<DrawingExportOptions | null> {
+    let options = defaultDrawingExportOptions(project, store.ui.page);
+    let initialAreaMode: "whole" | "crop" | undefined;
+    let cropReferencePage = store.ui.page;
+    for (;;) {
+      const result = await drawingExportDialog({
+        currentPage: store.ui.page,
+        pageCount: project.document.pageCount,
+        layers: project.layers.map((layer) => ({
+          id: layer.id,
+          name: layer.name,
+          kind: layer.kind,
+          visible: layer.visible,
+          color: layer.color,
+        })),
+        initial: options,
+        initialAreaMode,
+        cropReferencePage,
+      });
+      if (!result) return null;
+      options = result.options;
+      if (result.action === "export") return options;
+
+      initialAreaMode = "crop";
+      const crop = await this.canvas.pickExportCrop(options.crop);
+      if (crop) {
+        options = { ...options, crop };
+        cropReferencePage = store.ui.page;
+      }
+    }
+  }
+
   private async exportAs(
-    kind: "csv" | "json" | "png" | "pdf" | "quantity-csv" | "quantity-pdf",
+    kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf",
   ): Promise<void> {
     const project = store.project;
     if (!project) return;
@@ -1171,10 +1205,12 @@ export class App {
         return;
       }
 
-      if (kind === "pdf") {
+      if (kind === "drawing") {
         if (!this.renderer) throw new Error("The source PDF is not available.");
         try {
-          const bytes = await exportProjectPdf(project, this.renderer);
+          const options = await this.chooseDrawingExport(project);
+          if (!options) return;
+          const bytes = await exportProjectPdf(project, this.renderer, options);
           const path = await saveBinaryFile(
             bytes,
             `${safe}-markups.pdf`,
@@ -1182,7 +1218,12 @@ export class App {
             "application/pdf",
             project.document.path,
           );
-          if (path) toast("Flattened PDF exported.", "success");
+          if (path) {
+            toast(
+              options.crop ? "Cropped drawing PDF exported." : "Drawing PDF exported.",
+              "success",
+            );
+          }
         } catch (error) {
           if (error instanceof Error && /encrypt/i.test(error.message)) {
             await messageDialog(

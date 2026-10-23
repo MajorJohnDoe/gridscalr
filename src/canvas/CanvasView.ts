@@ -55,6 +55,12 @@ import {
   layerKindForItem,
   removeItem,
 } from "../model/layers";
+import {
+  normalizeCropRect,
+  pageRectFromCrop,
+  type NormalizedCrop,
+  type PageRect,
+} from "../model/export";
 import { itemMetrics } from "../model/measure";
 import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
@@ -140,6 +146,21 @@ interface MarqueeState {
   start: Point;
   current: Point;
   additive: boolean;
+}
+
+interface CropDrag {
+  mode: "new" | "move" | "resize";
+  start: Point;
+  startRect: PageRect | null;
+  handle?: BoxHandleRole;
+  pointerId: number;
+}
+
+interface CropMode {
+  rect: PageRect | null;
+  drag: CropDrag | null;
+  hover: BoxHandleRole | "move" | null;
+  resolve: (crop: NormalizedCrop | null) => void;
 }
 
 interface TextEditSession {
@@ -232,6 +253,8 @@ export class CanvasView {
   private editingItemId: string | null = null;
   private editingLabelId: string | null = null;
   private hoverHandle: Handle | null = null;
+  private cropMode: CropMode | null = null;
+  private cropUi: HTMLDivElement | null = null;
 
   constructor(host: HTMLElement, hooks: CanvasHooks) {
     this.host = host;
@@ -353,8 +376,13 @@ export class CanvasView {
       this.pan !== null ||
       this.draft !== null ||
       this.textEdit !== null ||
-      this.labelEdit !== null
+      this.labelEdit !== null ||
+      this.cropMode !== null
     );
+  }
+
+  get isCropping(): boolean {
+    return this.cropMode !== null;
   }
 
   private pageSize(): PageSize | undefined {
@@ -381,6 +409,98 @@ export class CanvasView {
     const panY = (this.height - size.height * zoom) / 2;
     store.setView(zoom, panX, panY);
     return true;
+  }
+
+  /**
+   * Enters the one-shot crop mode used by the drawing export dialog. The
+   * promise resolves with a relative crop, or null when the user cancels.
+   */
+  pickExportCrop(initial?: NormalizedCrop): Promise<NormalizedCrop | null> {
+    if (!store.project) return Promise.resolve(null);
+    this.finishCrop(null);
+    this.draft = null;
+    this.drag = null;
+    this.marquee = null;
+    this.pan = null;
+    this.hoverHandle = null;
+    this.snap = null;
+    this.snapCache = null;
+    store.clearSelection();
+    this.fitPage();
+    const size = this.pageSize();
+    if (!size) return Promise.resolve(null);
+    const rect = initial ? pageRectFromCrop(initial, size) : null;
+    return new Promise<NormalizedCrop | null>((resolve) => {
+      this.cropMode = { rect, drag: null, hover: null, resolve };
+      this.showCropUi();
+      this.interaction.focus({ preventScroll: true });
+      this.updateCursor();
+      this.drawInteraction();
+      toast("Draw the export area. Drag the handles to adjust. Enter uses it, Esc cancels.", "info");
+    });
+  }
+
+  confirmCrop(): boolean {
+    const mode = this.cropMode;
+    if (!mode) return false;
+    const size = this.pageSize();
+    if (!size || !mode.rect || mode.rect.width < 1 || mode.rect.height < 1) {
+      toast("Draw an export area first.", "warning");
+      return false;
+    }
+    const crop = normalizeCropRect(mode.rect, size);
+    if (!crop) {
+      toast("The export area is too small.", "warning");
+      return false;
+    }
+    this.finishCrop(crop);
+    return true;
+  }
+
+  cancelCrop(): void {
+    this.finishCrop(null);
+  }
+
+  private finishCrop(crop: NormalizedCrop | null): void {
+    const mode = this.cropMode;
+    if (!mode) return;
+    this.cropMode = null;
+    this.hideCropUi();
+    this.updateCursor();
+    this.drawInteraction();
+    mode.resolve(crop);
+  }
+
+  private showCropUi(): void {
+    this.hideCropUi();
+    const bar = document.createElement("div");
+    bar.className = "canvas-crop-bar";
+    bar.dataset.cropUi = "true";
+
+    const hint = document.createElement("span");
+    hint.className = "canvas-crop-hint";
+    hint.textContent = "Drag to select the export area";
+
+    const cancel = document.createElement("button");
+    cancel.type = "button";
+    cancel.className = "btn btn-small btn-ghost";
+    cancel.textContent = "Cancel";
+    cancel.addEventListener("click", () => this.cancelCrop());
+
+    const use = document.createElement("button");
+    use.type = "button";
+    use.className = "btn btn-small btn-primary";
+    use.textContent = "Use area";
+    use.addEventListener("click", () => this.confirmCrop());
+
+    bar.append(hint, cancel, use);
+    this.host.append(bar);
+    this.cropUi = bar;
+  }
+
+  private hideCropUi(): void {
+    this.cropUi?.remove();
+    this.cropUi = null;
   }
 
   actualSize(): void {
@@ -479,7 +599,15 @@ export class CanvasView {
   private updateCursor(): void {
     const tool = store.ui.activeTool;
     let cursor = "";
-    if (this.pan) cursor = "grabbing";
+    if (this.cropMode) {
+      const cropDrag = this.cropMode.drag;
+      if (cropDrag?.mode === "move") cursor = "move";
+      else if (cropDrag?.handle) cursor = cursorForRole(cropDrag.handle);
+      else if (cropDrag?.mode === "new") cursor = "crosshair";
+      else if (this.cropMode.hover === "move") cursor = "move";
+      else if (this.cropMode.hover) cursor = cursorForRole(this.cropMode.hover);
+      else cursor = "crosshair";
+    } else if (this.pan) cursor = "grabbing";
     else if (this.drag) {
       if (this.drag.mode === "rotate") cursor = "grabbing";
       else if (this.drag.mode === "resize" && this.drag.handle) {
@@ -517,6 +645,13 @@ export class CanvasView {
     this.commitActiveEditors();
     this.interaction.focus({ preventScroll: true });
     const screen = this.localPoint(event);
+
+    if (this.cropMode) {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      this.handleCropDown(this.toPage(screen), event);
+      return;
+    }
 
     if (event.button === 1 || this.spaceDown || store.ui.activeTool === "pan") {
       event.preventDefault();
@@ -877,6 +1012,11 @@ export class CanvasView {
     const page = this.toPage(screen);
     store.setCursor(page);
 
+    if (this.cropMode) {
+      this.handleCropMove(page);
+      return;
+    }
+
     if (this.pan) {
       const dx = event.clientX - this.pan.startX;
       const dy = event.clientY - this.pan.startY;
@@ -1105,6 +1245,10 @@ export class CanvasView {
     if (this.interaction.hasPointerCapture(event.pointerId)) {
       this.releasePointer(event.pointerId);
     }
+    if (this.cropMode) {
+      this.handleCropUp();
+      return;
+    }
     if (this.pan) {
       this.pan = null;
       this.updateCursor();
@@ -1175,7 +1319,133 @@ export class CanvasView {
     this.drawInteraction();
   }
 
+  private handleCropDown(page: Point, event: PointerEvent): void {
+    const mode = this.cropMode;
+    const size = this.pageSize();
+    if (!mode || !size) return;
+    const point = clampPointToPage(page, size);
+    const screen = this.toScreen(page);
+    if (mode.rect) {
+      const handle = this.cropHandleAt(mode.rect, screen);
+      if (handle) {
+        mode.drag = {
+          mode: "resize",
+          start: point,
+          startRect: { ...mode.rect },
+          handle,
+          pointerId: event.pointerId,
+        };
+        this.capturePointer(event.pointerId);
+        mode.hover = handle;
+        this.updateCursor();
+        this.drawInteraction();
+        return;
+      }
+      if (pointInRect(point, mode.rect)) {
+        mode.drag = {
+          mode: "move",
+          start: point,
+          startRect: { ...mode.rect },
+          pointerId: event.pointerId,
+        };
+        this.capturePointer(event.pointerId);
+        mode.hover = "move";
+        this.updateCursor();
+        this.drawInteraction();
+        return;
+      }
+    }
+    mode.rect = { x: point.x, y: point.y, width: 0, height: 0 };
+    mode.drag = {
+      mode: "new",
+      start: point,
+      startRect: null,
+      pointerId: event.pointerId,
+    };
+    mode.hover = null;
+    this.capturePointer(event.pointerId);
+    this.updateCursor();
+    this.drawInteraction();
+  }
+
+  private handleCropMove(page: Point): void {
+    const mode = this.cropMode;
+    const size = this.pageSize();
+    if (!mode || !size) return;
+    if (!mode.drag) {
+      mode.hover = mode.rect ? this.cropHoverAt(mode.rect, this.toScreen(page)) : null;
+      this.updateCursor();
+      this.drawInteraction();
+      return;
+    }
+    const point = clampPointToPage(page, size);
+    if (mode.drag.mode === "new") {
+      mode.rect = rectFromPoints(mode.drag.start, point);
+    } else if (mode.drag.startRect) {
+      mode.rect =
+        mode.drag.mode === "move"
+          ? movePageRect(mode.drag.startRect, mode.drag.start, point, size)
+          : resizePageRect(mode.drag.startRect, mode.drag.handle, point, size);
+    }
+    this.drawInteraction();
+  }
+
+  private handleCropUp(): void {
+    const mode = this.cropMode;
+    if (!mode) return;
+    const drag = mode.drag;
+    mode.drag = null;
+    mode.hover = null;
+    if (drag?.mode === "new" && mode.rect && (mode.rect.width < 1 || mode.rect.height < 1)) {
+      mode.rect = null;
+    }
+    this.updateCursor();
+    this.drawInteraction();
+  }
+
+  private cropHandleAt(rect: PageRect, screen: Point): BoxHandleRole | null {
+    const tolerance = 10;
+    for (const [role, point] of this.cropHandlePoints(rect)) {
+      const target = this.toScreen(point);
+      if (Math.hypot(target.x - screen.x, target.y - screen.y) <= tolerance) return role;
+    }
+    return null;
+  }
+
+  private cropHoverAt(rect: PageRect, screen: Point): BoxHandleRole | "move" | null {
+    const handle = this.cropHandleAt(rect, screen);
+    if (handle) return handle;
+    return pointInRect(this.toPage(screen), rect) ? "move" : null;
+  }
+
+  private cropHandlePoints(rect: PageRect): Array<[BoxHandleRole, Point]> {
+    const left = rect.x;
+    const top = rect.y;
+    const right = rect.x + rect.width;
+    const bottom = rect.y + rect.height;
+    const midX = (left + right) / 2;
+    const midY = (top + bottom) / 2;
+    return [
+      ["nw", { x: left, y: top }],
+      ["n", { x: midX, y: top }],
+      ["ne", { x: right, y: top }],
+      ["e", { x: right, y: midY }],
+      ["se", { x: right, y: bottom }],
+      ["s", { x: midX, y: bottom }],
+      ["sw", { x: left, y: bottom }],
+      ["w", { x: left, y: midY }],
+    ];
+  }
+
   private onPointerLeave = (): void => {
+    if (this.cropMode) {
+      if (!this.cropMode.drag) {
+        this.cropMode.hover = null;
+        this.updateCursor();
+        this.drawInteraction();
+      }
+      return;
+    }
     if (this.drag || this.pan) return;
     this.pointerScreen = null;
     this.hoverHandle = null;
@@ -1187,7 +1457,7 @@ export class CanvasView {
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
-    if (!store.project) return;
+    if (!store.project || this.cropMode) return;
     const tool = store.ui.activeTool;
     if (tool === "length" || tool === "area") {
       this.finishDraft();
@@ -1249,6 +1519,7 @@ export class CanvasView {
 
   private onContextMenu = (event: MouseEvent): void => {
     event.preventDefault();
+    if (this.cropMode) return;
     const project = store.project;
     if (!project) return;
     const page = this.toPage(this.localPoint(event));
@@ -2037,6 +2308,10 @@ export class CanvasView {
   }
 
   public finishDraft(): void {
+    if (this.cropMode) {
+      this.confirmCrop();
+      return;
+    }
     if (!this.draft) return;
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
@@ -2094,6 +2369,10 @@ export class CanvasView {
   }
 
   public cancelDraft(): void {
+    if (this.cropMode) {
+      this.cancelCrop();
+      return;
+    }
     if (!this.draft) return;
     this.draft = null;
     this.snap = null;
@@ -2586,6 +2865,10 @@ export class CanvasView {
     const ctx = this.interactionCtx;
     this.prepare(ctx);
     if (!store.project) return;
+    if (this.cropMode) {
+      this.drawCropOverlay(ctx);
+      return;
+    }
     const selected = resolveSelection(store.project, store.ui.selection).filter(
       (entry) => entry.layer.visible && entry.item.visible !== false,
     );
@@ -2723,6 +3006,99 @@ export class CanvasView {
       ctx.stroke();
       ctx.restore();
     }
+  }
+
+  private drawCropOverlay(ctx: CanvasRenderingContext2D): void {
+    const mode = this.cropMode;
+    const size = this.pageSize();
+    if (!mode || !size) return;
+    const pageTopLeft = this.toScreen({ x: 0, y: 0 });
+    const pageBottomRight = this.toScreen({ x: size.width, y: size.height });
+    const pageRect = {
+      x: pageTopLeft.x,
+      y: pageTopLeft.y,
+      width: pageBottomRight.x - pageTopLeft.x,
+      height: pageBottomRight.y - pageTopLeft.y,
+    };
+
+    if (!mode.rect) {
+      ctx.save();
+      ctx.strokeStyle = hexAlpha(ACCENT, 0.55);
+      ctx.lineWidth = 1;
+      ctx.setLineDash([6, 5]);
+      ctx.strokeRect(pageRect.x + 0.5, pageRect.y + 0.5, pageRect.width, pageRect.height);
+      ctx.restore();
+      return;
+    }
+
+    const start = this.toScreen({ x: mode.rect.x, y: mode.rect.y });
+    const end = this.toScreen({
+      x: mode.rect.x + mode.rect.width,
+      y: mode.rect.y + mode.rect.height,
+    });
+    const crop = {
+      x: start.x,
+      y: start.y,
+      width: end.x - start.x,
+      height: end.y - start.y,
+    };
+
+    ctx.save();
+    ctx.fillStyle = "rgba(4, 8, 10, 0.58)";
+    const top = Math.max(pageRect.y, 0);
+    const bottom = Math.min(pageRect.y + pageRect.height, this.height);
+    const left = Math.max(pageRect.x, 0);
+    const right = Math.min(pageRect.x + pageRect.width, this.width);
+    ctx.fillRect(left, top, right - left, Math.max(0, crop.y - top));
+    ctx.fillRect(
+      left,
+      crop.y + crop.height,
+      right - left,
+      Math.max(0, bottom - (crop.y + crop.height)),
+    );
+    ctx.fillRect(left, crop.y, Math.max(0, crop.x - left), crop.height);
+    ctx.fillRect(
+      crop.x + crop.width,
+      crop.y,
+      Math.max(0, right - (crop.x + crop.width)),
+      crop.height,
+    );
+
+    ctx.fillStyle = "rgba(53, 194, 161, 0.08)";
+    ctx.fillRect(crop.x, crop.y, crop.width, crop.height);
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([6, 4]);
+    ctx.strokeRect(crop.x + 0.75, crop.y + 0.75, crop.width, crop.height);
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = "#101619";
+    ctx.strokeStyle = ACCENT;
+    ctx.lineWidth = 1.5;
+    for (const [, point] of this.cropHandlePoints(mode.rect)) {
+      const screen = this.toScreen(point);
+      ctx.fillRect(screen.x - 4, screen.y - 4, 8, 8);
+      ctx.strokeRect(screen.x - 4, screen.y - 4, 8, 8);
+    }
+
+    const widthPercent = Math.round((mode.rect.width / size.width) * 100);
+    const heightPercent = Math.round((mode.rect.height / size.height) * 100);
+    const label = `Export area · ${widthPercent}% × ${heightPercent}%`;
+    ctx.font = `600 10px ${FONT_STACK}`;
+    const labelWidth = ctx.measureText(label).width + 12;
+    const labelX = Math.max(8, Math.min(this.width - labelWidth - 8, crop.x));
+    const labelY = Math.max(8, crop.y - 26);
+    ctx.fillStyle = "rgba(12,16,18,0.92)";
+    ctx.strokeStyle = hexAlpha(ACCENT, 0.65);
+    ctx.lineWidth = 1;
+    roundRect(ctx, labelX, labelY, labelWidth, 18, 4);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = "#edf3f5";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    ctx.fillText(label, labelX + 6, labelY + 9);
+    ctx.restore();
   }
 
   private traceItemOutline(ctx: CanvasRenderingContext2D, item: MarkupItem): void {
@@ -2964,6 +3340,8 @@ export class CanvasView {
 
   destroy(): void {
     this.unsubscribe();
+    this.hideCropUi();
+    this.cropMode = null;
     this.observer.disconnect();
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
     document.removeEventListener("pointerdown", this.onDocumentPointerDown, true);
@@ -2981,6 +3359,72 @@ export class CanvasView {
     this.interaction.removeEventListener("wheel", this.onWheel);
     this.interaction.removeEventListener("contextmenu", this.onContextMenu);
   }
+}
+
+function clampPointToPage(point: Point, size: PageSize): Point {
+  return {
+    x: Math.max(0, Math.min(size.width, point.x)),
+    y: Math.max(0, Math.min(size.height, point.y)),
+  };
+}
+
+function pointInRect(point: Point, rect: PageRect): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  );
+}
+
+function rectFromPoints(start: Point, end: Point): PageRect {
+  return {
+    x: Math.min(start.x, end.x),
+    y: Math.min(start.y, end.y),
+    width: Math.abs(end.x - start.x),
+    height: Math.abs(end.y - start.y),
+  };
+}
+
+function movePageRect(
+  rect: PageRect,
+  start: Point,
+  point: Point,
+  size: PageSize,
+): PageRect {
+  return {
+    x: Math.max(0, Math.min(size.width - rect.width, rect.x + point.x - start.x)),
+    y: Math.max(0, Math.min(size.height - rect.height, rect.y + point.y - start.y)),
+    width: rect.width,
+    height: rect.height,
+  };
+}
+
+function resizePageRect(
+  rect: PageRect,
+  handle: BoxHandleRole | undefined,
+  point: Point,
+  size: PageSize,
+): PageRect {
+  if (!handle) return rect;
+  const minSize = 1;
+  let left = rect.x;
+  let right = rect.x + rect.width;
+  let top = rect.y;
+  let bottom = rect.y + rect.height;
+  if (handle.includes("w")) {
+    left = Math.max(0, Math.min(right - minSize, point.x));
+  }
+  if (handle.includes("e")) {
+    right = Math.min(size.width, Math.max(left + minSize, point.x));
+  }
+  if (handle.includes("n")) {
+    top = Math.max(0, Math.min(bottom - minSize, point.y));
+  }
+  if (handle.includes("s")) {
+    bottom = Math.min(size.height, Math.max(top + minSize, point.y));
+  }
+  return { x: left, y: top, width: right - left, height: bottom - top };
 }
 
 function constrainSquare(start: Point, point: Point): Point {

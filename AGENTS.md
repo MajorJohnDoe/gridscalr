@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
 - Current project-file schema: `4`.
-- Etapp 1 and Etapp 2 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B is next.
+- Etapp 1, Etapp 2 and Etapp 3 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 is next.
 
 ## Read before changing code
 
@@ -159,7 +159,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 - **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
 - **Etapp 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
 - **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
-- **Etapp 3:** in progress — 3A complete with quick areas, manual scale/lock, and markup snapping; 3B drawing-export dialog is next.
+- **Etapp 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
 - **Etapp 4:** planned — image objects and image-aware PDF export.
 - XLSX is deferred until CSV proves insufficient.
 

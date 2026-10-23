@@ -1,5 +1,12 @@
-import type { LengthUnit } from "../model/types";
+import type { LayerKind, LengthUnit } from "../model/types";
 import { manualPointsPerMeter } from "../model/calibration";
+import {
+  cropAreaPercent,
+  formatPageList,
+  parsePageRange,
+  type DrawingExportOptions,
+  type NormalizedCrop,
+} from "../model/export";
 import { formatNumber, LENGTH_UNITS } from "../model/units";
 import { el, option } from "./dom";
 import { icon } from "./icons";
@@ -23,6 +30,8 @@ export function showModal(options: {
   body: HTMLElement;
   actions: ModalAction[];
   onValidate?: () => string | null;
+  /** Called after the modal is mounted, for dynamic button and field state. */
+  onMount?: (modal: HTMLElement) => void;
   wide?: boolean;
 }): Promise<string | null> {
   closeActiveModal();
@@ -86,6 +95,7 @@ export function showModal(options: {
     backdrop.append(modal);
     document.body.append(backdrop);
     activeModal = { close: closeModal };
+    options.onMount?.(modal);
 
     close.addEventListener("click", closeModal);
     backdrop.addEventListener("mousedown", (event) => {
@@ -380,6 +390,347 @@ export function manualScaleDialog(options: {
         }
       : null,
   );
+}
+
+export interface DrawingExportLayer {
+  id: string;
+  name: string;
+  kind: LayerKind;
+  visible: boolean;
+  color: string;
+}
+
+export interface DrawingExportDialogOptions {
+  currentPage: number;
+  pageCount: number;
+  layers: DrawingExportLayer[];
+  initial: DrawingExportOptions;
+  /** Keeps the area mode when the dialog reopens after drawing a crop. */
+  initialAreaMode?: "whole" | "crop";
+  /** Page used when the crop was drawn, shown to make the relative area clear. */
+  cropReferencePage: number;
+}
+
+export interface DrawingExportDialogResult {
+  action: "export" | "crop";
+  options: DrawingExportOptions;
+}
+
+export function drawingExportDialog(
+  options: DrawingExportDialogOptions,
+): Promise<DrawingExportDialogResult | null> {
+  const { currentPage, pageCount, layers, initial } = options;
+  const allPages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const initialPages = [...new Set(initial.pages)]
+    .filter((page) => Number.isInteger(page) && page >= 1 && page <= pageCount)
+    .sort((a, b) => a - b);
+  const initialIsAll =
+    initialPages.length === pageCount && initialPages.every((page, index) => page === index + 1);
+  let pageMode: "current" | "all" | "range" =
+    initialPages.length === 1 && initialPages[0] === currentPage
+      ? "current"
+      : initialIsAll
+        ? "all"
+        : "range";
+  let rangeText =
+    pageMode === "range" ? formatPageList(initialPages.length ? initialPages : [currentPage]) : "";
+  let areaMode: "whole" | "crop" = options.initialAreaMode ?? (initial.crop ? "crop" : "whole");
+  let crop: NormalizedCrop | undefined = initial.crop ? { ...initial.crop } : undefined;
+  const selectedLayers = new Set(
+    layers.filter((layer) => layer.visible && initial.layerIds.includes(layer.id)).map((layer) => layer.id),
+  );
+  let includeLabels = initial.includeLabels;
+  let includeCalibration = initial.includeCalibration;
+  let includeLegend = initial.includeLegend;
+  let primary: HTMLButtonElement | null = null;
+
+  const body = el("div", "form-stack export-form");
+
+  const areaSection = el("section", "export-section");
+  areaSection.append(el("h3", "export-section-title", "Area"));
+  const areaRadios = el("div", "export-radio-group");
+  const radioName = `drawing-export-area-${Date.now()}`;
+  const wholeRadio = exportRadio(radioName, "Whole page(s)", areaMode === "whole");
+  const cropRadio = exportRadio(radioName, "Selected area (crop)", areaMode === "crop");
+  areaRadios.append(wholeRadio.row, cropRadio.row);
+  areaSection.append(areaRadios);
+
+  const cropDetail = el("p", "export-note");
+  const cropButtons = el("div", "field-row export-actions-row");
+  const drawAreaButton = el("button", "btn btn-small", "Draw area…");
+  drawAreaButton.type = "button";
+  drawAreaButton.dataset.exportCrop = "true";
+  const clearAreaButton = el("button", "btn btn-small btn-ghost", "Clear");
+  clearAreaButton.type = "button";
+  cropButtons.append(drawAreaButton, clearAreaButton);
+  areaSection.append(cropDetail, cropButtons);
+  body.append(areaSection);
+
+  const pagesSection = el("section", "export-section");
+  pagesSection.append(el("h3", "export-section-title", "Pages"));
+  const pageRadios = el("div", "export-radio-group");
+  const currentRadio = exportRadio(radioName + "-pages", `Current page (${currentPage})`, pageMode === "current");
+  const allRadio = exportRadio(radioName + "-pages", `All pages (${pageCount})`, pageMode === "all");
+  const rangeRadio = exportRadio(radioName + "-pages", "Range", pageMode === "range");
+  pageRadios.append(currentRadio.row, allRadio.row, rangeRadio.row);
+  pagesSection.append(pageRadios);
+
+  const rangeField = el("label", "field export-range-field");
+  rangeField.append(el("span", "field-label", "Page range"));
+  const rangeInput = el("input", "input");
+  rangeInput.type = "text";
+  rangeInput.placeholder = "e.g. 1-3, 5";
+  rangeInput.value = rangeText;
+  rangeField.append(rangeInput);
+  const rangeError = el("p", "form-error");
+  rangeField.append(rangeError);
+  pagesSection.append(rangeField);
+  body.append(pagesSection);
+
+  const layerSection = el("section", "export-section");
+  const layerHead = el("div", "export-section-head");
+  layerHead.append(el("h3", "export-section-title", "Layers"));
+  const layerActions = el("div", "field-row export-actions-row");
+  const selectAll = el("button", "btn btn-small btn-ghost", "Select all");
+  selectAll.type = "button";
+  const clearAll = el("button", "btn btn-small btn-ghost", "Clear");
+  clearAll.type = "button";
+  layerActions.append(selectAll, clearAll);
+  layerHead.append(layerActions);
+  layerSection.append(layerHead);
+  const layerList = el("div", "export-layer-list");
+  const layerInputs = new Map<string, HTMLInputElement>();
+  for (const layer of layers) {
+    const row = el("label", `export-layer-row${layer.visible ? "" : " is-disabled"}`);
+    const input = el("input");
+    input.type = "checkbox";
+    input.checked = layer.visible && selectedLayers.has(layer.id);
+    input.disabled = !layer.visible;
+    input.addEventListener("change", () => {
+      if (input.checked) selectedLayers.add(layer.id);
+      else selectedLayers.delete(layer.id);
+      update();
+    });
+    layerInputs.set(layer.id, input);
+    const swatch = el("span", "export-layer-swatch");
+    swatch.style.background = layer.color;
+    row.append(input, swatch, el("span", "export-layer-name", layer.name));
+    if (!layer.visible) row.append(el("span", "export-hidden-tag", "Hidden"));
+    layerList.append(row);
+  }
+  layerSection.append(layerList);
+  body.append(layerSection);
+
+  const optionsSection = el("section", "export-section");
+  optionsSection.append(el("h3", "export-section-title", "Content"));
+  const labelsCheck = exportCheckbox("Labels", "Generated measurement labels; text notes always follow the drawing.", includeLabels);
+  const calibrationCheck = exportCheckbox(
+    "Calibration line",
+    "Reference line and label. Manual scales appear in the legend instead.",
+    includeCalibration,
+  );
+  const legendCheck = exportCheckbox(
+    "Legend",
+    "Adds a separate A4 page after the drawing pages.",
+    includeLegend,
+  );
+  labelsCheck.input.addEventListener("change", () => {
+    includeLabels = labelsCheck.input.checked;
+    update();
+  });
+  calibrationCheck.input.addEventListener("change", () => {
+    includeCalibration = calibrationCheck.input.checked;
+    update();
+  });
+  legendCheck.input.addEventListener("change", () => {
+    includeLegend = legendCheck.input.checked;
+    update();
+  });
+  optionsSection.append(labelsCheck.row, calibrationCheck.row, legendCheck.row);
+  body.append(optionsSection);
+
+  const syncAreaRadios = () => {
+    wholeRadio.input.checked = areaMode === "whole";
+    cropRadio.input.checked = areaMode === "crop";
+    cropDetail.textContent = crop
+      ? `${formatNumber(crop.width * 100, 1)}% × ${formatNumber(crop.height * 100, 1)}% of page ${options.cropReferencePage} · ${formatNumber(cropAreaPercent(crop), 1)}% of the page area. Same relative area on every selected page.`
+      : "No area selected. Draw a rectangular area on the page.";
+    clearAreaButton.disabled = !crop;
+    drawAreaButton.textContent = crop ? "Redraw area…" : "Draw area…";
+    cropDetail.hidden = areaMode !== "crop";
+    cropButtons.hidden = areaMode !== "crop";
+  };
+
+  const syncPageRadios = () => {
+    currentRadio.input.checked = pageMode === "current";
+    allRadio.input.checked = pageMode === "all";
+    rangeRadio.input.checked = pageMode === "range";
+    rangeField.hidden = pageMode !== "range";
+  };
+
+  const selectedPageNumbers = (): number[] => {
+    if (pageMode === "current") return [currentPage];
+    if (pageMode === "all") return [...allPages];
+    return parsePageRange(rangeText || rangeInput.value, pageCount).pages;
+  };
+
+  const rangeValidation = (): string | null => {
+    if (pageMode !== "range") return null;
+    return parsePageRange(rangeInput.value, pageCount).error;
+  };
+
+  const collect = (): DrawingExportOptions => ({
+    pages: selectedPageNumbers(),
+    crop: areaMode === "crop" ? crop : undefined,
+    layerIds: layers
+      .filter((layer) => layer.visible && selectedLayers.has(layer.id))
+      .map((layer) => layer.id),
+    includeLabels,
+    includeCalibration,
+    includeLegend,
+  });
+
+  const validation = (): string | null => {
+    const range = rangeValidation();
+    if (range) return range;
+    const pages = selectedPageNumbers();
+    if (!pages.length) return "Choose at least one page to export.";
+    if (areaMode === "crop" && !crop) return "Draw an export area first.";
+    if (!collect().layerIds.length) return "Select at least one visible layer to export.";
+    return null;
+  };
+
+  const update = () => {
+    rangeText = rangeInput.value;
+    syncAreaRadios();
+    syncPageRadios();
+    const range = rangeValidation();
+    rangeError.hidden = !range;
+    rangeError.textContent = range ?? "";
+    const error = validation();
+    if (primary) {
+      primary.disabled = Boolean(error);
+      primary.title = error ?? "Export the selected drawing pages";
+    }
+    legendCheck.row.title = "";
+    const legendNote = legendCheck.row.querySelector<HTMLElement>(".export-check-note");
+    if (legendNote) {
+      legendNote.textContent = includeLegend
+        ? `A separate A4 legend page will be added after ${selectedPageNumbers().length} drawing page${selectedPageNumbers().length === 1 ? "" : "s"}.`
+        : "Adds a separate A4 page after the drawing pages.";
+    }
+  };
+
+  wholeRadio.input.addEventListener("change", () => {
+    areaMode = "whole";
+    update();
+  });
+  cropRadio.input.addEventListener("change", () => {
+    areaMode = "crop";
+    update();
+  });
+  currentRadio.input.addEventListener("change", () => {
+    pageMode = "current";
+    update();
+  });
+  allRadio.input.addEventListener("change", () => {
+    pageMode = "all";
+    update();
+  });
+  rangeRadio.input.addEventListener("change", () => {
+    pageMode = "range";
+    update();
+  });
+  rangeInput.addEventListener("input", () => {
+    pageMode = "range";
+    update();
+  });
+  drawAreaButton.addEventListener("click", () => {
+    areaMode = "crop";
+    update();
+    finishDialog("crop");
+    closeActiveModal();
+  });
+  clearAreaButton.addEventListener("click", () => {
+    crop = undefined;
+    update();
+  });
+  selectAll.addEventListener("click", () => {
+    for (const layer of layers) {
+      if (!layer.visible) continue;
+      selectedLayers.add(layer.id);
+      const input = layerInputs.get(layer.id);
+      if (input) input.checked = true;
+    }
+    update();
+  });
+  clearAll.addEventListener("click", () => {
+    selectedLayers.clear();
+    for (const input of layerInputs.values()) input.checked = false;
+    update();
+  });
+
+  let finishDialog: (value: string | null) => void = () => undefined;
+  const result = new Promise<DrawingExportDialogResult | null>((resolve) => {
+    finishDialog = (value) => {
+      if (value === "export" || value === "crop") {
+        resolve({ action: value, options: collect() });
+      } else {
+        resolve(null);
+      }
+    };
+  });
+
+  void showModal({
+    title: "Export drawing PDF",
+    subtitle: "Pages, area and visible content",
+    body,
+    wide: true,
+    actions: [
+      { label: "Cancel", value: "__cancel__" },
+      { label: "Export", value: "export", primary: true },
+    ],
+    onMount: (modal) => {
+      primary = modal.querySelector<HTMLButtonElement>(".modal-footer .btn-primary");
+      update();
+    },
+  }).then((value) => {
+    if (value === "export") {
+      finishDialog(value);
+    } else {
+      finishDialog(null);
+    }
+  });
+
+  update();
+  return result;
+}
+
+function exportRadio(name: string, label: string, checked: boolean): {
+  row: HTMLElement;
+  input: HTMLInputElement;
+} {
+  const row = el("label", "check-row export-radio");
+  const input = el("input");
+  input.type = "radio";
+  input.name = name;
+  input.checked = checked;
+  row.append(input, el("span", "", label));
+  return { row, input };
+}
+
+function exportCheckbox(label: string, note: string, checked: boolean): {
+  row: HTMLElement;
+  input: HTMLInputElement;
+} {
+  const row = el("label", "check-row export-check");
+  const input = el("input");
+  input.type = "checkbox";
+  input.checked = checked;
+  const text = el("span", "export-check-text");
+  text.append(el("strong", "", label), el("span", "export-check-note", note));
+  row.append(input, text);
+  return { row, input };
 }
 
 export function recoveryDialog(projectName: string, savedAt: string): Promise<"restore" | "discard"> {

@@ -4,12 +4,12 @@
 
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
 - **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
-- **Etapp 3 – Mätverktyg, skala och export:** pågår. 3A är genomförd med snabbarea, manuell skala, skallås och snap; 3B exportdialog är nästa steg.
+- **Etapp 3 – Mätverktyg, skala och export:** genomförd. 3A gav snabbarea, manuell skala, skallås och snap. 3B gav exportdialogen med sidval, beskärningsruta, lagerval, etiketter, kalibreringslinje och teckenförklaring.
 - **Etapp 4 – Bilder:** planerad, medvetet sist.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
-Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A är genomförd; 3B återstår enligt planens genomförandeordning. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst.
+Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A och 3B är genomförda. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst.
 
 ## Produktprinciper
 
@@ -32,7 +32,7 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | 1 | Lager, urval och objektkontroll | Klar | – | Medel |
 | 2A | Kategorier, antal, avdrag och summering | Klar | Etapp 1 | Medel |
 | 2B | Svinn, avrundning och mängdförteckning | Klar | Etapp 2A | Medel |
-| 3 | Snabbarea, manuell skala, snap och exportdialog | Pågår (3A klar) | Etapp 2 | Hög |
+| 3 | Snabbarea, manuell skala, snap och exportdialog | Klar | Etapp 2 | Hög |
 | 4 | Bilder | Sist | Etapp 2–3 | Hög |
 
 ## Etapp 1 – genomförd
@@ -92,15 +92,16 @@ Planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd.
 - Snap till ändpunkt, mittpunkt, skärning mellan markup-segment och ortogonal låsning.
 - Tröskelvärde i pixlar.
 
-**3B – återstår:**
+**3B – genomförd:**
 
-- PDF-geometrisnapp som separat utredning/spike. Det kräver extrahering och indexering av vektorgeometri och ska inte blandas in i första snapleveransen.
 - Exportdialog för ritning:
   - aktuell sida, alla sidor eller sidintervall
   - valt område
   - teckenförklaring
   - etiketter och kalibreringslinje
   - val av synliga lager
+
+PDF-geometrisnapp är fortfarande en separat utredning/spike. Det kräver extrahering och indexering av vektorgeometri och ingår inte i Etapp 3.
 
 Beslut om valt område: användaren ritar en rektangulär beskärningsruta kring den detalj som ska exporteras. Rutan klipper allt innehåll utanför sig och sparas som ett relativt område. Vid export av flera sidor används samma relativa område på varje vald sida, så att olika sidstorlekar och rotation hanteras.
 
@@ -176,7 +177,7 @@ Kvar att överväga: branch protection eller krav på grön CI innan merge när 
 
 ## Öppna beslut
 
-Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Etapp 3-planen är ett utkast i `etapp-3-matverktyg-skala-export.md`. Följande återstår inför senare etapper:
+Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Etapp 3-planen är fastställd och genomförd. Följande återstår inför Etapp 4:
 
 - Ska bilder bäddas in eller ligga som externa assets i Etapp 4?
 - Full z-order eller endast bakgrund/annotation för bilder?
@@ -184,6 +185,5 @@ Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.
 
 ## Rekommenderad nästa ordning
 
-1. Godkänn Etapp 3-planen, med PDF-snap som separat spike.
-2. Genomför Etapp 3A och 3B i den ordning planen anger.
-3. Genomför därefter Etapp 4.
+1. Genomför Etapp 4 enligt planen.
+2. Utred PDF-geometrisnapp som en separat spike om behovet kvarstår.

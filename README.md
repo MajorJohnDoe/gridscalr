@@ -27,7 +27,7 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
 - Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
-- Export a flattened PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
+- Export a drawing PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
 - Undo/redo, autosave, recent files, and a shortcut reference.
 - No account, cloud service, or network access required.
 
@@ -230,14 +230,17 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 
 - **Save project** (`Ctrl/Cmd+S`) writes a `.gridscalr` JSON file.
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
-- **Export → Flattened PDF** writes all original PDF pages with the visible markup layers rendered as vectors to a new `<project>-markups.pdf` file. Text, shapes, arrows, highlights, measurement labels, and calibration labels are included. The source PDF is never modified, and the save flow refuses to overwrite it.
+- **Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
+  - **Selected area** enters a one-off crop mode on the canvas. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**; `Esc` cancels. The crop is stored relative to the page and applied to every selected page, so pages with different sizes or rotation stay aligned. It clips PDF content, markups, labels, and the calibration line.
+  - Hidden layers are listed but disabled. Hidden items are always excluded and locked items are exported.
+  - **Legend** adds a separate A4 page at the end of the export. It is never drawn over the drawing and is not affected by the crop.
 - **Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
 - **Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
 - **Export → Quantity report (PDF)** writes `<project>-quantities.pdf`, a print-friendly procurement report separate from the flattened drawing export.
 - **Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
 - **Export → View as PNG** exports the rendered page and markup layers at the current view.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
 
 ## Project files
 
@@ -367,7 +370,7 @@ scripts/make-fixture.mjs reproducible sample PDF generator
 Key design choices:
 
 - **Local first.** PDF bytes are read only when needed. Project data autosaves to browser local storage for recovery; no data leaves the machine.
-- **Markup layers are app-level.** They are not PDF optional-content groups, and GridScalr never rewrites the source PDF when saving a project. Flattened PDF export writes a new file and leaves the original untouched.
+- **Markup layers are app-level.** They are not PDF optional-content groups, and GridScalr never rewrites the source PDF when saving a project. The drawing PDF export writes a new file and leaves the original untouched.
 - **Coordinate stability.** Markup points are stored in PDF points, not screen pixels. Zooming, panning, and window resizing do not change measurements; export maps them through PDF.js viewports so page rotation and crop boxes are respected.
 - **Progressive rendering.** Only the visible crop of a page is rendered at device resolution. A new render cancels the previous incomplete one.
 - **Snapshot history.** Store mutations clone the project before applying changes, giving undo/redo without mutable shared state.
@@ -397,7 +400,7 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 
 ## Known limitations
 
-- Markup layers are stored in the project, not written into the PDF's own annotation or optional-content structures. Flattened PDF export bakes visible markups into page content as vectors.
+- Markup layers are stored in the project, not written into the PDF's own annotation or optional-content structures. The drawing PDF export bakes visible markups into page content as vectors.
 - Text notes do not wrap inside a fixed text box; use `Shift+Enter` for an explicit line break.
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.

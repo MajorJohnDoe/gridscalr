@@ -57,7 +57,7 @@ export interface PanelActions {
   openProject: () => void;
   saveProject: () => void;
   exportAs: (
-    kind: "csv" | "json" | "png" | "pdf" | "quantity-csv" | "quantity-pdf",
+    kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf",
   ) => void;
   startCalibration: () => void;
   clearCalibration: () => void;
@@ -2372,7 +2372,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
 
 export function showExportMenu(anchor: HTMLElement, actions: PanelActions): void {
   showPopover(anchor, [
-    { label: "Flattened PDF", icon: "file", action: () => actions.exportAs("pdf") },
+    { label: "Drawing PDF…", icon: "file", action: () => actions.exportAs("drawing") },
     { label: "View as PNG", icon: "image", action: () => actions.exportAs("png") },
     { label: "Markups to CSV", icon: "csv", action: () => actions.exportAs("csv") },
     { label: "Quantities to CSV", icon: "csv", action: () => actions.exportAs("quantity-csv") },
