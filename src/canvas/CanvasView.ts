@@ -94,7 +94,7 @@ import {
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
+import { calloutLayout, cloudLabelLayout, closestPointOnPolygon, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
@@ -130,7 +130,7 @@ type Draft =
   | { kind: "area-ellipse"; start: Point; current: Point };
 
 type BoxHandleRole = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-type HandleRole = BoxHandleRole | "rotate" | "vertex";
+type HandleRole = BoxHandleRole | "rotate" | "vertex" | "label";
 
 interface Handle {
   role: HandleRole;
@@ -140,7 +140,7 @@ interface Handle {
 }
 
 interface DragState {
-  mode: "move" | "vertex" | "resize" | "rotate";
+  mode: "move" | "vertex" | "resize" | "rotate" | "label";
   itemId: string;
   layerId: string;
   vertexIndex: number;
@@ -155,6 +155,7 @@ interface DragState {
   startBounds?: Bounds;
   center?: Point;
   startAngle?: number;
+  startTextOffset?: Point;
 }
 
 interface MarqueeState {
@@ -852,6 +853,43 @@ export class CanvasView {
     if (!modifier && selection.length === 1 && primary) {
       const found = findItem(project, primary.itemId);
       if (found && !itemIsLocked(found.item, found.layer)) {
+        if (found.item.kind === "cloud") {
+          const label = cloudLabelLayout(found.item);
+          const inLabel =
+            label &&
+            page.x >= label.center.x - label.width / 2 &&
+            page.y >= label.center.y - label.height / 2 &&
+            page.x <= label.center.x + label.width / 2 &&
+            page.y <= label.center.y + label.height / 2;
+          if (label && inLabel) {
+            this.beginHandleDrag(
+              found.layer.id,
+              found.item,
+              { role: "label", index: -1, point: screen, cursor: "move" },
+              page,
+              event,
+            );
+            return;
+          }
+        }
+        if (found.item.kind === "callout") {
+          const layout = calloutLayout(found.item);
+          const inBox =
+            page.x >= layout.box.x &&
+            page.y >= layout.box.y &&
+            page.x <= layout.box.x + layout.box.width &&
+            page.y <= layout.box.y + layout.box.height;
+          if (inBox) {
+            this.beginHandleDrag(
+              found.layer.id,
+              found.item,
+              { role: "vertex", index: 1, point: screen, cursor: "crosshair" },
+              page,
+              event,
+            );
+            return;
+          }
+        }
         const handle = this.handleAt(found.item, screen);
         if (handle) {
           this.beginHandleDrag(found.layer.id, found.item, handle, page, event);
@@ -934,7 +972,25 @@ export class CanvasView {
     page: Point,
     event: PointerEvent,
   ): void {
-    if (handle.role === "vertex") {
+    if (handle.role === "label") {
+      const label = cloudLabelLayout(item);
+      const centroid = averagePoints(item.points);
+      store.beginGesture();
+      this.drag = {
+        mode: "label",
+        itemId: item.id,
+        layerId,
+        vertexIndex: -1,
+        last: page,
+        moved: false,
+        startPage: page,
+        startTextOffset: label
+          ? { x: label.center.x - centroid.x, y: label.center.y - centroid.y }
+          : item.textOffset
+            ? { ...item.textOffset }
+            : { x: 0, y: 0 },
+      };
+    } else if (handle.role === "vertex") {
       store.beginGesture();
       this.drag = {
         mode: "vertex",
@@ -1010,12 +1066,24 @@ export class CanvasView {
       item.kind === "cloud" ||
       (item.kind === "highlight" && item.highlightShape !== "stroke")
     ) {
-      return item.points.slice(0, 80).map((point, index) => ({
+      const handles: Handle[] = item.points.slice(0, 80).map((point, index) => ({
         role: "vertex" as const,
         index,
         point: this.toScreen(itemLocalToPage(item, point)),
         cursor: "crosshair",
       }));
+      if (item.kind === "cloud") {
+        const label = cloudLabelLayout(item);
+        if (label) {
+          handles.push({
+            role: "label",
+            index: -1,
+            point: this.toScreen(label.center),
+            cursor: "move",
+          });
+        }
+      }
+      return handles;
     }
 
     if (item.kind === "callout") {
@@ -1241,6 +1309,15 @@ export class CanvasView {
         item.updatedAt = new Date().toISOString();
         this.drag.moved = true;
       }
+    } else if (this.drag.mode === "label") {
+      if (!this.drag.startPage) return;
+      const start = this.drag.startTextOffset ?? { x: 0, y: 0 };
+      item.textOffset = {
+        x: start.x + (page.x - this.drag.startPage.x),
+        y: start.y + (page.y - this.drag.startPage.y),
+      };
+      item.updatedAt = new Date().toISOString();
+      this.drag.moved = true;
     } else if (this.drag.mode === "resize") {
       this.applyResize(item, page, shiftKey);
     } else {
@@ -2513,14 +2590,17 @@ export class CanvasView {
   }
 
   private async promptCloudText(created: { layerId: string; itemId: string }): Promise<void> {
+    const existing = store.project
+      ? findItem(store.project, created.itemId)?.item.text
+      : undefined;
     const text = await textDialog(
       "Revision cloud text",
-      "Optional text anchored to the cloud",
-      "",
+      "Text box anchored to the cloud",
+      existing || "Revision",
       "Cloud text",
       true,
     );
-    if (text === null || !text.trim()) return;
+    if (text === null) return;
     store.mutate(
       (project) => {
         const item = findItem(project, created.itemId)?.item;
@@ -2609,7 +2689,7 @@ export class CanvasView {
       this.draft = null;
       this.snap = null;
       if (kind === "cloud") {
-        const created = this.createItem("cloud", points);
+        const created = this.createItem("cloud", points, { text: "Revision" });
         if (created) void this.promptCloudText(created);
       } else if (kind === "highlight-polygon") {
         this.createItem("highlight", points, { highlightShape: "polygon" });
@@ -3293,20 +3373,24 @@ export class CanvasView {
     const y = center.y - height / 2;
     ctx.save();
     if (leader && item.kind === "cloud" && item.points.length) {
-      const localCentroid = {
-        x: item.points.reduce((sum, point) => sum + point.x, 0) / item.points.length,
-        y: item.points.reduce((sum, point) => sum + point.y, 0) / item.points.length,
+      const targetPage = closestPointOnPolygon(item.points, layout.center);
+      const boxPage = {
+        x: layout.center.x - layout.width / 2,
+        y: layout.center.y - layout.height / 2,
+        width: layout.width,
+        height: layout.height,
       };
-      const centroid = this.toScreen(localCentroid);
-      const boxEdge = { x: Math.max(x, Math.min(x + width, centroid.x)), y: Math.max(y, Math.min(y + height, centroid.y)) };
+      const edgePage = closestPointOnBox(boxPage, targetPage);
+      const target = this.toScreen(targetPage);
+      const edge = this.toScreen(edgePage);
+      const head = arrowHeadGeometry(edge, target, 6);
       ctx.strokeStyle = item.color;
       ctx.lineWidth = Math.max(0.6, item.strokeWidth * zoom);
-      ctx.setLineDash([3, 3]);
       ctx.beginPath();
-      ctx.moveTo(boxEdge.x, boxEdge.y);
-      ctx.lineTo(centroid.x, centroid.y);
+      ctx.moveTo(edge.x, edge.y);
+      ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
       ctx.stroke();
-      ctx.setLineDash([]);
+      drawArrowHead(ctx, target, head, item.color);
     }
     ctx.fillStyle = fill;
     ctx.strokeStyle = item.color;
@@ -3469,6 +3553,13 @@ export class CanvasView {
             ctx.arc(handle.point.x, handle.point.y, 2, 0, Math.PI * 2);
             ctx.fillStyle = ACCENT;
             ctx.fill();
+          } else if (handle.role === "label") {
+            ctx.beginPath();
+            ctx.arc(handle.point.x, handle.point.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = ACCENT;
+            ctx.fill();
+            ctx.strokeStyle = "#101619";
+            ctx.stroke();
           } else {
             ctx.beginPath();
             ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
@@ -4142,7 +4233,7 @@ function pointInBox(point: Point, x: number, y: number, width: number, height: n
   return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
 }
 
-function closestPointOnBox(box: LabelBox, point: Point): Point {
+function closestPointOnBox(box: { x: number; y: number; width: number; height: number }, point: Point): Point {
   return {
     x: Math.max(box.x, Math.min(box.x + box.width, point.x)),
     y: Math.max(box.y, Math.min(box.y + box.height, point.y)),
@@ -4186,6 +4277,14 @@ function roundRect(
   ctx.arcTo(x, y + height, x, y, r);
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
+}
+
+function averagePoints(points: Point[]): Point {
+  if (!points.length) return { x: 0, y: 0 };
+  return {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
 }
 
 function drawArrowHead(

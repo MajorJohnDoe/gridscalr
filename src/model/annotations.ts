@@ -146,3 +146,30 @@ function average(points: readonly Point[]): Point {
   }
   return { x: x / points.length, y: y / points.length };
 }
+
+
+/** Closest point on a closed polygon outline. */
+export function closestPointOnPolygon(points: readonly Point[], point: Point): Point {
+  if (!points.length) return point;
+  if (points.length === 1) return points[0];
+  let best = points[0];
+  let bestDistance = Infinity;
+  for (let index = 0; index < points.length; index += 1) {
+    const a = points[index];
+    const b = points[(index + 1) % points.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const lengthSq = dx * dx + dy * dy;
+    const t =
+      lengthSq === 0
+        ? 0
+        : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSq));
+    const candidate = { x: a.x + dx * t, y: a.y + dy * t };
+    const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
+}

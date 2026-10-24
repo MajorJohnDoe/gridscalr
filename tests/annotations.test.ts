@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   calloutLayout,
   cloudLabelLayout,
+  closestPointOnPolygon,
   deltaLayout,
   stampLayout,
   textBoxLayout,
@@ -71,6 +72,17 @@ describe("annotation layouts", () => {
     const offset = cloudLabelLayout({ ...cloud, textOffset: { x: 20, y: 30 } });
     expect(offset?.center).toEqual({ x: 70, y: 105 });
     expect(cloudLabelLayout({ ...cloud, text: "" })).toBeNull();
+  });
+
+  it("finds the closest cloud edge point for leader lines", () => {
+    const square = [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+      { x: 100, y: 100 },
+      { x: 0, y: 100 },
+    ];
+    expect(closestPointOnPolygon(square, { x: 50, y: -20 })).toEqual({ x: 50, y: 0 });
+    expect(closestPointOnPolygon(square, { x: 130, y: 50 })).toEqual({ x: 100, y: 50 });
   });
 
   it("keeps revision deltas square", () => {

@@ -16,7 +16,7 @@ import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
 import { areaShapeOf, rectangleCorners } from "../model/area";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, type TextBoxLayout } from "../model/annotations";
+import { calloutLayout, cloudLabelLayout, closestPointOnBox, closestPointOnPolygon, deltaLayout, stampLayout, type TextBoxLayout } from "../model/annotations";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import {
@@ -633,6 +633,26 @@ function drawItem(
       }
       const label = cloudLabelLayout(item);
       if (label) {
+        const target = closestPointOnPolygon(item.points, label.center);
+        const box = {
+          x: label.center.x - label.width / 2,
+          y: label.center.y - label.height / 2,
+          width: label.width,
+          height: label.height,
+        };
+        const edge = closestPointOnBox(box, target);
+        const head = arrowHeadGeometry(edge, target, 6);
+        drawPolyline(
+          page,
+          viewport,
+          [edge, head.shaftEnd],
+          color,
+          Math.max(0.5, width),
+          opacity,
+          false,
+          LineCapStyle.Butt,
+        );
+        drawArrowHead(page, viewport, target, head, color, opacity);
         drawAnnotationPanel(page, viewport, label, item, fonts, opacity, "dark");
       }
       break;
