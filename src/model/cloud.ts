@@ -1,5 +1,22 @@
 import type { Point } from "./types";
 
+/** Suggested scallop radius for a cloud, based on its shorter side. */
+export function cloudRadiusForPoints(points: readonly Point[]): number {
+  if (!points.length) return 4;
+  let minX = points[0].x;
+  let maxX = points[0].x;
+  let minY = points[0].y;
+  let maxY = points[0].y;
+  for (const point of points) {
+    minX = Math.min(minX, point.x);
+    maxX = Math.max(maxX, point.x);
+    minY = Math.min(minY, point.y);
+    maxY = Math.max(maxY, point.y);
+  }
+  const shorter = Math.min(maxX - minX, maxY - minY);
+  return Math.max(3, Math.min(14, shorter * 0.07));
+}
+
 export interface CloudCurve {
   start: Point;
   cp1: Point;

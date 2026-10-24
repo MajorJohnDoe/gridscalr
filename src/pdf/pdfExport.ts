@@ -15,7 +15,7 @@ import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
 import { areaShapeOf, rectangleCorners } from "../model/area";
-import { cloudCurves } from "../model/cloud";
+import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, type TextBoxLayout } from "../model/annotations";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
@@ -617,7 +617,7 @@ function drawItem(
       drawEllipseItem(page, viewport, item, layerOpacity);
       break;
     case "cloud": {
-      const curves = cloudCurves(item.points, Math.max(8, item.strokeWidth * 5));
+      const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
       if (curves.length) {
         const path = cloudSvgPath(viewport, curves);
         page.drawSvgPath(path, {
@@ -1035,20 +1035,57 @@ function drawAnnotationPanel(
   const lineHeight = layout.lineHeight;
   layout.lines.forEach((line, index) => {
     if (!line) return;
-    drawCenteredText(
-      page,
-      viewport,
-      line,
-      {
-        x: layout.center.x,
-        y: layout.center.y + (index - (layout.lines.length - 1) / 2) * lineHeight,
-      },
-      layout.fontSize,
-      font,
-      textColor,
-      opacity,
-    );
+    const center = {
+      x: layout.center.x,
+      y: layout.center.y + (index - (layout.lines.length - 1) / 2) * lineHeight,
+    };
+    if (style === "stamp") {
+      drawTrackedCenteredText(
+        page,
+        viewport,
+        line,
+        center,
+        layout.fontSize,
+        font,
+        textColor,
+        opacity,
+        layout.fontSize * 0.08,
+      );
+    } else {
+      drawCenteredText(page, viewport, line, center, layout.fontSize, font, textColor, opacity);
+    }
   });
+}
+
+function drawTrackedCenteredText(
+  page: PDFPage,
+  viewport: PageViewport,
+  text: string,
+  center: Point,
+  size: number,
+  font: PDFFont,
+  color: RGB,
+  opacity: number,
+  tracking: number,
+): void {
+  const characters = [...text];
+  const widths = characters.map((character) => font.widthOfTextAtSize(character, size));
+  const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+  const baseline = font.heightAtSize(size, { descender: false });
+  let x = center.x - total / 2;
+  for (let index = 0; index < characters.length; index += 1) {
+    const point = toPdfPoint(viewport, { x, y: center.y + baseline * 0.36 });
+    page.drawText(characters[index], {
+      x: point.x,
+      y: point.y,
+      size,
+      font,
+      color,
+      opacity: clamp(opacity, 0, 1),
+      rotate: degrees(pdfAngle(viewport, 0)),
+    });
+    x += widths[index] + tracking;
+  }
 }
 
 function drawDelta(

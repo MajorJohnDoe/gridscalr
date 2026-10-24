@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cloudCurves } from "../src/model/cloud";
+import { cloudCurves, cloudRadiusForPoints } from "../src/model/cloud";
 
 const square = [
   { x: 40, y: 40 },
@@ -30,5 +30,23 @@ describe("revision cloud geometry", () => {
 
   it("requires at least three points", () => {
     expect(cloudCurves([{ x: 0, y: 0 }, { x: 10, y: 0 }], 6)).toEqual([]);
+  });
+
+  it("suggests smaller scallops for smaller clouds", () => {
+    const small = cloudRadiusForPoints([
+      { x: 0, y: 0 },
+      { x: 40, y: 0 },
+      { x: 40, y: 40 },
+      { x: 0, y: 40 },
+    ]);
+    const large = cloudRadiusForPoints([
+      { x: 0, y: 0 },
+      { x: 400, y: 0 },
+      { x: 400, y: 300 },
+      { x: 0, y: 300 },
+    ]);
+    expect(small).toBeLessThan(large);
+    expect(small).toBeGreaterThanOrEqual(3);
+    expect(large).toBeLessThanOrEqual(14);
   });
 });

@@ -25,3 +25,23 @@ export function normalizeStampPresets(value: unknown): string[] {
   }
   return presets;
 }
+
+
+const STATUS_COLORS: Record<string, string> = {
+  approved: "#35c2a1",
+  godkänd: "#35c2a1",
+  "not approved": "#f26d6d",
+  "ej godkänd": "#f26d6d",
+  "for information": "#4cc9f0",
+  "för kännedom": "#4cc9f0",
+  inspected: "#a78bfa",
+  besiktigad: "#a78bfa",
+  revised: "#f2a93b",
+  reviderad: "#f2a93b",
+};
+
+/** Status colour for a stamp label, keeping a custom item's existing colour. */
+export function stampStatusColor(text: string | undefined, fallback: string): string {
+  const key = (text ?? "").replace(/\s+/g, " ").trim().toLocaleLowerCase();
+  return STATUS_COLORS[key] ?? fallback;
+}

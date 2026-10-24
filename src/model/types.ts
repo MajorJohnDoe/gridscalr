@@ -114,6 +114,12 @@ export interface MarkupItem {
   highlightShape?: HighlightShape;
   /** Cloud text labels only: offset from the cloud centre in PDF points. */
   textOffset?: Point;
+  /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
+  cloudRadius?: number;
+  /** Callout and cloud text boxes only: fixed box width in PDF points. */
+  textBoxWidth?: number;
+  /** Callout and cloud text boxes only: fixed box height in PDF points. */
+  textBoxHeight?: number;
   /** Images only. References an embedded asset and selects the draw mode. */
   image?: ImageRef;
   createdAt: string;

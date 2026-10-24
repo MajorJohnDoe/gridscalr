@@ -6,7 +6,7 @@ import {
   stampLayout,
   textBoxLayout,
 } from "../src/model/annotations";
-import { DEFAULT_STAMP_PRESETS, normalizeStampPresets } from "../src/model/stamps";
+import { DEFAULT_STAMP_PRESETS, normalizeStampPresets, stampStatusColor } from "../src/model/stamps";
 import type { MarkupItem } from "../src/model/types";
 
 const base: MarkupItem = {
@@ -26,6 +26,18 @@ describe("annotation layouts", () => {
     const long = textBoxLayout("FOR INFORMATION", 12);
     expect(short.width).toBeGreaterThan(0);
     expect(long.width).toBeGreaterThan(short.width);
+  });
+
+  it("honours explicit text box dimensions", () => {
+    const layout = textBoxLayout("Callout", 12, 180, 80);
+    expect(layout.width).toBe(180);
+    expect(layout.height).toBe(80);
+  });
+
+  it("adds tracking space to stamp widths", () => {
+    const plain = textBoxLayout("APPROVED", 12);
+    const spaced = textBoxLayout("APPROVED", 12, undefined, undefined, 12 * 0.08);
+    expect(spaced.width).toBeGreaterThan(plain.width);
   });
 
   it("centres a stamp on its placement point", () => {
@@ -77,5 +89,12 @@ describe("stamp presets", () => {
 
   it("falls back to the English defaults for old projects", () => {
     expect(normalizeStampPresets(undefined)).toEqual([...DEFAULT_STAMP_PRESETS]);
+  });
+
+  it("maps common English and Swedish statuses to colours", () => {
+    expect(stampStatusColor("APPROVED", "#000000")).toBe("#35c2a1");
+    expect(stampStatusColor("NOT APPROVED", "#000000")).toBe("#f26d6d");
+    expect(stampStatusColor("FÖR KÄNNEDOM", "#000000")).toBe("#4cc9f0");
+    expect(stampStatusColor("custom", "#123456")).toBe("#123456");
   });
 });

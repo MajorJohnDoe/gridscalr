@@ -48,6 +48,7 @@ import {
 } from "../model/units";
 import { store, toolLayerKind } from "../state/store";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
+import { stampStatusColor } from "../model/stamps";
 import type { AutosavePayload } from "../state/store";
 import { clear, el, escapeHtml, option } from "./dom";
 import { confirmDialog, textDialog } from "./dialogs";
@@ -400,8 +401,15 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   ) {
     const color = el("input", "color-swatch");
     color.type = "color";
-    color.value = store.ui.style.color;
-    color.title = "Markup colour";
+    color.value =
+      store.ui.activeTool === "stamp"
+        ? stampStatusColor(store.ui.stampText, store.ui.style.color)
+        : store.ui.style.color;
+    color.title =
+      store.ui.activeTool === "stamp"
+        ? "Stamp colour follows its status preset"
+        : "Markup colour";
+    color.disabled = store.ui.activeTool === "stamp";
     color.addEventListener("change", () => store.setStyle({ color: color.value }));
     const width = el("select", "select");
     for (const value of STROKE_WIDTH_OPTIONS) {
@@ -1097,6 +1105,90 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     edit.addEventListener("click", actions.editSelectedText);
     textField.append(edit);
     section.append(textField);
+  }
+
+  if (item.kind === "callout" || item.kind === "cloud") {
+    const boxRow = el("div", "field-row");
+    const widthField = el("label", "field");
+    widthField.append(el("span", "field-label", "Text box width"));
+    const widthInput = el("input", "input");
+    widthInput.type = "number";
+    widthInput.min = "20";
+    widthInput.max = "2000";
+    widthInput.step = "5";
+    widthInput.placeholder = "Auto";
+    widthInput.value = item.textBoxWidth ? String(item.textBoxWidth) : "";
+    widthInput.disabled = locked;
+    widthInput.addEventListener("change", () => {
+      const raw = widthInput.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxWidth;
+        else target.textBoxWidth = Math.max(20, Math.min(2000, value));
+      }, "change");
+    });
+
+    const heightField = el("label", "field");
+    heightField.append(el("span", "field-label", "Text box height"));
+    const heightInput = el("input", "input");
+    heightInput.type = "number";
+    heightInput.min = "15";
+    heightInput.max = "2000";
+    heightInput.step = "5";
+    heightInput.placeholder = "Auto";
+    heightInput.value = item.textBoxHeight ? String(item.textBoxHeight) : "";
+    heightInput.disabled = locked;
+    heightInput.addEventListener("change", () => {
+      const raw = heightInput.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxHeight;
+        else target.textBoxHeight = Math.max(15, Math.min(2000, value));
+      }, "change");
+    });
+    widthField.append(widthInput);
+    heightField.append(heightInput);
+    boxRow.append(widthField, heightField);
+    section.append(boxRow);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "Leave a size empty for automatic sizing based on the text. Font size is set below.",
+      ),
+    );
+  }
+
+  if (item.kind === "cloud") {
+    const radiusField = el("label", "field");
+    radiusField.append(el("span", "field-label", "Scallop size"));
+    const radius = el("input", "input");
+    radius.type = "number";
+    radius.min = "2";
+    radius.max = "40";
+    radius.step = "0.5";
+    radius.placeholder = "Auto";
+    radius.value = item.cloudRadius ? String(item.cloudRadius) : "";
+    radius.disabled = locked;
+    radius.addEventListener("change", () => {
+      const raw = radius.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.cloudRadius;
+        else target.cloudRadius = Math.max(2, Math.min(40, value));
+      }, "change");
+    });
+    radiusField.append(radius);
+    section.append(radiusField);
+    section.append(
+      el("div", "empty-note small", "Auto scales the scallops with the cloud size."),
+    );
   }
 
   if (item.kind === "highlight") {

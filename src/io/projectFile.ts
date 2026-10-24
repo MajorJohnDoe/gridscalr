@@ -15,7 +15,7 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
-import { normalizeStampPresets } from "../model/stamps";
+import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
 import type {
   AreaMode,
   AreaShape,
@@ -309,6 +309,27 @@ function normalizeItem(
     raw.kind === "highlight" ? normalizeHighlightShape(raw.highlightShape) : undefined;
   const textOffset =
     raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
+  const cloudRadius =
+    raw.kind === "cloud" &&
+    typeof raw.cloudRadius === "number" &&
+    Number.isFinite(raw.cloudRadius) &&
+    raw.cloudRadius > 0
+      ? Math.max(2, Math.min(40, raw.cloudRadius))
+      : undefined;
+  const textBoxWidth =
+    (raw.kind === "callout" || raw.kind === "cloud") &&
+    typeof raw.textBoxWidth === "number" &&
+    Number.isFinite(raw.textBoxWidth) &&
+    raw.textBoxWidth > 0
+      ? Math.max(20, Math.min(2000, raw.textBoxWidth))
+      : undefined;
+  const textBoxHeight =
+    (raw.kind === "callout" || raw.kind === "cloud") &&
+    typeof raw.textBoxHeight === "number" &&
+    Number.isFinite(raw.textBoxHeight) &&
+    raw.textBoxHeight > 0
+      ? Math.max(15, Math.min(2000, raw.textBoxHeight))
+      : undefined;
   const text =
     typeof raw.text === "string"
       ? raw.text
@@ -332,7 +353,17 @@ function normalizeItem(
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
     kind: raw.kind,
     points,
-    color: typeof raw.color === "string" ? raw.color : raw.kind === "image" ? "#7aa2f7" : "#4cc9f0",
+    color:
+      raw.kind === "stamp"
+        ? stampStatusColor(
+            text,
+            typeof raw.color === "string" ? raw.color : "#4cc9f0",
+          )
+        : typeof raw.color === "string"
+          ? raw.color
+          : raw.kind === "image"
+            ? "#7aa2f7"
+            : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
@@ -370,6 +401,9 @@ function normalizeItem(
     areaShape,
     highlightShape,
     textOffset,
+    cloudRadius,
+    textBoxWidth,
+    textBoxHeight,
     countType:
       raw.kind === "count"
         ? COUNT_TYPES.has(raw.countType as CountType)

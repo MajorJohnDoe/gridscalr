@@ -147,15 +147,17 @@ Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain a
 
 Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to add a text box that moves with the cloud.
 
-Clouds use the current drawing colour and line weight. The default is a hollow revision cloud; the text box is optional.
+Clouds use the current drawing colour and line weight. Scallop size follows the cloud size automatically; set an exact **Scallop size** in Properties if you want smaller or larger arcs. The text box is optional. Its font size, width, and height can be changed in the context bar and Properties; leave the width or height empty for automatic sizing.
 
 ### Callout
 
-Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. Enter the text and press **Apply**. The leader ends in a filled arrow exactly at the target. Double-click the callout or right-click it to edit the text later.
+Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. Enter the text and press **Apply**. The leader ends in a filled arrow exactly at the target. Double-click the callout or right-click it to edit the text later. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing.
 
 ### Stamp
 
 Choose **Stamp** (`S`) and select a preset in the context bar. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
+
+Stamp colours follow common statuses: **APPROVED** is green, **NOT APPROVED** is red, **FOR INFORMATION** is blue, **INSPECTED** is violet, and **REVISED** is orange. The same colours are recognised for **GODKÄND**, **EJ GODKÄND**, **FÖR KÄNNEDOM**, **BESIKTIGAD**, and **REVIDERAD**. Custom statuses keep the current stamp colour. Stamps use a bold, letter-spaced label.
 
 Project stamp presets are managed under **Settings → Project settings → Stamps**. App defaults for new projects are stored locally on the computer; new projects inherit them, while each project keeps its own list.
 

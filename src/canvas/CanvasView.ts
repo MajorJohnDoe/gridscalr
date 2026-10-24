@@ -93,10 +93,11 @@ import {
   textItemLayout,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
-import { cloudCurves } from "../model/cloud";
+import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
+import { stampStatusColor } from "../model/stamps";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -2385,7 +2386,11 @@ export class CanvasView {
           page: projectPage,
           kind,
           points: points.map((p) => ({ ...p })),
-          color: isMeasure ? layer.color : style.color,
+          color: isMeasure
+            ? layer.color
+            : kind === "stamp"
+              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+              : style.color,
           strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
           fillColor: filled ? style.color : undefined,
           opacity:
@@ -2546,6 +2551,9 @@ export class CanvasView {
           target.text =
             text.trim() ||
             (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
+          if (target.kind === "stamp") {
+            target.color = stampStatusColor(target.text, target.color);
+          }
           target.updatedAt = new Date().toISOString();
         }
       },
@@ -3096,7 +3104,7 @@ export class CanvasView {
         break;
       }
       case "cloud": {
-        const curves = cloudCurves(item.points, Math.max(8, item.strokeWidth * 5));
+        const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
         if (!curves.length) break;
         const pathStart = this.toScreen(curves[0].start);
         ctx.save();
@@ -3240,6 +3248,26 @@ export class CanvasView {
     }
   }
 
+  private drawTrackedLine(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    centerX: number,
+    centerY: number,
+    tracking: number,
+  ): void {
+    const characters = [...text];
+    const widths = characters.map((character) => ctx.measureText(character).width);
+    const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+    let x = centerX - total / 2;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    characters.forEach((character, index) => {
+      ctx.fillText(character, x, centerY);
+      x += widths[index] + tracking;
+    });
+    ctx.textAlign = "center";
+  }
+
   private drawAnnotationPanel(
     ctx: CanvasRenderingContext2D,
     layout: {
@@ -3287,13 +3315,18 @@ export class CanvasView {
     ctx.fill();
     ctx.stroke();
     ctx.fillStyle = textColor;
-    ctx.font = `${bold ? 700 : 500} ${Math.max(6, layout.fontSize * zoom)}px ${FONT_STACK}`;
+    const fontSize = Math.max(6, layout.fontSize * zoom);
+    ctx.font = `${bold ? 700 : 500} ${fontSize}px ${FONT_STACK}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     const lineHeight = layout.lineHeight * zoom;
     const startY = center.y - ((layout.lines.length - 1) * lineHeight) / 2;
     layout.lines.forEach((line, index) => {
-      ctx.fillText(line, center.x, startY + index * lineHeight);
+      if (bold) {
+        this.drawTrackedLine(ctx, line, center.x, startY + index * lineHeight, fontSize * 0.08);
+      } else {
+        ctx.fillText(line, center.x, startY + index * lineHeight);
+      }
     });
     ctx.restore();
   }
