@@ -24,7 +24,7 @@ See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
-- Use revision clouds with editable vertices, auto-sized scallops, and optional anchored text, callouts with leaders, status-coloured inspection stamps, and revision deltas.
+- Use revision clouds with editable vertices, auto-sized scallops, and draggable anchored text with a leader arrow, callouts with leaders, status-coloured inspection stamps, and revision deltas.
 - Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
 - Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
@@ -174,7 +174,7 @@ Hold **Shift** while drawing lines, arrows, rectangles, or ellipses to constrain
 
 ### Revision cloud, callout, stamp, and revision delta
 
-- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Double-click, right-click, or use **Edit text…** in Properties to add an optional text box that moves with the cloud.
+- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click, right-click, or use **Edit text…** in Properties to edit the text.
 - **Callout (`N`)** – click the object to point at, then place the text box. The leader ends in a filled arrow at the target.
 - **Stamp (`S`)** – choose a preset in the context bar or use **Custom…**, then click to place. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
 - **Revision delta (`Y`)** – enter the revision in the context bar and click to place the triangle. An optional date can be set as its label in Properties.
