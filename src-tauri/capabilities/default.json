@@ -3,5 +3,5 @@
   "identifier": "default",
   "description": "GridScalr desktop permissions",
   "windows": ["main"],
-  "permissions": ["core:default", "dialog:default"]
+  "permissions": ["core:default", "core:window:allow-close", "dialog:default"]
 }

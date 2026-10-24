@@ -1,7 +1,15 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
+import { openHelp } from "./helpDialog";
+import { createMenuBar } from "./topMenu";
 import { TOOLS } from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
+import {
+  initPanelLayout,
+  PANEL_LIMITS,
+  setPanelWidth,
+  setSidebarCollapsed,
+} from "./sidebar";
 
 export interface ShellRefs {
   root: HTMLElement;
@@ -9,13 +17,6 @@ export interface ShellRefs {
   docName: HTMLElement;
   docMeta: HTMLElement;
   dirtyDot: HTMLElement;
-  openPdfBtn: HTMLButtonElement;
-  openProjectBtn: HTMLButtonElement;
-  saveBtn: HTMLButtonElement;
-  exportBtn: HTMLButtonElement;
-  importImageBtn: HTMLButtonElement;
-  undoBtn: HTMLButtonElement;
-  redoBtn: HTMLButtonElement;
   zoomOutBtn: HTMLButtonElement;
   zoomInBtn: HTMLButtonElement;
   zoomFitBtn: HTMLButtonElement;
@@ -43,7 +44,7 @@ export interface ShellRefs {
 function makeIconButton(iconName: string, label: string, shortcut?: string): HTMLButtonElement {
   const btn = el("button", "icon-btn");
   btn.type = "button";
-  btn.innerHTML = icon(iconName, 17);
+  btn.innerHTML = icon(iconName, 16);
   btn.title = shortcut ? `${label} (${shortcut})` : label;
   btn.setAttribute("aria-label", label);
   return btn;
@@ -60,6 +61,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   brandName.innerHTML = "Grid<span>Scalr</span>";
   brand.append(brandName);
 
+  const menuBar = createMenuBar();
+
   const identity = el("div", "doc-identity");
   const projectName = el("span", "project-name", "No project open");
   projectName.title = "Double-click to rename project";
@@ -72,48 +75,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   identity.append(projectName, docLine);
 
   const spacer = el("div", "topbar-spacer");
-
-  const fileGroup = el("div", "topbar-group");
-  const openPdfBtn = el("button", "btn btn-primary");
-  openPdfBtn.type = "button";
-  openPdfBtn.innerHTML = `${icon("folder", 15)}<span>Open drawing</span>`;
-  openPdfBtn.title = "Open a PDF or TIF drawing (Ctrl+O)";
-  const openProjectBtn = makeIconButton("file", "Open project", "Ctrl+Shift+O");
-  const saveBtn = makeIconButton("save", "Save project", "Ctrl+S");
-  const exportBtn = makeIconButton("download", "Export", "Ctrl+E");
-  const importImageBtn = el("button", "btn btn-ghost");
-  importImageBtn.type = "button";
-  importImageBtn.innerHTML = `${icon("image", 15)}<span>Import image</span>`;
-  importImageBtn.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
-  fileGroup.append(openPdfBtn, openProjectBtn, saveBtn, exportBtn, importImageBtn);
-
-  const historyGroup = el("div", "topbar-group");
-  const undoBtn = makeIconButton("undo", "Undo", "Ctrl+Z");
-  const redoBtn = makeIconButton("redo", "Redo", "Ctrl+Shift+Z");
-  historyGroup.append(undoBtn, redoBtn);
-
-  const zoomGroup = el("div", "topbar-group");
-  const zoomOutBtn = makeIconButton("zoomOut", "Zoom out", "Ctrl+-");
-  const zoomReadout = el("button", "zoom-readout", "100%");
-  zoomReadout.type = "button";
-  zoomReadout.title = "Reset to 100%";
-  const zoomInBtn = makeIconButton("zoomIn", "Zoom in", "Ctrl++");
-  const zoomFitBtn = makeIconButton("fit", "Fit page", "Ctrl+0");
-  const zoomActualBtn = makeIconButton("target", "Actual size (100%)");
-  zoomGroup.append(zoomOutBtn, zoomReadout, zoomInBtn, zoomFitBtn, zoomActualBtn);
-
-  const pageGroup = el("div", "topbar-group page-control");
-  const pagePrevBtn = makeIconButton("chevronLeft", "Previous page", "Page Up");
-  const pageInput = el("input", "page-input");
-  pageInput.type = "number";
-  pageInput.min = "1";
-  pageInput.value = "1";
-  pageInput.setAttribute("aria-label", "Page number");
-  const pageTotal = el("span", "page-total", "/ 0");
-  const pageNextBtn = makeIconButton("chevronRight", "Next page", "Page Down");
-  pageGroup.append(pagePrevBtn, pageInput, pageTotal, pageNextBtn);
-
-  topbar.append(brand, identity, spacer, fileGroup, historyGroup, zoomGroup, pageGroup);
+  const spacerEnd = el("div", "topbar-spacer");
+  topbar.append(brand, menuBar, spacer, identity, spacerEnd);
 
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
@@ -138,16 +101,16 @@ export function createShell(root: HTMLElement): ShellRefs {
   toolRail.append(el("div", "tool-spacer"));
   const keyboardHint = el("div", "tool-hint");
   keyboardHint.innerHTML = `${icon("keyboard", 15)}<div>Shortcuts</div>`;
-  keyboardHint.title = "V select · K calibrate · L length · A area · P pen · R rect · T text";
+  keyboardHint.title = "Keyboard shortcuts (?)";
+  keyboardHint.addEventListener("click", () => openHelp("shortcuts"));
   toolRail.append(keyboardHint);
 
   const dock = el("aside", "left-dock");
+  const dockHeader = el("div", "dock-header");
   const dockTabs = el("div", "dock-tabs");
   const tabDefs: Array<{ id: LeftTab; icon: string; label: string }> = [
     { id: "pages", icon: "pages", label: "Pages" },
     { id: "layers", icon: "layers", label: "Layers" },
-    { id: "markups", icon: "markups", label: "Markups" },
-    { id: "quantities", icon: "quantities", label: "Quantities" },
   ];
   const dockTabButtons: HTMLElement[] = [];
   for (const tab of tabDefs) {
@@ -160,12 +123,27 @@ export function createShell(root: HTMLElement): ShellRefs {
     dockTabs.append(btn);
     dockTabButtons.push(btn);
   }
+  const collapse = el("button", "dock-collapse");
+  collapse.type = "button";
+  collapse.title = "Hide sidebar (Ctrl+\\)";
+  collapse.setAttribute("aria-label", "Hide sidebar");
+  collapse.innerHTML = icon("chevronLeft", 14);
+  collapse.addEventListener("click", () => setSidebarCollapsed(true));
+  dockHeader.append(dockTabs, collapse);
   const dockBody = el("div", "dock-body");
   const dockFooter = el("div", "dock-footer");
-  dock.append(dockTabs, dockBody, dockFooter);
+  dock.append(dockHeader, dockBody, dockFooter);
+
+  const dockRestore = el("button", "dock-restore");
+  dockRestore.type = "button";
+  dockRestore.hidden = true;
+  dockRestore.title = "Show sidebar (Ctrl+\\)";
+  dockRestore.setAttribute("aria-label", "Show sidebar");
+  dockRestore.innerHTML = icon("chevronRight", 14);
+  dockRestore.addEventListener("click", () => setSidebarCollapsed(false));
 
   const dockResizer = el("div", "resizer");
-  dockResizer.title = "Resize panel";
+  dockResizer.title = "Resize sidebar";
 
   const main = el("main", "main-area");
   const contextBar = el("div", "context-bar");
@@ -174,7 +152,8 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const inspector = el("aside", "inspector");
   inspector.setAttribute("aria-label", "Properties");
-  const inspectorHeader = el("div", "inspector-header", "Properties");
+  const inspectorHeader = el("div", "inspector-header");
+  inspectorHeader.append(el("span", "", "Properties"));
   inspector.append(inspectorHeader);
 
   const inspectorResizer = el("div", "resizer");
@@ -182,17 +161,58 @@ export function createShell(root: HTMLElement): ShellRefs {
   const welcome = el("div", "welcome hidden");
   canvasHost.append(welcome);
 
-  workspace.append(toolRail, dock, dockResizer, main, inspectorResizer, inspector);
+  workspace.append(
+    toolRail,
+    dock,
+    dockRestore,
+    dockResizer,
+    main,
+    inspectorResizer,
+    inspector,
+  );
 
   const statusbar = el("footer", "statusbar");
   const statusCalibration = el("div", "status-section");
   const statusCoords = el("div", "status-section");
-  const statusZoom = el("div", "status-section");
-  const statusPage = el("div", "status-section");
+  const statusZoom = el("div", "status-section status-controls");
+  const statusPage = el("div", "status-section status-controls");
   const statusSpacer = el("div", "status-spacer");
   const statusLayer = el("div", "status-section");
   const statusLocal = el("div", "status-section");
   statusLocal.innerHTML = `<span class="status-chip"><span class="status-dot"></span>Local only</span>`;
+
+  const zoomOutBtn = makeIconButton("zoomOut", "Zoom out", "Ctrl+-");
+  const zoomReadout = el("button", "zoom-readout", "100%");
+  zoomReadout.type = "button";
+  zoomReadout.title = "Reset to 100%";
+  const zoomInBtn = makeIconButton("zoomIn", "Zoom in", "Ctrl++");
+  const zoomFitBtn = makeIconButton("fit", "Fit page", "Ctrl+0");
+  const zoomActualBtn = makeIconButton("target", "Actual size (100%)");
+  statusZoom.append(
+    el("span", "status-label", "Zoom"),
+    zoomOutBtn,
+    zoomReadout,
+    zoomInBtn,
+    zoomFitBtn,
+    zoomActualBtn,
+  );
+
+  const pagePrevBtn = makeIconButton("chevronLeft", "Previous page", "Page Up");
+  const pageInput = el("input", "page-input");
+  pageInput.type = "number";
+  pageInput.min = "1";
+  pageInput.value = "1";
+  pageInput.setAttribute("aria-label", "Page number");
+  const pageTotal = el("span", "page-total", "/ 0");
+  const pageNextBtn = makeIconButton("chevronRight", "Next page", "Page Down");
+  statusPage.append(
+    el("span", "status-label", "Page"),
+    pagePrevBtn,
+    pageInput,
+    pageTotal,
+    pageNextBtn,
+  );
+
   statusbar.append(
     statusCalibration,
     statusCoords,
@@ -206,8 +226,26 @@ export function createShell(root: HTMLElement): ShellRefs {
   shell.append(topbar, workspace, statusbar);
   root.append(shell);
 
-  setupResizer(dockResizer, dock, "dock-w", 210, 420);
-  setupResizer(inspectorResizer, inspector, "inspector-w", 250, 420, true);
+  initPanelLayout({
+    dock,
+    dockResizer,
+    dockRestore,
+    inspector,
+    inspectorResizer,
+  });
+
+  setupResizer(dockResizer, dock, "dock-w", PANEL_LIMITS.leftMin, PANEL_LIMITS.leftMax, false, (width) =>
+    setPanelWidth("left", width),
+  );
+  setupResizer(
+    inspectorResizer,
+    inspector,
+    "inspector-w",
+    PANEL_LIMITS.rightMin,
+    PANEL_LIMITS.rightMax,
+    true,
+    (width) => setPanelWidth("right", width),
+  );
 
   return {
     root,
@@ -215,13 +253,6 @@ export function createShell(root: HTMLElement): ShellRefs {
     docName,
     docMeta,
     dirtyDot,
-    openPdfBtn,
-    openProjectBtn,
-    saveBtn,
-    exportBtn,
-    importImageBtn,
-    undoBtn,
-    redoBtn,
     zoomOutBtn,
     zoomInBtn,
     zoomFitBtn,
@@ -253,7 +284,8 @@ function setupResizer(
   variable: string,
   min: number,
   max: number,
-  invert = false,
+  invert: boolean,
+  onEnd?: (width: number) => void,
 ): void {
   handle.addEventListener("pointerdown", (event) => {
     event.preventDefault();
@@ -261,15 +293,18 @@ function setupResizer(
     handle.classList.add("is-dragging");
     const startX = event.clientX;
     const startWidth = panel.getBoundingClientRect().width;
+    let lastWidth = startWidth;
     const onMove = (move: PointerEvent) => {
       const delta = (move.clientX - startX) * (invert ? -1 : 1);
       const width = Math.max(min, Math.min(max, startWidth + delta));
+      lastWidth = width;
       document.documentElement.style.setProperty(`--${variable}`, `${Math.round(width)}px`);
     };
     const onUp = () => {
       handle.classList.remove("is-dragging");
       handle.removeEventListener("pointermove", onMove);
       handle.removeEventListener("pointerup", onUp);
+      onEnd?.(lastWidth);
     };
     handle.addEventListener("pointermove", onMove);
     handle.addEventListener("pointerup", onUp, { once: true });

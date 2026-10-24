@@ -2,9 +2,9 @@
 
 GridScalr is a local-first desktop app for opening PDF drawings, calibrating their scale, measuring lengths and areas, and organising markups into separate measurement and drawing layers.
 
-It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents, a vertical tool rail, and dedicated layers, properties, and markups panels. The workflow is inspired by professional PDF takeoff tools, but GridScalr is an independent implementation built with Tauri, Rust, TypeScript, and HTML5 Canvas.
+It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents, a compact top menu, a vertical tool rail, a Pages/Layers sidebar, and a properties panel. The workflow is inspired by professional PDF takeoff tools, but GridScalr is an independent implementation built with Tauri, Rust, TypeScript, and HTML5 Canvas.
 
-![GridScalr showing a calibrated plan with a length measurement and an arrow markup](docs/gridscalr-screenshot.png)
+See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md](docs/shortcuts.md) for the keyboard reference. The same content is available in **Help** inside the app.
 
 ## Highlights
 
@@ -16,21 +16,23 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
-- Rename markups from the Markups list (double-click or `F2`) and rename the project from the top bar.
+- Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves.
+- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
-- Use right-click context menus on the canvas, Markups list, and layers for the same actions.
+- Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
+- Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The context bar keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
-- Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
-- Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
+- Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Measurements dialog.
+- Review live quantities by category, room, and measurement type in the on-demand **Quantities** dialog, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it. Inserted images are embedded and compressed inside the project.
 - Export a drawing PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
-- Undo/redo, autosave, recent files, and a shortcut reference.
+- Undo/redo, autosave, the ten most recent files, and a bundled Markdown user guide and shortcut reference under **Help**.
 - No account, cloud service, or network access required.
 
 ## Requirements
@@ -95,15 +97,30 @@ npm run fixture
 
 Then open `fixtures/sample-plan.pdf` in GridScalr. It contains two A4 landscape plan pages; page 1 includes a 10.00 m known dimension along the bottom for calibration. The PDF is generated by `scripts/make-fixture.mjs` using `pdf-lib`.
 
+## Interface
+
+GridScalr uses a compact drawing-first layout:
+
+- **Menu bar** – File, Edit, View, Settings, and Help.
+- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
+- **Left panel** – Pages and Layers only. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Canvas** – the drawing, markups, selection handles, and inline editors.
+- **Properties** – the page scale, active layer, and selected item. Move project-wide units, snapping, and quantity defaults to **Settings → Project settings**.
+- **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
+
+The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
+
 ## Workflow
 
 ### 1. Open a drawing
 
-Use **Open drawing**, drag a PDF or TIF onto the window, or choose it from the welcome screen. Password-protected PDFs prompt for a password.
+Use **File → Open drawing…** (`Ctrl/Cmd+O`), drag a PDF or TIF onto the window, or choose it from the welcome screen. Password-protected PDFs prompt for a password.
+
+**File → New project…** (`Ctrl/Cmd+N`) starts a fresh project from a drawing and asks before discarding unsaved changes. **File → Open recent** lists the ten most recent projects and drawings; the welcome screen shows the same list.
 
 Opening a drawing with no project active creates a new project. To continue previous work, open its `.gridscalr` file instead.
 
-With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. Page numbers are append-only: new sheets never shift existing pages, so measurements stay on the sheet they were drawn on. Use the page controls to move between sheets; the status bar names the source document and its local page number.
+With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. Page numbers are append-only: new sheets never shift existing pages, so measurements stay on the sheet they were drawn on. Use the page controls in the status bar to move between sheets; the top bar names the source document and the current page.
 
 #### TIF drawings
 
@@ -140,9 +157,9 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates.
 
-When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Set the snap distance in **Properties → Units** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
+When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
-While the Length, Area, or Count tool is active, the context bar shows the category and room for new measurements. The Count tool also shows the object type, and the Area tool shows the add/deduct mode. These stay selected for the next measurement together with the category and room until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
+While the Length, Area, or Count tool is active, the context bar shows the category and room for new measurements. The Count tool also shows the object type, and the Area tool shows the add/deduct mode. These stay selected for the next measurement together with the category and room until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 
@@ -163,11 +180,11 @@ Measurement labels are single-line editable. Double-click a measurement label, t
 
 Labels use compact paper-space sizes. On the canvas their on-screen size is capped at high zoom so they do not cover the room you are drawing; PDF export keeps the true paper-space size. Large rooms keep the full label centered inside the area. Smaller rooms shrink the label down to a minimum readable paper size. If it still does not fit, the label moves outside the area and a thin leader line connects it to the room. The same paper-space placement is used by canvas rendering, label hit-testing, inline editing, and PDF export.
 
-The Markups list supports renaming without changing the drawing text: double-click a row label or select a row and press `F2`. Renaming a text item changes its list/export label, not its text body. The project name in the top bar also supports double-click rename.
+Renaming in Properties changes the list/export label without changing the drawing text: select one item and edit **Label**, or press `F2` to focus the field. Renaming a text item changes its list/export label, not its text body. The project name in the top bar also supports double-click rename.
 
 ### 5. Add images
 
-Use **Import image** in the top bar (or in the context bar) to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
+Use **File → Import image…** (or the context bar) to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
 
 Images are embedded in the project, so the `.gridscalr` file stays portable. Each image is limited to 20 MB and 4000 px on its longest side. Images larger than 4000 px are proportionally downscaled; an image that is still larger than 20 MB after encoding is rejected. PNG transparency is preserved; JPEG files are re-encoded at quality 0.85 when they need resizing or exceed the size limit.
 
@@ -190,7 +207,7 @@ Each drag or inline edit is one undo step.
 
 ### 7. Organise layers
 
-Open the **Layers** panel to:
+Open the **Layers** tab in the left panel to:
 
 - Show or hide a layer.
 - Lock a layer against moving, editing, and deleting its items.
@@ -208,7 +225,7 @@ Locking a layer leaves the layer's own settings editable, but prevents changing 
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
-The **Markups** panel mirrors selection: `Shift`/`Ctrl`/`Cmd`-click rows to build a selection, use **Select all** for the current filter, and use each row's eye and lock buttons for per-item visibility and locking. Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
+Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) to search and navigate items. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection, use **Select all** for the current filter, and use each row's eye and lock buttons for per-item visibility and locking. Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. Click a row to jump to its page and select it.
 
 With more than one item selected, Properties offers bulk actions for:
 
@@ -232,10 +249,10 @@ Locked items remain visible and exportable, but group moves, nudges, deletes, re
 
 ### 9. Quantities and procurement reports
 
-Open the **Quantities** tab to summarise the measurements that are currently visible. Each row covers one category, room, and measurement type, and shows gross, deduction, net, waste, order quantity, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
+Open **View → Quantities…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements that are currently included by the filters. Each row covers one category, room, and measurement type, and shows gross, deduction, net, waste, order quantity, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
 
 - Filter by current or all pages, one category, a room substring, or any combination of measurement layers.
-- Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included. Enable **Include hidden items and layers** to allow counting them in the live panel.
+- Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included. Enable **Include hidden items and layers** to allow counting them in the live dialog.
 - Area deductions are subtracted inside the same category and room only. If a deduction exceeds its gross area, the net is clamped to zero and the row shows a warning. Length and count rows are never reduced by area deductions.
 - Length and area values use the project units, including yd², and counts always use pcs.
 - Measurements without a scale are excluded and counted in a note. Calibrate their page to include them.
@@ -243,12 +260,12 @@ Open the **Quantities** tab to summarise the measurements that are currently vis
 
 Waste and rounding turn net quantities into order quantities:
 
-- Set project defaults under **Properties → Categories → Waste / Round up**. Waste is a percentage of net, from 0 to 100. A rounding step of 0 means no rounding.
-- A category can override either value in **Manage categories**. Leave a field empty to inherit the project default. Both settings are stored in the project file and changes are undoable.
+- Set project defaults under **Settings → Project settings → Quantities**. Waste is a percentage of net, from 0 to 100. A rounding step of 0 means no rounding.
+- A category can override either value in **Settings → Manage categories…**. Leave a field empty to inherit the project default. Both settings are stored in the project file and changes are undoable.
 - Rounding always goes up. Counts always round to whole pcs even when the project uses a different step. Order quantity is never lower than net.
 - The row shows net, waste quantity, and order quantity separately. The waste percentage is part of the waste label.
 
-The **CSV** and **PDF** buttons in the Quantities footer, and **Export → Quantities to CSV / Quantity report (PDF)**, create the procurement report. Reports cover every page and every category, excluding hidden items and hidden layers, and include locked items. The live panel filters only affect the on-screen summary, not the exported report. Reports are generated on demand and never stored in the project file.
+The **CSV** and **PDF** buttons in the Quantities dialog, and **File → Export → Quantities to CSV / Quantity report (PDF)**, create the procurement report. Reports cover every page and every category, excluding hidden items and hidden layers, and include locked items. The dialog filters only affect the on-screen summary, not the exported report. Reports are generated on demand and never stored in the project file.
 
 The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for count quantities. It contains one row per category, room, and quantity type, followed by two blank lines and project metadata. `hidden_excluded` is `true` only when at least one hidden measurement was actually left out. The PDF report is A4 portrait with 48 pt margins, category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
@@ -256,17 +273,27 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 
 - **Save project** (`Ctrl/Cmd+S`) writes a `.gridscalr` JSON file.
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
-- **Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. Background images are drawn above the source page and below markups; annotation images follow layer order. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
+- **File → Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. Background images are drawn above the source page and below markups; annotation images follow layer order. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
   - **Selected area** enters a one-off crop mode on the canvas. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**; `Esc` cancels. The crop is stored relative to the page and applied to every selected page, so pages with different sizes or rotation stay aligned. It clips PDF content, markups, labels, and the calibration line.
   - Hidden layers are listed but disabled. Hidden items are always excluded and locked items are exported.
   - **Legend** adds a separate A4 page at the end of the export. It is never drawn over the drawing and is not affected by the crop.
-- **Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
-- **Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
-- **Export → Quantity report (PDF)** writes `<project>-quantities.pdf`, a print-friendly procurement report separate from the flattened drawing export.
-- **Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
-- **Export → View as PNG** exports the rendered page and markup layers at the current view.
+- **File → Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
+- **File → Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
+- **File → Export → Quantity report (PDF)** writes `<project>-quantities.pdf`, a print-friendly procurement report separate from the flattened drawing export.
+- **File → Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
+- **File → Export → View as PNG** exports the rendered page and markup layers at the current view.
 
 All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups and images stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Images are embedded as PNG or JPEG objects with their opacity and rotation. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
+
+## Help
+
+The **Help** menu opens a bundled help dialog:
+
+- **User guide** (`F1`) renders [`docs/user-guide.md`](docs/user-guide.md).
+- **Keyboard shortcuts** (`?`) renders [`docs/shortcuts.md`](docs/shortcuts.md).
+- **About GridScalr** shows the installed version from `package.json`.
+
+The Markdown is bundled by Vite at build time, so help works offline and does not read files at runtime. The app applies a safe Markdown subset and escapes raw HTML.
 
 ## Project files
 
@@ -380,6 +407,7 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Delete selection or remove last area/length point | `Delete` or `Backspace` |
 | Add/remove markups from selection | `Shift`/`Ctrl`/`Cmd` + click, or marquee drag |
 | Copy / cut / paste markups | `Ctrl/Cmd+C` / `Ctrl/Cmd+X` / `Ctrl/Cmd+V` |
+| Duplicate selection | `Ctrl/Cmd+D` |
 | Paste an image from the clipboard | `Ctrl/Cmd+V` when the clipboard contains an image |
 | Rename selected markup label | `F2` |
 | Edit selected text or measurement label | Double-click with Select or Text tool |
@@ -390,11 +418,16 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Zoom | `Ctrl/Cmd` + mouse wheel, `Ctrl/Cmd` + `+` / `-` |
 | Fit page / Actual size | `Ctrl/Cmd+0` / `Ctrl/Cmd+1` |
 | Previous / next page | `PageUp` / `PageDown` |
+| Toggle sidebar / Properties | `Ctrl/Cmd+\` / `Ctrl/Cmd+Shift+\` |
+| Measurements / Quantities | `Ctrl/Cmd+Shift+M` / `Ctrl/Cmd+Alt+Q` |
 | Undo / Redo | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` |
+| New project | `Ctrl/Cmd+N` |
 | Save / Save as | `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` |
 | Open drawing / Open project | `Ctrl/Cmd+O` / `Ctrl/Cmd+Shift+O` |
 | Export menu | `Ctrl/Cmd+E` |
-| Shortcut reference | `?` |
+| Project settings | `Ctrl/Cmd+,` |
+| Quit | `Ctrl/Cmd+Q` |
+| User guide / Shortcut reference | `F1` / `?` |
 
 ## Architecture
 
@@ -409,7 +442,12 @@ src/
   pdf/reportPdf.ts       print-friendly A4 quantity report built with pdf-lib
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
-  ui/                    shell, tool rail, panels, quantity panel, inspector, dialogs, status bar
+  ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
+  ui/helpDialog.ts       bundled Markdown help and About dialog
+  ui/settingsDialog.ts   project-wide units, snapping, quantity defaults
+  help/markdown.ts       safe Markdown renderer for bundled help
+  help/content.ts        Vite raw imports of docs/user-guide.md and docs/shortcuts.md
   io/projectFile.ts      project schema normalization, serialization, relative paths
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/sha256.ts           dependency-free SHA-256 fallback
@@ -417,7 +455,9 @@ src-tauri/
   src/commands.rs        atomic text/binary writes, reads, and path checks
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
-tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256
+docs/user-guide.md       in-app user guide and workflow reference
+docs/shortcuts.md        in-app keyboard reference
+tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256, Markdown
 scripts/make-fixture.mjs reproducible sample PDF generator
 ```
 
@@ -439,9 +479,9 @@ npm run build     # tsc --noEmit + Vite production build
 cargo check       # inside src-tauri, or: cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
-The frontend uses TypeScript with no UI framework. PDF.js is bundled with its worker. Icons are inline SVG. The CSS defines the Graphite & Jade theme, responsive panel layout, focus states, and reduced-motion handling.
+The frontend uses TypeScript with no UI framework. PDF.js is bundled with its worker. Icons are inline SVG. The CSS defines the Graphite & Jade theme, responsive panel layout, focus states, and reduced-motion handling. Help content is imported from `docs/*.md` with Vite `?raw` and rendered by a small safe Markdown parser.
 
-When adding a project field, update `src/model/types.ts`, the parser in `src/io/projectFile.ts`, and serialization tests. When adding a layer or item operation, keep the lock guards in `src/state/store.ts`, `src/canvas/CanvasView.ts`, and the inspector in sync.
+When adding a project field, update `src/model/types.ts`, the parser in `src/io/projectFile.ts`, and serialization tests. When adding a layer or item operation, keep the lock guards in `src/state/store.ts`, `src/canvas/CanvasView.ts`, and the inspector in sync. Every GUI or feature change must also update `docs/user-guide.md`, and shortcut changes must update `docs/shortcuts.md` and the table above.
 
 ## Browser fallback notes
 

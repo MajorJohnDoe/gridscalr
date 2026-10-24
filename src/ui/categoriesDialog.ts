@@ -22,8 +22,8 @@ function iconButton(markup: string, label: string, onClick: () => void): HTMLBut
  * single undo step, and measurements are always reassigned before a category
  * disappears.
  */
-export function openCategoriesDialog(): void {
-  if (!store.project) return;
+export function openCategoriesDialog(): Promise<void> {
+  if (!store.project) return Promise.resolve();
 
   const body = el("div", "form-stack category-manager");
   body.append(
@@ -299,7 +299,7 @@ export function openCategoriesDialog(): void {
 
   render();
 
-  void showModal({
+  return showModal({
     title: "Categories",
     subtitle: "Project-wide grouping for measurements and quantity reports.",
     body,

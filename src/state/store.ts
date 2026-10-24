@@ -40,7 +40,7 @@ export type ToolId =
   | "highlight"
   | "text";
 
-export type LeftTab = "pages" | "layers" | "markups" | "quantities";
+export type LeftTab = "pages" | "layers";
 
 export interface DrawStyle {
   color: string;

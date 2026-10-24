@@ -31,13 +31,18 @@ export function showModal(options: {
   actions: ModalAction[];
   onValidate?: () => string | null;
   /** Called after the modal is mounted, for dynamic button and field state. */
-  onMount?: (modal: HTMLElement) => void;
+  onMount?: (modal: HTMLElement, close: () => void) => void;
+  onClose?: () => void;
   wide?: boolean;
+  className?: string;
 }): Promise<string | null> {
   closeActiveModal();
   return new Promise((resolve) => {
     const backdrop = el("div", "modal-backdrop");
-    const modal = el("div", `modal${options.wide ? " modal-wide" : ""}`);
+    const modal = el(
+      "div",
+      `modal${options.wide ? " modal-wide" : ""}${options.className ? ` ${options.className}` : ""}`,
+    );
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-labelledby", "modal-title");
@@ -60,11 +65,15 @@ export function showModal(options: {
 
     const footer = el("div", "modal-footer");
     let error: HTMLElement | null = null;
+    let finished = false;
 
     const finish = (value: string | null) => {
+      if (finished) return;
+      finished = true;
       document.removeEventListener("keydown", onKeyDown);
       backdrop.remove();
       if (activeModal?.close === closeModal) activeModal = null;
+      options.onClose?.();
       resolve(value);
     };
     const closeModal = () => finish(null);
@@ -95,7 +104,7 @@ export function showModal(options: {
     backdrop.append(modal);
     document.body.append(backdrop);
     activeModal = { close: closeModal };
-    options.onMount?.(modal);
+    options.onMount?.(modal, closeModal);
 
     close.addEventListener("click", closeModal);
     backdrop.addEventListener("mousedown", (event) => {

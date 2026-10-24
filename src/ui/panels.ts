@@ -6,21 +6,18 @@ import {
   normalizeRoom,
 } from "../model/categories";
 import { hasClipboard } from "../model/clipboard";
-import { COUNT_TYPES, COUNT_TYPE_LABELS, countTypeLabel } from "../model/countSymbols";
-import { pageDocumentLabel, primaryDocument, totalPageCount } from "../model/documents";
+import { COUNT_TYPES, COUNT_TYPE_LABELS } from "../model/countSymbols";
+import { primaryDocument, totalPageCount } from "../model/documents";
 import {
-  duplicateLayer,
   findItem,
   isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
   layersForKind,
   moveItemToLayer,
-  moveLayer,
   removeLayer,
-  swapLayers,
 } from "../model/layers";
-import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import { itemKindLabel, itemMetrics } from "../model/measure";
 import {
   formatImageDimensions,
   IMAGE_MODE_LABELS,
@@ -29,16 +26,14 @@ import {
   imageOpacity,
 } from "../model/images";
 import { resolveSelection, selectionKind } from "../model/selection";
-import { formatBytes } from "../io/platform";
+import { formatBytes, getRecent } from "../io/platform";
 import type {
   AreaMode,
   AreaShape,
   AreaUnit,
   CountType,
   ImageMode,
-  Layer,
   LengthUnit,
-  MarkupItem,
   PageSize,
   RecentEntry,
   LayerKind,
@@ -53,22 +48,37 @@ import {
 } from "../model/units";
 import { store, toolLayerKind } from "../state/store";
 import type { AutosavePayload } from "../state/store";
-import { clear, el, option } from "./dom";
-import { confirmDialog, textDialog } from "./dialogs";
-import { openCategoriesDialog } from "./categoriesDialog";
-import { renderQuantities } from "./quantityPanel";
+import { clear, el, escapeHtml, option } from "./dom";
+import { confirmDialog } from "./dialogs";
 import { icon } from "./icons";
+import type { PopoverItem } from "./popover";
+import { showPopoverAt } from "./popover";
 import type { ShellRefs } from "./shell";
+import { openSettingsDialog } from "./settingsDialog";
+import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { TOOL_BY_ID } from "./toolDefs";
 import { toast } from "./toast";
 
 export interface PanelActions {
   openPdf: () => void;
   openProject: () => void;
+  newProject: () => void;
+  closeProject: () => void;
+  quit: () => void;
   saveProject: () => void;
+  saveProjectAs: () => void;
   exportAs: (
     kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf",
   ) => void;
+  undo: () => void;
+  redo: () => void;
+  zoomIn: () => void;
+  zoomOut: () => void;
+  zoomFit: () => void;
+  zoomActual: () => void;
+  renameSelection: () => void;
+  openMeasurements: () => void;
+  openQuantities: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;
   openManualScale: () => void;
@@ -100,96 +110,31 @@ export interface PanelActions {
   openRecent: (entry: RecentEntry) => void;
 }
 
-let markupPageFilter: "current" | "all" = "current";
-let markupKindFilter = "all";
-let markupSearch = "";
-
-function beginMarkupRename(label: HTMLElement, itemId: string, fallbackLabel: string): void {
-  if (label.querySelector(".markup-label-input")) return;
-  const found = store.project ? findItem(store.project, itemId) : undefined;
-  if (found && itemIsLocked(found.item, found.layer)) {
-    toast("This markup is locked.", "warning");
-    return;
-  }
-  const original = found?.item.label ?? "";
-  const input = document.createElement("input");
-  input.className = "markup-label-input";
-  input.value = original;
-  input.placeholder = fallbackLabel;
-  input.setAttribute("aria-label", "Markup name");
-  label.replaceWith(input);
-  input.focus({ preventScroll: true });
-  input.select();
-
-  let finished = false;
-  const finish = (commit: boolean) => {
-    if (finished) return;
-    finished = true;
-    if (!commit) {
-      input.replaceWith(label);
-      return;
-    }
-    const value = input.value.trim();
-    if (value === original) {
-      input.replaceWith(label);
-      return;
-    }
-    store.mutate(
-      (project) => {
-        const item = findItem(project, itemId)?.item;
-        if (item) {
-          item.label = value || undefined;
-          item.updatedAt = new Date().toISOString();
-        }
-      },
-      "change",
-    );
-  };
-  input.addEventListener("keydown", (event) => {
-    if (event.isComposing) return;
-    if (event.key === "Enter") {
-      event.preventDefault();
-      event.stopPropagation();
-      finish(true);
-    } else if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      finish(false);
-    }
-  });
-  input.addEventListener("blur", () => finish(true));
-  input.addEventListener("click", (event) => event.stopPropagation());
-  input.addEventListener("dblclick", (event) => event.stopPropagation());
-}
-
-/** Starts an inline rename for the selected markup; falls back to the inspector. */
+/** Focuses the selection label in Properties for rename. */
 export function requestMarkupRename(refs: ShellRefs): void {
   const selection = store.ui.selection.length === 1 ? store.primarySelection : null;
   if (!selection) {
-    toast("Select one markup to rename it.", "info");
+    toast("Select one item to rename it.", "info");
     return;
   }
-  store.setLeftTab("markups");
+  setInspectorCollapsed(false);
   window.requestAnimationFrame(() => {
-    const escaped = typeof CSS !== "undefined" && CSS.escape ? CSS.escape(selection.itemId) : selection.itemId;
-    const row = refs.dockBody.querySelector<HTMLElement>(`[data-item-id="${escaped}"]`);
-    const label = row?.querySelector<HTMLElement>(".markup-label");
-    if (label) {
-      beginMarkupRename(label, selection.itemId, row?.dataset.label ?? "Markup name");
-      return;
-    }
-    const fallback = refs.inspector.querySelector<HTMLInputElement>('[data-role="selection-label"]');
+    const fallback = refs.inspector.querySelector<HTMLInputElement>(
+      '[data-role="selection-label"]',
+    );
     if (fallback) {
       fallback.focus({ preventScroll: true });
       fallback.select();
+      return;
     }
+    toast("Select the item and edit its label in Properties.", "info");
   });
 }
 
 export function renderChrome(refs: ShellRefs, actions: PanelActions): void {
   renderTopbar(refs, actions);
   renderToolRail(refs);
-  renderDock(refs, actions);
+  renderSidebar(refs, actions);
   renderContextBar(refs, actions);
   renderInspector(refs, actions);
   renderStatus(refs);
@@ -210,12 +155,6 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
   refs.dirtyDot.title = "Unsaved changes";
-  refs.openPdfBtn.disabled = false;
-  refs.openProjectBtn.disabled = false;
-  refs.saveBtn.disabled = !hasProject;
-  refs.exportBtn.disabled = !hasProject;
-  refs.undoBtn.disabled = !store.canUndo;
-  refs.redoBtn.disabled = !store.canRedo;
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;
@@ -242,13 +181,10 @@ function renderStatus(refs: ShellRefs): void {
   const project = store.project;
   clear(refs.statusCalibration);
   clear(refs.statusCoords);
-  clear(refs.statusZoom);
-  clear(refs.statusPage);
   clear(refs.statusLayer);
 
   if (!project) {
     refs.statusCalibration.append(chip("No drawing open", "warning"));
-    refs.statusZoom.innerHTML = `<span class="status-label">Zoom</span> <span class="status-value">—</span>`;
     return;
   }
 
@@ -269,8 +205,6 @@ function renderStatus(refs: ShellRefs): void {
     ? `X ${formatCoordinate(cursor.x, scale, project.settings.lengthUnit)}  Y ${formatCoordinate(cursor.y, scale, project.settings.lengthUnit)} ${scale ? project.settings.lengthUnit : "pt"}`
     : "X —  Y —";
   refs.statusCoords.innerHTML = `<span class="status-label">Cursor</span> <span class="status-value">${coords}</span>`;
-  refs.statusZoom.innerHTML = `<span class="status-label">Zoom</span> <span class="status-value">${Math.round(store.ui.zoom * 100)}%</span>`;
-  refs.statusPage.innerHTML = `<span class="status-label">Page</span> <span class="status-value">${store.ui.page} / ${totalPageCount(project.documents)}</span>${project.documents.length > 1 ? ` <span class="status-doc">${escapeHtml(pageDocumentLabel(project, store.ui.page))}</span>` : ""}`;
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   refs.statusLayer.innerHTML = active
     ? `<span class="status-label">Layer</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
@@ -282,621 +216,6 @@ function chip(text: string, kind: "calibrated" | "warning"): HTMLElement {
   node.innerHTML = `<span class="status-dot"></span>`;
   node.append(document.createTextNode(text));
   return node;
-}
-
-export function renderDock(refs: ShellRefs, actions: PanelActions): void {
-  for (const tab of refs.dockTabs) {
-    const active = tab.dataset.tab === store.ui.leftTab;
-    tab.classList.toggle("is-active", active);
-    tab.setAttribute("aria-pressed", String(active));
-  }
-  clear(refs.dockBody);
-  clear(refs.dockFooter);
-  if (!store.project) {
-    const note = el("div", "empty-note");
-    note.innerHTML = `${icon("folder", 26)}<div>Open a PDF or TIF drawing to start measuring.</div>`;
-    refs.dockBody.append(note);
-    return;
-  }
-  switch (store.ui.leftTab) {
-    case "pages":
-      renderPages(refs, actions);
-      break;
-    case "layers":
-      renderLayers(refs, actions);
-      break;
-    case "markups":
-      renderMarkups(refs, actions);
-      break;
-    case "quantities":
-      renderQuantities(refs, actions);
-      break;
-  }
-}
-
-/* ---------------- Layers ---------------- */
-
-function renderLayers(refs: ShellRefs, actions: PanelActions): void {
-  const project = store.project!;
-  const groups: Array<{ kind: LayerKind; title: string; note: string }> = [
-    { kind: "draw", title: "Drawing layers", note: "Below measurements" },
-    { kind: "measure", title: "Measurement layers", note: "Top of stack" },
-  ];
-
-  let draggedId: string | null = null;
-
-  for (const group of groups) {
-    const layers = [...layersForKind(project, group.kind)].reverse();
-    const header = el("div", "layer-group-title");
-    const label = el("span", "", group.title);
-    label.title = group.note;
-    header.append(label, el("span", "count", String(layers.length)));
-    refs.dockBody.append(header);
-
-    for (const layer of layers) {
-      const row = el("div", "layer-row");
-      row.dataset.layerId = layer.id;
-      row.classList.toggle("is-active", layer.id === project.activeLayerId);
-      row.classList.toggle("is-hidden", !layer.visible);
-      row.draggable = true;
-
-      const grip = el("span", "layer-grip");
-      grip.innerHTML = icon("up", 11);
-      grip.title = "Drag to reorder within this group";
-
-      const color = el("input", "layer-color");
-      color.type = "color";
-      color.value = layer.color;
-      color.title = "Layer colour";
-      color.addEventListener("click", (event) => event.stopPropagation());
-      color.addEventListener("change", () => {
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (!target) return;
-            target.color = color.value;
-            for (const item of target.items) item.color = color.value;
-          },
-          "layers",
-        );
-      });
-
-      const name = el("span", "layer-name", layer.name);
-      name.title = layer.name;
-      name.addEventListener("dblclick", (event) => {
-        event.stopPropagation();
-        beginInlineRename(row, name, layer.id);
-      });
-
-      const count = el("span", "layer-count", String(layer.items.length));
-      count.title = `${layer.items.length} items`;
-
-      const actionsWrap = el("div", "layer-actions");
-      const eye = layerAction(layer.visible ? "eye" : "eyeOff", layer.visible ? "Hide layer" : "Show layer");
-      eye.classList.toggle("is-on", layer.visible);
-      eye.addEventListener("click", (event) => {
-        event.stopPropagation();
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (target) target.visible = !target.visible;
-          },
-          "layers",
-        );
-      });
-      const lock = layerAction(layer.locked ? "lock" : "unlock", layer.locked ? "Unlock layer" : "Lock layer");
-      lock.classList.toggle("is-locked", layer.locked);
-      lock.addEventListener("click", (event) => {
-        event.stopPropagation();
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (target) target.locked = !target.locked;
-          },
-          "layers",
-        );
-      });
-      const menu = layerAction("markups", "Layer actions", "layer-menu-btn");
-      menu.addEventListener("click", (event) => {
-        event.stopPropagation();
-        showLayerMenu(menu, layer.id, actions);
-      });
-      actionsWrap.append(eye, lock, menu);
-
-      row.append(grip, color, name, count, actionsWrap);
-      row.addEventListener("click", () => {
-        store.setActiveLayer(layer.id);
-        if (!layer.visible) toast("This layer is hidden. Show it to edit its contents.", "warning");
-      });
-      row.addEventListener("dragstart", (event) => {
-        draggedId = layer.id;
-        event.dataTransfer?.setData("text/plain", layer.id);
-        if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-        row.classList.add("is-dragging");
-      });
-      row.addEventListener("dragend", () => {
-        draggedId = null;
-        row.classList.remove("is-dragging");
-      });
-      row.addEventListener("dragover", (event) => {
-        if (!draggedId || draggedId === layer.id) return;
-        const other = project.layers.find((l) => l.id === draggedId);
-        if (!other || other.kind !== layer.kind) return;
-        event.preventDefault();
-        row.classList.add("is-drop-target");
-      });
-      row.addEventListener("dragleave", () => row.classList.remove("is-drop-target"));
-      row.addEventListener("drop", (event) => {
-        event.preventDefault();
-        row.classList.remove("is-drop-target");
-        const sourceId = draggedId ?? event.dataTransfer?.getData("text/plain");
-        if (!sourceId || sourceId === layer.id) return;
-        store.mutate(
-          (project) => {
-            swapLayers(project, sourceId, layer.id);
-          },
-          "layers",
-        );
-      });
-
-      refs.dockBody.append(row);
-    }
-  }
-
-  refs.dockBody.append(el("div", "layer-add-row"));
-  const addRow = refs.dockBody.lastElementChild as HTMLElement;
-  const addMeasure = el("button", "btn btn-small", "+ Measure layer");
-  addMeasure.type = "button";
-  addMeasure.addEventListener("click", () => {
-    store.createLayer("measure");
-    toast("Measurement layer created.", "success");
-  });
-  const addDraw = el("button", "btn btn-small", "+ Drawing layer");
-  addDraw.type = "button";
-  addDraw.addEventListener("click", () => {
-    store.createLayer("draw");
-    toast("Drawing layer created.", "success");
-  });
-  addRow.append(addMeasure, addDraw);
-
-  const active = project.layers.find((l) => l.id === project.activeLayerId);
-  if (active) {
-    const note = el("div", "empty-note small");
-    note.style.paddingTop = "4px";
-    note.innerHTML = `${icon("info", 14)} Items are created in <strong>${escapeHtml(active.name)}</strong> (${active.kind === "measure" ? "measurement" : "drawing"} layer).`;
-    refs.dockBody.append(note);
-  }
-
-  const footerMeasure = el("button", "btn btn-small btn-ghost", "New measurement layer");
-  footerMeasure.type = "button";
-  footerMeasure.addEventListener("click", () => store.createLayer("measure"));
-  const footerDraw = el("button", "btn btn-small btn-ghost", "New drawing layer");
-  footerDraw.type = "button";
-  footerDraw.addEventListener("click", () => store.createLayer("draw"));
-  refs.dockFooter.append(footerMeasure, footerDraw);
-}
-
-function layerAction(iconName: string, label: string, extraClass = ""): HTMLButtonElement {
-  const btn = el("button", `layer-action ${extraClass}`.trim());
-  btn.type = "button";
-  btn.title = label;
-  btn.setAttribute("aria-label", label);
-  btn.innerHTML = icon(iconName, 13);
-  return btn;
-}
-
-function beginInlineRename(row: HTMLElement, name: HTMLElement, layerId: string): void {
-  const input = el("input", "layer-name-input");
-  input.value = name.textContent ?? "";
-  row.replaceChild(input, name);
-  input.focus();
-  input.select();
-  let done = false;
-  const commit = (save: boolean) => {
-    if (done) return;
-    done = true;
-    if (save && input.value.trim()) {
-      store.mutate(
-        (project) => {
-          const layer = project.layers.find((l) => l.id === layerId);
-          if (layer) layer.name = input.value.trim();
-        },
-        "layers",
-      );
-    } else {
-      store.emit("layers");
-    }
-  };
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") commit(true);
-    if (event.key === "Escape") commit(false);
-    event.stopPropagation();
-  });
-  input.addEventListener("blur", () => commit(true));
-  input.addEventListener("click", (event) => event.stopPropagation());
-}
-
-function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActions): void {
-  const project = store.project;
-  const layer = project?.layers.find((l) => l.id === layerId);
-  if (!layer) return;
-  const group = project!.layers.filter((l) => l.kind === layer.kind);
-  const index = group.findIndex((l) => l.id === layerId);
-  showPopover(anchor, [
-    {
-      label: "Rename…",
-      icon: "text",
-      action: () => {
-        void textDialog("Rename layer", "Layer", layer.name, "Layer name").then((value) => {
-          if (!value) return;
-          store.mutate(
-            (project) => {
-              const target = project.layers.find((l) => l.id === layerId);
-              if (target) target.name = value;
-            },
-            "layers",
-          );
-        });
-      },
-    },
-    {
-      label: "Duplicate",
-      icon: "copy",
-      action: () => store.mutate((project) => duplicateLayer(project, layerId), "layers"),
-    },
-    {
-      label: `Move selection here (${store.ui.selection.length})`,
-      icon: "layers",
-      disabled:
-        store.ui.selection.length === 0 ||
-        selectionKind(project!, store.ui.selection) !== layer.kind ||
-        layer.locked,
-      action: () => actions.moveSelectionToLayer(layerId),
-    },
-    {
-      label: "Move up",
-      icon: "up",
-      disabled: index <= 0,
-      action: () => store.mutate((project) => moveLayer(project, layerId, 1), "layers"),
-    },
-    {
-      label: "Move down",
-      icon: "down",
-      disabled: index < 0 || index >= group.length - 1,
-      action: () => store.mutate((project) => moveLayer(project, layerId, -1), "layers"),
-    },
-    { separator: true },
-    {
-      label: "Clear layer",
-      icon: "trash",
-      danger: true,
-      disabled: layer.items.length === 0,
-      action: () => {
-        void confirmDialog(
-          "Clear layer",
-          `Remove all ${layer.items.length} items from “${layer.name}”? This can be undone.`,
-          "Clear",
-          { danger: true },
-        ).then((confirmed) => {
-          if (!confirmed) return;
-          store.mutate(
-            (project) => {
-              const target = project.layers.find((l) => l.id === layerId);
-              if (target) target.items = [];
-            },
-            "layers",
-          );
-        });
-      },
-    },
-    {
-      label: "Delete layer",
-      icon: "trash",
-      danger: true,
-      action: () => {
-        void confirmDialog(
-          "Delete layer",
-          `Delete “${layer.name}”${layer.items.length ? ` and its ${layer.items.length} items` : ""}? This can be undone.`,
-          "Delete",
-          { danger: true },
-        ).then((confirmed) => {
-          if (!confirmed) return;
-          store.mutate((project) => removeLayer(project, layerId), "layers");
-          actions.refresh();
-        });
-      },
-    },
-  ]);
-}
-
-/* ---------------- Pages ---------------- */
-
-function renderPages(refs: ShellRefs, actions: PanelActions): void {
-  const project = store.project!;
-  const list = el("div", "page-list");
-  const total = totalPageCount(project.documents);
-  const max = Math.min(total, 400);
-  for (let page = 1; page <= max; page++) {
-    actions.ensurePageSize(page);
-    const card = el("button", "page-card");
-    card.type = "button";
-    card.classList.toggle("is-active", page === store.ui.page);
-    const thumb = el("div", "page-thumb");
-    const size = actions.getPageSize(page);
-    if (size) {
-      thumb.style.aspectRatio = `${size.width} / ${size.height}`;
-    }
-    const thumbNumber = el("span", "page-thumb-placeholder", String(page));
-    thumb.append(thumbNumber);
-    const info = el("div", "page-info");
-    info.append(el("div", "page-title", `Page ${page}`));
-    const sizeNode = el(
-      "div",
-      "page-size",
-      size ? `${Math.round(size.width)} × ${Math.round(size.height)} pt` : "Loading size…",
-    );
-    info.append(sizeNode);
-    const badges = el("div", "page-badges");
-    if (project.pages[String(page)]?.calibration) {
-      badges.append(el("span", "page-badge is-calibrated", "Calibrated"));
-    }
-    if (project.pages[String(page)]?.scaleLocked) {
-      badges.append(el("span", "page-badge", "Scale locked"));
-    }
-    const itemCount = project.layers.reduce(
-      (count, layer) => count + layer.items.filter((item) => item.page === page).length,
-      0,
-    );
-    if (itemCount) badges.append(el("span", "page-badge", `${itemCount} items`));
-    if (badges.childElementCount) info.append(badges);
-    card.append(thumb, info);
-    card.addEventListener("click", () => actions.goToPage(page, true));
-    list.append(card);
-  }
-  refs.dockBody.append(list);
-  if (total > max) {
-    const note = el("div", "empty-note small", `Showing the first ${max} of ${total} pages.`);
-    refs.dockBody.append(note);
-  }
-  const footer = el("button", "btn btn-small btn-ghost", "Fit current page");
-  footer.type = "button";
-  footer.addEventListener("click", () => actions.goToPage(store.ui.page, true));
-  refs.dockFooter.append(footer);
-}
-
-/* ---------------- Markups ---------------- */
-
-function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
-  const project = store.project!;
-  const toolbar = el("div", "markup-toolbar");
-  const pageSelect = el("select", "select");
-  pageSelect.append(option("current", "Current page"), option("all", "All pages"));
-  pageSelect.value = markupPageFilter;
-  const kindSelect = el("select", "select");
-  kindSelect.append(option("all", "All types"), option("measure", "Measurements"), option("draw", "Drawings"));
-  kindSelect.value = markupKindFilter;
-  toolbar.append(pageSelect, kindSelect);
-
-  const searchRow = el("div", "markup-toolbar");
-  const search = el("input", "input");
-  search.type = "search";
-  search.placeholder = "Filter markups…";
-  search.value = markupSearch;
-  const selectAll = el("button", "btn btn-small btn-ghost", "Select all");
-  selectAll.type = "button";
-  selectAll.title = "Select all markups matching the current filter";
-  searchRow.append(search, selectAll);
-  const list = el("div", "markup-list");
-  const total = el("div", "markup-total");
-  let filteredRows: Array<{
-    item: MarkupItem;
-    layer: Layer;
-    layerId: string;
-    layerName: string;
-    color: string;
-  }> = [];
-
-  const update = () => {
-    clear(list);
-    const query = markupSearch.trim().toLowerCase();
-    const rows: Array<{
-      item: MarkupItem;
-      layer: Layer;
-      layerId: string;
-      layerName: string;
-      color: string;
-    }> = [];
-    for (const layer of project.layers) {
-      for (const item of layer.items) {
-        if (markupPageFilter === "current" && item.page !== store.ui.page) continue;
-        const kindGroup = isMeasurementKind(item.kind) ? "measure" : "draw";
-        if (markupKindFilter !== "all" && kindGroup !== markupKindFilter) continue;
-        const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
-        if (query) {
-          const haystack =
-            `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${category?.name ?? ""} ${item.room ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "Deduction" : ""}`.toLowerCase();
-          if (!haystack.includes(query)) continue;
-        }
-        rows.push({ item, layer, layerId: layer.id, layerName: layer.name, color: layer.color });
-      }
-    }
-    filteredRows = rows;
-    rows.sort((a, b) => a.item.page - b.item.page || a.layerName.localeCompare(b.layerName));
-    if (!rows.length) {
-      const note = el("div", "empty-note");
-      note.innerHTML = `${icon("markups", 24)}<div>No markups match this filter.</div>`;
-      list.append(note);
-    }
-    for (const row of rows) {
-      const metrics = itemMetrics(row.item, project);
-      const fallbackLabel = itemLabel(row.item, project);
-      const itemRow = el("div", "markup-row");
-      itemRow.tabIndex = 0;
-      itemRow.setAttribute("role", "button");
-      itemRow.dataset.itemId = row.item.id;
-      itemRow.dataset.label = fallbackLabel;
-      const locked = itemIsLocked(row.item, row.layer);
-      const visible = itemIsVisible(row.item, row.layer);
-      itemRow.classList.toggle("is-selected", store.isSelected({ layerId: row.layerId, itemId: row.item.id }));
-      itemRow.classList.toggle("is-hidden", !visible);
-      itemRow.classList.toggle("is-locked", locked);
-      const iconWrap = el("span", "markup-icon");
-      iconWrap.innerHTML = icon(markupIcon(row.item.kind), 14);
-      iconWrap.style.color = row.color;
-      const label = el("span", "markup-label", fallbackLabel);
-      label.title = `${row.item.text ?? fallbackLabel} — double-click to rename`;
-      const value = el("span", "markup-value", metrics?.primary ?? "");
-      const category = isMeasurementKind(row.item.kind) ? categoryForItem(project, row.item) : undefined;
-      const countType =
-        row.item.kind === "count" ? countTypeLabel(row.item.countType) : undefined;
-      const deduction = row.item.kind === "area" && row.item.areaMode === "subtract";
-      const metaParts = category
-        ? [category.name, countType, deduction ? "Deduction" : undefined, row.item.room].filter(Boolean)
-        : [itemKindLabel(row.item.kind), row.layerName];
-      const meta = el("span", "markup-meta", metaParts.join(" · "));
-      meta.title = category
-        ? [itemKindLabel(row.item.kind), ...metaParts, row.layerName].join(" · ")
-        : metaParts.join(" · ");
-      itemRow.classList.toggle("is-deduction", deduction);
-      const page = el("span", "markup-page", `p.${row.item.page}`);
-      const rowActions = el("span", "markup-actions");
-      const eye = layerAction(
-        row.item.visible === false ? "eyeOff" : "eye",
-        row.layer.visible
-          ? row.item.visible === false
-            ? "Show markup"
-            : "Hide markup"
-          : "Layer is hidden",
-      );
-      eye.classList.toggle("is-on", row.item.visible !== false && row.layer.visible);
-      eye.disabled = !row.layer.visible;
-      eye.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const nextVisible = row.item.visible === false;
-        store.mutate(
-          (project) => {
-            const target = findItem(project, row.item.id)?.item;
-            if (target) target.visible = nextVisible;
-          },
-          "change",
-        );
-        if (!nextVisible) {
-          store.setSelectionMany(
-            store.ui.selection.filter((ref) => ref.itemId !== row.item.id),
-          );
-        }
-      });
-      const lock = layerAction(
-        locked ? "lock" : "unlock",
-        row.layer.locked ? "Layer is locked" : locked ? "Unlock markup" : "Lock markup",
-      );
-      lock.classList.toggle("is-locked", locked);
-      lock.disabled = row.layer.locked;
-      lock.addEventListener("click", (event) => {
-        event.stopPropagation();
-        const nextLocked = !row.item.locked;
-        store.mutate(
-          (project) => {
-            const target = findItem(project, row.item.id)?.item;
-            if (target) target.locked = nextLocked;
-          },
-          "change",
-        );
-      });
-      rowActions.append(eye, lock);
-      itemRow.append(iconWrap, label, value, meta, page, rowActions);
-      itemRow.addEventListener("click", (event) => {
-        const modifier = event.shiftKey || event.ctrlKey || event.metaKey;
-        if (modifier) {
-          if (row.item.page !== store.ui.page) actions.goToPage(row.item.page, false);
-          store.toggleSelection({ layerId: row.layerId, itemId: row.item.id });
-          return;
-        }
-        actions.navigateToItem(row.item.page, row.layerId, row.item.id);
-      });
-      itemRow.addEventListener("contextmenu", (event) => {
-        event.preventDefault();
-        if (!store.isSelected({ layerId: row.layerId, itemId: row.item.id })) {
-          store.setSelection({ layerId: row.layerId, itemId: row.item.id });
-        }
-        showSelectionMenuAt(event.clientX, event.clientY, actions);
-      });
-      itemRow.addEventListener("keydown", (event) => {
-        if (event.target !== itemRow) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          actions.navigateToItem(row.item.page, row.layerId, row.item.id);
-        } else if (event.key === "F2") {
-          event.preventDefault();
-          event.stopPropagation();
-          beginMarkupRename(label, row.item.id, fallbackLabel);
-        }
-      });
-      label.addEventListener("dblclick", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        beginMarkupRename(label, row.item.id, fallbackLabel);
-      });
-      list.append(itemRow);
-    }
-    total.innerHTML = "";
-    total.append(el("span", "", `${rows.length} markup${rows.length === 1 ? "" : "s"}`));
-    total.append(el("span", "", markupPageFilter === "current" ? `Page ${store.ui.page}` : `${totalPageCount(project.documents)} pages`));
-  };
-
-  pageSelect.addEventListener("change", () => {
-    markupPageFilter = pageSelect.value as "current" | "all";
-    update();
-  });
-  kindSelect.addEventListener("change", () => {
-    markupKindFilter = kindSelect.value;
-    update();
-  });
-  search.addEventListener("input", () => {
-    markupSearch = search.value;
-    update();
-  });
-  selectAll.addEventListener("click", () => {
-    store.setSelectionMany(
-      filteredRows.map((row) => ({ layerId: row.layerId, itemId: row.item.id })),
-    );
-  });
-
-  refs.dockBody.append(toolbar, searchRow, list, total);
-  update();
-
-  const exportBtn = el("button", "btn btn-small btn-ghost", "Export CSV");
-  exportBtn.type = "button";
-  exportBtn.innerHTML = `${icon("csv", 13)}<span>Export CSV</span>`;
-  exportBtn.addEventListener("click", actions.exportAs.bind(null, "csv"));
-  refs.dockFooter.append(exportBtn);
-}
-
-function markupIcon(kind: MarkupItem["kind"]): string {
-  switch (kind) {
-    case "length":
-      return "length";
-    case "area":
-      return "area";
-    case "count":
-      return "count";
-    case "pen":
-      return "pen";
-    case "line":
-      return "line";
-    case "arrow":
-      return "arrow";
-    case "rect":
-      return "rect";
-    case "ellipse":
-      return "ellipse";
-    case "highlight":
-      return "highlight";
-    case "text":
-      return "text";
-    case "image":
-      return "image";
-  }
 }
 
 /* ---------------- Context bar ---------------- */
@@ -1172,7 +491,25 @@ function toggleButton(iconName: string, label: string, active: boolean, onClick:
 
 function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.inspector);
-  refs.inspector.append(el("div", "inspector-header", "Properties"));
+  const header = el("div", "inspector-header");
+  header.append(el("span", "", "Properties"));
+  const headerActions = el("span", "inspector-header-actions");
+  const settings = el("button", "icon-btn inspector-settings");
+  settings.type = "button";
+  settings.title = "Project settings (Ctrl/Cmd+,)";
+  settings.setAttribute("aria-label", "Project settings");
+  settings.innerHTML = icon("settings", 14);
+  settings.disabled = !store.project;
+  settings.addEventListener("click", () => openSettingsDialog());
+  const collapse = el("button", "icon-btn inspector-settings");
+  collapse.type = "button";
+  collapse.title = "Hide properties (Ctrl/Cmd+Shift+\\)";
+  collapse.setAttribute("aria-label", "Hide properties");
+  collapse.innerHTML = icon("chevronRight", 14);
+  collapse.addEventListener("click", () => setInspectorCollapsed(true));
+  headerActions.append(settings, collapse);
+  header.append(headerActions);
+  refs.inspector.append(header);
   const project = store.project;
   if (!project) {
     const note = el("div", "empty-note");
@@ -1182,8 +519,6 @@ function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   }
 
   refs.inspector.append(scaleSection(project, actions));
-  refs.inspector.append(unitsSection(project));
-  refs.inspector.append(categoriesSection(project));
   refs.inspector.append(activeLayerSection(project, actions));
   refs.inspector.append(selectionSection(project, actions));
 }
@@ -1269,175 +604,6 @@ function scaleSection(project: NonNullable<typeof store.project>, actions: Panel
   card.append(buttons);
   section.append(card);
   return section;
-}
-
-function unitsSection(project: NonNullable<typeof store.project>): HTMLElement {
-  const section = el("section", "inspector-section");
-  section.append(el("h3", "", "Units & guides"));
-  const lengthField = el("label", "field");
-  lengthField.append(el("span", "field-label", "Length unit"));
-  const lengthSelect = el("select", "select");
-  for (const unit of LENGTH_UNITS) {
-    lengthSelect.append(option(unit.id, unit.label, unit.id === project.settings.lengthUnit));
-  }
-  lengthSelect.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        project.settings.lengthUnit = lengthSelect.value as LengthUnit;
-      },
-      "change",
-    );
-  });
-  lengthField.append(lengthSelect);
-
-  const areaField = el("label", "field");
-  areaField.append(el("span", "field-label", "Area unit"));
-  const areaSelect = el("select", "select");
-  for (const unit of AREA_UNITS) {
-    areaSelect.append(option(unit.id, unit.label, unit.id === project.settings.areaUnit));
-  }
-  areaSelect.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        project.settings.areaUnit = areaSelect.value as AreaUnit;
-      },
-      "change",
-    );
-  });
-  areaField.append(areaSelect);
-  section.append(lengthField, areaField);
-
-  const snapField = el("label", "field");
-  const snapHead = el("div", "section-head");
-  snapHead.style.marginBottom = "4px";
-  snapHead.append(el("span", "field-label", "Snap distance"));
-  const snapValue = el("span", "range-value", `${formatNumber(project.settings.snapTolerancePx, 0)} px`);
-  snapHead.append(snapValue);
-  const snapRange = el("input");
-  snapRange.type = "range";
-  snapRange.min = "2";
-  snapRange.max = "24";
-  snapRange.step = "1";
-  snapRange.value = String(project.settings.snapTolerancePx);
-  snapRange.setAttribute("aria-label", "Snap distance in screen pixels");
-  snapRange.title = "How close the pointer must be to a snap point, in screen pixels";
-  snapRange.addEventListener("input", () => {
-    snapValue.textContent = `${snapRange.value} px`;
-  });
-  snapRange.addEventListener("change", () => {
-    const value = Math.max(2, Math.min(24, Math.round(Number(snapRange.value))));
-    store.mutate((project) => {
-      project.settings.snapTolerancePx = value;
-    }, "change");
-  });
-  snapField.append(snapHead, snapRange);
-  section.append(snapField);
-
-  section.append(
-    checkRow("Snap to geometry", project.settings.snapToGeometry, (checked) => {
-      store.mutate((project) => {
-        project.settings.snapToGeometry = checked;
-      }, "change");
-    }),
-    checkRow("Show grid", project.settings.showGrid, (checked) => {
-      store.mutate((project) => {
-        project.settings.showGrid = checked;
-      }, "change");
-    }),
-    checkRow("Show scale reference", project.settings.showCalibration, (checked) => {
-      store.mutate((project) => {
-        project.settings.showCalibration = checked;
-      }, "change");
-    }),
-  );
-  return section;
-}
-
-function categoriesSection(project: NonNullable<typeof store.project>): HTMLElement {
-  const section = el("section", "inspector-section");
-  section.append(el("h3", "", "Categories"));
-
-  const field = el("label", "field");
-  field.append(el("span", "field-label", "Default for new measurements"));
-  const select = el("select", "select");
-  for (const category of project.categories) {
-    select.append(
-      option(
-        category.id,
-        category.name,
-        category.id === project.settings.quantity.defaultCategoryId,
-      ),
-    );
-  }
-  select.addEventListener("change", () => store.setDefaultCategory(select.value));
-  field.append(select);
-
-  const manage = el("button", "btn btn-small", `Manage categories (${project.categories.length})`);
-  manage.type = "button";
-  manage.addEventListener("click", () => openCategoriesDialog());
-
-  const quantityFields = el("div", "field-row");
-  const wasteField = el("label", "field");
-  wasteField.append(el("span", "field-label", "Waste"));
-  const wasteRow = el("div", "input-row");
-  const wasteInput = el("input", "input");
-  wasteInput.type = "number";
-  wasteInput.min = "0";
-  wasteInput.max = "100";
-  wasteInput.step = "0.5";
-  wasteInput.value = String(project.settings.quantity.wastePercent);
-  wasteInput.setAttribute("aria-label", "Project waste percentage");
-  wasteInput.addEventListener("change", () => {
-    const value = Number(wasteInput.value);
-    if (wasteInput.value.trim() === "" || !Number.isFinite(value) || value < 0 || value > 100) {
-      wasteInput.value = String(project.settings.quantity.wastePercent);
-      toast("Waste must be between 0 and 100 percent.", "warning");
-      return;
-    }
-    store.setQuantityDefaults({ wastePercent: value });
-  });
-  wasteRow.append(wasteInput, el("span", "context-unit", "%"));
-  wasteField.append(wasteRow);
-
-  const roundingField = el("label", "field");
-  roundingField.append(el("span", "field-label", "Round up"));
-  const roundingInput = el("input", "input");
-  roundingInput.type = "number";
-  roundingInput.min = "0";
-  roundingInput.step = "0.01";
-  roundingInput.value = String(project.settings.quantity.roundingStep);
-  roundingInput.setAttribute("aria-label", "Project rounding step");
-  roundingInput.title = "Order quantities round up to this step in each row's own unit. Counts always round to whole pcs.";
-  roundingInput.addEventListener("change", () => {
-    const value = Number(roundingInput.value);
-    if (roundingInput.value.trim() === "" || !Number.isFinite(value) || value < 0) {
-      roundingInput.value = String(project.settings.quantity.roundingStep);
-      toast("Rounding step must be zero or greater.", "warning");
-      return;
-    }
-    store.setQuantityDefaults({ roundingStep: value });
-  });
-  roundingField.append(roundingInput);
-  quantityFields.append(wasteField, roundingField);
-
-  const hint = el(
-    "div",
-    "empty-note small",
-    "Waste and rounding apply to order quantities. Categories can override both; 0 means no rounding, and counts always round to whole pcs.",
-  );
-
-  section.append(field, quantityFields, hint, manage);
-  return section;
-}
-
-function checkRow(label: string, checked: boolean, onChange: (checked: boolean) => void): HTMLElement {
-  const row = el("label", "check-row");
-  const input = el("input");
-  input.type = "checkbox";
-  input.checked = checked;
-  input.addEventListener("change", () => onChange(input.checked));
-  row.append(input, el("span", "", label));
-  return row;
 }
 
 function activeLayerSection(project: NonNullable<typeof store.project>, actions: PanelActions): HTMLElement {
@@ -1801,7 +967,7 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     ? "Unlock the layer to edit this markup."
     : metrics
       ? "Shown with the measurement on the page."
-      : "Used in the Markups list and exports. Double-click the Markups row or press F2.";
+      : "Used in the Measurements dialog and exports. Press F2 to focus it.";
   labelInput.addEventListener("change", () => {
     store.mutate((project) => {
       const target = findItem(project, item.id)?.item;
@@ -1815,7 +981,7 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
       el(
         "div",
         "empty-note small",
-        "List labels are export and Markups-list metadata; they are not drawn on the page.",
+        "List labels are export and Measurements metadata; they are not drawn on the page.",
       ),
     );
   }
@@ -2286,12 +1452,12 @@ function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   }
   card.append(actionsWrap);
 
-  const recent = getRecentSafe();
+  const recent = getRecent();
   if (recent.length) {
     const recents = el("div", "welcome-recents");
     recents.append(el("h3", "", "Recent"));
     const list = el("div", "recent-list");
-    for (const entry of recent.slice(0, 5)) {
+    for (const entry of recent.slice(0, 10)) {
       const row = el("button", "recent-item");
       row.type = "button";
       row.innerHTML = icon(entry.kind === "pdf" ? "file" : "layers", 15);
@@ -2308,92 +1474,6 @@ function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   note.innerHTML = `${icon("lock", 14)}<span>Local-first. Drawings are read from your disk and never uploaded.</span>`;
   card.append(note);
   refs.welcome.append(card);
-}
-
-function getRecentSafe(): RecentEntry[] {
-  try {
-    const raw = localStorage.getItem("gridscalr.recent.v1");
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as RecentEntry[];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    return [];
-  }
-}
-
-/* ---------------- Popover ---------------- */
-
-interface PopoverItem {
-  label?: string;
-  icon?: string;
-  action?: () => void;
-  danger?: boolean;
-  disabled?: boolean;
-  separator?: boolean;
-}
-
-function buildPopover(items: PopoverItem[]): HTMLElement {
-  const popover = el("div", "popover");
-  for (const item of items) {
-    if (item.separator) {
-      popover.append(el("div", "popover-separator"));
-      continue;
-    }
-    const btn = el("button", `popover-item${item.danger ? " is-danger" : ""}`);
-    btn.type = "button";
-    btn.disabled = item.disabled ?? false;
-    if (item.icon) btn.innerHTML = icon(item.icon, 14);
-    btn.append(el("span", "", item.label ?? ""));
-    btn.addEventListener("click", () => {
-      popover.remove();
-      item.action?.();
-    });
-    popover.append(btn);
-  }
-  return popover;
-}
-
-function mountPopover(popover: HTMLElement, left: number, top: number): void {
-  document.querySelectorAll(".popover").forEach((node) => node.remove());
-  document.body.append(popover);
-  const width = popover.offsetWidth;
-  const height = popover.offsetHeight;
-  if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
-  if (top + height > window.innerHeight - 8) top = window.innerHeight - height - 8;
-  popover.style.left = `${Math.max(8, left)}px`;
-  popover.style.top = `${Math.max(8, top)}px`;
-
-  const close = (event: Event) => {
-    if (event.type === "mousedown" && popover.contains(event.target as Node)) return;
-    popover.remove();
-    document.removeEventListener("mousedown", close);
-    document.removeEventListener("keydown", onKey);
-  };
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key === "Escape") close(event);
-  };
-  setTimeout(() => {
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", onKey);
-  }, 0);
-}
-
-export function showPopover(anchor: HTMLElement, items: PopoverItem[]): void {
-  const popover = buildPopover(items);
-  document.body.append(popover);
-  const rect = anchor.getBoundingClientRect();
-  const width = popover.offsetWidth;
-  const height = popover.offsetHeight;
-  let left = rect.left;
-  let top = rect.bottom + 5;
-  if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
-  if (top + height > window.innerHeight - 8) top = rect.top - height - 5;
-  popover.remove();
-  mountPopover(popover, left, top);
-}
-
-export function showPopoverAt(x: number, y: number, items: PopoverItem[]): void {
-  mountPopover(buildPopover(items), x + 2, y + 2);
 }
 
 export function showSelectionMenuAt(x: number, y: number, actions: PanelActions): void {
@@ -2463,23 +1543,4 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     },
   );
   showPopoverAt(x, y, items);
-}
-
-export function showExportMenu(anchor: HTMLElement, actions: PanelActions): void {
-  showPopover(anchor, [
-    { label: "Drawing PDF…", icon: "file", action: () => actions.exportAs("drawing") },
-    { label: "View as PNG", icon: "image", action: () => actions.exportAs("png") },
-    { label: "Markups to CSV", icon: "csv", action: () => actions.exportAs("csv") },
-    { label: "Quantities to CSV", icon: "csv", action: () => actions.exportAs("quantity-csv") },
-    { label: "Quantity report (PDF)", icon: "file", action: () => actions.exportAs("quantity-pdf") },
-    { label: "Project to JSON", icon: "file", action: () => actions.exportAs("json") },
-  ]);
-}
-
-function escapeHtml(value: string): string {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
 }

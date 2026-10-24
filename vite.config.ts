@@ -1,5 +1,5 @@
 import { cp, mkdir } from "node:fs/promises";
-import { createReadStream, existsSync } from "node:fs";
+import { createReadStream, existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, type Plugin } from "vitest/config";
@@ -7,6 +7,9 @@ import { defineConfig, type Plugin } from "vitest/config";
 const host = process.env.TAURI_DEV_HOST;
 const root = fileURLToPath(new URL(".", import.meta.url));
 const wasmDir = path.join(root, "node_modules/pdfjs-dist/wasm");
+const packageJson = JSON.parse(
+  readFileSync(path.join(root, "package.json"), "utf8"),
+) as { version: string };
 
 /**
  * PDF.js 6 decodes CCITT fax data and JBIG2 through WebAssembly. It fetches
@@ -48,6 +51,9 @@ export default defineConfig({
   // asset URLs work on every platform and keep the built index.html portable.
   base: "./",
   clearScreen: false,
+  define: {
+    __APP_VERSION__: JSON.stringify(packageJson.version),
+  },
   plugins: [pdfjsWasm()],
   server: {
     port: 1420,
