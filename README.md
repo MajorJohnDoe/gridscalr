@@ -13,7 +13,7 @@ See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply a scale to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
-- Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, and text notes.
+- Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision clouds, callouts, stamps, revision deltas, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
@@ -24,6 +24,7 @@ See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
+- Use revision clouds with editable vertices and optional anchored text, callouts with leaders, inspection stamps, and revision deltas.
 - Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
 - Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
@@ -105,7 +106,7 @@ GridScalr uses a compact drawing-first layout:
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
 - **Left panel** – Pages and Layers only. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Properties** – the page scale, active layer, and selected item. Move project-wide units, snapping, and quantity defaults to **Settings → Project settings**.
+- **Properties** – the page scale, active layer, and selected item. Move project-wide units, snapping, quantity defaults, and stamp presets to **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
@@ -167,9 +168,24 @@ While the Length, Area, or Count tool is active, the context bar shows the categ
 
 ### 4. Draw and annotate
 
-Use the pen, line, arrow, rectangle, ellipse, highlight, and text tools. Drawing items are added to the active drawing layer. Drawings render below measurement layers, so measurement labels stay easy to read.
+Use the pen, line, arrow, rectangle, ellipse, highlight, revision cloud, callout, stamp, revision delta, and text tools. Drawing items are added to the active drawing layer. Drawings render below measurement layers, so measurement labels stay easy to read.
 
 Hold **Shift** while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions.
+
+### Revision cloud, callout, stamp, and revision delta
+
+- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Double-click, right-click, or use **Edit text…** in Properties to add an optional text box that moves with the cloud.
+- **Callout (`N`)** – click the object to point at, then place the text box. The leader ends in a filled arrow at the target.
+- **Stamp (`S`)** – choose a preset in the context bar or use **Custom…**, then click to place. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
+- **Revision delta (`Y`)** – enter the revision in the context bar and click to place the triangle. An optional date can be set as its label in Properties.
+
+Stamp presets are stored per project under **Settings → Project settings → Stamps**. App defaults for new projects are stored locally and can be edited in the same dialog.
+
+### Highlight modes
+
+The Highlight tool has **Pen**, **Rectangle**, and **Polygon** modes in the context bar. Rectangle and Polygon create translucent area highlights; Pen keeps the original freehand highlighter. Existing freehand highlights are unchanged.
+
+### Text notes
 
 To add a text note, choose the Text tool and click the plan. The inline editor accepts multiple lines:
 
@@ -305,11 +321,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 7: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order, and schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 8: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 7,
+  "schemaVersion": 8,
   "name": "Level 01",
   "documents": [
     {
@@ -342,6 +358,7 @@ Version 1–5 projects load normally and are migrated to schema 7: the old `docu
     "showCalibration": true,
     "snapToGeometry": true,
     "snapTolerancePx": 8,
+    "stampPresets": ["APPROVED", "NOT APPROVED", "FOR INFORMATION"],
     "quantity": {
       "defaultCategoryId": "cat_...",
       "wastePercent": 0,
@@ -394,7 +411,7 @@ Version 1–5 projects load normally and are migrated to schema 7: the old `docu
 
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
-Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.
+Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, stamp presets, annotation text and layouts, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.
 
 ## Keyboard shortcuts
 
@@ -406,6 +423,8 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Pen / Line / Arrow | `P` / `I` / `U` |
 | Rectangle / Ellipse | `R` / `O` |
 | Highlight / Text note | `G` / `T` |
+| Revision cloud / Callout | `D` / `N` |
+| Stamp / Revision delta | `S` / `Y` |
 | Finish current shape | `Enter` or double-click |
 | Cancel draft / clear selection / return to Select | `Esc` |
 | Delete selection or remove last area/length point | `Delete` or `Backspace` |
@@ -439,7 +458,7 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 src/
   app/App.ts             application wiring, file flows, shortcuts, exports
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
-  model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard
+  model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
@@ -450,6 +469,10 @@ src/
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
   ui/helpDialog.ts       bundled Markdown help and About dialog
   ui/settingsDialog.ts   project-wide units, snapping, quantity defaults
+  model/cloud.ts         revision-cloud bezier geometry
+  model/annotations.ts   callout, stamp, delta, and cloud-label layout
+  model/stamps.ts        stamp preset normalization and defaults
+  io/stampDefaults.ts    global stamp presets for new projects
   help/markdown.ts       safe Markdown renderer for bundled help
   help/content.ts        Vite raw imports of docs/user-guide.md and docs/shortcuts.md
   io/projectFile.ts      project schema normalization, serialization, relative paths

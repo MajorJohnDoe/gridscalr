@@ -93,12 +93,14 @@ import {
   textItemLayout,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
+import { cloudCurves } from "../model/cloud";
+import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
-import { calibrationDialog } from "../ui/dialogs";
+import { calibrationDialog, textDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 
 export interface CanvasHooks {
@@ -115,10 +117,14 @@ type Draft =
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
   | { kind: "highlight"; points: Point[]; cursor: Point }
+  | { kind: "highlight-polygon"; points: Point[]; cursor: Point }
+  | { kind: "cloud"; points: Point[]; cursor: Point }
+  | { kind: "callout"; start: Point; current: Point }
   | { kind: "line"; start: Point; current: Point }
   | { kind: "arrow"; start: Point; current: Point }
   | { kind: "rect"; start: Point; current: Point }
   | { kind: "ellipse"; start: Point; current: Point }
+  | { kind: "highlight-rect"; start: Point; current: Point }
   | { kind: "area-rect"; start: Point; current: Point }
   | { kind: "area-ellipse"; start: Point; current: Point };
 
@@ -718,13 +724,23 @@ export class CanvasView {
       return;
     }
 
-    if (tool === "length" || tool === "area") {
+    const polygonKind =
+      tool === "length"
+        ? "length"
+        : tool === "area"
+          ? "area"
+          : tool === "cloud"
+            ? "cloud"
+            : tool === "highlight" && store.ui.highlightShape === "polygon"
+              ? "highlight-polygon"
+              : null;
+    if (polygonKind) {
       if (event.detail > 1) {
         this.finishDraft();
         return;
       }
       let snapped = this.snapPoint(page);
-      if (this.draft && this.draft.kind === tool && this.draft.points.length) {
+      if (this.draft && this.draft.kind === polygonKind && this.draft.points.length) {
         if (event.shiftKey) {
           const constrained = constrainAngle(
             this.draft.points[this.draft.points.length - 1],
@@ -734,10 +750,10 @@ export class CanvasView {
           snapped = constrained;
         }
       }
-      if (!this.draft || this.draft.kind !== tool) {
-        this.draft = { kind: tool, points: [snapped], cursor: snapped };
+      if (!this.draft || this.draft.kind !== polygonKind) {
+        this.draft = { kind: polygonKind, points: [snapped], cursor: snapped };
       } else if (
-        tool === "area" &&
+        polygonKind !== "length" &&
         this.draft.points.length >= 3 &&
         distance(snapped, this.draft.points[0]) < 10 / store.ui.zoom
       ) {
@@ -749,6 +765,19 @@ export class CanvasView {
         this.draft.cursor = snapped;
       }
       this.drawInteraction();
+      return;
+    }
+
+    if (
+      tool === "highlight" &&
+      (store.ui.highlightShape === "rectangle" || store.ui.highlightShape === "polygon")
+    ) {
+      if (store.ui.highlightShape === "rectangle") {
+        const snapped = this.snapPoint(page);
+        this.draft = { kind: "highlight-rect", start: snapped, current: snapped };
+        this.capturePointer(event.pointerId);
+        this.drawInteraction();
+      }
       return;
     }
 
@@ -777,6 +806,31 @@ export class CanvasView {
       } else {
         this.startNewText(page);
       }
+      return;
+    }
+
+    if (tool === "callout") {
+      if (event.detail > 1) return;
+      if (!this.draft || this.draft.kind !== "callout") {
+        this.draft = { kind: "callout", start: page, current: page };
+        this.drawInteraction();
+      } else {
+        this.finishCallout(page);
+      }
+      return;
+    }
+
+    if (tool === "stamp") {
+      if (event.detail > 1) return;
+      this.createItem("stamp", [page], { text: store.ui.stampText });
+      this.drawInteraction();
+      return;
+    }
+
+    if (tool === "delta") {
+      if (event.detail > 1) return;
+      this.createItem("delta", [page], { text: store.ui.deltaText });
+      this.drawInteraction();
       return;
     }
 
@@ -837,6 +891,9 @@ export class CanvasView {
       single &&
       (hit.item.kind === "length" ||
         hit.item.kind === "area" ||
+        hit.item.kind === "cloud" ||
+        hit.item.kind === "callout" ||
+        (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
         hit.item.kind === "line" ||
         hit.item.kind === "arrow" ||
         hit.item.kind === "pen");
@@ -946,13 +1003,31 @@ export class CanvasView {
 
   private selectionHandles(item: MarkupItem): Handle[] {
     if (item.kind === "count") return [];
-    if (item.kind === "length" || item.kind === "area") {
+    if (
+      item.kind === "length" ||
+      item.kind === "area" ||
+      item.kind === "cloud" ||
+      (item.kind === "highlight" && item.highlightShape !== "stroke")
+    ) {
       return item.points.slice(0, 80).map((point, index) => ({
         role: "vertex" as const,
         index,
         point: this.toScreen(itemLocalToPage(item, point)),
         cursor: "crosshair",
       }));
+    }
+
+    if (item.kind === "callout") {
+      return item.points.slice(0, 2).map((point, index) => ({
+        role: "vertex" as const,
+        index,
+        point: this.toScreen(itemLocalToPage(item, point)),
+        cursor: "crosshair",
+      }));
+    }
+
+    if (item.kind === "stamp" || item.kind === "delta") {
+      return [];
     }
 
     if (item.kind === "line" || item.kind === "arrow") {
@@ -1061,7 +1136,11 @@ export class CanvasView {
           current = constrained;
         }
         this.draft.current = current;
-      } else if (this.draft.kind === "line" || this.draft.kind === "arrow") {
+      } else if (
+        this.draft.kind === "line" ||
+        this.draft.kind === "arrow" ||
+        this.draft.kind === "callout"
+      ) {
         let current = this.snapPoint(page);
         if (event.shiftKey) {
           const constrained = constrainAngle(this.draft.start, current);
@@ -1069,7 +1148,11 @@ export class CanvasView {
           current = constrained;
         }
         this.draft.current = current;
-      } else if (this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+      } else if (
+        this.draft.kind === "rect" ||
+        this.draft.kind === "ellipse" ||
+        this.draft.kind === "highlight-rect"
+      ) {
         this.snap = null;
         this.draft.current = event.shiftKey
           ? constrainSquare(this.draft.start, page)
@@ -1084,7 +1167,10 @@ export class CanvasView {
         let snapped = this.snapPoint(page);
         if (
           event.shiftKey &&
-          (this.draft.kind === "length" || this.draft.kind === "area") &&
+          (this.draft.kind === "length" ||
+            this.draft.kind === "area" ||
+            this.draft.kind === "cloud" ||
+            this.draft.kind === "highlight-polygon") &&
           this.draft.points.length
         ) {
           const constrained = constrainAngle(
@@ -1298,7 +1384,13 @@ export class CanvasView {
         this.finishPen();
       } else if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
         this.finishQuickArea();
-      } else if (this.draft.kind === "line" || this.draft.kind === "arrow" || this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+      } else if (
+        this.draft.kind === "line" ||
+        this.draft.kind === "arrow" ||
+        this.draft.kind === "rect" ||
+        this.draft.kind === "ellipse" ||
+        this.draft.kind === "highlight-rect"
+      ) {
         this.finishShape();
       }
     }
@@ -1516,12 +1608,24 @@ export class CanvasView {
       this.startTextEdit(hit.item, hit.layer);
       return;
     }
+    if (
+      hit.item.kind === "cloud" ||
+      hit.item.kind === "callout" ||
+      hit.item.kind === "stamp" ||
+      hit.item.kind === "delta"
+    ) {
+      void this.editItemText(hit.item);
+      return;
+    }
 
     const segment = findSegment(
       hit.item,
       page,
       7 / store.ui.zoom,
-      hit.item.kind === "area" || hit.item.kind === "rect" || hit.item.kind === "ellipse",
+      hit.item.kind === "area" ||
+        hit.item.kind === "rect" ||
+        hit.item.kind === "ellipse" ||
+        (hit.item.kind === "highlight" && hit.item.highlightShape === "polygon"),
     );
     if (
       segment &&
@@ -1768,12 +1872,25 @@ export class CanvasView {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
     const found = findItem(store.project, selection.itemId);
-    if (!found || found.item.kind !== "text") {
-      toast("Select a text note to edit it.", "info");
+    if (!found || found.item.locked || found.layer.locked) {
+      toast("Select an unlocked text item to edit it.", "info");
       return;
     }
     store.setTool("select");
-    this.startTextEdit(found.item, found.layer);
+    if (found.item.kind === "text") {
+      this.startTextEdit(found.item, found.layer);
+      return;
+    }
+    if (
+      found.item.kind === "cloud" ||
+      found.item.kind === "callout" ||
+      found.item.kind === "stamp" ||
+      found.item.kind === "delta"
+    ) {
+      void this.editItemText(found.item);
+      return;
+    }
+    toast("Select a text note to edit it.", "info");
   }
 
   private beginTextEditSession(
@@ -2218,11 +2335,14 @@ export class CanvasView {
   private createItem(
     kind: ItemKind,
     points: Point[],
-    text?: string,
-    areaShape?: AreaShape,
-  ): void {
+    options: {
+      text?: string;
+      areaShape?: AreaShape;
+      highlightShape?: "stroke" | "rectangle" | "polygon";
+    } = {},
+  ): { layerId: string; itemId: string } | null {
     const project = store.project;
-    if (!project) return;
+    if (!project) return null;
     const layerKind = layerKindForItem(kind);
     const active = project.layers.find(
       (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
@@ -2232,7 +2352,7 @@ export class CanvasView {
         `“${active.name}” is ${active.locked ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
         "warning",
       );
-      return;
+      return null;
     }
     const projectPage = store.ui.page;
     let layerId = "";
@@ -2245,6 +2365,21 @@ export class CanvasView {
         const style = store.ui.style;
         const isMeasure = layerKind === "measure";
         const category = isMeasure ? measurementCategory(project, store.ui.measureCategoryId) : undefined;
+        const highlightShape =
+          kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
+        const filled =
+          !isMeasure &&
+          (kind === "rect" ||
+            kind === "ellipse" ||
+            kind === "stamp" ||
+            kind === "delta" ||
+            (kind === "highlight" && highlightShape !== "stroke"));
+        const textLike =
+          kind === "text" ||
+          kind === "cloud" ||
+          kind === "callout" ||
+          kind === "stamp" ||
+          kind === "delta";
         const item: MarkupItem = {
           id: makeId("item"),
           page: projectPage,
@@ -2252,23 +2387,28 @@ export class CanvasView {
           points: points.map((p) => ({ ...p })),
           color: isMeasure ? layer.color : style.color,
           strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
-          fillColor:
-            !isMeasure && (kind === "rect" || kind === "ellipse") && style.fillOpacity > 0
-              ? style.color
-              : undefined,
+          fillColor: filled ? style.color : undefined,
           opacity:
-            !isMeasure && (kind === "rect" || kind === "ellipse")
-              ? style.fillOpacity
+            !isMeasure &&
+            (kind === "rect" ||
+              kind === "ellipse" ||
+              kind === "stamp" ||
+              kind === "delta" ||
+              (kind === "highlight" && highlightShape !== "stroke"))
+              ? kind === "highlight"
+                ? Math.max(0.18, style.fillOpacity)
+                : style.fillOpacity
               : kind === "highlight"
                 ? 0.35
                 : undefined,
-          text,
-          fontSize: kind === "text" ? style.fontSize : undefined,
+          text: options.text,
+          fontSize: textLike ? style.fontSize : undefined,
+          highlightShape,
           scale: isMeasure && scale ? { ...scale } : null,
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
           areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
-          areaShape: kind === "area" ? (areaShape ?? "polygon") : undefined,
+          areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
           countType: kind === "count" ? store.ui.measureCountType : undefined,
           createdAt: now,
           updatedAt: now,
@@ -2279,7 +2419,9 @@ export class CanvasView {
       },
       "change",
     );
-    if (layerId && itemId) store.setSelection({ layerId, itemId });
+    if (!layerId || !itemId) return null;
+    store.setSelection({ layerId, itemId });
+    return { layerId, itemId };
   }
 
   private finishPen(): void {
@@ -2302,7 +2444,8 @@ export class CanvasView {
       (this.draft.kind !== "line" &&
         this.draft.kind !== "arrow" &&
         this.draft.kind !== "rect" &&
-        this.draft.kind !== "ellipse")
+        this.draft.kind !== "ellipse" &&
+        this.draft.kind !== "highlight-rect")
     ) {
       return;
     }
@@ -2313,8 +2456,99 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    this.createItem(kind, [start, current]);
+    if (kind === "highlight-rect") {
+      this.createItem("highlight", [start, current], { highlightShape: "rectangle" });
+    } else {
+      this.createItem(kind, [start, current]);
+    }
     this.drawInteraction();
+  }
+
+  private finishCallout(current: Point): void {
+    if (!this.draft || this.draft.kind !== "callout") return;
+    const start = this.draft.start;
+    this.draft = null;
+    this.snap = null;
+    if (distance(start, current) < 3 / store.ui.zoom) {
+      this.drawInteraction();
+      return;
+    }
+    void this.createCallout(start, current);
+  }
+
+  private async createCallout(start: Point, current: Point): Promise<void> {
+    const text = await textDialog(
+      "Callout",
+      "Text attached to the leader",
+      "",
+      "Callout text",
+      true,
+    );
+    if (text === null) {
+      this.drawInteraction();
+      return;
+    }
+    const content = text.trim() || "Callout";
+    const page = this.pageSize();
+    let center = current;
+    if (page) {
+      const box = textBoxLayout(content, store.ui.style.fontSize);
+      const margin = 8;
+      const minX = Math.min(page.width / 2, box.width / 2 + margin);
+      const maxX = Math.max(page.width / 2, page.width - box.width / 2 - margin);
+      const minY = Math.min(page.height / 2, box.height / 2 + margin);
+      const maxY = Math.max(page.height / 2, page.height - box.height / 2 - margin);
+      center = {
+        x: Math.max(minX, Math.min(maxX, current.x)),
+        y: Math.max(minY, Math.min(maxY, current.y)),
+      };
+    }
+    this.createItem("callout", [start, center], { text: content });
+    this.drawInteraction();
+  }
+
+  private async promptCloudText(created: { layerId: string; itemId: string }): Promise<void> {
+    const text = await textDialog(
+      "Revision cloud text",
+      "Optional text anchored to the cloud",
+      "",
+      "Cloud text",
+      true,
+    );
+    if (text === null || !text.trim()) return;
+    store.mutate(
+      (project) => {
+        const item = findItem(project, created.itemId)?.item;
+        if (item) {
+          item.text = text.trim();
+          item.updatedAt = new Date().toISOString();
+        }
+      },
+      "change",
+    );
+  }
+
+  private async editItemText(item: MarkupItem): Promise<void> {
+    const title =
+      item.kind === "stamp"
+        ? "Edit stamp text"
+        : item.kind === "delta"
+          ? "Edit revision delta"
+          : item.kind === "cloud"
+            ? "Revision cloud text"
+            : "Edit callout";
+    const text = await textDialog(title, "Only this item is changed", item.text ?? "", "", true);
+    if (text === null) return;
+    store.mutate(
+      (project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) {
+          target.text = text.trim() || (target.kind === "stamp" ? "STAMP" : text.trim());
+          target.updatedAt = new Date().toISOString();
+        }
+      },
+      "change",
+    );
   }
 
   private finishQuickArea(): void {
@@ -2332,7 +2566,7 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    this.createItem("area", [start, current], undefined, shape);
+    this.createItem("area", [start, current], { areaShape: shape });
     this.drawInteraction();
   }
 
@@ -2344,7 +2578,12 @@ export class CanvasView {
     if (!this.draft) return;
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
-    } else if (this.draft.kind === "length" || this.draft.kind === "area") {
+    } else if (
+      this.draft.kind === "length" ||
+      this.draft.kind === "area" ||
+      this.draft.kind === "cloud" ||
+      this.draft.kind === "highlight-polygon"
+    ) {
       this.draft.points = dedupeLast(this.draft.points);
       const points = this.draft.points;
       const kind = this.draft.kind;
@@ -2353,21 +2592,31 @@ export class CanvasView {
         this.drawInteraction();
         return;
       }
-      if (kind === "area" && points.length < 3) {
-        toast("An area needs at least three points.", "warning");
+      if (kind !== "length" && points.length < 3) {
+        toast("This shape needs at least three points.", "warning");
         return;
       }
       this.draft = null;
       this.snap = null;
-      this.createItem(kind, points);
+      if (kind === "cloud") {
+        const created = this.createItem("cloud", points);
+        if (created) void this.promptCloudText(created);
+      } else if (kind === "highlight-polygon") {
+        this.createItem("highlight", points, { highlightShape: "polygon" });
+      } else {
+        this.createItem(kind, points);
+      }
       this.drawInteraction();
+    } else if (this.draft.kind === "callout") {
+      this.finishCallout(this.draft.current);
     } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
       this.finishPen();
     } else if (
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
-      this.draft.kind === "ellipse"
+      this.draft.kind === "ellipse" ||
+      this.draft.kind === "highlight-rect"
     ) {
       this.finishShape();
     } else {
@@ -2382,8 +2631,10 @@ export class CanvasView {
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
       this.draft.kind === "ellipse" ||
+      this.draft.kind === "highlight-rect" ||
       this.draft.kind === "area-rect" ||
-      this.draft.kind === "area-ellipse"
+      this.draft.kind === "area-ellipse" ||
+      this.draft.kind === "callout"
     ) {
       return false;
     }
@@ -2758,6 +3009,21 @@ export class CanvasView {
         break;
       }
       case "highlight": {
+        if (item.highlightShape && item.highlightShape !== "stroke") {
+          const outline =
+            item.highlightShape === "rectangle"
+              ? rectangleCorners([points[0], points[1]])
+              : points;
+          ctx.save();
+          ctx.globalAlpha *= item.opacity ?? 0.3;
+          ctx.fillStyle = item.color;
+          ctx.beginPath();
+          outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          break;
+        }
         ctx.save();
         ctx.globalAlpha *= 0.38;
         ctx.lineWidth = lineWidth * 4.2;
@@ -2827,6 +3093,113 @@ export class CanvasView {
         ctx.stroke();
         break;
       }
+      case "cloud": {
+        const curves = cloudCurves(item.points, Math.max(8, item.strokeWidth * 5));
+        if (!curves.length) break;
+        const pathStart = this.toScreen(curves[0].start);
+        ctx.save();
+        if (item.fillColor) {
+          ctx.save();
+          ctx.globalAlpha *= item.opacity ?? 0.12;
+          ctx.fillStyle = item.fillColor;
+          ctx.beginPath();
+          ctx.moveTo(pathStart.x, pathStart.y);
+          for (const curve of curves) {
+            const cp1 = this.toScreen(curve.cp1);
+            const cp2 = this.toScreen(curve.cp2);
+            const end = this.toScreen(curve.end);
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.moveTo(pathStart.x, pathStart.y);
+        for (const curve of curves) {
+          const cp1 = this.toScreen(curve.cp1);
+          const cp2 = this.toScreen(curve.cp2);
+          const end = this.toScreen(curve.end);
+          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+        const label = cloudLabelLayout(item);
+        if (label) {
+          this.drawAnnotationPanel(ctx, label, item, "rgba(12, 16, 18, 0.9)", "#f7fbfc", true);
+        }
+        break;
+      }
+      case "callout": {
+        const layout = calloutLayout(item);
+        const anchor = this.toScreen(layout.anchor);
+        const leaderStart = this.toScreen(layout.leaderStart);
+        const size = Math.max(8, lineWidth * 3.6);
+        const head = arrowHeadGeometry(leaderStart, anchor, size);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(leaderStart.x, leaderStart.y);
+        ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
+        ctx.stroke();
+        drawArrowHead(ctx, anchor, head, item.color);
+        ctx.restore();
+        this.drawAnnotationPanel(
+          ctx,
+          { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
+          item,
+          "rgba(12, 16, 18, 0.92)",
+          "#f7fbfc",
+          false,
+        );
+        break;
+      }
+      case "stamp": {
+        const layout = stampLayout(item);
+        this.drawAnnotationPanel(
+          ctx,
+          layout,
+          item,
+          hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
+          item.color,
+          true,
+          true,
+        );
+        break;
+      }
+      case "delta": {
+        const layout = deltaLayout(item);
+        const size = layout.size * zoom;
+        const center = this.toScreen(layout.center);
+        ctx.save();
+        ctx.save();
+        ctx.globalAlpha *= item.opacity ?? 0.16;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y - size / 2);
+        ctx.lineTo(center.x + size / 2, center.y + size / 2);
+        ctx.lineTo(center.x - size / 2, center.y + size / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y - size / 2);
+        ctx.lineTo(center.x + size / 2, center.y + size / 2);
+        ctx.lineTo(center.x - size / 2, center.y + size / 2);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = item.color;
+        ctx.font = `700 ${Math.max(7, (item.fontSize ?? 14) * zoom * 0.7)}px ${TEXT_FONT_STACK}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(item.text || "", center.x, center.y + size * 0.12);
+        if (item.label) {
+          ctx.font = `500 ${Math.max(6, (item.fontSize ?? 14) * zoom * 0.38)}px ${TEXT_FONT_STACK}`;
+          ctx.fillText(item.label, center.x, center.y + size * 0.62);
+        }
+        ctx.restore();
+        break;
+      }
       case "text": {
         const layout = textItemLayout(item);
         const fontSize = Math.max(0.3, layout.fontSize * zoom);
@@ -2863,6 +3236,64 @@ export class CanvasView {
         this.drawLabelLayout(ctx, layout);
       }
     }
+  }
+
+  private drawAnnotationPanel(
+    ctx: CanvasRenderingContext2D,
+    layout: {
+      center: Point;
+      width: number;
+      height: number;
+      lines: string[];
+      fontSize: number;
+      lineHeight: number;
+      padding: number;
+    },
+    item: MarkupItem,
+    fill: string,
+    textColor: string,
+    leader: boolean,
+    bold = false,
+  ): void {
+    const zoom = store.ui.zoom;
+    const center = this.toScreen(layout.center);
+    const width = layout.width * zoom;
+    const height = layout.height * zoom;
+    const x = center.x - width / 2;
+    const y = center.y - height / 2;
+    ctx.save();
+    if (leader && item.kind === "cloud" && item.points.length) {
+      const localCentroid = {
+        x: item.points.reduce((sum, point) => sum + point.x, 0) / item.points.length,
+        y: item.points.reduce((sum, point) => sum + point.y, 0) / item.points.length,
+      };
+      const centroid = this.toScreen(localCentroid);
+      const boxEdge = { x: Math.max(x, Math.min(x + width, centroid.x)), y: Math.max(y, Math.min(y + height, centroid.y)) };
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = Math.max(0.6, item.strokeWidth * zoom);
+      ctx.setLineDash([3, 3]);
+      ctx.beginPath();
+      ctx.moveTo(boxEdge.x, boxEdge.y);
+      ctx.lineTo(centroid.x, centroid.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = Math.max(0.8, item.strokeWidth * zoom);
+    roundRect(ctx, x, y, width, height, Math.min(5, height / 4));
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = textColor;
+    ctx.font = `${bold ? 700 : 500} ${Math.max(6, layout.fontSize * zoom)}px ${FONT_STACK}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const lineHeight = layout.lineHeight * zoom;
+    const startY = center.y - ((layout.lines.length - 1) * lineHeight) / 2;
+    layout.lines.forEach((line, index) => {
+      ctx.fillText(line, center.x, startY + index * lineHeight);
+    });
+    ctx.restore();
   }
 
   private drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
@@ -3240,7 +3671,13 @@ export class CanvasView {
     const unit = project.settings.lengthUnit;
     const areaUnit = project.settings.areaUnit;
 
-    if (this.draft.kind === "calibrate" || this.draft.kind === "length" || this.draft.kind === "area") {
+    if (
+      this.draft.kind === "calibrate" ||
+      this.draft.kind === "length" ||
+      this.draft.kind === "area" ||
+      this.draft.kind === "cloud" ||
+      this.draft.kind === "highlight-polygon"
+    ) {
       const points = this.draft.points.map((p) => this.toScreen(p));
       const cursor = this.toScreen(this.draft.cursor);
       ctx.save();
@@ -3250,7 +3687,14 @@ export class CanvasView {
       if (points.length > 1) {
         ctx.beginPath();
         points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        if (this.draft.kind === "area" && points.length >= 3) ctx.closePath();
+        if (
+          (this.draft.kind === "area" ||
+            this.draft.kind === "cloud" ||
+            this.draft.kind === "highlight-polygon") &&
+          points.length >= 3
+        ) {
+          ctx.closePath();
+        }
         ctx.stroke();
       }
       ctx.setLineDash([5, 4]);
@@ -3261,7 +3705,10 @@ export class CanvasView {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      if (this.draft.kind === "area" && points.length >= 2) {
+      if (
+        (this.draft.kind === "area" || this.draft.kind === "highlight-polygon") &&
+        points.length >= 2
+      ) {
         const pagePoints = this.draft.points;
         const preview = [...pagePoints, this.draft.cursor];
         ctx.save();
@@ -3276,7 +3723,7 @@ export class CanvasView {
         ctx.closePath();
         ctx.fill();
         ctx.restore();
-        if (preview.length >= 3) {
+        if (preview.length >= 3 && this.draft.kind === "area") {
           this.drawPreviewLabel(
             ctx,
             formatArea(areaValue(preview, "polygon"), scale, areaUnit),
@@ -3395,10 +3842,17 @@ export class CanvasView {
       ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
       ctx.stroke();
       if (head) drawArrowHead(ctx, current, head, store.ui.style.color);
-    } else if (this.draft.kind === "rect") {
+    } else if (this.draft.kind === "rect" || this.draft.kind === "highlight-rect") {
       const rect = expandRect(start, current);
-      if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-      ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      if (this.draft.kind === "highlight-rect") {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.restore();
+      } else {
+        if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      }
     } else if (this.draft.kind === "ellipse") {
       const rect = expandRect(start, current);
       ctx.beginPath();
@@ -3413,6 +3867,23 @@ export class CanvasView {
       );
       if (store.ui.style.fillOpacity > 0) ctx.fill();
       ctx.stroke();
+    } else if (this.draft.kind === "callout") {
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(current.x, current.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const width = 76;
+      const height = 24;
+      ctx.fillStyle = "rgba(12, 16, 18, 0.9)";
+      ctx.fillRect(current.x - width / 2, current.y - height / 2, width, height);
+      ctx.strokeRect(current.x - width / 2, current.y - height / 2, width, height);
+      ctx.fillStyle = store.ui.style.color;
+      ctx.font = `600 ${Math.max(9, store.ui.style.fontSize * zoom)}px ${TEXT_FONT_STACK}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Callout", current.x, current.y);
     }
     ctx.restore();
   }

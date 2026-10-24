@@ -826,6 +826,45 @@ describe("project files", () => {
     expect(parsed.pages["2"]).toBeUndefined();
   });
 
+  it("round-trips stamp presets and the new markup kinds", () => {
+    const project = makeProject();
+    project.settings.stampPresets = ["GODKÄND", "GODKÄND", "", "FÖR KÄNNEDOM"];
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      id: "stamp_item",
+      page: 2,
+      kind: "stamp",
+      points: [{ x: 30, y: 40 }],
+      color: "#35c2a1",
+      strokeWidth: 1,
+      text: "GODKÄND",
+      fontSize: 12,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.settings.stampPresets).toEqual(["GODKÄND", "FÖR KÄNNEDOM"]);
+    const stamp = parsed.layers.flatMap((layer) => layer.items).find((item) => item.id === "stamp_item");
+    expect(stamp).toMatchObject({ kind: "stamp", text: "GODKÄND", page: 2 });
+  });
+
+  it("gives schema 7 projects the English stamp defaults", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.schemaVersion = 7;
+    delete raw.settings.stampPresets;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.settings.stampPresets).toEqual([
+      "APPROVED",
+      "NOT APPROVED",
+      "FOR INFORMATION",
+      "INSPECTED",
+      "REVISED",
+    ]);
+  });
+
   it("rejects a TIF document without its embedded PDF", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));

@@ -19,6 +19,10 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Ellipse | `O` |
 | Highlight | `G` |
 | Text note | `T` |
+| Revision cloud | `D` |
+| Callout | `N` |
+| Stamp | `S` |
+| Revision delta | `Y` |
 
 ## Drawing and editing
 

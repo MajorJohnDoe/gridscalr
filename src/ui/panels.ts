@@ -50,7 +50,7 @@ import { store, toolLayerKind } from "../state/store";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import type { AutosavePayload } from "../state/store";
 import { clear, el, escapeHtml, option } from "./dom";
-import { confirmDialog } from "./dialogs";
+import { confirmDialog, textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
@@ -385,7 +385,19 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.append(categoryField, roomField, el("div", "divider-v"));
   }
 
-  if (store.ui.activeTool === "pen" || store.ui.activeTool === "line" || store.ui.activeTool === "arrow" || store.ui.activeTool === "rect" || store.ui.activeTool === "ellipse" || store.ui.activeTool === "highlight" || store.ui.activeTool === "text") {
+  if (
+    store.ui.activeTool === "pen" ||
+    store.ui.activeTool === "line" ||
+    store.ui.activeTool === "arrow" ||
+    store.ui.activeTool === "rect" ||
+    store.ui.activeTool === "ellipse" ||
+    store.ui.activeTool === "highlight" ||
+    store.ui.activeTool === "text" ||
+    store.ui.activeTool === "cloud" ||
+    store.ui.activeTool === "callout" ||
+    store.ui.activeTool === "stamp" ||
+    store.ui.activeTool === "delta"
+  ) {
     const color = el("input", "color-swatch");
     color.type = "color";
     color.value = store.ui.style.color;
@@ -398,7 +410,13 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     width.title = "Stroke width";
     width.addEventListener("change", () => store.setStyle({ strokeWidth: Number(width.value) }));
     controls.append(color, width);
-    if (store.ui.activeTool === "text") {
+    if (
+      store.ui.activeTool === "text" ||
+      store.ui.activeTool === "cloud" ||
+      store.ui.activeTool === "callout" ||
+      store.ui.activeTool === "stamp" ||
+      store.ui.activeTool === "delta"
+    ) {
       const sizeWrap = el("label", "context-number");
       sizeWrap.title = "Text size in points";
       sizeWrap.append(el("span", "", "Size"));
@@ -421,6 +439,66 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       controls.append(sizeWrap);
     }
     controls.append(el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "highlight") {
+    const shapeField = el("label", "context-field");
+    shapeField.title = "Highlight mode";
+    shapeField.append(el("span", "context-field-label", "Mode"));
+    const shapeSelect = el("select", "select context-select");
+    shapeSelect.setAttribute("aria-label", "Highlight mode");
+    shapeSelect.append(
+      option("stroke", "Pen", store.ui.highlightShape === "stroke"),
+      option("rectangle", "Rectangle", store.ui.highlightShape === "rectangle"),
+      option("polygon", "Polygon", store.ui.highlightShape === "polygon"),
+    );
+    shapeSelect.addEventListener("change", () =>
+      store.setHighlightShape(shapeSelect.value as "stroke" | "rectangle" | "polygon"),
+    );
+    shapeField.append(shapeSelect);
+    controls.prepend(shapeField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "stamp") {
+    const presetField = el("label", "context-field");
+    presetField.title = "Stamp preset for the next stamp";
+    presetField.append(el("span", "context-field-label", "Stamp"));
+    const presetSelect = el("select", "select context-select");
+    presetSelect.setAttribute("aria-label", "Stamp preset");
+    const presets = project.settings.stampPresets.length
+      ? project.settings.stampPresets
+      : ["APPROVED"];
+    if (!presets.includes(store.ui.stampText)) {
+      presetSelect.append(option(store.ui.stampText, store.ui.stampText, true));
+    }
+    for (const preset of presets) {
+      presetSelect.append(option(preset, preset, preset === store.ui.stampText));
+    }
+    presetSelect.addEventListener("change", () => store.setStampText(presetSelect.value));
+    const custom = el("button", "btn btn-small btn-ghost", "Custom…");
+    custom.type = "button";
+    custom.addEventListener("click", () => {
+      void textDialog("Custom stamp", "Only for the next stamp", store.ui.stampText, "Status").then(
+        (value) => {
+          if (value !== null && value.trim()) store.setStampText(value.trim());
+        },
+      );
+    });
+    presetField.append(presetSelect);
+    controls.prepend(presetField, custom, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "delta") {
+    const revisionField = el("label", "context-field");
+    revisionField.title = "Revision number or letter";
+    revisionField.append(el("span", "context-field-label", "Revision"));
+    const revision = el("input", "input context-room-input");
+    revision.type = "text";
+    revision.value = store.ui.deltaText;
+    revision.setAttribute("aria-label", "Revision number or letter");
+    revision.addEventListener("input", () => store.setDeltaText(revision.value));
+    revisionField.append(revision);
+    controls.prepend(revisionField, el("div", "divider-v"));
   }
 
   const lengthUnit = el("select", "select");
@@ -957,14 +1035,21 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     el(
       "span",
       "field-label",
-      metrics ? "Label (optional)" : "List label (optional)",
+      item.kind === "delta"
+        ? "Date (optional)"
+        : metrics
+          ? "Label (optional)"
+          : "List label (optional)",
     ),
   );
   const labelInput = el("input", "input");
   labelInput.id = "selection-label-input";
   labelInput.dataset.role = "selection-label";
   labelInput.value = item.label ?? "";
-  labelInput.placeholder = metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label");
+  labelInput.placeholder =
+    item.kind === "delta"
+      ? "YYYY-MM-DD"
+      : metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label");
   labelInput.disabled = locked;
   labelInput.title = locked
     ? "Unlock the layer to edit this markup."
@@ -984,20 +1069,68 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
       el(
         "div",
         "empty-note small",
-        "List labels are export and Measurements metadata; they are not drawn on the page.",
+        item.kind === "delta"
+          ? "The date is drawn below the revision triangle."
+          : "List labels are export and Measurements metadata; they are not drawn on the page.",
       ),
     );
   }
 
-  if (item.kind === "text") {
+  if (
+    item.kind === "text" ||
+    item.kind === "cloud" ||
+    item.kind === "callout" ||
+    item.kind === "stamp" ||
+    item.kind === "delta"
+  ) {
     const textField = el("label", "field");
-    textField.append(el("span", "field-label", "Text"));
-    const edit = el("button", "btn btn-small", "Edit on canvas");
+    textField.append(
+      el(
+        "span",
+        "field-label",
+        item.kind === "stamp" ? "Stamp text" : item.kind === "delta" ? "Revision" : "Text",
+      ),
+    );
+    const edit = el("button", "btn btn-small", "Edit text…");
     edit.type = "button";
     edit.disabled = locked;
     edit.addEventListener("click", actions.editSelectedText);
     textField.append(edit);
     section.append(textField);
+  }
+
+  if (item.kind === "highlight") {
+    const modeField = el("label", "field");
+    modeField.append(el("span", "field-label", "Highlight mode"));
+    const mode = el("select", "select");
+    mode.append(
+      option("stroke", "Pen", (item.highlightShape ?? "stroke") === "stroke"),
+      option("rectangle", "Rectangle", item.highlightShape === "rectangle"),
+      option("polygon", "Polygon", item.highlightShape === "polygon"),
+    );
+    mode.disabled = locked;
+    mode.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        target.highlightShape = mode.value as "stroke" | "rectangle" | "polygon";
+        if (
+          (target.highlightShape === "rectangle" && target.points.length > 2) ||
+          (target.highlightShape === "polygon" && target.points.length < 3)
+        ) {
+          const xs = target.points.map((point) => point.x);
+          const ys = target.points.map((point) => point.y);
+          const min = { x: Math.min(...xs), y: Math.min(...ys) };
+          const max = { x: Math.max(...xs), y: Math.max(...ys) };
+          target.points =
+            target.highlightShape === "rectangle"
+              ? [min, max]
+              : [min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }];
+        }
+      }, "change");
+    });
+    modeField.append(mode);
+    section.append(modeField);
   }
 
   if (item.kind !== "image") {
@@ -1018,7 +1151,13 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
   styleRow.append(colorField);
 
   const sizeField = el("label", "field");
-  if (item.kind === "text") {
+  if (
+    item.kind === "text" ||
+    item.kind === "cloud" ||
+    item.kind === "callout" ||
+    item.kind === "stamp" ||
+    item.kind === "delta"
+  ) {
     sizeField.append(el("span", "field-label", "Text size"));
     const sizeWrap = el("div", "input-row");
     const size = el("input", "input");
@@ -1532,10 +1671,24 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     return;
   }
 
+  const editableText =
+    resolved.length === 1 &&
+    (resolved[0].item.kind === "text" ||
+      resolved[0].item.kind === "cloud" ||
+      resolved[0].item.kind === "callout" ||
+      resolved[0].item.kind === "stamp" ||
+      resolved[0].item.kind === "delta") &&
+    !resolved[0].locked;
+
   items.push(
     { label: "Copy", icon: "copy", action: actions.copySelection },
     { label: "Cut", icon: "trash", action: actions.cutSelection },
     { label: "Duplicate", icon: "copy", action: actions.duplicateSelection },
+  );
+  if (editableText) {
+    items.push({ label: "Edit text…", icon: "text", action: actions.editSelectedText });
+  }
+  items.push(
     { separator: true },
     {
       label: anyVisible ? "Hide" : "Show",

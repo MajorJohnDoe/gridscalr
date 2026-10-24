@@ -15,10 +15,12 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
+import { normalizeStampPresets } from "../model/stamps";
 import type {
   AreaMode,
   AreaShape,
   AreaUnit,
+  HighlightShape,
   Calibration,
   Category,
   CountType,
@@ -48,6 +50,10 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "highlight",
   "text",
   "image",
+  "cloud",
+  "callout",
+  "stamp",
+  "delta",
 ]);
 
 const COUNT_TYPES: ReadonlySet<CountType> = new Set([
@@ -119,6 +125,10 @@ function normalizeCalibration(value: unknown): Calibration | undefined {
   };
 }
 
+function normalizeHighlightShape(value: unknown): HighlightShape {
+  return value === "rectangle" || value === "polygon" ? value : "stroke";
+}
+
 function normalizeAreaShape(value: unknown): AreaShape {
   return value === "rectangle" || value === "ellipse" ? value : "polygon";
 }
@@ -182,6 +192,7 @@ function normalizeSettings(
       typeof value?.snapTolerancePx === "number" && Number.isFinite(value.snapTolerancePx)
         ? Math.max(2, Math.min(24, value.snapTolerancePx))
         : DEFAULT_SETTINGS.snapTolerancePx,
+    stampPresets: normalizeStampPresets(value?.stampPresets),
     quantity: {
       defaultCategoryId:
         typeof rawQuantity.defaultCategoryId === "string" && ids.has(rawQuantity.defaultCategoryId)
@@ -288,6 +299,34 @@ function normalizeItem(
     if (points.length < 2) return null;
     if (points.length > 2) points.length = 2;
   }
+  if (raw.kind === "cloud" && points.length < 3) return null;
+  if (raw.kind === "callout") {
+    if (points.length < 2) return null;
+    points.length = 2;
+  }
+  if (raw.kind === "stamp" || raw.kind === "delta") points.length = 1;
+  const highlightShape =
+    raw.kind === "highlight" ? normalizeHighlightShape(raw.highlightShape) : undefined;
+  const textOffset =
+    raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
+  const text =
+    typeof raw.text === "string"
+      ? raw.text
+      : raw.kind === "stamp"
+        ? "APPROVED"
+        : raw.kind === "callout"
+          ? "Callout"
+          : raw.kind === "delta"
+            ? "A"
+            : undefined;
+  const fontSize =
+    typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize) && raw.fontSize > 0
+      ? Math.max(0.5, Math.min(300, raw.fontSize))
+      : raw.kind === "callout" || raw.kind === "cloud" || raw.kind === "stamp"
+        ? 12
+        : raw.kind === "delta"
+          ? 14
+          : undefined;
   return {
     id: typeof raw.id === "string" ? raw.id : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
@@ -297,12 +336,9 @@ function normalizeItem(
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
-    text: typeof raw.text === "string" ? raw.text : undefined,
+    text,
     label: typeof raw.label === "string" ? raw.label : undefined,
-    fontSize:
-      typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize) && raw.fontSize > 0
-        ? Math.max(0.5, Math.min(300, raw.fontSize))
-        : undefined,
+    fontSize,
     rotation:
       typeof raw.rotation === "number" && Number.isFinite(raw.rotation)
         ? ((raw.rotation % 360) + 360) % 360
@@ -332,6 +368,8 @@ function normalizeItem(
     areaMode:
       raw.kind === "area" ? (raw.areaMode === "subtract" ? ("subtract" as AreaMode) : "add") : undefined,
     areaShape,
+    highlightShape,
+    textOffset,
     countType:
       raw.kind === "count"
         ? COUNT_TYPES.has(raw.countType as CountType)

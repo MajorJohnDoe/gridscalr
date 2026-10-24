@@ -6,6 +6,8 @@ import {
 } from "../model/calibration";
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { AREA_UNITS, formatNumber, formatScale, LENGTH_UNITS } from "../model/units";
+import { loadGlobalStampPresets, resetGlobalStampPresets, saveGlobalStampPresets } from "../io/stampDefaults";
+import { normalizeStampPresets } from "../model/stamps";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
 import { showModal } from "./dialogs";
@@ -207,6 +209,127 @@ function quantitiesSection(): HTMLElement {
   return wrap;
 }
 
+function presetEditor(
+  values: readonly string[],
+  onChange: (next: string[]) => void,
+  addLabel: string,
+): HTMLElement {
+  const wrap = el("div", "stamp-preset-editor");
+  let currentValues = [...values];
+  const rebuild = () => {
+    wrap.replaceChildren();
+    currentValues.forEach((value, index) => {
+      const row = el("div", "stamp-preset-row");
+      const input = el("input", "input");
+      input.type = "text";
+      input.value = value;
+      input.maxLength = 40;
+      input.setAttribute("aria-label", `Stamp preset ${index + 1}`);
+      input.addEventListener("change", () => {
+        const next = [...currentValues];
+        next[index] = input.value;
+        currentValues = normalizeStampPresets(next);
+        onChange(currentValues);
+      });
+      const remove = el("button", "icon-btn", "×");
+      remove.type = "button";
+      remove.title = "Remove preset";
+      remove.setAttribute("aria-label", `Remove ${value}`);
+      remove.addEventListener("click", () => {
+        currentValues = currentValues.filter((_entry, entryIndex) => entryIndex !== index);
+        onChange(currentValues);
+        rebuild();
+      });
+      row.append(input, remove);
+      wrap.append(row);
+    });
+    const addRow = el("div", "input-row");
+    const addInput = el("input", "input");
+    addInput.type = "text";
+    addInput.placeholder = addLabel;
+    addInput.maxLength = 40;
+    addInput.setAttribute("aria-label", addLabel);
+    const add = el("button", "btn btn-small", "Add");
+    add.type = "button";
+    add.addEventListener("click", () => {
+      const text = addInput.value.trim();
+      if (!text) return;
+      currentValues = normalizeStampPresets([...currentValues, text]);
+      onChange(currentValues);
+      rebuild();
+    });
+    addInput.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        add.click();
+      }
+    });
+    addRow.append(addInput, add);
+    wrap.append(addRow);
+  };
+  rebuild();
+  return wrap;
+}
+
+function stampsSection(): HTMLElement {
+  const project = store.project!;
+  const wrap = section(
+    "Stamps",
+    "Presets are stored in the project. New projects start from the app defaults.",
+  );
+
+  const projectLabel = el("div", "settings-subhead", "Project presets");
+  const projectEditor = presetEditor(
+    project.settings.stampPresets,
+    (next) => {
+      store.mutate((current) => {
+        current.settings.stampPresets = next;
+      }, "change");
+    },
+    "New project preset",
+  );
+
+  const globalValues = loadGlobalStampPresets();
+  const globalLabel = el("div", "settings-subhead", "App defaults for new projects");
+  const globalEditor = presetEditor(
+    globalValues,
+    (next) => {
+      saveGlobalStampPresets(next);
+    },
+    "New default preset",
+  );
+
+  const copyToDefaults = el("button", "btn btn-small btn-ghost", "Use project presets as defaults");
+  copyToDefaults.type = "button";
+  copyToDefaults.addEventListener("click", () => {
+    saveGlobalStampPresets(store.project?.settings.stampPresets ?? []);
+    toast("App stamp defaults updated.", "success");
+    openSettingsDialog();
+  });
+  const copyToProject = el("button", "btn btn-small btn-ghost", "Load app defaults into project");
+  copyToProject.type = "button";
+  copyToProject.addEventListener("click", () => {
+    const next = loadGlobalStampPresets();
+    store.mutate((current) => {
+      current.settings.stampPresets = next;
+    }, "change");
+    toast("Project stamp presets updated.", "success");
+    openSettingsDialog();
+  });
+  const reset = el("button", "btn btn-small btn-ghost", "Reset app defaults");
+  reset.type = "button";
+  reset.addEventListener("click", () => {
+    resetGlobalStampPresets();
+    toast("App stamp defaults reset.", "success");
+    openSettingsDialog();
+  });
+  const actions = el("div", "settings-actions");
+  actions.append(copyToDefaults, copyToProject, reset);
+
+  wrap.append(projectLabel, projectEditor, globalLabel, globalEditor, actions);
+  return wrap;
+}
+
 function interfaceSection(): HTMLElement {
   const wrap = section("Interface", "Panel layout is stored locally and is not part of the project file.");
   const reset = el("button", "btn btn-small", "Reset panel layout");
@@ -232,6 +355,7 @@ export function openSettingsDialog(): void {
       unitsSection(),
       displaySection(),
       quantitiesSection(),
+      stampsSection(),
       interfaceSection(),
     );
   };

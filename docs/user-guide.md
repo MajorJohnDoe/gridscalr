@@ -139,9 +139,29 @@ The snap marker names the target type. Hidden items and hidden layers never prov
 
 ## Draw and annotate
 
-Use the pen, line, arrow, rectangle, ellipse, highlight, and text tools. Drawing items are added to the active **drawing layer**. Drawing layers render below measurement layers, so measurement labels stay readable.
+Use the pen, line, arrow, rectangle, ellipse, highlight, cloud, callout, stamp, delta, and text tools. Drawing items are added to the active **drawing layer**. Drawing layers render below measurement layers, so measurement labels stay readable.
 
 Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions.
+
+### Revision cloud
+
+Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to add a text box that moves with the cloud.
+
+Clouds use the current drawing colour and line weight. The default is a hollow revision cloud; the text box is optional.
+
+### Callout
+
+Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. Enter the text and press **Apply**. The leader ends in a filled arrow exactly at the target. Double-click the callout or right-click it to edit the text later.
+
+### Stamp
+
+Choose **Stamp** (`S`) and select a preset in the context bar. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
+
+Project stamp presets are managed under **Settings → Project settings → Stamps**. App defaults for new projects are stored locally on the computer; new projects inherit them, while each project keeps its own list.
+
+### Revision delta
+
+Choose **Revision delta** (`Y`), enter the revision number or letter in the context bar, and click to place the triangle. Double-click or right-click the delta to edit its revision text. An optional date can be entered as its label in Properties.
 
 ### Text notes
 
@@ -233,6 +253,16 @@ Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of 
 - Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
 - Use **Select all** for the current filter.
 
+## Highlight modes
+
+The **Highlight** tool (`G`) has three modes in the context bar:
+
+- **Pen** – the original freehand highlighter.
+- **Rectangle** – drag a translucent highlight box.
+- **Polygon** – click a translucent highlight area and close it with `Enter` or the first point.
+
+Existing projects keep their freehand highlights; new highlights use the selected mode.
+
 ## Quantities
 
 Open **View → Quantities…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters.
@@ -302,6 +332,7 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
 - **Units** – length and area units for the project.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance.
 - **Quantities** – default category, waste percentage, and rounding step.
+- **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
 - **Manage categories…** – rename, reorder, delete, and override waste/rounding per category.
 - **Reset panel layout** – restores the default sidebar and Properties widths and expands both panels.
 
@@ -319,9 +350,9 @@ The help content is bundled with the application. It does not use the network.
 
 A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations, settings, categories, layers, markup items, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
 
-New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered. Schema version 7 is the current format.
+New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 7 is the current format. Older projects load normally and are migrated when opened.
+Schema version 8 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
