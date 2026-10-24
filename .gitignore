@@ -24,3 +24,6 @@ Thumbs.db
 # Local test output
 coverage/
 exports/
+
+# Local test drawings (never commit)
+temp_test_plans/
