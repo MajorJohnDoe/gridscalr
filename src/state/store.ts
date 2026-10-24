@@ -1,4 +1,4 @@
-import { totalPageCount } from "../model/documents";
+import { deletePageFromProject, totalPageCount, type DeletePageResult } from "../model/documents";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
@@ -234,6 +234,31 @@ export class Store {
     this.revision += 1;
     this.emit("project");
     this.scheduleAutosave();
+  }
+
+  /**
+   * Deletes one page and remaps measurements on later pages. Structural like
+   * importing a document: the source files are untouched and the operation is
+   * not added to the undo stack.
+   */
+  deletePage(page: number): DeletePageResult | null {
+    if (!this.project) return null;
+    const result = deletePageFromProject(this.project, page);
+    if (!result) return null;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
+    for (const assetId of [...this.assetPayloads.keys()]) {
+      if (!this.project.assets[assetId]) this.assetPayloads.delete(assetId);
+    }
+    this.ui.page = result.page;
+    this.ui.selection = [];
+    this.ui.hover = null;
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    this.scheduleAutosave();
+    return result;
   }
 
   setPage(page: number): void {

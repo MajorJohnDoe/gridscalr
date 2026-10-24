@@ -77,25 +77,61 @@ export class PdfRenderer {
   private activeTask: { cancel: () => void } | null = null;
   /** 1-based global page where each document starts. */
   private starts: number[] = [];
+  /** Source-local pages included for each document, in global order. */
+  private pageMaps: number[][];
 
-  constructor(public readonly documents: PDFDocumentProxy[]) {
+  constructor(public readonly documents: PDFDocumentProxy[], pageMaps?: number[][]) {
     if (!documents.length) throw new Error("A project needs at least one document.");
+    this.pageMaps = documents.map((document, index) => {
+      const requested = pageMaps?.[index];
+      if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
+      return requested.filter((page) => Number.isInteger(page) && page >= 1 && page <= document.numPages);
+    });
     this.recomputeStarts();
   }
 
   private recomputeStarts(): void {
     this.starts = [];
     let start = 1;
-    for (const document of this.documents) {
+    for (const pages of this.pageMaps) {
       this.starts.push(start);
-      start += document.numPages;
+      start += pages.length;
     }
   }
 
-  /** Appends a document. Pages are only ever added at the end. */
-  addDocument(document: PDFDocumentProxy): void {
+  /** Appends a document. New documents always go at the end. */
+  addDocument(document: PDFDocumentProxy, pageMap?: number[]): void {
     this.documents.push(document);
+    this.pageMaps.push(
+      pageMap?.filter((page) => page >= 1 && page <= document.numPages) ??
+        Array.from({ length: document.numPages }, (_, page) => page + 1),
+    );
     this.recomputeStarts();
+  }
+
+  /** Replaces the included source pages after a page removal. */
+  setPageMaps(pageMaps: number[][]): void {
+    this.cancel();
+    for (const page of this.pages.values()) page.cleanup();
+    this.pages.clear();
+    this.pageMaps = this.documents.map((document, index) => {
+      const requested = pageMaps[index];
+      if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
+      return requested.filter((page) => Number.isInteger(page) && page >= 1 && page <= document.numPages);
+    });
+    this.recomputeStarts();
+  }
+
+  /** Removes an entire source document after its last included page is deleted. */
+  removeDocument(index: number): void {
+    if (index < 0 || index >= this.documents.length) return;
+    this.cancel();
+    for (const page of this.pages.values()) page.cleanup();
+    this.pages.clear();
+    const [document] = this.documents.splice(index, 1);
+    this.pageMaps.splice(index, 1);
+    this.recomputeStarts();
+    if (document) void document.loadingTask.destroy().catch(() => undefined);
   }
 
   get documentCount(): number {
@@ -103,7 +139,7 @@ export class PdfRenderer {
   }
 
   get pageCount(): number {
-    return this.starts[this.starts.length - 1] + this.documents[this.documents.length - 1].numPages - 1;
+    return this.pageMaps.reduce((sum, pages) => sum + pages.length, 0);
   }
 
   /** 0-based document index and 1-based local page for a global page number. */
@@ -114,7 +150,8 @@ export class PdfRenderer {
       if (page >= this.starts[i]) index = i;
       else break;
     }
-    return { index, localPage: page - this.starts[index] + 1 };
+    const pages = this.pageMaps[index] ?? [];
+    return { index, localPage: pages[Math.max(0, page - this.starts[index])] ?? 1 };
   }
 
   async getPage(pageNumber: number): Promise<PDFPageProxy> {

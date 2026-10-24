@@ -120,7 +120,7 @@ Use **File → Open drawing…** (`Ctrl/Cmd+O`), drag a PDF or TIF onto the wind
 
 Opening a drawing with no project active creates a new project. To continue previous work, open its `.gridscalr` file instead.
 
-With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. Page numbers are append-only: new sheets never shift existing pages, so measurements stay on the sheet they were drawn on. Use the page controls in the status bar to move between sheets; the top bar names the source document and the current page.
+With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. New sheets are added at the end. Page numbers only move when you explicitly delete a page, in which case later measurements move down with their sheets. Use the page controls in the status bar to move between sheets; the top bar names the source document and the current page.
 
 #### TIF drawings
 
@@ -131,6 +131,10 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 - Multi-page TIFFs become several pages. Reduced-resolution preview images inside the file are skipped. Orientation tags 1, 3, 6, and 8 are honoured.
 - The converted PDF is embedded in the `.gridscalr` file, so a TIF project keeps working even if the original scan is moved. The original file path and SHA-256 are still stored for provenance.
 - Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a clear message.
+
+#### Delete a page
+
+Right-click a page card in the **Pages** tab and choose **Delete page…**, or use the footer button for the current page. The page's measurements, images, and page scale are deleted; measurements and page state on later pages move down one page number; earlier pages keep their numbers. Removing the last remaining page of a document drops that document reference, but never modifies the source PDF or TIF. Page deletion is structural and cannot be undone. A project always keeps at least one page.
 
 ### 2. Set the page scale
 
@@ -301,11 +305,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 6: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order, and page state beyond the last page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 7: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order, and schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 6,
+  "schemaVersion": 7,
   "name": "Level 01",
   "documents": [
     {
@@ -390,7 +394,7 @@ Version 1–5 projects load normally and are migrated to schema 6: the old `docu
 
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
-Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes version 1–5 projects, repairs category references, drops page state beyond the last page, and drops items that do not match their layer kind or reference a missing image.
+Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.
 
 ## Keyboard shortcuts
 
@@ -503,6 +507,6 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
 - Images support PNG and JPEG only. They are embedded in the project and count toward its file size; there is no external `assets/` folder. Image cropping, filters, and colour correction are not available.
 - TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages cannot be rearranged or removed, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.
-- Pages are append-only. A sheet can be added after the existing pages, but pages and documents cannot be reordered, inserted, or deleted.
+- New sheets are always added after the existing pages. A page can be deleted explicitly: its measurements and page scale are removed, later measurements move down one page number, and the operation is not undoable. Pages cannot be inserted or reordered.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.
