@@ -5,13 +5,16 @@
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
 - **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
 - **Etapp 3 – Mätverktyg, skala och export:** genomförd. 3A gav snabbarea, manuell skala, skallås och snap. 3B gav exportdialogen med sidval, beskärningsruta, lagerval, etiketter, kalibreringslinje och teckenförklaring.
-- **Etapp 4 – Bilder:** genomförd. Etapp 4 gav inbäddade PNG/JPEG-bilder, bakgrunds- och annotationsläge, bildhandtag, opacitet, rotation samt bildinbäddning i ritnings-PDF:en. Projektformatet är nu schema v5.
+- **Etapp 4 – Bilder:** genomförd. Etapp 4 gav inbäddade PNG/JPEG-bilder, bakgrunds- och annotationsläge, bildhandtag, opacitet, rotation samt bildinbäddning i ritnings-PDF:en. Projektformatet höjdes till schema v5.
+- **Etapp 5 – TIF-ritningar och flera dokument:** plan fastställd 2026-10-24, ännu inte påbörjad. Etapp 5 ger TIF-import som dokument via förlustfri CCITT G4-passthrough, flera källdokument per projekt och schema v6.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A och 3B är genomförda. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst.
 
 Etapp 4-planen finns i `etapp-4-bilder.md` och är fastställd. Samtliga beslut om inbäddning, storleksgränser, bildlägen, lagring och export är införda.
+
+Etapp 5-planen finns i `etapp-5-tiff.md` och är fastställd 2026-10-24. Den låser TIF som dokument, förlustfri CCITT G4-passthrough, flera dokument per projekt, append-only sidordning, bäddad TIF-PDF och schema v6. Spike S1 verifierar konverteringen innan implementationen börjar.
 
 ## Produktprinciper
 
@@ -132,6 +135,7 @@ Externa assets och fullständig z-order mellan alla objekt sköts upp. Inför ex
 - Etapp 2: schema v3.
 - Etapp 3: schema v4 för snabbarea, manuell skala och skallåsning.
 - Etapp 4: schema v5 för inbäddade bildassets och bildobjekt.
+- Etapp 5: schema v6 för flera dokument och bäddade TIF-PDF:er.
 - Varje migrering ska ha tester för minst aktuell och närmast föregående version.
 
 ### Test och kvalitet
@@ -176,14 +180,16 @@ Kvar att överväga: branch protection eller krav på grön CI innan merge när 
 
 ## Öppna beslut
 
-Beslut som rör Etapp 2, Etapp 3 och Etapp 4 är fastställda och dokumenterade i respektive plan. Kvar att avgöra:
+Beslut som rör Etapp 2, Etapp 3, Etapp 4 och Etapp 5 är fastställda och dokumenterade i respektive plan. Kvar att avgöra:
 
 - Ska GitHub-repot vara privat eller publikt, och vem äger det?
 - Ska externa bildassets införas om projektfilerna blir för stora?
+- Ska TIF-filer med andra komprimeringar än CCITT G4 stödjas via en avkodande fallback?
 - Ska PDF-geometrisnapp utredas som en separat spike?
 
 ## Rekommenderad nästa ordning
 
-1. Utred PDF-geometrisnapp som en separat spike om behovet kvarstår.
-2. Utvärdera externa bildassets först om inbäddade projektfiler blir praktiskt för stora.
-3. XLSX skjuts upp tills CSV visat sig otillräckligt.
+1. Kör spike S1 för CCITT G4-passthrough och därefter Etapp 5.
+2. Utred PDF-geometrisnapp som en separat spike (S2) om behovet kvarstår.
+3. XLSX-export och anpassade antalstyper som nästa funktionsetapp när Etapp 5 är klar.
+4. Utvärdera externa bildassets först om inbäddade projektfiler blir praktiskt för stora.
