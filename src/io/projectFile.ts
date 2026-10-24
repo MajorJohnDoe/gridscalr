@@ -330,6 +330,12 @@ function normalizeItem(
     raw.textBoxHeight > 0
       ? Math.max(15, Math.min(2000, raw.textBoxHeight))
       : undefined;
+  const textColor =
+    (raw.kind === "cloud" || raw.kind === "callout" || raw.kind === "stamp" || raw.kind === "delta") &&
+    typeof raw.textColor === "string" &&
+    raw.textColor
+      ? raw.textColor
+      : undefined;
   const text =
     typeof raw.text === "string"
       ? raw.text
@@ -404,6 +410,7 @@ function normalizeItem(
     cloudRadius,
     textBoxWidth,
     textBoxHeight,
+    textColor,
     countType:
       raw.kind === "count"
         ? COUNT_TYPES.has(raw.countType as CountType)

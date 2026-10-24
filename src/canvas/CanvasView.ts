@@ -180,6 +180,7 @@ interface CropMode {
 }
 
 interface TextEditSession {
+  mode: "text" | "cloud";
   itemId: string | null;
   layerId: string | null;
   page: number;
@@ -188,6 +189,8 @@ interface TextEditSession {
   color: string;
   fontSize: number;
   rotation: number;
+  boxWidth?: number;
+  boxHeight?: number;
   original?: {
     text: string;
     color: string;
@@ -1686,8 +1689,11 @@ export class CanvasView {
       this.startTextEdit(hit.item, hit.layer);
       return;
     }
+    if (hit.item.kind === "cloud") {
+      this.startCloudTextEdit(hit.item, hit.layer);
+      return;
+    }
     if (
-      hit.item.kind === "cloud" ||
       hit.item.kind === "callout" ||
       hit.item.kind === "stamp" ||
       hit.item.kind === "delta"
@@ -1911,6 +1917,7 @@ export class CanvasView {
     if (this.textEdit) this.commitTextEdit();
     const style = store.ui.style;
     this.beginTextEditSession({
+      mode: "text",
       itemId: null,
       layerId: null,
       page: store.ui.page,
@@ -1929,6 +1936,7 @@ export class CanvasView {
     }
     if (this.textEdit) this.commitTextEdit();
     this.beginTextEditSession({
+      mode: "text",
       itemId: item.id,
       layerId: layer.id,
       page: item.page,
@@ -1946,6 +1954,36 @@ export class CanvasView {
     });
   }
 
+  private startCloudTextEdit(item: MarkupItem, layer: Layer): void {
+    if (itemIsLocked(item, layer)) {
+      toast("This item is locked.", "warning");
+      return;
+    }
+    if (this.textEdit) this.commitTextEdit();
+    const label = cloudLabelLayout(item);
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const color = item.textColor ?? "#f7fbfc";
+    this.beginTextEditSession({
+      mode: "cloud",
+      itemId: item.id,
+      layerId: layer.id,
+      page: item.page,
+      anchor: label?.center ?? itemCenter(item),
+      text: item.text ?? "",
+      color,
+      fontSize,
+      rotation: 0,
+      boxWidth: item.textBoxWidth,
+      boxHeight: item.textBoxHeight,
+      original: {
+        text: item.text ?? "",
+        color,
+        fontSize,
+        rotation: 0,
+      },
+    });
+  }
+
   public editSelectedText(): void {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
@@ -1959,8 +1997,11 @@ export class CanvasView {
       this.startTextEdit(found.item, found.layer);
       return;
     }
+    if (found.item.kind === "cloud") {
+      this.startCloudTextEdit(found.item, found.layer);
+      return;
+    }
     if (
-      found.item.kind === "cloud" ||
       found.item.kind === "callout" ||
       found.item.kind === "stamp" ||
       found.item.kind === "delta"
@@ -1980,8 +2021,9 @@ export class CanvasView {
     const textarea = document.createElement("textarea");
     textarea.className = "canvas-text-editor-input";
     textarea.value = session.text;
-    textarea.placeholder = "Type a note…";
-    textarea.wrap = "off";
+    textarea.placeholder = session.mode === "cloud" ? "Cloud text…" : "Type a note…";
+    textarea.wrap = session.mode === "cloud" ? "soft" : "off";
+    textarea.style.textAlign = session.mode === "cloud" ? "center" : "left";
     textarea.spellcheck = false;
     textarea.setAttribute("aria-label", "Text annotation");
     const strip = document.createElement("div");
@@ -2023,6 +2065,10 @@ export class CanvasView {
     rotationInput.value = String(roundTo(session.rotation, 1));
     rotationInput.className = "inline-angle-input";
     rotationField.append(rotationLabel, rotationInput);
+    if (session.mode === "cloud") {
+      rotationField.hidden = true;
+      rotationField.style.display = "none";
+    }
 
     const cancelButton = document.createElement("button");
     cancelButton.type = "button";
@@ -2098,39 +2144,69 @@ export class CanvasView {
   private positionTextEditor(): void {
     const edit = this.textEdit;
     if (!edit || edit.closing) return;
-    const layout = textItemLayout(
-      { text: edit.text, fontSize: edit.fontSize },
-      measureTextWidth,
-    );
     const zoom = store.ui.zoom;
     const anchor = this.toScreen(edit.anchor);
-    const width = Math.max(52, layout.width * zoom + 4);
-    const height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
     const textarea = edit.textarea;
-    textarea.style.left = `${anchor.x - 2}px`;
-    textarea.style.top = `${anchor.y - 2}px`;
+    let left: number;
+    let top: number;
+    let width: number;
+    let height: number;
+    let rotation = edit.rotation;
+    let lineHeight: number;
+    let fontSize: number;
+    if (edit.mode === "cloud") {
+      const layout = textBoxLayout(
+        edit.text,
+        edit.fontSize,
+        edit.boxWidth,
+        edit.boxHeight,
+      );
+      width = Math.max(40, layout.width * zoom);
+      height = Math.max(20, layout.height * zoom);
+      left = anchor.x - width / 2;
+      top = anchor.y - height / 2;
+      lineHeight = layout.lineHeight * zoom;
+      fontSize = Math.max(1, layout.fontSize * zoom);
+      rotation = 0;
+      const horizontalPadding = Math.max(2, layout.padding * zoom);
+      const verticalPadding = Math.max(
+        2,
+        (height - layout.lines.length * lineHeight) / 2,
+      );
+      textarea.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
+      textarea.style.whiteSpace = "pre-wrap";
+    } else {
+      const layout = textItemLayout(
+        { text: edit.text, fontSize: edit.fontSize },
+        measureTextWidth,
+      );
+      width = Math.max(52, layout.width * zoom + 4);
+      height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
+      left = anchor.x - 2;
+      top = anchor.y - 2;
+      lineHeight = layout.lineHeight * zoom;
+      fontSize = Math.max(1, layout.fontSize * zoom);
+      textarea.style.padding = "2px";
+      textarea.style.whiteSpace = "pre";
+    }
+    textarea.style.left = `${left}px`;
+    textarea.style.top = `${top}px`;
     textarea.style.width = `${width}px`;
     textarea.style.height = `${height}px`;
-    textarea.style.fontSize = `${Math.max(1, layout.fontSize * zoom)}px`;
-    textarea.style.lineHeight = `${layout.lineHeight * zoom}px`;
+    textarea.style.fontSize = `${fontSize}px`;
+    textarea.style.lineHeight = `${lineHeight}px`;
     textarea.style.fontFamily = FONT_STACK;
     textarea.style.color = edit.color;
-    textarea.style.transform = `rotate(${edit.rotation}deg)`;
+    textarea.style.transform = `rotate(${rotation}deg)`;
     textarea.style.transformOrigin = "center";
 
-    const box = rotatedAabb(
-      anchor.x - 2,
-      anchor.y - 2,
-      width,
-      height,
-      edit.rotation,
-    );
+    const box = rotatedAabb(left, top, width, height, rotation);
     const stripWidth = edit.strip.offsetWidth || 270;
-    const left = Math.max(8, Math.min(this.width - stripWidth - 8, box.minX));
-    let top = box.minY - 44;
-    if (top < 8) top = box.maxY + 8;
-    edit.strip.style.left = `${left}px`;
-    edit.strip.style.top = `${Math.max(8, top)}px`;
+    const stripLeft = Math.max(8, Math.min(this.width - stripWidth - 8, box.minX));
+    let stripTop = box.minY - 44;
+    if (stripTop < 8) stripTop = box.maxY + 8;
+    edit.strip.style.left = `${stripLeft}px`;
+    edit.strip.style.top = `${Math.max(8, stripTop)}px`;
   }
 
   private closeTextEditor(): void {
@@ -2156,6 +2232,27 @@ export class CanvasView {
       const found = findItem(project, edit.itemId);
       if (!found || itemIsLocked(found.item, found.layer)) {
         this.closeTextEditor();
+        return;
+      }
+      if (edit.mode === "cloud") {
+        const original = edit.original!;
+        const changed =
+          value !== original.text ||
+          edit.color !== original.color ||
+          Math.abs(edit.fontSize - original.fontSize) > 0.001;
+        this.closeTextEditor();
+        if (!changed) return;
+        store.mutate(
+          (project) => {
+            const item = findItem(project, edit.itemId!)?.item;
+            if (!item) return;
+            item.text = value.trim() || "Revision";
+            item.textColor = edit.color;
+            item.fontSize = clampTextSize(edit.fontSize);
+            item.updatedAt = new Date().toISOString();
+          },
+          "change",
+        );
         return;
       }
       const original = edit.original!;
@@ -2589,30 +2686,6 @@ export class CanvasView {
     this.drawInteraction();
   }
 
-  private async promptCloudText(created: { layerId: string; itemId: string }): Promise<void> {
-    const existing = store.project
-      ? findItem(store.project, created.itemId)?.item.text
-      : undefined;
-    const text = await textDialog(
-      "Revision cloud text",
-      "Text box anchored to the cloud",
-      existing || "Revision",
-      "Cloud text",
-      true,
-    );
-    if (text === null) return;
-    store.mutate(
-      (project) => {
-        const item = findItem(project, created.itemId)?.item;
-        if (item) {
-          item.text = text.trim();
-          item.updatedAt = new Date().toISOString();
-        }
-      },
-      "change",
-    );
-  }
-
   private async editItemText(item: MarkupItem): Promise<void> {
     const title =
       item.kind === "stamp"
@@ -2690,7 +2763,10 @@ export class CanvasView {
       this.snap = null;
       if (kind === "cloud") {
         const created = this.createItem("cloud", points, { text: "Revision" });
-        if (created) void this.promptCloudText(created);
+        if (created && store.project) {
+          const found = findItem(store.project, created.itemId);
+          if (found) this.startCloudTextEdit(found.item, found.layer);
+        }
       } else if (kind === "highlight-polygon") {
         this.createItem("highlight", points, { highlightShape: "polygon" });
       } else {
@@ -3015,7 +3091,7 @@ export class CanvasView {
     item: MarkupItem,
     labels: Map<string, LabelLayout>,
   ): void {
-    if (this.editingItemId === item.id) return;
+    if (this.editingItemId === item.id && item.kind !== "cloud") return;
     const zoom = store.ui.zoom;
     const points = item.points.map((p) => this.toScreen(p));
     if (points.length === 0) return;
@@ -3216,8 +3292,15 @@ export class CanvasView {
         ctx.stroke();
         ctx.restore();
         const label = cloudLabelLayout(item);
-        if (label) {
-          this.drawAnnotationPanel(ctx, label, item, "rgba(12, 16, 18, 0.9)", "#f7fbfc", true);
+        if (label && this.editingItemId !== item.id) {
+          this.drawAnnotationPanel(
+            ctx,
+            label,
+            item,
+            "rgba(12, 16, 18, 0.9)",
+            item.textColor ?? "#f7fbfc",
+            true,
+          );
         }
         break;
       }
@@ -3239,7 +3322,7 @@ export class CanvasView {
           { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
           item,
           "rgba(12, 16, 18, 0.92)",
-          "#f7fbfc",
+          item.textColor ?? "#f7fbfc",
           false,
         );
         break;
@@ -3251,7 +3334,7 @@ export class CanvasView {
           layout,
           item,
           hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
-          item.color,
+          item.textColor ?? item.color,
           true,
           true,
         );
@@ -3278,7 +3361,7 @@ export class CanvasView {
         ctx.lineTo(center.x - size / 2, center.y + size / 2);
         ctx.closePath();
         ctx.stroke();
-        ctx.fillStyle = item.color;
+        ctx.fillStyle = item.textColor ?? item.color;
         ctx.font = `700 ${Math.max(7, (item.fontSize ?? 14) * zoom * 0.7)}px ${TEXT_FONT_STACK}`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";

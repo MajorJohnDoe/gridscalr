@@ -3553,3 +3553,7 @@ textarea:disabled {
   flex: 1;
   min-width: 0;
 }
+
+.inline-style-field[hidden] {
+  display: none;
+}

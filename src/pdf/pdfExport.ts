@@ -1051,7 +1051,11 @@ function drawAnnotationPanel(
     });
   }
   const font = style === "stamp" ? fonts.bold : fonts.regular;
-  const textColor = style === "dark" ? INK : border;
+  const textColor = item.textColor
+    ? pdfColor(item.textColor)
+    : style === "dark"
+      ? INK
+      : border;
   const lineHeight = layout.lineHeight;
   layout.lines.forEach((line, index) => {
     if (!line) return;
@@ -1136,6 +1140,7 @@ function drawDelta(
     borderWidth: Math.max(0.5, width),
     borderOpacity: opacity,
   });
+  const textColor = item.textColor ? pdfColor(item.textColor) : color;
   if (item.text) {
     drawCenteredText(
       page,
@@ -1144,7 +1149,7 @@ function drawDelta(
       { x: layout.center.x, y: layout.center.y + layout.size * 0.12 },
       Math.max(4, (item.fontSize ?? 14) * 0.7),
       fonts.bold,
-      color,
+      textColor,
       opacity,
     );
   }
@@ -1156,7 +1161,7 @@ function drawDelta(
       { x: layout.center.x, y: layout.center.y + layout.size * 0.62 },
       Math.max(3, (item.fontSize ?? 14) * 0.38),
       fonts.regular,
-      color,
+      textColor,
       opacity,
     );
   }

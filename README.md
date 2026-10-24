@@ -174,7 +174,7 @@ Hold **Shift** while drawing lines, arrows, rectangles, or ellipses to constrain
 
 ### Revision cloud, callout, stamp, and revision delta
 
-- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click, right-click, or use **Edit text…** in Properties to edit the text.
+- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click the box to edit it inline with font size, colour, Cancel, and Done.
 - **Callout (`N`)** – click the object to point at, then place the text box. The leader ends in a filled arrow at the target.
 - **Stamp (`S`)** – choose a preset in the context bar or use **Custom…**, then click to place. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
 - **Revision delta (`Y`)** – enter the revision in the context bar and click to place the triangle. An optional date can be set as its label in Properties.

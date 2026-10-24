@@ -120,6 +120,8 @@ export interface MarkupItem {
   textBoxWidth?: number;
   /** Callout and cloud text boxes only: fixed box height in PDF points. */
   textBoxHeight?: number;
+  /** Text colour for annotation text boxes. Missing uses the default light text. */
+  textColor?: string;
   /** Images only. References an embedded asset and selects the draw mode. */
   image?: ImageRef;
   createdAt: string;

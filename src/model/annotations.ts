@@ -28,15 +28,19 @@ export function textBoxLayout(
   height?: number,
   tracking = 0,
 ): Omit<TextBoxLayout, "center"> {
-  const lines = textLines(text);
   const size = Math.max(0.5, fontSize);
   const padding = Math.max(4, size * 0.45);
+  const rawLines = textLines(text);
+  const resolvedWidth = width && width > 0 ? width : undefined;
+  const lines = resolvedWidth
+    ? wrapLines(rawLines, Math.max(1, (resolvedWidth - padding * 2) / (size * 0.62)))
+    : rawLines;
   const longest = lines.reduce((max, line) => Math.max(max, line.length), 1);
   const autoWidth =
     longest * size * 0.62 + Math.max(0, longest - 1) * tracking + padding * 2;
   const autoHeight = lines.length * size * 1.25 + padding * 2;
   return {
-    width: width && width > 0 ? width : Math.max(size * 3.5, autoWidth),
+    width: resolvedWidth ?? Math.max(size * 3.5, autoWidth),
     height: height && height > 0 ? height : Math.max(size * 1.8, autoHeight),
     lines,
     fontSize: size,
@@ -172,4 +176,36 @@ export function closestPointOnPolygon(points: readonly Point[], point: Point): P
     }
   }
   return best;
+}
+
+
+function wrapLines(lines: string[], maxCharacters: number): string[] {
+  const result: string[] = [];
+  const limit = Math.max(1, Math.floor(maxCharacters));
+  for (const line of lines) {
+    if (line.length <= limit) {
+      result.push(line);
+      continue;
+    }
+    let current = "";
+    for (const word of line.split(/\s+/)) {
+      if (!word) continue;
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= limit) {
+        current = candidate;
+      } else {
+        if (current) result.push(current);
+        if (word.length <= limit) {
+          current = word;
+        } else {
+          for (let index = 0; index < word.length; index += limit) {
+            result.push(word.slice(index, index + limit));
+          }
+          current = "";
+        }
+      }
+    }
+    if (current) result.push(current);
+  }
+  return result.length ? result : [""];
 }
