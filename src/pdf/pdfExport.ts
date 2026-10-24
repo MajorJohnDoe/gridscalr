@@ -6,6 +6,7 @@ import {
   rgb,
   StandardFonts,
   type PDFFont,
+  type PDFImage,
   type PDFPage,
   type RGB,
 } from "pdf-lib";
@@ -22,6 +23,7 @@ import {
   type NormalizedCrop,
 } from "../model/export";
 import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
+import { imageOpacity } from "../model/images";
 import type { LabelLayout } from "../model/labelLayout";
 import {
   CALIBRATION_LABEL_ID,
@@ -29,7 +31,7 @@ import {
   pageLabelSources,
 } from "../model/labelLayout";
 import { textItemLayout } from "../model/text";
-import type { CountType, MarkupItem, Point, Project } from "../model/types";
+import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
 
 interface ExportFonts {
@@ -67,6 +69,7 @@ export async function exportProjectPdf(
   const includeCalibration = options?.includeCalibration !== false;
   const includeLegend = options?.includeLegend === true;
   const crop = normalizeCrop(options?.crop);
+  const images = await embedImages(pdf, project, selectedPages, selectedLayers);
 
   for (const pageNumber of selectedPages) {
     const pdfPage = pages[pageNumber - 1];
@@ -85,11 +88,22 @@ export async function exportProjectPdf(
       },
     );
 
+    // Background images sit above the source page and below every markup.
     for (const layer of project.layers) {
       if (!layer.visible || layer.opacity <= 0 || !selectedLayers.has(layer.id)) continue;
       for (const item of layer.items) {
         if (item.page !== pageNumber || item.visible === false) continue;
-        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels);
+        if (item.kind !== "image" || item.image?.mode === "annotation") continue;
+        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
+      }
+    }
+
+    for (const layer of project.layers) {
+      if (!layer.visible || layer.opacity <= 0 || !selectedLayers.has(layer.id)) continue;
+      for (const item of layer.items) {
+        if (item.page !== pageNumber || item.visible === false) continue;
+        if (item.kind === "image" && item.image?.mode !== "annotation") continue;
+        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
       }
     }
 
@@ -423,6 +437,40 @@ async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
   }
 }
 
+async function embedImages(
+  pdf: PDFDocument,
+  project: Project,
+  pages: readonly number[],
+  selectedLayers: ReadonlySet<string>,
+): Promise<Map<string, PDFImage>> {
+  const selectedPages = new Set(pages);
+  const embedded = new Map<string, PDFImage>();
+  const assets = new Map<string, ImageAsset>();
+  for (const layer of project.layers) {
+    if (!layer.visible || !selectedLayers.has(layer.id)) continue;
+    for (const item of layer.items) {
+      if (item.kind !== "image" || !item.image || item.visible === false) continue;
+      if (!selectedPages.has(item.page)) continue;
+      const asset = project.assets[item.image.assetId];
+      if (asset) assets.set(asset.id, asset);
+    }
+  }
+  for (const asset of assets.values()) {
+    if (!asset.data) continue;
+    try {
+      embedded.set(
+        asset.id,
+        asset.mime === "image/png"
+          ? await pdf.embedPng(asset.data)
+          : await pdf.embedJpg(asset.data),
+      );
+    } catch {
+      // A corrupt image must not abort the rest of the drawing export.
+    }
+  }
+  return embedded;
+}
+
 function drawItem(
   page: PDFPage,
   viewport: PageViewport,
@@ -430,6 +478,7 @@ function drawItem(
   layerOpacity: number,
   fonts: ExportFonts,
   labels: Map<string, LabelLayout>,
+  images: Map<string, PDFImage>,
 ): void {
   const color = pdfColor(item.color);
   const width = Math.max(0.35, item.strokeWidth);
@@ -522,6 +571,21 @@ function drawItem(
     case "text":
       drawTextItem(page, viewport, item, layerOpacity, fonts);
       break;
+    case "image": {
+      if (item.points.length < 2 || !item.image) break;
+      const image = images.get(item.image.assetId);
+      if (!image) break;
+      const rect = pdfRectFromCorners(viewport, itemRectCorners(item));
+      page.drawImage(image, {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+        rotate: degrees(rect.angle),
+        opacity: clamp(layerOpacity * imageOpacity(item), 0, 1),
+      });
+      break;
+    }
   }
 
   const label = labels.get(item.id);

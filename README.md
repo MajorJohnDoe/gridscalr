@@ -21,12 +21,13 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
+- Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
 - Use right-click context menus on the canvas, Markups list, and layers for the same actions.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The context bar keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
 - Review live quantities by category, room, and measurement type in the Quantities panel, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
-- Save portable `.gridscalr` project files that reference the PDF rather than embedding it.
+- Save portable `.gridscalr` project files that reference the PDF rather than embedding it. Inserted images are embedded and compressed inside the project.
 - Export a drawing PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
 - Undo/redo, autosave, recent files, and a shortcut reference.
 - No account, cloud service, or network access required.
@@ -151,7 +152,19 @@ Labels use compact paper-space sizes. On the canvas their on-screen size is capp
 
 The Markups list supports renaming without changing the drawing text: double-click a row label or select a row and press `F2`. Renaming a text item changes its list/export label, not its text body. The project name in the top bar also supports double-click rename.
 
-### 5. Resize and rotate
+### 5. Add images
+
+Use **Import image** in the top bar (or in the context bar) to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
+
+Images are embedded in the project, so the `.gridscalr` file stays portable. Each image is limited to 20 MB and 4000 px on its longest side. Images larger than 4000 px are proportionally downscaled; an image that is still larger than 20 MB after encoding is rejected. PNG transparency is preserved; JPEG files are re-encoded at quality 0.85 when they need resizing or exceed the size limit.
+
+A new image is placed on the current page and on a visible, unlocked drawing layer. If the image would be larger than the page it is scaled proportionally to fit inside the page, so the page width limits wide images; otherwise it keeps its natural size at 96 DPI (1 px = 0.75 pt). Both cases centre the image on the page.
+
+The default mode is **Background**: the image sits above the PDF drawing and below every markup and measurement. Switch to **Annotation** in Properties to draw the image in normal layer order. Properties also expose opacity, rotation, layer, visibility, lock state, duplicate, and delete. Drag a corner handle to resize proportionally, or a side handle to change one dimension.
+
+Images follow the same visibility and locking rules as other items: hidden images and layers never render, hit-test, or export, and locked images stay visible and exportable but cannot be edited. Images are only allowed on drawing layers.
+
+### 6. Resize and rotate
 
 Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal its handles:
 
@@ -162,7 +175,7 @@ Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal i
 
 Each drag or inline edit is one undo step.
 
-### 6. Organise layers
+### 7. Organise layers
 
 Open the **Layers** panel to:
 
@@ -178,7 +191,7 @@ The **Layer** picker in the context bar shows which layer will receive new items
 
 Locking a layer leaves the layer's own settings editable, but prevents changing its markup content. Measurements and drawings always live in their matching layer type.
 
-### 7. Select, bulk edit, and reuse
+### 8. Select, bulk edit, and reuse
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
@@ -204,7 +217,7 @@ The internal clipboard is in-memory only and is not shared with the operating sy
 
 Locked items remain visible and exportable, but group moves, nudges, deletes, resize/rotate, and property edits skip them. Hidden items are not rendered, cannot be hit-tested on the canvas, and are excluded from PDF, PNG, and CSV exports. Both states are stored per item, while layer visibility and locking still take precedence.
 
-### 8. Quantities and procurement reports
+### 9. Quantities and procurement reports
 
 Open the **Quantities** tab to summarise the measurements that are currently visible. Each row covers one category, room, and measurement type, and shows gross, deduction, net, waste, order quantity, and the number of items. Category and room headers provide subtotals, and a total row summarises each measurement type.
 
@@ -226,11 +239,11 @@ The **CSV** and **PDF** buttons in the Quantities footer, and **Export → Quant
 
 The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for count quantities. It contains one row per category, room, and quantity type, followed by two blank lines and project metadata. `hidden_excluded` is `true` only when at least one hidden measurement was actually left out. The PDF report is A4 portrait with 48 pt margins, category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
-### 9. Save and export
+### 10. Save and export
 
 - **Save project** (`Ctrl/Cmd+S`) writes a `.gridscalr` JSON file.
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
-- **Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
+- **Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. Background images are drawn above the source page and below markups; annotation images follow layer order. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
   - **Selected area** enters a one-off crop mode on the canvas. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**; `Esc` cancels. The crop is stored relative to the page and applied to every selected page, so pages with different sizes or rotation stay aligned. It clips PDF content, markups, labels, and the calibration line.
   - Hidden layers are listed but disabled. Hidden items are always excluded and locked items are exported.
   - **Legend** adds a separate A4 page at the end of the export. It is never drawn over the drawing and is not affected by the crop.
@@ -240,19 +253,19 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 - **Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
 - **Export → View as PNG** exports the rendered page and markup layers at the current view.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups and images stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Images are embedded as PNG or JPEG objects with their opacity and rotation. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, and other interaction overlays.
 
 ## Project files
 
-A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, and markup items. The PDF itself is **not** embedded.
+A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, markup items, and embedded images. The PDF itself is **not** embedded.
 
-Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 adds quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting.
+Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 adds embedded image assets and image items.
 
-Version 1, 2, and 3 projects load normally. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults.
+Version 1–4 projects load normally. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "name": "Level 01",
   "document": {
     "name": "Level 01.pdf",
@@ -279,6 +292,17 @@ Version 1, 2, and 3 projects load normally. Measurements are assigned to the `Ot
     { "id": "cat_...", "name": "Floor", "wastePercent": 10, "roundingStep": 0.5 },
     { "id": "cat_...", "name": "Other" }
   ],
+  "assets": {
+    "img_...": {
+      "id": "img_...",
+      "name": "Site photo.jpg",
+      "mime": "image/jpeg",
+      "width": 1600,
+      "height": 900,
+      "byteSize": 184320,
+      "data": "data:image/jpeg;base64,/9j/4AAQSk..."
+    }
+  },
   "pages": {
     "1": {
       "calibration": {
@@ -310,7 +334,7 @@ Version 1, 2, and 3 projects load normally. Measurements are assigned to the `Ot
 
 On desktop, GridScalr tries the stored absolute PDF path first, then a path relative to the project file. If the PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. The project file is designed to stay useful when a project folder is moved without the drawing it references.
 
-Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, and snap settings are preserved in the file. Reading validates the schema, normalizes version 1–3 projects, repairs category references, and drops items that do not match their layer kind.
+Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes version 1–4 projects, repairs category references, and drops items that do not match their layer kind or reference a missing image.
 
 ## Keyboard shortcuts
 
@@ -327,6 +351,7 @@ Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamp
 | Delete selection or remove last area/length point | `Delete` or `Backspace` |
 | Add/remove markups from selection | `Shift`/`Ctrl`/`Cmd` + click, or marquee drag |
 | Copy / cut / paste markups | `Ctrl/Cmd+C` / `Ctrl/Cmd+X` / `Ctrl/Cmd+V` |
+| Paste an image from the clipboard | `Ctrl/Cmd+V` when the clipboard contains an image |
 | Rename selected markup label | `F2` |
 | Edit selected text or measurement label | Double-click with Select or Text tool |
 | Rename project | Double-click the project name in the top bar |
@@ -407,5 +432,6 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
 - Snapping targets markup endpoints, midpoints, and intersections only. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
 - Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
+- Images support PNG and JPEG only. They are embedded in the project and count toward its file size; there is no external `assets/` folder. Image cropping, filters, and colour correction are not available.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

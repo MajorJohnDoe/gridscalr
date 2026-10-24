@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 4 as const;
+export const SCHEMA_VERSION = 5 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -16,8 +16,30 @@ export type DrawingKind =
   | "rect"
   | "ellipse"
   | "highlight"
-  | "text";
+  | "text"
+  | "image";
 export type ItemKind = MeasurementKind | DrawingKind;
+
+/** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
+export type ImageMode = "background" | "annotation";
+
+export interface ImageAsset {
+  id: string;
+  name: string;
+  mime: "image/png" | "image/jpeg";
+  /** Natural pixel size after any downscaling. */
+  width: number;
+  height: number;
+  /** Encoded byte size of the embedded image. */
+  byteSize: number;
+  /** data:image/png;base64,... or data:image/jpeg;base64,... */
+  data: string;
+}
+
+export interface ImageRef {
+  assetId: string;
+  mode: ImageMode;
+}
 
 export interface Point {
   x: number;
@@ -65,7 +87,7 @@ export interface MarkupItem {
   text?: string;
   label?: string;
   fontSize?: number;
-  /** Clockwise rotation in degrees. Used by text, rectangles and ellipses. */
+  /** Clockwise rotation in degrees. Used by text, rectangles, ellipses and images. */
   rotation?: number;
   /** Hidden items stay in the project but are not drawn or exported. Defaults to true. */
   visible?: boolean;
@@ -83,6 +105,8 @@ export interface MarkupItem {
   areaShape?: AreaShape;
   /** Count items only. */
   countType?: CountType;
+  /** Images only. References an embedded asset and selects the draw mode. */
+  image?: ImageRef;
   createdAt: string;
   updatedAt: string;
 }
@@ -158,6 +182,8 @@ export interface Project {
   settings: ProjectSettings;
   /** Ordered category list. At least one category always exists. */
   categories: Category[];
+  /** Embedded image payloads keyed by asset id. Items reference these by id. */
+  assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;
   layers: Layer[];
   activeLayerId: string;

@@ -66,7 +66,7 @@ function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitRes
     return null;
   }
 
-  if (item.kind === "rect" || item.kind === "ellipse") {
+  if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
     const nearEdge = distanceToPolyline(localPoint, item.points, true);
     if (nearEdge <= tolerance) return { distance: nearEdge, vertexIndex: -1, segmentIndex: -1 };
     return { distance: 0, vertexIndex: -1, segmentIndex: -1 };
@@ -84,6 +84,9 @@ export function hitTest(
   tolerance: number,
   options: { includeLocked?: boolean; includeHidden?: boolean } = {},
 ): HitResult | null {
+  // Background images render below every markup. Remember the first one as a
+  // fallback so overlapping markups keep their visual priority for selection.
+  let backgroundHit: HitResult | null = null;
   for (let l = project.layers.length - 1; l >= 0; l--) {
     const layer = project.layers[l];
     if (!options.includeHidden && !layer.visible) continue;
@@ -94,10 +97,17 @@ export function hitTest(
       if (!options.includeHidden && item.visible === false) continue;
       if (!options.includeLocked && item.locked === true) continue;
       const hit = hitItem(item, point, tolerance);
-      if (hit) return { layer, item, ...hit };
+      if (hit) {
+        const result = { layer, item, ...hit };
+        if (item.kind === "image" && item.image?.mode !== "annotation") {
+          if (!backgroundHit) backgroundHit = result;
+          continue;
+        }
+        return result;
+      }
     }
   }
-  return null;
+  return backgroundHit;
 }
 
 export function findVertex(

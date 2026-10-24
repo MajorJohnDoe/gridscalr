@@ -5,11 +5,13 @@
 - **Etapp 1 – Lager, urval och objektkontroll:** genomförd.
 - **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
 - **Etapp 3 – Mätverktyg, skala och export:** genomförd. 3A gav snabbarea, manuell skala, skallås och snap. 3B gav exportdialogen med sidval, beskärningsruta, lagerval, etiketter, kalibreringslinje och teckenförklaring.
-- **Etapp 4 – Bilder:** planerad, medvetet sist.
+- **Etapp 4 – Bilder:** genomförd. Etapp 4 gav inbäddade PNG/JPEG-bilder, bakgrunds- och annotationsläge, bildhandtag, opacitet, rotation samt bildinbäddning i ritnings-PDF:en. Projektformatet är nu schema v5.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
 Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A och 3B är genomförda. Beslutet att ”valt område” är en rektangulär beskärningsruta och att samma relativa område används vid flersidig export är låst.
+
+Etapp 4-planen finns i `etapp-4-bilder.md` och är fastställd. Samtliga beslut om inbäddning, storleksgränser, bildlägen, lagring och export är införda.
 
 ## Produktprinciper
 
@@ -105,26 +107,23 @@ PDF-geometrisnapp är fortfarande en separat utredning/spike. Det kräver extrah
 
 Beslut om valt område: användaren ritar en rektangulär beskärningsruta kring den detalj som ska exporteras. Rutan klipper allt innehåll utanför sig och sparas som ett relativt område. Vid export av flera sidor används samma relativa område på varje vald sida, så att olika sidstorlekar och rotation hanteras.
 
-Etapp 3 höjer projektformatet till schema v4 eftersom snabbarea och manuell skala inte kan tolkas säkert av äldre versioner. Etapp 4 blir därmed sannolikt schema v5.
+Etapp 3 höjer projektformatet till schema v4 eftersom snabbarea och manuell skala inte kan tolkas säkert av äldre versioner. Etapp 4 höjer det till schema v5 för inbäddade bildassets och bildobjekt.
 
 Viktigt: Etapp 3 får inte införa möjligheten att exportera dolda objekt om inte Etapp 1-regeln ändras genom ett uttryckligt beslut.
 
 ## Etapp 4 – Bilder
 
-Planeras sist eftersom bilder påverkar datamodell, rendering, hit-test, projektformat, minne och PDF-export.
+Genomförd. Planen finns i `etapp-4-bilder.md`.
 
-- Klistra in bild eller välj bildfil.
-- Bildobjekt med position, storlek, rotation och opacitet.
-- Handtag och inline-kontroller.
-- Bild som underlag bakom mätningar.
-- PDF-export med inbäddad bild, rotation och opacitet.
-- Beslut om bilden ska bäddas in i `.gridscalr` eller ligga i en projektmapp med `assets/`.
+- Klistra in bild från urklipp (`Ctrl/Cmd+V`) eller välj PNG/JPEG via **Image**.
+- Bildobjekt med position, storlek, rotation och opacitet på `draw`-lager.
+- Handtag på canvas; hörn bevarar proportionerna, sidohandtag ändrar en dimension.
+- Två lägen: **bakgrund** ovanpå PDF:en men under alla markeringar, och **annotation** i vanlig lagerordning.
+- Inbäddade, komprimerade bilder i `.gridscalr` med hård gräns 20 MB och 4000 px. Naturlig storlek räknas vid 96 DPI.
+- PDF-export med inbäddad bild, rotation, opacitet och samma beskärning som övriga objekt.
+- Undo/redo bevarar bilddata utan att duplicera den i varje snapshot.
 
-Rekommendation att utreda i Etapp 4:
-
-- Börja med komprimerade inbäddade bilder under en hård storleksgräns.
-- Inför externa assets först om filstorleken blir ett praktiskt problem.
-- Börja med två bildlägen, “bakgrund” och “annotation”, i stället för fullständig z-order mellan alla objekt.
+Externa assets och fullständig z-order mellan alla objekt sköts upp. Inför externa assets först om projektfilens storlek blir ett praktiskt problem.
 
 ## Tvärgående arbete
 
@@ -132,7 +131,7 @@ Rekommendation att utreda i Etapp 4:
 
 - Etapp 2: schema v3.
 - Etapp 3: schema v4 för snabbarea, manuell skala och skallåsning.
-- Etapp 4: sannolikt schema v5.
+- Etapp 4: schema v5 för inbäddade bildassets och bildobjekt.
 - Varje migrering ska ha tester för minst aktuell och närmast föregående version.
 
 ### Test och kvalitet
@@ -177,13 +176,14 @@ Kvar att överväga: branch protection eller krav på grön CI innan merge när 
 
 ## Öppna beslut
 
-Beslut som rör Etapp 2 är fastställda och dokumenterade i `etapp-2-mangddata.md`. Etapp 3-planen är fastställd och genomförd. Följande återstår inför Etapp 4:
+Beslut som rör Etapp 2, Etapp 3 och Etapp 4 är fastställda och dokumenterade i respektive plan. Kvar att avgöra:
 
-- Ska bilder bäddas in eller ligga som externa assets i Etapp 4?
-- Full z-order eller endast bakgrund/annotation för bilder?
 - Ska GitHub-repot vara privat eller publikt, och vem äger det?
+- Ska externa bildassets införas om projektfilerna blir för stora?
+- Ska PDF-geometrisnapp utredas som en separat spike?
 
 ## Rekommenderad nästa ordning
 
-1. Genomför Etapp 4 enligt planen.
-2. Utred PDF-geometrisnapp som en separat spike om behovet kvarstår.
+1. Utred PDF-geometrisnapp som en separat spike om behovet kvarstår.
+2. Utvärdera externa bildassets först om inbäddade projektfiler blir praktiskt för stora.
+3. XLSX skjuts upp tills CSV visat sig otillräckligt.

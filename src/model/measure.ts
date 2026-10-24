@@ -83,5 +83,7 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Highlight";
     case "text":
       return "Text";
+    case "image":
+      return "Image";
   }
 }

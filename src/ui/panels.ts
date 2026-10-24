@@ -20,12 +20,21 @@ import {
   swapLayers,
 } from "../model/layers";
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import {
+  formatImageDimensions,
+  IMAGE_MODE_LABELS,
+  imageAssetForItem,
+  imageModeOf,
+  imageOpacity,
+} from "../model/images";
 import { resolveSelection, selectionKind } from "../model/selection";
+import { formatBytes } from "../io/platform";
 import type {
   AreaMode,
   AreaShape,
   AreaUnit,
   CountType,
+  ImageMode,
   Layer,
   LengthUnit,
   MarkupItem,
@@ -77,6 +86,9 @@ export interface PanelActions {
   setSelectionRoom: (room: string) => void;
   setSelectionAreaMode: (mode: AreaMode) => void;
   setSelectionCountType: (type: CountType) => void;
+  insertImage: () => void;
+  setSelectionImageMode: (mode: ImageMode) => void;
+  setSelectionOpacity: (opacity: number) => void;
   goToPage: (page: number, fit?: boolean) => void;
   navigateToItem: (page: number, layerId: string, itemId: string) => void;
   ensurePageSize: (page: number) => void;
@@ -881,12 +893,14 @@ function markupIcon(kind: MarkupItem["kind"]): string {
       return "highlight";
     case "text":
       return "text";
+    case "image":
+      return "image";
   }
 }
 
 /* ---------------- Context bar ---------------- */
 
-function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
+function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.contextBar);
   const project = store.project;
   const tool = TOOL_BY_ID.get(store.ui.activeTool);
@@ -945,6 +959,13 @@ function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
     }
     controls.append(layerTarget, el("div", "divider-v"));
   }
+
+  const imageButton = el("button", "btn btn-small btn-ghost context-image-button", "Import image");
+  imageButton.type = "button";
+  imageButton.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
+  imageButton.innerHTML = `${icon("image", 14)}<span>Import image</span>`;
+  imageButton.addEventListener("click", actions.insertImage);
+  controls.append(imageButton, el("div", "divider-v"));
 
   const measureTool =
     store.ui.activeTool === "length" ||
@@ -1564,6 +1585,18 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     if (metrics.secondary) card.append(el("div", "selection-secondary", metrics.secondary));
   } else if (item.kind === "text") {
     card.append(el("div", "selection-secondary", "Text annotation"));
+  } else if (item.kind === "image") {
+    const asset = imageAssetForItem(project, item);
+    card.append(
+      el(
+        "div",
+        "selection-secondary",
+        `${IMAGE_MODE_LABELS[imageModeOf(item)]} image${asset ? ` · ${formatImageDimensions(asset)}` : ""}`,
+      ),
+    );
+    if (asset) {
+      card.append(el("div", "selection-secondary", `${formatBytes(asset.byteSize)} embedded`));
+    }
   }
   card.append(
     el(
@@ -1695,6 +1728,60 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     section.append(roomField);
   }
 
+  if (item.kind === "image") {
+    const image = item.image;
+    const asset = image ? imageAssetForItem(project, item) : undefined;
+    const modeField = el("label", "field");
+    modeField.append(el("span", "field-label", "Image mode"));
+    const modeSelect = el("select", "select");
+    modeSelect.append(
+      option("background", "Background (below markups)", imageModeOf(item) === "background"),
+      option("annotation", "Annotation (in layer order)", imageModeOf(item) === "annotation"),
+    );
+    modeSelect.disabled = locked;
+    modeSelect.title = locked
+      ? "Unlock the image to change its mode."
+      : "Background images sit above the PDF and below every markup.";
+    modeSelect.addEventListener("change", () => actions.setSelectionImageMode(modeSelect.value as ImageMode));
+    modeField.append(modeSelect);
+    section.append(modeField);
+
+    const opacityField = el("label", "field");
+    const opacityHead = el("div", "section-head");
+    opacityHead.style.marginBottom = "4px";
+    opacityHead.append(el("span", "field-label", "Opacity"));
+    const opacityValue = el("span", "range-value", `${Math.round(imageOpacity(item) * 100)}%`);
+    opacityHead.append(opacityValue);
+    const opacityRange = el("input");
+    opacityRange.type = "range";
+    opacityRange.min = "0";
+    opacityRange.max = "100";
+    opacityRange.step = "1";
+    opacityRange.value = String(Math.round(imageOpacity(item) * 100));
+    opacityRange.disabled = locked;
+    opacityRange.setAttribute("aria-label", "Image opacity");
+    opacityRange.addEventListener("input", () => {
+      opacityValue.textContent = `${opacityRange.value}%`;
+    });
+    opacityRange.addEventListener("change", () =>
+      actions.setSelectionOpacity(Number(opacityRange.value) / 100),
+    );
+    opacityField.append(opacityHead, opacityRange);
+    section.append(opacityField);
+
+    if (asset) {
+      section.append(
+        el(
+          "div",
+          "empty-note small",
+          `${asset.name} · ${formatImageDimensions(asset)} · ${formatBytes(asset.byteSize)} embedded`,
+        ),
+      );
+    } else if (image) {
+      section.append(el("div", "empty-note small", "The embedded image data is missing."));
+    }
+  }
+
   const labelField = el("label", "field");
   labelField.append(
     el(
@@ -1743,9 +1830,10 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     section.append(textField);
   }
 
-  const styleRow = el("div", "field-row");
-  const colorField = el("label", "field");
-  colorField.append(el("span", "field-label", item.kind === "text" ? "Text colour" : "Colour"));
+  if (item.kind !== "image") {
+    const styleRow = el("div", "field-row");
+    const colorField = el("label", "field");
+    colorField.append(el("span", "field-label", item.kind === "text" ? "Text colour" : "Colour"));
   const colorInput = el("input", "color-swatch");
   colorInput.type = "color";
   colorInput.value = item.color;
@@ -1801,8 +1889,14 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
   }
   styleRow.append(sizeField);
   section.append(styleRow);
+  }
 
-  if (item.kind === "text" || item.kind === "rect" || item.kind === "ellipse") {
+  if (
+    item.kind === "text" ||
+    item.kind === "rect" ||
+    item.kind === "ellipse" ||
+    item.kind === "image"
+  ) {
     const rotationField = el("label", "field");
     rotationField.append(el("span", "field-label", "Rotation"));
     const rotationWrap = el("div", "input-row");

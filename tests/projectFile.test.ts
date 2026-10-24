@@ -274,7 +274,7 @@ describe("project files", () => {
         ],
       };
       const parsed = parseProject(JSON.stringify(raw));
-      expect(parsed.schemaVersion).toBe(4);
+      expect(parsed.schemaVersion).toBe(5);
       expect(parsed.categories.map((entry) => entry.name)).toEqual([
         "Floor",
         "Wall",
@@ -480,7 +480,7 @@ describe("project files", () => {
     });
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.schemaVersion).toBe(5);
     expect(parsed.settings.snapTolerancePx).toBe(12);
     expect(parsed.pages["1"].scaleLocked).toBe(true);
     const calibration = parsed.pages["1"].calibration;
@@ -574,7 +574,7 @@ describe("project files", () => {
     });
 
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(4);
+    expect(parsed.schemaVersion).toBe(5);
     expect(parsed.settings.snapTolerancePx).toBe(2);
     expect(parsed.pages["2"]).toBeUndefined();
 
@@ -609,5 +609,144 @@ describe("project files", () => {
     project.settings.areaUnit = "yd2";
     const parsed = parseProject(serializeProject(project));
     expect(parsed.settings.areaUnit).toBe("yd2");
+  });
+
+  it("migrates a v4 project to schema v5 with an empty asset map", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 4;
+    delete raw.assets;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(5);
+    expect(parsed.assets).toEqual({});
+  });
+
+  it("round-trips embedded images and image items", () => {
+    const project = makeProject();
+    const data = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUg==";
+    project.assets["img_a"] = {
+      id: "img_a",
+      name: "Detail.png",
+      mime: "image/png",
+      width: 640,
+      height: 480,
+      byteSize: data.length,
+      data,
+    };
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      id: "item_image",
+      page: 1,
+      kind: "image",
+      points: [{ x: 20, y: 20 }, { x: 220, y: 170 }],
+      color: "#7aa2f7",
+      strokeWidth: 1,
+      opacity: 0.6,
+      rotation: 30,
+      image: { assetId: "img_a", mode: "annotation" },
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.assets["img_a"]).toMatchObject({
+      name: "Detail.png",
+      mime: "image/png",
+      width: 640,
+      height: 480,
+      data,
+    });
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_image")!;
+    expect(item.kind).toBe("image");
+    expect(item.image).toEqual({ assetId: "img_a", mode: "annotation" });
+    expect(item.opacity).toBe(0.6);
+    expect(item.rotation).toBe(30);
+  });
+
+  it("normalizes an unknown image mode to background", () => {
+    const project = makeProject();
+    project.assets["img_mode"] = {
+      id: "img_mode",
+      name: "Mode.png",
+      mime: "image/png",
+      width: 10,
+      height: 10,
+      byteSize: 44,
+      data: "data:image/png;base64,iVBORw0KGgo=",
+    };
+    project.layers
+      .find((layer) => layer.kind === "draw")!
+      .items.push({
+        id: "item_image_mode",
+        page: 1,
+        kind: "image",
+        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        color: "#7aa2f7",
+        strokeWidth: 1,
+        image: { assetId: "img_mode", mode: "annotation" },
+        createdAt: "2026-01-01T00:00:00.000Z",
+        updatedAt: "2026-01-01T00:00:00.000Z",
+      });
+    const raw = JSON.parse(serializeProject(project));
+    const rawItem = raw.layers
+      .flatMap((layer: { items: { id: string; image?: { mode: string } }[] }) => layer.items)
+      .find((item: { id: string }) => item.id === "item_image_mode");
+    rawItem.image.mode = "sticker";
+    const parsed = parseProject(JSON.stringify(raw));
+    const item = parsed.layers.flatMap((layer) => layer.items).find((entry) => entry.id === "item_image_mode");
+    expect(item?.image).toEqual({ assetId: "img_mode", mode: "background" });
+  });
+
+  it("drops image items with missing or invalid assets", () => {
+    const project = makeProject();
+    project.assets["img_bad"] = {
+      id: "img_bad",
+      name: "Broken.png",
+      mime: "image/png",
+      width: 10,
+      height: 10,
+      byteSize: 4,
+      data: "not-an-image",
+    };
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const base = {
+      page: 1,
+      color: "#7aa2f7",
+      strokeWidth: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    draw.items.push(
+      {
+        ...base,
+        id: "missing_asset",
+        kind: "image",
+        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        image: { assetId: "img_missing", mode: "background" },
+      },
+      {
+        ...base,
+        id: "bad_asset",
+        kind: "image",
+        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        image: { assetId: "img_bad", mode: "background" },
+      },
+    );
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      ...base,
+      id: "image_on_measure",
+      kind: "image",
+      points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      image: { assetId: "img_bad", mode: "background" },
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.assets.img_bad).toBeUndefined();
+    const ids = parsed.layers.flatMap((layer) => layer.items).map((item) => item.id);
+    expect(ids).not.toContain("missing_asset");
+    expect(ids).not.toContain("bad_asset");
+    expect(ids).not.toContain("image_on_measure");
   });
 });

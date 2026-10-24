@@ -13,6 +13,7 @@ export interface ShellRefs {
   openProjectBtn: HTMLButtonElement;
   saveBtn: HTMLButtonElement;
   exportBtn: HTMLButtonElement;
+  importImageBtn: HTMLButtonElement;
   undoBtn: HTMLButtonElement;
   redoBtn: HTMLButtonElement;
   zoomOutBtn: HTMLButtonElement;
@@ -80,7 +81,11 @@ export function createShell(root: HTMLElement): ShellRefs {
   const openProjectBtn = makeIconButton("file", "Open project", "Ctrl+Shift+O");
   const saveBtn = makeIconButton("save", "Save project", "Ctrl+S");
   const exportBtn = makeIconButton("download", "Export", "Ctrl+E");
-  fileGroup.append(openPdfBtn, openProjectBtn, saveBtn, exportBtn);
+  const importImageBtn = el("button", "btn btn-ghost");
+  importImageBtn.type = "button";
+  importImageBtn.innerHTML = `${icon("image", 15)}<span>Import image</span>`;
+  importImageBtn.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
+  fileGroup.append(openPdfBtn, openProjectBtn, saveBtn, exportBtn, importImageBtn);
 
   const historyGroup = el("div", "topbar-group");
   const undoBtn = makeIconButton("undo", "Undo", "Ctrl+Z");
@@ -214,6 +219,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     openProjectBtn,
     saveBtn,
     exportBtn,
+    importImageBtn,
     undoBtn,
     redoBtn,
     zoomOutBtn,

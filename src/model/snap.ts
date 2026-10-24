@@ -39,7 +39,7 @@ interface Segment {
  */
 function endpointCandidates(item: MarkupItem): Point[] {
   const points = item.points.map((point) => itemLocalToPage(item, point));
-  if (item.kind === "rect") {
+  if (item.kind === "rect" || item.kind === "image") {
     return [...points, ...itemCorners(item)];
   }
   if (item.kind === "area" && areaShapeOf(item) === "rectangle") {

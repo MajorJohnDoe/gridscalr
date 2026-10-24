@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-import { PDFDocument, degrees } from "pdf-lib";
+import { PDFDocument, PDFArray, PDFRawStream, decodePDFRawStream, degrees } from "pdf-lib";
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
@@ -25,6 +25,19 @@ function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
     updatedAt: now,
     ...overrides,
   };
+}
+
+async function decodePageContent(bytes: Uint8Array): Promise<string> {
+  const doc = await PDFDocument.load(bytes);
+  const contents = doc.getPage(0).node.Contents();
+  const refs = contents instanceof PDFArray ? contents.asArray() : [contents];
+  let text = "";
+  for (const ref of refs) {
+    const stream = doc.context.lookup(ref);
+    if (!(stream instanceof PDFRawStream)) continue;
+    text += new TextDecoder("latin1").decode(decodePDFRawStream(stream).decode());
+  }
+  return text;
 }
 
 function makeProject(): Project {
@@ -342,6 +355,150 @@ describe("flattened PDF export", () => {
         { x: 100, y: 0, width: 100, height: 100 },
       ),
     ).toThrow(/too small/i);
+  });
+
+  it("embeds image objects in the drawing export", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const data =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    project.assets["img_export"] = {
+      id: "img_export",
+      name: "Pixel.png",
+      mime: "image/png",
+      width: 1,
+      height: 1,
+      byteSize: 70,
+      data,
+    };
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push(
+      makeItem({
+        id: "item_image_bg",
+        kind: "image",
+        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        image: { assetId: "img_export", mode: "background" },
+        opacity: 0.5,
+        rotation: 15,
+      }),
+    );
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      pages: [1],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: false,
+      includeCalibration: false,
+      includeLegend: false,
+    });
+    const output = await PDFDocument.load(bytes);
+    expect(output.getPageCount()).toBe(1);
+    const raw = new TextDecoder("latin1").decode(bytes);
+    expect(raw).toContain("/Subtype /Image");
+  });
+
+  it("draws background images before markups and annotation images in layer order", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const data =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    project.assets["img_order"] = {
+      id: "img_order",
+      name: "Pixel.png",
+      mime: "image/png",
+      width: 1,
+      height: 1,
+      byteSize: 70,
+      data,
+    };
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.length = 0;
+    draw.items.push(
+      makeItem({
+        id: "item_rect",
+        kind: "rect",
+        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        color: "#ff0000",
+        strokeWidth: 2,
+      }),
+      makeItem({
+        id: "item_image_bg",
+        kind: "image",
+        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        image: { assetId: "img_order", mode: "background" },
+      }),
+      makeItem({
+        id: "item_image_annotation",
+        kind: "image",
+        points: [{ x: 30, y: 30 }, { x: 130, y: 90 }],
+        image: { assetId: "img_order", mode: "annotation" },
+      }),
+    );
+
+    const content = await decodePageContent(
+      await exportProjectPdf(project, renderer, {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: false,
+        includeCalibration: false,
+        includeLegend: false,
+      }),
+    );
+    const imageDraws = [...content.matchAll(/\/Image-\d+ Do/g)].map((match) => match.index ?? -1);
+    const rectFill = content.search(/1 0 0 RG/);
+    expect(imageDraws.length).toBe(2);
+    expect(imageDraws[0]).toBeLessThan(rectFill);
+    expect(rectFill).toBeLessThan(imageDraws[1]);
+  });
+
+  it("excludes hidden images, exports locked images, and skips corrupt data", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const data =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    project.assets["img_state"] = {
+      id: "img_state",
+      name: "Pixel.png",
+      mime: "image/png",
+      width: 1,
+      height: 1,
+      byteSize: 70,
+      data,
+    };
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.length = 0;
+    const item = makeItem({
+      id: "item_image_state",
+      kind: "image",
+      points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+      image: { assetId: "img_state", mode: "annotation" },
+      visible: false,
+    });
+    draw.items.push(item);
+    const options = {
+      pages: [1],
+      layerIds: project.layers.map((layer) => layer.id),
+      includeLabels: false,
+      includeCalibration: false,
+      includeLegend: false,
+    };
+
+    const hidden = new TextDecoder("latin1").decode(
+      await exportProjectPdf(project, renderer, options),
+    );
+    expect(hidden).not.toContain("/Subtype /Image");
+
+    item.visible = true;
+    item.locked = true;
+    const locked = new TextDecoder("latin1").decode(
+      await exportProjectPdf(project, renderer, options),
+    );
+    expect(locked).toContain("/Subtype /Image");
+
+    project.assets["img_state"].data = "data:image/png;base64,AAAA";
+    const corrupt = new TextDecoder("latin1").decode(
+      await exportProjectPdf(project, renderer, options),
+    );
+    expect(corrupt).not.toContain("/Subtype /Image");
   });
 
   it("adds a separate A4 legend page only when requested and counts exported content", async () => {

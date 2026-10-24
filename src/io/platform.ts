@@ -73,6 +73,23 @@ export interface PickedProject {
   text: string;
 }
 
+export async function pickImage(): Promise<File | null> {
+  if (isTauri) {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const path = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: "Image", extensions: ["png", "jpg", "jpeg"] }],
+    });
+    if (!path || Array.isArray(path)) return null;
+    const name = path.split(/[\\/]/).pop() ?? "Image.png";
+    const mime = /\.png$/i.test(name) ? "image/png" : "image/jpeg";
+    const bytes = await readFileBytes(path);
+    return new File([new Uint8Array(bytes).buffer], name, { type: mime });
+  }
+  return browserFilePicker("image/png,image/jpeg,.png,.jpg,.jpeg");
+}
+
 export async function pickProject(): Promise<PickedProject | null> {
   if (isTauri) {
     const { open } = await import("@tauri-apps/plugin-dialog");

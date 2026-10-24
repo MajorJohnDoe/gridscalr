@@ -62,6 +62,11 @@ import {
   type PageRect,
 } from "../model/export";
 import { itemMetrics } from "../model/measure";
+import {
+  imageAssetForItem,
+  imageModeOf,
+  imageOpacity,
+} from "../model/images";
 import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
 import {
@@ -86,7 +91,7 @@ import {
   TEXT_FONT_STACK,
   textItemLayout,
 } from "../model/text";
-import type { AreaShape, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
+import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -255,6 +260,9 @@ export class CanvasView {
   private hoverHandle: Handle | null = null;
   private cropMode: CropMode | null = null;
   private cropUi: HTMLDivElement | null = null;
+  private imageCache = new Map<string, HTMLImageElement>();
+  private imageLoading = new Set<string>();
+  private imageFailed = new Set<string>();
 
   constructor(host: HTMLElement, hooks: CanvasHooks) {
     this.host = host;
@@ -325,6 +333,11 @@ export class CanvasView {
       this.drag = null;
       this.marquee = null;
       this.renderedPage = page;
+    }
+    if (reason === "project") {
+      this.imageCache.clear();
+      this.imageLoading.clear();
+      this.imageFailed.clear();
     }
     if (reason === "tool") {
       this.draft = null;
@@ -1182,7 +1195,15 @@ export class CanvasView {
     } else {
       factorX = Math.max(0.02, Math.min(50, factorX));
       factorY = Math.max(0.02, Math.min(50, factorY));
-      if (shiftKey && signX !== 0 && signY !== 0) {
+      if (item.kind === "image") {
+        // Corner handles keep the source aspect ratio; edge handles resize one axis.
+        if (signX !== 0 && signY !== 0) {
+          const factor =
+            Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
+          factorX = factor;
+          factorY = factor;
+        }
+      } else if (shiftKey && signX !== 0 && signY !== 0) {
         const factor =
           Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
         factorX = factor;
@@ -1207,7 +1228,7 @@ export class CanvasView {
         x: scaled.min.x + shiftX,
         y: scaled.min.y + shiftY,
       };
-    } else if (item.kind === "rect" || item.kind === "ellipse") {
+    } else if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
       item.points = [
         { x: scaled.min.x + shiftX, y: scaled.min.y + shiftY },
         { x: scaled.max.x + shiftX, y: scaled.max.y + shiftY },
@@ -1231,7 +1252,12 @@ export class CanvasView {
     let delta = ((angle - this.drag.startAngle) * 180) / Math.PI;
     if (shiftKey) delta = Math.round(delta / 15) * 15;
     if (delta === 0) return;
-    if (item.kind === "text" || item.kind === "rect" || item.kind === "ellipse") {
+    if (
+      item.kind === "text" ||
+      item.kind === "rect" ||
+      item.kind === "ellipse" ||
+      item.kind === "image"
+    ) {
       item.rotation = normalizeDegrees((this.drag.startRotation ?? 0) + delta);
     } else {
       item.points = rotatePointsAround(this.drag.startPoints ?? item.points, center, delta);
@@ -2562,12 +2588,26 @@ export class CanvasView {
     const page = store.ui.page;
     const labels = this.pageLabelLayouts();
 
+    // Background images sit above the PDF but below every markup layer.
+    for (const layer of project.layers) {
+      if (!layer.visible || layer.opacity <= 0) continue;
+      ctx.save();
+      ctx.globalAlpha = layer.opacity;
+      for (const item of layer.items) {
+        if (item.page !== page || item.visible === false || item.kind !== "image") continue;
+        if (imageModeOf(item) !== "background") continue;
+        this.drawItem(ctx, item, labels);
+      }
+      ctx.restore();
+    }
+
     for (const layer of project.layers) {
       if (!layer.visible || layer.opacity <= 0) continue;
       ctx.save();
       ctx.globalAlpha = layer.opacity;
       for (const item of layer.items) {
         if (item.page !== page || item.visible === false) continue;
+        if (item.kind === "image" && imageModeOf(item) === "background") continue;
         this.drawItem(ctx, item, labels);
       }
       ctx.restore();
@@ -2601,6 +2641,31 @@ export class CanvasView {
     }
   }
 
+  private imageElement(asset: ImageAsset): HTMLImageElement | null {
+    if (this.imageFailed.has(asset.id)) return null;
+    const cached = this.imageCache.get(asset.id);
+    if (cached) {
+      return cached.complete && cached.naturalWidth > 0 ? cached : null;
+    }
+    if (this.imageLoading.has(asset.id)) return null;
+    const image = new Image();
+    this.imageLoading.add(asset.id);
+    image.onload = () => {
+      this.imageLoading.delete(asset.id);
+      this.imageFailed.delete(asset.id);
+      this.drawAll();
+    };
+    image.onerror = () => {
+      this.imageLoading.delete(asset.id);
+      this.imageCache.delete(asset.id);
+      this.imageFailed.add(asset.id);
+      this.drawAll();
+    };
+    image.src = asset.data;
+    this.imageCache.set(asset.id, image);
+    return null;
+  }
+
   private drawItem(
     ctx: CanvasRenderingContext2D,
     item: MarkupItem,
@@ -2613,7 +2678,11 @@ export class CanvasView {
     const lineWidth = Math.max(1.2, item.strokeWidth * zoom);
     const rotation = itemRotation(item);
     const rotatesInPlace =
-      rotation !== 0 && (item.kind === "text" || item.kind === "rect" || item.kind === "ellipse");
+      rotation !== 0 &&
+      (item.kind === "text" ||
+        item.kind === "rect" ||
+        item.kind === "ellipse" ||
+        item.kind === "image");
     const center = rotatesInPlace ? this.toScreen(itemCenter(item)) : null;
     ctx.save();
     if (center) {
@@ -2761,6 +2830,20 @@ export class CanvasView {
         layout.lines.forEach((line, index) => {
           ctx.fillText(line, points[0].x, points[0].y + index * lineHeight);
         });
+        break;
+      }
+      case "image": {
+        if (points.length < 2) break;
+        const project = store.project;
+        const asset = project ? imageAssetForItem(project, item) : undefined;
+        if (!asset) break;
+        const image = this.imageElement(asset);
+        if (!image) break;
+        const rect = expandRect(points[0], points[1]);
+        ctx.save();
+        ctx.globalAlpha *= imageOpacity(item);
+        ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
+        ctx.restore();
         break;
       }
     }

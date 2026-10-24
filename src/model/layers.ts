@@ -80,6 +80,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     document,
     settings: { ...DEFAULT_SETTINGS, quantity: createDefaultQuantitySettings(categories) },
     categories,
+    assets: {},
     pages: {},
     layers: normalizeLayerOrder(actualLayers),
     activeLayerId: measureLayer?.id ?? actualLayers[0].id,

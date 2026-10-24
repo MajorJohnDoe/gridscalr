@@ -9,8 +9,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.1.0`.
-- Current project-file schema: `4`.
-- Etapp 1, Etapp 2 and Etapp 3 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 is next.
+- Current project-file schema: `5`.
+- Etapp 1, Etapp 2, Etapp 3 and Etapp 4 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export.
 
 ## Read before changing code
 
@@ -18,7 +18,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 2. `docs/plan/roadmap-etapper.md` — Etapp 1–4 scope, product invariants, and open decisions.
 3. `docs/plan/etapp-2-mangddata.md` — detailed Etapp 2A/2B plan.
 4. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
-5. The relevant source and tests for the area being changed.
+5. `docs/plan/etapp-4-bilder.md` — approved Etapp 4 plan and image decisions.
+6. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -129,7 +130,7 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 ```text
 src/app/App.ts             app wiring, file flows, shortcuts, export actions
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
-src/model/                 types, geometry, labels, units, calibration, layers, metrics, selection, clipboard
+src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/pdfExport.ts       flattened vector PDF export
@@ -137,6 +138,7 @@ src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model and CSV serialization
 src/ui/                    shell, tool rail, panels, inspector, dialogs, status bar
 src/io/projectFile.ts      schema normalization, migration, serialization, relative paths
+src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src-tauri/src/commands.rs  atomic file writes and path checks
 tests/                     model, project-file, hit-test, selection, and PDF tests
@@ -160,7 +162,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 - **Etapp 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
 - **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
 - **Etapp 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
-- **Etapp 4:** planned — image objects and image-aware PDF export.
+- **Etapp 4:** complete — embedded PNG/JPEG images, background/annotation modes, image handles, opacity/rotation, schema v5, and image-aware PDF export.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

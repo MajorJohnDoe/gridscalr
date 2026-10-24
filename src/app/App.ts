@@ -11,6 +11,7 @@ import {
 import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import {
+  addItem,
   createProject,
   findItem,
   isMeasurementKind,
@@ -18,6 +19,7 @@ import {
   itemIsVisible,
   moveItemsToLayer,
 } from "../model/layers";
+import { createImageItem } from "../model/images";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { itemKindLabel, itemMetrics } from "../model/measure";
@@ -25,6 +27,9 @@ import { resolveSelection } from "../model/selection";
 import type {
   AreaMode,
   CountType,
+  ImageAsset,
+  ImageMode,
+  Layer,
   PageSize,
   Project,
   RecentEntry,
@@ -43,6 +48,7 @@ import {
   chooseSavePath,
   isTauri,
   pathExists,
+  pickImage,
   pickPdf,
   pickProject,
   readFileBytes,
@@ -59,6 +65,7 @@ import {
   PdfRenderer,
 } from "../pdf/pdfRenderer";
 import { exportProjectPdf } from "../pdf/pdfExport";
+import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { exportQuantityReportPdf } from "../pdf/reportPdf";
 import { serializeQuantityCsv } from "../report/csv";
 import { buildQuantityReport } from "../report/reportModel";
@@ -145,6 +152,9 @@ export class App {
       setSelectionRoom: (room) => this.setSelectionRoom(room),
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
       setSelectionCountType: (type) => this.setSelectionCountType(type),
+      insertImage: () => void this.insertImageFlow(),
+      setSelectionImageMode: (mode) => this.setSelectionImageMode(mode),
+      setSelectionOpacity: (opacity) => this.setSelectionOpacity(opacity),
       goToPage: (page, fit = true) => void this.goToPage(page, fit),
       navigateToItem: (page, layerId, itemId) => void this.navigateToItem(page, layerId, itemId),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
@@ -199,6 +209,7 @@ export class App {
     refs.openProjectBtn.addEventListener("click", () => void this.openProjectFlow());
     refs.saveBtn.addEventListener("click", () => void this.saveProjectFlow(false));
     refs.exportBtn.addEventListener("click", () => showExportMenu(refs.exportBtn, this.actions));
+    refs.importImageBtn.addEventListener("click", () => void this.insertImageFlow());
 
     refs.undoBtn.addEventListener("click", () => store.undo());
     refs.redoBtn.addEventListener("click", () => store.redo());
@@ -234,6 +245,7 @@ export class App {
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
     window.addEventListener("blur", this.onWindowBlur);
+    window.addEventListener("paste", this.onPaste);
   }
 
   private onWindowBlur = (): void => {
@@ -242,6 +254,34 @@ export class App {
 
   private onKeyUp = (event: KeyboardEvent): void => {
     if (event.code === "Space") this.canvas.setSpaceDown(false);
+  };
+
+  private onPaste = (event: ClipboardEvent): void => {
+    if (this.disposed || !store.project) return;
+    if (document.querySelector(".modal-backdrop")) return;
+    if (isEditableTarget(event.target)) return;
+    const clipboard = event.clipboardData;
+    if (!clipboard) return;
+    let image = Array.from(clipboard.files).find(isSupportedImageFile) ?? null;
+    if (!image) {
+      for (const item of Array.from(clipboard.items)) {
+        if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
+        const file = item.getAsFile();
+        if (file && isSupportedImageFile(file)) {
+          image = file;
+          break;
+        }
+      }
+    }
+    if (image) {
+      event.preventDefault();
+      void this.insertImageFile(image);
+      return;
+    }
+    if (hasClipboard(store.project)) {
+      event.preventDefault();
+      this.pasteSelection();
+    }
   };
 
   private onKeyDown = (event: KeyboardEvent): void => {
@@ -275,10 +315,6 @@ export class App {
         case "x":
           event.preventDefault();
           this.cutSelection();
-          return;
-        case "v":
-          event.preventDefault();
-          this.pasteSelection();
           return;
         case "o":
           event.preventDefault();
@@ -834,6 +870,124 @@ export class App {
     toast(`${refs.length} item${refs.length === 1 ? "" : "s"} pasted.`, "success");
   }
 
+  private async insertImageFlow(): Promise<void> {
+    if (!store.project) return;
+    let file: File | null;
+    try {
+      file = await pickImage();
+    } catch (error) {
+      toast(errorMessage(error), "error");
+      return;
+    }
+    if (!file) return;
+    await this.insertImageFile(file);
+  }
+
+  private async insertImageFile(file: File): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    if (!isSupportedImageFile(file)) {
+      toast("Choose a PNG or JPEG image.", "warning");
+      return;
+    }
+    let asset: ImageAsset;
+    try {
+      asset = await ingestImageBlob(file, file.name);
+    } catch (error) {
+      toast(errorMessage(error), "error");
+      return;
+    }
+    const page = store.ui.page;
+    const pageSize = await this.enqueuePageSize(page);
+    if (!pageSize) {
+      toast("Wait until the page has finished rendering, then try again.", "warning");
+      return;
+    }
+    if (store.project !== project) return;
+    const layer = this.imageTargetLayer();
+    if (!layer) {
+      toast("Show and unlock a drawing layer before inserting an image.", "warning");
+      return;
+    }
+    const item = createImageItem(asset, page, pageSize, "background");
+    store.registerImageAsset(asset);
+    store.mutate(
+      (project) => {
+        project.assets[asset.id] = asset;
+        addItem(project, layer.id, item);
+      },
+      "change",
+    );
+    store.setSelection({ layerId: layer.id, itemId: item.id });
+    toast(`Image added to “${layer.name}”.`, "success");
+  }
+
+  private imageTargetLayer(): Layer | null {
+    const project = store.project;
+    if (!project) return null;
+    const active = project.layers.find(
+      (layer) => layer.id === project.activeLayerId,
+    );
+    if (active && active.kind === "draw" && active.visible && !active.locked) {
+      return active;
+    }
+    const candidate = project.layers.find(
+      (layer) => layer.kind === "draw" && layer.visible && !layer.locked,
+    );
+    if (candidate) {
+      store.setActiveLayer(candidate.id);
+      return candidate;
+    }
+    return null;
+  }
+
+  private setSelectionImageMode(mode: ImageMode): void {
+    const project = store.project;
+    if (!project || !store.ui.selection.length) return;
+    const images = resolveSelection(project, store.ui.selection).filter(
+      (entry) => entry.item.kind === "image" && entry.item.image,
+    );
+    if (!images.length) return;
+    const editable = images.filter((entry) => !entry.locked);
+    if (!editable.length) {
+      toast("The selected image is locked.", "warning");
+      return;
+    }
+    store.mutate(
+      (project) => {
+        for (const entry of editable) {
+          const item = findItem(project, entry.ref.itemId)?.item;
+          if (item?.image) item.image = { ...item.image, mode };
+        }
+      },
+      "change",
+    );
+  }
+
+  private setSelectionOpacity(opacity: number): void {
+    const project = store.project;
+    if (!project || !store.ui.selection.length) return;
+    const value = Math.max(0, Math.min(1, opacity));
+    const images = resolveSelection(project, store.ui.selection).filter(
+      (entry) => entry.item.kind === "image",
+    );
+    if (!images.length) return;
+    const editable = images.filter((entry) => !entry.locked);
+    if (!editable.length) {
+      toast("The selected image is locked.", "warning");
+      return;
+    }
+    store.mutate(
+      (project) => {
+        for (const entry of editable) {
+          const item = findItem(project, entry.ref.itemId)?.item;
+          if (item) item.opacity = value;
+        }
+      },
+      "change",
+    );
+  }
+
   private duplicateSelection(): void {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
@@ -1349,6 +1503,7 @@ export class App {
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
+    window.removeEventListener("paste", this.onPaste);
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }

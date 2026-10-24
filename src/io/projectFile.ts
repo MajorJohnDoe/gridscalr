@@ -21,6 +21,8 @@ import type {
   Calibration,
   Category,
   CountType,
+  ImageAsset,
+  ImageMode,
   ItemKind,
   Layer,
   LayerKind,
@@ -43,6 +45,7 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "ellipse",
   "highlight",
   "text",
+  "image",
 ]);
 
 const COUNT_TYPES: ReadonlySet<CountType> = new Set([
@@ -194,11 +197,58 @@ function normalizeSettings(
   };
 }
 
+function normalizeAssets(value: unknown): Record<string, ImageAsset> {
+  const assets: Record<string, ImageAsset> = {};
+  if (typeof value !== "object" || value === null) return assets;
+  for (const [id, entry] of Object.entries(value)) {
+    if (!id || id === "__proto__" || id === "constructor" || id === "prototype") continue;
+    if (typeof entry !== "object" || entry === null) continue;
+    const raw = entry as Partial<ImageAsset>;
+    const mime: ImageAsset["mime"] | null =
+      raw.mime === "image/png" || raw.mime === "image/jpeg" ? raw.mime : null;
+    if (!mime) continue;
+    if (typeof raw.data !== "string") continue;
+    const prefix = mime === "image/png" ? "data:image/png;base64," : "data:image/jpeg;base64,";
+    if (!raw.data.startsWith(prefix) || raw.data.length <= prefix.length) continue;
+    if (
+      typeof raw.width !== "number" ||
+      !Number.isFinite(raw.width) ||
+      raw.width <= 0 ||
+      typeof raw.height !== "number" ||
+      !Number.isFinite(raw.height) ||
+      raw.height <= 0
+    ) {
+      continue;
+    }
+    assets[id] = {
+      id,
+      name:
+        typeof raw.name === "string" && raw.name.trim()
+          ? raw.name.trim().slice(0, 260)
+          : `Image.${mime === "image/png" ? "png" : "jpg"}`,
+      mime,
+      width: Math.round(raw.width),
+      height: Math.round(raw.height),
+      byteSize:
+        typeof raw.byteSize === "number" && Number.isFinite(raw.byteSize)
+          ? Math.max(0, Math.round(raw.byteSize))
+          : 0,
+      data: raw.data,
+    };
+  }
+  return assets;
+}
+
+function normalizeImageMode(value: unknown): ImageMode {
+  return value === "annotation" ? "annotation" : "background";
+}
+
 function normalizeItem(
   value: unknown,
   layerKind: LayerKind,
   categoryIds: ReadonlySet<string>,
   fallbackCategoryId: string,
+  assetIds: ReadonlySet<string>,
 ): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
@@ -214,6 +264,21 @@ function normalizeItem(
     raw.kind === "count"
       ? [{ x: raw.points[0].x, y: raw.points[0].y }]
       : raw.points.map((p) => ({ x: p.x, y: p.y }));
+  let image: MarkupItem["image"];
+  if (raw.kind === "image") {
+    if (!raw.image || typeof raw.image.assetId !== "string" || !assetIds.has(raw.image.assetId)) {
+      return null;
+    }
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+    const width = Math.abs(points[1].x - points[0].x);
+    const height = Math.abs(points[1].y - points[0].y);
+    if (width < 0.5 || height < 0.5) return null;
+    image = {
+      assetId: raw.image.assetId,
+      mode: normalizeImageMode(raw.image.mode),
+    };
+  }
   const areaShape = raw.kind === "area" ? normalizeAreaShape(raw.areaShape) : undefined;
   if (areaShape === "rectangle" || areaShape === "ellipse") {
     // Quick areas are defined by exactly two opposite points. Trim malformed
@@ -226,7 +291,7 @@ function normalizeItem(
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
     kind: raw.kind,
     points,
-    color: typeof raw.color === "string" ? raw.color : "#4cc9f0",
+    color: typeof raw.color === "string" ? raw.color : raw.kind === "image" ? "#7aa2f7" : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
@@ -271,6 +336,7 @@ function normalizeItem(
           ? (raw.countType as CountType)
           : "other"
         : undefined,
+    image,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : now,
   };
@@ -280,6 +346,7 @@ function normalizeLayers(
   rawLayers: unknown,
   categoryIds: ReadonlySet<string>,
   fallbackCategoryId: string,
+  assetIds: ReadonlySet<string>,
 ): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
@@ -299,7 +366,13 @@ function normalizeLayers(
       };
       if (Array.isArray(raw.items)) {
         for (const item of raw.items) {
-          const normalized = normalizeItem(item, layer.kind, categoryIds, fallbackCategoryId);
+          const normalized = normalizeItem(
+            item,
+            layer.kind,
+            categoryIds,
+            fallbackCategoryId,
+            assetIds,
+          );
           if (normalized) layer.items.push(normalized);
         }
       }
@@ -359,6 +432,7 @@ export function parseProject(text: string): Project {
   const base = createProject(doc, createDefaultLayers());
   const categories = normalizeCategories(raw.categories);
   const settings = normalizeSettings(raw.settings, categories);
+  const assets = normalizeAssets(raw.assets);
   const project: Project = {
     ...base,
     id: typeof raw.id === "string" ? raw.id : base.id,
@@ -366,11 +440,13 @@ export function parseProject(text: string): Project {
     document: doc,
     settings,
     categories,
+    assets,
     pages: {},
     layers: normalizeLayers(
       raw.layers,
       new Set(categories.map((category) => category.id)),
       settings.quantity.defaultCategoryId,
+      new Set(Object.keys(assets)),
     ),
     activeLayerId: typeof raw.activeLayerId === "string" ? raw.activeLayerId : base.activeLayerId,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : base.createdAt,

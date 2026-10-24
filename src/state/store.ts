@@ -16,6 +16,7 @@ import type {
   AreaShape,
   Category,
   CountType,
+  ImageAsset,
   LayerKind,
   Point,
   Project,
@@ -149,6 +150,7 @@ export class Store {
   private redoStack: string[] = [];
   private gestureSnapshot: string | null = null;
   private autosaveTimer: number | null = null;
+  private assetPayloads = new Map<string, string>();
 
   subscribe(listener: Listener): () => void {
     this.listeners.add(listener);
@@ -175,6 +177,11 @@ export class Store {
     this.undoStack = [];
     this.redoStack = [];
     this.gestureSnapshot = null;
+    this.assetPayloads.clear();
+    if (!project.assets) project.assets = {};
+    for (const asset of Object.values(project.assets)) {
+      if (asset.data) this.assetPayloads.set(asset.id, asset.data);
+    }
     this.ui.page = 1;
     this.ui.selection = [];
     this.ui.hover = null;
@@ -197,6 +204,7 @@ export class Store {
     this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
+    this.assetPayloads.clear();
     this.ui = defaultUI();
     this.emit("project");
     this.clearAutosave();
@@ -451,7 +459,35 @@ export class Store {
   }
 
   private snapshot(): string | null {
-    return this.project ? JSON.stringify(this.project) : null;
+    if (!this.project) return null;
+    const imagePayloads = new Set<string>();
+    for (const asset of Object.values(this.project.assets ?? {})) {
+      if (!asset.data) continue;
+      this.assetPayloads.set(asset.id, asset.data);
+      imagePayloads.add(asset.data);
+    }
+    return JSON.stringify(this.project, (_key, value) =>
+      typeof value === "string" && imagePayloads.has(value) ? undefined : value,
+    );
+  }
+
+  /** Keeps embedded image payloads available across undo and redo. */
+  registerImageAsset(asset: ImageAsset): void {
+    this.assetPayloads.set(asset.id, asset.data);
+  }
+
+  private restoreSnapshot(snapshot: string): Project {
+    const project = JSON.parse(snapshot) as Project;
+    if (!project.assets) project.assets = {};
+    for (const asset of Object.values(project.assets)) {
+      if (asset.data) {
+        this.assetPayloads.set(asset.id, asset.data);
+      } else {
+        const data = this.assetPayloads.get(asset.id);
+        if (data) asset.data = data;
+      }
+    }
+    return project;
   }
 
   mutate(
@@ -500,7 +536,7 @@ export class Store {
 
   cancelGesture(): void {
     if (this.gestureSnapshot && this.project) {
-      this.project = JSON.parse(this.gestureSnapshot) as Project;
+      this.project = this.restoreSnapshot(this.gestureSnapshot);
     }
     this.gestureSnapshot = null;
   }
@@ -508,8 +544,8 @@ export class Store {
   undo(): void {
     const previous = this.undoStack.pop();
     if (!previous || !this.project) return;
-    this.redoStack.push(JSON.stringify(this.project));
-    this.project = JSON.parse(previous) as Project;
+    this.redoStack.push(this.snapshot() ?? JSON.stringify(this.project));
+    this.project = this.restoreSnapshot(previous);
     this.afterHistoryRestore();
     this.emit("undo");
     this.scheduleAutosave();
@@ -518,8 +554,8 @@ export class Store {
   redo(): void {
     const next = this.redoStack.pop();
     if (!next || !this.project) return;
-    this.undoStack.push(JSON.stringify(this.project));
-    this.project = JSON.parse(next) as Project;
+    this.undoStack.push(this.snapshot() ?? JSON.stringify(this.project));
+    this.project = this.restoreSnapshot(next);
     this.afterHistoryRestore();
     this.emit("undo");
     this.scheduleAutosave();
