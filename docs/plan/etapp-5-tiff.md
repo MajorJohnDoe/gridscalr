@@ -151,15 +151,25 @@ export interface Project {
 
 ## S1 – spike innan implementation
 
-S1 körs på branchen `spike/tiff-ccitt-passthrough` och merged inte. Den svarar på om A1 håller innan produktionskoden skrivs.
+S1 är **genomförd 2026-10-24** på branchen `spike/tiff-ccitt-passthrough` och merged inte. Prototypen finns i `scripts/spike/tiff-g4.mjs` och fynden i `spike-s1-tiff.md`.
 
-Acceptanskriterier:
+Acceptanskriterier och utfall:
 
-1. Alla tre testfilerna konverteras på under 2 sekunder och under 100 MB peak-minne.
-2. PDF:ens bildobjekt matchar TIFF:ens IFD:er exakt: bredd, höjd, filter och antal strips.
-3. Rendering i PDF.js är pixelidentisk med en UTIF-avkodning. Under 0,1 % avvikande pixlar godkänns.
-4. Sidstorlekarna stämmer mot DPI enligt exemplen ovan.
-5. Kalibrering mot ett känt mått på `Sitplan 001 Fångad tomt.tif` ger rimlig skala.
+| Kriterium | Krav | Utfall |
+|---|---|---|
+| Konverteringstid | < 2 s | 6–18 ms |
+| Peak-minne | < 100 MB | 51–53 MB |
+| Bildobjekt | matchar IFD | 1 respektive 37 XObjects |
+| Pixelidentitet mot libtiff | < 0,1 % | 0,000 % |
+| Sidstorlek mot DPI | exakt | `2531,06 × 1684,59` och `2410,56 × 1697,76` pt |
+
+A1 håller. Tre fynd styr implementationen:
+
+1. **PDF.js 6 avkodar CCITT via WASM.** Utan `wasmUrl` ritas en tom sida utan att något fel kastas. Etapp 5 måste kopiera `pdfjs-dist/wasm/` till `public/wasm/` och skicka `wasmUrl` från `loadPdfDocument`. Detta gäller även JBIG2-bilder i vanliga PDF:er.
+2. **`BlackIs1`:** `Photometric 0` (WhiteIsZero) kräver `false`, annars blir ritningen inverterad.
+3. **`EndOfBlock false`:** TIFF-strips saknar ofta EOFB, så `Rows` måste styra avkodningen.
+
+Verifieringen ska göras med appens egen renderare. Poppler låg en rad fel på vissa strips i `Sitplan`, medan PDF.js var pixelidentisk.
 
 Testfilerna ligger i `temp_test_plans/`, som är gitignorerad och aldrig committas. De tre filerna är 1-bitars bilevel med CCITT G4, 12128 × 8072 vid 345 DPI respektive 13392 × 9432 vid 400 DPI, en sida vardera.
 
@@ -169,7 +179,7 @@ Testfilerna ligger i `temp_test_plans/`, som är gitignorerad och aldrig committ
 2. Dokumentregister i storen: aktivt dokument per sida, total sidräkning, append-only-skydd.
 3. TIF-läsare: IFD-parsning, magic bytes, DPI, orientation, `NewSubfileType`, gränser.
 4. A1-konvertering: PDF-skapande med CCITT-passthrough, strips, `BlackIs1`.
-5. Renderer: ladda flera dokument, slå upp sida per globalt index, cachelagring per dokument.
+5. Renderer: ladda flera dokument, slå upp sida per globalt index, cachelagring per dokument. Kopiera `pdfjs-dist/wasm/` till `public/wasm/` och skicka `wasmUrl` i `loadPdfDocument`, annars blir CCITT-sidor tomma.
 6. Importflöde: filväljare, drop, tilläggsdialog, aktiv sida efter import.
 7. Export och rapporter över dokumentgränser.
 8. UI: statusradens dokumentnamn, sidnavigering, felmeddelanden.
