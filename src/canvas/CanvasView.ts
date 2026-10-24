@@ -2543,7 +2543,9 @@ export class CanvasView {
       (project) => {
         const target = findItem(project, item.id)?.item;
         if (target) {
-          target.text = text.trim() || (target.kind === "stamp" ? "STAMP" : text.trim());
+          target.text =
+            text.trim() ||
+            (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
           target.updatedAt = new Date().toISOString();
         }
       },
