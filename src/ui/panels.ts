@@ -1191,6 +1191,82 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     );
   }
 
+  if (item.kind === "cloud") {
+    const fillRow = el("label", "check-row");
+    const fillToggle = el("input");
+    fillToggle.type = "checkbox";
+    fillToggle.checked = Boolean(item.fillColor);
+    fillToggle.disabled = locked;
+    fillToggle.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (fillToggle.checked) {
+          target.fillColor = target.fillColor ?? target.color;
+          target.opacity = target.opacity ?? 0.22;
+        } else {
+          delete target.fillColor;
+        }
+      }, "change");
+    });
+    fillRow.append(fillToggle, el("span", "", "Fill"));
+    section.append(fillRow);
+
+    const fillColorField = el("label", "field");
+    fillColorField.append(el("span", "field-label", "Fill colour"));
+    const fillColor = el("input", "color-swatch");
+    fillColor.type = "color";
+    fillColor.value = item.fillColor ?? item.color;
+    fillColor.disabled = !item.fillColor || locked;
+    fillColor.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        target.fillColor = fillColor.value;
+        target.opacity = target.opacity ?? 0.22;
+      }, "change");
+    });
+    fillColorField.append(fillColor);
+    section.append(fillColorField);
+
+    const opacityField = el("label", "field");
+    const opacityHead = el("div", "section-head");
+    opacityHead.style.marginBottom = "4px";
+    opacityHead.append(el("span", "field-label", "Fill opacity"));
+    const opacityValue = el(
+      "span",
+      "range-value",
+      `${Math.round((item.opacity ?? 0.22) * 100)}%`,
+    );
+    opacityHead.append(opacityValue);
+    const opacityRange = el("input");
+    opacityRange.type = "range";
+    opacityRange.min = "0";
+    opacityRange.max = "100";
+    opacityRange.step = "1";
+    opacityRange.value = String(Math.round((item.opacity ?? 0.22) * 100));
+    opacityRange.disabled = !item.fillColor || locked;
+    opacityRange.setAttribute("aria-label", "Cloud fill opacity");
+    opacityRange.addEventListener("input", () => {
+      opacityValue.textContent = `${opacityRange.value}%`;
+    });
+    opacityRange.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) target.opacity = Number(opacityRange.value) / 100;
+      }, "change");
+    });
+    opacityField.append(opacityHead, opacityRange);
+    section.append(opacityField);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "A 20–30% fill keeps the drawing and text underneath readable. Hatch patterns are not available yet.",
+      ),
+    );
+  }
+
   if (item.kind === "highlight") {
     const modeField = el("label", "field");
     modeField.append(el("span", "field-label", "Highlight mode"));

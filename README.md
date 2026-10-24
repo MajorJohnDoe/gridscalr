@@ -24,7 +24,7 @@ See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
-- Use revision clouds with editable vertices, auto-sized scallops, and draggable anchored text with a leader arrow, callouts with leaders, status-coloured inspection stamps, and revision deltas.
+- Use revision clouds with editable vertices, auto-sized scallops, optional translucent fill, and draggable anchored text with a leader arrow, callouts with leaders, status-coloured inspection stamps, and revision deltas.
 - Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
 - Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
