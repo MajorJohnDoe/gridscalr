@@ -1,4 +1,5 @@
 import { totalPageCount } from "../model/documents";
+import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
   addCategory as addCategoryToProject,
@@ -128,7 +129,7 @@ function defaultUI(): UIState {
     leftTab: "layers",
     style: {
       color: "#f2a93b",
-      strokeWidth: 2,
+      strokeWidth: DEFAULT_DRAWING_STROKE_WIDTH,
       fillOpacity: 0.15,
       fontSize: 12,
     },

@@ -85,7 +85,7 @@ Measurements without a scale are shown in PDF points (`pt` / `pt²`) and are exc
 
 ## Measure
 
-Measurements are added to the active **measurement layer**. Choose the target layer in the context bar or the Layers tab.
+Measurements are added to the active **measurement layer**. Choose the target layer in the context bar or the Layers tab. New measurements use a **0.75 pt** paper-space line weight; change it in **Properties → Stroke width** from 0.25 to 8 pt. The line weight is stored per item and is used by the PDF export.
 
 ### Length
 
@@ -188,7 +188,7 @@ Use the Select tool (`V`) to:
 Properties shows the selection and offers bulk actions:
 
 - Move all selected items of one kind to another layer.
-- Set a common colour.
+- Set a common colour and line weight.
 - Hide or show the selection.
 - Lock or unlock the selection.
 - Duplicate or delete the selection.
@@ -275,7 +275,7 @@ The source PDF is never overwritten. Autosave keeps a recovery snapshot in local
 - **Quantity report (PDF)** – writes `<project>-quantities.pdf`.
 - **Project to JSON** – exports the project payload without requiring a `.gridscalr` extension.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. Selection handles, hover states, and vertex markers are editing aids and are never included in an export.
 
 ## Settings
 

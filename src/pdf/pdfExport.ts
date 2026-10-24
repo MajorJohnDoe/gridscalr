@@ -22,7 +22,7 @@ import {
   type DrawingExportOptions,
   type NormalizedCrop,
 } from "../model/export";
-import { itemCenter, midpoint, rotatePoint } from "../model/geometry";
+import { arrowHeadGeometry, itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import { imageOpacity } from "../model/images";
 import type { LabelLayout } from "../model/labelLayout";
 import {
@@ -32,6 +32,7 @@ import {
 } from "../model/labelLayout";
 import { textItemLayout } from "../model/text";
 import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
+import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
 import type { PdfRenderer } from "./pdfRenderer";
 
 interface ExportFonts {
@@ -488,13 +489,12 @@ function drawItem(
   images: Map<string, PDFImage>,
 ): void {
   const color = pdfColor(item.color);
-  const width = Math.max(0.35, item.strokeWidth);
+  const width = Math.max(MIN_EXPORT_STROKE_WIDTH, item.strokeWidth);
   const opacity = clamp(layerOpacity, 0, 1);
 
   switch (item.kind) {
     case "length":
       drawPolyline(page, viewport, item.points, color, width, opacity, false);
-      drawEndpoints(page, viewport, item.points, color, opacity);
       break;
     case "area": {
       const shape = areaShapeOf(item);
@@ -513,7 +513,6 @@ function drawItem(
           borderWidth: width,
           borderOpacity: opacity,
         });
-        drawEndpoints(page, viewport, corners, color, opacity);
       } else if (shape === "ellipse") {
         const corners = itemRectCorners(item);
         const center = midpoint(corners[0], corners[2]);
@@ -533,9 +532,15 @@ function drawItem(
         });
       } else {
         const path = svgPolygon(viewport, item.points);
-        page.drawSvgPath(path, { x: 0, y: 0, color, opacity: opacity * 0.14 });
-        drawPolyline(page, viewport, item.points, color, width, opacity, true);
-        drawEndpoints(page, viewport, item.points, color, opacity);
+        page.drawSvgPath(path, {
+          x: 0,
+          y: 0,
+          color,
+          opacity: opacity * 0.14,
+          borderColor: color,
+          borderWidth: width,
+          borderOpacity: opacity,
+        });
       }
       break;
     }
@@ -560,13 +565,25 @@ function drawItem(
     case "line":
       if (item.points.length < 2) break;
       drawPolyline(page, viewport, item.points.slice(0, 2), color, width, opacity, false);
-      drawEndpoints(page, viewport, item.points.slice(0, 2), color, opacity);
       break;
-    case "arrow":
+    case "arrow": {
       if (item.points.length < 2) break;
-      drawPolyline(page, viewport, item.points.slice(0, 2), color, width, opacity, false);
-      drawArrowHead(page, viewport, item.points[0], item.points[1], color, width, opacity);
+      const start = item.points[0];
+      const end = item.points[1];
+      const head = arrowHeadGeometry(start, end, Math.max(8, width * 3.6));
+      drawPolyline(
+        page,
+        viewport,
+        [start, head.shaftEnd],
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Butt,
+      );
+      drawArrowHead(page, viewport, end, head, color, opacity);
       break;
+    }
     case "rect":
       if (item.points.length < 2) break;
       drawRectItem(page, viewport, item, layerOpacity);
@@ -875,57 +892,20 @@ function drawPolyline(
   }
 }
 
-function drawEndpoints(
-  page: PDFPage,
-  viewport: PageViewport,
-  points: Point[],
-  color: RGB,
-  opacity: number,
-): void {
-  if (points.length > 26) return;
-  for (const point of points) {
-    page.drawCircle({
-      x: toPdfPoint(viewport, point).x,
-      y: toPdfPoint(viewport, point).y,
-      size: 2.2,
-      color: rgb(0.063, 0.082, 0.094),
-      borderColor: color,
-      borderWidth: 1,
-      borderOpacity: clamp(opacity, 0, 1),
-      opacity: clamp(opacity, 0, 1),
-    });
-  }
-}
-
 function drawArrowHead(
   page: PDFPage,
   viewport: PageViewport,
-  start: Point,
-  end: Point,
+  tip: Point,
+  head: { wingA: Point; wingB: Point },
   color: RGB,
-  width: number,
   opacity: number,
 ): void {
-  const size = Math.max(8, width * 3.6);
-  const angle = Math.atan2(end.y - start.y, end.x - start.x);
-  const wingA = {
-    x: end.x - size * Math.cos(angle - Math.PI / 7),
-    y: end.y - size * Math.sin(angle - Math.PI / 7),
-  };
-  const wingB = {
-    x: end.x - size * Math.cos(angle + Math.PI / 7),
-    y: end.y - size * Math.sin(angle + Math.PI / 7),
-  };
-  for (const wing of [wingA, wingB]) {
-    page.drawLine({
-      start: toPdfPoint(viewport, end),
-      end: toPdfPoint(viewport, wing),
-      thickness: width,
-      color,
-      opacity: clamp(opacity, 0, 1),
-      lineCap: LineCapStyle.Round,
-    });
-  }
+  const pdfTip = toPdfPoint(viewport, tip);
+  const pdfA = toPdfPoint(viewport, head.wingA);
+  const pdfB = toPdfPoint(viewport, head.wingB);
+  // drawSvgPath flips the SVG y-axis, so negate the PDF y values.
+  const path = `M ${pdfTip.x} ${-pdfTip.y} L ${pdfA.x} ${-pdfA.y} L ${pdfB.x} ${-pdfB.y} Z`;
+  page.drawSvgPath(path, { x: 0, y: 0, color, opacity: clamp(opacity, 0, 1) });
 }
 
 function itemRectCorners(item: MarkupItem): Point[] {

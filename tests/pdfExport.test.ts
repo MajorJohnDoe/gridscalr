@@ -177,6 +177,12 @@ describe("flattened PDF export", () => {
     expect(output.getPage(0).getRotation().angle).toBe(90);
   });
 
+  it("does not export editing endpoint markers", async () => {
+    const bytes = await exportProjectPdf(makeProject(), await makeRenderer());
+    const content = await decodePageContent(bytes);
+    expect(content).not.toMatch(/0\.062/);
+  });
+
   it("exports rectangle and ellipse quick areas as vector content", async () => {
     const renderer = await makeRenderer();
     const baseline = await contentBytes(await exportProjectPdf(makeProject(), renderer));

@@ -233,6 +233,43 @@ export function rotatePointRadians(point: Point, center: Point, radians: number)
   };
 }
 
+
+export interface ArrowHeadGeometry {
+  /** Point where the shaft should stop so it does not poke through the tip. */
+  shaftEnd: Point;
+  wingA: Point;
+  wingB: Point;
+}
+
+/**
+ * Filled arrowhead with the tip exactly at `end`. The shaft is shortened to sit
+ * under the head instead of extending past it with a rounded cap.
+ */
+export function arrowHeadGeometry(start: Point, end: Point, size: number): ArrowHeadGeometry {
+  const dx = end.x - start.x;
+  const dy = end.y - start.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 0.0001) {
+    return { shaftEnd: end, wingA: end, wingB: end };
+  }
+  const angle = Math.atan2(dy, dx);
+  const inset = Math.min(size * 0.8, length);
+  return {
+    shaftEnd: {
+      x: end.x - (dx / length) * inset,
+      y: end.y - (dy / length) * inset,
+    },
+    wingA: {
+      x: end.x - size * Math.cos(angle - Math.PI / 7),
+      y: end.y - size * Math.sin(angle - Math.PI / 7),
+    },
+    wingB: {
+      x: end.x - size * Math.cos(angle + Math.PI / 7),
+      y: end.y - size * Math.sin(angle + Math.PI / 7),
+    },
+  };
+}
+
 export function itemRotation(item: MarkupItem): number {
   return Number.isFinite(item.rotation) ? (item.rotation as number) : 0;
 }

@@ -47,6 +47,7 @@ import {
   formatScale,
 } from "../model/units";
 import { store, toolLayerKind } from "../state/store";
+import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import type { AutosavePayload } from "../state/store";
 import { clear, el, escapeHtml, option } from "./dom";
 import { confirmDialog } from "./dialogs";
@@ -93,6 +94,7 @@ export interface PanelActions {
   setSelectionVisible: (visible: boolean) => void;
   setSelectionLocked: (locked: boolean) => void;
   setSelectionColor: (color: string) => void;
+  setSelectionStrokeWidth: (width: number) => void;
   setSelectionCategory: (categoryId: string) => void;
   setSelectionRoom: (room: string) => void;
   setSelectionAreaMode: (mode: AreaMode) => void;
@@ -389,7 +391,7 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     color.title = "Markup colour";
     color.addEventListener("change", () => store.setStyle({ color: color.value }));
     const width = el("select", "select");
-    for (const value of [1, 2, 3, 4, 6, 8]) {
+    for (const value of STROKE_WIDTH_OPTIONS) {
       width.append(option(String(value), `${value} pt`, value === store.ui.style.strokeWidth));
     }
     width.title = "Stroke width";
@@ -1042,7 +1044,7 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
   } else {
     sizeField.append(el("span", "field-label", "Stroke width"));
     const width = el("select", "select");
-    for (const value of [1, 1.5, 2, 3, 4, 6, 8]) {
+    for (const value of STROKE_WIDTH_OPTIONS) {
       width.append(option(String(value), `${value} pt`, Math.abs(value - item.strokeWidth) < 0.01));
     }
     width.disabled = locked;
@@ -1367,6 +1369,36 @@ function multiSelectionSection(
   colorInput.addEventListener("change", () => actions.setSelectionColor(colorInput.value));
   colorField.append(colorInput);
   section.append(colorField);
+
+  const weights = resolved.map((entry) => entry.item.strokeWidth);
+  const firstWeight = weights[0] ?? 1;
+  const commonWeight = weights.every((value) => Math.abs(value - firstWeight) < 0.01)
+    ? firstWeight
+    : null;
+  const weightField = el("label", "field");
+  weightField.append(el("span", "field-label", "Line weight"));
+  const weightSelect = el("select", "select");
+  weightSelect.append(
+    option(
+      "",
+      commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`,
+      true,
+    ),
+  );
+  for (const value of STROKE_WIDTH_OPTIONS) {
+    weightSelect.append(option(String(value), `${value} pt`, false));
+  }
+  weightSelect.disabled = lockedCount === resolved.length;
+  weightSelect.setAttribute("aria-label", "Line weight for selected items");
+  weightSelect.title =
+    lockedCount === resolved.length
+      ? "Unlock the selected items to change their line weight."
+      : "Apply one line weight to the selected items";
+  weightSelect.addEventListener("change", () => {
+    if (weightSelect.value) actions.setSelectionStrokeWidth(Number(weightSelect.value));
+  });
+  weightField.append(weightSelect);
+  section.append(weightField);
 
   const toggles = el("div", "field-row");
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));

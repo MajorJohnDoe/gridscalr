@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  arrowHeadGeometry,
   boundingBox,
   constrainAngle,
   distance,
@@ -78,6 +79,20 @@ describe("geometry", () => {
       { x: 0, y: 0 },
       { x: 20, y: 0 },
     ]);
+  });
+
+  it("puts the arrow tip at the endpoint and shortens the shaft underneath it", () => {
+    const head = arrowHeadGeometry({ x: 0, y: 0 }, { x: 100, y: 0 }, 10);
+    expect(head.shaftEnd.x).toBeCloseTo(92);
+    expect(head.shaftEnd.y).toBeCloseTo(0);
+    expect(head.wingA.x).toBeCloseTo(head.wingB.x);
+    expect(head.wingA.y).toBeCloseTo(-head.wingB.y);
+    expect(head.wingA.x).toBeLessThan(100);
+  });
+
+  it("does not push the shaft behind the start point on a very short arrow", () => {
+    const head = arrowHeadGeometry({ x: 0, y: 0 }, { x: 3, y: 0 }, 10);
+    expect(head.shaftEnd).toEqual({ x: 0, y: 0 });
   });
 
   it("translates and bounds points without mutating the input", () => {

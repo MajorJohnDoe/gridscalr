@@ -1,4 +1,5 @@
 import {
+  arrowHeadGeometry,
   constrainAngle,
   distance,
   expandRect,
@@ -93,6 +94,7 @@ import {
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
+import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -2249,7 +2251,7 @@ export class CanvasView {
           kind,
           points: points.map((p) => ({ ...p })),
           color: isMeasure ? layer.color : style.color,
-          strokeWidth: isMeasure ? 2 : style.strokeWidth,
+          strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
           fillColor:
             !isMeasure && (kind === "rect" || kind === "ellipse") && style.fillOpacity > 0
               ? style.color
@@ -2676,7 +2678,7 @@ export class CanvasView {
     const zoom = store.ui.zoom;
     const points = item.points.map((p) => this.toScreen(p));
     if (points.length === 0) return;
-    const lineWidth = Math.max(1.2, item.strokeWidth * zoom);
+    const lineWidth = Math.max(1, item.strokeWidth * zoom);
     const rotation = itemRotation(item);
     const rotatesInPlace =
       rotation !== 0 &&
@@ -2777,11 +2779,16 @@ export class CanvasView {
       }
       case "arrow": {
         if (points.length < 2) break;
+        const size = Math.max(8, lineWidth * 3.6);
+        const head = arrowHeadGeometry(points[0], points[1], size);
+        ctx.save();
+        ctx.lineCap = "butt";
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
-        ctx.lineTo(points[1].x, points[1].y);
+        ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
         ctx.stroke();
-        drawArrowHead(ctx, points[0], points[1], item.color, Math.max(8, lineWidth * 3.6));
+        ctx.restore();
+        drawArrowHead(ctx, points[1], head, item.color);
         break;
       }
       case "rect": {
@@ -3381,13 +3388,13 @@ export class CanvasView {
     ctx.lineWidth = Math.max(1, store.ui.style.strokeWidth * zoom);
     ctx.lineCap = "round";
     if (this.draft.kind === "line" || this.draft.kind === "arrow") {
+      const head =
+        this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
       ctx.beginPath();
       ctx.moveTo(start.x, start.y);
-      ctx.lineTo(current.x, current.y);
+      ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
       ctx.stroke();
-      if (this.draft.kind === "arrow") {
-        drawArrowHead(ctx, start, current, store.ui.style.color, 10);
-      }
+      if (head) drawArrowHead(ctx, current, head, store.ui.style.color);
     } else if (this.draft.kind === "rect") {
       const rect = expandRect(start, current);
       if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
@@ -3677,18 +3684,16 @@ function roundRect(
 
 function drawArrowHead(
   ctx: CanvasRenderingContext2D,
-  start: Point,
-  end: Point,
+  tip: Point,
+  head: { wingA: Point; wingB: Point },
   color: string,
-  size: number,
 ): void {
-  const angle = Math.atan2(end.y - start.y, end.x - start.x);
   ctx.save();
   ctx.fillStyle = color;
   ctx.beginPath();
-  ctx.moveTo(end.x, end.y);
-  ctx.lineTo(end.x - size * Math.cos(angle - Math.PI / 7), end.y - size * Math.sin(angle - Math.PI / 7));
-  ctx.lineTo(end.x - size * Math.cos(angle + Math.PI / 7), end.y - size * Math.sin(angle + Math.PI / 7));
+  ctx.moveTo(tip.x, tip.y);
+  ctx.lineTo(head.wingA.x, head.wingA.y);
+  ctx.lineTo(head.wingB.x, head.wingB.y);
   ctx.closePath();
   ctx.fill();
   ctx.restore();

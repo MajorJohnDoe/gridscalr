@@ -187,6 +187,7 @@ export class App {
       setSelectionVisible: (visible) => this.setSelectionVisible(visible),
       setSelectionLocked: (locked) => this.setSelectionLocked(locked),
       setSelectionColor: (color) => this.setSelectionColor(color),
+      setSelectionStrokeWidth: (width) => this.setSelectionStrokeWidth(width),
       setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
       setSelectionRoom: (room) => this.setSelectionRoom(room),
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
@@ -1341,6 +1342,30 @@ export class App {
         stillLocked ? "warning" : "success",
       );
     }
+  }
+
+  private setSelectionStrokeWidth(width: number): void {
+    const project = store.project;
+    if (!project || !store.ui.selection.length) return;
+    if (!Number.isFinite(width) || width <= 0) return;
+    const resolved = resolveSelection(project, store.ui.selection);
+    const editable = resolved.filter((entry) => !entry.locked);
+    if (!editable.length) {
+      toast("The selected items are locked.", "warning");
+      return;
+    }
+    store.mutate(
+      (project) => {
+        for (const entry of editable) {
+          const item = findItem(project, entry.ref.itemId)?.item;
+          if (item) {
+            item.strokeWidth = width;
+            item.updatedAt = new Date().toISOString();
+          }
+        }
+      },
+      "change",
+    );
   }
 
   private setSelectionColor(color: string): void {
