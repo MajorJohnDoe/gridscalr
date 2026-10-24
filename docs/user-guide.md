@@ -38,7 +38,7 @@ Panels remember their width and collapsed state between sessions.
 
 **File → Open drawing…** (`Ctrl/Cmd+O`) opens a PDF or TIF. With no project open, this creates a new project.
 
-With a project already open, the drawing is **added after the existing pages**. GridScalr asks for confirmation and shows how many pages will be added. Pages are append-only: new sheets never move existing page numbers, so measurements stay on the sheet where they were drawn.
+With a project already open, the drawing is **added after the existing pages**. GridScalr asks for confirmation and shows how many pages will be added. New sheets never change existing page numbers unless you explicitly delete a page.
 
 ### Open a project
 
@@ -57,6 +57,23 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 - Multi-page TIFFs become several pages. Reduced-resolution preview images are skipped. Orientation tags 1, 3, 6, and 8 are honoured.
 - The converted PDF is embedded in the `.gridscalr` file, so the project keeps working even if the original scan is moved.
 - Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a message.
+
+### Delete a page
+
+If you imported the wrong drawing, delete the page from the **Pages** tab:
+
+1. Right-click the page card and choose **Delete page…**, or select the page and use **Delete page…** in the panel footer.
+2. Confirm the warning.
+
+Deleting a page:
+
+- Removes all measurements, highlights, images, and page scale stored on that page.
+- Moves measurements and page state on later pages down one page number.
+- Keeps every earlier page on its existing number.
+- Deletes the source document reference when its last remaining page is removed. The original PDF or TIF file on disk is never modified.
+- Cannot be undone.
+
+A project must keep at least one page. New drawings are still always added at the end.
 
 ## Set the page scale
 
@@ -302,9 +319,9 @@ The help content is bundled with the application. It does not use the network.
 
 A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations, settings, categories, layers, markup items, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
 
-Pages are append-only. A sheet can be added after the existing pages, but pages and documents cannot be reordered, inserted, or deleted. This keeps measurement page numbers stable.
+New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered. Schema version 7 is the current format.
 
-Schema version 6 is the current format. Older projects load normally and are migrated when opened.
+Schema version 7 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

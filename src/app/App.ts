@@ -21,7 +21,7 @@ import {
 } from "../model/layers";
 import { makeId } from "../model/calibration";
 import { createImageItem } from "../model/images";
-import { totalPageCount } from "../model/documents";
+import { documentPageMaps, projectDocumentForPage, totalPageCount } from "../model/documents";
 import { base64ToBytes } from "../io/base64";
 import { isTiff } from "../io/tiff";
 import { createTiffDocumentRef, tiffToPdf } from "../io/tiffImport";
@@ -188,6 +188,7 @@ export class App {
       setSelectionLocked: (locked) => this.setSelectionLocked(locked),
       setSelectionColor: (color) => this.setSelectionColor(color),
       setSelectionStrokeWidth: (width) => this.setSelectionStrokeWidth(width),
+      deletePage: (page) => void this.deletePageFlow(page),
       setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
       setSelectionRoom: (room) => this.setSelectionRoom(room),
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
@@ -911,7 +912,7 @@ export class App {
     dirty: boolean,
   ): Promise<void> {
     const previous = this.renderer;
-    this.renderer = new PdfRenderer(documents);
+    this.renderer = new PdfRenderer(documents, documentPageMaps(project.documents));
     this.sizeEpoch++;
     this.pageSizes.clear();
     this.pageSizePromises.clear();
@@ -1342,6 +1343,45 @@ export class App {
         stillLocked ? "warning" : "success",
       );
     }
+  }
+
+  private async deletePageFlow(page: number): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    const source = projectDocumentForPage(project, page);
+    const total = totalPageCount(project.documents);
+    if (total <= 1) {
+      toast("A project must keep at least one page.", "warning");
+      return;
+    }
+    const target = Math.max(1, Math.min(total, Math.round(page)));
+    const confirmed = await confirmDialog(
+      "Delete page",
+      `Delete page ${target}${source ? ` from “${source.name}”` : ""}? Measurements and page scale on this page will be removed. Measurements and page state on later pages move down one page number. This cannot be undone.`,
+      "Delete page",
+      { danger: true },
+    );
+    if (!confirmed) return;
+    const result = store.deletePage(target);
+    if (!result) {
+      toast("The page could not be deleted.", "warning");
+      return;
+    }
+    if (result.removedDocumentIndex !== null) {
+      this.renderer?.removeDocument(result.removedDocumentIndex);
+    }
+    const current = store.project;
+    if (current) this.renderer?.setPageMaps(documentPageMaps(current.documents));
+    this.sizeEpoch++;
+    this.pageSizes.clear();
+    this.pageSizePromises.clear();
+    this.sizeQueue = [];
+    this.sizeActive = 0;
+    await this.enqueuePageSize(store.ui.page);
+    this.canvas.fitPage();
+    this.canvas.invalidate();
+    this.renderAll();
+    toast(`Page ${target} deleted.`, "info");
   }
 
   private setSelectionStrokeWidth(width: number): void {

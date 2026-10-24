@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 6 as const;
+export const SCHEMA_VERSION = 7 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -152,7 +152,10 @@ export interface DocumentRef {
   relativePath: string | null;
   /** Hash of the source file. For a TIF this is the original .tif, not the derived PDF. */
   sha256: string;
+  /** Page count in the source document. */
   pageCount: number;
+  /** 1-based source pages explicitly removed from the project. */
+  excludedPages?: number[];
   sizeBytes: number;
   /** Only for kind "tiff": base64 encoded PDF derived from the TIFF. */
   embeddedPdf?: string;
@@ -196,7 +199,7 @@ export interface Project {
   schemaVersion: typeof SCHEMA_VERSION;
   id: string;
   name: string;
-  /** Source documents in page order. Always at least one. Pages are append-only. */
+  /** Source documents in page order. New documents append; pages can be deleted explicitly. */
   documents: DocumentRef[];
   settings: ProjectSettings;
   /** Ordered category list. At least one category always exists. */

@@ -1,6 +1,8 @@
 import { totalPageCount } from "../model/documents";
 import { store } from "../state/store";
 import { el } from "./dom";
+import { icon } from "./icons";
+import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
 
@@ -44,6 +46,25 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
     card.addEventListener("click", () => actions.goToPage(page, true));
+    card.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      const locked = total <= 1;
+      showPopoverAt(event.clientX, event.clientY, [
+        {
+          label: `Go to page ${page}`,
+          icon: "pages",
+          action: () => actions.goToPage(page, true),
+        },
+        { separator: true },
+        {
+          label: "Delete page…",
+          icon: "trash",
+          danger: true,
+          disabled: locked,
+          action: () => actions.deletePage(page),
+        },
+      ]);
+    });
     list.append(card);
   }
   refs.dockBody.append(list);
@@ -54,5 +75,14 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   const footer = el("button", "btn btn-small btn-ghost", "Fit current page");
   footer.type = "button";
   footer.addEventListener("click", () => actions.goToPage(store.ui.page, true));
-  refs.dockFooter.append(footer);
+  const remove = el("button", "btn btn-small btn-ghost", "Delete page…");
+  remove.type = "button";
+  remove.disabled = total <= 1;
+  remove.title =
+    total <= 1
+      ? "A project must keep at least one page."
+      : "Delete the current page and move later pages down";
+  remove.innerHTML = `${icon("trash", 13)}<span>Delete page…</span>`;
+  remove.addEventListener("click", () => actions.deletePage(store.ui.page));
+  refs.dockFooter.append(footer, remove);
 }

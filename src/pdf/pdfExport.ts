@@ -15,6 +15,7 @@ import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
 import { areaShapeOf } from "../model/area";
+import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import {
   formatPageList,
@@ -59,10 +60,16 @@ export async function exportProjectPdf(
   // Merge every source document into one working PDF so page numbers, crops and
   // labels keep referring to the same global page index as the canvas.
   const pdf = await PDFDocument.create();
+  const pageMaps = documentPageMaps(project.documents);
   for (let index = 0; index < project.documents.length; index++) {
+    const included = pageMaps[index] ?? [];
+    if (!included.length) continue;
     const bytes = await renderer.getDocumentData(index);
     const source = await PDFDocument.load(bytes);
-    const copied = await pdf.copyPages(source, source.getPageIndices());
+    const copied = await pdf.copyPages(
+      source,
+      included.map((page) => page - 1),
+    );
     for (const page of copied) pdf.addPage(page);
   }
   pdf.registerFontkit(fontkit);

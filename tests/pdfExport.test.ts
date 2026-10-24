@@ -183,6 +183,14 @@ describe("flattened PDF export", () => {
     expect(content).not.toMatch(/0\.062/);
   });
 
+  it("exports only pages still included in the project", async () => {
+    const project = makeProject();
+    project.documents[0].excludedPages = [2];
+    const bytes = await exportProjectPdf(project, await makeRenderer());
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(1);
+  });
+
   it("exports rectangle and ellipse quick areas as vector content", async () => {
     const renderer = await makeRenderer();
     const baseline = await contentBytes(await exportProjectPdf(makeProject(), renderer));

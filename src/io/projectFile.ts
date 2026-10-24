@@ -423,6 +423,17 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
         ? Math.max(0, Math.round(rawDoc.sizeBytes))
         : 0,
   };
+  if (Array.isArray(rawDoc.excludedPages)) {
+    const excluded = [
+      ...new Set(
+        rawDoc.excludedPages
+          .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+          .map((value) => Math.round(value))
+          .filter((value) => value >= 1 && value <= document.pageCount),
+      ),
+    ].sort((a, b) => a - b);
+    if (excluded.length) document.excludedPages = excluded;
+  }
   if (kind === "tiff") {
     if (typeof rawDoc.embeddedPdf !== "string" || !rawDoc.embeddedPdf) {
       throw new Error("A TIF document in this project is missing its embedded PDF.");
@@ -473,6 +484,7 @@ export function parseProject(text: string): Project {
     seen.add(document.id);
   }
   const total = totalPageCount(documents);
+  if (total < 1) throw new Error("Project file has no remaining pages.");
   const base = createProject(documents[0], createDefaultLayers());
   const categories = normalizeCategories(raw.categories);
   const settings = normalizeSettings(raw.settings, categories);

@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  deletePageFromProject,
   documentIndexForPage,
+  documentPageMaps,
   documentPageRange,
   documentStartPage,
+  includedLocalPages,
   localPageNumber,
   pageDocumentLabel,
   primaryDocument,
   totalPageCount,
 } from "../src/model/documents";
-import { defaultDocument } from "../src/model/layers";
+import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef } from "../src/model/types";
 
 function pdf(name: string, pageCount: number): DocumentRef {
@@ -59,5 +62,80 @@ describe("document page mapping", () => {
   it("exposes the primary document", () => {
     expect(primaryDocument(documents)?.name).toBe("Bottom.pdf");
     expect(primaryDocument([])).toBeUndefined();
+  });
+
+  it("maps across source pages that are excluded from the project", () => {
+    const trimmed = [
+      { ...pdf("Bottom.pdf", 3), excludedPages: [2] },
+      pdf("Upper.pdf", 2),
+    ];
+    expect(includedLocalPages(trimmed[0])).toEqual([1, 3]);
+    expect(totalPageCount(trimmed)).toBe(4);
+    expect(documentPageMaps(trimmed)).toEqual([[1, 3], [1, 2]]);
+    expect(documentStartPage(trimmed, 1)).toBe(3);
+    expect(localPageNumber(trimmed, 2)).toBe(3);
+    expect(localPageNumber(trimmed, 3)).toBe(1);
+    expect(documentPageRange(trimmed, 0)).toEqual({ start: 1, end: 2 });
+  });
+
+  it("uses the first document that still has pages as primary", () => {
+    const trimmed = [
+      { ...pdf("Empty.pdf", 1), excludedPages: [1] },
+      pdf("Upper.pdf", 2),
+    ];
+    expect(primaryDocument(trimmed)?.name).toBe("Upper.pdf");
+  });
+});
+
+function pageProject() {
+  const project = createProject(pdf("Bottom.pdf", 3), createDefaultLayers());
+  project.documents.push(pdf("Upper.pdf", 1));
+  const measure = project.layers.find((layer) => layer.kind === "measure")!;
+  measure.items = [
+    { id: "p1", page: 1, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
+    { id: "p2", page: 2, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
+    { id: "p3", page: 3, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
+    { id: "p4", page: 4, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
+  ];
+  project.pages = { "1": {}, "2": {}, "3": {}, "4": {} };
+  return project;
+}
+
+const now = "2026-01-01T00:00:00.000Z";
+
+describe("page deletion", () => {
+  it("removes the page, its items, and remaps later pages", () => {
+    const project = pageProject();
+    const result = deletePageFromProject(project, 2);
+    expect(result).toEqual({ page: 2, removedDocumentIndex: null });
+    expect(totalPageCount(project.documents)).toBe(3);
+    expect(project.documents[0].excludedPages).toEqual([2]);
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    expect(measure.items.map((item) => [item.id, item.page])).toEqual([
+      ["p1", 1],
+      ["p3", 2],
+      ["p4", 3],
+    ]);
+    expect(Object.keys(project.pages)).toEqual(["1", "2", "3"]);
+  });
+
+  it("removes a document when its last included page is deleted", () => {
+    const project = pageProject();
+    const result = deletePageFromProject(project, 4);
+    expect(result).toEqual({ page: 3, removedDocumentIndex: 1 });
+    expect(project.documents.map((document) => document.name)).toEqual(["Bottom.pdf"]);
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    expect(measure.items.map((item) => item.id)).toEqual(["p1", "p2", "p3"]);
+  });
+
+  it("refuses to delete the last remaining page", () => {
+    const project = createProject(pdf("Only.pdf", 1), createDefaultLayers());
+    expect(deletePageFromProject(project, 1)).toBeNull();
+  });
+
+  it("refuses pages outside the project", () => {
+    const project = pageProject();
+    expect(deletePageFromProject(project, 0)).toBeNull();
+    expect(deletePageFromProject(project, 99)).toBeNull();
   });
 });

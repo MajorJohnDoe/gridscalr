@@ -9,7 +9,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.2.0`.
-- Current project-file schema: `6`.
+- Current project-file schema: `7`.
 - Etapp 1, Etapp 2, Etapp 3 and Etapp 4 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
@@ -35,7 +35,8 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
 - Project files must remain backward compatible. Every schema change needs migration tests for the current and previous version.
-- Pages are append-only. New documents add pages after the existing ones; never insert, reorder, or delete pages, because measurements reference page numbers.
+- New documents always append pages at the end. Never insert or reorder pages.
+- Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items and page state, remap later item/page-state numbers, keep at least one page in the project, and resync the PDF renderer. Source files are never modified.
 - Derived quantities and summaries are calculated from item data, never stored as separate sources of truth.
 - Exports must use the same visibility and locking rules as the canvas.
 - Do not add cloud sync, accounts, telemetry, or network dependencies without an explicit decision.
@@ -168,7 +169,7 @@ src/io/projectFile.ts      schema normalization, migration, serialization, relat
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
 src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
-src/model/documents.ts     page to document mapping and append-only helpers
+src/model/documents.ts     page mapping, included-page lists, and page deletion remapping
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src-tauri/src/commands.rs  atomic file writes and path checks
 docs/user-guide.md         in-app user guide
@@ -196,7 +197,7 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 - **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
 - **Etapp 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
 - **Etapp 4:** complete — embedded PNG/JPEG images, background/annotation modes, image handles, opacity/rotation, schema v5, and image-aware PDF export.
-- **Etapp 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6.
+- **Etapp 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6. Current schema after page management is v7.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

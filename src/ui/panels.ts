@@ -106,6 +106,7 @@ export interface PanelActions {
   navigateToItem: (page: number, layerId: string, itemId: string) => void;
   ensurePageSize: (page: number) => void;
   getPageSize: (page: number) => PageSize | undefined;
+  deletePage: (page: number) => void;
   refresh: () => void;
   restoreAutosave: () => void;
   getAutosave: () => AutosavePayload | null;

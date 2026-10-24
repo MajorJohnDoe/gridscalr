@@ -814,6 +814,18 @@ describe("project files", () => {
     expect(parsed.pages["3"].calibration?.source).toBe("manual");
   });
 
+  it("round-trips removed source pages and drops invalid exclusions", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.documents[0].excludedPages = [2, 2, 0, 99];
+    raw.schemaVersion = 6;
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.documents[0].excludedPages).toEqual([2]);
+    expect(parsed.pages["2"]).toBeUndefined();
+  });
+
   it("rejects a TIF document without its embedded PDF", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
