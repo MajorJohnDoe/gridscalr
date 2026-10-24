@@ -83,12 +83,17 @@ import {
   renderChrome,
   renderTopbar,
   requestMarkupRename,
-  showExportMenu,
   showSelectionMenuAt,
   updateStatus,
   type PanelActions,
 } from "../ui/panels";
 import { createShell, type ShellRefs } from "../ui/shell";
+import { openHelp } from "../ui/helpDialog";
+import { openMeasurementsDialog } from "../ui/measurementsDialog";
+import { openQuantitiesDialog } from "../ui/quantityDialog";
+import { openSettingsDialog } from "../ui/settingsDialog";
+import { openExportMenu, setMenuActions } from "../ui/topMenu";
+import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { toast } from "../ui/toast";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
@@ -133,14 +138,41 @@ export class App {
   private sizeEpoch = 0;
   private unsubscribe: () => void;
   private disposed = false;
+  private allowWindowClose = false;
+  private unlistenClose: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.refs = createShell(root);
     this.actions = {
       openPdf: () => void this.openPdfFlow(),
       openProject: () => void this.openProjectFlow(),
+      newProject: () => void this.newProjectFlow(),
+      closeProject: () => void this.closeProjectFlow(),
+      quit: () => void this.quitFlow(),
       saveProject: () => void this.saveProjectFlow(false),
+      saveProjectAs: () => void this.saveProjectFlow(true),
       exportAs: (kind) => void this.exportAs(kind),
+      undo: () => store.undo(),
+      redo: () => store.redo(),
+      zoomIn: () => {
+        this.canvas.zoomBy(1.2);
+        this.canvas.invalidate();
+      },
+      zoomOut: () => {
+        this.canvas.zoomBy(1 / 1.2);
+        this.canvas.invalidate();
+      },
+      zoomFit: () => {
+        this.canvas.fitPage();
+        this.canvas.invalidate();
+      },
+      zoomActual: () => {
+        this.canvas.actualSize();
+        this.canvas.invalidate();
+      },
+      renameSelection: () => requestMarkupRename(this.refs),
+      openMeasurements: () => openMeasurementsDialog(this.actions),
+      openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
       openManualScale: () => void this.openManualScaleFlow(),
@@ -171,6 +203,7 @@ export class App {
       getAutosave: () => store.readAutosave(),
       openRecent: (entry) => void this.openRecent(entry),
     };
+    setMenuActions(this.actions);
 
     this.canvas = new CanvasView(this.refs.canvasHost, {
       getRenderer: () => this.renderer,
@@ -198,6 +231,7 @@ export class App {
 
     this.bind();
     this.renderAll();
+    void this.bindWindowClose();
     void this.setupDragDrop();
   }
 
@@ -212,14 +246,6 @@ export class App {
 
   private bind(): void {
     const refs = this.refs;
-    refs.openPdfBtn.addEventListener("click", () => void this.openPdfFlow());
-    refs.openProjectBtn.addEventListener("click", () => void this.openProjectFlow());
-    refs.saveBtn.addEventListener("click", () => void this.saveProjectFlow(false));
-    refs.exportBtn.addEventListener("click", () => showExportMenu(refs.exportBtn, this.actions));
-    refs.importImageBtn.addEventListener("click", () => void this.insertImageFlow());
-
-    refs.undoBtn.addEventListener("click", () => store.undo());
-    refs.redoBtn.addEventListener("click", () => store.redo());
     refs.zoomOutBtn.addEventListener("click", () => this.canvas.zoomBy(1 / 1.2));
     refs.zoomInBtn.addEventListener("click", () => this.canvas.zoomBy(1.2));
     refs.zoomFitBtn.addEventListener("click", () => {
@@ -301,6 +327,11 @@ export class App {
     const key = event.key.toLowerCase();
 
     if (mod) {
+      if (event.altKey && event.code === "KeyQ") {
+        event.preventDefault();
+        openQuantitiesDialog(this.actions);
+        return;
+      }
       switch (key) {
         case "z":
           event.preventDefault();
@@ -310,6 +341,34 @@ export class App {
         case "y":
           event.preventDefault();
           store.redo();
+          return;
+        case "n":
+          event.preventDefault();
+          void this.newProjectFlow();
+          return;
+        case "q":
+          event.preventDefault();
+          if (!event.altKey && !event.shiftKey) void this.quitFlow();
+          return;
+        case "m":
+          if (event.shiftKey) {
+            event.preventDefault();
+            openMeasurementsDialog(this.actions);
+          }
+          return;
+        case "d":
+          event.preventDefault();
+          this.duplicateSelection();
+          return;
+        case ",":
+          event.preventDefault();
+          openSettingsDialog();
+          return;
+        case "\\":
+        case "|":
+          event.preventDefault();
+          if (event.shiftKey) toggleInspector();
+          else toggleSidebar();
           return;
         case "s":
           event.preventDefault();
@@ -330,7 +389,7 @@ export class App {
           return;
         case "e":
           event.preventDefault();
-          showExportMenu(this.refs.exportBtn, this.actions);
+          openExportMenu();
           return;
         case "0":
           event.preventDefault();
@@ -357,6 +416,18 @@ export class App {
     }
 
     if (event.altKey) return;
+
+    if (event.key === "F1") {
+      event.preventDefault();
+      openHelp("guide");
+      return;
+    }
+
+    if (event.key === "?") {
+      event.preventDefault();
+      openHelp("shortcuts");
+      return;
+    }
 
     if (event.key === "F2") {
       event.preventDefault();
@@ -423,16 +494,6 @@ export class App {
       event.preventDefault();
       store.setTool(tool);
       return;
-    }
-
-    if (key === "?" || (event.shiftKey && key === "/")) {
-      event.preventDefault();
-      void messageDialog(
-        "Keyboard shortcuts",
-        "Tools: V select · H pan · K calibrate · L length · A area · C count · P pen · I line · U arrow · R rectangle · O ellipse · G highlight · T text. " +
-          "Editing: Enter finish · Esc cancel/clear · Delete remove · arrows nudge · Ctrl+C/X/V copy, cut and paste · Ctrl+Z undo · Ctrl+Shift+Z redo. " +
-          "View: Ctrl+wheel zoom · Space+drag pan · Ctrl+0 fit · Ctrl+1 actual size · PageUp/PageDown change page.",
-      );
     }
   };
 
@@ -537,6 +598,91 @@ export class App {
       "change",
     );
     toast(cleared ? "Page scale cleared." : "The page scale could not be cleared.", cleared ? "info" : "warning");
+  }
+
+  private async newProjectFlow(): Promise<void> {
+    try {
+      const picked = await pickDrawing();
+      if (!picked) return;
+      if (!(await this.confirmDiscardChanges())) return;
+      await this.resetProject();
+      await this.loadNewPdf(picked.bytes, picked.name, picked.path);
+    } catch (error) {
+      await messageDialog("Could not open drawing", errorMessage(error), "warning");
+    }
+  }
+
+  private async closeProjectFlow(): Promise<void> {
+    if (!(await this.confirmDiscardChanges())) return;
+    await this.resetProject();
+    toast("Project closed.", "info");
+  }
+
+  private async quitFlow(): Promise<void> {
+    if (!(await this.confirmDiscardChanges())) return;
+    if (store.dirty) store.clearAutosave();
+    if (!isTauri) {
+      window.close();
+      toast("Close the browser tab to quit.", "info");
+      return;
+    }
+    this.allowWindowClose = true;
+    try {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      await getCurrentWindow().close();
+    } catch {
+      this.allowWindowClose = false;
+      toast("The window could not be closed. Close it from the title bar.", "warning");
+    }
+  }
+
+  private async bindWindowClose(): Promise<void> {
+    if (!isTauri) return;
+    try {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      const win = getCurrentWindow();
+      this.unlistenClose = await win.onCloseRequested(async (event) => {
+        if (this.allowWindowClose || !store.dirty) return;
+        event.preventDefault();
+        if (!(await this.confirmDiscardChanges())) return;
+        this.allowWindowClose = true;
+        store.clearAutosave();
+        await win.close();
+      });
+    } catch {
+      // The title-bar close still works; only the unsaved-change prompt is unavailable.
+    }
+  }
+
+  private async confirmDiscardChanges(): Promise<boolean> {
+    if (!store.project || !store.dirty) return true;
+    return confirmDialog(
+      "Discard unsaved changes?",
+      "The current project has unsaved changes. Continuing will discard them.",
+      "Discard changes",
+      { danger: true },
+    );
+  }
+
+  private async resetProject(): Promise<void> {
+    store.closeProject();
+    const renderer = this.renderer;
+    this.renderer = null;
+    if (renderer) {
+      try {
+        await renderer.destroy();
+      } catch {
+        // The documents may already be closed.
+      }
+    }
+    this.sizeEpoch++;
+    this.pageSizes.clear();
+    this.pageSizePromises.clear();
+    this.sizeQueue = [];
+    this.sizeActive = 0;
+    this.canvas.fitPage();
+    this.canvas.invalidate();
+    this.renderAll();
   }
 
   private async openPdfFlow(): Promise<void> {
@@ -1596,6 +1742,8 @@ export class App {
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
     window.removeEventListener("paste", this.onPaste);
+    this.unlistenClose?.();
+    this.unlistenClose = null;
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }

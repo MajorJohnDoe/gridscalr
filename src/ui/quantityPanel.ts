@@ -8,8 +8,6 @@ import { formatNumber } from "../model/units";
 import { store } from "../state/store";
 import { clear, el, option } from "./dom";
 import { icon } from "./icons";
-import type { ShellRefs } from "./shell";
-import type { PanelActions } from "./panels";
 
 let pageFilter: "current" | "all" = "current";
 let categoryFilter = "";
@@ -369,9 +367,8 @@ function renderNotice(summary: QuantitySummary): HTMLElement | null {
 }
 
 function rerender(): void {
-  const body = document.querySelector<HTMLElement>(".dock-body");
-  if (!body) return;
-  renderQuantitiesBody(body);
+  if (!activeContainer) return;
+  renderQuantitiesBody(activeContainer);
 }
 
 function renderQuantitiesBody(body: HTMLElement): void {
@@ -389,7 +386,13 @@ function renderQuantitiesBody(body: HTMLElement): void {
   body.append(panel);
 }
 
-export function renderQuantities(refs: ShellRefs, actions: PanelActions): void {
+let activeContainer: HTMLElement | null = null;
+
+export function unmountQuantities(): void {
+  activeContainer = null;
+}
+
+export function mountQuantities(container: HTMLElement): void {
   const project = store.project;
   if (!project) return;
   const identity = `${project.id}\u0000${project.documents.map((document) => document.sha256).join("+")}`;
@@ -397,16 +400,6 @@ export function renderQuantities(refs: ShellRefs, actions: PanelActions): void {
     projectIdentity = identity;
     resetFilters();
   }
-  renderQuantitiesBody(refs.dockBody);
-  const exportCsv = el("button", "btn btn-small btn-ghost", "Export quantity CSV");
-  exportCsv.type = "button";
-  exportCsv.innerHTML = `${icon("csv", 13)}<span>CSV</span>`;
-  exportCsv.title = "Export the quantity report as CSV";
-  exportCsv.addEventListener("click", () => actions.exportAs("quantity-csv"));
-  const exportPdf = el("button", "btn btn-small btn-ghost", "Export quantity PDF");
-  exportPdf.type = "button";
-  exportPdf.innerHTML = `${icon("file", 13)}<span>PDF</span>`;
-  exportPdf.title = "Export a print-friendly quantity report as PDF";
-  exportPdf.addEventListener("click", () => actions.exportAs("quantity-pdf"));
-  refs.dockFooter.append(exportCsv, exportPdf);
+  activeContainer = container;
+  renderQuantitiesBody(container);
 }

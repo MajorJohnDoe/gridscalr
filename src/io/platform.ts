@@ -260,7 +260,7 @@ export function addRecent(entry: RecentEntry): void {
   try {
     const entries = getRecent().filter((e) => e.path !== entry.path || e.kind !== entry.kind);
     entries.unshift(entry);
-    localStorage.setItem(RECENT_KEY, JSON.stringify(entries.slice(0, 8)));
+    localStorage.setItem(RECENT_KEY, JSON.stringify(entries.slice(0, 10)));
   } catch {
     // Recent files are a convenience only.
   }
