@@ -46,6 +46,32 @@ export interface PickedPdf {
   bytes: Uint8Array;
 }
 
+/** Picks a drawing: PDF or a scanned TIF. */
+export async function pickDrawing(): Promise<PickedPdf | null> {
+  if (isTauri) {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const path = await open({
+      multiple: false,
+      directory: false,
+      filters: [
+        { name: "Drawing", extensions: ["pdf", "tif", "tiff"] },
+        { name: "PDF", extensions: ["pdf"] },
+        { name: "TIFF image", extensions: ["tif", "tiff"] },
+      ],
+    });
+    if (!path || Array.isArray(path)) return null;
+    const bytes = await readFileBytes(path);
+    return { name: path.split(/[\\/]/).pop() ?? "Drawing.pdf", path, bytes };
+  }
+  const file = await browserFilePicker("application/pdf,.pdf,image/tiff,.tif,.tiff");
+  if (!file) return null;
+  return {
+    name: file.name,
+    path: null,
+    bytes: new Uint8Array(await file.arrayBuffer()),
+  };
+}
+
 export async function pickPdf(): Promise<PickedPdf | null> {
   if (isTauri) {
     const { open } = await import("@tauri-apps/plugin-dialog");

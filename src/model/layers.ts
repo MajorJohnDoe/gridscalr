@@ -59,6 +59,8 @@ export function createDefaultLayers(): Layer[] {
 
 export function defaultDocument(name = "Untitled", pageCount = 1): DocumentRef {
   return {
+    id: makeId("doc"),
+    kind: "pdf",
     name,
     path: null,
     relativePath: null,
@@ -76,8 +78,8 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
   return {
     schemaVersion: SCHEMA_VERSION,
     id: makeId("project"),
-    name: document.name.replace(/\.pdf$/i, "") || "Untitled",
-    document,
+    name: document.name.replace(/\.(pdf|tiff?)$/i, "") || "Untitled",
+    documents: [document],
     settings: { ...DEFAULT_SETTINGS, quantity: createDefaultQuantitySettings(categories) },
     categories,
     assets: {},

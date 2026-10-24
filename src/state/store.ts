@@ -1,3 +1,4 @@
+import { totalPageCount } from "../model/documents";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
   addCategory as addCategoryToProject,
@@ -16,6 +17,7 @@ import type {
   AreaShape,
   Category,
   CountType,
+  DocumentRef,
   ImageAsset,
   LayerKind,
   Point,
@@ -217,9 +219,25 @@ export class Store {
     this.emit("view");
   }
 
+  /**
+   * Appends a source document. Document import is structural like opening a
+   * file, so it clears the undo history instead of pretending to be undoable.
+   * Pages are append-only; existing page indexes never move.
+   */
+  addDocument(document: DocumentRef): void {
+    if (!this.project) return;
+    this.project.documents.push(document);
+    this.undoStack = [];
+    this.redoStack = [];
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    this.scheduleAutosave();
+  }
+
   setPage(page: number): void {
     if (!this.project) return;
-    const clamped = Math.max(1, Math.min(this.project.document.pageCount, Math.round(page)));
+    const clamped = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
     if (clamped === this.ui.page) return;
     this.ui.page = clamped;
     this.ui.selection = [];
@@ -608,7 +626,7 @@ export class Store {
       const raw = localStorage.getItem(AUTOSAVE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw) as AutosavePayload;
-      if (!parsed?.project?.document) return null;
+      if (!Array.isArray(parsed?.project?.documents) || !parsed.project.documents.length) return null;
       return parsed;
     } catch {
       return null;

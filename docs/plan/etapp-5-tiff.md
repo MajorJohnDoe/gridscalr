@@ -1,6 +1,6 @@
 # Etapp 5 – TIF-ritningar och flera dokument
 
-**Status:** fastställd 2026-10-24. Besluten nedan är låsta för Etapp 5. Etapp 5 höjer projektformatet till schema v6.
+**Status:** genomförd 2026-10-24. Besluten nedan är låsta för Etapp 5. Projektformatet är nu schema v6.
 
 ## Mål
 

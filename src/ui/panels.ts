@@ -7,6 +7,7 @@ import {
 } from "../model/categories";
 import { hasClipboard } from "../model/clipboard";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countTypeLabel } from "../model/countSymbols";
+import { pageDocumentLabel, primaryDocument, totalPageCount } from "../model/documents";
 import {
   duplicateLayer,
   findItem,
@@ -203,9 +204,9 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     refs.projectName.textContent = project?.name ?? "";
   }
   refs.projectName.title = "Double-click to rename project";
-  refs.docName.textContent = project?.document.name ?? "No drawing open";
+  refs.docName.textContent = project ? (primaryDocument(project.documents)?.name ?? "No drawing open") : "No drawing open";
   refs.docMeta.textContent = project
-    ? `Page ${store.ui.page} of ${project.document.pageCount}`
+    ? `Page ${store.ui.page} of ${totalPageCount(project.documents)}`
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
   refs.dirtyDot.title = "Unsaved changes";
@@ -218,11 +219,11 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;
-  refs.pageNextBtn.disabled = !hasProject || store.ui.page >= (project?.document.pageCount ?? 1);
+  refs.pageNextBtn.disabled = !hasProject || store.ui.page >= (project ? totalPageCount(project.documents) : 1);
   if (document.activeElement !== refs.pageInput) {
     refs.pageInput.value = hasProject ? String(store.ui.page) : "1";
   }
-  refs.pageTotal.textContent = `/ ${project?.document.pageCount ?? 0}`;
+  refs.pageTotal.textContent = `/ ${project ? totalPageCount(project.documents) : 0}`;
 }
 
 function renderToolRail(refs: ShellRefs): void {
@@ -269,7 +270,7 @@ function renderStatus(refs: ShellRefs): void {
     : "X —  Y —";
   refs.statusCoords.innerHTML = `<span class="status-label">Cursor</span> <span class="status-value">${coords}</span>`;
   refs.statusZoom.innerHTML = `<span class="status-label">Zoom</span> <span class="status-value">${Math.round(store.ui.zoom * 100)}%</span>`;
-  refs.statusPage.innerHTML = `<span class="status-label">Page</span> <span class="status-value">${store.ui.page} / ${project.document.pageCount}</span>`;
+  refs.statusPage.innerHTML = `<span class="status-label">Page</span> <span class="status-value">${store.ui.page} / ${totalPageCount(project.documents)}</span>${project.documents.length > 1 ? ` <span class="status-doc">${escapeHtml(pageDocumentLabel(project, store.ui.page))}</span>` : ""}`;
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   refs.statusLayer.innerHTML = active
     ? `<span class="status-label">Layer</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
@@ -293,7 +294,7 @@ export function renderDock(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.dockFooter);
   if (!store.project) {
     const note = el("div", "empty-note");
-    note.innerHTML = `${icon("folder", 26)}<div>Open a PDF drawing to start measuring.</div>`;
+    note.innerHTML = `${icon("folder", 26)}<div>Open a PDF or TIF drawing to start measuring.</div>`;
     refs.dockBody.append(note);
     return;
   }
@@ -613,7 +614,7 @@ function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActio
 function renderPages(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project!;
   const list = el("div", "page-list");
-  const total = project.document.pageCount;
+  const total = totalPageCount(project.documents);
   const max = Math.min(total, 400);
   for (let page = 1; page <= max; page++) {
     actions.ensurePageSize(page);
@@ -840,7 +841,7 @@ function renderMarkups(refs: ShellRefs, actions: PanelActions): void {
     }
     total.innerHTML = "";
     total.append(el("span", "", `${rows.length} markup${rows.length === 1 ? "" : "s"}`));
-    total.append(el("span", "", markupPageFilter === "current" ? `Page ${store.ui.page}` : `${project.document.pageCount} pages`));
+    total.append(el("span", "", markupPageFilter === "current" ? `Page ${store.ui.page}` : `${totalPageCount(project.documents)} pages`));
   };
 
   pageSelect.addEventListener("change", () => {
@@ -2260,13 +2261,13 @@ function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
     el(
       "p",
       "welcome-subtitle",
-      "Open architectural or engineering PDF drawings, calibrate the scale, and measure lengths and areas. Organise every measurement and markup on separate, lockable layers — entirely on your device.",
+      "Open architectural or engineering drawings as PDF or scanned TIF, calibrate the scale, and measure lengths and areas. Add several sheets to one project. Everything stays on your device.",
     ),
   );
   const actionsWrap = el("div", "welcome-actions");
-  const open = el("button", "btn btn-primary", "Open PDF drawing");
+  const open = el("button", "btn btn-primary", "Open drawing");
   open.type = "button";
-  open.innerHTML = `${icon("folder", 16)}<span>Open PDF drawing</span>`;
+  open.innerHTML = `${icon("folder", 16)}<span>Open drawing</span>`;
   open.addEventListener("click", actions.openPdf);
   const openProject = el("button", "btn", "Open project");
   openProject.type = "button";

@@ -55,8 +55,15 @@ export async function exportProjectPdf(
   renderer: PdfRenderer,
   options?: DrawingExportOptions,
 ): Promise<Uint8Array> {
-  const source = await renderer.document.getData();
-  const pdf = await PDFDocument.load(source);
+  // Merge every source document into one working PDF so page numbers, crops and
+  // labels keep referring to the same global page index as the canvas.
+  const pdf = await PDFDocument.create();
+  for (let index = 0; index < project.documents.length; index++) {
+    const bytes = await renderer.getDocumentData(index);
+    const source = await PDFDocument.load(bytes);
+    const copied = await pdf.copyPages(source, source.getPageIndices());
+    for (const page of copied) pdf.addPage(page);
+  }
   pdf.registerFontkit(fontkit);
   const fonts = await embedFonts(pdf);
 

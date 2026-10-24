@@ -91,6 +91,7 @@ import {
   TEXT_FONT_STACK,
   textItemLayout,
 } from "../model/text";
+import { totalPageCount } from "../model/documents";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
@@ -1631,7 +1632,7 @@ export class CanvasView {
     const result = await calibrationDialog({
       defaultUnit: project.settings.lengthUnit,
       hasMeasurements: pagesAffected,
-      pageCount: project.document.pageCount,
+      pageCount: totalPageCount(project.documents),
       currentPage: page,
     });
     if (!result) {
@@ -1645,7 +1646,7 @@ export class CanvasView {
         changed = setPageCalibration(project, page, calibration, {
           applyToAll: result.applyToAll,
           updateMeasurements: result.updateMeasurements,
-          pageCount: project.document.pageCount,
+          pageCount: totalPageCount(project.documents),
         });
       },
       "change",
@@ -1657,7 +1658,7 @@ export class CanvasView {
     }
     store.setTool("select");
     const lockedSkipped = result.applyToAll
-      ? project.document.pageCount - changed.length
+      ? totalPageCount(project.documents) - changed.length
       : 0;
     toast(
       result.applyToAll
@@ -1696,7 +1697,7 @@ export class CanvasView {
       initialKnownLength: calibration.knownLength,
       initialUnit: calibration.unit,
       hasMeasurements: pagesAffected,
-      pageCount: project.document.pageCount,
+      pageCount: totalPageCount(project.documents),
       currentPage: page,
     });
     if (!result) return;
@@ -1711,7 +1712,7 @@ export class CanvasView {
         setPageCalibration(project, page, next, {
           applyToAll: false,
           updateMeasurements: result.updateMeasurements,
-          pageCount: project.document.pageCount,
+          pageCount: totalPageCount(project.documents),
         });
       },
       "change",

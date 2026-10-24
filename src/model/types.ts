@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 5 as const;
+export const SCHEMA_VERSION = 6 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -133,13 +133,31 @@ export interface PageState {
   scaleLocked?: boolean;
 }
 
+export type DocumentKind = "pdf" | "tiff";
+
+/** Provenance for a document that GridScalr derived itself, such as a converted TIF. */
+export interface DocumentSourceInfo {
+  format: "tiff";
+  /** X and Y resolution in dots per inch, as read from the TIFF. */
+  dpi: [number, number];
+  originalName: string;
+}
+
 export interface DocumentRef {
+  /** Stable id. Page numbers map onto documents in array order. */
+  id: string;
+  kind: DocumentKind;
   name: string;
   path: string | null;
   relativePath: string | null;
+  /** Hash of the source file. For a TIF this is the original .tif, not the derived PDF. */
   sha256: string;
   pageCount: number;
   sizeBytes: number;
+  /** Only for kind "tiff": base64 encoded PDF derived from the TIFF. */
+  embeddedPdf?: string;
+  /** Only for kind "tiff". */
+  source?: DocumentSourceInfo;
 }
 
 export interface ProjectSettings {
@@ -178,7 +196,8 @@ export interface Project {
   schemaVersion: typeof SCHEMA_VERSION;
   id: string;
   name: string;
-  document: DocumentRef;
+  /** Source documents in page order. Always at least one. Pages are append-only. */
+  documents: DocumentRef[];
   settings: ProjectSettings;
   /** Ordered category list. At least one category always exists. */
   categories: Category[];

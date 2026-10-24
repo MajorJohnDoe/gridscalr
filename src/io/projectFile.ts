@@ -14,6 +14,7 @@ import {
 } from "../model/layers";
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
+import { totalPageCount } from "../model/documents";
 import type {
   AreaMode,
   AreaShape,
@@ -21,6 +22,7 @@ import type {
   Calibration,
   Category,
   CountType,
+  DocumentRef,
   ImageAsset,
   ImageMode,
   ItemKind,
@@ -392,28 +394,20 @@ function normalizeLayers(
   );
 }
 
-export function parseProject(text: string): Project {
-  let data: unknown;
-  try {
-    data = JSON.parse(text);
-  } catch {
-    throw new Error("This file is not valid JSON.");
-  }
-  if (typeof data !== "object" || data === null) throw new Error("Project file is empty or invalid.");
-  const raw = data as Partial<Project>;
-  if (typeof raw.schemaVersion !== "number") throw new Error("Project file has no schema version.");
-  if (raw.schemaVersion > SCHEMA_VERSION) {
-    throw new Error("This project was created by a newer version of GridScalr.");
-  }
-  if (typeof raw.document !== "object" || raw.document === null) {
-    throw new Error("Project file has no document reference.");
-  }
-  const rawDoc = raw.document;
-  const doc = {
+function normalizeDocument(rawValue: unknown): DocumentRef {
+  const rawDoc = (typeof rawValue === "object" && rawValue !== null ? rawValue : {}) as Partial<DocumentRef> & {
+    source?: { format?: unknown; dpi?: unknown; originalName?: unknown };
+  };
+  const kind = rawDoc.kind === "tiff" ? "tiff" : "pdf";
+  const document: DocumentRef = {
+    id: typeof rawDoc.id === "string" && rawDoc.id ? rawDoc.id : makeId("doc"),
+    kind,
     name:
       typeof rawDoc.name === "string" && rawDoc.name.trim()
         ? rawDoc.name
-        : "Untitled.pdf",
+        : kind === "tiff"
+          ? "Untitled.tif"
+          : "Untitled.pdf",
     path: typeof rawDoc.path === "string" && rawDoc.path ? rawDoc.path : null,
     relativePath:
       typeof rawDoc.relativePath === "string" && rawDoc.relativePath
@@ -429,7 +423,57 @@ export function parseProject(text: string): Project {
         ? Math.max(0, Math.round(rawDoc.sizeBytes))
         : 0,
   };
-  const base = createProject(doc, createDefaultLayers());
+  if (kind === "tiff") {
+    if (typeof rawDoc.embeddedPdf !== "string" || !rawDoc.embeddedPdf) {
+      throw new Error("A TIF document in this project is missing its embedded PDF.");
+    }
+    document.embeddedPdf = rawDoc.embeddedPdf;
+    const dpi = Array.isArray(rawDoc.source?.dpi) ? rawDoc.source.dpi : [];
+    const x = typeof dpi[0] === "number" && dpi[0] > 0 ? dpi[0] : 300;
+    const y = typeof dpi[1] === "number" && dpi[1] > 0 ? dpi[1] : x;
+    document.source = {
+      format: "tiff",
+      dpi: [x, y],
+      originalName:
+        typeof rawDoc.source?.originalName === "string" && rawDoc.source.originalName
+          ? rawDoc.source.originalName
+          : document.name,
+    };
+  }
+  return document;
+}
+
+export function parseProject(text: string): Project {
+  let data: unknown;
+  try {
+    data = JSON.parse(text);
+  } catch {
+    throw new Error("This file is not valid JSON.");
+  }
+  if (typeof data !== "object" || data === null) throw new Error("Project file is empty or invalid.");
+  const raw = data as Partial<Project>;
+  if (typeof raw.schemaVersion !== "number") throw new Error("Project file has no schema version.");
+  if (raw.schemaVersion > SCHEMA_VERSION) {
+    throw new Error("This project was created by a newer version of GridScalr.");
+  }
+  const legacy = (raw as { document?: unknown }).document;
+  const rawDocuments: unknown[] = Array.isArray((raw as { documents?: unknown }).documents)
+    ? ((raw as { documents: unknown[] }).documents)
+    : legacy
+      ? [legacy]
+      : [];
+  if (!rawDocuments.length) {
+    throw new Error("Project file has no document reference.");
+  }
+  // Schema 5 and earlier stored exactly one document. Migration wraps it in a list.
+  const documents = rawDocuments.map((entry) => normalizeDocument(entry));
+  const seen = new Set<string>();
+  for (const document of documents) {
+    if (seen.has(document.id)) document.id = makeId("doc");
+    seen.add(document.id);
+  }
+  const total = totalPageCount(documents);
+  const base = createProject(documents[0], createDefaultLayers());
   const categories = normalizeCategories(raw.categories);
   const settings = normalizeSettings(raw.settings, categories);
   const assets = normalizeAssets(raw.assets);
@@ -437,7 +481,7 @@ export function parseProject(text: string): Project {
     ...base,
     id: typeof raw.id === "string" ? raw.id : base.id,
     name: typeof raw.name === "string" && raw.name.trim() ? raw.name : base.name,
-    document: doc,
+    documents,
     settings,
     categories,
     assets,
@@ -456,7 +500,7 @@ export function parseProject(text: string): Project {
   if (raw.pages && typeof raw.pages === "object") {
     for (const [key, value] of Object.entries(raw.pages)) {
       const page = Number(key);
-      if (!Number.isInteger(page) || page < 1) continue;
+      if (!Number.isInteger(page) || page < 1 || page > total) continue;
       const rawPage = value as { calibration?: unknown; scaleLocked?: unknown } | null;
       const cal = normalizeCalibration(rawPage?.calibration);
       if (cal) {

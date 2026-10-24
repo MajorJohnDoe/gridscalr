@@ -98,7 +98,7 @@ async function makeRenderer(): Promise<PdfRenderer> {
   const raw = await source.save();
 
   return {
-    document: { getData: async () => raw },
+    getDocumentData: async () => raw,
     getPage: async (pageNumber: number) => ({
       getViewport: ({ scale = 1 }: { scale?: number } = {}) => {
         const pageSize = pageNumber === 1 ? { width: 200, height: 120 } : { width: 300, height: 200 };
@@ -535,5 +535,45 @@ describe("flattened PDF export", () => {
       2,
     );
     expect(withoutHiddenCount.some((item) => item.text === "Door")).toBe(false);
+  });
+  it("exports pages from every source document in project order", async () => {
+    const first = await PDFDocument.create();
+    first.addPage([100, 100]);
+    const second = await PDFDocument.create();
+    second.addPage([200, 200]);
+    second.addPage([200, 200]);
+    const firstBytes = await first.save();
+    const secondBytes = await second.save();
+
+    const project = createProject(defaultDocument("First.pdf", 1), createDefaultLayers());
+    project.documents.push({
+      ...defaultDocument("Second.pdf", 2),
+      id: "doc_second",
+      kind: "pdf",
+    });
+
+    const sizes = [
+      { width: 100, height: 100 },
+      { width: 200, height: 200 },
+      { width: 200, height: 200 },
+    ];
+    const renderer = {
+      getDocumentData: async (index: number) => (index === 0 ? firstBytes : secondBytes),
+      getPage: async (pageNumber: number) => ({
+        getViewport: ({ scale = 1 }: { scale?: number } = {}) => ({
+          ...sizes[pageNumber - 1],
+          width: sizes[pageNumber - 1].width * scale,
+          height: sizes[pageNumber - 1].height * scale,
+          scale,
+          convertToPdfPoint: (x: number, y: number) => [x / scale, sizes[pageNumber - 1].height - y / scale],
+        }),
+      }),
+    } as unknown as PdfRenderer;
+
+    const bytes = await exportProjectPdf(project, renderer);
+    const output = await PDFDocument.load(bytes);
+    expect(output.getPageCount()).toBe(3);
+    expect(output.getPage(0).getSize()).toEqual({ width: 100, height: 100 });
+    expect(output.getPage(2).getSize()).toEqual({ width: 200, height: 200 });
   });
 });

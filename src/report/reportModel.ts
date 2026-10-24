@@ -1,5 +1,6 @@
 import { calculateQuantities, type QuantityFilters, type QuantitySummary } from "../model/quantity";
 import { formatScale } from "../model/units";
+import { totalPageCount } from "../model/documents";
 import type { Project } from "../model/types";
 
 export interface QuantityReport {
@@ -35,8 +36,11 @@ export function buildQuantityReport(
   });
   return {
     projectName: project.name,
-    documentName: project.document.name,
-    documentSha256: project.document.sha256,
+    documentName: project.documents.map((document) => document.name).join(", "),
+    documentSha256: project.documents
+      .map((document) => document.sha256)
+      .filter(Boolean)
+      .join("+"),
     generatedAt: options.generatedAt ?? new Date().toISOString(),
     hiddenExcluded: summary.hiddenExcluded > 0,
     scaleSummary: describeScale(project),
@@ -64,7 +68,7 @@ function describeScale(project: Project): string {
   const calibration = calibrated[0].calibration;
   if (!calibration) return "No page calibration";
   const pages =
-    calibrated.length === project.document.pageCount
+    calibrated.length === totalPageCount(project.documents)
       ? "All pages"
       : `Page${calibrated.length === 1 ? "" : "s"} ${calibrated
           .map((entry) => entry.page)

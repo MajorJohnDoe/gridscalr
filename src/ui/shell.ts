@@ -76,8 +76,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const fileGroup = el("div", "topbar-group");
   const openPdfBtn = el("button", "btn btn-primary");
   openPdfBtn.type = "button";
-  openPdfBtn.innerHTML = `${icon("folder", 15)}<span>Open PDF</span>`;
-  openPdfBtn.title = "Open a PDF drawing (Ctrl+O)";
+  openPdfBtn.innerHTML = `${icon("folder", 15)}<span>Open drawing</span>`;
+  openPdfBtn.title = "Open a PDF or TIF drawing (Ctrl+O)";
   const openProjectBtn = makeIconButton("file", "Open project", "Ctrl+Shift+O");
   const saveBtn = makeIconButton("save", "Save project", "Ctrl+S");
   const exportBtn = makeIconButton("download", "Export", "Ctrl+E");

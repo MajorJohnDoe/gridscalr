@@ -392,7 +392,7 @@ function renderQuantitiesBody(body: HTMLElement): void {
 export function renderQuantities(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   if (!project) return;
-  const identity = `${project.id}\u0000${project.document.sha256}`;
+  const identity = `${project.id}\u0000${project.documents.map((document) => document.sha256).join("+")}`;
   if (identity !== projectIdentity) {
     projectIdentity = identity;
     resetFilters();

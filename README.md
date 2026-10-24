@@ -8,7 +8,8 @@ It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents
 
 ## Highlights
 
-- Open PDF plans locally with PDF.js.
+- Open PDF plans locally with PDF.js, or scanned TIF drawings with lossless CCITT G3/G4 import.
+- Keep several sheets in one project. Each PDF or TIF you open while a project is active is added after the existing pages, so a set of drawings shares one quantity take-off.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply a scale to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
@@ -98,9 +99,21 @@ Then open `fixtures/sample-plan.pdf` in GridScalr. It contains two A4 landscape 
 
 ### 1. Open a drawing
 
-Use **Open PDF**, drag a PDF onto the window, or choose it from the welcome screen. Password-protected PDFs prompt for a password.
+Use **Open drawing**, drag a PDF or TIF onto the window, or choose it from the welcome screen. Password-protected PDFs prompt for a password.
 
-Opening a PDF creates a new project. To continue previous work, open its `.gridscalr` file instead.
+Opening a drawing with no project active creates a new project. To continue previous work, open its `.gridscalr` file instead.
+
+With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. Page numbers are append-only: new sheets never shift existing pages, so measurements stay on the sheet they were drawn on. Use the page controls to move between sheets; the status bar names the source document and its local page number.
+
+#### TIF drawings
+
+Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper size and scale. The format is detected from the file contents, not the extension.
+
+- 1-bit CCITT Group 3 or Group 4 scans are written into the project losslessly, without re-encoding. A 126 megapixel A1 sheet stays a few hundred kilobytes and keeps full resolution when zoomed.
+- The page size comes from the scan's DPI tags: 12128 × 8072 pixels at 345 DPI becomes 893 × 594 mm. DPI gives the **paper** size, not the drawing scale, so calibrate the page against a known dimension as usual. If a scan has no resolution tags, 300 DPI is assumed and a warning is shown.
+- Multi-page TIFFs become several pages. Reduced-resolution preview images inside the file are skipped. Orientation tags 1, 3, 6, and 8 are honoured.
+- The converted PDF is embedded in the `.gridscalr` file, so a TIF project keeps working even if the original scan is moved. The original file path and SHA-256 are still stored for provenance.
+- Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a clear message.
 
 ### 2. Set the page scale
 
@@ -257,24 +270,40 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 ## Project files
 
-A `.gridscalr` file is UTF-8 JSON. It contains the document reference, per-page calibrations, settings, layers, markup items, and embedded images. The PDF itself is **not** embedded.
+A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, per-page calibrations, settings, layers, markup items, and embedded images. Referenced PDFs are **not** embedded; a TIF's converted PDF is, because the scan cannot be read directly at render time.
 
-Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 adds embedded image assets and image items.
+Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–4 projects load normally. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 6: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order, and page state beyond the last page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 5,
+  "schemaVersion": 6,
   "name": "Level 01",
-  "document": {
-    "name": "Level 01.pdf",
-    "path": "/home/ana/drawings/Level 01.pdf",
-    "relativePath": "../drawings/Level 01.pdf",
-    "sha256": "7ef5cc05...",
-    "pageCount": 12,
-    "sizeBytes": 4839201
-  },
+  "documents": [
+    {
+      "id": "doc_8f21c3",
+      "kind": "pdf",
+      "name": "Level 01.pdf",
+      "path": "/home/ana/drawings/Level 01.pdf",
+      "relativePath": "../drawings/Level 01.pdf",
+      "sha256": "7ef5cc05...",
+      "pageCount": 12,
+      "sizeBytes": 4839201
+    },
+    {
+      "id": "doc_tif_4b77de",
+      "kind": "tiff",
+      "name": "Site plan.tif",
+      "path": "/home/ana/drawings/Site plan.tif",
+      "relativePath": "../drawings/Site plan.tif",
+      "sha256": "1c9ad40e...",
+      "pageCount": 1,
+      "sizeBytes": 708779,
+      "embeddedPdf": "JVBERi0xLjQK...",
+      "source": { "format": "tiff", "dpi": [400, 400], "originalName": "Site plan.tif" }
+    }
+  ],
   "settings": {
     "lengthUnit": "mm",
     "areaUnit": "m2",
@@ -332,9 +361,9 @@ Version 1–4 projects load normally. Measurements are assigned to the `Other` c
 }
 ```
 
-On desktop, GridScalr tries the stored absolute PDF path first, then a path relative to the project file. If the PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. The project file is designed to stay useful when a project folder is moved without the drawing it references.
+On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
-Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes version 1–4 projects, repairs category references, and drops items that do not match their layer kind or reference a missing image.
+Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, category IDs, per-item visibility/lock flags, snap settings, and embedded image assets are preserved in the file. Reading validates the schema, normalizes version 1–5 projects, repairs category references, drops page state beyond the last page, and drops items that do not match their layer kind or reference a missing image.
 
 ## Keyboard shortcuts
 
@@ -363,7 +392,7 @@ Layer IDs, item IDs, calibration data, quick-area shapes, scale locks, timestamp
 | Previous / next page | `PageUp` / `PageDown` |
 | Undo / Redo | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` |
 | Save / Save as | `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` |
-| Open PDF / Open project | `Ctrl/Cmd+O` / `Ctrl/Cmd+Shift+O` |
+| Open drawing / Open project | `Ctrl/Cmd+O` / `Ctrl/Cmd+Shift+O` |
 | Export menu | `Ctrl/Cmd+E` |
 | Shortcut reference | `?` |
 
@@ -433,5 +462,7 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - Snapping targets markup endpoints, midpoints, and intersections only. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
 - Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
 - Images support PNG and JPEG only. They are embedded in the project and count toward its file size; there is no external `assets/` folder. Image cropping, filters, and colour correction are not available.
+- TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages cannot be rearranged or removed, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.
+- Pages are append-only. A sheet can be added after the existing pages, but pages and documents cannot be reordered, inserted, or deleted.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

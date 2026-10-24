@@ -18,7 +18,7 @@ const SCALE = { pointsPerMeter: 100, sourceUnit: "m" as const };
 function makeProject(): Project {
   const project = createProject(defaultDocument("plan, final.pdf", 2), createDefaultLayers());
   project.name = "Example, project";
-  project.document.sha256 = "abc123";
+  project.documents[0].sha256 = "abc123";
   project.settings.lengthUnit = "m";
   project.settings.areaUnit = "m2";
   project.settings.quantity.wastePercent = 10;

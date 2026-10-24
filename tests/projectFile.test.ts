@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { createCalibration, createManualCalibration, manualPointsPerMeter } from "../src/model/calibration";
 import { findCategory } from "../src/model/categories";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem, Project } from "../src/model/types";
 import {
   parseProject,
@@ -41,8 +42,8 @@ describe("project files", () => {
 
     expect(parsed.id).toBe(project.id);
     expect(parsed.name).toBe("Floor Plan");
-    expect(parsed.document.name).toBe("Floor Plan.pdf");
-    expect(parsed.document.pageCount).toBe(2);
+    expect(parsed.documents[0].name).toBe("Floor Plan.pdf");
+    expect(parsed.documents[0].pageCount).toBe(2);
     expect(parsed.layers).toHaveLength(2);
     expect(parsed.pages["1"].calibration?.pointsPerMeter).toBe(20);
 
@@ -178,7 +179,9 @@ describe("project files", () => {
       }),
     );
 
-    expect(parsed.document).toEqual({
+    expect(parsed.documents).toHaveLength(1);
+    expect(parsed.documents[0]).toMatchObject({
+      kind: "pdf",
       name: "Untitled.pdf",
       path: null,
       relativePath: null,
@@ -186,6 +189,7 @@ describe("project files", () => {
       pageCount: 1,
       sizeBytes: 0,
     });
+    expect(parsed.documents[0].id).toMatch(/^doc_/);
   });
 
   it("leaves legacy items without a scale snapshot undefined", () => {
@@ -274,7 +278,7 @@ describe("project files", () => {
         ],
       };
       const parsed = parseProject(JSON.stringify(raw));
-      expect(parsed.schemaVersion).toBe(5);
+      expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
       expect(parsed.categories.map((entry) => entry.name)).toEqual([
         "Floor",
         "Wall",
@@ -480,7 +484,7 @@ describe("project files", () => {
     });
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(5);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.settings.snapTolerancePx).toBe(12);
     expect(parsed.pages["1"].scaleLocked).toBe(true);
     const calibration = parsed.pages["1"].calibration;
@@ -574,7 +578,7 @@ describe("project files", () => {
     });
 
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(5);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.settings.snapTolerancePx).toBe(2);
     expect(parsed.pages["2"]).toBeUndefined();
 
@@ -611,12 +615,12 @@ describe("project files", () => {
     expect(parsed.settings.areaUnit).toBe("yd2");
   });
 
-  it("migrates a v4 project to schema v5 with an empty asset map", () => {
+  it("migrates a v4 project to the current schema with an empty asset map", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 4;
     delete raw.assets;
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(5);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.assets).toEqual({});
   });
 
@@ -748,5 +752,91 @@ describe("project files", () => {
     expect(ids).not.toContain("missing_asset");
     expect(ids).not.toContain("bad_asset");
     expect(ids).not.toContain("image_on_measure");
+  });
+  it("migrates a schema 5 project into a single document entry", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    expect(raw.schemaVersion).toBe(SCHEMA_VERSION);
+    delete raw.documents;
+    raw.schemaVersion = 5;
+    raw.document = {
+      name: "Legacy.pdf",
+      path: "/plans/Legacy.pdf",
+      relativePath: "Legacy.pdf",
+      sha256: "oldhash",
+      pageCount: 2,
+      sizeBytes: 1024,
+    };
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.documents).toHaveLength(1);
+    expect(parsed.documents[0]).toMatchObject({
+      kind: "pdf",
+      name: "Legacy.pdf",
+      path: "/plans/Legacy.pdf",
+      relativePath: "Legacy.pdf",
+      sha256: "oldhash",
+      pageCount: 2,
+      sizeBytes: 1024,
+    });
+    expect(parsed.documents[0].id).toMatch(/^doc_/);
+    // Page state keys survive unchanged so calibrations keep pointing at the right sheet.
+    expect(parsed.pages["1"].calibration?.pointsPerMeter).toBe(20);
+  });
+
+  it("round-trips a project with an embedded TIF document", () => {
+    const project = makeProject();
+    project.documents.push({
+      id: "doc_tif",
+      kind: "tiff",
+      name: "Plan.tif",
+      path: "/plans/Plan.tif",
+      relativePath: "Plan.tif",
+      sha256: "tifhash",
+      pageCount: 1,
+      sizeBytes: 4096,
+      embeddedPdf: "JVBERi0xLjQK",
+      source: { format: "tiff", dpi: [400, 400], originalName: "Plan.tif" },
+    });
+    project.pages["3"] = { calibration: createManualCalibration(100) };
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.documents).toHaveLength(2);
+    expect(parsed.documents[1]).toMatchObject({
+      id: "doc_tif",
+      kind: "tiff",
+      name: "Plan.tif",
+      pageCount: 1,
+      embeddedPdf: "JVBERi0xLjQK",
+      source: { format: "tiff", dpi: [400, 400], originalName: "Plan.tif" },
+    });
+    expect(parsed.pages["3"].calibration?.source).toBe("manual");
+  });
+
+  it("rejects a TIF document without its embedded PDF", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.documents = [
+      {
+        id: "doc_tif",
+        kind: "tiff",
+        name: "Broken.tif",
+        path: null,
+        relativePath: null,
+        sha256: "",
+        pageCount: 1,
+        sizeBytes: 0,
+      },
+    ];
+    expect(() => parseProject(JSON.stringify(raw))).toThrow(/missing its embedded PDF/i);
+  });
+
+  it("drops page state beyond the last page", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.pages["9"] = { calibration: createManualCalibration(50) };
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.pages["9"]).toBeUndefined();
   });
 });

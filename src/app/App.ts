@@ -19,7 +19,12 @@ import {
   itemIsVisible,
   moveItemsToLayer,
 } from "../model/layers";
+import { makeId } from "../model/calibration";
 import { createImageItem } from "../model/images";
+import { totalPageCount } from "../model/documents";
+import { base64ToBytes } from "../io/base64";
+import { isTiff } from "../io/tiff";
+import { createTiffDocumentRef, tiffToPdf } from "../io/tiffImport";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { itemKindLabel, itemMetrics } from "../model/measure";
@@ -27,6 +32,7 @@ import { resolveSelection } from "../model/selection";
 import type {
   AreaMode,
   CountType,
+  DocumentRef,
   ImageAsset,
   ImageMode,
   Layer,
@@ -51,6 +57,7 @@ import {
   pickImage,
   pickPdf,
   pickProject,
+  pickDrawing,
   readFileBytes,
   readFileText,
   saveBinaryFile,
@@ -454,7 +461,7 @@ export class App {
     );
     const result = await manualScaleDialog({
       currentPage: page,
-      pageCount: project.document.pageCount,
+      pageCount: totalPageCount(project.documents),
       hasMeasurements,
       initialRatio: current?.source === "manual" ? current.ratio : undefined,
     });
@@ -466,7 +473,7 @@ export class App {
         changed = setPageCalibration(project, page, calibration, {
           applyToAll: result.applyToAll,
           updateMeasurements: result.updateMeasurements,
-          pageCount: project.document.pageCount,
+          pageCount: totalPageCount(project.documents),
         });
       },
       "change",
@@ -476,7 +483,7 @@ export class App {
       return;
     }
     const lockedSkipped = result.applyToAll
-      ? project.document.pageCount - changed.length
+      ? totalPageCount(project.documents) - changed.length
       : 0;
     toast(
       `Manual scale 1:${calibration.ratio} set on ${
@@ -534,11 +541,11 @@ export class App {
 
   private async openPdfFlow(): Promise<void> {
     try {
-      const picked = await pickPdf();
+      const picked = await pickDrawing();
       if (!picked) return;
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
-      await messageDialog("Could not open PDF", errorMessage(error), "warning");
+      await messageDialog("Could not open drawing", errorMessage(error), "warning");
     }
   }
 
@@ -562,24 +569,93 @@ export class App {
     );
   }
 
-  private async loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void> {
-    if (!(await this.confirmReplaceProject())) return;
-    const document = await this.openDocument(bytes, name);
-    if (!document) return;
-    const hash = await this.hashBytes(bytes);
-    const project = createProject({
-      name,
-      path,
-      relativePath: null,
-      sha256: hash,
-      pageCount: document.numPages,
-      sizeBytes: bytes.byteLength,
-    });
-    await this.installDocument(document, project, null, false);
-    if (path) {
-      addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });
+  private async loadNewPdf(
+    bytes: Uint8Array,
+    name: string,
+    path: string | null,
+  ): Promise<void> {
+    const tiff = isTiff(bytes);
+    let pdfBytes = bytes;
+    let documentRef: DocumentRef;
+    let dpiWarning = false;
+
+    if (tiff) {
+      let conversion;
+      try {
+        conversion = await tiffToPdf(bytes);
+      } catch (error) {
+        await messageDialog("Could not import TIF", errorMessage(error), "warning");
+        return;
+      }
+      const hash = await this.hashBytes(bytes);
+      documentRef = createTiffDocumentRef({
+        name,
+        path,
+        sha256: hash,
+        sizeBytes: bytes.byteLength,
+        conversion,
+      });
+      pdfBytes = conversion.bytes;
+      dpiWarning = conversion.pages.some((page) => !page.dpiKnown);
+    } else {
+      const hash = await this.hashBytes(bytes);
+      documentRef = {
+        id: makeId("doc"),
+        kind: "pdf",
+        name,
+        path,
+        relativePath: null,
+        sha256: hash,
+        pageCount: 1,
+        sizeBytes: bytes.byteLength,
+      };
     }
-    toast(`Opened ${name}`, "success");
+
+    const project = store.project;
+
+    if (!project) {
+      if (!(await this.confirmReplaceProject())) return;
+      const pdf = await this.openDocument(pdfBytes, name);
+      if (!pdf) return;
+      documentRef.pageCount = pdf.numPages;
+      const created = createProject(documentRef);
+      await this.installDocuments([pdf], created, null, false);
+      if (path) {
+        addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });
+      }
+      if (dpiWarning) {
+        toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
+      }
+      toast(`Opened ${name}`, "success");
+      return;
+    }
+
+    const pdf = await this.openDocument(pdfBytes, name);
+    if (!pdf) return;
+    const startPage = totalPageCount(project.documents) + 1;
+    const pageLabel = pdf.numPages === 1 ? "1 page" : `${pdf.numPages} pages`;
+    const confirmed = await confirmDialog(
+      "Add pages to project",
+      `“${name}” will be added as ${pageLabel} after page ${startPage - 1}. Existing measurements keep their page numbers.`,
+      "Add pages",
+    );
+    if (!confirmed) {
+      await pdf.loadingTask.destroy();
+      return;
+    }
+
+    documentRef.pageCount = pdf.numPages;
+    if (documentRef.kind === "tiff") documentRef.relativePath = null;
+    store.addDocument(documentRef);
+    this.renderer?.addDocument(pdf);
+    store.setPage(startPage);
+    await this.enqueuePageSize(startPage);
+    this.canvas.fitPage();
+    this.canvas.invalidate();
+    if (dpiWarning) {
+      toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
+    }
+    toast(`Added ${pageLabel} from ${name}.`, "success");
   }
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
@@ -599,65 +675,77 @@ export class App {
     projectPath: string | null,
     dirty: boolean,
   ): Promise<void> {
-    let pdfPath = project.document.path;
-    let bytes: Uint8Array | null = null;
-    let pickedName: string | null = null;
+    const loaded: PDFDocumentProxy[] = [];
 
-    if (isTauri) {
-      const candidates: string[] = [];
-      if (project.document.path) candidates.push(project.document.path);
-      if (projectPath && project.document.relativePath) {
-        const resolved = resolveRelativePath(projectPath, project.document.relativePath);
-        if (resolved) candidates.push(resolved);
-      }
-      for (const candidate of candidates) {
-        if (!(await pathExists(candidate))) continue;
-        try {
-          bytes = await readFileBytes(candidate);
-          pdfPath = candidate;
-          break;
-        } catch {
-          // Try the next candidate.
+    for (const documentRef of project.documents) {
+      let bytes: Uint8Array | null = null;
+      let pdfPath = documentRef.path;
+
+      if (documentRef.kind === "tiff" && documentRef.embeddedPdf) {
+        bytes = base64ToBytes(documentRef.embeddedPdf);
+        pdfPath = null;
+      } else if (isTauri) {
+        const candidates: string[] = [];
+        if (documentRef.path) candidates.push(documentRef.path);
+        if (projectPath && documentRef.relativePath) {
+          const resolved = resolveRelativePath(projectPath, documentRef.relativePath);
+          if (resolved) candidates.push(resolved);
+        }
+        for (const candidate of candidates) {
+          if (!(await pathExists(candidate))) continue;
+          try {
+            bytes = await readFileBytes(candidate);
+            pdfPath = candidate;
+            break;
+          } catch {
+            // Try the next candidate.
+          }
         }
       }
+
+      if (!bytes) {
+        const picked = await pickPdf();
+        if (!picked) return;
+        bytes = picked.bytes;
+        pdfPath = picked.path;
+        documentRef.name = picked.name;
+        documentRef.kind = "pdf";
+      }
+
+      // A TIF document carries the hash of the original .tif while `bytes` is
+      // the derived PDF, so only referenced PDFs can be checksum verified here.
+      const hash = documentRef.kind === "pdf" ? await this.hashBytes(bytes) : "";
+      if (documentRef.kind === "pdf" && documentRef.sha256 && hash && documentRef.sha256 !== hash) {
+        const proceed = await confirmDialog(
+          "PDF checksum changed",
+          `The PDF file “${documentRef.name}” no longer matches the checksum stored in this project. It may have been replaced or edited. Continue and update the checksum?`,
+          "Open anyway",
+          { danger: true },
+        );
+        if (!proceed) return;
+      }
+
+      const document = await this.openDocument(bytes, documentRef.name);
+      if (!document) return;
+
+      if (documentRef.pageCount !== document.numPages) {
+        toast(
+          `“${documentRef.name}” now has ${document.numPages} page${document.numPages === 1 ? "" : "s"} instead of ${documentRef.pageCount}.`,
+          "warning",
+        );
+        documentRef.pageCount = document.numPages;
+      }
+
+      if (documentRef.kind === "pdf") {
+        documentRef.path = isTauri ? pdfPath : null;
+        documentRef.relativePath = null;
+        documentRef.sizeBytes = bytes.byteLength;
+        if (hash) documentRef.sha256 = hash;
+      }
+      loaded.push(document);
     }
 
-    if (!bytes) {
-      const picked = await pickPdf();
-      if (!picked) return;
-      bytes = picked.bytes;
-      pdfPath = picked.path;
-      pickedName = picked.name;
-    }
-
-    const hash = await this.hashBytes(bytes);
-    if (project.document.sha256 && hash && project.document.sha256 !== hash) {
-      const proceed = await confirmDialog(
-        "PDF checksum changed",
-        `The PDF file “${project.document.name}” no longer matches the checksum stored in this project. It may have been replaced or edited. Continue and update the checksum?`,
-        "Open anyway",
-        { danger: true },
-      );
-      if (!proceed) return;
-    }
-
-    const document = await this.openDocument(bytes, project.document.name);
-    if (!document) return;
-
-    if (project.document.pageCount !== document.numPages) {
-      toast(
-        `The PDF now has ${document.numPages} page${document.numPages === 1 ? "" : "s"} instead of ${project.document.pageCount}.`,
-        "warning",
-      );
-    }
-
-    project.document.path = isTauri ? pdfPath : null;
-    project.document.relativePath = null;
-    project.document.sizeBytes = bytes.byteLength;
-    if (pickedName) project.document.name = pickedName;
-    if (hash) project.document.sha256 = hash;
-
-    await this.installDocument(document, project, projectPath, dirty);
+    await this.installDocuments(loaded, project, projectPath, dirty);
     if (projectPath) {
       addRecent({
         kind: "project",
@@ -669,14 +757,14 @@ export class App {
     toast(dirty ? "Autosaved session restored." : `Loaded ${project.name}`, "success");
   }
 
-  private async installDocument(
-    document: PDFDocumentProxy,
+  private async installDocuments(
+    documents: PDFDocumentProxy[],
     project: Project,
     projectPath: string | null,
     dirty: boolean,
   ): Promise<void> {
     const previous = this.renderer;
-    this.renderer = new PdfRenderer(document);
+    this.renderer = new PdfRenderer(documents);
     this.sizeEpoch++;
     this.pageSizes.clear();
     this.pageSizePromises.clear();
@@ -685,13 +773,16 @@ export class App {
       try {
         await previous.destroy();
       } catch {
-        // The old document may already be closed.
+        // The old documents may already be closed.
       }
     }
-    project.document.pageCount = document.numPages;
-    if (projectPath && project.document.path) {
-      project.document.relativePath = relativeDocumentPath(projectPath, project.document.path);
-    }
+    project.documents.forEach((documentRef, index) => {
+      const document = documents[index];
+      if (document) documentRef.pageCount = document.numPages;
+      if (projectPath && documentRef.path && documentRef.kind === "pdf") {
+        documentRef.relativePath = relativeDocumentPath(projectPath, documentRef.path);
+      }
+    });
     store.setProject(project, projectPath, dirty);
     await this.enqueuePageSize(1);
     this.canvas.invalidate();
@@ -782,7 +873,7 @@ export class App {
   private async goToPage(page: number, fit = true): Promise<void> {
     const project = store.project;
     if (!project) return;
-    const target = Math.max(1, Math.min(project.document.pageCount, Math.round(page)));
+    const target = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(page)));
     if (target !== store.ui.page) store.setPage(target);
     const size = await this.enqueuePageSize(target);
     if (size && fit) {
@@ -794,7 +885,7 @@ export class App {
   private async navigateToItem(page: number, layerId: string, itemId: string): Promise<void> {
     const project = store.project;
     if (!project) return;
-    const target = Math.max(1, Math.min(project.document.pageCount, Math.round(page)));
+    const target = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(page)));
     const selection = store.primarySelection;
     if (
       target === store.ui.page &&
@@ -1179,7 +1270,7 @@ export class App {
     try {
       const suggested = suggestedProjectName(project);
       if (!isTauri) {
-        project.document.relativePath = null;
+        project.documents[0].relativePath = null;
         const json = serializeProject(project);
         const result = await saveTextFile(json, suggested, PROJECT_FILTERS);
         if (!result) return;
@@ -1194,7 +1285,7 @@ export class App {
         if (!chosen) return;
         path = chosen;
       }
-      project.document.relativePath = relativeDocumentPath(path, project.document.path);
+      project.documents[0].relativePath = relativeDocumentPath(path, project.documents[0].path);
       const json = serializeProject(project);
       await writeTextFile(path, json);
       store.markSaved(path);
@@ -1269,7 +1360,7 @@ export class App {
     for (;;) {
       const result = await drawingExportDialog({
         currentPage: store.ui.page,
-        pageCount: project.document.pageCount,
+        pageCount: totalPageCount(project.documents),
         layers: project.layers.map((layer) => ({
           id: layer.id,
           name: layer.name,
@@ -1346,7 +1437,7 @@ export class App {
           `${safe}-quantities.pdf`,
           PDF_FILTERS,
           "application/pdf",
-          project.document.path,
+          project.documents[0].path,
         );
         if (path) toast("Quantity report exported to PDF.", "success");
         return;
@@ -1370,7 +1461,7 @@ export class App {
             `${safe}-markups.pdf`,
             PDF_FILTERS,
             "application/pdf",
-            project.document.path,
+            project.documents[0].path,
           );
           if (path) {
             toast(
@@ -1441,14 +1532,14 @@ export class App {
   private async openPath(path: string): Promise<void> {
     const lower = path.toLowerCase();
     try {
-      if (lower.endsWith(".pdf")) {
+      if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
         const bytes = await readFileBytes(path);
         await this.loadNewPdf(bytes, basename(path), path);
       } else if (lower.endsWith(".gridscalr") || lower.endsWith(".json")) {
         const text = await readFileText(path);
         await this.loadProjectText(text, path);
       } else {
-        toast("Drop a PDF drawing or a .gridscalr project.", "warning");
+        toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
       }
     } catch (error) {
       await messageDialog("Could not open dropped file", errorMessage(error), "warning");
@@ -1457,7 +1548,8 @@ export class App {
 
   private async openDroppedFile(file: File): Promise<void> {
     try {
-      if (file.name.toLowerCase().endsWith(".pdf")) {
+      const lower = file.name.toLowerCase();
+      if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
         await this.loadNewPdf(new Uint8Array(await file.arrayBuffer()), file.name, null);
       } else if (
         file.name.toLowerCase().endsWith(".gridscalr") ||
@@ -1465,7 +1557,7 @@ export class App {
       ) {
         await this.loadProjectText(await file.text(), null);
       } else {
-        toast("Drop a PDF drawing or a .gridscalr project.", "warning");
+        toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
       }
     } catch (error) {
       await messageDialog("Could not open dropped file", errorMessage(error), "warning");

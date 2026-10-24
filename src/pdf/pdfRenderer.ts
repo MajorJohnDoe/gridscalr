@@ -32,6 +32,16 @@ function isPasswordException(error: unknown): boolean {
   );
 }
 
+/** PDF.js 6 decodes CCITT and JBIG2 through WebAssembly, so the assets need a base URL. */
+function wasmBaseUrl(): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  try {
+    return new URL("wasm/", document.baseURI).href;
+  } catch {
+    return undefined;
+  }
+}
+
 export async function loadPdfDocument(
   data: Uint8Array,
   password?: string,
@@ -43,6 +53,7 @@ export async function loadPdfDocument(
       useSystemFonts: true,
       disableAutoFetch: true,
       disableStream: false,
+      wasmUrl: wasmBaseUrl(),
     });
     return await task.promise;
   } catch (error) {
@@ -64,17 +75,57 @@ export interface RenderResult {
 export class PdfRenderer {
   private pages = new Map<number, PDFPageProxy>();
   private activeTask: { cancel: () => void } | null = null;
+  /** 1-based global page where each document starts. */
+  private starts: number[] = [];
 
-  constructor(public readonly document: PDFDocumentProxy) {}
+  constructor(public readonly documents: PDFDocumentProxy[]) {
+    if (!documents.length) throw new Error("A project needs at least one document.");
+    this.recomputeStarts();
+  }
+
+  private recomputeStarts(): void {
+    this.starts = [];
+    let start = 1;
+    for (const document of this.documents) {
+      this.starts.push(start);
+      start += document.numPages;
+    }
+  }
+
+  /** Appends a document. Pages are only ever added at the end. */
+  addDocument(document: PDFDocumentProxy): void {
+    this.documents.push(document);
+    this.recomputeStarts();
+  }
+
+  get documentCount(): number {
+    return this.documents.length;
+  }
 
   get pageCount(): number {
-    return this.document.numPages;
+    return this.starts[this.starts.length - 1] + this.documents[this.documents.length - 1].numPages - 1;
+  }
+
+  /** 0-based document index and 1-based local page for a global page number. */
+  private locate(pageNumber: number): { index: number; localPage: number } {
+    const page = Math.max(1, Math.min(this.pageCount, Math.round(pageNumber)));
+    let index = 0;
+    for (let i = 0; i < this.starts.length; i++) {
+      if (page >= this.starts[i]) index = i;
+      else break;
+    }
+    return { index, localPage: page - this.starts[index] + 1 };
   }
 
   async getPage(pageNumber: number): Promise<PDFPageProxy> {
     const existing = this.pages.get(pageNumber);
     if (existing) return existing;
-    const page = await this.document.getPage(pageNumber);
+    const { index, localPage } = this.locate(pageNumber);
+    const page = await this.documents[index].getPage(localPage);
+    // Images (including CCITT/JBIG2 decoded through WASM) are attached to the
+    // operator list. Building it up front prevents a blank first paint while
+    // the image is still pending in the worker.
+    await page.getOperatorList();
     this.pages.set(pageNumber, page);
     return page;
   }
@@ -83,6 +134,12 @@ export class PdfRenderer {
     const page = await this.getPage(pageNumber);
     const viewport = page.getViewport({ scale: 1 });
     return { width: viewport.width, height: viewport.height };
+  }
+
+  async getDocumentData(index: number): Promise<Uint8Array> {
+    const document = this.documents[index];
+    if (!document) throw new Error(`Document ${index + 1} is not loaded.`);
+    return document.getData();
   }
 
   cancel(): void {
@@ -157,7 +214,9 @@ export class PdfRenderer {
     this.cancel();
     for (const page of this.pages.values()) page.cleanup();
     this.pages.clear();
-    await this.document.loadingTask.destroy();
+    for (const document of this.documents) {
+      await document.loadingTask.destroy();
+    }
   }
 }
 

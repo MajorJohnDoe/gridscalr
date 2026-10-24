@@ -1,3 +1,4 @@
+import { totalPageCount } from "./documents";
 import type { PageSize, Project } from "./types";
 
 /** Crop rectangle stored relative to the visible page area, 0–1. */
@@ -37,7 +38,7 @@ export function defaultDrawingExportOptions(
   project: Project,
   currentPage: number,
 ): DrawingExportOptions {
-  const page = Math.max(1, Math.min(project.document.pageCount, Math.round(currentPage)));
+  const page = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(currentPage)));
   return {
     pages: [page],
     layerIds: project.layers.filter((layer) => layer.visible).map((layer) => layer.id),

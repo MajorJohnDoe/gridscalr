@@ -6,7 +6,7 @@
 - **Etapp 2 – Mängddata och beställningsunderlag:** genomförd. Etapp 2A gav kategorier, schema v3, rum, antalsverktyg, avdragsarea, Quantities-panel och massredigering. Etapp 2B lade till svinn, avrundning, beställningsmängder samt mängdförteckning som CSV och utskriftsvänlig PDF.
 - **Etapp 3 – Mätverktyg, skala och export:** genomförd. 3A gav snabbarea, manuell skala, skallås och snap. 3B gav exportdialogen med sidval, beskärningsruta, lagerval, etiketter, kalibreringslinje och teckenförklaring.
 - **Etapp 4 – Bilder:** genomförd. Etapp 4 gav inbäddade PNG/JPEG-bilder, bakgrunds- och annotationsläge, bildhandtag, opacitet, rotation samt bildinbäddning i ritnings-PDF:en. Projektformatet höjdes till schema v5.
-- **Etapp 5 – TIF-ritningar och flera dokument:** plan fastställd 2026-10-24, ännu inte påbörjad. Etapp 5 ger TIF-import som dokument via förlustfri CCITT G4-passthrough, flera källdokument per projekt och schema v6.
+- **Etapp 5 – TIF-ritningar och flera dokument:** genomförd. TIF-import som dokument via förlustfri CCITT G3/G4-passthrough, flera källdokument per projekt, append-only sidnumrering och schema v6.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 
@@ -14,7 +14,7 @@ Etapp 3-planen finns i `etapp-3-matverktyg-skala-export.md` och är godkänd. 3A
 
 Etapp 4-planen finns i `etapp-4-bilder.md` och är fastställd. Samtliga beslut om inbäddning, storleksgränser, bildlägen, lagring och export är införda.
 
-Etapp 5-planen finns i `etapp-5-tiff.md` och är fastställd 2026-10-24. Den låser TIF som dokument, förlustfri CCITT G4-passthrough, flera dokument per projekt, append-only sidordning, bäddad TIF-PDF och schema v6. Spike S1 verifierar konverteringen innan implementationen börjar.
+Etapp 5-planen finns i `etapp-5-tiff.md` och är fastställd 2026-10-24. Den låser TIF som dokument, förlustfri CCITT G4-passthrough, flera dokument per projekt, append-only sidordning, bäddad TIF-PDF och schema v6. Spike S1 verifierade konverteringen före implementationen: 0,000 % pixelavvikelse mot libtiff, 6–18 ms per blad och 51–53 MB peak-minne.
 
 ## Produktprinciper
 
