@@ -138,6 +138,8 @@ export class App {
   private sizeEpoch = 0;
   private unsubscribe: () => void;
   private disposed = false;
+  private allowWindowClose = false;
+  private unlistenClose: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
     this.refs = createShell(root);
@@ -229,6 +231,7 @@ export class App {
 
     this.bind();
     this.renderAll();
+    void this.bindWindowClose();
     void this.setupDragDrop();
   }
 
@@ -623,11 +626,31 @@ export class App {
       toast("Close the browser tab to quit.", "info");
       return;
     }
+    this.allowWindowClose = true;
     try {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       await getCurrentWindow().close();
     } catch {
+      this.allowWindowClose = false;
       toast("The window could not be closed. Close it from the title bar.", "warning");
+    }
+  }
+
+  private async bindWindowClose(): Promise<void> {
+    if (!isTauri) return;
+    try {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      const win = getCurrentWindow();
+      this.unlistenClose = await win.onCloseRequested(async (event) => {
+        if (this.allowWindowClose || !store.dirty) return;
+        event.preventDefault();
+        if (!(await this.confirmDiscardChanges())) return;
+        this.allowWindowClose = true;
+        store.clearAutosave();
+        await win.close();
+      });
+    } catch {
+      // The title-bar close still works; only the unsaved-change prompt is unavailable.
     }
   }
 
@@ -1719,6 +1742,8 @@ export class App {
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
     window.removeEventListener("paste", this.onPaste);
+    this.unlistenClose?.();
+    this.unlistenClose = null;
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }
