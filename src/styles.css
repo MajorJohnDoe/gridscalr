@@ -591,7 +591,9 @@ textarea:disabled {
   padding: 0 12px;
   background: #1a2024;
   border-bottom: 1px solid var(--border);
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
   z-index: 3;
 }
 
@@ -3509,4 +3511,15 @@ textarea:disabled {
   color: var(--text);
   font-size: 12px;
   font-variant-numeric: tabular-nums;
+}
+
+
+.context-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+@media (max-width: 1500px) {
+  .context-hint {
+    display: none;
+  }
 }
