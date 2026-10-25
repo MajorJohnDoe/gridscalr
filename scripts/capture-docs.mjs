@@ -24,7 +24,7 @@ const shots = [
   {
     file: "measure.png",
     title: "Measure and annotate",
-    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and units.",
+    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer, New measurement options and Canvas controls.",
     description: "Measurement and drawing tools share one canvas but stay on separate layer types.",
   },
   {

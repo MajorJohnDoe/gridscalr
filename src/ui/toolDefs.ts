@@ -80,7 +80,7 @@ export const TOOLS: ToolDef[] = [
     label: "Arrow",
     icon: "arrow",
     shortcut: TOOL_SHORTCUTS.arrow,
-    hint: "Drag to draw an arrow · hold Shift to constrain the angle",
+    hint: "Drag to draw an arrow · Shift constrains the angle · Variants for heads and colour",
     group: "draw",
   },
   {
@@ -104,7 +104,7 @@ export const TOOLS: ToolDef[] = [
     label: "Highlight",
     icon: "highlight",
     shortcut: TOOL_SHORTCUTS.highlight,
-    hint: "Drag to highlight an area of the drawing",
+    hint: "Drag to highlight · choose Pen, Rectangle or Polygon in the tool flyout",
     group: "draw",
   },
   {
@@ -120,7 +120,7 @@ export const TOOLS: ToolDef[] = [
     label: "Revision cloud",
     icon: "cloud",
     shortcut: TOOL_SHORTCUTS.cloud,
-    hint: "Click each corner · close on the first point or press Enter · add text with Properties or double-click",
+    hint: "Click each corner · close on the first point or press Enter · Variants for text box and fill",
     group: "draw",
   },
   {
@@ -128,7 +128,7 @@ export const TOOLS: ToolDef[] = [
     label: "Callout",
     icon: "callout",
     shortcut: TOOL_SHORTCUTS.callout,
-    hint: "Click the object to point at, then place the text box",
+    hint: "Click the object to point at, then place the text box · Variants for leader colour",
     group: "draw",
   },
   {
@@ -136,7 +136,7 @@ export const TOOLS: ToolDef[] = [
     label: "Stamp",
     icon: "stamp",
     shortcut: TOOL_SHORTCUTS.stamp,
-    hint: "Choose a stamp preset and click to place it · double-click to edit this stamp",
+    hint: "Choose a preset and click to place it · Variants for presets · double-click to edit this stamp",
     group: "draw",
   },
   {

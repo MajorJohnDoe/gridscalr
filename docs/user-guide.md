@@ -20,7 +20,9 @@ The welcome screen also offers **Open drawing**, **Open project**, **Restore las
 GridScalr uses a compact, drawing-first layout.
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
+- **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
+- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Properties** – the current page scale, the active layer, and the selected item. Collapse it with **View → Properties**.
@@ -120,12 +122,12 @@ Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to 
 
 ### Area
 
-Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the context bar.
+Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover.
 
 - **Polygon** works click-by-click. Click around the perimeter, then click the first vertex or press `Enter` to close it.
 - **Rectangle** and **Ellipse** are quick areas drawn by dragging from one corner to the opposite corner.
 - Hold `Shift` while dragging a quick area to make a square or circle.
-- Choose **Add** or **Deduct** before drawing. Deductions are subtracted inside the same category and room.
+- Choose **Add** or **Deduct** in the **New measurement** popover before drawing. Deductions are subtracted inside the same category and room.
 
 ### Count
 
@@ -133,13 +135,13 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 ### Category and room
 
-While a measurement tool is active, the context bar shows the category and room for new measurements. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
+While a measurement tool is active, the context bar shows a **New measurement** button with the current category and room. Open it to change the category, room, object type, area shape, and add/deduct mode. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
 
 Change a measurement's category, room, area mode, or count type later in **Properties**, or for several selected measurements at once.
 
 ### Snapping
 
-When **Snap to geometry** is enabled under **Settings → Project settings**, point placement can lock to:
+When **Snap to geometry** is enabled in the **Canvas** popover, point placement can lock to:
 
 - Endpoints and corners of visible markup segments
 - Segment midpoints
@@ -157,7 +159,7 @@ Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain a
 
 Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`.
 
-Long-press or right-click the cloud button in the tool rail to choose **Cloud** or **Cloud + text**, and one of the fill presets: **No fill**, **Blue**, **Orange**, **Green**, or **Red**. Form and fill are independent, so Red + Cloud + text and Red + Cloud are both available without separate tools. The default is **Cloud** with no text box and no fill. The context bar also has quick **Text box** and **Fill** controls. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
+Long-press or right-click the cloud button in the tool rail, or choose **Variants** in the context bar, to pick **Cloud** or **Cloud + text**, and one of the fill presets: **No fill**, **Blue**, **Orange**, **Green**, or **Red**. Form and fill are independent, so Red + Cloud + text and Red + Cloud are both available without separate tools. The default is **Cloud** with no text box and no fill. The context bar also has quick **Text box** and **Fill** controls. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
 
 Every cloud gets an attached text box with a leader arrow to the cloud edge. Select the cloud and drag the round label handle, or drag inside the text box, to move the box independently. When the whole cloud is moved, the box keeps its relative position.
 
@@ -177,7 +179,7 @@ Double-click the text box, use **Edit text…** in Properties, or right-click th
 
 Long-press or right-click the Stamp button to pick a project status preset, or choose **Custom…**. The preset list uses the status colours. A placed stamp can still get an individual colour override in Properties.
 
-Choose **Stamp** (`S`) and select a preset in the context bar. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
+Choose **Stamp** (`S`) and select a preset in the context bar, its **Variants** popover or the tool flyout. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
 
 Stamp colours follow common statuses: **APPROVED** is green, **NOT APPROVED** is red, **FOR INFORMATION** is blue, **INSPECTED** is violet, and **REVISED** is orange. The same colours are recognised for **GODKÄND**, **EJ GODKÄND**, **FÖR KÄNNEDOM**, **BESIKTIGAD**, and **REVIDERAD**. Custom statuses keep the current stamp colour. Stamps use a bold, letter-spaced label.
 
@@ -185,7 +187,7 @@ Project stamp presets are managed under **Settings → Project settings → Stam
 
 ### Arrow
 
-Long-press or right-click the Arrow button to choose **Single** or **Double** arrowheads and a colour preset. The same head and colour controls are available in the context bar and Properties.
+Long-press or right-click the Arrow button, or choose **Variants** in the context bar, to pick **Single** or **Double** arrowheads and a colour preset. The same head and colour controls are available in the context bar and Properties.
 
 ### Revision delta
 
@@ -283,7 +285,7 @@ Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of 
 
 ## Highlight modes
 
-Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons for Photoshop-style variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
+Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons, or choose **Variants** in the context bar, for Photoshop-style variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
 
 - **Pen** – the original freehand highlighter.
 - **Rectangle** – drag a translucent highlight box.
@@ -360,7 +362,7 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
 
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it in **Properties → Scale**.
 - **Units** – length and area units for the project.
-- **Display** – show grid, show scale line, snap to geometry, and snap distance.
+- **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
 - **Manage categories…** – rename, reorder, delete, and override waste/rounding per category.

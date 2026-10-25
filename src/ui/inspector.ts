@@ -216,7 +216,7 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
   });
   const locked = el("button", `toggle${active.locked ? " is-on" : ""}`);
   locked.type = "button";
-  locked.innerHTML = `${icon(active.locked ? "lock" : "unlock", 13)}<span>${active.locked ? "Locked" : "Editable"}</span>`;
+  locked.innerHTML = `${icon(active.locked ? "lock" : "unlock", 13)}<span>${active.locked ? "Locked" : "Unlocked"}</span>`;
   locked.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);

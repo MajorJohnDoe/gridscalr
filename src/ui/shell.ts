@@ -5,6 +5,7 @@ import { createMenuBar } from "./topMenu";
 import { attachToolFlyout } from "./toolFlyouts";
 import { TOOLS } from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
+import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import {
   initPanelLayout,
   PANEL_LIMITS,
@@ -18,6 +19,8 @@ export interface ShellRefs {
   docName: HTMLElement;
   docMeta: HTMLElement;
   dirtyDot: HTMLElement;
+  undoBtn: HTMLButtonElement;
+  redoBtn: HTMLButtonElement;
   zoomOutBtn: HTMLButtonElement;
   zoomInBtn: HTMLButtonElement;
   zoomFitBtn: HTMLButtonElement;
@@ -63,6 +66,14 @@ export function createShell(root: HTMLElement): ShellRefs {
   brand.append(brandName);
 
   const menuBar = createMenuBar();
+  const history = el("div", "topbar-history");
+  const undoBtn = makeIconButton("undo", "Undo", formatShortcut(APP_SHORTCUTS.undo));
+  const redoBtn = makeIconButton("redo", "Redo", formatShortcut(APP_SHORTCUTS.redo));
+  undoBtn.classList.add("topbar-history-btn");
+  redoBtn.classList.add("topbar-history-btn");
+  undoBtn.disabled = true;
+  redoBtn.disabled = true;
+  history.append(undoBtn, redoBtn);
 
   const identity = el("div", "doc-identity");
   const projectName = el("span", "project-name", "No project open");
@@ -77,7 +88,7 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const spacer = el("div", "topbar-spacer");
   const spacerEnd = el("div", "topbar-spacer");
-  topbar.append(brand, menuBar, spacer, identity, spacerEnd);
+  topbar.append(brand, menuBar, history, spacer, identity, spacerEnd);
 
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
@@ -255,6 +266,8 @@ export function createShell(root: HTMLElement): ShellRefs {
     docName,
     docMeta,
     dirtyDot,
+    undoBtn,
+    redoBtn,
     zoomOutBtn,
     zoomInBtn,
     zoomFitBtn,

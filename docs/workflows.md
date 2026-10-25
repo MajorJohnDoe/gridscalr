@@ -24,7 +24,7 @@ A calibrated page shows the scale in the status bar and the Reference calibratio
 
 ### 2. Measure what the job needs
 
-Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer, category and room, so repeated measurements stay consistent.
+Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units, snapping and guides in the **Canvas** popover.
 
 ![Length tool active with the Layers panel and measurement context](screenshots/measure.png)
 
@@ -86,7 +86,7 @@ Use **Lock scale** once the scale is verified. This prevents accidental recalibr
 
 ### 3. Measure by category and room
 
-Set the project category and room for each measurement. Room names autocomplete from names already used in the project.
+Check the length and area units in the **Canvas** popover. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
 
 - Measure gross floor area per room.
 - Add deductions for shafts, openings and other non-orderable areas.

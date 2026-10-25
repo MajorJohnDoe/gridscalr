@@ -26,17 +26,129 @@ try {
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Riverside House - Takeoff");
   assert.equal(await page.locator(".page-card").count(), 2, "expected two page cards");
+  assert.equal(
+    await page.getByText("Editable", { exact: true }).count(),
+    0,
+    "the old Editable terminology should be gone",
+  );
+  await page.getByRole("button", { name: "Unlocked" }).waitFor();
+  assert.equal(
+    await page.getByRole("button", { name: "Undo" }).isDisabled(),
+    true,
+    "undo should start disabled on a freshly loaded project",
+  );
+  assert.equal(
+    await page.getByRole("button", { name: "Redo" }).isDisabled(),
+    true,
+    "redo should start disabled on a freshly loaded project",
+  );
 
-  await page.keyboard.press("l");
-  await page.locator(".context-tool", { hasText: "Length" }).waitFor();
+  const assertContextBarFits = async (label) => {
+    const size = await page.locator(".context-bar").evaluate((bar) => ({
+      scrollWidth: bar.scrollWidth,
+      clientWidth: bar.clientWidth,
+    }));
+    assert.ok(
+      size.scrollWidth <= size.clientWidth + 1,
+      `${label}: context bar overflows (${size.scrollWidth}px content in ${size.clientWidth}px)`,
+    );
+  };
+
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.waitForTimeout(250);
+
+  for (const [key, label] of [
+    ["v", "Select"],
+    ["h", "Pan"],
+    ["k", "Calibrate"],
+    ["l", "Length"],
+    ["a", "Area"],
+    ["c", "Count"],
+    ["p", "Pen"],
+    ["i", "Line"],
+    ["u", "Arrow"],
+    ["r", "Rectangle"],
+    ["o", "Ellipse"],
+    ["g", "Highlight"],
+    ["t", "Text"],
+    ["d", "Revision cloud"],
+    ["n", "Callout"],
+    ["s", "Stamp"],
+    ["y", "Revision delta"],
+  ]) {
+    await page.keyboard.press(key);
+    await page.waitForTimeout(80);
+    await assertContextBarFits(label);
+  }
+
+  await page.keyboard.press("a");
+  await page.locator(".context-tool", { hasText: "Area" }).waitFor();
+  await assertContextBarFits("Area");
+
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const measureOptions = page.getByRole("dialog", { name: "New measurement options" });
+  await measureOptions.waitFor();
+  assert.equal(
+    await page.evaluate(() => Boolean(document.activeElement?.closest(".measure-options"))),
+    true,
+    "focus should move into the New measurement popover",
+  );
+  await measureOptions.getByLabel("Area shape").selectOption("rectangle");
+  await measureOptions.getByLabel("Area mode").selectOption("subtract");
+  await page.keyboard.press("Escape");
+  await measureOptions.waitFor({ state: "detached" });
+  assert.match(
+    (await page.getByRole("button", { name: /New measurement options/ }).textContent()) ?? "",
+    /Rectangle · Deduct/,
+    "the New measurement button should summarise the active area mode",
+  );
+  await assertContextBarFits("Area options applied");
+
+  await page.getByRole("button", { name: /Canvas options/ }).click();
+  const canvasOptions = page.getByRole("dialog", { name: "Canvas options" });
+  await canvasOptions.waitFor();
+  assert.equal(
+    await page.evaluate(() => Boolean(document.activeElement?.closest(".canvas-options"))),
+    true,
+    "focus should move into the Canvas popover",
+  );
+  const gridToggle = canvasOptions.getByRole("button", { name: "Grid" });
+  assert.equal(await gridToggle.getAttribute("aria-pressed"), "false");
+  await gridToggle.click();
+  assert.equal(
+    await canvasOptions.getByRole("button", { name: "Grid" }).getAttribute("aria-pressed"),
+    "true",
+  );
+  await page.keyboard.press("Escape");
+  await canvasOptions.waitFor({ state: "detached" });
+
+  await page.keyboard.press("d");
+  await page.locator(".context-tool", { hasText: "Revision cloud" }).waitFor();
+  await assertContextBarFits("Revision cloud");
+  await page.getByRole("button", { name: "Choose variants for Revision cloud" }).click();
+  const variants = page.getByRole("menu", { name: "Revision cloud variants" });
+  await variants.waitFor();
+  await page.keyboard.press("Escape");
+  await variants.waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+Shift+M");
   const measurements = page.getByRole("dialog");
   await measurements.waitFor();
   const rows = await measurements.locator(".markup-row").count();
   assert.ok(rows >= 14, `expected at least 14 measurements on page 1, got ${rows}`);
-  await page.keyboard.press("Escape");
+  await page.locator('[data-item-id="item_floor_living"]').click();
   await measurements.waitFor({ state: "detached" });
+
+  const undo = page.getByRole("button", { name: "Undo" });
+  const redo = page.getByRole("button", { name: "Redo" });
+  assert.equal(await undo.isEnabled(), true, "undo should be enabled after earlier edits");
+  await page.keyboard.press("ArrowRight");
+  await page.waitForTimeout(100);
+  assert.equal(await undo.isEnabled(), true, "undo should stay enabled after a nudge");
+  await undo.click();
+  await page.waitForTimeout(100);
+  assert.equal(await redo.isEnabled(), true, "redo should enable after undo");
+  await redo.click();
 
   await page.keyboard.press("Control+Alt+q");
   const quantities = page.getByRole("dialog");
@@ -54,6 +166,12 @@ try {
   assert.equal(await help.getByRole("tab").count(), 4, "expected four help topics");
   await help.getByRole("tab", { name: "Workflows" }).click();
   await help.getByText("Operations technician (drifttekniker)").first().waitFor();
+  for (let index = 0; index < 20; index += 1) await page.keyboard.press("Tab");
+  assert.equal(
+    await page.evaluate(() => Boolean(document.activeElement?.closest(".modal"))),
+    true,
+    "Tab should stay inside the modal",
+  );
   await page.keyboard.press("Escape");
   await help.waitFor({ state: "detached" });
 

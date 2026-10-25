@@ -122,6 +122,8 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
   refs.dirtyDot.title = "Unsaved changes";
+  refs.undoBtn.disabled = !store.canUndo;
+  refs.redoBtn.disabled = !store.canRedo;
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;

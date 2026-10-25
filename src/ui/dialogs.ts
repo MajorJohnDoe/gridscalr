@@ -38,6 +38,7 @@ export function showModal(options: {
 }): Promise<string | null> {
   closeActiveModal();
   return new Promise((resolve) => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const backdrop = el("div", "modal-backdrop");
     const modal = el(
       "div",
@@ -46,6 +47,7 @@ export function showModal(options: {
     modal.setAttribute("role", "dialog");
     modal.setAttribute("aria-modal", "true");
     modal.setAttribute("aria-labelledby", "modal-title");
+    modal.tabIndex = -1;
 
     const header = el("div", "modal-header");
     const titles = el("div", "modal-titles");
@@ -74,6 +76,7 @@ export function showModal(options: {
       backdrop.remove();
       if (activeModal?.close === closeModal) activeModal = null;
       options.onClose?.();
+      if (previousFocus?.isConnected) previousFocus.focus();
       resolve(value);
     };
     const closeModal = () => finish(null);
@@ -110,10 +113,37 @@ export function showModal(options: {
     backdrop.addEventListener("mousedown", (event) => {
       if (event.target === backdrop) closeModal();
     });
+    const focusableSelector =
+      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    const focusableElements = () =>
+      [...modal.querySelectorAll<HTMLElement>(focusableSelector)].filter(
+        (element) => !element.hasAttribute("hidden") && element.offsetParent !== null,
+      );
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
         closeModal();
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = focusableElements();
+      if (!focusable.length) {
+        event.preventDefault();
+        modal.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      const active = document.activeElement;
+      if (!modal.contains(active)) {
+        event.preventDefault();
+        first.focus();
+      } else if (event.shiftKey && active === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && active === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
     document.addEventListener("keydown", onKeyDown);

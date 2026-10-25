@@ -37,7 +37,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves.
-- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow tools for Photoshop-style variants, colours, and presets.
+- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for Photoshop-style variants, colours, and presets.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
@@ -47,7 +47,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
 - Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
-- Tag measurements with a category and a free-text room. The context bar keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
+- Tag measurements with a category and a free-text room. The **New measurement** popover keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Measurements dialog.
 - Review live quantities by category, room, and measurement type in the on-demand **Quantities** dialog, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it. Inserted images are embedded and compressed inside the project.
@@ -124,10 +124,12 @@ The repository also includes `fixtures/demo-project.gridscalr`, a calibrated two
 GridScalr uses a compact drawing-first layout:
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
+- **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
+- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Properties** – the page scale, active layer, and selected item. Move project-wide units, snapping, quantity defaults, and stamp presets to **Settings → Project settings**.
+- **Properties** – the page scale, active layer, and selected item. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
@@ -186,14 +188,14 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 ### 3. Measure
 
 - **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle.
-- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the context bar. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in Properties. Choose **Add** or **Deduct** in the context bar before drawing, or change an existing area in Properties.
+- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the **New measurement** popover before drawing, or change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates. New measurements use a 0.75 pt paper-space line weight and new drawing items use 1.5 pt; both can be changed from 0.25 to 8 pt in Properties, and drawing tools also expose the weight in the context bar.
 
-When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
+When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Toggle snapping in the **Canvas** popover and set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
-While the Length, Area, or Count tool is active, the context bar shows the category and room for new measurements. The Count tool also shows the object type, and the Area tool shows the add/deduct mode. These stay selected for the next measurement together with the category and room until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
+While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. Open it to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 
@@ -203,10 +205,10 @@ Hold **Shift** while drawing lines, arrows, rectangles, or ellipses to constrain
 
 ### Revision cloud, callout, stamp, and revision delta
 
-- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Long-press or right-click the tool for **Cloud / Cloud + text** and the **No fill / Blue / Orange / Green / Red** fill presets. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click the box to edit it inline with font size, colour, bold, underline, alignment, Cancel, and Done; drag the lower-right handle in the editor to resize the box.
-- **Callout (`N`)** – click the object to point at, then place the text box. The inline editor opens immediately with size, colour, bold, underline, alignment, Cancel, and Done; the leader ends in a filled arrow at the target. Drag the lower-right handle in the editor to resize the text box. Right-click the tool for leader-colour presets.
-- **Stamp (`S`)** – choose a preset in the tool flyout or context bar, or use **Custom…**, then click to place. Status presets carry their status colour. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
-- **Arrow (`U`)** – right-click the tool for single/double arrowheads and colour presets; the same options are in the context bar.
+- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Long-press or right-click the tool, or choose **Variants** in the context bar, for **Cloud / Cloud + text** and the **No fill / Blue / Orange / Green / Red** fill presets. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click the box to edit it inline with font size, colour, bold, underline, alignment, Cancel, and Done; drag the lower-right handle in the editor to resize the box.
+- **Callout (`N`)** – click the object to point at, then place the text box. The inline editor opens immediately with size, colour, bold, underline, alignment, Cancel, and Done; the leader ends in a filled arrow at the target. Drag the lower-right handle in the editor to resize the text box. Right-click the tool or choose **Variants** in the context bar for leader-colour presets.
+- **Stamp (`S`)** – choose a preset in the tool flyout, **Variants** popover or context bar, or use **Custom…**, then click to place. Status presets carry their status colour. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
+- **Arrow (`U`)** – right-click the tool or choose **Variants** in the context bar for single/double arrowheads and colour presets; the same options are in Properties.
 - **Revision delta (`Y`)** – enter the revision in the context bar and click to place the triangle. An optional date can be set as its label in Properties.
 
 Stamp presets are stored per project under **Settings → Project settings → Stamps**. App defaults for new projects are stored locally and can be edited in the same dialog.
@@ -501,8 +503,10 @@ src/
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
   ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties scale and active-layer sections
+  ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts single and multi-selection Properties
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting

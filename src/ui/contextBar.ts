@@ -1,25 +1,20 @@
-import { allRooms, measurementCategory } from "../model/categories";
+import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
-import { COUNT_TYPES, COUNT_TYPE_LABELS } from "../model/countSymbols";
+import { COUNT_TYPE_LABELS } from "../model/countSymbols";
 import { layersForKind } from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
-import type {
-  AreaMode,
-  AreaShape,
-  AreaUnit,
-  CountType,
-  LayerKind,
-  LengthUnit,
-} from "../model/types";
-import { AREA_UNITS, LENGTH_UNITS } from "../model/units";
+import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { clear, el, option } from "./dom";
+import { openCanvasOptions } from "./canvasOptions";
+import { openMeasureOptions } from "./measureOptions";
 import { textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
 import { TOOL_BY_ID } from "./toolDefs";
+import { hasToolVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 
 export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
@@ -30,6 +25,15 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   if (tool) {
     toolWrap.innerHTML = icon(tool.icon, 17);
     toolWrap.append(el("span", "", tool.label));
+    if (hasToolVariants(tool.id)) {
+      const variants = el("button", "context-variant-btn");
+      variants.type = "button";
+      variants.title = "Choose variants and presets";
+      variants.setAttribute("aria-label", `Choose variants for ${tool.label}`);
+      variants.innerHTML = `${icon("chevronDown", 12)}<span>Variants</span>`;
+      variants.addEventListener("click", () => openToolVariants(variants, tool.id));
+      toolWrap.append(variants);
+    }
   }
   refs.contextBar.append(toolWrap);
   refs.contextBar.append(el("div", "context-hint", tool?.hint ?? ""));
@@ -82,10 +86,11 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.append(layerTarget, el("div", "divider-v"));
   }
 
-  const imageButton = el("button", "btn btn-small btn-ghost context-image-button", "Import image");
+  const imageButton = el("button", "btn btn-small btn-ghost context-image-button context-icon-button");
   imageButton.type = "button";
   imageButton.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
-  imageButton.innerHTML = `${icon("image", 14)}<span>Import image</span>`;
+  imageButton.setAttribute("aria-label", "Import image");
+  imageButton.innerHTML = icon("image", 14);
   imageButton.addEventListener("click", actions.insertImage);
   controls.append(imageButton, el("div", "divider-v"));
 
@@ -94,94 +99,21 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     store.ui.activeTool === "area" ||
     store.ui.activeTool === "count";
   if (measureTool) {
-    if (store.ui.activeTool === "count") {
-      const typeField = el("label", "context-field");
-      typeField.title = "Object type for new counts";
-      typeField.append(el("span", "context-field-label", "Type"));
-      const typeSelect = el("select", "select context-select");
-      typeSelect.setAttribute("aria-label", "Object type for new counts");
-      for (const type of COUNT_TYPES) {
-        typeSelect.append(
-          option(type, COUNT_TYPE_LABELS[type], type === store.ui.measureCountType),
-        );
-      }
-      typeSelect.addEventListener("change", () =>
-        store.setMeasureCountType(typeSelect.value as CountType),
-      );
-      typeField.append(typeSelect);
-      controls.append(typeField, el("div", "divider-v"));
-    }
-    if (store.ui.activeTool === "area") {
-      const shapeField = el("label", "context-field");
-      shapeField.title = "Quick areas use two opposite corners; polygon is click-by-click";
-      shapeField.append(el("span", "context-field-label", "Shape"));
-      const shapeSelect = el("select", "select context-select");
-      shapeSelect.setAttribute("aria-label", "Area shape for new measurements");
-      shapeSelect.append(
-        option("polygon", "Polygon", store.ui.measureAreaShape === "polygon"),
-        option("rectangle", "Rectangle", store.ui.measureAreaShape === "rectangle"),
-        option("ellipse", "Ellipse", store.ui.measureAreaShape === "ellipse"),
-      );
-      shapeSelect.addEventListener("change", () =>
-        store.setMeasureAreaShape(shapeSelect.value as AreaShape),
-      );
-      shapeField.append(shapeSelect);
-      controls.append(shapeField, el("div", "divider-v"));
-
-      const modeField = el("label", "context-field");
-      modeField.title = "Add the area or deduct it from its category and room";
-      modeField.append(el("span", "context-field-label", "Area"));
-      const modeSelect = el("select", "select context-select");
-      modeSelect.setAttribute("aria-label", "Area mode for new measurements");
-      modeSelect.append(
-        option("add", "Add", store.ui.measureAreaMode === "add"),
-        option("subtract", "Deduct", store.ui.measureAreaMode === "subtract"),
-      );
-      modeSelect.addEventListener("change", () =>
-        store.setMeasureAreaMode(modeSelect.value as AreaMode),
-      );
-      modeField.append(modeSelect);
-      controls.append(modeField, el("div", "divider-v"));
-    }
-    const pendingCategory = measurementCategory(project, store.ui.measureCategoryId);
-    const categoryField = el("label", "context-field");
-    categoryField.title = "Category for new measurements";
-    categoryField.append(el("span", "context-field-label", "Category"));
-    const categorySelect = el("select", "select context-select");
-    categorySelect.setAttribute("aria-label", "Category for new measurements");
-    for (const category of project.categories) {
-      categorySelect.append(option(category.id, category.name, category.id === pendingCategory?.id));
-    }
-    categorySelect.addEventListener("change", () => store.setMeasureCategory(categorySelect.value));
-    categoryField.append(categorySelect);
-
-    const roomField = el("label", "context-field");
-    roomField.title = "Room for new measurements";
-    roomField.append(el("span", "context-field-label", "Room"));
-    const roomWrap = el("span", "context-room");
-    const roomInput = el("input", "input context-room-input");
-    roomInput.type = "text";
-    roomInput.value = store.ui.measureRoom;
-    roomInput.placeholder = "Room";
-    roomInput.setAttribute("aria-label", "Room for new measurements");
-    const roomList = el("datalist");
-    roomList.id = "context-room-options";
-    for (const room of allRooms(project)) roomList.append(option(room, room));
-    roomInput.setAttribute("list", roomList.id);
-    roomInput.addEventListener("input", () => store.setMeasureRoom(roomInput.value));
-    const clearRoom = el("button", "icon-btn context-room-clear");
-    clearRoom.type = "button";
-    clearRoom.title = "Clear room";
-    clearRoom.setAttribute("aria-label", "Clear room");
-    clearRoom.innerHTML = icon("close", 11);
-    clearRoom.addEventListener("click", () => {
-      roomInput.value = "";
-      store.setMeasureRoom("");
-      roomInput.focus();
-    });
-    roomWrap.append(roomInput, clearRoom);
-    roomField.append(roomWrap, roomList);
-    controls.append(categoryField, roomField, el("div", "divider-v"));
+    const measureOptions = el("button", "btn btn-small btn-ghost context-measure-options");
+    measureOptions.type = "button";
+    measureOptions.title = "Category, room and measurement options";
+    measureOptions.setAttribute("aria-label", "New measurement options: category, room and type");
+    measureOptions.setAttribute("aria-expanded", "false");
+    measureOptions.setAttribute("aria-haspopup", "dialog");
+    measureOptions.innerHTML = `${icon("markups", 14)}<span class="context-measure-summary"></span>${icon("chevronDown", 12)}`;
+    const summary = measureOptions.querySelector<HTMLElement>(".context-measure-summary");
+    if (summary) summary.textContent = measurementSummary(project);
+    const updateSummary = () => {
+      const current = store.project;
+      if (current && summary) summary.textContent = measurementSummary(current);
+    };
+    measureOptions.addEventListener("click", () => openMeasureOptions(measureOptions, updateSummary));
+    controls.append(measureOptions, el("div", "divider-v"));
   }
 
   if (
@@ -349,62 +281,38 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.prepend(textToggle, fillField, el("div", "divider-v"));
   }
 
-  const lengthUnit = el("select", "select");
-  for (const unit of LENGTH_UNITS) {
-    lengthUnit.append(option(unit.id, unit.id, unit.id === project.settings.lengthUnit));
-  }
-  lengthUnit.title = "Length unit";
-  lengthUnit.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        project.settings.lengthUnit = lengthUnit.value as LengthUnit;
-      },
-      "change",
-    );
-  });
-  const areaUnit = el("select", "select");
-  for (const unit of AREA_UNITS) {
-    areaUnit.append(option(unit.id, unit.label, unit.id === project.settings.areaUnit));
-  }
-  areaUnit.title = "Area unit";
-  areaUnit.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        project.settings.areaUnit = areaUnit.value as AreaUnit;
-      },
-      "change",
-    );
-  });
-  controls.append(lengthUnit, areaUnit);
-
-  controls.append(
-    toggleButton("target", "Snap", project.settings.snapToGeometry, () => {
-      store.mutate(
-        (project) => {
-          project.settings.snapToGeometry = !project.settings.snapToGeometry;
-        },
-        "change",
-      );
-    }),
-    toggleButton("grid", "Grid", project.settings.showGrid, () => {
-      store.mutate(
-        (project) => {
-          project.settings.showGrid = !project.settings.showGrid;
-        },
-        "change",
-      );
-    }),
-    toggleButton("ruler", "Scale line", project.settings.showCalibration, () => {
-      store.mutate(
-        (project) => {
-          project.settings.showCalibration = !project.settings.showCalibration;
-        },
-        "change",
-      );
-    }),
-  );
+  const canvasOptions = el("button", "btn btn-small btn-ghost context-canvas-options");
+  canvasOptions.type = "button";
+  canvasOptions.title = "Units, snapping and guides";
+  canvasOptions.setAttribute("aria-label", "Canvas options: units, snapping and guides");
+  canvasOptions.setAttribute("aria-expanded", "false");
+  canvasOptions.setAttribute("aria-haspopup", "dialog");
+  canvasOptions.innerHTML = `${icon("settings", 14)}<span>Canvas</span>`;
+  canvasOptions.addEventListener("click", () => openCanvasOptions(canvasOptions));
+  controls.append(canvasOptions);
 
   refs.contextBar.append(controls);
+}
+
+function measurementSummary(project: Project): string {
+  const parts: string[] = [];
+  if (store.ui.activeTool === "area") {
+    parts.push(
+      store.ui.measureAreaShape === "rectangle"
+        ? "Rectangle"
+        : store.ui.measureAreaShape === "ellipse"
+          ? "Ellipse"
+          : "Polygon",
+    );
+    parts.push(store.ui.measureAreaMode === "subtract" ? "Deduct" : "Add");
+  } else if (store.ui.activeTool === "count") {
+    parts.push(COUNT_TYPE_LABELS[store.ui.measureCountType]);
+  }
+  const category = measurementCategory(project, store.ui.measureCategoryId);
+  parts.push(category?.name ?? "Category");
+  const room = store.ui.measureRoom.trim();
+  if (room) parts.push(room);
+  return parts.join(" · ");
 }
 
 function toggleButton(iconName: string, label: string, active: boolean, onClick: () => void): HTMLButtonElement {

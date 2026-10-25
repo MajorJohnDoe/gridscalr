@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T11:53:29.958Z",
+  "generatedAt": "2026-10-25T12:16:17.441Z",
   "appVersion": "0.3.0",
   "viewport": {
     "width": 1920,
@@ -16,7 +16,7 @@
     {
       "file": "measure.png",
       "title": "Measure and annotate",
-      "alt": "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and units.",
+      "alt": "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer, New measurement options and Canvas controls.",
       "description": "Measurement and drawing tools share one canvas but stay on separate layer types."
     },
     {

@@ -648,7 +648,7 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
   lockToggle.type = "button";
   lockToggle.disabled = layer.locked;
   lockToggle.title = layer.locked ? "Unlock the layer first" : "Lock or unlock this markup";
-  lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? "Locked" : "Editable"}</span>`;
+  lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? "Locked" : "Unlocked"}</span>`;
   lockToggle.addEventListener("click", () => actions.setSelectionLocked(!item.locked));
   visibilityRow.append(visibleToggle, lockToggle);
   section.append(visibilityRow);

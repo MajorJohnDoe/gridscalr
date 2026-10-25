@@ -167,8 +167,10 @@ src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model and CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
+src/ui/canvasOptions.ts    units, snapping, grid and scale-line popover
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
 src/ui/inspector.ts        Properties scale and active-layer sections
+src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting

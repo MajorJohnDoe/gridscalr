@@ -61,7 +61,12 @@ export function attachToolFlyout(button: HTMLButtonElement, toolId: string): voi
   });
 }
 
-function openToolFlyout(button: HTMLButtonElement, toolId: string): void {
+export function openToolVariants(anchor: HTMLElement, toolId: string): void {
+  if (!VARIANT_TOOLS.has(toolId)) return;
+  openToolFlyout(anchor, toolId);
+}
+
+function openToolFlyout(button: HTMLElement, toolId: string): void {
   closeToolFlyout();
   store.setTool(toolId as "cloud" | "highlight");
   const root = el("div", "tool-flyout-root");

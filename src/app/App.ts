@@ -260,6 +260,8 @@ export class App {
 
   private bind(): void {
     const refs = this.refs;
+    refs.undoBtn.addEventListener("click", () => store.undo());
+    refs.redoBtn.addEventListener("click", () => store.redo());
     refs.zoomOutBtn.addEventListener("click", () => this.canvas.zoomBy(1 / 1.2));
     refs.zoomInBtn.addEventListener("click", () => this.canvas.zoomBy(1.2));
     refs.zoomFitBtn.addEventListener("click", () => {
