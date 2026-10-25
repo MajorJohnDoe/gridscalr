@@ -14,12 +14,16 @@ export async function startVite({ port = 1420 } = {}) {
     ".bin",
     process.platform === "win32" ? "vite.cmd" : "vite",
   );
-  const server = spawn(viteCommand, ["--port", String(port), "--strictPort"], {
-    cwd: repoRoot,
-    stdio: ["ignore", "pipe", "pipe"],
-    env: { ...process.env, BROWSER: "none" },
-    shell: process.platform === "win32",
-  });
+  const server = spawn(
+    viteCommand,
+    ["--host", "127.0.0.1", "--port", String(port), "--strictPort"],
+    {
+      cwd: repoRoot,
+      stdio: ["ignore", "pipe", "pipe"],
+      env: { ...process.env, BROWSER: "none" },
+      shell: process.platform === "win32",
+    },
+  );
   server.stdout.on("data", (chunk) => {
     output += chunk.toString();
   });
