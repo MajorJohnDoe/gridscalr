@@ -492,6 +492,7 @@ src/
   app/App.ts             application wiring, file flows, shortcuts, exports
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
+  model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
@@ -500,6 +501,13 @@ src/
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
   ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  ui/contextBar.ts       tool-specific context bar and target layer controls
+  ui/inspector.ts        Properties scale and active-layer sections
+  ui/selectionInspector.ts single and multi-selection Properties
+  ui/shortcuts.json      single source for tool and application shortcuts
+  ui/shortcuts.ts        typed shortcut maps and platform formatting
+  ui/statusBar.ts        calibration, cursor and layer status
+  ui/welcome.ts          empty-project welcome screen and recent files
   ui/pageImportDialog.ts page picker with previews for PDF/TIF import
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
@@ -526,6 +534,8 @@ docs/screenshots/        versioned screenshots and capture manifest
 tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project
 scripts/make-fixture.mjs reproducible sample PDF generator
 scripts/make-demo-project.mjs deterministic documentation project
+scripts/ui-harness.mjs shared Playwright server and demo-project helpers
+scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
 ```
@@ -547,7 +557,8 @@ Key design choices:
 npm test          # Vitest model and project-format tests
 npm run build     # tsc --noEmit + Vite production build
 npm run check:docs  # links, images, anchors, tools and schema references
-npx playwright install chromium  # one-time browser install for docs:capture
+npx playwright install chromium  # one-time browser install for test:ui and docs:capture
+npm run test:ui     # Playwright smoke: open, measure, help and save
 npm run docs:capture # regenerate docs/screenshots from the demo project
 cargo check       # inside src-tauri, or: cargo check --manifest-path src-tauri/Cargo.toml
 ```
@@ -562,7 +573,7 @@ The documentation pipeline is reproducible:
 
 When a visible screen or workflow changes, recapture the affected screenshots. Do not publish screenshots that show a previous interface.
 
-When adding a project field, update `src/model/types.ts`, the parser in `src/io/projectFile.ts`, and serialization tests. When adding a layer or item operation, keep the lock guards in `src/state/store.ts`, `src/canvas/CanvasView.ts`, and the inspector in sync. Every GUI or feature change must also update `docs/user-guide.md`, and shortcut changes must update `docs/shortcuts.md` and the table above.
+When adding a project field, update `src/model/types.ts`, the parser in `src/io/projectFile.ts`, and serialization tests. When adding a layer or item operation, put lock and visibility semantics in `src/model/commands.ts` and keep the App, canvas and dialog call sites aligned. Every GUI or feature change must also update `docs/user-guide.md`, and shortcut changes must update `docs/shortcuts.md` and the table above.
 
 ## Browser fallback notes
 

@@ -9,6 +9,16 @@ import {
   setPageScaleLocked,
 } from "../model/calibration";
 import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
+import {
+  deleteItems,
+  emptyItemCommandResult,
+  setItemsColor,
+  setItemsImageMode,
+  setItemsLocked,
+  setItemsOpacity,
+  setItemsStrokeWidth,
+  setItemsVisible,
+} from "../model/commands";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import {
   addItem,
@@ -86,17 +96,18 @@ import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { exportQuantityReportPdf } from "../pdf/reportPdf";
 import { serializeQuantityCsv } from "../report/csv";
 import { buildQuantityReport } from "../report/reportModel";
-import { store, type ToolId } from "../state/store";
+import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
+import { TOOL_KEYS } from "../ui/shortcuts";
 import { confirmDialog, drawingExportDialog, manualScaleDialog, messageDialog, passwordDialog } from "../ui/dialogs";
 import {
   renderChrome,
   renderTopbar,
   requestMarkupRename,
   showSelectionMenuAt,
-  updateStatus,
   type PanelActions,
 } from "../ui/panels";
+import { updateStatus } from "../ui/statusBar";
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { openMeasurementsDialog } from "../ui/measurementsDialog";
@@ -115,26 +126,6 @@ const CSV_FILTERS = [{ name: "CSV markups", extensions: ["csv"] }];
 const QUANTITY_CSV_FILTERS = [{ name: "Quantity CSV", extensions: ["csv"] }];
 const PNG_FILTERS = [{ name: "PNG image", extensions: ["png"] }];
 const PDF_FILTERS = [{ name: "PDF document", extensions: ["pdf"] }];
-
-const TOOL_KEYS: Record<string, ToolId> = {
-  v: "select",
-  h: "pan",
-  k: "calibrate",
-  l: "length",
-  a: "area",
-  c: "count",
-  p: "pen",
-  i: "line",
-  u: "arrow",
-  r: "rect",
-  o: "ellipse",
-  g: "highlight",
-  t: "text",
-  d: "cloud",
-  n: "callout",
-  s: "stamp",
-  y: "delta",
-};
 
 interface SizeTask {
   page: number;
@@ -1155,21 +1146,19 @@ export class App {
       toast("The selected item is locked.", "warning");
       return;
     }
-    const count = copyItems(project, removable.map((entry) => entry.ref));
+    const refs = removable.map((entry) => entry.ref);
+    const count = copyItems(project, refs);
     if (!count) return;
+    let deleted = 0;
     store.mutate(
       (project) => {
-        for (const entry of removable) {
-          const layer = project.layers.find((candidate) => candidate.id === entry.ref.layerId);
-          if (!layer) continue;
-          layer.items = layer.items.filter((item) => item.id !== entry.ref.itemId);
-        }
+        deleted = deleteItems(project, refs).changed;
       },
       "change",
     );
     store.clearSelection();
     toast(
-      `${count} item${count === 1 ? "" : "s"} cut. Paste on any page with Ctrl+V.`,
+      `${deleted} item${deleted === 1 ? "" : "s"} cut. Paste on any page with Ctrl+V.`,
       "success",
     );
   }
@@ -1281,10 +1270,7 @@ export class App {
     }
     store.mutate(
       (project) => {
-        for (const entry of editable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item?.image) item.image = { ...item.image, mode };
-        }
+        setItemsImageMode(project, store.ui.selection, mode);
       },
       "change",
     );
@@ -1293,7 +1279,6 @@ export class App {
   private setSelectionOpacity(opacity: number): void {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
-    const value = Math.max(0, Math.min(1, opacity));
     const images = resolveSelection(project, store.ui.selection).filter(
       (entry) => entry.item.kind === "image",
     );
@@ -1305,10 +1290,7 @@ export class App {
     }
     store.mutate(
       (project) => {
-        for (const entry of editable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item) item.opacity = value;
-        }
+        setItemsOpacity(project, store.ui.selection, opacity);
       },
       "change",
     );
@@ -1374,26 +1356,27 @@ export class App {
       toast("The layer is hidden. Show the layer first.", "warning");
       return;
     }
+    const result = emptyItemCommandResult();
     store.mutate(
       (project) => {
-        for (const entry of targetable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item) item.visible = visible;
-        }
+        Object.assign(result, setItemsVisible(project, store.ui.selection, visible));
       },
       "change",
     );
     if (!visible) {
       store.clearSelection();
       toast(
-        `${targetable.length} item${targetable.length === 1 ? "" : "s"} hidden. Hidden items are excluded from PDF, PNG and CSV export.`,
+        `${result.changed} item${result.changed === 1 ? "" : "s"} hidden. Hidden items are excluded from PDF, PNG and CSV export.`,
         "info",
       );
     } else {
-      const stillHidden = resolved.length - targetable.length;
       toast(
-        `${targetable.length} item${targetable.length === 1 ? "" : "s"} shown.${stillHidden ? ` ${stillHidden} remain hidden because their layer is hidden.` : ""}`,
-        stillHidden ? "warning" : "success",
+        `${result.changed} item${result.changed === 1 ? "" : "s"} shown.${
+          result.skippedLayerHidden
+            ? ` ${result.skippedLayerHidden} remain hidden because their layer is hidden.`
+            : ""
+        }`,
+        result.skippedLayerHidden ? "warning" : "success",
       );
     }
   }
@@ -1409,25 +1392,23 @@ export class App {
       toast("The layer is locked. Unlock the layer first.", "warning");
       return;
     }
+    const result = emptyItemCommandResult();
     store.mutate(
       (project) => {
-        for (const entry of targetable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item) item.locked = locked;
-        }
+        Object.assign(result, setItemsLocked(project, store.ui.selection, locked));
       },
       "change",
     );
     if (locked) {
-      toast(
-        `${targetable.length} item${targetable.length === 1 ? "" : "s"} locked.`,
-        "success",
-      );
+      toast(`${result.changed} item${result.changed === 1 ? "" : "s"} locked.`, "success");
     } else {
-      const stillLocked = resolved.length - targetable.length;
       toast(
-        `${targetable.length} item${targetable.length === 1 ? "" : "s"} unlocked.${stillLocked ? ` ${stillLocked} still locked by their layer.` : ""}`,
-        stillLocked ? "warning" : "success",
+        `${result.changed} item${result.changed === 1 ? "" : "s"} unlocked.${
+          result.skippedLayerLocked
+            ? ` ${result.skippedLayerLocked} still locked by their layer.`
+            : ""
+        }`,
+        result.skippedLayerLocked ? "warning" : "success",
       );
     }
   }
@@ -1484,13 +1465,7 @@ export class App {
     }
     store.mutate(
       (project) => {
-        for (const entry of editable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item) {
-            item.strokeWidth = width;
-            item.updatedAt = new Date().toISOString();
-          }
-        }
+        setItemsStrokeWidth(project, store.ui.selection, width);
       },
       "change",
     );
@@ -1507,10 +1482,7 @@ export class App {
     }
     store.mutate(
       (project) => {
-        for (const entry of editable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (item) item.color = color;
-        }
+        setItemsColor(project, store.ui.selection, color);
       },
       "change",
     );

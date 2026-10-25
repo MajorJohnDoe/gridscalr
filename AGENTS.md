@@ -159,6 +159,7 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 src/app/App.ts             app wiring, file flows, shortcuts, export actions
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
+src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
@@ -166,6 +167,13 @@ src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model and CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
+src/ui/contextBar.ts       tool-specific context bar and target layer controls
+src/ui/inspector.ts        Properties scale and active-layer sections
+src/ui/selectionInspector.ts single and multi-selection Properties
+src/ui/shortcuts.json      single source for tool and application shortcuts
+src/ui/shortcuts.ts        typed shortcut maps and platform formatting
+src/ui/statusBar.ts        calibration, cursor and layer status
+src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
@@ -192,20 +200,23 @@ docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image and demo project tests
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
 scripts/make-demo-project.mjs deterministic documentation demo project
+scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
+scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 ```
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
 
-When adding a layer or item operation, keep lock and visibility guards aligned in `src/state/store.ts`, `src/canvas/CanvasView.ts`, `src/ui/layerList.ts`, `src/ui/panels.ts`, and export code.
+When adding a layer or item operation, put lock and visibility semantics in `src/model/commands.ts` and keep the App, canvas, layer list, inspector and export call sites aligned.
 
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite.
+- `npm run test:ui` runs the Playwright smoke test against the browser fallback.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage and schema references.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
-- `npx playwright install chromium` installs the browser once for `docs:capture`.
+- `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
 - `npm run fixture` regenerates `fixtures/sample-plan.pdf` from `scripts/make-fixture.mjs`.
 - The sample PDF has two A4 landscape pages; page 1 contains a 10.00 m calibration dimension.

@@ -14,6 +14,7 @@ import {
   toggleSidebar,
 } from "./sidebar";
 import { openSettingsDialog } from "./settingsDialog";
+import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
 
 interface ActionItem {
@@ -46,19 +47,6 @@ interface MenuDefinition {
   items: () => MenuItem[];
 }
 
-const isMac = /Mac|iPhone|iPad/i.test(
-  typeof navigator === "undefined" ? "" : `${navigator.platform} ${navigator.userAgent}`,
-);
-
-function shortcut(label: string): string {
-  if (!isMac) return label;
-  return label
-    .replace(/Ctrl\+/g, "⌘")
-    .replace(/Shift\+/g, "⇧")
-    .replace(/Alt\+/g, "⌥")
-    .replace(/⌘⇧/g, "⇧⌘");
-}
-
 function action(
   label: string,
   run: () => void,
@@ -67,7 +55,7 @@ function action(
   return {
     kind: "action",
     label,
-    shortcut: options.shortcut ? shortcut(options.shortcut) : undefined,
+    shortcut: options.shortcut ? formatShortcut(options.shortcut) : undefined,
     disabled: options.disabled,
     checked: options.checked,
     danger: options.danger,
@@ -93,9 +81,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       id: "file",
       label: "File",
       items: () => [
-        action("New project…", actions.newProject, { shortcut: "Ctrl+N" }),
-        action("Open project…", actions.openProject, { shortcut: "Ctrl+Shift+O" }),
-        action("Open drawing…", actions.openPdf, { shortcut: "Ctrl+O" }),
+        action("New project…", actions.newProject, { shortcut: APP_SHORTCUTS.newProject }),
+        action("Open project…", actions.openProject, { shortcut: APP_SHORTCUTS.openProject }),
+        action("Open drawing…", actions.openPdf, { shortcut: APP_SHORTCUTS.openDrawing }),
         {
           kind: "submenu",
           label: "Open recent",
@@ -118,9 +106,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
             : [action("No recent files", () => undefined, { disabled: true })],
         },
         separator(),
-        action("Save", actions.saveProject, { shortcut: "Ctrl+S", disabled: !hasProject }),
+        action("Save", actions.saveProject, { shortcut: APP_SHORTCUTS.save, disabled: !hasProject }),
         action("Save as…", actions.saveProjectAs, {
-          shortcut: "Ctrl+Shift+S",
+          shortcut: APP_SHORTCUTS.saveAs,
           disabled: !hasProject,
         }),
         separator(),
@@ -143,43 +131,43 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         },
         separator(),
         action("Close project", actions.closeProject, { disabled: !hasProject }),
-        action("Quit", actions.quit, { shortcut: "Ctrl+Q" }),
+        action("Quit", actions.quit, { shortcut: APP_SHORTCUTS.quit }),
       ],
     },
     {
       id: "edit",
       label: "Edit",
       items: () => [
-        action("Undo", actions.undo, { shortcut: "Ctrl+Z", disabled: !store.canUndo }),
+        action("Undo", actions.undo, { shortcut: APP_SHORTCUTS.undo, disabled: !store.canUndo }),
         action("Redo", actions.redo, {
-          shortcut: "Ctrl+Shift+Z",
+          shortcut: APP_SHORTCUTS.redo,
           disabled: !store.canRedo,
         }),
         separator(),
         action("Cut", actions.cutSelection, {
-          shortcut: "Ctrl+X",
+          shortcut: APP_SHORTCUTS.cut,
           disabled: !hasSelection(),
         }),
         action("Copy", actions.copySelection, {
-          shortcut: "Ctrl+C",
+          shortcut: APP_SHORTCUTS.copy,
           disabled: !hasSelection(),
         }),
         action("Paste", actions.pasteSelection, {
-          shortcut: "Ctrl+V",
+          shortcut: APP_SHORTCUTS.paste,
           disabled: !hasProject || !hasClipboard(project!),
         }),
         action("Duplicate", actions.duplicateSelection, {
-          shortcut: "Ctrl+D",
+          shortcut: APP_SHORTCUTS.duplicate,
           disabled: !hasSelection(),
         }),
-        action("Delete", actions.deleteSelection, {
-          shortcut: "Delete",
+        action(APP_SHORTCUTS.delete, actions.deleteSelection, {
+          shortcut: APP_SHORTCUTS.delete,
           disabled: !hasSelection(),
           danger: true,
         }),
         separator(),
         action("Rename", actions.renameSelection, {
-          shortcut: "F2",
+          shortcut: APP_SHORTCUTS.rename,
           disabled: store.ui.selection.length !== 1,
         }),
       ],
@@ -189,19 +177,19 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       label: "View",
       items: () => [
         action("Sidebar", toggleSidebar, {
-          shortcut: "Ctrl+\\",
+          shortcut: APP_SHORTCUTS.sidebar,
           checked: !isSidebarCollapsed(),
         }),
         action("Properties", toggleInspector, {
-          shortcut: "Ctrl+Shift+\\",
+          shortcut: APP_SHORTCUTS.properties,
           checked: !isInspectorCollapsed(),
         }),
         separator(),
-        action("Zoom in", actions.zoomIn, { shortcut: "Ctrl++", disabled: !hasProject }),
-        action("Zoom out", actions.zoomOut, { shortcut: "Ctrl+-", disabled: !hasProject }),
-        action("Fit page", actions.zoomFit, { shortcut: "Ctrl+0", disabled: !hasProject }),
+        action("Zoom in", actions.zoomIn, { shortcut: APP_SHORTCUTS.zoomIn, disabled: !hasProject }),
+        action("Zoom out", actions.zoomOut, { shortcut: APP_SHORTCUTS.zoomOut, disabled: !hasProject }),
+        action("Fit page", actions.zoomFit, { shortcut: APP_SHORTCUTS.fitPage, disabled: !hasProject }),
         action("Actual size", actions.zoomActual, {
-          shortcut: "Ctrl+1",
+          shortcut: APP_SHORTCUTS.actualSize,
           disabled: !hasProject,
         }),
         separator(),
@@ -219,11 +207,11 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         }),
         separator(),
         action("Measurements…", actions.openMeasurements, {
-          shortcut: "Ctrl+Shift+M",
+          shortcut: APP_SHORTCUTS.measurements,
           disabled: !hasProject,
         }),
         action("Quantities…", actions.openQuantities, {
-          shortcut: "Ctrl+Alt+Q",
+          shortcut: APP_SHORTCUTS.quantities,
           disabled: !hasProject,
         }),
       ],
@@ -233,7 +221,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       label: "Settings",
       items: () => [
         action("Project settings…", () => openSettingsDialog(), {
-          shortcut: "Ctrl+,",
+          shortcut: APP_SHORTCUTS.settings,
           disabled: !hasProject,
         }),
         action("Manage categories…", () => void openCategoriesDialog(), {
@@ -251,8 +239,8 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       label: "Help",
       items: () => [
         action("Workflows", () => openHelp("workflows")),
-        action("User guide", () => openHelp("guide"), { shortcut: "F1" }),
-        action("Keyboard shortcuts", () => openHelp("shortcuts"), { shortcut: "?" }),
+        action("User guide", () => openHelp("guide"), { shortcut: APP_SHORTCUTS.userGuide }),
+        action("Keyboard shortcuts", () => openHelp("shortcuts"), { shortcut: APP_SHORTCUTS.shortcuts }),
         separator(),
         action("About GridScalr", () => openHelp("about")),
       ],

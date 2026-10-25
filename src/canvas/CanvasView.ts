@@ -54,8 +54,8 @@ import {
   findItem,
   itemIsLocked,
   layerKindForItem,
-  removeItem,
 } from "../model/layers";
+import { deleteItems, translateItems } from "../model/commands";
 import {
   normalizeCropRect,
   pageRectFromCrop,
@@ -3058,17 +3058,16 @@ export class CanvasView {
       toast("The selected item is locked.", "warning");
       return;
     }
+    let deleted = 0;
     store.mutate(
       (project) => {
-        for (const entry of removable) {
-          removeItem(project, entry.ref.layerId, entry.ref.itemId);
-        }
+        deleted = deleteItems(project, store.ui.selection).changed;
       },
       "change",
     );
-    if (removable.length < resolved.length) {
+    if (deleted < resolved.length) {
       toast(
-        `${removable.length} item${removable.length === 1 ? "" : "s"} deleted. Locked items were kept.`,
+        `${deleted} item${deleted === 1 ? "" : "s"} deleted. Locked items were kept.`,
         "info",
       );
     }
@@ -3082,12 +3081,7 @@ export class CanvasView {
     if (!movable.length) return;
     store.mutate(
       (project) => {
-        for (const entry of movable) {
-          const item = findItem(project, entry.ref.itemId)?.item;
-          if (!item) continue;
-          item.points = translatePoints(item.points, dx, dy);
-          item.updatedAt = new Date().toISOString();
-        }
+        translateItems(project, store.ui.selection, dx, dy);
       },
       "change",
     );

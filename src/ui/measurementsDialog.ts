@@ -2,6 +2,7 @@ import { categoryForItem } from "../model/categories";
 import { countTypeLabel } from "../model/countSymbols";
 import { totalPageCount } from "../model/documents";
 import { findItem, isMeasurementKind, itemIsLocked, itemIsVisible } from "../model/layers";
+import { setItemsLocked, setItemsVisible } from "../model/commands";
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import type { Layer, MarkupItem } from "../model/types";
 import { store } from "../state/store";
@@ -228,16 +229,16 @@ export function openMeasurementsDialog(actions: PanelActions): void {
       eye.addEventListener("click", (event) => {
         event.stopPropagation();
         const nextVisible = row.item.visible === false;
+        const ref = { layerId: row.layerId, itemId: row.item.id };
         store.mutate(
           (project) => {
-            const target = findItem(project, row.item.id)?.item;
-            if (target) target.visible = nextVisible;
+            setItemsVisible(project, [ref], nextVisible);
           },
           "change",
         );
         if (!nextVisible) {
           store.setSelectionMany(
-            store.ui.selection.filter((ref) => ref.itemId !== row.item.id),
+            store.ui.selection.filter((selection) => selection.itemId !== row.item.id),
           );
         }
       });
@@ -250,10 +251,10 @@ export function openMeasurementsDialog(actions: PanelActions): void {
       lock.addEventListener("click", (event) => {
         event.stopPropagation();
         const nextLocked = !row.item.locked;
+        const ref = { layerId: row.layerId, itemId: row.item.id };
         store.mutate(
           (project) => {
-            const target = findItem(project, row.item.id)?.item;
-            if (target) target.locked = nextLocked;
+            setItemsLocked(project, [ref], nextLocked);
           },
           "change",
         );
