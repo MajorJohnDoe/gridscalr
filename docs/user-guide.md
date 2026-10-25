@@ -2,7 +2,7 @@
 
 GridScalr is a local-first desktop app for measuring PDF and TIF drawings and turning those measurements into procurement quantities. Everything runs on your computer. Drawings are read from disk and are never uploaded.
 
-This guide follows the current interface. For a printable shortcut list, open **Help → Keyboard shortcuts** or read [shortcuts.md](shortcuts.md).
+This guide follows the current interface. For a printable shortcut list, open **Help → Keyboard shortcuts** or read [shortcuts.md](shortcuts.md). For task-oriented walkthroughs, open **Help → Workflows** or read [workflows.md](workflows.md).
 
 ## Quick start
 
@@ -370,11 +370,12 @@ Project settings are stored in the `.gridscalr` file and are undoable while the 
 
 ## Help
 
+- **Help → Workflows** opens task-oriented guides for operations technicians and technical property managers.
 - **Help → User guide** (`F1`) opens this guide inside the app.
 - **Help → Keyboard shortcuts** (`?`) opens the shortcut reference.
-- **Help → About GridScalr** shows the installed version.
+- **Help → About GridScalr** shows the installed version and project schema.
 
-The help content is bundled with the application. It does not use the network.
+The help content is bundled with the application. It does not use the network. Use the search field to filter the current topic, or the table of contents to jump between sections. Screenshots can be clicked to open them at full size.
 
 ## Project files
 

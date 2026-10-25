@@ -1,0 +1,53 @@
+{
+  "generatedAt": "2026-10-25T11:35:43.166Z",
+  "appVersion": "0.3.0",
+  "viewport": {
+    "width": 1920,
+    "height": 1080
+  },
+  "project": "fixtures/demo-project.gridscalr",
+  "screenshots": [
+    {
+      "file": "hero.png",
+      "title": "Measurement takeoff",
+      "alt": "GridScalr showing a calibrated floor plan with measurement labels, a selected living-area rectangle and the Properties panel.",
+      "description": "A calibrated takeoff with rectangle areas, counts, a deduction and drawing annotations."
+    },
+    {
+      "file": "measure.png",
+      "title": "Measure and annotate",
+      "alt": "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and units.",
+      "description": "Measurement and drawing tools share one canvas but stay on separate layer types."
+    },
+    {
+      "file": "markups.png",
+      "title": "Markups and layers",
+      "alt": "GridScalr Layers panel with a selected revision cloud, callout and inspected stamp visible on the plan.",
+      "description": "Revision clouds, callouts and status stamps live on drawing layers."
+    },
+    {
+      "file": "quantities.png",
+      "title": "Quantities",
+      "alt": "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
+      "description": "Live quantities with deductions, waste and rounding for procurement."
+    },
+    {
+      "file": "measurements.png",
+      "title": "Measurements list",
+      "alt": "The GridScalr Measurements dialog listing all pages with search, page and type filters, and row actions.",
+      "description": "Find, select and navigate every measurement and drawing across all pages."
+    },
+    {
+      "file": "export.png",
+      "title": "Drawing export",
+      "alt": "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
+      "description": "Export visible markups as a flattened drawing PDF without modifying the source drawing."
+    },
+    {
+      "file": "workflows-help.png",
+      "title": "Workflows in the help dialog",
+      "alt": "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
+      "description": "Task-oriented workflows sit beside the full user guide, shortcuts and About."
+    }
+  ]
+}

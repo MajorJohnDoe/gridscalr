@@ -61,7 +61,9 @@ export default defineConfig({
     host: host || false,
     hmr: host ? { protocol: "ws", host, port: 1421 } : undefined,
     watch: {
-      ignored: ["**/src-tauri/**"],
+      // docs:capture writes these files while the dev server is running. They
+      // are static help assets, so avoid a full reload for every screenshot.
+      ignored: ["**/src-tauri/**", "**/docs/screenshots/**"],
     },
   },
   worker: {

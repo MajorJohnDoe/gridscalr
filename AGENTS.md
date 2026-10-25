@@ -16,13 +16,15 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 
 1. `README.md` — user-facing behaviour, architecture, shortcuts, and file format.
 2. `docs/user-guide.md` — the in-app user guide. Keep it accurate whenever the GUI or a user-facing workflow changes.
-3. `docs/shortcuts.md` — the in-app shortcut reference.
-4. `docs/plan/roadmap-etapper.md` — Etapp 1–5 scope, product invariants, and open decisions.
-5. `docs/plan/etapp-2-mangddata.md` — detailed Etapp 2A/2B plan.
-6. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
-7. `docs/plan/etapp-4-bilder.md` — approved Etapp 4 plan and image decisions.
-8. `docs/plan/etapp-5-tiff.md` — approved Etapp 5 plan, TIF decisions, and S1 results.
-9. The relevant source and tests for the area being changed.
+3. `docs/workflows.md` — task-oriented guides for operations technicians and technical property managers.
+4. `docs/shortcuts.md` — the in-app shortcut reference.
+5. `docs/screenshots/manifest.json` and the referenced screenshots — regenerate with `npm run docs:capture` when a visible screen changes.
+6. `docs/plan/roadmap-etapper.md` — Etapp 1–5 scope, product invariants, and open decisions.
+7. `docs/plan/etapp-2-mangddata.md` — detailed Etapp 2A/2B plan.
+8. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
+9. `docs/plan/etapp-4-bilder.md` — approved Etapp 4 plan and image decisions.
+10. `docs/plan/etapp-5-tiff.md` — approved Etapp 5 plan, TIF decisions, and S1 results.
+11. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -48,8 +50,10 @@ Every change to the GUI, menu structure, shortcuts, or user-facing behaviour mus
 - Update `docs/user-guide.md` for any new feature, renamed command, moved panel, changed menu path, or changed workflow.
 - Update `docs/shortcuts.md` and the README shortcut table whenever a keyboard shortcut is added, removed, or changed.
 - Update `README.md` when navigation, menus, panels, exports, or the architecture map change.
-- Keep `Help → About` accurate. The version is read from `package.json`; do not hardcode it in help content.
-- Documentation-only changes do not need the full build, but links and instructions must remain correct.
+- Keep role-based workflows in `docs/workflows.md` accurate when a tool or workflow changes.
+- When a change alters a visible screen or workflow, recapture the affected images with `npm run docs:capture`. Do not leave old screenshots that show a previous interface.
+- Keep `Help → About` accurate. The version is read from `package.json` and the schema version from `SCHEMA_VERSION`; do not hardcode either in help content.
+- Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct. `npm run check:docs` must pass.
 - Do not report a GUI change as complete while the user guide describes the previous interface.
 
 ## Git workflow
@@ -73,6 +77,7 @@ Run the relevant checks from the repository root:
 
 ```bash
 npm run check:versions
+npm run check:docs
 npx tsc --noEmit
 npm test -- --run
 npm run build
@@ -163,10 +168,11 @@ src/report/                pure report model and CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
-src/ui/helpDialog.ts       bundled Markdown help and About dialog
+src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
 src/ui/settingsDialog.ts   project units, snapping, quantity defaults
 src/help/markdown.ts       safe Markdown renderer for bundled help
-src/help/content.ts        raw imports of docs/user-guide.md and docs/shortcuts.md
+src/help/content.ts        raw imports of the user guide, workflows and shortcuts
+src/help/images.ts         bundled screenshot URLs for the help dialog
 src/io/projectFile.ts      schema normalization, migration, serialization, relative paths
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
@@ -180,9 +186,14 @@ src/io/stampDefaults.ts    global stamp presets for new projects
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src-tauri/src/commands.rs  atomic file writes and path checks
 docs/user-guide.md         in-app user guide
+docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
-tests/                     model, project-file, hit-test, selection, TIFF, PDF, and Markdown tests
+docs/screenshots/          versioned screenshots and capture manifest
+tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image and demo project tests
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
+scripts/make-demo-project.mjs deterministic documentation demo project
+scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
+scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 ```
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
@@ -192,6 +203,10 @@ When adding a layer or item operation, keep lock and visibility guards aligned i
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite.
+- `npm run check:docs` validates documentation links, anchors, images, tool coverage and schema references.
+- `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
+- `npx playwright install chromium` installs the browser once for `docs:capture`.
+- `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
 - `npm run fixture` regenerates `fixtures/sample-plan.pdf` from `scripts/make-fixture.mjs`.
 - The sample PDF has two A4 landscape pages; page 1 contains a 10.00 m calibration dimension.
 - Browser-only development (`npm run dev`) is a UI fallback. Native file paths and recents require Tauri.
@@ -211,7 +226,7 @@ Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.
 
 ## Start-of-session checklist
 
-1. Read `AGENTS.md`, `README.md`, `docs/user-guide.md`, `docs/shortcuts.md`, and the relevant plan.
+1. Read `AGENTS.md`, `README.md`, `docs/user-guide.md`, `docs/workflows.md`, `docs/shortcuts.md`, and the relevant plan.
 2. Run `git status` and check that the working tree is not carrying unexplained changes.
 3. Run `gh auth status` if GitHub operations are needed.
 4. Check the latest CI status with `gh run list --repo MajorJohnDoe/gridscalr`.

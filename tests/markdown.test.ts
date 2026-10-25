@@ -41,6 +41,31 @@ describe("markdown renderer", () => {
     expect(html).toContain("<pre><code class=\"language-json\">{ &quot;a&quot;: 1 }</code></pre>");
   });
 
+  it("renders bundled help images as figures with captions", () => {
+    const html = renderMarkdown("![Calibration dialog](screenshots/calibrate.png)\n", {
+      resolveImage: (src) => (src.endsWith("calibrate.png") ? "/assets/calibrate.png" : null),
+    });
+    expect(html).toContain('<figure class="help-figure">');
+    expect(html).toContain('<img src="/assets/calibrate.png" alt="Calibration dialog" loading="lazy">');
+    expect(html).toContain("<figcaption>Calibration dialog</figcaption>");
+  });
+
+  it("does not emit an image when the resolver rejects the source", () => {
+    const html = renderMarkdown("![Calibration dialog](screenshots/calibrate.png)\n", {
+      resolveImage: () => null,
+    });
+    expect(html).not.toContain("<img");
+    expect(html).toContain("Calibration dialog");
+  });
+
+  it("escapes image attributes supplied by Markdown", () => {
+    const html = renderMarkdown('![A "quoted" caption](screenshots/a.png)\n', {
+      resolveImage: () => '/assets/a.png" onerror="alert(1)',
+    });
+    expect(html).not.toContain('onerror="alert(1)"');
+    expect(html).toContain("&quot;");
+  });
+
   it("sanitizes links and keeps internal anchors", () => {
     const html = renderMarkdown("[Guide](#measure) [Shortcuts](shortcuts.md) [Site](https://example.com)");
     expect(html).toContain('<a href="#measure" class="help-link">Guide</a>');
@@ -61,10 +86,13 @@ describe("markdown renderer", () => {
     expect(HELP_CONTENT.guide).toContain("Settings → Project settings");
     expect(HELP_CONTENT.shortcuts).toContain("## Project and file");
     expect(HELP_CONTENT.shortcuts).toContain("Ctrl+Shift+M");
+    expect(HELP_CONTENT.workflows).toContain("# Workflows");
+    expect(HELP_CONTENT.workflows).toContain("Operations technician");
+    expect(HELP_CONTENT.workflows).toContain("Technical property manager");
   });
 
   it("renders the bundled documents without raw HTML", () => {
-    for (const content of [HELP_CONTENT.guide, HELP_CONTENT.shortcuts]) {
+    for (const content of [HELP_CONTENT.workflows, HELP_CONTENT.guide, HELP_CONTENT.shortcuts]) {
       const html = renderMarkdown(content);
       expect(html).toContain('<div class="markdown">');
       expect(html).not.toContain("<script");

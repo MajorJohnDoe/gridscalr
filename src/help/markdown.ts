@@ -7,6 +7,25 @@ function escapeHtml(value: string): string {
     .replace(/'/g, "&#39;");
 }
 
+export interface MarkdownRenderOptions {
+  /** Resolves a bundled help image. Unresolved images render as alt text. */
+  resolveImage?: (src: string, alt: string) => string | null;
+}
+
+function renderImage(
+  alt: string,
+  src: string,
+  options: MarkdownRenderOptions,
+  figure: boolean,
+): string {
+  const resolved = options.resolveImage?.(src, alt) ?? null;
+  if (!resolved) return escapeHtml(alt);
+  const image = `<img src="${escapeHtml(resolved)}" alt="${escapeHtml(alt)}" loading="lazy">`;
+  if (!figure) return image;
+  const caption = alt.trim() ? `<figcaption>${escapeHtml(alt.trim())}</figcaption>` : "";
+  return `<figure class="help-figure">${image}${caption}</figure>`;
+}
+
 function safeHref(href: string): "anchor" | "doc" | "external" | "none" {
   const value = href.trim();
   if (value.startsWith("#")) return "anchor";
@@ -15,12 +34,17 @@ function safeHref(href: string): "anchor" | "doc" | "external" | "none" {
   return "none";
 }
 
-function renderInline(raw: string): string {
+function renderInline(raw: string, options: MarkdownRenderOptions): string {
   const codeSpans: string[] = [];
   let text = escapeHtml(raw).replace(/`([^`]+)`/g, (_match, code: string) => {
     codeSpans.push(code);
     return `\u0001${codeSpans.length - 1}\u0001`;
   });
+
+  text = text.replace(
+    /!\[([^\]]*)\]\(([^)\s]+)\)/g,
+    (_match, alt: string, src: string) => renderImage(alt, src, options, false),
+  );
 
   text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_match, label: string, href: string) => {
     const kind = safeHref(href);
@@ -79,11 +103,15 @@ function isBlockStart(lines: string[], index: number): boolean {
     /^>\s?/.test(line) ||
     /^\s*([-*+]|\d+[.)])\s+/.test(line) ||
     /^(---+|\*\*\*+|___+)\s*$/.test(line) ||
+    /^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.test(line) ||
     (line.includes("|") && index + 1 < lines.length && isTableSeparator(lines[index + 1]))
   );
 }
 
-export function renderMarkdown(markdown: string): string {
+export function renderMarkdown(
+  markdown: string,
+  options: MarkdownRenderOptions = {},
+): string {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   const html: string[] = [];
   const usedIds = new Set<string>();
@@ -93,6 +121,13 @@ export function renderMarkdown(markdown: string): string {
     const line = lines[index];
 
     if (/^\s*$/.test(line)) {
+      index += 1;
+      continue;
+    }
+
+    const image = /^\s*!\[([^\]]*)\]\(([^)\s]+)\)\s*$/.exec(line);
+    if (image) {
+      html.push(renderImage(image[1], image[2], options, true));
       index += 1;
       continue;
     }
@@ -118,7 +153,7 @@ export function renderMarkdown(markdown: string): string {
       const level = heading[1].length;
       const rawText = heading[2].trim();
       const id = slugify(rawText, usedIds);
-      html.push(`<h${level} id="${id}">${renderInline(rawText)}</h${level}>`);
+      html.push(`<h${level} id="${id}">${renderInline(rawText, options)}</h${level}>`);
       index += 1;
       continue;
     }
@@ -137,12 +172,12 @@ export function renderMarkdown(markdown: string): string {
         rows.push(splitTableRow(lines[index]));
         index += 1;
       }
-      const head = headers.map((cell) => `<th>${renderInline(cell)}</th>`).join("");
+      const head = headers.map((cell) => `<th>${renderInline(cell, options)}</th>`).join("");
       const bodyRows = rows
         .map(
           (row) =>
             `<tr>${headers
-              .map((_header, cellIndex) => `<td>${renderInline(row[cellIndex] ?? "")}</td>`)
+              .map((_header, cellIndex) => `<td>${renderInline(row[cellIndex] ?? "", options)}</td>`)
               .join("")}</tr>`,
         )
         .join("");
@@ -156,7 +191,7 @@ export function renderMarkdown(markdown: string): string {
         quote.push(lines[index].replace(/^>\s?/, ""));
         index += 1;
       }
-      html.push(`<blockquote>${renderInline(quote.join("\n"))}</blockquote>`);
+      html.push(`<blockquote>${renderInline(quote.join("\n"), options)}</blockquote>`);
       continue;
     }
 
@@ -166,7 +201,7 @@ export function renderMarkdown(markdown: string): string {
       while (index < lines.length) {
         const match = /^\s*[-*+]\s+(.*)$/.exec(lines[index]);
         if (!match) break;
-        items.push(`<li>${renderInline(match[1])}</li>`);
+        items.push(`<li>${renderInline(match[1], options)}</li>`);
         index += 1;
       }
       html.push(`<ul>${items.join("")}</ul>`);
@@ -179,7 +214,7 @@ export function renderMarkdown(markdown: string): string {
       while (index < lines.length) {
         const match = /^\s*\d+[.)]\s+(.*)$/.exec(lines[index]);
         if (!match) break;
-        items.push(`<li>${renderInline(match[1])}</li>`);
+        items.push(`<li>${renderInline(match[1], options)}</li>`);
         index += 1;
       }
       html.push(`<ol>${items.join("")}</ol>`);
@@ -192,7 +227,7 @@ export function renderMarkdown(markdown: string): string {
       paragraph.push(lines[index]);
       index += 1;
     }
-    html.push(`<p>${renderInline(paragraph.join("\n"))}</p>`);
+    html.push(`<p>${renderInline(paragraph.join("\n"), options)}</p>`);
   }
 
   return `<div class="markdown">${html.join("\n")}</div>`;

@@ -250,6 +250,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       id: "help",
       label: "Help",
       items: () => [
+        action("Workflows", () => openHelp("workflows")),
         action("User guide", () => openHelp("guide"), { shortcut: "F1" }),
         action("Keyboard shortcuts", () => openHelp("shortcuts"), { shortcut: "?" }),
         separator(),

@@ -76,6 +76,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 
 | Action | Shortcut |
 | --- | --- |
+| Workflows | `Help → Workflows` |
 | User guide | `F1` |
 | Keyboard shortcuts | `?` |
 | About GridScalr | `Help → About GridScalr` |
