@@ -57,7 +57,6 @@ import {
 import { deleteItems, translateItems } from "../model/commands";
 import {
   averagePoints,
-  clampPointToPage,
   constrainSquare,
   cursorForRole,
   dedupeLast,
@@ -65,19 +64,15 @@ import {
   handleLocalPoint,
   hexAlpha,
   isCancellation,
-  movePageRect,
   oppositeHandlePoint,
   pointInBox,
-  pointInRect,
-  rectFromPoints,
-  resizePageRect,
-  rotatedAabb,
   roundRect,
-  roundTo,
   scaleBounds,
   snapLabel,
   type BoxHandleRole,
 } from "./geometry";
+import { CropController } from "./crop";
+import { CanvasEditorController, type LabelHit } from "./editors";
 import {
   handleAt,
   selectionHandles,
@@ -88,13 +83,7 @@ import {
   drawEndpoints as paintEndpoints,
   drawLabelLayout as paintLabelLayout,
 } from "./annotationDraw";
-import {
-  normalizeCropRect,
-  pageRectFromCrop,
-  type NormalizedCrop,
-  type PageRect,
-} from "../model/export";
-import { itemMetrics } from "../model/measure";
+import type { NormalizedCrop } from "../model/export";
 import {
   imageAssetForItem,
   imageModeOf,
@@ -119,7 +108,6 @@ import {
 } from "../model/snap";
 import {
   clampTextSize,
-  measureTextWidth,
   TEXT_FONT_STACK,
   TEXT_UNDERLINE_OFFSET,
   TEXT_UNDERLINE_WIDTH,
@@ -129,14 +117,13 @@ import {
 import { totalPageCount } from "../model/documents";
 import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
-import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef, TextAlign } from "../model/types";
+import type { AreaShape, ImageAsset, ItemKind, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import { calibrationDialog, textDialog } from "../ui/dialogs";
-import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
 
 export interface CanvasHooks {
@@ -153,6 +140,8 @@ export interface CanvasTestApi {
   screenToPage(point: Point): Point;
   pageSize(): PageSize | undefined;
   selectionHandles(itemId: string): Handle[] | null;
+  labelScreenPoint(itemId: string): Point | null;
+  annotationScreenPoint(itemId: string): Point | null;
 }
 
 type Draft =
@@ -195,72 +184,6 @@ interface MarqueeState {
   start: Point;
   current: Point;
   additive: boolean;
-}
-
-interface CropDrag {
-  mode: "new" | "move" | "resize";
-  start: Point;
-  startRect: PageRect | null;
-  handle?: BoxHandleRole;
-  pointerId: number;
-}
-
-interface CropMode {
-  rect: PageRect | null;
-  drag: CropDrag | null;
-  hover: BoxHandleRole | "move" | null;
-  resolve: (crop: NormalizedCrop | null) => void;
-}
-
-interface TextStyleSnapshot {
-  text: string;
-  color: string;
-  fontSize: number;
-  rotation: number;
-  bold: boolean;
-  underline: boolean;
-  align: TextAlign;
-  boxWidth?: number;
-  boxHeight?: number;
-}
-
-interface TextEditSession {
-  mode: "text" | "cloud" | "callout";
-  itemId: string | null;
-  layerId: string | null;
-  page: number;
-  anchor: Point;
-  text: string;
-  color: string;
-  fontSize: number;
-  rotation: number;
-  bold: boolean;
-  underline: boolean;
-  align: TextAlign;
-  boxWidth?: number;
-  boxHeight?: number;
-  original?: TextStyleSnapshot;
-  closing: boolean;
-  container: HTMLDivElement;
-  textarea: HTMLTextAreaElement;
-  strip: HTMLDivElement;
-  resizeHandle: HTMLDivElement | null;
-}
-
-interface LabelEditSession {
-  itemId: string;
-  layerId: string;
-  page: number;
-  value: string;
-  original: string | undefined;
-  closing: boolean;
-  container: HTMLDivElement;
-  input: HTMLInputElement;
-}
-
-interface LabelHit {
-  layer: Layer;
-  item: MarkupItem;
 }
 
 interface PanState {
@@ -309,14 +232,9 @@ export class CanvasView {
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
   private spaceDown = false;
   private renderedPage = 0;
-  private editorLayer: HTMLDivElement;
-  private textEdit: TextEditSession | null = null;
-  private labelEdit: LabelEditSession | null = null;
-  private editingItemId: string | null = null;
-  private editingLabelId: string | null = null;
+  private editors: CanvasEditorController;
   private hoverHandle: Handle | null = null;
-  private cropMode: CropMode | null = null;
-  private cropUi: HTMLDivElement | null = null;
+  private crop: CropController;
   private imageCache = new Map<string, HTMLImageElement>();
   private imageLoading = new Set<string>();
   private imageFailed = new Set<string>();
@@ -343,13 +261,42 @@ export class CanvasView {
     this.loading.textContent = "Rendering page…";
     host.append(this.loading);
 
-    this.editorLayer = document.createElement("div");
-    this.editorLayer.className = "canvas-editor-layer";
-    host.append(this.editorLayer);
+    this.editors = new CanvasEditorController({
+      host,
+      width: () => this.width,
+      toScreen: (point) => this.toScreen(point),
+      pageLabelLayouts: () => this.pageLabelLayouts(),
+      screenLabelBox: (box, metrics) => this.screenLabelBox(box, metrics),
+      drawContent: () => this.drawContent(),
+      drawInteraction: () => this.drawInteraction(),
+    });
+
+    this.crop = new CropController({
+      host: this.host,
+      pageSize: () => this.pageSize(),
+      toPage: (screen) => this.toPage(screen),
+      toScreen: (page) => this.toScreen(page),
+      width: () => this.width,
+      height: () => this.height,
+      prepare: () => {
+        this.draft = null;
+        this.drag = null;
+        this.marquee = null;
+        this.pan = null;
+        this.hoverHandle = null;
+        this.snap = null;
+        this.snapCache = null;
+        store.clearSelection();
+        this.fitPage();
+        this.interaction.focus({ preventScroll: true });
+      },
+      updateCursor: () => this.updateCursor(),
+      drawInteraction: () => this.drawInteraction(),
+      capturePointer: (pointerId) => this.capturePointer(pointerId),
+    });
 
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
-    document.addEventListener("pointerdown", this.onDocumentPointerDown, true);
 
     this.interaction.addEventListener("pointerdown", this.onPointerDown);
     this.interaction.addEventListener("pointermove", this.onPointerMove);
@@ -371,18 +318,7 @@ export class CanvasView {
 
   private onStoreChange(reason: string): void {
     if (reason === "cursor") return;
-    if (
-      (this.textEdit && !this.textEdit.closing) ||
-      (this.labelEdit && !this.labelEdit.closing)
-    ) {
-      if (reason === "view") {
-        this.positionTextEditor();
-        this.positionLabelEditor();
-      } else if (reason !== "selection" && reason !== "change" && reason !== "save") {
-        this.cancelTextEdit();
-        this.cancelLabelEdit();
-      }
-    }
+    this.editors.handleStoreChange(reason);
     const page = store.ui.page;
     if (reason === "project" || reason === "undo") {
       this.lastRender = null;
@@ -424,8 +360,8 @@ export class CanvasView {
       canvas.height = Math.max(1, Math.round(this.height * this.dpr));
     }
     this.drawAll();
-    this.positionTextEditor();
-    this.positionLabelEditor();
+    this.editors.positionTextEditor();
+    this.editors.positionLabelEditor();
     this.schedulePdfRender();
   }
 
@@ -445,14 +381,13 @@ export class CanvasView {
       this.marquee !== null ||
       this.pan !== null ||
       this.draft !== null ||
-      this.textEdit !== null ||
-      this.labelEdit !== null ||
-      this.cropMode !== null
+      this.editors.hasEditors ||
+      this.crop.active
     );
   }
 
   get isCropping(): boolean {
-    return this.cropMode !== null;
+    return this.crop.active;
   }
 
   private pageSize(): PageSize | undefined {
@@ -487,90 +422,15 @@ export class CanvasView {
    */
   pickExportCrop(initial?: NormalizedCrop): Promise<NormalizedCrop | null> {
     if (!store.project) return Promise.resolve(null);
-    this.finishCrop(null);
-    this.draft = null;
-    this.drag = null;
-    this.marquee = null;
-    this.pan = null;
-    this.hoverHandle = null;
-    this.snap = null;
-    this.snapCache = null;
-    store.clearSelection();
-    this.fitPage();
-    const size = this.pageSize();
-    if (!size) return Promise.resolve(null);
-    const rect = initial ? pageRectFromCrop(initial, size) : null;
-    return new Promise<NormalizedCrop | null>((resolve) => {
-      this.cropMode = { rect, drag: null, hover: null, resolve };
-      this.showCropUi();
-      this.interaction.focus({ preventScroll: true });
-      this.updateCursor();
-      this.drawInteraction();
-      toast("Draw the export area. Drag the handles to adjust. Enter uses it, Esc cancels.", "info");
-    });
+    return this.crop.pick(initial);
   }
 
   confirmCrop(): boolean {
-    const mode = this.cropMode;
-    if (!mode) return false;
-    const size = this.pageSize();
-    if (!size || !mode.rect || mode.rect.width < 1 || mode.rect.height < 1) {
-      toast("Draw an export area first.", "warning");
-      return false;
-    }
-    const crop = normalizeCropRect(mode.rect, size);
-    if (!crop) {
-      toast("The export area is too small.", "warning");
-      return false;
-    }
-    this.finishCrop(crop);
-    return true;
+    return this.crop.confirm();
   }
 
   cancelCrop(): void {
-    this.finishCrop(null);
-  }
-
-  private finishCrop(crop: NormalizedCrop | null): void {
-    const mode = this.cropMode;
-    if (!mode) return;
-    this.cropMode = null;
-    this.hideCropUi();
-    this.updateCursor();
-    this.drawInteraction();
-    mode.resolve(crop);
-  }
-
-  private showCropUi(): void {
-    this.hideCropUi();
-    const bar = document.createElement("div");
-    bar.className = "canvas-crop-bar";
-    bar.dataset.cropUi = "true";
-
-    const hint = document.createElement("span");
-    hint.className = "canvas-crop-hint";
-    hint.textContent = "Drag to select the export area";
-
-    const cancel = document.createElement("button");
-    cancel.type = "button";
-    cancel.className = "btn btn-small btn-ghost";
-    cancel.textContent = "Cancel";
-    cancel.addEventListener("click", () => this.cancelCrop());
-
-    const use = document.createElement("button");
-    use.type = "button";
-    use.className = "btn btn-small btn-primary";
-    use.textContent = "Use area";
-    use.addEventListener("click", () => this.confirmCrop());
-
-    bar.append(hint, cancel, use);
-    this.host.append(bar);
-    this.cropUi = bar;
-  }
-
-  private hideCropUi(): void {
-    this.cropUi?.remove();
-    this.cropUi = null;
+    this.crop.cancel();
   }
 
   actualSize(): void {
@@ -669,14 +529,8 @@ export class CanvasView {
   private updateCursor(): void {
     const tool = store.ui.activeTool;
     let cursor = "";
-    if (this.cropMode) {
-      const cropDrag = this.cropMode.drag;
-      if (cropDrag?.mode === "move") cursor = "move";
-      else if (cropDrag?.handle) cursor = cursorForRole(cropDrag.handle);
-      else if (cropDrag?.mode === "new") cursor = "crosshair";
-      else if (this.cropMode.hover === "move") cursor = "move";
-      else if (this.cropMode.hover) cursor = cursorForRole(this.cropMode.hover);
-      else cursor = "crosshair";
+    if (this.crop.active) {
+      cursor = this.crop.cursor() ?? "crosshair";
     } else if (this.pan) cursor = "grabbing";
     else if (this.drag) {
       if (this.drag.mode === "rotate") cursor = "grabbing";
@@ -712,14 +566,14 @@ export class CanvasView {
 
   private onPointerDown = (event: PointerEvent): void => {
     if (!store.project) return;
-    this.commitActiveEditors();
+    this.editors.commitActiveEditors();
     this.interaction.focus({ preventScroll: true });
     const screen = this.localPoint(event);
 
-    if (this.cropMode) {
+    if (this.crop.active) {
       if (event.button !== 0) return;
       event.preventDefault();
-      this.handleCropDown(this.toPage(screen), event);
+      this.crop.pointerDown(this.toPage(screen), event);
       return;
     }
 
@@ -850,9 +704,9 @@ export class CanvasView {
       const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
       if (hit?.item.kind === "text" && !hit.layer.locked) {
         store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
-        this.startTextEdit(hit.item, hit.layer);
+        this.editors.startTextEdit(hit.item, hit.layer);
       } else {
-        this.startNewText(page);
+        this.editors.startNewText(page);
       }
       return;
     }
@@ -1097,8 +951,8 @@ export class CanvasView {
     const page = this.toPage(screen);
     store.setCursor(page);
 
-    if (this.cropMode) {
-      this.handleCropMove(page);
+    if (this.crop.active) {
+      this.crop.pointerMove(page);
       return;
     }
 
@@ -1363,8 +1217,8 @@ export class CanvasView {
     if (this.interaction.hasPointerCapture(event.pointerId)) {
       this.releasePointer(event.pointerId);
     }
-    if (this.cropMode) {
-      this.handleCropUp();
+    if (this.crop.active) {
+      this.crop.pointerUp();
       return;
     }
     if (this.pan) {
@@ -1443,131 +1297,9 @@ export class CanvasView {
     this.drawInteraction();
   }
 
-  private handleCropDown(page: Point, event: PointerEvent): void {
-    const mode = this.cropMode;
-    const size = this.pageSize();
-    if (!mode || !size) return;
-    const point = clampPointToPage(page, size);
-    const screen = this.toScreen(page);
-    if (mode.rect) {
-      const handle = this.cropHandleAt(mode.rect, screen);
-      if (handle) {
-        mode.drag = {
-          mode: "resize",
-          start: point,
-          startRect: { ...mode.rect },
-          handle,
-          pointerId: event.pointerId,
-        };
-        this.capturePointer(event.pointerId);
-        mode.hover = handle;
-        this.updateCursor();
-        this.drawInteraction();
-        return;
-      }
-      if (pointInRect(point, mode.rect)) {
-        mode.drag = {
-          mode: "move",
-          start: point,
-          startRect: { ...mode.rect },
-          pointerId: event.pointerId,
-        };
-        this.capturePointer(event.pointerId);
-        mode.hover = "move";
-        this.updateCursor();
-        this.drawInteraction();
-        return;
-      }
-    }
-    mode.rect = { x: point.x, y: point.y, width: 0, height: 0 };
-    mode.drag = {
-      mode: "new",
-      start: point,
-      startRect: null,
-      pointerId: event.pointerId,
-    };
-    mode.hover = null;
-    this.capturePointer(event.pointerId);
-    this.updateCursor();
-    this.drawInteraction();
-  }
-
-  private handleCropMove(page: Point): void {
-    const mode = this.cropMode;
-    const size = this.pageSize();
-    if (!mode || !size) return;
-    if (!mode.drag) {
-      mode.hover = mode.rect ? this.cropHoverAt(mode.rect, this.toScreen(page)) : null;
-      this.updateCursor();
-      this.drawInteraction();
-      return;
-    }
-    const point = clampPointToPage(page, size);
-    if (mode.drag.mode === "new") {
-      mode.rect = rectFromPoints(mode.drag.start, point);
-    } else if (mode.drag.startRect) {
-      mode.rect =
-        mode.drag.mode === "move"
-          ? movePageRect(mode.drag.startRect, mode.drag.start, point, size)
-          : resizePageRect(mode.drag.startRect, mode.drag.handle, point, size);
-    }
-    this.drawInteraction();
-  }
-
-  private handleCropUp(): void {
-    const mode = this.cropMode;
-    if (!mode) return;
-    const drag = mode.drag;
-    mode.drag = null;
-    mode.hover = null;
-    if (drag?.mode === "new" && mode.rect && (mode.rect.width < 1 || mode.rect.height < 1)) {
-      mode.rect = null;
-    }
-    this.updateCursor();
-    this.drawInteraction();
-  }
-
-  private cropHandleAt(rect: PageRect, screen: Point): BoxHandleRole | null {
-    const tolerance = 10;
-    for (const [role, point] of this.cropHandlePoints(rect)) {
-      const target = this.toScreen(point);
-      if (Math.hypot(target.x - screen.x, target.y - screen.y) <= tolerance) return role;
-    }
-    return null;
-  }
-
-  private cropHoverAt(rect: PageRect, screen: Point): BoxHandleRole | "move" | null {
-    const handle = this.cropHandleAt(rect, screen);
-    if (handle) return handle;
-    return pointInRect(this.toPage(screen), rect) ? "move" : null;
-  }
-
-  private cropHandlePoints(rect: PageRect): Array<[BoxHandleRole, Point]> {
-    const left = rect.x;
-    const top = rect.y;
-    const right = rect.x + rect.width;
-    const bottom = rect.y + rect.height;
-    const midX = (left + right) / 2;
-    const midY = (top + bottom) / 2;
-    return [
-      ["nw", { x: left, y: top }],
-      ["n", { x: midX, y: top }],
-      ["ne", { x: right, y: top }],
-      ["e", { x: right, y: midY }],
-      ["se", { x: right, y: bottom }],
-      ["s", { x: midX, y: bottom }],
-      ["sw", { x: left, y: bottom }],
-      ["w", { x: left, y: midY }],
-    ];
-  }
-
   private onPointerLeave = (): void => {
-    if (this.cropMode) {
-      if (!this.cropMode.drag) {
-        this.cropMode.hover = null;
-        this.updateCursor();
-        this.drawInteraction();
-      }
+    if (this.crop.active) {
+      this.crop.pointerLeave();
       return;
     }
     if (this.drag || this.pan) return;
@@ -1581,7 +1313,7 @@ export class CanvasView {
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
-    if (!store.project || this.cropMode) return;
+    if (!store.project || this.crop.active) return;
     const tool = store.ui.activeTool;
     if (tool === "length" || tool === "area") {
       this.finishDraft();
@@ -1599,7 +1331,7 @@ export class CanvasView {
     const labelHit = this.measurementLabelHit(screen);
     if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
       store.setSelection({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
-      this.startLabelEdit(labelHit);
+      this.editors.startLabelEdit(labelHit);
       return;
     }
 
@@ -1608,15 +1340,15 @@ export class CanvasView {
     store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
 
     if (hit.item.kind === "text") {
-      this.startTextEdit(hit.item, hit.layer);
+      this.editors.startTextEdit(hit.item, hit.layer);
       return;
     }
     if (hit.item.kind === "cloud") {
-      this.startCloudTextEdit(hit.item, hit.layer);
+      this.editors.startCloudTextEdit(hit.item, hit.layer);
       return;
     }
     if (hit.item.kind === "callout") {
-      this.startCalloutTextEdit(hit.item, hit.layer);
+      this.editors.startCalloutTextEdit(hit.item, hit.layer);
       return;
     }
     if (hit.item.kind === "stamp" || hit.item.kind === "delta") {
@@ -1658,7 +1390,7 @@ export class CanvasView {
 
   private onContextMenu = (event: MouseEvent): void => {
     event.preventDefault();
-    if (this.cropMode) return;
+    if (this.crop.active) return;
     const project = store.project;
     if (!project) return;
     const page = this.toPage(this.localPoint(event));
@@ -1835,136 +1567,6 @@ export class CanvasView {
     );
   };
 
-  private startNewText(point: Point): void {
-    if (this.textEdit) this.commitTextEdit();
-    const style = store.ui.style;
-    this.beginTextEditSession({
-      mode: "text",
-      itemId: null,
-      layerId: null,
-      page: store.ui.page,
-      anchor: point,
-      text: "",
-      color: style.color,
-      fontSize: style.fontSize,
-      rotation: 0,
-      bold: false,
-      underline: false,
-      align: "left",
-    });
-  }
-
-  private startTextEdit(item: MarkupItem, layer: Layer): void {
-    if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
-      return;
-    }
-    if (this.textEdit) this.commitTextEdit();
-    const fontSize = clampTextSize(item.fontSize ?? 12);
-    const rotation = normalizeDegrees(itemRotation(item));
-    this.beginTextEditSession({
-      mode: "text",
-      itemId: item.id,
-      layerId: layer.id,
-      page: item.page,
-      anchor: item.points[0] ?? { x: 0, y: 0 },
-      text: item.text ?? "",
-      color: item.color,
-      fontSize,
-      rotation,
-      bold: item.textBold === true,
-      underline: item.textUnderline === true,
-      align: item.textAlign ?? "left",
-      original: {
-        text: item.text ?? "",
-        color: item.color,
-        fontSize,
-        rotation,
-        bold: item.textBold === true,
-        underline: item.textUnderline === true,
-        align: item.textAlign ?? "left",
-      },
-    });
-  }
-
-  private startCloudTextEdit(item: MarkupItem, layer: Layer): void {
-    if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
-      return;
-    }
-    if (this.textEdit) this.commitTextEdit();
-    const label = cloudLabelLayout(item);
-    const fontSize = clampTextSize(item.fontSize ?? 12);
-    const color = item.textColor ?? "#f7fbfc";
-    const align = item.textAlign ?? "center";
-    this.beginTextEditSession({
-      mode: "cloud",
-      itemId: item.id,
-      layerId: layer.id,
-      page: item.page,
-      anchor: label?.center ?? itemCenter(item),
-      text: item.text ?? "",
-      color,
-      fontSize,
-      rotation: 0,
-      bold: item.textBold === true,
-      underline: item.textUnderline === true,
-      align,
-      boxWidth: item.textBoxWidth,
-      boxHeight: item.textBoxHeight,
-      original: {
-        text: item.text ?? "",
-        color,
-        fontSize,
-        rotation: 0,
-        bold: item.textBold === true,
-        underline: item.textUnderline === true,
-        align,
-        boxWidth: item.textBoxWidth,
-        boxHeight: item.textBoxHeight,
-      },
-    });
-  }
-
-  private startCalloutTextEdit(item: MarkupItem, layer: Layer): void {
-    if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
-      return;
-    }
-    if (this.textEdit) this.commitTextEdit();
-    const layout = calloutLayout(item);
-    const fontSize = clampTextSize(item.fontSize ?? 12);
-    const color = item.textColor ?? "#f7fbfc";
-    const align = item.textAlign ?? "center";
-    this.beginTextEditSession({
-      mode: "callout",
-      itemId: item.id,
-      layerId: layer.id,
-      page: item.page,
-      anchor: layout.center,
-      text: item.text ?? "",
-      color,
-      fontSize,
-      rotation: 0,
-      bold: item.textBold === true,
-      underline: item.textUnderline === true,
-      align,
-      boxWidth: item.textBoxWidth,
-      boxHeight: item.textBoxHeight,
-      original: {
-        text: item.text ?? "",
-        color,
-        fontSize,
-        rotation: 0,
-        bold: item.textBold === true,
-        underline: item.textUnderline === true,
-        align,
-        boxWidth: item.textBoxWidth,
-        boxHeight: item.textBoxHeight,
-      },
-    });
-  }
-
   public editSelectedText(): void {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
@@ -1975,15 +1577,15 @@ export class CanvasView {
     }
     store.setTool("select");
     if (found.item.kind === "text") {
-      this.startTextEdit(found.item, found.layer);
+      this.editors.startTextEdit(found.item, found.layer);
       return;
     }
     if (found.item.kind === "cloud") {
-      this.startCloudTextEdit(found.item, found.layer);
+      this.editors.startCloudTextEdit(found.item, found.layer);
       return;
     }
     if (found.item.kind === "callout") {
-      this.startCalloutTextEdit(found.item, found.layer);
+      this.editors.startCalloutTextEdit(found.item, found.layer);
       return;
     }
     if (found.item.kind === "stamp" || found.item.kind === "delta") {
@@ -1991,602 +1593,6 @@ export class CanvasView {
       return;
     }
     toast("Select a text note to edit it.", "info");
-  }
-
-  private beginTextEditSession(
-    session: Omit<TextEditSession, "closing" | "container" | "textarea" | "strip" | "resizeHandle">,
-  ): void {
-    this.cancelLabelEdit();
-    const container = document.createElement("div");
-    container.className = "canvas-text-editor";
-    const textarea = document.createElement("textarea");
-    textarea.className = "canvas-text-editor-input";
-    textarea.value = session.text;
-    textarea.placeholder =
-      session.mode === "cloud"
-        ? "Cloud text…"
-        : session.mode === "callout"
-          ? "Callout text…"
-          : "Type a note…";
-    textarea.wrap = session.mode === "text" ? "off" : "soft";
-    textarea.spellcheck = false;
-    textarea.setAttribute("aria-label", "Text annotation");
-    const strip = document.createElement("div");
-    strip.className = "inline-style-strip";
-
-    const sizeField = document.createElement("label");
-    sizeField.className = "inline-style-field";
-    sizeField.title = "Font size in points";
-    const sizeLabel = document.createElement("span");
-    sizeLabel.textContent = "Size";
-    const sizeInput = document.createElement("input");
-    sizeInput.type = "number";
-    sizeInput.min = "0.5";
-    sizeInput.max = "300";
-    sizeInput.step = "0.5";
-    sizeInput.value = String(roundTo(session.fontSize, 2));
-    sizeInput.className = "inline-size-input";
-    sizeField.append(sizeLabel, sizeInput);
-
-    const colorField = document.createElement("label");
-    colorField.className = "inline-style-field inline-color-field";
-    colorField.title = "Text colour";
-    const colorInput = document.createElement("input");
-    colorInput.type = "color";
-    colorInput.value = session.color;
-    colorInput.setAttribute("aria-label", "Text colour");
-    colorField.append(colorInput);
-
-    const boldButton = document.createElement("button");
-    boldButton.type = "button";
-    boldButton.className = "inline-strip-button is-toggle is-bold";
-    boldButton.title = "Bold";
-    boldButton.setAttribute("aria-label", "Bold");
-    boldButton.textContent = "B";
-    const underlineButton = document.createElement("button");
-    underlineButton.type = "button";
-    underlineButton.className = "inline-strip-button is-toggle is-underline";
-    underlineButton.title = "Underline";
-    underlineButton.setAttribute("aria-label", "Underline");
-    underlineButton.textContent = "U";
-    const alignGroup = document.createElement("div");
-    alignGroup.className = "inline-toggle-group";
-    alignGroup.setAttribute("role", "group");
-    alignGroup.setAttribute("aria-label", "Text alignment");
-    const alignButtons: Array<{ align: TextAlign; button: HTMLButtonElement }> = [];
-    for (const align of ["left", "center", "right"] as const) {
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "inline-strip-button is-toggle is-align";
-      button.title = `Align ${align}`;
-      button.setAttribute("aria-label", `Align text ${align}`);
-      button.innerHTML = icon(`align${align[0].toUpperCase()}${align.slice(1)}`, 14);
-      button.addEventListener("mousedown", (event) => event.preventDefault());
-      button.addEventListener("click", () => {
-        edit.align = align;
-        refresh();
-      });
-      alignGroup.append(button);
-      alignButtons.push({ align, button });
-    }
-    boldButton.addEventListener("mousedown", (event) => event.preventDefault());
-    underlineButton.addEventListener("mousedown", (event) => event.preventDefault());
-    boldButton.addEventListener("click", () => {
-      edit.bold = !edit.bold;
-      refresh();
-    });
-    underlineButton.addEventListener("click", () => {
-      edit.underline = !edit.underline;
-      refresh();
-    });
-
-    const rotationField = document.createElement("label");
-    rotationField.className = "inline-style-field";
-    rotationField.title = "Rotation in degrees";
-    const rotationLabel = document.createElement("span");
-    rotationLabel.textContent = "Angle";
-    const rotationInput = document.createElement("input");
-    rotationInput.type = "number";
-    rotationInput.min = "-360";
-    rotationInput.max = "360";
-    rotationInput.step = "1";
-    rotationInput.value = String(roundTo(session.rotation, 1));
-    rotationInput.className = "inline-angle-input";
-    rotationField.append(rotationLabel, rotationInput);
-    if (session.mode !== "text") {
-      rotationField.hidden = true;
-      rotationField.style.display = "none";
-    }
-
-    const cancelButton = document.createElement("button");
-    cancelButton.type = "button";
-    cancelButton.className = "inline-strip-button is-quiet";
-    cancelButton.textContent = "Cancel";
-    const doneButton = document.createElement("button");
-    doneButton.type = "button";
-    doneButton.className = "inline-strip-button is-primary";
-    doneButton.textContent = "Done";
-    strip.append(
-      sizeField,
-      colorField,
-      boldButton,
-      underlineButton,
-      alignGroup,
-      rotationField,
-      cancelButton,
-      doneButton,
-    );
-    const resizeHandle = document.createElement("div");
-    resizeHandle.className = "canvas-text-editor-resize";
-    resizeHandle.title = "Drag to resize the text box";
-    resizeHandle.setAttribute("aria-hidden", "true");
-    const resizable = session.mode === "cloud" || session.mode === "callout";
-    if (resizable) container.append(resizeHandle);
-    container.append(textarea, strip);
-
-    const edit: TextEditSession = {
-      ...session,
-      closing: false,
-      container,
-      textarea,
-      strip,
-      resizeHandle: resizable ? resizeHandle : null,
-    };
-    this.textEdit = edit;
-    this.editingItemId = edit.itemId;
-    this.editorLayer.append(container);
-
-    const syncStyle = () => {
-      textarea.style.color = edit.color;
-      textarea.style.fontWeight = edit.bold ? "700" : "400";
-      textarea.style.textDecoration = edit.underline ? "underline" : "none";
-      textarea.style.textAlign = edit.align;
-      boldButton.setAttribute("aria-pressed", edit.bold ? "true" : "false");
-      underlineButton.setAttribute("aria-pressed", edit.underline ? "true" : "false");
-      for (const entry of alignButtons) {
-        entry.button.setAttribute("aria-pressed", edit.align === entry.align ? "true" : "false");
-      }
-    };
-    const refresh = () => {
-      edit.text = textarea.value;
-      edit.fontSize = clampTextSize(Number(sizeInput.value));
-      edit.color = colorInput.value;
-      edit.rotation = normalizeDegrees(Number(rotationInput.value));
-      syncStyle();
-      this.positionTextEditor();
-    };
-    sizeInput.addEventListener("input", refresh);
-    colorInput.addEventListener("input", refresh);
-    rotationInput.addEventListener("input", refresh);
-    textarea.addEventListener("input", () => {
-      edit.text = textarea.value;
-      this.positionTextEditor();
-    });
-    textarea.addEventListener("keydown", (event) => {
-      if (event.isComposing) return;
-      if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        this.cancelTextEdit();
-      } else if (event.key === "Enter" && !event.shiftKey) {
-        event.preventDefault();
-        event.stopPropagation();
-        void this.commitTextEdit();
-      }
-    });
-    textarea.addEventListener("blur", () => {
-      window.setTimeout(() => {
-        if (!this.textEdit || this.textEdit !== edit || edit.closing) return;
-        const active = document.activeElement;
-        if (active && this.editorLayer.contains(active)) return;
-        void this.commitTextEdit();
-      }, 0);
-    });
-    doneButton.addEventListener("click", () => void this.commitTextEdit());
-    cancelButton.addEventListener("click", () => this.cancelTextEdit());
-    if (edit.resizeHandle) {
-      this.bindTextEditorResize(edit, edit.resizeHandle);
-    }
-
-    syncStyle();
-    this.positionTextEditor();
-    this.drawContent();
-    this.drawInteraction();
-    window.requestAnimationFrame(() => {
-      if (this.textEdit !== edit) return;
-      textarea.focus({ preventScroll: true });
-      const end = textarea.value.length;
-      textarea.setSelectionRange(end, end);
-    });
-  }
-
-  private bindTextEditorResize(edit: TextEditSession, handle: HTMLDivElement): void {
-    handle.addEventListener("pointerdown", (event) => {
-      if (event.button !== 0) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const zoom = Math.max(0.01, store.ui.zoom);
-      const startX = event.clientX;
-      const startY = event.clientY;
-      const current = textBoxLayout(edit.text, edit.fontSize, edit.boxWidth, edit.boxHeight);
-      const startWidth = edit.boxWidth ?? current.width;
-      const startHeight = edit.boxHeight ?? current.height;
-      handle.setPointerCapture(event.pointerId);
-
-      const move = (moveEvent: PointerEvent) => {
-        // The box is centred on the annotation, so dragging one edge out moves
-        // the opposite edge by the same amount.
-        edit.boxWidth = Math.max(
-          20,
-          Math.min(2000, startWidth + ((moveEvent.clientX - startX) * 2) / zoom),
-        );
-        edit.boxHeight = Math.max(
-          15,
-          Math.min(2000, startHeight + ((moveEvent.clientY - startY) * 2) / zoom),
-        );
-        this.positionTextEditor();
-        this.drawContent();
-      };
-      const finish = (endEvent: PointerEvent) => {
-        if (handle.hasPointerCapture(endEvent.pointerId)) {
-          handle.releasePointerCapture(endEvent.pointerId);
-        }
-        handle.removeEventListener("pointermove", move);
-        handle.removeEventListener("pointerup", finish);
-        handle.removeEventListener("pointercancel", finish);
-      };
-      handle.addEventListener("pointermove", move);
-      handle.addEventListener("pointerup", finish);
-      handle.addEventListener("pointercancel", finish);
-    });
-  }
-
-  private positionTextEditor(): void {
-    const edit = this.textEdit;
-    if (!edit || edit.closing) return;
-    const zoom = store.ui.zoom;
-    const anchor = this.toScreen(edit.anchor);
-    const textarea = edit.textarea;
-    let left: number;
-    let top: number;
-    let width: number;
-    let height: number;
-    let rotation = edit.rotation;
-    let lineHeight: number;
-    let fontSize: number;
-    if (edit.mode === "cloud" || edit.mode === "callout") {
-      const layout = textBoxLayout(
-        edit.text,
-        edit.fontSize,
-        edit.boxWidth,
-        edit.boxHeight,
-      );
-      width = Math.max(40, layout.width * zoom);
-      height = Math.max(20, layout.height * zoom);
-      left = anchor.x - width / 2;
-      top = anchor.y - height / 2;
-      lineHeight = layout.lineHeight * zoom;
-      fontSize = Math.max(1, layout.fontSize * zoom);
-      rotation = 0;
-      const horizontalPadding = Math.max(2, layout.padding * zoom);
-      const verticalPadding = Math.max(
-        2,
-        (height - layout.lines.length * lineHeight) / 2,
-      );
-      textarea.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
-      textarea.style.whiteSpace = "pre-wrap";
-    } else {
-      const layout = textItemLayout(
-        { text: edit.text, fontSize: edit.fontSize },
-        measureTextWidth,
-      );
-      width = Math.max(52, layout.width * zoom + 4);
-      height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
-      left = anchor.x - 2;
-      top = anchor.y - 2;
-      lineHeight = layout.lineHeight * zoom;
-      fontSize = Math.max(1, layout.fontSize * zoom);
-      textarea.style.padding = "2px";
-      textarea.style.whiteSpace = "pre";
-    }
-    textarea.style.left = `${left}px`;
-    textarea.style.top = `${top}px`;
-    textarea.style.width = `${width}px`;
-    textarea.style.height = `${height}px`;
-    textarea.style.fontSize = `${fontSize}px`;
-    textarea.style.lineHeight = `${lineHeight}px`;
-    textarea.style.fontFamily = FONT_STACK;
-    textarea.style.color = edit.color;
-    textarea.style.transform = `rotate(${rotation}deg)`;
-    textarea.style.transformOrigin = "center";
-    if (edit.resizeHandle) {
-      edit.resizeHandle.style.left = `${left + width - 7}px`;
-      edit.resizeHandle.style.top = `${top + height - 7}px`;
-    }
-
-    const box = rotatedAabb(left, top, width, height, rotation);
-    const stripWidth = edit.strip.offsetWidth || 270;
-    const stripLeft = Math.max(8, Math.min(this.width - stripWidth - 8, box.minX));
-    let stripTop = box.minY - 44;
-    if (stripTop < 8) stripTop = box.maxY + 8;
-    edit.strip.style.left = `${stripLeft}px`;
-    edit.strip.style.top = `${Math.max(8, stripTop)}px`;
-  }
-
-  private closeTextEditor(): void {
-    if (!this.textEdit) return;
-    this.textEdit.container.remove();
-    this.textEdit = null;
-    this.editingItemId = null;
-    this.drawContent();
-    this.drawInteraction();
-  }
-
-  private async commitTextEdit(): Promise<void> {
-    const edit = this.textEdit;
-    if (!edit || edit.closing) return;
-    edit.closing = true;
-    const project = store.project;
-    if (!project) {
-      this.closeTextEditor();
-      return;
-    }
-    const value = edit.text;
-    if (edit.itemId) {
-      const found = findItem(project, edit.itemId);
-      if (!found || itemIsLocked(found.item, found.layer)) {
-        this.closeTextEditor();
-        return;
-      }
-      if (edit.mode === "cloud" || edit.mode === "callout") {
-        const original = edit.original!;
-        const changed =
-          value !== original.text ||
-          edit.color !== original.color ||
-          Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-          edit.bold !== original.bold ||
-          edit.underline !== original.underline ||
-          edit.align !== original.align ||
-          edit.boxWidth !== original.boxWidth ||
-          edit.boxHeight !== original.boxHeight;
-        this.closeTextEditor();
-        if (!changed) return;
-        store.mutate(
-          (project) => {
-            const item = findItem(project, edit.itemId!)?.item;
-            if (!item) return;
-            item.text = value.trim() || "Revision";
-            item.textColor = edit.color;
-            item.fontSize = clampTextSize(edit.fontSize);
-            if (edit.bold) item.textBold = true;
-            else delete item.textBold;
-            if (edit.underline) item.textUnderline = true;
-            else delete item.textUnderline;
-            if (edit.align === "center") delete item.textAlign;
-            else item.textAlign = edit.align;
-            if (edit.boxWidth) item.textBoxWidth = edit.boxWidth;
-            else delete item.textBoxWidth;
-            if (edit.boxHeight) item.textBoxHeight = edit.boxHeight;
-            else delete item.textBoxHeight;
-            item.updatedAt = new Date().toISOString();
-          },
-          "change",
-        );
-        return;
-      }
-      const original = edit.original!;
-      const rotation = normalizeDegrees(edit.rotation);
-      const changed =
-        value !== original.text ||
-        edit.color !== original.color ||
-        Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-        Math.abs(rotation - normalizeDegrees(original.rotation)) > 0.001 ||
-        edit.bold !== original.bold ||
-        edit.underline !== original.underline ||
-        edit.align !== original.align;
-      this.closeTextEditor();
-      if (!changed) return;
-      store.mutate(
-        (project) => {
-          const item = findItem(project, edit.itemId!)?.item;
-          if (!item) return;
-          item.text = value;
-          item.color = edit.color;
-          item.fontSize = clampTextSize(edit.fontSize);
-          if (edit.bold) item.textBold = true;
-          else delete item.textBold;
-          if (edit.underline) item.textUnderline = true;
-          else delete item.textUnderline;
-          if (edit.align === "left") delete item.textAlign;
-          else item.textAlign = edit.align;
-          if (rotation === 0) delete item.rotation;
-          else item.rotation = rotation;
-          item.updatedAt = new Date().toISOString();
-        },
-        "change",
-      );
-      return;
-    }
-
-    if (!value.trim()) {
-      this.closeTextEditor();
-      return;
-    }
-    const active = project.layers.find(
-      (layer) => layer.id === project.activeLayerId && layer.kind === "draw",
-    );
-    if (active && (!active.visible || active.locked)) {
-      toast(
-        `“${active.name}” is ${active.locked ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
-        "warning",
-      );
-      this.closeTextEditor();
-      return;
-    }
-    const rotation = normalizeDegrees(edit.rotation);
-    let layerId = "";
-    let itemId = "";
-    this.closeTextEditor();
-    store.mutate(
-      (project) => {
-        const layer = ensureActiveLayer(project, "draw");
-        const now = new Date().toISOString();
-        const item: MarkupItem = {
-          id: makeId("item"),
-          page: edit.page,
-          kind: "text",
-          points: [{ ...edit.anchor }],
-          color: edit.color,
-          strokeWidth: 2,
-          text: value,
-          fontSize: clampTextSize(edit.fontSize),
-          textBold: edit.bold ? true : undefined,
-          textUnderline: edit.underline ? true : undefined,
-          textAlign: edit.align === "left" ? undefined : edit.align,
-          rotation: rotation === 0 ? undefined : rotation,
-          scale: null,
-          createdAt: now,
-          updatedAt: now,
-        };
-        addItem(project, layer.id, item);
-        layerId = layer.id;
-        itemId = item.id;
-      },
-      "change",
-    );
-    if (layerId && itemId) {
-      store.setSelection({ layerId, itemId });
-      store.setTool("select");
-    }
-  }
-
-  private cancelTextEdit(): void {
-    if (!this.textEdit) return;
-    this.textEdit.closing = true;
-    this.closeTextEditor();
-  }
-
-  private startLabelEdit(hit: LabelHit): void {
-    if (itemIsLocked(hit.item, hit.layer)) {
-      toast("This item is locked.", "warning");
-      return;
-    }
-    if (this.textEdit) this.commitTextEdit();
-    const container = document.createElement("div");
-    container.className = "canvas-label-editor";
-    const input = document.createElement("input");
-    input.type = "text";
-    input.className = "canvas-label-editor-input";
-    input.value = hit.item.label ?? "";
-    input.placeholder = "Add label";
-    input.setAttribute("aria-label", "Measurement label");
-    const hint = document.createElement("span");
-    hint.className = "canvas-label-editor-hint";
-    const project = store.project;
-    const metrics = project ? itemMetrics(hit.item, project) : null;
-    hint.textContent = metrics
-      ? `${metrics.primary}${metrics.secondary ? ` · ${metrics.secondary}` : ""}`
-      : "";
-    container.append(input, hint);
-    const edit: LabelEditSession = {
-      itemId: hit.item.id,
-      layerId: hit.layer.id,
-      page: hit.item.page,
-      value: hit.item.label ?? "",
-      original: hit.item.label,
-      closing: false,
-      container,
-      input,
-    };
-    this.labelEdit = edit;
-    this.editingLabelId = hit.item.id;
-    this.editorLayer.append(container);
-    this.positionLabelEditor();
-
-    input.addEventListener("input", () => {
-      edit.value = input.value;
-    });
-    input.addEventListener("keydown", (event) => {
-      if (event.isComposing) return;
-      if (event.key === "Enter") {
-        event.preventDefault();
-        event.stopPropagation();
-        void this.commitLabelEdit();
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        this.cancelLabelEdit();
-      }
-    });
-    input.addEventListener("blur", () => {
-      window.setTimeout(() => {
-        if (!this.labelEdit || this.labelEdit !== edit || edit.closing) return;
-        const active = document.activeElement;
-        if (active && this.editorLayer.contains(active)) return;
-        void this.commitLabelEdit();
-      }, 0);
-    });
-    this.drawContent();
-    this.drawInteraction();
-    window.requestAnimationFrame(() => {
-      if (this.labelEdit !== edit) return;
-      input.focus({ preventScroll: true });
-      input.select();
-    });
-  }
-
-  private positionLabelEditor(): void {
-    const edit = this.labelEdit;
-    if (!edit || edit.closing || !store.project) return;
-    const found = findItem(store.project, edit.itemId);
-    if (!found) return;
-    const layout = this.pageLabelLayouts().get(found.item.id);
-    if (!layout) return;
-    const box = this.screenLabelBox(layout.box, layout.metrics);
-    const width = Math.max(150, box.width + 42);
-    edit.container.style.left = `${Math.max(6, Math.min(this.width - width - 6, box.x - 20))}px`;
-    edit.container.style.top = `${Math.max(6, box.y)}px`;
-    edit.container.style.width = `${width}px`;
-    edit.container.style.minHeight = `${Math.max(28, box.height)}px`;
-  }
-
-  private closeLabelEditor(): void {
-    if (!this.labelEdit) return;
-    this.labelEdit.container.remove();
-    this.labelEdit = null;
-    this.editingLabelId = null;
-    this.drawContent();
-    this.drawInteraction();
-  }
-
-  private async commitLabelEdit(): Promise<void> {
-    const edit = this.labelEdit;
-    if (!edit || edit.closing) return;
-    edit.closing = true;
-    const value = edit.value.trim();
-    const original = (edit.original ?? "").trim();
-    this.closeLabelEditor();
-    if (value === original) return;
-    store.mutate(
-      (project) => {
-        const item = findItem(project, edit.itemId)?.item;
-        if (!item) return;
-        item.label = value || undefined;
-        item.updatedAt = new Date().toISOString();
-      },
-      "change",
-    );
-  }
-
-  private cancelLabelEdit(): void {
-    if (!this.labelEdit) return;
-    this.labelEdit.closing = true;
-    this.closeLabelEditor();
-  }
-
-  private commitActiveEditors(): void {
-    if (this.textEdit && !this.textEdit.closing) void this.commitTextEdit();
-    if (this.labelEdit && !this.labelEdit.closing) void this.commitLabelEdit();
   }
 
   private measurementLabelHit(screen: Point): LabelHit | null {
@@ -2630,13 +1636,6 @@ export class CanvasView {
       box.height + paddingY * 2,
     );
   }
-
-  private onDocumentPointerDown = (event: PointerEvent): void => {
-    if (!this.textEdit && !this.labelEdit) return;
-    const target = event.target;
-    if (target instanceof Node && this.editorLayer.contains(target)) return;
-    this.commitActiveEditors();
-  };
 
   private createItem(
     kind: ItemKind,
@@ -2810,7 +1809,7 @@ export class CanvasView {
     const created = this.createItem("callout", [start, center], { text: content });
     if (created && store.project) {
       const found = findItem(store.project, created.itemId);
-      if (found) this.startCalloutTextEdit(found.item, found.layer);
+      if (found) this.editors.startCalloutTextEdit(found.item, found.layer);
     }
     this.drawInteraction();
   }
@@ -2863,8 +1862,8 @@ export class CanvasView {
   }
 
   public finishDraft(): void {
-    if (this.cropMode) {
-      this.confirmCrop();
+    if (this.crop.active) {
+      this.crop.confirm();
       return;
     }
     if (!this.draft) return;
@@ -2896,7 +1895,7 @@ export class CanvasView {
         });
         if (created && store.ui.cloudText && store.project) {
           const found = findItem(store.project, created.itemId);
-          if (found) this.startCloudTextEdit(found.item, found.layer);
+          if (found) this.editors.startCloudTextEdit(found.item, found.layer);
         }
       } else if (kind === "highlight-polygon") {
         this.createItem("highlight", points, { highlightShape: "polygon" });
@@ -2946,8 +1945,8 @@ export class CanvasView {
   }
 
   public cancelDraft(): void {
-    if (this.cropMode) {
-      this.cancelCrop();
+    if (this.crop.active) {
+      this.crop.cancel();
       return;
     }
     if (!this.draft) return;
@@ -3217,7 +2216,7 @@ export class CanvasView {
     labels: Map<string, LabelLayout>,
   ): void {
     if (
-      this.editingItemId === item.id &&
+      this.editors.editingItemId === item.id &&
       item.kind !== "cloud" &&
       item.kind !== "callout"
     ) {
@@ -3428,7 +2427,7 @@ export class CanvasView {
         ctx.stroke();
         ctx.restore();
         const label = cloudLabelLayout(item);
-        if (label && this.editingItemId !== item.id) {
+        if (label && this.editors.editingItemId !== item.id) {
           this.drawAnnotationPanel(
             ctx,
             label,
@@ -3442,13 +2441,13 @@ export class CanvasView {
       }
       case "callout": {
         const liveCallout =
-          this.textEdit && this.textEdit.itemId === item.id && this.textEdit.mode === "callout"
+          this.editors.textSession && this.editors.textSession.itemId === item.id && this.editors.textSession.mode === "callout"
             ? {
                 ...item,
-                text: this.textEdit.text,
-                fontSize: this.textEdit.fontSize,
-                textBoxWidth: this.textEdit.boxWidth,
-                textBoxHeight: this.textEdit.boxHeight,
+                text: this.editors.textSession.text,
+                fontSize: this.editors.textSession.fontSize,
+                textBoxWidth: this.editors.textSession.boxWidth,
+                textBoxHeight: this.editors.textSession.boxHeight,
               }
             : item;
         const layout = calloutLayout(liveCallout);
@@ -3463,7 +2462,7 @@ export class CanvasView {
         ctx.stroke();
         drawArrowHead(ctx, anchor, head, item.color);
         ctx.restore();
-        if (this.editingItemId !== item.id) {
+        if (this.editors.editingItemId !== item.id) {
           this.drawAnnotationPanel(
             ctx,
             { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
@@ -3568,7 +2567,7 @@ export class CanvasView {
 
     if (item.kind === "length" || item.kind === "area" || item.kind === "count") {
       const layout = labels.get(item.id);
-      if (layout && this.editingLabelId !== item.id) {
+      if (layout && this.editors.editingLabelId !== item.id) {
         this.drawLabelLayout(ctx, layout);
       }
     }
@@ -3645,10 +2644,7 @@ export class CanvasView {
     const ctx = this.interactionCtx;
     this.prepare(ctx);
     if (!store.project) return;
-    if (this.cropMode) {
-      this.drawCropOverlay(ctx);
-      return;
-    }
+    if (this.crop.draw(ctx)) return;
     const selected = resolveSelection(store.project, store.ui.selection).filter(
       (entry) => entry.layer.visible && entry.item.visible !== false,
     );
@@ -3793,99 +2789,6 @@ export class CanvasView {
       ctx.stroke();
       ctx.restore();
     }
-  }
-
-  private drawCropOverlay(ctx: CanvasRenderingContext2D): void {
-    const mode = this.cropMode;
-    const size = this.pageSize();
-    if (!mode || !size) return;
-    const pageTopLeft = this.toScreen({ x: 0, y: 0 });
-    const pageBottomRight = this.toScreen({ x: size.width, y: size.height });
-    const pageRect = {
-      x: pageTopLeft.x,
-      y: pageTopLeft.y,
-      width: pageBottomRight.x - pageTopLeft.x,
-      height: pageBottomRight.y - pageTopLeft.y,
-    };
-
-    if (!mode.rect) {
-      ctx.save();
-      ctx.strokeStyle = hexAlpha(ACCENT, 0.55);
-      ctx.lineWidth = 1;
-      ctx.setLineDash([6, 5]);
-      ctx.strokeRect(pageRect.x + 0.5, pageRect.y + 0.5, pageRect.width, pageRect.height);
-      ctx.restore();
-      return;
-    }
-
-    const start = this.toScreen({ x: mode.rect.x, y: mode.rect.y });
-    const end = this.toScreen({
-      x: mode.rect.x + mode.rect.width,
-      y: mode.rect.y + mode.rect.height,
-    });
-    const crop = {
-      x: start.x,
-      y: start.y,
-      width: end.x - start.x,
-      height: end.y - start.y,
-    };
-
-    ctx.save();
-    ctx.fillStyle = "rgba(4, 8, 10, 0.58)";
-    const top = Math.max(pageRect.y, 0);
-    const bottom = Math.min(pageRect.y + pageRect.height, this.height);
-    const left = Math.max(pageRect.x, 0);
-    const right = Math.min(pageRect.x + pageRect.width, this.width);
-    ctx.fillRect(left, top, right - left, Math.max(0, crop.y - top));
-    ctx.fillRect(
-      left,
-      crop.y + crop.height,
-      right - left,
-      Math.max(0, bottom - (crop.y + crop.height)),
-    );
-    ctx.fillRect(left, crop.y, Math.max(0, crop.x - left), crop.height);
-    ctx.fillRect(
-      crop.x + crop.width,
-      crop.y,
-      Math.max(0, right - (crop.x + crop.width)),
-      crop.height,
-    );
-
-    ctx.fillStyle = "rgba(53, 194, 161, 0.08)";
-    ctx.fillRect(crop.x, crop.y, crop.width, crop.height);
-    ctx.strokeStyle = ACCENT;
-    ctx.lineWidth = 1.5;
-    ctx.setLineDash([6, 4]);
-    ctx.strokeRect(crop.x + 0.75, crop.y + 0.75, crop.width, crop.height);
-    ctx.setLineDash([]);
-
-    ctx.fillStyle = "#101619";
-    ctx.strokeStyle = ACCENT;
-    ctx.lineWidth = 1.5;
-    for (const [, point] of this.cropHandlePoints(mode.rect)) {
-      const screen = this.toScreen(point);
-      ctx.fillRect(screen.x - 4, screen.y - 4, 8, 8);
-      ctx.strokeRect(screen.x - 4, screen.y - 4, 8, 8);
-    }
-
-    const widthPercent = Math.round((mode.rect.width / size.width) * 100);
-    const heightPercent = Math.round((mode.rect.height / size.height) * 100);
-    const label = `Export area · ${widthPercent}% × ${heightPercent}%`;
-    ctx.font = `600 10px ${FONT_STACK}`;
-    const labelWidth = ctx.measureText(label).width + 12;
-    const labelX = Math.max(8, Math.min(this.width - labelWidth - 8, crop.x));
-    const labelY = Math.max(8, crop.y - 26);
-    ctx.fillStyle = "rgba(12,16,18,0.92)";
-    ctx.strokeStyle = hexAlpha(ACCENT, 0.65);
-    ctx.lineWidth = 1;
-    roundRect(ctx, labelX, labelY, labelWidth, 18, 4);
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = "#edf3f5";
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    ctx.fillText(label, labelX + 6, labelY + 9);
-    ctx.restore();
   }
 
   private traceItemOutline(ctx: CanvasRenderingContext2D, item: MarkupItem): void {
@@ -4169,6 +3072,23 @@ export class CanvasView {
         const found = project ? findItem(project, itemId) : undefined;
         return found ? selectionHandles(found.item, (point) => this.toScreen(point)) : null;
       },
+      labelScreenPoint: (itemId) => {
+        const layout = this.pageLabelLayouts().get(itemId);
+        if (!layout) return null;
+        const box = this.screenLabelBox(layout.box, layout.metrics);
+        return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      },
+      annotationScreenPoint: (itemId) => {
+        const project = store.project;
+        const found = project ? findItem(project, itemId) : undefined;
+        if (!found) return null;
+        if (found.item.kind === "callout") return this.toScreen(calloutLayout(found.item).center);
+        if (found.item.kind === "cloud") {
+          const label = cloudLabelLayout(found.item);
+          return label ? this.toScreen(label.center) : null;
+        }
+        return null;
+      },
     };
   }
 
@@ -4186,16 +3106,10 @@ export class CanvasView {
 
   destroy(): void {
     this.unsubscribe();
-    this.hideCropUi();
-    this.cropMode = null;
+    this.crop.destroy();
     this.observer.disconnect();
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
-    document.removeEventListener("pointerdown", this.onDocumentPointerDown, true);
-    this.textEdit?.container.remove();
-    this.labelEdit?.container.remove();
-    this.textEdit = null;
-    this.labelEdit = null;
-    this.editorLayer.remove();
+    this.editors.destroy();
     this.interaction.removeEventListener("pointerdown", this.onPointerDown);
     this.interaction.removeEventListener("pointermove", this.onPointerMove);
     this.interaction.removeEventListener("pointerup", this.onPointerUp);

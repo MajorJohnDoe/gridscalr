@@ -208,7 +208,37 @@ try {
     "Escape should cancel text creation",
   );
 
-  // 6. Hidden and locked items stay out of hit testing.
+  // 6. Measurement-label editing.
+  await page.keyboard.press("v");
+  await selectItem("item_floor_living");
+  const labelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  assert.ok(labelPoint, "the measurement label should have a screen position");
+  await page.mouse.dblclick(canvasBox.x + labelPoint.x, canvasBox.y + labelPoint.y);
+  const labelEditor = page.locator(".canvas-label-editor-input");
+  await labelEditor.waitFor();
+  await labelEditor.fill("QA living");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(100);
+  assert.equal((await itemById("item_floor_living")).label, "QA living");
+
+  // 7. Callout text editor.
+  await page.keyboard.press("v");
+  await selectItem("item_callout_window");
+  const calloutPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.annotationScreenPoint("item_callout_window"),
+  );
+  assert.ok(calloutPoint, "the callout text box should have a screen position");
+  await page.mouse.dblclick(canvasBox.x + calloutPoint.x, canvasBox.y + calloutPoint.y);
+  const calloutEditor = page.locator(".canvas-text-editor-input");
+  await calloutEditor.waitFor();
+  await calloutEditor.fill("QA callout");
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(100);
+  assert.equal((await itemById("item_callout_window")).text, "QA callout");
+
+  // 8. Hidden and locked items stay out of hit testing.
   await page.keyboard.press("v");
   await page.evaluate(() => {
     const layer = window.__gridscalr.store.project.layers.find((entry) => entry.kind === "measure");
@@ -244,7 +274,7 @@ try {
     "a locked item must not be moved by a canvas drag",
   );
 
-  // 7. Crop mode: draw an area, confirm, and close the reopened export dialog.
+  // 9. Crop mode: draw an area, confirm, and close the reopened export dialog.
   await page.evaluate(() => {
     for (const layer of window.__gridscalr.store.project.layers) {
       const item = layer.items.find((entry) => entry.id === "item_floor_living");
@@ -267,7 +297,7 @@ try {
 
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
-  console.log("Canvas regression passed: length, area, resize, rotate, text, hidden/locked and crop.");
+  console.log("Canvas regression passed: length, area, resize, rotate, text, label/callout editing, hidden/locked and crop.");
 } finally {
   await page?.close();
   await browser?.close();

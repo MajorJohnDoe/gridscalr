@@ -496,6 +496,8 @@ src/
   canvas/geometry.ts     crop, handle, rotation and colour helpers
   canvas/selectionHandles.ts selection and rotation handles
   canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
+  canvas/crop.ts         export crop mode, overlay and toolbar
+  canvas/editors.ts      inline text and measurement-label editors
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave

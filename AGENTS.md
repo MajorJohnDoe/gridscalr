@@ -161,6 +161,8 @@ src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate
 src/canvas/geometry.ts     crop, handle, rotation and colour helpers
 src/canvas/selectionHandles.ts selection and rotation handles
 src/canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
+src/canvas/crop.ts         export crop mode, overlay and toolbar
+src/canvas/editors.ts      inline text and measurement-label editors
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
