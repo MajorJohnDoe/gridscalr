@@ -11,6 +11,7 @@ export type AreaMode = "add" | "subtract";
 export type AreaShape = "polygon" | "rectangle" | "ellipse";
 export type HighlightShape = "stroke" | "rectangle" | "polygon";
 export type ArrowHeads = "end" | "both";
+export type TextAlign = "left" | "center" | "right";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -125,6 +126,12 @@ export interface MarkupItem {
   textBoxHeight?: number;
   /** Text colour for annotation text boxes. Missing uses the default light text. */
   textColor?: string;
+  /** Text, callout and cloud text: bold weight. Missing means regular. */
+  textBold?: boolean;
+  /** Text, callout and cloud text: underline. Missing means no underline. */
+  textUnderline?: boolean;
+  /** Text, callout and cloud text alignment. Missing means left for notes and centred for callouts and clouds. */
+  textAlign?: TextAlign;
   /** Images only. References an embedded asset and selects the draw mode. */
   image?: ImageRef;
   createdAt: string;

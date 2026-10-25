@@ -33,7 +33,12 @@ import {
   layoutPageLabels,
   pageLabelSources,
 } from "../model/labelLayout";
-import { textItemLayout } from "../model/text";
+import {
+  TEXT_UNDERLINE_OFFSET,
+  TEXT_UNDERLINE_WIDTH,
+  textItemLayout,
+  textLineX,
+} from "../model/text";
 import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
 import type { PdfRenderer } from "./pdfRenderer";
@@ -722,15 +727,26 @@ function drawTextItem(
   const rotation = item.rotation ?? 0;
   const center = itemCenter(item);
   const angle = pdfAngle(viewport, rotation);
-  const baseline = fonts.regular.heightAtSize(layout.fontSize, { descender: false });
+  const font = item.textBold ? fonts.bold : fonts.regular;
+  const align = item.textAlign ?? "left";
+  const baseline = font.heightAtSize(layout.fontSize, { descender: false });
   const color = pdfColor(item.color);
+  const opacity = clamp(layerOpacity, 0, 1);
+  const lineWidths = layout.lines.map((line) =>
+    font.widthOfTextAtSize(line, layout.fontSize),
+  );
+  // Align lines against the block width, matching the canvas layout.
+  const blockWidth = Math.max(0, ...lineWidths);
 
   layout.lines.forEach((line, index) => {
     if (!line) return;
+    const lineWidth = lineWidths[index];
+    const offsetX = textLineX(align, 0, blockWidth, lineWidth);
+    const baselineY = anchor.y + baseline + index * layout.lineHeight;
     const start = rotatePoint(
       {
-        x: anchor.x,
-        y: anchor.y + baseline + index * layout.lineHeight,
+        x: anchor.x + offsetX,
+        y: baselineY,
       },
       center,
       rotation,
@@ -740,11 +756,31 @@ function drawTextItem(
       x: pdfPoint.x,
       y: pdfPoint.y,
       size: layout.fontSize,
-      font: fonts.regular,
+      font,
       color,
-      opacity: clamp(layerOpacity, 0, 1),
+      opacity,
       rotate: degrees(angle),
     });
+    if (item.textUnderline) {
+      const underlineY = baselineY + layout.fontSize * TEXT_UNDERLINE_OFFSET;
+      const from = rotatePoint(
+        { x: anchor.x + offsetX, y: underlineY },
+        center,
+        rotation,
+      );
+      const to = rotatePoint(
+        { x: anchor.x + offsetX + lineWidth, y: underlineY },
+        center,
+        rotation,
+      );
+      page.drawLine({
+        start: toPdfPoint(viewport, from),
+        end: toPdfPoint(viewport, to),
+        thickness: Math.max(0.35, layout.fontSize * TEXT_UNDERLINE_WIDTH),
+        color,
+        opacity,
+      });
+    }
   });
 }
 
@@ -1054,20 +1090,25 @@ function drawAnnotationPanel(
       borderOpacity: opacity,
     });
   }
-  const font = style === "stamp" ? fonts.bold : fonts.regular;
+  const isStamp = style === "stamp";
+  const font = isStamp || item.textBold === true ? fonts.bold : fonts.regular;
   const textColor = item.textColor
     ? pdfColor(item.textColor)
     : style === "dark"
       ? INK
       : border;
   const lineHeight = layout.lineHeight;
+  const align = isStamp ? "center" : (item.textAlign ?? "center");
+  const contentLeft = box.x + layout.padding;
+  const contentWidth = Math.max(0, box.width - layout.padding * 2);
+  const ascent = font.heightAtSize(layout.fontSize, { descender: false });
   layout.lines.forEach((line, index) => {
     if (!line) return;
     const center = {
       x: layout.center.x,
       y: layout.center.y + (index - (layout.lines.length - 1) / 2) * lineHeight,
     };
-    if (style === "stamp") {
+    if (isStamp) {
       drawTrackedCenteredText(
         page,
         viewport,
@@ -1079,8 +1120,30 @@ function drawAnnotationPanel(
         opacity,
         layout.fontSize * 0.08,
       );
-    } else {
-      drawCenteredText(page, viewport, line, center, layout.fontSize, font, textColor, opacity);
+      return;
+    }
+    const lineWidth = font.widthOfTextAtSize(line, layout.fontSize);
+    const x = contentLeft + textLineX(align, 0, contentWidth, lineWidth);
+    const baselineY = center.y + ascent * 0.36;
+    const textPoint = toPdfPoint(viewport, { x, y: baselineY });
+    page.drawText(line, {
+      x: textPoint.x,
+      y: textPoint.y,
+      size: layout.fontSize,
+      font,
+      color: textColor,
+      opacity: clamp(opacity, 0, 1),
+      rotate: degrees(pdfAngle(viewport, 0)),
+    });
+    if (item.textUnderline) {
+      const underlineY = baselineY + layout.fontSize * TEXT_UNDERLINE_OFFSET;
+      page.drawLine({
+        start: toPdfPoint(viewport, { x, y: underlineY }),
+        end: toPdfPoint(viewport, { x: x + lineWidth, y: underlineY }),
+        thickness: Math.max(0.35, layout.fontSize * TEXT_UNDERLINE_WIDTH),
+        color: textColor,
+        opacity: clamp(opacity, 0, 1),
+      });
     }
   });
 }

@@ -37,6 +37,7 @@ import type {
   Project,
   ProjectSettings,
   QuantitySettings,
+  TextAlign,
 } from "../model/types";
 
 const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
@@ -339,6 +340,15 @@ function normalizeItem(
     raw.textColor
       ? raw.textColor
       : undefined;
+  const supportsTextStyle =
+    raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout";
+  const textBold = supportsTextStyle && raw.textBold === true ? true : undefined;
+  const textUnderline = supportsTextStyle && raw.textUnderline === true ? true : undefined;
+  const textAlign: TextAlign | undefined =
+    supportsTextStyle &&
+    (raw.textAlign === "left" || raw.textAlign === "center" || raw.textAlign === "right")
+      ? raw.textAlign
+      : undefined;
   const text =
     typeof raw.text === "string"
       ? raw.text
@@ -415,6 +425,9 @@ function normalizeItem(
     textBoxWidth,
     textBoxHeight,
     textColor,
+    textBold,
+    textUnderline,
+    textAlign,
     countType:
       raw.kind === "count"
         ? COUNT_TYPES.has(raw.countType as CountType)

@@ -90,18 +90,22 @@ import {
   clampTextSize,
   measureTextWidth,
   TEXT_FONT_STACK,
+  TEXT_UNDERLINE_OFFSET,
+  TEXT_UNDERLINE_WIDTH,
   textItemLayout,
+  textLineX,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
 import { calloutLayout, cloudLabelLayout, closestPointOnPolygon, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
-import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
+import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef, TextAlign } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import { calibrationDialog, textDialog } from "../ui/dialogs";
+import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
 
 export interface CanvasHooks {
@@ -179,6 +183,18 @@ interface CropMode {
   resolve: (crop: NormalizedCrop | null) => void;
 }
 
+interface TextStyleSnapshot {
+  text: string;
+  color: string;
+  fontSize: number;
+  rotation: number;
+  bold: boolean;
+  underline: boolean;
+  align: TextAlign;
+  boxWidth?: number;
+  boxHeight?: number;
+}
+
 interface TextEditSession {
   mode: "text" | "cloud" | "callout";
   itemId: string | null;
@@ -189,18 +205,17 @@ interface TextEditSession {
   color: string;
   fontSize: number;
   rotation: number;
+  bold: boolean;
+  underline: boolean;
+  align: TextAlign;
   boxWidth?: number;
   boxHeight?: number;
-  original?: {
-    text: string;
-    color: string;
-    fontSize: number;
-    rotation: number;
-  };
+  original?: TextStyleSnapshot;
   closing: boolean;
   container: HTMLDivElement;
   textarea: HTMLTextAreaElement;
   strip: HTMLDivElement;
+  resizeHandle: HTMLDivElement | null;
 }
 
 interface LabelEditSession {
@@ -1926,6 +1941,9 @@ export class CanvasView {
       color: style.color,
       fontSize: style.fontSize,
       rotation: 0,
+      bold: false,
+      underline: false,
+      align: "left",
     });
   }
 
@@ -1935,6 +1953,8 @@ export class CanvasView {
       return;
     }
     if (this.textEdit) this.commitTextEdit();
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const rotation = normalizeDegrees(itemRotation(item));
     this.beginTextEditSession({
       mode: "text",
       itemId: item.id,
@@ -1943,13 +1963,19 @@ export class CanvasView {
       anchor: item.points[0] ?? { x: 0, y: 0 },
       text: item.text ?? "",
       color: item.color,
-      fontSize: clampTextSize(item.fontSize ?? 12),
-      rotation: normalizeDegrees(itemRotation(item)),
+      fontSize,
+      rotation,
+      bold: item.textBold === true,
+      underline: item.textUnderline === true,
+      align: item.textAlign ?? "left",
       original: {
         text: item.text ?? "",
         color: item.color,
-        fontSize: clampTextSize(item.fontSize ?? 12),
-        rotation: normalizeDegrees(itemRotation(item)),
+        fontSize,
+        rotation,
+        bold: item.textBold === true,
+        underline: item.textUnderline === true,
+        align: item.textAlign ?? "left",
       },
     });
   }
@@ -1963,6 +1989,7 @@ export class CanvasView {
     const label = cloudLabelLayout(item);
     const fontSize = clampTextSize(item.fontSize ?? 12);
     const color = item.textColor ?? "#f7fbfc";
+    const align = item.textAlign ?? "center";
     this.beginTextEditSession({
       mode: "cloud",
       itemId: item.id,
@@ -1973,6 +2000,9 @@ export class CanvasView {
       color,
       fontSize,
       rotation: 0,
+      bold: item.textBold === true,
+      underline: item.textUnderline === true,
+      align,
       boxWidth: item.textBoxWidth,
       boxHeight: item.textBoxHeight,
       original: {
@@ -1980,6 +2010,11 @@ export class CanvasView {
         color,
         fontSize,
         rotation: 0,
+        bold: item.textBold === true,
+        underline: item.textUnderline === true,
+        align,
+        boxWidth: item.textBoxWidth,
+        boxHeight: item.textBoxHeight,
       },
     });
   }
@@ -1993,6 +2028,7 @@ export class CanvasView {
     const layout = calloutLayout(item);
     const fontSize = clampTextSize(item.fontSize ?? 12);
     const color = item.textColor ?? "#f7fbfc";
+    const align = item.textAlign ?? "center";
     this.beginTextEditSession({
       mode: "callout",
       itemId: item.id,
@@ -2003,6 +2039,9 @@ export class CanvasView {
       color,
       fontSize,
       rotation: 0,
+      bold: item.textBold === true,
+      underline: item.textUnderline === true,
+      align,
       boxWidth: item.textBoxWidth,
       boxHeight: item.textBoxHeight,
       original: {
@@ -2010,6 +2049,11 @@ export class CanvasView {
         color,
         fontSize,
         rotation: 0,
+        bold: item.textBold === true,
+        underline: item.textUnderline === true,
+        align,
+        boxWidth: item.textBoxWidth,
+        boxHeight: item.textBoxHeight,
       },
     });
   }
@@ -2043,7 +2087,7 @@ export class CanvasView {
   }
 
   private beginTextEditSession(
-    session: Omit<TextEditSession, "closing" | "container" | "textarea" | "strip">,
+    session: Omit<TextEditSession, "closing" | "container" | "textarea" | "strip" | "resizeHandle">,
   ): void {
     this.cancelLabelEdit();
     const container = document.createElement("div");
@@ -2058,7 +2102,6 @@ export class CanvasView {
           ? "Callout text…"
           : "Type a note…";
     textarea.wrap = session.mode === "text" ? "off" : "soft";
-    textarea.style.textAlign = session.mode === "text" ? "left" : "center";
     textarea.spellcheck = false;
     textarea.setAttribute("aria-label", "Text annotation");
     const strip = document.createElement("div");
@@ -2087,6 +2130,49 @@ export class CanvasView {
     colorInput.setAttribute("aria-label", "Text colour");
     colorField.append(colorInput);
 
+    const boldButton = document.createElement("button");
+    boldButton.type = "button";
+    boldButton.className = "inline-strip-button is-toggle is-bold";
+    boldButton.title = "Bold";
+    boldButton.setAttribute("aria-label", "Bold");
+    boldButton.textContent = "B";
+    const underlineButton = document.createElement("button");
+    underlineButton.type = "button";
+    underlineButton.className = "inline-strip-button is-toggle is-underline";
+    underlineButton.title = "Underline";
+    underlineButton.setAttribute("aria-label", "Underline");
+    underlineButton.textContent = "U";
+    const alignGroup = document.createElement("div");
+    alignGroup.className = "inline-toggle-group";
+    alignGroup.setAttribute("role", "group");
+    alignGroup.setAttribute("aria-label", "Text alignment");
+    const alignButtons: Array<{ align: TextAlign; button: HTMLButtonElement }> = [];
+    for (const align of ["left", "center", "right"] as const) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "inline-strip-button is-toggle is-align";
+      button.title = `Align ${align}`;
+      button.setAttribute("aria-label", `Align text ${align}`);
+      button.innerHTML = icon(`align${align[0].toUpperCase()}${align.slice(1)}`, 14);
+      button.addEventListener("mousedown", (event) => event.preventDefault());
+      button.addEventListener("click", () => {
+        edit.align = align;
+        refresh();
+      });
+      alignGroup.append(button);
+      alignButtons.push({ align, button });
+    }
+    boldButton.addEventListener("mousedown", (event) => event.preventDefault());
+    underlineButton.addEventListener("mousedown", (event) => event.preventDefault());
+    boldButton.addEventListener("click", () => {
+      edit.bold = !edit.bold;
+      refresh();
+    });
+    underlineButton.addEventListener("click", () => {
+      edit.underline = !edit.underline;
+      refresh();
+    });
+
     const rotationField = document.createElement("label");
     rotationField.className = "inline-style-field";
     rotationField.title = "Rotation in degrees";
@@ -2113,7 +2199,22 @@ export class CanvasView {
     doneButton.type = "button";
     doneButton.className = "inline-strip-button is-primary";
     doneButton.textContent = "Done";
-    strip.append(sizeField, colorField, rotationField, cancelButton, doneButton);
+    strip.append(
+      sizeField,
+      colorField,
+      boldButton,
+      underlineButton,
+      alignGroup,
+      rotationField,
+      cancelButton,
+      doneButton,
+    );
+    const resizeHandle = document.createElement("div");
+    resizeHandle.className = "canvas-text-editor-resize";
+    resizeHandle.title = "Drag to resize the text box";
+    resizeHandle.setAttribute("aria-hidden", "true");
+    const resizable = session.mode === "cloud" || session.mode === "callout";
+    if (resizable) container.append(resizeHandle);
     container.append(textarea, strip);
 
     const edit: TextEditSession = {
@@ -2122,17 +2223,29 @@ export class CanvasView {
       container,
       textarea,
       strip,
+      resizeHandle: resizable ? resizeHandle : null,
     };
     this.textEdit = edit;
     this.editingItemId = edit.itemId;
     this.editorLayer.append(container);
 
+    const syncStyle = () => {
+      textarea.style.color = edit.color;
+      textarea.style.fontWeight = edit.bold ? "700" : "400";
+      textarea.style.textDecoration = edit.underline ? "underline" : "none";
+      textarea.style.textAlign = edit.align;
+      boldButton.setAttribute("aria-pressed", edit.bold ? "true" : "false");
+      underlineButton.setAttribute("aria-pressed", edit.underline ? "true" : "false");
+      for (const entry of alignButtons) {
+        entry.button.setAttribute("aria-pressed", edit.align === entry.align ? "true" : "false");
+      }
+    };
     const refresh = () => {
       edit.text = textarea.value;
       edit.fontSize = clampTextSize(Number(sizeInput.value));
       edit.color = colorInput.value;
       edit.rotation = normalizeDegrees(Number(rotationInput.value));
-      textarea.style.color = edit.color;
+      syncStyle();
       this.positionTextEditor();
     };
     sizeInput.addEventListener("input", refresh);
@@ -2164,7 +2277,11 @@ export class CanvasView {
     });
     doneButton.addEventListener("click", () => void this.commitTextEdit());
     cancelButton.addEventListener("click", () => this.cancelTextEdit());
+    if (edit.resizeHandle) {
+      this.bindTextEditorResize(edit, edit.resizeHandle);
+    }
 
+    syncStyle();
     this.positionTextEditor();
     this.drawContent();
     this.drawInteraction();
@@ -2173,6 +2290,47 @@ export class CanvasView {
       textarea.focus({ preventScroll: true });
       const end = textarea.value.length;
       textarea.setSelectionRange(end, end);
+    });
+  }
+
+  private bindTextEditorResize(edit: TextEditSession, handle: HTMLDivElement): void {
+    handle.addEventListener("pointerdown", (event) => {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const zoom = Math.max(0.01, store.ui.zoom);
+      const startX = event.clientX;
+      const startY = event.clientY;
+      const current = textBoxLayout(edit.text, edit.fontSize, edit.boxWidth, edit.boxHeight);
+      const startWidth = edit.boxWidth ?? current.width;
+      const startHeight = edit.boxHeight ?? current.height;
+      handle.setPointerCapture(event.pointerId);
+
+      const move = (moveEvent: PointerEvent) => {
+        // The box is centred on the annotation, so dragging one edge out moves
+        // the opposite edge by the same amount.
+        edit.boxWidth = Math.max(
+          20,
+          Math.min(2000, startWidth + ((moveEvent.clientX - startX) * 2) / zoom),
+        );
+        edit.boxHeight = Math.max(
+          15,
+          Math.min(2000, startHeight + ((moveEvent.clientY - startY) * 2) / zoom),
+        );
+        this.positionTextEditor();
+        this.drawContent();
+      };
+      const finish = (endEvent: PointerEvent) => {
+        if (handle.hasPointerCapture(endEvent.pointerId)) {
+          handle.releasePointerCapture(endEvent.pointerId);
+        }
+        handle.removeEventListener("pointermove", move);
+        handle.removeEventListener("pointerup", finish);
+        handle.removeEventListener("pointercancel", finish);
+      };
+      handle.addEventListener("pointermove", move);
+      handle.addEventListener("pointerup", finish);
+      handle.addEventListener("pointercancel", finish);
     });
   }
 
@@ -2234,6 +2392,10 @@ export class CanvasView {
     textarea.style.color = edit.color;
     textarea.style.transform = `rotate(${rotation}deg)`;
     textarea.style.transformOrigin = "center";
+    if (edit.resizeHandle) {
+      edit.resizeHandle.style.left = `${left + width - 7}px`;
+      edit.resizeHandle.style.top = `${top + height - 7}px`;
+    }
 
     const box = rotatedAabb(left, top, width, height, rotation);
     const stripWidth = edit.strip.offsetWidth || 270;
@@ -2274,7 +2436,12 @@ export class CanvasView {
         const changed =
           value !== original.text ||
           edit.color !== original.color ||
-          Math.abs(edit.fontSize - original.fontSize) > 0.001;
+          Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
+          edit.bold !== original.bold ||
+          edit.underline !== original.underline ||
+          edit.align !== original.align ||
+          edit.boxWidth !== original.boxWidth ||
+          edit.boxHeight !== original.boxHeight;
         this.closeTextEditor();
         if (!changed) return;
         store.mutate(
@@ -2284,6 +2451,16 @@ export class CanvasView {
             item.text = value.trim() || "Revision";
             item.textColor = edit.color;
             item.fontSize = clampTextSize(edit.fontSize);
+            if (edit.bold) item.textBold = true;
+            else delete item.textBold;
+            if (edit.underline) item.textUnderline = true;
+            else delete item.textUnderline;
+            if (edit.align === "center") delete item.textAlign;
+            else item.textAlign = edit.align;
+            if (edit.boxWidth) item.textBoxWidth = edit.boxWidth;
+            else delete item.textBoxWidth;
+            if (edit.boxHeight) item.textBoxHeight = edit.boxHeight;
+            else delete item.textBoxHeight;
             item.updatedAt = new Date().toISOString();
           },
           "change",
@@ -2296,7 +2473,10 @@ export class CanvasView {
         value !== original.text ||
         edit.color !== original.color ||
         Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
-        Math.abs(rotation - normalizeDegrees(original.rotation)) > 0.001;
+        Math.abs(rotation - normalizeDegrees(original.rotation)) > 0.001 ||
+        edit.bold !== original.bold ||
+        edit.underline !== original.underline ||
+        edit.align !== original.align;
       this.closeTextEditor();
       if (!changed) return;
       store.mutate(
@@ -2306,6 +2486,12 @@ export class CanvasView {
           item.text = value;
           item.color = edit.color;
           item.fontSize = clampTextSize(edit.fontSize);
+          if (edit.bold) item.textBold = true;
+          else delete item.textBold;
+          if (edit.underline) item.textUnderline = true;
+          else delete item.textUnderline;
+          if (edit.align === "left") delete item.textAlign;
+          else item.textAlign = edit.align;
           if (rotation === 0) delete item.rotation;
           else item.rotation = rotation;
           item.updatedAt = new Date().toISOString();
@@ -2347,6 +2533,9 @@ export class CanvasView {
           strokeWidth: 2,
           text: value,
           fontSize: clampTextSize(edit.fontSize),
+          textBold: edit.bold ? true : undefined,
+          textUnderline: edit.underline ? true : undefined,
+          textAlign: edit.align === "left" ? undefined : edit.align,
           rotation: rotation === 0 ? undefined : rotation,
           scale: null,
           createdAt: now,
@@ -3351,7 +3540,17 @@ export class CanvasView {
         break;
       }
       case "callout": {
-        const layout = calloutLayout(item);
+        const liveCallout =
+          this.textEdit && this.textEdit.itemId === item.id && this.textEdit.mode === "callout"
+            ? {
+                ...item,
+                text: this.textEdit.text,
+                fontSize: this.textEdit.fontSize,
+                textBoxWidth: this.textEdit.boxWidth,
+                textBoxHeight: this.textEdit.boxHeight,
+              }
+            : item;
+        const layout = calloutLayout(liveCallout);
         const anchor = this.toScreen(layout.anchor);
         const leaderStart = this.toScreen(layout.leaderStart);
         const size = Math.max(8, lineWidth * 3.6);
@@ -3384,7 +3583,7 @@ export class CanvasView {
           hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
           item.textColor ?? item.color,
           true,
-          true,
+          "stamp",
         );
         break;
       }
@@ -3425,12 +3624,27 @@ export class CanvasView {
         const layout = textItemLayout(item);
         const fontSize = Math.max(0.3, layout.fontSize * zoom);
         const lineHeight = layout.lineHeight * zoom;
-        ctx.font = `500 ${fontSize}px ${FONT_STACK}`;
+        const align = item.textAlign ?? "left";
+        ctx.font = `${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
         ctx.fillStyle = item.color;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
+        const lineWidths = layout.lines.map((line) => ctx.measureText(line).width);
+        const blockWidth = Math.max(0, ...lineWidths);
         layout.lines.forEach((line, index) => {
-          ctx.fillText(line, points[0].x, points[0].y + index * lineHeight);
+          const lineWidth = lineWidths[index];
+          const x = points[0].x + textLineX(align, 0, blockWidth, lineWidth);
+          const y = points[0].y + index * lineHeight;
+          ctx.fillText(line, x, y);
+          if (item.textUnderline) {
+            ctx.strokeStyle = item.color;
+            ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
+            const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
+            ctx.beginPath();
+            ctx.moveTo(x, underlineY);
+            ctx.lineTo(x + lineWidth, underlineY);
+            ctx.stroke();
+          }
         });
         break;
       }
@@ -3494,7 +3708,7 @@ export class CanvasView {
     fill: string,
     textColor: string,
     leader: boolean,
-    bold = false,
+    style: "text" | "stamp" = "text",
   ): void {
     const zoom = store.ui.zoom;
     const center = this.toScreen(layout.center);
@@ -3502,6 +3716,12 @@ export class CanvasView {
     const height = layout.height * zoom;
     const x = center.x - width / 2;
     const y = center.y - height / 2;
+    const isStamp = style === "stamp";
+    const bold = isStamp || item.textBold === true;
+    const align = isStamp ? "center" : (item.textAlign ?? "center");
+    const padding = layout.padding * zoom;
+    const contentLeft = x + padding;
+    const contentWidth = Math.max(0, width - padding * 2);
     ctx.save();
     if (leader && item.kind === "cloud" && item.points.length) {
       const targetPage = closestPointOnPolygon(item.points, layout.center);
@@ -3531,16 +3751,28 @@ export class CanvasView {
     ctx.stroke();
     ctx.fillStyle = textColor;
     const fontSize = Math.max(6, layout.fontSize * zoom);
-    ctx.font = `${bold ? 700 : 500} ${fontSize}px ${FONT_STACK}`;
-    ctx.textAlign = "center";
+    ctx.font = `${bold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
+    ctx.textAlign = "left";
     ctx.textBaseline = "middle";
     const lineHeight = layout.lineHeight * zoom;
     const startY = center.y - ((layout.lines.length - 1) * lineHeight) / 2;
     layout.lines.forEach((line, index) => {
-      if (bold) {
-        this.drawTrackedLine(ctx, line, center.x, startY + index * lineHeight, fontSize * 0.08);
-      } else {
-        ctx.fillText(line, center.x, startY + index * lineHeight);
+      const lineY = startY + index * lineHeight;
+      if (isStamp) {
+        this.drawTrackedLine(ctx, line, center.x, lineY, fontSize * 0.08);
+        return;
+      }
+      const lineWidth = ctx.measureText(line).width;
+      const lineX = contentLeft + textLineX(align, 0, contentWidth, lineWidth);
+      ctx.fillText(line, lineX, lineY);
+      if (item.textUnderline) {
+        ctx.strokeStyle = textColor;
+        ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
+        const underlineY = lineY + fontSize * (0.35 + TEXT_UNDERLINE_OFFSET);
+        ctx.beginPath();
+        ctx.moveTo(lineX, underlineY);
+        ctx.lineTo(lineX + lineWidth, underlineY);
+        ctx.stroke();
       }
     });
     ctx.restore();

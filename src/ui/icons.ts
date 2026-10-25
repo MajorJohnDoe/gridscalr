@@ -68,6 +68,9 @@ const paths: Record<string, string> = {
   callout: '<path d="M4 5h16v10H9l-4 4v-4H4V5Z"/><path d="M8 9h8M8 12h5"/>',
   stamp: '<path d="M6 15h12M8 15V9a4 4 0 0 1 8 0v6M5 19h14"/>',
   delta: '<path d="M12 4 21 20 3 20 12 4Z"/>',
+  alignLeft: '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
+  alignCenter: '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
+  alignRight: '<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
 };
 
 export function icon(name: string, size = 18): string {

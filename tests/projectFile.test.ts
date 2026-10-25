@@ -119,6 +119,129 @@ describe("project files", () => {
     expect(text.fontSize).toBe(300);
   });
 
+  it("round-trips text styling on notes, callouts and clouds", () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const now = "2026-01-01T00:00:00.000Z";
+    draw.items.push(
+      {
+        id: "note_styled",
+        page: 1,
+        kind: "text",
+        points: [{ x: 20, y: 20 }],
+        color: "#f2a93b",
+        strokeWidth: 2,
+        text: "Styled note",
+        fontSize: 14,
+        textBold: true,
+        textUnderline: true,
+        textAlign: "right",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "callout_styled",
+        page: 1,
+        kind: "callout",
+        points: [{ x: 40, y: 40 }, { x: 120, y: 90 }],
+        color: "#4cc9f0",
+        strokeWidth: 2,
+        text: "Callout",
+        fontSize: 12,
+        textBold: true,
+        textAlign: "left",
+        textBoxWidth: 220,
+        textBoxHeight: 90,
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "cloud_styled",
+        page: 1,
+        kind: "cloud",
+        points: [
+          { x: 0, y: 0 },
+          { x: 60, y: 0 },
+          { x: 60, y: 60 },
+          { x: 0, y: 60 },
+        ],
+        color: "#ef476f",
+        strokeWidth: 2,
+        text: "Cloud",
+        fontSize: 12,
+        textUnderline: true,
+        textAlign: "right",
+        createdAt: now,
+        updatedAt: now,
+      },
+    );
+
+    const parsed = parseProject(serializeProject(project));
+    const items = parsed.layers.flatMap((layer) => layer.items);
+    expect(items.find((item) => item.id === "note_styled")).toMatchObject({
+      textBold: true,
+      textUnderline: true,
+      textAlign: "right",
+    });
+    expect(items.find((item) => item.id === "callout_styled")).toMatchObject({
+      textBold: true,
+      textAlign: "left",
+      textBoxWidth: 220,
+      textBoxHeight: 90,
+    });
+    expect(items.find((item) => item.id === "cloud_styled")).toMatchObject({
+      textUnderline: true,
+      textAlign: "right",
+    });
+  });
+
+  it("drops text styling that is invalid or belongs to other markup kinds", () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const now = "2026-01-01T00:00:00.000Z";
+    draw.items.push(
+      {
+        id: "note_bad",
+        page: 1,
+        kind: "text",
+        points: [{ x: 20, y: 20 }],
+        color: "#f2a93b",
+        strokeWidth: 2,
+        text: "Note",
+        textBold: "yes" as unknown as boolean,
+        textUnderline: "yes" as unknown as boolean,
+        textAlign: "justify" as unknown as "left",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "stamp_extra",
+        page: 1,
+        kind: "stamp",
+        points: [{ x: 20, y: 20 }],
+        color: "#35c2a1",
+        strokeWidth: 1,
+        text: "APPROVED",
+        textBold: true,
+        textUnderline: true,
+        textAlign: "right",
+        createdAt: now,
+        updatedAt: now,
+      },
+    );
+
+    const parsed = parseProject(serializeProject(project));
+    const items = parsed.layers.flatMap((layer) => layer.items);
+    const note = items.find((item) => item.id === "note_bad")!;
+    expect(note.textBold).toBeUndefined();
+    expect(note.textUnderline).toBeUndefined();
+    expect(note.textAlign).toBeUndefined();
+    const stamp = items.find((item) => item.id === "stamp_extra")!;
+    expect(stamp.textBold).toBeUndefined();
+    expect(stamp.textUnderline).toBeUndefined();
+    expect(stamp.textAlign).toBeUndefined();
+  });
+
   it("rejects empty, invalid, and newer project files", () => {
     expect(() => parseProject("not json")).toThrow(/valid JSON/);
     expect(() => parseProject("{}")).toThrow(/schema version/);

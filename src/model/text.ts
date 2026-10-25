@@ -1,4 +1,4 @@
-import type { MarkupItem } from "./types";
+import type { MarkupItem, TextAlign } from "./types";
 
 export const TEXT_FONT_STACK = 'Inter, "Segoe UI", system-ui, sans-serif';
 export const TEXT_LINE_HEIGHT = 1.28;
@@ -13,7 +13,7 @@ function canvasMeasure(text: string, fontSize: number): number | null {
     measureCanvas = document.createElement("canvas").getContext("2d");
   }
   if (!measureCanvas) return null;
-  measureCanvas.font = `500 ${fontSize}px ${TEXT_FONT_STACK}`;
+  measureCanvas.font = `400 ${fontSize}px ${TEXT_FONT_STACK}`;
   return measureCanvas.measureText(text).width;
 }
 
@@ -38,6 +38,29 @@ export function measureTextWidth(text: string, fontSize: number): number {
   }
   return Math.max(0.1, units * fontSize);
 }
+
+/**
+ * Left edge for one line of text inside a box whose left edge is `left`.
+ * Lines that are wider than the box start at the box edge instead of
+ * overflowing it to the left.
+ */
+export function textLineX(
+  align: TextAlign | undefined,
+  left: number,
+  boxWidth: number,
+  lineWidth: number,
+): number {
+  const free = Math.max(0, boxWidth - lineWidth);
+  if (align === "center") return left + free / 2;
+  if (align === "right") return left + free;
+  return left;
+}
+
+/** Underline distance below the baseline, as a fraction of the font size. */
+export const TEXT_UNDERLINE_OFFSET = 0.12;
+
+/** Underline stroke width as a fraction of the font size. */
+export const TEXT_UNDERLINE_WIDTH = 0.06;
 
 export interface TextLayout {
   lines: string[];
