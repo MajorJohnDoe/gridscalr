@@ -6,12 +6,7 @@
  * destroy source material.
  */
 export function pathComparisonKey(path: string): string {
-  return path
-    .trim()
-    .replace(/\\/g, "/")
-    .replace(/\/+/g, "/")
-    .replace(/\/+$/g, "")
-    .toLowerCase();
+  return path.trim().replace(/\\/g, "/").replace(/\/+/g, "/").replace(/\/+$/g, "").toLowerCase();
 }
 
 export function sameFilePath(first: string, second: string): boolean {
@@ -29,13 +24,8 @@ export function findProtectedPath(
   return protectedPaths.find((path) => sameFilePath(candidate, path)) ?? null;
 }
 
-export function assertWritablePath(
-  candidate: string,
-  protectedPaths: readonly string[],
-): void {
+export function assertWritablePath(candidate: string, protectedPaths: readonly string[]): void {
   const match = findProtectedPath(candidate, protectedPaths);
   if (!match) return;
-  throw new Error(
-    "Choose a different file name. GridScalr will not overwrite a source drawing.",
-  );
+  throw new Error("Choose a different file name. GridScalr will not overwrite a source drawing.");
 }

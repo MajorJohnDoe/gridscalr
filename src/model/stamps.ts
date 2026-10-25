@@ -26,7 +26,6 @@ export function normalizeStampPresets(value: unknown): string[] {
   return presets;
 }
 
-
 const STATUS_COLORS: Record<string, string> = {
   approved: "#35c2a1",
   godkänd: "#35c2a1",

@@ -70,10 +70,7 @@ export function setItemsLocked(
 }
 
 /** Deletes every selected item that is not protected by an item or layer lock. */
-export function deleteItems(
-  project: Project,
-  refs: SelectionRef[],
-): ItemCommandResult {
+export function deleteItems(project: Project, refs: SelectionRef[]): ItemCommandResult {
   const result = emptyResult();
   for (const entry of resolveSelection(project, refs)) {
     if (entry.locked) {

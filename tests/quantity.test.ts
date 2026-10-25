@@ -37,7 +37,12 @@ function add(
   const created: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
     page: 1,
-    points: [{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 110 }, { x: 10, y: 110 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 110, y: 10 },
+      { x: 110, y: 110 },
+      { x: 10, y: 110 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     scale: { ...SCALE },
@@ -58,18 +63,17 @@ function lengthItem(
     project,
     {
       kind: "length",
-      points: [{ x: 10, y: 10 }, { x: 110, y: 10 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 110, y: 10 },
+      ],
       ...extra,
     },
     layerId,
   );
 }
 
-function areaItem(
-  project: Project,
-  extra: Partial<MarkupItem> = {},
-  layerId?: string,
-): MarkupItem {
+function areaItem(project: Project, extra: Partial<MarkupItem> = {}, layerId?: string): MarkupItem {
   return add(project, { kind: "area", ...extra }, layerId);
 }
 
@@ -100,7 +104,10 @@ describe("quantity rows", () => {
     lengthItem(project, {
       categoryId: floor,
       room: "Room A",
-      points: [{ x: 10, y: 10 }, { x: 210, y: 10 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 210, y: 10 },
+      ],
     });
     areaItem(project, { categoryId: floor, room: "Room A" });
     countItem(project, { categoryId: floor, room: "Room B", countType: "door" });
@@ -138,13 +145,23 @@ describe("quantity rows", () => {
     areaItem(project, {
       categoryId: floor,
       room: "Room 101",
-      points: [{ x: 10, y: 10 }, { x: 60, y: 10 }, { x: 60, y: 60 }, { x: 10, y: 60 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 60, y: 10 },
+        { x: 60, y: 60 },
+        { x: 10, y: 60 },
+      ],
       areaMode: "subtract",
     });
     areaItem(project, {
       categoryId: floor,
       room: "Room 102",
-      points: [{ x: 10, y: 10 }, { x: 73, y: 10 }, { x: 73, y: 73 }, { x: 10, y: 73 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 73, y: 10 },
+        { x: 73, y: 73 },
+        { x: 10, y: 73 },
+      ],
     });
     areaItem(project, {
       categoryId: floor,
@@ -156,7 +173,12 @@ describe("quantity rows", () => {
     areaItem(project, {
       categoryId: wall,
       room: "Room 101",
-      points: [{ x: 10, y: 10 }, { x: 210, y: 10 }, { x: 210, y: 210 }, { x: 10, y: 210 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 210, y: 10 },
+        { x: 210, y: 210 },
+        { x: 10, y: 210 },
+      ],
       areaMode: "subtract",
     });
     lengthItem(project, { categoryId: floor, room: "Room 101", areaMode: "subtract" });
@@ -228,18 +250,12 @@ describe("quantity rows", () => {
 
     expect(calculateQuantities(project, { page: 1 }).rows).toHaveLength(2);
     expect(calculateQuantities(project, { page: 2 }).rows[0].categoryName).toBe("Wall");
-    expect(
-      calculateQuantities(project, { page: "all", categoryId: floor }).rows,
-    ).toHaveLength(2);
-    expect(
-      calculateQuantities(project, { page: "all", layerIds: [second.id] }).rows,
-    ).toHaveLength(1);
-    expect(
-      calculateQuantities(project, { page: "all", layerIds: [] }).rows,
-    ).toHaveLength(0);
-    expect(
-      calculateQuantities(project, { page: "all", room: "room a" }).rows,
-    ).toHaveLength(2);
+    expect(calculateQuantities(project, { page: "all", categoryId: floor }).rows).toHaveLength(2);
+    expect(calculateQuantities(project, { page: "all", layerIds: [second.id] }).rows).toHaveLength(
+      1,
+    );
+    expect(calculateQuantities(project, { page: "all", layerIds: [] }).rows).toHaveLength(0);
+    expect(calculateQuantities(project, { page: "all", room: "room a" }).rows).toHaveLength(2);
     expect(JSON.stringify(project)).toBe(before);
   });
 
@@ -273,13 +289,19 @@ describe("quantity rows", () => {
       categoryId: floor,
       room: "Rect",
       areaShape: "rectangle",
-      points: [{ x: 0, y: 0 }, { x: 100, y: 50 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 50 },
+      ],
     });
     areaItem(project, {
       categoryId: floor,
       room: "Ellipse",
       areaShape: "ellipse",
-      points: [{ x: 0, y: 0 }, { x: 100, y: 50 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 50 },
+      ],
     });
 
     const summary = calculateQuantities(project, { page: "all" });
@@ -375,7 +397,10 @@ describe("quantity rows", () => {
     lengthItem(project, {
       categoryId: floor,
       room: "A",
-      points: [{ x: 10, y: 10 }, { x: 40, y: 10 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 40, y: 10 },
+      ],
     });
 
     const row = calculateQuantities(project, { page: "all" }).rows[0];
@@ -393,5 +418,4 @@ describe("quantity rows", () => {
     expect(row.roundingStep).toBe(0);
     expect(row.orderQuantity).toBeCloseTo(row.net);
   });
-
 });

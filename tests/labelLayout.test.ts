@@ -1,14 +1,7 @@
 import { describe, expect, it } from "vitest";
-import {
-  layoutPageLabels,
-  type LabelSource,
-} from "../src/model/labelLayout";
+import { layoutPageLabels, type LabelSource } from "../src/model/labelLayout";
 import type { Bounds } from "../src/model/geometry";
-import {
-  LABEL_MIN_PRIMARY_SIZE,
-  LABEL_PRIMARY_SIZE,
-  type LabelMeasure,
-} from "../src/model/label";
+import { LABEL_MIN_PRIMARY_SIZE, LABEL_PRIMARY_SIZE, type LabelMeasure } from "../src/model/label";
 import type { PageSize } from "../src/model/types";
 
 const page: PageSize = { width: 300, height: 200 };

@@ -1,9 +1,11 @@
 import { readFile, readdir, stat } from "node:fs/promises";
+import { docsSourceFingerprint } from "./docs-fingerprint.mjs";
 import { dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const errors = [];
+const warnings = [];
 let checkedLinks = 0;
 let checkedImages = 0;
 
@@ -201,6 +203,27 @@ if (!(await exists(manifestPath))) {
       errors.push(`docs/screenshots/${file} is not listed in manifest.json`);
     }
   }
+}
+
+if (manifestPath) {
+  const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+  if (!manifest.sourceFingerprint) {
+    warnings.push(
+      "docs/screenshots/manifest.json has no sourceFingerprint; run npm run docs:capture.",
+    );
+  } else {
+    const current = await docsSourceFingerprint(root);
+    if (current !== manifest.sourceFingerprint) {
+      const message =
+        "Screenshots were captured from an older UI. Run npm run docs:capture before publishing.";
+      if (process.env.GRIDSCALR_DOCS_STRICT === "1") errors.push(message);
+      else warnings.push(message);
+    }
+  }
+}
+
+if (warnings.length) {
+  for (const warning of warnings) console.warn(`Warning: ${warning}`);
 }
 
 if (errors.length) {

@@ -16,7 +16,7 @@ export const QUANTITY_CSV_COLUMNS = [
   "item_count",
 ] as const;
 
-function escapeField(value: string): string {
+export function escapeCsvField(value: string): string {
   if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
   return value;
 }
@@ -55,9 +55,7 @@ function rowValues(row: QuantityRow): string[] {
 export function serializeQuantityCsv(report: QuantityReport): string {
   const lines: string[] = [
     QUANTITY_CSV_COLUMNS.join(","),
-    ...report.summary.rows.map((row) =>
-      rowValues(row).map(escapeField).join(","),
-    ),
+    ...report.summary.rows.map((row) => rowValues(row).map(escapeCsvField).join(",")),
   ];
   const metadata = [
     ["project", report.projectName],
@@ -66,7 +64,7 @@ export function serializeQuantityCsv(report: QuantityReport): string {
     ["generated_at", report.generatedAt],
     ["hidden_excluded", report.hiddenExcluded ? "true" : "false"],
   ]
-    .map(([key, value]) => `${escapeField(key)},${escapeField(value)}`)
+    .map(([key, value]) => `${escapeCsvField(key)},${escapeCsvField(value)}`)
     .join("\r\n");
   return `\uFEFF${lines.join("\r\n")}\r\n\r\n\r\n${metadata}\r\n`;
 }

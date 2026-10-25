@@ -82,9 +82,9 @@ describe("count hit testing", () => {
     const lockedLayer = layersForKind(lockedProject, "measure")[0];
     addItem(lockedProject, lockedLayer.id, makeCount({ locked: true }));
     expect(hitTest(lockedProject, 1, { x: 150, y: 100 }, 6)).toBeNull();
-    expect(
-      hitTest(lockedProject, 1, { x: 150, y: 100 }, 6, { includeLocked: true })?.item.id,
-    ).toBe("item_count");
+    expect(hitTest(lockedProject, 1, { x: 150, y: 100 }, 6, { includeLocked: true })?.item.id).toBe(
+      "item_count",
+    );
   });
 });
 
@@ -103,16 +103,18 @@ describe("count metrics and labels", () => {
       text: "1 pcs",
       secondary: "Door",
     });
-    expect(
-      measurementLabelParts(makeCount({ label: "D1" }), project),
-    ).toEqual({ text: "D1 · 1 pcs", secondary: "Door" });
+    expect(measurementLabelParts(makeCount({ label: "D1" }), project)).toEqual({
+      text: "D1 · 1 pcs",
+      secondary: "Door",
+    });
   });
 
   it("places the label clear of the symbol", () => {
     const anchor = { x: 150, y: 100 };
-    expect(
-      labelAnchorForPoints(makeCount({ points: [anchor] }), [anchor]),
-    ).toEqual({ x: 150, y: 100 - COUNT_LABEL_OFFSET });
+    expect(labelAnchorForPoints(makeCount({ points: [anchor] }), [anchor])).toEqual({
+      x: 150,
+      y: 100 - COUNT_LABEL_OFFSET,
+    });
   });
 
   it("includes counts in the page label layout", () => {

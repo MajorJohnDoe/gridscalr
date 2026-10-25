@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { cloneItem, createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import {
+  cloneItem,
+  createDefaultLayers,
+  createProject,
+  defaultDocument,
+} from "../src/model/layers";
 import { itemMetrics } from "../src/model/measure";
 import { measurementLabelParts } from "../src/model/label";
 import type { MarkupItem, Project } from "../src/model/types";

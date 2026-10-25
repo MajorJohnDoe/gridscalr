@@ -12,13 +12,7 @@ export const COUNT_SYMBOL_RADIUS = COUNT_SYMBOL_SIZE / 2;
 /** Distance from the anchor to the label center, clear of the symbol. */
 export const COUNT_LABEL_OFFSET = COUNT_SYMBOL_RADIUS + 11;
 
-export const COUNT_TYPES: CountType[] = [
-  "door",
-  "window",
-  "radiator",
-  "fixture",
-  "other",
-];
+export const COUNT_TYPES: CountType[] = ["door", "window", "radiator", "fixture", "other"];
 
 export const COUNT_TYPE_LABELS: Record<CountType, string> = {
   door: "Door",
@@ -59,19 +53,12 @@ export function countSymbol(type: CountType | undefined): CountSymbol {
   switch (type) {
     case "door":
       return {
-        paths: [
-          line(-5, -5, -5, 5),
-          arc(-5, -5, 10, Math.PI / 2, 0),
-        ],
+        paths: [line(-5, -5, -5, 5), arc(-5, -5, 10, Math.PI / 2, 0)],
         dots: [],
       };
     case "window":
       return {
-        paths: [
-          rect(-6, -2.5, 6, 2.5),
-          line(-6, -0.8, 6, -0.8),
-          line(-6, 0.8, 6, 0.8),
-        ],
+        paths: [rect(-6, -2.5, 6, 2.5), line(-6, -0.8, 6, -0.8), line(-6, 0.8, 6, 0.8)],
         dots: [],
       };
     case "radiator":
@@ -86,11 +73,7 @@ export function countSymbol(type: CountType | undefined): CountSymbol {
       };
     case "fixture":
       return {
-        paths: [
-          circle(0, 0, 4),
-          line(-2.8, -2.8, 2.8, 2.8),
-          line(-2.8, 2.8, 2.8, -2.8),
-        ],
+        paths: [circle(0, 0, 4), line(-2.8, -2.8, 2.8, 2.8), line(-2.8, 2.8, 2.8, -2.8)],
         dots: [],
       };
     case "other":
@@ -129,13 +112,7 @@ function circle(cx: number, cy: number, radius: number): CountSymbolPath {
 }
 
 /** Flattens an arc into short line segments so canvas and PDF share geometry. */
-function arc(
-  cx: number,
-  cy: number,
-  radius: number,
-  start: number,
-  end: number,
-): CountSymbolPath {
+function arc(cx: number, cy: number, radius: number, start: number, end: number): CountSymbolPath {
   const steps = 24;
   const points: Point[] = [];
   for (let index = 0; index <= steps; index++) {

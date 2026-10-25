@@ -36,8 +36,7 @@ export function textBoxLayout(
     ? wrapLines(rawLines, Math.max(1, (resolvedWidth - padding * 2) / (size * 0.62)))
     : rawLines;
   const longest = lines.reduce((max, line) => Math.max(max, line.length), 1);
-  const autoWidth =
-    longest * size * 0.62 + Math.max(0, longest - 1) * tracking + padding * 2;
+  const autoWidth = longest * size * 0.62 + Math.max(0, longest - 1) * tracking + padding * 2;
   const autoHeight = lines.length * size * 1.25 + padding * 2;
   return {
     width: resolvedWidth ?? Math.max(size * 3.5, autoWidth),
@@ -151,7 +150,6 @@ function average(points: readonly Point[]): Point {
   return { x: x / points.length, y: y / points.length };
 }
 
-
 /** Closest point on a closed polygon outline. */
 export function closestPointOnPolygon(points: readonly Point[], point: Point): Point {
   if (!points.length) return point;
@@ -177,7 +175,6 @@ export function closestPointOnPolygon(points: readonly Point[], point: Point): P
   }
   return best;
 }
-
 
 function wrapLines(lines: string[], maxCharacters: number): string[] {
   const result: string[] = [];

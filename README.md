@@ -491,7 +491,8 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 
 ```text
 src/
-  app/App.ts             application wiring, file flows, shortcuts, exports
+  app/App.ts             application wiring, file flows, shortcuts
+  app/exportFlows.ts     CSV, PDF, PNG and JSON export orchestration
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
   canvas/geometry.ts     crop, handle, rotation and colour helpers
   canvas/selectionHandles.ts selection and rotation handles
@@ -508,7 +509,10 @@ src/
   pdf/reportPdf.ts       print-friendly A4 quantity report built with pdf-lib
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
+  report/markupCsv.ts    visible markup CSV serialization
   ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  styles/help.css        help dialog, search, TOC and image lightbox
+  styles/popovers.css    tool flyouts, Canvas options and measurement options
   ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties scale and active-layer sections
@@ -550,6 +554,7 @@ scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark with 2,000+ items
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
+scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 ```
 
 Key design choices:
@@ -568,7 +573,9 @@ Key design choices:
 ```bash
 npm test          # Vitest model and project-format tests
 npm run build     # tsc --noEmit + Vite production build
-npm run check:docs  # links, images, anchors, tools and schema references
+npm run format:check # Prettier check for TypeScript, CSS and test scripts
+npm run check:docs  # links, images, anchors, tools, schema and screenshot freshness
+# GRIDSCALR_DOCS_STRICT=1 makes stale screenshots fail instead of warn
 npx playwright install chromium  # one-time browser install for test:ui and docs:capture
 npm run test:ui     # Playwright smoke: open, measure, help and save
 npm run test:canvas # Playwright canvas gestures: draw, resize, rotate, text, crop

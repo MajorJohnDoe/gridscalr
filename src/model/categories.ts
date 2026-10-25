@@ -67,7 +67,9 @@ export function findCategory(project: Project, id: string | undefined): Category
 }
 
 export function defaultCategory(project: Project): Category | undefined {
-  return findCategory(project, project.settings.quantity.defaultCategoryId) ?? project.categories[0];
+  return (
+    findCategory(project, project.settings.quantity.defaultCategoryId) ?? project.categories[0]
+  );
 }
 
 /** Resolves an item category id, falling back to the project default. */

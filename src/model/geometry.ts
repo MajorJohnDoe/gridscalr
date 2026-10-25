@@ -118,7 +118,8 @@ export function distanceToPolyline(p: Point, points: Point[], closed = false): n
   for (let i = 1; i < points.length; i++) {
     best = Math.min(best, pointToSegmentDistance(p, points[i - 1], points[i]));
   }
-  if (closed) best = Math.min(best, pointToSegmentDistance(p, points[points.length - 1], points[0]));
+  if (closed)
+    best = Math.min(best, pointToSegmentDistance(p, points[points.length - 1], points[0]));
   return best;
 }
 
@@ -197,7 +198,10 @@ export function translatePoints(points: Point[], dx: number, dy: number): Point[
   return points.map((p) => ({ x: p.x + dx, y: p.y + dy }));
 }
 
-export function expandRect(a: Point, b: Point): { x: number; y: number; width: number; height: number } {
+export function expandRect(
+  a: Point,
+  b: Point,
+): { x: number; y: number; width: number; height: number } {
   return {
     x: Math.min(a.x, b.x),
     y: Math.min(a.y, b.y),
@@ -233,7 +237,6 @@ export function rotatePointRadians(point: Point, center: Point, radians: number)
     y: center.y + dx * sin + dy * cos,
   };
 }
-
 
 export interface ArrowHeadGeometry {
   /** Point where the shaft should stop so it does not poke through the tip. */

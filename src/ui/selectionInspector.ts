@@ -25,8 +25,10 @@ import { el, option } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 
-export function selectionSection(project: NonNullable<typeof store.project>, actions: PanelActions): HTMLElement {
-
+export function selectionSection(
+  project: NonNullable<typeof store.project>,
+  actions: PanelActions,
+): HTMLElement {
   const refs = store.ui.selection;
   if (refs.length > 1) return multiSelectionSection(project, refs, actions);
 
@@ -214,7 +216,9 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
     modeSelect.title = locked
       ? "Unlock the image to change its mode."
       : "Background images sit above the PDF and below every markup.";
-    modeSelect.addEventListener("change", () => actions.setSelectionImageMode(modeSelect.value as ImageMode));
+    modeSelect.addEventListener("change", () =>
+      actions.setSelectionImageMode(modeSelect.value as ImageMode),
+    );
     modeField.append(modeSelect);
     section.append(modeField);
 
@@ -273,7 +277,7 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
   labelInput.placeholder =
     item.kind === "delta"
       ? "YYYY-MM-DD"
-      : metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label");
+      : (metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label"));
   labelInput.disabled = locked;
   labelInput.title = locked
     ? "Unlock the layer to edit this markup."
@@ -402,9 +406,7 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
     });
     radiusField.append(radius);
     section.append(radiusField);
-    section.append(
-      el("div", "empty-note small", "Auto scales the scallops with the cloud size."),
-    );
+    section.append(el("div", "empty-note small", "Auto scales the scallops with the cloud size."));
   }
 
   if (item.kind === "cloud") {
@@ -449,11 +451,7 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
     const opacityHead = el("div", "section-head");
     opacityHead.style.marginBottom = "4px";
     opacityHead.append(el("span", "field-label", "Fill opacity"));
-    const opacityValue = el(
-      "span",
-      "range-value",
-      `${Math.round((item.opacity ?? 0.22) * 100)}%`,
-    );
+    const opacityValue = el("span", "range-value", `${Math.round((item.opacity ?? 0.22) * 100)}%`);
     opacityHead.append(opacityValue);
     const opacityRange = el("input");
     opacityRange.type = "range";
@@ -521,67 +519,69 @@ export function selectionSection(project: NonNullable<typeof store.project>, act
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
     colorField.append(el("span", "field-label", item.kind === "text" ? "Text colour" : "Colour"));
-  const colorInput = el("input", "color-swatch");
-  colorInput.type = "color";
-  colorInput.value = item.color;
-  colorInput.disabled = locked;
-  colorInput.addEventListener("change", () => {
-    store.mutate((project) => {
-      const target = findItem(project, item.id)?.item;
-      if (target) target.color = colorInput.value;
-    }, "change");
-  });
-  colorField.append(colorInput);
-  styleRow.append(colorField);
+    const colorInput = el("input", "color-swatch");
+    colorInput.type = "color";
+    colorInput.value = item.color;
+    colorInput.disabled = locked;
+    colorInput.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) target.color = colorInput.value;
+      }, "change");
+    });
+    colorField.append(colorInput);
+    styleRow.append(colorField);
 
-  const sizeField = el("label", "field");
-  if (
-    item.kind === "text" ||
-    item.kind === "cloud" ||
-    item.kind === "callout" ||
-    item.kind === "stamp" ||
-    item.kind === "delta"
-  ) {
-    sizeField.append(el("span", "field-label", "Text size"));
-    const sizeWrap = el("div", "input-row");
-    const size = el("input", "input");
-    size.type = "number";
-    size.min = "0.5";
-    size.max = "300";
-    size.step = "0.5";
-    size.value = String(item.fontSize ?? 12);
-    size.disabled = locked;
-    size.setAttribute("aria-label", "Text size in points");
-    size.addEventListener("change", () => {
-      const value = Number(size.value);
-      if (!Number.isFinite(value) || value <= 0) {
-        size.value = String(item.fontSize ?? 12);
-        return;
+    const sizeField = el("label", "field");
+    if (
+      item.kind === "text" ||
+      item.kind === "cloud" ||
+      item.kind === "callout" ||
+      item.kind === "stamp" ||
+      item.kind === "delta"
+    ) {
+      sizeField.append(el("span", "field-label", "Text size"));
+      const sizeWrap = el("div", "input-row");
+      const size = el("input", "input");
+      size.type = "number";
+      size.min = "0.5";
+      size.max = "300";
+      size.step = "0.5";
+      size.value = String(item.fontSize ?? 12);
+      size.disabled = locked;
+      size.setAttribute("aria-label", "Text size in points");
+      size.addEventListener("change", () => {
+        const value = Number(size.value);
+        if (!Number.isFinite(value) || value <= 0) {
+          size.value = String(item.fontSize ?? 12);
+          return;
+        }
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (target) target.fontSize = Math.max(0.5, Math.min(300, value));
+        }, "change");
+      });
+      sizeWrap.append(size, el("span", "context-unit", "pt"));
+      sizeField.append(sizeWrap);
+    } else {
+      sizeField.append(el("span", "field-label", "Stroke width"));
+      const width = el("select", "select");
+      for (const value of STROKE_WIDTH_OPTIONS) {
+        width.append(
+          option(String(value), `${value} pt`, Math.abs(value - item.strokeWidth) < 0.01),
+        );
       }
-      store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) target.fontSize = Math.max(0.5, Math.min(300, value));
-      }, "change");
-    });
-    sizeWrap.append(size, el("span", "context-unit", "pt"));
-    sizeField.append(sizeWrap);
-  } else {
-    sizeField.append(el("span", "field-label", "Stroke width"));
-    const width = el("select", "select");
-    for (const value of STROKE_WIDTH_OPTIONS) {
-      width.append(option(String(value), `${value} pt`, Math.abs(value - item.strokeWidth) < 0.01));
+      width.disabled = locked;
+      width.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (target) target.strokeWidth = Number(width.value);
+        }, "change");
+      });
+      sizeField.append(width);
     }
-    width.disabled = locked;
-    width.addEventListener("change", () => {
-      store.mutate((project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) target.strokeWidth = Number(width.value);
-      }, "change");
-    });
-    sizeField.append(width);
-  }
-  styleRow.append(sizeField);
-  section.append(styleRow);
+    styleRow.append(sizeField);
+    section.append(styleRow);
   }
 
   if (
@@ -757,9 +757,7 @@ function multiSelectionSection(
       const categorySelect = el("select", "select");
       categorySelect.append(option("", "Set category…", !commonCategory));
       for (const category of project.categories) {
-        categorySelect.append(
-          option(category.id, category.name, category.id === commonCategory),
-        );
+        categorySelect.append(option(category.id, category.name, category.id === commonCategory));
       }
       categorySelect.disabled = allLocked;
       categorySelect.setAttribute("aria-label", "Category for selected measurements");
@@ -773,9 +771,7 @@ function multiSelectionSection(
       section.append(categoryField);
 
       const firstRoom = (measurements[0].item.room ?? "").trim();
-      const commonRoom = measurements.every(
-        (entry) => (entry.item.room ?? "").trim() === firstRoom,
-      )
+      const commonRoom = measurements.every((entry) => (entry.item.room ?? "").trim() === firstRoom)
         ? firstRoom
         : "";
       const roomField = el("div", "field");
@@ -850,9 +846,7 @@ function multiSelectionSection(
         const countSelect = el("select", "select");
         countSelect.append(option("", "Set object type…", !commonType));
         for (const type of COUNT_TYPES) {
-          countSelect.append(
-            option(type, COUNT_TYPE_LABELS[type], type === commonType),
-          );
+          countSelect.append(option(type, COUNT_TYPE_LABELS[type], type === commonType));
         }
         countSelect.disabled = allLocked;
         countSelect.setAttribute("aria-label", "Object type for selected counts");
@@ -903,11 +897,7 @@ function multiSelectionSection(
   weightField.append(el("span", "field-label", "Line weight"));
   const weightSelect = el("select", "select");
   weightSelect.append(
-    option(
-      "",
-      commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`,
-      true,
-    ),
+    option("", commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`, true),
   );
   for (const value of STROKE_WIDTH_OPTIONS) {
     weightSelect.append(option(String(value), `${value} pt`, false));
@@ -961,4 +951,3 @@ function multiSelectionSection(
 
   return section;
 }
-

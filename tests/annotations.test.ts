@@ -7,7 +7,11 @@ import {
   stampLayout,
   textBoxLayout,
 } from "../src/model/annotations";
-import { DEFAULT_STAMP_PRESETS, normalizeStampPresets, stampStatusColor } from "../src/model/stamps";
+import {
+  DEFAULT_STAMP_PRESETS,
+  normalizeStampPresets,
+  stampStatusColor,
+} from "../src/model/stamps";
 import type { MarkupItem } from "../src/model/types";
 
 const base: MarkupItem = {
@@ -51,7 +55,10 @@ describe("annotation layouts", () => {
     const layout = calloutLayout({
       ...base,
       kind: "callout",
-      points: [{ x: 200, y: 200 }, { x: 100, y: 100 }],
+      points: [
+        { x: 200, y: 200 },
+        { x: 100, y: 100 },
+      ],
       text: "Check valve",
     });
     expect(layout.center).toEqual({ x: 100, y: 100 });
@@ -63,7 +70,12 @@ describe("annotation layouts", () => {
     const cloud: MarkupItem = {
       ...base,
       kind: "cloud",
-      points: [{ x: 0, y: 50 }, { x: 100, y: 50 }, { x: 100, y: 100 }, { x: 0, y: 100 }],
+      points: [
+        { x: 0, y: 50 },
+        { x: 100, y: 50 },
+        { x: 100, y: 100 },
+        { x: 0, y: 100 },
+      ],
       text: "Revision",
       fontSize: 10,
     };

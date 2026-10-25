@@ -34,7 +34,11 @@ function add(
   const created: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
     page: 1,
-    points: [{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 110 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 110, y: 10 },
+      { x: 110, y: 110 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: NOW,

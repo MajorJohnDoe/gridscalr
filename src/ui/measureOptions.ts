@@ -106,7 +106,11 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
         "Area shape",
         [
           { value: "polygon", label: "Polygon", selected: store.ui.measureAreaShape === "polygon" },
-          { value: "rectangle", label: "Rectangle", selected: store.ui.measureAreaShape === "rectangle" },
+          {
+            value: "rectangle",
+            label: "Rectangle",
+            selected: store.ui.measureAreaShape === "rectangle",
+          },
           { value: "ellipse", label: "Ellipse", selected: store.ui.measureAreaShape === "ellipse" },
         ],
         (value) => store.setMeasureAreaShape(value as AreaShape),
@@ -116,7 +120,11 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
         "Area mode",
         [
           { value: "add", label: "Add to area", selected: store.ui.measureAreaMode === "add" },
-          { value: "subtract", label: "Deduct from area", selected: store.ui.measureAreaMode === "subtract" },
+          {
+            value: "subtract",
+            label: "Deduct from area",
+            selected: store.ui.measureAreaMode === "subtract",
+          },
         ],
         (value) => store.setMeasureAreaMode(value as AreaMode),
       );

@@ -18,7 +18,13 @@ import {
 describe("geometry", () => {
   it("measures distances and polyline lengths", () => {
     expect(distance({ x: 0, y: 0 }, { x: 3, y: 4 })).toBe(5);
-    expect(polylineLength([{ x: 0, y: 0 }, { x: 3, y: 4 }, { x: 3, y: 8 }])).toBe(9);
+    expect(
+      polylineLength([
+        { x: 0, y: 0 },
+        { x: 3, y: 4 },
+        { x: 3, y: 8 },
+      ]),
+    ).toBe(9);
   });
 
   it("closes a polyline when measuring a perimeter", () => {
@@ -99,7 +105,12 @@ describe("geometry", () => {
     const points = [{ x: 1, y: 2 }];
     expect(translatePoints(points, 5, -1)).toEqual([{ x: 6, y: 1 }]);
     expect(points).toEqual([{ x: 1, y: 2 }]);
-    expect(boundingBox([{ x: -2, y: 4 }, { x: 7, y: -1 }])).toEqual({
+    expect(
+      boundingBox([
+        { x: -2, y: 4 },
+        { x: 7, y: -1 },
+      ]),
+    ).toEqual({
       min: { x: -2, y: -1 },
       max: { x: 7, y: 4 },
     });

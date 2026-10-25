@@ -3,7 +3,12 @@ import { arrowHeadGeometry } from "../model/geometry";
 import type { LabelBox, LabelMetrics } from "../model/label";
 import type { LabelLayout } from "../model/labelLayout";
 import { LABEL_FONT_STACK } from "../model/labelFont";
-import { TEXT_FONT_STACK, TEXT_UNDERLINE_OFFSET, TEXT_UNDERLINE_WIDTH, textLineX } from "../model/text";
+import {
+  TEXT_FONT_STACK,
+  TEXT_UNDERLINE_OFFSET,
+  TEXT_UNDERLINE_WIDTH,
+  textLineX,
+} from "../model/text";
 import type { MarkupItem, Point } from "../model/types";
 import { closestPointOnBox, drawArrowHead, hexAlpha, roundRect } from "./geometry";
 
@@ -20,7 +25,8 @@ export function drawTrackedLine(
 ): void {
   const characters = [...text];
   const widths = characters.map((character) => ctx.measureText(character).width);
-  const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+  const total =
+    widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
   let x = centerX - total / 2;
   ctx.textAlign = "left";
   ctx.textBaseline = "middle";
@@ -117,11 +123,7 @@ export function drawAnnotationPanel(
   ctx.restore();
 }
 
-export function drawEndpoints(
-  ctx: CanvasRenderingContext2D,
-  points: Point[],
-  color: string,
-): void {
+export function drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
   if (points.length > 26) return;
   ctx.save();
   ctx.fillStyle = "#101518";

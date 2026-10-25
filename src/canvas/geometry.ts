@@ -30,12 +30,7 @@ export function rectFromPoints(start: Point, end: Point): PageRect {
   };
 }
 
-export function movePageRect(
-  rect: PageRect,
-  start: Point,
-  point: Point,
-  size: PageSize,
-): PageRect {
+export function movePageRect(rect: PageRect, start: Point, point: Point, size: PageSize): PageRect {
   return {
     x: Math.max(0, Math.min(size.width - rect.width, rect.x + point.x - start.x)),
     y: Math.max(0, Math.min(size.height - rect.height, rect.y + point.y - start.y)),
@@ -225,7 +220,13 @@ export function dedupeLast(points: Point[]): Point[] {
 
 export function hexAlpha(hex: string, alpha: number): string {
   const value = hex.replace("#", "");
-  const full = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
+  const full =
+    value.length === 3
+      ? value
+          .split("")
+          .map((c) => c + c)
+          .join("")
+      : value;
   const int = parseInt(full, 16);
   if (!Number.isFinite(int) || full.length !== 6) return `rgba(255,255,255,${alpha})`;
   return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;

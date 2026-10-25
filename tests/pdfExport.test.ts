@@ -4,10 +4,7 @@ import { PDFDocument, PDFArray, PDFRawStream, decodePDFRawStream, degrees } from
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
-import {
-  LABEL_PRIMARY_SIZE,
-  LABEL_SECONDARY_SIZE,
-} from "../src/model/label";
+import { LABEL_PRIMARY_SIZE, LABEL_SECONDARY_SIZE } from "../src/model/label";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 
@@ -53,7 +50,10 @@ function makeProject(): Project {
     makeItem({
       id: "item_rect",
       kind: "rect",
-      points: [{ x: 40, y: 40 }, { x: 110, y: 90 }],
+      points: [
+        { x: 40, y: 40 },
+        { x: 110, y: 90 },
+      ],
       rotation: 25,
       fillColor: "#f2a93b",
       opacity: 0.2,
@@ -63,7 +63,10 @@ function makeProject(): Project {
     makeItem({
       id: "item_length",
       kind: "length",
-      points: [{ x: 20, y: 60 }, { x: 120, y: 60 }],
+      points: [
+        { x: 20, y: 60 },
+        { x: 120, y: 60 },
+      ],
       label: "Wall A",
       scale: { pointsPerMeter: 10, sourceUnit: "m" },
     }),
@@ -101,7 +104,8 @@ async function makeRenderer(): Promise<PdfRenderer> {
     getDocumentData: async () => raw,
     getPage: async (pageNumber: number) => ({
       getViewport: ({ scale = 1 }: { scale?: number } = {}) => {
-        const pageSize = pageNumber === 1 ? { width: 200, height: 120 } : { width: 300, height: 200 };
+        const pageSize =
+          pageNumber === 1 ? { width: 200, height: 120 } : { width: 300, height: 200 };
         const rotated = pageNumber === 1;
         return {
           width: (rotated ? pageSize.height : pageSize.width) * scale,
@@ -210,7 +214,10 @@ describe("flattened PDF export", () => {
       makeItem({
         id: "callout_item",
         kind: "callout",
-        points: [{ x: 100, y: 20 }, { x: 150, y: 60 }],
+        points: [
+          { x: 100, y: 20 },
+          { x: 150, y: 60 },
+        ],
         text: "Check valve",
         fontSize: 10,
       }),
@@ -232,14 +239,20 @@ describe("flattened PDF export", () => {
       makeItem({
         id: "highlight_area",
         kind: "highlight",
-        points: [{ x: 130, y: 20 }, { x: 180, y: 50 }],
+        points: [
+          { x: 130, y: 20 },
+          { x: 180, y: 50 },
+        ],
         highlightShape: "rectangle",
         opacity: 0.3,
       }),
       makeItem({
         id: "double_arrow",
         kind: "arrow",
-        points: [{ x: 40, y: 110 }, { x: 140, y: 130 }],
+        points: [
+          { x: 40, y: 110 },
+          { x: 140, y: 130 },
+        ],
         arrowHeads: "both",
       }),
     );
@@ -259,14 +272,20 @@ describe("flattened PDF export", () => {
         id: "quick_rect",
         kind: "area",
         areaShape: "rectangle",
-        points: [{ x: 140, y: 20 }, { x: 190, y: 60 }],
+        points: [
+          { x: 140, y: 20 },
+          { x: 190, y: 60 },
+        ],
         scale: { pointsPerMeter: 10, sourceUnit: "m" },
       }),
       makeItem({
         id: "quick_ellipse",
         kind: "area",
         areaShape: "ellipse",
-        points: [{ x: 140, y: 70 }, { x: 190, y: 110 }],
+        points: [
+          { x: 140, y: 70 },
+          { x: 190, y: 110 },
+        ],
         scale: { pointsPerMeter: 10, sourceUnit: "m" },
       }),
     );
@@ -367,23 +386,27 @@ describe("flattened PDF export", () => {
   it("turns generated labels and the calibration line off independently", async () => {
     const renderer = await makeRenderer();
     const project = makeProject();
-    const withBoth = await textItems(await exportProjectPdf(project, renderer, {
-      pages: [1],
-      layerIds: project.layers.map((layer) => layer.id),
-      includeLabels: true,
-      includeCalibration: true,
-      includeLegend: false,
-    }));
+    const withBoth = await textItems(
+      await exportProjectPdf(project, renderer, {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: true,
+        includeCalibration: true,
+        includeLegend: false,
+      }),
+    );
     expect(withBoth.some((item) => item.text.startsWith("Wall A"))).toBe(true);
     expect(withBoth.some((item) => item.text.includes("10 m reference"))).toBe(true);
 
-    const withoutBoth = await textItems(await exportProjectPdf(project, renderer, {
-      pages: [1],
-      layerIds: project.layers.map((layer) => layer.id),
-      includeLabels: false,
-      includeCalibration: false,
-      includeLegend: false,
-    }));
+    const withoutBoth = await textItems(
+      await exportProjectPdf(project, renderer, {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: false,
+        includeCalibration: false,
+        includeLegend: false,
+      }),
+    );
     expect(withoutBoth.some((item) => item.text.startsWith("Wall A"))).toBe(false);
     expect(withoutBoth.some((item) => item.text.includes("10 m reference"))).toBe(false);
     expect(withoutBoth.some((item) => item.text === "Plan note")).toBe(true);
@@ -448,7 +471,10 @@ describe("flattened PDF export", () => {
       makeItem({
         id: "item_image_bg",
         kind: "image",
-        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        points: [
+          { x: 20, y: 20 },
+          { x: 120, y: 80 },
+        ],
         image: { assetId: "img_export", mode: "background" },
         opacity: 0.5,
         rotation: 15,
@@ -488,20 +514,29 @@ describe("flattened PDF export", () => {
       makeItem({
         id: "item_rect",
         kind: "rect",
-        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        points: [
+          { x: 20, y: 20 },
+          { x: 120, y: 80 },
+        ],
         color: "#ff0000",
         strokeWidth: 2,
       }),
       makeItem({
         id: "item_image_bg",
         kind: "image",
-        points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+        points: [
+          { x: 20, y: 20 },
+          { x: 120, y: 80 },
+        ],
         image: { assetId: "img_order", mode: "background" },
       }),
       makeItem({
         id: "item_image_annotation",
         kind: "image",
-        points: [{ x: 30, y: 30 }, { x: 130, y: 90 }],
+        points: [
+          { x: 30, y: 30 },
+          { x: 130, y: 90 },
+        ],
         image: { assetId: "img_order", mode: "annotation" },
       }),
     );
@@ -541,7 +576,10 @@ describe("flattened PDF export", () => {
     const item = makeItem({
       id: "item_image_state",
       kind: "image",
-      points: [{ x: 20, y: 20 }, { x: 120, y: 80 }],
+      points: [
+        { x: 20, y: 20 },
+        { x: 120, y: 80 },
+      ],
       image: { assetId: "img_state", mode: "annotation" },
       visible: false,
     });
@@ -637,7 +675,10 @@ describe("flattened PDF export", () => {
           width: sizes[pageNumber - 1].width * scale,
           height: sizes[pageNumber - 1].height * scale,
           scale,
-          convertToPdfPoint: (x: number, y: number) => [x / scale, sizes[pageNumber - 1].height - y / scale],
+          convertToPdfPoint: (x: number, y: number) => [
+            x / scale,
+            sizes[pageNumber - 1].height - y / scale,
+          ],
         }),
       }),
     } as unknown as PdfRenderer;

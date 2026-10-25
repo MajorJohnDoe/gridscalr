@@ -2,13 +2,7 @@ import { hasClipboard } from "../model/clipboard";
 import { primaryDocument, totalPageCount } from "../model/documents";
 import { itemIsVisible, layersForKind } from "../model/layers";
 import { resolveSelection, selectionKind } from "../model/selection";
-import type {
-  AreaMode,
-  CountType,
-  ImageMode,
-  PageSize,
-  RecentEntry,
-} from "../model/types";
+import type { AreaMode, CountType, ImageMode, PageSize, RecentEntry } from "../model/types";
 import { store } from "../state/store";
 import type { AutosavePreview } from "../state/store";
 import type { PopoverItem } from "./popover";
@@ -29,9 +23,7 @@ export interface PanelActions {
   quit: () => void;
   saveProject: () => void;
   saveProjectAs: () => void;
-  exportAs: (
-    kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf",
-  ) => void;
+  exportAs: (kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf") => void;
   undo: () => void;
   redo: () => void;
   zoomIn: () => void;
@@ -116,7 +108,9 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     refs.projectName.textContent = project?.name ?? "";
   }
   refs.projectName.title = "Double-click to rename project";
-  refs.docName.textContent = project ? (primaryDocument(project.documents)?.name ?? "No drawing open") : "No drawing open";
+  refs.docName.textContent = project
+    ? (primaryDocument(project.documents)?.name ?? "No drawing open")
+    : "No drawing open";
   refs.docMeta.textContent = project
     ? `Page ${store.ui.page} of ${totalPageCount(project.documents)}`
     : "";
@@ -127,7 +121,8 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;
-  refs.pageNextBtn.disabled = !hasProject || store.ui.page >= (project ? totalPageCount(project.documents) : 1);
+  refs.pageNextBtn.disabled =
+    !hasProject || store.ui.page >= (project ? totalPageCount(project.documents) : 1);
   if (document.activeElement !== refs.pageInput) {
     refs.pageInput.value = hasProject ? String(store.ui.page) : "1";
   }

@@ -38,7 +38,8 @@ export function showModal(options: {
 }): Promise<string | null> {
   closeActiveModal();
   return new Promise((resolve) => {
-    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousFocus =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const backdrop = el("div", "modal-backdrop");
     const modal = el(
       "div",
@@ -82,7 +83,11 @@ export function showModal(options: {
     const closeModal = () => finish(null);
 
     for (const action of options.actions) {
-      const btn = el("button", `btn${action.primary ? " btn-primary" : ""}${action.danger ? " btn-danger" : ""}`, action.label);
+      const btn = el(
+        "button",
+        `btn${action.primary ? " btn-primary" : ""}${action.danger ? " btn-danger" : ""}`,
+        action.label,
+      );
       btn.type = "button";
       btn.addEventListener("click", () => {
         if (action.value === "__cancel__") {
@@ -148,7 +153,9 @@ export function showModal(options: {
     };
     document.addEventListener("keydown", onKeyDown);
 
-    const focusable = modal.querySelector<HTMLElement>("input, textarea, select, button.btn-primary");
+    const focusable = modal.querySelector<HTMLElement>(
+      "input, textarea, select, button.btn-primary",
+    );
     requestAnimationFrame(() => focusable?.focus());
   });
 }
@@ -171,7 +178,11 @@ export function confirmDialog(
   }).then((value) => value === "confirm");
 }
 
-export function messageDialog(title: string, message: string, kind: "info" | "warning" = "info"): Promise<void> {
+export function messageDialog(
+  title: string,
+  message: string,
+  kind: "info" | "warning" = "info",
+): Promise<void> {
   const body = el("div", "modal-message-row");
   const iconWrap = el("div", `modal-callout ${kind}`);
   iconWrap.innerHTML = icon(kind === "warning" ? "warning" : "info", 20);
@@ -213,7 +224,9 @@ export function textDialog(
 
 export function passwordDialog(filename: string): Promise<string | null> {
   const body = el("div", "form-stack");
-  body.append(el("p", "modal-message", `“${filename}” is password protected. Enter the password to open it.`));
+  body.append(
+    el("p", "modal-message", `“${filename}” is password protected. Enter the password to open it.`),
+  );
   const field = el("label", "field");
   field.append(el("span", "field-label", "Password"));
   const input = el("input", "input");
@@ -301,7 +314,9 @@ export function calibrationDialog(options: {
   }
 
   return showModal({
-    title: editing ? `Edit calibration · page ${options.currentPage}` : `Calibrate page ${options.currentPage}`,
+    title: editing
+      ? `Edit calibration · page ${options.currentPage}`
+      : `Calibrate page ${options.currentPage}`,
     subtitle: editing ? "Update reference length" : "Set drawing scale",
     body,
     actions: [
@@ -476,7 +491,9 @@ export function drawingExportDialog(
   let areaMode: "whole" | "crop" = options.initialAreaMode ?? (initial.crop ? "crop" : "whole");
   let crop: NormalizedCrop | undefined = initial.crop ? { ...initial.crop } : undefined;
   const selectedLayers = new Set(
-    layers.filter((layer) => layer.visible && initial.layerIds.includes(layer.id)).map((layer) => layer.id),
+    layers
+      .filter((layer) => layer.visible && initial.layerIds.includes(layer.id))
+      .map((layer) => layer.id),
   );
   let includeLabels = initial.includeLabels;
   let includeCalibration = initial.includeCalibration;
@@ -508,8 +525,16 @@ export function drawingExportDialog(
   const pagesSection = el("section", "export-section");
   pagesSection.append(el("h3", "export-section-title", "Pages"));
   const pageRadios = el("div", "export-radio-group");
-  const currentRadio = exportRadio(radioName + "-pages", `Current page (${currentPage})`, pageMode === "current");
-  const allRadio = exportRadio(radioName + "-pages", `All pages (${pageCount})`, pageMode === "all");
+  const currentRadio = exportRadio(
+    radioName + "-pages",
+    `Current page (${currentPage})`,
+    pageMode === "current",
+  );
+  const allRadio = exportRadio(
+    radioName + "-pages",
+    `All pages (${pageCount})`,
+    pageMode === "all",
+  );
   const rangeRadio = exportRadio(radioName + "-pages", "Range", pageMode === "range");
   pageRadios.append(currentRadio.row, allRadio.row, rangeRadio.row);
   pagesSection.append(pageRadios);
@@ -562,7 +587,11 @@ export function drawingExportDialog(
 
   const optionsSection = el("section", "export-section");
   optionsSection.append(el("h3", "export-section-title", "Content"));
-  const labelsCheck = exportCheckbox("Labels", "Generated measurement labels; text notes always follow the drawing.", includeLabels);
+  const labelsCheck = exportCheckbox(
+    "Labels",
+    "Generated measurement labels; text notes always follow the drawing.",
+    includeLabels,
+  );
   const calibrationCheck = exportCheckbox(
     "Calibration line",
     "Reference line and label. Manual scales appear in the legend instead.",
@@ -745,7 +774,11 @@ export function drawingExportDialog(
   return result;
 }
 
-function exportRadio(name: string, label: string, checked: boolean): {
+function exportRadio(
+  name: string,
+  label: string,
+  checked: boolean,
+): {
   row: HTMLElement;
   input: HTMLInputElement;
 } {
@@ -758,7 +791,11 @@ function exportRadio(name: string, label: string, checked: boolean): {
   return { row, input };
 }
 
-function exportCheckbox(label: string, note: string, checked: boolean): {
+function exportCheckbox(
+  label: string,
+  note: string,
+  checked: boolean,
+): {
   row: HTMLElement;
   input: HTMLInputElement;
 } {
@@ -772,7 +809,10 @@ function exportCheckbox(label: string, note: string, checked: boolean): {
   return { row, input };
 }
 
-export function recoveryDialog(projectName: string, savedAt: string): Promise<"restore" | "discard"> {
+export function recoveryDialog(
+  projectName: string,
+  savedAt: string,
+): Promise<"restore" | "discard"> {
   const body = el("div", "form-stack");
   body.append(
     el(

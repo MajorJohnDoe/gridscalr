@@ -17,7 +17,8 @@ function ensureStack(): HTMLElement {
 export function toast(message: string, kind: ToastKind = "info", duration = 4200): void {
   const host = ensureStack();
   const node = el("div", `toast toast-${kind}`);
-  const iconName = kind === "success" ? "check" : kind === "warning" || kind === "error" ? "warning" : "info";
+  const iconName =
+    kind === "success" ? "check" : kind === "warning" || kind === "error" ? "warning" : "info";
   node.innerHTML = icon(iconName, 16);
   node.append(el("span", "", message));
   const close = el("button", "toast-close");

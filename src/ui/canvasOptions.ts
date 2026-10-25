@@ -28,21 +28,28 @@ export function openCanvasOptions(anchor: HTMLElement): void {
   const render = () => {
     panel.replaceChildren();
     const title = el("div", "canvas-options-title");
-    title.append(el("span", "", "Canvas"), el("span", "canvas-options-subtitle", "Units and guides"));
+    title.append(
+      el("span", "", "Canvas"),
+      el("span", "canvas-options-subtitle", "Units and guides"),
+    );
     panel.append(title);
 
     const units = el("section", "canvas-options-section");
     units.append(el("h3", "canvas-options-heading", "Units"));
-    units.append(unitField("Length", LENGTH_UNITS, project.settings.lengthUnit, (value) => {
-      store.mutate((current) => {
-        current.settings.lengthUnit = value as LengthUnit;
-      }, "change");
-    }));
-    units.append(unitField("Area", AREA_UNITS, project.settings.areaUnit, (value) => {
-      store.mutate((current) => {
-        current.settings.areaUnit = value as AreaUnit;
-      }, "change");
-    }));
+    units.append(
+      unitField("Length", LENGTH_UNITS, project.settings.lengthUnit, (value) => {
+        store.mutate((current) => {
+          current.settings.lengthUnit = value as LengthUnit;
+        }, "change");
+      }),
+    );
+    units.append(
+      unitField("Area", AREA_UNITS, project.settings.areaUnit, (value) => {
+        store.mutate((current) => {
+          current.settings.areaUnit = value as AreaUnit;
+        }, "change");
+      }),
+    );
     panel.append(units);
 
     const guides = el("section", "canvas-options-section");
@@ -54,7 +61,11 @@ export function openCanvasOptions(anchor: HTMLElement): void {
     );
     panel.append(guides);
 
-    const settings = el("button", "btn btn-small btn-ghost canvas-options-settings", "Project settings…");
+    const settings = el(
+      "button",
+      "btn btn-small btn-ghost canvas-options-settings",
+      "Project settings…",
+    );
     settings.type = "button";
     settings.addEventListener("click", () => {
       closeCanvasOptions();
@@ -99,9 +110,7 @@ export function openCanvasOptions(anchor: HTMLElement): void {
       }, "change");
       button.classList.toggle("is-on", next);
       button.setAttribute("aria-pressed", String(next));
-      button
-        .querySelector(".canvas-option-indicator")
-        ?.classList.toggle("is-on", next);
+      button.querySelector(".canvas-option-indicator")?.classList.toggle("is-on", next);
     });
     return button;
   };

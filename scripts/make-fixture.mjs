@@ -48,14 +48,37 @@ function dimension(page, x1, y1, x2, y2, label, offset = 0) {
   const nx = horizontal ? 0 : offset;
   const ny = horizontal ? offset : 0;
   line(page, x1, y1, x2, y2, 0.7, mid);
-  line(page, x1 - (horizontal ? 0 : 4), y1 - (horizontal ? 4 : 0), x1 + (horizontal ? 0 : 4), y1 + (horizontal ? 4 : 0), 0.7, mid);
-  line(page, x2 - (horizontal ? 0 : 4), y2 - (horizontal ? 4 : 0), x2 + (horizontal ? 0 : 4), y2 + (horizontal ? 4 : 0), 0.7, mid);
+  line(
+    page,
+    x1 - (horizontal ? 0 : 4),
+    y1 - (horizontal ? 4 : 0),
+    x1 + (horizontal ? 0 : 4),
+    y1 + (horizontal ? 4 : 0),
+    0.7,
+    mid,
+  );
+  line(
+    page,
+    x2 - (horizontal ? 0 : 4),
+    y2 - (horizontal ? 4 : 0),
+    x2 + (horizontal ? 0 : 4),
+    y2 + (horizontal ? 4 : 0),
+    0.7,
+    mid,
+  );
   const x = (x1 + x2) / 2 + nx;
   const y = (y1 + y2) / 2 + ny;
   if (horizontal) {
     text(page, label, x - label.length * 2.2, y + 4, 8, mid);
   } else {
-    page.drawText(label, { x: x - 10, y: y - 2, size: 8, font, color: mid, rotate: { type: "degrees", angle: 90 } });
+    page.drawText(label, {
+      x: x - 10,
+      y: y - 2,
+      size: 8,
+      font,
+      color: mid,
+      rotate: { type: "degrees", angle: 90 },
+    });
   }
 }
 
@@ -85,7 +108,14 @@ function planPage(pageNumber) {
 
   if (pageNumber === 1) {
     // Outer walls.
-    page.drawRectangle({ x: 150, y: 180, width: 460, height: 290, borderColor: ink, borderWidth: 5 });
+    page.drawRectangle({
+      x: 150,
+      y: 180,
+      width: 460,
+      height: 290,
+      borderColor: ink,
+      borderWidth: 5,
+    });
     // Inner partitions.
     line(page, 330, 180, 330, 370, 4);
     line(page, 330, 370, 610, 370, 4);
@@ -134,7 +164,14 @@ function planPage(pageNumber) {
     dimension(page, 610, 180, 610, 470, "5.80 m", 42);
     text(page, "GROUND FLOOR", 98, 520, 10, mid, bold);
   } else {
-    page.drawRectangle({ x: 190, y: 205, width: 400, height: 270, borderColor: ink, borderWidth: 5 });
+    page.drawRectangle({
+      x: 190,
+      y: 205,
+      width: 400,
+      height: 270,
+      borderColor: ink,
+      borderWidth: 5,
+    });
     line(page, 390, 205, 390, 360, 4);
     line(page, 190, 360, 590, 360, 4);
     line(page, 500, 360, 500, 475, 4);
@@ -174,4 +211,6 @@ planPage(2);
 const bytes = await doc.save();
 await mkdir(outputDir, { recursive: true });
 await writeFile(output, bytes);
-console.log(`Wrote ${output} (${bytes.length.toLocaleString()} bytes, ${doc.getPageCount()} pages)`);
+console.log(
+  `Wrote ${output} (${bytes.length.toLocaleString()} bytes, ${doc.getPageCount()} pages)`,
+);

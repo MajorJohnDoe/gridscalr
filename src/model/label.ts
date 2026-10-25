@@ -111,10 +111,7 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
   return points[0];
 }
 
-export function measurementLabelParts(
-  item: MarkupItem,
-  project: Project,
-): LabelParts | null {
+export function measurementLabelParts(item: MarkupItem, project: Project): LabelParts | null {
   const metrics = itemMetrics(item, project);
   if (!metrics) return null;
   return {

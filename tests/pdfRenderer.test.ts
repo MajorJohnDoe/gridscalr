@@ -17,10 +17,7 @@ function documentProxy(name: string, pages: number): PDFDocumentProxy {
 
 describe("PdfRenderer page maps", () => {
   it("maps global pages through included source pages", async () => {
-    const renderer = new PdfRenderer(
-      [documentProxy("A", 3), documentProxy("B", 2)],
-      [[1, 3], [2]],
-    );
+    const renderer = new PdfRenderer([documentProxy("A", 3), documentProxy("B", 2)], [[1, 3], [2]]);
     expect(renderer.pageCount).toBe(3);
     await expect(renderer.getPage(1)).resolves.toMatchObject({ name: "A", localPage: 1 });
     await expect(renderer.getPage(2)).resolves.toMatchObject({ name: "A", localPage: 3 });
@@ -30,7 +27,10 @@ describe("PdfRenderer page maps", () => {
   it("rebuilds the mapping after a page removal", async () => {
     const renderer = new PdfRenderer(
       [documentProxy("A", 3), documentProxy("B", 2)],
-      [[1, 2, 3], [1, 2]],
+      [
+        [1, 2, 3],
+        [1, 2],
+      ],
     );
     renderer.setPageMaps([[1, 3], [2]]);
     expect(renderer.pageCount).toBe(3);
@@ -39,10 +39,7 @@ describe("PdfRenderer page maps", () => {
   });
 
   it("removes an empty document and keeps the remaining mapping aligned", async () => {
-    const renderer = new PdfRenderer(
-      [documentProxy("A", 1), documentProxy("B", 2)],
-      [[1], [1, 2]],
-    );
+    const renderer = new PdfRenderer([documentProxy("A", 1), documentProxy("B", 2)], [[1], [1, 2]]);
     renderer.removeDocument(0);
     expect(renderer.documentCount).toBe(1);
     expect(renderer.pageCount).toBe(2);

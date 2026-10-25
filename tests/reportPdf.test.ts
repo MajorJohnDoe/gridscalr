@@ -49,7 +49,12 @@ function add(
     points:
       kind === "count"
         ? [{ x: 40, y: 40 }]
-        : [{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 110 }, { x: 10, y: 110 }],
+        : [
+            { x: 10, y: 10 },
+            { x: 110, y: 10 },
+            { x: 110, y: 110 },
+            { x: 10, y: 110 },
+          ],
     color: "#4cc9f0",
     strokeWidth: 2,
     scale: kind === "count" ? null : { ...SCALE },

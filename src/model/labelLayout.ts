@@ -1,13 +1,7 @@
 import { isReferenceCalibration, pageCalibration } from "./calibration";
 import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
-import {
-  boundingBox,
-  itemBounds,
-  midpoint,
-  pointInPolygon,
-  type Bounds,
-} from "./geometry";
+import { boundingBox, itemBounds, midpoint, pointInPolygon, type Bounds } from "./geometry";
 import {
   labelAnchorForPoints,
   labelBox,
@@ -71,13 +65,9 @@ export interface LabelSourceOptions {
 
 export const CALIBRATION_LABEL_ID = "calibration";
 
-const LABEL_SCALES = [
-  1,
-  0.95,
-  0.9,
-  0.85,
-  LABEL_MIN_SCALE,
-].filter((scale, index, values) => values.indexOf(scale) === index);
+const LABEL_SCALES = [1, 0.95, 0.9, 0.85, LABEL_MIN_SCALE].filter(
+  (scale, index, values) => values.indexOf(scale) === index,
+);
 
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
@@ -87,8 +77,7 @@ export function pageLabelSources(
 ): LabelSource[] {
   const sources: LabelSource[] = [];
   const includeLabels = options.includeLabels !== false;
-  const includeCalibration =
-    options.includeCalibration ?? project.settings.showCalibration;
+  const includeCalibration = options.includeCalibration ?? project.settings.showCalibration;
 
   if (includeLabels) {
     for (const layer of project.layers) {
@@ -108,10 +97,7 @@ export function pageLabelSources(
             item.kind === "count" && item.points[0]
               ? countSymbolBounds(item.points[0])
               : itemBounds(item),
-          polygon:
-            item.kind === "area"
-              ? areaOutline(item.points, areaShapeOf(item))
-              : undefined,
+          polygon: item.kind === "area" ? areaOutline(item.points, areaShapeOf(item)) : undefined,
           color: item.color,
         });
       }
@@ -199,8 +185,7 @@ function layoutLabel(
   }
 
   const fallbackScale = LABEL_SCALES[LABEL_SCALES.length - 1];
-  const fallbackAnchor =
-    outsideAnchors(source, fallbackScale, options.measure)[0] ?? source.anchor;
+  const fallbackAnchor = outsideAnchors(source, fallbackScale, options.measure)[0] ?? source.anchor;
   const fallback = clampToPage(
     buildLayout(source, fallbackScale, fallbackAnchor, "outside", options),
     options.pageSize,
@@ -231,11 +216,7 @@ function buildLayout(
   };
 }
 
-function outsideAnchors(
-  source: LabelSource,
-  scale: number,
-  measure: LabelMeasure,
-): Point[] {
+function outsideAnchors(source: LabelSource, scale: number, measure: LabelMeasure): Point[] {
   const metrics = labelMetrics(scale);
   const primaryWidth = measure(source.parts.text, metrics.primarySize, "bold");
   const secondaryWidth = source.parts.secondary
@@ -382,9 +363,7 @@ function clampToPage(layout: LabelLayout, page: PageSize): LabelLayout {
       y,
       primaryCenterY: layout.box.primaryCenterY + dy,
       secondaryCenterY:
-        layout.box.secondaryCenterY === undefined
-          ? undefined
-          : layout.box.secondaryCenterY + dy,
+        layout.box.secondaryCenterY === undefined ? undefined : layout.box.secondaryCenterY + dy,
     },
     leader: layout.leader
       ? {
@@ -394,4 +373,3 @@ function clampToPage(layout: LabelLayout, page: PageSize): LabelLayout {
       : undefined,
   };
 }
-

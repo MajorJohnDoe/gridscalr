@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import {
-  clearClipboard,
-  copyItems,
-  duplicateItems,
-  pasteItems,
-} from "../src/model/clipboard";
+import { clearClipboard, copyItems, duplicateItems, pasteItems } from "../src/model/clipboard";
 import {
   addItem,
   addLayer,
@@ -30,7 +25,10 @@ function makeItem(id: string, page = 1, kind: MarkupItem["kind"] = "length"): Ma
     id,
     page,
     kind,
-    points: [{ x: 10, y: 10 }, { x: 110, y: 10 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 110, y: 10 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: now,
@@ -50,9 +48,7 @@ describe("selection helpers", () => {
     ]);
     expect(refs).toHaveLength(2);
     const resolved = resolveSelection(project, refs);
-    expect(resolved.map((entry) => entry.ref)).toEqual([
-      { layerId: measure.id, itemId: "item_a" },
-    ]);
+    expect(resolved.map((entry) => entry.ref)).toEqual([{ layerId: measure.id, itemId: "item_a" }]);
     expect(selectionKind(project, refs)).toBe("measure");
   });
 

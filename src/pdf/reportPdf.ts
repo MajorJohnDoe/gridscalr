@@ -1,11 +1,4 @@
-import {
-  PDFDocument,
-  rgb,
-  StandardFonts,
-  type PDFFont,
-  type PDFPage,
-  type RGB,
-} from "pdf-lib";
+import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
 import type { QuantityRow, QuantityType, QuantityTypeTotal } from "../model/quantity";
 import { formatNumber } from "../model/units";
 import type { QuantityReport } from "../report/reportModel";
@@ -73,12 +66,7 @@ function fitText(text: string, font: PDFFont, size: number, maxWidth: number): s
   return `${text.slice(0, low)}${ellipsis}`;
 }
 
-function wrapText(
-  text: string,
-  font: PDFFont,
-  size: number,
-  maxWidth: number,
-): string[] {
+function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): string[] {
   const words = text.split(/\s+/);
   const lines: string[] = [];
   let line = "";
@@ -118,19 +106,32 @@ class ReportLayout {
   }
 
   private drawHeader(): void {
-    this.page.drawText(
-      fitText(this.report.projectName, this.fonts.bold, 16, CONTENT_WIDTH),
-      { x: MARGIN, y: this.cursor - 16, size: 16, font: this.fonts.bold, color: INK },
-    );
+    this.page.drawText(fitText(this.report.projectName, this.fonts.bold, 16, CONTENT_WIDTH), {
+      x: MARGIN,
+      y: this.cursor - 16,
+      size: 16,
+      font: this.fonts.bold,
+      color: INK,
+    });
     this.cursor -= 23;
     this.page.drawText(
-      fitText(`Quantity report · ${this.report.documentName}`, this.fonts.regular, 9, CONTENT_WIDTH),
+      fitText(
+        `Quantity report · ${this.report.documentName}`,
+        this.fonts.regular,
+        9,
+        CONTENT_WIDTH,
+      ),
       { x: MARGIN, y: this.cursor - 9, size: 9, font: this.fonts.regular, color: MUTED },
     );
     this.cursor -= 13;
     const date = this.report.generatedAt.slice(0, 10);
     this.page.drawText(
-      fitText(`Date ${date} · Scale: ${this.report.scaleSummary}`, this.fonts.regular, 8.5, CONTENT_WIDTH),
+      fitText(
+        `Date ${date} · Scale: ${this.report.scaleSummary}`,
+        this.fonts.regular,
+        8.5,
+        CONTENT_WIDTH,
+      ),
       { x: MARGIN, y: this.cursor - 8.5, size: 8.5, font: this.fonts.regular, color: MUTED },
     );
     this.cursor -= 14;

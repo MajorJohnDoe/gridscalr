@@ -90,12 +90,14 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           disabled: recent.length === 0,
           items: recent.length
             ? [
-                ...recent.slice(0, 10).map((entry) =>
-                  action(
-                    `${entry.name}  ·  ${entry.kind === "project" ? "Project" : "Drawing"}`,
-                    () => actions.openRecent(entry),
+                ...recent
+                  .slice(0, 10)
+                  .map((entry) =>
+                    action(
+                      `${entry.name}  ·  ${entry.kind === "project" ? "Project" : "Drawing"}`,
+                      () => actions.openRecent(entry),
+                    ),
                   ),
-                ),
                 separator(),
                 action("Clear recent list", () => {
                   clearRecent();
@@ -106,7 +108,10 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
             : [action("No recent files", () => undefined, { disabled: true })],
         },
         separator(),
-        action("Save", actions.saveProject, { shortcut: APP_SHORTCUTS.save, disabled: !hasProject }),
+        action("Save", actions.saveProject, {
+          shortcut: APP_SHORTCUTS.save,
+          disabled: !hasProject,
+        }),
         action("Save as…", actions.saveProjectAs, {
           shortcut: APP_SHORTCUTS.saveAs,
           disabled: !hasProject,
@@ -185,9 +190,18 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           checked: !isInspectorCollapsed(),
         }),
         separator(),
-        action("Zoom in", actions.zoomIn, { shortcut: APP_SHORTCUTS.zoomIn, disabled: !hasProject }),
-        action("Zoom out", actions.zoomOut, { shortcut: APP_SHORTCUTS.zoomOut, disabled: !hasProject }),
-        action("Fit page", actions.zoomFit, { shortcut: APP_SHORTCUTS.fitPage, disabled: !hasProject }),
+        action("Zoom in", actions.zoomIn, {
+          shortcut: APP_SHORTCUTS.zoomIn,
+          disabled: !hasProject,
+        }),
+        action("Zoom out", actions.zoomOut, {
+          shortcut: APP_SHORTCUTS.zoomOut,
+          disabled: !hasProject,
+        }),
+        action("Fit page", actions.zoomFit, {
+          shortcut: APP_SHORTCUTS.fitPage,
+          disabled: !hasProject,
+        }),
         action("Actual size", actions.zoomActual, {
           shortcut: APP_SHORTCUTS.actualSize,
           disabled: !hasProject,
@@ -240,7 +254,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       items: () => [
         action("Workflows", () => openHelp("workflows")),
         action("User guide", () => openHelp("guide"), { shortcut: APP_SHORTCUTS.userGuide }),
-        action("Keyboard shortcuts", () => openHelp("shortcuts"), { shortcut: APP_SHORTCUTS.shortcuts }),
+        action("Keyboard shortcuts", () => openHelp("shortcuts"), {
+          shortcut: APP_SHORTCUTS.shortcuts,
+        }),
         separator(),
         action("About GridScalr", () => openHelp("about")),
       ],
@@ -248,9 +264,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
   ];
 }
 
-function toggleSetting(
-  key: "showGrid" | "showCalibration" | "snapToGeometry",
-): void {
+function toggleSetting(key: "showGrid" | "showCalibration" | "snapToGeometry"): void {
   store.mutate((project) => {
     project.settings[key] = !project.settings[key];
   }, "change");

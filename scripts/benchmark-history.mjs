@@ -1,8 +1,4 @@
-import {
-  launchBrowser,
-  openDemoProject,
-  startVite,
-} from "./ui-harness.mjs";
+import { launchBrowser, openDemoProject, startVite } from "./ui-harness.mjs";
 
 const port = Number(process.env.GRIDSCALR_BENCH_PORT ?? 1430);
 const itemCount = Number(process.env.GRIDSCALR_BENCH_ITEMS ?? 2000);

@@ -7,7 +7,12 @@ import {
   naturalImageSize,
 } from "../src/model/images";
 import { hitTest } from "../src/model/hitTest";
-import { createDefaultLayers, createProject, defaultDocument, layerKindForItem } from "../src/model/layers";
+import {
+  createDefaultLayers,
+  createProject,
+  defaultDocument,
+  layerKindForItem,
+} from "../src/model/layers";
 import type { ImageAsset } from "../src/model/types";
 
 const asset: ImageAsset = {
@@ -50,7 +55,10 @@ describe("images", () => {
     expect(item.kind).toBe("image");
     expect(item.image).toEqual({ assetId: "img_a", mode: "background" });
     expect(item.label).toBe("Detail.png");
-    expect(item.points).toEqual([{ x: 0, y: 50 }, { x: 400, y: 250 }]);
+    expect(item.points).toEqual([
+      { x: 0, y: 50 },
+      { x: 400, y: 250 },
+    ]);
     expect(imageModeOf(item)).toBe("background");
     expect(imageOpacity(item)).toBe(1);
     expect(layerKindForItem(item.kind)).toBe("draw");
@@ -73,9 +81,7 @@ describe("images", () => {
     const item = createImageItem(asset, 1, { width: 400, height: 300 });
     draw.items.push(item);
 
-    expect(
-      hitTest(projectValue, 1, { x: 200, y: 150 }, 4)?.item.id,
-    ).toBe(item.id);
+    expect(hitTest(projectValue, 1, { x: 200, y: 150 }, 4)?.item.id).toBe(item.id);
     item.visible = false;
     expect(hitTest(projectValue, 1, { x: 200, y: 150 }, 4)).toBeNull();
   });
@@ -87,7 +93,10 @@ describe("images", () => {
       id: "item_over_image",
       page: 1,
       kind: "rect" as const,
-      points: [{ x: 0, y: 50 }, { x: 400, y: 250 }],
+      points: [
+        { x: 0, y: 50 },
+        { x: 400, y: 250 },
+      ],
       color: "#4cc9f0",
       strokeWidth: 2,
       createdAt: "2026-01-01T00:00:00.000Z",

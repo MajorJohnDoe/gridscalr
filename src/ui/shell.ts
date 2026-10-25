@@ -6,12 +6,7 @@ import { attachToolFlyout } from "./toolFlyouts";
 import { TOOLS } from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
-import {
-  initPanelLayout,
-  PANEL_LIMITS,
-  setPanelWidth,
-  setSidebarCollapsed,
-} from "./sidebar";
+import { initPanelLayout, PANEL_LIMITS, setPanelWidth, setSidebarCollapsed } from "./sidebar";
 
 export interface ShellRefs {
   root: HTMLElement;
@@ -174,15 +169,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   const welcome = el("div", "welcome hidden");
   canvasHost.append(welcome);
 
-  workspace.append(
-    toolRail,
-    dock,
-    dockRestore,
-    dockResizer,
-    main,
-    inspectorResizer,
-    inspector,
-  );
+  workspace.append(toolRail, dock, dockRestore, dockResizer, main, inspectorResizer, inspector);
 
   const statusbar = el("footer", "statusbar");
   const statusCalibration = el("div", "status-section");
@@ -247,8 +234,14 @@ export function createShell(root: HTMLElement): ShellRefs {
     inspectorResizer,
   });
 
-  setupResizer(dockResizer, dock, "dock-w", PANEL_LIMITS.leftMin, PANEL_LIMITS.leftMax, false, (width) =>
-    setPanelWidth("left", width),
+  setupResizer(
+    dockResizer,
+    dock,
+    "dock-w",
+    PANEL_LIMITS.leftMin,
+    PANEL_LIMITS.leftMax,
+    false,
+    (width) => setPanelWidth("left", width),
   );
   setupResizer(
     inspectorResizer,

@@ -23,6 +23,8 @@ describe("documentation demo project", () => {
     expect(measure?.items.some((item) => item.areaMode === "subtract")).toBe(true);
     expect(measure?.items.some((item) => item.kind === "count")).toBe(true);
     expect(draw?.items.some((item) => item.kind === "cloud")).toBe(true);
-    expect(draw?.items.some((item) => item.kind === "stamp" && item.text === "INSPECTED")).toBe(true);
+    expect(draw?.items.some((item) => item.kind === "stamp" && item.text === "INSPECTED")).toBe(
+      true,
+    );
   });
 });

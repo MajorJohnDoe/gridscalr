@@ -2,7 +2,13 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
 import { PDFDict, PDFDocument, PDFName, PDFNumber, PDFRawStream } from "pdf-lib";
-import { isTiff, pageSizePt, readTiff, rotationForOrientation, TiffImportError } from "../src/io/tiff";
+import {
+  isTiff,
+  pageSizePt,
+  readTiff,
+  rotationForOrientation,
+  TiffImportError,
+} from "../src/io/tiff";
 import { createTiffDocumentRef, tiffToPdf } from "../src/io/tiffImport";
 
 const fixtures = path.resolve(__dirname, "../fixtures/tiff");

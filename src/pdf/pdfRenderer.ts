@@ -80,12 +80,17 @@ export class PdfRenderer {
   /** Source-local pages included for each document, in global order. */
   private pageMaps: number[][];
 
-  constructor(public readonly documents: PDFDocumentProxy[], pageMaps?: number[][]) {
+  constructor(
+    public readonly documents: PDFDocumentProxy[],
+    pageMaps?: number[][],
+  ) {
     if (!documents.length) throw new Error("A project needs at least one document.");
     this.pageMaps = documents.map((document, index) => {
       const requested = pageMaps?.[index];
       if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
-      return requested.filter((page) => Number.isInteger(page) && page >= 1 && page <= document.numPages);
+      return requested.filter(
+        (page) => Number.isInteger(page) && page >= 1 && page <= document.numPages,
+      );
     });
     this.recomputeStarts();
   }
@@ -117,7 +122,9 @@ export class PdfRenderer {
     this.pageMaps = this.documents.map((document, index) => {
       const requested = pageMaps[index];
       if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
-      return requested.filter((page) => Number.isInteger(page) && page >= 1 && page <= document.numPages);
+      return requested.filter(
+        (page) => Number.isInteger(page) && page >= 1 && page <= document.numPages,
+      );
     });
     this.recomputeStarts();
   }
@@ -183,10 +190,7 @@ export class PdfRenderer {
    * render task so it never cancels or blocks the main canvas render, and the
    * caller caps the pixel size to keep large drawings cheap.
    */
-  async renderPageThumbnail(
-    pageNumber: number,
-    maxDimension = 144,
-  ): Promise<HTMLCanvasElement> {
+  async renderPageThumbnail(pageNumber: number, maxDimension = 144): Promise<HTMLCanvasElement> {
     const page = await this.getPage(pageNumber);
     return renderPagePreview(page, maxDimension);
   }
@@ -324,20 +328,10 @@ export function cropRectForView(
   };
 }
 
-export function screenToPage(
-  point: Point,
-  zoom: number,
-  panX: number,
-  panY: number,
-): Point {
+export function screenToPage(point: Point, zoom: number, panX: number, panY: number): Point {
   return { x: (point.x - panX) / zoom, y: (point.y - panY) / zoom };
 }
 
-export function pageToScreen(
-  point: Point,
-  zoom: number,
-  panX: number,
-  panY: number,
-): Point {
+export function pageToScreen(point: Point, zoom: number, panX: number, panY: number): Point {
   return { x: point.x * zoom + panX, y: point.y * zoom + panY };
 }

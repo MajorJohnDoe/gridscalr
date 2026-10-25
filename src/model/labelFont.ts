@@ -14,11 +14,7 @@ let fontPromise: Promise<void> | null = null;
  * text measurement and PDF text measurement produce matching label boxes.
  */
 export function ensureLabelFonts(): Promise<void> {
-  if (
-    typeof document === "undefined" ||
-    typeof FontFace === "undefined" ||
-    !document.fonts
-  ) {
+  if (typeof document === "undefined" || typeof FontFace === "undefined" || !document.fonts) {
     return Promise.resolve();
   }
   if (!fontPromise) {

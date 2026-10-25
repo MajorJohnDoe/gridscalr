@@ -67,11 +67,7 @@ function currentSummary(): QuantitySummary | null {
   const project = store.project;
   if (!project) return null;
   const key = filtersKey(project.id);
-  if (
-    cachedSummary &&
-    cachedRevision === store.revision &&
-    cachedKey === key
-  ) {
+  if (cachedSummary && cachedRevision === store.revision && cachedKey === key) {
     return cachedSummary;
   }
   cachedSummary = calculateQuantities(project, {
@@ -161,9 +157,7 @@ function renderRows(summary: QuantitySummary): HTMLElement {
             el(
               "span",
               "quantity-stat-value",
-              className === "is-waste"
-                ? formatNumber(value, 2)
-                : formatValue(value, row.type),
+              className === "is-waste" ? formatNumber(value, 2) : formatValue(value, row.type),
             ),
           );
           if (className === "is-order") {
@@ -192,10 +186,7 @@ function renderRows(summary: QuantitySummary): HTMLElement {
   }
 
   const grand = el("section", "quantity-grand");
-  grand.append(
-    el("div", "quantity-section-title", "Total"),
-    totalsChips(summary.totals, "Net"),
-  );
+  grand.append(el("div", "quantity-section-title", "Total"), totalsChips(summary.totals, "Net"));
   list.append(grand);
   return list;
 }
@@ -237,9 +228,7 @@ function renderFilters(): HTMLElement {
   categorySelect.setAttribute("aria-label", "Filter quantities by category");
   categorySelect.append(option("", "All categories", !categoryFilter));
   for (const category of project.categories) {
-    categorySelect.append(
-      option(category.id, category.name, category.id === categoryFilter),
-    );
+    categorySelect.append(option(category.id, category.name, category.id === categoryFilter));
   }
   categorySelect.addEventListener("change", () => {
     categoryFilter = categorySelect.value;
@@ -299,18 +288,14 @@ function renderFilters(): HTMLElement {
     input.addEventListener("change", () => {
       if (layerFilter === null) {
         if (!input.checked) {
-          layerFilter = new Set(
-            layers.map((entry) => entry.id).filter((id) => id !== layer.id),
-          );
+          layerFilter = new Set(layers.map((entry) => entry.id).filter((id) => id !== layer.id));
         }
       } else {
         const next = new Set(layerFilter);
         if (input.checked) next.add(layer.id);
         else next.delete(layer.id);
         layerFilter =
-          layers.length > 0 && layers.every((entry) => next.has(entry.id))
-            ? null
-            : next;
+          layers.length > 0 && layers.every((entry) => next.has(entry.id)) ? null : next;
       }
       rerender();
     });
@@ -338,14 +323,7 @@ function renderFilters(): HTMLElement {
   });
   actions.append(reset);
 
-  wrap.append(
-    pageField,
-    categoryField,
-    roomField,
-    layerDetails,
-    hiddenRow,
-    actions,
-  );
+  wrap.append(pageField, categoryField, roomField, layerDetails, hiddenRow, actions);
   return wrap;
 }
 
@@ -355,9 +333,7 @@ function renderNotice(summary: QuantitySummary): HTMLElement | null {
     notes.push(`${plural(summary.hiddenExcluded, "hidden measurement")} excluded`);
   }
   if (summary.uncalibratedExcluded > 0) {
-    notes.push(
-      `${plural(summary.uncalibratedExcluded, "uncalibrated measurement")} excluded`,
-    );
+    notes.push(`${plural(summary.uncalibratedExcluded, "uncalibrated measurement")} excluded`);
   }
   if (!notes.length) return null;
   const notice = el("div", "quantity-notice");

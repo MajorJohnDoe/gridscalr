@@ -48,7 +48,9 @@ export function initPanelLayout(next: PanelLayout): void {
 }
 
 export function isSidebarCollapsed(): boolean {
-  return layout ? layout.dock.classList.contains("is-collapsed") : loadPanelPreferences().leftCollapsed;
+  return layout
+    ? layout.dock.classList.contains("is-collapsed")
+    : loadPanelPreferences().leftCollapsed;
 }
 
 export function isInspectorCollapsed(): boolean {

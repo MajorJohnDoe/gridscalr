@@ -1,10 +1,6 @@
 import { areaShapeOf, rectangleCorners } from "./area";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
-import {
-  distance,
-  itemCorners,
-  itemLocalToPage,
-} from "./geometry";
+import { distance, itemCorners, itemLocalToPage } from "./geometry";
 import type { MarkupItem, Point, Project } from "./types";
 
 export type SnapKind = "endpoint" | "midpoint" | "intersection";
@@ -43,10 +39,16 @@ function endpointCandidates(item: MarkupItem): Point[] {
     return [...points, ...itemCorners(item)];
   }
   if (item.kind === "area" && areaShapeOf(item) === "rectangle") {
-    return [...points, ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point))];
+    return [
+      ...points,
+      ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point)),
+    ];
   }
   if (item.kind === "highlight" && item.highlightShape === "rectangle") {
-    return [...points, ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point))];
+    return [
+      ...points,
+      ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point)),
+    ];
   }
   return points;
 }
@@ -74,7 +76,10 @@ function closedSegments(item: MarkupItem, points: Point[]): Segment[] {
  */
 function straightsForItem(item: MarkupItem): Segment[] {
   if (item.kind === "length") {
-    return openSegments(item, item.points.map((point) => itemLocalToPage(item, point)));
+    return openSegments(
+      item,
+      item.points.map((point) => itemLocalToPage(item, point)),
+    );
   }
   if (item.kind === "area") {
     const shape = areaShapeOf(item);
@@ -83,10 +88,16 @@ function straightsForItem(item: MarkupItem): Segment[] {
       const corners = rectangleCorners(item.points).map((point) => itemLocalToPage(item, point));
       return closedSegments(item, corners);
     }
-    return closedSegments(item, item.points.map((point) => itemLocalToPage(item, point)));
+    return closedSegments(
+      item,
+      item.points.map((point) => itemLocalToPage(item, point)),
+    );
   }
   if (item.kind === "cloud") {
-    return closedSegments(item, item.points.map((point) => itemLocalToPage(item, point)));
+    return closedSegments(
+      item,
+      item.points.map((point) => itemLocalToPage(item, point)),
+    );
   }
   if (item.kind === "highlight" && item.highlightShape && item.highlightShape !== "stroke") {
     const points =
@@ -96,7 +107,10 @@ function straightsForItem(item: MarkupItem): Segment[] {
     return closedSegments(item, points);
   }
   if (item.kind === "line" || item.kind === "arrow") {
-    return openSegments(item, item.points.slice(0, 2).map((point) => itemLocalToPage(item, point)));
+    return openSegments(
+      item,
+      item.points.slice(0, 2).map((point) => itemLocalToPage(item, point)),
+    );
   }
   if (item.kind === "rect") {
     return closedSegments(item, itemCorners(item));

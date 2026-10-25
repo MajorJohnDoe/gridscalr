@@ -25,10 +25,7 @@ export function uniqueSelectionRefs(refs: SelectionRef[]): SelectionRef[] {
   return unique;
 }
 
-export function resolveSelection(
-  project: Project,
-  refs: SelectionRef[],
-): ResolvedSelection[] {
+export function resolveSelection(project: Project, refs: SelectionRef[]): ResolvedSelection[] {
   const resolved: ResolvedSelection[] = [];
   for (const ref of uniqueSelectionRefs(refs)) {
     const found = findItem(project, ref.itemId);

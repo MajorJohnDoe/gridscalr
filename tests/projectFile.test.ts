@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { createCalibration, createManualCalibration, manualPointsPerMeter } from "../src/model/calibration";
+import {
+  createCalibration,
+  createManualCalibration,
+  manualPointsPerMeter,
+} from "../src/model/calibration";
 import { findCategory } from "../src/model/categories";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import { SCHEMA_VERSION } from "../src/model/types";
@@ -22,7 +26,10 @@ function makeProject(): Project {
     id: "item_a",
     page: 1,
     kind: "length",
-    points: [{ x: 10, y: 10 }, { x: 110, y: 10 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 110, y: 10 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     label: "Wall A",
@@ -74,9 +81,7 @@ describe("project files", () => {
 
   it("clamps invalid category waste and rounding overrides", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
-    raw.categories = [
-      { id: "cat_x", name: "X", wastePercent: 400, roundingStep: -2 },
-    ];
+    raw.categories = [{ id: "cat_x", name: "X", wastePercent: 400, roundingStep: -2 }];
     raw.settings.quantity.defaultCategoryId = "cat_x";
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.categories[0].wastePercent).toBe(100);
@@ -145,7 +150,10 @@ describe("project files", () => {
         id: "callout_styled",
         page: 1,
         kind: "callout",
-        points: [{ x: 40, y: 40 }, { x: 120, y: 90 }],
+        points: [
+          { x: 40, y: 40 },
+          { x: 120, y: 90 },
+        ],
         color: "#4cc9f0",
         strokeWidth: 2,
         text: "Callout",
@@ -247,9 +255,9 @@ describe("project files", () => {
   it("rejects empty, invalid, and newer project files", () => {
     expect(() => parseProject("not json")).toThrow(/valid JSON/);
     expect(() => parseProject("{}")).toThrow(/schema version/);
-    expect(() =>
-      parseProject(JSON.stringify({ schemaVersion: 999, document: {} })),
-    ).toThrow(/newer version/);
+    expect(() => parseProject(JSON.stringify({ schemaVersion: 999, document: {} }))).toThrow(
+      /newer version/,
+    );
   });
 
   it("drops items that do not belong to the layer kind and fills missing layers", () => {
@@ -275,7 +283,10 @@ describe("project files", () => {
               id: "wrong_layer",
               page: 1,
               kind: "length",
-              points: [{ x: 0, y: 0 }, { x: 1, y: 1 }],
+              points: [
+                { x: 0, y: 0 },
+                { x: 1, y: 1 },
+              ],
               color: "#fff",
               strokeWidth: 1,
             },
@@ -336,7 +347,10 @@ describe("project files", () => {
               id: "legacy",
               page: 1,
               kind: "length",
-              points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+              points: [
+                { x: 0, y: 0 },
+                { x: 10, y: 0 },
+              ],
               color: "#4cc9f0",
               strokeWidth: 2,
             },
@@ -350,9 +364,9 @@ describe("project files", () => {
   });
 
   it("computes portable relative document paths", () => {
-    expect(relativeDocumentPath("/home/ana/projects/plan.gridscalr", "/home/ana/drawings/a.pdf")).toBe(
-      "../drawings/a.pdf",
-    );
+    expect(
+      relativeDocumentPath("/home/ana/projects/plan.gridscalr", "/home/ana/drawings/a.pdf"),
+    ).toBe("../drawings/a.pdf");
     expect(relativeDocumentPath("/home/ana/plan.gridscalr", "/home/ana/a.pdf")).toBe("a.pdf");
     expect(relativeDocumentPath("/home/ana/plan.gridscalr", null)).toBeNull();
     expect(resolveRelativePath("/home/ana/projects/plan.gridscalr", "../../drawings/a.pdf")).toBe(
@@ -384,9 +398,9 @@ describe("project files", () => {
     project.documents[0].path = null;
     project.documents[0].relativePath = "../drawings/Fallback.pdf";
 
-    expect(
-      sourceDocumentPaths(project, "/home/ana/projects/plan.gridscalr"),
-    ).toContain("/home/ana/drawings/Fallback.pdf");
+    expect(sourceDocumentPaths(project, "/home/ana/projects/plan.gridscalr")).toContain(
+      "/home/ana/drawings/Fallback.pdf",
+    );
   });
 
   it("updates the relative path for every document when the project moves", () => {
@@ -434,7 +448,10 @@ describe("project files", () => {
                 id: "item_length",
                 page: 1,
                 kind: "length",
-                points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+                points: [
+                  { x: 0, y: 0 },
+                  { x: 10, y: 0 },
+                ],
                 color: "#4cc9f0",
                 strokeWidth: 2,
               },
@@ -442,7 +459,11 @@ describe("project files", () => {
                 id: "item_area",
                 page: 1,
                 kind: "area",
-                points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+                points: [
+                  { x: 0, y: 0 },
+                  { x: 10, y: 0 },
+                  { x: 10, y: 10 },
+                ],
                 color: "#4cc9f0",
                 strokeWidth: 2,
               },
@@ -488,7 +509,9 @@ describe("project files", () => {
         { id: "cat_keep", name: "Keep" },
         { id: "cat_other", name: "Other" },
       ],
-      settings: { quantity: { defaultCategoryId: "cat_other", wastePercent: 10, roundingStep: 0.5 } },
+      settings: {
+        quantity: { defaultCategoryId: "cat_other", wastePercent: 10, roundingStep: 0.5 },
+      },
       layers: [
         {
           id: "measure_1",
@@ -498,7 +521,10 @@ describe("project files", () => {
               id: "orphan",
               page: 1,
               kind: "length",
-              points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+              points: [
+                { x: 0, y: 0 },
+                { x: 10, y: 0 },
+              ],
               color: "#4cc9f0",
               strokeWidth: 2,
               categoryId: "cat_deleted",
@@ -514,7 +540,10 @@ describe("project files", () => {
               id: "drawing",
               page: 1,
               kind: "rect",
-              points: [{ x: 0, y: 0 }, { x: 10, y: 0 }],
+              points: [
+                { x: 0, y: 0 },
+                { x: 10, y: 0 },
+              ],
               color: "#f2a93b",
               strokeWidth: 2,
               categoryId: "cat_keep",
@@ -592,7 +621,12 @@ describe("project files", () => {
       }),
     );
 
-    expect(parsed.categories.map((entry) => entry.name)).toEqual(["Floor", "floor 2", "Other", "Duplicate id"]);
+    expect(parsed.categories.map((entry) => entry.name)).toEqual([
+      "Floor",
+      "floor 2",
+      "Other",
+      "Duplicate id",
+    ]);
     expect(new Set(parsed.categories.map((entry) => entry.id)).size).toBe(4);
     expect(findCategory(parsed, "cat_a")?.name).toBe("Floor");
     expect(findCategory(parsed, "cat_b")?.name).toBe("floor 2");
@@ -605,7 +639,9 @@ describe("project files", () => {
         schemaVersion: 3,
         document: defaultDocument("Plan.pdf", 1),
         categories: [{ id: "cat_a", name: "Floor" }],
-        settings: { quantity: { defaultCategoryId: "cat_gone", wastePercent: 400, roundingStep: -2 } },
+        settings: {
+          quantity: { defaultCategoryId: "cat_gone", wastePercent: 400, roundingStep: -2 },
+        },
         layers: [
           {
             id: "measure_1",
@@ -615,7 +651,10 @@ describe("project files", () => {
                 id: "count_bad",
                 page: 1,
                 kind: "count",
-                points: [{ x: 1, y: 2 }, { x: 3, y: 4 }],
+                points: [
+                  { x: 1, y: 2 },
+                  { x: 3, y: 4 },
+                ],
                 color: "#4cc9f0",
                 strokeWidth: 2,
                 countType: "spaceship",
@@ -647,7 +686,10 @@ describe("project files", () => {
       id: "item_quick_area",
       page: 1,
       kind: "area",
-      points: [{ x: 10, y: 20 }, { x: 110, y: 70 }],
+      points: [
+        { x: 10, y: 20 },
+        { x: 110, y: 70 },
+      ],
       color: "#4cc9f0",
       strokeWidth: 2,
       areaMode: "add",
@@ -715,7 +757,11 @@ describe("project files", () => {
         id: "bad_rectangle",
         page: 1,
         kind: "area",
-        points: [{ x: 0, y: 0 }, { x: 10, y: 0 }, { x: 10, y: 10 }],
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 0 },
+          { x: 10, y: 10 },
+        ],
         color: "#4cc9f0",
         strokeWidth: 2,
         areaShape: "rectangle",
@@ -724,7 +770,10 @@ describe("project files", () => {
         id: "unknown_shape",
         page: 1,
         kind: "area",
-        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+        ],
         color: "#4cc9f0",
         strokeWidth: 2,
         areaShape: "triangle",
@@ -744,7 +793,10 @@ describe("project files", () => {
       id: "drawing_with_shape",
       page: 1,
       kind: "rect",
-      points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 },
+      ],
       color: "#f2a93b",
       strokeWidth: 2,
       areaShape: "ellipse",
@@ -765,7 +817,10 @@ describe("project files", () => {
       .flatMap((layer) => layer.items)
       .find((item) => item.id === "bad_rectangle")!;
     expect(badRectangle.areaShape).toBe("rectangle");
-    expect(badRectangle.points).toEqual([{ x: 0, y: 0 }, { x: 10, y: 0 }]);
+    expect(badRectangle.points).toEqual([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+    ]);
     const unknownShape = parsed.layers
       .flatMap((layer) => layer.items)
       .find((item) => item.id === "unknown_shape")!;
@@ -814,7 +869,10 @@ describe("project files", () => {
       id: "item_image",
       page: 1,
       kind: "image",
-      points: [{ x: 20, y: 20 }, { x: 220, y: 170 }],
+      points: [
+        { x: 20, y: 20 },
+        { x: 220, y: 170 },
+      ],
       color: "#7aa2f7",
       strokeWidth: 1,
       opacity: 0.6,
@@ -858,7 +916,10 @@ describe("project files", () => {
         id: "item_image_mode",
         page: 1,
         kind: "image",
-        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+        ],
         color: "#7aa2f7",
         strokeWidth: 1,
         image: { assetId: "img_mode", mode: "annotation" },
@@ -871,7 +932,9 @@ describe("project files", () => {
       .find((item: { id: string }) => item.id === "item_image_mode");
     rawItem.image.mode = "sticker";
     const parsed = parseProject(JSON.stringify(raw));
-    const item = parsed.layers.flatMap((layer) => layer.items).find((entry) => entry.id === "item_image_mode");
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_image_mode");
     expect(item?.image).toEqual({ assetId: "img_mode", mode: "background" });
   });
 
@@ -899,14 +962,20 @@ describe("project files", () => {
         ...base,
         id: "missing_asset",
         kind: "image",
-        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+        ],
         image: { assetId: "img_missing", mode: "background" },
       },
       {
         ...base,
         id: "bad_asset",
         kind: "image",
-        points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+        points: [
+          { x: 0, y: 0 },
+          { x: 10, y: 10 },
+        ],
         image: { assetId: "img_bad", mode: "background" },
       },
     );
@@ -915,7 +984,10 @@ describe("project files", () => {
       ...base,
       id: "image_on_measure",
       kind: "image",
-      points: [{ x: 0, y: 0 }, { x: 10, y: 10 }],
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 10 },
+      ],
       image: { assetId: "img_bad", mode: "background" },
     });
 
@@ -1018,13 +1090,18 @@ describe("project files", () => {
 
     const parsed = parseProject(serializeProject(project));
     expect(parsed.settings.stampPresets).toEqual(["GODKÄND", "FÖR KÄNNEDOM"]);
-    const stamp = parsed.layers.flatMap((layer) => layer.items).find((item) => item.id === "stamp_item");
+    const stamp = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "stamp_item");
     expect(stamp).toMatchObject({ kind: "stamp", text: "GODKÄND", page: 2 });
     draw.items.push({
       id: "double_arrow",
       page: 2,
       kind: "arrow",
-      points: [{ x: 10, y: 10 }, { x: 50, y: 10 }],
+      points: [
+        { x: 10, y: 10 },
+        { x: 50, y: 10 },
+      ],
       color: "#4cc9f0",
       strokeWidth: 1,
       arrowHeads: "both",
@@ -1032,7 +1109,9 @@ describe("project files", () => {
       updatedAt: "2026-01-01T00:00:00.000Z",
     });
     const withArrow = parseProject(serializeProject(project));
-    const arrow = withArrow.layers.flatMap((layer) => layer.items).find((item) => item.id === "double_arrow");
+    const arrow = withArrow.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === "double_arrow");
     expect(arrow).toMatchObject({ kind: "arrow", arrowHeads: "both" });
   });
 

@@ -35,4 +35,3 @@ export function openQuantitiesDialog(actions: PanelActions): void {
     onClose: unmountQuantities,
   });
 }
-

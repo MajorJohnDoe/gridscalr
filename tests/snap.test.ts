@@ -7,11 +7,7 @@ import {
   defaultDocument,
   layersForKind,
 } from "../src/model/layers";
-import {
-  collectSnapCandidates,
-  findSnap,
-  type SnapCandidate,
-} from "../src/model/snap";
+import { collectSnapCandidates, findSnap, type SnapCandidate } from "../src/model/snap";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -21,7 +17,10 @@ function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
     id: "item",
     page: 1,
     kind: "length",
-    points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: NOW,
@@ -36,12 +35,24 @@ function makeProject(): Project {
   addItem(
     project,
     measure.id,
-    makeItem({ id: "horizontal", points: [{ x: 0, y: 0 }, { x: 100, y: 0 }] }),
+    makeItem({
+      id: "horizontal",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+    }),
   );
   addItem(
     project,
     measure.id,
-    makeItem({ id: "vertical", points: [{ x: 30, y: -50 }, { x: 30, y: 40 }] }),
+    makeItem({
+      id: "vertical",
+      points: [
+        { x: 30, y: -50 },
+        { x: 30, y: 40 },
+      ],
+    }),
   );
   addItem(
     project,
@@ -50,7 +61,10 @@ function makeProject(): Project {
       id: "rectangle",
       kind: "area",
       areaShape: "rectangle",
-      points: [{ x: 200, y: 200 }, { x: 300, y: 250 }],
+      points: [
+        { x: 200, y: 200 },
+        { x: 300, y: 250 },
+      ],
     }),
   );
   addItem(
@@ -60,13 +74,21 @@ function makeProject(): Project {
       id: "ellipse",
       kind: "area",
       areaShape: "ellipse",
-      points: [{ x: 400, y: 400 }, { x: 500, y: 450 }],
+      points: [
+        { x: 400, y: 400 },
+        { x: 500, y: 450 },
+      ],
     }),
   );
   return project;
 }
 
-function has(candidates: SnapCandidate[], kind: SnapCandidate["kind"], x: number, y: number): boolean {
+function has(
+  candidates: SnapCandidate[],
+  kind: SnapCandidate["kind"],
+  x: number,
+  y: number,
+): boolean {
   return candidates.some(
     (candidate) =>
       candidate.kind === kind &&
@@ -90,9 +112,7 @@ describe("markup snapping", () => {
 
   it("does not add midpoints or intersections for ellipses", () => {
     const candidates = collectSnapCandidates(makeProject(), 1);
-    const fromEllipse = candidates.filter((candidate) =>
-      candidate.itemIds?.includes("ellipse"),
-    );
+    const fromEllipse = candidates.filter((candidate) => candidate.itemIds?.includes("ellipse"));
     expect(fromEllipse.length).toBeGreaterThan(0);
     expect(fromEllipse.every((candidate) => candidate.kind === "endpoint")).toBe(true);
   });
@@ -121,12 +141,18 @@ describe("markup snapping", () => {
     const hidden = makeItem({
       id: "hidden",
       visible: false,
-      points: [{ x: 700, y: 700 }, { x: 800, y: 700 }],
+      points: [
+        { x: 700, y: 700 },
+        { x: 800, y: 700 },
+      ],
     });
     const locked = makeItem({
       id: "locked",
       locked: true,
-      points: [{ x: 900, y: 900 }, { x: 1000, y: 900 }],
+      points: [
+        { x: 900, y: 900 },
+        { x: 1000, y: 900 },
+      ],
     });
     addItem(project, measure.id, hidden);
     addItem(project, measure.id, locked);

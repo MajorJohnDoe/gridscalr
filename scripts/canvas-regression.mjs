@@ -1,10 +1,5 @@
 import assert from "node:assert/strict";
-import {
-  launchBrowser,
-  openDemoProject,
-  startVite,
-  waitForApp,
-} from "./ui-harness.mjs";
+import { launchBrowser, openDemoProject, startVite, waitForApp } from "./ui-harness.mjs";
 
 const port = Number(process.env.GRIDSCALR_CANVAS_TEST_PORT ?? 1431);
 let vite;
@@ -57,12 +52,22 @@ try {
     await dragScreen(await mousePoint(start), await mousePoint(end));
   };
   const itemIds = async () =>
-    page.evaluate(() => window.__gridscalr.store.project.layers.flatMap((layer) => layer.items.map((item) => item.id)));
+    page.evaluate(() =>
+      window.__gridscalr.store.project.layers.flatMap((layer) =>
+        layer.items.map((item) => item.id),
+      ),
+    );
   const itemById = async (id) =>
     page.evaluate((itemId) => {
       for (const layer of window.__gridscalr.store.project.layers) {
         const item = layer.items.find((entry) => entry.id === itemId);
-        if (item) return { ...item, layerId: layer.id, layerVisible: layer.visible, layerLocked: layer.locked };
+        if (item)
+          return {
+            ...item,
+            layerId: layer.id,
+            layerVisible: layer.visible,
+            layerLocked: layer.locked,
+          };
       }
       return null;
     }, id);
@@ -157,7 +162,11 @@ try {
     },
   );
   const resized = await itemById(rectId);
-  assert.notDeepEqual(resized.points, rectBefore.points, "dragging a box handle should resize the rectangle");
+  assert.notDeepEqual(
+    resized.points,
+    rectBefore.points,
+    "dragging a box handle should resize the rectangle",
+  );
   const rotate = (await handlesFor(rectId))?.find((handle) => handle.role === "rotate");
   assert.ok(rotate, "the selected rectangle should expose a rotation handle");
   await dragScreen(
@@ -165,7 +174,11 @@ try {
     { x: canvasBox.x + rotate.point.x + 60, y: canvasBox.y + rotate.point.y + 30 },
   );
   const rotatedRect = await itemById(rectId);
-  assert.notEqual(rotatedRect.rotation, rectBefore.rotation, "dragging the rotation handle should rotate the rectangle");
+  assert.notEqual(
+    rotatedRect.rotation,
+    rectBefore.rotation,
+    "dragging the rotation handle should rotate the rectangle",
+  );
 
   // 4. Rotate an existing text object from its rotation handle.
   await page.keyboard.press("v");
@@ -179,7 +192,11 @@ try {
     { x: canvasBox.x + rotateHandle.point.x + 70, y: canvasBox.y + rotateHandle.point.y + 35 },
   );
   const textAfter = await itemById("item_text_hatch");
-  assert.notEqual(textAfter.rotation, textBefore.rotation, "dragging the rotation handle should rotate the text");
+  assert.notEqual(
+    textAfter.rotation,
+    textBefore.rotation,
+    "dragging the rotation handle should rotate the text",
+  );
 
   // 5. Text editor: create, commit with Enter, then cancel a second edit.
   await page.keyboard.press("v");
@@ -248,7 +265,7 @@ try {
   });
   await clickPage({ x: 240, y: 300 });
   assert.equal(
-    (await page.evaluate(() => window.__gridscalr.store.ui.selection.length)),
+    await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
     0,
     "a hidden layer must not be hit-tested",
   );
@@ -297,7 +314,9 @@ try {
 
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
-  console.log("Canvas regression passed: length, area, resize, rotate, text, label/callout editing, hidden/locked and crop.");
+  console.log(
+    "Canvas regression passed: length, area, resize, rotate, text, label/callout editing, hidden/locked and crop.",
+  );
 } finally {
   await page?.close();
   await browser?.close();

@@ -29,18 +29,26 @@ describe("canvas geometry", () => {
 
   it("moves and resizes a crop rectangle within the page", () => {
     const rect = { x: 10, y: 10, width: 100, height: 50 };
-    expect(movePageRect(rect, { x: 0, y: 0 }, { x: -50, y: 500 }, { width: 200, height: 100 })).toEqual({
+    expect(
+      movePageRect(rect, { x: 0, y: 0 }, { x: -50, y: 500 }, { width: 200, height: 100 }),
+    ).toEqual({
       x: 0,
       y: 50,
       width: 100,
       height: 50,
     });
-    expect(
-      resizePageRect(rect, "se", { x: 300, y: 300 }, { width: 200, height: 100 }),
-    ).toEqual({ x: 10, y: 10, width: 190, height: 90 });
-    expect(
-      resizePageRect(rect, "nw", { x: 0, y: 0 }, { width: 200, height: 100 }),
-    ).toEqual({ x: 0, y: 0, width: 110, height: 60 });
+    expect(resizePageRect(rect, "se", { x: 300, y: 300 }, { width: 200, height: 100 })).toEqual({
+      x: 10,
+      y: 10,
+      width: 190,
+      height: 90,
+    });
+    expect(resizePageRect(rect, "nw", { x: 0, y: 0 }, { width: 200, height: 100 })).toEqual({
+      x: 0,
+      y: 0,
+      width: 110,
+      height: 60,
+    });
   });
 
   it("constrains quick areas to a square", () => {
@@ -75,7 +83,13 @@ describe("canvas geometry", () => {
   it("handles colour alpha and duplicate draft points", () => {
     expect(hexAlpha("#35c2a1", 0.5)).toBe("rgba(53,194,161,0.5)");
     expect(hexAlpha("zzzzzz", 0.2)).toBe("rgba(255,255,255,0.2)");
-    expect(dedupeLast([{ x: 0, y: 0 }, { x: 1, y: 1 }, { x: 1, y: 1 }])).toHaveLength(2);
+    expect(
+      dedupeLast([
+        { x: 0, y: 0 },
+        { x: 1, y: 1 },
+        { x: 1, y: 1 },
+      ]),
+    ).toHaveLength(2);
   });
 });
 

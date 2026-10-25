@@ -231,8 +231,7 @@ export function openCategoriesDialog(): Promise<void> {
       wasteInput.min = "0";
       wasteInput.max = "100";
       wasteInput.step = "0.5";
-      wasteInput.value =
-        category.wastePercent === undefined ? "" : String(category.wastePercent);
+      wasteInput.value = category.wastePercent === undefined ? "" : String(category.wastePercent);
       wasteInput.placeholder = `Default ${formatNumber(project.settings.quantity.wastePercent, 1)}`;
       wasteInput.title = "Leave empty to inherit the project waste percentage.";
       wasteInput.setAttribute("aria-label", `Waste percentage override for ${category.name}`);
@@ -261,10 +260,7 @@ export function openCategoriesDialog(): Promise<void> {
       roundingInput.placeholder = `Default ${formatNumber(project.settings.quantity.roundingStep, 2)}`;
       roundingInput.title =
         "Leave empty to inherit the project rounding step. The step uses each row's unit; counts always round to whole pcs.";
-      roundingInput.setAttribute(
-        "aria-label",
-        `Rounding step override for ${category.name}`,
-      );
+      roundingInput.setAttribute("aria-label", `Rounding step override for ${category.name}`);
       roundingInput.addEventListener("change", () => {
         const raw = roundingInput.value.trim();
         const value = raw === "" ? null : Number(raw);

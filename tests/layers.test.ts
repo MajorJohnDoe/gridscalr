@@ -30,7 +30,10 @@ function makeItem(id: string, page = 1, kind: MarkupItem["kind"] = "length"): Ma
     id,
     page,
     kind,
-    points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: now,
@@ -44,7 +47,9 @@ describe("layers", () => {
     expect(project.layers.map((layer) => layer.kind)).toEqual(["draw", "measure"]);
     expect(layersForKind(project, "draw")).toHaveLength(1);
     expect(layersForKind(project, "measure")).toHaveLength(1);
-    expect(project.layers.find((layer) => layer.id === project.activeLayerId)?.kind).toBe("measure");
+    expect(project.layers.find((layer) => layer.id === project.activeLayerId)?.kind).toBe(
+      "measure",
+    );
   });
 
   it("maps item kinds to the right layer kind", () => {

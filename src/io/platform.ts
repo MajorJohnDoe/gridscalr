@@ -3,8 +3,7 @@ import { sha256Fallback } from "./sha256";
 import { assertWritablePath } from "./writeGuard";
 
 export const isTauri =
-  typeof window !== "undefined" &&
-  ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
+  typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
 
 const RECENT_KEY = "gridscalr.recent.v1";
 

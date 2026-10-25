@@ -1,4 +1,5 @@
 import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { docsSourceFingerprint } from "./docs-fingerprint.mjs";
 import { resolve } from "node:path";
 import {
   launchBrowser,
@@ -19,7 +20,8 @@ const shots = [
     file: "hero.png",
     title: "Measurement takeoff",
     alt: "GridScalr showing a calibrated floor plan with measurement labels, a selected living-area rectangle and the Properties panel.",
-    description: "A calibrated takeoff with rectangle areas, counts, a deduction and drawing annotations.",
+    description:
+      "A calibrated takeoff with rectangle areas, counts, a deduction and drawing annotations.",
   },
   {
     file: "measure.png",
@@ -49,7 +51,8 @@ const shots = [
     file: "export.png",
     title: "Drawing export",
     alt: "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
-    description: "Export visible markups as a flattened drawing PDF without modifying the source drawing.",
+    description:
+      "Export visible markups as a flattened drawing PDF without modifying the source drawing.",
   },
   {
     file: "workflows-help.png",
@@ -153,6 +156,7 @@ try {
   const manifest = {
     generatedAt: new Date().toISOString(),
     appVersion: packageJson.version,
+    sourceFingerprint: await docsSourceFingerprint(root),
     viewport,
     project: "fixtures/demo-project.gridscalr",
     screenshots: shots,

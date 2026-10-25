@@ -51,10 +51,7 @@ describe("text layout and rotated item geometry", () => {
 
     expect(local.max.x).toBeGreaterThan(local.min.x);
     expect(itemCorners(item)[0]).not.toEqual(local.min);
-    expect(rotatedBounds.max.x - rotatedBounds.min.x).toBeCloseTo(
-      local.max.y - local.min.y,
-      5,
-    );
+    expect(rotatedBounds.max.x - rotatedBounds.min.x).toBeCloseTo(local.max.y - local.min.y, 5);
     expect(rotatePoint(local.min, center, 90)).toEqual(itemCorners(item)[0]);
   });
 

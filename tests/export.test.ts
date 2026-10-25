@@ -34,11 +34,17 @@ describe("drawing export model", () => {
   });
 
   it("normalizes and clamps crop rectangles to the visible page", () => {
-    const crop = normalizeCropRect({ x: 20, y: 10, width: 60, height: 40 }, { width: 200, height: 100 });
+    const crop = normalizeCropRect(
+      { x: 20, y: 10, width: 60, height: 40 },
+      { width: 200, height: 100 },
+    );
     expect(crop).toEqual({ x: 0.1, y: 0.1, width: 0.3, height: 0.4 });
     expect(cropAreaPercent(crop!)).toBeCloseTo(12, 6);
 
-    const clamped = normalizeCropRect({ x: -20, y: -10, width: 100, height: 50 }, { width: 200, height: 100 });
+    const clamped = normalizeCropRect(
+      { x: -20, y: -10, width: 100, height: 50 },
+      { width: 200, height: 100 },
+    );
     expect(clamped).toEqual({ x: 0, y: 0, width: 0.4, height: 0.4 });
     expect(pageRectFromCrop(clamped!, { width: 200, height: 100 })).toEqual({
       x: 0,
@@ -46,7 +52,9 @@ describe("drawing export model", () => {
       width: 80,
       height: 40,
     });
-    expect(normalizeCropRect({ x: 0, y: 0, width: 0.2, height: 0.2 }, { width: 200, height: 100 })).toBeNull();
+    expect(
+      normalizeCropRect({ x: 0, y: 0, width: 0.2, height: 0.2 }, { width: 200, height: 100 }),
+    ).toBeNull();
   });
 
   it("applies the same relative crop to pages of different sizes", () => {
@@ -73,7 +81,9 @@ describe("drawing export model", () => {
     project.layers[0].visible = false;
     const options = defaultDrawingExportOptions(project, 99);
     expect(options.pages).toEqual([3]);
-    expect(options.layerIds).toEqual(project.layers.filter((layer) => layer.visible).map((layer) => layer.id));
+    expect(options.layerIds).toEqual(
+      project.layers.filter((layer) => layer.visible).map((layer) => layer.id),
+    );
     expect(options).toMatchObject({
       includeLabels: true,
       includeCalibration: true,

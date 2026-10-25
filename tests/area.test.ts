@@ -11,7 +11,10 @@ import {
 } from "../src/model/area";
 import type { MarkupItem, Point } from "../src/model/types";
 
-const RECT: Point[] = [{ x: 10, y: 20 }, { x: 110, y: 70 }];
+const RECT: Point[] = [
+  { x: 10, y: 20 },
+  { x: 110, y: 70 },
+];
 
 function areaItem(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
@@ -72,8 +75,8 @@ describe("quick area geometry", () => {
   it("reads rectangle and ellipse shapes from area items only", () => {
     expect(areaShapeOf(areaItem({ areaShape: "rectangle" }))).toBe("rectangle");
     expect(areaShapeOf(areaItem({ areaShape: "ellipse" }))).toBe("ellipse");
-    expect(
-      areaShapeOf(areaItem({ kind: "rect", points: RECT, areaShape: "ellipse" })),
-    ).toBe("polygon");
+    expect(areaShapeOf(areaItem({ kind: "rect", points: RECT, areaShape: "ellipse" }))).toBe(
+      "polygon",
+    );
   });
 });

@@ -21,9 +21,7 @@ interface Tile {
  * Lets the user choose which pages of a picked PDF or TIF become project pages.
  * Previews are rendered lazily for visible tiles, one at a time, by the caller.
  */
-export async function pageImportDialog(
-  options: PageImportDialogOptions,
-): Promise<number[] | null> {
+export async function pageImportDialog(options: PageImportDialogOptions): Promise<number[] | null> {
   const allPages = Array.from({ length: options.pageCount }, (_, index) => index + 1);
   const selected = new Set(allPages);
   const tiles = new Map<number, Tile>();

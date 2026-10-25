@@ -1,29 +1,11 @@
-import {
-  calloutLayout,
-  cloudLabelLayout,
-  textBoxLayout,
-} from "../model/annotations";
+import { calloutLayout, cloudLabelLayout, textBoxLayout } from "../model/annotations";
 import { makeId } from "../model/calibration";
-import {
-  itemCenter,
-  itemRotation,
-  normalizeDegrees,
-} from "../model/geometry";
-import {
-  addItem,
-  ensureActiveLayer,
-  findItem,
-  itemIsLocked,
-} from "../model/layers";
+import { itemCenter, itemRotation, normalizeDegrees } from "../model/geometry";
+import { addItem, ensureActiveLayer, findItem, itemIsLocked } from "../model/layers";
 import type { LabelBox, LabelMetrics } from "../model/label";
 import type { LabelLayout } from "../model/labelLayout";
 import { itemMetrics } from "../model/measure";
-import {
-  TEXT_FONT_STACK,
-  clampTextSize,
-  measureTextWidth,
-  textItemLayout,
-} from "../model/text";
+import { TEXT_FONT_STACK, clampTextSize, measureTextWidth, textItemLayout } from "../model/text";
 import type { Layer, MarkupItem, Point, TextAlign } from "../model/types";
 import { store } from "../state/store";
 import { icon } from "../ui/icons";
@@ -367,10 +349,7 @@ export class CanvasEditorController {
       textarea.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
       textarea.style.whiteSpace = "pre-wrap";
     } else {
-      const layout = textItemLayout(
-        { text: edit.text, fontSize: edit.fontSize },
-        measureTextWidth,
-      );
+      const layout = textItemLayout({ text: edit.text, fontSize: edit.fontSize }, measureTextWidth);
       width = Math.max(52, layout.width * zoom + 4);
       height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
       left = anchor.x - 2;
@@ -726,27 +705,24 @@ export class CanvasEditorController {
           edit.boxHeight !== original.boxHeight;
         this.closeTextEditor();
         if (!changed) return;
-        store.mutate(
-          (project) => {
-            const item = findItem(project, edit.itemId!)?.item;
-            if (!item) return;
-            item.text = value.trim() || "Revision";
-            item.textColor = edit.color;
-            item.fontSize = clampTextSize(edit.fontSize);
-            if (edit.bold) item.textBold = true;
-            else delete item.textBold;
-            if (edit.underline) item.textUnderline = true;
-            else delete item.textUnderline;
-            if (edit.align === "center") delete item.textAlign;
-            else item.textAlign = edit.align;
-            if (edit.boxWidth) item.textBoxWidth = edit.boxWidth;
-            else delete item.textBoxWidth;
-            if (edit.boxHeight) item.textBoxHeight = edit.boxHeight;
-            else delete item.textBoxHeight;
-            item.updatedAt = new Date().toISOString();
-          },
-          "change",
-        );
+        store.mutate((project) => {
+          const item = findItem(project, edit.itemId!)?.item;
+          if (!item) return;
+          item.text = value.trim() || "Revision";
+          item.textColor = edit.color;
+          item.fontSize = clampTextSize(edit.fontSize);
+          if (edit.bold) item.textBold = true;
+          else delete item.textBold;
+          if (edit.underline) item.textUnderline = true;
+          else delete item.textUnderline;
+          if (edit.align === "center") delete item.textAlign;
+          else item.textAlign = edit.align;
+          if (edit.boxWidth) item.textBoxWidth = edit.boxWidth;
+          else delete item.textBoxWidth;
+          if (edit.boxHeight) item.textBoxHeight = edit.boxHeight;
+          else delete item.textBoxHeight;
+          item.updatedAt = new Date().toISOString();
+        }, "change");
         return;
       }
       const original = edit.original!;
@@ -761,25 +737,22 @@ export class CanvasEditorController {
         edit.align !== original.align;
       this.closeTextEditor();
       if (!changed) return;
-      store.mutate(
-        (project) => {
-          const item = findItem(project, edit.itemId!)?.item;
-          if (!item) return;
-          item.text = value;
-          item.color = edit.color;
-          item.fontSize = clampTextSize(edit.fontSize);
-          if (edit.bold) item.textBold = true;
-          else delete item.textBold;
-          if (edit.underline) item.textUnderline = true;
-          else delete item.textUnderline;
-          if (edit.align === "left") delete item.textAlign;
-          else item.textAlign = edit.align;
-          if (rotation === 0) delete item.rotation;
-          else item.rotation = rotation;
-          item.updatedAt = new Date().toISOString();
-        },
-        "change",
-      );
+      store.mutate((project) => {
+        const item = findItem(project, edit.itemId!)?.item;
+        if (!item) return;
+        item.text = value;
+        item.color = edit.color;
+        item.fontSize = clampTextSize(edit.fontSize);
+        if (edit.bold) item.textBold = true;
+        else delete item.textBold;
+        if (edit.underline) item.textUnderline = true;
+        else delete item.textUnderline;
+        if (edit.align === "left") delete item.textAlign;
+        else item.textAlign = edit.align;
+        if (rotation === 0) delete item.rotation;
+        else item.rotation = rotation;
+        item.updatedAt = new Date().toISOString();
+      }, "change");
       return;
     }
 
@@ -802,33 +775,30 @@ export class CanvasEditorController {
     let layerId = "";
     let itemId = "";
     this.closeTextEditor();
-    store.mutate(
-      (project) => {
-        const layer = ensureActiveLayer(project, "draw");
-        const now = new Date().toISOString();
-        const item: MarkupItem = {
-          id: makeId("item"),
-          page: edit.page,
-          kind: "text",
-          points: [{ ...edit.anchor }],
-          color: edit.color,
-          strokeWidth: 2,
-          text: value,
-          fontSize: clampTextSize(edit.fontSize),
-          textBold: edit.bold ? true : undefined,
-          textUnderline: edit.underline ? true : undefined,
-          textAlign: edit.align === "left" ? undefined : edit.align,
-          rotation: rotation === 0 ? undefined : rotation,
-          scale: null,
-          createdAt: now,
-          updatedAt: now,
-        };
-        addItem(project, layer.id, item);
-        layerId = layer.id;
-        itemId = item.id;
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      const layer = ensureActiveLayer(project, "draw");
+      const now = new Date().toISOString();
+      const item: MarkupItem = {
+        id: makeId("item"),
+        page: edit.page,
+        kind: "text",
+        points: [{ ...edit.anchor }],
+        color: edit.color,
+        strokeWidth: 2,
+        text: value,
+        fontSize: clampTextSize(edit.fontSize),
+        textBold: edit.bold ? true : undefined,
+        textUnderline: edit.underline ? true : undefined,
+        textAlign: edit.align === "left" ? undefined : edit.align,
+        rotation: rotation === 0 ? undefined : rotation,
+        scale: null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      addItem(project, layer.id, item);
+      layerId = layer.id;
+      itemId = item.id;
+    }, "change");
     if (layerId && itemId) {
       store.setSelection({ layerId, itemId });
       store.setTool("select");
@@ -858,15 +828,12 @@ export class CanvasEditorController {
     const original = (edit.original ?? "").trim();
     this.closeLabelEditor();
     if (value === original) return;
-    store.mutate(
-      (project) => {
-        const item = findItem(project, edit.itemId)?.item;
-        if (!item) return;
-        item.label = value || undefined;
-        item.updatedAt = new Date().toISOString();
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      const item = findItem(project, edit.itemId)?.item;
+      if (!item) return;
+      item.label = value || undefined;
+      item.updatedAt = new Date().toISOString();
+    }, "change");
   }
 
   private cancelLabelEdit(): void {

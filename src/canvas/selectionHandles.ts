@@ -8,11 +8,7 @@ import {
   rotatePoint,
 } from "../model/geometry";
 import type { MarkupItem, Point } from "../model/types";
-import {
-  cursorForRole,
-  handleLocalPoint,
-  type BoxHandleRole,
-} from "./geometry";
+import { cursorForRole, handleLocalPoint, type BoxHandleRole } from "./geometry";
 
 export type HandleRole = BoxHandleRole | "rotate" | "vertex" | "label";
 
@@ -104,9 +100,7 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
   const center = midpoint(bounds.min, bounds.max);
   const rotation = itemRotation(item);
   const roles: BoxHandleRole[] =
-    item.kind === "text"
-      ? ["nw", "ne", "se", "sw"]
-      : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    item.kind === "text" ? ["nw", "ne", "se", "sw"] : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
   const handles: Handle[] = roles.map((role) => {
     const local = handleLocalPoint(bounds, role);
     const point = toScreen(rotatePoint(local, center, rotation));
@@ -135,7 +129,10 @@ export function rotationHandlePoint(item: MarkupItem, toScreen: ToScreen): Point
   const upPage = rotatePoint({ x: center.x, y: center.y - 1 }, center, rotation);
   const centerScreen = toScreen(center);
   const upScreen = toScreen(upPage);
-  const length = Math.max(1e-6, Math.hypot(upScreen.x - centerScreen.x, upScreen.y - centerScreen.y));
+  const length = Math.max(
+    1e-6,
+    Math.hypot(upScreen.x - centerScreen.x, upScreen.y - centerScreen.y),
+  );
   return {
     x: topScreen.x + ((upScreen.x - centerScreen.x) / length) * 26,
     y: topScreen.y + ((upScreen.y - centerScreen.y) / length) * 26,

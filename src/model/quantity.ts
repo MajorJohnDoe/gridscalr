@@ -124,10 +124,7 @@ function compareRooms(a: string, b: string): number {
   return a.localeCompare(b, undefined, { sensitivity: "base" });
 }
 
-function addTypeTotal(
-  totals: Map<QuantityType, QuantityTypeTotal>,
-  row: QuantityRow,
-): void {
+function addTypeTotal(totals: Map<QuantityType, QuantityTypeTotal>, row: QuantityRow): void {
   let total = totals.get(row.type);
   if (!total) {
     total = {
@@ -165,10 +162,7 @@ function totalsFromRows(rows: QuantityRow[]): QuantityTypeTotal[] {
  * sums of the clamped row nets so a deduction can never make an order row
  * negative.
  */
-export function calculateQuantities(
-  project: Project,
-  filters: QuantityFilters,
-): QuantitySummary {
+export function calculateQuantities(project: Project, filters: QuantityFilters): QuantitySummary {
   const groups = new Map<string, GroupAccumulator>();
   let hiddenExcluded = 0;
   let uncalibratedExcluded = 0;
@@ -254,11 +248,7 @@ export function calculateQuantities(
       room: group.room,
       type: group.type,
       unit:
-        group.type === "length"
-          ? lengthUnit
-          : group.type === "area"
-            ? unitLabel(areaUnit)
-            : "pcs",
+        group.type === "length" ? lengthUnit : group.type === "area" ? unitLabel(areaUnit) : "pcs",
       gross: group.gross,
       deduction: group.deduction,
       net,

@@ -37,8 +37,8 @@ describe("markdown renderer", () => {
   });
 
   it("renders fenced code blocks literally", () => {
-    const html = renderMarkdown("```json\n{ \"a\": 1 }\n```\n");
-    expect(html).toContain("<pre><code class=\"language-json\">{ &quot;a&quot;: 1 }</code></pre>");
+    const html = renderMarkdown('```json\n{ "a": 1 }\n```\n');
+    expect(html).toContain('<pre><code class="language-json">{ &quot;a&quot;: 1 }</code></pre>');
   });
 
   it("renders bundled help images as figures with captions", () => {
@@ -46,7 +46,9 @@ describe("markdown renderer", () => {
       resolveImage: (src) => (src.endsWith("calibrate.png") ? "/assets/calibrate.png" : null),
     });
     expect(html).toContain('<figure class="help-figure">');
-    expect(html).toContain('<img src="/assets/calibrate.png" alt="Calibration dialog" loading="lazy">');
+    expect(html).toContain(
+      '<img src="/assets/calibrate.png" alt="Calibration dialog" loading="lazy">',
+    );
     expect(html).toContain("<figcaption>Calibration dialog</figcaption>");
   });
 
@@ -67,7 +69,9 @@ describe("markdown renderer", () => {
   });
 
   it("sanitizes links and keeps internal anchors", () => {
-    const html = renderMarkdown("[Guide](#measure) [Shortcuts](shortcuts.md) [Site](https://example.com)");
+    const html = renderMarkdown(
+      "[Guide](#measure) [Shortcuts](shortcuts.md) [Site](https://example.com)",
+    );
     expect(html).toContain('<a href="#measure" class="help-link">Guide</a>');
     expect(html).toContain('<a href="shortcuts.md" class="help-link">Shortcuts</a>');
     expect(html).toContain('<span class="help-external">Site</span>');

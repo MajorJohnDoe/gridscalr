@@ -1,12 +1,5 @@
 import { makeId } from "./calibration";
-import type {
-  ImageAsset,
-  ImageMode,
-  MarkupItem,
-  PageSize,
-  Point,
-  Project,
-} from "./types";
+import type { ImageAsset, ImageMode, MarkupItem, PageSize, Point, Project } from "./types";
 
 /** Hard limits for one embedded image. */
 export const IMAGE_MAX_BYTES = 20 * 1024 * 1024;
@@ -19,10 +12,7 @@ export const IMAGE_MODE_LABELS: Record<ImageMode, string> = {
   annotation: "Annotation",
 };
 
-export function imageAssetForItem(
-  project: Project,
-  item: MarkupItem,
-): ImageAsset | undefined {
+export function imageAssetForItem(project: Project, item: MarkupItem): ImageAsset | undefined {
   if (item.kind !== "image" || !item.image) return undefined;
   return project.assets[item.image.assetId];
 }

@@ -34,57 +34,87 @@ function item(id, kind, page, points, extra = {}) {
 }
 
 const measureItems = [
-  item("item_floor_living", "area", 1, [
-    { x: 150, y: 235 },
-    { x: 330, y: 370 },
-  ], {
-    label: "Living floor",
-    categoryId: "cat_floor",
-    room: "Living",
-    areaMode: "add",
-    areaShape: "rectangle",
-    color: "#4cc9f0",
-  }),
-  item("item_floor_kitchen", "area", 1, [
-    { x: 330, y: 370 },
-    { x: 610, y: 470 },
-  ], {
-    label: "Kitchen / dining floor",
-    categoryId: "cat_floor",
-    room: "Kitchen / dining",
-    areaMode: "add",
-    areaShape: "rectangle",
-    color: "#4cc9f0",
-  }),
-  item("item_floor_shaft", "area", 1, [
-    { x: 480, y: 425 },
-    { x: 515, y: 462 },
-  ], {
-    label: "Shaft deduction",
-    categoryId: "cat_floor",
-    room: "Kitchen / dining",
-    areaMode: "subtract",
-    areaShape: "rectangle",
-    color: "#4cc9f0",
-  }),
-  item("item_wall_partition", "length", 1, [
-    { x: 330, y: 370 },
-    { x: 610, y: 370 },
-  ], {
-    label: "Partition wall",
-    categoryId: "cat_wall",
-    room: "Kitchen / dining",
-    color: "#4cc9f0",
-  }),
-  item("item_facade_window", "length", 1, [
-    { x: 230, y: 470 },
-    { x: 295, y: 470 },
-  ], {
-    label: "Window run",
-    categoryId: "cat_facade",
-    room: "Living",
-    color: "#4cc9f0",
-  }),
+  item(
+    "item_floor_living",
+    "area",
+    1,
+    [
+      { x: 150, y: 235 },
+      { x: 330, y: 370 },
+    ],
+    {
+      label: "Living floor",
+      categoryId: "cat_floor",
+      room: "Living",
+      areaMode: "add",
+      areaShape: "rectangle",
+      color: "#4cc9f0",
+    },
+  ),
+  item(
+    "item_floor_kitchen",
+    "area",
+    1,
+    [
+      { x: 330, y: 370 },
+      { x: 610, y: 470 },
+    ],
+    {
+      label: "Kitchen / dining floor",
+      categoryId: "cat_floor",
+      room: "Kitchen / dining",
+      areaMode: "add",
+      areaShape: "rectangle",
+      color: "#4cc9f0",
+    },
+  ),
+  item(
+    "item_floor_shaft",
+    "area",
+    1,
+    [
+      { x: 480, y: 425 },
+      { x: 515, y: 462 },
+    ],
+    {
+      label: "Shaft deduction",
+      categoryId: "cat_floor",
+      room: "Kitchen / dining",
+      areaMode: "subtract",
+      areaShape: "rectangle",
+      color: "#4cc9f0",
+    },
+  ),
+  item(
+    "item_wall_partition",
+    "length",
+    1,
+    [
+      { x: 330, y: 370 },
+      { x: 610, y: 370 },
+    ],
+    {
+      label: "Partition wall",
+      categoryId: "cat_wall",
+      room: "Kitchen / dining",
+      color: "#4cc9f0",
+    },
+  ),
+  item(
+    "item_facade_window",
+    "length",
+    1,
+    [
+      { x: 230, y: 470 },
+      { x: 295, y: 470 },
+    ],
+    {
+      label: "Window run",
+      categoryId: "cat_facade",
+      room: "Living",
+      color: "#4cc9f0",
+    },
+  ),
   item("item_count_door_living", "count", 1, [{ x: 165, y: 270 }], {
     label: "Living door",
     categoryId: "cat_other",
@@ -106,50 +136,68 @@ const measureItems = [
     countType: "radiator",
     color: "#4cc9f0",
   }),
-  item("item_floor_bedroom", "area", 2, [
-    { x: 190, y: 280 },
-    { x: 390, y: 475 },
-  ], {
-    label: "Bedroom 1 floor",
-    categoryId: "cat_floor",
-    room: "Bedroom 1",
-    areaMode: "add",
-    areaShape: "rectangle",
-    color: "#4cc9f0",
-    scale: { pointsPerMeter: 28.34645669, sourceUnit: "m" },
-  }),
+  item(
+    "item_floor_bedroom",
+    "area",
+    2,
+    [
+      { x: 190, y: 280 },
+      { x: 390, y: 475 },
+    ],
+    {
+      label: "Bedroom 1 floor",
+      categoryId: "cat_floor",
+      room: "Bedroom 1",
+      areaMode: "add",
+      areaShape: "rectangle",
+      color: "#4cc9f0",
+      scale: { pointsPerMeter: 28.34645669, sourceUnit: "m" },
+    },
+  ),
 ];
 
 const drawItems = [
-  item("item_cloud_bath", "cloud", 1, [
-    { x: 475, y: 295 },
-    { x: 615, y: 295 },
-    { x: 615, y: 375 },
-    { x: 475, y: 375 },
-  ], {
-    text: "Verify floor drain",
-    fillColor: "#f2a93b",
-    opacity: 0.14,
-    color: "#f2a93b",
-    strokeWidth: 1.5,
-    fontSize: 10,
-    textOffset: { x: 0, y: 58 },
-    textColor: "#f7fbfc",
-    scale: undefined,
-  }),
-  item("item_callout_window", "callout", 1, [
-    { x: 520, y: 470 },
-    { x: 650, y: 515 },
-  ], {
-    text: "Replace window seal",
-    color: "#4cc9f0",
-    strokeWidth: 1.2,
-    fontSize: 10,
-    textBoxWidth: 105,
-    textBoxHeight: 30,
-    textColor: "#f7fbfc",
-    scale: undefined,
-  }),
+  item(
+    "item_cloud_bath",
+    "cloud",
+    1,
+    [
+      { x: 475, y: 295 },
+      { x: 615, y: 295 },
+      { x: 615, y: 375 },
+      { x: 475, y: 375 },
+    ],
+    {
+      text: "Verify floor drain",
+      fillColor: "#f2a93b",
+      opacity: 0.14,
+      color: "#f2a93b",
+      strokeWidth: 1.5,
+      fontSize: 10,
+      textOffset: { x: 0, y: 58 },
+      textColor: "#f7fbfc",
+      scale: undefined,
+    },
+  ),
+  item(
+    "item_callout_window",
+    "callout",
+    1,
+    [
+      { x: 520, y: 470 },
+      { x: 650, y: 515 },
+    ],
+    {
+      text: "Replace window seal",
+      color: "#4cc9f0",
+      strokeWidth: 1.2,
+      fontSize: 10,
+      textBoxWidth: 105,
+      textBoxHeight: 30,
+      textColor: "#f7fbfc",
+      scale: undefined,
+    },
+  ),
   item("item_stamp_bath", "stamp", 1, [{ x: 725, y: 445 }], {
     text: "INSPECTED",
     color: "#a78bfa",
@@ -164,15 +212,21 @@ const drawItems = [
     fontSize: 9,
     scale: undefined,
   }),
-  item("item_arrow_hatch", "arrow", 1, [
-    { x: 635, y: 215 },
-    { x: 560, y: 235 },
-  ], {
-    color: "#f2a93b",
-    strokeWidth: 1.5,
-    arrowHeads: "end",
-    scale: undefined,
-  }),
+  item(
+    "item_arrow_hatch",
+    "arrow",
+    1,
+    [
+      { x: 635, y: 215 },
+      { x: 560, y: 235 },
+    ],
+    {
+      color: "#f2a93b",
+      strokeWidth: 1.5,
+      arrowHeads: "end",
+      scale: undefined,
+    },
+  ),
   item("item_delta_b", "delta", 1, [{ x: 760, y: 505 }], {
     text: "B",
     label: "2026-10-25",
@@ -216,7 +270,7 @@ const project = {
   categories,
   assets: {},
   pages: {
-    "1": {
+    1: {
       calibration: {
         id: "cal_demo_page_1",
         source: "reference",
@@ -228,7 +282,7 @@ const project = {
         createdAt: now,
       },
     },
-    "2": {
+    2: {
       calibration: {
         id: "cal_demo_page_2",
         source: "manual",

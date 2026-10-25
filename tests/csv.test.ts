@@ -38,7 +38,12 @@ function add(
     points:
       kind === "count"
         ? [{ x: 40, y: 40 }]
-        : [{ x: 10, y: 10 }, { x: 110, y: 10 }, { x: 110, y: 110 }, { x: 10, y: 110 }],
+        : [
+            { x: 10, y: 10 },
+            { x: 110, y: 10 },
+            { x: 110, y: 110 },
+            { x: 10, y: 110 },
+          ],
     color: "#4cc9f0",
     strokeWidth: 2,
     scale: kind === "count" ? null : { ...SCALE },
@@ -80,9 +85,7 @@ describe("quantity CSV", () => {
     expect(lines[1]).toBe(
       'Floor,"Room, ""A""",area,m²,1.000,0.000,1.000,10.000,0.100,0.500,1.500,1',
     );
-    expect(lines[2]).toBe(
-      'Floor,"Room, ""A""",count,pcs,1,0,1,10.000,0.100,0.500,2,1',
-    );
+    expect(lines[2]).toBe('Floor,"Room, ""A""",count,pcs,1,0,1,10.000,0.100,0.500,2,1');
   });
 
   it("puts metadata after two blank lines and escapes project metadata", () => {
@@ -90,9 +93,7 @@ describe("quantity CSV", () => {
     const floor = categoryId(project, "Floor");
     add(project, "length", { categoryId: floor, room: "A" });
 
-    const csv = serializeQuantityCsv(
-      buildQuantityReport(project, { generatedAt: GENERATED }),
-    );
+    const csv = serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }));
     const lines = csv.slice(1).split("\r\n");
     const firstBlank = lines.indexOf("");
     expect(lines[firstBlank + 1]).toBe("");
@@ -111,9 +112,7 @@ describe("quantity CSV", () => {
     const floor = categoryId(project, "Floor");
     add(project, "length", { categoryId: floor, room: "A", visible: false });
 
-    const csv = serializeQuantityCsv(
-      buildQuantityReport(project, { generatedAt: GENERATED }),
-    );
+    const csv = serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }));
     expect(csv).toContain("hidden_excluded,true");
     expect(csv).not.toContain("A,length");
   });

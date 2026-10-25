@@ -1,11 +1,5 @@
 import { selectionKind } from "../model/selection";
-import {
-  duplicateLayer,
-  layersForKind,
-  moveLayer,
-  removeLayer,
-  swapLayers,
-} from "../model/layers";
+import { duplicateLayer, layersForKind, moveLayer, removeLayer, swapLayers } from "../model/layers";
 import type { LayerKind } from "../model/types";
 import { store } from "../state/store";
 import { confirmDialog, textDialog } from "./dialogs";
@@ -16,11 +10,7 @@ import { showPopover } from "./popover";
 import type { ShellRefs } from "./shell";
 import { toast } from "./toast";
 
-export function layerAction(
-  iconName: string,
-  label: string,
-  extraClass = "",
-): HTMLButtonElement {
+export function layerAction(iconName: string, label: string, extraClass = ""): HTMLButtonElement {
   const btn = el("button", `layer-action ${extraClass}`.trim());
   btn.type = "button";
   btn.title = label;
@@ -40,13 +30,10 @@ function beginInlineRename(row: HTMLElement, name: HTMLElement, layerId: string)
     if (done) return;
     done = true;
     if (save && input.value.trim()) {
-      store.mutate(
-        (project) => {
-          const layer = project.layers.find((l) => l.id === layerId);
-          if (layer) layer.name = input.value.trim();
-        },
-        "layers",
-      );
+      store.mutate((project) => {
+        const layer = project.layers.find((l) => l.id === layerId);
+        if (layer) layer.name = input.value.trim();
+      }, "layers");
     } else {
       store.emit("layers");
     }
@@ -73,13 +60,10 @@ function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActio
       action: () => {
         void textDialog("Rename layer", "Layer", layer.name, "Layer name").then((value) => {
           if (!value) return;
-          store.mutate(
-            (project) => {
-              const target = project.layers.find((l) => l.id === layerId);
-              if (target) target.name = value;
-            },
-            "layers",
-          );
+          store.mutate((project) => {
+            const target = project.layers.find((l) => l.id === layerId);
+            if (target) target.name = value;
+          }, "layers");
         });
       },
     },
@@ -123,13 +107,10 @@ function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActio
           { danger: true },
         ).then((confirmed) => {
           if (!confirmed) return;
-          store.mutate(
-            (project) => {
-              const target = project.layers.find((l) => l.id === layerId);
-              if (target) target.items = [];
-            },
-            "layers",
-          );
+          store.mutate((project) => {
+            const target = project.layers.find((l) => l.id === layerId);
+            if (target) target.items = [];
+          }, "layers");
         });
       },
     },
@@ -205,15 +186,12 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       color.title = "Layer colour";
       color.addEventListener("click", (event) => event.stopPropagation());
       color.addEventListener("change", () => {
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (!target) return;
-            target.color = color.value;
-            for (const item of target.items) item.color = color.value;
-          },
-          "layers",
-        );
+        store.mutate((project) => {
+          const target = project.layers.find((l) => l.id === layer.id);
+          if (!target) return;
+          target.color = color.value;
+          for (const item of target.items) item.color = color.value;
+        }, "layers");
       });
 
       const name = el("span", "layer-name", layer.name);
@@ -234,13 +212,10 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       eye.classList.toggle("is-on", layer.visible);
       eye.addEventListener("click", (event) => {
         event.stopPropagation();
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (target) target.visible = !target.visible;
-          },
-          "layers",
-        );
+        store.mutate((project) => {
+          const target = project.layers.find((l) => l.id === layer.id);
+          if (target) target.visible = !target.visible;
+        }, "layers");
       });
       const lock = layerAction(
         layer.locked ? "lock" : "unlock",
@@ -249,13 +224,10 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       lock.classList.toggle("is-locked", layer.locked);
       lock.addEventListener("click", (event) => {
         event.stopPropagation();
-        store.mutate(
-          (project) => {
-            const target = project.layers.find((l) => l.id === layer.id);
-            if (target) target.locked = !target.locked;
-          },
-          "layers",
-        );
+        store.mutate((project) => {
+          const target = project.layers.find((l) => l.id === layer.id);
+          if (target) target.locked = !target.locked;
+        }, "layers");
       });
       const menu = layerAction("markups", "Layer actions", "layer-menu-btn");
       menu.addEventListener("click", (event) => {
@@ -292,12 +264,9 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
         row.classList.remove("is-drop-target");
         const sourceId = draggedId ?? event.dataTransfer?.getData("text/plain");
         if (!sourceId || sourceId === layer.id) return;
-        store.mutate(
-          (project) => {
-            swapLayers(project, sourceId, layer.id);
-          },
-          "layers",
-        );
+        store.mutate((project) => {
+          swapLayers(project, sourceId, layer.id);
+        }, "layers");
       });
 
       refs.dockBody.append(row);

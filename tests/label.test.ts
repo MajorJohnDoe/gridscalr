@@ -17,9 +17,7 @@ describe("measurement label geometry", () => {
     expect(box.height).toBeCloseTo(
       metrics.paddingY * 2 + metrics.primaryLine + metrics.rowGap + metrics.secondaryLine,
     );
-    expect(box.primaryCenterY).toBeCloseTo(
-      box.y + metrics.paddingY + metrics.primaryLine / 2,
-    );
+    expect(box.primaryCenterY).toBeCloseTo(box.y + metrics.paddingY + metrics.primaryLine / 2);
     expect(box.secondaryCenterY).toBeCloseTo(
       box.primaryCenterY + metrics.primaryLine / 2 + metrics.rowGap + metrics.secondaryLine / 2,
     );
@@ -27,13 +25,7 @@ describe("measurement label geometry", () => {
 
   it("scales text, padding, and line spacing together", () => {
     const scale = 0.9;
-    const box = labelBox(
-      { x: 100, y: 100 },
-      40 * scale,
-      80 * scale,
-      "secondary",
-      scale,
-    );
+    const box = labelBox({ x: 100, y: 100 }, 40 * scale, 80 * scale, "secondary", scale);
     const metrics = labelMetrics(scale);
 
     expect(box.width).toBeCloseTo((80 + LABEL_PADDING_X * 2) * scale);

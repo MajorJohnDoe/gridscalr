@@ -146,9 +146,7 @@ export function deletePageFromProject(project: Project, page: number): DeletePag
   for (const layer of project.layers) {
     layer.items = layer.items
       .filter((item) => item.page !== target)
-      .map((item) =>
-        item.page > target ? { ...item, page: item.page - 1 } : item,
-      );
+      .map((item) => (item.page > target ? { ...item, page: item.page - 1 } : item));
   }
 
   const remappedPages: Project["pages"] = {};

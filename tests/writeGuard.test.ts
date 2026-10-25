@@ -35,9 +35,9 @@ describe("write guard", () => {
   });
 
   it("throws a clear error instead of allowing a source overwrite", () => {
-    expect(() =>
-      assertWritablePath("/home/ana/Level 01.pdf", ["/home/ana/Level 01.pdf"]),
-    ).toThrow(/will not overwrite a source drawing/i);
+    expect(() => assertWritablePath("/home/ana/Level 01.pdf", ["/home/ana/Level 01.pdf"])).toThrow(
+      /will not overwrite a source drawing/i,
+    );
     expect(() =>
       assertWritablePath("/home/ana/Level 01.pdf", ["/home/ana/Other.pdf"]),
     ).not.toThrow();
@@ -55,13 +55,9 @@ describe("write guard", () => {
     ).rejects.toThrow(/will not overwrite a source drawing/i);
 
     await expect(
-      saveBinaryFile(
-        new Uint8Array([1]),
-        "/home/ana/Level 01.pdf",
-        [],
-        "application/pdf",
-        { forbiddenPaths: protectedPaths },
-      ),
+      saveBinaryFile(new Uint8Array([1]), "/home/ana/Level 01.pdf", [], "application/pdf", {
+        forbiddenPaths: protectedPaths,
+      }),
     ).rejects.toThrow(/will not overwrite a source drawing/i);
   });
 });

@@ -38,8 +38,10 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Could not open the recovery database."));
-    request.onblocked = () => reject(new Error("The recovery database is blocked by another window."));
+    request.onerror = () =>
+      reject(request.error ?? new Error("Could not open the recovery database."));
+    request.onblocked = () =>
+      reject(new Error("The recovery database is blocked by another window."));
   });
 }
 
@@ -150,8 +152,13 @@ export async function readAutosave(): Promise<AutosavePayload | null> {
   return legacy;
 }
 
-export async function clearAutosave(): Promise<void> {
-  await pendingWrite.catch(() => undefined);
+export function clearAutosave(): Promise<void> {
+  const run = pendingWrite.then(() => clearAutosaveNow());
+  pendingWrite = run.catch(() => undefined);
+  return run;
+}
+
+async function clearAutosaveNow(): Promise<void> {
   try {
     localStorage.removeItem(META_KEY);
     localStorage.removeItem(LEGACY_KEY);

@@ -41,9 +41,8 @@ function renderInline(raw: string, options: MarkdownRenderOptions): string {
     return `\u0001${codeSpans.length - 1}\u0001`;
   });
 
-  text = text.replace(
-    /!\[([^\]]*)\]\(([^)\s]+)\)/g,
-    (_match, alt: string, src: string) => renderImage(alt, src, options, false),
+  text = text.replace(/!\[([^\]]*)\]\(([^)\s]+)\)/g, (_match, alt: string, src: string) =>
+    renderImage(alt, src, options, false),
   );
 
   text = text.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, (_match, label: string, href: string) => {
@@ -61,7 +60,10 @@ function renderInline(raw: string, options: MarkdownRenderOptions): string {
   text = text.replace(/(^|[^*])\*([^*\n]+)\*/g, "$1<em>$2</em>");
 
   return text
-    .replace(/\u0001(\d+)\u0001/g, (_match, index: string) => `<code>${codeSpans[Number(index)] ?? ""}</code>`)
+    .replace(
+      /\u0001(\d+)\u0001/g,
+      (_match, index: string) => `<code>${codeSpans[Number(index)] ?? ""}</code>`,
+    )
     .replace(/\n/g, " ");
 }
 
@@ -108,10 +110,7 @@ function isBlockStart(lines: string[], index: number): boolean {
   );
 }
 
-export function renderMarkdown(
-  markdown: string,
-  options: MarkdownRenderOptions = {},
-): string {
+export function renderMarkdown(markdown: string, options: MarkdownRenderOptions = {}): string {
   const lines = markdown.replace(/\r\n?/g, "\n").split("\n");
   const html: string[] = [];
   const usedIds = new Set<string>();
@@ -177,7 +176,9 @@ export function renderMarkdown(
         .map(
           (row) =>
             `<tr>${headers
-              .map((_header, cellIndex) => `<td>${renderInline(row[cellIndex] ?? "", options)}</td>`)
+              .map(
+                (_header, cellIndex) => `<td>${renderInline(row[cellIndex] ?? "", options)}</td>`,
+              )
               .join("")}</tr>`,
         )
         .join("");

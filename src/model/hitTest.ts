@@ -1,8 +1,4 @@
-import {
-  distanceToAreaShape,
-  areaShapeOf,
-  pointInAreaShape,
-} from "./area";
+import { distanceToAreaShape, areaShapeOf, pointInAreaShape } from "./area";
 import {
   distanceToPolyline,
   expandRect,
@@ -24,7 +20,11 @@ export interface HitResult {
   segmentIndex: number;
 }
 
-function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitResult, "layer" | "item"> | null {
+function hitItem(
+  item: MarkupItem,
+  point: Point,
+  tolerance: number,
+): Omit<HitResult, "layer" | "item"> | null {
   const { min, max } = itemBounds(item);
   if (
     point.x < min.x - tolerance ||
@@ -41,9 +41,7 @@ function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitRes
     const anchor = item.points[0];
     if (!anchor) return null;
     const distance = Math.hypot(localPoint.x - anchor.x, localPoint.y - anchor.y);
-    return distance <= tolerance
-      ? { distance, vertexIndex: -1, segmentIndex: -1 }
-      : null;
+    return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 
   if (item.kind === "area") {
@@ -180,11 +178,7 @@ export function hitTest(
   return backgroundHit;
 }
 
-export function findVertex(
-  item: MarkupItem,
-  point: Point,
-  tolerance: number,
-): number {
+export function findVertex(item: MarkupItem, point: Point, tolerance: number): number {
   let best = -1;
   let bestDistance = tolerance;
   item.points.forEach((localVertex, index) => {
@@ -238,8 +232,10 @@ export function findSegment(
   return best;
 }
 
-
-function pointInRect(point: Point, rect: { x: number; y: number; width: number; height: number }): boolean {
+function pointInRect(
+  point: Point,
+  rect: { x: number; y: number; width: number; height: number },
+): boolean {
   return (
     point.x >= rect.x &&
     point.x <= rect.x + rect.width &&

@@ -17,7 +17,10 @@ function makeItem(id: string, kind: MarkupItem["kind"], page = 1): MarkupItem {
     id,
     page,
     kind,
-    points: [{ x: 10, y: 10 }, { x: 30, y: 30 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 30, y: 30 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 1,
     createdAt: "2026-01-01T00:00:00.000Z",

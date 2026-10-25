@@ -16,7 +16,15 @@ import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
 import { areaShapeOf, rectangleCorners } from "../model/area";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, closestPointOnBox, closestPointOnPolygon, deltaLayout, stampLayout, type TextBoxLayout } from "../model/annotations";
+import {
+  calloutLayout,
+  cloudLabelLayout,
+  closestPointOnBox,
+  closestPointOnPolygon,
+  deltaLayout,
+  stampLayout,
+  type TextBoxLayout,
+} from "../model/annotations";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import {
@@ -28,11 +36,7 @@ import {
 import { arrowHeadGeometry, itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import { imageOpacity } from "../model/images";
 import type { LabelLayout } from "../model/labelLayout";
-import {
-  CALIBRATION_LABEL_ID,
-  layoutPageLabels,
-  pageLabelSources,
-} from "../model/labelLayout";
+import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import {
   TEXT_UNDERLINE_OFFSET,
   TEXT_UNDERLINE_WIDTH,
@@ -156,11 +160,13 @@ export async function exportProjectPdf(
 function normalizeExportPages(pages: readonly number[] | undefined, pageCount: number): number[] {
   if (pageCount < 1) throw new Error("The source PDF has no pages.");
   if (!pages) return Array.from({ length: pageCount }, (_, index) => index + 1);
-  const selected = [...new Set(
-    pages
-      .filter((page) => Number.isInteger(page) && page >= 1 && page <= pageCount)
-      .map((page) => Math.round(page)),
-  )].sort((a, b) => a - b);
+  const selected = [
+    ...new Set(
+      pages
+        .filter((page) => Number.isInteger(page) && page >= 1 && page <= pageCount)
+        .map((page) => Math.round(page)),
+    ),
+  ].sort((a, b) => a - b);
   if (!selected.length) throw new Error("Select at least one page to export.");
   return selected;
 }
@@ -197,7 +203,9 @@ export function pdfCropBoxForViewport(
   const rotationValue = Number.isFinite(viewport.rotation) ? viewport.rotation : 0;
   const rotation = ((rotationValue % 360) + 360) % 360;
   if (rotation % 90 !== 0) {
-    throw new Error("The page rotation is not a multiple of 90°, so the export area cannot be applied safely.");
+    throw new Error(
+      "The page rotation is not a multiple of 90°, so the export area cannot be applied safely.",
+    );
   }
   const rect = pageRectFromCrop(crop, {
     width: viewport.width,
@@ -219,7 +227,9 @@ export function pdfCropBoxForViewport(
   };
   const clipped = intersectBoxes(box, existingCrop);
   if (clipped.width < 1 || clipped.height < 1) {
-    throw new Error("The selected export area is too small or lies outside the page's visible area.");
+    throw new Error(
+      "The selected export area is too small or lies outside the page's visible area.",
+    );
   }
   return clipped;
 }
@@ -243,12 +253,7 @@ function intersectBoxes(first: PdfCropBox, second: PdfCropBox): PdfCropBox {
   };
 }
 
-function drawCalibrationLine(
-  page: PDFPage,
-  viewport: PageViewport,
-  p1: Point,
-  p2: Point,
-): void {
+function drawCalibrationLine(page: PDFPage, viewport: PageViewport, p1: Point, p2: Point): void {
   const color = pdfColor("#a78bfa");
   const start = toPdfPoint(viewport, p1);
   const end = toPdfPoint(viewport, p2);
@@ -601,8 +606,7 @@ function drawItem(
       const end = item.points[1];
       const size = Math.max(8, width * 3.6);
       const head = arrowHeadGeometry(start, end, size);
-      const startHead =
-        item.arrowHeads === "both" ? arrowHeadGeometry(end, start, size) : null;
+      const startHead = item.arrowHeads === "both" ? arrowHeadGeometry(end, start, size) : null;
       drawPolyline(
         page,
         viewport,
@@ -626,14 +630,20 @@ function drawItem(
       drawEllipseItem(page, viewport, item, layerOpacity);
       break;
     case "cloud": {
-      const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
+      const curves = cloudCurves(
+        item.points,
+        item.cloudRadius ?? cloudRadiusForPoints(item.points),
+      );
       if (curves.length) {
         const path = cloudSvgPath(viewport, curves);
         page.drawSvgPath(path, {
           x: 0,
           y: 0,
           ...(item.fillColor
-            ? { color: pdfColor(item.fillColor), opacity: clamp(opacity * (item.opacity ?? 0.12), 0, 1) }
+            ? {
+                color: pdfColor(item.fillColor),
+                opacity: clamp(opacity * (item.opacity ?? 0.12), 0, 1),
+              }
             : {}),
           borderColor: color,
           borderWidth: width,
@@ -732,9 +742,7 @@ function drawTextItem(
   const baseline = font.heightAtSize(layout.fontSize, { descender: false });
   const color = pdfColor(item.color);
   const opacity = clamp(layerOpacity, 0, 1);
-  const lineWidths = layout.lines.map((line) =>
-    font.widthOfTextAtSize(line, layout.fontSize),
-  );
+  const lineWidths = layout.lines.map((line) => font.widthOfTextAtSize(line, layout.fontSize));
   // Align lines against the block width, matching the canvas layout.
   const blockWidth = Math.max(0, ...lineWidths);
 
@@ -763,11 +771,7 @@ function drawTextItem(
     });
     if (item.textUnderline) {
       const underlineY = baselineY + layout.fontSize * TEXT_UNDERLINE_OFFSET;
-      const from = rotatePoint(
-        { x: anchor.x + offsetX, y: underlineY },
-        center,
-        rotation,
-      );
+      const from = rotatePoint({ x: anchor.x + offsetX, y: underlineY }, center, rotation);
       const to = rotatePoint(
         { x: anchor.x + offsetX + lineWidth, y: underlineY },
         center,
@@ -1044,9 +1048,7 @@ function cloudSvgPath(viewport: PageViewport, curves: ReturnType<typeof cloudCur
   };
   const parts = [`M ${point(curves[0].start)}`];
   for (const curve of curves) {
-    parts.push(
-      `C ${point(curve.cp1)} ${point(curve.cp2)} ${point(curve.end)}`,
-    );
+    parts.push(`C ${point(curve.cp1)} ${point(curve.cp2)} ${point(curve.end)}`);
   }
   parts.push("Z");
   return parts.join(" ");
@@ -1092,11 +1094,7 @@ function drawAnnotationPanel(
   }
   const isStamp = style === "stamp";
   const font = isStamp || item.textBold === true ? fonts.bold : fonts.regular;
-  const textColor = item.textColor
-    ? pdfColor(item.textColor)
-    : style === "dark"
-      ? INK
-      : border;
+  const textColor = item.textColor ? pdfColor(item.textColor) : style === "dark" ? INK : border;
   const lineHeight = layout.lineHeight;
   const align = isStamp ? "center" : (item.textAlign ?? "center");
   const contentLeft = box.x + layout.padding;
@@ -1161,7 +1159,8 @@ function drawTrackedCenteredText(
 ): void {
   const characters = [...text];
   const widths = characters.map((character) => font.widthOfTextAtSize(character, size));
-  const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+  const total =
+    widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
   const baseline = font.heightAtSize(size, { descender: false });
   let x = center.x - total / 2;
   for (let index = 0; index < characters.length; index += 1) {
@@ -1294,7 +1293,13 @@ function svgPolygon(viewport: PageViewport, points: Point[]): string {
 
 function pdfColor(hex: string): RGB {
   const value = hex.replace("#", "");
-  const full = value.length === 3 ? value.split("").map((part) => part + part).join("") : value;
+  const full =
+    value.length === 3
+      ? value
+          .split("")
+          .map((part) => part + part)
+          .join("")
+      : value;
   const int = Number.parseInt(full, 16);
   if (!Number.isFinite(int) || full.length !== 6) return rgb(0.93, 0.95, 0.96);
   return rgb(((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255);

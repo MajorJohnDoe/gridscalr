@@ -110,7 +110,11 @@ export function formatScale(
   return `1 pt = ${formatNumber(mmPerPoint, 3)} mm`;
 }
 
-export function formatCoordinate(value: number, scale: ScaleSnapshot | null, unit: LengthUnit): string {
+export function formatCoordinate(
+  value: number,
+  scale: ScaleSnapshot | null,
+  unit: LengthUnit,
+): string {
   if (!scale) return `${formatNumber(value, 1)}`;
   return formatNumber(lengthInUnit(value, scale.pointsPerMeter, unit), 2);
 }

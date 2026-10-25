@@ -20,13 +20,7 @@ import {
   translatePoints,
   type Bounds,
 } from "../model/geometry";
-import {
-  areaCentroid,
-  areaOutline,
-  areaShapeOf,
-  areaValue,
-  rectangleCorners,
-} from "../model/area";
+import { areaCentroid, areaOutline, areaShapeOf, areaValue, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
@@ -43,10 +37,7 @@ import {
   pageLabelSources,
   type LabelLayout,
 } from "../model/labelLayout";
-import {
-  ensureLabelFonts,
-  measureLabelText,
-} from "../model/labelFont";
+import { ensureLabelFonts, measureLabelText } from "../model/labelFont";
 import {
   addItem,
   ensureActiveLayer,
@@ -73,22 +64,14 @@ import {
 } from "./geometry";
 import { CropController } from "./crop";
 import { CanvasEditorController, type LabelHit } from "./editors";
-import {
-  handleAt,
-  selectionHandles,
-  type Handle,
-} from "./selectionHandles";
+import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
 import {
   drawAnnotationPanel as paintAnnotationPanel,
   drawEndpoints as paintEndpoints,
   drawLabelLayout as paintLabelLayout,
 } from "./annotationDraw";
 import type { NormalizedCrop } from "../model/export";
-import {
-  imageAssetForItem,
-  imageModeOf,
-  imageOpacity,
-} from "../model/images";
+import { imageAssetForItem, imageModeOf, imageOpacity } from "../model/images";
 import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
 import {
@@ -115,9 +98,28 @@ import {
   textLineX,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
-import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
-import type { AreaShape, ImageAsset, ItemKind, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
+import {
+  CLOUD_FILL_OPACITY,
+  cloudCurves,
+  cloudFillColor,
+  cloudRadiusForPoints,
+} from "../model/cloud";
+import {
+  calloutLayout,
+  cloudLabelLayout,
+  deltaLayout,
+  stampLayout,
+  textBoxLayout,
+} from "../model/annotations";
+import type {
+  AreaShape,
+  ImageAsset,
+  ItemKind,
+  MarkupItem,
+  PageSize,
+  Point,
+  SelectionRef,
+} from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import { formatArea, formatLength, formatNumber } from "../model/units";
@@ -520,9 +522,7 @@ export class CanvasView {
       height,
       primaryCenterY: y + (box.primaryCenterY - box.y) * scale,
       secondaryCenterY:
-        box.secondaryCenterY === undefined
-          ? undefined
-          : y + (box.secondaryCenterY - box.y) * scale,
+        box.secondaryCenterY === undefined ? undefined : y + (box.secondaryCenterY - box.y) * scale,
     };
   }
 
@@ -836,9 +836,7 @@ export class CanvasView {
         hit.item.kind === "line" ||
         hit.item.kind === "arrow" ||
         hit.item.kind === "pen");
-    const vertexIndex = vertexEditable
-      ? findVertex(hit.item, page, 7 / store.ui.zoom)
-      : -1;
+    const vertexIndex = vertexEditable ? findVertex(hit.item, page, 7 / store.ui.zoom) : -1;
     const startSelection = resolveSelection(project, store.ui.selection)
       .filter((entry) => !entry.locked)
       .map((entry) => ({
@@ -1002,9 +1000,7 @@ export class CanvasView {
         this.draft.kind === "highlight-rect"
       ) {
         this.snap = null;
-        this.draft.current = event.shiftKey
-          ? constrainSquare(this.draft.start, page)
-          : page;
+        this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
         if (distance(last, page) > 1.4 / store.ui.zoom) {
@@ -1045,7 +1041,9 @@ export class CanvasView {
       }
       if (!this.hoverHandle) {
         const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
-        store.setHover(hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null);
+        store.setHover(
+          hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null,
+        );
       } else {
         store.setHover(null);
       }
@@ -1082,8 +1080,7 @@ export class CanvasView {
       const target = this.snapPoint(page, this.drag.itemId);
       const index = this.drag.vertexIndex;
       if (index >= 0 && index < item.points.length) {
-        const localTarget =
-          itemRotation(item) === 0 ? target : pointToItemLocal(item, target);
+        const localTarget = itemRotation(item) === 0 ? target : pointToItemLocal(item, target);
         item.points[index] = localTarget;
         item.updatedAt = new Date().toISOString();
         this.drag.moved = true;
@@ -1144,14 +1141,12 @@ export class CanvasView {
       if (item.kind === "image") {
         // Corner handles keep the source aspect ratio; edge handles resize one axis.
         if (signX !== 0 && signY !== 0) {
-          const factor =
-            Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
+          const factor = Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
           factorX = factor;
           factorY = factor;
         }
       } else if (shiftKey && signX !== 0 && signY !== 0) {
-        const factor =
-          Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
+        const factor = Math.abs(factorX - 1) >= Math.abs(factorY - 1) ? factorX : factorY;
         factorX = factor;
         factorY = factor;
       }
@@ -1375,16 +1370,13 @@ export class CanvasView {
         hit.item.points[segment.index],
         hit.item.points[(segment.index + 1) % hit.item.points.length],
       );
-      store.mutate(
-        (project) => {
-          const item = findItem(project, hit.item.id)?.item;
-          if (item) {
-            item.points.splice(segment.index + 1, 0, insert);
-            item.updatedAt = new Date().toISOString();
-          }
-        },
-        "change",
-      );
+      store.mutate((project) => {
+        const item = findItem(project, hit.item.id)?.item;
+        if (item) {
+          item.points.splice(segment.index + 1, 0, insert);
+          item.updatedAt = new Date().toISOString();
+        }
+      }, "change");
     }
   };
 
@@ -1443,9 +1435,7 @@ export class CanvasView {
     this.snap = null;
     if (!project || !project.settings.snapToGeometry) return point;
     const candidates = excludeItemId
-      ? this.snapCandidates().filter(
-          (candidate) => !candidate.itemIds?.includes(excludeItemId),
-        )
+      ? this.snapCandidates().filter((candidate) => !candidate.itemIds?.includes(excludeItemId))
       : this.snapCandidates();
     const result = findSnap(
       point,
@@ -1469,9 +1459,7 @@ export class CanvasView {
       return;
     }
     const pagesAffected = project.layers.some(
-      (layer) =>
-        layer.kind === "measure" &&
-        layer.items.some((item) => item.page === page),
+      (layer) => layer.kind === "measure" && layer.items.some((item) => item.page === page),
     );
     const result = await calibrationDialog({
       defaultUnit: project.settings.lengthUnit,
@@ -1485,16 +1473,13 @@ export class CanvasView {
     }
     const calibration = createCalibration(p1, p2, result.knownLength, result.unit);
     let changed: number[] = [];
-    store.mutate(
-      (project) => {
-        changed = setPageCalibration(project, page, calibration, {
-          applyToAll: result.applyToAll,
-          updateMeasurements: result.updateMeasurements,
-          pageCount: totalPageCount(project.documents),
-        });
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      changed = setPageCalibration(project, page, calibration, {
+        applyToAll: result.applyToAll,
+        updateMeasurements: result.updateMeasurements,
+        pageCount: totalPageCount(project.documents),
+      });
+    }, "change");
     if (!changed.length) {
       toast("No unlocked pages were available for this calibration.", "warning");
       this.drawInteraction();
@@ -1531,9 +1516,7 @@ export class CanvasView {
       return;
     }
     const pagesAffected = project.layers.some(
-      (layer) =>
-        layer.kind === "measure" &&
-        layer.items.some((item) => item.page === page),
+      (layer) => layer.kind === "measure" && layer.items.some((item) => item.page === page),
     );
     const result = await calibrationDialog({
       mode: "edit",
@@ -1545,22 +1528,14 @@ export class CanvasView {
       currentPage: page,
     });
     if (!result) return;
-    const next = createCalibration(
-      calibration.p1,
-      calibration.p2,
-      result.knownLength,
-      result.unit,
-    );
-    store.mutate(
-      (project) => {
-        setPageCalibration(project, page, next, {
-          applyToAll: false,
-          updateMeasurements: result.updateMeasurements,
-          pageCount: totalPageCount(project.documents),
-        });
-      },
-      "change",
-    );
+    const next = createCalibration(calibration.p1, calibration.p2, result.knownLength, result.unit);
+    store.mutate((project) => {
+      setPageCalibration(project, page, next, {
+        applyToAll: false,
+        updateMeasurements: result.updateMeasurements,
+        pageCount: totalPageCount(project.documents),
+      });
+    }, "change");
     toast(
       `Reference length updated to ${formatNumber(result.knownLength, 2)} ${result.unit}.`,
       "success",
@@ -1663,76 +1638,75 @@ export class CanvasView {
     let layerId = "";
     let itemId = "";
     const scale = pageScale(project, projectPage);
-    store.mutate(
-      (project) => {
-        const layer = ensureActiveLayer(project, layerKind);
-        const now = new Date().toISOString();
-        const style = store.ui.style;
-        const isMeasure = layerKind === "measure";
-        const category = isMeasure ? measurementCategory(project, store.ui.measureCategoryId) : undefined;
-        const highlightShape =
-          kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
-        const filled =
+    store.mutate((project) => {
+      const layer = ensureActiveLayer(project, layerKind);
+      const now = new Date().toISOString();
+      const style = store.ui.style;
+      const isMeasure = layerKind === "measure";
+      const category = isMeasure
+        ? measurementCategory(project, store.ui.measureCategoryId)
+        : undefined;
+      const highlightShape =
+        kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
+      const filled =
+        !isMeasure &&
+        (kind === "rect" ||
+          kind === "ellipse" ||
+          kind === "stamp" ||
+          kind === "delta" ||
+          (kind === "highlight" && highlightShape !== "stroke"));
+      const textLike =
+        kind === "text" ||
+        kind === "cloud" ||
+        kind === "callout" ||
+        kind === "stamp" ||
+        kind === "delta";
+      const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
+      const item: MarkupItem = {
+        id: makeId("item"),
+        page: projectPage,
+        kind,
+        points: points.map((p) => ({ ...p })),
+        color: isMeasure
+          ? layer.color
+          : kind === "stamp"
+            ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+            : (cloudPreset ?? style.color),
+        strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
+        fillColor: cloudPreset ?? (filled ? style.color : undefined),
+        opacity:
           !isMeasure &&
           (kind === "rect" ||
             kind === "ellipse" ||
             kind === "stamp" ||
             kind === "delta" ||
-            (kind === "highlight" && highlightShape !== "stroke"));
-        const textLike =
-          kind === "text" ||
-          kind === "cloud" ||
-          kind === "callout" ||
-          kind === "stamp" ||
-          kind === "delta";
-        const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-        const item: MarkupItem = {
-          id: makeId("item"),
-          page: projectPage,
-          kind,
-          points: points.map((p) => ({ ...p })),
-          color: isMeasure
-            ? layer.color
-            : kind === "stamp"
-              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-              : cloudPreset ?? style.color,
-          strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
-          fillColor: cloudPreset ?? (filled ? style.color : undefined),
-          opacity:
-            !isMeasure &&
-            (kind === "rect" ||
-              kind === "ellipse" ||
-              kind === "stamp" ||
-              kind === "delta" ||
-              cloudPreset !== null ||
-              (kind === "highlight" && highlightShape !== "stroke"))
-              ? kind === "highlight"
-                ? Math.max(0.18, style.fillOpacity)
-                : kind === "cloud"
-                  ? CLOUD_FILL_OPACITY
-                  : style.fillOpacity
-              : kind === "highlight"
-                ? 0.35
-                : undefined,
-          text: options.text,
-          fontSize: textLike ? style.fontSize : undefined,
-          highlightShape,
-          arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
-          scale: isMeasure && scale ? { ...scale } : null,
-          categoryId: category?.id,
-          room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
-          areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
-          areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
-          countType: kind === "count" ? store.ui.measureCountType : undefined,
-          createdAt: now,
-          updatedAt: now,
-        };
-        addItem(project, layer.id, item);
-        layerId = layer.id;
-        itemId = item.id;
-      },
-      "change",
-    );
+            cloudPreset !== null ||
+            (kind === "highlight" && highlightShape !== "stroke"))
+            ? kind === "highlight"
+              ? Math.max(0.18, style.fillOpacity)
+              : kind === "cloud"
+                ? CLOUD_FILL_OPACITY
+                : style.fillOpacity
+            : kind === "highlight"
+              ? 0.35
+              : undefined,
+        text: options.text,
+        fontSize: textLike ? style.fontSize : undefined,
+        highlightShape,
+        arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
+        scale: isMeasure && scale ? { ...scale } : null,
+        categoryId: category?.id,
+        room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
+        areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
+        areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
+        countType: kind === "count" ? store.ui.measureCountType : undefined,
+        createdAt: now,
+        updatedAt: now,
+      };
+      addItem(project, layer.id, item);
+      layerId = layer.id;
+      itemId = item.id;
+    }, "change");
     if (!layerId || !itemId) return null;
     store.setSelection({ layerId, itemId });
     return { layerId, itemId };
@@ -1825,28 +1799,22 @@ export class CanvasView {
             : "Edit callout";
     const text = await textDialog(title, "Only this item is changed", item.text ?? "", "", true);
     if (text === null) return;
-    store.mutate(
-      (project) => {
-        const target = findItem(project, item.id)?.item;
-        if (target) {
-          target.text =
-            text.trim() ||
-            (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
-          if (target.kind === "stamp") {
-            target.color = stampStatusColor(target.text, target.color);
-          }
-          target.updatedAt = new Date().toISOString();
+    store.mutate((project) => {
+      const target = findItem(project, item.id)?.item;
+      if (target) {
+        target.text =
+          text.trim() ||
+          (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
+        if (target.kind === "stamp") {
+          target.color = stampStatusColor(target.text, target.color);
         }
-      },
-      "change",
-    );
+        target.updatedAt = new Date().toISOString();
+      }
+    }, "change");
   }
 
   private finishQuickArea(): void {
-    if (
-      !this.draft ||
-      (this.draft.kind !== "area-rect" && this.draft.kind !== "area-ellipse")
-    ) {
+    if (!this.draft || (this.draft.kind !== "area-rect" && this.draft.kind !== "area-ellipse")) {
       return;
     }
     const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
@@ -1965,17 +1933,11 @@ export class CanvasView {
       return;
     }
     let deleted = 0;
-    store.mutate(
-      (project) => {
-        deleted = deleteItems(project, store.ui.selection).changed;
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      deleted = deleteItems(project, store.ui.selection).changed;
+    }, "change");
     if (deleted < resolved.length) {
-      toast(
-        `${deleted} item${deleted === 1 ? "" : "s"} deleted. Locked items were kept.`,
-        "info",
-      );
+      toast(`${deleted} item${deleted === 1 ? "" : "s"} deleted. Locked items were kept.`, "info");
     }
     store.clearSelection();
   }
@@ -1985,12 +1947,9 @@ export class CanvasView {
     if (!project || !store.ui.selection.length) return;
     const movable = resolveSelection(project, store.ui.selection).filter((entry) => !entry.locked);
     if (!movable.length) return;
-    store.mutate(
-      (project) => {
-        translateItems(project, store.ui.selection, dx, dy);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      translateItems(project, store.ui.selection, dx, dy);
+    }, "change");
   }
 
   private schedulePdfRender(): void {
@@ -2028,7 +1987,9 @@ export class CanvasView {
     } catch (error) {
       if (isCancellation(error)) return;
       if (generation === this.renderGeneration) {
-        this.hooks.onError?.(`Could not render this page: ${error instanceof Error ? error.message : String(error)}`);
+        this.hooks.onError?.(
+          `Could not render this page: ${error instanceof Error ? error.message : String(error)}`,
+        );
       }
     } finally {
       if (generation === this.renderGeneration) {
@@ -2307,14 +2268,14 @@ export class CanvasView {
       case "highlight": {
         if (item.highlightShape && item.highlightShape !== "stroke") {
           const outline =
-            item.highlightShape === "rectangle"
-              ? rectangleCorners([points[0], points[1]])
-              : points;
+            item.highlightShape === "rectangle" ? rectangleCorners([points[0], points[1]]) : points;
           ctx.save();
           ctx.globalAlpha *= item.opacity ?? 0.3;
           ctx.fillStyle = item.color;
           ctx.beginPath();
-          outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          outline.forEach((p, index) =>
+            index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y),
+          );
           ctx.closePath();
           ctx.fill();
           ctx.restore();
@@ -2344,9 +2305,7 @@ export class CanvasView {
         const size = Math.max(8, lineWidth * 3.6);
         const head = arrowHeadGeometry(points[0], points[1], size);
         const startHead =
-          item.arrowHeads === "both"
-            ? arrowHeadGeometry(points[1], points[0], size)
-            : null;
+          item.arrowHeads === "both" ? arrowHeadGeometry(points[1], points[0], size) : null;
         ctx.save();
         ctx.lineCap = "butt";
         ctx.beginPath();
@@ -2395,7 +2354,10 @@ export class CanvasView {
         break;
       }
       case "cloud": {
-        const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
+        const curves = cloudCurves(
+          item.points,
+          item.cloudRadius ?? cloudRadiusForPoints(item.points),
+        );
         if (!curves.length) break;
         const pathStart = this.toScreen(curves[0].start);
         ctx.save();
@@ -2441,7 +2403,9 @@ export class CanvasView {
       }
       case "callout": {
         const liveCallout =
-          this.editors.textSession && this.editors.textSession.itemId === item.id && this.editors.textSession.mode === "callout"
+          this.editors.textSession &&
+          this.editors.textSession.itemId === item.id &&
+          this.editors.textSession.mode === "callout"
             ? {
                 ...item,
                 text: this.editors.textSession.text,
@@ -2465,7 +2429,13 @@ export class CanvasView {
         if (this.editors.editingItemId !== item.id) {
           this.drawAnnotationPanel(
             ctx,
-            { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
+            {
+              ...layout,
+              center: {
+                x: layout.box.x + layout.box.width / 2,
+                y: layout.box.y + layout.box.height / 2,
+              },
+            },
             item,
             "rgba(12, 16, 18, 0.92)",
             item.textColor ?? "#f7fbfc",
@@ -2984,8 +2954,14 @@ export class CanvasView {
     if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
       const points = this.draft.points.map((p) => this.toScreen(p));
       ctx.save();
-      ctx.strokeStyle = this.draft.kind === "highlight" ? hexAlpha(store.ui.style.color, 0.4) : store.ui.style.color;
-      ctx.lineWidth = this.draft.kind === "highlight" ? store.ui.style.strokeWidth * zoom * 4 : store.ui.style.strokeWidth * zoom;
+      ctx.strokeStyle =
+        this.draft.kind === "highlight"
+          ? hexAlpha(store.ui.style.color, 0.4)
+          : store.ui.style.color;
+      ctx.lineWidth =
+        this.draft.kind === "highlight"
+          ? store.ui.style.strokeWidth * zoom * 4
+          : store.ui.style.strokeWidth * zoom;
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
       ctx.beginPath();
@@ -3003,14 +2979,16 @@ export class CanvasView {
     ctx.lineWidth = Math.max(1, store.ui.style.strokeWidth * zoom);
     ctx.lineCap = "round";
     if (this.draft.kind === "line" || this.draft.kind === "arrow") {
-      const head =
-        this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
+      const head = this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
       const startHead =
         this.draft.kind === "arrow" && store.ui.arrowHeads === "both"
           ? arrowHeadGeometry(current, start, 10)
           : null;
       ctx.beginPath();
-      ctx.moveTo(startHead ? startHead.shaftEnd.x : start.x, startHead ? startHead.shaftEnd.y : start.y);
+      ctx.moveTo(
+        startHead ? startHead.shaftEnd.x : start.x,
+        startHead ? startHead.shaftEnd.y : start.y,
+      );
       ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
       ctx.stroke();
       if (startHead) drawArrowHead(ctx, start, startHead, store.ui.style.color);

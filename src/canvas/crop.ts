@@ -76,7 +76,10 @@ export class CropController {
       this.showUi();
       this.host.updateCursor();
       this.host.drawInteraction();
-      toast("Draw the export area. Drag the handles to adjust. Enter uses it, Esc cancels.", "info");
+      toast(
+        "Draw the export area. Drag the handles to adjust. Enter uses it, Esc cancels.",
+        "info",
+      );
     });
   }
 

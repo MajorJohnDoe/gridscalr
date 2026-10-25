@@ -6,7 +6,11 @@ import {
 } from "../model/calibration";
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { AREA_UNITS, formatNumber, formatScale, LENGTH_UNITS } from "../model/units";
-import { loadGlobalStampPresets, resetGlobalStampPresets, saveGlobalStampPresets } from "../io/stampDefaults";
+import {
+  loadGlobalStampPresets,
+  resetGlobalStampPresets,
+  saveGlobalStampPresets,
+} from "../io/stampDefaults";
 import { normalizeStampPresets } from "../model/stamps";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
@@ -22,7 +26,11 @@ function section(title: string, note?: string): HTMLElement {
   return wrap;
 }
 
-function checkRow(label: string, checked: boolean, onChange: (checked: boolean) => void): HTMLElement {
+function checkRow(
+  label: string,
+  checked: boolean,
+  onChange: (checked: boolean) => void,
+): HTMLElement {
   const row = el("label", "check-row");
   const input = el("input");
   input.type = "checkbox";
@@ -331,7 +339,10 @@ function stampsSection(): HTMLElement {
 }
 
 function interfaceSection(): HTMLElement {
-  const wrap = section("Interface", "Panel layout is stored locally and is not part of the project file.");
+  const wrap = section(
+    "Interface",
+    "Panel layout is stored locally and is not part of the project file.",
+  );
   const reset = el("button", "btn btn-small", "Reset panel layout");
   reset.type = "button";
   reset.addEventListener("click", () => {

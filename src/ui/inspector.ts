@@ -1,4 +1,9 @@
-import { isManualCalibration, pageCalibration, pageScale, pageScaleLocked } from "../model/calibration";
+import {
+  isManualCalibration,
+  pageCalibration,
+  pageScale,
+  pageScaleLocked,
+} from "../model/calibration";
 import { removeLayer } from "../model/layers";
 import { formatNumber, formatScale } from "../model/units";
 import { store } from "../state/store";
@@ -12,7 +17,6 @@ import { openSettingsDialog } from "./settingsDialog";
 import { setInspectorCollapsed } from "./sidebar";
 
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
-
   clear(refs.inspector);
   const header = el("div", "inspector-header");
   header.append(el("span", "", "Properties"));
@@ -46,7 +50,10 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   refs.inspector.append(selectionSection(project, actions));
 }
 
-function scaleSection(project: NonNullable<typeof store.project>, actions: PanelActions): HTMLElement {
+function scaleSection(
+  project: NonNullable<typeof store.project>,
+  actions: PanelActions,
+): HTMLElement {
   const section = el("section", "inspector-section");
   const page = store.ui.page;
   const head = el("div", "section-head");
@@ -129,7 +136,10 @@ function scaleSection(project: NonNullable<typeof store.project>, actions: Panel
   return section;
 }
 
-function activeLayerSection(project: NonNullable<typeof store.project>, actions: PanelActions): HTMLElement {
+function activeLayerSection(
+  project: NonNullable<typeof store.project>,
+  actions: PanelActions,
+): HTMLElement {
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
   head.append(el("h3", "", "Active layer"));
@@ -147,13 +157,10 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
   nameInput.value = active.name;
   nameInput.addEventListener("change", () => {
     if (!nameInput.value.trim()) return;
-    store.mutate(
-      (project) => {
-        const layer = project.layers.find((l) => l.id === active.id);
-        if (layer) layer.name = nameInput.value.trim();
-      },
-      "layers",
-    );
+    store.mutate((project) => {
+      const layer = project.layers.find((l) => l.id === active.id);
+      if (layer) layer.name = nameInput.value.trim();
+    }, "layers");
   });
   nameField.append(nameInput);
   section.append(nameField);
@@ -164,15 +171,12 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
   color.type = "color";
   color.value = active.color;
   color.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        const layer = project.layers.find((l) => l.id === active.id);
-        if (!layer) return;
-        layer.color = color.value;
-        for (const item of layer.items) item.color = color.value;
-      },
-      "layers",
-    );
+    store.mutate((project) => {
+      const layer = project.layers.find((l) => l.id === active.id);
+      if (!layer) return;
+      layer.color = color.value;
+      for (const item of layer.items) item.color = color.value;
+    }, "layers");
   });
   colorField.append(color);
   section.append(colorField);
@@ -193,13 +197,10 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
     opacityValue.textContent = `${range.value}%`;
   });
   range.addEventListener("change", () => {
-    store.mutate(
-      (project) => {
-        const layer = project.layers.find((l) => l.id === active.id);
-        if (layer) layer.opacity = Number(range.value) / 100;
-      },
-      "layers",
-    );
+    store.mutate((project) => {
+      const layer = project.layers.find((l) => l.id === active.id);
+      if (layer) layer.opacity = Number(range.value) / 100;
+    }, "layers");
   });
   opacityField.append(opacityHead, range);
   section.append(opacityField);
@@ -226,7 +227,11 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
   toggles.append(visible, locked);
   section.append(toggles);
 
-  const deleteLayerBtn = el("button", "btn btn-small btn-ghost", `Delete layer (${active.items.length})`);
+  const deleteLayerBtn = el(
+    "button",
+    "btn btn-small btn-ghost",
+    `Delete layer (${active.items.length})`,
+  );
   deleteLayerBtn.type = "button";
   deleteLayerBtn.style.marginTop = "8px";
   deleteLayerBtn.addEventListener("click", () => {
@@ -243,4 +248,3 @@ function activeLayerSection(project: NonNullable<typeof store.project>, actions:
   section.append(deleteLayerBtn);
   return section;
 }
-

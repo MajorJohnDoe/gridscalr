@@ -1,10 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  clampTextSize,
-  TEXT_UNDERLINE_OFFSET,
-  textItemLayout,
-  textLineX,
-} from "../src/model/text";
+import { clampTextSize, TEXT_UNDERLINE_OFFSET, textItemLayout, textLineX } from "../src/model/text";
 
 describe("text layout", () => {
   it("keeps single-line text at its measured width", () => {
@@ -15,10 +10,7 @@ describe("text layout", () => {
   });
 
   it("measures the widest line of a multi-line note", () => {
-    const layout = textItemLayout(
-      { text: "AB\nABCD", fontSize: 10 },
-      (text) => text.length * 6,
-    );
+    const layout = textItemLayout({ text: "AB\nABCD", fontSize: 10 }, (text) => text.length * 6);
     expect(layout.width).toBe(24);
     expect(layout.lines).toEqual(["AB", "ABCD"]);
   });

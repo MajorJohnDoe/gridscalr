@@ -26,7 +26,6 @@ import {
   findItem,
   isMeasurementKind,
   itemIsLocked,
-  itemIsVisible,
   moveItemsToLayer,
 } from "../model/layers";
 import { makeId } from "../model/calibration";
@@ -42,7 +41,6 @@ import { isTiff } from "../io/tiff";
 import { createTiffDocumentRef, tiffToPdf } from "../io/tiffImport";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
-import { itemKindLabel, itemMetrics } from "../model/measure";
 import { resolveSelection } from "../model/selection";
 import type {
   AreaMode,
@@ -77,7 +75,6 @@ import {
   pickDrawing,
   readFileBytes,
   readFileText,
-  saveBinaryFile,
   saveTextFile,
   sha256Hex,
   writeTextFile,
@@ -91,15 +88,19 @@ import {
   renderPagePreview,
 } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
-import { exportProjectPdf } from "../pdf/pdfExport";
+import { exportProject } from "./exportFlows";
+import type { ExportKind } from "./exportFlows";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
-import { exportQuantityReportPdf } from "../pdf/reportPdf";
-import { serializeQuantityCsv } from "../report/csv";
-import { buildQuantityReport } from "../report/reportModel";
 import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
-import { confirmDialog, drawingExportDialog, manualScaleDialog, messageDialog, passwordDialog } from "../ui/dialogs";
+import {
+  confirmDialog,
+  drawingExportDialog,
+  manualScaleDialog,
+  messageDialog,
+  passwordDialog,
+} from "../ui/dialogs";
 import {
   renderChrome,
   renderTopbar,
@@ -121,11 +122,6 @@ import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
-const JSON_FILTERS = [{ name: "JSON project", extensions: ["json"] }];
-const CSV_FILTERS = [{ name: "CSV markups", extensions: ["csv"] }];
-const QUANTITY_CSV_FILTERS = [{ name: "Quantity CSV", extensions: ["csv"] }];
-const PNG_FILTERS = [{ name: "PNG image", extensions: ["png"] }];
-const PDF_FILTERS = [{ name: "PDF document", extensions: ["pdf"] }];
 
 interface SizeTask {
   page: number;
@@ -224,8 +220,7 @@ export class App {
       getPageSize: (page) => this.pageSizes.get(page),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
       onError: (message) => toast(message, "error"),
-      onContextMenu: ({ clientX, clientY }) =>
-        showSelectionMenuAt(clientX, clientY, this.actions),
+      onContextMenu: ({ clientX, clientY }) => showSelectionMenuAt(clientX, clientY, this.actions),
     });
 
     this.unsubscribe = store.subscribe((reason) => {
@@ -549,16 +544,13 @@ export class App {
     if (!result) return;
     const calibration = createManualCalibration(result.ratio);
     let changed: number[] = [];
-    store.mutate(
-      (project) => {
-        changed = setPageCalibration(project, page, calibration, {
-          applyToAll: result.applyToAll,
-          updateMeasurements: result.updateMeasurements,
-          pageCount: totalPageCount(project.documents),
-        });
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      changed = setPageCalibration(project, page, calibration, {
+        applyToAll: result.applyToAll,
+        updateMeasurements: result.updateMeasurements,
+        pageCount: totalPageCount(project.documents),
+      });
+    }, "change");
     if (!changed.length) {
       toast("No unlocked pages were available for this scale.", "warning");
       return;
@@ -582,12 +574,9 @@ export class App {
       toast("Set a scale before locking the page.", "warning");
       return;
     }
-    store.mutate(
-      (project) => {
-        setPageScaleLocked(project, page, locked);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      setPageScaleLocked(project, page, locked);
+    }, "change");
     toast(
       locked ? `Scale locked on page ${page}.` : `Scale unlocked on page ${page}.`,
       locked ? "success" : "info",
@@ -611,13 +600,13 @@ export class App {
     );
     if (!confirmed) return;
     let cleared = false;
-    store.mutate(
-      (project) => {
-        cleared = clearPageCalibration(project, page);
-      },
-      "change",
+    store.mutate((project) => {
+      cleared = clearPageCalibration(project, page);
+    }, "change");
+    toast(
+      cleared ? "Page scale cleared." : "The page scale could not be cleared.",
+      cleared ? "info" : "warning",
     );
-    toast(cleared ? "Page scale cleared." : "The page scale could not be cleared.", cleared ? "info" : "warning");
   }
 
   private async newProjectFlow(): Promise<void> {
@@ -749,11 +738,7 @@ export class App {
     );
   }
 
-  private async loadNewPdf(
-    bytes: Uint8Array,
-    name: string,
-    path: string | null,
-  ): Promise<void> {
+  private async loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void> {
     const tiff = isTiff(bytes);
     let pdfBytes = bytes;
     let documentRef: DocumentRef;
@@ -811,7 +796,10 @@ export class App {
         addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });
       }
       if (dpiWarning) {
-        toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
+        toast(
+          "This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.",
+          "warning",
+        );
       }
       toast(
         pages.length === pdf.numPages
@@ -842,7 +830,10 @@ export class App {
     this.canvas.fitPage();
     this.canvas.invalidate();
     if (dpiWarning) {
-      toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
+      toast(
+        "This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.",
+        "warning",
+      );
     }
     toast(`Added ${describePages(pages.length, pdf.numPages)} from ${name}.`, "success");
   }
@@ -1156,12 +1147,9 @@ export class App {
     const count = copyItems(project, refs);
     if (!count) return;
     let deleted = 0;
-    store.mutate(
-      (project) => {
-        deleted = deleteItems(project, refs).changed;
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      deleted = deleteItems(project, refs).changed;
+    }, "change");
     store.clearSelection();
     toast(
       `${deleted} item${deleted === 1 ? "" : "s"} cut. Paste on any page with Ctrl+V.`,
@@ -1177,12 +1165,9 @@ export class App {
       return;
     }
     let refs: SelectionRef[] = [];
-    store.mutate(
-      (project) => {
-        refs = pasteItems(project, store.ui.page);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      refs = pasteItems(project, store.ui.page);
+    }, "change");
     if (!refs.length) {
       toast("Could not paste these items on this page.", "warning");
       return;
@@ -1232,13 +1217,10 @@ export class App {
     }
     const item = createImageItem(asset, page, pageSize, "background");
     store.registerImageAsset(asset);
-    store.mutate(
-      (project) => {
-        project.assets[asset.id] = asset;
-        addItem(project, layer.id, item);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      project.assets[asset.id] = asset;
+      addItem(project, layer.id, item);
+    }, "change");
     store.setSelection({ layerId: layer.id, itemId: item.id });
     toast(`Image added to “${layer.name}”.`, "success");
   }
@@ -1246,9 +1228,7 @@ export class App {
   private imageTargetLayer(): Layer | null {
     const project = store.project;
     if (!project) return null;
-    const active = project.layers.find(
-      (layer) => layer.id === project.activeLayerId,
-    );
+    const active = project.layers.find((layer) => layer.id === project.activeLayerId);
     if (active && active.kind === "draw" && active.visible && !active.locked) {
       return active;
     }
@@ -1274,12 +1254,9 @@ export class App {
       toast("The selected image is locked.", "warning");
       return;
     }
-    store.mutate(
-      (project) => {
-        setItemsImageMode(project, store.ui.selection, mode);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      setItemsImageMode(project, store.ui.selection, mode);
+    }, "change");
   }
 
   private setSelectionOpacity(opacity: number): void {
@@ -1294,12 +1271,9 @@ export class App {
       toast("The selected image is locked.", "warning");
       return;
     }
-    store.mutate(
-      (project) => {
-        setItemsOpacity(project, store.ui.selection, opacity);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      setItemsOpacity(project, store.ui.selection, opacity);
+    }, "change");
   }
 
   private duplicateSelection(): void {
@@ -1311,12 +1285,9 @@ export class App {
       return;
     }
     let refs: SelectionRef[] = [];
-    store.mutate(
-      (project) => {
-        refs = duplicateItems(project, store.ui.selection, 12);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      refs = duplicateItems(project, store.ui.selection, 12);
+    }, "change");
     if (refs.length) store.setSelectionMany(refs);
   }
 
@@ -1324,12 +1295,9 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     let result = { moved: 0, skipped: 0, mixedKinds: false };
-    store.mutate(
-      (project) => {
-        result = moveItemsToLayer(project, store.ui.selection, layerId);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      result = moveItemsToLayer(project, store.ui.selection, layerId);
+    }, "change");
     if (result.mixedKinds) {
       toast("Select only measurements or only drawings before moving to a layer.", "warning");
       return;
@@ -1355,20 +1323,15 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = visible
-      ? resolved.filter((entry) => entry.layer.visible)
-      : resolved;
+    const targetable = visible ? resolved.filter((entry) => entry.layer.visible) : resolved;
     if (!targetable.length) {
       toast("The layer is hidden. Show the layer first.", "warning");
       return;
     }
     const result = emptyItemCommandResult();
-    store.mutate(
-      (project) => {
-        Object.assign(result, setItemsVisible(project, store.ui.selection, visible));
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      Object.assign(result, setItemsVisible(project, store.ui.selection, visible));
+    }, "change");
     if (!visible) {
       store.clearSelection();
       toast(
@@ -1391,20 +1354,15 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = locked
-      ? resolved
-      : resolved.filter((entry) => !entry.layer.locked);
+    const targetable = locked ? resolved : resolved.filter((entry) => !entry.layer.locked);
     if (!targetable.length) {
       toast("The layer is locked. Unlock the layer first.", "warning");
       return;
     }
     const result = emptyItemCommandResult();
-    store.mutate(
-      (project) => {
-        Object.assign(result, setItemsLocked(project, store.ui.selection, locked));
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      Object.assign(result, setItemsLocked(project, store.ui.selection, locked));
+    }, "change");
     if (locked) {
       toast(`${result.changed} item${result.changed === 1 ? "" : "s"} locked.`, "success");
     } else {
@@ -1469,12 +1427,9 @@ export class App {
       toast("The selected items are locked.", "warning");
       return;
     }
-    store.mutate(
-      (project) => {
-        setItemsStrokeWidth(project, store.ui.selection, width);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      setItemsStrokeWidth(project, store.ui.selection, width);
+    }, "change");
   }
 
   private setSelectionColor(color: string): void {
@@ -1486,12 +1441,9 @@ export class App {
       toast("The selected item is locked.", "warning");
       return;
     }
-    store.mutate(
-      (project) => {
-        setItemsColor(project, store.ui.selection, color);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      setItemsColor(project, store.ui.selection, color);
+    }, "change");
   }
 
   private bulkEditMeasurementSelection(patch: MeasurementBulkPatch): void {
@@ -1509,12 +1461,9 @@ export class App {
       skippedLocked: 0,
       skippedNonMeasurement: 0,
     };
-    store.mutate(
-      (project) => {
-        result = applyMeasurementBulkEdit(project, store.ui.selection, patch);
-      },
-      "change",
-    );
+    store.mutate((project) => {
+      result = applyMeasurementBulkEdit(project, store.ui.selection, patch);
+    }, "change");
     if (result.updated && result.skippedLocked) {
       toast(
         `${result.updated} measurement${result.updated === 1 ? "" : "s"} updated. ${result.skippedLocked} locked skipped.`,
@@ -1600,12 +1549,9 @@ export class App {
         name.textContent = original;
         return;
       }
-      store.mutate(
-        (current) => {
-          current.name = value;
-        },
-        "change",
-      );
+      store.mutate((current) => {
+        current.name = value;
+      }, "change");
     };
     const onBlur = () => finish(true);
     const onKey = (event: KeyboardEvent) => {
@@ -1666,124 +1612,16 @@ export class App {
     }
   }
 
-  private async exportAs(
-    kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf",
-  ): Promise<void> {
+  private async exportAs(kind: ExportKind): Promise<void> {
     const project = store.project;
     if (!project) return;
-    const safe = project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
-    const protectedPaths = sourceDocumentPaths(project, store.projectPath);
-    try {
-      if (kind === "csv") {
-        const rows: string[][] = [
-          ["Page", "Type", "Layer", "Label", "Value", "Unit", "Details", "Points"],
-        ];
-        for (const layer of project.layers) {
-          if (!layer.visible) continue;
-          for (const item of layer.items) {
-            if (!itemIsVisible(item, layer)) continue;
-            const metrics = itemMetrics(item, project);
-            rows.push([
-              String(item.page),
-              itemKindLabel(item.kind),
-              layer.name,
-              item.label ?? "",
-              metrics?.primary ?? item.text ?? "",
-              metrics?.unit ?? "",
-              metrics?.secondary ?? "",
-              item.points.map((point) => `${point.x.toFixed(2)} ${point.y.toFixed(2)}`).join("; "),
-            ]);
-          }
-        }
-        const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
-        const path = await saveTextFile(csv, `${safe}-markups.csv`, CSV_FILTERS, {
-          forbiddenPaths: protectedPaths,
-        });
-        if (path) toast("Markups exported to CSV.", "success");
-        return;
-      }
-
-      if (kind === "quantity-csv") {
-        const csv = serializeQuantityCsv(buildQuantityReport(project));
-        const path = await saveTextFile(
-          csv,
-          `${safe}-quantities.csv`,
-          QUANTITY_CSV_FILTERS,
-          { forbiddenPaths: protectedPaths },
-        );
-        if (path) toast("Quantity report exported to CSV.", "success");
-        return;
-      }
-
-      if (kind === "quantity-pdf") {
-        const bytes = await exportQuantityReportPdf(buildQuantityReport(project));
-        const path = await saveBinaryFile(
-          bytes,
-          `${safe}-quantities.pdf`,
-          PDF_FILTERS,
-          "application/pdf",
-          { forbiddenPaths: protectedPaths },
-        );
-        if (path) toast("Quantity report exported to PDF.", "success");
-        return;
-      }
-
-      if (kind === "json") {
-        const json = serializeProject(project);
-        const path = await saveTextFile(json, `${safe}.json`, JSON_FILTERS, {
-          forbiddenPaths: protectedPaths,
-        });
-        if (path) toast("Project exported to JSON.", "success");
-        return;
-      }
-
-      if (kind === "drawing") {
-        if (!this.renderer) throw new Error("The source PDF is not available.");
-        try {
-          const options = await this.chooseDrawingExport(project);
-          if (!options) return;
-          const bytes = await exportProjectPdf(project, this.renderer, options);
-          const path = await saveBinaryFile(
-            bytes,
-            `${safe}-markups.pdf`,
-            PDF_FILTERS,
-            "application/pdf",
-            { forbiddenPaths: protectedPaths },
-          );
-          if (path) {
-            toast(
-              options.crop ? "Cropped drawing PDF exported." : "Drawing PDF exported.",
-              "success",
-            );
-          }
-        } catch (error) {
-          if (error instanceof Error && /encrypt/i.test(error.message)) {
-            await messageDialog(
-              "Cannot export this PDF",
-              "The source PDF is encrypted, so it cannot be flattened without its owner password. Open an unencrypted copy and try again.",
-              "warning",
-            );
-            return;
-          }
-          throw error;
-        }
-        return;
-      }
-
-      const canvas = this.canvas.getCompositeCanvas();
-      const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
-      if (!blob) throw new Error("The canvas could not be exported.");
-      const path = await saveBinaryFile(
-        new Uint8Array(await blob.arrayBuffer()),
-        `${safe}.png`,
-        PNG_FILTERS,
-        "image/png",
-        { forbiddenPaths: protectedPaths },
-      );
-      if (path) toast("View exported as PNG.", "success");
-    } catch (error) {
-      await messageDialog("Export failed", errorMessage(error), "warning");
-    }
+    await exportProject(kind, {
+      project,
+      projectPath: store.projectPath,
+      renderer: this.renderer,
+      canvas: this.canvas,
+      chooseDrawingExport: (target) => this.chooseDrawingExport(target),
+    });
   }
 
   private async restoreAutosave(): Promise<void> {
@@ -1899,11 +1737,6 @@ export class App {
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }
-}
-
-function csvEscape(value: string): string {
-  if (/[",\r\n]/.test(value)) return `"${value.replace(/"/g, '""')}"`;
-  return value;
 }
 
 function errorMessage(error: unknown): string {

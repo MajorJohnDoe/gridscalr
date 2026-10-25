@@ -84,8 +84,7 @@ function normalizeCalibration(value: unknown): Calibration | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const cal = value as Record<string, unknown>;
   const id = typeof cal.id === "string" && cal.id ? cal.id : makeId("cal");
-  const createdAt =
-    typeof cal.createdAt === "string" ? cal.createdAt : new Date().toISOString();
+  const createdAt = typeof cal.createdAt === "string" ? cal.createdAt : new Date().toISOString();
 
   if (cal.source === "manual") {
     const ratio = typeof cal.ratio === "number" ? cal.ratio : NaN;
@@ -335,13 +334,15 @@ function normalizeItem(
       ? Math.max(15, Math.min(2000, raw.textBoxHeight))
       : undefined;
   const textColor =
-    (raw.kind === "cloud" || raw.kind === "callout" || raw.kind === "stamp" || raw.kind === "delta") &&
+    (raw.kind === "cloud" ||
+      raw.kind === "callout" ||
+      raw.kind === "stamp" ||
+      raw.kind === "delta") &&
     typeof raw.textColor === "string" &&
     raw.textColor
       ? raw.textColor
       : undefined;
-  const supportsTextStyle =
-    raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout";
+  const supportsTextStyle = raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout";
   const textBold = supportsTextStyle && raw.textBold === true ? true : undefined;
   const textUnderline = supportsTextStyle && raw.textUnderline === true ? true : undefined;
   const textAlign: TextAlign | undefined =
@@ -368,16 +369,16 @@ function normalizeItem(
           ? 14
           : undefined;
   return {
-    id: typeof raw.id === "string" ? raw.id : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+    id:
+      typeof raw.id === "string"
+        ? raw.id
+        : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
     page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
     kind: raw.kind,
     points,
     color:
       raw.kind === "stamp"
-        ? stampStatusColor(
-            text,
-            typeof raw.color === "string" ? raw.color : "#4cc9f0",
-          )
+        ? stampStatusColor(text, typeof raw.color === "string" ? raw.color : "#4cc9f0")
         : typeof raw.color === "string"
           ? raw.color
           : raw.kind === "image"
@@ -404,8 +405,10 @@ function normalizeItem(
             (scale as { pointsPerMeter: number }).pointsPerMeter > 0
           ? {
               pointsPerMeter: (scale as { pointsPerMeter: number }).pointsPerMeter,
-              sourceUnit: LENGTH_UNITS.has((scale as { sourceUnit?: LengthUnit }).sourceUnit as LengthUnit)
-                ? ((scale as { sourceUnit: LengthUnit }).sourceUnit)
+              sourceUnit: LENGTH_UNITS.has(
+                (scale as { sourceUnit?: LengthUnit }).sourceUnit as LengthUnit,
+              )
+                ? (scale as { sourceUnit: LengthUnit }).sourceUnit
                 : "mm",
             }
           : null,
@@ -416,7 +419,11 @@ function normalizeItem(
       : undefined,
     room: isMeasure && room ? room : undefined,
     areaMode:
-      raw.kind === "area" ? (raw.areaMode === "subtract" ? ("subtract" as AreaMode) : "add") : undefined,
+      raw.kind === "area"
+        ? raw.areaMode === "subtract"
+          ? ("subtract" as AreaMode)
+          : "add"
+        : undefined,
     areaShape,
     highlightShape,
     arrowHeads,
@@ -453,13 +460,26 @@ function normalizeLayers(
       const raw = value as Partial<Layer>;
       if (raw.kind !== "measure" && raw.kind !== "draw") continue;
       const layer: Layer = {
-        id: typeof raw.id === "string" ? raw.id : `layer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        name: typeof raw.name === "string" && raw.name.trim() ? raw.name.trim() : raw.kind === "measure" ? "Measurements" : "Markups",
+        id:
+          typeof raw.id === "string"
+            ? raw.id
+            : `layer_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+        name:
+          typeof raw.name === "string" && raw.name.trim()
+            ? raw.name.trim()
+            : raw.kind === "measure"
+              ? "Measurements"
+              : "Markups",
         kind: raw.kind,
         visible: raw.visible !== false,
         locked: raw.locked === true,
         opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : 1,
-        color: typeof raw.color === "string" ? raw.color : raw.kind === "measure" ? "#4cc9f0" : "#f2a93b",
+        color:
+          typeof raw.color === "string"
+            ? raw.color
+            : raw.kind === "measure"
+              ? "#4cc9f0"
+              : "#f2a93b",
         items: [],
       };
       if (Array.isArray(raw.items)) {
@@ -478,7 +498,8 @@ function normalizeLayers(
     }
   }
 
-  if (!layers.some((l) => l.kind === "measure")) layers.push(createLayer("measure", "Measurements"));
+  if (!layers.some((l) => l.kind === "measure"))
+    layers.push(createLayer("measure", "Measurements"));
   if (!layers.some((l) => l.kind === "draw")) layers.push(createLayer("draw", "Markups"));
   const ids = new Set<string>();
   return normalizeLayerOrder(
@@ -491,7 +512,9 @@ function normalizeLayers(
 }
 
 function normalizeDocument(rawValue: unknown): DocumentRef {
-  const rawDoc = (typeof rawValue === "object" && rawValue !== null ? rawValue : {}) as Partial<DocumentRef> & {
+  const rawDoc = (
+    typeof rawValue === "object" && rawValue !== null ? rawValue : {}
+  ) as Partial<DocumentRef> & {
     source?: { format?: unknown; dpi?: unknown; originalName?: unknown };
   };
   const kind = rawDoc.kind === "tiff" ? "tiff" : "pdf";
@@ -506,9 +529,7 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
           : "Untitled.pdf",
     path: typeof rawDoc.path === "string" && rawDoc.path ? rawDoc.path : null,
     relativePath:
-      typeof rawDoc.relativePath === "string" && rawDoc.relativePath
-        ? rawDoc.relativePath
-        : null,
+      typeof rawDoc.relativePath === "string" && rawDoc.relativePath ? rawDoc.relativePath : null,
     sha256: typeof rawDoc.sha256 === "string" ? rawDoc.sha256 : "",
     pageCount:
       typeof rawDoc.pageCount === "number" && Number.isFinite(rawDoc.pageCount)
@@ -557,7 +578,8 @@ export function parseProject(text: string): Project {
   } catch {
     throw new Error("This file is not valid JSON.");
   }
-  if (typeof data !== "object" || data === null) throw new Error("Project file is empty or invalid.");
+  if (typeof data !== "object" || data === null)
+    throw new Error("Project file is empty or invalid.");
   const raw = data as Partial<Project>;
   if (typeof raw.schemaVersion !== "number") throw new Error("Project file has no schema version.");
   if (raw.schemaVersion > SCHEMA_VERSION) {
@@ -565,7 +587,7 @@ export function parseProject(text: string): Project {
   }
   const legacy = (raw as { document?: unknown }).document;
   const rawDocuments: unknown[] = Array.isArray((raw as { documents?: unknown }).documents)
-    ? ((raw as { documents: unknown[] }).documents)
+    ? (raw as { documents: unknown[] }).documents
     : legacy
       ? [legacy]
       : [];
@@ -620,7 +642,8 @@ export function parseProject(text: string): Project {
   }
 
   if (!project.layers.some((l) => l.id === project.activeLayerId)) {
-    project.activeLayerId = project.layers.find((l) => l.kind === "measure")?.id ?? project.layers[0].id;
+    project.activeLayerId =
+      project.layers.find((l) => l.kind === "measure")?.id ?? project.layers[0].id;
   }
 
   return project;
@@ -635,7 +658,10 @@ export function suggestedProjectName(project: Project): string {
   return `${safe}.gridscalr`;
 }
 
-export function relativeDocumentPath(projectPath: string, documentPath: string | null): string | null {
+export function relativeDocumentPath(
+  projectPath: string,
+  documentPath: string | null,
+): string | null {
   if (!documentPath) return null;
   const normalize = (path: string) => path.replace(/\\/g, "/");
   const projectDir = normalize(projectPath).split("/").slice(0, -1).join("/");
@@ -650,12 +676,17 @@ export function relativeDocumentPath(projectPath: string, documentPath: string |
   return [...Array(up).fill(".."), ...docParts.slice(i)].join("/");
 }
 
-export function resolveRelativePath(projectPath: string, relativePath: string | null): string | null {
+export function resolveRelativePath(
+  projectPath: string,
+  relativePath: string | null,
+): string | null {
   if (!relativePath) return null;
   const separator = projectPath.includes("\\") ? "\\" : "/";
   const projectDir = projectPath.split(/[\\/]/).slice(0, -1).join(separator);
   if (!projectDir) return relativePath;
-  const parts = `${projectDir}${separator}${relativePath.replace(/[\\/]/g, separator)}`.split(separator);
+  const parts = `${projectDir}${separator}${relativePath.replace(/[\\/]/g, separator)}`.split(
+    separator,
+  );
   const resolved: string[] = [];
   for (const part of parts) {
     if (!part || part === ".") continue;
@@ -671,10 +702,7 @@ export function resolveRelativePath(projectPath: string, relativePath: string | 
  * an export can never overwrite a drawing even if it was located through the
  * portable fallback.
  */
-export function sourceDocumentPaths(
-  project: Project,
-  projectPath: string | null = null,
-): string[] {
+export function sourceDocumentPaths(project: Project, projectPath: string | null = null): string[] {
   const paths = new Set<string>();
   for (const document of project.documents) {
     if (document.path) paths.add(document.path);
@@ -687,10 +715,7 @@ export function sourceDocumentPaths(
 }
 
 /** Recomputes every document's relative path for a new project location. */
-export function updateRelativeDocumentPaths(
-  project: Project,
-  projectPath: string | null,
-): void {
+export function updateRelativeDocumentPaths(project: Project, projectPath: string | null): void {
   for (const document of project.documents) {
     document.relativePath =
       projectPath && document.path ? relativeDocumentPath(projectPath, document.path) : null;

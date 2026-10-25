@@ -195,7 +195,10 @@ function renderCloud(panel: HTMLElement, render: () => void): void {
       render();
     });
     const option = el("span", "tool-fill-option");
-    option.append(button, el("span", "tool-fill-label", preset.label === "No fill" ? "None" : preset.label));
+    option.append(
+      button,
+      el("span", "tool-fill-label", preset.label === "No fill" ? "None" : preset.label),
+    );
     swatches.append(option);
   }
   panel.append(swatches);
@@ -210,7 +213,12 @@ function renderCloud(panel: HTMLElement, render: () => void): void {
 
 function renderHighlight(panel: HTMLElement, render: () => void): void {
   panel.append(el("div", "tool-flyout-title", "Highlight"));
-  const entries: Array<{ id: HighlightShape; label: string; description: string; iconName: string }> = [
+  const entries: Array<{
+    id: HighlightShape;
+    label: string;
+    description: string;
+    iconName: string;
+  }> = [
     {
       id: "stroke",
       label: "Pen",
@@ -289,9 +297,7 @@ function renderStamp(panel: HTMLElement, render: () => void): void {
   panel.append(el("div", "tool-flyout-section", "Status"));
   const presets = store.project?.settings.stampPresets ?? [];
   if (!presets.length) {
-    panel.append(
-      el("div", "tool-flyout-note", "No stamp presets. Add them in Settings."),
-    );
+    panel.append(el("div", "tool-flyout-note", "No stamp presets. Add them in Settings."));
   }
   for (const preset of presets) {
     const selected = store.ui.stampText === preset;

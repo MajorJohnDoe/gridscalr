@@ -76,7 +76,6 @@ function signedArea(points: readonly Point[]): number {
   return area / 2;
 }
 
-
 export type CloudFillPreset = "none" | "blue" | "orange" | "green" | "red";
 
 export const CLOUD_FILL_OPACITY = 0.22;

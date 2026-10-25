@@ -25,7 +25,10 @@ function makeMeasurement(page: number): MarkupItem {
     id: `item_${page}`,
     page,
     kind: "length",
-    points: [{ x: 0, y: 0 }, { x: 100, y: 0 }],
+    points: [
+      { x: 0, y: 0 },
+      { x: 100, y: 0 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: now,
@@ -101,20 +104,16 @@ describe("calibration", () => {
     const item = makeMeasurement(1);
     item.scale = null;
     measureLayer.items.push(item);
-    setPageCalibration(
-      project,
-      1,
-      createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m"),
-      { updateMeasurements: false, pageCount: 1 },
-    );
+    setPageCalibration(project, 1, createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m"), {
+      updateMeasurements: false,
+      pageCount: 1,
+    });
     expect(itemScale(item, project)).toBeNull();
 
-    setPageCalibration(
-      project,
-      1,
-      createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 10, "m"),
-      { updateMeasurements: true, pageCount: 1 },
-    );
+    setPageCalibration(project, 1, createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 10, "m"), {
+      updateMeasurements: true,
+      pageCount: 1,
+    });
     expect(item.scale).toEqual({ pointsPerMeter: 10, sourceUnit: "m" });
   });
 
@@ -123,12 +122,9 @@ describe("calibration", () => {
     const measureLayer = project.layers.find((layer) => layer.kind === "measure")!;
     const item = makeMeasurement(1);
     measureLayer.items.push(item);
-    setPageCalibration(
-      project,
-      1,
-      createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m"),
-      { pageCount: 1 },
-    );
+    setPageCalibration(project, 1, createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m"), {
+      pageCount: 1,
+    });
 
     clearPageCalibration(project, 1);
 
@@ -141,14 +137,8 @@ describe("calibration", () => {
     const calibration = createManualCalibration(100);
     expect(calibration.source).toBe("manual");
     expect(calibration.ratio).toBe(100);
-    expect(calibration.pointsPerMeter).toBeCloseTo(
-      MANUAL_SCALE_POINTS_PER_METER / 100,
-      9,
-    );
-    expect(manualPointsPerMeter(200)).toBeCloseTo(
-      MANUAL_SCALE_POINTS_PER_METER / 200,
-      9,
-    );
+    expect(calibration.pointsPerMeter).toBeCloseTo(MANUAL_SCALE_POINTS_PER_METER / 100, 9);
+    expect(manualPointsPerMeter(200)).toBeCloseTo(MANUAL_SCALE_POINTS_PER_METER / 200, 9);
 
     const project = makeProject(1);
     setPageCalibration(project, 1, calibration, { pageCount: 1 });
@@ -197,14 +187,8 @@ describe("calibration", () => {
     });
 
     expect(changed).toEqual([1, 2]);
-    expect(pageCalibration(project, 1)?.pointsPerMeter).toBeCloseTo(
-      manualPointsPerMeter(100),
-      9,
-    );
-    expect(pageCalibration(project, 2)?.pointsPerMeter).toBeCloseTo(
-      manualPointsPerMeter(100),
-      9,
-    );
+    expect(pageCalibration(project, 1)?.pointsPerMeter).toBeCloseTo(manualPointsPerMeter(100), 9);
+    expect(pageCalibration(project, 2)?.pointsPerMeter).toBeCloseTo(manualPointsPerMeter(100), 9);
     expect(pageCalibration(project, 3)?.pointsPerMeter).toBe(20);
     expect(pageScaleLocked(project, 3)).toBe(true);
     expect(first.scale).toEqual({

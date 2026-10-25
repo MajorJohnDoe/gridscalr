@@ -42,7 +42,11 @@ function addItem(project: Project, kind: ItemKind, extra: Partial<MarkupItem> = 
     id: `item_${layer.items.length + 1}`,
     page: 1,
     kind,
-    points: [{ x: 10, y: 10 }, { x: 40, y: 10 }, { x: 40, y: 40 }],
+    points: [
+      { x: 10, y: 10 },
+      { x: 40, y: 10 },
+      { x: 40, y: 40 },
+    ],
     color: "#4cc9f0",
     strokeWidth: 2,
     createdAt: NOW,

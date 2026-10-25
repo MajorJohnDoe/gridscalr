@@ -119,7 +119,10 @@ export function openHelp(topic: HelpTopic = "guide"): void {
     const markdown = content.querySelector<HTMLElement>(".markdown");
     if (!markdown) return;
     const { headings, blocks } = collectBlocks(markdown);
-    const results = new Map<string, { heading: HTMLElement; snippet: string; element: HTMLElement }>();
+    const results = new Map<
+      string,
+      { heading: HTMLElement; snippet: string; element: HTMLElement }
+    >();
 
     for (const heading of headings) {
       const text = heading.textContent?.trim() ?? "";

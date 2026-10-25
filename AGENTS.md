@@ -78,6 +78,7 @@ Run the relevant checks from the repository root:
 ```bash
 npm run check:versions
 npm run check:docs
+npm run format:check
 npx tsc --noEmit
 npm test -- --run
 npm run build
@@ -156,7 +157,8 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 ## Architecture map
 
 ```text
-src/app/App.ts             app wiring, file flows, shortcuts, export actions
+src/app/App.ts             app wiring, file flows, shortcuts
+src/app/exportFlows.ts     CSV, PDF, PNG and JSON export orchestration
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/geometry.ts     crop, handle, rotation and colour helpers
 src/canvas/selectionHandles.ts selection and rotation handles
@@ -171,8 +173,10 @@ src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
 src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
-src/report/                pure report model and CSV serialization
+src/report/                pure report model, quantity and markup CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
+src/styles/help.css        help dialog, search, TOC and image lightbox
+src/styles/popovers.css    tool flyouts, Canvas options and measurement options
 src/ui/canvasOptions.ts    units, snapping, grid and scale-line popover
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
 src/ui/inspector.ts        Properties scale and active-layer sections
@@ -214,6 +218,7 @@ scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
+scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 ```
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
@@ -226,7 +231,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback.
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items and crop.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
-- `npm run check:docs` validates documentation links, anchors, images, tool coverage and schema references.
+- `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
+- `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.

@@ -1,4 +1,6 @@
 import "./styles.css";
+import "./styles/help.css";
+import "./styles/popovers.css";
 import { App } from "./app/App";
 import { store } from "./state/store";
 
@@ -67,9 +69,15 @@ try {
   const app = new App(root);
   appStarted = true;
   if (import.meta.env.DEV) {
-    (window as Window & {
-      __gridscalr?: { store: typeof store; app: App; canvas: ReturnType<App["getCanvasTestApi"]> };
-    }).__gridscalr = {
+    (
+      window as Window & {
+        __gridscalr?: {
+          store: typeof store;
+          app: App;
+          canvas: ReturnType<App["getCanvasTestApi"]>;
+        };
+      }
+    ).__gridscalr = {
       store,
       app,
       canvas: app.getCanvasTestApi(),

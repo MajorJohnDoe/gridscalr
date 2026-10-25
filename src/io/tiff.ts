@@ -296,7 +296,9 @@ export function faxParameters(page: TiffPage): FaxParameters {
     );
   }
   if (page.tiled) {
-    throw new TiffImportError("Tiled TIFFs are not supported yet. Save this file as a stripped TIFF.");
+    throw new TiffImportError(
+      "Tiled TIFFs are not supported yet. Save this file as a stripped TIFF.",
+    );
   }
   if (page.fillOrder !== 1) {
     throw new TiffImportError("TIFF fill order 2 is not supported.");

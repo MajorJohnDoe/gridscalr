@@ -1,8 +1,4 @@
-import {
-  IMAGE_MAX_BYTES,
-  IMAGE_MAX_DIMENSION,
-  createImageAsset,
-} from "../model/images";
+import { IMAGE_MAX_BYTES, IMAGE_MAX_DIMENSION, createImageAsset } from "../model/images";
 import type { ImageAsset } from "../model/types";
 
 export interface PickedImage {
@@ -162,9 +158,7 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
     const data = await readBlobAsDataUrl(result);
     const actualMime = supportedImageMime(result.type) ?? mime;
     return createImageAsset({
-      name:
-        name.trim() ||
-        `Image.${actualMime === "image/png" ? "png" : "jpg"}`,
+      name: name.trim() || `Image.${actualMime === "image/png" ? "png" : "jpg"}`,
       mime: actualMime,
       width: targetWidth,
       height: targetHeight,

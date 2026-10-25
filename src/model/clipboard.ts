@@ -1,10 +1,4 @@
-import {
-  addItem,
-  cloneItem,
-  ensureActiveLayer,
-  itemIsLocked,
-  layerKindForItem,
-} from "./layers";
+import { addItem, cloneItem, ensureActiveLayer, itemIsLocked, layerKindForItem } from "./layers";
 import { resolveSelection } from "./selection";
 import type { Layer, MarkupItem, Project, SelectionRef } from "./types";
 
@@ -61,10 +55,7 @@ function targetLayerFor(project: Project, sourceLayerId: string, item: MarkupIte
 
   const active = project.layers.find(
     (layer) =>
-      layer.id === project.activeLayerId &&
-      layer.kind === kind &&
-      layer.visible &&
-      !layer.locked,
+      layer.id === project.activeLayerId && layer.kind === kind && layer.visible && !layer.locked,
   );
   if (active) return active;
 

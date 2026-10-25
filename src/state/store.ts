@@ -532,13 +532,8 @@ export class Store {
         ? quantity.wastePercent
         : Math.max(0, Math.min(100, patch.wastePercent));
     const roundingStep =
-      patch.roundingStep === undefined
-        ? quantity.roundingStep
-        : Math.max(0, patch.roundingStep);
-    if (
-      wastePercent === quantity.wastePercent &&
-      roundingStep === quantity.roundingStep
-    ) {
+      patch.roundingStep === undefined ? quantity.roundingStep : Math.max(0, patch.roundingStep);
+    if (wastePercent === quantity.wastePercent && roundingStep === quantity.roundingStep) {
       return true;
     }
     this.mutate((project) => {

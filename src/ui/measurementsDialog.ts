@@ -27,16 +27,13 @@ function beginMarkupRename(label: HTMLElement, itemId: string, fallbackLabel: st
     if (!input.isConnected) return;
     const value = input.value.trim();
     if (commit && value !== (label.textContent ?? "")) {
-      store.mutate(
-        (project) => {
-          const item = findItem(project, itemId)?.item;
-          if (item) {
-            item.label = value || undefined;
-            item.updatedAt = new Date().toISOString();
-          }
-        },
-        "change",
-      );
+      store.mutate((project) => {
+        const item = findItem(project, itemId)?.item;
+        if (item) {
+          item.label = value || undefined;
+          item.updatedAt = new Date().toISOString();
+        }
+      }, "change");
     } else {
       input.replaceWith(label);
     }
@@ -230,12 +227,9 @@ export function openMeasurementsDialog(actions: PanelActions): void {
         event.stopPropagation();
         const nextVisible = row.item.visible === false;
         const ref = { layerId: row.layerId, itemId: row.item.id };
-        store.mutate(
-          (project) => {
-            setItemsVisible(project, [ref], nextVisible);
-          },
-          "change",
-        );
+        store.mutate((project) => {
+          setItemsVisible(project, [ref], nextVisible);
+        }, "change");
         if (!nextVisible) {
           store.setSelectionMany(
             store.ui.selection.filter((selection) => selection.itemId !== row.item.id),
@@ -252,12 +246,9 @@ export function openMeasurementsDialog(actions: PanelActions): void {
         event.stopPropagation();
         const nextLocked = !row.item.locked;
         const ref = { layerId: row.layerId, itemId: row.item.id };
-        store.mutate(
-          (project) => {
-            setItemsLocked(project, [ref], nextLocked);
-          },
-          "change",
-        );
+        store.mutate((project) => {
+          setItemsLocked(project, [ref], nextLocked);
+        }, "change");
       });
       rowActions.append(eye, lock);
       itemRow.append(iconWrap, label, value, meta, page, rowActions);

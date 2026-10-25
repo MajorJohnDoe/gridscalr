@@ -51,7 +51,11 @@ try {
   });
   assert.ok(autosave.preview, "autosave metadata should be present");
   assert.equal(autosave.record, true, "the recovery snapshot should be stored in IndexedDB");
-  assert.equal(autosave.legacy, null, "the legacy localStorage snapshot should be removed after migration");
+  assert.equal(
+    autosave.legacy,
+    null,
+    "the legacy localStorage snapshot should be removed after migration",
+  );
   assert.equal(
     await page.getByText("Editable", { exact: true }).count(),
     0,
@@ -209,6 +213,20 @@ try {
   await page.keyboard.press("Control+s");
   const download = await downloadPromise;
   assert.match(download.suggestedFilename(), /\.gridscalr$/, "expected a .gridscalr download");
+  await waitForToastsGone(page);
+
+  const exportDownload = async (label) => {
+    await page.getByRole("menuitem", { name: "File" }).click();
+    await page.getByRole("menuitem", { name: /^Export/ }).click();
+    const pending = page.waitForEvent("download");
+    await page.getByRole("menuitem", { name: label }).click();
+    return pending;
+  };
+
+  const markupsCsv = await exportDownload("Markups to CSV");
+  assert.match(markupsCsv.suggestedFilename(), /-markups\.csv$/, "expected a markups CSV export");
+  const projectJson = await exportDownload("Project to JSON");
+  assert.match(projectJson.suggestedFilename(), /\.json$/, "expected a project JSON export");
   await waitForToastsGone(page);
 
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);

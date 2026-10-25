@@ -45,7 +45,10 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   const targetKind = toolLayerKind(store.ui.activeTool);
   const layerTarget = el("label", "layer-target");
   if (activeLayer) {
-    layerTarget.classList.toggle("is-warning", Boolean(targetKind && (!activeLayer.visible || activeLayer.locked)));
+    layerTarget.classList.toggle(
+      "is-warning",
+      Boolean(targetKind && (!activeLayer.visible || activeLayer.locked)),
+    );
     const dot = el("span", "layer-target-dot");
     dot.style.background = activeLayer.color;
     const select = el("select", "select layer-target-select");
@@ -70,11 +73,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
         );
       }
     });
-    layerTarget.append(
-      el("span", "layer-target-label", "Layer"),
-      dot,
-      select,
-    );
+    layerTarget.append(el("span", "layer-target-label", "Layer"), dot, select);
     if (targetKind && (!activeLayer.visible || activeLayer.locked)) {
       const warning = el("span", "layer-target-warning");
       warning.title = activeLayer.locked
@@ -86,7 +85,10 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.append(layerTarget, el("div", "divider-v"));
   }
 
-  const imageButton = el("button", "btn btn-small btn-ghost context-image-button context-icon-button");
+  const imageButton = el(
+    "button",
+    "btn btn-small btn-ghost context-image-button context-icon-button",
+  );
   imageButton.type = "button";
   imageButton.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
   imageButton.setAttribute("aria-label", "Import image");
@@ -112,7 +114,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       const current = store.project;
       if (current && summary) summary.textContent = measurementSummary(current);
     };
-    measureOptions.addEventListener("click", () => openMeasureOptions(measureOptions, updateSummary));
+    measureOptions.addEventListener("click", () =>
+      openMeasureOptions(measureOptions, updateSummary),
+    );
     controls.append(measureOptions, el("div", "divider-v"));
   }
 
@@ -131,12 +135,11 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   ) {
     const color = el("input", "color-swatch");
     color.type = "color";
-    const cloudPreset =
-      store.ui.activeTool === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
+    const cloudPreset = store.ui.activeTool === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
     color.value =
       store.ui.activeTool === "stamp"
         ? stampStatusColor(store.ui.stampText, store.ui.style.color)
-        : cloudPreset ?? store.ui.style.color;
+        : (cloudPreset ?? store.ui.style.color);
     color.title =
       store.ui.activeTool === "stamp"
         ? "Stamp colour follows its status preset"
@@ -270,9 +273,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     const fillSelect = el("select", "select context-select");
     fillSelect.setAttribute("aria-label", "Cloud fill preset");
     for (const preset of CLOUD_FILL_PRESETS) {
-      fillSelect.append(
-        option(preset.id, preset.label, preset.id === store.ui.cloudFill),
-      );
+      fillSelect.append(option(preset.id, preset.label, preset.id === store.ui.cloudFill));
     }
     fillSelect.addEventListener("change", () =>
       store.setCloudFill(fillSelect.value as typeof store.ui.cloudFill),
@@ -315,7 +316,12 @@ function measurementSummary(project: Project): string {
   return parts.join(" · ");
 }
 
-function toggleButton(iconName: string, label: string, active: boolean, onClick: () => void): HTMLButtonElement {
+function toggleButton(
+  iconName: string,
+  label: string,
+  active: boolean,
+  onClick: () => void,
+): HTMLButtonElement {
   const btn = el("button", `toggle${active ? " is-on" : ""}`);
   btn.type = "button";
   btn.innerHTML = `${icon(iconName, 14)}<span>${label}</span>`;
@@ -323,5 +329,3 @@ function toggleButton(iconName: string, label: string, active: boolean, onClick:
   btn.addEventListener("click", onClick);
   return btn;
 }
-
-

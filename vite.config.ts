@@ -7,9 +7,9 @@ import { defineConfig, type Plugin } from "vitest/config";
 const host = process.env.TAURI_DEV_HOST;
 const root = fileURLToPath(new URL(".", import.meta.url));
 const wasmDir = path.join(root, "node_modules/pdfjs-dist/wasm");
-const packageJson = JSON.parse(
-  readFileSync(path.join(root, "package.json"), "utf8"),
-) as { version: string };
+const packageJson = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as {
+  version: string;
+};
 
 /**
  * PDF.js 6 decodes CCITT fax data and JBIG2 through WebAssembly. It fetches

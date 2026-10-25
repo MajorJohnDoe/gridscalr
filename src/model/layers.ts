@@ -52,10 +52,7 @@ export function createLayer(kind: LayerKind, name?: string, color?: string): Lay
 }
 
 export function createDefaultLayers(): Layer[] {
-  return [
-    createLayer("draw", "Markups"),
-    createLayer("measure", "Measurements"),
-  ];
+  return [createLayer("draw", "Markups"), createLayer("measure", "Measurements")];
 }
 
 export function defaultDocument(name = "Untitled", pageCount = 1): DocumentRef {
@@ -211,7 +208,12 @@ export function moveLayer(project: Project, layerId: string, direction: -1 | 1):
   [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
   const others = project.layers.filter((l) => l.kind !== layer.kind);
   const draw = project.layers.some((l) => l.kind === "draw");
-  project.layers = layer.kind === "draw" ? [...reordered, ...others] : draw ? [...others, ...reordered] : [...reordered, ...others];
+  project.layers =
+    layer.kind === "draw"
+      ? [...reordered, ...others]
+      : draw
+        ? [...others, ...reordered]
+        : [...reordered, ...others];
   return true;
 }
 
@@ -236,7 +238,11 @@ export function reorderLayer(project: Project, layerId: string, beforeLayerId: s
   group.splice(to, 0, layer);
   const others = project.layers.filter((l) => l.kind !== layer.kind);
   project.layers =
-    layer.kind === "draw" ? [...group, ...others] : others.some((l) => l.kind === "draw") ? [...others, ...group] : [...group, ...others];
+    layer.kind === "draw"
+      ? [...group, ...others]
+      : others.some((l) => l.kind === "draw")
+        ? [...others, ...group]
+        : [...group, ...others];
   return true;
 }
 
@@ -246,7 +252,11 @@ export function addItem(project: Project, layerId: string, item: MarkupItem): vo
   layer.items.push(item);
 }
 
-export function removeItem(project: Project, layerId: string, itemId: string): MarkupItem | undefined {
+export function removeItem(
+  project: Project,
+  layerId: string,
+  itemId: string,
+): MarkupItem | undefined {
   const layer = project.layers.find((l) => l.id === layerId);
   if (!layer) return undefined;
   const index = layer.items.findIndex((i) => i.id === itemId);
@@ -265,7 +275,12 @@ export function findItem(
   return undefined;
 }
 
-export function moveItemToLayer(project: Project, layerId: string, itemId: string, targetLayerId: string): boolean {
+export function moveItemToLayer(
+  project: Project,
+  layerId: string,
+  itemId: string,
+  targetLayerId: string,
+): boolean {
   const source = project.layers.find((l) => l.id === layerId);
   const target = project.layers.find((l) => l.id === targetLayerId);
   if (!source || !target || source.kind !== target.kind) return false;

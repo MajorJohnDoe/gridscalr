@@ -86,6 +86,19 @@ describe("autosave storage", () => {
     expect(await readAutosave()).toBeNull();
   });
 
+  it("serialises a clear after a pending write", async () => {
+    const write = writeAutosave(payload("Pending.pdf"));
+    const clear = clearAutosave();
+    await Promise.allSettled([write, clear]);
+    expect(await readAutosave()).toBeNull();
+  });
+
+  it("keeps a write that happens after a clear", async () => {
+    await clearAutosave();
+    await writeAutosave(payload("After clear.pdf"));
+    expect(await readAutosave()).not.toBeNull();
+  });
+
   it("ignores an invalid legacy snapshot", () => {
     storage.set("gridscalr.autosave.v1", JSON.stringify({ project: { documents: [] } }));
     expect(readAutosavePreview()).toBeNull();

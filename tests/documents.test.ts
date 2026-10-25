@@ -83,13 +83,13 @@ describe("document page mapping", () => {
   });
 
   it("maps across source pages that are excluded from the project", () => {
-    const trimmed = [
-      { ...pdf("Bottom.pdf", 3), excludedPages: [2] },
-      pdf("Upper.pdf", 2),
-    ];
+    const trimmed = [{ ...pdf("Bottom.pdf", 3), excludedPages: [2] }, pdf("Upper.pdf", 2)];
     expect(includedLocalPages(trimmed[0])).toEqual([1, 3]);
     expect(totalPageCount(trimmed)).toBe(4);
-    expect(documentPageMaps(trimmed)).toEqual([[1, 3], [1, 2]]);
+    expect(documentPageMaps(trimmed)).toEqual([
+      [1, 3],
+      [1, 2],
+    ]);
     expect(documentStartPage(trimmed, 1)).toBe(3);
     expect(localPageNumber(trimmed, 2)).toBe(3);
     expect(localPageNumber(trimmed, 3)).toBe(1);
@@ -97,10 +97,7 @@ describe("document page mapping", () => {
   });
 
   it("uses the first document that still has pages as primary", () => {
-    const trimmed = [
-      { ...pdf("Empty.pdf", 1), excludedPages: [1] },
-      pdf("Upper.pdf", 2),
-    ];
+    const trimmed = [{ ...pdf("Empty.pdf", 1), excludedPages: [1] }, pdf("Upper.pdf", 2)];
     expect(primaryDocument(trimmed)?.name).toBe("Upper.pdf");
   });
 });
@@ -110,10 +107,46 @@ function pageProject() {
   project.documents.push(pdf("Upper.pdf", 1));
   const measure = project.layers.find((layer) => layer.kind === "measure")!;
   measure.items = [
-    { id: "p1", page: 1, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
-    { id: "p2", page: 2, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
-    { id: "p3", page: 3, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
-    { id: "p4", page: 4, kind: "count", points: [{ x: 0, y: 0 }], color: "#fff", strokeWidth: 1, createdAt: now, updatedAt: now },
+    {
+      id: "p1",
+      page: 1,
+      kind: "count",
+      points: [{ x: 0, y: 0 }],
+      color: "#fff",
+      strokeWidth: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "p2",
+      page: 2,
+      kind: "count",
+      points: [{ x: 0, y: 0 }],
+      color: "#fff",
+      strokeWidth: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "p3",
+      page: 3,
+      kind: "count",
+      points: [{ x: 0, y: 0 }],
+      color: "#fff",
+      strokeWidth: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
+    {
+      id: "p4",
+      page: 4,
+      kind: "count",
+      points: [{ x: 0, y: 0 }],
+      color: "#fff",
+      strokeWidth: 1,
+      createdAt: now,
+      updatedAt: now,
+    },
   ];
   project.pages = { "1": {}, "2": {}, "3": {}, "4": {} };
   return project;

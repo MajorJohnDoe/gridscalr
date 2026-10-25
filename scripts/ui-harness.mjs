@@ -1,4 +1,5 @@
 import { spawn } from "node:child_process";
+import { createServer } from "node:net";
 import { readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -6,7 +7,21 @@ import { chromium } from "playwright";
 
 export const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-export async function startVite({ port = 1420 } = {}) {
+async function findAvailablePort(preferred) {
+  for (let port = preferred; port < preferred + 100; port += 1) {
+    const available = await new Promise((resolve) => {
+      const probe = createServer();
+      probe.once("error", () => resolve(false));
+      probe.once("listening", () => probe.close(() => resolve(true)));
+      probe.listen({ port, host: "127.0.0.1", exclusive: true });
+    });
+    if (available) return port;
+  }
+  throw new Error(`No free local port between ${preferred} and ${preferred + 99}.`);
+}
+
+export async function startVite({ port: preferredPort = 1420 } = {}) {
+  const port = await findAvailablePort(preferredPort);
   let output = "";
   const viteCommand = resolve(
     repoRoot,
@@ -32,25 +47,31 @@ export async function startVite({ port = 1420 } = {}) {
   });
 
   const base = `http://127.0.0.1:${port}`;
-  const deadline = Date.now() + 30_000;
-  while (Date.now() < deadline) {
-    if (server.exitCode !== null) {
-      throw new Error(`Vite exited before the UI test started.\n${output}`);
+  try {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      if (server.exitCode !== null) {
+        throw new Error(`Vite exited before the UI test started.\n${output}`);
+      }
+      try {
+        const response = await fetch(base);
+        if (response.ok) break;
+      } catch {
+        // Keep waiting for Vite to listen.
+      }
+      await new Promise((resolveWait) => setTimeout(resolveWait, 250));
     }
-    try {
-      const response = await fetch(base);
-      if (response.ok) break;
-    } catch {
-      // Keep waiting for Vite to listen.
+    if (Date.now() >= deadline) {
+      throw new Error(`Vite did not start within 30 seconds.\n${output}`);
     }
-    await new Promise((resolveWait) => setTimeout(resolveWait, 250));
-  }
-  if (Date.now() >= deadline) {
-    throw new Error(`Vite did not start within 30 seconds.\n${output}`);
+  } catch (error) {
+    if (server.exitCode === null) server.kill();
+    throw error;
   }
 
   return {
     base,
+    port,
     server,
     output: () => output,
     async stop() {
@@ -95,9 +116,12 @@ export async function openDemoProject(page, { base } = {}) {
 
   await page.goto(base, { waitUntil: "domcontentloaded" });
   await page.locator(".app-shell").waitFor();
-  await page.evaluate((payload) => {
-    localStorage.setItem("gridscalr.autosave.v1", JSON.stringify(payload));
-  }, { project, projectPath: null, savedAt: new Date().toISOString() });
+  await page.evaluate(
+    (payload) => {
+      localStorage.setItem("gridscalr.autosave.v1", JSON.stringify(payload));
+    },
+    { project, projectPath: null, savedAt: new Date().toISOString() },
+  );
 
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Restore last session" }).waitFor();
