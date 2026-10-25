@@ -2,7 +2,6 @@ import { totalPageCount } from "../model/documents";
 import type { PageSize } from "../model/types";
 import { store } from "../state/store";
 import { el } from "./dom";
-import { icon } from "./icons";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -109,25 +108,24 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     });
     list.append(card);
   }
+  list.addEventListener("contextmenu", (event) => {
+    // Cards have their own menu; this one covers the empty panel area.
+    if ((event.target as HTMLElement | null)?.closest(".page-card")) return;
+    event.preventDefault();
+    showPopoverAt(event.clientX, event.clientY, [
+      {
+        label: "Add pages…",
+        icon: "plus",
+        action: () => actions.addPages(),
+      },
+    ]);
+  });
   refs.dockBody.append(list);
   if (total > max) {
     const note = el("div", "empty-note small", `Showing the first ${max} of ${total} pages.`);
     refs.dockBody.append(note);
   }
   observeThumbnails(refs, actions, pendingThumbnails);
-  const footer = el("button", "btn btn-small btn-ghost", "Fit current page");
-  footer.type = "button";
-  footer.addEventListener("click", () => actions.goToPage(store.ui.page, true));
-  const remove = el("button", "btn btn-small btn-ghost", "Delete page…");
-  remove.type = "button";
-  remove.disabled = total <= 1;
-  remove.title =
-    total <= 1
-      ? "A project must keep at least one page."
-      : "Delete the current page and move later pages down";
-  remove.innerHTML = `${icon("trash", 13)}<span>Delete page…</span>`;
-  remove.addEventListener("click", () => actions.deletePage(store.ui.page));
-  refs.dockFooter.append(footer, remove);
 }
 
 /**

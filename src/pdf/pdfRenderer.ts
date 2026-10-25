@@ -188,21 +188,7 @@ export class PdfRenderer {
     maxDimension = 144,
   ): Promise<HTMLCanvasElement> {
     const page = await this.getPage(pageNumber);
-    const base = page.getViewport({ scale: 1 });
-    const longest = Math.max(base.width, base.height, 1);
-    const scale = Math.min(1, Math.max(1, maxDimension) / longest);
-    const viewport = base.clone({ scale });
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.max(1, Math.ceil(viewport.width));
-    canvas.height = Math.max(1, Math.ceil(viewport.height));
-    const task = page.render({
-      canvas,
-      viewport,
-      background: "#ffffff",
-      intent: "display",
-    });
-    await task.promise;
-    return canvas;
+    return renderPagePreview(page, maxDimension);
   }
 
   async getDocumentData(index: number): Promise<Uint8Array> {
@@ -287,6 +273,32 @@ export class PdfRenderer {
       await document.loadingTask.destroy();
     }
   }
+}
+
+/**
+ * Renders one PDF page into a small white canvas. Used for page previews in
+ * the Pages panel and in the import picker. The page's own rotation and view
+ * are preserved, and the largest side is capped at `maxDimension` pixels.
+ */
+export async function renderPagePreview(
+  page: PDFPageProxy,
+  maxDimension = 144,
+): Promise<HTMLCanvasElement> {
+  const base = page.getViewport({ scale: 1 });
+  const longest = Math.max(base.width, base.height, 1);
+  const scale = Math.min(1, Math.max(1, maxDimension) / longest);
+  const viewport = base.clone({ scale });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.max(1, Math.ceil(viewport.width));
+  canvas.height = Math.max(1, Math.ceil(viewport.height));
+  const task = page.render({
+    canvas,
+    viewport,
+    background: "#ffffff",
+    intent: "display",
+  });
+  await task.promise;
+  return canvas;
 }
 
 export function cropRectForView(

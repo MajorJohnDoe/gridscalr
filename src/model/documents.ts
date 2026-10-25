@@ -28,6 +28,27 @@ export function documentPageMaps(documents: DocumentList): number[][] {
   return documents.map((document) => includedLocalPages(document));
 }
 
+/**
+ * Complement of a selected set of 1-based source pages, ready for
+ * `DocumentRef.excludedPages`. Returns undefined when every page is included.
+ */
+export function excludedSourcePages(
+  pageCount: number,
+  selected: readonly number[],
+): number[] | undefined {
+  const total = Math.max(0, Math.round(pageCount));
+  if (total === 0) return undefined;
+  const included = new Set(
+    selected.filter((page) => Number.isInteger(page) && page >= 1 && page <= total),
+  );
+  if (included.size >= total) return undefined;
+  const excluded: number[] = [];
+  for (let page = 1; page <= total; page += 1) {
+    if (!included.has(page)) excluded.push(page);
+  }
+  return excluded.length ? excluded : undefined;
+}
+
 /** First document that still has pages, falling back to the first reference. */
 export function primaryDocument(documents: DocumentList): DocumentRef | undefined {
   return documents.find((document) => documentIncludedPageCount(document) > 0) ?? documents[0];

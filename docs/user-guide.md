@@ -36,9 +36,11 @@ Panels remember their width and collapsed state between sessions.
 
 ### Open a drawing
 
-**File → Open drawing…** (`Ctrl/Cmd+O`) opens a PDF or TIF. With no project open, this creates a new project.
+**File → Open drawing…** (`Ctrl/Cmd+O`) opens a PDF or TIF. With no project open, this creates a new project. You can also right-click an empty spot in the **Pages** panel and choose **Add pages…**.
 
-With a project already open, the drawing is **added after the existing pages**. GridScalr asks for confirmation and shows how many pages will be added. New sheets never change existing page numbers unless you explicitly delete a page.
+A PDF or TIF with several sheets opens a page picker with a preview of every page before anything is imported. Clear the pages you do not need, or use **Select all** / **Clear all**, then choose **Create project** or **Add pages**. Single-page files skip the picker.
+
+With a project already open, the selected pages are **added after the existing pages**. The picker shows where they will land. New sheets never change existing page numbers unless you explicitly delete a page.
 
 ### Open a project
 
@@ -64,11 +66,13 @@ The **Pages** tab shows a small preview of each sheet along with its page size, 
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, at low resolution, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page** and **Delete page…**.
+
 ### Delete a page
 
 If you imported the wrong drawing, delete the page from the **Pages** tab:
 
-1. Right-click the page card and choose **Delete page…**, or select the page and use **Delete page…** in the panel footer.
+1. Right-click the page card and choose **Delete page…**.
 2. Confirm the warning.
 
 Deleting a page:

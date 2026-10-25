@@ -21,7 +21,12 @@ import {
 } from "../model/layers";
 import { makeId } from "../model/calibration";
 import { createImageItem } from "../model/images";
-import { documentPageMaps, projectDocumentForPage, totalPageCount } from "../model/documents";
+import {
+  documentPageMaps,
+  excludedSourcePages,
+  projectDocumentForPage,
+  totalPageCount,
+} from "../model/documents";
 import { base64ToBytes } from "../io/base64";
 import { isTiff } from "../io/tiff";
 import { createTiffDocumentRef, tiffToPdf } from "../io/tiffImport";
@@ -70,6 +75,7 @@ import {
   PasswordRequiredError,
   PdfPasswordError,
   PdfRenderer,
+  renderPagePreview,
 } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProjectPdf } from "../pdf/pdfExport";
@@ -91,6 +97,7 @@ import {
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { openMeasurementsDialog } from "../ui/measurementsDialog";
+import { pageImportDialog } from "../ui/pageImportDialog";
 import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
@@ -210,6 +217,7 @@ export class App {
       getPageSize: (page) => this.pageSizes.get(page),
       getPageThumbnail: (page) => this.thumbnails?.get(page) ?? null,
       requestPageThumbnail: (page) => this.thumbnails?.request(page) ?? Promise.resolve(null),
+      addPages: () => void this.openPdfFlow(),
       refresh: () => this.renderAll(),
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosave(),
@@ -789,7 +797,13 @@ export class App {
       if (!(await this.confirmReplaceProject())) return;
       const pdf = await this.openDocument(pdfBytes, name);
       if (!pdf) return;
+      const pages = await this.chooseImportPages(pdf, name, null);
+      if (!pages) {
+        await pdf.loadingTask.destroy();
+        return;
+      }
       documentRef.pageCount = pdf.numPages;
+      documentRef.excludedPages = excludedSourcePages(pdf.numPages, pages);
       const created = createProject(documentRef);
       created.settings.stampPresets = loadGlobalStampPresets();
       await this.installDocuments([pdf], created, null, false);
@@ -799,28 +813,30 @@ export class App {
       if (dpiWarning) {
         toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
       }
-      toast(`Opened ${name}`, "success");
+      toast(
+        pages.length === pdf.numPages
+          ? `Opened ${name}`
+          : `Opened ${describePages(pages.length, pdf.numPages)} from ${name}.`,
+        "success",
+      );
       return;
     }
 
     const pdf = await this.openDocument(pdfBytes, name);
     if (!pdf) return;
-    const startPage = totalPageCount(project.documents) + 1;
-    const pageLabel = pdf.numPages === 1 ? "1 page" : `${pdf.numPages} pages`;
-    const confirmed = await confirmDialog(
-      "Add pages to project",
-      `“${name}” will be added as ${pageLabel} after page ${startPage - 1}. Existing measurements keep their page numbers.`,
-      "Add pages",
-    );
-    if (!confirmed) {
+    const lastPage = totalPageCount(project.documents);
+    const startPage = lastPage + 1;
+    const pages = await this.chooseImportPages(pdf, name, lastPage);
+    if (!pages) {
       await pdf.loadingTask.destroy();
       return;
     }
 
     documentRef.pageCount = pdf.numPages;
+    documentRef.excludedPages = excludedSourcePages(pdf.numPages, pages);
     if (documentRef.kind === "tiff") documentRef.relativePath = null;
     store.addDocument(documentRef);
-    this.renderer?.addDocument(pdf);
+    this.renderer?.addDocument(pdf, pages);
     store.setPage(startPage);
     await this.enqueuePageSize(startPage);
     this.canvas.fitPage();
@@ -828,7 +844,39 @@ export class App {
     if (dpiWarning) {
       toast("This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.", "warning");
     }
-    toast(`Added ${pageLabel} from ${name}.`, "success");
+    toast(`Added ${describePages(pages.length, pdf.numPages)} from ${name}.`, "success");
+  }
+
+  /**
+   * Asks which pages of a picked PDF or TIF should join the project. Single-page
+   * files skip the picker; previews come from a temporary service so they never
+   * interfere with the project's cached Pages-panel thumbnails.
+   */
+  private async chooseImportPages(
+    pdf: PDFDocumentProxy,
+    name: string,
+    afterPage: number | null,
+  ): Promise<number[] | null> {
+    if (pdf.numPages <= 1) return [1];
+    const previews = new PageThumbnailService(
+      async (page) => {
+        const proxy = await pdf.getPage(page);
+        const canvas = await renderPagePreview(proxy, 144);
+        return canvas.toDataURL("image/jpeg", 0.72);
+      },
+      () => this.renderer?.busy ?? false,
+    );
+    try {
+      return await pageImportDialog({
+        fileName: name,
+        pageCount: pdf.numPages,
+        mode: afterPage === null ? "new" : "add",
+        afterPage: afterPage ?? undefined,
+        requestThumbnail: (page) => previews.request(page),
+      });
+    } finally {
+      previews.destroy();
+    }
   }
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
@@ -1861,4 +1909,9 @@ function csvEscape(value: string): string {
 function errorMessage(error: unknown): string {
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+function describePages(count: number, total: number): string {
+  if (count === total) return total === 1 ? "1 page" : `${total} pages`;
+  return `${count} of ${total} pages`;
 }

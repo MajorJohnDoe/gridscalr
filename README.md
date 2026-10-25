@@ -121,7 +121,9 @@ Use **File → Open drawing…** (`Ctrl/Cmd+O`), drag a PDF or TIF onto the wind
 
 Opening a drawing with no project active creates a new project. To continue previous work, open its `.gridscalr` file instead.
 
-With a project already open, the drawing is **added after the existing pages** instead of replacing them. GridScalr asks for confirmation and shows how many pages will be added. New sheets are added at the end. Page numbers only move when you explicitly delete a page, in which case later measurements move down with their sheets. Use the page controls in the status bar to move between sheets; the top bar names the source document and the current page.
+Multi-page PDFs and TIFs open a page picker with a preview of every page. Clear the pages you do not need, or use **Select all** / **Clear all**, then choose **Create project** or **Add pages**. Single-page files skip the picker. The same picker is available from **Pages → right-click → Add pages…**.
+
+With a project already open, the selected pages are **added after the existing pages** instead of replacing them. The picker shows where they will land. New sheets are added at the end. Page numbers only move when you explicitly delete a page, in which case later measurements move down with their sheets. Use the page controls in the status bar to move between sheets; the top bar names the source document and the current page.
 
 #### TIF drawings
 
@@ -137,9 +139,11 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 The **Pages** tab shows a low-resolution preview of each sheet along with its page size, calibration badge, and item count. Previews show the source drawing, not your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
 
+Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page** and **Delete page…**.
+
 #### Delete a page
 
-Right-click a page card in the **Pages** tab and choose **Delete page…**, or use the footer button for the current page. The page's measurements, images, and page scale are deleted; measurements and page state on later pages move down one page number; earlier pages keep their numbers. Removing the last remaining page of a document drops that document reference, but never modifies the source PDF or TIF. Page deletion is structural and cannot be undone. A project always keeps at least one page.
+Right-click a page card in the **Pages** tab and choose **Delete page…**. The page's measurements, images, and page scale are deleted; measurements and page state on later pages move down one page number; earlier pages keep their numbers. Removing the last remaining page of a document drops that document reference, but never modifies the source PDF or TIF. Page deletion is structural and cannot be undone. A project always keeps at least one page.
 
 ### 2. Set the page scale
 
@@ -474,6 +478,7 @@ src/
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
   ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  ui/pageImportDialog.ts page picker with previews for PDF/TIF import
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
   ui/helpDialog.ts       bundled Markdown help and About dialog
   ui/settingsDialog.ts   project-wide units, snapping, quantity defaults

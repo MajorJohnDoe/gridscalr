@@ -161,6 +161,7 @@ src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model and CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
+src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
 src/ui/helpDialog.ts       bundled Markdown help and About dialog
 src/ui/settingsDialog.ts   project units, snapping, quantity defaults

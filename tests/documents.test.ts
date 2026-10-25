@@ -5,6 +5,7 @@ import {
   documentPageMaps,
   documentPageRange,
   documentStartPage,
+  excludedSourcePages,
   includedLocalPages,
   localPageNumber,
   pageDocumentLabel,
@@ -24,6 +25,23 @@ describe("document page mapping", () => {
   it("sums page counts across documents", () => {
     expect(totalPageCount(documents)).toBe(5);
     expect(totalPageCount([])).toBe(0);
+  });
+
+  it("computes excluded source pages for a partial import", () => {
+    expect(excludedSourcePages(5, [1, 2, 3, 4, 5])).toBeUndefined();
+    expect(excludedSourcePages(5, [2, 4])).toEqual([1, 3, 5]);
+    expect(excludedSourcePages(5, [])).toEqual([1, 2, 3, 4, 5]);
+    expect(excludedSourcePages(5, [0, 6, 2])).toEqual([1, 3, 4, 5]);
+    expect(excludedSourcePages(0, [1])).toBeUndefined();
+  });
+
+  it("keeps a partially imported document limited to its selected pages", () => {
+    const partial: DocumentRef = {
+      ...pdf("Partial.pdf", 4),
+      excludedPages: excludedSourcePages(4, [1, 3]),
+    };
+    expect(includedLocalPages(partial)).toEqual([1, 3]);
+    expect(totalPageCount([partial])).toBe(2);
   });
 
   it("maps global pages onto documents in order", () => {

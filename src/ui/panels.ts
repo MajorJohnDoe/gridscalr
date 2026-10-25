@@ -110,6 +110,7 @@ export interface PanelActions {
   getPageSize: (page: number) => PageSize | undefined;
   getPageThumbnail: (page: number) => string | null;
   requestPageThumbnail: (page: number) => Promise<string | null>;
+  addPages: () => void;
   deletePage: (page: number) => void;
   refresh: () => void;
   restoreAutosave: () => void;
