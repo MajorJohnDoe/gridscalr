@@ -1,15 +1,15 @@
 import { CLOUD_FILL_PRESETS, type CloudFillPreset } from "../model/cloud";
 import { stampStatusColor } from "../model/stamps";
 import { DRAW_COLOR_PRESETS } from "../model/style";
-import type { HighlightShape } from "../model/types";
-import { store } from "../state/store";
+import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
+import { store, type ToolId } from "../state/store";
 import { textDialog } from "./dialogs";
 import { el } from "./dom";
 import { icon } from "./icons";
 
 const LONG_PRESS_MS = 320;
 
-const VARIANT_TOOLS = new Set(["cloud", "highlight", "callout", "stamp", "arrow"]);
+const VARIANT_TOOLS = new Set(["area", "cloud", "highlight", "callout", "stamp", "arrow"]);
 
 let flyoutRoot: HTMLElement | null = null;
 let flyoutCleanup: (() => void) | null = null;
@@ -68,7 +68,7 @@ export function openToolVariants(anchor: HTMLElement, toolId: string): void {
 
 function openToolFlyout(button: HTMLElement, toolId: string): void {
   closeToolFlyout();
-  store.setTool(toolId as "cloud" | "highlight");
+  store.setTool(toolId as ToolId);
   const root = el("div", "tool-flyout-root");
   root.addEventListener("mousedown", (event) => {
     if (event.target === root) closeToolFlyout();
@@ -77,15 +77,17 @@ function openToolFlyout(button: HTMLElement, toolId: string): void {
   panel.setAttribute("role", "menu");
   panel.setAttribute(
     "aria-label",
-    toolId === "cloud"
-      ? "Revision cloud variants"
-      : toolId === "highlight"
-        ? "Highlight variants"
-        : toolId === "callout"
-          ? "Callout colours"
-          : toolId === "stamp"
-            ? "Stamp presets"
-            : "Arrow variants",
+    toolId === "area"
+      ? "Area options"
+      : toolId === "cloud"
+        ? "Revision cloud variants"
+        : toolId === "highlight"
+          ? "Highlight variants"
+          : toolId === "callout"
+            ? "Callout colours"
+            : toolId === "stamp"
+              ? "Stamp presets"
+              : "Arrow variants",
   );
   root.append(panel);
   document.body.append(root);
@@ -93,7 +95,8 @@ function openToolFlyout(button: HTMLElement, toolId: string): void {
 
   const render = () => {
     panel.replaceChildren();
-    if (toolId === "cloud") renderCloud(panel, render);
+    if (toolId === "area") renderArea(panel, render);
+    else if (toolId === "cloud") renderCloud(panel, render);
     else if (toolId === "highlight") renderHighlight(panel, render);
     else if (toolId === "callout") renderCallout(panel, render);
     else if (toolId === "stamp") renderStamp(panel, render);
@@ -149,6 +152,78 @@ function closeToolFlyout(): void {
   flyoutCleanup?.();
   flyoutCleanup = null;
   root.remove();
+}
+
+function renderArea(panel: HTMLElement, render: () => void): void {
+  panel.append(el("div", "tool-flyout-title", "Area"));
+  panel.append(el("div", "tool-flyout-section", "Shape"));
+  const shapes: Array<{ id: AreaShape; label: string; description: string; iconName: string }> = [
+    {
+      id: "polygon",
+      label: "Polygon",
+      description: "Click each corner",
+      iconName: "area",
+    },
+    {
+      id: "rectangle",
+      label: "Rectangle",
+      description: "Drag a quick area",
+      iconName: "rect",
+    },
+    {
+      id: "ellipse",
+      label: "Ellipse",
+      description: "Drag an oval area",
+      iconName: "ellipse",
+    },
+  ];
+  for (const entry of shapes) {
+    variantRow(panel, {
+      label: entry.label,
+      description: entry.description,
+      iconName: entry.iconName,
+      selected: store.ui.measureAreaShape === entry.id,
+      onSelect: () => {
+        store.setMeasureAreaShape(entry.id);
+        render();
+      },
+    });
+  }
+
+  panel.append(el("div", "tool-flyout-section", "Mode"));
+  const modes: Array<{ id: AreaMode; label: string; description: string; iconName: string }> = [
+    {
+      id: "add",
+      label: "Add area",
+      description: "Adds to the category and room total",
+      iconName: "plus",
+    },
+    {
+      id: "subtract",
+      label: "Deduct area",
+      description: "Subtracts from the same category and room",
+      iconName: "minus",
+    },
+  ];
+  for (const entry of modes) {
+    variantRow(panel, {
+      label: entry.label,
+      description: entry.description,
+      iconName: entry.iconName,
+      selected: store.ui.measureAreaMode === entry.id,
+      onSelect: () => {
+        store.setMeasureAreaMode(entry.id);
+        render();
+      },
+    });
+  }
+  panel.append(
+    el(
+      "div",
+      "tool-flyout-note",
+      "The mode stays active for the next area. You can also change a placed area in Properties.",
+    ),
+  );
 }
 
 function renderCloud(panel: HTMLElement, render: () => void): void {

@@ -115,6 +115,27 @@ try {
   await page.locator(".context-tool", { hasText: "Area" }).waitFor();
   await assertContextBarFits("Area");
 
+  const areaMode = page.locator(".area-mode-toggle");
+  await areaMode.getByRole("button", { name: "Deduct", exact: true }).click();
+  assert.equal(
+    await areaMode
+      .getByRole("button", { name: "Deduct", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+    "the Deduct switch should mark the area mode",
+  );
+  assert.match(
+    (await page.getByRole("button", { name: /New measurement options/ }).textContent()) ?? "",
+    /Deduct/,
+    "the New measurement summary should follow the Deduct switch",
+  );
+  await areaMode.getByRole("button", { name: "Add", exact: true }).click();
+  assert.equal(
+    await areaMode.getByRole("button", { name: "Add", exact: true }).getAttribute("aria-pressed"),
+    "true",
+    "the Add switch should restore additive areas",
+  );
+
   await page.getByRole("button", { name: /New measurement options/ }).click();
   const measureOptions = page.getByRole("dialog", { name: "New measurement options" });
   await measureOptions.waitFor();
@@ -179,6 +200,28 @@ try {
   await page.waitForTimeout(100);
   assert.equal(await redo.isEnabled(), true, "redo should enable after undo");
   await redo.click();
+
+  await page.getByRole("button", { name: "Layers" }).click();
+  const measureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
+  await measureLayer.getByRole("button", { name: /Expand Measurements/ }).click();
+  const layerItems = page.locator(".layer-items .layer-item-row");
+  await layerItems.first().waitFor();
+  assert.ok(
+    (await layerItems.count()) >= 9,
+    `expected the measurement layer to list its items, got ${await layerItems.count()}`,
+  );
+  await layerItems.filter({ hasText: "Living floor" }).first().click();
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),
+    "item_floor_living",
+    "clicking a layer item should select it",
+  );
+  await measureLayer.click({ button: "right" });
+  const layerMenu = page.locator(".popover");
+  await layerMenu.waitFor();
+  await layerMenu.getByRole("button", { name: /Rename/ }).waitFor();
+  await page.keyboard.press("Escape");
+  await layerMenu.waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+Alt+q");
   const quantities = page.getByRole("dialog");

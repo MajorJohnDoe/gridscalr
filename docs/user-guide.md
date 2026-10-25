@@ -127,7 +127,8 @@ Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in t
 - **Polygon** works click-by-click. Click around the perimeter, then click the first vertex or press `Enter` to close it.
 - **Rectangle** and **Ellipse** are quick areas drawn by dragging from one corner to the opposite corner.
 - Hold `Shift` while dragging a quick area to make a square or circle.
-- Choose **Add** or **Deduct** in the **New measurement** popover before drawing. Deductions are subtracted inside the same category and room.
+- Use the **Add / Deduct** switch in the context bar before drawing. Deductions are subtracted inside the same category and room.
+- The same mode is available in the **New measurement** popover and by right-clicking or long-pressing the Area tool.
 
 ### Count
 
@@ -135,7 +136,7 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 ### Category and room
 
-While a measurement tool is active, the context bar shows a **New measurement** button with the current category and room. Open it to change the category, room, object type, area shape, and add/deduct mode. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
+While a measurement tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows a direct **Add / Deduct** switch. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
 
 Change a measurement's category, room, area mode, or count type later in **Properties**, or for several selected measurements at once.
 
@@ -173,7 +174,7 @@ Long-press or right-click the Callout button to choose the leader colour: Blue, 
 
 Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. The inline editor opens immediately with size, text colour, bold, underline, alignment, Cancel, and Done. The leader ends in a filled arrow exactly at the target.
 
-Double-click the text box, use **Edit text…** in Properties, or right-click the callout to edit it inline later. Drag the box itself or its vertex handle to move the text independently, or drag the square handle at the lower-right corner of the inline editor to resize the box. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing.
+Double-click the text box, use **Edit text…** in Properties, or right-click the callout to edit it inline later. Drag the box itself or its vertex handle to move the text independently, or drag the square handle at the lower-right corner of the inline editor to resize the box. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing. Wrapped lines follow the measured text box width, so resizing the box changes where the lines break.
 
 ### Stamp
 
@@ -236,8 +237,13 @@ Open the **Layers** tab in the left panel.
 - Click the colour swatch to change the layer colour.
 - Double-click the name to rename the layer.
 - Drag layers within their group to reorder them.
+- Use the chevron to expand a layer and list every item in it, newest first.
+- Click an item to jump to its page and select it. `Shift`/`Ctrl`/`Cmd`-click adds it to the current selection.
+- Right-click a layer for layer actions, or right-click an item for copy, cut, duplicate, visibility, lock, move and delete.
 - Use **+ Measure layer** or **+ Drawing layer** to add layers.
 - Move the selected item to another layer from Properties or the right-click menu.
+
+![Measurement layers expanded with their areas, lengths and counts](screenshots/layers.png)
 
 Measurement layers and drawing layers stay separate. The **Layer** picker in the context bar shows which layer receives new items. If the active layer is hidden or locked, the picker shows a warning. Choosing a tool automatically switches to a visible, unlocked layer of the matching kind.
 

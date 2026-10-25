@@ -11,7 +11,8 @@ import { clear, el, option } from "./dom";
 import { icon } from "./icons";
 import { layerAction } from "./layerList";
 import type { PanelActions } from "./panels";
-import { showSelectionMenuAt } from "./panels";
+import { markupIcon } from "./itemIcon";
+import { showSelectionMenuAt } from "./selectionMenu";
 
 function beginMarkupRename(label: HTMLElement, itemId: string, fallbackLabel: string): void {
   if (label.querySelector(".markup-label-input")) return;
@@ -53,41 +54,6 @@ function beginMarkupRename(label: HTMLElement, itemId: string, fallbackLabel: st
   input.addEventListener("blur", () => finish(true));
   input.addEventListener("click", (event) => event.stopPropagation());
   input.addEventListener("dblclick", (event) => event.stopPropagation());
-}
-
-function markupIcon(kind: MarkupItem["kind"]): string {
-  switch (kind) {
-    case "length":
-      return "length";
-    case "area":
-      return "area";
-    case "count":
-      return "count";
-    case "pen":
-      return "pen";
-    case "line":
-      return "line";
-    case "arrow":
-      return "arrow";
-    case "rect":
-      return "rect";
-    case "ellipse":
-      return "ellipse";
-    case "highlight":
-      return "highlight";
-    case "text":
-      return "text";
-    case "image":
-      return "image";
-    case "cloud":
-      return "cloud";
-    case "callout":
-      return "callout";
-    case "stamp":
-      return "stamp";
-    case "delta":
-      return "delta";
-  }
 }
 
 interface MarkupRowData {

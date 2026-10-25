@@ -31,7 +31,7 @@ Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keep
 - Use Length for pipe runs, cable routes, skirting and other linear work.
 - Use a rectangle or polygon area for floor, wall or ceiling areas.
 - Use Count for doors, windows, radiators, fixtures and other objects.
-- Use **Deduct** for shafts, openings and other areas that should not be ordered.
+- Use the **Deduct** switch in the context bar for shafts, openings and other areas that should not be ordered.
 
 Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
 
@@ -89,13 +89,13 @@ Use **Lock scale** once the scale is verified. This prevents accidental recalibr
 Check the length and area units in the **Canvas** popover. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
 
 - Measure gross floor area per room.
-- Add deductions for shafts, openings and other non-orderable areas.
+- Add deductions for shafts, openings and other non-orderable areas with the **Deduct** switch in the context bar.
 - Measure wall, facade, roof and ground quantities in their own categories.
 - Count doors, windows, radiators and fixtures as pieces.
 
 ![Selected floor area with category, room and deduction controls in Properties](screenshots/hero.png)
 
-Use **Shift**/`Ctrl`/`Cmd`-click or a marquee to select several measurements, then apply one category, room, area mode or count type in a single undoable action.
+Use **Shift**/`Ctrl`/`Cmd`-click or a marquee to select several measurements, then apply one category, room, area mode or count type in a single undoable action. Expand a layer in the Layers tab to check every item it contains; click an item to jump to it on the plan.
 
 ### 4. Review quantities and order settings
 

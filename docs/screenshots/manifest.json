@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-25T13:49:17.949Z",
+  "generatedAt": "2026-10-25T18:27:14.554Z",
   "appVersion": "0.3.1",
-  "sourceFingerprint": "d9a34bfa296a9e5c4063739b6f3c0925d48eec026aae27738e08f83b0e226bde",
+  "sourceFingerprint": "8139ab0bbef2577c194e60300bd639e4f00d48aeb59d100b4260a634c05c239f",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -25,6 +25,12 @@
       "title": "Markups and layers",
       "alt": "GridScalr Layers panel with a selected revision cloud, callout and inspected stamp visible on the plan.",
       "description": "Revision clouds, callouts and status stamps live on drawing layers."
+    },
+    {
+      "file": "layers.png",
+      "title": "Expanded layer items",
+      "alt": "GridScalr Layers panel with a measurement layer expanded to show its areas, lengths and counts, and the Add/Deduct switch in the context bar.",
+      "description": "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas."
     },
     {
       "file": "quantities.png",

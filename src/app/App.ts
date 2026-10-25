@@ -101,13 +101,8 @@ import {
   messageDialog,
   passwordDialog,
 } from "../ui/dialogs";
-import {
-  renderChrome,
-  renderTopbar,
-  requestMarkupRename,
-  showSelectionMenuAt,
-  type PanelActions,
-} from "../ui/panels";
+import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
+import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus } from "../ui/statusBar";
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";

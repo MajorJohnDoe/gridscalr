@@ -140,6 +140,28 @@ try {
     "dragging a vertex should edit the quick area",
   );
 
+  // 2b. Switch the Area tool to Deduct in the context bar and draw a deduction.
+  await page.keyboard.press("a");
+  const areaMode = page.locator(".area-mode-toggle");
+  await areaMode.getByRole("button", { name: "Deduct", exact: true }).click();
+  assert.equal(
+    await areaMode
+      .getByRole("button", { name: "Deduct", exact: true })
+      .getAttribute("aria-pressed"),
+    "true",
+    "the context bar should expose the deduct mode",
+  );
+  await dragPage({ x: 540, y: 240 }, { x: 580, y: 280 });
+  const afterDeduct = await itemIds();
+  const deductionId = afterDeduct.find(
+    (id) => !afterArea.includes(id) && !afterLength.includes(id) && id !== areaId,
+  );
+  assert.ok(deductionId, "a deduction area should be created");
+  const deduction = await itemById(deductionId);
+  assert.equal(deduction.kind, "area");
+  assert.equal(deduction.areaMode, "subtract");
+  await areaMode.getByRole("button", { name: "Add", exact: true }).click();
+
   // 3. Draw a rectangle, resize its south-east box handle and rotate it.
   await page.keyboard.press("r");
   await dragPage({ x: 700, y: 180 }, { x: 760, y: 240 });
@@ -315,7 +337,7 @@ try {
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, resize, rotate, text, label/callout editing, hidden/locked and crop.",
+    "Canvas regression passed: length, area, deduction, resize, rotate, text, label/callout editing, hidden/locked and crop.",
   );
 } finally {
   await page?.close();

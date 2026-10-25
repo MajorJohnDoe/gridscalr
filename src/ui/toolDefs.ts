@@ -48,7 +48,7 @@ export const TOOLS: ToolDef[] = [
     label: "Area",
     icon: "area",
     shortcut: TOOL_SHORTCUTS.area,
-    hint: "Polygon: click each point · Rectangle/Ellipse: drag · Shift makes a square/circle",
+    hint: "Polygon: click each point · Rectangle/Ellipse: drag · Add or Deduct in the context bar",
     group: "measure",
   },
   {

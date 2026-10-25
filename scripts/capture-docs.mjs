@@ -36,6 +36,13 @@ const shots = [
     description: "Revision clouds, callouts and status stamps live on drawing layers.",
   },
   {
+    file: "layers.png",
+    title: "Expanded layer items",
+    alt: "GridScalr Layers panel with a measurement layer expanded to show its areas, lengths and counts, and the Add/Deduct switch in the context bar.",
+    description:
+      "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
+  },
+  {
     file: "quantities.png",
     title: "Quantities",
     alt: "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
@@ -101,6 +108,15 @@ try {
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(200);
   await capture("markups.png");
+
+  await page.evaluate(() => window.__gridscalr.store.clearSelection());
+  await page.keyboard.press("a");
+  const measureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
+  await measureLayer.getByRole("button", { name: /Expand Measurements/ }).click();
+  await page.waitForTimeout(200);
+  await capture("layers.png");
+  await measureLayer.getByRole("button", { name: /Collapse Measurements/ }).click();
+  await page.keyboard.press("v");
 
   await page.keyboard.press("Control+Alt+q");
   await page.getByRole("dialog").waitFor();

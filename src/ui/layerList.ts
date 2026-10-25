@@ -1,14 +1,24 @@
 import { selectionKind } from "../model/selection";
 import { duplicateLayer, layersForKind, moveLayer, removeLayer, swapLayers } from "../model/layers";
-import type { LayerKind } from "../model/types";
+import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import type { Layer, LayerKind, Project } from "../model/types";
 import { store } from "../state/store";
 import { confirmDialog, textDialog } from "./dialogs";
 import { el, escapeHtml } from "./dom";
 import { icon } from "./icons";
+import { markupIcon } from "./itemIcon";
 import type { PanelActions } from "./panels";
-import { showPopover } from "./popover";
+import type { PopoverItem } from "./popover";
+import { showPopover, showPopoverAt } from "./popover";
+import { showSelectionMenuAt } from "./selectionMenu";
 import type { ShellRefs } from "./shell";
 import { toast } from "./toast";
+
+/**
+ * Layers keep their expanded state while the panel re-renders. It is view-only
+ * state, so it deliberately stays out of the project file and undo history.
+ */
+const expandedLayers = new Set<string>();
 
 export function layerAction(iconName: string, label: string, extraClass = ""): HTMLButtonElement {
   const btn = el("button", `layer-action ${extraClass}`.trim());
@@ -47,13 +57,27 @@ function beginInlineRename(row: HTMLElement, name: HTMLElement, layerId: string)
   input.addEventListener("click", (event) => event.stopPropagation());
 }
 
-function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActions): void {
+function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   const project = store.project;
   const layer = project?.layers.find((l) => l.id === layerId);
-  if (!layer) return;
-  const group = project!.layers.filter((l) => l.kind === layer.kind);
+  if (!project || !layer) return [];
+  const group = project.layers.filter((l) => l.kind === layer.kind);
   const index = group.findIndex((l) => l.id === layerId);
-  showPopover(anchor, [
+  const expanded = expandedLayers.has(layerId);
+  return [
+    {
+      label: layer.items.length
+        ? `${expanded ? "Collapse" : "Show"} ${layer.items.length} item${layer.items.length === 1 ? "" : "s"}`
+        : "No items in this layer",
+      icon: expanded ? "chevronDown" : "chevronRight",
+      disabled: layer.items.length === 0,
+      action: () => {
+        if (expanded) expandedLayers.delete(layerId);
+        else expandedLayers.add(layerId);
+        actions.refresh();
+      },
+    },
+    { separator: true },
     {
       label: "Rename…",
       icon: "text",
@@ -77,7 +101,7 @@ function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActio
       icon: "layers",
       disabled:
         store.ui.selection.length === 0 ||
-        selectionKind(project!, store.ui.selection) !== layer.kind ||
+        selectionKind(project, store.ui.selection) !== layer.kind ||
         layer.locked,
       action: () => actions.moveSelectionToLayer(layerId),
     },
@@ -131,7 +155,91 @@ function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActio
         });
       },
     },
-  ]);
+  ];
+}
+
+function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActions): void {
+  showPopover(anchor, layerMenuItems(layerId, actions));
+}
+
+function showLayerMenuAt(x: number, y: number, layerId: string, actions: PanelActions): void {
+  showPopoverAt(x, y, layerMenuItems(layerId, actions));
+}
+
+function buildLayerItems(project: Project, layer: Layer, actions: PanelActions): HTMLElement {
+  const list = el("div", "layer-items");
+  list.id = `layer-items-${layer.id}`;
+  list.dataset.layerId = layer.id;
+  // Later items paint above earlier ones, so list the topmost item first.
+  for (const item of [...layer.items].reverse()) {
+    const ref = { layerId: layer.id, itemId: item.id };
+    const metrics = itemMetrics(item, project);
+    const selected = store.isSelected(ref);
+    const itemHidden = item.visible === false;
+    const itemLocked = item.locked === true;
+    const deduction = item.kind === "area" && item.areaMode === "subtract";
+    const label = itemLabel(item, project);
+
+    const row = el("button", "layer-item-row");
+    row.type = "button";
+    row.dataset.itemId = item.id;
+    row.classList.toggle("is-selected", selected);
+    row.classList.toggle("is-hidden", itemHidden);
+    row.classList.toggle("is-locked", itemLocked);
+    row.classList.toggle("is-deduction", deduction);
+    row.title = [
+      label,
+      itemKindLabel(item.kind),
+      deduction ? "Deduction" : "",
+      `Page ${item.page}`,
+      itemHidden ? "Hidden" : "",
+      itemLocked ? "Locked" : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    row.setAttribute(
+      "aria-label",
+      `${itemKindLabel(item.kind)}: ${label}, page ${item.page}${deduction ? ", deduction" : ""}`,
+    );
+
+    const iconWrap = el("span", "layer-item-icon");
+    iconWrap.innerHTML = icon(markupIcon(item.kind), 12);
+    iconWrap.style.color = item.color;
+    const name = el("span", "layer-item-label", label);
+    const value = el("span", "layer-item-value", metrics?.primary ?? "");
+    const page = el("span", "layer-item-page", `p.${item.page}`);
+    row.append(iconWrap, name, value, page);
+
+    if (itemLocked) {
+      const flag = el("span", "layer-item-flag");
+      flag.innerHTML = icon("lock", 10);
+      flag.title = "Locked";
+      row.append(flag);
+    } else if (itemHidden) {
+      const flag = el("span", "layer-item-flag");
+      flag.innerHTML = icon("eyeOff", 10);
+      flag.title = "Hidden";
+      row.append(flag);
+    }
+
+    row.addEventListener("click", (event) => {
+      if (event.shiftKey || event.ctrlKey || event.metaKey) {
+        if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+        store.toggleSelection(ref);
+        return;
+      }
+      actions.navigateToItem(item.page, layer.id, item.id);
+    });
+    row.addEventListener("contextmenu", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      if (!store.isSelected(ref)) store.setSelection(ref);
+      showSelectionMenuAt(event.clientX, event.clientY, actions);
+    });
+
+    list.append(row);
+  }
+  return list;
 }
 
 function addLayerRow(refs: ShellRefs): void {
@@ -175,6 +283,49 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       row.classList.toggle("is-active", layer.id === project.activeLayerId);
       row.classList.toggle("is-hidden", !layer.visible);
       row.draggable = true;
+
+      const expanded = expandedLayers.has(layer.id);
+      const panelId = `layer-items-${layer.id}`;
+      let itemList = expanded ? buildLayerItems(project, layer, actions) : null;
+
+      const disclosure = el("button", "layer-disclosure");
+      disclosure.type = "button";
+      disclosure.disabled = layer.items.length === 0;
+      disclosure.setAttribute("aria-expanded", String(expanded));
+      disclosure.setAttribute("aria-controls", panelId);
+      disclosure.setAttribute(
+        "aria-label",
+        `${expanded ? "Collapse" : "Expand"} ${layer.name}${
+          layer.items.length ? ` (${layer.items.length} items)` : ""
+        }`,
+      );
+      disclosure.title = layer.items.length
+        ? `${expanded ? "Hide" : "Show"} ${layer.items.length} item${layer.items.length === 1 ? "" : "s"}`
+        : "No items in this layer";
+      disclosure.innerHTML = icon(expanded ? "chevronDown" : "chevronRight", 12);
+      const setExpanded = (open: boolean) => {
+        if (open) expandedLayers.add(layer.id);
+        else expandedLayers.delete(layer.id);
+        disclosure.setAttribute("aria-expanded", String(open));
+        disclosure.setAttribute(
+          "aria-label",
+          `${open ? "Collapse" : "Expand"} ${layer.name} (${layer.items.length} items)`,
+        );
+        disclosure.title = `${open ? "Hide" : "Show"} ${layer.items.length} item${
+          layer.items.length === 1 ? "" : "s"
+        }`;
+        disclosure.innerHTML = icon(open ? "chevronDown" : "chevronRight", 12);
+        if (open) {
+          if (!itemList) itemList = buildLayerItems(project, layer, actions);
+          if (!itemList.isConnected) row.after(itemList);
+        } else {
+          itemList?.remove();
+        }
+      };
+      disclosure.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setExpanded(!expandedLayers.has(layer.id));
+      });
 
       const grip = el("span", "layer-grip");
       grip.innerHTML = icon("up", 11);
@@ -236,10 +387,15 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       });
       actionsWrap.append(eye, lock, menu);
 
-      row.append(grip, color, name, count, actionsWrap);
+      row.append(disclosure, grip, color, name, count, actionsWrap);
       row.addEventListener("click", () => {
         store.setActiveLayer(layer.id);
         if (!layer.visible) toast("This layer is hidden. Show it to edit its contents.", "warning");
+      });
+      row.addEventListener("contextmenu", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        showLayerMenuAt(event.clientX, event.clientY, layer.id, actions);
       });
       row.addEventListener("dragstart", (event) => {
         draggedId = layer.id;
@@ -270,6 +426,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       });
 
       refs.dockBody.append(row);
+      if (itemList) refs.dockBody.append(itemList);
     }
   }
 

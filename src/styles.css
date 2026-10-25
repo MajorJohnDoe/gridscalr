@@ -678,6 +678,27 @@ textarea:disabled {
   white-space: nowrap;
 }
 
+.area-mode-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-deep);
+}
+
+.area-mode-toggle .toggle {
+  height: 24px;
+  border-color: transparent;
+  background: transparent;
+}
+
+.area-mode-toggle .toggle.is-on {
+  background: var(--jade-dim);
+  border-color: rgba(53, 194, 161, 0.3);
+}
+
 .context-hint {
   color: var(--muted-2);
   font-size: 11px;
@@ -1691,6 +1712,31 @@ textarea:disabled {
   border-top-color: var(--jade);
 }
 
+.layer-disclosure {
+  width: 16px;
+  height: 22px;
+  margin-left: -3px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 16px;
+}
+
+.layer-disclosure:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--text);
+}
+
+.layer-disclosure:disabled {
+  opacity: 0.25;
+  cursor: default;
+}
+
 .layer-grip {
   color: var(--muted-2);
   cursor: grab;
@@ -1794,6 +1840,95 @@ textarea:disabled {
 .layer-row:hover .layer-menu-btn,
 .layer-row.is-active .layer-menu-btn {
   opacity: 1;
+}
+
+.layer-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  margin: 0 6px 5px 24px;
+  padding-left: 3px;
+  border-left: 1px solid var(--border-soft);
+}
+
+.layer-item-row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 2px 5px 2px 6px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 10.5px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.layer-item-row:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.layer-item-row.is-selected {
+  background: var(--jade-dim);
+  border-color: rgba(53, 194, 161, 0.24);
+  color: var(--text);
+}
+
+.layer-item-row.is-hidden {
+  opacity: 0.5;
+}
+
+.layer-item-row.is-locked .layer-item-label {
+  color: var(--muted-2);
+}
+
+.layer-item-icon {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.layer-item-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-item-value {
+  flex: 0 1 auto;
+  max-width: 78px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.layer-item-row.is-deduction .layer-item-value {
+  color: var(--amber);
+}
+
+.layer-item-page {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
+}
+
+.layer-item-flag {
+  display: inline-flex;
+  align-items: center;
+  color: var(--muted-2);
+  flex: 0 0 auto;
+}
+
+.layer-item-row.is-locked .layer-item-flag {
+  color: var(--amber);
 }
 
 .layer-add-row {

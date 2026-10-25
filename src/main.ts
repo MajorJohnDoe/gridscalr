@@ -65,6 +65,21 @@ window.addEventListener("unhandledrejection", (event) => {
   if (!appStarted) showStartupError(event.reason);
 });
 
+// The WebView's native context menu contains Reload/Refresh, which would
+// discard the open project. Text fields keep the native menu so cut, copy and
+// paste still work; every other area uses the app's own context menus.
+document.addEventListener(
+  "contextmenu",
+  (event) => {
+    const target = event.target;
+    if (target instanceof Element && target.closest('input, textarea, [contenteditable="true"]')) {
+      return;
+    }
+    event.preventDefault();
+  },
+  { capture: true },
+);
+
 try {
   const app = new App(root);
   appStarted = true;

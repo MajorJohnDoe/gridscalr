@@ -41,18 +41,32 @@ function mountPopover(popover: HTMLElement, left: number, top: number): void {
   popover.style.left = `${Math.max(8, left)}px`;
   popover.style.top = `${Math.max(8, top)}px`;
 
-  const close = (event: Event) => {
-    if (event.type === "mousedown" && popover.contains(event.target as Node)) return;
-    popover.remove();
-    document.removeEventListener("mousedown", close);
-    document.removeEventListener("keydown", onKey);
+  let closed = false;
+  let armTimer = 0;
+  const onMouseDown = (event: MouseEvent) => {
+    if (popover.contains(event.target as Node)) return;
+    close();
   };
   const onKey = (event: KeyboardEvent) => {
-    if (event.key === "Escape") close(event);
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    event.stopPropagation();
+    close();
   };
-  setTimeout(() => {
-    document.addEventListener("mousedown", close);
-    document.addEventListener("keydown", onKey);
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    if (armTimer) window.clearTimeout(armTimer);
+    document.removeEventListener("mousedown", onMouseDown);
+    document.removeEventListener("keydown", onKey);
+    popover.remove();
+  };
+  // Escape is safe to handle immediately. A mouse click is armed on the next
+  // turn so the click that opened the popover does not close it again.
+  document.addEventListener("keydown", onKey);
+  popover.addEventListener("click", close);
+  armTimer = window.setTimeout(() => {
+    if (!closed) document.addEventListener("mousedown", onMouseDown);
   }, 0);
 }
 

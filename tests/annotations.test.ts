@@ -39,6 +39,24 @@ describe("annotation layouts", () => {
     expect(layout.height).toBe(80);
   });
 
+  it("wraps text by measured width instead of an average character count", () => {
+    const measure = (value: string, size: number) => Array.from(value).length * size;
+    const layout = textBoxLayout("AAAAA BBBBB", 10, 100, undefined, 0, measure);
+    expect(layout.lines).toEqual(["AAAAA", "BBBBB"]);
+  });
+
+  it("breaks a single long word so it stays inside the text box", () => {
+    const measure = (value: string, size: number) => Array.from(value).length * size;
+    const layout = textBoxLayout("ABCDEFGHIJK", 10, 50, undefined, 0, measure);
+    expect(layout.lines).toEqual(["ABCD", "EFGH", "IJK"]);
+  });
+
+  it("auto-sizes a text box from the measured line width", () => {
+    const measure = (value: string, size: number) => Array.from(value).length * size;
+    const layout = textBoxLayout("ABCD", 10, undefined, undefined, 0, measure);
+    expect(layout.width).toBeCloseTo(49);
+  });
+
   it("adds tracking space to stamp widths", () => {
     const plain = textBoxLayout("APPROVED", 12);
     const spaced = textBoxLayout("APPROVED", 12, undefined, undefined, 12 * 0.08);

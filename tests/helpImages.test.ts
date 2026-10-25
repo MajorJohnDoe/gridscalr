@@ -7,6 +7,7 @@ describe("help images", () => {
       expect.arrayContaining([
         "export.png",
         "hero.png",
+        "layers.png",
         "markups.png",
         "measure.png",
         "measurements.png",

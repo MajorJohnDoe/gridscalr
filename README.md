@@ -36,8 +36,8 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
-- Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves.
-- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for Photoshop-style variants, colours, and presets.
+- Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves. Expand a layer to list every item in it, then click an item to jump to its page and select it.
+- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Area, Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for Photoshop-style shapes, modes, colours, and presets.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
@@ -188,14 +188,14 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 ### 3. Measure
 
 - **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle.
-- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the **New measurement** popover before drawing, or change an existing area in Properties.
+- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the context bar before drawing, in the **New measurement** popover, or from the Area tool flyout. You can also change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates. New measurements use a 0.75 pt paper-space line weight and new drawing items use 1.5 pt; both can be changed from 0.25 to 8 pt in Properties, and drawing tools also expose the weight in the context bar.
 
 When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Toggle snapping in the **Canvas** popover and set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
-While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. Open it to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
+While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows an **Add / Deduct** switch directly in the context bar. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 
@@ -266,6 +266,9 @@ Open the **Layers** tab in the left panel to:
 - Change layer colour and opacity.
 - Rename the active layer.
 - Drag layers within their group to reorder them.
+- Expand a layer with its chevron to list every item in that layer, newest first.
+- Click an item to jump to its page and select it, or `Shift`/`Ctrl`/`Cmd`-click to add it to the current selection.
+- Right-click a layer or an item for the layer and item menus. The panel never shows the WebView's browser menu.
 - Add new measurement or drawing layers.
 - Move the selected item to another layer from Properties or the right-click menu.
 
@@ -518,6 +521,8 @@ src/
   ui/inspector.ts        Properties scale and active-layer sections
   ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts single and multi-selection Properties
+  ui/selectionMenu.ts    shared item context menu for canvas, layers and Measurements
+  ui/itemIcon.ts         icon lookup shared by Layers and Measurements
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
   ui/statusBar.ts        calibration, cursor and layer status

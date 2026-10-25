@@ -110,13 +110,49 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     measureOptions.innerHTML = `${icon("markups", 14)}<span class="context-measure-summary"></span>${icon("chevronDown", 12)}`;
     const summary = measureOptions.querySelector<HTMLElement>(".context-measure-summary");
     if (summary) summary.textContent = measurementSummary(project);
+
+    let syncAreaMode = () => {};
     const updateSummary = () => {
       const current = store.project;
       if (current && summary) summary.textContent = measurementSummary(current);
+      syncAreaMode();
     };
+    const selectAreaMode = (mode: "add" | "subtract") => {
+      store.setMeasureAreaMode(mode);
+      updateSummary();
+    };
+
+    let areaMode: HTMLElement | null = null;
+    if (store.ui.activeTool === "area") {
+      const addButton = toggleButton("plus", "Add", store.ui.measureAreaMode === "add", () =>
+        selectAreaMode("add"),
+      );
+      const deductButton = toggleButton(
+        "minus",
+        "Deduct",
+        store.ui.measureAreaMode === "subtract",
+        () => selectAreaMode("subtract"),
+      );
+      addButton.classList.add("area-mode-btn");
+      deductButton.classList.add("area-mode-btn");
+      addButton.title = "Add areas to their category and room";
+      deductButton.title = "Deduct areas from their category and room";
+      areaMode = el("div", "area-mode-toggle");
+      areaMode.setAttribute("role", "group");
+      areaMode.setAttribute("aria-label", "Area mode");
+      areaMode.append(addButton, deductButton);
+      syncAreaMode = () => {
+        addButton.classList.toggle("is-on", store.ui.measureAreaMode === "add");
+        addButton.setAttribute("aria-pressed", String(store.ui.measureAreaMode === "add"));
+        deductButton.classList.toggle("is-on", store.ui.measureAreaMode === "subtract");
+        deductButton.setAttribute("aria-pressed", String(store.ui.measureAreaMode === "subtract"));
+      };
+    }
+
     measureOptions.addEventListener("click", () =>
       openMeasureOptions(measureOptions, updateSummary),
     );
+    if (areaMode) controls.append(areaMode, el("div", "divider-v"));
     controls.append(measureOptions, el("div", "divider-v"));
   }
 
