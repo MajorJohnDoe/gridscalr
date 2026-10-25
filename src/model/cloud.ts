@@ -75,3 +75,24 @@ function signedArea(points: readonly Point[]): number {
   }
   return area / 2;
 }
+
+
+export type CloudFillPreset = "none" | "blue" | "orange" | "green" | "red";
+
+export const CLOUD_FILL_OPACITY = 0.22;
+
+export const CLOUD_FILL_PRESETS: Array<{
+  id: CloudFillPreset;
+  label: string;
+  color: string | null;
+}> = [
+  { id: "none", label: "No fill", color: null },
+  { id: "blue", label: "Blue", color: "#4cc9f0" },
+  { id: "orange", label: "Orange", color: "#f2a93b" },
+  { id: "green", label: "Green", color: "#35c2a1" },
+  { id: "red", label: "Red", color: "#f26d6d" },
+];
+
+export function cloudFillColor(preset: CloudFillPreset): string | null {
+  return CLOUD_FILL_PRESETS.find((entry) => entry.id === preset)?.color ?? null;
+}

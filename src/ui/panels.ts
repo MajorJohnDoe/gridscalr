@@ -47,6 +47,7 @@ import {
   formatScale,
 } from "../model/units";
 import { store, toolLayerKind } from "../state/store";
+import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import type { AutosavePayload } from "../state/store";
@@ -59,6 +60,7 @@ import type { ShellRefs } from "./shell";
 import { openSettingsDialog } from "./settingsDialog";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { TOOL_BY_ID } from "./toolDefs";
+import { updateToolVariantIndicators } from "./toolFlyouts";
 import { toast } from "./toast";
 
 export interface PanelActions {
@@ -175,6 +177,7 @@ function renderToolRail(refs: ShellRefs): void {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
+  updateToolVariantIndicators(refs.toolRail);
 }
 
 export function updateStatus(refs: ShellRefs): void {
@@ -401,15 +404,19 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   ) {
     const color = el("input", "color-swatch");
     color.type = "color";
+    const cloudPreset =
+      store.ui.activeTool === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
     color.value =
       store.ui.activeTool === "stamp"
         ? stampStatusColor(store.ui.stampText, store.ui.style.color)
-        : store.ui.style.color;
+        : cloudPreset ?? store.ui.style.color;
     color.title =
       store.ui.activeTool === "stamp"
         ? "Stamp colour follows its status preset"
-        : "Markup colour";
-    color.disabled = store.ui.activeTool === "stamp";
+        : cloudPreset
+          ? "Cloud colour follows its fill preset"
+          : "Markup colour";
+    color.disabled = store.ui.activeTool === "stamp" || Boolean(cloudPreset);
     color.addEventListener("change", () => store.setStyle({ color: color.value }));
     const width = el("select", "select");
     for (const value of STROKE_WIDTH_OPTIONS) {
@@ -507,6 +514,27 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     revision.addEventListener("input", () => store.setDeltaText(revision.value));
     revisionField.append(revision);
     controls.prepend(revisionField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "cloud") {
+    const textToggle = toggleButton("callout", "Text box", store.ui.cloudText, () => {
+      store.setCloudText(!store.ui.cloudText);
+    });
+    const fillField = el("label", "context-field");
+    fillField.title = "Fill preset for the next cloud";
+    fillField.append(el("span", "context-field-label", "Fill"));
+    const fillSelect = el("select", "select context-select");
+    fillSelect.setAttribute("aria-label", "Cloud fill preset");
+    for (const preset of CLOUD_FILL_PRESETS) {
+      fillSelect.append(
+        option(preset.id, preset.label, preset.id === store.ui.cloudFill),
+      );
+    }
+    fillSelect.addEventListener("change", () =>
+      store.setCloudFill(fillSelect.value as typeof store.ui.cloudFill),
+    );
+    fillField.append(fillSelect);
+    controls.prepend(textToggle, fillField, el("div", "divider-v"));
   }
 
   const lengthUnit = el("select", "select");

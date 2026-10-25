@@ -1,4 +1,5 @@
 import { deletePageFromProject, totalPageCount, type DeletePageResult } from "../model/documents";
+import type { CloudFillPreset } from "../model/cloud";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
@@ -70,6 +71,8 @@ export interface UIState {
   stampText: string;
   deltaText: string;
   highlightShape: HighlightShape;
+  cloudText: boolean;
+  cloudFill: CloudFillPreset;
   /** Category for new measurements. null means the project default. */
   measureCategoryId: string | null;
   /** Sticky room for new measurements, trimmed when an item is created. */
@@ -149,6 +152,8 @@ function defaultUI(): UIState {
     stampText: "APPROVED",
     deltaText: "A",
     highlightShape: "stroke",
+    cloudText: false,
+    cloudFill: "none",
     measureCategoryId: null,
     measureRoom: "",
     measureCountType: "other",
@@ -315,6 +320,16 @@ export class Store {
 
   setHighlightShape(shape: HighlightShape): void {
     this.ui.highlightShape = shape;
+    this.emit("tool");
+  }
+
+  setCloudText(enabled: boolean): void {
+    this.ui.cloudText = enabled;
+    this.emit("tool");
+  }
+
+  setCloudFill(preset: CloudFillPreset): void {
+    this.ui.cloudFill = preset;
     this.emit("tool");
   }
 

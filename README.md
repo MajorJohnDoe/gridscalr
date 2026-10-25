@@ -18,7 +18,7 @@ See the [user guide](docs/user-guide.md) for the full workflow and [shortcuts.md
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves.
-- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window.
+- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Cloud and Highlight tools for Photoshop-style variants and presets.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
@@ -174,7 +174,7 @@ Hold **Shift** while drawing lines, arrows, rectangles, or ellipses to constrain
 
 ### Revision cloud, callout, stamp, and revision delta
 
-- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click the box to edit it inline with font size, colour, Cancel, and Done.
+- **Revision cloud (`D`)** – click the corners and close on the first point or with `Enter`. Long-press or right-click the tool for **Cloud / Cloud + text** and the **No fill / Blue / Orange / Green / Red** fill presets. Cloud vertices can be reshaped. Each cloud has a text box with a leader arrow; drag the round label handle or the box itself to move it independently, while moving the cloud keeps the text's relative position. Double-click the box to edit it inline with font size, colour, Cancel, and Done.
 - **Callout (`N`)** – click the object to point at, then place the text box. The inline editor opens immediately with size, colour, Cancel, and Done; the leader ends in a filled arrow at the target.
 - **Stamp (`S`)** – choose a preset in the context bar or use **Custom…**, then click to place. Double-click or right-click a placed stamp to edit only that stamp; the preset list is unchanged.
 - **Revision delta (`Y`)** – enter the revision in the context bar and click to place the triangle. An optional date can be set as its label in Properties.
@@ -183,7 +183,7 @@ Stamp presets are stored per project under **Settings → Project settings → S
 
 ### Highlight modes
 
-The Highlight tool has **Pen**, **Rectangle**, and **Polygon** modes in the context bar. Rectangle and Polygon create translucent area highlights; Pen keeps the original freehand highlighter. Existing freehand highlights are unchanged.
+The Highlight tool has **Pen**, **Rectangle**, and **Polygon** modes in its tool flyout and context bar. Rectangle and Polygon create translucent area highlights; Pen keeps the original freehand highlighter. Existing freehand highlights are unchanged.
 
 ### Text notes
 

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { cloudCurves, cloudRadiusForPoints } from "../src/model/cloud";
+import { CLOUD_FILL_PRESETS, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../src/model/cloud";
 
 const square = [
   { x: 40, y: 40 },
@@ -30,6 +30,19 @@ describe("revision cloud geometry", () => {
 
   it("requires at least three points", () => {
     expect(cloudCurves([{ x: 0, y: 0 }, { x: 10, y: 0 }], 6)).toEqual([]);
+  });
+
+  it("provides independent fill presets", () => {
+    expect(CLOUD_FILL_PRESETS.map((preset) => preset.id)).toEqual([
+      "none",
+      "blue",
+      "orange",
+      "green",
+      "red",
+    ]);
+    expect(cloudFillColor("none")).toBeNull();
+    expect(cloudFillColor("blue")).toBe("#4cc9f0");
+    expect(cloudFillColor("red")).toBe("#f26d6d");
   });
 
   it("suggests smaller scallops for smaller clouds", () => {

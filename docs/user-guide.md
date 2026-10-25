@@ -145,7 +145,9 @@ Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain a
 
 ### Revision cloud
 
-Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
+Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`.
+
+Long-press or right-click the cloud button in the tool rail to choose **Cloud** or **Cloud + text**, and one of the fill presets: **No fill**, **Blue**, **Orange**, **Green**, or **Red**. Form and fill are independent, so Red + Cloud + text and Red + Cloud are both available without separate tools. The default is **Cloud** with no text box and no fill. The context bar also has quick **Text box** and **Fill** controls. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
 
 Every cloud gets an attached text box with a leader arrow to the cloud edge. Select the cloud and drag the round label handle, or drag inside the text box, to move the box independently. When the whole cloud is moved, the box keeps its relative position.
 
@@ -263,7 +265,7 @@ Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of 
 
 ## Highlight modes
 
-The **Highlight** tool (`G`) has three modes in the context bar:
+Long-press or right-click the Highlight button in the tool rail to choose Pen, Rectangle, or Polygon. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
 
 - **Pen** – the original freehand highlighter.
 - **Rectangle** – drag a translucent highlight box.

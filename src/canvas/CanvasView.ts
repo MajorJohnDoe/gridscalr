@@ -93,7 +93,7 @@ import {
   textItemLayout,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
-import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
+import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
 import { calloutLayout, cloudLabelLayout, closestPointOnPolygon, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
@@ -2590,6 +2590,7 @@ export class CanvasView {
           kind === "callout" ||
           kind === "stamp" ||
           kind === "delta";
+        const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
         const item: MarkupItem = {
           id: makeId("item"),
           page: projectPage,
@@ -2599,19 +2600,22 @@ export class CanvasView {
             ? layer.color
             : kind === "stamp"
               ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-              : style.color,
+              : cloudPreset ?? style.color,
           strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
-          fillColor: filled ? style.color : undefined,
+          fillColor: cloudPreset ?? (filled ? style.color : undefined),
           opacity:
             !isMeasure &&
             (kind === "rect" ||
               kind === "ellipse" ||
               kind === "stamp" ||
               kind === "delta" ||
+              cloudPreset !== null ||
               (kind === "highlight" && highlightShape !== "stroke"))
               ? kind === "highlight"
                 ? Math.max(0.18, style.fillOpacity)
-                : style.fillOpacity
+                : kind === "cloud"
+                  ? CLOUD_FILL_OPACITY
+                  : style.fillOpacity
               : kind === "highlight"
                 ? 0.35
                 : undefined,
@@ -2790,8 +2794,10 @@ export class CanvasView {
       this.draft = null;
       this.snap = null;
       if (kind === "cloud") {
-        const created = this.createItem("cloud", points, { text: "Revision" });
-        if (created && store.project) {
+        const created = this.createItem("cloud", points, {
+          text: store.ui.cloudText ? "Revision" : undefined,
+        });
+        if (created && store.ui.cloudText && store.project) {
           const found = findItem(store.project, created.itemId);
           if (found) this.startCloudTextEdit(found.item, found.layer);
         }
