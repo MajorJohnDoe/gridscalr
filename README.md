@@ -133,6 +133,10 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 - The converted PDF is embedded in the `.gridscalr` file, so a TIF project keeps working even if the original scan is moved. The original file path and SHA-256 are still stored for provenance.
 - Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a clear message.
 
+#### Page thumbnails
+
+The **Pages** tab shows a low-resolution preview of each sheet along with its page size, calibration badge, and item count. Previews show the source drawing, not your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
+
 #### Delete a page
 
 Right-click a page card in the **Pages** tab and choose **Delete page…**, or use the footer button for the current page. The page's measurements, images, and page scale are deleted; measurements and page state on later pages move down one page number; earlier pages keep their numbers. Removing the last remaining page of a document drops that document reference, but never modifies the source PDF or TIF. Page deletion is structural and cannot be undone. A project always keeps at least one page.
@@ -464,6 +468,7 @@ src/
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
+  pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
   pdf/reportPdf.ts       print-friendly A4 quantity report built with pdf-lib
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
@@ -487,7 +492,7 @@ src-tauri/
   capabilities/          desktop permissions
 docs/user-guide.md       in-app user guide and workflow reference
 docs/shortcuts.md        in-app keyboard reference
-tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, SHA-256, Markdown
+tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown
 scripts/make-fixture.mjs reproducible sample PDF generator
 ```
 
@@ -497,6 +502,7 @@ Key design choices:
 - **Markup layers are app-level.** They are not PDF optional-content groups, and GridScalr never rewrites the source PDF when saving a project. The drawing PDF export writes a new file and leaves the original untouched.
 - **Coordinate stability.** Markup points are stored in PDF points, not screen pixels. Zooming, panning, and window resizing do not change measurements; export maps them through PDF.js viewports so page rotation and crop boxes are respected.
 - **Progressive rendering.** Only the visible crop of a page is rendered at device resolution. A new render cancels the previous incomplete one.
+- **On-demand page thumbnails.** The Pages panel rasterises only the cards near the viewport, one page at a time, at a capped pixel size, and caches the result. Thumbnail work yields while the main canvas renders, so page previews never block drawing.
 - **Snapshot history.** Store mutations clone the project before applying changes, giving undo/redo without mutable shared state.
 - **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum.
 - **Tauri prototype freezing stays off.** `@pdf-lib/fontkit` assigns to a prototype property inherited from `Object.prototype`; Tauri's `freezePrototype` makes that assignment throw and prevents the window from starting. GridScalr does not execute untrusted JavaScript, so this hardening is left disabled.

@@ -58,6 +58,12 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 - The converted PDF is embedded in the `.gridscalr` file, so the project keeps working even if the original scan is moved.
 - Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a message.
 
+### Page thumbnails
+
+The **Pages** tab shows a small preview of each sheet along with its page size, calibration state, and item count. Previews show the source drawing, not your markups.
+
+Previews are produced on demand: only the cards near the visible part of the list are rendered, at low resolution, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
+
 ### Delete a page
 
 If you imported the wrong drawing, delete the page from the **Pages** tab:

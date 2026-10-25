@@ -2,7 +2,7 @@ import { store } from "../state/store";
 import { clear, el } from "./dom";
 import { icon } from "./icons";
 import { renderLayers } from "./layerList";
-import { renderPages } from "./pageList";
+import { renderPages, disconnectPageThumbnails } from "./pageList";
 import type { PanelActions } from "./panels";
 import {
   clearPanelPreferences,
@@ -94,6 +94,7 @@ export function resetPanelLayout(): void {
 }
 
 export function renderSidebar(refs: ShellRefs, actions: PanelActions): void {
+  disconnectPageThumbnails();
   for (const tab of refs.dockTabs) {
     const active = tab.dataset.tab === store.ui.leftTab;
     tab.classList.toggle("is-active", active);

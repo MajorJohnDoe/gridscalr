@@ -173,6 +173,38 @@ export class PdfRenderer {
     return { width: viewport.width, height: viewport.height };
   }
 
+  /** True while the main canvas render is running, so background work can yield. */
+  get busy(): boolean {
+    return this.activeTask !== null;
+  }
+
+  /**
+   * Renders a small preview of the page for the Pages panel. This uses its own
+   * render task so it never cancels or blocks the main canvas render, and the
+   * caller caps the pixel size to keep large drawings cheap.
+   */
+  async renderPageThumbnail(
+    pageNumber: number,
+    maxDimension = 144,
+  ): Promise<HTMLCanvasElement> {
+    const page = await this.getPage(pageNumber);
+    const base = page.getViewport({ scale: 1 });
+    const longest = Math.max(base.width, base.height, 1);
+    const scale = Math.min(1, Math.max(1, maxDimension) / longest);
+    const viewport = base.clone({ scale });
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.ceil(viewport.width));
+    canvas.height = Math.max(1, Math.ceil(viewport.height));
+    const task = page.render({
+      canvas,
+      viewport,
+      background: "#ffffff",
+      intent: "display",
+    });
+    await task.promise;
+    return canvas;
+  }
+
   async getDocumentData(index: number): Promise<Uint8Array> {
     const document = this.documents[index];
     if (!document) throw new Error(`Document ${index + 1} is not loaded.`);

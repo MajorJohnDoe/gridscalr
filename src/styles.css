@@ -1776,9 +1776,9 @@ textarea:disabled {
 }
 
 .page-thumb {
-  width: 48px;
-  height: 62px;
-  flex: 0 0 48px;
+  width: 60px;
+  height: 78px;
+  flex: 0 0 60px;
   border-radius: 3px;
   background: #eef2f4;
   display: flex;
@@ -1787,6 +1787,19 @@ textarea:disabled {
   overflow: hidden;
   position: relative;
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.page-thumb-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.page-thumb-image[hidden] {
+  display: none;
 }
 
 .page-thumb canvas {

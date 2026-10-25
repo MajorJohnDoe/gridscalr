@@ -71,6 +71,7 @@ import {
   PdfPasswordError,
   PdfRenderer,
 } from "../pdf/pdfRenderer";
+import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProjectPdf } from "../pdf/pdfExport";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { exportQuantityReportPdf } from "../pdf/reportPdf";
@@ -90,6 +91,7 @@ import {
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { openMeasurementsDialog } from "../ui/measurementsDialog";
+import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
@@ -136,6 +138,7 @@ export class App {
   private canvas: CanvasView;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
+  private thumbnails: PageThumbnailService | null = null;
   private pageSizes = new Map<number, PageSize>();
   private pageSizePromises = new Map<number, Promise<PageSize | undefined>>();
   private sizeQueue: SizeTask[] = [];
@@ -205,6 +208,8 @@ export class App {
       navigateToItem: (page, layerId, itemId) => void this.navigateToItem(page, layerId, itemId),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
       getPageSize: (page) => this.pageSizes.get(page),
+      getPageThumbnail: (page) => this.thumbnails?.get(page) ?? null,
+      requestPageThumbnail: (page) => this.thumbnails?.request(page) ?? Promise.resolve(null),
       refresh: () => this.renderAll(),
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosave(),
@@ -685,7 +690,10 @@ export class App {
   private async resetProject(): Promise<void> {
     store.closeProject();
     const renderer = this.renderer;
+    const thumbnails = this.thumbnails;
     this.renderer = null;
+    this.thumbnails = null;
+    thumbnails?.destroy();
     if (renderer) {
       try {
         await renderer.destroy();
@@ -929,7 +937,17 @@ export class App {
     dirty: boolean,
   ): Promise<void> {
     const previous = this.renderer;
-    this.renderer = new PdfRenderer(documents, documentPageMaps(project.documents));
+    const previousThumbnails = this.thumbnails;
+    const renderer = new PdfRenderer(documents, documentPageMaps(project.documents));
+    this.renderer = renderer;
+    this.thumbnails = new PageThumbnailService(
+      async (page) => {
+        const canvas = await renderer.renderPageThumbnail(page, 144);
+        return canvas.toDataURL("image/jpeg", 0.72);
+      },
+      () => renderer.busy,
+    );
+    previousThumbnails?.destroy();
     this.sizeEpoch++;
     this.pageSizes.clear();
     this.pageSizePromises.clear();
@@ -1023,6 +1041,7 @@ export class App {
           if (task.epoch === this.sizeEpoch) {
             this.pageSizes.set(task.page, size);
             this.canvas.invalidate();
+            updatePageSizeLabel(this.refs, task.page, size);
           }
           task.resolve(size);
         } catch {
@@ -1389,6 +1408,7 @@ export class App {
     }
     const current = store.project;
     if (current) this.renderer?.setPageMaps(documentPageMaps(current.documents));
+    this.thumbnails?.clear();
     this.sizeEpoch++;
     this.pageSizes.clear();
     this.pageSizePromises.clear();
@@ -1826,6 +1846,8 @@ export class App {
     window.removeEventListener("paste", this.onPaste);
     this.unlistenClose?.();
     this.unlistenClose = null;
+    this.thumbnails?.destroy();
+    this.thumbnails = null;
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }

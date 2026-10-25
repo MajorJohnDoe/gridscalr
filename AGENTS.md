@@ -156,6 +156,7 @@ src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
+src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
 src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model and CSV serialization
