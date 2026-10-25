@@ -314,7 +314,7 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
 
-All export formats exclude hidden items and hidden layers. Locked items are still exported. Selection handles, hover states, and vertex markers are never exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups and images stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Images are embedded as PNG or JPEG objects with their opacity and rotation. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, vertex markers, and other interaction overlays.
+All export formats exclude hidden items and hidden layers. Locked items are still exported. Selection handles, hover states, and vertex markers are never exported. Every save and export refuses a destination that matches any source document in the project, including a second PDF or TIF in a multi-document project, so the source files are never overwritten. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups and images stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Images are embedded as PNG or JPEG objects with their opacity and rotation. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, vertex markers, and other interaction overlays.
 
 ## Help
 
@@ -488,8 +488,9 @@ src/
   io/stampDefaults.ts    global stamp presets for new projects
   help/markdown.ts       safe Markdown renderer for bundled help
   help/content.ts        Vite raw imports of docs/user-guide.md and docs/shortcuts.md
-  io/projectFile.ts      project schema normalization, serialization, relative paths
+  io/projectFile.ts      project schema normalization, serialization, relative paths, source-path protection
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
+  io/writeGuard.ts       conservative source-path matching for every save and export
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
   src/commands.rs        atomic text/binary writes, reads, and path checks

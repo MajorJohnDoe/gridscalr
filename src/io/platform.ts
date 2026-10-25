@@ -1,11 +1,17 @@
 import type { RecentEntry } from "../model/types";
 import { sha256Fallback } from "./sha256";
+import { assertWritablePath } from "./writeGuard";
 
 export const isTauri =
   typeof window !== "undefined" &&
   ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
 
 const RECENT_KEY = "gridscalr.recent.v1";
+
+export interface SaveOptions {
+  /** Absolute paths that must never be overwritten, such as source drawings. */
+  forbiddenPaths?: readonly string[];
+}
 
 async function tauriInvoke<T>(command: string, args?: Record<string, unknown>): Promise<T> {
   const { invoke } = await import("@tauri-apps/api/core");
@@ -178,22 +184,33 @@ export async function chooseSavePath(
   return save({ defaultPath: filename, filters });
 }
 
-export async function writeTextFile(path: string, contents: string): Promise<void> {
+export async function writeTextFile(
+  path: string,
+  contents: string,
+  options: SaveOptions = {},
+): Promise<void> {
+  assertWritablePath(path, options.forbiddenPaths ?? []);
   if (!isTauri) {
     downloadBlob(new Blob([contents], { type: "text/plain;charset=utf-8" }), path);
     return;
   }
-  await tauriInvoke("write_text", { path, contents });
+  await tauriInvoke("write_text", {
+    path,
+    contents,
+    protectedPaths: options.forbiddenPaths ?? [],
+  });
 }
 
 export async function saveTextFile(
   contents: string,
   filename: string,
   filters: { name: string; extensions: string[] }[],
+  options: SaveOptions = {},
 ): Promise<string | null> {
   const path = await chooseSavePath(filename, filters);
   if (!path) return null;
-  await writeTextFile(path, contents);
+  assertWritablePath(path, options.forbiddenPaths ?? []);
+  await writeTextFile(path, contents, options);
   return path;
 }
 
@@ -202,31 +219,27 @@ export async function saveBinaryFile(
   filename: string,
   filters: { name: string; extensions: string[] }[],
   mime = "application/octet-stream",
-  forbiddenPath?: string | null,
+  options: SaveOptions = {},
 ): Promise<string | null> {
   if (isTauri) {
     const path = await chooseSavePath(filename, filters);
     if (!path) return null;
-    if (forbiddenPath && sameFilePath(path, forbiddenPath)) {
-      throw new Error(
-        "Choose a different file name. GridScalr will not overwrite the source PDF.",
-      );
-    }
+    assertWritablePath(path, options.forbiddenPaths ?? []);
     let binary = "";
     const chunk = 0x8000;
     for (let i = 0; i < bytes.length; i += chunk) {
       binary += String.fromCharCode(...bytes.subarray(i, i + chunk));
     }
-    await tauriInvoke("write_binary_base64", { path, data: btoa(binary) });
+    await tauriInvoke("write_binary_base64", {
+      path,
+      data: btoa(binary),
+      protectedPaths: options.forbiddenPaths ?? [],
+    });
     return path;
   }
+  assertWritablePath(filename, options.forbiddenPaths ?? []);
   downloadBlob(new Blob([new Uint8Array(bytes).buffer], { type: mime }), filename);
   return filename;
-}
-
-function sameFilePath(a: string, b: string): boolean {
-  const normalize = (path: string) => path.replace(/\\/g, "/").replace(/\/+$/, "").toLowerCase();
-  return normalize(a) === normalize(b);
 }
 
 export async function sha256Hex(bytes: Uint8Array): Promise<string> {

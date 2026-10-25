@@ -51,7 +51,9 @@ import {
   relativeDocumentPath,
   resolveRelativePath,
   serializeProject,
+  sourceDocumentPaths,
   suggestedProjectName,
+  updateRelativeDocumentPaths,
 } from "../io/projectFile";
 import {
   addRecent,
@@ -70,6 +72,7 @@ import {
   sha256Hex,
   writeTextFile,
 } from "../io/platform";
+import { assertWritablePath } from "../io/writeGuard";
 import {
   loadPdfDocument,
   PasswordRequiredError,
@@ -1564,11 +1567,14 @@ export class App {
     const project = store.project;
     if (!project) return;
     try {
+      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
       const suggested = suggestedProjectName(project);
       if (!isTauri) {
-        project.documents[0].relativePath = null;
+        updateRelativeDocumentPaths(project, null);
         const json = serializeProject(project);
-        const result = await saveTextFile(json, suggested, PROJECT_FILTERS);
+        const result = await saveTextFile(json, suggested, PROJECT_FILTERS, {
+          forbiddenPaths: protectedPaths,
+        });
         if (!result) return;
         store.markSaved(null);
         toast("Project downloaded.", "success");
@@ -1581,9 +1587,10 @@ export class App {
         if (!chosen) return;
         path = chosen;
       }
-      project.documents[0].relativePath = relativeDocumentPath(path, project.documents[0].path);
+      assertWritablePath(path, protectedPaths);
+      updateRelativeDocumentPaths(project, path);
       const json = serializeProject(project);
-      await writeTextFile(path, json);
+      await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
       store.markSaved(path);
       addRecent({
         kind: "project",
@@ -1687,6 +1694,7 @@ export class App {
     const project = store.project;
     if (!project) return;
     const safe = project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
+    const protectedPaths = sourceDocumentPaths(project, store.projectPath);
     try {
       if (kind === "csv") {
         const rows: string[][] = [
@@ -1710,7 +1718,9 @@ export class App {
           }
         }
         const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
-        const path = await saveTextFile(csv, `${safe}-markups.csv`, CSV_FILTERS);
+        const path = await saveTextFile(csv, `${safe}-markups.csv`, CSV_FILTERS, {
+          forbiddenPaths: protectedPaths,
+        });
         if (path) toast("Markups exported to CSV.", "success");
         return;
       }
@@ -1721,6 +1731,7 @@ export class App {
           csv,
           `${safe}-quantities.csv`,
           QUANTITY_CSV_FILTERS,
+          { forbiddenPaths: protectedPaths },
         );
         if (path) toast("Quantity report exported to CSV.", "success");
         return;
@@ -1733,7 +1744,7 @@ export class App {
           `${safe}-quantities.pdf`,
           PDF_FILTERS,
           "application/pdf",
-          project.documents[0].path,
+          { forbiddenPaths: protectedPaths },
         );
         if (path) toast("Quantity report exported to PDF.", "success");
         return;
@@ -1741,7 +1752,9 @@ export class App {
 
       if (kind === "json") {
         const json = serializeProject(project);
-        const path = await saveTextFile(json, `${safe}.json`, JSON_FILTERS);
+        const path = await saveTextFile(json, `${safe}.json`, JSON_FILTERS, {
+          forbiddenPaths: protectedPaths,
+        });
         if (path) toast("Project exported to JSON.", "success");
         return;
       }
@@ -1757,7 +1770,7 @@ export class App {
             `${safe}-markups.pdf`,
             PDF_FILTERS,
             "application/pdf",
-            project.documents[0].path,
+            { forbiddenPaths: protectedPaths },
           );
           if (path) {
             toast(
@@ -1787,6 +1800,7 @@ export class App {
         `${safe}.png`,
         PNG_FILTERS,
         "image/png",
+        { forbiddenPaths: protectedPaths },
       );
       if (path) toast("View exported as PNG.", "success");
     } catch (error) {

@@ -665,6 +665,38 @@ export function resolveRelativePath(projectPath: string, relativePath: string | 
   return (projectPath.startsWith("/") ? "/" : "") + resolved.join(separator);
 }
 
+/**
+ * Every path that belongs to a source document. This includes both the stored
+ * absolute path and the path resolved from the project's relative reference, so
+ * an export can never overwrite a drawing even if it was located through the
+ * portable fallback.
+ */
+export function sourceDocumentPaths(
+  project: Project,
+  projectPath: string | null = null,
+): string[] {
+  const paths = new Set<string>();
+  for (const document of project.documents) {
+    if (document.path) paths.add(document.path);
+    if (projectPath && document.relativePath) {
+      const resolved = resolveRelativePath(projectPath, document.relativePath);
+      if (resolved) paths.add(resolved);
+    }
+  }
+  return [...paths];
+}
+
+/** Recomputes every document's relative path for a new project location. */
+export function updateRelativeDocumentPaths(
+  project: Project,
+  projectPath: string | null,
+): void {
+  for (const document of project.documents) {
+    document.relativePath =
+      projectPath && document.path ? relativeDocumentPath(projectPath, document.path) : null;
+  }
+}
+
 export function remapPageItems(project: Project, pageCount: number): void {
   for (const layer of project.layers) {
     layer.items = layer.items.filter((item) => item.page <= pageCount);

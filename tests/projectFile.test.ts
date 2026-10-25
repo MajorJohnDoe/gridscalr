@@ -9,7 +9,9 @@ import {
   relativeDocumentPath,
   resolveRelativePath,
   serializeProject,
+  sourceDocumentPaths,
   suggestedProjectName,
+  updateRelativeDocumentPaths,
 } from "../src/io/projectFile";
 
 function makeProject(): Project {
@@ -357,6 +359,54 @@ describe("project files", () => {
       "/home/drawings/a.pdf",
     );
     expect(resolveRelativePath("/home/ana/projects/plan.gridscalr", null)).toBeNull();
+  });
+
+  it("collects every source document path that a write must protect", () => {
+    const project = makeProject();
+    project.documents[0].path = "/home/ana/drawings/Floor Plan.pdf";
+    project.documents[0].relativePath = "../drawings/Floor Plan.pdf";
+    project.documents.push({
+      ...defaultDocument("Site plan.tif", 1),
+      id: "doc_tif",
+      kind: "tiff",
+      path: "/home/ana/scans/Site plan.tif",
+      relativePath: "../scans/Site plan.tif",
+    });
+
+    expect(sourceDocumentPaths(project, "/home/ana/projects/plan.gridscalr")).toEqual([
+      "/home/ana/drawings/Floor Plan.pdf",
+      "/home/ana/scans/Site plan.tif",
+    ]);
+  });
+
+  it("protects a relative-only source document through the project path", () => {
+    const project = makeProject();
+    project.documents[0].path = null;
+    project.documents[0].relativePath = "../drawings/Fallback.pdf";
+
+    expect(
+      sourceDocumentPaths(project, "/home/ana/projects/plan.gridscalr"),
+    ).toContain("/home/ana/drawings/Fallback.pdf");
+  });
+
+  it("updates the relative path for every document when the project moves", () => {
+    const project = makeProject();
+    project.documents[0].path = "/tmp/a/Plan.pdf";
+    project.documents.push({
+      ...defaultDocument("Site.pdf", 1),
+      id: "doc_site",
+      path: "/tmp/b/Site.pdf",
+      relativePath: null,
+    });
+
+    updateRelativeDocumentPaths(project, "/tmp/projects/New.gridscalr");
+    expect(project.documents.map((document) => document.relativePath)).toEqual([
+      "../a/Plan.pdf",
+      "../b/Site.pdf",
+    ]);
+
+    updateRelativeDocumentPaths(project, null);
+    expect(project.documents.map((document) => document.relativePath)).toEqual([null, null]);
   });
 
   it("suggests a safe project filename", () => {

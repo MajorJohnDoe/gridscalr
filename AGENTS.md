@@ -168,6 +168,7 @@ src/ui/settingsDialog.ts   project units, snapping, quantity defaults
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of docs/user-guide.md and docs/shortcuts.md
 src/io/projectFile.ts      schema normalization, migration, serialization, relative paths
+src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
 src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs

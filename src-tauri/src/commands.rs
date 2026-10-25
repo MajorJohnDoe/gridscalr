@@ -25,6 +25,31 @@ fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
     Ok(())
 }
 
+fn path_key(path: &str) -> String {
+    let mut value = path.trim().replace('\\', "/");
+    while value.ends_with('/') && value.len() > 1 {
+        value.pop();
+    }
+    value.to_lowercase()
+}
+
+/// Second line of defence behind the frontend guard: a write must never target
+/// one of the project's source drawings.
+fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), String> {
+    let target = path_key(path);
+    let blocked = protected_paths
+        .iter()
+        .filter(|protected| !protected.trim().is_empty())
+        .any(|protected| path_key(protected) == target);
+    if blocked {
+        return Err(
+            "Choose a different file name. GridScalr will not overwrite a source drawing."
+                .to_string(),
+        );
+    }
+    Ok(())
+}
+
 #[tauri::command]
 pub fn read_binary(path: String) -> Result<Response, String> {
     let bytes = fs::read(&path).map_err(|error| format!("Could not read {path}: {error}"))?;
@@ -37,12 +62,22 @@ pub fn read_text(path: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub fn write_text(path: String, contents: String) -> Result<(), String> {
+pub fn write_text(
+    path: String,
+    contents: String,
+    protected_paths: Vec<String>,
+) -> Result<(), String> {
+    ensure_writable(&path, &protected_paths)?;
     atomic_write(Path::new(&path), contents.as_bytes())
 }
 
 #[tauri::command]
-pub fn write_binary_base64(path: String, data: String) -> Result<(), String> {
+pub fn write_binary_base64(
+    path: String,
+    data: String,
+    protected_paths: Vec<String>,
+) -> Result<(), String> {
+    ensure_writable(&path, &protected_paths)?;
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(data.as_bytes())
         .map_err(|error| format!("Invalid binary payload: {error}"))?;
@@ -52,4 +87,32 @@ pub fn write_binary_base64(path: String, data: String) -> Result<(), String> {
 #[tauri::command]
 pub fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn blocks_a_protected_source_path() {
+        let protected = vec!["C:\\Drawings\\Plan.pdf".to_string()];
+        assert!(ensure_writable("C:/Drawings/Plan.pdf", &protected).is_err());
+    }
+
+    #[test]
+    fn blocks_a_protected_source_path_regardless_of_case() {
+        let protected = vec!["/home/ana/Plan.pdf".to_string()];
+        assert!(ensure_writable("/home/ana/plan.pdf", &protected).is_err());
+    }
+
+    #[test]
+    fn allows_a_different_export_path() {
+        let protected = vec!["/home/ana/Plan.pdf".to_string()];
+        assert!(ensure_writable("/home/ana/Plan-markups.pdf", &protected).is_ok());
+    }
+
+    #[test]
+    fn empty_protected_paths_do_not_block() {
+        assert!(ensure_writable("/home/ana/Plan.pdf", &[]).is_ok());
+    }
 }
