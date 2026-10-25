@@ -155,7 +155,9 @@ Clouds use the current drawing colour and line weight. Use **Fill** in Propertie
 
 ### Callout
 
-Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. Enter the text and press **Apply**. The leader ends in a filled arrow exactly at the target. Double-click the callout or right-click it to edit the text later. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing.
+Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. The inline editor opens immediately with size, text colour, Cancel, and Done. The leader ends in a filled arrow exactly at the target.
+
+Double-click the text box, use **Edit text…** in Properties, or right-click the callout to edit it inline later. Drag the box itself or its vertex handle to move the text independently. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing.
 
 ### Stamp
 

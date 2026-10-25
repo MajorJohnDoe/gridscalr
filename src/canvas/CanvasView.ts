@@ -180,7 +180,7 @@ interface CropMode {
 }
 
 interface TextEditSession {
-  mode: "text" | "cloud";
+  mode: "text" | "cloud" | "callout";
   itemId: string | null;
   layerId: string | null;
   page: number;
@@ -1693,11 +1693,11 @@ export class CanvasView {
       this.startCloudTextEdit(hit.item, hit.layer);
       return;
     }
-    if (
-      hit.item.kind === "callout" ||
-      hit.item.kind === "stamp" ||
-      hit.item.kind === "delta"
-    ) {
+    if (hit.item.kind === "callout") {
+      this.startCalloutTextEdit(hit.item, hit.layer);
+      return;
+    }
+    if (hit.item.kind === "stamp" || hit.item.kind === "delta") {
       void this.editItemText(hit.item);
       return;
     }
@@ -1984,6 +1984,36 @@ export class CanvasView {
     });
   }
 
+  private startCalloutTextEdit(item: MarkupItem, layer: Layer): void {
+    if (itemIsLocked(item, layer)) {
+      toast("This item is locked.", "warning");
+      return;
+    }
+    if (this.textEdit) this.commitTextEdit();
+    const layout = calloutLayout(item);
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const color = item.textColor ?? "#f7fbfc";
+    this.beginTextEditSession({
+      mode: "callout",
+      itemId: item.id,
+      layerId: layer.id,
+      page: item.page,
+      anchor: layout.center,
+      text: item.text ?? "",
+      color,
+      fontSize,
+      rotation: 0,
+      boxWidth: item.textBoxWidth,
+      boxHeight: item.textBoxHeight,
+      original: {
+        text: item.text ?? "",
+        color,
+        fontSize,
+        rotation: 0,
+      },
+    });
+  }
+
   public editSelectedText(): void {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
@@ -2001,11 +2031,11 @@ export class CanvasView {
       this.startCloudTextEdit(found.item, found.layer);
       return;
     }
-    if (
-      found.item.kind === "callout" ||
-      found.item.kind === "stamp" ||
-      found.item.kind === "delta"
-    ) {
+    if (found.item.kind === "callout") {
+      this.startCalloutTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "stamp" || found.item.kind === "delta") {
       void this.editItemText(found.item);
       return;
     }
@@ -2021,9 +2051,14 @@ export class CanvasView {
     const textarea = document.createElement("textarea");
     textarea.className = "canvas-text-editor-input";
     textarea.value = session.text;
-    textarea.placeholder = session.mode === "cloud" ? "Cloud text…" : "Type a note…";
-    textarea.wrap = session.mode === "cloud" ? "soft" : "off";
-    textarea.style.textAlign = session.mode === "cloud" ? "center" : "left";
+    textarea.placeholder =
+      session.mode === "cloud"
+        ? "Cloud text…"
+        : session.mode === "callout"
+          ? "Callout text…"
+          : "Type a note…";
+    textarea.wrap = session.mode === "text" ? "off" : "soft";
+    textarea.style.textAlign = session.mode === "text" ? "left" : "center";
     textarea.spellcheck = false;
     textarea.setAttribute("aria-label", "Text annotation");
     const strip = document.createElement("div");
@@ -2065,7 +2100,7 @@ export class CanvasView {
     rotationInput.value = String(roundTo(session.rotation, 1));
     rotationInput.className = "inline-angle-input";
     rotationField.append(rotationLabel, rotationInput);
-    if (session.mode === "cloud") {
+    if (session.mode !== "text") {
       rotationField.hidden = true;
       rotationField.style.display = "none";
     }
@@ -2154,7 +2189,7 @@ export class CanvasView {
     let rotation = edit.rotation;
     let lineHeight: number;
     let fontSize: number;
-    if (edit.mode === "cloud") {
+    if (edit.mode === "cloud" || edit.mode === "callout") {
       const layout = textBoxLayout(
         edit.text,
         edit.fontSize,
@@ -2234,7 +2269,7 @@ export class CanvasView {
         this.closeTextEditor();
         return;
       }
-      if (edit.mode === "cloud") {
+      if (edit.mode === "cloud" || edit.mode === "callout") {
         const original = edit.original!;
         const changed =
           value !== original.text ||
@@ -2652,22 +2687,11 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    void this.createCallout(start, current);
+    this.createCallout(start, current);
   }
 
-  private async createCallout(start: Point, current: Point): Promise<void> {
-    const text = await textDialog(
-      "Callout",
-      "Text attached to the leader",
-      "",
-      "Callout text",
-      true,
-    );
-    if (text === null) {
-      this.drawInteraction();
-      return;
-    }
-    const content = text.trim() || "Callout";
+  private createCallout(start: Point, current: Point): void {
+    const content = "Callout";
     const page = this.pageSize();
     let center = current;
     if (page) {
@@ -2682,7 +2706,11 @@ export class CanvasView {
         y: Math.max(minY, Math.min(maxY, current.y)),
       };
     }
-    this.createItem("callout", [start, center], { text: content });
+    const created = this.createItem("callout", [start, center], { text: content });
+    if (created && store.project) {
+      const found = findItem(store.project, created.itemId);
+      if (found) this.startCalloutTextEdit(found.item, found.layer);
+    }
     this.drawInteraction();
   }
 
@@ -3091,7 +3119,13 @@ export class CanvasView {
     item: MarkupItem,
     labels: Map<string, LabelLayout>,
   ): void {
-    if (this.editingItemId === item.id && item.kind !== "cloud") return;
+    if (
+      this.editingItemId === item.id &&
+      item.kind !== "cloud" &&
+      item.kind !== "callout"
+    ) {
+      return;
+    }
     const zoom = store.ui.zoom;
     const points = item.points.map((p) => this.toScreen(p));
     if (points.length === 0) return;
@@ -3317,14 +3351,16 @@ export class CanvasView {
         ctx.stroke();
         drawArrowHead(ctx, anchor, head, item.color);
         ctx.restore();
-        this.drawAnnotationPanel(
-          ctx,
-          { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
-          item,
-          "rgba(12, 16, 18, 0.92)",
-          item.textColor ?? "#f7fbfc",
-          false,
-        );
+        if (this.editingItemId !== item.id) {
+          this.drawAnnotationPanel(
+            ctx,
+            { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
+            item,
+            "rgba(12, 16, 18, 0.92)",
+            item.textColor ?? "#f7fbfc",
+            false,
+          );
+        }
         break;
       }
       case "stamp": {
