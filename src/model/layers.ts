@@ -354,6 +354,7 @@ export function cloneItem(item: MarkupItem, offset = 0, page?: number): MarkupIt
     page: page ?? item.page,
     points: item.points.map((point) => ({ x: point.x + offset, y: point.y + offset })),
     textOffset: item.textOffset ? { ...item.textOffset } : undefined,
+    labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
     // Copies should always be visible and editable after they are pasted.
     visible: true,
     locked: false,

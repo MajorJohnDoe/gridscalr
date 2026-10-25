@@ -34,6 +34,8 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision clouds, callouts, stamps, revision deltas, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
+- Drag measurement labels to place them manually when labels are tight, and choose **Solid** or **Dashed** line styles for length measurements.
+- Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves. Expand a layer to list every item in it, then click an item to jump to its page and select it.
@@ -129,7 +131,7 @@ GridScalr uses a compact drawing-first layout:
 - **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Properties** – the page scale, active layer, and selected item. Quantity defaults and stamp presets are under **Settings → Project settings**.
+- **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a jade accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
@@ -187,9 +189,11 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 
 ### 3. Measure
 
-- **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle.
+- **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle. Choose **Solid** or **Dashed** under **Line style** in Properties. Drag the value label on the plan to place it manually; **Reset label position** returns it to automatic placement.
 - **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the context bar before drawing, in the **New measurement** popover, or from the Area tool flyout. You can also change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
+
+Length and area units are project-wide. Choose mm, cm, m, in, ft, yd, or the matching area unit in **Properties → Measurement units**, **Canvas → Units**, or **Settings → Project settings**. Changing units only changes how values are displayed and reported.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates. New measurements use a 0.75 pt paper-space line weight and new drawing items use 1.5 pt; both can be changed from 0.25 to 8 pt in Properties, and drawing tools also expose the weight in the context bar.
 
@@ -264,7 +268,7 @@ Open the **Layers** tab in the left panel to:
 - Show or hide a layer.
 - Lock a layer against moving, editing, and deleting its items.
 - Change layer colour and opacity.
-- Rename the active layer.
+- Double-click anywhere on a layer row to rename it inline.
 - Drag layers within their group to reorder them.
 - Expand a layer with its chevron to list every item in that layer, newest first.
 - Click an item to jump to its page and select it, or `Shift`/`Ctrl`/`Cmd`-click to add it to the current selection.
@@ -359,11 +363,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 8: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 9: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets and dashed length measurements. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 8,
+  "schemaVersion": 9,
   "name": "Level 01",
   "documents": [
     {

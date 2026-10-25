@@ -101,6 +101,55 @@ describe("project files", () => {
     expect(item.locked).toBe(true);
   });
 
+  it("round-trips manual label offsets and dashed length lines", () => {
+    const project = makeProject();
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items[0].labelOffset = { x: 14, y: -9 };
+    measure.items[0].lineStyle = "dashed";
+
+    const parsed = parseProject(serializeProject(project));
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_a")!;
+    expect(item.labelOffset).toEqual({ x: 14, y: -9 });
+    expect(item.lineStyle).toBe("dashed");
+  });
+
+  it("drops label offsets and line styles that do not belong to the item kind", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    const draw = raw.layers.find((layer: { kind: string }) => layer.kind === "draw");
+    draw.items.push({
+      id: "item_label_on_text",
+      page: 1,
+      kind: "text",
+      points: [{ x: 20, y: 20 }],
+      color: "#f2a93b",
+      strokeWidth: 2,
+      text: "Note",
+      labelOffset: { x: 10, y: 10 },
+      lineStyle: "dashed",
+    });
+    const parsed = parseProject(JSON.stringify(raw));
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_label_on_text")!;
+    expect(item.labelOffset).toBeUndefined();
+    expect(item.lineStyle).toBeUndefined();
+  });
+
+  it("migrates a schema 8 project to the current format", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 8;
+    for (const layer of raw.layers as Array<{ items: Array<Record<string, unknown>> }>) {
+      for (const item of layer.items) {
+        delete item.labelOffset;
+        delete item.lineStyle;
+      }
+    }
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+  });
+
   it("normalizes text rotation and clamps arbitrary text sizes", () => {
     const project = makeProject();
     const draw = project.layers.find((layer) => layer.kind === "draw")!;

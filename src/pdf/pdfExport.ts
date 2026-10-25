@@ -513,7 +513,17 @@ function drawItem(
 
   switch (item.kind) {
     case "length":
-      drawPolyline(page, viewport, item.points, color, width, opacity, false);
+      drawPolyline(
+        page,
+        viewport,
+        item.points,
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Round,
+        item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
+      );
       break;
     case "area": {
       const shape = areaShapeOf(item);
@@ -1007,6 +1017,7 @@ function drawPolyline(
   opacity: number,
   closed: boolean,
   lineCap: LineCapStyle = LineCapStyle.Round,
+  dashArray?: number[],
 ): void {
   if (points.length < 2) return;
   const count = closed ? points.length : points.length - 1;
@@ -1021,6 +1032,7 @@ function drawPolyline(
       color,
       opacity: clamp(opacity, 0, 1),
       lineCap,
+      dashArray,
     });
   }
 }

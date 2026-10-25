@@ -25,7 +25,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Properties** – the current page scale, the active layer, and the selected item. Collapse it with **View → Properties**.
+- **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, active layer, and a local-only indicator.
 
 Panels remember their width and collapsed state between sessions.
@@ -120,6 +120,8 @@ Measurements are added to the active **measurement layer**. Choose the target la
 
 Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to finish. Hold `Shift` to constrain the angle.
 
+Length measurements can use a **Solid** or **Dashed** line style in Properties. Drag the value label on the plan to place it manually when labels are tight; a leader line connects it to the measurement. **Reset label position** in Properties returns it to automatic placement. The same label dragging works for areas and counts.
+
 ### Area
 
 Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover.
@@ -138,7 +140,7 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 While a measurement tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows a direct **Add / Deduct** switch. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
 
-Change a measurement's category, room, area mode, or count type later in **Properties**, or for several selected measurements at once.
+Change a measurement's category, room, area mode, line style, or count type later in **Properties**, or for several selected measurements at once. When a markup is selected, the **Selection** section is shown above **Active layer** so it is clear whether a change applies to one markup or the whole layer.
 
 ### Snapping
 
@@ -235,7 +237,7 @@ Open the **Layers** tab in the left panel.
 - **Eye** shows or hides a layer.
 - **Lock** prevents moving, editing, and deleting its items.
 - Click the colour swatch to change the layer colour.
-- Double-click the name to rename the layer.
+- Double-click anywhere on a layer row to rename it inline.
 - Drag layers within their group to reorder them.
 - Use the chevron to expand a layer and list every item in it, newest first.
 - Click an item to jump to its page and select it. `Shift`/`Ctrl`/`Cmd`-click adds it to the current selection.
@@ -367,7 +369,7 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
 
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it in **Properties → Scale**.
-- **Units** – length and area units for the project.
+- **Units** – length and area units for the project. The same controls are available under **Properties → Measurement units** and in the **Canvas** popover.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
@@ -391,7 +393,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 8 is the current format. Older projects load normally and are migrated when opened.
+Schema version 9 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

@@ -5,10 +5,11 @@ import {
   pageScaleLocked,
 } from "../model/calibration";
 import { removeLayer } from "../model/layers";
-import { formatNumber, formatScale } from "../model/units";
+import { AREA_UNITS, LENGTH_UNITS, formatNumber, formatScale } from "../model/units";
+import type { AreaUnit, LengthUnit } from "../model/types";
 import { store } from "../state/store";
 import { confirmDialog } from "./dialogs";
-import { clear, el } from "./dom";
+import { clear, el, option } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -46,8 +47,17 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   }
 
   refs.inspector.append(scaleSection(project, actions));
-  refs.inspector.append(activeLayerSection(project, actions));
-  refs.inspector.append(selectionSection(project, actions));
+  const layerSection = activeLayerSection(project, actions);
+  layerSection.classList.add("active-layer-section");
+  const selection = selectionSection(project, actions);
+  selection.classList.add("selection-section");
+  // A selected markup is the task at hand. Put it above the layer-wide
+  // settings so the two colour controls are harder to confuse.
+  if (store.ui.selection.length) {
+    refs.inspector.append(selection, layerSection);
+  } else {
+    refs.inspector.append(layerSection, selection);
+  }
 }
 
 function scaleSection(
@@ -133,6 +143,54 @@ function scaleSection(
   }
   card.append(buttons);
   section.append(card);
+
+  const units = el("div", "scale-units");
+  const unitsHead = el("div", "section-head");
+  unitsHead.append(el("h3", "", "Measurement units"));
+  unitsHead.append(el("span", "status-chip", "Project"));
+  units.append(unitsHead);
+  const unitsRow = el("div", "field-row");
+
+  const lengthField = el("label", "field");
+  lengthField.append(el("span", "field-label", "Length"));
+  const lengthUnit = el("select", "select");
+  lengthUnit.setAttribute("aria-label", "Project length unit");
+  lengthUnit.title = "Applies to every page and to quantity reports";
+  for (const unit of LENGTH_UNITS) {
+    lengthUnit.append(option(unit.id, unit.label, unit.id === project.settings.lengthUnit));
+  }
+  lengthUnit.addEventListener("change", () => {
+    store.mutate((current) => {
+      current.settings.lengthUnit = lengthUnit.value as LengthUnit;
+    }, "change");
+  });
+  lengthField.append(lengthUnit);
+
+  const areaField = el("label", "field");
+  areaField.append(el("span", "field-label", "Area"));
+  const areaUnit = el("select", "select");
+  areaUnit.setAttribute("aria-label", "Project area unit");
+  areaUnit.title = "Applies to every page and to quantity reports";
+  for (const unit of AREA_UNITS) {
+    areaUnit.append(option(unit.id, unit.label, unit.id === project.settings.areaUnit));
+  }
+  areaUnit.addEventListener("change", () => {
+    store.mutate((current) => {
+      current.settings.areaUnit = areaUnit.value as AreaUnit;
+    }, "change");
+  });
+  areaField.append(areaUnit);
+
+  unitsRow.append(lengthField, areaField);
+  units.append(unitsRow);
+  units.append(
+    el(
+      "div",
+      "empty-note small",
+      "Project-wide. Changing units only changes the display and reports.",
+    ),
+  );
+  section.append(units);
   return section;
 }
 
@@ -145,6 +203,13 @@ function activeLayerSection(
   head.append(el("h3", "", "Active layer"));
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   section.append(head);
+  section.append(
+    el(
+      "div",
+      "empty-note small",
+      "These settings apply to the whole layer. To change one markup, use Selection.",
+    ),
+  );
   if (!active) {
     section.append(el("div", "empty-note small", "No active layer."));
     return section;
@@ -166,7 +231,7 @@ function activeLayerSection(
   section.append(nameField);
 
   const colorField = el("label", "field");
-  colorField.append(el("span", "field-label", "Layer colour"));
+  colorField.append(el("span", "field-label", "Layer colour (all items)"));
   const color = el("input", "color-swatch");
   color.type = "color";
   color.value = active.color;

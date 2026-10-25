@@ -4,12 +4,12 @@ GridScalr is used for two closely related jobs: recording what is on a drawing, 
 
 | Role | Typical output |
 | --- | --- |
-| Operations technician (drifttekniker) | A marked-up drawing PDF for a work order, inspection or deviation report |
-| Technical property manager (teknisk förvaltare) | A quantity takeoff with categories, rooms, waste and rounding for procurement |
+| Operations technician | A marked-up drawing PDF for a work order, inspection or deviation report |
+| Technical property manager | A quantity takeoff with categories, rooms, waste and rounding for procurement |
 
 Both workflows use the same local `.gridscalr` project. A drawing is never uploaded or overwritten.
 
-## Operations technician (drifttekniker)
+## Operations technician
 
 Use this workflow when you need to document a site visit, mark a deviation, or give a contractor a drawing with clear annotations.
 
@@ -33,7 +33,7 @@ Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keep
 - Use Count for doors, windows, radiators, fixtures and other objects.
 - Use the **Deduct** switch in the context bar for shafts, openings and other areas that should not be ordered.
 
-Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
+Drag a measurement label to place it clear of nearby geometry; **Reset label position** in Properties returns it to automatic placement. Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
 
 ### 3. Mark the deviation
 
@@ -68,7 +68,7 @@ The source drawing is never modified. GridScalr also refuses to save an export o
 - Hidden layers and items are intentional; hidden content is excluded from every export.
 - The exported PDF has the pages, labels and legend the contractor needs.
 
-## Technical property manager (teknisk förvaltare)
+## Technical property manager
 
 Use this workflow when the drawing set will become a quantity takeoff, budget or procurement list.
 

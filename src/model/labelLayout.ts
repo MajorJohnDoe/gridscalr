@@ -30,6 +30,8 @@ export interface LabelSource {
   obstacle: Bounds;
   /** Area outline, when the source is a measured polygon. */
   polygon?: Point[];
+  /** Manual label offset in PDF points. Manual placement skips collision layout. */
+  labelOffset?: Point;
   color: string;
 }
 
@@ -98,6 +100,7 @@ export function pageLabelSources(
               ? countSymbolBounds(item.points[0])
               : itemBounds(item),
           polygon: item.kind === "area" ? areaOutline(item.points, areaShapeOf(item)) : undefined,
+          labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
           color: item.color,
         });
       }
@@ -144,6 +147,16 @@ function layoutLabel(
   options: LabelLayoutOptions,
   occupied: Bounds[],
 ): LabelLayout {
+  if (source.labelOffset) {
+    const anchor = {
+      x: source.anchor.x + source.labelOffset.x,
+      y: source.anchor.y + source.labelOffset.y,
+    };
+    return clampToPage(
+      withLeader(buildLayout(source, 1, anchor, "line", options), source),
+      options.pageSize,
+    );
+  }
   if (source.kind === "area") {
     const centers = [source.anchor, boundsCenter(source.obstacle)];
     for (const scale of LABEL_SCALES) {

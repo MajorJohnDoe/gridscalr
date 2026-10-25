@@ -312,6 +312,9 @@ function normalizeItem(
     raw.kind === "arrow" ? (raw.arrowHeads === "both" ? "both" : "end") : undefined;
   const textOffset =
     raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
+  const labelOffset = isMeasure && isPoint(raw.labelOffset) ? { ...raw.labelOffset } : undefined;
+  const lineStyle: MarkupItem["lineStyle"] =
+    raw.kind === "length" && raw.lineStyle === "dashed" ? "dashed" : undefined;
   const cloudRadius =
     raw.kind === "cloud" &&
     typeof raw.cloudRadius === "number" &&
@@ -428,6 +431,8 @@ function normalizeItem(
     highlightShape,
     arrowHeads,
     textOffset,
+    labelOffset,
+    lineStyle,
     cloudRadius,
     textBoxWidth,
     textBoxHeight,

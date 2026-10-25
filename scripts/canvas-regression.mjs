@@ -247,9 +247,24 @@ try {
     "Escape should cancel text creation",
   );
 
-  // 6. Measurement-label editing.
+  // 6. Measurement-label dragging and editing.
   await page.keyboard.press("v");
   await selectItem("item_floor_living");
+  const draggableLabel = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  assert.ok(draggableLabel, "the measurement label should have a screen position");
+  await dragScreen(
+    { x: canvasBox.x + draggableLabel.x, y: canvasBox.y + draggableLabel.y },
+    { x: canvasBox.x + draggableLabel.x + 70, y: canvasBox.y + draggableLabel.y + 45 },
+  );
+  const movedLabel = await itemById("item_floor_living");
+  assert.ok(
+    movedLabel.labelOffset &&
+      Math.abs(movedLabel.labelOffset.x) > 10 &&
+      Math.abs(movedLabel.labelOffset.y) > 10,
+    "dragging a measurement label should store a manual offset",
+  );
   const labelPoint = await page.evaluate(() =>
     window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
   );
@@ -276,6 +291,16 @@ try {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(100);
   assert.equal((await itemById("item_callout_window")).text, "QA callout");
+
+  // 7b. Length line style: dashed measurement lines.
+  await page.keyboard.press("v");
+  await selectItem("item_wall_partition");
+  await page.getByLabel("Measurement line style").selectOption("dashed");
+  assert.equal(
+    (await itemById("item_wall_partition")).lineStyle,
+    "dashed",
+    "the Properties line style should mark the length as dashed",
+  );
 
   // 8. Hidden and locked items stay out of hit testing.
   await page.keyboard.press("v");
@@ -337,7 +362,7 @@ try {
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, deduction, resize, rotate, text, label/callout editing, hidden/locked and crop.",
+    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, resize, rotate, text, label/callout editing, hidden/locked and crop.",
   );
 } finally {
   await page?.close();

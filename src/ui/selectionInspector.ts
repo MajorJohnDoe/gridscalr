@@ -33,7 +33,10 @@ export function selectionSection(
   if (refs.length > 1) return multiSelectionSection(project, refs, actions);
 
   const section = el("section", "inspector-section");
-  section.append(el("h3", "", "Selection"));
+  const head = el("div", "section-head");
+  head.append(el("h3", "", "Selection"));
+  if (refs.length) head.append(el("span", "status-chip is-selected", "Selected"));
+  section.append(head);
   const selection = refs[0] ?? null;
   const found = selection ? findItem(project, selection.itemId) : undefined;
   if (!selection || !found) {
@@ -107,6 +110,31 @@ export function selectionSection(
   }
 
   if (isMeasurementKind(item.kind)) {
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "Drag the value label on the plan to position it freely. Reset returns it to automatic placement.",
+      ),
+    );
+    if (item.labelOffset) {
+      const resetLabel = el("button", "btn btn-small btn-ghost", "Reset label position");
+      resetLabel.type = "button";
+      resetLabel.disabled = locked;
+      resetLabel.title = locked
+        ? "Unlock the layer to move or reset this label."
+        : "Return the value label to automatic placement";
+      resetLabel.addEventListener("click", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          delete target.labelOffset;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      section.append(resetLabel);
+    }
+
     if (item.kind === "count") {
       const typeField = el("label", "field");
       typeField.append(el("span", "field-label", "Object type"));
@@ -582,6 +610,32 @@ export function selectionSection(
     }
     styleRow.append(sizeField);
     section.append(styleRow);
+
+    if (item.kind === "length") {
+      const lineField = el("label", "field");
+      lineField.append(el("span", "field-label", "Line style"));
+      const lineStyle = el("select", "select");
+      lineStyle.append(
+        option("solid", "Solid", item.lineStyle !== "dashed"),
+        option("dashed", "Dashed", item.lineStyle === "dashed"),
+      );
+      lineStyle.disabled = locked;
+      lineStyle.setAttribute("aria-label", "Measurement line style");
+      lineStyle.title = locked
+        ? "Unlock the layer to change the line style."
+        : "Solid or dashed measurement line";
+      lineStyle.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          if (lineStyle.value === "dashed") target.lineStyle = "dashed";
+          else delete target.lineStyle;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      lineField.append(lineStyle);
+      section.append(lineField);
+    }
   }
 
   if (

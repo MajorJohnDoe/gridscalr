@@ -116,6 +116,27 @@ describe("measurement label placement", () => {
     expect(layout.leader).toBeDefined();
   });
 
+  it("honours a manual label offset and draws a leader to the measurement", () => {
+    const source: LabelSource = {
+      id: "manual",
+      kind: "length",
+      parts: { text: "10 m" },
+      anchor: { x: 150, y: 100 },
+      obstacle: {
+        min: { x: 100, y: 100 },
+        max: { x: 200, y: 100 },
+      },
+      labelOffset: { x: 40, y: -30 },
+      color: "#35c2a1",
+    };
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("line");
+    expect(layout.box.x + layout.box.width / 2).toBeCloseTo(190);
+    expect(layout.box.y + layout.box.height / 2).toBeCloseTo(70);
+    expect(layout.leader).toBeDefined();
+  });
+
   it("keeps length labels next to the line without a leader", () => {
     const source: LabelSource = {
       id: "length",

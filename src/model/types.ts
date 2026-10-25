@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 8 as const;
+export const SCHEMA_VERSION = 9 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -12,6 +12,8 @@ export type AreaShape = "polygon" | "rectangle" | "ellipse";
 export type HighlightShape = "stroke" | "rectangle" | "polygon";
 export type ArrowHeads = "end" | "both";
 export type TextAlign = "left" | "center" | "right";
+/** Stroke pattern for measurement and drawing lines. Missing means solid. */
+export type LineStyle = "solid" | "dashed";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -110,6 +112,8 @@ export interface MarkupItem {
   areaMode?: AreaMode;
   /** Areas only. Missing means polygon. */
   areaShape?: AreaShape;
+  /** Length measurements only. Missing means solid. */
+  lineStyle?: LineStyle;
   /** Count items only. */
   countType?: CountType;
   /** Highlights only. Missing means the original freehand stroke. */
@@ -118,6 +122,8 @@ export interface MarkupItem {
   arrowHeads?: ArrowHeads;
   /** Cloud text labels only: offset from the cloud centre in PDF points. */
   textOffset?: Point;
+  /** Measurements only: manual offset for the value label, in PDF points. */
+  labelOffset?: Point;
   /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
   cloudRadius?: number;
   /** Callout and cloud text boxes only: fixed box width in PDF points. */

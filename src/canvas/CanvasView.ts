@@ -24,6 +24,7 @@ import { areaCentroid, areaOutline, areaShapeOf, areaValue, rectangleCorners } f
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
+  labelAnchorForPoints,
   labelBox,
   labelMetrics,
   LABEL_CALIBRATION_OFFSET,
@@ -164,7 +165,7 @@ type Draft =
   | { kind: "area-ellipse"; start: Point; current: Point };
 
 interface DragState {
-  mode: "move" | "vertex" | "resize" | "rotate" | "label";
+  mode: "move" | "vertex" | "resize" | "rotate" | "label" | "measurement-label";
   itemId: string;
   layerId: string;
   vertexIndex: number;
@@ -180,6 +181,7 @@ interface DragState {
   center?: Point;
   startAngle?: number;
   startTextOffset?: Point;
+  startLabelOffset?: Point;
 }
 
 interface MarqueeState {
@@ -750,6 +752,40 @@ export class CanvasView {
     const modifier = event.shiftKey || event.ctrlKey || event.metaKey;
     const selection = store.ui.selection;
     const primary = store.primarySelection;
+
+    if (!modifier) {
+      const labelHit = this.measurementLabelHit(screen);
+      if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
+        const layout = this.pageLabelLayouts().get(labelHit.item.id);
+        if (layout) {
+          const ref = { layerId: labelHit.layer.id, itemId: labelHit.item.id };
+          if (!store.isSelected(ref)) store.setSelection(ref);
+          const center = {
+            x: layout.box.x + layout.box.width / 2,
+            y: layout.box.y + layout.box.height / 2,
+          };
+          const anchor = labelAnchorForPoints(labelHit.item, labelHit.item.points);
+          store.beginGesture();
+          this.drag = {
+            mode: "measurement-label",
+            itemId: labelHit.item.id,
+            layerId: labelHit.layer.id,
+            vertexIndex: -1,
+            last: page,
+            moved: false,
+            startPage: page,
+            startLabelOffset: labelHit.item.labelOffset
+              ? { ...labelHit.item.labelOffset }
+              : { x: center.x - anchor.x, y: center.y - anchor.y },
+          };
+          this.capturePointer(event.pointerId);
+          this.updateCursor();
+          this.drawInteraction();
+          return;
+        }
+      }
+    }
+
     if (!modifier && selection.length === 1 && primary) {
       const found = findItem(project, primary.itemId);
       if (found && !itemIsLocked(found.item, found.layer)) {
@@ -1089,6 +1125,15 @@ export class CanvasView {
       if (!this.drag.startPage) return;
       const start = this.drag.startTextOffset ?? { x: 0, y: 0 };
       item.textOffset = {
+        x: start.x + (page.x - this.drag.startPage.x),
+        y: start.y + (page.y - this.drag.startPage.y),
+      };
+      item.updatedAt = new Date().toISOString();
+      this.drag.moved = true;
+    } else if (this.drag.mode === "measurement-label") {
+      if (!this.drag.startPage) return;
+      const start = this.drag.startLabelOffset ?? { x: 0, y: 0 };
+      item.labelOffset = {
         x: start.x + (page.x - this.drag.startPage.x),
         y: start.y + (page.y - this.drag.startPage.y),
       };
@@ -2211,7 +2256,11 @@ export class CanvasView {
       case "length": {
         ctx.beginPath();
         points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
         ctx.stroke();
+        ctx.setLineDash([]);
         this.drawEndpoints(ctx, points, item.color);
         break;
       }

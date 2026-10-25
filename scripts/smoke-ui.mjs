@@ -216,6 +216,60 @@ try {
     "item_floor_living",
     "clicking a layer item should select it",
   );
+  const inspectorOrder = await page.evaluate(() =>
+    [...document.querySelectorAll(".inspector-section")].map((section) =>
+      section.classList.contains("selection-section")
+        ? "selection"
+        : section.classList.contains("active-layer-section")
+          ? "layer"
+          : "scale",
+    ),
+  );
+  assert.deepEqual(
+    inspectorOrder,
+    ["scale", "selection", "layer"],
+    "a selected markup should sit above the active-layer settings",
+  );
+
+  const lengthUnit = page.getByLabel("Project length unit");
+  await lengthUnit.selectOption("m");
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.project.settings.lengthUnit),
+    "m",
+    "the Properties unit selector should change the project length unit",
+  );
+  await lengthUnit.selectOption("mm");
+
+  await page.evaluate(() => {
+    window.__gridscalrContextPrevented = null;
+    document.addEventListener(
+      "contextmenu",
+      (event) => {
+        window.__gridscalrContextPrevented = event.defaultPrevented;
+      },
+      { once: true },
+    );
+  });
+  await page.locator(".inspector-section").first().click({ button: "right" });
+  assert.equal(
+    await page.evaluate(() => window.__gridscalrContextPrevented),
+    true,
+    "Properties should suppress the WebView context menu",
+  );
+
+  const drawingLayer = page.locator(".layer-row").filter({ hasText: "Site markups" }).first();
+  const drawingNameBox = await drawingLayer.locator(".layer-name").boundingBox();
+  assert.ok(drawingNameBox, "the drawing layer name should be visible");
+  await page.mouse.dblclick(
+    drawingNameBox.x + drawingNameBox.width / 2,
+    drawingNameBox.y + drawingNameBox.height / 2,
+  );
+  const layerRename = page.locator(".layer-name-input");
+  await layerRename.waitFor();
+  assert.equal(await layerRename.inputValue(), "Site markups");
+  await page.keyboard.press("Escape");
+  await layerRename.waitFor({ state: "detached" });
+
   await measureLayer.click({ button: "right" });
   const layerMenu = page.locator(".popover");
   await layerMenu.waitFor();
@@ -238,7 +292,17 @@ try {
   await help.waitFor();
   assert.equal(await help.getByRole("tab").count(), 4, "expected four help topics");
   await help.getByRole("tab", { name: "Workflows" }).click();
-  await help.getByText("Operations technician (drifttekniker)").first().waitFor();
+  await help.getByText("Operations technician", { exact: true }).first().waitFor();
+  const helpBox = await help.boundingBox();
+  assert.ok(
+    helpBox && helpBox.width >= 1100,
+    `the help dialog should use more of the window, got ${helpBox?.width ?? 0}px`,
+  );
+  const helpText = await help.innerText();
+  assert.ok(
+    !/drifttekniker|förvaltare/i.test(helpText),
+    "the English workflows should not include Swedish role names",
+  );
   for (let index = 0; index < 20; index += 1) await page.keyboard.press("Tab");
   assert.equal(
     await page.evaluate(() => Boolean(document.activeElement?.closest(".modal"))),

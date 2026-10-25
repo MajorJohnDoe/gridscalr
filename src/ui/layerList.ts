@@ -19,6 +19,7 @@ import { toast } from "./toast";
  * state, so it deliberately stays out of the project file and undo history.
  */
 const expandedLayers = new Set<string>();
+let lastLayerClick: { id: string; time: number } | null = null;
 
 export function layerAction(iconName: string, label: string, extraClass = ""): HTMLButtonElement {
   const btn = el("button", `layer-action ${extraClass}`.trim());
@@ -346,11 +347,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       });
 
       const name = el("span", "layer-name", layer.name);
-      name.title = layer.name;
-      name.addEventListener("dblclick", (event) => {
-        event.stopPropagation();
-        beginInlineRename(row, name, layer.id);
-      });
+      name.title = `${layer.name} — double-click to rename`;
 
       const count = el("span", "layer-count", String(layer.items.length));
       count.title = `${layer.items.length} items`;
@@ -388,7 +385,19 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       actionsWrap.append(eye, lock, menu);
 
       row.append(disclosure, grip, color, name, count, actionsWrap);
-      row.addEventListener("click", () => {
+      row.addEventListener("click", (event) => {
+        const target = event.target as HTMLElement | null;
+        const now = Date.now();
+        const doubleClick =
+          lastLayerClick?.id === layer.id &&
+          now - lastLayerClick.time < 400 &&
+          !target?.closest("button, input, select");
+        lastLayerClick = doubleClick ? null : { id: layer.id, time: now };
+        if (doubleClick) {
+          event.stopPropagation();
+          beginInlineRename(row, name, layer.id);
+          return;
+        }
         store.setActiveLayer(layer.id);
         if (!layer.visible) toast("This layer is hidden. Show it to edit its contents.", "warning");
       });

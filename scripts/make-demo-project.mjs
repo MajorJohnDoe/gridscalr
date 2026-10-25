@@ -238,7 +238,7 @@ const drawItems = [
 ];
 
 const project = {
-  schemaVersion: 8,
+  schemaVersion: 9,
   id: "prj_demo_takeoff",
   name: "Riverside House - Takeoff",
   documents: [
