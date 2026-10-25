@@ -375,6 +375,35 @@ describe("project files", () => {
     expect(resolveRelativePath("/home/ana/projects/plan.gridscalr", null)).toBeNull();
   });
 
+  it("handles Windows paths, spaces and Swedish characters", () => {
+    const projectPath = "C:\\Projekt\\Översikt.gridscalr";
+    const documentPath = "C:\\Ritningar\\Plan 1.pdf";
+    expect(relativeDocumentPath(projectPath, documentPath)).toBe("../Ritningar/Plan 1.pdf");
+    expect(resolveRelativePath(projectPath, "../Ritningar/Plan 1.pdf")).toBe(
+      "C:\\Ritningar\\Plan 1.pdf",
+    );
+  });
+
+  it("updates Windows relative paths for several documents", () => {
+    const project = makeProject();
+    project.documents[0].path = "C:\\Ritningar\\Plan 1.pdf";
+    project.documents.push({
+      ...defaultDocument("Fasad Ö.pdf", 1),
+      id: "doc_facade",
+      path: "C:\\Ritningar\\Fasad Ö.pdf",
+      relativePath: null,
+    });
+
+    updateRelativeDocumentPaths(project, "C:\\Projekt\\Nytt projekt.gridscalr");
+    expect(project.documents.map((document) => document.relativePath)).toEqual([
+      "../Ritningar/Plan 1.pdf",
+      "../Ritningar/Fasad Ö.pdf",
+    ]);
+    expect(sourceDocumentPaths(project, "C:\\Projekt\\Nytt projekt.gridscalr")).toEqual(
+      expect.arrayContaining(["C:\\Ritningar\\Plan 1.pdf", "C:\\Ritningar\\Fasad Ö.pdf"]),
+    );
+  });
+
   it("collects every source document path that a write must protect", () => {
     const project = makeProject();
     project.documents[0].path = "/home/ana/drawings/Floor Plan.pdf";

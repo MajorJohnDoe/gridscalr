@@ -34,6 +34,13 @@ describe("write guard", () => {
     expect(findProtectedPath("/home/ana/Level 01-markups.pdf", protectedPaths)).toBeNull();
   });
 
+  it("handles Windows paths with spaces and Swedish characters", () => {
+    const protectedPaths = ["C:\\Ritningar\\Översiktsplan 1.pdf"];
+    expect(findProtectedPath("c:/ritningar/översiktsplan 1.pdf", protectedPaths)).toBe(
+      protectedPaths[0],
+    );
+  });
+
   it("throws a clear error instead of allowing a source overwrite", () => {
     expect(() => assertWritablePath("/home/ana/Level 01.pdf", ["/home/ana/Level 01.pdf"])).toThrow(
       /will not overwrite a source drawing/i,

@@ -227,6 +227,28 @@ try {
   assert.match(markupsCsv.suggestedFilename(), /-markups\.csv$/, "expected a markups CSV export");
   const projectJson = await exportDownload("Project to JSON");
   assert.match(projectJson.suggestedFilename(), /\.json$/, "expected a project JSON export");
+  const quantityCsv = await exportDownload("Quantities to CSV");
+  assert.match(
+    quantityCsv.suggestedFilename(),
+    /-quantities\.csv$/,
+    "expected a quantity CSV export",
+  );
+  const quantityPdf = await exportDownload("Quantity report (PDF)");
+  assert.match(
+    quantityPdf.suggestedFilename(),
+    /-quantities\.pdf$/,
+    "expected a quantity PDF export",
+  );
+
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: /^Export/ }).click();
+  const drawingPending = page.waitForEvent("download");
+  await page.getByRole("menuitem", { name: "Drawing PDF…" }).click();
+  const drawingDialog = page.getByRole("dialog");
+  await drawingDialog.waitFor();
+  await drawingDialog.getByRole("button", { name: "Export" }).click();
+  const drawingPdf = await drawingPending;
+  assert.match(drawingPdf.suggestedFilename(), /-markups\.pdf$/, "expected a drawing PDF export");
   await waitForToastsGone(page);
 
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
