@@ -45,7 +45,6 @@ import {
 } from "../model/labelLayout";
 import {
   ensureLabelFonts,
-  LABEL_FONT_STACK,
   measureLabelText,
 } from "../model/labelFont";
 import {
@@ -56,6 +55,39 @@ import {
   layerKindForItem,
 } from "../model/layers";
 import { deleteItems, translateItems } from "../model/commands";
+import {
+  averagePoints,
+  clampPointToPage,
+  constrainSquare,
+  cursorForRole,
+  dedupeLast,
+  drawArrowHead,
+  handleLocalPoint,
+  hexAlpha,
+  isCancellation,
+  movePageRect,
+  oppositeHandlePoint,
+  pointInBox,
+  pointInRect,
+  rectFromPoints,
+  resizePageRect,
+  rotatedAabb,
+  roundRect,
+  roundTo,
+  scaleBounds,
+  snapLabel,
+  type BoxHandleRole,
+} from "./geometry";
+import {
+  handleAt,
+  selectionHandles,
+  type Handle,
+} from "./selectionHandles";
+import {
+  drawAnnotationPanel as paintAnnotationPanel,
+  drawEndpoints as paintEndpoints,
+  drawLabelLayout as paintLabelLayout,
+} from "./annotationDraw";
 import {
   normalizeCropRect,
   pageRectFromCrop,
@@ -83,7 +115,6 @@ import {
   collectSnapCandidates,
   findSnap,
   type SnapCandidate,
-  type SnapKind,
   type SnapResult,
 } from "../model/snap";
 import {
@@ -97,7 +128,7 @@ import {
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, closestPointOnPolygon, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
+import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef, TextAlign } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
@@ -132,16 +163,6 @@ type Draft =
   | { kind: "highlight-rect"; start: Point; current: Point }
   | { kind: "area-rect"; start: Point; current: Point }
   | { kind: "area-ellipse"; start: Point; current: Point };
-
-type BoxHandleRole = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-type HandleRole = BoxHandleRole | "rotate" | "vertex" | "label";
-
-interface Handle {
-  role: HandleRole;
-  index: number;
-  point: Point;
-  cursor: string;
-}
 
 interface DragState {
   mode: "move" | "vertex" | "resize" | "rotate" | "label";
@@ -244,7 +265,6 @@ interface PanState {
 const ACCENT = "#35c2a1";
 const CALIBRATION_COLOR = "#a78bfa";
 const FONT_STACK = TEXT_FONT_STACK;
-const HANDLE_SIZE = 8;
 /**
  * Screen-space ceiling for canvas measurement labels. Paper-space labels keep
  * their true scale in exported PDFs, but at high zoom they would otherwise
@@ -908,7 +928,7 @@ export class CanvasView {
             return;
           }
         }
-        const handle = this.handleAt(found.item, screen);
+        const handle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
         if (handle) {
           this.beginHandleDrag(found.layer.id, found.item, handle, page, event);
           return;
@@ -1062,127 +1082,6 @@ export class CanvasView {
     this.drawInteraction();
   }
 
-  private handleAt(item: MarkupItem, screen: Point): Handle | null {
-    const handles = this.selectionHandles(item);
-    let best: Handle | null = null;
-    let bestDistance = HANDLE_SIZE + 2;
-    for (const handle of handles) {
-      const d = distance(screen, handle.point);
-      if (d <= bestDistance) {
-        best = handle;
-        bestDistance = d;
-      }
-    }
-    return best;
-  }
-
-  private selectionHandles(item: MarkupItem): Handle[] {
-    if (item.kind === "count") return [];
-    if (
-      item.kind === "length" ||
-      item.kind === "area" ||
-      item.kind === "cloud" ||
-      (item.kind === "highlight" && item.highlightShape !== "stroke")
-    ) {
-      const handles: Handle[] = item.points.slice(0, 80).map((point, index) => ({
-        role: "vertex" as const,
-        index,
-        point: this.toScreen(itemLocalToPage(item, point)),
-        cursor: "crosshair",
-      }));
-      if (item.kind === "cloud") {
-        const label = cloudLabelLayout(item);
-        if (label) {
-          handles.push({
-            role: "label",
-            index: -1,
-            point: this.toScreen(label.center),
-            cursor: "move",
-          });
-        }
-      }
-      return handles;
-    }
-
-    if (item.kind === "callout") {
-      return item.points.slice(0, 2).map((point, index) => ({
-        role: "vertex" as const,
-        index,
-        point: this.toScreen(itemLocalToPage(item, point)),
-        cursor: "crosshair",
-      }));
-    }
-
-    if (item.kind === "stamp" || item.kind === "delta") {
-      return [];
-    }
-
-    if (item.kind === "line" || item.kind === "arrow") {
-      const handles: Handle[] = item.points.slice(0, 2).map((point, index) => ({
-        role: "vertex" as const,
-        index,
-        point: this.toScreen(itemLocalToPage(item, point)),
-        cursor: "crosshair",
-      }));
-      handles.push({
-        role: "rotate",
-        index: -1,
-        point: this.rotationHandlePoint(item),
-        cursor: "grab",
-      });
-      return handles;
-    }
-
-    const bounds = itemLocalBounds(item);
-    const center = midpoint(bounds.min, bounds.max);
-    const rotation = itemRotation(item);
-    const roles: BoxHandleRole[] =
-      item.kind === "text"
-        ? ["nw", "ne", "se", "sw"]
-        : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
-    const handles: Handle[] = roles.map((role) => {
-      const local = handleLocalPoint(bounds, role);
-      const point = this.toScreen(rotatePoint(local, center, rotation));
-      return {
-        role,
-        index: -1,
-        point,
-        cursor: cursorForRole(role),
-      };
-    });
-    handles.push({
-      role: "rotate",
-      index: -1,
-      point: this.rotationHandlePoint(item),
-      cursor: "grab",
-    });
-    return handles;
-  }
-
-  private rotationHandlePoint(item: MarkupItem): Point {
-    const bounds = itemLocalBounds(item);
-    const center = midpoint(bounds.min, bounds.max);
-    const rotation = itemRotation(item);
-    const top = rotatePoint({ x: center.x, y: bounds.min.y }, center, rotation);
-    const topScreen = this.toScreen(top);
-    const upPage = rotatePoint({ x: center.x, y: center.y - 1 }, center, rotation);
-    const centerScreen = this.toScreen(center);
-    const upScreen = {
-      x: (this.toScreen(upPage).x - centerScreen.x) / Math.max(1e-6, Math.hypot(
-        this.toScreen(upPage).x - centerScreen.x,
-        this.toScreen(upPage).y - centerScreen.y,
-      )),
-      y: (this.toScreen(upPage).y - centerScreen.y) / Math.max(1e-6, Math.hypot(
-        this.toScreen(upPage).x - centerScreen.x,
-        this.toScreen(upPage).y - centerScreen.y,
-      )),
-    };
-    return {
-      x: topScreen.x + upScreen.x * 26,
-      y: topScreen.y + upScreen.y * 26,
-    };
-  }
-
   private onPointerMove = (event: PointerEvent): void => {
     if (!store.project) return;
     const screen = this.localPoint(event);
@@ -1279,7 +1178,7 @@ export class CanvasView {
       if (selection && store.ui.selection.length === 1) {
         const found = findItem(store.project, selection.itemId);
         if (found && !itemIsLocked(found.item, found.layer)) {
-          this.hoverHandle = this.handleAt(found.item, screen);
+          this.hoverHandle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
         }
       }
       if (!this.hoverHandle) {
@@ -3667,26 +3566,6 @@ export class CanvasView {
     }
   }
 
-  private drawTrackedLine(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    centerX: number,
-    centerY: number,
-    tracking: number,
-  ): void {
-    const characters = [...text];
-    const widths = characters.map((character) => ctx.measureText(character).width);
-    const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
-    let x = centerX - total / 2;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    characters.forEach((character, index) => {
-      ctx.fillText(character, x, centerY);
-      x += widths[index] + tracking;
-    });
-    ctx.textAlign = "center";
-  }
-
   private drawAnnotationPanel(
     ctx: CanvasRenderingContext2D,
     layout: {
@@ -3704,136 +3583,31 @@ export class CanvasView {
     leader: boolean,
     style: "text" | "stamp" = "text",
   ): void {
-    const zoom = store.ui.zoom;
-    const center = this.toScreen(layout.center);
-    const width = layout.width * zoom;
-    const height = layout.height * zoom;
-    const x = center.x - width / 2;
-    const y = center.y - height / 2;
-    const isStamp = style === "stamp";
-    const bold = isStamp || item.textBold === true;
-    const align = isStamp ? "center" : (item.textAlign ?? "center");
-    const padding = layout.padding * zoom;
-    const contentLeft = x + padding;
-    const contentWidth = Math.max(0, width - padding * 2);
-    ctx.save();
-    if (leader && item.kind === "cloud" && item.points.length) {
-      const targetPage = closestPointOnPolygon(item.points, layout.center);
-      const boxPage = {
-        x: layout.center.x - layout.width / 2,
-        y: layout.center.y - layout.height / 2,
-        width: layout.width,
-        height: layout.height,
-      };
-      const edgePage = closestPointOnBox(boxPage, targetPage);
-      const target = this.toScreen(targetPage);
-      const edge = this.toScreen(edgePage);
-      const head = arrowHeadGeometry(edge, target, 6);
-      ctx.strokeStyle = item.color;
-      ctx.lineWidth = Math.max(0.6, item.strokeWidth * zoom);
-      ctx.beginPath();
-      ctx.moveTo(edge.x, edge.y);
-      ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
-      ctx.stroke();
-      drawArrowHead(ctx, target, head, item.color);
-    }
-    ctx.fillStyle = fill;
-    ctx.strokeStyle = item.color;
-    ctx.lineWidth = Math.max(0.8, item.strokeWidth * zoom);
-    roundRect(ctx, x, y, width, height, Math.min(5, height / 4));
-    ctx.fill();
-    ctx.stroke();
-    ctx.fillStyle = textColor;
-    const fontSize = Math.max(6, layout.fontSize * zoom);
-    ctx.font = `${bold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
-    ctx.textAlign = "left";
-    ctx.textBaseline = "middle";
-    const lineHeight = layout.lineHeight * zoom;
-    const startY = center.y - ((layout.lines.length - 1) * lineHeight) / 2;
-    layout.lines.forEach((line, index) => {
-      const lineY = startY + index * lineHeight;
-      if (isStamp) {
-        this.drawTrackedLine(ctx, line, center.x, lineY, fontSize * 0.08);
-        return;
-      }
-      const lineWidth = ctx.measureText(line).width;
-      const lineX = contentLeft + textLineX(align, 0, contentWidth, lineWidth);
-      ctx.fillText(line, lineX, lineY);
-      if (item.textUnderline) {
-        ctx.strokeStyle = textColor;
-        ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
-        const underlineY = lineY + fontSize * (0.35 + TEXT_UNDERLINE_OFFSET);
-        ctx.beginPath();
-        ctx.moveTo(lineX, underlineY);
-        ctx.lineTo(lineX + lineWidth, underlineY);
-        ctx.stroke();
-      }
-    });
-    ctx.restore();
+    paintAnnotationPanel(
+      ctx,
+      layout,
+      item,
+      fill,
+      textColor,
+      leader,
+      style,
+      (point) => this.toScreen(point),
+      store.ui.zoom,
+    );
   }
 
   private drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
-    if (points.length > 26) return;
-    ctx.save();
-    ctx.fillStyle = "#101518";
-    ctx.strokeStyle = color;
-    ctx.lineWidth = 1.4;
-    for (const p of points) {
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-    }
-    ctx.restore();
+    paintEndpoints(ctx, points, color);
   }
 
   private drawLabelLayout(ctx: CanvasRenderingContext2D, layout: LabelLayout): void {
-    const screenScale = this.labelScreenScale(layout.metrics);
-    const box = this.screenLabelBox(layout.box, layout.metrics);
-    const borderWidth = Math.max(0.5, Math.min(1, layout.metrics.borderWidth * screenScale));
-    const leaderWidth = Math.max(0.5, Math.min(1, layout.metrics.leaderWidth * screenScale));
-    ctx.save();
-
-    if (layout.leader) {
-      const to = this.toScreen(layout.leader.to);
-      const from = closestPointOnBox(box, to);
-      ctx.strokeStyle = hexAlpha(layout.color, 0.5);
-      ctx.lineWidth = leaderWidth;
-      ctx.beginPath();
-      ctx.moveTo(from.x, from.y);
-      ctx.lineTo(to.x, to.y);
-      ctx.stroke();
-    }
-
-    ctx.fillStyle = "rgba(12, 16, 18, 0.82)";
-    ctx.strokeStyle = hexAlpha(layout.color, 0.55);
-    ctx.lineWidth = borderWidth;
-    roundRect(
+    paintLabelLayout(
       ctx,
-      box.x,
-      box.y,
-      box.width,
-      box.height,
-      Math.max(0.5, layout.metrics.radius * screenScale),
+      layout,
+      (point) => this.toScreen(point),
+      (metrics) => this.labelScreenScale(metrics),
+      (box, metrics) => this.screenLabelBox(box, metrics),
     );
-    ctx.fill();
-    ctx.stroke();
-
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    ctx.fillStyle = "#edf3f5";
-    ctx.font = `700 ${Math.max(0.1, layout.metrics.primarySize * screenScale)}px ${LABEL_FONT_STACK}`;
-    ctx.fillText(layout.text, box.x + box.width / 2, box.primaryCenterY);
-    if (layout.secondary) {
-      ctx.fillStyle = "rgba(210, 222, 227, 0.68)";
-      ctx.font = `400 ${Math.max(0.1, layout.metrics.secondarySize * screenScale)}px ${LABEL_FONT_STACK}`;
-      ctx.fillText(
-        layout.secondary,
-        box.x + box.width / 2,
-        box.secondaryCenterY ?? box.primaryCenterY,
-      );
-    }
-    ctx.restore();
   }
 
   private drawPreviewLabel(
@@ -3885,7 +3659,7 @@ export class CanvasView {
       if (selected.length === 1 && !selected[0].locked) {
         const item = selected[0].item;
         const measured = item.kind === "length" || item.kind === "area" || item.kind === "count";
-        const handles = this.selectionHandles(item);
+        const handles = selectionHandles(item, (page) => this.toScreen(page));
         const rotation = handles.find((handle) => handle.role === "rotate");
         ctx.save();
         if (rotation && !measured) {
@@ -4409,268 +4183,4 @@ export class CanvasView {
     this.interaction.removeEventListener("wheel", this.onWheel);
     this.interaction.removeEventListener("contextmenu", this.onContextMenu);
   }
-}
-
-function clampPointToPage(point: Point, size: PageSize): Point {
-  return {
-    x: Math.max(0, Math.min(size.width, point.x)),
-    y: Math.max(0, Math.min(size.height, point.y)),
-  };
-}
-
-function pointInRect(point: Point, rect: PageRect): boolean {
-  return (
-    point.x >= rect.x &&
-    point.x <= rect.x + rect.width &&
-    point.y >= rect.y &&
-    point.y <= rect.y + rect.height
-  );
-}
-
-function rectFromPoints(start: Point, end: Point): PageRect {
-  return {
-    x: Math.min(start.x, end.x),
-    y: Math.min(start.y, end.y),
-    width: Math.abs(end.x - start.x),
-    height: Math.abs(end.y - start.y),
-  };
-}
-
-function movePageRect(
-  rect: PageRect,
-  start: Point,
-  point: Point,
-  size: PageSize,
-): PageRect {
-  return {
-    x: Math.max(0, Math.min(size.width - rect.width, rect.x + point.x - start.x)),
-    y: Math.max(0, Math.min(size.height - rect.height, rect.y + point.y - start.y)),
-    width: rect.width,
-    height: rect.height,
-  };
-}
-
-function resizePageRect(
-  rect: PageRect,
-  handle: BoxHandleRole | undefined,
-  point: Point,
-  size: PageSize,
-): PageRect {
-  if (!handle) return rect;
-  const minSize = 1;
-  let left = rect.x;
-  let right = rect.x + rect.width;
-  let top = rect.y;
-  let bottom = rect.y + rect.height;
-  if (handle.includes("w")) {
-    left = Math.max(0, Math.min(right - minSize, point.x));
-  }
-  if (handle.includes("e")) {
-    right = Math.min(size.width, Math.max(left + minSize, point.x));
-  }
-  if (handle.includes("n")) {
-    top = Math.max(0, Math.min(bottom - minSize, point.y));
-  }
-  if (handle.includes("s")) {
-    bottom = Math.min(size.height, Math.max(top + minSize, point.y));
-  }
-  return { x: left, y: top, width: right - left, height: bottom - top };
-}
-
-function constrainSquare(start: Point, point: Point): Point {
-  const dx = point.x - start.x;
-  const dy = point.y - start.y;
-  const size = Math.max(Math.abs(dx), Math.abs(dy));
-  return {
-    x: start.x + Math.sign(dx || 1) * size,
-    y: start.y + Math.sign(dy || 1) * size,
-  };
-}
-
-function snapLabel(kind: SnapKind): string {
-  if (kind === "endpoint") return "Endpoint";
-  if (kind === "midpoint") return "Midpoint";
-  return "Intersection";
-}
-
-function cursorForRole(role: BoxHandleRole): string {
-  switch (role) {
-    case "nw":
-    case "se":
-      return "nwse-resize";
-    case "ne":
-    case "sw":
-      return "nesw-resize";
-    case "n":
-    case "s":
-      return "ns-resize";
-    case "e":
-    case "w":
-      return "ew-resize";
-  }
-}
-
-function handleLocalPoint(bounds: Bounds, role: BoxHandleRole): Point {
-  const midX = (bounds.min.x + bounds.max.x) / 2;
-  const midY = (bounds.min.y + bounds.max.y) / 2;
-  switch (role) {
-    case "nw":
-      return { x: bounds.min.x, y: bounds.min.y };
-    case "n":
-      return { x: midX, y: bounds.min.y };
-    case "ne":
-      return { x: bounds.max.x, y: bounds.min.y };
-    case "e":
-      return { x: bounds.max.x, y: midY };
-    case "se":
-      return { x: bounds.max.x, y: bounds.max.y };
-    case "s":
-      return { x: midX, y: bounds.max.y };
-    case "sw":
-      return { x: bounds.min.x, y: bounds.max.y };
-    case "w":
-      return { x: bounds.min.x, y: midY };
-  }
-}
-
-function oppositeHandlePoint(bounds: Bounds, role: BoxHandleRole): Point {
-  const midX = (bounds.min.x + bounds.max.x) / 2;
-  const midY = (bounds.min.y + bounds.max.y) / 2;
-  switch (role) {
-    case "nw":
-      return { x: bounds.max.x, y: bounds.max.y };
-    case "n":
-      return { x: midX, y: bounds.max.y };
-    case "ne":
-      return { x: bounds.min.x, y: bounds.max.y };
-    case "e":
-      return { x: bounds.min.x, y: midY };
-    case "se":
-      return { x: bounds.min.x, y: bounds.min.y };
-    case "s":
-      return { x: midX, y: bounds.min.y };
-    case "sw":
-      return { x: bounds.max.x, y: bounds.min.y };
-    case "w":
-      return { x: bounds.max.x, y: midY };
-  }
-}
-
-function scaleBounds(bounds: Bounds, anchor: Point, factorX: number, factorY: number): Bounds {
-  return {
-    min: {
-      x: anchor.x + (bounds.min.x - anchor.x) * factorX,
-      y: anchor.y + (bounds.min.y - anchor.y) * factorY,
-    },
-    max: {
-      x: anchor.x + (bounds.max.x - anchor.x) * factorX,
-      y: anchor.y + (bounds.max.y - anchor.y) * factorY,
-    },
-  };
-}
-
-function rotatedAabb(
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  rotation: number,
-): { minX: number; minY: number; maxX: number; maxY: number } {
-  const center = { x: x + width / 2, y: y + height / 2 };
-  const corners = [
-    { x, y },
-    { x: x + width, y },
-    { x: x + width, y: y + height },
-    { x, y: y + height },
-  ].map((point) => rotatePoint(point, center, rotation));
-  return {
-    minX: Math.min(...corners.map((point) => point.x)),
-    minY: Math.min(...corners.map((point) => point.y)),
-    maxX: Math.max(...corners.map((point) => point.x)),
-    maxY: Math.max(...corners.map((point) => point.y)),
-  };
-}
-
-function pointInBox(point: Point, x: number, y: number, width: number, height: number): boolean {
-  return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
-}
-
-function closestPointOnBox(box: { x: number; y: number; width: number; height: number }, point: Point): Point {
-  return {
-    x: Math.max(box.x, Math.min(box.x + box.width, point.x)),
-    y: Math.max(box.y, Math.min(box.y + box.height, point.y)),
-  };
-}
-
-function roundTo(value: number, digits: number): number {
-  const factor = 10 ** digits;
-  return Math.round(value * factor) / factor;
-}
-
-function dedupeLast(points: Point[]): Point[] {
-  if (points.length < 2) return points;
-  const last = points[points.length - 1];
-  const prev = points[points.length - 2];
-  if (distance(last, prev) < 0.0001) return points.slice(0, -1);
-  return points;
-}
-
-function hexAlpha(hex: string, alpha: number): string {
-  const value = hex.replace("#", "");
-  const full = value.length === 3 ? value.split("").map((c) => c + c).join("") : value;
-  const int = parseInt(full, 16);
-  if (!Number.isFinite(int) || full.length !== 6) return `rgba(255,255,255,${alpha})`;
-  return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;
-}
-
-function roundRect(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  width: number,
-  height: number,
-  radius: number,
-): void {
-  const r = Math.min(radius, width / 2, height / 2);
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + width, y, x + width, y + height, r);
-  ctx.arcTo(x + width, y + height, x, y + height, r);
-  ctx.arcTo(x, y + height, x, y, r);
-  ctx.arcTo(x, y, x + width, y, r);
-  ctx.closePath();
-}
-
-function averagePoints(points: Point[]): Point {
-  if (!points.length) return { x: 0, y: 0 };
-  return {
-    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
-    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
-  };
-}
-
-function drawArrowHead(
-  ctx: CanvasRenderingContext2D,
-  tip: Point,
-  head: { wingA: Point; wingB: Point },
-  color: string,
-): void {
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.beginPath();
-  ctx.moveTo(tip.x, tip.y);
-  ctx.lineTo(head.wingA.x, head.wingA.y);
-  ctx.lineTo(head.wingB.x, head.wingB.y);
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-}
-
-function isCancellation(error: unknown): boolean {
-  return (
-    typeof error === "object" &&
-    error !== null &&
-    ((error as { name?: string }).name === "RenderingCancelledException" ||
-      (error as { name?: string }).name === "AbortException")
-  );
 }

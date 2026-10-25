@@ -76,28 +76,34 @@ try {
     console.warn(`Page error: ${error.message}`);
   });
 
+  const capture = async (file) => {
+    await page.mouse.move(2, 2);
+    await page.waitForTimeout(60);
+    await page.screenshot({ path: resolve(screenshotDir, file) });
+  };
+
   await openDemoProject(page, { base: vite.base });
   await waitForToastsGone(page);
 
   await openMeasurementsItem(page, "item_floor_living");
-  await page.screenshot({ path: resolve(screenshotDir, "hero.png") });
+  await capture("hero.png");
 
   await page.keyboard.press("Escape");
   await page.keyboard.press("l");
   await page.waitForTimeout(200);
-  await page.screenshot({ path: resolve(screenshotDir, "measure.png") });
+  await capture("measure.png");
 
   await page.keyboard.press("Escape");
   await openMeasurementsItem(page, "item_cloud_bath", "draw");
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(200);
-  await page.screenshot({ path: resolve(screenshotDir, "markups.png") });
+  await capture("markups.png");
 
   await page.keyboard.press("Control+Alt+q");
   await page.getByRole("dialog").waitFor();
   await page.getByLabel("Filter quantities by page").selectOption("all");
   await page.waitForTimeout(150);
-  await page.screenshot({ path: resolve(screenshotDir, "quantities.png") });
+  await capture("quantities.png");
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
@@ -107,7 +113,7 @@ try {
   await page.getByRole("dialog").waitFor();
   await page.getByRole("checkbox", { name: /^Legend/ }).check();
   await page.waitForTimeout(300);
-  await page.screenshot({ path: resolve(screenshotDir, "export.png") });
+  await capture("export.png");
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
@@ -115,7 +121,7 @@ try {
   await page.getByRole("dialog").waitFor();
   await page.getByLabel("Filter measurements by page").selectOption("all");
   await page.waitForTimeout(150);
-  await page.screenshot({ path: resolve(screenshotDir, "measurements.png") });
+  await capture("measurements.png");
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
@@ -131,7 +137,7 @@ try {
   }
   await helpSearch.fill("");
   await page.waitForTimeout(150);
-  await page.screenshot({ path: resolve(screenshotDir, "workflows-help.png") });
+  await capture("workflows-help.png");
 
   const helpImage = helpDialog.locator(".help-figure img").first();
   if ((await helpImage.count()) > 0) {

@@ -158,9 +158,13 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 ```text
 src/app/App.ts             app wiring, file flows, shortcuts, export actions
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
+src/canvas/geometry.ts     crop, handle, rotation and colour helpers
+src/canvas/selectionHandles.ts selection and rotation handles
+src/canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
+src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
 src/pdf/pdfExport.ts       flattened vector PDF export
@@ -199,11 +203,12 @@ docs/user-guide.md         in-app user guide
 docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
-tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image and demo project tests
+tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
 scripts/make-demo-project.mjs deterministic documentation demo project
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
+scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 ```
@@ -216,6 +221,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 - `npm test -- --run` runs the Vitest suite.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback.
+- `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage and schema references.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.

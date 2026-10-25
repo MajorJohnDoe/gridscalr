@@ -493,9 +493,13 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 src/
   app/App.ts             application wiring, file flows, shortcuts, exports
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
+  canvas/geometry.ts     crop, handle, rotation and colour helpers
+  canvas/selectionHandles.ts selection and rotation handles
+  canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
+  state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
   pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
@@ -535,18 +539,19 @@ docs/user-guide.md       in-app user guide and workflow reference
 docs/workflows.md        role-based guides for operations and property management
 docs/shortcuts.md        in-app keyboard reference
 docs/screenshots/        versioned screenshots and capture manifest
-tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project
+tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry and autosave
 scripts/make-fixture.mjs reproducible sample PDF generator
 scripts/make-demo-project.mjs deterministic documentation project
 scripts/ui-harness.mjs shared Playwright server and demo-project helpers
 scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
+scripts/benchmark-history.mjs synthetic undo/history benchmark with 2,000+ items
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
 ```
 
 Key design choices:
 
-- **Local first.** PDF bytes are read only when needed. Project data autosaves to browser local storage for recovery; no data leaves the machine.
+- **Local first.** PDF bytes are read only when needed. Project data autosaves to a local IndexedDB recovery store; no data leaves the machine. A localStorage fallback is used only when the browser disables IndexedDB.
 - **Markup layers are app-level.** They are not PDF optional-content groups, and GridScalr never rewrites the source PDF when saving a project. The drawing PDF export writes a new file and leaves the original untouched.
 - **Coordinate stability.** Markup points are stored in PDF points, not screen pixels. Zooming, panning, and window resizing do not change measurements; export maps them through PDF.js viewports so page rotation and crop boxes are respected.
 - **Progressive rendering.** Only the visible crop of a page is rendered at device resolution. A new render cancels the previous incomplete one.
@@ -563,6 +568,7 @@ npm run build     # tsc --noEmit + Vite production build
 npm run check:docs  # links, images, anchors, tools and schema references
 npx playwright install chromium  # one-time browser install for test:ui and docs:capture
 npm run test:ui     # Playwright smoke: open, measure, help and save
+npm run bench:history # synthetic undo/history benchmark (2,000 items by default)
 npm run docs:capture # regenerate docs/screenshots from the demo project
 cargo check       # inside src-tauri, or: cargo check --manifest-path src-tauri/Cargo.toml
 ```

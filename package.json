@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "node scripts/smoke-ui.mjs",
+    "bench:history": "node scripts/benchmark-history.mjs",
     "check:versions": "node scripts/check-versions.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "docs:demo": "node scripts/make-demo-project.mjs",
@@ -28,6 +29,7 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.3",
     "@types/node": "^24.19.2",
+    "fake-indexeddb": "^6.2.6",
     "playwright": "^1.64.1",
     "typescript": "^5.9.3",
     "vite": "^8.3.4",

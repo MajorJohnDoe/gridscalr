@@ -10,7 +10,7 @@ import type {
   RecentEntry,
 } from "../model/types";
 import { store } from "../state/store";
-import type { AutosavePayload } from "../state/store";
+import type { AutosavePreview } from "../state/store";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
 import type { ShellRefs } from "./shell";
@@ -73,7 +73,7 @@ export interface PanelActions {
   deletePage: (page: number) => void;
   refresh: () => void;
   restoreAutosave: () => void;
-  getAutosave: () => AutosavePayload | null;
+  getAutosave: () => AutosavePreview | null;
   openRecent: (entry: RecentEntry) => void;
 }
 

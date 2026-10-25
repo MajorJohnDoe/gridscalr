@@ -1,5 +1,6 @@
 import "./styles.css";
 import { App } from "./app/App";
+import { store } from "./state/store";
 
 const root = document.getElementById("app");
 
@@ -65,6 +66,12 @@ window.addEventListener("unhandledrejection", (event) => {
 try {
   const app = new App(root);
   appStarted = true;
+  if (import.meta.env.DEV) {
+    (window as Window & { __gridscalr?: { store: typeof store; app: App } }).__gridscalr = {
+      store,
+      app,
+    };
+  }
 
   if (import.meta.hot) {
     import.meta.hot.dispose(() => app.dispose());

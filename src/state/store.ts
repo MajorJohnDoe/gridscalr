@@ -15,6 +15,14 @@ import {
 } from "../model/categories";
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
+import {
+  clearAutosave as clearAutosaveStorage,
+  readAutosavePreview,
+  readAutosave as readAutosaveStorage,
+  writeAutosave as writeAutosaveStorage,
+  type AutosavePayload,
+  type AutosavePreview,
+} from "./autosave";
 import type {
   AreaMode,
   AreaShape,
@@ -101,14 +109,9 @@ export type ChangeReason =
 
 type Listener = (reason: ChangeReason) => void;
 
-const AUTOSAVE_KEY = "gridscalr.autosave.v1";
 const HISTORY_LIMIT = 80;
 
-export interface AutosavePayload {
-  project: Project;
-  projectPath: string | null;
-  savedAt: string;
-}
+export type { AutosavePayload, AutosavePreview };
 
 export function toolLayerKind(tool: ToolId): LayerKind | null {
   switch (tool) {
@@ -170,6 +173,8 @@ export class Store {
   ui: UIState = defaultUI();
   projectPath: string | null = null;
   dirty = false;
+  /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
+  autosaveError: string | null = null;
   /** Increments whenever project data changes, including undo and redo. */
   revision = 0;
   private listeners = new Set<Listener>();
@@ -200,6 +205,7 @@ export class Store {
     this.project = project;
     this.projectPath = projectPath;
     this.dirty = dirty;
+    this.autosaveError = null;
     this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
@@ -229,13 +235,18 @@ export class Store {
     this.project = null;
     this.projectPath = null;
     this.dirty = false;
+    this.autosaveError = null;
     this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
     this.assetPayloads.clear();
     this.ui = defaultUI();
+    if (this.autosaveTimer !== null) {
+      window.clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
+    }
     this.emit("project");
-    this.clearAutosave();
+    void this.clearAutosave();
   }
 
   setView(zoom: number, panX: number, panY: number): void {
@@ -690,42 +701,48 @@ export class Store {
     if (this.autosaveTimer !== null) window.clearTimeout(this.autosaveTimer);
     this.autosaveTimer = window.setTimeout(() => {
       this.autosaveTimer = null;
-      this.writeAutosave();
+      void this.writeAutosave();
     }, 900);
   }
 
-  private writeAutosave(): void {
-    if (!this.project) return;
+  private async writeAutosave(): Promise<void> {
+    const project = this.project;
+    if (!project) return;
+    const payload: AutosavePayload = {
+      project,
+      projectPath: this.projectPath,
+      savedAt: new Date().toISOString(),
+    };
     try {
-      const payload: AutosavePayload = {
-        project: this.project,
-        projectPath: this.projectPath,
-        savedAt: new Date().toISOString(),
-      };
-      localStorage.setItem(AUTOSAVE_KEY, JSON.stringify(payload));
-    } catch {
-      // Storage can be full or unavailable; explicit saves still work.
+      await writeAutosaveStorage(payload);
+      this.autosaveError = null;
+    } catch (error) {
+      this.autosaveError =
+        error instanceof Error ? error.message : "The recovery snapshot could not be saved.";
+      this.emit("save");
     }
   }
 
-  readAutosave(): AutosavePayload | null {
-    try {
-      const raw = localStorage.getItem(AUTOSAVE_KEY);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw) as AutosavePayload;
-      if (!Array.isArray(parsed?.project?.documents) || !parsed.project.documents.length) return null;
-      return parsed;
-    } catch {
-      return null;
-    }
+  readAutosavePreview(): AutosavePreview | null {
+    return readAutosavePreview();
   }
 
-  clearAutosave(): void {
-    try {
-      localStorage.removeItem(AUTOSAVE_KEY);
-    } catch {
-      // Ignore storage failures.
+  readAutosave(): Promise<AutosavePayload | null> {
+    return readAutosaveStorage();
+  }
+
+  consumeAutosaveError(): string | null {
+    const error = this.autosaveError;
+    this.autosaveError = null;
+    return error;
+  }
+
+  clearAutosave(): Promise<void> {
+    if (this.autosaveTimer !== null) {
+      window.clearTimeout(this.autosaveTimer);
+      this.autosaveTimer = null;
     }
+    return clearAutosaveStorage();
   }
 }
 

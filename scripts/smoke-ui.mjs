@@ -26,6 +26,32 @@ try {
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Riverside House - Takeoff");
   assert.equal(await page.locator(".page-card").count(), 2, "expected two page cards");
+
+  const autosave = await page.evaluate(async () => {
+    const preview = localStorage.getItem("gridscalr.autosave.meta.v1");
+    const legacy = localStorage.getItem("gridscalr.autosave.v1");
+    const record = await new Promise((resolve) => {
+      const request = indexedDB.open("gridscalr", 1);
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction("autosave", "readonly");
+        const get = transaction.objectStore("autosave").get("current");
+        get.onsuccess = () => {
+          database.close();
+          resolve(Boolean(get.result));
+        };
+        get.onerror = () => {
+          database.close();
+          resolve(false);
+        };
+      };
+      request.onerror = () => resolve(false);
+    });
+    return { preview, legacy, record };
+  });
+  assert.ok(autosave.preview, "autosave metadata should be present");
+  assert.equal(autosave.record, true, "the recovery snapshot should be stored in IndexedDB");
+  assert.equal(autosave.legacy, null, "the legacy localStorage snapshot should be removed after migration");
   assert.equal(
     await page.getByText("Editable", { exact: true }).count(),
     0,

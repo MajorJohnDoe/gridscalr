@@ -214,7 +214,7 @@ export class App {
       addPages: () => void this.openPdfFlow(),
       refresh: () => this.renderAll(),
       restoreAutosave: () => void this.restoreAutosave(),
-      getAutosave: () => store.readAutosave(),
+      getAutosave: () => store.readAutosavePreview(),
       openRecent: (entry) => void this.openRecent(entry),
     };
     setMenuActions(this.actions);
@@ -239,6 +239,10 @@ export class App {
         updateStatus(this.refs);
         this.updateTitle();
         return;
+      }
+      if (reason === "save") {
+        const autosaveError = store.consumeAutosaveError();
+        if (autosaveError) toast(autosaveError, "warning");
       }
       this.renderAll();
     });
@@ -636,7 +640,7 @@ export class App {
 
   private async quitFlow(): Promise<void> {
     if (!(await this.confirmDiscardChanges())) return;
-    if (store.dirty) store.clearAutosave();
+    if (store.dirty) await store.clearAutosave();
     if (!isTauri) {
       window.close();
       toast("Close the browser tab to quit.", "info");
@@ -659,7 +663,7 @@ export class App {
         this.closeInProgress = true;
         try {
           if (!(await this.confirmDiscardChanges())) return;
-          store.clearAutosave();
+          await store.clearAutosave();
           await this.destroyWindow("The window could not be closed. Close it from the title bar.");
         } finally {
           this.closeInProgress = false;
@@ -1783,8 +1787,11 @@ export class App {
   }
 
   private async restoreAutosave(): Promise<void> {
-    const payload = store.readAutosave();
-    if (!payload) return;
+    const payload = await store.readAutosave();
+    if (!payload) {
+      toast("No recovery snapshot was found.", "info");
+      return;
+    }
     let project: Project;
     try {
       project = parseProject(JSON.stringify(payload.project));
