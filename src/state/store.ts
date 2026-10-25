@@ -144,7 +144,7 @@ function defaultUI(): UIState {
     selection: [],
     hover: null,
     cursor: null,
-    leftTab: "layers",
+    leftTab: "pages",
     style: {
       color: "#f2a93b",
       strokeWidth: DEFAULT_DRAWING_STROKE_WIDTH,
@@ -214,7 +214,7 @@ export class Store {
     this.ui.hover = null;
     this.ui.activeTool = "select";
     this.ui.cursor = null;
-    this.ui.leftTab = "layers";
+    this.ui.leftTab = "pages";
     this.ui.stampText = project.settings.stampPresets[0] ?? "APPROVED";
     this.ui.measureCategoryId = null;
     this.ui.measureRoom = "";
@@ -300,7 +300,12 @@ export class Store {
     this.ui.activeTool = tool;
     if (this.project) {
       const kind = toolLayerKind(tool);
-      if (kind) ensureActiveLayer(this.project, kind);
+      if (kind) {
+        ensureActiveLayer(this.project, kind);
+        // Every markup tool targets a layer, so surface the Layers tab while
+        // the user draws. Select and Pan leave the current tab alone.
+        this.ui.leftTab = "layers";
+      }
     }
     this.emit("tool");
   }

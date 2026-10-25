@@ -21,7 +21,7 @@ GridScalr uses a compact, drawing-first layout.
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
-- **Left panel** – Pages and Layers only. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Properties** – the current page scale, the active layer, and the selected item. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, active layer, and a local-only indicator.
