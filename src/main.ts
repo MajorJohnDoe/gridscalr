@@ -67,9 +67,12 @@ try {
   const app = new App(root);
   appStarted = true;
   if (import.meta.env.DEV) {
-    (window as Window & { __gridscalr?: { store: typeof store; app: App } }).__gridscalr = {
+    (window as Window & {
+      __gridscalr?: { store: typeof store; app: App; canvas: ReturnType<App["getCanvasTestApi"]> };
+    }).__gridscalr = {
       store,
       app,
+      canvas: app.getCanvasTestApi(),
     };
   }
 

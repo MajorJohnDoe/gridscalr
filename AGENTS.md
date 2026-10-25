@@ -208,6 +208,7 @@ fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
 scripts/make-demo-project.mjs deterministic documentation demo project
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
+scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
@@ -221,6 +222,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 - `npm test -- --run` runs the Vitest suite.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback.
+- `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items and crop.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage and schema references.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.

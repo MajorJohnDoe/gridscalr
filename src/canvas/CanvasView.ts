@@ -147,6 +147,14 @@ export interface CanvasHooks {
   onContextMenu?: (position: { page: Point; clientX: number; clientY: number }) => void;
 }
 
+/** Dev-only coordinate bridge used by the Playwright canvas regression suite. */
+export interface CanvasTestApi {
+  pageToScreen(point: Point): Point;
+  screenToPage(point: Point): Point;
+  pageSize(): PageSize | undefined;
+  selectionHandles(itemId: string): Handle[] | null;
+}
+
 type Draft =
   | { kind: "calibrate"; points: Point[]; cursor: Point }
   | { kind: "length"; points: Point[]; cursor: Point }
@@ -4148,6 +4156,20 @@ export class CanvasView {
       ctx.fillText("Callout", current.x, current.y);
     }
     ctx.restore();
+  }
+
+  /** Dev-only bridge used by Playwright; the production UI never calls it. */
+  getTestApi(): CanvasTestApi {
+    return {
+      pageToScreen: (point) => this.toScreen(point),
+      screenToPage: (point) => this.toPage(point),
+      pageSize: () => this.pageSize(),
+      selectionHandles: (itemId) => {
+        const project = store.project;
+        const found = project ? findItem(project, itemId) : undefined;
+        return found ? selectionHandles(found.item, (point) => this.toScreen(point)) : null;
+      },
+    };
   }
 
   getCompositeCanvas(): HTMLCanvasElement {

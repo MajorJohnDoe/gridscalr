@@ -544,6 +544,7 @@ scripts/make-fixture.mjs reproducible sample PDF generator
 scripts/make-demo-project.mjs deterministic documentation project
 scripts/ui-harness.mjs shared Playwright server and demo-project helpers
 scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
+scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark with 2,000+ items
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
@@ -568,6 +569,7 @@ npm run build     # tsc --noEmit + Vite production build
 npm run check:docs  # links, images, anchors, tools and schema references
 npx playwright install chromium  # one-time browser install for test:ui and docs:capture
 npm run test:ui     # Playwright smoke: open, measure, help and save
+npm run test:canvas # Playwright canvas gestures: draw, resize, rotate, text, crop
 npm run bench:history # synthetic undo/history benchmark (2,000 items by default)
 npm run docs:capture # regenerate docs/screenshots from the demo project
 cargo check       # inside src-tauri, or: cargo check --manifest-path src-tauri/Cargo.toml

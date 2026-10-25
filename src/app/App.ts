@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { CanvasView } from "../canvas/CanvasView";
+import { CanvasView, type CanvasTestApi } from "../canvas/CanvasView";
 import {
   clearPageCalibration,
   createManualCalibration,
@@ -1878,6 +1878,11 @@ export class App {
       const file = event.dataTransfer?.files?.[0];
       if (file) void this.openDroppedFile(file);
     });
+  }
+
+  /** Dev-only test bridge consumed by the Playwright suite. */
+  getCanvasTestApi(): CanvasTestApi {
+    return this.canvas.getTestApi();
   }
 
   dispose(): void {
