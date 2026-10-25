@@ -157,17 +157,25 @@ Clouds use the current drawing colour and line weight. Use **Fill** in Propertie
 
 ### Callout
 
+Long-press or right-click the Callout button to choose the leader colour: Blue, Orange, Green, Red, Violet, or Graphite. The text colour is changed separately in the inline editor.
+
 Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. The inline editor opens immediately with size, text colour, Cancel, and Done. The leader ends in a filled arrow exactly at the target.
 
 Double-click the text box, use **Edit text…** in Properties, or right-click the callout to edit it inline later. Drag the box itself or its vertex handle to move the text independently. Font size and optional text box width/height are available in Properties; empty width/height means automatic sizing.
 
 ### Stamp
 
+Long-press or right-click the Stamp button to pick a project status preset, or choose **Custom…**. The preset list uses the status colours. A placed stamp can still get an individual colour override in Properties.
+
 Choose **Stamp** (`S`) and select a preset in the context bar. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
 
 Stamp colours follow common statuses: **APPROVED** is green, **NOT APPROVED** is red, **FOR INFORMATION** is blue, **INSPECTED** is violet, and **REVISED** is orange. The same colours are recognised for **GODKÄND**, **EJ GODKÄND**, **FÖR KÄNNEDOM**, **BESIKTIGAD**, and **REVIDERAD**. Custom statuses keep the current stamp colour. Stamps use a bold, letter-spaced label.
 
 Project stamp presets are managed under **Settings → Project settings → Stamps**. App defaults for new projects are stored locally on the computer; new projects inherit them, while each project keeps its own list.
+
+### Arrow
+
+Long-press or right-click the Arrow button to choose **Single** or **Double** arrowheads and a colour preset. The same head and colour controls are available in the context bar and Properties.
 
 ### Revision delta
 
@@ -265,7 +273,7 @@ Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of 
 
 ## Highlight modes
 
-Long-press or right-click the Highlight button in the tool rail to choose Pen, Rectangle, or Polygon. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
+Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons for Photoshop-style variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
 
 - **Pen** – the original freehand highlighter.
 - **Rectangle** – drag a translucent highlight box.

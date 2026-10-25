@@ -847,6 +847,20 @@ describe("project files", () => {
     expect(parsed.settings.stampPresets).toEqual(["GODKÄND", "FÖR KÄNNEDOM"]);
     const stamp = parsed.layers.flatMap((layer) => layer.items).find((item) => item.id === "stamp_item");
     expect(stamp).toMatchObject({ kind: "stamp", text: "GODKÄND", page: 2 });
+    draw.items.push({
+      id: "double_arrow",
+      page: 2,
+      kind: "arrow",
+      points: [{ x: 10, y: 10 }, { x: 50, y: 10 }],
+      color: "#4cc9f0",
+      strokeWidth: 1,
+      arrowHeads: "both",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    const withArrow = parseProject(serializeProject(project));
+    const arrow = withArrow.layers.flatMap((layer) => layer.items).find((item) => item.id === "double_arrow");
+    expect(arrow).toMatchObject({ kind: "arrow", arrowHeads: "both" });
   });
 
   it("gives schema 7 projects the English stamp defaults", () => {

@@ -594,17 +594,21 @@ function drawItem(
       if (item.points.length < 2) break;
       const start = item.points[0];
       const end = item.points[1];
-      const head = arrowHeadGeometry(start, end, Math.max(8, width * 3.6));
+      const size = Math.max(8, width * 3.6);
+      const head = arrowHeadGeometry(start, end, size);
+      const startHead =
+        item.arrowHeads === "both" ? arrowHeadGeometry(end, start, size) : null;
       drawPolyline(
         page,
         viewport,
-        [start, head.shaftEnd],
+        [startHead?.shaftEnd ?? start, head.shaftEnd],
         color,
         width,
         opacity,
         false,
         LineCapStyle.Butt,
       );
+      if (startHead) drawArrowHead(page, viewport, start, startHead, color, opacity);
       drawArrowHead(page, viewport, end, head, color, opacity);
       break;
     }

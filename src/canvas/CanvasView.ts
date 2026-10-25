@@ -2622,6 +2622,7 @@ export class CanvasView {
           text: options.text,
           fontSize: textLike ? style.fontSize : undefined,
           highlightShape,
+          arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
           scale: isMeasure && scale ? { ...scale } : null,
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
@@ -3253,13 +3254,18 @@ export class CanvasView {
         if (points.length < 2) break;
         const size = Math.max(8, lineWidth * 3.6);
         const head = arrowHeadGeometry(points[0], points[1], size);
+        const startHead =
+          item.arrowHeads === "both"
+            ? arrowHeadGeometry(points[1], points[0], size)
+            : null;
         ctx.save();
         ctx.lineCap = "butt";
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
+        ctx.moveTo((startHead?.shaftEnd ?? points[0]).x, (startHead?.shaftEnd ?? points[0]).y);
         ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
         ctx.stroke();
         ctx.restore();
+        if (startHead) drawArrowHead(ctx, points[0], startHead, item.color);
         drawArrowHead(ctx, points[1], head, item.color);
         break;
       }
@@ -4088,10 +4094,15 @@ export class CanvasView {
     if (this.draft.kind === "line" || this.draft.kind === "arrow") {
       const head =
         this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
+      const startHead =
+        this.draft.kind === "arrow" && store.ui.arrowHeads === "both"
+          ? arrowHeadGeometry(current, start, 10)
+          : null;
       ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
+      ctx.moveTo(startHead ? startHead.shaftEnd.x : start.x, startHead ? startHead.shaftEnd.y : start.y);
       ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
       ctx.stroke();
+      if (startHead) drawArrowHead(ctx, start, startHead, store.ui.style.color);
       if (head) drawArrowHead(ctx, current, head, store.ui.style.color);
     } else if (this.draft.kind === "rect" || this.draft.kind === "highlight-rect") {
       const rect = expandRect(start, current);

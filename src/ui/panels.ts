@@ -60,7 +60,6 @@ import type { ShellRefs } from "./shell";
 import { openSettingsDialog } from "./settingsDialog";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { TOOL_BY_ID } from "./toolDefs";
-import { updateToolVariantIndicators } from "./toolFlyouts";
 import { toast } from "./toast";
 
 export interface PanelActions {
@@ -177,7 +176,6 @@ function renderToolRail(refs: ShellRefs): void {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
-  updateToolVariantIndicators(refs.toolRail);
 }
 
 export function updateStatus(refs: ShellRefs): void {
@@ -514,6 +512,23 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     revision.addEventListener("input", () => store.setDeltaText(revision.value));
     revisionField.append(revision);
     controls.prepend(revisionField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "arrow") {
+    const headsField = el("label", "context-field");
+    headsField.title = "Arrowheads";
+    headsField.append(el("span", "context-field-label", "Heads"));
+    const heads = el("select", "select context-select");
+    heads.setAttribute("aria-label", "Arrowheads");
+    heads.append(
+      option("end", "Single", store.ui.arrowHeads === "end"),
+      option("both", "Double", store.ui.arrowHeads === "both"),
+    );
+    heads.addEventListener("change", () =>
+      store.setArrowHeads(heads.value === "both" ? "both" : "end"),
+    );
+    headsField.append(heads);
+    controls.prepend(headsField, el("div", "divider-v"));
   }
 
   if (store.ui.activeTool === "cloud") {

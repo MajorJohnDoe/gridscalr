@@ -10,6 +10,7 @@ export type AreaMode = "add" | "subtract";
 /** Polygon is the original click-by-click area. Rectangle and ellipse use two opposite points. */
 export type AreaShape = "polygon" | "rectangle" | "ellipse";
 export type HighlightShape = "stroke" | "rectangle" | "polygon";
+export type ArrowHeads = "end" | "both";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -112,6 +113,8 @@ export interface MarkupItem {
   countType?: CountType;
   /** Highlights only. Missing means the original freehand stroke. */
   highlightShape?: HighlightShape;
+  /** Arrows only. Missing means a single head at the end point. */
+  arrowHeads?: ArrowHeads;
   /** Cloud text labels only: offset from the cloud centre in PDF points. */
   textOffset?: Point;
   /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */

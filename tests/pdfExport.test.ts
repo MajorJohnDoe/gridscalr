@@ -236,6 +236,12 @@ describe("flattened PDF export", () => {
         highlightShape: "rectangle",
         opacity: 0.3,
       }),
+      makeItem({
+        id: "double_arrow",
+        kind: "arrow",
+        points: [{ x: 40, y: 110 }, { x: 140, y: 130 }],
+        arrowHeads: "both",
+      }),
     );
     const bytes = await exportProjectPdf(project, await makeRenderer());
     const doc = await PDFDocument.load(bytes);

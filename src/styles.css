@@ -3572,23 +3572,6 @@ textarea:disabled {
   opacity: 0.6;
 }
 
-.tool-variant-dot {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid rgba(6, 12, 14, 0.9);
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.28);
-  pointer-events: none;
-}
-
-.tool-variant-dot.is-outline {
-  border-color: var(--muted-2);
-  box-shadow: none;
-}
-
 .tool-flyout-root {
   position: fixed;
   inset: 0;
@@ -3608,6 +3591,8 @@ textarea:disabled {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  max-height: min(72vh, 620px);
+  overflow-y: auto;
 }
 
 .tool-flyout-title {
@@ -3745,4 +3730,13 @@ textarea:disabled {
   font-size: 9px;
   line-height: 1.1;
   text-align: center;
+}
+
+.tool-status-dot {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
 }

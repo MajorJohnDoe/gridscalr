@@ -20,6 +20,7 @@ import type {
   AreaMode,
   AreaShape,
   AreaUnit,
+  ArrowHeads,
   HighlightShape,
   Calibration,
   Category,
@@ -307,6 +308,8 @@ function normalizeItem(
   if (raw.kind === "stamp" || raw.kind === "delta") points.length = 1;
   const highlightShape =
     raw.kind === "highlight" ? normalizeHighlightShape(raw.highlightShape) : undefined;
+  const arrowHeads: ArrowHeads | undefined =
+    raw.kind === "arrow" ? (raw.arrowHeads === "both" ? "both" : "end") : undefined;
   const textOffset =
     raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
   const cloudRadius =
@@ -406,6 +409,7 @@ function normalizeItem(
       raw.kind === "area" ? (raw.areaMode === "subtract" ? ("subtract" as AreaMode) : "add") : undefined,
     areaShape,
     highlightShape,
+    arrowHeads,
     textOffset,
     cloudRadius,
     textBoxWidth,

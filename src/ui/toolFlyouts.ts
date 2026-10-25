@@ -1,16 +1,15 @@
-import {
-  CLOUD_FILL_PRESETS,
-  cloudFillColor,
-  type CloudFillPreset,
-} from "../model/cloud";
+import { CLOUD_FILL_PRESETS, type CloudFillPreset } from "../model/cloud";
+import { stampStatusColor } from "../model/stamps";
+import { DRAW_COLOR_PRESETS } from "../model/style";
 import type { HighlightShape } from "../model/types";
 import { store } from "../state/store";
+import { textDialog } from "./dialogs";
 import { el } from "./dom";
 import { icon } from "./icons";
 
 const LONG_PRESS_MS = 320;
 
-const VARIANT_TOOLS = new Set(["cloud", "highlight"]);
+const VARIANT_TOOLS = new Set(["cloud", "highlight", "callout", "stamp", "arrow"]);
 
 let flyoutRoot: HTMLElement | null = null;
 let flyoutCleanup: (() => void) | null = null;
@@ -23,9 +22,6 @@ export function hasToolVariants(toolId: string): boolean {
 export function attachToolFlyout(button: HTMLButtonElement, toolId: string): void {
   if (!VARIANT_TOOLS.has(toolId)) return;
   button.classList.add("has-variants");
-  const dot = el("span", "tool-variant-dot");
-  button.append(dot);
-  if (toolId === "cloud") updateCloudDot(button);
 
   const open = () => {
     longPressTimer = null;
@@ -65,19 +61,6 @@ export function attachToolFlyout(button: HTMLButtonElement, toolId: string): voi
   });
 }
 
-export function updateToolVariantIndicators(rail: HTMLElement): void {
-  const cloud = rail.querySelector<HTMLElement>('[data-tool="cloud"]');
-  if (cloud) updateCloudDot(cloud);
-}
-
-function updateCloudDot(button: HTMLElement): void {
-  const dot = button.querySelector<HTMLElement>(".tool-variant-dot");
-  if (!dot) return;
-  const color = cloudFillColor(store.ui.cloudFill);
-  dot.style.background = color ?? "transparent";
-  dot.classList.toggle("is-outline", !color);
-}
-
 function openToolFlyout(button: HTMLButtonElement, toolId: string): void {
   closeToolFlyout();
   store.setTool(toolId as "cloud" | "highlight");
@@ -87,7 +70,18 @@ function openToolFlyout(button: HTMLButtonElement, toolId: string): void {
   });
   const panel = el("div", "tool-flyout");
   panel.setAttribute("role", "menu");
-  panel.setAttribute("aria-label", toolId === "cloud" ? "Revision cloud variants" : "Highlight variants");
+  panel.setAttribute(
+    "aria-label",
+    toolId === "cloud"
+      ? "Revision cloud variants"
+      : toolId === "highlight"
+        ? "Highlight variants"
+        : toolId === "callout"
+          ? "Callout colours"
+          : toolId === "stamp"
+            ? "Stamp presets"
+            : "Arrow variants",
+  );
   root.append(panel);
   document.body.append(root);
   flyoutRoot = root;
@@ -95,7 +89,10 @@ function openToolFlyout(button: HTMLButtonElement, toolId: string): void {
   const render = () => {
     panel.replaceChildren();
     if (toolId === "cloud") renderCloud(panel, render);
-    else renderHighlight(panel, render);
+    else if (toolId === "highlight") renderHighlight(panel, render);
+    else if (toolId === "callout") renderCallout(panel, render);
+    else if (toolId === "stamp") renderStamp(panel, render);
+    else renderArrow(panel, render);
   };
   render();
 
@@ -240,6 +237,126 @@ function renderHighlight(panel: HTMLElement, render: () => void): void {
       },
     });
   }
+}
+
+function renderCallout(panel: HTMLElement, render: () => void): void {
+  panel.append(el("div", "tool-flyout-title", "Callout"));
+  panel.append(el("div", "tool-flyout-section", "Leader colour"));
+  renderColorSwatches(panel, render);
+  panel.append(
+    el(
+      "div",
+      "tool-flyout-note",
+      "The text box stays dark and the text colour is changed in the inline editor.",
+    ),
+  );
+}
+
+function renderArrow(panel: HTMLElement, render: () => void): void {
+  panel.append(el("div", "tool-flyout-title", "Arrow"));
+  panel.append(el("div", "tool-flyout-section", "Heads"));
+  variantRow(panel, {
+    label: "Single",
+    description: "Arrowhead at the end",
+    iconName: "arrow",
+    selected: store.ui.arrowHeads === "end",
+    onSelect: () => {
+      store.setArrowHeads("end");
+      render();
+    },
+  });
+  variantRow(panel, {
+    label: "Double",
+    description: "Arrowheads at both ends",
+    iconName: "line",
+    selected: store.ui.arrowHeads === "both",
+    onSelect: () => {
+      store.setArrowHeads("both");
+      render();
+    },
+  });
+  panel.append(el("div", "tool-flyout-section", "Colour"));
+  renderColorSwatches(panel, render);
+}
+
+function renderStamp(panel: HTMLElement, render: () => void): void {
+  panel.append(el("div", "tool-flyout-title", "Stamp"));
+  panel.append(el("div", "tool-flyout-section", "Status"));
+  const presets = store.project?.settings.stampPresets ?? [];
+  if (!presets.length) {
+    panel.append(
+      el("div", "tool-flyout-note", "No stamp presets. Add them in Settings."),
+    );
+  }
+  for (const preset of presets) {
+    const selected = store.ui.stampText === preset;
+    const row = el("button", `tool-variant-row${selected ? " is-selected" : ""}`);
+    row.type = "button";
+    row.setAttribute("role", "menuitemradio");
+    row.setAttribute("aria-checked", String(selected));
+    const mark = el("span", "tool-variant-check");
+    if (selected) mark.innerHTML = icon("check", 11);
+    const dot = el("span", "tool-status-dot");
+    dot.style.background = stampStatusColor(preset, store.ui.style.color);
+    const text = el("span", "tool-variant-text");
+    text.append(el("span", "tool-variant-label", preset));
+    row.append(mark, dot, text);
+    row.addEventListener("click", () => {
+      store.setStampText(preset);
+      render();
+    });
+    panel.append(row);
+  }
+  const custom = el("button", "tool-variant-row");
+  custom.type = "button";
+  const customMark = el("span", "tool-variant-check");
+  const customIcon = el("span", "tool-variant-icon");
+  customIcon.innerHTML = icon("text", 14);
+  const customText = el("span", "tool-variant-text");
+  customText.append(
+    el("span", "tool-variant-label", "Custom…"),
+    el("span", "tool-variant-description", "One-off stamp for the next placement"),
+  );
+  custom.append(customMark, customIcon, customText);
+  custom.addEventListener("click", () => {
+    closeToolFlyout();
+    void textDialog("Custom stamp", "Only for the next stamp", store.ui.stampText, "Status").then(
+      (value) => {
+        if (value !== null && value.trim()) store.setStampText(value.trim());
+      },
+    );
+  });
+  panel.append(custom);
+  panel.append(
+    el(
+      "div",
+      "tool-flyout-note",
+      "Stamp colours follow the status. Use Properties to override a placed stamp.",
+    ),
+  );
+}
+
+function renderColorSwatches(panel: HTMLElement, render: () => void): void {
+  const swatches = el("div", "tool-fill-swatches");
+  for (const preset of DRAW_COLOR_PRESETS) {
+    const button = el("button", "tool-fill-swatch has-color");
+    button.type = "button";
+    button.title = preset.label;
+    button.setAttribute("aria-label", preset.label);
+    button.style.setProperty("--swatch", preset.color);
+    button.classList.toggle(
+      "is-selected",
+      store.ui.style.color.toLowerCase() === preset.color.toLowerCase(),
+    );
+    button.addEventListener("click", () => {
+      store.setStyle({ color: preset.color });
+      render();
+    });
+    const option = el("span", "tool-fill-option");
+    option.append(button, el("span", "tool-fill-label", preset.label));
+    swatches.append(option);
+  }
+  panel.append(swatches);
 }
 
 function variantRow(
