@@ -304,6 +304,8 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 - **File → Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
 - **File → Export → View as PNG** exports the rendered page and markup layers at the current view.
 
+Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
+
 All export formats exclude hidden items and hidden layers. Locked items are still exported. Selection handles, hover states, and vertex markers are never exported. Quantity reports always cover all pages and all categories; their rows use the same visibility and locking rules as the canvas. The drawing PDF export uses the source file's page sizes, rotation, and crop information, so markups and images stay aligned on rotated or cropped pages. Measurement and calibration labels are drawn at a compact paper-space size so they annotate rather than cover the source drawing. Text is embedded with a bundled Liberation Sans font. Images are embedded as PNG or JPEG objects with their opacity and rotation. Encrypted source PDFs cannot be flattened without their owner password and produce a clear warning. The PNG export excludes selection handles, hover states, vertex markers, and other interaction overlays.
 
 ## Help

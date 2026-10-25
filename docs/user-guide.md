@@ -324,6 +324,8 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 
 The source PDF is never overwritten. Autosave keeps a recovery snapshot in local storage.
 
+Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
+
 ### Export
 
 **File → Export** contains:

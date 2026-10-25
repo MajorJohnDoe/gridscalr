@@ -143,7 +143,7 @@ export class App {
   private sizeEpoch = 0;
   private unsubscribe: () => void;
   private disposed = false;
-  private allowWindowClose = false;
+  private closeInProgress = false;
   private unlistenClose: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
@@ -633,14 +633,7 @@ export class App {
       toast("Close the browser tab to quit.", "info");
       return;
     }
-    this.allowWindowClose = true;
-    try {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      await getCurrentWindow().close();
-    } catch {
-      this.allowWindowClose = false;
-      toast("The window could not be closed. Close it from the title bar.", "warning");
-    }
+    await this.destroyWindow("The window could not be closed. Close it from the title bar.");
   }
 
   private async bindWindowClose(): Promise<void> {
@@ -649,15 +642,33 @@ export class App {
       const { getCurrentWindow } = await import("@tauri-apps/api/window");
       const win = getCurrentWindow();
       this.unlistenClose = await win.onCloseRequested(async (event) => {
-        if (this.allowWindowClose || !store.dirty) return;
+        // Always take over the close, then decide explicitly. The Tauri close API
+        // would otherwise destroy the window itself, which needs its own permission
+        // and gives no feedback if it fails.
         event.preventDefault();
-        if (!(await this.confirmDiscardChanges())) return;
-        this.allowWindowClose = true;
-        store.clearAutosave();
-        await win.close();
+        if (this.closeInProgress) return;
+        this.closeInProgress = true;
+        try {
+          if (!(await this.confirmDiscardChanges())) return;
+          store.clearAutosave();
+          await this.destroyWindow("The window could not be closed. Close it from the title bar.");
+        } finally {
+          this.closeInProgress = false;
+        }
       });
     } catch {
       // The title-bar close still works; only the unsaved-change prompt is unavailable.
+    }
+  }
+
+  private async destroyWindow(failureMessage: string): Promise<void> {
+    try {
+      const { getCurrentWindow } = await import("@tauri-apps/api/window");
+      // destroy() bypasses the close-requested event, so closing cannot re-enter
+      // the unsaved-change prompt.
+      await getCurrentWindow().destroy();
+    } catch {
+      toast(failureMessage, "warning");
     }
   }
 
