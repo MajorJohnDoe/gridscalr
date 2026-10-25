@@ -1,4 +1,6 @@
 import { deletePageFromProject, totalPageCount, type DeletePageResult } from "../model/documents";
+import type { CloudFillPreset } from "../model/cloud";
+import type { ArrowHeads } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
@@ -16,6 +18,7 @@ import { selectionKey, uniqueSelectionRefs } from "../model/selection";
 import type {
   AreaMode,
   AreaShape,
+  HighlightShape,
   Category,
   CountType,
   DocumentRef,
@@ -39,7 +42,11 @@ export type ToolId =
   | "rect"
   | "ellipse"
   | "highlight"
-  | "text";
+  | "text"
+  | "cloud"
+  | "callout"
+  | "stamp"
+  | "delta";
 
 export type LeftTab = "pages" | "layers";
 
@@ -61,6 +68,13 @@ export interface UIState {
   cursor: Point | null;
   leftTab: LeftTab;
   style: DrawStyle;
+  /** Text used by the next stamp or revision delta. */
+  stampText: string;
+  deltaText: string;
+  highlightShape: HighlightShape;
+  cloudText: boolean;
+  cloudFill: CloudFillPreset;
+  arrowHeads: ArrowHeads;
   /** Category for new measurements. null means the project default. */
   measureCategoryId: string | null;
   /** Sticky room for new measurements, trimmed when an item is created. */
@@ -110,6 +124,10 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "ellipse":
     case "highlight":
     case "text":
+    case "cloud":
+    case "callout":
+    case "stamp":
+    case "delta":
       return "draw";
     default:
       return null;
@@ -133,6 +151,12 @@ function defaultUI(): UIState {
       fillOpacity: 0.15,
       fontSize: 12,
     },
+    stampText: "APPROVED",
+    deltaText: "A",
+    highlightShape: "stroke",
+    cloudText: false,
+    cloudFill: "none",
+    arrowHeads: "end",
     measureCategoryId: null,
     measureRoom: "",
     measureCountType: "other",
@@ -191,6 +215,7 @@ export class Store {
     this.ui.activeTool = "select";
     this.ui.cursor = null;
     this.ui.leftTab = "layers";
+    this.ui.stampText = project.settings.stampPresets[0] ?? "APPROVED";
     this.ui.measureCategoryId = null;
     this.ui.measureRoom = "";
     this.ui.measureCountType = "other";
@@ -283,6 +308,37 @@ export class Store {
   setLeftTab(tab: LeftTab): void {
     this.ui.leftTab = tab;
     this.emit("change");
+  }
+
+  setStampText(text: string): void {
+    this.ui.stampText = text;
+    this.emit("tool");
+  }
+
+  setDeltaText(text: string): void {
+    this.ui.deltaText = text;
+    // Typing must not rebuild the context bar and steal focus.
+    this.emit("cursor");
+  }
+
+  setHighlightShape(shape: HighlightShape): void {
+    this.ui.highlightShape = shape;
+    this.emit("tool");
+  }
+
+  setCloudText(enabled: boolean): void {
+    this.ui.cloudText = enabled;
+    this.emit("tool");
+  }
+
+  setCloudFill(preset: CloudFillPreset): void {
+    this.ui.cloudFill = preset;
+    this.emit("tool");
+  }
+
+  setArrowHeads(heads: ArrowHeads): void {
+    this.ui.arrowHeads = heads;
+    this.emit("tool");
   }
 
   get primarySelection(): SelectionRef | null {

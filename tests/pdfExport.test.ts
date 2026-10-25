@@ -191,6 +191,64 @@ describe("flattened PDF export", () => {
     expect(doc.getPageCount()).toBe(1);
   });
 
+  it("exports revision clouds, callouts, stamps, deltas, and area highlights", async () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push(
+      makeItem({
+        id: "cloud_item",
+        kind: "cloud",
+        points: [
+          { x: 20, y: 20 },
+          { x: 80, y: 20 },
+          { x: 80, y: 70 },
+          { x: 20, y: 70 },
+        ],
+        text: "Revision",
+        fontSize: 10,
+      }),
+      makeItem({
+        id: "callout_item",
+        kind: "callout",
+        points: [{ x: 100, y: 20 }, { x: 150, y: 60 }],
+        text: "Check valve",
+        fontSize: 10,
+      }),
+      makeItem({
+        id: "stamp_item",
+        kind: "stamp",
+        points: [{ x: 60, y: 100 }],
+        text: "APPROVED",
+        fontSize: 12,
+      }),
+      makeItem({
+        id: "delta_item",
+        kind: "delta",
+        points: [{ x: 100, y: 100 }],
+        text: "A",
+        label: "2026-10-24",
+        fontSize: 14,
+      }),
+      makeItem({
+        id: "highlight_area",
+        kind: "highlight",
+        points: [{ x: 130, y: 20 }, { x: 180, y: 50 }],
+        highlightShape: "rectangle",
+        opacity: 0.3,
+      }),
+      makeItem({
+        id: "double_arrow",
+        kind: "arrow",
+        points: [{ x: 40, y: 110 }, { x: 140, y: 130 }],
+        arrowHeads: "both",
+      }),
+    );
+    const bytes = await exportProjectPdf(project, await makeRenderer());
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.getPageCount()).toBe(2);
+    expect(bytes.byteLength).toBeGreaterThan(1000);
+  });
+
   it("exports rectangle and ellipse quick areas as vector content", async () => {
     const renderer = await makeRenderer();
     const baseline = await contentBytes(await exportProjectPdf(makeProject(), renderer));

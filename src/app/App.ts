@@ -95,6 +95,7 @@ import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { toast } from "../ui/toast";
+import { loadGlobalStampPresets } from "../io/stampDefaults";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
 const JSON_FILTERS = [{ name: "JSON project", extensions: ["json"] }];
@@ -117,6 +118,10 @@ const TOOL_KEYS: Record<string, ToolId> = {
   o: "ellipse",
   g: "highlight",
   t: "text",
+  d: "cloud",
+  n: "callout",
+  s: "stamp",
+  y: "delta",
 };
 
 interface SizeTask {
@@ -767,6 +772,7 @@ export class App {
       if (!pdf) return;
       documentRef.pageCount = pdf.numPages;
       const created = createProject(documentRef);
+      created.settings.stampPresets = loadGlobalStampPresets();
       await this.installDocuments([pdf], created, null, false);
       if (path) {
         addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });

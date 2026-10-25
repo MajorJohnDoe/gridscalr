@@ -1,4 +1,5 @@
 import { textItemLayout } from "./text";
+import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import type { MarkupItem, Point } from "./types";
 
 export function distance(a: Point, b: Point): number {
@@ -283,6 +284,46 @@ export function itemLocalBounds(item: MarkupItem): Bounds {
       min: { x: anchor.x, y: anchor.y },
       max: { x: anchor.x + layout.width, y: anchor.y + layout.height },
     };
+  }
+  if (item.kind === "stamp") {
+    const layout = stampLayout(item);
+    return {
+      min: { x: layout.center.x - layout.width / 2, y: layout.center.y - layout.height / 2 },
+      max: { x: layout.center.x + layout.width / 2, y: layout.center.y + layout.height / 2 },
+    };
+  }
+  if (item.kind === "callout") {
+    const layout = calloutLayout(item);
+    return {
+      min: {
+        x: Math.min(layout.box.x, layout.anchor.x),
+        y: Math.min(layout.box.y, layout.anchor.y),
+      },
+      max: {
+        x: Math.max(layout.box.x + layout.box.width, layout.anchor.x),
+        y: Math.max(layout.box.y + layout.box.height, layout.anchor.y),
+      },
+    };
+  }
+  if (item.kind === "delta") {
+    const layout = deltaLayout(item);
+    return {
+      min: { x: layout.center.x - layout.size / 2, y: layout.center.y - layout.size / 2 },
+      max: { x: layout.center.x + layout.size / 2, y: layout.center.y + layout.size / 2 },
+    };
+  }
+  if (item.kind === "cloud") {
+    const bounds = boundingBox(item.points);
+    const label = cloudLabelLayout(item);
+    const min = { x: bounds.min.x - 8, y: bounds.min.y - 8 };
+    const max = { x: bounds.max.x + 8, y: bounds.max.y + 8 };
+    if (label) {
+      min.x = Math.min(min.x, label.center.x - label.width / 2);
+      min.y = Math.min(min.y, label.center.y - label.height / 2);
+      max.x = Math.max(max.x, label.center.x + label.width / 2);
+      max.y = Math.max(max.y, label.center.y + label.height / 2);
+    }
+    return { min, max };
   }
   return boundingBox(item.points);
 }

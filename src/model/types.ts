@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 7 as const;
+export const SCHEMA_VERSION = 8 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -9,6 +9,8 @@ export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
 export type AreaMode = "add" | "subtract";
 /** Polygon is the original click-by-click area. Rectangle and ellipse use two opposite points. */
 export type AreaShape = "polygon" | "rectangle" | "ellipse";
+export type HighlightShape = "stroke" | "rectangle" | "polygon";
+export type ArrowHeads = "end" | "both";
 export type DrawingKind =
   | "pen"
   | "line"
@@ -17,7 +19,11 @@ export type DrawingKind =
   | "ellipse"
   | "highlight"
   | "text"
-  | "image";
+  | "image"
+  | "cloud"
+  | "callout"
+  | "stamp"
+  | "delta";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -105,6 +111,20 @@ export interface MarkupItem {
   areaShape?: AreaShape;
   /** Count items only. */
   countType?: CountType;
+  /** Highlights only. Missing means the original freehand stroke. */
+  highlightShape?: HighlightShape;
+  /** Arrows only. Missing means a single head at the end point. */
+  arrowHeads?: ArrowHeads;
+  /** Cloud text labels only: offset from the cloud centre in PDF points. */
+  textOffset?: Point;
+  /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
+  cloudRadius?: number;
+  /** Callout and cloud text boxes only: fixed box width in PDF points. */
+  textBoxWidth?: number;
+  /** Callout and cloud text boxes only: fixed box height in PDF points. */
+  textBoxHeight?: number;
+  /** Text colour for annotation text boxes. Missing uses the default light text. */
+  textColor?: string;
   /** Images only. References an embedded asset and selects the draw mode. */
   image?: ImageRef;
   createdAt: string;
@@ -171,6 +191,8 @@ export interface ProjectSettings {
   snapToGeometry: boolean;
   /** Markup snap distance in screen pixels. Defaults to 8. */
   snapTolerancePx: number;
+  /** Reusable stamp labels. New projects inherit the app defaults. */
+  stampPresets: string[];
   quantity: QuantitySettings;
 }
 

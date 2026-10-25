@@ -5,12 +5,15 @@ import {
 } from "./area";
 import {
   distanceToPolyline,
+  expandRect,
   itemBounds,
   itemLocalBounds,
   itemLocalToPage,
+  pointInPolygon,
   pointToItemLocal,
   pointToSegmentDistance,
 } from "./geometry";
+import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import type { Layer, MarkupItem, Point, Project } from "./types";
 
 export interface HitResult {
@@ -51,6 +54,73 @@ function hitItem(item: MarkupItem, point: Point, tolerance: number): Omit<HitRes
       return { distance: inside ? 0 : edgeDistance, vertexIndex: -1, segmentIndex: -1 };
     }
     return null;
+  }
+
+  if (item.kind === "cloud") {
+    const inside = pointInPolygon(localPoint, item.points);
+    const edgeDistance = distanceToPolyline(localPoint, item.points, true);
+    const label = cloudLabelLayout(item);
+    const inLabel =
+      label &&
+      localPoint.x >= label.center.x - label.width / 2 - tolerance &&
+      localPoint.y >= label.center.y - label.height / 2 - tolerance &&
+      localPoint.x <= label.center.x + label.width / 2 + tolerance &&
+      localPoint.y <= label.center.y + label.height / 2 + tolerance;
+    if (inside || edgeDistance <= tolerance || inLabel) {
+      return {
+        distance: inside || inLabel ? 0 : edgeDistance,
+        vertexIndex: -1,
+        segmentIndex: -1,
+      };
+    }
+    return null;
+  }
+
+  if (item.kind === "highlight" && item.highlightShape !== "stroke" && item.highlightShape) {
+    const inside =
+      item.highlightShape === "rectangle"
+        ? pointInRect(localPoint, expandRect(item.points[0], item.points[1]))
+        : pointInPolygon(localPoint, item.points);
+    const edgeDistance =
+      item.highlightShape === "rectangle"
+        ? distanceToPolyline(localPoint, rectangleCorners(item.points[0], item.points[1]), true)
+        : distanceToPolyline(localPoint, item.points, true);
+    if (inside || edgeDistance <= tolerance) {
+      return { distance: inside ? 0 : edgeDistance, vertexIndex: -1, segmentIndex: -1 };
+    }
+    return null;
+  }
+
+  if (item.kind === "stamp") {
+    const layout = stampLayout(item);
+    const inside =
+      localPoint.x >= layout.center.x - layout.width / 2 - tolerance &&
+      localPoint.y >= layout.center.y - layout.height / 2 - tolerance &&
+      localPoint.x <= layout.center.x + layout.width / 2 + tolerance &&
+      localPoint.y <= layout.center.y + layout.height / 2 + tolerance;
+    return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
+  if (item.kind === "callout") {
+    const layout = calloutLayout(item);
+    const inBox =
+      localPoint.x >= layout.box.x - tolerance &&
+      localPoint.y >= layout.box.y - tolerance &&
+      localPoint.x <= layout.box.x + layout.box.width + tolerance &&
+      localPoint.y <= layout.box.y + layout.box.height + tolerance;
+    const d = pointToSegmentDistance(localPoint, layout.leaderStart, layout.anchor);
+    if (inBox || d <= tolerance) {
+      return { distance: inBox ? 0 : d, vertexIndex: -1, segmentIndex: -1 };
+    }
+    return null;
+  }
+
+  if (item.kind === "delta") {
+    const layout = deltaLayout(item);
+    const inside =
+      Math.abs(localPoint.x - layout.center.x) <= layout.size / 2 + tolerance &&
+      Math.abs(localPoint.y - layout.center.y) <= layout.size / 2 + tolerance;
+    return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 
   if (item.kind === "text") {
@@ -166,4 +236,24 @@ export function findSegment(
     }
   }
   return best;
+}
+
+
+function pointInRect(point: Point, rect: { x: number; y: number; width: number; height: number }): boolean {
+  return (
+    point.x >= rect.x &&
+    point.x <= rect.x + rect.width &&
+    point.y >= rect.y &&
+    point.y <= rect.y + rect.height
+  );
+}
+
+function rectangleCorners(a: Point, b: Point | undefined): Point[] {
+  const c = b ?? a;
+  return [
+    { x: a.x, y: a.y },
+    { x: c.x, y: a.y },
+    { x: c.x, y: c.y },
+    { x: a.x, y: c.y },
+  ];
 }

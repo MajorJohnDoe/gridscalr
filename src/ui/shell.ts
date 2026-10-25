@@ -2,6 +2,7 @@ import { el } from "./dom";
 import { brandMark, icon } from "./icons";
 import { openHelp } from "./helpDialog";
 import { createMenuBar } from "./topMenu";
+import { attachToolFlyout } from "./toolFlyouts";
 import { TOOLS } from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
 import {
@@ -96,6 +97,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     btn.title = `${tool.label} (${tool.shortcut})`;
     btn.setAttribute("aria-label", tool.label);
     btn.addEventListener("click", () => store.setTool(tool.id));
+    attachToolFlyout(btn, tool.id);
     toolRail.append(btn);
   }
   toolRail.append(el("div", "tool-spacer"));

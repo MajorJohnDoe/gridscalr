@@ -58,6 +58,10 @@ export function itemLabel(item: MarkupItem, project: Project): string {
   const metrics = itemMetrics(item, project);
   if (metrics) return metrics.primary;
   if (item.kind === "text") return item.text?.slice(0, 32) || "Text";
+  if (item.kind === "callout") return item.text?.slice(0, 32) || "Callout";
+  if (item.kind === "stamp") return item.text?.slice(0, 32) || "Stamp";
+  if (item.kind === "delta") return item.text ? `Rev ${item.text}` : "Revision";
+  if (item.kind === "cloud") return item.text?.slice(0, 32) || "Revision cloud";
   return itemKindLabel(item.kind);
 }
 
@@ -85,5 +89,13 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Text";
     case "image":
       return "Image";
+    case "cloud":
+      return "Revision cloud";
+    case "callout":
+      return "Callout";
+    case "stamp":
+      return "Stamp";
+    case "delta":
+      return "Revision delta";
   }
 }

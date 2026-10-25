@@ -14,7 +14,9 @@ import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
-import { areaShapeOf } from "../model/area";
+import { areaShapeOf, rectangleCorners } from "../model/area";
+import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
+import { calloutLayout, cloudLabelLayout, closestPointOnBox, closestPointOnPolygon, deltaLayout, stampLayout, type TextBoxLayout } from "../model/annotations";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import {
@@ -557,18 +559,33 @@ function drawItem(
     case "pen":
       drawPolyline(page, viewport, item.points, color, width, opacity, false);
       break;
-    case "highlight":
-      drawPolyline(
-        page,
-        viewport,
-        item.points,
-        color,
-        width * 4.2,
-        opacity * 0.38,
-        false,
-        LineCapStyle.Butt,
-      );
+    case "highlight": {
+      if (item.highlightShape && item.highlightShape !== "stroke") {
+        const points =
+          item.highlightShape === "rectangle"
+            ? rectangleCorners(item.points.slice(0, 2))
+            : item.points;
+        const path = svgPolygon(viewport, points);
+        page.drawSvgPath(path, {
+          x: 0,
+          y: 0,
+          color,
+          opacity: clamp(opacity * (item.opacity ?? 0.3), 0, 1),
+        });
+      } else {
+        drawPolyline(
+          page,
+          viewport,
+          item.points,
+          color,
+          width * 4.2,
+          opacity * 0.38,
+          false,
+          LineCapStyle.Butt,
+        );
+      }
       break;
+    }
     case "line":
       if (item.points.length < 2) break;
       drawPolyline(page, viewport, item.points.slice(0, 2), color, width, opacity, false);
@@ -577,17 +594,21 @@ function drawItem(
       if (item.points.length < 2) break;
       const start = item.points[0];
       const end = item.points[1];
-      const head = arrowHeadGeometry(start, end, Math.max(8, width * 3.6));
+      const size = Math.max(8, width * 3.6);
+      const head = arrowHeadGeometry(start, end, size);
+      const startHead =
+        item.arrowHeads === "both" ? arrowHeadGeometry(end, start, size) : null;
       drawPolyline(
         page,
         viewport,
-        [start, head.shaftEnd],
+        [startHead?.shaftEnd ?? start, head.shaftEnd],
         color,
         width,
         opacity,
         false,
         LineCapStyle.Butt,
       );
+      if (startHead) drawArrowHead(page, viewport, start, startHead, color, opacity);
       drawArrowHead(page, viewport, end, head, color, opacity);
       break;
     }
@@ -598,6 +619,71 @@ function drawItem(
     case "ellipse":
       if (item.points.length < 2) break;
       drawEllipseItem(page, viewport, item, layerOpacity);
+      break;
+    case "cloud": {
+      const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
+      if (curves.length) {
+        const path = cloudSvgPath(viewport, curves);
+        page.drawSvgPath(path, {
+          x: 0,
+          y: 0,
+          ...(item.fillColor
+            ? { color: pdfColor(item.fillColor), opacity: clamp(opacity * (item.opacity ?? 0.12), 0, 1) }
+            : {}),
+          borderColor: color,
+          borderWidth: width,
+          borderOpacity: opacity,
+        });
+      }
+      const label = cloudLabelLayout(item);
+      if (label) {
+        const target = closestPointOnPolygon(item.points, label.center);
+        const box = {
+          x: label.center.x - label.width / 2,
+          y: label.center.y - label.height / 2,
+          width: label.width,
+          height: label.height,
+        };
+        const edge = closestPointOnBox(box, target);
+        const head = arrowHeadGeometry(edge, target, 6);
+        drawPolyline(
+          page,
+          viewport,
+          [edge, head.shaftEnd],
+          color,
+          Math.max(0.5, width),
+          opacity,
+          false,
+          LineCapStyle.Butt,
+        );
+        drawArrowHead(page, viewport, target, head, color, opacity);
+        drawAnnotationPanel(page, viewport, label, item, fonts, opacity, "dark");
+      }
+      break;
+    }
+    case "callout": {
+      const layout = calloutLayout(item);
+      const size = Math.max(8, width * 3.6);
+      const head = arrowHeadGeometry(layout.leaderStart, layout.anchor, size);
+      drawPolyline(
+        page,
+        viewport,
+        [layout.leaderStart, head.shaftEnd],
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Butt,
+      );
+      drawArrowHead(page, viewport, layout.anchor, head, color, opacity);
+      drawAnnotationPanel(page, viewport, layout, item, fonts, opacity, "dark");
+      break;
+    }
+    case "stamp":
+      drawAnnotationPanel(page, viewport, stampLayout(item), item, fonts, opacity, "stamp");
+      break;
+    case "delta":
+      drawDelta(page, viewport, item, fonts, opacity, color, width);
       break;
     case "text":
       drawTextItem(page, viewport, item, layerOpacity, fonts);
@@ -913,6 +999,176 @@ function drawArrowHead(
   // drawSvgPath flips the SVG y-axis, so negate the PDF y values.
   const path = `M ${pdfTip.x} ${-pdfTip.y} L ${pdfA.x} ${-pdfA.y} L ${pdfB.x} ${-pdfB.y} Z`;
   page.drawSvgPath(path, { x: 0, y: 0, color, opacity: clamp(opacity, 0, 1) });
+}
+
+function cloudSvgPath(viewport: PageViewport, curves: ReturnType<typeof cloudCurves>): string {
+  const point = (value: Point) => {
+    const pdf = toPdfPoint(viewport, value);
+    return `${pdf.x} ${-pdf.y}`;
+  };
+  const parts = [`M ${point(curves[0].start)}`];
+  for (const curve of curves) {
+    parts.push(
+      `C ${point(curve.cp1)} ${point(curve.cp2)} ${point(curve.end)}`,
+    );
+  }
+  parts.push("Z");
+  return parts.join(" ");
+}
+
+function drawAnnotationPanel(
+  page: PDFPage,
+  viewport: PageViewport,
+  layout: Omit<TextBoxLayout, "center"> & { center: Point },
+  item: MarkupItem,
+  fonts: ExportFonts,
+  opacity: number,
+  style: "dark" | "stamp" | "rgba",
+): void {
+  const box = {
+    x: layout.center.x - layout.width / 2,
+    y: layout.center.y - layout.height / 2,
+    width: layout.width,
+    height: layout.height,
+  };
+  const path = roundedRectSvgPath(viewport, box, Math.min(5, layout.height / 4));
+  const border = pdfColor(item.color);
+  if (style === "dark") {
+    page.drawSvgPath(path, {
+      x: 0,
+      y: 0,
+      color: LABEL_BG,
+      opacity: clamp(opacity * 0.92, 0, 1),
+      borderColor: border,
+      borderWidth: Math.max(0.5, item.strokeWidth),
+      borderOpacity: opacity,
+    });
+  } else if (style === "stamp") {
+    page.drawSvgPath(path, {
+      x: 0,
+      y: 0,
+      color: border,
+      opacity: clamp(opacity * (item.opacity ?? 0.12), 0, 1),
+      borderColor: border,
+      borderWidth: Math.max(0.5, item.strokeWidth),
+      borderOpacity: opacity,
+    });
+  }
+  const font = style === "stamp" ? fonts.bold : fonts.regular;
+  const textColor = item.textColor
+    ? pdfColor(item.textColor)
+    : style === "dark"
+      ? INK
+      : border;
+  const lineHeight = layout.lineHeight;
+  layout.lines.forEach((line, index) => {
+    if (!line) return;
+    const center = {
+      x: layout.center.x,
+      y: layout.center.y + (index - (layout.lines.length - 1) / 2) * lineHeight,
+    };
+    if (style === "stamp") {
+      drawTrackedCenteredText(
+        page,
+        viewport,
+        line,
+        center,
+        layout.fontSize,
+        font,
+        textColor,
+        opacity,
+        layout.fontSize * 0.08,
+      );
+    } else {
+      drawCenteredText(page, viewport, line, center, layout.fontSize, font, textColor, opacity);
+    }
+  });
+}
+
+function drawTrackedCenteredText(
+  page: PDFPage,
+  viewport: PageViewport,
+  text: string,
+  center: Point,
+  size: number,
+  font: PDFFont,
+  color: RGB,
+  opacity: number,
+  tracking: number,
+): void {
+  const characters = [...text];
+  const widths = characters.map((character) => font.widthOfTextAtSize(character, size));
+  const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+  const baseline = font.heightAtSize(size, { descender: false });
+  let x = center.x - total / 2;
+  for (let index = 0; index < characters.length; index += 1) {
+    const point = toPdfPoint(viewport, { x, y: center.y + baseline * 0.36 });
+    page.drawText(characters[index], {
+      x: point.x,
+      y: point.y,
+      size,
+      font,
+      color,
+      opacity: clamp(opacity, 0, 1),
+      rotate: degrees(pdfAngle(viewport, 0)),
+    });
+    x += widths[index] + tracking;
+  }
+}
+
+function drawDelta(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  fonts: ExportFonts,
+  opacity: number,
+  color: RGB,
+  width: number,
+): void {
+  const layout = deltaLayout(item);
+  const half = layout.size / 2;
+  const tip = { x: layout.center.x, y: layout.center.y - half };
+  const left = { x: layout.center.x - half, y: layout.center.y + half };
+  const right = { x: layout.center.x + half, y: layout.center.y + half };
+  const point = (value: Point) => {
+    const pdf = toPdfPoint(viewport, value);
+    return `${pdf.x} ${-pdf.y}`;
+  };
+  const path = `M ${point(tip)} L ${point(right)} L ${point(left)} Z`;
+  page.drawSvgPath(path, {
+    x: 0,
+    y: 0,
+    color,
+    opacity: clamp(opacity * (item.opacity ?? 0.16), 0, 1),
+    borderColor: color,
+    borderWidth: Math.max(0.5, width),
+    borderOpacity: opacity,
+  });
+  const textColor = item.textColor ? pdfColor(item.textColor) : color;
+  if (item.text) {
+    drawCenteredText(
+      page,
+      viewport,
+      item.text,
+      { x: layout.center.x, y: layout.center.y + layout.size * 0.12 },
+      Math.max(4, (item.fontSize ?? 14) * 0.7),
+      fonts.bold,
+      textColor,
+      opacity,
+    );
+  }
+  if (item.label) {
+    drawCenteredText(
+      page,
+      viewport,
+      item.label,
+      { x: layout.center.x, y: layout.center.y + layout.size * 0.62 },
+      Math.max(3, (item.fontSize ?? 14) * 0.38),
+      fonts.regular,
+      textColor,
+      opacity,
+    );
+  }
 }
 
 function itemRectCorners(item: MarkupItem): Point[] {

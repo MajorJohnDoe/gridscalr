@@ -114,6 +114,38 @@ export const TOOLS: ToolDef[] = [
     hint: "Click a location to place a text note",
     group: "draw",
   },
+  {
+    id: "cloud",
+    label: "Revision cloud",
+    icon: "cloud",
+    shortcut: "D",
+    hint: "Click each corner · close on the first point or press Enter · add text with Properties or double-click",
+    group: "draw",
+  },
+  {
+    id: "callout",
+    label: "Callout",
+    icon: "callout",
+    shortcut: "N",
+    hint: "Click the object to point at, then place the text box",
+    group: "draw",
+  },
+  {
+    id: "stamp",
+    label: "Stamp",
+    icon: "stamp",
+    shortcut: "S",
+    hint: "Choose a stamp preset and click to place it · double-click to edit this stamp",
+    group: "draw",
+  },
+  {
+    id: "delta",
+    label: "Revision delta",
+    icon: "delta",
+    shortcut: "Y",
+    hint: "Set the revision in the context bar and click to place the triangle",
+    group: "draw",
+  },
 ];
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));

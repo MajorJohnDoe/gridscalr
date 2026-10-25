@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   showCalibration: true,
   snapToGeometry: true,
   snapTolerancePx: 8,
+  stampPresets: ["APPROVED", "NOT APPROVED", "FOR INFORMATION", "INSPECTED", "REVISED"],
   // Replaced by createProject and the project normalizer, which know the
   // project's category ids.
   quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },
@@ -80,7 +81,11 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     id: makeId("project"),
     name: document.name.replace(/\.(pdf|tiff?)$/i, "") || "Untitled",
     documents: [document],
-    settings: { ...DEFAULT_SETTINGS, quantity: createDefaultQuantitySettings(categories) },
+    settings: {
+      ...DEFAULT_SETTINGS,
+      stampPresets: [...DEFAULT_SETTINGS.stampPresets],
+      quantity: createDefaultQuantitySettings(categories),
+    },
     categories,
     assets: {},
     pages: {},
@@ -333,6 +338,7 @@ export function cloneItem(item: MarkupItem, offset = 0, page?: number): MarkupIt
     id: makeId("item"),
     page: page ?? item.page,
     points: item.points.map((point) => ({ x: point.x + offset, y: point.y + offset })),
+    textOffset: item.textOffset ? { ...item.textOffset } : undefined,
     // Copies should always be visible and editable after they are pasted.
     visible: true,
     locked: false,

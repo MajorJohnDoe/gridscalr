@@ -93,7 +93,7 @@ function aboutPane(): HTMLElement {
   const facts = el("dl", "help-facts");
   for (const [label, value] of [
     ["Version", `v${__APP_VERSION__}`],
-    ["Project format", "Schema v7"],
+    ["Project format", "Schema v8"],
     ["Desktop shell", "Tauri 2 with Rust"],
     ["Frontend", "TypeScript, HTML5 Canvas and PDF.js"],
     ["Storage", "Local files only"],

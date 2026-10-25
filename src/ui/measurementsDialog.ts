@@ -81,6 +81,14 @@ function markupIcon(kind: MarkupItem["kind"]): string {
       return "text";
     case "image":
       return "image";
+    case "cloud":
+      return "cloud";
+    case "callout":
+      return "callout";
+    case "stamp":
+      return "stamp";
+    case "delta":
+      return "delta";
   }
 }
 

@@ -45,6 +45,9 @@ function endpointCandidates(item: MarkupItem): Point[] {
   if (item.kind === "area" && areaShapeOf(item) === "rectangle") {
     return [...points, ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point))];
   }
+  if (item.kind === "highlight" && item.highlightShape === "rectangle") {
+    return [...points, ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point))];
+  }
   return points;
 }
 
@@ -81,6 +84,16 @@ function straightsForItem(item: MarkupItem): Segment[] {
       return closedSegments(item, corners);
     }
     return closedSegments(item, item.points.map((point) => itemLocalToPage(item, point)));
+  }
+  if (item.kind === "cloud") {
+    return closedSegments(item, item.points.map((point) => itemLocalToPage(item, point)));
+  }
+  if (item.kind === "highlight" && item.highlightShape && item.highlightShape !== "stroke") {
+    const points =
+      item.highlightShape === "rectangle"
+        ? rectangleCorners(item.points).map((point) => itemLocalToPage(item, point))
+        : item.points.map((point) => itemLocalToPage(item, point));
+    return closedSegments(item, points);
   }
   if (item.kind === "line" || item.kind === "arrow") {
     return openSegments(item, item.points.slice(0, 2).map((point) => itemLocalToPage(item, point)));

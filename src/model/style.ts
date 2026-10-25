@@ -6,3 +6,13 @@ export const MIN_EXPORT_STROKE_WIDTH = 0.15;
 export const STROKE_WIDTH_OPTIONS = [
   0.25, 0.5, 0.75, 1, 1.5, 2, 3, 4, 6, 8,
 ] as const;
+
+
+export const DRAW_COLOR_PRESETS = [
+  { label: "Blue", color: "#4cc9f0" },
+  { label: "Orange", color: "#f2a93b" },
+  { label: "Green", color: "#35c2a1" },
+  { label: "Red", color: "#f26d6d" },
+  { label: "Violet", color: "#a78bfa" },
+  { label: "Graphite", color: "#14181b" },
+] as const;

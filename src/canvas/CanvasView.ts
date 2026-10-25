@@ -93,12 +93,15 @@ import {
   textItemLayout,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
+import { CLOUD_FILL_OPACITY, cloudCurves, cloudFillColor, cloudRadiusForPoints } from "../model/cloud";
+import { calloutLayout, cloudLabelLayout, closestPointOnPolygon, deltaLayout, stampLayout, textBoxLayout } from "../model/annotations";
 import type { AreaShape, ImageAsset, ItemKind, Layer, MarkupItem, PageSize, Point, SelectionRef } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
+import { stampStatusColor } from "../model/stamps";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
-import { calibrationDialog } from "../ui/dialogs";
+import { calibrationDialog, textDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 
 export interface CanvasHooks {
@@ -115,15 +118,19 @@ type Draft =
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
   | { kind: "highlight"; points: Point[]; cursor: Point }
+  | { kind: "highlight-polygon"; points: Point[]; cursor: Point }
+  | { kind: "cloud"; points: Point[]; cursor: Point }
+  | { kind: "callout"; start: Point; current: Point }
   | { kind: "line"; start: Point; current: Point }
   | { kind: "arrow"; start: Point; current: Point }
   | { kind: "rect"; start: Point; current: Point }
   | { kind: "ellipse"; start: Point; current: Point }
+  | { kind: "highlight-rect"; start: Point; current: Point }
   | { kind: "area-rect"; start: Point; current: Point }
   | { kind: "area-ellipse"; start: Point; current: Point };
 
 type BoxHandleRole = "nw" | "n" | "ne" | "e" | "se" | "s" | "sw" | "w";
-type HandleRole = BoxHandleRole | "rotate" | "vertex";
+type HandleRole = BoxHandleRole | "rotate" | "vertex" | "label";
 
 interface Handle {
   role: HandleRole;
@@ -133,7 +140,7 @@ interface Handle {
 }
 
 interface DragState {
-  mode: "move" | "vertex" | "resize" | "rotate";
+  mode: "move" | "vertex" | "resize" | "rotate" | "label";
   itemId: string;
   layerId: string;
   vertexIndex: number;
@@ -148,6 +155,7 @@ interface DragState {
   startBounds?: Bounds;
   center?: Point;
   startAngle?: number;
+  startTextOffset?: Point;
 }
 
 interface MarqueeState {
@@ -172,6 +180,7 @@ interface CropMode {
 }
 
 interface TextEditSession {
+  mode: "text" | "cloud" | "callout";
   itemId: string | null;
   layerId: string | null;
   page: number;
@@ -180,6 +189,8 @@ interface TextEditSession {
   color: string;
   fontSize: number;
   rotation: number;
+  boxWidth?: number;
+  boxHeight?: number;
   original?: {
     text: string;
     color: string;
@@ -718,13 +729,23 @@ export class CanvasView {
       return;
     }
 
-    if (tool === "length" || tool === "area") {
+    const polygonKind =
+      tool === "length"
+        ? "length"
+        : tool === "area"
+          ? "area"
+          : tool === "cloud"
+            ? "cloud"
+            : tool === "highlight" && store.ui.highlightShape === "polygon"
+              ? "highlight-polygon"
+              : null;
+    if (polygonKind) {
       if (event.detail > 1) {
         this.finishDraft();
         return;
       }
       let snapped = this.snapPoint(page);
-      if (this.draft && this.draft.kind === tool && this.draft.points.length) {
+      if (this.draft && this.draft.kind === polygonKind && this.draft.points.length) {
         if (event.shiftKey) {
           const constrained = constrainAngle(
             this.draft.points[this.draft.points.length - 1],
@@ -734,10 +755,10 @@ export class CanvasView {
           snapped = constrained;
         }
       }
-      if (!this.draft || this.draft.kind !== tool) {
-        this.draft = { kind: tool, points: [snapped], cursor: snapped };
+      if (!this.draft || this.draft.kind !== polygonKind) {
+        this.draft = { kind: polygonKind, points: [snapped], cursor: snapped };
       } else if (
-        tool === "area" &&
+        polygonKind !== "length" &&
         this.draft.points.length >= 3 &&
         distance(snapped, this.draft.points[0]) < 10 / store.ui.zoom
       ) {
@@ -749,6 +770,19 @@ export class CanvasView {
         this.draft.cursor = snapped;
       }
       this.drawInteraction();
+      return;
+    }
+
+    if (
+      tool === "highlight" &&
+      (store.ui.highlightShape === "rectangle" || store.ui.highlightShape === "polygon")
+    ) {
+      if (store.ui.highlightShape === "rectangle") {
+        const snapped = this.snapPoint(page);
+        this.draft = { kind: "highlight-rect", start: snapped, current: snapped };
+        this.capturePointer(event.pointerId);
+        this.drawInteraction();
+      }
       return;
     }
 
@@ -780,6 +814,31 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "callout") {
+      if (event.detail > 1) return;
+      if (!this.draft || this.draft.kind !== "callout") {
+        this.draft = { kind: "callout", start: page, current: page };
+        this.drawInteraction();
+      } else {
+        this.finishCallout(page);
+      }
+      return;
+    }
+
+    if (tool === "stamp") {
+      if (event.detail > 1) return;
+      this.createItem("stamp", [page], { text: store.ui.stampText });
+      this.drawInteraction();
+      return;
+    }
+
+    if (tool === "delta") {
+      if (event.detail > 1) return;
+      this.createItem("delta", [page], { text: store.ui.deltaText });
+      this.drawInteraction();
+      return;
+    }
+
     if (tool === "count") {
       if (event.detail > 1) return;
       const snapped = this.snapPoint(page);
@@ -797,6 +856,43 @@ export class CanvasView {
     if (!modifier && selection.length === 1 && primary) {
       const found = findItem(project, primary.itemId);
       if (found && !itemIsLocked(found.item, found.layer)) {
+        if (found.item.kind === "cloud") {
+          const label = cloudLabelLayout(found.item);
+          const inLabel =
+            label &&
+            page.x >= label.center.x - label.width / 2 &&
+            page.y >= label.center.y - label.height / 2 &&
+            page.x <= label.center.x + label.width / 2 &&
+            page.y <= label.center.y + label.height / 2;
+          if (label && inLabel) {
+            this.beginHandleDrag(
+              found.layer.id,
+              found.item,
+              { role: "label", index: -1, point: screen, cursor: "move" },
+              page,
+              event,
+            );
+            return;
+          }
+        }
+        if (found.item.kind === "callout") {
+          const layout = calloutLayout(found.item);
+          const inBox =
+            page.x >= layout.box.x &&
+            page.y >= layout.box.y &&
+            page.x <= layout.box.x + layout.box.width &&
+            page.y <= layout.box.y + layout.box.height;
+          if (inBox) {
+            this.beginHandleDrag(
+              found.layer.id,
+              found.item,
+              { role: "vertex", index: 1, point: screen, cursor: "crosshair" },
+              page,
+              event,
+            );
+            return;
+          }
+        }
         const handle = this.handleAt(found.item, screen);
         if (handle) {
           this.beginHandleDrag(found.layer.id, found.item, handle, page, event);
@@ -837,6 +933,9 @@ export class CanvasView {
       single &&
       (hit.item.kind === "length" ||
         hit.item.kind === "area" ||
+        hit.item.kind === "cloud" ||
+        hit.item.kind === "callout" ||
+        (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
         hit.item.kind === "line" ||
         hit.item.kind === "arrow" ||
         hit.item.kind === "pen");
@@ -876,7 +975,25 @@ export class CanvasView {
     page: Point,
     event: PointerEvent,
   ): void {
-    if (handle.role === "vertex") {
+    if (handle.role === "label") {
+      const label = cloudLabelLayout(item);
+      const centroid = averagePoints(item.points);
+      store.beginGesture();
+      this.drag = {
+        mode: "label",
+        itemId: item.id,
+        layerId,
+        vertexIndex: -1,
+        last: page,
+        moved: false,
+        startPage: page,
+        startTextOffset: label
+          ? { x: label.center.x - centroid.x, y: label.center.y - centroid.y }
+          : item.textOffset
+            ? { ...item.textOffset }
+            : { x: 0, y: 0 },
+      };
+    } else if (handle.role === "vertex") {
       store.beginGesture();
       this.drag = {
         mode: "vertex",
@@ -946,13 +1063,43 @@ export class CanvasView {
 
   private selectionHandles(item: MarkupItem): Handle[] {
     if (item.kind === "count") return [];
-    if (item.kind === "length" || item.kind === "area") {
-      return item.points.slice(0, 80).map((point, index) => ({
+    if (
+      item.kind === "length" ||
+      item.kind === "area" ||
+      item.kind === "cloud" ||
+      (item.kind === "highlight" && item.highlightShape !== "stroke")
+    ) {
+      const handles: Handle[] = item.points.slice(0, 80).map((point, index) => ({
         role: "vertex" as const,
         index,
         point: this.toScreen(itemLocalToPage(item, point)),
         cursor: "crosshair",
       }));
+      if (item.kind === "cloud") {
+        const label = cloudLabelLayout(item);
+        if (label) {
+          handles.push({
+            role: "label",
+            index: -1,
+            point: this.toScreen(label.center),
+            cursor: "move",
+          });
+        }
+      }
+      return handles;
+    }
+
+    if (item.kind === "callout") {
+      return item.points.slice(0, 2).map((point, index) => ({
+        role: "vertex" as const,
+        index,
+        point: this.toScreen(itemLocalToPage(item, point)),
+        cursor: "crosshair",
+      }));
+    }
+
+    if (item.kind === "stamp" || item.kind === "delta") {
+      return [];
     }
 
     if (item.kind === "line" || item.kind === "arrow") {
@@ -1061,7 +1208,11 @@ export class CanvasView {
           current = constrained;
         }
         this.draft.current = current;
-      } else if (this.draft.kind === "line" || this.draft.kind === "arrow") {
+      } else if (
+        this.draft.kind === "line" ||
+        this.draft.kind === "arrow" ||
+        this.draft.kind === "callout"
+      ) {
         let current = this.snapPoint(page);
         if (event.shiftKey) {
           const constrained = constrainAngle(this.draft.start, current);
@@ -1069,7 +1220,11 @@ export class CanvasView {
           current = constrained;
         }
         this.draft.current = current;
-      } else if (this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+      } else if (
+        this.draft.kind === "rect" ||
+        this.draft.kind === "ellipse" ||
+        this.draft.kind === "highlight-rect"
+      ) {
         this.snap = null;
         this.draft.current = event.shiftKey
           ? constrainSquare(this.draft.start, page)
@@ -1084,7 +1239,10 @@ export class CanvasView {
         let snapped = this.snapPoint(page);
         if (
           event.shiftKey &&
-          (this.draft.kind === "length" || this.draft.kind === "area") &&
+          (this.draft.kind === "length" ||
+            this.draft.kind === "area" ||
+            this.draft.kind === "cloud" ||
+            this.draft.kind === "highlight-polygon") &&
           this.draft.points.length
         ) {
           const constrained = constrainAngle(
@@ -1154,6 +1312,15 @@ export class CanvasView {
         item.updatedAt = new Date().toISOString();
         this.drag.moved = true;
       }
+    } else if (this.drag.mode === "label") {
+      if (!this.drag.startPage) return;
+      const start = this.drag.startTextOffset ?? { x: 0, y: 0 };
+      item.textOffset = {
+        x: start.x + (page.x - this.drag.startPage.x),
+        y: start.y + (page.y - this.drag.startPage.y),
+      };
+      item.updatedAt = new Date().toISOString();
+      this.drag.moved = true;
     } else if (this.drag.mode === "resize") {
       this.applyResize(item, page, shiftKey);
     } else {
@@ -1298,7 +1465,13 @@ export class CanvasView {
         this.finishPen();
       } else if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
         this.finishQuickArea();
-      } else if (this.draft.kind === "line" || this.draft.kind === "arrow" || this.draft.kind === "rect" || this.draft.kind === "ellipse") {
+      } else if (
+        this.draft.kind === "line" ||
+        this.draft.kind === "arrow" ||
+        this.draft.kind === "rect" ||
+        this.draft.kind === "ellipse" ||
+        this.draft.kind === "highlight-rect"
+      ) {
         this.finishShape();
       }
     }
@@ -1516,12 +1689,27 @@ export class CanvasView {
       this.startTextEdit(hit.item, hit.layer);
       return;
     }
+    if (hit.item.kind === "cloud") {
+      this.startCloudTextEdit(hit.item, hit.layer);
+      return;
+    }
+    if (hit.item.kind === "callout") {
+      this.startCalloutTextEdit(hit.item, hit.layer);
+      return;
+    }
+    if (hit.item.kind === "stamp" || hit.item.kind === "delta") {
+      void this.editItemText(hit.item);
+      return;
+    }
 
     const segment = findSegment(
       hit.item,
       page,
       7 / store.ui.zoom,
-      hit.item.kind === "area" || hit.item.kind === "rect" || hit.item.kind === "ellipse",
+      hit.item.kind === "area" ||
+        hit.item.kind === "rect" ||
+        hit.item.kind === "ellipse" ||
+        (hit.item.kind === "highlight" && hit.item.highlightShape === "polygon"),
     );
     if (
       segment &&
@@ -1729,6 +1917,7 @@ export class CanvasView {
     if (this.textEdit) this.commitTextEdit();
     const style = store.ui.style;
     this.beginTextEditSession({
+      mode: "text",
       itemId: null,
       layerId: null,
       page: store.ui.page,
@@ -1747,6 +1936,7 @@ export class CanvasView {
     }
     if (this.textEdit) this.commitTextEdit();
     this.beginTextEditSession({
+      mode: "text",
       itemId: item.id,
       layerId: layer.id,
       page: item.page,
@@ -1764,16 +1954,92 @@ export class CanvasView {
     });
   }
 
+  private startCloudTextEdit(item: MarkupItem, layer: Layer): void {
+    if (itemIsLocked(item, layer)) {
+      toast("This item is locked.", "warning");
+      return;
+    }
+    if (this.textEdit) this.commitTextEdit();
+    const label = cloudLabelLayout(item);
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const color = item.textColor ?? "#f7fbfc";
+    this.beginTextEditSession({
+      mode: "cloud",
+      itemId: item.id,
+      layerId: layer.id,
+      page: item.page,
+      anchor: label?.center ?? itemCenter(item),
+      text: item.text ?? "",
+      color,
+      fontSize,
+      rotation: 0,
+      boxWidth: item.textBoxWidth,
+      boxHeight: item.textBoxHeight,
+      original: {
+        text: item.text ?? "",
+        color,
+        fontSize,
+        rotation: 0,
+      },
+    });
+  }
+
+  private startCalloutTextEdit(item: MarkupItem, layer: Layer): void {
+    if (itemIsLocked(item, layer)) {
+      toast("This item is locked.", "warning");
+      return;
+    }
+    if (this.textEdit) this.commitTextEdit();
+    const layout = calloutLayout(item);
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const color = item.textColor ?? "#f7fbfc";
+    this.beginTextEditSession({
+      mode: "callout",
+      itemId: item.id,
+      layerId: layer.id,
+      page: item.page,
+      anchor: layout.center,
+      text: item.text ?? "",
+      color,
+      fontSize,
+      rotation: 0,
+      boxWidth: item.textBoxWidth,
+      boxHeight: item.textBoxHeight,
+      original: {
+        text: item.text ?? "",
+        color,
+        fontSize,
+        rotation: 0,
+      },
+    });
+  }
+
   public editSelectedText(): void {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
     const found = findItem(store.project, selection.itemId);
-    if (!found || found.item.kind !== "text") {
-      toast("Select a text note to edit it.", "info");
+    if (!found || found.item.locked || found.layer.locked) {
+      toast("Select an unlocked text item to edit it.", "info");
       return;
     }
     store.setTool("select");
-    this.startTextEdit(found.item, found.layer);
+    if (found.item.kind === "text") {
+      this.startTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "cloud") {
+      this.startCloudTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "callout") {
+      this.startCalloutTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "stamp" || found.item.kind === "delta") {
+      void this.editItemText(found.item);
+      return;
+    }
+    toast("Select a text note to edit it.", "info");
   }
 
   private beginTextEditSession(
@@ -1785,8 +2051,14 @@ export class CanvasView {
     const textarea = document.createElement("textarea");
     textarea.className = "canvas-text-editor-input";
     textarea.value = session.text;
-    textarea.placeholder = "Type a note…";
-    textarea.wrap = "off";
+    textarea.placeholder =
+      session.mode === "cloud"
+        ? "Cloud text…"
+        : session.mode === "callout"
+          ? "Callout text…"
+          : "Type a note…";
+    textarea.wrap = session.mode === "text" ? "off" : "soft";
+    textarea.style.textAlign = session.mode === "text" ? "left" : "center";
     textarea.spellcheck = false;
     textarea.setAttribute("aria-label", "Text annotation");
     const strip = document.createElement("div");
@@ -1828,6 +2100,10 @@ export class CanvasView {
     rotationInput.value = String(roundTo(session.rotation, 1));
     rotationInput.className = "inline-angle-input";
     rotationField.append(rotationLabel, rotationInput);
+    if (session.mode !== "text") {
+      rotationField.hidden = true;
+      rotationField.style.display = "none";
+    }
 
     const cancelButton = document.createElement("button");
     cancelButton.type = "button";
@@ -1903,39 +2179,69 @@ export class CanvasView {
   private positionTextEditor(): void {
     const edit = this.textEdit;
     if (!edit || edit.closing) return;
-    const layout = textItemLayout(
-      { text: edit.text, fontSize: edit.fontSize },
-      measureTextWidth,
-    );
     const zoom = store.ui.zoom;
     const anchor = this.toScreen(edit.anchor);
-    const width = Math.max(52, layout.width * zoom + 4);
-    const height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
     const textarea = edit.textarea;
-    textarea.style.left = `${anchor.x - 2}px`;
-    textarea.style.top = `${anchor.y - 2}px`;
+    let left: number;
+    let top: number;
+    let width: number;
+    let height: number;
+    let rotation = edit.rotation;
+    let lineHeight: number;
+    let fontSize: number;
+    if (edit.mode === "cloud" || edit.mode === "callout") {
+      const layout = textBoxLayout(
+        edit.text,
+        edit.fontSize,
+        edit.boxWidth,
+        edit.boxHeight,
+      );
+      width = Math.max(40, layout.width * zoom);
+      height = Math.max(20, layout.height * zoom);
+      left = anchor.x - width / 2;
+      top = anchor.y - height / 2;
+      lineHeight = layout.lineHeight * zoom;
+      fontSize = Math.max(1, layout.fontSize * zoom);
+      rotation = 0;
+      const horizontalPadding = Math.max(2, layout.padding * zoom);
+      const verticalPadding = Math.max(
+        2,
+        (height - layout.lines.length * lineHeight) / 2,
+      );
+      textarea.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
+      textarea.style.whiteSpace = "pre-wrap";
+    } else {
+      const layout = textItemLayout(
+        { text: edit.text, fontSize: edit.fontSize },
+        measureTextWidth,
+      );
+      width = Math.max(52, layout.width * zoom + 4);
+      height = Math.max(layout.lineHeight * zoom + 4, layout.height * zoom + 4);
+      left = anchor.x - 2;
+      top = anchor.y - 2;
+      lineHeight = layout.lineHeight * zoom;
+      fontSize = Math.max(1, layout.fontSize * zoom);
+      textarea.style.padding = "2px";
+      textarea.style.whiteSpace = "pre";
+    }
+    textarea.style.left = `${left}px`;
+    textarea.style.top = `${top}px`;
     textarea.style.width = `${width}px`;
     textarea.style.height = `${height}px`;
-    textarea.style.fontSize = `${Math.max(1, layout.fontSize * zoom)}px`;
-    textarea.style.lineHeight = `${layout.lineHeight * zoom}px`;
+    textarea.style.fontSize = `${fontSize}px`;
+    textarea.style.lineHeight = `${lineHeight}px`;
     textarea.style.fontFamily = FONT_STACK;
     textarea.style.color = edit.color;
-    textarea.style.transform = `rotate(${edit.rotation}deg)`;
+    textarea.style.transform = `rotate(${rotation}deg)`;
     textarea.style.transformOrigin = "center";
 
-    const box = rotatedAabb(
-      anchor.x - 2,
-      anchor.y - 2,
-      width,
-      height,
-      edit.rotation,
-    );
+    const box = rotatedAabb(left, top, width, height, rotation);
     const stripWidth = edit.strip.offsetWidth || 270;
-    const left = Math.max(8, Math.min(this.width - stripWidth - 8, box.minX));
-    let top = box.minY - 44;
-    if (top < 8) top = box.maxY + 8;
-    edit.strip.style.left = `${left}px`;
-    edit.strip.style.top = `${Math.max(8, top)}px`;
+    const stripLeft = Math.max(8, Math.min(this.width - stripWidth - 8, box.minX));
+    let stripTop = box.minY - 44;
+    if (stripTop < 8) stripTop = box.maxY + 8;
+    edit.strip.style.left = `${stripLeft}px`;
+    edit.strip.style.top = `${Math.max(8, stripTop)}px`;
   }
 
   private closeTextEditor(): void {
@@ -1961,6 +2267,27 @@ export class CanvasView {
       const found = findItem(project, edit.itemId);
       if (!found || itemIsLocked(found.item, found.layer)) {
         this.closeTextEditor();
+        return;
+      }
+      if (edit.mode === "cloud" || edit.mode === "callout") {
+        const original = edit.original!;
+        const changed =
+          value !== original.text ||
+          edit.color !== original.color ||
+          Math.abs(edit.fontSize - original.fontSize) > 0.001;
+        this.closeTextEditor();
+        if (!changed) return;
+        store.mutate(
+          (project) => {
+            const item = findItem(project, edit.itemId!)?.item;
+            if (!item) return;
+            item.text = value.trim() || "Revision";
+            item.textColor = edit.color;
+            item.fontSize = clampTextSize(edit.fontSize);
+            item.updatedAt = new Date().toISOString();
+          },
+          "change",
+        );
         return;
       }
       const original = edit.original!;
@@ -2218,11 +2545,14 @@ export class CanvasView {
   private createItem(
     kind: ItemKind,
     points: Point[],
-    text?: string,
-    areaShape?: AreaShape,
-  ): void {
+    options: {
+      text?: string;
+      areaShape?: AreaShape;
+      highlightShape?: "stroke" | "rectangle" | "polygon";
+    } = {},
+  ): { layerId: string; itemId: string } | null {
     const project = store.project;
-    if (!project) return;
+    if (!project) return null;
     const layerKind = layerKindForItem(kind);
     const active = project.layers.find(
       (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
@@ -2232,7 +2562,7 @@ export class CanvasView {
         `“${active.name}” is ${active.locked ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
         "warning",
       );
-      return;
+      return null;
     }
     const projectPage = store.ui.page;
     let layerId = "";
@@ -2245,30 +2575,59 @@ export class CanvasView {
         const style = store.ui.style;
         const isMeasure = layerKind === "measure";
         const category = isMeasure ? measurementCategory(project, store.ui.measureCategoryId) : undefined;
+        const highlightShape =
+          kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
+        const filled =
+          !isMeasure &&
+          (kind === "rect" ||
+            kind === "ellipse" ||
+            kind === "stamp" ||
+            kind === "delta" ||
+            (kind === "highlight" && highlightShape !== "stroke"));
+        const textLike =
+          kind === "text" ||
+          kind === "cloud" ||
+          kind === "callout" ||
+          kind === "stamp" ||
+          kind === "delta";
+        const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
         const item: MarkupItem = {
           id: makeId("item"),
           page: projectPage,
           kind,
           points: points.map((p) => ({ ...p })),
-          color: isMeasure ? layer.color : style.color,
+          color: isMeasure
+            ? layer.color
+            : kind === "stamp"
+              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+              : cloudPreset ?? style.color,
           strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
-          fillColor:
-            !isMeasure && (kind === "rect" || kind === "ellipse") && style.fillOpacity > 0
-              ? style.color
-              : undefined,
+          fillColor: cloudPreset ?? (filled ? style.color : undefined),
           opacity:
-            !isMeasure && (kind === "rect" || kind === "ellipse")
-              ? style.fillOpacity
+            !isMeasure &&
+            (kind === "rect" ||
+              kind === "ellipse" ||
+              kind === "stamp" ||
+              kind === "delta" ||
+              cloudPreset !== null ||
+              (kind === "highlight" && highlightShape !== "stroke"))
+              ? kind === "highlight"
+                ? Math.max(0.18, style.fillOpacity)
+                : kind === "cloud"
+                  ? CLOUD_FILL_OPACITY
+                  : style.fillOpacity
               : kind === "highlight"
                 ? 0.35
                 : undefined,
-          text,
-          fontSize: kind === "text" ? style.fontSize : undefined,
+          text: options.text,
+          fontSize: textLike ? style.fontSize : undefined,
+          highlightShape,
+          arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
           scale: isMeasure && scale ? { ...scale } : null,
           categoryId: category?.id,
           room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
           areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
-          areaShape: kind === "area" ? (areaShape ?? "polygon") : undefined,
+          areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
           countType: kind === "count" ? store.ui.measureCountType : undefined,
           createdAt: now,
           updatedAt: now,
@@ -2279,7 +2638,9 @@ export class CanvasView {
       },
       "change",
     );
-    if (layerId && itemId) store.setSelection({ layerId, itemId });
+    if (!layerId || !itemId) return null;
+    store.setSelection({ layerId, itemId });
+    return { layerId, itemId };
   }
 
   private finishPen(): void {
@@ -2302,7 +2663,8 @@ export class CanvasView {
       (this.draft.kind !== "line" &&
         this.draft.kind !== "arrow" &&
         this.draft.kind !== "rect" &&
-        this.draft.kind !== "ellipse")
+        this.draft.kind !== "ellipse" &&
+        this.draft.kind !== "highlight-rect")
     ) {
       return;
     }
@@ -2313,8 +2675,76 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    this.createItem(kind, [start, current]);
+    if (kind === "highlight-rect") {
+      this.createItem("highlight", [start, current], { highlightShape: "rectangle" });
+    } else {
+      this.createItem(kind, [start, current]);
+    }
     this.drawInteraction();
+  }
+
+  private finishCallout(current: Point): void {
+    if (!this.draft || this.draft.kind !== "callout") return;
+    const start = this.draft.start;
+    this.draft = null;
+    this.snap = null;
+    if (distance(start, current) < 3 / store.ui.zoom) {
+      this.drawInteraction();
+      return;
+    }
+    this.createCallout(start, current);
+  }
+
+  private createCallout(start: Point, current: Point): void {
+    const content = "Callout";
+    const page = this.pageSize();
+    let center = current;
+    if (page) {
+      const box = textBoxLayout(content, store.ui.style.fontSize);
+      const margin = 8;
+      const minX = Math.min(page.width / 2, box.width / 2 + margin);
+      const maxX = Math.max(page.width / 2, page.width - box.width / 2 - margin);
+      const minY = Math.min(page.height / 2, box.height / 2 + margin);
+      const maxY = Math.max(page.height / 2, page.height - box.height / 2 - margin);
+      center = {
+        x: Math.max(minX, Math.min(maxX, current.x)),
+        y: Math.max(minY, Math.min(maxY, current.y)),
+      };
+    }
+    const created = this.createItem("callout", [start, center], { text: content });
+    if (created && store.project) {
+      const found = findItem(store.project, created.itemId);
+      if (found) this.startCalloutTextEdit(found.item, found.layer);
+    }
+    this.drawInteraction();
+  }
+
+  private async editItemText(item: MarkupItem): Promise<void> {
+    const title =
+      item.kind === "stamp"
+        ? "Edit stamp text"
+        : item.kind === "delta"
+          ? "Edit revision delta"
+          : item.kind === "cloud"
+            ? "Revision cloud text"
+            : "Edit callout";
+    const text = await textDialog(title, "Only this item is changed", item.text ?? "", "", true);
+    if (text === null) return;
+    store.mutate(
+      (project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) {
+          target.text =
+            text.trim() ||
+            (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
+          if (target.kind === "stamp") {
+            target.color = stampStatusColor(target.text, target.color);
+          }
+          target.updatedAt = new Date().toISOString();
+        }
+      },
+      "change",
+    );
   }
 
   private finishQuickArea(): void {
@@ -2332,7 +2762,7 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    this.createItem("area", [start, current], undefined, shape);
+    this.createItem("area", [start, current], { areaShape: shape });
     this.drawInteraction();
   }
 
@@ -2344,7 +2774,12 @@ export class CanvasView {
     if (!this.draft) return;
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
-    } else if (this.draft.kind === "length" || this.draft.kind === "area") {
+    } else if (
+      this.draft.kind === "length" ||
+      this.draft.kind === "area" ||
+      this.draft.kind === "cloud" ||
+      this.draft.kind === "highlight-polygon"
+    ) {
       this.draft.points = dedupeLast(this.draft.points);
       const points = this.draft.points;
       const kind = this.draft.kind;
@@ -2353,21 +2788,36 @@ export class CanvasView {
         this.drawInteraction();
         return;
       }
-      if (kind === "area" && points.length < 3) {
-        toast("An area needs at least three points.", "warning");
+      if (kind !== "length" && points.length < 3) {
+        toast("This shape needs at least three points.", "warning");
         return;
       }
       this.draft = null;
       this.snap = null;
-      this.createItem(kind, points);
+      if (kind === "cloud") {
+        const created = this.createItem("cloud", points, {
+          text: store.ui.cloudText ? "Revision" : undefined,
+        });
+        if (created && store.ui.cloudText && store.project) {
+          const found = findItem(store.project, created.itemId);
+          if (found) this.startCloudTextEdit(found.item, found.layer);
+        }
+      } else if (kind === "highlight-polygon") {
+        this.createItem("highlight", points, { highlightShape: "polygon" });
+      } else {
+        this.createItem(kind, points);
+      }
       this.drawInteraction();
+    } else if (this.draft.kind === "callout") {
+      this.finishCallout(this.draft.current);
     } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
       this.finishPen();
     } else if (
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
-      this.draft.kind === "ellipse"
+      this.draft.kind === "ellipse" ||
+      this.draft.kind === "highlight-rect"
     ) {
       this.finishShape();
     } else {
@@ -2382,8 +2832,10 @@ export class CanvasView {
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
       this.draft.kind === "ellipse" ||
+      this.draft.kind === "highlight-rect" ||
       this.draft.kind === "area-rect" ||
-      this.draft.kind === "area-ellipse"
+      this.draft.kind === "area-ellipse" ||
+      this.draft.kind === "callout"
     ) {
       return false;
     }
@@ -2674,7 +3126,13 @@ export class CanvasView {
     item: MarkupItem,
     labels: Map<string, LabelLayout>,
   ): void {
-    if (this.editingItemId === item.id) return;
+    if (
+      this.editingItemId === item.id &&
+      item.kind !== "cloud" &&
+      item.kind !== "callout"
+    ) {
+      return;
+    }
     const zoom = store.ui.zoom;
     const points = item.points.map((p) => this.toScreen(p));
     if (points.length === 0) return;
@@ -2758,6 +3216,21 @@ export class CanvasView {
         break;
       }
       case "highlight": {
+        if (item.highlightShape && item.highlightShape !== "stroke") {
+          const outline =
+            item.highlightShape === "rectangle"
+              ? rectangleCorners([points[0], points[1]])
+              : points;
+          ctx.save();
+          ctx.globalAlpha *= item.opacity ?? 0.3;
+          ctx.fillStyle = item.color;
+          ctx.beginPath();
+          outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+          break;
+        }
         ctx.save();
         ctx.globalAlpha *= 0.38;
         ctx.lineWidth = lineWidth * 4.2;
@@ -2781,13 +3254,18 @@ export class CanvasView {
         if (points.length < 2) break;
         const size = Math.max(8, lineWidth * 3.6);
         const head = arrowHeadGeometry(points[0], points[1], size);
+        const startHead =
+          item.arrowHeads === "both"
+            ? arrowHeadGeometry(points[1], points[0], size)
+            : null;
         ctx.save();
         ctx.lineCap = "butt";
         ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
+        ctx.moveTo((startHead?.shaftEnd ?? points[0]).x, (startHead?.shaftEnd ?? points[0]).y);
         ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
         ctx.stroke();
         ctx.restore();
+        if (startHead) drawArrowHead(ctx, points[0], startHead, item.color);
         drawArrowHead(ctx, points[1], head, item.color);
         break;
       }
@@ -2827,6 +3305,122 @@ export class CanvasView {
         ctx.stroke();
         break;
       }
+      case "cloud": {
+        const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
+        if (!curves.length) break;
+        const pathStart = this.toScreen(curves[0].start);
+        ctx.save();
+        if (item.fillColor) {
+          ctx.save();
+          ctx.globalAlpha *= item.opacity ?? 0.12;
+          ctx.fillStyle = item.fillColor;
+          ctx.beginPath();
+          ctx.moveTo(pathStart.x, pathStart.y);
+          for (const curve of curves) {
+            const cp1 = this.toScreen(curve.cp1);
+            const cp2 = this.toScreen(curve.cp2);
+            const end = this.toScreen(curve.end);
+            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+          }
+          ctx.closePath();
+          ctx.fill();
+          ctx.restore();
+        }
+        ctx.beginPath();
+        ctx.moveTo(pathStart.x, pathStart.y);
+        for (const curve of curves) {
+          const cp1 = this.toScreen(curve.cp1);
+          const cp2 = this.toScreen(curve.cp2);
+          const end = this.toScreen(curve.end);
+          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+        }
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+        const label = cloudLabelLayout(item);
+        if (label && this.editingItemId !== item.id) {
+          this.drawAnnotationPanel(
+            ctx,
+            label,
+            item,
+            "rgba(12, 16, 18, 0.9)",
+            item.textColor ?? "#f7fbfc",
+            true,
+          );
+        }
+        break;
+      }
+      case "callout": {
+        const layout = calloutLayout(item);
+        const anchor = this.toScreen(layout.anchor);
+        const leaderStart = this.toScreen(layout.leaderStart);
+        const size = Math.max(8, lineWidth * 3.6);
+        const head = arrowHeadGeometry(leaderStart, anchor, size);
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(leaderStart.x, leaderStart.y);
+        ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
+        ctx.stroke();
+        drawArrowHead(ctx, anchor, head, item.color);
+        ctx.restore();
+        if (this.editingItemId !== item.id) {
+          this.drawAnnotationPanel(
+            ctx,
+            { ...layout, center: { x: (layout.box.x + layout.box.width / 2), y: (layout.box.y + layout.box.height / 2) } },
+            item,
+            "rgba(12, 16, 18, 0.92)",
+            item.textColor ?? "#f7fbfc",
+            false,
+          );
+        }
+        break;
+      }
+      case "stamp": {
+        const layout = stampLayout(item);
+        this.drawAnnotationPanel(
+          ctx,
+          layout,
+          item,
+          hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
+          item.textColor ?? item.color,
+          true,
+          true,
+        );
+        break;
+      }
+      case "delta": {
+        const layout = deltaLayout(item);
+        const size = layout.size * zoom;
+        const center = this.toScreen(layout.center);
+        ctx.save();
+        ctx.save();
+        ctx.globalAlpha *= item.opacity ?? 0.16;
+        ctx.fillStyle = item.color;
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y - size / 2);
+        ctx.lineTo(center.x + size / 2, center.y + size / 2);
+        ctx.lineTo(center.x - size / 2, center.y + size / 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y - size / 2);
+        ctx.lineTo(center.x + size / 2, center.y + size / 2);
+        ctx.lineTo(center.x - size / 2, center.y + size / 2);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.fillStyle = item.textColor ?? item.color;
+        ctx.font = `700 ${Math.max(7, (item.fontSize ?? 14) * zoom * 0.7)}px ${TEXT_FONT_STACK}`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillText(item.text || "", center.x, center.y + size * 0.12);
+        if (item.label) {
+          ctx.font = `500 ${Math.max(6, (item.fontSize ?? 14) * zoom * 0.38)}px ${TEXT_FONT_STACK}`;
+          ctx.fillText(item.label, center.x, center.y + size * 0.62);
+        }
+        ctx.restore();
+        break;
+      }
       case "text": {
         const layout = textItemLayout(item);
         const fontSize = Math.max(0.3, layout.fontSize * zoom);
@@ -2863,6 +3457,93 @@ export class CanvasView {
         this.drawLabelLayout(ctx, layout);
       }
     }
+  }
+
+  private drawTrackedLine(
+    ctx: CanvasRenderingContext2D,
+    text: string,
+    centerX: number,
+    centerY: number,
+    tracking: number,
+  ): void {
+    const characters = [...text];
+    const widths = characters.map((character) => ctx.measureText(character).width);
+    const total = widths.reduce((sum, width) => sum + width, 0) + tracking * Math.max(0, characters.length - 1);
+    let x = centerX - total / 2;
+    ctx.textAlign = "left";
+    ctx.textBaseline = "middle";
+    characters.forEach((character, index) => {
+      ctx.fillText(character, x, centerY);
+      x += widths[index] + tracking;
+    });
+    ctx.textAlign = "center";
+  }
+
+  private drawAnnotationPanel(
+    ctx: CanvasRenderingContext2D,
+    layout: {
+      center: Point;
+      width: number;
+      height: number;
+      lines: string[];
+      fontSize: number;
+      lineHeight: number;
+      padding: number;
+    },
+    item: MarkupItem,
+    fill: string,
+    textColor: string,
+    leader: boolean,
+    bold = false,
+  ): void {
+    const zoom = store.ui.zoom;
+    const center = this.toScreen(layout.center);
+    const width = layout.width * zoom;
+    const height = layout.height * zoom;
+    const x = center.x - width / 2;
+    const y = center.y - height / 2;
+    ctx.save();
+    if (leader && item.kind === "cloud" && item.points.length) {
+      const targetPage = closestPointOnPolygon(item.points, layout.center);
+      const boxPage = {
+        x: layout.center.x - layout.width / 2,
+        y: layout.center.y - layout.height / 2,
+        width: layout.width,
+        height: layout.height,
+      };
+      const edgePage = closestPointOnBox(boxPage, targetPage);
+      const target = this.toScreen(targetPage);
+      const edge = this.toScreen(edgePage);
+      const head = arrowHeadGeometry(edge, target, 6);
+      ctx.strokeStyle = item.color;
+      ctx.lineWidth = Math.max(0.6, item.strokeWidth * zoom);
+      ctx.beginPath();
+      ctx.moveTo(edge.x, edge.y);
+      ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
+      ctx.stroke();
+      drawArrowHead(ctx, target, head, item.color);
+    }
+    ctx.fillStyle = fill;
+    ctx.strokeStyle = item.color;
+    ctx.lineWidth = Math.max(0.8, item.strokeWidth * zoom);
+    roundRect(ctx, x, y, width, height, Math.min(5, height / 4));
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = textColor;
+    const fontSize = Math.max(6, layout.fontSize * zoom);
+    ctx.font = `${bold ? 700 : 500} ${fontSize}px ${FONT_STACK}`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    const lineHeight = layout.lineHeight * zoom;
+    const startY = center.y - ((layout.lines.length - 1) * lineHeight) / 2;
+    layout.lines.forEach((line, index) => {
+      if (bold) {
+        this.drawTrackedLine(ctx, line, center.x, startY + index * lineHeight, fontSize * 0.08);
+      } else {
+        ctx.fillText(line, center.x, startY + index * lineHeight);
+      }
+    });
+    ctx.restore();
   }
 
   private drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
@@ -3003,6 +3684,13 @@ export class CanvasView {
             ctx.arc(handle.point.x, handle.point.y, 2, 0, Math.PI * 2);
             ctx.fillStyle = ACCENT;
             ctx.fill();
+          } else if (handle.role === "label") {
+            ctx.beginPath();
+            ctx.arc(handle.point.x, handle.point.y, 5, 0, Math.PI * 2);
+            ctx.fillStyle = ACCENT;
+            ctx.fill();
+            ctx.strokeStyle = "#101619";
+            ctx.stroke();
           } else {
             ctx.beginPath();
             ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
@@ -3240,7 +3928,13 @@ export class CanvasView {
     const unit = project.settings.lengthUnit;
     const areaUnit = project.settings.areaUnit;
 
-    if (this.draft.kind === "calibrate" || this.draft.kind === "length" || this.draft.kind === "area") {
+    if (
+      this.draft.kind === "calibrate" ||
+      this.draft.kind === "length" ||
+      this.draft.kind === "area" ||
+      this.draft.kind === "cloud" ||
+      this.draft.kind === "highlight-polygon"
+    ) {
       const points = this.draft.points.map((p) => this.toScreen(p));
       const cursor = this.toScreen(this.draft.cursor);
       ctx.save();
@@ -3250,7 +3944,14 @@ export class CanvasView {
       if (points.length > 1) {
         ctx.beginPath();
         points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        if (this.draft.kind === "area" && points.length >= 3) ctx.closePath();
+        if (
+          (this.draft.kind === "area" ||
+            this.draft.kind === "cloud" ||
+            this.draft.kind === "highlight-polygon") &&
+          points.length >= 3
+        ) {
+          ctx.closePath();
+        }
         ctx.stroke();
       }
       ctx.setLineDash([5, 4]);
@@ -3261,7 +3962,10 @@ export class CanvasView {
       ctx.stroke();
       ctx.setLineDash([]);
 
-      if (this.draft.kind === "area" && points.length >= 2) {
+      if (
+        (this.draft.kind === "area" || this.draft.kind === "highlight-polygon") &&
+        points.length >= 2
+      ) {
         const pagePoints = this.draft.points;
         const preview = [...pagePoints, this.draft.cursor];
         ctx.save();
@@ -3276,7 +3980,7 @@ export class CanvasView {
         ctx.closePath();
         ctx.fill();
         ctx.restore();
-        if (preview.length >= 3) {
+        if (preview.length >= 3 && this.draft.kind === "area") {
           this.drawPreviewLabel(
             ctx,
             formatArea(areaValue(preview, "polygon"), scale, areaUnit),
@@ -3390,15 +4094,27 @@ export class CanvasView {
     if (this.draft.kind === "line" || this.draft.kind === "arrow") {
       const head =
         this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
+      const startHead =
+        this.draft.kind === "arrow" && store.ui.arrowHeads === "both"
+          ? arrowHeadGeometry(current, start, 10)
+          : null;
       ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
+      ctx.moveTo(startHead ? startHead.shaftEnd.x : start.x, startHead ? startHead.shaftEnd.y : start.y);
       ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
       ctx.stroke();
+      if (startHead) drawArrowHead(ctx, start, startHead, store.ui.style.color);
       if (head) drawArrowHead(ctx, current, head, store.ui.style.color);
-    } else if (this.draft.kind === "rect") {
+    } else if (this.draft.kind === "rect" || this.draft.kind === "highlight-rect") {
       const rect = expandRect(start, current);
-      if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-      ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      if (this.draft.kind === "highlight-rect") {
+        ctx.save();
+        ctx.globalAlpha = 0.3;
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.restore();
+      } else {
+        if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      }
     } else if (this.draft.kind === "ellipse") {
       const rect = expandRect(start, current);
       ctx.beginPath();
@@ -3413,6 +4129,23 @@ export class CanvasView {
       );
       if (store.ui.style.fillOpacity > 0) ctx.fill();
       ctx.stroke();
+    } else if (this.draft.kind === "callout") {
+      ctx.setLineDash([5, 4]);
+      ctx.beginPath();
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(current.x, current.y);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      const width = 76;
+      const height = 24;
+      ctx.fillStyle = "rgba(12, 16, 18, 0.9)";
+      ctx.fillRect(current.x - width / 2, current.y - height / 2, width, height);
+      ctx.strokeRect(current.x - width / 2, current.y - height / 2, width, height);
+      ctx.fillStyle = store.ui.style.color;
+      ctx.font = `600 ${Math.max(9, store.ui.style.fontSize * zoom)}px ${TEXT_FONT_STACK}`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText("Callout", current.x, current.y);
     }
     ctx.restore();
   }
@@ -3636,7 +4369,7 @@ function pointInBox(point: Point, x: number, y: number, width: number, height: n
   return point.x >= x && point.x <= x + width && point.y >= y && point.y <= y + height;
 }
 
-function closestPointOnBox(box: LabelBox, point: Point): Point {
+function closestPointOnBox(box: { x: number; y: number; width: number; height: number }, point: Point): Point {
   return {
     x: Math.max(box.x, Math.min(box.x + box.width, point.x)),
     y: Math.max(box.y, Math.min(box.y + box.height, point.y)),
@@ -3680,6 +4413,14 @@ function roundRect(
   ctx.arcTo(x, y + height, x, y, r);
   ctx.arcTo(x, y, x + width, y, r);
   ctx.closePath();
+}
+
+function averagePoints(points: Point[]): Point {
+  if (!points.length) return { x: 0, y: 0 };
+  return {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
 }
 
 function drawArrowHead(

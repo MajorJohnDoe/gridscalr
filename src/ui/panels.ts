@@ -47,10 +47,12 @@ import {
   formatScale,
 } from "../model/units";
 import { store, toolLayerKind } from "../state/store";
+import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
+import { stampStatusColor } from "../model/stamps";
 import type { AutosavePayload } from "../state/store";
 import { clear, el, escapeHtml, option } from "./dom";
-import { confirmDialog } from "./dialogs";
+import { confirmDialog, textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
@@ -385,11 +387,34 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.append(categoryField, roomField, el("div", "divider-v"));
   }
 
-  if (store.ui.activeTool === "pen" || store.ui.activeTool === "line" || store.ui.activeTool === "arrow" || store.ui.activeTool === "rect" || store.ui.activeTool === "ellipse" || store.ui.activeTool === "highlight" || store.ui.activeTool === "text") {
+  if (
+    store.ui.activeTool === "pen" ||
+    store.ui.activeTool === "line" ||
+    store.ui.activeTool === "arrow" ||
+    store.ui.activeTool === "rect" ||
+    store.ui.activeTool === "ellipse" ||
+    store.ui.activeTool === "highlight" ||
+    store.ui.activeTool === "text" ||
+    store.ui.activeTool === "cloud" ||
+    store.ui.activeTool === "callout" ||
+    store.ui.activeTool === "stamp" ||
+    store.ui.activeTool === "delta"
+  ) {
     const color = el("input", "color-swatch");
     color.type = "color";
-    color.value = store.ui.style.color;
-    color.title = "Markup colour";
+    const cloudPreset =
+      store.ui.activeTool === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
+    color.value =
+      store.ui.activeTool === "stamp"
+        ? stampStatusColor(store.ui.stampText, store.ui.style.color)
+        : cloudPreset ?? store.ui.style.color;
+    color.title =
+      store.ui.activeTool === "stamp"
+        ? "Stamp colour follows its status preset"
+        : cloudPreset
+          ? "Cloud colour follows its fill preset"
+          : "Markup colour";
+    color.disabled = store.ui.activeTool === "stamp" || Boolean(cloudPreset);
     color.addEventListener("change", () => store.setStyle({ color: color.value }));
     const width = el("select", "select");
     for (const value of STROKE_WIDTH_OPTIONS) {
@@ -398,7 +423,13 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     width.title = "Stroke width";
     width.addEventListener("change", () => store.setStyle({ strokeWidth: Number(width.value) }));
     controls.append(color, width);
-    if (store.ui.activeTool === "text") {
+    if (
+      store.ui.activeTool === "text" ||
+      store.ui.activeTool === "cloud" ||
+      store.ui.activeTool === "callout" ||
+      store.ui.activeTool === "stamp" ||
+      store.ui.activeTool === "delta"
+    ) {
       const sizeWrap = el("label", "context-number");
       sizeWrap.title = "Text size in points";
       sizeWrap.append(el("span", "", "Size"));
@@ -421,6 +452,104 @@ function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       controls.append(sizeWrap);
     }
     controls.append(el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "highlight") {
+    const shapeField = el("label", "context-field");
+    shapeField.title = "Highlight mode";
+    shapeField.append(el("span", "context-field-label", "Mode"));
+    const shapeSelect = el("select", "select context-select");
+    shapeSelect.setAttribute("aria-label", "Highlight mode");
+    shapeSelect.append(
+      option("stroke", "Pen", store.ui.highlightShape === "stroke"),
+      option("rectangle", "Rectangle", store.ui.highlightShape === "rectangle"),
+      option("polygon", "Polygon", store.ui.highlightShape === "polygon"),
+    );
+    shapeSelect.addEventListener("change", () =>
+      store.setHighlightShape(shapeSelect.value as "stroke" | "rectangle" | "polygon"),
+    );
+    shapeField.append(shapeSelect);
+    controls.prepend(shapeField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "stamp") {
+    const presetField = el("label", "context-field");
+    presetField.title = "Stamp preset for the next stamp";
+    presetField.append(el("span", "context-field-label", "Stamp"));
+    const presetSelect = el("select", "select context-select");
+    presetSelect.setAttribute("aria-label", "Stamp preset");
+    const presets = project.settings.stampPresets.length
+      ? project.settings.stampPresets
+      : ["APPROVED"];
+    if (!presets.includes(store.ui.stampText)) {
+      presetSelect.append(option(store.ui.stampText, store.ui.stampText, true));
+    }
+    for (const preset of presets) {
+      presetSelect.append(option(preset, preset, preset === store.ui.stampText));
+    }
+    presetSelect.addEventListener("change", () => store.setStampText(presetSelect.value));
+    const custom = el("button", "btn btn-small btn-ghost", "Custom…");
+    custom.type = "button";
+    custom.addEventListener("click", () => {
+      void textDialog("Custom stamp", "Only for the next stamp", store.ui.stampText, "Status").then(
+        (value) => {
+          if (value !== null && value.trim()) store.setStampText(value.trim());
+        },
+      );
+    });
+    presetField.append(presetSelect);
+    controls.prepend(presetField, custom, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "delta") {
+    const revisionField = el("label", "context-field");
+    revisionField.title = "Revision number or letter";
+    revisionField.append(el("span", "context-field-label", "Revision"));
+    const revision = el("input", "input context-room-input");
+    revision.type = "text";
+    revision.value = store.ui.deltaText;
+    revision.setAttribute("aria-label", "Revision number or letter");
+    revision.addEventListener("input", () => store.setDeltaText(revision.value));
+    revisionField.append(revision);
+    controls.prepend(revisionField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "arrow") {
+    const headsField = el("label", "context-field");
+    headsField.title = "Arrowheads";
+    headsField.append(el("span", "context-field-label", "Heads"));
+    const heads = el("select", "select context-select");
+    heads.setAttribute("aria-label", "Arrowheads");
+    heads.append(
+      option("end", "Single", store.ui.arrowHeads === "end"),
+      option("both", "Double", store.ui.arrowHeads === "both"),
+    );
+    heads.addEventListener("change", () =>
+      store.setArrowHeads(heads.value === "both" ? "both" : "end"),
+    );
+    headsField.append(heads);
+    controls.prepend(headsField, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "cloud") {
+    const textToggle = toggleButton("callout", "Text box", store.ui.cloudText, () => {
+      store.setCloudText(!store.ui.cloudText);
+    });
+    const fillField = el("label", "context-field");
+    fillField.title = "Fill preset for the next cloud";
+    fillField.append(el("span", "context-field-label", "Fill"));
+    const fillSelect = el("select", "select context-select");
+    fillSelect.setAttribute("aria-label", "Cloud fill preset");
+    for (const preset of CLOUD_FILL_PRESETS) {
+      fillSelect.append(
+        option(preset.id, preset.label, preset.id === store.ui.cloudFill),
+      );
+    }
+    fillSelect.addEventListener("change", () =>
+      store.setCloudFill(fillSelect.value as typeof store.ui.cloudFill),
+    );
+    fillField.append(fillSelect);
+    controls.prepend(textToggle, fillField, el("div", "divider-v"));
   }
 
   const lengthUnit = el("select", "select");
@@ -957,14 +1086,21 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
     el(
       "span",
       "field-label",
-      metrics ? "Label (optional)" : "List label (optional)",
+      item.kind === "delta"
+        ? "Date (optional)"
+        : metrics
+          ? "Label (optional)"
+          : "List label (optional)",
     ),
   );
   const labelInput = el("input", "input");
   labelInput.id = "selection-label-input";
   labelInput.dataset.role = "selection-label";
   labelInput.value = item.label ?? "";
-  labelInput.placeholder = metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label");
+  labelInput.placeholder =
+    item.kind === "delta"
+      ? "YYYY-MM-DD"
+      : metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label");
   labelInput.disabled = locked;
   labelInput.title = locked
     ? "Unlock the layer to edit this markup."
@@ -984,20 +1120,228 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
       el(
         "div",
         "empty-note small",
-        "List labels are export and Measurements metadata; they are not drawn on the page.",
+        item.kind === "delta"
+          ? "The date is drawn below the revision triangle."
+          : "List labels are export and Measurements metadata; they are not drawn on the page.",
       ),
     );
   }
 
-  if (item.kind === "text") {
+  if (
+    item.kind === "text" ||
+    item.kind === "cloud" ||
+    item.kind === "callout" ||
+    item.kind === "stamp" ||
+    item.kind === "delta"
+  ) {
     const textField = el("label", "field");
-    textField.append(el("span", "field-label", "Text"));
-    const edit = el("button", "btn btn-small", "Edit on canvas");
+    textField.append(
+      el(
+        "span",
+        "field-label",
+        item.kind === "stamp" ? "Stamp text" : item.kind === "delta" ? "Revision" : "Text",
+      ),
+    );
+    const edit = el("button", "btn btn-small", "Edit text…");
     edit.type = "button";
     edit.disabled = locked;
     edit.addEventListener("click", actions.editSelectedText);
     textField.append(edit);
     section.append(textField);
+  }
+
+  if (item.kind === "callout" || item.kind === "cloud") {
+    const boxRow = el("div", "field-row");
+    const widthField = el("label", "field");
+    widthField.append(el("span", "field-label", "Text box width"));
+    const widthInput = el("input", "input");
+    widthInput.type = "number";
+    widthInput.min = "20";
+    widthInput.max = "2000";
+    widthInput.step = "5";
+    widthInput.placeholder = "Auto";
+    widthInput.value = item.textBoxWidth ? String(item.textBoxWidth) : "";
+    widthInput.disabled = locked;
+    widthInput.addEventListener("change", () => {
+      const raw = widthInput.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxWidth;
+        else target.textBoxWidth = Math.max(20, Math.min(2000, value));
+      }, "change");
+    });
+
+    const heightField = el("label", "field");
+    heightField.append(el("span", "field-label", "Text box height"));
+    const heightInput = el("input", "input");
+    heightInput.type = "number";
+    heightInput.min = "15";
+    heightInput.max = "2000";
+    heightInput.step = "5";
+    heightInput.placeholder = "Auto";
+    heightInput.value = item.textBoxHeight ? String(item.textBoxHeight) : "";
+    heightInput.disabled = locked;
+    heightInput.addEventListener("change", () => {
+      const raw = heightInput.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.textBoxHeight;
+        else target.textBoxHeight = Math.max(15, Math.min(2000, value));
+      }, "change");
+    });
+    widthField.append(widthInput);
+    heightField.append(heightInput);
+    boxRow.append(widthField, heightField);
+    section.append(boxRow);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "Leave a size empty for automatic sizing based on the text. Font size is set below.",
+      ),
+    );
+  }
+
+  if (item.kind === "cloud") {
+    const radiusField = el("label", "field");
+    radiusField.append(el("span", "field-label", "Scallop size"));
+    const radius = el("input", "input");
+    radius.type = "number";
+    radius.min = "2";
+    radius.max = "40";
+    radius.step = "0.5";
+    radius.placeholder = "Auto";
+    radius.value = item.cloudRadius ? String(item.cloudRadius) : "";
+    radius.disabled = locked;
+    radius.addEventListener("change", () => {
+      const raw = radius.value.trim();
+      const value = Number(raw);
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (!raw || !Number.isFinite(value) || value <= 0) delete target.cloudRadius;
+        else target.cloudRadius = Math.max(2, Math.min(40, value));
+      }, "change");
+    });
+    radiusField.append(radius);
+    section.append(radiusField);
+    section.append(
+      el("div", "empty-note small", "Auto scales the scallops with the cloud size."),
+    );
+  }
+
+  if (item.kind === "cloud") {
+    const fillRow = el("label", "check-row");
+    const fillToggle = el("input");
+    fillToggle.type = "checkbox";
+    fillToggle.checked = Boolean(item.fillColor);
+    fillToggle.disabled = locked;
+    fillToggle.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (fillToggle.checked) {
+          target.fillColor = target.fillColor ?? target.color;
+          target.opacity = target.opacity ?? 0.22;
+        } else {
+          delete target.fillColor;
+        }
+      }, "change");
+    });
+    fillRow.append(fillToggle, el("span", "", "Fill"));
+    section.append(fillRow);
+
+    const fillColorField = el("label", "field");
+    fillColorField.append(el("span", "field-label", "Fill colour"));
+    const fillColor = el("input", "color-swatch");
+    fillColor.type = "color";
+    fillColor.value = item.fillColor ?? item.color;
+    fillColor.disabled = !item.fillColor || locked;
+    fillColor.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        target.fillColor = fillColor.value;
+        target.opacity = target.opacity ?? 0.22;
+      }, "change");
+    });
+    fillColorField.append(fillColor);
+    section.append(fillColorField);
+
+    const opacityField = el("label", "field");
+    const opacityHead = el("div", "section-head");
+    opacityHead.style.marginBottom = "4px";
+    opacityHead.append(el("span", "field-label", "Fill opacity"));
+    const opacityValue = el(
+      "span",
+      "range-value",
+      `${Math.round((item.opacity ?? 0.22) * 100)}%`,
+    );
+    opacityHead.append(opacityValue);
+    const opacityRange = el("input");
+    opacityRange.type = "range";
+    opacityRange.min = "0";
+    opacityRange.max = "100";
+    opacityRange.step = "1";
+    opacityRange.value = String(Math.round((item.opacity ?? 0.22) * 100));
+    opacityRange.disabled = !item.fillColor || locked;
+    opacityRange.setAttribute("aria-label", "Cloud fill opacity");
+    opacityRange.addEventListener("input", () => {
+      opacityValue.textContent = `${opacityRange.value}%`;
+    });
+    opacityRange.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (target) target.opacity = Number(opacityRange.value) / 100;
+      }, "change");
+    });
+    opacityField.append(opacityHead, opacityRange);
+    section.append(opacityField);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "A 20–30% fill keeps the drawing and text underneath readable. Hatch patterns are not available yet.",
+      ),
+    );
+  }
+
+  if (item.kind === "highlight") {
+    const modeField = el("label", "field");
+    modeField.append(el("span", "field-label", "Highlight mode"));
+    const mode = el("select", "select");
+    mode.append(
+      option("stroke", "Pen", (item.highlightShape ?? "stroke") === "stroke"),
+      option("rectangle", "Rectangle", item.highlightShape === "rectangle"),
+      option("polygon", "Polygon", item.highlightShape === "polygon"),
+    );
+    mode.disabled = locked;
+    mode.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        target.highlightShape = mode.value as "stroke" | "rectangle" | "polygon";
+        if (
+          (target.highlightShape === "rectangle" && target.points.length > 2) ||
+          (target.highlightShape === "polygon" && target.points.length < 3)
+        ) {
+          const xs = target.points.map((point) => point.x);
+          const ys = target.points.map((point) => point.y);
+          const min = { x: Math.min(...xs), y: Math.min(...ys) };
+          const max = { x: Math.max(...xs), y: Math.max(...ys) };
+          target.points =
+            target.highlightShape === "rectangle"
+              ? [min, max]
+              : [min, { x: max.x, y: min.y }, max, { x: min.x, y: max.y }];
+        }
+      }, "change");
+    });
+    modeField.append(mode);
+    section.append(modeField);
   }
 
   if (item.kind !== "image") {
@@ -1018,7 +1362,13 @@ function selectionSection(project: NonNullable<typeof store.project>, actions: P
   styleRow.append(colorField);
 
   const sizeField = el("label", "field");
-  if (item.kind === "text") {
+  if (
+    item.kind === "text" ||
+    item.kind === "cloud" ||
+    item.kind === "callout" ||
+    item.kind === "stamp" ||
+    item.kind === "delta"
+  ) {
     sizeField.append(el("span", "field-label", "Text size"));
     const sizeWrap = el("div", "input-row");
     const size = el("input", "input");
@@ -1532,10 +1882,24 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     return;
   }
 
+  const editableText =
+    resolved.length === 1 &&
+    (resolved[0].item.kind === "text" ||
+      resolved[0].item.kind === "cloud" ||
+      resolved[0].item.kind === "callout" ||
+      resolved[0].item.kind === "stamp" ||
+      resolved[0].item.kind === "delta") &&
+    !resolved[0].locked;
+
   items.push(
     { label: "Copy", icon: "copy", action: actions.copySelection },
     { label: "Cut", icon: "trash", action: actions.cutSelection },
     { label: "Duplicate", icon: "copy", action: actions.duplicateSelection },
+  );
+  if (editableText) {
+    items.push({ label: "Edit text…", icon: "text", action: actions.editSelectedText });
+  }
+  items.push(
     { separator: true },
     {
       label: anyVisible ? "Hide" : "Show",
