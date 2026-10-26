@@ -4,7 +4,13 @@ import {
   pageScale,
   pageScaleLocked,
 } from "../model/calibration";
-import { removeLayer } from "../model/layers";
+import {
+  layerLockedOnPage,
+  layerVisibleOnPage,
+  removeLayer,
+  setLayerLockedOnPage,
+  setLayerVisibleOnPage,
+} from "../model/layers";
 import { AREA_UNITS, LENGTH_UNITS, formatNumber, formatScale } from "../model/units";
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { store } from "../state/store";
@@ -207,7 +213,7 @@ function activeLayerSection(
     el(
       "div",
       "empty-note small",
-      "These settings apply to the whole layer. To change one markup, use Selection.",
+      "Name, colour and opacity apply to the whole layer. Visibility and lock apply to the current page. To change one markup, use Selection.",
     ),
   );
   if (!active) {
@@ -271,22 +277,27 @@ function activeLayerSection(
   section.append(opacityField);
 
   const toggles = el("div", "field-row");
-  const visible = el("button", `toggle${active.visible ? " is-on" : ""}`);
+  const page = store.ui.page;
+  const activeVisible = layerVisibleOnPage(active, page);
+  const activeLocked = layerLockedOnPage(active, page);
+  const visible = el("button", `toggle${activeVisible ? " is-on" : ""}`);
   visible.type = "button";
-  visible.innerHTML = `${icon(active.visible ? "eye" : "eyeOff", 13)}<span>${active.visible ? "Visible" : "Hidden"}</span>`;
+  visible.title = `Visibility on Page ${page}`;
+  visible.innerHTML = `${icon(activeVisible ? "eye" : "eyeOff", 13)}<span>${activeVisible ? "Visible" : "Hidden"} on p.${page}</span>`;
   visible.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) layer.visible = !layer.visible;
+      if (layer) setLayerVisibleOnPage(layer, page, !layerVisibleOnPage(layer, page));
     }, "layers");
   });
-  const locked = el("button", `toggle${active.locked ? " is-on" : ""}`);
+  const locked = el("button", `toggle${activeLocked ? " is-on" : ""}`);
   locked.type = "button";
-  locked.innerHTML = `${icon(active.locked ? "lock" : "unlock", 13)}<span>${active.locked ? "Locked" : "Unlocked"}</span>`;
+  locked.title = `Lock state on Page ${page}`;
+  locked.innerHTML = `${icon(activeLocked ? "lock" : "unlock", 13)}<span>${activeLocked ? "Locked" : "Unlocked"} on p.${page}</span>`;
   locked.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) layer.locked = !layer.locked;
+      if (layer) setLayerLockedOnPage(layer, page, !layerLockedOnPage(layer, page));
     }, "layers");
   });
   toggles.append(visible, locked);

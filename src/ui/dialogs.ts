@@ -583,6 +583,13 @@ export function drawingExportDialog(
     layerList.append(row);
   }
   layerSection.append(layerList);
+  layerSection.append(
+    el(
+      "p",
+      "export-note",
+      "Layers are resolved per page. A layer hidden on one page is skipped there and still exported on pages where it is visible.",
+    ),
+  );
   body.append(layerSection);
 
   const optionsSection = el("section", "export-section");

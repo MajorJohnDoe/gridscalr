@@ -1,3 +1,4 @@
+import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import { resolveSelection } from "./selection";
 import { translatePoints } from "./geometry";
 import type { ImageMode, Project, SelectionRef } from "./types";
@@ -36,7 +37,7 @@ export function setItemsVisible(
 ): ItemCommandResult {
   const result = emptyResult();
   for (const entry of resolveSelection(project, refs)) {
-    if (visible && !entry.layer.visible) {
+    if (visible && !layerVisibleOnPage(entry.layer, entry.item.page)) {
       result.skippedLayerHidden += 1;
       continue;
     }
@@ -58,7 +59,7 @@ export function setItemsLocked(
 ): ItemCommandResult {
   const result = emptyResult();
   for (const entry of resolveSelection(project, refs)) {
-    if (!locked && entry.layer.locked) {
+    if (!locked && layerLockedOnPage(entry.layer, entry.item.page)) {
       result.skippedLayerLocked += 1;
       continue;
     }

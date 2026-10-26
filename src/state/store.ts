@@ -1,4 +1,11 @@
-import { deletePageFromProject, totalPageCount, type DeletePageResult } from "../model/documents";
+import {
+  deletePageFromProject,
+  duplicatePageFromProject,
+  totalPageCount,
+  type DeletePageResult,
+  type DuplicatePageOptions,
+  type DuplicatePageResult,
+} from "../model/documents";
 import type { CloudFillPreset } from "../model/cloud";
 import type { ArrowHeads } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
@@ -312,7 +319,7 @@ export class Store {
     if (this.project) {
       const kind = toolLayerKind(tool);
       if (kind) {
-        ensureActiveLayer(this.project, kind);
+        ensureActiveLayer(this.project, kind, this.ui.page);
         // Every markup tool targets a layer, so surface the Layers tab while
         // the user draws. Select and Pan leave the current tab alone.
         this.ui.leftTab = "layers";
@@ -458,8 +465,43 @@ export class Store {
   createLayer(kind: LayerKind): void {
     if (!this.project) return;
     this.mutate((project) => {
-      addLayer(project, kind);
+      addLayer(project, kind, this.ui.page);
     }, "layers");
+  }
+
+  renamePage(page: number, name: string): void {
+    if (!this.project) return;
+    const target = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
+    const trimmed = name.trim().slice(0, 80);
+    this.mutate((project) => {
+      const key = String(target);
+      const state = project.pages[key] ?? {};
+      if (trimmed) state.name = trimmed;
+      else delete state.name;
+      if (Object.keys(state).length) project.pages[key] = state;
+      else delete project.pages[key];
+    }, "change");
+  }
+
+  /**
+   * Appends a duplicate of one page. Like importing a document, this is
+   * structural and clears the undo history.
+   */
+  duplicatePage(page: number, options: DuplicatePageOptions): DuplicatePageResult | null {
+    if (!this.project) return null;
+    const result = duplicatePageFromProject(this.project, page, options);
+    if (!result) return null;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
+    this.ui.page = result.page;
+    this.ui.selection = [];
+    this.ui.hover = null;
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    this.scheduleAutosave();
+    return result;
   }
 
   addCategory(name: string): Category | null {

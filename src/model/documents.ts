@@ -1,4 +1,5 @@
-import type { DocumentRef, Project } from "./types";
+import { makeId } from "./calibration";
+import type { DocumentRef, MarkupItem, PageState, Project } from "./types";
 
 /** A project always has at least one document and at least one included page. */
 export type DocumentList = readonly DocumentRef[];
@@ -128,6 +129,114 @@ export interface DeletePageResult {
   removedDocumentIndex: number | null;
 }
 
+export interface DuplicatePageOptions {
+  /** Copy markups and drawings from the source page. */
+  copyMarkups: boolean;
+  /** Copy the page scale and lock. */
+  copyScale: boolean;
+  /** Copy the page name. */
+  copyName: boolean;
+  /** Name for the new page when `copyName` is true. */
+  name: string;
+}
+
+export interface DuplicatePageResult {
+  /** 1-based page number of the appended copy. */
+  page: number;
+  /** Index of the source document in `project.documents` before the copy was appended. */
+  sourceDocumentIndex: number;
+  /** 1-based source page inside the source document. */
+  sourceLocalPage: number;
+}
+
+/** User-facing page title, or undefined when the default "Page N" is used. */
+export function pageDisplayName(project: Pick<Project, "pages">, page: number): string | undefined {
+  const name = project.pages[String(page)]?.name?.trim();
+  return name || undefined;
+}
+
+function clonePageState(state: PageState | undefined): PageState {
+  if (!state) return {};
+  const copy: PageState = {};
+  if (state.calibration) copy.calibration = JSON.parse(JSON.stringify(state.calibration));
+  if (state.scaleLocked) copy.scaleLocked = true;
+  if (state.name) copy.name = state.name;
+  return copy;
+}
+
+function duplicateItemForPage(item: MarkupItem, page: number, now: string): MarkupItem {
+  return {
+    ...item,
+    id: makeId("item"),
+    page,
+    points: item.points.map((point) => ({ ...point })),
+    textOffset: item.textOffset ? { ...item.textOffset } : undefined,
+    labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
+    labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
+    scale: item.scale ? { ...item.scale } : item.scale,
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+/**
+ * Appends a copy of one source page. The source PDF is never modified. The
+ * copy is a new document reference with exactly one included source page, so
+ * it works with the existing renderer, export and save code.
+ */
+export function duplicatePageFromProject(
+  project: Project,
+  page: number,
+  options: DuplicatePageOptions,
+): DuplicatePageResult | null {
+  const total = totalPageCount(project.documents);
+  const sourcePage = Math.round(page);
+  if (sourcePage < 1 || sourcePage > total) return null;
+
+  const sourceDocumentIndex = documentIndexForPage(project.documents, sourcePage);
+  const sourceDocument = project.documents[sourceDocumentIndex];
+  const sourceLocalPage = localPageNumber(project.documents, sourcePage);
+  const newPage = total + 1;
+  const now = new Date().toISOString();
+  const copyDocument: DocumentRef = {
+    ...sourceDocument,
+    id: makeId("doc"),
+    excludedPages: excludedSourcePages(sourceDocument.pageCount, [sourceLocalPage]),
+    copiedFrom: sourceDocument.copiedFrom
+      ? { ...sourceDocument.copiedFrom }
+      : { documentId: sourceDocument.id, page: sourceLocalPage },
+  };
+  project.documents.push(copyDocument);
+
+  const sourceState = project.pages[String(sourcePage)];
+  const newState = clonePageState(options.copyScale ? sourceState : undefined);
+  if (options.copyName) {
+    const name = options.name.trim().slice(0, 80);
+    if (name) newState.name = name;
+    else delete newState.name;
+  } else {
+    delete newState.name;
+  }
+  if (Object.keys(newState).length) project.pages[String(newPage)] = newState;
+  else delete project.pages[String(newPage)];
+
+  for (const layer of project.layers) {
+    if (options.copyMarkups) {
+      for (const item of layer.items.filter((entry) => entry.page === sourcePage)) {
+        layer.items.push(duplicateItemForPage(item, newPage, now));
+      }
+    }
+    const pageState = layer.pageState?.[String(sourcePage)];
+    if (pageState) {
+      layer.pageState ??= {};
+      layer.pageState[String(newPage)] = { ...pageState };
+    }
+  }
+
+  project.updatedAt = now;
+  return { page: newPage, sourceDocumentIndex, sourceLocalPage };
+}
+
 /**
  * Structurally removes one page. Measurements and page state on the deleted
  * page are dropped; later measurements and page state move down one page.
@@ -156,6 +265,22 @@ export function deletePageFromProject(project: Project, page: number): DeletePag
     remappedPages[String(number > target ? number - 1 : number)] = value;
   }
   project.pages = remappedPages;
+
+  for (const layer of project.layers) {
+    if (layer.homePage) {
+      if (layer.homePage === target) layer.homePage = Math.min(target, total - 1);
+      else if (layer.homePage > target) layer.homePage -= 1;
+    }
+    if (!layer.pageState) continue;
+    const remappedLayerState: NonNullable<typeof layer.pageState> = {};
+    for (const [key, value] of Object.entries(layer.pageState)) {
+      const number = Number(key);
+      if (number === target) continue;
+      remappedLayerState[String(number > target ? number - 1 : number)] = value;
+    }
+    if (Object.keys(remappedLayerState).length) layer.pageState = remappedLayerState;
+    else delete layer.pageState;
+  }
 
   let removedDocumentIndex: number | null = null;
   if (included.length <= 1) {

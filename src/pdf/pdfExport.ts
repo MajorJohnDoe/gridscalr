@@ -35,6 +35,7 @@ import {
 } from "../model/export";
 import { arrowHeadGeometry, itemCenter, midpoint, rotatePoint } from "../model/geometry";
 import { imageOpacity } from "../model/images";
+import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
 import type { LabelLayout } from "../model/labelLayout";
 import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import {
@@ -88,9 +89,7 @@ export async function exportProjectPdf(
 
   const pages = pdf.getPages();
   const selectedPages = normalizeExportPages(options?.pages, pages.length);
-  const selectedLayers = new Set(
-    options?.layerIds ?? project.layers.filter((layer) => layer.visible).map((layer) => layer.id),
-  );
+  const selectedLayers = new Set(options?.layerIds ?? project.layers.map((layer) => layer.id));
   const includeLabels = options?.includeLabels !== false;
   const includeCalibration = options?.includeCalibration !== false;
   const includeLegend = options?.includeLegend === true;
@@ -116,18 +115,28 @@ export async function exportProjectPdf(
 
     // Background images sit above the source page and below every markup.
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0 || !selectedLayers.has(layer.id)) continue;
+      if (
+        !layerVisibleOnPage(layer, pageNumber) ||
+        layer.opacity <= 0 ||
+        !selectedLayers.has(layer.id)
+      )
+        continue;
       for (const item of layer.items) {
-        if (item.page !== pageNumber || item.visible === false) continue;
+        if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
         drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
       }
     }
 
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0 || !selectedLayers.has(layer.id)) continue;
+      if (
+        !layerVisibleOnPage(layer, pageNumber) ||
+        layer.opacity <= 0 ||
+        !selectedLayers.has(layer.id)
+      )
+        continue;
       for (const item of layer.items) {
-        if (item.page !== pageNumber || item.visible === false) continue;
+        if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind === "image" && item.image?.mode !== "annotation") continue;
         drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
       }
@@ -332,7 +341,10 @@ function drawLegendPage(
   y -= 18;
 
   const layers = project.layers.filter(
-    (layer) => layer.visible && layer.opacity > 0 && selectedLayerIds.has(layer.id),
+    (layer) =>
+      layer.opacity > 0 &&
+      selectedLayerIds.has(layer.id) &&
+      pages.some((page) => layerVisibleOnPage(layer, page)),
   );
   if (!layers.length) {
     page.drawText("No layers selected.", {
@@ -421,9 +433,9 @@ function exportedCounts(
   const pageSet = new Set(pages);
   const counts = new Map<CountType, number>();
   for (const layer of project.layers) {
-    if (!layer.visible || layer.opacity <= 0 || !selectedLayerIds.has(layer.id)) continue;
+    if (layer.opacity <= 0 || !selectedLayerIds.has(layer.id)) continue;
     for (const item of layer.items) {
-      if (item.kind !== "count" || item.visible === false || !pageSet.has(item.page)) continue;
+      if (item.kind !== "count" || !itemIsVisible(item, layer) || !pageSet.has(item.page)) continue;
       const type = item.countType ?? "other";
       counts.set(type, (counts.get(type) ?? 0) + 1);
     }
@@ -474,9 +486,9 @@ async function embedImages(
   const embedded = new Map<string, PDFImage>();
   const assets = new Map<string, ImageAsset>();
   for (const layer of project.layers) {
-    if (!layer.visible || !selectedLayers.has(layer.id)) continue;
+    if (!selectedLayers.has(layer.id)) continue;
     for (const item of layer.items) {
-      if (item.kind !== "image" || !item.image || item.visible === false) continue;
+      if (item.kind !== "image" || !item.image || !itemIsVisible(item, layer)) continue;
       if (!selectedPages.has(item.page)) continue;
       const asset = project.assets[item.image.assetId];
       if (asset) assets.set(asset.id, asset);

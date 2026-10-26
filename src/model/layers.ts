@@ -6,6 +6,7 @@ import type {
   ItemKind,
   Layer,
   LayerKind,
+  LayerPageState,
   MarkupItem,
   Project,
   ProjectSettings,
@@ -38,7 +39,12 @@ export function layerKindForItem(kind: ItemKind): LayerKind {
   return isMeasurementKind(kind) ? "measure" : "draw";
 }
 
-export function createLayer(kind: LayerKind, name?: string, color?: string): Layer {
+export function createLayer(
+  kind: LayerKind,
+  name?: string,
+  color?: string,
+  homePage?: number,
+): Layer {
   const index = Math.floor(Math.random() * 900 + 100);
   return {
     id: makeId("layer"),
@@ -49,11 +55,15 @@ export function createLayer(kind: LayerKind, name?: string, color?: string): Lay
     opacity: 1,
     color: color ?? (kind === "measure" ? DEFAULT_MEASURE_COLOR : DEFAULT_DRAW_COLOR),
     items: [],
+    ...(homePage ? { homePage } : {}),
   };
 }
 
-export function createDefaultLayers(): Layer[] {
-  return [createLayer("draw", "Markups"), createLayer("measure", "Measurements")];
+export function createDefaultLayers(page = 1): Layer[] {
+  return [
+    createLayer("draw", "Markups", undefined, page),
+    createLayer("measure", "Measurements", undefined, page),
+  ];
 }
 
 export function defaultDocument(name = "Untitled", pageCount = 1): DocumentRef {
@@ -108,13 +118,75 @@ export function layersForKind(project: Project, kind: LayerKind): Layer[] {
   return project.layers.filter((l) => l.kind === kind);
 }
 
+export function layerPageState(layer: Layer, page: number): LayerPageState | undefined {
+  return layer.pageState?.[String(page)];
+}
+
+export function layerVisibleOnPage(layer: Layer, page: number): boolean {
+  return layerPageState(layer, page)?.visible ?? layer.visible;
+}
+
+export function layerLockedOnPage(layer: Layer, page: number): boolean {
+  return layerPageState(layer, page)?.locked ?? layer.locked;
+}
+
+/** True when a layer is either created on the page or has items on it. */
+export function layerAppliesToPage(layer: Layer, page: number): boolean {
+  return layer.homePage === page || layer.items.some((item) => item.page === page);
+}
+
+function pruneLayerPageState(layer: Layer, key: string): void {
+  if (!layer.pageState) return;
+  const state = layer.pageState[key];
+  if (state && state.visible === undefined && state.locked === undefined) {
+    delete layer.pageState[key];
+  }
+  if (!Object.keys(layer.pageState).length) delete layer.pageState;
+}
+
+export function setLayerVisibleOnPage(layer: Layer, page: number, visible: boolean): void {
+  const key = String(page);
+  layer.pageState ??= {};
+  layer.pageState[key] = { ...layer.pageState[key], visible };
+  if (visible === layer.visible) delete layer.pageState[key].visible;
+  pruneLayerPageState(layer, key);
+}
+
+export function setLayerLockedOnPage(layer: Layer, page: number, locked: boolean): void {
+  const key = String(page);
+  layer.pageState ??= {};
+  layer.pageState[key] = { ...layer.pageState[key], locked };
+  if (locked === layer.locked) delete layer.pageState[key].locked;
+  pruneLayerPageState(layer, key);
+}
+
+function clearPageOverride(layer: Layer, field: "visible" | "locked"): void {
+  if (!layer.pageState) return;
+  for (const state of Object.values(layer.pageState)) delete state[field];
+  for (const key of Object.keys(layer.pageState)) {
+    const state = layer.pageState[key];
+    if (state.visible === undefined && state.locked === undefined) delete layer.pageState[key];
+  }
+  if (!Object.keys(layer.pageState).length) delete layer.pageState;
+}
+
+export function setLayerVisibleGlobally(layer: Layer, visible: boolean): void {
+  layer.visible = visible;
+  clearPageOverride(layer, "visible");
+}
+
+export function setLayerLockedGlobally(layer: Layer, locked: boolean): void {
+  layer.locked = locked;
+  clearPageOverride(layer, "locked");
+}
+
 export function itemIsVisible(item: MarkupItem, layer?: Layer): boolean {
-  if (layer && !layer.visible) return false;
+  if (layer && !layerVisibleOnPage(layer, item.page)) return false;
   return item.visible !== false;
 }
 
 export function itemIsLocked(item: MarkupItem, layer?: Layer): boolean {
-  if (layer?.locked) return true;
+  if (layer && layerLockedOnPage(layer, item.page)) return true;
   return item.locked === true;
 }
 
@@ -128,36 +200,40 @@ function availableLayerName(project: Project, kind: LayerKind): string {
 }
 
 /** Returns a layer that can receive new items of the requested kind. */
-export function ensureActiveLayer(project: Project, kind: LayerKind): Layer {
+export function ensureActiveLayer(project: Project, kind: LayerKind, page?: number): Layer {
   const current = project.layers.find((l) => l.id === project.activeLayerId && l.kind === kind);
-  if (current?.visible && !current.locked) return current;
+  const currentEditable = current
+    ? page === undefined
+      ? current.visible && !current.locked
+      : layerVisibleOnPage(current, page) && !layerLockedOnPage(current, page)
+    : false;
+  if (current && currentEditable) return current;
 
-  const editable = layersForKind(project, kind).find((layer) => layer.visible && !layer.locked);
+  const editable = layersForKind(project, kind).find(
+    (layer) =>
+      (page === undefined || layerAppliesToPage(layer, page)) &&
+      (page === undefined
+        ? layer.visible && !layer.locked
+        : layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page)),
+  );
   if (editable) {
     project.activeLayerId = editable.id;
     return editable;
   }
 
-  let layer = current;
-  if (!layer) {
-    layer = createLayer(kind, availableLayerName(project, kind));
-    project.layers = normalizeLayerOrder([...project.layers, layer]);
-  }
-  // If every layer of this kind is hidden or locked, create a new editable layer
-  // rather than silently drawing something the user cannot see or change.
-  if (!layer.visible || layer.locked) {
-    layer = createLayer(kind, availableLayerName(project, kind));
-    project.layers = normalizeLayerOrder([...project.layers, layer]);
-  }
+  const layer = createLayer(kind, availableLayerName(project, kind), undefined, page);
+  project.layers = normalizeLayerOrder([...project.layers, layer]);
   project.activeLayerId = layer.id;
   return layer;
 }
 
-export function addLayer(project: Project, kind: LayerKind): Layer {
+export function addLayer(project: Project, kind: LayerKind, page?: number): Layer {
   const existing = layersForKind(project, kind).length;
   const layer = createLayer(
     kind,
     kind === "measure" ? `Measurements ${existing + 1}` : `Markup ${existing + 1}`,
+    undefined,
+    page,
   );
   project.layers = normalizeLayerOrder([...project.layers, layer]);
   project.activeLayerId = layer.id;
@@ -178,6 +254,9 @@ export function duplicateLayer(project: Project, layerId: string): Layer | undef
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     })),
+    pageState: source.pageState
+      ? (JSON.parse(JSON.stringify(source.pageState)) as Record<string, LayerPageState>)
+      : undefined,
   };
   const index = project.layers.findIndex((l) => l.id === layerId);
   project.layers.splice(index + 1, 0, copy);
@@ -191,7 +270,10 @@ export function removeLayer(project: Project, layerId: string): boolean {
   if (!layer) return false;
   project.layers = project.layers.filter((l) => l.id !== layerId);
   if (!layersForKind(project, layer.kind).length) {
-    project.layers = normalizeLayerOrder([...project.layers, createLayer(layer.kind)]);
+    project.layers = normalizeLayerOrder([
+      ...project.layers,
+      createLayer(layer.kind, undefined, undefined, layer.homePage),
+    ]);
   }
   const fallback = layersForKind(project, layer.kind)[0];
   if (project.activeLayerId === layerId && fallback) project.activeLayerId = fallback.id;
@@ -305,7 +387,7 @@ export function moveItemsToLayer(
 ): MoveSelectionResult {
   const result: MoveSelectionResult = { moved: 0, skipped: 0, mixedKinds: false };
   const target = project.layers.find((layer) => layer.id === targetLayerId);
-  if (!target || target.locked) return result;
+  if (!target) return result;
 
   const found = refs
     .map((ref) => ({ ref, match: findItem(project, ref.itemId) }))
@@ -325,7 +407,7 @@ export function moveItemsToLayer(
   }
 
   for (const { ref, match } of found) {
-    if (itemIsLocked(match.item, match.layer)) {
+    if (itemIsLocked(match.item, match.layer) || layerLockedOnPage(target, match.item.page)) {
       result.skipped++;
       continue;
     }

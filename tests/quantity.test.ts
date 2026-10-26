@@ -6,6 +6,7 @@ import {
   createProject,
   defaultDocument,
   layersForKind,
+  setLayerVisibleOnPage,
 } from "../src/model/layers";
 import { calculateQuantities } from "../src/model/quantity";
 import type { MarkupItem, Project } from "../src/model/types";
@@ -234,6 +235,25 @@ describe("quantity rows", () => {
     const on = calculateQuantities(project, { page: "all", includeHidden: true });
     expect(on.rows[0].items).toBe(3);
     expect(on.hiddenExcluded).toBe(0);
+  });
+
+  it("applies layer visibility separately per page", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    const layer = measureLayer(project);
+    setLayerVisibleOnPage(layer, 1, false);
+    lengthItem(project, { categoryId: floor, room: "A", page: 1 }, layer.id);
+    lengthItem(project, { categoryId: floor, room: "A", page: 2 }, layer.id);
+
+    const summary = calculateQuantities(project, { page: "all" });
+    expect(summary.rows).toHaveLength(1);
+    expect(summary.rows[0].items).toBe(1);
+    expect(summary.rows[0].gross).toBeCloseTo(1);
+    expect(summary.hiddenExcluded).toBe(1);
+
+    const all = calculateQuantities(project, { page: "all", includeHidden: true });
+    expect(all.rows[0].items).toBe(2);
+    expect(all.hiddenExcluded).toBe(0);
   });
 
   it("applies page, layer, category, and room filters without changing the project", () => {

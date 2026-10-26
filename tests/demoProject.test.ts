@@ -15,6 +15,9 @@ describe("documentation demo project", () => {
     expect(project.documents).toHaveLength(1);
     expect(project.documents[0].name).toBe("industrial-plan.pdf");
     expect(project.documents[0].pageCount).toBe(3);
+    expect(project.pages["1"].name).toBe("Ground floor");
+    expect(project.pages["2"].name).toBe("Mezzanine");
+    expect(project.pages["3"].name).toBe("Site plan");
     expect(project.pages["1"].calibration?.pointsPerMeter).toBeCloseTo(28.3464567, 4);
     expect(project.pages["2"].calibration?.source).toBe("manual");
     expect(project.pages["2"].calibration?.pointsPerMeter).toBeCloseTo(56.6929134, 4);

@@ -1,7 +1,8 @@
-import { totalPageCount } from "../model/documents";
+import { pageDisplayName, totalPageCount } from "../model/documents";
 import type { PageSize } from "../model/types";
 import { store } from "../state/store";
 import { el } from "./dom";
+import { textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -41,6 +42,37 @@ function applyThumbnail(pending: PendingThumbnail, url: string): void {
 }
 
 /** Updates one card when its page size arrives after the panel was rendered. */
+function beginPageRename(title: HTMLElement, page: number): void {
+  if (title.querySelector(".page-name-input")) return;
+  const input = el("input", "page-name-input");
+  input.value = title.textContent ?? "";
+  input.maxLength = 80;
+  input.setAttribute("aria-label", `Name for Page ${page}`);
+  title.replaceWith(input);
+  input.focus();
+  input.select();
+  let done = false;
+  const finish = (save: boolean) => {
+    if (done) return;
+    done = true;
+    if (save) store.renamePage(page, input.value);
+    else store.emit("change");
+  };
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      finish(true);
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      finish(false);
+    }
+    event.stopPropagation();
+  });
+  input.addEventListener("blur", () => finish(true));
+  input.addEventListener("click", (event) => event.stopPropagation());
+  input.addEventListener("dblclick", (event) => event.stopPropagation());
+}
+
 export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSize): void {
   const card = refs.dockBody.querySelector<HTMLElement>(`.page-card[data-page="${page}"]`);
   if (!card) return;
@@ -76,12 +108,19 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const cached = actions.getPageThumbnail(page);
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
-    info.append(el("div", "page-title", `Page ${page}`));
-    const sizeNode = el(
-      "div",
-      "page-size",
-      size ? `${Math.round(size.width)} × ${Math.round(size.height)} pt` : "Loading size…",
-    );
+    const pageName = pageDisplayName(project, page);
+    const title = el("div", "page-title", pageName ?? `Page ${page}`);
+    title.title = pageName ? `${pageName} — double-click to rename` : "Double-click to rename";
+    title.addEventListener("dblclick", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      beginPageRename(title, page);
+    });
+    info.append(title);
+    const sizeText = size
+      ? `${Math.round(size.width)} × ${Math.round(size.height)} pt`
+      : "Loading size…";
+    const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
     info.append(sizeNode);
     const badges = el("div", "page-badges");
     if (project.pages[String(page)]?.calibration) {
@@ -98,6 +137,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
     pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
+    card.setAttribute(
+      "aria-label",
+      `${pageName ?? `Page ${page}`}${pageName ? `, Page ${page}` : ""}${size ? `, ${Math.round(size.width)} by ${Math.round(size.height)} points` : ""}`,
+    );
     card.addEventListener("click", () => actions.goToPage(page, true));
     card.addEventListener("contextmenu", (event) => {
       event.preventDefault();
@@ -107,6 +150,25 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
           label: `Go to page ${page}`,
           icon: "pages",
           action: () => actions.goToPage(page, true),
+        },
+        {
+          label: "Rename page…",
+          icon: "text",
+          action: () => {
+            void textDialog(
+              "Rename page",
+              `Page ${page}`,
+              pageDisplayName(project, page) ?? "",
+              "Page name",
+            ).then((value) => {
+              if (value !== null) store.renamePage(page, value);
+            });
+          },
+        },
+        {
+          label: "Duplicate page…",
+          icon: "copy",
+          action: () => actions.duplicatePage(page),
         },
         { separator: true },
         {

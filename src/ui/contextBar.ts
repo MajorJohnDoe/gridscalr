@@ -1,7 +1,7 @@
 import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
 import { COUNT_TYPE_LABELS } from "../model/countSymbols";
-import { layersForKind } from "../model/layers";
+import { layersForKind, layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import type { LayerKind, Project } from "../model/types";
@@ -45,9 +45,12 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   const targetKind = toolLayerKind(store.ui.activeTool);
   const layerTarget = el("label", "layer-target");
   if (activeLayer) {
+    const page = store.ui.page;
+    const activeVisible = layerVisibleOnPage(activeLayer, page);
+    const activeLocked = layerLockedOnPage(activeLayer, page);
     layerTarget.classList.toggle(
       "is-warning",
-      Boolean(targetKind && (!activeLayer.visible || activeLayer.locked)),
+      Boolean(targetKind && (!activeVisible || activeLocked)),
     );
     const dot = el("span", "layer-target-dot");
     dot.style.background = activeLayer.color;
@@ -66,20 +69,22 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     select.addEventListener("change", () => {
       store.setActiveLayer(select.value);
       const next = store.project?.layers.find((layer) => layer.id === select.value);
-      if (targetKind && next && (!next.visible || next.locked)) {
+      if (
+        targetKind &&
+        next &&
+        (!layerVisibleOnPage(next, page) || layerLockedOnPage(next, page))
+      ) {
         toast(
-          `“${next.name}” is ${next.locked ? "locked" : "hidden"}. Unlock or show it before drawing.`,
+          `“${next.name}” is ${layerLockedOnPage(next, page) ? "locked" : "hidden"}. Unlock or show it before drawing.`,
           "warning",
         );
       }
     });
     layerTarget.append(el("span", "layer-target-label", "Layer"), dot, select);
-    if (targetKind && (!activeLayer.visible || activeLayer.locked)) {
+    if (targetKind && (!activeVisible || activeLocked)) {
       const warning = el("span", "layer-target-warning");
-      warning.title = activeLayer.locked
-        ? "The target layer is locked"
-        : "The target layer is hidden";
-      warning.innerHTML = icon(activeLayer.locked ? "lock" : "eyeOff", 13);
+      warning.title = activeLocked ? "The target layer is locked" : "The target layer is hidden";
+      warning.innerHTML = icon(activeLocked ? "lock" : "eyeOff", 13);
       layerTarget.append(warning);
     }
     controls.append(layerTarget, el("div", "divider-v"));

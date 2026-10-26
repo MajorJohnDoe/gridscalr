@@ -18,7 +18,6 @@ export const MARKUP_CSV_COLUMNS = [
 export function serializeMarkupCsv(project: Project): string {
   const rows: string[][] = [MARKUP_CSV_COLUMNS.slice()];
   for (const layer of project.layers) {
-    if (!layer.visible) continue;
     for (const item of layer.items) {
       if (!itemIsVisible(item, layer)) continue;
       const metrics = itemMetrics(item, project);

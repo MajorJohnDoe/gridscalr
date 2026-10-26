@@ -368,6 +368,47 @@ try {
   assert.match(drawingPdf.suggestedFilename(), /-markups\.pdf$/, "expected a drawing PDF export");
   await waitForToastsGone(page);
 
+  // Page names and page duplication.
+  await page.getByRole("button", { name: "Pages", exact: true }).click();
+  await page.waitForTimeout(150);
+  await page.locator('.page-card[data-page="2"]').click({ button: "right" });
+  await page.getByRole("button", { name: "Rename page…" }).click();
+  const pageRename = page.getByRole("dialog");
+  await pageRename.waitFor();
+  await pageRename.getByLabel("Text").fill("Mezzanine review");
+  await pageRename.getByRole("button", { name: "Apply" }).click();
+  await pageRename.waitFor({ state: "detached" });
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.locator('.page-card[data-page="2"] .page-title').textContent(),
+    "Mezzanine review",
+    "renaming a page should update its card",
+  );
+
+  await page.locator('.page-card[data-page="1"]').click({ button: "right" });
+  await page.getByRole("button", { name: "Duplicate page…" }).click();
+  const duplicatePage = page.getByRole("dialog");
+  await duplicatePage.waitFor();
+  await duplicatePage.getByRole("button", { name: "Duplicate page" }).click();
+  await duplicatePage.waitFor({ state: "detached" });
+  await page.waitForTimeout(300);
+  assert.equal(await page.locator(".page-card").count(), 4, "duplicating should add one page");
+  assert.equal(
+    await page.locator('.page-card[data-page="4"] .page-title').textContent(),
+    "Ground floor copy",
+    "the duplicate should copy the page name",
+  );
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.project.documents.length),
+    2,
+    "the duplicate is a single-page document reference",
+  );
+
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
+  await page.getByText(/No layers on Page 4 yet/).waitFor();
+  await page.getByRole("button", { name: "All pages", exact: true }).click();
+  await page.locator(".layer-row").first().waitFor();
+
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);
 } finally {

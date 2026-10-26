@@ -1,7 +1,14 @@
 import { categoryForItem } from "../model/categories";
 import { countTypeLabel } from "../model/countSymbols";
 import { totalPageCount } from "../model/documents";
-import { findItem, isMeasurementKind, itemIsLocked, itemIsVisible } from "../model/layers";
+import {
+  findItem,
+  isMeasurementKind,
+  itemIsLocked,
+  itemIsVisible,
+  layerLockedOnPage,
+  layerVisibleOnPage,
+} from "../model/layers";
 import { setItemsLocked, setItemsVisible } from "../model/commands";
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import type { Layer, MarkupItem } from "../model/types";
@@ -179,16 +186,17 @@ export function openMeasurementsDialog(actions: PanelActions): void {
       itemRow.classList.toggle("is-deduction", deduction);
       const page = el("span", "markup-page", `p.${row.item.page}`);
       const rowActions = el("span", "markup-actions");
+      const layerShown = layerVisibleOnPage(row.layer, row.item.page);
       const eye = layerAction(
         row.item.visible === false ? "eyeOff" : "eye",
-        row.layer.visible
+        layerShown
           ? row.item.visible === false
             ? "Show item"
             : "Hide item"
-          : "Layer is hidden",
+          : `Layer is hidden on Page ${row.item.page}`,
       );
-      eye.classList.toggle("is-on", row.item.visible !== false && row.layer.visible);
-      eye.disabled = !row.layer.visible;
+      eye.classList.toggle("is-on", row.item.visible !== false && layerShown);
+      eye.disabled = !layerShown;
       eye.addEventListener("click", (event) => {
         event.stopPropagation();
         const nextVisible = row.item.visible === false;
@@ -202,12 +210,17 @@ export function openMeasurementsDialog(actions: PanelActions): void {
           );
         }
       });
+      const layerIsLocked = layerLockedOnPage(row.layer, row.item.page);
       const lock = layerAction(
         locked ? "lock" : "unlock",
-        row.layer.locked ? "Layer is locked" : locked ? "Unlock item" : "Lock item",
+        layerIsLocked
+          ? `Layer is locked on Page ${row.item.page}`
+          : locked
+            ? "Unlock item"
+            : "Lock item",
       );
       lock.classList.toggle("is-locked", locked);
-      lock.disabled = row.layer.locked;
+      lock.disabled = layerIsLocked;
       lock.addEventListener("click", (event) => {
         event.stopPropagation();
         const nextLocked = !row.item.locked;

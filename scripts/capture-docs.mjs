@@ -38,7 +38,7 @@ const shots = [
   {
     file: "layers.png",
     title: "Expanded layer items",
-    alt: "GridScalr Layers panel with a measurement layer expanded to show warehouse, office and mezzanine items, and the Add/Deduct switch in the context bar.",
+    alt: "GridScalr Layers panel with page-scoped layers, a measurement layer expanded to show items on the current page, and the Add/Deduct switch in the context bar.",
     description:
       "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
   },

@@ -1,4 +1,12 @@
-import { addItem, cloneItem, ensureActiveLayer, itemIsLocked, layerKindForItem } from "./layers";
+import {
+  addItem,
+  cloneItem,
+  ensureActiveLayer,
+  itemIsLocked,
+  layerKindForItem,
+  layerLockedOnPage,
+  layerVisibleOnPage,
+} from "./layers";
 import { resolveSelection } from "./selection";
 import type { Layer, MarkupItem, Project, SelectionRef } from "./types";
 
@@ -50,32 +58,48 @@ export function clearClipboard(): void {
   clipboard = null;
 }
 
-function targetLayerFor(project: Project, sourceLayerId: string, item: MarkupItem): Layer {
+function targetLayerFor(
+  project: Project,
+  sourceLayerId: string,
+  item: MarkupItem,
+  page: number,
+): Layer {
   const kind = layerKindForItem(item.kind);
   const source = project.layers.find((layer) => layer.id === sourceLayerId);
-  if (source && source.kind === kind && !source.locked && source.visible) return source;
+  if (
+    source &&
+    source.kind === kind &&
+    layerVisibleOnPage(source, page) &&
+    !layerLockedOnPage(source, page)
+  ) {
+    return source;
+  }
 
   const active = project.layers.find(
     (layer) =>
-      layer.id === project.activeLayerId && layer.kind === kind && layer.visible && !layer.locked,
+      layer.id === project.activeLayerId &&
+      layer.kind === kind &&
+      layerVisibleOnPage(layer, page) &&
+      !layerLockedOnPage(layer, page),
   );
   if (active) return active;
 
   const editable = project.layers.find(
-    (layer) => layer.kind === kind && layer.visible && !layer.locked,
+    (layer) =>
+      layer.kind === kind && layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page),
   );
   if (editable) {
     project.activeLayerId = editable.id;
     return editable;
   }
-  return ensureActiveLayer(project, kind);
+  return ensureActiveLayer(project, kind, page);
 }
 
 export function pasteItems(project: Project, page: number): SelectionRef[] {
   if (!clipboard || clipboard.projectId !== project.id) return [];
   const refs: SelectionRef[] = [];
   for (const entry of clipboard.items) {
-    const layer = targetLayerFor(project, entry.sourceLayerId, entry.item);
+    const layer = targetLayerFor(project, entry.sourceLayerId, entry.item, page);
     const offset = entry.item.page === page ? 12 : 0;
     const copy = cloneItem(entry.item, offset, page);
     addItem(project, layer.id, copy);
@@ -93,7 +117,7 @@ export function duplicateItems(
   const created: SelectionRef[] = [];
   for (const { layer, item } of resolved) {
     if (itemIsLocked(item, layer)) continue;
-    const target = targetLayerFor(project, layer.id, item);
+    const target = targetLayerFor(project, layer.id, item, item.page);
     const copy = cloneItem(item, offset, item.page);
     addItem(project, target.id, copy);
     created.push({ layerId: target.id, itemId: copy.id });
