@@ -37,6 +37,30 @@ describe("markup CSV", () => {
     expect(csv).not.toContain("\n\n");
   });
 
+  it("keeps the value and unit consistent when smart lengths are enabled", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    project.settings.lengthUnit = "cm";
+    project.settings.smartLengthUnits = true;
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      ...item("long", "length", "Long wall"),
+      points: [
+        { x: 0, y: 0 },
+        { x: 3000, y: 0 },
+      ],
+    });
+    measure.items.push({
+      ...item("short", "length", "Short wall"),
+      points: [
+        { x: 0, y: 0 },
+        { x: 15, y: 0 },
+      ],
+    });
+    const csv = serializeMarkupCsv(project);
+    expect(csv).toContain("Long wall,100 m,m");
+    expect(csv).toContain("Short wall,50 cm,cm");
+  });
+
   it("excludes hidden layers and hidden items", () => {
     const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
     const measure = project.layers.find((layer) => layer.kind === "measure")!;

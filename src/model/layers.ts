@@ -17,6 +17,7 @@ export const DEFAULT_DRAW_COLOR = "#f2a93b";
 export const DEFAULT_SETTINGS: ProjectSettings = {
   lengthUnit: "mm",
   areaUnit: "m2",
+  smartLengthUnits: true,
   showGrid: false,
   showCalibration: true,
   snapToGeometry: true,

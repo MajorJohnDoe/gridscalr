@@ -186,6 +186,7 @@ function normalizeSettings(
     areaUnit: AREA_UNITS.has(value?.areaUnit as AreaUnit)
       ? (value!.areaUnit as AreaUnit)
       : DEFAULT_SETTINGS.areaUnit,
+    smartLengthUnits: value?.smartLengthUnits !== false,
     showGrid: value?.showGrid ?? DEFAULT_SETTINGS.showGrid,
     showCalibration: value?.showCalibration ?? DEFAULT_SETTINGS.showCalibration,
     snapToGeometry: value?.snapToGeometry ?? DEFAULT_SETTINGS.snapToGeometry,

@@ -61,13 +61,38 @@ export function areaInUnit(pointArea: number, ppm: number, unit: AreaUnit): numb
   return pointArea / (ppm * ppm) / areaUnitToSquareMeters(unit);
 }
 
+function usesSmartMetric(unit: LengthUnit): boolean {
+  return unit === "mm" || unit === "cm";
+}
+
+/**
+ * Unit used for a smart length label. Metric lengths shorter than one metre
+ * keep the project unit (cm or mm); longer values switch to metres so a wall
+ * does not read as 4,352.07 cm.
+ */
+export function displayedLengthUnit(
+  points: number,
+  scale: ScaleSnapshot | null | undefined,
+  unit: LengthUnit,
+  smart: boolean,
+): LengthUnit {
+  if (!smart || !scale || !usesSmartMetric(unit)) return unit;
+  return Math.abs(points / scale.pointsPerMeter) >= 0.9995 ? "m" : unit;
+}
+
 export function formatLength(
   points: number,
   scale: ScaleSnapshot | null | undefined,
   unit: LengthUnit,
+  smart = false,
 ): string {
   if (!scale) return `${formatNumber(points, 1)} pt`;
-  return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, unit), 2)} ${unit}`;
+  const displayUnit = displayedLengthUnit(points, scale, unit, smart);
+  if (displayUnit === "m" && displayUnit !== unit) {
+    return `${formatNumber(points / scale.pointsPerMeter, 2)} m`;
+  }
+  const decimals = smart ? (unit === "mm" ? 0 : unit === "cm" ? 1 : 2) : 2;
+  return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, displayUnit), decimals)} ${displayUnit}`;
 }
 
 /**
@@ -79,10 +104,15 @@ export function formatLengthCompact(
   points: number,
   scale: ScaleSnapshot | null | undefined,
   unit: LengthUnit,
+  smart = false,
 ): string {
   if (!scale) return `${formatNumber(points, 1)} pt`;
+  const displayUnit = displayedLengthUnit(points, scale, unit, smart);
+  if (displayUnit === "m" && displayUnit !== unit) {
+    return `${formatNumber(points / scale.pointsPerMeter, 2)} m`;
+  }
   const decimals = unit === "mm" ? 0 : unit === "cm" ? 1 : 2;
-  return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, unit), decimals)} ${unit}`;
+  return `${formatNumber(lengthInUnit(points, scale.pointsPerMeter, displayUnit), decimals)} ${displayUnit}`;
 }
 
 export function formatArea(

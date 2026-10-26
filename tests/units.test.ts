@@ -5,6 +5,7 @@ import {
   calibrationToScale,
   formatArea,
   formatCoordinate,
+  displayedLengthUnit,
   formatLength,
   formatLengthCompact,
   formatNumber,
@@ -52,6 +53,20 @@ describe("units", () => {
     expect(formatArea(10_000, scale, "m2")).toBe("1 m²");
     expect(formatArea(10_000, scale, "yd2")).toBe("1.2 yd²");
     expect(formatArea(10_000, null, "m2")).toBe("10,000 pt²");
+  });
+
+  it("switches metric lengths to metres above one metre", () => {
+    const scale = calibrationToScale(calibration);
+    expect(displayedLengthUnit(1000, scale, "cm", true)).toBe("m");
+    expect(displayedLengthUnit(50, scale, "cm", true)).toBe("cm");
+    expect(displayedLengthUnit(1000, scale, "in", true)).toBe("in");
+    expect(formatLength(1000, scale, "cm", true)).toBe("10 m");
+    expect(formatLength(50, scale, "cm", true)).toBe("50 cm");
+    expect(formatLength(42.55, scale, "cm", true)).toBe("42.6 cm");
+    expect(formatLength(42.55, scale, "cm")).toBe("42.55 cm");
+    expect(formatLength(100, scale, "mm", true)).toBe("1 m");
+    expect(formatLengthCompact(1000, scale, "cm", true)).toBe("10 m");
+    expect(formatLength(1000, scale, "in", true)).toBe("393.7 in");
   });
 
   it("formats scale and cursor coordinates", () => {

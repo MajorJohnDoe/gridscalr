@@ -20,6 +20,20 @@ export function disconnectPageThumbnails(): void {
   thumbnailObserver = null;
 }
 
+function thumbWidth(size: PageSize | undefined): number {
+  if (!size || size.height <= 0) return 60;
+  const ratio = Math.max(0.55, Math.min(1.65, size.width / size.height));
+  return Math.round(Math.max(58, Math.min(132, 82 * ratio)));
+}
+
+function applyThumbShape(thumb: HTMLElement, size: PageSize | undefined): void {
+  if (!size || size.height <= 0) return;
+  const width = thumbWidth(size);
+  thumb.style.aspectRatio = `${size.width} / ${size.height}`;
+  thumb.style.width = `${width}px`;
+  thumb.style.flexBasis = `${width}px`;
+}
+
 function applyThumbnail(pending: PendingThumbnail, url: string): void {
   pending.image.src = url;
   pending.image.hidden = false;
@@ -33,7 +47,7 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
   const label = card.querySelector<HTMLElement>(".page-size");
   if (label) label.textContent = `${Math.round(size.width)} × ${Math.round(size.height)} pt`;
   const thumb = card.querySelector<HTMLElement>(".page-thumb");
-  if (thumb) thumb.style.aspectRatio = `${size.width} / ${size.height}`;
+  if (thumb) applyThumbShape(thumb, size);
 }
 
 export function renderPages(refs: ShellRefs, actions: PanelActions): void {
@@ -50,9 +64,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     card.classList.toggle("is-active", page === store.ui.page);
     const thumb = el("div", "page-thumb");
     const size = actions.getPageSize(page);
-    if (size) {
-      thumb.style.aspectRatio = `${size.width} / ${size.height}`;
-    }
+    applyThumbShape(thumb, size);
     const thumbNumber = el("span", "page-thumb-placeholder", String(page));
     const image = el("img", "page-thumb-image");
     image.alt = "";

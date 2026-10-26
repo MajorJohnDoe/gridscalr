@@ -88,6 +88,17 @@ describe("project files", () => {
     expect(parsed.categories[0].roundingStep).toBe(0);
   });
 
+  it("round-trips smart length labels and defaults them on for older files", () => {
+    const project = makeProject();
+    project.settings.smartLengthUnits = false;
+    expect(parseProject(serializeProject(project)).settings.smartLengthUnits).toBe(false);
+
+    const raw = JSON.parse(serializeProject(makeProject()));
+    delete raw.settings.smartLengthUnits;
+    raw.schemaVersion = 9;
+    expect(parseProject(JSON.stringify(raw)).settings.smartLengthUnits).toBe(true);
+  });
+
   it("round-trips per-item visibility and locking", () => {
     const project = makeProject();
     const measure = project.layers.find((layer) => layer.kind === "measure")!;

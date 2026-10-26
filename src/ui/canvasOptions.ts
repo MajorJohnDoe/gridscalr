@@ -50,6 +50,9 @@ export function openCanvasOptions(anchor: HTMLElement): void {
         }, "change");
       }),
     );
+    units.append(
+      toggleRow("Smart lengths", "smartLengthUnits", "Show cm below 1 m and metres above 1 m"),
+    );
     panel.append(units);
 
     const guides = el("section", "canvas-options-section");
@@ -94,7 +97,7 @@ export function openCanvasOptions(anchor: HTMLElement): void {
 
   const toggleRow = (
     label: string,
-    key: "snapToGeometry" | "showGrid" | "showCalibration",
+    key: "snapToGeometry" | "showGrid" | "showCalibration" | "smartLengthUnits",
     title: string,
   ): HTMLButtonElement => {
     const active = Boolean(store.project?.settings[key]);

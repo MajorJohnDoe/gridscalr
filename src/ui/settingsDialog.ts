@@ -99,6 +99,20 @@ function unitsSection(): HTMLElement {
 
   row.append(field("Length", length), field("Area", area));
   wrap.append(row);
+  wrap.append(
+    checkRow("Smart length labels", project.settings.smartLengthUnits, (checked) => {
+      store.mutate((project) => {
+        project.settings.smartLengthUnits = checked;
+      }, "change");
+    }),
+  );
+  wrap.append(
+    el(
+      "p",
+      "settings-note",
+      "Metric lengths under 1 m use the selected unit and longer values switch to metres. Quantity reports keep the project unit.",
+    ),
+  );
   return wrap;
 }
 

@@ -103,3 +103,46 @@ export class PageThumbnailService {
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+export interface ContentBounds {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/**
+ * Tight bounds of non-white pixels in a rendered preview. The Pages panel uses
+ * this to crop obvious page margins; import previews keep the full sheet.
+ */
+export function contentBoundsFromPixels(
+  pixels: Uint8ClampedArray | Uint8Array,
+  width: number,
+  height: number,
+  threshold = 246,
+): ContentBounds | null {
+  if (width <= 0 || height <= 0 || pixels.length < width * height * 4) return null;
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const index = (y * width + x) * 4;
+      const alpha = pixels[index + 3];
+      if (alpha === 0) continue;
+      if (
+        pixels[index] >= threshold &&
+        pixels[index + 1] >= threshold &&
+        pixels[index + 2] >= threshold
+      ) {
+        continue;
+      }
+      if (x < minX) minX = x;
+      if (y < minY) minY = y;
+      if (x > maxX) maxX = x;
+      if (y > maxY) maxY = y;
+    }
+  }
+  if (maxX < minX || maxY < minY) return null;
+  return { x: minX, y: minY, width: maxX - minX + 1, height: maxY - minY + 1 };
+}

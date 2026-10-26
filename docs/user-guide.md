@@ -22,7 +22,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
-- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, snapping, and guides.
+- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
@@ -64,9 +64,9 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 ### Page thumbnails
 
-The **Pages** tab shows a small preview of each sheet along with its page size, calibration state, and item count. Previews show the source drawing, not your markups.
+The **Pages** tab shows a preview of each sheet along with its page size, calibration state, and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing, not your markups.
 
-Previews are produced on demand: only the cards near the visible part of the list are rendered, at low resolution, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
+Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
 Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page** and **Delete page…**.
 
@@ -120,7 +120,7 @@ Measurements are added to the active **measurement layer**. Choose the target la
 
 Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to finish. Hold `Shift` to constrain the angle.
 
-Length measurements can use a **Solid** or **Dashed** line style in Properties. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging works for areas and counts.
+Length measurements can use a **Solid** or **Dashed** line style in Properties. With **Smart length labels** enabled, metric lengths below 1 m use the project unit and longer values switch to metres. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging works for areas and counts.
 
 ### Area
 
@@ -293,7 +293,7 @@ Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of 
 
 ## Highlight modes
 
-Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons, or choose **Variants** in the context bar, for Photoshop-style variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
+Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons, or choose **Variants** in the context bar, for additional variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
 
 - **Pen** – the original freehand highlighter.
 - **Rectangle** – drag a translucent highlight box.
@@ -369,7 +369,7 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
 
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it in **Properties → Scale**.
-- **Units** – length and area units for the project. The same controls are available under **Properties → Measurement units** and in the **Canvas** popover.
+- **Units** – length and area units for the project. The same controls are available under **Properties → Measurement units** and in the **Canvas** popover. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
@@ -393,7 +393,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 9 is the current format. Older projects load normally and are migrated when opened.
+Schema version 10 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

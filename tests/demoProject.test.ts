@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { parseProject } from "../src/io/projectFile";
+import { SCHEMA_VERSION } from "../src/model/types";
 
 describe("documentation demo project", () => {
   const project = parseProject(
@@ -9,6 +10,8 @@ describe("documentation demo project", () => {
 
   it("parses and keeps all three sheets and their calibrations", () => {
     expect(project.name).toBe("Northgate Logistics Hub - Takeoff");
+    expect(project.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(project.settings.smartLengthUnits).toBe(true);
     expect(project.documents).toHaveLength(1);
     expect(project.documents[0].name).toBe("industrial-plan.pdf");
     expect(project.documents[0].pageCount).toBe(3);

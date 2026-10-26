@@ -6,6 +6,7 @@ import {
 } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import type { PageSize, Point } from "../model/types";
+import { contentBoundsFromPixels } from "./thumbnails";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
@@ -190,9 +191,9 @@ export class PdfRenderer {
    * render task so it never cancels or blocks the main canvas render, and the
    * caller caps the pixel size to keep large drawings cheap.
    */
-  async renderPageThumbnail(pageNumber: number, maxDimension = 144): Promise<HTMLCanvasElement> {
+  async renderPageThumbnail(pageNumber: number, maxDimension = 256): Promise<HTMLCanvasElement> {
     const page = await this.getPage(pageNumber);
-    return renderPagePreview(page, maxDimension);
+    return renderPagePreview(page, maxDimension, true);
   }
 
   async getDocumentData(index: number): Promise<Uint8Array> {
@@ -287,6 +288,7 @@ export class PdfRenderer {
 export async function renderPagePreview(
   page: PDFPageProxy,
   maxDimension = 144,
+  trimMargins = false,
 ): Promise<HTMLCanvasElement> {
   const base = page.getViewport({ scale: 1 });
   const longest = Math.max(base.width, base.height, 1);
@@ -302,7 +304,35 @@ export async function renderPagePreview(
     intent: "display",
   });
   await task.promise;
-  return canvas;
+  if (!trimMargins) return canvas;
+
+  let bounds = null;
+  try {
+    const context = canvas.getContext("2d", { willReadFrequently: true });
+    if (!context) return canvas;
+    const image = context.getImageData(0, 0, canvas.width, canvas.height);
+    bounds = contentBoundsFromPixels(image.data, canvas.width, canvas.height);
+  } catch {
+    return canvas;
+  }
+  if (!bounds) return canvas;
+  const padding = Math.max(2, Math.round(Math.max(bounds.width, bounds.height) * 0.025));
+  const x = Math.max(0, bounds.x - padding);
+  const y = Math.max(0, bounds.y - padding);
+  const width = Math.min(canvas.width - x, bounds.width + padding * 2);
+  const height = Math.min(canvas.height - y, bounds.height + padding * 2);
+  if (width < 8 || height < 8) return canvas;
+  if (width * height < canvas.width * canvas.height * 0.01) return canvas;
+
+  const trimmed = document.createElement("canvas");
+  trimmed.width = width;
+  trimmed.height = height;
+  const context = trimmed.getContext("2d");
+  if (!context) return canvas;
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, width, height);
+  context.drawImage(canvas, x, y, width, height, 0, 0, width, height);
+  return trimmed;
 }
 
 export function cropRectForView(
