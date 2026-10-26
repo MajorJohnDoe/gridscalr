@@ -24,8 +24,8 @@ try {
   page.on("pageerror", (error) => pageErrors.push(error.message));
 
   const project = await openDemoProject(page, { base: vite.base });
-  assert.equal(project.name, "Riverside House - Takeoff");
-  assert.equal(await page.locator(".page-card").count(), 2, "expected two page cards");
+  assert.equal(project.name, "Northgate Logistics Hub - Takeoff");
+  assert.equal(await page.locator(".page-card").count(), 3, "expected three page cards");
 
   const autosave = await page.evaluate(async () => {
     const preview = localStorage.getItem("gridscalr.autosave.meta.v1");
@@ -186,7 +186,7 @@ try {
   const measurements = page.getByRole("dialog");
   await measurements.waitFor();
   const rows = await measurements.locator(".markup-row").count();
-  assert.ok(rows >= 14, `expected at least 14 measurements on page 1, got ${rows}`);
+  assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
   await page.locator('[data-item-id="item_floor_living"]').click();
   await measurements.waitFor({ state: "detached" });
 
@@ -210,7 +210,7 @@ try {
     (await layerItems.count()) >= 9,
     `expected the measurement layer to list its items, got ${await layerItems.count()}`,
   );
-  await layerItems.filter({ hasText: "Living floor" }).first().click();
+  await layerItems.filter({ hasText: "Warehouse floor" }).first().click();
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),
     "item_floor_living",
