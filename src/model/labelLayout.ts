@@ -32,6 +32,10 @@ export interface LabelSource {
   polygon?: Point[];
   /** Manual label offset in PDF points. Manual placement skips collision layout. */
   labelOffset?: Point;
+  /** Manual leader connection point in PDF coordinates. */
+  labelAnchor?: Point;
+  /** Line or outline used to find the nearest connection point. */
+  outline?: Point[];
   color: string;
 }
 
@@ -101,6 +105,13 @@ export function pageLabelSources(
               : itemBounds(item),
           polygon: item.kind === "area" ? areaOutline(item.points, areaShapeOf(item)) : undefined,
           labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
+          labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
+          outline:
+            item.kind === "area"
+              ? areaOutline(item.points, areaShapeOf(item))
+              : item.kind === "length"
+                ? item.points.map((point) => ({ ...point }))
+                : undefined,
           color: item.color,
         });
       }
@@ -189,7 +200,7 @@ function layoutLabel(
       const layout = buildLayout(source, scale, anchor, "outside", options);
       if (
         fitsPage(layout.box, options.pageSize) &&
-        !overlapsObstacle(layout.box, source.obstacle) &&
+        !overlapsSource(layout.box, source) &&
         !collides(layout.box, occupied)
       ) {
         return withLeader(layout, source);
@@ -245,21 +256,125 @@ function outsideAnchors(source: LabelSource, scale: number, measure: LabelMeasur
   const bounds = source.obstacle;
   const center = boundsCenter(bounds);
   const gap = metrics.gap;
-  return [
+  const anchors: Point[] = [];
+  if (source.kind === "length" && source.outline && source.outline.length > 1) {
+    const count = source.outline.length - 1;
+    const step = Math.max(1, Math.ceil(count / 12));
+    for (let index = 0; index < count; index += step) {
+      const a = source.outline[index];
+      const b = source.outline[index + 1];
+      const midpoint = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 };
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const length = Math.hypot(dx, dy);
+      if (length < 1e-6) continue;
+      const nx = -dy / length;
+      const ny = dx / length;
+      const offset = gap + (Math.abs(nx) * size.width + Math.abs(ny) * size.height) / 2;
+      anchors.push(
+        { x: midpoint.x + nx * offset, y: midpoint.y + ny * offset },
+        { x: midpoint.x - nx * offset, y: midpoint.y - ny * offset },
+      );
+    }
+  }
+  anchors.push(
     { x: center.x, y: bounds.min.y - gap - size.height / 2 },
     { x: center.x, y: bounds.max.y + gap + size.height / 2 },
     { x: bounds.max.x + gap + size.width / 2, y: center.y },
     { x: bounds.min.x - gap - size.width / 2, y: center.y },
-  ];
+  );
+  return anchors;
+}
+
+/**
+ * A line label may sit inside the line's bounding box; only the line itself is
+ * an obstacle. Areas and other sources keep the rectangular obstacle test.
+ */
+function overlapsSource(box: LabelBox, source: LabelSource): boolean {
+  if (source.kind === "length" && source.outline && source.outline.length > 1) {
+    return polylineIntersectsBox(source.outline, box, false, 2);
+  }
+  return overlapsObstacle(box, source.obstacle);
+}
+
+function polylineIntersectsBox(
+  points: readonly Point[],
+  box: LabelBox,
+  closed: boolean,
+  margin: number,
+): boolean {
+  const minX = box.x - margin;
+  const minY = box.y - margin;
+  const maxX = box.x + box.width + margin;
+  const maxY = box.y + box.height + margin;
+  const count = closed ? points.length : points.length - 1;
+  for (let index = 0; index < count; index += 1) {
+    if (
+      segmentIntersectsBox(
+        points[index],
+        points[(index + 1) % points.length],
+        minX,
+        minY,
+        maxX,
+        maxY,
+      )
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function segmentIntersectsBox(
+  a: Point,
+  b: Point,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number,
+): boolean {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  let t0 = 0;
+  let t1 = 1;
+  const p = [-dx, dx, -dy, dy];
+  const q = [a.x - minX, maxX - a.x, a.y - minY, maxY - a.y];
+  for (let index = 0; index < 4; index += 1) {
+    const denominator = p[index];
+    const numerator = q[index];
+    if (denominator === 0) {
+      if (numerator < 0) return false;
+      continue;
+    }
+    const ratio = numerator / denominator;
+    if (denominator < 0) {
+      if (ratio > t1) return false;
+      if (ratio > t0) t0 = ratio;
+    } else {
+      if (ratio < t0) return false;
+      if (ratio < t1) t1 = ratio;
+    }
+  }
+  return true;
 }
 
 function withLeader(layout: LabelLayout, source: LabelSource): LabelLayout {
   if (source.kind === "calibration") return layout;
   const box = boxBounds(layout.box);
-  const target =
-    source.kind === "area"
-      ? closestPointOnBounds(source.obstacle, boxCenter(box))
-      : boundsCenter(source.obstacle);
+  const boxCenterPoint = boxCenter(box);
+  const manualAnchor = source.labelAnchor;
+  let anchorStillOnOutline = Boolean(manualAnchor);
+  if (manualAnchor && source.outline && source.outline.length > 1) {
+    const nearest = closestPointOnPolyline(source.outline, manualAnchor, source.kind === "area");
+    anchorStillOnOutline = Math.hypot(manualAnchor.x - nearest.x, manualAnchor.y - nearest.y) <= 2;
+  }
+  const target = anchorStillOnOutline
+    ? manualAnchor!
+    : source.kind === "count"
+      ? boundsCenter(source.obstacle)
+      : source.outline && source.outline.length > 1
+        ? closestPointOnPolyline(source.outline, boxCenterPoint, source.kind === "area")
+        : closestPointOnBounds(source.obstacle, boxCenterPoint);
   return {
     ...layout,
     leader: {
@@ -267,6 +382,37 @@ function withLeader(layout: LabelLayout, source: LabelSource): LabelLayout {
       to: target,
     },
   };
+}
+
+/** Nearest point on a closed polygon or an open polyline. */
+export function closestPointOnPolyline(
+  points: readonly Point[],
+  point: Point,
+  closed: boolean,
+): Point {
+  if (!points.length) return point;
+  if (points.length === 1) return points[0];
+  let best = points[0];
+  let bestDistance = Infinity;
+  const count = closed ? points.length : points.length - 1;
+  for (let index = 0; index < count; index += 1) {
+    const a = points[index];
+    const b = points[(index + 1) % points.length];
+    const dx = b.x - a.x;
+    const dy = b.y - a.y;
+    const lengthSq = dx * dx + dy * dy;
+    const t =
+      lengthSq === 0
+        ? 0
+        : Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSq));
+    const candidate = { x: a.x + dx * t, y: a.y + dy * t };
+    const distance = Math.hypot(point.x - candidate.x, point.y - candidate.y);
+    if (distance < bestDistance) {
+      best = candidate;
+      bestDistance = distance;
+    }
+  }
+  return best;
 }
 
 function calibrationAnchor(p1: Point, p2: Point): Point {

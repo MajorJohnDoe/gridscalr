@@ -120,7 +120,7 @@ Measurements are added to the active **measurement layer**. Choose the target la
 
 Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to finish. Hold `Shift` to constrain the angle.
 
-Length measurements can use a **Solid** or **Dashed** line style in Properties. Drag the value label on the plan to place it manually when labels are tight; a leader line connects it to the measurement. **Reset label position** in Properties returns it to automatic placement. The same label dragging works for areas and counts.
+Length measurements can use a **Solid** or **Dashed** line style in Properties. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging works for areas and counts.
 
 ### Area
 

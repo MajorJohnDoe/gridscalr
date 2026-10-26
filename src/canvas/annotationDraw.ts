@@ -148,13 +148,13 @@ export function drawLabelLayout(
   const screenScale = labelScreenScale(layout.metrics);
   const box = screenLabelBox(layout.box, layout.metrics);
   const borderWidth = Math.max(0.5, Math.min(1, layout.metrics.borderWidth * screenScale));
-  const leaderWidth = Math.max(0.5, Math.min(1, layout.metrics.leaderWidth * screenScale));
+  const leaderWidth = Math.max(0.8, Math.min(1.4, layout.metrics.leaderWidth * screenScale * 1.4));
   ctx.save();
 
   if (layout.leader) {
     const to = toScreen(layout.leader.to);
     const from = closestPointOnBox(box, to);
-    ctx.strokeStyle = hexAlpha(layout.color, 0.5);
+    ctx.strokeStyle = hexAlpha(layout.color, 0.82);
     ctx.lineWidth = leaderWidth;
     ctx.beginPath();
     ctx.moveTo(from.x, from.y);

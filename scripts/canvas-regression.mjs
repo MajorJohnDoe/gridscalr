@@ -265,6 +265,37 @@ try {
       Math.abs(movedLabel.labelOffset.y) > 10,
     "dragging a measurement label should store a manual offset",
   );
+  const movedLabelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  assert.ok(movedLabelPoint, "the moved measurement label should have a screen position");
+  await page.mouse.click(canvasBox.x + movedLabelPoint.x, canvasBox.y + movedLabelPoint.y, {
+    button: "right",
+  });
+  const labelMenu = page.locator(".popover");
+  await labelMenu.waitFor();
+  await labelMenu.getByRole("button", { name: /Choose connection point/ }).click();
+  await clickPage({ x: 240, y: 235 });
+  const connected = await itemById("item_floor_living");
+  assert.ok(
+    connected.labelAnchor &&
+      Math.abs(connected.labelAnchor.x - 240) < 2 &&
+      Math.abs(connected.labelAnchor.y - 235) < 2,
+    "choosing a connection point should store it on the measurement",
+  );
+  const connectedLabelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  assert.ok(connectedLabelPoint, "the connected label should have a screen position");
+  await page.mouse.click(canvasBox.x + connectedLabelPoint.x, canvasBox.y + connectedLabelPoint.y, {
+    button: "right",
+  });
+  await labelMenu.waitFor();
+  await labelMenu.getByRole("button", { name: /Reset label position/ }).click();
+  const resetLabel = await itemById("item_floor_living");
+  assert.equal(resetLabel.labelOffset, undefined);
+  assert.equal(resetLabel.labelAnchor, undefined);
+
   const labelPoint = await page.evaluate(() =>
     window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
   );
@@ -362,7 +393,7 @@ try {
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, resize, rotate, text, label/callout editing, hidden/locked and crop.",
+    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, text, label/callout editing, hidden/locked and crop.",
   );
 } finally {
   await page?.close();

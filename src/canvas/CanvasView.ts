@@ -34,6 +34,7 @@ import {
 } from "../model/label";
 import {
   CALIBRATION_LABEL_ID,
+  closestPointOnPolyline,
   layoutPageLabels,
   pageLabelSources,
   type LabelLayout,
@@ -127,6 +128,7 @@ import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import { calibrationDialog, textDialog } from "../ui/dialogs";
+import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
 
 export interface CanvasHooks {
@@ -238,6 +240,7 @@ export class CanvasView {
   private renderedPage = 0;
   private editors: CanvasEditorController;
   private hoverHandle: Handle | null = null;
+  private labelConnect: { itemId: string; layerId: string } | null = null;
   private crop: CropController;
   private imageCache = new Map<string, HTMLImageElement>();
   private imageLoading = new Set<string>();
@@ -329,6 +332,7 @@ export class CanvasView {
       this.draft = null;
       this.drag = null;
       this.marquee = null;
+      this.labelConnect = null;
       this.renderedPage = page;
     }
     if (reason === "project") {
@@ -338,11 +342,13 @@ export class CanvasView {
     }
     if (reason === "tool") {
       this.draft = null;
+      this.labelConnect = null;
       this.updateCursor();
     }
     if (page !== this.renderedPage) {
       this.lastRender = null;
       this.draft = null;
+      this.labelConnect = null;
       this.renderedPage = page;
     }
     this.drawAll();
@@ -385,6 +391,7 @@ export class CanvasView {
       this.marquee !== null ||
       this.pan !== null ||
       this.draft !== null ||
+      this.labelConnect !== null ||
       this.editors.hasEditors ||
       this.crop.active
     );
@@ -540,7 +547,8 @@ export class CanvasView {
         cursor = cursorForRole(this.drag.handle);
       } else if (this.drag.mode === "vertex") cursor = "crosshair";
       else cursor = "move";
-    } else if (this.spaceDown || tool === "pan") cursor = "grab";
+    } else if (this.labelConnect) cursor = "crosshair";
+    else if (this.spaceDown || tool === "pan") cursor = "grab";
     else if (this.marquee) cursor = "crosshair";
     else if (this.hoverHandle) cursor = this.hoverHandle.cursor;
     else if (tool === "text") cursor = "text";
@@ -576,6 +584,12 @@ export class CanvasView {
       if (event.button !== 0) return;
       event.preventDefault();
       this.crop.pointerDown(this.toPage(screen), event);
+      return;
+    }
+
+    if (this.labelConnect) {
+      event.preventDefault();
+      this.commitLabelConnection(this.toPage(screen));
       return;
     }
 
@@ -1430,7 +1444,14 @@ export class CanvasView {
     if (this.crop.active) return;
     const project = store.project;
     if (!project) return;
-    const page = this.toPage(this.localPoint(event));
+    const screen = this.localPoint(event);
+    const labelHit = this.measurementLabelHit(screen);
+    if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
+      store.setSelection({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
+      this.showMeasurementLabelMenu(event.clientX, event.clientY, labelHit.item, labelHit.layer.id);
+      return;
+    }
+    const page = this.toPage(screen);
     const hit = hitTest(project, store.ui.page, page, 7 / store.ui.zoom, {
       includeLocked: true,
     });
@@ -1613,6 +1634,76 @@ export class CanvasView {
       return;
     }
     toast("Select a text note to edit it.", "info");
+  }
+
+  private showMeasurementLabelMenu(x: number, y: number, item: MarkupItem, layerId: string): void {
+    const custom = Boolean(item.labelOffset || item.labelAnchor);
+    showPopoverAt(x, y, [
+      {
+        label: "Reset label position",
+        icon: "undo",
+        disabled: !custom,
+        action: () => {
+          store.mutate((project) => {
+            const target = findItem(project, item.id)?.item;
+            if (!target) return;
+            delete target.labelOffset;
+            delete target.labelAnchor;
+            target.updatedAt = new Date().toISOString();
+          }, "change");
+        },
+      },
+      { separator: true },
+      {
+        label: "Choose connection point…",
+        icon: "target",
+        disabled: item.kind === "count",
+        action: () => {
+          this.labelConnect = { itemId: item.id, layerId };
+          toast("Click the line or outline to set where the label connects.", "info");
+          this.interaction.focus({ preventScroll: true });
+          this.updateCursor();
+        },
+      },
+    ]);
+  }
+
+  private commitLabelConnection(page: Point): void {
+    const connect = this.labelConnect;
+    this.labelConnect = null;
+    const project = store.project;
+    if (!connect || !project) {
+      this.updateCursor();
+      return;
+    }
+    const found = findItem(project, connect.itemId);
+    if (!found || itemIsLocked(found.item, found.layer) || found.item.page !== store.ui.page) {
+      this.updateCursor();
+      return;
+    }
+    const point =
+      found.item.kind === "length"
+        ? closestPointOnPolyline(found.item.points, page, false)
+        : found.item.kind === "area"
+          ? closestPointOnPolyline(
+              areaOutline(found.item.points, areaShapeOf(found.item)),
+              page,
+              true,
+            )
+          : found.item.points[0];
+    if (!point) {
+      this.updateCursor();
+      return;
+    }
+    store.mutate((project) => {
+      const target = findItem(project, connect.itemId)?.item;
+      if (!target) return;
+      target.labelAnchor = { ...point };
+      target.updatedAt = new Date().toISOString();
+    }, "change");
+    toast("Label connection point updated.", "success");
+    this.updateCursor();
+    this.drawInteraction();
   }
 
   private measurementLabelHit(screen: Point): LabelHit | null {
@@ -1960,6 +2051,12 @@ export class CanvasView {
   public cancelDraft(): void {
     if (this.crop.active) {
       this.crop.cancel();
+      return;
+    }
+    if (this.labelConnect) {
+      this.labelConnect = null;
+      this.updateCursor();
+      this.drawInteraction();
       return;
     }
     if (!this.draft) return;

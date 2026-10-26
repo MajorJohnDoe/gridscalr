@@ -116,6 +116,75 @@ describe("measurement label placement", () => {
     expect(layout.leader).toBeDefined();
   });
 
+  it("connects a label to the nearest point on a multi-segment line", () => {
+    const source: LabelSource = {
+      id: "elbow",
+      kind: "length",
+      parts: { text: "10 m" },
+      anchor: { x: 0, y: 0 },
+      obstacle: {
+        min: { x: 0, y: 0 },
+        max: { x: 100, y: 100 },
+      },
+      labelOffset: { x: 200, y: 50 },
+      outline: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 },
+      ],
+      color: "#35c2a1",
+    };
+    const layout = layoutOne(source);
+
+    expect(layout.leader?.to).toEqual({ x: 100, y: 50 });
+  });
+
+  it("falls back to the line when a stored anchor no longer touches it", () => {
+    const source: LabelSource = {
+      id: "stale",
+      kind: "length",
+      parts: { text: "10 m" },
+      anchor: { x: 0, y: 0 },
+      obstacle: {
+        min: { x: 0, y: 0 },
+        max: { x: 100, y: 0 },
+      },
+      labelOffset: { x: 50, y: -40 },
+      labelAnchor: { x: 50, y: 30 },
+      outline: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      color: "#35c2a1",
+    };
+    const layout = layoutOne(source);
+
+    expect(layout.leader?.to).toEqual({ x: 50, y: 0 });
+  });
+
+  it("uses an explicit label anchor when one is set", () => {
+    const source: LabelSource = {
+      id: "anchored",
+      kind: "length",
+      parts: { text: "10 m" },
+      anchor: { x: 0, y: 0 },
+      obstacle: {
+        min: { x: 0, y: 0 },
+        max: { x: 100, y: 0 },
+      },
+      labelOffset: { x: 0, y: -40 },
+      labelAnchor: { x: 25, y: 0 },
+      outline: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      color: "#35c2a1",
+    };
+    const layout = layoutOne(source);
+
+    expect(layout.leader?.to).toEqual({ x: 25, y: 0 });
+  });
+
   it("honours a manual label offset and draws a leader to the measurement", () => {
     const source: LabelSource = {
       id: "manual",

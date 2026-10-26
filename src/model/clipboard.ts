@@ -29,6 +29,7 @@ export function copyItems(project: Project, refs: SelectionRef[]): number {
         points: item.points.map((point) => ({ ...point })),
         textOffset: item.textOffset ? { ...item.textOffset } : undefined,
         labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
+        labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
         scale: item.scale ? { ...item.scale } : item.scale,
       },
     })),

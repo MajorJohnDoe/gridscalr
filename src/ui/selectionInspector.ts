@@ -117,7 +117,7 @@ export function selectionSection(
         "Drag the value label on the plan to position it freely. Reset returns it to automatic placement.",
       ),
     );
-    if (item.labelOffset) {
+    if (item.labelOffset || item.labelAnchor) {
       const resetLabel = el("button", "btn btn-small btn-ghost", "Reset label position");
       resetLabel.type = "button";
       resetLabel.disabled = locked;

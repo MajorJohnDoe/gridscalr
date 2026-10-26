@@ -124,6 +124,8 @@ export interface MarkupItem {
   textOffset?: Point;
   /** Measurements only: manual offset for the value label, in PDF points. */
   labelOffset?: Point;
+  /** Measurements only: manual leader connection point in PDF coordinates. */
+  labelAnchor?: Point;
   /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
   cloudRadius?: number;
   /** Callout and cloud text boxes only: fixed box width in PDF points. */

@@ -105,6 +105,7 @@ describe("project files", () => {
     const project = makeProject();
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items[0].labelOffset = { x: 14, y: -9 };
+    measure.items[0].labelAnchor = { x: 30, y: 10 };
     measure.items[0].lineStyle = "dashed";
 
     const parsed = parseProject(serializeProject(project));
@@ -112,6 +113,7 @@ describe("project files", () => {
       .flatMap((layer) => layer.items)
       .find((entry) => entry.id === "item_a")!;
     expect(item.labelOffset).toEqual({ x: 14, y: -9 });
+    expect(item.labelAnchor).toEqual({ x: 30, y: 10 });
     expect(item.lineStyle).toBe("dashed");
   });
 
@@ -127,6 +129,7 @@ describe("project files", () => {
       strokeWidth: 2,
       text: "Note",
       labelOffset: { x: 10, y: 10 },
+      labelAnchor: { x: 12, y: 12 },
       lineStyle: "dashed",
     });
     const parsed = parseProject(JSON.stringify(raw));
@@ -134,6 +137,7 @@ describe("project files", () => {
       .flatMap((layer) => layer.items)
       .find((entry) => entry.id === "item_label_on_text")!;
     expect(item.labelOffset).toBeUndefined();
+    expect(item.labelAnchor).toBeUndefined();
     expect(item.lineStyle).toBeUndefined();
   });
 
@@ -143,6 +147,7 @@ describe("project files", () => {
     for (const layer of raw.layers as Array<{ items: Array<Record<string, unknown>> }>) {
       for (const item of layer.items) {
         delete item.labelOffset;
+        delete item.labelAnchor;
         delete item.lineStyle;
       }
     }

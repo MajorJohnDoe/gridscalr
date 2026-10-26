@@ -313,6 +313,7 @@ function normalizeItem(
   const textOffset =
     raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
   const labelOffset = isMeasure && isPoint(raw.labelOffset) ? { ...raw.labelOffset } : undefined;
+  const labelAnchor = isMeasure && isPoint(raw.labelAnchor) ? { ...raw.labelAnchor } : undefined;
   const lineStyle: MarkupItem["lineStyle"] =
     raw.kind === "length" && raw.lineStyle === "dashed" ? "dashed" : undefined;
   const cloudRadius =
@@ -432,6 +433,7 @@ function normalizeItem(
     arrowHeads,
     textOffset,
     labelOffset,
+    labelAnchor,
     lineStyle,
     cloudRadius,
     textBoxWidth,

@@ -895,9 +895,9 @@ function drawLeader(
   page.drawLine({
     start: toPdfPoint(viewport, layout.leader.from),
     end: toPdfPoint(viewport, layout.leader.to),
-    thickness: layout.metrics.leaderWidth,
+    thickness: Math.max(0.6, layout.metrics.leaderWidth),
     color: pdfColor(layout.color),
-    opacity: clamp(opacity * 0.55, 0, 1),
+    opacity: clamp(opacity * 0.82, 0, 1),
     lineCap: LineCapStyle.Round,
   });
 }
