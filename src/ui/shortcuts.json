@@ -40,7 +40,7 @@
     "zoomOut": "Ctrl+-",
     "fitPage": "Ctrl+0",
     "actualSize": "Ctrl+1",
-    "measurements": "Ctrl+Shift+M",
+    "markups": "Ctrl+Shift+M",
     "quantities": "Ctrl+Alt+Q",
     "settings": "Ctrl+,",
     "userGuide": "F1",

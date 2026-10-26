@@ -22,9 +22,9 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 | ![Revision cloud around a loading dock, a callout at the entrance and an inspected stamp on a drawing layer](docs/screenshots/markups.png) | ![Drawing export dialog with pages, crop, layers and legend options](docs/screenshots/export.png) |
 | **Field annotations.** Revision clouds, callouts, stamps and text notes live on drawing layers. | **Controlled PDF output.** Choose pages, crop, visible layers, labels and an optional legend. |
 
-| Measurements list | Workflows in the app |
+| Markups list | Workflows in the app |
 | --- | --- |
-| ![Measurements dialog listing every page with search, page, type and layer filters](docs/screenshots/measurements.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
+| ![Docked Markups list with name, type, page, layer, value, category and room columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The Workflows tab explains the same tools for site work and procurement. |
 
 ## Highlights
@@ -49,11 +49,11 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Copy, cut, paste, and duplicate markups with an internal clipboard. Cross-page pastes keep their exact PDF coordinates, while same-page pastes offset by 12 pt.
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
 - Use revision clouds with editable vertices, auto-sized scallops, optional translucent fill, and draggable anchored text with a leader arrow, callouts with leaders, status-coloured inspection stamps, and revision deltas.
-- Use right-click context menus on the canvas, Measurements dialog, and layers for the same actions.
-- Search, navigate, select, and show or hide items from the on-demand **Measurements** dialog without keeping a permanent list in the sidebar.
+- Use right-click context menus on the canvas, Markups list, and layers for the same actions.
+- Search, navigate, select, and show or hide items from the docked **Markups** list while keeping the drawing visible.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The **New measurement** popover keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
-- Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Measurements dialog.
+- Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
 - Review live quantities by category, room, and measurement type in the on-demand **Quantities** dialog, with subtotals, filters, project units including yd², waste, rounding, and order quantities.
 - Save portable `.gridscalr` project files that reference the PDF rather than embedding it. Inserted images are embedded and compressed inside the project.
 - Export a drawing PDF with the original pages and visible markups, a markups CSV, a project JSON, the current view as PNG, or a quantity report as CSV or print-friendly PDF.
@@ -134,10 +134,11 @@ GridScalr uses a compact drawing-first layout:
 - **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
+- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with page/type/search filters, inline rename, layer changes, visibility, locking, and CSV export.
 - **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
 
-The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
+The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…** opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
 
 ## Workflow
 
@@ -210,7 +211,7 @@ Measurements are added to the active measurement layer. The value shown on the p
 
 When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Toggle snapping in the **Canvas** popover and set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
-While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows an **Add / Deduct** switch directly in the context bar. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Measurements dialog shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
+While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows an **Add / Deduct** switch directly in the context bar. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
 ### 4. Draw and annotate
 
@@ -299,7 +300,7 @@ Locking a layer leaves the layer's own settings editable, but prevents changing 
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
-Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) to search and navigate items. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection, use **Select all** for the current filter, and use each row's eye and lock buttons for per-item visibility and locking. Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. Click a row to jump to its page and select it.
+Open **View → Markups list…** (`Ctrl/Cmd+Shift+M`) for a docked table of every measurement and drawing. Filter by all/current page, type, or a free-text search, then click a row to jump to its page and select it without closing the panel. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the current Markups CSV.
 
 With more than one item selected, Properties offers bulk actions for:
 
@@ -516,7 +517,7 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Fit page / Actual size | `Ctrl/Cmd+0` / `Ctrl/Cmd+1` |
 | Previous / next page | `PageUp` / `PageDown` |
 | Toggle sidebar / Properties | `Ctrl/Cmd+\` / `Ctrl/Cmd+Shift+\` |
-| Measurements / Quantities | `Ctrl/Cmd+Shift+M` / `Ctrl/Cmd+Alt+Q` |
+| Markups list / Quantities | `Ctrl/Cmd+Shift+M` / `Ctrl/Cmd+Alt+Q` |
 | Undo / Redo | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` |
 | New project | `Ctrl/Cmd+N` |
 | Save / Save as | `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` |
@@ -549,16 +550,18 @@ src/
   report/reportModel.ts  pure quantity report model shared by CSV and PDF
   report/csv.ts          quantity CSV serialization with BOM and metadata
   report/markupCsv.ts    visible markup CSV serialization
-  ui/                    top menu, sidebar, page/layer lists, context bar, inspector, dialogs, status bar
+  ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, dialogs, status bar
   styles/help.css        help dialog, search, TOC and image lightbox
   styles/popovers.css    tool flyouts, Canvas options and measurement options
   ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties scale and active-layer sections
+  ui/markupsPanel.ts     docked project-wide Markups table and filters
+  ui/duplicatePageDialog.ts page name, scale and markup duplication options
   ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts single and multi-selection Properties
-  ui/selectionMenu.ts    shared item context menu for canvas, layers and Measurements
-  ui/itemIcon.ts         icon lookup shared by Layers and Measurements
+  ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
+  ui/itemIcon.ts         icon lookup shared by Layers and Markups
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
   ui/statusBar.ts        calibration, cursor and layer status

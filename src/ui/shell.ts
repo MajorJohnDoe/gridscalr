@@ -32,6 +32,8 @@ export interface ShellRefs {
   contextBar: HTMLElement;
   inspector: HTMLElement;
   canvasHost: HTMLElement;
+  markupsResizer: HTMLElement;
+  markupsPanel: HTMLElement;
   welcome: HTMLElement;
   statusCalibration: HTMLElement;
   statusCoords: HTMLElement;
@@ -156,7 +158,13 @@ export function createShell(root: HTMLElement): ShellRefs {
   const main = el("main", "main-area");
   const contextBar = el("div", "context-bar");
   const canvasHost = el("div", "canvas-host");
-  main.append(contextBar, canvasHost);
+  const markupsResizer = el("div", "markups-resizer");
+  markupsResizer.hidden = true;
+  markupsResizer.title = "Resize Markups list";
+  const markupsPanel = el("section", "markups-panel");
+  markupsPanel.hidden = true;
+  markupsPanel.setAttribute("aria-label", "Markups list");
+  main.append(contextBar, canvasHost, markupsResizer, markupsPanel);
 
   const inspector = el("aside", "inspector");
   inspector.setAttribute("aria-label", "Properties");
@@ -277,6 +285,8 @@ export function createShell(root: HTMLElement): ShellRefs {
     contextBar,
     inspector,
     canvasHost,
+    markupsResizer,
+    markupsPanel,
     welcome,
     statusCalibration,
     statusCoords,

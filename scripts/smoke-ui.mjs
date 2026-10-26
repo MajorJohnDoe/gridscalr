@@ -183,12 +183,46 @@ try {
   await variants.waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+Shift+M");
-  const measurements = page.getByRole("dialog");
-  await measurements.waitFor();
-  const rows = await measurements.locator(".markup-row").count();
+  const markupsPanel = page.locator(".markups-panel");
+  await markupsPanel.waitFor({ state: "visible" });
+  await markupsPanel.getByLabel("Filter markups by page").selectOption("current");
+  await markupsPanel.getByLabel("Filter markups by type").selectOption("measure");
+  const rows = await markupsPanel.locator("tbody tr[data-item-id]").count();
   assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
-  await page.locator('[data-item-id="item_floor_living"]').click();
-  await measurements.waitFor({ state: "detached" });
+  assert.equal(
+    await markupsPanel.locator("thead th").count(),
+    9,
+    "the Markups table should expose all nine columns",
+  );
+  await markupsPanel.locator('[data-item-id="item_floor_living"] .markups-item-label').click();
+  await page.waitForTimeout(250);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),
+    "item_floor_living",
+    "clicking a Markups row should select it without closing the panel",
+  );
+
+  const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
+  await radiatorRow.hover();
+  await radiatorRow.locator(".markups-rename").click();
+  const markupRename = markupsPanel.locator(".markups-name-input");
+  await markupRename.waitFor();
+  await markupRename.fill("QA radiator");
+  await markupRename.press("Enter");
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.evaluate(
+      () =>
+        window.__gridscalr.store.project.layers
+          .flatMap((layer) => layer.items)
+          .find((item) => item.id === "item_count_radiator")?.label,
+    ),
+    "QA radiator",
+    "inline Markups rename should update the item label",
+  );
+
+  await page.keyboard.press("Control+Shift+M");
+  await markupsPanel.waitFor({ state: "hidden" });
 
   const undo = page.getByRole("button", { name: "Undo" });
   const redo = page.getByRole("button", { name: "Redo" });

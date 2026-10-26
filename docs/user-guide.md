@@ -25,10 +25,11 @@ GridScalr uses a compact, drawing-first layout.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. Page cards can be renamed, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
+- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with filters, inline rename, layer changes, visibility, locking, and CSV export.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, active layer, and a local-only indicator.
 
-Panels remember their width and collapsed state between sessions.
+Panels remember their width, height and collapsed state between sessions.
 
 ## Open drawings and projects
 
@@ -298,7 +299,16 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 ### Find and navigate measurements
 
-Open **View → Measurements…** (`Ctrl/Cmd+Shift+M`) for a searchable list of every measurement and drawing.
+Open **View → Markups list…** (`Ctrl/Cmd+Shift+M`) for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing.
+
+- Filter by **All pages** or **Current page**, by measurement/drawing type, or with the search field.
+- Columns show the name, type, page, layer, value, category and room.
+- Click a row to go to its page and select the markup.
+- Double-click a name or use the rename button to edit the label inline.
+- Change the layer from the row picker.
+- Use the eye and lock controls for per-item visibility and locking.
+- **Select all** selects every row matching the current filter; **Export CSV** writes the Markups CSV.
+- Close the panel with its close button or `Ctrl/Cmd+Shift+M`. The panel remembers its height between sessions.
 
 - Filter by current or all pages.
 - Search by label, type, layer, category, room, or count type.

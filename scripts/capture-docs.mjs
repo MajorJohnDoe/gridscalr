@@ -4,7 +4,7 @@ import { resolve } from "node:path";
 import {
   launchBrowser,
   openDemoProject,
-  openMeasurementsItem,
+  openMarkupsItem,
   repoRoot as root,
   startVite,
   waitForToastsGone,
@@ -49,10 +49,11 @@ const shots = [
     description: "Live quantities with deductions, waste and rounding for procurement.",
   },
   {
-    file: "measurements.png",
-    title: "Measurements list",
-    alt: "The GridScalr Measurements dialog listing all three pages with search, page and type filters, and row actions.",
-    description: "Find, select and navigate every measurement and drawing across all pages.",
+    file: "markups-list.png",
+    title: "Markups list",
+    alt: "The GridScalr Markups panel listing all three pages with name, type, page, layer, value, category and room columns.",
+    description:
+      "A docked, project-wide list for finding, filtering, renaming and navigating every measurement and drawing.",
   },
   {
     file: "export.png",
@@ -95,7 +96,7 @@ try {
   await openDemoProject(page, { base: vite.base });
   await waitForToastsGone(page);
 
-  await openMeasurementsItem(page, "item_floor_living");
+  await openMarkupsItem(page, "item_floor_living");
   await capture("hero.png");
 
   await page.keyboard.press("Escape");
@@ -104,7 +105,7 @@ try {
   await capture("measure.png");
 
   await page.keyboard.press("Escape");
-  await openMeasurementsItem(page, "item_cloud_dock", "draw");
+  await openMarkupsItem(page, "item_cloud_dock", "draw");
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(200);
   await capture("markups.png");
@@ -137,12 +138,15 @@ try {
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+Shift+M");
-  await page.getByRole("dialog").waitFor();
-  await page.getByLabel("Filter measurements by page").selectOption("all");
-  await page.waitForTimeout(150);
-  await capture("measurements.png");
-  await page.keyboard.press("Escape");
-  await page.getByRole("dialog").waitFor({ state: "detached" });
+  const markupsPanel = page.locator(".markups-panel");
+  await markupsPanel.waitFor({ state: "visible" });
+  await markupsPanel.getByLabel("Filter markups by page").selectOption("all");
+  await markupsPanel.getByLabel("Filter markups by type").selectOption("all");
+  await markupsPanel.locator('[data-item-id="item_floor_living"] .markups-item-label').click();
+  await page.waitForTimeout(250);
+  await capture("markups-list.png");
+  await markupsPanel.getByRole("button", { name: "Close Markups list" }).click();
+  await markupsPanel.waitFor({ state: "hidden" });
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

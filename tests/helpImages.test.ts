@@ -10,7 +10,7 @@ describe("help images", () => {
         "layers.png",
         "markups.png",
         "measure.png",
-        "measurements.png",
+        "markups-list.png",
         "quantities.png",
         "workflows-help.png",
       ]),

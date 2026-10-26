@@ -110,7 +110,7 @@ import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus } from "../ui/statusBar";
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
-import { openMeasurementsDialog } from "../ui/measurementsDialog";
+import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { pageImportDialog } from "../ui/pageImportDialog";
 import { updatePageSizeLabel } from "../ui/pageList";
@@ -176,7 +176,10 @@ export class App {
         this.canvas.invalidate();
       },
       renameSelection: () => requestMarkupRename(this.refs),
-      openMeasurements: () => openMeasurementsDialog(this.actions),
+      toggleMarkups: () => {
+        setMarkupsOpen(!isMarkupsOpen());
+        this.renderAll();
+      },
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
@@ -369,7 +372,7 @@ export class App {
         case "m":
           if (event.shiftKey) {
             event.preventDefault();
-            openMeasurementsDialog(this.actions);
+            this.actions.toggleMarkups();
           }
           return;
         case "d":
