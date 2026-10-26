@@ -182,8 +182,10 @@ src/ui/contextBar.ts       tool-specific context bar and target layer controls
 src/ui/inspector.ts        Properties scale and active-layer sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
-src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Measurements
-src/ui/itemIcon.ts         icon lookup shared by Layers and Measurements
+src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
+src/ui/markupsPanel.ts     docked project-wide Markups table and filters
+src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
+src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
 src/ui/statusBar.ts        calibration, cursor and layer status

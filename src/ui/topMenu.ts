@@ -14,6 +14,7 @@ import {
   toggleSidebar,
 } from "./sidebar";
 import { openSettingsDialog } from "./settingsDialog";
+import { isMarkupsOpen } from "./markupsPanel";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
 
@@ -220,9 +221,10 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           disabled: !hasProject,
         }),
         separator(),
-        action("Measurements…", actions.openMeasurements, {
-          shortcut: APP_SHORTCUTS.measurements,
+        action("Markups list…", actions.toggleMarkups, {
+          shortcut: APP_SHORTCUTS.markups,
           disabled: !hasProject,
+          checked: isMarkupsOpen(),
         }),
         action("Quantities…", actions.openQuantities, {
           shortcut: APP_SHORTCUTS.quantities,

@@ -313,7 +313,7 @@ export function selectionSection(
     ? "Unlock the layer to edit this markup."
     : metrics
       ? "Shown with the measurement on the page."
-      : "Used in the Measurements dialog and exports. Press F2 to focus it.";
+      : "Used in the Markups list and exports. Press F2 to focus it.";
   labelInput.addEventListener("change", () => {
     store.mutate((project) => {
       const target = findItem(project, item.id)?.item;
@@ -329,7 +329,7 @@ export function selectionSection(
         "empty-note small",
         item.kind === "delta"
           ? "The date is drawn below the revision triangle."
-          : "List labels are export and Measurements metadata; they are not drawn on the page.",
+          : "List labels are export and Markups metadata; they are not drawn on the page.",
       ),
     );
   }

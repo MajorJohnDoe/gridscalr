@@ -136,12 +136,20 @@ export async function openDemoProject(page, { base } = {}) {
   return project;
 }
 
-export async function openMeasurementsItem(page, itemId, kind = "all") {
-  await page.keyboard.press("Control+Shift+M");
-  const dialog = page.getByRole("dialog");
-  await dialog.waitFor();
-  await page.getByLabel("Filter by item type").selectOption(kind);
-  await page.locator(`[data-item-id="${itemId}"]`).click();
-  await dialog.waitFor({ state: "detached" });
+export async function openMarkupsItem(page, itemId, kind = "all") {
+  const panel = page.locator(".markups-panel");
+  if (!(await panel.isVisible())) {
+    await page.keyboard.press("Control+Shift+M");
+  }
+  await panel.waitFor({ state: "visible" });
+  if (kind !== "all") {
+    await panel.getByLabel("Filter markups by type").selectOption(kind);
+  }
+  await panel.locator(`[data-item-id="${itemId}"]`).click();
+  await page.waitForTimeout(120);
+  if (await panel.isVisible()) {
+    await panel.getByRole("button", { name: "Close Markups list" }).click();
+    await panel.waitFor({ state: "hidden" });
+  }
   await waitForApp(page);
 }

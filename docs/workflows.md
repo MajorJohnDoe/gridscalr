@@ -118,9 +118,9 @@ Reports always cover every page and every category. Dialog filters only affect t
 
 ### 6. Keep the project reviewable
 
-Use **View → Measurements…** (`Ctrl/Cmd+Shift+M`) to search, select and navigate every item across all pages. The list is also the quickest way to check that a room or category has not been missed.
+Use **View → Markups list…** (`Ctrl/Cmd+Shift+M`) to search, select and navigate every item across all pages. The docked panel stays open while you jump between sheets and is the quickest way to check that a room or category has not been missed.
 
-![Measurements dialog with all pages, search and row actions](screenshots/measurements.png)
+![Docked Markups list with all pages, search, layer picker and row actions](screenshots/markups-list.png)
 
 Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing.
 

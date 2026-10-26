@@ -1,6 +1,6 @@
 import type { MarkupItem } from "../model/types";
 
-/** Icon name for a markup item kind, shared by the Layers and Measurements panels. */
+/** Icon name for a markup item kind, shared by the Layers and Markups panels. */
 export function markupIcon(kind: MarkupItem["kind"]): string {
   switch (kind) {
     case "length":

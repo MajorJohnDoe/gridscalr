@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-26T20:14:48.397Z",
+  "generatedAt": "2026-10-26T20:32:39.444Z",
   "appVersion": "0.3.3",
-  "sourceFingerprint": "482fa1b36211dce987a1196705de483985b68601789c06f3856d82d46b352cf3",
+  "sourceFingerprint": "3b9b6a4a3d4fe60ca6bc91af1aa6326c2db0f4a7a39322dc6d0e920f20fcc7d2",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -39,10 +39,10 @@
       "description": "Live quantities with deductions, waste and rounding for procurement."
     },
     {
-      "file": "measurements.png",
-      "title": "Measurements list",
-      "alt": "The GridScalr Measurements dialog listing all three pages with search, page and type filters, and row actions.",
-      "description": "Find, select and navigate every measurement and drawing across all pages."
+      "file": "markups-list.png",
+      "title": "Markups list",
+      "alt": "The GridScalr Markups panel listing all three pages with name, type, page, layer, value, category and room columns.",
+      "description": "A docked, project-wide list for finding, filtering, renaming and navigating every measurement and drawing."
     },
     {
       "file": "export.png",

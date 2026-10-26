@@ -6,6 +6,7 @@ import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { renderContextBar } from "./contextBar";
 import { renderInspector } from "./inspector";
+import { renderMarkupsPanel } from "./markupsPanel";
 import { updateStatus } from "./statusBar";
 import { renderWelcome } from "./welcome";
 import { toast } from "./toast";
@@ -26,7 +27,7 @@ export interface PanelActions {
   zoomFit: () => void;
   zoomActual: () => void;
   renameSelection: () => void;
-  openMeasurements: () => void;
+  toggleMarkups: () => void;
   openQuantities: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;
@@ -92,6 +93,7 @@ export function renderChrome(refs: ShellRefs, actions: PanelActions): void {
   renderSidebar(refs, actions);
   renderContextBar(refs, actions);
   renderInspector(refs, actions);
+  renderMarkupsPanel(refs, actions);
   updateStatus(refs);
   renderWelcome(refs, actions);
 }
