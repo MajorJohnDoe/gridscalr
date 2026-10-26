@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-26T19:50:03.177Z",
+  "generatedAt": "2026-10-26T20:14:48.397Z",
   "appVersion": "0.3.3",
-  "sourceFingerprint": "84bfadc7e5853d7ac977f5650d7aabe3245447e204730f619aded5f1fe019a77",
+  "sourceFingerprint": "482fa1b36211dce987a1196705de483985b68601789c06f3856d82d46b352cf3",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -29,7 +29,7 @@
     {
       "file": "layers.png",
       "title": "Expanded layer items",
-      "alt": "GridScalr Layers panel with a measurement layer expanded to show warehouse, office and mezzanine items, and the Add/Deduct switch in the context bar.",
+      "alt": "GridScalr Layers panel with page-scoped layers, a measurement layer expanded to show items on the current page, and the Add/Deduct switch in the context bar.",
       "description": "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas."
     },
     {

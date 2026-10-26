@@ -8,6 +8,7 @@ import {
   parsePageRange,
 } from "../src/model/export";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { setLayerVisibleOnPage } from "../src/model/layers";
 
 describe("drawing export model", () => {
   it("parses single pages, ranges, and comma-separated selections", () => {
@@ -89,5 +90,16 @@ describe("drawing export model", () => {
       includeCalibration: true,
       includeLegend: false,
     });
+  });
+});
+
+describe("page-scoped export defaults", () => {
+  it("selects a layer when it is visible on at least one page", () => {
+    const project = createProject(defaultDocument("Export.pdf", 2), createDefaultLayers());
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.visible = false;
+    setLayerVisibleOnPage(draw, 2, true);
+    const options = defaultDrawingExportOptions(project, 1);
+    expect(options.layerIds).toContain(draw.id);
   });
 });

@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   deletePageFromProject,
   documentIndexForPage,
+  duplicatePageFromProject,
+  pageDisplayName,
   documentPageMaps,
   documentPageRange,
   documentStartPage,
@@ -188,5 +190,83 @@ describe("page deletion", () => {
     const project = pageProject();
     expect(deletePageFromProject(project, 0)).toBeNull();
     expect(deletePageFromProject(project, 99)).toBeNull();
+  });
+
+  it("remaps page-scoped layer state and home pages", () => {
+    const project = pageProject();
+    const layer = project.layers.find((entry) => entry.kind === "measure")!;
+    layer.homePage = 2;
+    layer.pageState = {
+      "2": { visible: false },
+      "3": { locked: true },
+    };
+    project.pages["3"].name = "Detail";
+    deletePageFromProject(project, 2);
+    expect(layer.homePage).toBe(2);
+    expect(layer.pageState).toEqual({ "2": { locked: true } });
+    expect(project.pages["2"].name).toBe("Detail");
+  });
+});
+
+describe("page duplication", () => {
+  function duplicateProject() {
+    const project = pageProject();
+    project.pages["2"] = {
+      name: "Windows",
+      calibration: {
+        id: "cal_2",
+        source: "reference",
+        p1: { x: 0, y: 0 },
+        p2: { x: 100, y: 0 },
+        knownLength: 10,
+        unit: "m",
+        pointsPerMeter: 10,
+        createdAt: now,
+      },
+      scaleLocked: true,
+    };
+    const layer = project.layers.find((entry) => entry.kind === "measure")!;
+    layer.homePage = 1;
+    layer.pageState = { "2": { visible: false } };
+    return { project, layer };
+  }
+
+  it("appends a page copy with scale, name, layer state and markups", () => {
+    const { project, layer } = duplicateProject();
+    const result = duplicatePageFromProject(project, 2, {
+      copyMarkups: true,
+      copyScale: true,
+      copyName: true,
+      name: "Windows copy",
+    });
+    expect(result).toEqual({ page: 5, sourceDocumentIndex: 0, sourceLocalPage: 2 });
+    expect(project.documents).toHaveLength(3);
+    const copyDocument = project.documents[2];
+    expect(copyDocument.excludedPages).toEqual([1, 3]);
+    expect(copyDocument.copiedFrom).toEqual({ documentId: project.documents[0].id, page: 2 });
+    expect(project.pages["5"]).toMatchObject({
+      name: "Windows copy",
+      scaleLocked: true,
+      calibration: { id: "cal_2", pointsPerMeter: 10 },
+    });
+    const copied = layer.items.filter((item) => item.page === 5);
+    expect(copied).toHaveLength(1);
+    expect(copied[0].id).not.toBe("p2");
+    expect(layer.pageState?.["5"]).toEqual({ visible: false });
+    expect(pageDisplayName(project, 5)).toBe("Windows copy");
+  });
+
+  it("can omit markups, scale and name", () => {
+    const { project, layer } = duplicateProject();
+    const result = duplicatePageFromProject(project, 2, {
+      copyMarkups: false,
+      copyScale: false,
+      copyName: false,
+      name: "Ignored",
+    });
+    expect(result?.page).toBe(5);
+    expect(project.pages["5"]).toBeUndefined();
+    expect(layer.items.filter((item) => item.page === 5)).toHaveLength(0);
+    expect(layer.pageState?.["5"]).toEqual({ visible: false });
   });
 });

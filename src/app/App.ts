@@ -26,13 +26,17 @@ import {
   findItem,
   isMeasurementKind,
   itemIsLocked,
+  layerLockedOnPage,
+  layerVisibleOnPage,
   moveItemsToLayer,
 } from "../model/layers";
 import { makeId } from "../model/calibration";
 import { createImageItem } from "../model/images";
 import {
+  documentIndexForPage,
   documentPageMaps,
   excludedSourcePages,
+  pageDisplayName,
   projectDocumentForPage,
   totalPageCount,
 } from "../model/documents";
@@ -107,6 +111,7 @@ import { updateStatus } from "../ui/statusBar";
 import { createShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { openMeasurementsDialog } from "../ui/measurementsDialog";
+import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { pageImportDialog } from "../ui/pageImportDialog";
 import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
@@ -189,6 +194,7 @@ export class App {
       setSelectionColor: (color) => this.setSelectionColor(color),
       setSelectionStrokeWidth: (width) => this.setSelectionStrokeWidth(width),
       deletePage: (page) => void this.deletePageFlow(page),
+      duplicatePage: (page) => void this.duplicatePageFlow(page),
       setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
       setSelectionRoom: (room) => this.setSelectionRoom(room),
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
@@ -883,8 +889,34 @@ export class App {
     dirty: boolean,
   ): Promise<void> {
     const loaded: PDFDocumentProxy[] = [];
+    const loadedById = new Map<string, PDFDocumentProxy>();
+    const loadedByKey = new Map<string, PDFDocumentProxy>();
+    const cacheKeyFor = (documentRef: DocumentRef): string | null =>
+      documentRef.kind === "tiff"
+        ? `tiff:${documentRef.sha256}:${documentRef.pageCount}:${documentRef.sizeBytes}`
+        : documentRef.path || documentRef.sha256
+          ? `pdf:${documentRef.path ?? ""}:${documentRef.sha256}`
+          : null;
 
     for (const documentRef of project.documents) {
+      const copiedSource = documentRef.copiedFrom
+        ? loadedById.get(documentRef.copiedFrom.documentId)
+        : undefined;
+      if (copiedSource) {
+        documentRef.pageCount = copiedSource.numPages;
+        loaded.push(copiedSource);
+        loadedById.set(documentRef.id, copiedSource);
+        continue;
+      }
+      const cacheKey = cacheKeyFor(documentRef);
+      const cached = cacheKey ? loadedByKey.get(cacheKey) : undefined;
+      if (cached) {
+        documentRef.pageCount = cached.numPages;
+        loaded.push(cached);
+        loadedById.set(documentRef.id, cached);
+        continue;
+      }
+
       let bytes: Uint8Array | null = null;
       let pdfPath = documentRef.path;
 
@@ -950,6 +982,8 @@ export class App {
         if (hash) documentRef.sha256 = hash;
       }
       loaded.push(document);
+      loadedById.set(documentRef.id, document);
+      if (cacheKey) loadedByKey.set(cacheKey, document);
     }
 
     await this.installDocuments(loaded, project, projectPath, dirty);
@@ -1223,12 +1257,19 @@ export class App {
   private imageTargetLayer(): Layer | null {
     const project = store.project;
     if (!project) return null;
+    const page = store.ui.page;
     const active = project.layers.find((layer) => layer.id === project.activeLayerId);
-    if (active && active.kind === "draw" && active.visible && !active.locked) {
+    if (
+      active &&
+      active.kind === "draw" &&
+      layerVisibleOnPage(active, page) &&
+      !layerLockedOnPage(active, page)
+    ) {
       return active;
     }
     const candidate = project.layers.find(
-      (layer) => layer.kind === "draw" && layer.visible && !layer.locked,
+      (layer) =>
+        layer.kind === "draw" && layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page),
     );
     if (candidate) {
       store.setActiveLayer(candidate.id);
@@ -1318,7 +1359,9 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = visible ? resolved.filter((entry) => entry.layer.visible) : resolved;
+    const targetable = visible
+      ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.page))
+      : resolved;
     if (!targetable.length) {
       toast("The layer is hidden. Show the layer first.", "warning");
       return;
@@ -1349,7 +1392,9 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = locked ? resolved : resolved.filter((entry) => !entry.layer.locked);
+    const targetable = locked
+      ? resolved
+      : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
     if (!targetable.length) {
       toast("The layer is locked. Unlock the layer first.", "warning");
       return;
@@ -1372,6 +1417,45 @@ export class App {
     }
   }
 
+  private async duplicatePageFlow(page: number): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    const total = totalPageCount(project.documents);
+    const target = Math.max(1, Math.min(total, Math.round(page)));
+    const sourceName = pageDisplayName(project, target);
+    const defaultName = sourceName ? `${sourceName} copy` : `Page ${target} copy`;
+    const hasScale = Boolean(project.pages[String(target)]?.calibration);
+    const options = await duplicatePageDialog({
+      page: target,
+      newPage: total + 1,
+      defaultName,
+      hasScale,
+    });
+    if (!options) return;
+
+    const sourceDocumentIndex = documentIndexForPage(project.documents, target);
+    const sourceProxy = this.renderer?.documents[sourceDocumentIndex];
+    const result = store.duplicatePage(target, options);
+    if (!result) {
+      toast("The page could not be duplicated.", "warning");
+      return;
+    }
+    if (sourceProxy && this.renderer) {
+      this.renderer.addDocument(sourceProxy, [result.sourceLocalPage]);
+    }
+    this.thumbnails?.clear();
+    this.sizeEpoch++;
+    this.pageSizes.clear();
+    this.pageSizePromises.clear();
+    this.sizeQueue = [];
+    this.sizeActive = 0;
+    await this.enqueuePageSize(result.page);
+    this.canvas.fitPage();
+    this.canvas.invalidate();
+    this.renderAll();
+    toast(`Page ${target} duplicated as Page ${result.page}.`, "success");
+  }
+
   private async deletePageFlow(page: number): Promise<void> {
     const project = store.project;
     if (!project) return;
@@ -1382,9 +1466,10 @@ export class App {
       return;
     }
     const target = Math.max(1, Math.min(total, Math.round(page)));
+    const pageName = pageDisplayName(project, target);
     const confirmed = await confirmDialog(
       "Delete page",
-      `Delete page ${target}${source ? ` from “${source.name}”` : ""}? Measurements and page scale on this page will be removed. Measurements and page state on later pages move down one page number. This cannot be undone.`,
+      `Delete ${pageName ? `“${pageName}” (Page ${target})` : `page ${target}`}${source ? ` from “${source.name}”` : ""}? Measurements and page scale on this page will be removed. Measurements and page state on later pages move down one page number. This cannot be undone.`,
       "Delete page",
       { danger: true },
     );
@@ -1580,14 +1665,16 @@ export class App {
     let initialAreaMode: "whole" | "crop" | undefined;
     let cropReferencePage = store.ui.page;
     for (;;) {
+      const pageCount = totalPageCount(project.documents);
+      const pageNumbers = Array.from({ length: pageCount }, (_, index) => index + 1);
       const result = await drawingExportDialog({
         currentPage: store.ui.page,
-        pageCount: totalPageCount(project.documents),
+        pageCount,
         layers: project.layers.map((layer) => ({
           id: layer.id,
           name: layer.name,
           kind: layer.kind,
-          visible: layer.visible,
+          visible: pageNumbers.some((page) => layerVisibleOnPage(layer, page)),
           color: layer.color,
         })),
         initial: options,

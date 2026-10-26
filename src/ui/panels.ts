@@ -1,4 +1,4 @@
-import { primaryDocument, totalPageCount } from "../model/documents";
+import { pageDisplayName, primaryDocument, totalPageCount } from "../model/documents";
 import type { AreaMode, CountType, ImageMode, PageSize, RecentEntry } from "../model/types";
 import { store } from "../state/store";
 import type { AutosavePreview } from "../state/store";
@@ -58,6 +58,7 @@ export interface PanelActions {
   requestPageThumbnail: (page: number) => Promise<string | null>;
   addPages: () => void;
   deletePage: (page: number) => void;
+  duplicatePage: (page: number) => void;
   refresh: () => void;
   restoreAutosave: () => void;
   getAutosave: () => AutosavePreview | null;
@@ -106,8 +107,9 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   refs.docName.textContent = project
     ? (primaryDocument(project.documents)?.name ?? "No drawing open")
     : "No drawing open";
+  const pageName = project ? pageDisplayName(project, store.ui.page) : undefined;
   refs.docMeta.textContent = project
-    ? `Page ${store.ui.page} of ${totalPageCount(project.documents)}`
+    ? `Page ${store.ui.page} of ${totalPageCount(project.documents)}${pageName ? ` · ${pageName}` : ""}`
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
   refs.dirtyDot.title = "Unsaved changes";

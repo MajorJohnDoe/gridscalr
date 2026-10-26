@@ -1,5 +1,10 @@
 import { hasClipboard } from "../model/clipboard";
-import { itemIsVisible, layersForKind } from "../model/layers";
+import {
+  itemIsVisible,
+  layerLockedOnPage,
+  layerVisibleOnPage,
+  layersForKind,
+} from "../model/layers";
 import { resolveSelection, selectionKind } from "../model/selection";
 import { store } from "../state/store";
 import type { PanelActions } from "./panels";
@@ -14,9 +19,9 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   const resolved = resolveSelection(project, refs);
   const kind = selectionKind(project, refs);
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));
-  const canShow = resolved.some((entry) => entry.layer.visible);
+  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.page));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
-  const canUnlock = resolved.some((entry) => !entry.layer.locked);
+  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
   const items: PopoverItem[] = [];
 
   if (!resolved.length) {
@@ -71,7 +76,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
       items.push({
         label: `Move to ${layer.name}`,
         icon: "layers",
-        disabled: layer.locked,
+        disabled: resolved.some((entry) => layerLockedOnPage(layer, entry.item.page)),
         action: () => actions.moveSelectionToLayer(layer.id),
       });
     }

@@ -2,6 +2,7 @@ import { areaShapeOf, rectangleCorners } from "./area";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
 import { distance, itemCorners, itemLocalToPage } from "./geometry";
 import type { MarkupItem, Point, Project } from "./types";
+import { layerVisibleOnPage } from "./layers";
 
 export type SnapKind = "endpoint" | "midpoint" | "intersection";
 
@@ -165,7 +166,7 @@ export function collectSnapCandidates(project: Project, page: number): SnapCandi
   const segments: Segment[] = [];
 
   for (const layer of project.layers) {
-    if (!layer.visible) continue;
+    if (!layerVisibleOnPage(layer, page)) continue;
     for (const item of layer.items) {
       if (item.page !== page || item.visible === false) continue;
 

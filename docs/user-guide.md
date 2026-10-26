@@ -23,7 +23,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
-- **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers only. Page cards can be renamed, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, active layer, and a local-only indicator.
@@ -68,7 +68,19 @@ The **Pages** tab shows a preview of each sheet along with its page size, calibr
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
-Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page** and **Delete page…**.
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Duplicate page…**, and **Delete page…**.
+
+Double-click a page name to rename it inline. Named pages show their title in the card and in the top bar; unnamed pages keep the automatic **Page N** label.
+
+### Duplicate a page
+
+Right-click a page card and choose **Duplicate page…**. Choose whether to copy:
+
+- **Page name** – the name is editable before duplicating.
+- **Page scale** – keeps the calibration and scale lock.
+- **Markups and drawings** – copies every item on the source page.
+
+The copy is appended at the end and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility and lock settings follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
 
 ### Delete a page
 
@@ -232,22 +244,26 @@ Use **File → Import image…** or the context bar to add a PNG or JPEG. `Ctrl/
 
 ## Layers
 
-Open the **Layers** tab in the left panel.
+Open the **Layers** tab in the left panel. The **This page / All pages** switch controls the scope.
 
-- **Eye** shows or hides a layer.
-- **Lock** prevents moving, editing, and deleting its items.
+- **This page** lists layers created on the current page or used by at least one item on it.
+- **All pages** lists every layer and edits the project-wide defaults.
+- **Eye** shows or hides a layer. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
+- **Lock** prevents moving, editing, and deleting its items. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
 - Click the colour swatch to change the layer colour.
 - Double-click anywhere on a layer row to rename it inline.
 - Drag layers within their group to reorder them.
-- Use the chevron to expand a layer and list every item in it, newest first.
+- Use the chevron to expand a layer and list the items on the current page, or every item in **All pages** scope, newest first.
 - Click an item to jump to its page and select it. `Shift`/`Ctrl`/`Cmd`-click adds it to the current selection.
 - Right-click a layer for layer actions, or right-click an item for copy, cut, duplicate, visibility, lock, move and delete.
-- Use **+ Measure layer** or **+ Drawing layer** to add layers.
+- Use **+ Measure layer** or **+ Drawing layer** to add layers on the current page.
 - Move the selected item to another layer from Properties or the right-click menu.
 
-![Measurement layers expanded with their areas, lengths and counts](screenshots/layers.png)
+![Page-scoped measurement layers expanded with the current page's areas, lengths and counts](screenshots/layers.png)
 
-Measurement layers and drawing layers stay separate. The **Layer** picker in the context bar shows which layer receives new items. If the active layer is hidden or locked, the picker shows a warning. Choosing a tool automatically switches to a visible, unlocked layer of the matching kind.
+A page with no layers shows **No layers on Page N yet** with the create-layer buttons. Layers keep their name, colour and order across pages; only visibility, lock and the item list are page-scoped. Page-scoped visibility is used by hit-testing, snapping, quantities, Markups CSV and every PDF export.
+
+Measurement layers and drawing layers stay separate. The **Layer** picker in the context bar shows which layer receives new items. If the active layer is hidden or locked on the current page, the picker shows a warning. Choosing a tool automatically switches to a visible, unlocked layer of the matching kind; if none exists, a new layer is created on the current page.
 
 Hidden items do not render, hit-test, or export. Locked items stay visible and exportable but cannot be moved, edited, or deleted.
 
@@ -353,7 +369,7 @@ Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Al
 - **Drawing PDF…** – opens the drawing export dialog. Choose whole pages or a selected area, current page / all pages / a page range, visible layers, labels, the calibration line, and an optional legend. The export writes `<project>-markups.pdf`.
   **Selected area** enters a one-off crop mode. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**. `Esc` cancels. The crop is stored relative to the page and applied to every selected page.
 
-  Hidden layers are listed but disabled. Hidden items are always excluded; locked items are exported.
+  A layer hidden on every page is listed but disabled. A layer hidden on one page is skipped there and still exported where it is visible. Hidden items are always excluded; locked items are exported.
 
   **Legend** adds a separate A4 page at the end of the export.
 - **View as PNG** – exports the rendered page and markup layers at the current view.
@@ -393,7 +409,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 10 is the current format. Older projects load normally and are migrated when opened.
+Schema version 11 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

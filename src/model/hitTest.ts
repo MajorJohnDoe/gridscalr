@@ -1,4 +1,5 @@
 import { distanceToAreaShape, areaShapeOf, pointInAreaShape } from "./area";
+import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import {
   distanceToPolyline,
   expandRect,
@@ -157,13 +158,14 @@ export function hitTest(
   let backgroundHit: HitResult | null = null;
   for (let l = project.layers.length - 1; l >= 0; l--) {
     const layer = project.layers[l];
-    if (!options.includeHidden && !layer.visible) continue;
-    if (!options.includeLocked && layer.locked) continue;
+    if (!options.includeHidden && !layerVisibleOnPage(layer, page)) continue;
+    if (!options.includeLocked && layerLockedOnPage(layer, page)) continue;
     for (let i = layer.items.length - 1; i >= 0; i--) {
       const item = layer.items[i];
       if (item.page !== page) continue;
       if (!options.includeHidden && item.visible === false) continue;
-      if (!options.includeLocked && item.locked === true) continue;
+      if (!options.includeLocked && (item.locked === true || layerLockedOnPage(layer, page)))
+        continue;
       const hit = hitItem(item, point, tolerance);
       if (hit) {
         const result = { layer, item, ...hit };

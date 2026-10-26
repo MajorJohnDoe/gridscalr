@@ -1,5 +1,6 @@
 import { categoryForItem, normalizeRoom } from "./categories";
 import { areaShapeOf, areaValue } from "./area";
+import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
 import { areaInUnit, lengthInUnit, unitLabel } from "./units";
 import { polylineLength } from "./geometry";
@@ -182,7 +183,7 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
       if (filters.layerIds && !filters.layerIds.includes(layer.id)) continue;
       if (filters.categoryId && category.id !== filters.categoryId) continue;
       if (roomFilter && !room.toLowerCase().includes(roomFilter)) continue;
-      if (filters.includeHidden !== true && (!layer.visible || item.visible === false)) {
+      if (filters.includeHidden !== true && !itemIsVisible(item, layer)) {
         hiddenExcluded += 1;
         continue;
       }

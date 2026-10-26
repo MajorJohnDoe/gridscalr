@@ -99,6 +99,67 @@ describe("project files", () => {
     expect(parseProject(JSON.stringify(raw)).settings.smartLengthUnits).toBe(true);
   });
 
+  it("round-trips page names, page-scoped layer state and copied page references", () => {
+    const project = makeProject();
+    project.pages["1"].name = "Windows";
+    project.pages["2"] = { name: "Details" };
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.homePage = 1;
+    measure.pageState = { "2": { visible: false, locked: true } };
+    project.documents.push({
+      ...project.documents[0],
+      id: "doc_copy",
+      excludedPages: [2],
+      copiedFrom: { documentId: project.documents[0].id, page: 1 },
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.pages["1"].name).toBe("Windows");
+    expect(parsed.pages["2"].name).toBe("Details");
+    const parsedMeasure = parsed.layers.find((layer) => layer.kind === "measure")!;
+    expect(parsedMeasure.homePage).toBe(1);
+    expect(parsedMeasure.pageState).toEqual({ "2": { visible: false, locked: true } });
+    expect(parsed.documents[1].copiedFrom).toEqual({
+      documentId: parsed.documents[0].id,
+      page: 1,
+    });
+  });
+
+  it("migrates a schema 10 project to the page-name and page-scoped layer format", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 10;
+    for (const page of Object.values(raw.pages) as Array<Record<string, unknown>>) {
+      delete page.name;
+    }
+    for (const layer of raw.layers as Array<Record<string, unknown>>) {
+      delete layer.homePage;
+      delete layer.pageState;
+    }
+    for (const document of raw.documents as Array<Record<string, unknown>>) {
+      delete document.copiedFrom;
+    }
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.pages["1"].name).toBeUndefined();
+    expect(parsed.layers.every((layer) => !layer.pageState)).toBe(true);
+    expect(parsed.layers.find((layer) => layer.kind === "draw")?.homePage).toBe(1);
+  });
+
+  it("drops page names and layer overrides that do not fit the project", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.pages["1"].name = "Kept";
+    raw.pages["9"] = { name: "Outside" };
+    raw.layers[0].homePage = 9;
+    raw.layers[0].pageState = { "9": { visible: false } };
+    raw.documents[0].copiedFrom = { documentId: "missing", page: 1 };
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.pages["1"].name).toBe("Kept");
+    expect(parsed.pages["9"]).toBeUndefined();
+    expect(parsed.layers[0].homePage).toBe(1);
+    expect(parsed.layers[0].pageState).toBeUndefined();
+    expect(parsed.documents[0].copiedFrom).toBeUndefined();
+  });
+
   it("round-trips per-item visibility and locking", () => {
     const project = makeProject();
     const measure = project.layers.find((layer) => layer.kind === "measure")!;

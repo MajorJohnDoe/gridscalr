@@ -118,7 +118,7 @@ export class PdfRenderer {
   /** Replaces the included source pages after a page removal. */
   setPageMaps(pageMaps: number[][]): void {
     this.cancel();
-    for (const page of this.pages.values()) page.cleanup();
+    for (const page of new Set(this.pages.values())) page.cleanup();
     this.pages.clear();
     this.pageMaps = this.documents.map((document, index) => {
       const requested = pageMaps[index];
@@ -134,12 +134,16 @@ export class PdfRenderer {
   removeDocument(index: number): void {
     if (index < 0 || index >= this.documents.length) return;
     this.cancel();
-    for (const page of this.pages.values()) page.cleanup();
+    for (const page of new Set(this.pages.values())) page.cleanup();
     this.pages.clear();
     const [document] = this.documents.splice(index, 1);
     this.pageMaps.splice(index, 1);
     this.recomputeStarts();
-    if (document) void document.loadingTask.destroy().catch(() => undefined);
+    // Duplicated pages share the source PDF proxy, so only destroy it when the
+    // last project page that uses it has gone.
+    if (document && !this.documents.includes(document)) {
+      void document.loadingTask.destroy().catch(() => undefined);
+    }
   }
 
   get documentCount(): number {
@@ -272,9 +276,9 @@ export class PdfRenderer {
 
   async destroy(): Promise<void> {
     this.cancel();
-    for (const page of this.pages.values()) page.cleanup();
+    for (const page of new Set(this.pages.values())) page.cleanup();
     this.pages.clear();
-    for (const document of this.documents) {
+    for (const document of new Set(this.documents)) {
       await document.loadingTask.destroy();
     }
   }

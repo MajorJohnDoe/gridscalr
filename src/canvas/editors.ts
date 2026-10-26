@@ -1,7 +1,14 @@
 import { calloutLayout, cloudLabelLayout, textBoxLayout } from "../model/annotations";
 import { makeId } from "../model/calibration";
 import { itemCenter, itemRotation, normalizeDegrees } from "../model/geometry";
-import { addItem, ensureActiveLayer, findItem, itemIsLocked } from "../model/layers";
+import {
+  addItem,
+  ensureActiveLayer,
+  findItem,
+  itemIsLocked,
+  layerLockedOnPage,
+  layerVisibleOnPage,
+} from "../model/layers";
 import type { LabelBox, LabelMetrics } from "../model/label";
 import type { LabelLayout } from "../model/labelLayout";
 import { itemMetrics } from "../model/measure";
@@ -763,9 +770,12 @@ export class CanvasEditorController {
     const active = project.layers.find(
       (layer) => layer.id === project.activeLayerId && layer.kind === "draw",
     );
-    if (active && (!active.visible || active.locked)) {
+    if (
+      active &&
+      (!layerVisibleOnPage(active, edit.page) || layerLockedOnPage(active, edit.page))
+    ) {
       toast(
-        `“${active.name}” is ${active.locked ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
+        `“${active.name}” is ${layerLockedOnPage(active, edit.page) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
         "warning",
       );
       this.closeTextEditor();
@@ -776,7 +786,7 @@ export class CanvasEditorController {
     let itemId = "";
     this.closeTextEditor();
     store.mutate((project) => {
-      const layer = ensureActiveLayer(project, "draw");
+      const layer = ensureActiveLayer(project, "draw", edit.page);
       const now = new Date().toISOString();
       const item: MarkupItem = {
         id: makeId("item"),

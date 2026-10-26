@@ -13,6 +13,8 @@ import {
   isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
+  layerLockedOnPage,
+  layerVisibleOnPage,
   layersForKind,
   moveItemToLayer,
 } from "../model/layers";
@@ -89,8 +91,8 @@ export function selectionSection(
       el(
         "div",
         "empty-note small",
-        layer.locked
-          ? `“${layer.name}” is locked. Unlock the layer to edit this markup.`
+        layerLockedOnPage(layer, item.page)
+          ? `“${layer.name}” is locked on Page ${item.page}. Unlock it to edit this markup.`
           : "This markup is locked. Unlock it below to edit it.",
       ),
     );
@@ -694,14 +696,17 @@ export function selectionSection(
   const visibilityRow = el("div", "field-row");
   const visibleToggle = el("button", `toggle${!hidden ? " is-on" : ""}`);
   visibleToggle.type = "button";
-  visibleToggle.disabled = !layer.visible;
-  visibleToggle.title = layer.visible ? "Show or hide this markup" : "Show the layer first";
+  const layerShown = layerVisibleOnPage(layer, item.page);
+  visibleToggle.disabled = !layerShown;
+  visibleToggle.title = layerShown ? "Show or hide this markup" : "Show the layer first";
   visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? "Hidden" : "Visible"}</span>`;
   visibleToggle.addEventListener("click", () => actions.setSelectionVisible(hidden));
   const lockToggle = el("button", `toggle${locked ? " is-on" : ""}`);
   lockToggle.type = "button";
-  lockToggle.disabled = layer.locked;
-  lockToggle.title = layer.locked ? "Unlock the layer first" : "Lock or unlock this markup";
+  lockToggle.disabled = layerLockedOnPage(layer, item.page);
+  lockToggle.title = layerLockedOnPage(layer, item.page)
+    ? "Unlock the layer first"
+    : "Lock or unlock this markup";
   lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? "Locked" : "Unlocked"}</span>`;
   lockToggle.addEventListener("click", () => actions.setSelectionLocked(!item.locked));
   visibilityRow.append(visibleToggle, lockToggle);
@@ -970,7 +975,7 @@ function multiSelectionSection(
 
   const toggles = el("div", "field-row");
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));
-  const canShow = resolved.some((entry) => entry.layer.visible);
+  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.page));
   const visible = el("button", `toggle${anyVisible ? " is-on" : ""}`);
   visible.type = "button";
   visible.disabled = !anyVisible && !canShow;
@@ -978,7 +983,7 @@ function multiSelectionSection(
   visible.innerHTML = `${icon(anyVisible ? "eye" : "eyeOff", 13)}<span>${anyVisible ? "Hide" : "Show"}</span>`;
   visible.addEventListener("click", () => actions.setSelectionVisible(!anyVisible));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
-  const canUnlock = resolved.some((entry) => !entry.layer.locked);
+  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
   const lock = el("button", `toggle${!anyUnlocked ? " is-on" : ""}`);
   lock.type = "button";
   lock.disabled = !anyUnlocked && !canUnlock;

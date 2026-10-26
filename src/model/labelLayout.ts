@@ -1,4 +1,5 @@
 import { isReferenceCalibration, pageCalibration } from "./calibration";
+import { layerVisibleOnPage } from "./layers";
 import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
 import { boundingBox, itemBounds, midpoint, pointInPolygon, type Bounds } from "./geometry";
@@ -87,7 +88,7 @@ export function pageLabelSources(
 
   if (includeLabels) {
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
       if (options.layerIds && !options.layerIds.has(layer.id)) continue;
       for (const item of layer.items) {
         if (item.page !== page || item.visible === false) continue;

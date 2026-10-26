@@ -31,6 +31,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 
 - Open PDF plans locally with PDF.js, or scanned TIF drawings with lossless CCITT G3/G4 import.
 - Keep several sheets in one project. Each PDF or TIF you open while a project is active is added after the existing pages, so a set of drawings shares one quantity take-off.
+- Name pages and duplicate a sheet for a separate takeoff, for example one copy for windows and another for doors, without changing the source drawing.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply a scale to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
@@ -40,7 +41,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings. **Smart length labels** show cm below 1 m and metres above, while quantity reports keep the selected project unit.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
-- Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves. Expand a layer to list every item in it, then click an item to jump to its page and select it.
+- Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves. Visibility and lock can be scoped to the active page. Expand a layer to list every item in it, then click an item to jump to its page and select it.
 - Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Area, Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for additional shapes, modes, colours, and presets.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
@@ -166,7 +167,15 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 The **Pages** tab shows a preview of each sheet along with its page size, calibration badge, and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing rather than your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
 
-Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page** and **Delete page…**.
+Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page**, **Rename page…**, **Duplicate page…**, and **Delete page…**.
+
+Double-click a page name to rename it inline. A named page appears as its title in the card and in the top bar; unnamed pages keep the automatic **Page N** label. Page names are undoable project data.
+
+#### Duplicate a page
+
+Right-click a page card and choose **Duplicate page…**. The dialog can copy the page scale, the page name, and, when wanted, every markup and drawing on the source page.
+
+The copy is appended after the last page and references the same source sheet, so the original PDF or TIF is never modified. Page-scale copies keep the calibration and lock. Page-scoped layer visibility and lock overrides follow the copy so the new sheet looks the same. Duplicating is structural and cannot be undone. Use it when the same drawing needs a separate takeoff, for example one sheet for windows and another for doors.
 
 #### Delete a page
 
@@ -265,22 +274,26 @@ Each drag or inline edit is one undo step.
 
 ### 7. Organise layers
 
-Open the **Layers** tab in the left panel to:
+Open the **Layers** tab in the left panel. The **This page / All pages** switch controls the scope.
 
-- Show or hide a layer.
-- Lock a layer against moving, editing, and deleting its items.
+- **This page** lists layers created on the current page or used by at least one item on it.
+- **All pages** lists every layer and edits the project-wide defaults.
+- Show or hide a layer. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
+- Lock a layer. In **This page** scope this blocks editing only on the active page; in **All pages** it changes the default and clears page overrides.
 - Change layer colour and opacity.
 - Double-click anywhere on a layer row to rename it inline.
 - Drag layers within their group to reorder them.
-- Expand a layer with its chevron to list every item in that layer, newest first.
+- Expand a layer with its chevron to list the items on the current page, or every item in **All pages** scope, newest first.
 - Click an item to jump to its page and select it, or `Shift`/`Ctrl`/`Cmd`-click to add it to the current selection.
 - Right-click a layer or an item for the layer and item menus. The panel never shows the WebView's browser menu.
-- Add new measurement or drawing layers.
+- Add new measurement or drawing layers on the current page.
 - Move the selected item to another layer from Properties or the right-click menu.
 
-The **Layer** picker in the context bar shows which layer will receive new items. If the active layer is hidden or locked, the picker shows a warning. Picking a drawing or measurement tool automatically switches to a visible, unlocked layer of the matching kind; if none exists, GridScalr creates one instead of silently drawing into a layer you cannot see or edit.
+A page with no layers shows **No layers on Page N yet** and the create-layer buttons. Layers keep their name, colour and order across pages; only visibility, lock and the item list are page-scoped. Page-scoped visibility is used by hit-testing, snapping, quantities, Markups CSV and all PDF exports. Use **File → Export → Drawing PDF…** to see the same rule applied per exported page.
 
-Locking a layer leaves the layer's own settings editable, but prevents changing its markup content. Measurements and drawings always live in their matching layer type.
+The **Layer** picker in the context bar shows which layer will receive new items. If the active layer is hidden or locked on the current page, the picker shows a warning. Picking a drawing or measurement tool automatically switches to a visible, unlocked layer of the matching kind; if none exists, GridScalr creates one on the current page instead of silently drawing into a layer you cannot see or edit.
+
+Locking a layer leaves the layer's own settings editable, but prevents changing its markup content on that page. Measurements and drawings always live in their matching layer type.
 
 ### 8. Select, bulk edit, and reuse
 
@@ -336,7 +349,7 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
 - **Save as** (`Ctrl/Cmd+Shift+S`) writes to a new path.
 - **File → Export → Drawing PDF…** opens an export dialog. Choose whole page(s) or a selected area, current page / all pages / a page range, which visible layers to include, labels, the calibration line, and an optional legend. Background images are drawn above the source page and below markups; annotation images follow layer order. The export writes `<project>-markups.pdf`; the source PDF is never modified, and the save flow refuses to overwrite it.
   - **Selected area** enters a one-off crop mode on the canvas. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**; `Esc` cancels. The crop is stored relative to the page and applied to every selected page, so pages with different sizes or rotation stay aligned. It clips PDF content, markups, labels, and the calibration line.
-  - Hidden layers are listed but disabled. Hidden items are always excluded and locked items are exported.
+  - A layer hidden on every page is listed but disabled. A layer hidden on one page is skipped there and still exported on pages where it is visible. Hidden items are always excluded and locked items are exported.
   - **Legend** adds a separate A4 page at the end of the export. It is never drawn over the drawing and is not affected by the crop.
 - **File → Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
 - **File → Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
@@ -365,11 +378,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 10: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 11: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 10,
+  "schemaVersion": 11,
   "name": "Level 01",
   "documents": [
     {
@@ -427,6 +440,7 @@ Version 1–5 projects load normally and are migrated to schema 10: the old `doc
   },
   "pages": {
     "1": {
+      "name": "Ground floor",
       "calibration": {
         "id": "cal_...",
         "source": "reference",
@@ -449,7 +463,22 @@ Version 1–5 projects load normally and are migrated to schema 10: the old `doc
       }
     }
   },
-  "layers": [],
+  "layers": [
+    {
+      "id": "layer_...",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#4cc9f0",
+      "homePage": 1,
+      "pageState": {
+        "2": { "visible": false }
+      },
+      "items": []
+    }
+  ],
   "activeLayerId": "layer_..."
 }
 ```

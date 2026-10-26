@@ -233,7 +233,7 @@ const drawItems = [
 ];
 
 const project = {
-  schemaVersion: 10,
+  schemaVersion: 11,
   id: "prj_demo_takeoff",
   name: "Northgate Logistics Hub - Takeoff",
   documents: [
@@ -267,6 +267,7 @@ const project = {
   assets: {},
   pages: {
     1: {
+      name: "Ground floor",
       calibration: {
         id: "cal_demo_page_1",
         source: "reference",
@@ -279,6 +280,7 @@ const project = {
       },
     },
     2: {
+      name: "Mezzanine",
       calibration: {
         id: "cal_demo_page_2",
         source: "manual",
@@ -288,6 +290,7 @@ const project = {
       },
     },
     3: {
+      name: "Site plan",
       calibration: {
         id: "cal_demo_page_3",
         source: "manual",

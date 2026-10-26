@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 10 as const;
+export const SCHEMA_VERSION = 11 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -151,6 +151,13 @@ export interface SelectionRef {
   itemId: string;
 }
 
+export interface LayerPageState {
+  /** Overrides the layer default on this page. */
+  visible?: boolean;
+  /** Overrides the layer default on this page. */
+  locked?: boolean;
+}
+
 export interface Layer {
   id: string;
   name: string;
@@ -160,12 +167,18 @@ export interface Layer {
   opacity: number;
   color: string;
   items: MarkupItem[];
+  /** Page-specific visibility and lock overrides. */
+  pageState?: Record<string, LayerPageState>;
+  /** The page where the layer was created. Keeps empty layers discoverable. */
+  homePage?: number;
 }
 
 export interface PageState {
   calibration?: Calibration;
   /** Only valid when the page has a calibration. */
   scaleLocked?: boolean;
+  /** Optional user-facing page title, for example "Window count". */
+  name?: string;
 }
 
 export type DocumentKind = "pdf" | "tiff";
@@ -196,6 +209,8 @@ export interface DocumentRef {
   embeddedPdf?: string;
   /** Only for kind "tiff". */
   source?: DocumentSourceInfo;
+  /** Set when this reference is a duplicated page of another document entry. */
+  copiedFrom?: { documentId: string; page: number };
 }
 
 export interface ProjectSettings {

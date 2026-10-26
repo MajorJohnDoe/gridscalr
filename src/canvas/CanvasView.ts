@@ -45,6 +45,9 @@ import {
   ensureActiveLayer,
   findItem,
   itemIsLocked,
+  itemIsVisible,
+  layerLockedOnPage,
+  layerVisibleOnPage,
   layerKindForItem,
 } from "../model/layers";
 import { deleteItems, translateItems } from "../model/commands";
@@ -718,7 +721,7 @@ export class CanvasView {
 
     if (tool === "text") {
       const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
-      if (hit?.item.kind === "text" && !hit.layer.locked) {
+      if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, store.ui.page)) {
         store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
         this.editors.startTextEdit(hit.item, hit.layer);
       } else {
@@ -1334,9 +1337,9 @@ export class CanvasView {
     }
     const refs = marquee.additive ? [...store.ui.selection] : [];
     for (const layer of store.project.layers) {
-      if (!layer.visible) continue;
+      if (!layerVisibleOnPage(layer, store.ui.page)) continue;
       for (const item of layer.items) {
-        if (item.page !== store.ui.page || item.visible === false) continue;
+        if (item.page !== store.ui.page || !itemIsVisible(item, layer)) continue;
         const bounds = itemBounds(item);
         const intersects =
           bounds.max.x >= rect.x &&
@@ -1612,7 +1615,7 @@ export class CanvasView {
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
     const found = findItem(store.project, selection.itemId);
-    if (!found || found.item.locked || found.layer.locked) {
+    if (!found || itemIsLocked(found.item, found.layer)) {
       toast("Select an unlocked text item to edit it.", "info");
       return;
     }
@@ -1712,10 +1715,10 @@ export class CanvasView {
     const layouts = this.pageLabelLayouts();
     for (let l = project.layers.length - 1; l >= 0; l--) {
       const layer = project.layers[l];
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, store.ui.page) || layer.opacity <= 0) continue;
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
-        if (item.page !== store.ui.page || item.visible === false) continue;
+        if (item.page !== store.ui.page || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
@@ -1763,9 +1766,12 @@ export class CanvasView {
     const active = project.layers.find(
       (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
     );
-    if (active && (!active.visible || active.locked)) {
+    if (
+      active &&
+      (!layerVisibleOnPage(active, store.ui.page) || layerLockedOnPage(active, store.ui.page))
+    ) {
       toast(
-        `“${active.name}” is ${active.locked ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
+        `“${active.name}” is ${layerLockedOnPage(active, store.ui.page) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
         "warning",
       );
       return null;
@@ -1775,7 +1781,7 @@ export class CanvasView {
     let itemId = "";
     const scale = pageScale(project, projectPage);
     store.mutate((project) => {
-      const layer = ensureActiveLayer(project, layerKind);
+      const layer = ensureActiveLayer(project, layerKind, store.ui.page);
       const now = new Date().toISOString();
       const style = store.ui.style;
       const isMeasure = layerKind === "measure";
@@ -2237,11 +2243,11 @@ export class CanvasView {
 
     // Background images sit above the PDF but below every markup layer.
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
       ctx.save();
       ctx.globalAlpha = layer.opacity;
       for (const item of layer.items) {
-        if (item.page !== page || item.visible === false || item.kind !== "image") continue;
+        if (item.page !== page || !itemIsVisible(item, layer) || item.kind !== "image") continue;
         if (imageModeOf(item) !== "background") continue;
         this.drawItem(ctx, item, labels);
       }
@@ -2249,11 +2255,11 @@ export class CanvasView {
     }
 
     for (const layer of project.layers) {
-      if (!layer.visible || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
       ctx.save();
       ctx.globalAlpha = layer.opacity;
       for (const item of layer.items) {
-        if (item.page !== page || item.visible === false) continue;
+        if (item.page !== page || !itemIsVisible(item, layer)) continue;
         if (item.kind === "image" && imageModeOf(item) === "background") continue;
         this.drawItem(ctx, item, labels);
       }
@@ -2762,7 +2768,8 @@ export class CanvasView {
     if (!store.project) return;
     if (this.crop.draw(ctx)) return;
     const selected = resolveSelection(store.project, store.ui.selection).filter(
-      (entry) => entry.layer.visible && entry.item.visible !== false,
+      (entry) =>
+        layerVisibleOnPage(entry.layer, entry.item.page) && itemIsVisible(entry.item, entry.layer),
     );
 
     if (selected.length) {

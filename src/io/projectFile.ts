@@ -31,8 +31,10 @@ import type {
   ItemKind,
   Layer,
   LayerKind,
+  LayerPageState,
   LengthUnit,
   MarkupItem,
+  PageState,
   Point,
   Project,
   ProjectSettings,
@@ -455,11 +457,31 @@ function normalizeItem(
   };
 }
 
+function normalizeLayerPageState(
+  value: unknown,
+  totalPages: number,
+): Record<string, LayerPageState> | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const states: Record<string, LayerPageState> = {};
+  for (const [key, rawState] of Object.entries(value)) {
+    const page = Number(key);
+    if (!Number.isInteger(page) || page < 1 || page > totalPages) continue;
+    if (typeof rawState !== "object" || rawState === null) continue;
+    const raw = rawState as LayerPageState;
+    const state: LayerPageState = {};
+    if (typeof raw.visible === "boolean") state.visible = raw.visible;
+    if (typeof raw.locked === "boolean") state.locked = raw.locked;
+    if (state.visible !== undefined || state.locked !== undefined) states[key] = state;
+  }
+  return Object.keys(states).length ? states : undefined;
+}
+
 function normalizeLayers(
   rawLayers: unknown,
   categoryIds: ReadonlySet<string>,
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
+  totalPages: number,
 ): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
@@ -490,6 +512,16 @@ function normalizeLayers(
               : "#f2a93b",
         items: [],
       };
+      const homePage =
+        typeof raw.homePage === "number" &&
+        Number.isInteger(raw.homePage) &&
+        raw.homePage >= 1 &&
+        raw.homePage <= totalPages
+          ? raw.homePage
+          : undefined;
+      if (homePage) layer.homePage = homePage;
+      const pageState = normalizeLayerPageState(raw.pageState, totalPages);
+      if (pageState) layer.pageState = pageState;
       if (Array.isArray(raw.items)) {
         for (const item of raw.items) {
           const normalized = normalizeItem(
@@ -502,13 +534,17 @@ function normalizeLayers(
           if (normalized) layer.items.push(normalized);
         }
       }
+      // Older empty layers had no page membership. Keep them discoverable on
+      // the first page instead of hiding them from page-scoped Layers.
+      if (!layer.homePage && layer.items.length === 0) layer.homePage = 1;
       layers.push(layer);
     }
   }
 
   if (!layers.some((l) => l.kind === "measure"))
-    layers.push(createLayer("measure", "Measurements"));
-  if (!layers.some((l) => l.kind === "draw")) layers.push(createLayer("draw", "Markups"));
+    layers.push(createLayer("measure", "Measurements", undefined, 1));
+  if (!layers.some((l) => l.kind === "draw"))
+    layers.push(createLayer("draw", "Markups", undefined, 1));
   const ids = new Set<string>();
   return normalizeLayerOrder(
     layers.map((layer) => {
@@ -558,6 +594,19 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
       ),
     ].sort((a, b) => a - b);
     if (excluded.length) document.excludedPages = excluded;
+  }
+  if (rawDoc.copiedFrom && typeof rawDoc.copiedFrom === "object") {
+    const copied = rawDoc.copiedFrom as { documentId?: unknown; page?: unknown };
+    if (
+      typeof copied.documentId === "string" &&
+      copied.documentId &&
+      typeof copied.page === "number" &&
+      Number.isInteger(copied.page) &&
+      copied.page >= 1 &&
+      copied.page <= document.pageCount
+    ) {
+      document.copiedFrom = { documentId: copied.documentId, page: copied.page };
+    }
   }
   if (kind === "tiff") {
     if (typeof rawDoc.embeddedPdf !== "string" || !rawDoc.embeddedPdf) {
@@ -609,6 +658,11 @@ export function parseProject(text: string): Project {
     if (seen.has(document.id)) document.id = makeId("doc");
     seen.add(document.id);
   }
+  for (const document of documents) {
+    if (!document.copiedFrom) continue;
+    const source = documents.find((candidate) => candidate.id === document.copiedFrom!.documentId);
+    if (!source || document.copiedFrom.page > source.pageCount) document.copiedFrom = undefined;
+  }
   const total = totalPageCount(documents);
   if (total < 1) throw new Error("Project file has no remaining pages.");
   const base = createProject(documents[0], createDefaultLayers());
@@ -629,6 +683,7 @@ export function parseProject(text: string): Project {
       new Set(categories.map((category) => category.id)),
       settings.quantity.defaultCategoryId,
       new Set(Object.keys(assets)),
+      total,
     ),
     activeLayerId: typeof raw.activeLayerId === "string" ? raw.activeLayerId : base.activeLayerId,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : base.createdAt,
@@ -639,13 +694,22 @@ export function parseProject(text: string): Project {
     for (const [key, value] of Object.entries(raw.pages)) {
       const page = Number(key);
       if (!Number.isInteger(page) || page < 1 || page > total) continue;
-      const rawPage = value as { calibration?: unknown; scaleLocked?: unknown } | null;
+      const rawPage = value as {
+        calibration?: unknown;
+        scaleLocked?: unknown;
+        name?: unknown;
+      } | null;
       const cal = normalizeCalibration(rawPage?.calibration);
+      const name = typeof rawPage?.name === "string" ? rawPage.name.trim().slice(0, 80) : "";
+      if (!cal && !name) continue;
+      const state: PageState = {};
       if (cal) {
-        project.pages[key] = { calibration: cal };
+        state.calibration = cal;
         // A lock without a scale is meaningless and is discarded.
-        if (rawPage?.scaleLocked === true) project.pages[key].scaleLocked = true;
+        if (rawPage?.scaleLocked === true) state.scaleLocked = true;
       }
+      if (name) state.name = name;
+      project.pages[key] = state;
     }
   }
 

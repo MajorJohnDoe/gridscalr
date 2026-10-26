@@ -9,13 +9,22 @@ import {
   ensureActiveLayer,
   findItem,
   itemCountForPage,
+  itemIsLocked,
+  itemIsVisible,
+  layerAppliesToPage,
   layerKindForItem,
+  layerLockedOnPage,
+  layerVisibleOnPage,
   layersForKind,
   moveItemToLayer,
   moveLayer,
   normalizeLayerOrder,
   removeItem,
   removeLayer,
+  setLayerLockedGlobally,
+  setLayerLockedOnPage,
+  setLayerVisibleGlobally,
+  setLayerVisibleOnPage,
   swapLayers,
 } from "../src/model/layers";
 import type { MarkupItem } from "../src/model/types";
@@ -160,5 +169,58 @@ describe("layers", () => {
     addItem(project, measure.id, makeItem("item_a"));
     expect(moveItemToLayer(project, measure.id, "item_a", draw.id)).toBe(false);
     expect(findItem(project, "item_a")?.layer.id).toBe(measure.id);
+  });
+});
+
+describe("page-scoped layer state", () => {
+  it("applies visibility and lock overrides to one page", () => {
+    const project = makeProject();
+    const layer = layersForKind(project, "measure")[0];
+    const item = makeItem("item_page_2", 2);
+    addItem(project, layer.id, item);
+
+    setLayerVisibleOnPage(layer, 2, false);
+    setLayerLockedOnPage(layer, 2, true);
+    expect(layerVisibleOnPage(layer, 1)).toBe(true);
+    expect(layerVisibleOnPage(layer, 2)).toBe(false);
+    expect(layerLockedOnPage(layer, 1)).toBe(false);
+    expect(layerLockedOnPage(layer, 2)).toBe(true);
+    expect(itemIsVisible(item, layer)).toBe(false);
+    expect(itemIsLocked(item, layer)).toBe(true);
+
+    setLayerVisibleOnPage(layer, 2, true);
+    setLayerLockedOnPage(layer, 2, false);
+    expect(layer.pageState).toBeUndefined();
+  });
+
+  it("clears page overrides when a global default changes", () => {
+    const project = makeProject();
+    const layer = layersForKind(project, "draw")[0];
+    setLayerVisibleOnPage(layer, 2, false);
+    setLayerLockedOnPage(layer, 2, true);
+    setLayerVisibleGlobally(layer, true);
+    setLayerLockedGlobally(layer, false);
+    expect(layer.pageState).toBeUndefined();
+  });
+
+  it("identifies layers that belong to a page", () => {
+    const project = makeProject();
+    const layer = layersForKind(project, "measure")[0];
+    layer.homePage = 1;
+    expect(layerAppliesToPage(layer, 1)).toBe(true);
+    expect(layerAppliesToPage(layer, 2)).toBe(false);
+    addItem(project, layer.id, makeItem("item_page_2", 2));
+    expect(layerAppliesToPage(layer, 2)).toBe(true);
+  });
+
+  it("creates a new page-scoped layer when every applicable layer is hidden", () => {
+    const project = makeProject();
+    const current = layersForKind(project, "measure")[0];
+    project.activeLayerId = current.id;
+    setLayerVisibleOnPage(current, 2, false);
+    const created = ensureActiveLayer(project, "measure", 2);
+    expect(created.id).not.toBe(current.id);
+    expect(created.homePage).toBe(2);
+    expect(layerVisibleOnPage(created, 2)).toBe(true);
   });
 });

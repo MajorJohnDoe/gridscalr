@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { PdfRenderer } from "../src/pdf/pdfRenderer";
 
@@ -45,5 +45,27 @@ describe("PdfRenderer page maps", () => {
     expect(renderer.pageCount).toBe(2);
     await expect(renderer.getPage(1)).resolves.toMatchObject({ name: "B", localPage: 1 });
     await expect(renderer.getPage(2)).resolves.toMatchObject({ name: "B", localPage: 2 });
+  });
+});
+
+describe("PdfRenderer shared page copies", () => {
+  it("does not destroy a source PDF while another page copy still uses it", async () => {
+    const destroy = vi.fn(async () => undefined);
+    const proxy = {
+      numPages: 1,
+      getPage: async (localPage: number) => ({
+        localPage,
+        getOperatorList: async () => undefined,
+        getViewport: () => ({ width: 100, height: 100 }),
+      }),
+      loadingTask: { destroy },
+    } as unknown as PDFDocumentProxy;
+    const renderer = new PdfRenderer([proxy, proxy], [[1], [1]]);
+    renderer.removeDocument(0);
+    await Promise.resolve();
+    expect(destroy).not.toHaveBeenCalled();
+    renderer.removeDocument(0);
+    await Promise.resolve();
+    expect(destroy).toHaveBeenCalledTimes(1);
   });
 });
