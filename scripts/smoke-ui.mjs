@@ -240,6 +240,16 @@ try {
   );
   await lengthUnit.selectOption("mm");
 
+  await page.keyboard.press("Control+,");
+  const settingsDialog = page.getByRole("dialog");
+  await settingsDialog.waitFor();
+  assert.ok(
+    await settingsDialog.getByText("Smart length labels", { exact: true }).count(),
+    "project settings should expose smart length labels",
+  );
+  await page.keyboard.press("Escape");
+  await settingsDialog.waitFor({ state: "detached" });
+
   await page.evaluate(() => {
     window.__gridscalrContextPrevented = null;
     document.addEventListener(

@@ -976,8 +976,8 @@ export class App {
     this.renderer = renderer;
     this.thumbnails = new PageThumbnailService(
       async (page) => {
-        const canvas = await renderer.renderPageThumbnail(page, 144);
-        return canvas.toDataURL("image/jpeg", 0.72);
+        const canvas = await renderer.renderPageThumbnail(page, 256);
+        return canvas.toDataURL("image/jpeg", 0.78);
       },
       () => renderer.busy,
     );

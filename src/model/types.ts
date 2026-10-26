@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 9 as const;
+export const SCHEMA_VERSION = 10 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -201,6 +201,8 @@ export interface DocumentRef {
 export interface ProjectSettings {
   lengthUnit: LengthUnit;
   areaUnit: AreaUnit;
+  /** Show cm below 1 m and metres above 1 m on lengths and labels. */
+  smartLengthUnits: boolean;
   showGrid: boolean;
   showCalibration: boolean;
   snapToGeometry: boolean;

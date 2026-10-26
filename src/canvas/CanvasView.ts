@@ -3025,7 +3025,7 @@ export class CanvasView {
         const length = Math.hypot(dx, dy) || 1;
         this.drawPreviewLabel(
           ctx,
-          formatLength(polylineLength(preview), scale, unit),
+          formatLength(polylineLength(preview), scale, unit, project.settings.smartLengthUnits),
           {
             x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
             y: mid.y + (dx / length) * LABEL_LINE_OFFSET,

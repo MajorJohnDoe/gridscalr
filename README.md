@@ -4,11 +4,13 @@ GridScalr is a local-first desktop app for opening PDF drawings, calibrating the
 
 ![GridScalr with a calibrated industrial floor plan, warehouse and office measurements and a selected warehouse area](docs/screenshots/hero.png)
 
-It uses a **Graphite & Jade** interface: a dark graphite workspace, jade accents, a compact top menu, a vertical tool rail, a Pages/Layers sidebar, and a properties panel. The workflow is inspired by professional PDF takeoff tools, but GridScalr is an independent implementation built with Tauri, Rust, TypeScript, and HTML5 Canvas.
+The interface is drawing-first: a compact top menu, a vertical tool rail, a Pages/Layers sidebar, the canvas, and a properties panel. GridScalr is built with Tauri, Rust, TypeScript, PDF.js, and HTML5 Canvas.
+
+GridScalr is pre-1.0. Project files are versioned and migrated automatically, and source drawings are never modified.
 
 See the [user guide](docs/user-guide.md) for the full workflow, the [role-based workflows](docs/workflows.md) for day-to-day use, and [shortcuts.md](docs/shortcuts.md) for the keyboard reference. The same content is available in **Help** inside the app.
 
-## Feature gallery
+## Screenshots
 
 | Measure and annotate | Review quantities |
 | --- | --- |
@@ -35,11 +37,11 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision clouds, callouts, stamps, revision deltas, and text notes.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Drag measurement labels to place them manually when labels are tight, and choose **Solid** or **Dashed** line styles for length measurements.
-- Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings.
+- Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings. **Smart length labels** show cm below 1 m and metres above, while quantity reports keep the selected project unit.
 - Resize selected text, arrows, and shapes with selection handles, and rotate them with 15° Shift snapping.
 - Rename markups in Properties (or press `F2` after selecting one) and rename the project from the top bar.
 - Keep **measurement layers** and **drawing layers** separate, with visibility, locking, colour, opacity, ordering, and layer-to-layer item moves. Expand a layer to list every item in it, then click an item to jump to its page and select it.
-- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Area, Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for Photoshop-style shapes, modes, colours, and presets.
+- Use a compact top menu for File, Edit, View, Settings, and Help. The Pages/Layers sidebar and Properties panel can be collapsed to give the drawing the full window. Long-press or right-click the Area, Cloud, Highlight, Callout, Stamp, and Arrow tools, or choose **Variants** in the context bar, for additional shapes, modes, colours, and presets.
 - Choose the active target layer from the context bar, with a warning when that layer is hidden or locked.
 - Hide or lock individual markups without changing their layer. Hidden items are excluded from rendering, hit-testing, and every export; locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Select several markups with `Shift`/`Ctrl`/`Cmd`-click or a marquee, move them together, and edit their layer, colour, visibility, or lock state in one bulk action. Measurement selections can also share a category, room, area mode, or count type.
@@ -128,10 +130,10 @@ GridScalr uses a compact drawing-first layout:
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
-- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, snapping, and guides.
+- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a jade accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
+- **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. There are no permanent measurement tables: **View → Measurements…** and **View → Quantities…** open them on demand.
@@ -162,7 +164,7 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 #### Page thumbnails
 
-The **Pages** tab shows a low-resolution preview of each sheet along with its page size, calibration badge, and item count. Previews show the source drawing, not your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
+The **Pages** tab shows a preview of each sheet along with its page size, calibration badge, and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing rather than your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
 
 Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page** and **Delete page…**.
 
@@ -193,7 +195,7 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 - **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the context bar before drawing, in the **New measurement** popover, or from the Area tool flyout. You can also change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
-Length and area units are project-wide. Choose mm, cm, m, in, ft, yd, or the matching area unit in **Properties → Measurement units**, **Canvas → Units**, or **Settings → Project settings**. Changing units only changes how values are displayed and reported.
+Length and area units are project-wide. Choose mm, cm, m, in, ft, yd, or the matching area unit in **Properties → Measurement units**, **Canvas → Units**, or **Settings → Project settings**. Changing units only changes how values are displayed and reported. **Smart length labels** show metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates. New measurements use a 0.75 pt paper-space line weight and new drawing items use 1.5 pt; both can be changed from 0.25 to 8 pt in Properties, and drawing tools also expose the weight in the context bar.
 
@@ -363,11 +365,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 9: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 10: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
 
 ```json
 {
-  "schemaVersion": 9,
+  "schemaVersion": 10,
   "name": "Level 01",
   "documents": [
     {
@@ -396,6 +398,7 @@ Version 1–5 projects load normally and are migrated to schema 9: the old `docu
   "settings": {
     "lengthUnit": "mm",
     "areaUnit": "m2",
+    "smartLengthUnits": true,
     "showGrid": false,
     "showCalibration": true,
     "snapToGeometry": true,
@@ -595,7 +598,7 @@ npm run docs:capture # regenerate docs/screenshots from the demo project
 cargo check       # inside src-tauri, or: cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
-The frontend uses TypeScript with no UI framework. PDF.js is bundled with its worker. Icons are inline SVG. The CSS defines the Graphite & Jade theme, responsive panel layout, focus states, and reduced-motion handling. Help content is imported from `docs/*.md` with Vite `?raw` and rendered by a small safe Markdown parser. Help screenshots are bundled with Vite `?url` assets, so the help dialog stays offline.
+The frontend uses TypeScript with no UI framework. PDF.js is bundled with its worker. Icons are inline SVG. The CSS implements the dark theme, responsive panel layout, focus states, and reduced-motion handling. Help content is imported from `docs/*.md` with Vite `?raw` and rendered by a small safe Markdown parser. Help screenshots are bundled with Vite `?url` assets, so the help dialog stays offline.
 
 The documentation pipeline is reproducible:
 

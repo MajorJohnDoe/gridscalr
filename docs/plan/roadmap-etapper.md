@@ -38,7 +38,8 @@ Dessa regler gäller alla etapper och ska inte omtolkas utan ett medvetet beslut
 | 2A | Kategorier, antal, avdrag och summering | Klar | Etapp 1 | Medel |
 | 2B | Svinn, avrundning och mängdförteckning | Klar | Etapp 2A | Medel |
 | 3 | Snabbarea, manuell skala, snap och exportdialog | Klar | Etapp 2 | Hög |
-| 4 | Bilder | Sist | Etapp 2–3 | Hög |
+| 4 | Bilder | Klar | Etapp 2–3 | Hög |
+| 5 | TIF-ritningar och flera dokument | Klar | Etapp 2–4 | Hög |
 
 ## Etapp 1 – genomförd
 

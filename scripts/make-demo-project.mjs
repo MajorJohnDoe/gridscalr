@@ -233,7 +233,7 @@ const drawItems = [
 ];
 
 const project = {
-  schemaVersion: 9,
+  schemaVersion: 10,
   id: "prj_demo_takeoff",
   name: "Northgate Logistics Hub - Takeoff",
   documents: [
@@ -251,6 +251,7 @@ const project = {
   settings: {
     lengthUnit: "m",
     areaUnit: "m2",
+    smartLengthUnits: true,
     showGrid: false,
     showCalibration: false,
     snapToGeometry: true,

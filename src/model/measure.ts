@@ -3,7 +3,7 @@ import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
 import { polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
-import { formatArea, formatLength, formatLengthCompact } from "./units";
+import { displayedLengthUnit, formatArea, formatLength, formatLengthCompact } from "./units";
 
 export interface ItemMetrics {
   primary: string;
@@ -21,11 +21,12 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
   const scale = itemScale(item, project);
   if (item.kind === "length") {
     const points = polylineLength(item.points);
+    const smart = project.settings.smartLengthUnits;
     return {
-      primary: formatLength(points, scale, project.settings.lengthUnit),
+      primary: formatLength(points, scale, project.settings.lengthUnit, smart),
       rawPoints: points,
       scale,
-      unit: scale ? project.settings.lengthUnit : "pt",
+      unit: scale ? displayedLengthUnit(points, scale, project.settings.lengthUnit, smart) : "pt",
     };
   }
   if (item.kind === "area") {
@@ -33,9 +34,10 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
     const area = areaValue(item.points, shape);
     const perimeter = areaPerimeter(item.points, shape);
     const deduction = item.areaMode === "subtract" ? "Deduction · " : "";
+    const smart = project.settings.smartLengthUnits;
     return {
       primary: formatArea(area, scale, project.settings.areaUnit),
-      secondary: `${deduction}Perimeter ${formatLengthCompact(perimeter, scale, project.settings.lengthUnit)}`,
+      secondary: `${deduction}Perimeter ${formatLengthCompact(perimeter, scale, project.settings.lengthUnit, smart)}`,
       rawPoints: area,
       scale,
       unit: scale ? project.settings.areaUnit : "pt²",

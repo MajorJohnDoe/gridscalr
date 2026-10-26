@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { PageThumbnailService } from "../src/pdf/thumbnails";
+import { contentBoundsFromPixels, PageThumbnailService } from "../src/pdf/thumbnails";
 
 function wait(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -72,5 +72,41 @@ describe("page thumbnails", () => {
     const pending = service.request(5);
     service.destroy();
     await expect(pending).resolves.toBeNull();
+  });
+});
+
+describe("thumbnail content bounds", () => {
+  function blank(width: number, height: number): Uint8ClampedArray {
+    return new Uint8ClampedArray(width * height * 4).fill(255);
+  }
+
+  function ink(pixels: Uint8ClampedArray, width: number, x: number, y: number): void {
+    const index = (y * width + x) * 4;
+    pixels[index] = 0;
+    pixels[index + 1] = 0;
+    pixels[index + 2] = 0;
+    pixels[index + 3] = 255;
+  }
+
+  it("finds the tight bounds of non-white content", () => {
+    const pixels = blank(10, 8);
+    ink(pixels, 10, 2, 1);
+    ink(pixels, 10, 7, 5);
+    expect(contentBoundsFromPixels(pixels, 10, 8)).toEqual({
+      x: 2,
+      y: 1,
+      width: 6,
+      height: 5,
+    });
+  });
+
+  it("returns null for a blank page and ignores near-white pixels", () => {
+    const pixels = blank(10, 8);
+    expect(contentBoundsFromPixels(pixels, 10, 8)).toBeNull();
+    const index = (4 * 10 + 4) * 4;
+    pixels[index] = 250;
+    pixels[index + 1] = 250;
+    pixels[index + 2] = 250;
+    expect(contentBoundsFromPixels(pixels, 10, 8)).toBeNull();
   });
 });

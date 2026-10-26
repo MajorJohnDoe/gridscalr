@@ -2004,8 +2004,10 @@ textarea:disabled {
 
 .page-thumb {
   width: 60px;
-  height: 78px;
-  flex: 0 0 60px;
+  height: 82px;
+  flex: 0 0 auto;
+  min-width: 58px;
+  max-width: 132px;
   border-radius: 3px;
   background: #eef2f4;
   display: flex;
