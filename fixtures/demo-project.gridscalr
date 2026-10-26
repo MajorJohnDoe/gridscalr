@@ -1,24 +1,24 @@
 {
   "schemaVersion": 9,
   "id": "prj_demo_takeoff",
-  "name": "Riverside House - Takeoff",
+  "name": "Northgate Logistics Hub - Takeoff",
   "documents": [
     {
       "id": "doc_demo_plan",
       "kind": "pdf",
-      "name": "sample-plan.pdf",
+      "name": "industrial-plan.pdf",
       "path": null,
-      "relativePath": "sample-plan.pdf",
+      "relativePath": "industrial-plan.pdf",
       "sha256": "",
-      "pageCount": 2,
-      "sizeBytes": 3781
+      "pageCount": 3,
+      "sizeBytes": 77387
     }
   ],
   "settings": {
     "lengthUnit": "m",
     "areaUnit": "m2",
     "showGrid": false,
-    "showCalibration": true,
+    "showCalibration": false,
     "snapToGeometry": true,
     "snapTolerancePx": 8,
     "stampPresets": [
@@ -73,26 +73,35 @@
         "id": "cal_demo_page_1",
         "source": "reference",
         "p1": {
-          "x": 150,
-          "y": 135
+          "x": 184.01574804,
+          "y": 636.566929125
         },
         "p2": {
-          "x": 450,
-          "y": 135
+          "x": 467.48031504,
+          "y": 636.566929125
         },
         "knownLength": 10,
         "unit": "m",
-        "pointsPerMeter": 30,
-        "createdAt": "2026-10-25T09:00:00.000Z"
+        "pointsPerMeter": 28.3464567,
+        "createdAt": "2026-10-26T09:00:00.000Z"
       }
     },
     "2": {
       "calibration": {
         "id": "cal_demo_page_2",
         "source": "manual",
-        "ratio": 100,
-        "pointsPerMeter": 28.34645669,
-        "createdAt": "2026-10-25T09:00:00.000Z"
+        "ratio": 50,
+        "pointsPerMeter": 56.6929134,
+        "createdAt": "2026-10-26T09:00:00.000Z"
+      }
+    },
+    "3": {
+      "calibration": {
+        "id": "cal_demo_page_3",
+        "source": "manual",
+        "ratio": 400,
+        "pointsPerMeter": 7.08661417,
+        "createdAt": "2026-10-26T09:00:00.000Z"
       }
     }
   },
@@ -107,40 +116,40 @@
       "color": "#f2a93b",
       "items": [
         {
-          "id": "item_cloud_bath",
+          "id": "item_cloud_dock",
           "page": 1,
           "kind": "cloud",
           "points": [
             {
-              "x": 475,
-              "y": 295
+              "x": 158.50393701,
+              "y": 385.70078733
             },
             {
-              "x": 615,
-              "y": 295
+              "x": 283.22834649000004,
+              "y": 385.70078733
             },
             {
-              "x": 615,
-              "y": 375
+              "x": 283.22834649000004,
+              "y": 258.14173217999996
             },
             {
-              "x": 475,
-              "y": 375
+              "x": 158.50393701,
+              "y": 258.14173217999996
             }
           ],
           "color": "#f2a93b",
           "strokeWidth": 1.5,
           "visible": true,
           "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "text": "Verify floor drain",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "Verify dock leveller",
           "fillColor": "#f2a93b",
           "opacity": 0.14,
           "fontSize": 10,
           "textOffset": {
-            "x": 0,
-            "y": 58
+            "x": 120,
+            "y": 26
           },
           "textColor": "#f7fbfc"
         },
@@ -150,44 +159,25 @@
           "kind": "callout",
           "points": [
             {
-              "x": 520,
-              "y": 470
+              "x": 835.98425214,
+              "y": 666.33070866
             },
             {
-              "x": 650,
-              "y": 515
+              "x": 932.3622049200001,
+              "y": 592.6299212399999
             }
           ],
-          "color": "#4cc9f0",
+          "color": "#f2a93b",
           "strokeWidth": 1.2,
           "visible": true,
           "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "text": "Replace window seal",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "New entrance canopy",
           "fontSize": 10,
-          "textBoxWidth": 105,
-          "textBoxHeight": 30,
+          "textBoxWidth": 108,
+          "textBoxHeight": 28,
           "textColor": "#f7fbfc"
-        },
-        {
-          "id": "item_stamp_bath",
-          "page": 1,
-          "kind": "stamp",
-          "points": [
-            {
-              "x": 725,
-              "y": 445
-            }
-          ],
-          "color": "#a78bfa",
-          "strokeWidth": 1.5,
-          "visible": true,
-          "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "text": "INSPECTED",
-          "fontSize": 13
         },
         {
           "id": "item_text_hatch",
@@ -195,40 +185,59 @@
           "kind": "text",
           "points": [
             {
-              "x": 650,
-              "y": 205
+              "x": 376.77165360000004,
+              "y": 558.6141732
             }
           ],
           "color": "#f2a93b",
           "strokeWidth": 1.2,
           "visible": true,
           "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "text": "Access hatch — check clearance",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "Keep 3.5 m forklift aisle clear",
           "fontSize": 9
         },
         {
-          "id": "item_arrow_hatch",
+          "id": "item_arrow_aisle",
           "page": 1,
           "kind": "arrow",
           "points": [
             {
-              "x": 635,
-              "y": 215
+              "x": 376.77165360000004,
+              "y": 550.11023619
             },
             {
-              "x": 560,
-              "y": 235
+              "x": 461.8110237,
+              "y": 422.55118103999996
             }
           ],
           "color": "#f2a93b",
           "strokeWidth": 1.5,
           "visible": true,
           "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
           "arrowHeads": "end"
+        },
+        {
+          "id": "item_stamp_inspected",
+          "page": 1,
+          "kind": "stamp",
+          "points": [
+            {
+              "x": 725.43307101,
+              "y": 374.36220464999997
+            }
+          ],
+          "color": "#a78bfa",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "INSPECTED",
+          "fontSize": 13
         },
         {
           "id": "item_delta_b",
@@ -236,19 +245,77 @@
           "kind": "delta",
           "points": [
             {
-              "x": 760,
-              "y": 505
+              "x": 1085.4330711,
+              "y": 90.89763764999998
             }
           ],
           "color": "#f2a93b",
           "strokeWidth": 1.2,
           "visible": true,
           "locked": false,
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
           "text": "B",
-          "label": "2026-10-25",
+          "label": "2026-10-26",
           "fontSize": 14
+        },
+        {
+          "id": "item_cloud_stair",
+          "page": 2,
+          "kind": "cloud",
+          "points": [
+            {
+              "x": 317.00787402000003,
+              "y": 634.99212598
+            },
+            {
+              "x": 470.07874019999997,
+              "y": 634.99212598
+            },
+            {
+              "x": 470.07874019999997,
+              "y": 481.92125980000003
+            },
+            {
+              "x": 317.00787402000003,
+              "y": 481.92125980000003
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "Verify stair headroom",
+          "fillColor": "#f2a93b",
+          "opacity": 0.14,
+          "fontSize": 9,
+          "textOffset": {
+            "x": 95,
+            "y": 80
+          },
+          "textColor": "#f7fbfc"
+        },
+        {
+          "id": "item_text_railing",
+          "page": 2,
+          "kind": "text",
+          "points": [
+            {
+              "x": 334.01574804000006,
+              "y": 425.22834639999996
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 1.2,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "text": "Glass railing to warehouse void",
+          "fontSize": 7.5,
+          "rotation": 90
         }
       ]
     },
@@ -268,11 +335,11 @@
           "points": [
             {
               "x": 150,
-              "y": 235
+              "y": 672
             },
             {
-              "x": 330,
-              "y": 370
+              "x": 773.6220474,
+              "y": 48.37795259999996
             }
           ],
           "color": "#4cc9f0",
@@ -280,75 +347,15 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Living floor",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Warehouse floor",
           "categoryId": "cat_floor",
-          "room": "Living",
+          "room": "Warehouse",
           "areaMode": "add",
-          "areaShape": "rectangle"
-        },
-        {
-          "id": "item_floor_kitchen",
-          "page": 1,
-          "kind": "area",
-          "points": [
-            {
-              "x": 330,
-              "y": 370
-            },
-            {
-              "x": 610,
-              "y": 470
-            }
-          ],
-          "color": "#4cc9f0",
-          "strokeWidth": 0.75,
-          "visible": true,
-          "locked": false,
-          "scale": {
-            "pointsPerMeter": 30,
-            "sourceUnit": "m"
-          },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Kitchen / dining floor",
-          "categoryId": "cat_floor",
-          "room": "Kitchen / dining",
-          "areaMode": "add",
-          "areaShape": "rectangle"
-        },
-        {
-          "id": "item_floor_shaft",
-          "page": 1,
-          "kind": "area",
-          "points": [
-            {
-              "x": 480,
-              "y": 425
-            },
-            {
-              "x": 515,
-              "y": 462
-            }
-          ],
-          "color": "#4cc9f0",
-          "strokeWidth": 0.75,
-          "visible": true,
-          "locked": false,
-          "scale": {
-            "pointsPerMeter": 30,
-            "sourceUnit": "m"
-          },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Shaft deduction",
-          "categoryId": "cat_floor",
-          "room": "Kitchen / dining",
-          "areaMode": "subtract",
           "areaShape": "rectangle"
         },
         {
@@ -357,12 +364,12 @@
           "kind": "length",
           "points": [
             {
-              "x": 330,
-              "y": 370
+              "x": 773.6220474,
+              "y": 530.2677165
             },
             {
-              "x": 610,
-              "y": 370
+              "x": 1113.7795277999999,
+              "y": 530.2677165
             }
           ],
           "color": "#4cc9f0",
@@ -370,14 +377,42 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Partition wall",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Corridor partition",
           "categoryId": "cat_wall",
-          "room": "Kitchen / dining"
+          "room": "Office"
+        },
+        {
+          "id": "item_wall_warehouse",
+          "page": 1,
+          "kind": "length",
+          "points": [
+            {
+              "x": 150,
+              "y": 48.37795259999996
+            },
+            {
+              "x": 773.6220474,
+              "y": 48.37795259999996
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 28.3464567,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "North wall",
+          "categoryId": "cat_wall",
+          "room": "Warehouse"
         },
         {
           "id": "item_facade_window",
@@ -385,12 +420,12 @@
           "kind": "length",
           "points": [
             {
-              "x": 230,
-              "y": 470
+              "x": 929.5275592500001,
+              "y": 672
             },
             {
-              "x": 295,
-              "y": 470
+              "x": 1014.56692935,
+              "y": 672
             }
           ],
           "color": "#4cc9f0",
@@ -398,23 +433,27 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Window run",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Meeting window",
           "categoryId": "cat_facade",
-          "room": "Living"
+          "room": "Office"
         },
         {
-          "id": "item_count_door_living",
+          "id": "item_facade_dock",
           "page": 1,
-          "kind": "count",
+          "kind": "length",
           "points": [
             {
-              "x": 165,
-              "y": 270
+              "x": 150,
+              "y": 581.29133856
+            },
+            {
+              "x": 150,
+              "y": 484.91338578
             }
           ],
           "color": "#4cc9f0",
@@ -422,24 +461,23 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Living door",
-          "categoryId": "cat_other",
-          "room": "Living",
-          "countType": "door"
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Dock 01 opening",
+          "categoryId": "cat_facade",
+          "room": "Warehouse"
         },
         {
-          "id": "item_count_door_study",
+          "id": "item_count_dock",
           "page": 1,
           "kind": "count",
           "points": [
             {
-              "x": 340,
-              "y": 280
+              "x": 201.02362206,
+              "y": 533.10236217
             }
           ],
           "color": "#4cc9f0",
@@ -447,15 +485,65 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Study door",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Dock 01",
+          "categoryId": "cat_facade",
+          "room": "Warehouse",
+          "countType": "other"
+        },
+        {
+          "id": "item_count_entrance",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 835.98425214,
+              "y": 660.66141732
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 28.3464567,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Office entrance",
           "categoryId": "cat_other",
-          "room": "Study",
+          "room": "Office",
           "countType": "door"
+        },
+        {
+          "id": "item_count_window",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 1014.56692935,
+              "y": 54.04724393999993
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 28.3464567,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Workshop window",
+          "categoryId": "cat_facade",
+          "room": "Workshop",
+          "countType": "window"
         },
         {
           "id": "item_count_radiator",
@@ -463,8 +551,8 @@
           "kind": "count",
           "points": [
             {
-              "x": 365,
-              "y": 210
+              "x": 804.8031497700001,
+              "y": 334.67716527
             }
           ],
           "color": "#4cc9f0",
@@ -472,28 +560,53 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 30,
+            "pointsPerMeter": 28.3464567,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Kitchen radiator",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Office radiator",
           "categoryId": "cat_other",
-          "room": "Kitchen / dining",
+          "room": "Office",
           "countType": "radiator"
         },
         {
-          "id": "item_floor_bedroom",
+          "id": "item_count_toilet",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 1095.3543309450001,
+              "y": 367.275590475
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 28.3464567,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "WC toilet",
+          "categoryId": "cat_other",
+          "room": "Office",
+          "countType": "fixture"
+        },
+        {
+          "id": "item_floor_mezz",
           "page": 2,
           "kind": "area",
           "points": [
             {
-              "x": 190,
-              "y": 280
+              "x": 300,
+              "y": 652
             },
             {
-              "x": 390,
-              "y": 475
+              "x": 980.3149608,
+              "y": 85.07086600000002
             }
           ],
           "color": "#4cc9f0",
@@ -501,14 +614,106 @@
           "visible": true,
           "locked": false,
           "scale": {
-            "pointsPerMeter": 28.34645669,
+            "pointsPerMeter": 56.6929134,
             "sourceUnit": "m"
           },
-          "createdAt": "2026-10-25T09:00:00.000Z",
-          "updatedAt": "2026-10-25T09:00:00.000Z",
-          "label": "Bedroom 1 floor",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Mezzanine floor",
           "categoryId": "cat_floor",
-          "room": "Bedroom 1",
+          "room": "Mezzanine",
+          "areaMode": "add",
+          "areaShape": "rectangle",
+          "labelOffset": {
+            "x": 0,
+            "y": -40
+          }
+        },
+        {
+          "id": "item_floor_stair_void",
+          "page": 2,
+          "kind": "area",
+          "points": [
+            {
+              "x": 319.8425196900001,
+              "y": 632.15748031
+            },
+            {
+              "x": 461.5748031900001,
+              "y": 490.42519681
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 56.6929134,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Stair void deduction",
+          "categoryId": "cat_floor",
+          "room": "Mezzanine",
+          "areaMode": "subtract",
+          "areaShape": "rectangle"
+        },
+        {
+          "id": "item_railing_mezz",
+          "page": 2,
+          "kind": "length",
+          "points": [
+            {
+              "x": 300,
+              "y": 481.92125980000003
+            },
+            {
+              "x": 300,
+              "y": 85.07086600000002
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 56.6929134,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Glass railing",
+          "categoryId": "cat_other",
+          "room": "Mezzanine"
+        },
+        {
+          "id": "item_ground_yard",
+          "page": 3,
+          "kind": "area",
+          "points": [
+            {
+              "x": 157.08661417,
+              "y": 644.91338583
+            },
+            {
+              "x": 383.85826761,
+              "y": 318.92913401
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": {
+            "pointsPerMeter": 7.08661417,
+            "sourceUnit": "m"
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "label": "Truck yard",
+          "categoryId": "cat_ground",
+          "room": "Site",
           "areaMode": "add",
           "areaShape": "rectangle"
         }
@@ -516,6 +721,6 @@
     }
   ],
   "activeLayerId": "layer_measurements",
-  "createdAt": "2026-10-25T09:00:00.000Z",
-  "updatedAt": "2026-10-25T09:00:00.000Z"
+  "createdAt": "2026-10-26T09:00:00.000Z",
+  "updatedAt": "2026-10-26T09:00:00.000Z"
 }

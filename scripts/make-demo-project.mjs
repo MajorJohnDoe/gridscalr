@@ -1,10 +1,13 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { stat, writeFile, mkdir } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { MEZZANINE, PLAN, SITE } from "./plan-geometry.mjs";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const output = resolve(here, "..", "fixtures", "demo-project.gridscalr");
-const now = "2026-10-25T09:00:00.000Z";
+const pdfPath = resolve(here, "..", "fixtures", "industrial-plan.pdf");
+const pdfStat = await stat(pdfPath);
+const now = "2026-10-26T09:00:00.000Z";
 
 const categories = [
   { id: "cat_floor", name: "Floor", wastePercent: 10, roundingStep: 0.5 },
@@ -16,6 +19,30 @@ const categories = [
   { id: "cat_other", name: "Other" },
 ];
 
+// Drawing geometry uses a bottom-left origin. Project items use the app's
+// top-left PDF coordinate space, so every Y value is mirrored across the sheet.
+const SHEET_HEIGHT = 842;
+const pdfY = (drawingY) => SHEET_HEIGHT - drawingY;
+
+const p1 = (x, y) => ({
+  x: PLAN.origin.x + x * PLAN.scalePpm,
+  y: pdfY(PLAN.origin.y + y * PLAN.scalePpm),
+});
+const p2 = (x, y) => ({
+  x: MEZZANINE.origin.x + (x - 22) * MEZZANINE.scalePpm,
+  y: pdfY(MEZZANINE.origin.y + (y - 12) * MEZZANINE.scalePpm),
+});
+const p3 = (x, y) => ({
+  x: SITE.origin.x + x * SITE.scalePpm,
+  y: pdfY(SITE.origin.y + y * SITE.scalePpm),
+});
+
+const scales = {
+  1: { pointsPerMeter: PLAN.scalePpm, sourceUnit: "m" },
+  2: { pointsPerMeter: MEZZANINE.scalePpm, sourceUnit: "m" },
+  3: { pointsPerMeter: SITE.scalePpm, sourceUnit: "m" },
+};
+
 function item(id, kind, page, points, extra = {}) {
   return {
     id,
@@ -26,238 +53,206 @@ function item(id, kind, page, points, extra = {}) {
     strokeWidth: 0.75,
     visible: true,
     locked: false,
-    scale: { pointsPerMeter: 30, sourceUnit: "m" },
+    scale: scales[page],
     createdAt: now,
     updatedAt: now,
     ...extra,
   };
 }
 
+function drawItem(id, kind, page, points, extra = {}) {
+  return item(id, kind, page, points, {
+    color: "#f2a93b",
+    scale: undefined,
+    ...extra,
+  });
+}
+
 const measureItems = [
-  item(
-    "item_floor_living",
-    "area",
-    1,
-    [
-      { x: 150, y: 235 },
-      { x: 330, y: 370 },
-    ],
-    {
-      label: "Living floor",
-      categoryId: "cat_floor",
-      room: "Living",
-      areaMode: "add",
-      areaShape: "rectangle",
-      color: "#4cc9f0",
-    },
-  ),
-  item(
-    "item_floor_kitchen",
-    "area",
-    1,
-    [
-      { x: 330, y: 370 },
-      { x: 610, y: 470 },
-    ],
-    {
-      label: "Kitchen / dining floor",
-      categoryId: "cat_floor",
-      room: "Kitchen / dining",
-      areaMode: "add",
-      areaShape: "rectangle",
-      color: "#4cc9f0",
-    },
-  ),
-  item(
-    "item_floor_shaft",
-    "area",
-    1,
-    [
-      { x: 480, y: 425 },
-      { x: 515, y: 462 },
-    ],
-    {
-      label: "Shaft deduction",
-      categoryId: "cat_floor",
-      room: "Kitchen / dining",
-      areaMode: "subtract",
-      areaShape: "rectangle",
-      color: "#4cc9f0",
-    },
-  ),
-  item(
-    "item_wall_partition",
-    "length",
-    1,
-    [
-      { x: 330, y: 370 },
-      { x: 610, y: 370 },
-    ],
-    {
-      label: "Partition wall",
-      categoryId: "cat_wall",
-      room: "Kitchen / dining",
-      color: "#4cc9f0",
-    },
-  ),
-  item(
-    "item_facade_window",
-    "length",
-    1,
-    [
-      { x: 230, y: 470 },
-      { x: 295, y: 470 },
-    ],
-    {
-      label: "Window run",
-      categoryId: "cat_facade",
-      room: "Living",
-      color: "#4cc9f0",
-    },
-  ),
-  item("item_count_door_living", "count", 1, [{ x: 165, y: 270 }], {
-    label: "Living door",
-    categoryId: "cat_other",
-    room: "Living",
-    countType: "door",
-    color: "#4cc9f0",
+  // Floor areas.
+  item("item_floor_living", "area", 1, [p1(0, 0), p1(22, 22)], {
+    label: "Warehouse floor",
+    categoryId: "cat_floor",
+    room: "Warehouse",
+    areaMode: "add",
+    areaShape: "rectangle",
   }),
-  item("item_count_door_study", "count", 1, [{ x: 340, y: 280 }], {
-    label: "Study door",
-    categoryId: "cat_other",
-    room: "Study",
-    countType: "door",
-    color: "#4cc9f0",
+
+  // Linear takeoff.
+  item("item_wall_partition", "length", 1, [p1(22, 5), p1(34, 5)], {
+    label: "Corridor partition",
+    categoryId: "cat_wall",
+    room: "Office",
   }),
-  item("item_count_radiator", "count", 1, [{ x: 365, y: 210 }], {
-    label: "Kitchen radiator",
+  item("item_wall_warehouse", "length", 1, [p1(0, 22), p1(22, 22)], {
+    label: "North wall",
+    categoryId: "cat_wall",
+    room: "Warehouse",
+  }),
+  item("item_facade_window", "length", 1, [p1(27.5, 0), p1(30.5, 0)], {
+    label: "Meeting window",
+    categoryId: "cat_facade",
+    room: "Office",
+  }),
+  item("item_facade_dock", "length", 1, [p1(0, 3.2), p1(0, 6.6)], {
+    label: "Dock 01 opening",
+    categoryId: "cat_facade",
+    room: "Warehouse",
+  }),
+
+  // Counts.
+  item("item_count_dock", "count", 1, [p1(1.8, 4.9)], {
+    label: "Dock 01",
+    categoryId: "cat_facade",
+    room: "Warehouse",
+    countType: "other",
+  }),
+  item("item_count_entrance", "count", 1, [p1(24.2, 0.4)], {
+    label: "Office entrance",
     categoryId: "cat_other",
-    room: "Kitchen / dining",
+    room: "Office",
+    countType: "door",
+  }),
+  item("item_count_window", "count", 1, [p1(30.5, 21.8)], {
+    label: "Workshop window",
+    categoryId: "cat_facade",
+    room: "Workshop",
+    countType: "window",
+  }),
+  item("item_count_radiator", "count", 1, [p1(23.1, 11.9)], {
+    label: "Office radiator",
+    categoryId: "cat_other",
+    room: "Office",
     countType: "radiator",
-    color: "#4cc9f0",
   }),
-  item(
-    "item_floor_bedroom",
-    "area",
-    2,
-    [
-      { x: 190, y: 280 },
-      { x: 390, y: 475 },
-    ],
-    {
-      label: "Bedroom 1 floor",
-      categoryId: "cat_floor",
-      room: "Bedroom 1",
-      areaMode: "add",
-      areaShape: "rectangle",
-      color: "#4cc9f0",
-      scale: { pointsPerMeter: 28.34645669, sourceUnit: "m" },
-    },
-  ),
+  item("item_count_toilet", "count", 1, [p1(33.35, 10.75)], {
+    label: "WC toilet",
+    categoryId: "cat_other",
+    room: "Office",
+    countType: "fixture",
+  }),
+
+  // Mezzanine and site.
+  item("item_floor_mezz", "area", 2, [p2(22, 12), p2(34, 22)], {
+    label: "Mezzanine floor",
+    categoryId: "cat_floor",
+    room: "Mezzanine",
+    areaMode: "add",
+    areaShape: "rectangle",
+    labelOffset: { x: 0, y: -40 },
+  }),
+  item("item_floor_stair_void", "area", 2, [p2(22.35, 12.35), p2(24.85, 14.85)], {
+    label: "Stair void deduction",
+    categoryId: "cat_floor",
+    room: "Mezzanine",
+    areaMode: "subtract",
+    areaShape: "rectangle",
+  }),
+  item("item_railing_mezz", "length", 2, [p2(22, 15), p2(22, 22)], {
+    label: "Glass railing",
+    categoryId: "cat_other",
+    room: "Mezzanine",
+  }),
+  item("item_ground_yard", "area", 3, [p3(1, 1), p3(33, 47)], {
+    label: "Truck yard",
+    categoryId: "cat_ground",
+    room: "Site",
+    areaMode: "add",
+    areaShape: "rectangle",
+  }),
 ];
 
 const drawItems = [
-  item(
-    "item_cloud_bath",
+  drawItem(
+    "item_cloud_dock",
     "cloud",
     1,
-    [
-      { x: 475, y: 295 },
-      { x: 615, y: 295 },
-      { x: 615, y: 375 },
-      { x: 475, y: 375 },
-    ],
+    [p1(0.3, 10.1), p1(4.7, 10.1), p1(4.7, 14.6), p1(0.3, 14.6)],
     {
-      text: "Verify floor drain",
+      text: "Verify dock leveller",
       fillColor: "#f2a93b",
       opacity: 0.14,
-      color: "#f2a93b",
       strokeWidth: 1.5,
       fontSize: 10,
-      textOffset: { x: 0, y: 58 },
+      textOffset: { x: 120, y: 26 },
       textColor: "#f7fbfc",
-      scale: undefined,
     },
   ),
-  item(
-    "item_callout_window",
-    "callout",
-    1,
-    [
-      { x: 520, y: 470 },
-      { x: 650, y: 515 },
-    ],
-    {
-      text: "Replace window seal",
-      color: "#4cc9f0",
-      strokeWidth: 1.2,
-      fontSize: 10,
-      textBoxWidth: 105,
-      textBoxHeight: 30,
-      textColor: "#f7fbfc",
-      scale: undefined,
-    },
-  ),
-  item("item_stamp_bath", "stamp", 1, [{ x: 725, y: 445 }], {
+  drawItem("item_callout_window", "callout", 1, [p1(24.2, 0.2), p1(27.6, 2.8)], {
+    text: "New entrance canopy",
+    strokeWidth: 1.2,
+    fontSize: 10,
+    textBoxWidth: 108,
+    textBoxHeight: 28,
+    textColor: "#f7fbfc",
+  }),
+  drawItem("item_text_hatch", "text", 1, [p1(8.0, 4.0)], {
+    text: "Keep 3.5 m forklift aisle clear",
+    strokeWidth: 1.2,
+    fontSize: 9,
+    color: "#f2a93b",
+  }),
+  drawItem("item_arrow_aisle", "arrow", 1, [p1(8.0, 4.3), p1(11.0, 8.8)], {
+    strokeWidth: 1.5,
+    arrowHeads: "end",
+  }),
+  drawItem("item_stamp_inspected", "stamp", 1, [p1(20.3, 10.5)], {
     text: "INSPECTED",
     color: "#a78bfa",
     strokeWidth: 1.5,
     fontSize: 13,
-    scale: undefined,
   }),
-  item("item_text_hatch", "text", 1, [{ x: 650, y: 205 }], {
-    text: "Access hatch — check clearance",
-    color: "#f2a93b",
-    strokeWidth: 1.2,
-    fontSize: 9,
-    scale: undefined,
-  }),
-  item(
-    "item_arrow_hatch",
-    "arrow",
-    1,
-    [
-      { x: 635, y: 215 },
-      { x: 560, y: 235 },
-    ],
-    {
-      color: "#f2a93b",
-      strokeWidth: 1.5,
-      arrowHeads: "end",
-      scale: undefined,
-    },
-  ),
-  item("item_delta_b", "delta", 1, [{ x: 760, y: 505 }], {
+  drawItem("item_delta_b", "delta", 1, [p1(33.0, 20.5)], {
     text: "B",
-    label: "2026-10-25",
-    color: "#f2a93b",
+    label: "2026-10-26",
     strokeWidth: 1.2,
     fontSize: 14,
-    scale: undefined,
+  }),
+  drawItem(
+    "item_cloud_stair",
+    "cloud",
+    2,
+    [p2(22.3, 12.3), p2(25.0, 12.3), p2(25.0, 15.0), p2(22.3, 15.0)],
+    {
+      text: "Verify stair headroom",
+      fillColor: "#f2a93b",
+      opacity: 0.14,
+      strokeWidth: 1.5,
+      fontSize: 9,
+      textOffset: { x: 95, y: 80 },
+      textColor: "#f7fbfc",
+    },
+  ),
+  drawItem("item_text_railing", "text", 2, [p2(22.6, 16.0)], {
+    text: "Glass railing to warehouse void",
+    strokeWidth: 1.2,
+    fontSize: 7.5,
+    rotation: 90,
+    color: "#f2a93b",
   }),
 ];
 
 const project = {
   schemaVersion: 9,
   id: "prj_demo_takeoff",
-  name: "Riverside House - Takeoff",
+  name: "Northgate Logistics Hub - Takeoff",
   documents: [
     {
       id: "doc_demo_plan",
       kind: "pdf",
-      name: "sample-plan.pdf",
+      name: "industrial-plan.pdf",
       path: null,
-      relativePath: "sample-plan.pdf",
+      relativePath: "industrial-plan.pdf",
       sha256: "",
-      pageCount: 2,
-      sizeBytes: 3781,
+      pageCount: 3,
+      sizeBytes: pdfStat.size,
     },
   ],
   settings: {
     lengthUnit: "m",
     areaUnit: "m2",
     showGrid: false,
-    showCalibration: true,
+    showCalibration: false,
     snapToGeometry: true,
     snapTolerancePx: 8,
     stampPresets: ["APPROVED", "NOT APPROVED", "FOR INFORMATION", "INSPECTED", "REVISED"],
@@ -274,11 +269,11 @@ const project = {
       calibration: {
         id: "cal_demo_page_1",
         source: "reference",
-        p1: { x: 150, y: 135 },
-        p2: { x: 450, y: 135 },
-        knownLength: 10,
+        p1: p1(PLAN.calibration.p1.x, PLAN.calibration.p1.y),
+        p2: p1(PLAN.calibration.p2.x, PLAN.calibration.p2.y),
+        knownLength: PLAN.calibration.metres,
         unit: "m",
-        pointsPerMeter: 30,
+        pointsPerMeter: PLAN.scalePpm,
         createdAt: now,
       },
     },
@@ -286,8 +281,17 @@ const project = {
       calibration: {
         id: "cal_demo_page_2",
         source: "manual",
-        ratio: 100,
-        pointsPerMeter: 28.34645669,
+        ratio: 50,
+        pointsPerMeter: MEZZANINE.scalePpm,
+        createdAt: now,
+      },
+    },
+    3: {
+      calibration: {
+        id: "cal_demo_page_3",
+        source: "manual",
+        ratio: 400,
+        pointsPerMeter: SITE.scalePpm,
         createdAt: now,
       },
     },

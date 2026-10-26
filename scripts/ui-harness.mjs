@@ -111,7 +111,7 @@ export async function waitForToastsGone(page) {
 export async function openDemoProject(page, { base } = {}) {
   if (!base) throw new Error("openDemoProject requires a base URL.");
   const projectPath = resolve(repoRoot, "fixtures", "demo-project.gridscalr");
-  const pdfPath = resolve(repoRoot, "fixtures", "sample-plan.pdf");
+  const pdfPath = resolve(repoRoot, "fixtures", "industrial-plan.pdf");
   const project = JSON.parse(await readFile(projectPath, "utf8"));
 
   await page.goto(base, { waitUntil: "domcontentloaded" });

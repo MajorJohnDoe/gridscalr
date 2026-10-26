@@ -213,6 +213,9 @@ docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
+scripts/plan-geometry.mjs  shared geometry for the industrial sample set
+scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
+scripts/make-fixture.mjs   legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation demo project
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
@@ -238,8 +241,9 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
-- `npm run fixture` regenerates `fixtures/sample-plan.pdf` from `scripts/make-fixture.mjs`.
-- The sample PDF has two A4 landscape pages; page 1 contains a 10.00 m calibration dimension.
+- `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
+- The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.
+- `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Etapp 3 checklist only.
 - Browser-only development (`npm run dev`) is a UI fallback. Native file paths and recents require Tauri.
 - Do not delete `tests/` fixtures or generated sample files without checking whether tests depend on them.
 

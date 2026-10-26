@@ -19,9 +19,9 @@ const shots = [
   {
     file: "hero.png",
     title: "Measurement takeoff",
-    alt: "GridScalr showing a calibrated floor plan with measurement labels, a selected living-area rectangle and the Properties panel.",
+    alt: "GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel.",
     description:
-      "A calibrated takeoff with rectangle areas, counts, a deduction and drawing annotations.",
+      "A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing annotations.",
   },
   {
     file: "measure.png",
@@ -32,13 +32,13 @@ const shots = [
   {
     file: "markups.png",
     title: "Markups and layers",
-    alt: "GridScalr Layers panel with a selected revision cloud, callout and inspected stamp visible on the plan.",
+    alt: "GridScalr Layers panel with a revision cloud around a loading dock, a callout at the entrance and an inspected stamp.",
     description: "Revision clouds, callouts and status stamps live on drawing layers.",
   },
   {
     file: "layers.png",
     title: "Expanded layer items",
-    alt: "GridScalr Layers panel with a measurement layer expanded to show its areas, lengths and counts, and the Add/Deduct switch in the context bar.",
+    alt: "GridScalr Layers panel with a measurement layer expanded to show warehouse, office and mezzanine items, and the Add/Deduct switch in the context bar.",
     description:
       "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
   },
@@ -51,7 +51,7 @@ const shots = [
   {
     file: "measurements.png",
     title: "Measurements list",
-    alt: "The GridScalr Measurements dialog listing all pages with search, page and type filters, and row actions.",
+    alt: "The GridScalr Measurements dialog listing all three pages with search, page and type filters, and row actions.",
     description: "Find, select and navigate every measurement and drawing across all pages.",
   },
   {
@@ -104,7 +104,7 @@ try {
   await capture("measure.png");
 
   await page.keyboard.press("Escape");
-  await openMeasurementsItem(page, "item_cloud_bath", "draw");
+  await openMeasurementsItem(page, "item_cloud_dock", "draw");
   await page.getByRole("button", { name: "Layers" }).click();
   await page.waitForTimeout(200);
   await capture("markups.png");

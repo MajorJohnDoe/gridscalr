@@ -275,12 +275,12 @@ try {
   const labelMenu = page.locator(".popover");
   await labelMenu.waitFor();
   await labelMenu.getByRole("button", { name: /Choose connection point/ }).click();
-  await clickPage({ x: 240, y: 235 });
+  await clickPage({ x: 240, y: 48 });
   const connected = await itemById("item_floor_living");
   assert.ok(
     connected.labelAnchor &&
       Math.abs(connected.labelAnchor.x - 240) < 2 &&
-      Math.abs(connected.labelAnchor.y - 235) < 2,
+      Math.abs(connected.labelAnchor.y - 48) < 2,
     "choosing a connection point should store it on the measurement",
   );
   const connectedLabelPoint = await page.evaluate(() =>
@@ -341,7 +341,7 @@ try {
     window.__gridscalr.store.clearSelection();
     window.__gridscalr.store.emit("change");
   });
-  await clickPage({ x: 240, y: 300 });
+  await clickPage({ x: 600, y: 300 });
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
     0,
@@ -361,7 +361,7 @@ try {
     }
     window.__gridscalr.store.emit("change");
   });
-  await dragPage({ x: 240, y: 300 }, { x: 280, y: 340 });
+  await dragPage({ x: 600, y: 300 }, { x: 640, y: 340 });
   const lockedAfter = await itemById("item_floor_living");
   assert.deepEqual(
     lockedAfter.points,
