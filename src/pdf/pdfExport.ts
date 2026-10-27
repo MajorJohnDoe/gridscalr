@@ -63,10 +63,10 @@ import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
 import {
   inspectionStatusColor,
-  SYMBOL_SIZE,
   symbolCategoryColor,
   symbolFor,
   symbolRenderPlan,
+  symbolSizeOf,
   type SymbolRenderShape,
 } from "../model/symbols";
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
@@ -1097,7 +1097,7 @@ function drawSymbolItem(
     definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
   const rotation = item.rotation ?? 0;
   const plan = symbolRenderPlan(definition, accentHex);
-  const scale = SYMBOL_SIZE / plan.viewBox;
+  const scale = symbolSizeOf(item) / plan.viewBox;
   const half = plan.viewBox / 2;
   const toPage = (point: Point): Point =>
     rotatePoint(

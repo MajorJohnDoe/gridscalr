@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 13 as const;
+export const SCHEMA_VERSION = 14 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -121,6 +121,8 @@ export interface MarkupItem {
   countType?: CountType;
   /** Symbols only: stable built-in symbol id. */
   symbolId?: string;
+  /** Symbols only: plate size in PDF points. Missing means the 24 pt default. */
+  symbolSize?: number;
   /** Symbols only: inspection state shown in the Markups list and on the plan. */
   status?: InspectionStatus;
   /** Highlights only. Missing means the original freehand stroke. */

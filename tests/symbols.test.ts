@@ -7,9 +7,12 @@ import {
   SYMBOL_CATEGORIES,
   SYMBOL_CATEGORY_COLORS,
   SYMBOL_CATEGORY_LABELS,
+  SYMBOL_MAX_SIZE,
+  SYMBOL_MIN_SIZE,
   SYMBOL_SIZE,
   SYMBOL_STYLE,
   SYMBOL_VIEWBOX,
+  clampSymbolSize,
   hasSymbol,
   inspectionStatusColor,
   inspectionStatusLabel,
@@ -18,6 +21,7 @@ import {
   symbolCategoryOf,
   symbolFor,
   symbolName,
+  symbolSizeOf,
   symbolArtBounds,
   symbolRenderPlan,
   symbolSvgMarkup,
@@ -134,6 +138,14 @@ describe("symbol library", () => {
     expect(aed.art!.shapes.some((shape) => shape.fillRule === "evenodd")).toBe(true);
     expect(symbolSvgMarkup(aed, 64, "#009b48")).toContain('fill-rule="evenodd"');
     expect(SYMBOL_SIZE).toBeGreaterThanOrEqual(20);
+  });
+
+  it("defaults and clamps the plate size of a symbol item", () => {
+    expect(symbolSizeOf({})).toBe(SYMBOL_SIZE);
+    expect(symbolSizeOf({ symbolSize: Number.NaN })).toBe(SYMBOL_SIZE);
+    expect(symbolSizeOf({ symbolSize: 36 })).toBe(36);
+    expect(clampSymbolSize(1)).toBe(SYMBOL_MIN_SIZE);
+    expect(clampSymbolSize(5000)).toBe(SYMBOL_MAX_SIZE);
   });
 
   it("centres every built-in pictogram on the sign plate", () => {

@@ -9,7 +9,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
 - Current app version: `0.6.1`.
-- Current project-file schema: `13`.
+- Current project-file schema: `14`.
 - Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
@@ -282,6 +282,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
 - **0.6.1:** complete — all 52 built-in facilities symbols are redrawn as original classic sign plates with filled vector pictograms, category-coloured plates, a 24 pt default size and a white-ringed status badge. No schema change; the schema remains v13.
+- **Unreleased:** stamp and symbol corner resizing, schema 14 with optional `symbolSize` on facility symbols (missing means 24 pt), context-aware markup focus zoom, and the page scale moved from Properties to the status bar.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

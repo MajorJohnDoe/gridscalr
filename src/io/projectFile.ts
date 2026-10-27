@@ -17,7 +17,7 @@ import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
 import { normalizeMarkupsViews } from "../model/markups";
-import { isInspectionStatus } from "../model/symbols";
+import { isInspectionStatus, SYMBOL_MAX_SIZE, SYMBOL_MIN_SIZE } from "../model/symbols";
 import type {
   AreaMode,
   AreaShape,
@@ -459,6 +459,10 @@ function normalizeItem(
         ? typeof raw.symbolId === "string" && raw.symbolId.trim()
           ? raw.symbolId.trim().slice(0, 120)
           : "unknown"
+        : undefined,
+    symbolSize:
+      raw.kind === "symbol" && typeof raw.symbolSize === "number" && Number.isFinite(raw.symbolSize)
+        ? Math.max(SYMBOL_MIN_SIZE, Math.min(SYMBOL_MAX_SIZE, raw.symbolSize))
         : undefined,
     status: raw.kind === "symbol" && isInspectionStatus(raw.status) ? raw.status : undefined,
     image,

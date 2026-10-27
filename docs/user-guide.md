@@ -443,7 +443,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 13 is the current format. Older projects load normally and are migrated when opened.
+Schema version 14 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

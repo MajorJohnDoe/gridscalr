@@ -41,16 +41,6 @@ export function handleAt(
 
 export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[] {
   if (item.kind === "count") return [];
-  if (item.kind === "symbol") {
-    return [
-      {
-        role: "rotate",
-        index: -1,
-        point: rotationHandlePoint(item, toScreen),
-        cursor: "grab",
-      },
-    ];
-  }
   if (
     item.kind === "length" ||
     item.kind === "area" ||
@@ -124,7 +114,9 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
   const center = midpoint(bounds.min, bounds.max);
   const rotation = itemRotation(item);
   const roles: BoxHandleRole[] =
-    item.kind === "text" ? ["nw", "ne", "se", "sw"] : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    item.kind === "text" || item.kind === "symbol"
+      ? ["nw", "ne", "se", "sw"]
+      : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
   const handles: Handle[] = roles.map((role) => {
     const local = handleLocalPoint(bounds, role);
     const point = toScreen(rotatePoint(local, center, rotation));

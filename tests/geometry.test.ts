@@ -4,6 +4,7 @@ import {
   boundingBox,
   constrainAngle,
   distance,
+  itemLocalBounds,
   nearestPointOnSegment,
   pointInPolygon,
   pointToSegmentDistance,
@@ -14,6 +15,7 @@ import {
   simplifyPolyline,
   translatePoints,
 } from "../src/model/geometry";
+import type { MarkupItem } from "../src/model/types";
 
 describe("geometry", () => {
   it("measures distances and polyline lengths", () => {
@@ -99,6 +101,28 @@ describe("geometry", () => {
   it("does not push the shaft behind the start point on a very short arrow", () => {
     const head = arrowHeadGeometry({ x: 0, y: 0 }, { x: 3, y: 0 }, 10);
     expect(head.shaftEnd).toEqual({ x: 0, y: 0 });
+  });
+
+  it("grows a symbol's bounds with its stored plate size", () => {
+    const symbol: MarkupItem = {
+      id: "symbol",
+      page: 1,
+      kind: "symbol",
+      points: [{ x: 100, y: 100 }],
+      color: "#e5484d",
+      strokeWidth: 1,
+      symbolId: "fire.extinguisher",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    expect(itemLocalBounds(symbol)).toEqual({
+      min: { x: 88, y: 88 },
+      max: { x: 112, y: 112 },
+    });
+    expect(itemLocalBounds({ ...symbol, symbolSize: 40 })).toEqual({
+      min: { x: 80, y: 80 },
+      max: { x: 120, y: 120 },
+    });
   });
 
   it("translates and bounds points without mutating the input", () => {

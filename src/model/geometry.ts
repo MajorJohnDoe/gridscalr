@@ -1,6 +1,6 @@
 import { textItemLayout } from "./text";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
-import { SYMBOL_SIZE } from "./symbols";
+import { symbolSizeOf } from "./symbols";
 import type { MarkupItem, Point } from "./types";
 
 export function distance(a: Point, b: Point): number {
@@ -283,7 +283,7 @@ export function itemRotation(item: MarkupItem): number {
 export function itemLocalBounds(item: MarkupItem): Bounds {
   if (item.kind === "symbol") {
     const anchor = item.points[0] ?? { x: 0, y: 0 };
-    const half = SYMBOL_SIZE / 2;
+    const half = symbolSizeOf(item) / 2;
     return {
       min: { x: anchor.x - half, y: anchor.y - half },
       max: { x: anchor.x + half, y: anchor.y + half },
