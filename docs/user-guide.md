@@ -318,17 +318,17 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 ### Find and navigate measurements
 
-Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it, capped at four times Fit page; a markup that is already visible is left in place. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it, capped at four times Fit page; a markup that is already visible is left in place. Ctrl/Cmd-click toggles single rows and Shift-click selects a range; the table and the canvas share one selection.
 
-- Filter by **All pages** or **Current page**, measurements/drawings/symbols, measurement or symbol category, or the search field.
-- Use **Columns** to show or hide table columns, including **Status**. Name is always visible.
+- Filter by **All pages** or **Current page**, measurements/drawings/symbols, measurement or symbol category, or the search field. The search also matches **Created** and **Modified** dates.
+- Use **Columns** to show or hide table columns, including **Status**, **Created** and **Modified**. Name is always visible.
 - Use **Group by** to create collapsible groups by category, room, page, layer, or **Building → Floor → Room**. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group.
 - Click a sortable column heading to sort, click again to reverse, and a third time to return to the default page/layer/name order.
 - Click a row to go to its page and select the markup.
 - Double-click a name or use the rename button to edit the label inline.
-- Change the layer from the row picker, change symbol status from its status picker, and use the eye and lock controls for per-item visibility and locking.
-- Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
-- **Select all** selects every row matching the current filter. **Export CSV** writes the Markups CSV for the whole project, not only the visible view.
+- Change the layer from the row picker, change symbol status from its status picker, and use the eye and lock controls for per-item visibility and locking. When several rows are selected, these cell edits apply to the whole selection.
+- Right-click a row or the selection for copy, cut, duplicate, hide/show, lock/unlock, move to layer, set category, set room, set status, and delete. Right-clicking an unselected row selects it first.
+- **Select all** selects every row matching the current filter. **Export CSV** writes the Markups CSV for the whole project, not only the visible view, and includes both timestamps.
 - Close the panel with its close button, the tool rail button, or `Ctrl/Cmd+L`. The panel remembers its height between sessions.
 
 ### Markups views
