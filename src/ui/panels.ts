@@ -6,7 +6,7 @@ import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { renderContextBar } from "./contextBar";
 import { renderInspector } from "./inspector";
-import { renderMarkupsPanel } from "./markupsPanel";
+import { isMarkupsOpen, renderMarkupsPanel } from "./markupsPanel";
 import { updateStatus } from "./statusBar";
 import { renderWelcome } from "./welcome";
 import { toast } from "./toast";
@@ -134,6 +134,10 @@ function renderToolRail(refs: ShellRefs): void {
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }
+  const markupsActive = Boolean(store.project) && isMarkupsOpen();
+  refs.markupsBtn.classList.toggle("is-active", markupsActive);
+  refs.markupsBtn.setAttribute("aria-pressed", String(markupsActive));
+  refs.markupsBtn.disabled = !store.project;
 }
 
 /* ---------------- Inspector ---------------- */

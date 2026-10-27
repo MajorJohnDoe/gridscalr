@@ -139,7 +139,7 @@ export async function openDemoProject(page, { base } = {}) {
 export async function openMarkupsItem(page, itemId, kind = "all") {
   const panel = page.locator(".markups-panel");
   if (!(await panel.isVisible())) {
-    await page.keyboard.press("Control+Shift+M");
+    await page.locator(".tool-markups").click();
   }
   await panel.waitFor({ state: "visible" });
   if (kind !== "all") {

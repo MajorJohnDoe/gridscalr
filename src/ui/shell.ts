@@ -1,6 +1,5 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
-import { openHelp } from "./helpDialog";
 import { createMenuBar } from "./topMenu";
 import { attachToolFlyout } from "./toolFlyouts";
 import { TOOLS } from "./toolDefs";
@@ -26,6 +25,7 @@ export interface ShellRefs {
   pageInput: HTMLInputElement;
   pageTotal: HTMLElement;
   toolRail: HTMLElement;
+  markupsBtn: HTMLButtonElement;
   dockTabs: HTMLElement[];
   dockBody: HTMLElement;
   dockFooter: HTMLElement;
@@ -109,11 +109,13 @@ export function createShell(root: HTMLElement): ShellRefs {
     toolRail.append(btn);
   }
   toolRail.append(el("div", "tool-spacer"));
-  const keyboardHint = el("div", "tool-hint");
-  keyboardHint.innerHTML = `${icon("keyboard", 15)}<div>Shortcuts</div>`;
-  keyboardHint.title = "Keyboard shortcuts (?)";
-  keyboardHint.addEventListener("click", () => openHelp("shortcuts"));
-  toolRail.append(keyboardHint);
+  const markupsBtn = el("button", "tool-markups");
+  markupsBtn.type = "button";
+  markupsBtn.innerHTML = `${icon("markups", 18)}<span>Markups</span>`;
+  markupsBtn.title = `Markups list (${formatShortcut(APP_SHORTCUTS.markups)})`;
+  markupsBtn.setAttribute("aria-label", "Markups list");
+  markupsBtn.setAttribute("aria-pressed", "false");
+  toolRail.append(markupsBtn);
 
   const dock = el("aside", "left-dock");
   const dockHeader = el("div", "dock-header");
@@ -186,8 +188,6 @@ export function createShell(root: HTMLElement): ShellRefs {
   const statusPage = el("div", "status-section status-controls");
   const statusSpacer = el("div", "status-spacer");
   const statusLayer = el("div", "status-section");
-  const statusLocal = el("div", "status-section");
-  statusLocal.innerHTML = `<span class="status-chip"><span class="status-dot"></span>Local only</span>`;
 
   const zoomOutBtn = makeIconButton("zoomOut", "Zoom out", "Ctrl+-");
   const zoomReadout = el("button", "zoom-readout", "100%");
@@ -228,7 +228,6 @@ export function createShell(root: HTMLElement): ShellRefs {
     statusPage,
     statusSpacer,
     statusLayer,
-    statusLocal,
   );
 
   shell.append(topbar, workspace, statusbar);
@@ -279,6 +278,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     pageInput,
     pageTotal,
     toolRail,
+    markupsBtn,
     dockTabs: dockTabButtons,
     dockBody,
     dockFooter,

@@ -12,6 +12,66 @@ export function clampPointToPage(point: Point, size: PageSize): Point {
   };
 }
 
+export interface ViewTransform {
+  zoom: number;
+  panX: number;
+  panY: number;
+}
+
+export interface FocusBoundsOptions {
+  /** Page padding used by Fit page, in screen pixels. */
+  fitPadding?: number;
+  /** Extra context around the target bounds. 1.25 adds 25 % breathing room. */
+  marginFactor?: number;
+  maxZoom?: number;
+  minZoom?: number;
+}
+
+/**
+ * Centers target bounds in the viewport without zooming out further than Fit
+ * page. Small markups get a close-up; oversized targets fall back to the whole
+ * page so the drawing remains the frame of reference.
+ */
+export function focusViewTransform(
+  bounds: Bounds,
+  pageSize: PageSize,
+  viewport: { width: number; height: number },
+  options: FocusBoundsOptions = {},
+): ViewTransform {
+  const fitPadding = options.fitPadding ?? 42;
+  const marginFactor = options.marginFactor ?? 1.25;
+  const maxZoom = options.maxZoom ?? 8;
+  const minZoom = options.minZoom ?? 0.03;
+  const innerWidth = Math.max(1, viewport.width - fitPadding * 2);
+  const innerHeight = Math.max(1, viewport.height - fitPadding * 2);
+  const fitZoom = Math.max(
+    minZoom,
+    Math.min(innerWidth / Math.max(1, pageSize.width), innerHeight / Math.max(1, pageSize.height)),
+  );
+  const width = Math.max(1, bounds.max.x - bounds.min.x) * marginFactor;
+  const height = Math.max(1, bounds.max.y - bounds.min.y) * marginFactor;
+  const targetZoom = Math.min(innerWidth / width, innerHeight / height);
+
+  if (!Number.isFinite(targetZoom) || targetZoom <= fitZoom) {
+    return {
+      zoom: fitZoom,
+      panX: (viewport.width - pageSize.width * fitZoom) / 2,
+      panY: (viewport.height - pageSize.height * fitZoom) / 2,
+    };
+  }
+
+  const zoom = Math.min(Math.max(targetZoom, fitZoom), Math.max(fitZoom, maxZoom));
+  const center = {
+    x: (bounds.min.x + bounds.max.x) / 2,
+    y: (bounds.min.y + bounds.max.y) / 2,
+  };
+  return {
+    zoom,
+    panX: viewport.width / 2 - center.x * zoom,
+    panY: viewport.height / 2 - center.y * zoom,
+  };
+}
+
 export function pointInRect(point: Point, rect: PageRect): boolean {
   return (
     point.x >= rect.x &&

@@ -89,7 +89,7 @@ describe("markdown renderer", () => {
     expect(HELP_CONTENT.guide).toContain("## Quantities");
     expect(HELP_CONTENT.guide).toContain("Settings → Project settings");
     expect(HELP_CONTENT.shortcuts).toContain("## Project and file");
-    expect(HELP_CONTENT.shortcuts).toContain("Ctrl+Shift+M");
+    expect(HELP_CONTENT.shortcuts).toContain("Ctrl+L");
     expect(HELP_CONTENT.workflows).toContain("# Workflows");
     expect(HELP_CONTENT.workflows).toContain("Operations technician");
     expect(HELP_CONTENT.workflows).toContain("Technical property manager");

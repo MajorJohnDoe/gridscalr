@@ -57,6 +57,7 @@ import {
   cursorForRole,
   dedupeLast,
   drawArrowHead,
+  focusViewTransform,
   handleLocalPoint,
   hexAlpha,
   isCancellation,
@@ -428,6 +429,37 @@ export class CanvasView {
     const panY = (this.height - size.height * zoom) / 2;
     store.setView(zoom, panX, panY);
     return true;
+  }
+
+  /** Fits one item in view, including its measurement label, with 25 % breathing room. */
+  focusItem(item: MarkupItem): boolean {
+    const size = this.ensurePageSize();
+    if (!size || this.width < 1 || this.height < 1) return false;
+    const view = focusViewTransform(this.focusBoundsForItem(item), size, {
+      width: this.width,
+      height: this.height,
+    });
+    store.setView(view.zoom, view.panX, view.panY);
+    return true;
+  }
+
+  private focusBoundsForItem(item: MarkupItem): Bounds {
+    const bounds = itemBounds(item);
+    if (item.kind === "count" && item.points[0]) {
+      const radius = COUNT_SYMBOL_RADIUS + 2;
+      bounds.min.x -= radius;
+      bounds.min.y -= radius;
+      bounds.max.x += radius;
+      bounds.max.y += radius;
+    }
+    const label = this.pageLabelLayouts().get(item.id);
+    if (label) {
+      bounds.min.x = Math.min(bounds.min.x, label.box.x);
+      bounds.min.y = Math.min(bounds.min.y, label.box.y);
+      bounds.max.x = Math.max(bounds.max.x, label.box.x + label.box.width);
+      bounds.max.y = Math.max(bounds.max.y, label.box.y + label.box.height);
+    }
+    return bounds;
   }
 
   /**

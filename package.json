@@ -1,7 +1,7 @@
 {
   "name": "gridscalr",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.4.1",
   "type": "module",
   "description": "Local-first PDF plan viewer with calibration, measurement and layered markup tools.",
   "scripts": {

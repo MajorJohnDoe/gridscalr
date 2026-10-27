@@ -4,6 +4,7 @@ import {
   constrainSquare,
   cursorForRole,
   dedupeLast,
+  focusViewTransform,
   handleLocalPoint,
   hexAlpha,
   movePageRect,
@@ -78,6 +79,35 @@ describe("canvas geometry", () => {
     expect(snapLabel("endpoint")).toBe("Endpoint");
     expect(snapLabel("midpoint")).toBe("Midpoint");
     expect(snapLabel("intersection")).toBe("Intersection");
+  });
+
+  it("focuses small markups without zooming out past fit page", () => {
+    const viewport = { width: 1000, height: 1000 };
+    const page = { width: 1000, height: 1000 };
+    const centered = focusViewTransform(
+      { min: { x: 450, y: 450 }, max: { x: 550, y: 550 } },
+      page,
+      viewport,
+    );
+    expect(centered.zoom).toBeCloseTo(916 / 125, 5);
+    expect(centered.panX).toBeCloseTo(500 - 500 * centered.zoom, 5);
+    expect(centered.panY).toBeCloseTo(500 - 500 * centered.zoom, 5);
+
+    const tiny = focusViewTransform(
+      { min: { x: 499, y: 499 }, max: { x: 500, y: 500 } },
+      page,
+      viewport,
+    );
+    expect(tiny.zoom).toBe(8);
+
+    const oversized = focusViewTransform(
+      { min: { x: -500, y: -500 }, max: { x: 1500, y: 1500 } },
+      page,
+      viewport,
+    );
+    expect(oversized.zoom).toBeCloseTo(916 / 1000, 5);
+    expect(oversized.panX).toBeCloseTo(42, 5);
+    expect(oversized.panY).toBeCloseTo(42, 5);
   });
 
   it("handles colour alpha and duplicate draft points", () => {

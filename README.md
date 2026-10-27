@@ -130,15 +130,15 @@ GridScalr uses a compact drawing-first layout:
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
-- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
+- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools, plus a **Markups** button at the bottom that opens the docked list.
 - **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with page/type/search filters, inline rename, layer changes, visibility, locking, and CSV export.
+- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with page/type/search filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room so small items stay readable on large drawings.
 - **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
-- **Status bar** – calibration, cursor coordinates, zoom and page controls, active layer, and the local-only indicator.
+- **Status bar** – calibration, cursor coordinates, zoom and page controls, and the active layer.
 
-The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…** opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
+The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…**, the tool rail button, or `Ctrl/Cmd+L` opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
 
 ## Workflow
 
@@ -300,7 +300,7 @@ Locking a layer leaves the layer's own settings editable, but prevents changing 
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
-Open **View → Markups list…** (`Ctrl/Cmd+Shift+M`) for a docked table of every measurement and drawing. Filter by all/current page, type, or a free-text search, then click a row to jump to its page and select it without closing the panel. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the current Markups CSV.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked table of every measurement and drawing. Filter by all/current page, type, or a free-text search, then click a row to jump to its page, select it, and zoom to it with 25 % breathing room. The zoom never pulls back further than Fit page, so an oversized target still shows the whole sheet. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection without changing the view, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the current Markups CSV.
 
 With more than one item selected, Properties offers bulk actions for:
 
@@ -517,7 +517,7 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Fit page / Actual size | `Ctrl/Cmd+0` / `Ctrl/Cmd+1` |
 | Previous / next page | `PageUp` / `PageDown` |
 | Toggle sidebar / Properties | `Ctrl/Cmd+\` / `Ctrl/Cmd+Shift+\` |
-| Markups list / Quantities | `Ctrl/Cmd+Shift+M` / `Ctrl/Cmd+Alt+Q` |
+| Markups list / Quantities | `Ctrl/Cmd+L` / `Ctrl/Cmd+Alt+Q` |
 | Undo / Redo | `Ctrl/Cmd+Z` / `Ctrl/Cmd+Shift+Z` or `Ctrl/Cmd+Y` |
 | New project | `Ctrl/Cmd+N` |
 | Save / Save as | `Ctrl/Cmd+S` / `Ctrl/Cmd+Shift+S` |

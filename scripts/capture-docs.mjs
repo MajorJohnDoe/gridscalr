@@ -137,7 +137,7 @@ try {
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
-  await page.keyboard.press("Control+Shift+M");
+  await page.keyboard.press("Control+l");
   const markupsPanel = page.locator(".markups-panel");
   await markupsPanel.waitFor({ state: "visible" });
   await markupsPanel.getByLabel("Filter markups by page").selectOption("all");

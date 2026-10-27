@@ -21,13 +21,13 @@ GridScalr uses a compact, drawing-first layout.
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
-- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools.
+- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools, plus a **Markups** button at the bottom.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. Page cards can be renamed, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with filters, inline rename, layer changes, visibility, locking, and CSV export.
+- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
-- **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, active layer, and a local-only indicator.
+- **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions.
 
@@ -299,7 +299,7 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 ### Find and navigate measurements
 
-Open **View → Markups list…** (`Ctrl/Cmd+Shift+M`) for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it with 25 % breathing room; the view never zooms out further than Fit page. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
 
 - Filter by **All pages** or **Current page**, by measurement/drawing type, or with the search field.
 - Columns show the name, type, page, layer, value, category and room.
@@ -308,7 +308,7 @@ Open **View → Markups list…** (`Ctrl/Cmd+Shift+M`) for a docked, searchable 
 - Change the layer from the row picker.
 - Use the eye and lock controls for per-item visibility and locking.
 - **Select all** selects every row matching the current filter; **Export CSV** writes the Markups CSV.
-- Close the panel with its close button or `Ctrl/Cmd+Shift+M`. The panel remembers its height between sessions.
+- Close the panel with its close button, the tool rail button, or `Ctrl/Cmd+L`. The panel remembers its height between sessions.
 
 - Filter by current or all pages.
 - Search by label, type, layer, category, room, or count type.
@@ -430,6 +430,7 @@ The full list is in **Help → Keyboard shortcuts** and in [shortcuts.md](shortc
 - `Enter` finishes a shape; `Esc` cancels a draft, clears the selection, or returns to Select.
 - `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo.
 - `Ctrl/Cmd+0` fit page, `Ctrl/Cmd+1` actual size.
+- `Ctrl/Cmd+L` opens or closes the Markups list.
 - `PageUp` / `PageDown` change page.
 - `Space` + drag pans temporarily.
 

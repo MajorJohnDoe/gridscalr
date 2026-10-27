@@ -54,7 +54,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Previous / next page | `PageUp` / `PageDown` |
 | Toggle left sidebar | `Ctrl+\` |
 | Toggle Properties panel | `Ctrl+Shift+\` |
-| Open Markups list | `Ctrl+Shift+M` |
+| Open Markups list | `Ctrl+L` |
 | Open Quantities | `Ctrl+Alt+Q` |
 
 ## Project and file

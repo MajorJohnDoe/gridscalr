@@ -177,6 +177,7 @@ export class App {
       },
       renameSelection: () => requestMarkupRename(this.refs),
       toggleMarkups: () => {
+        if (!store.project) return;
         setMarkupsOpen(!isMarkupsOpen());
         this.renderAll();
       },
@@ -265,6 +266,7 @@ export class App {
     const refs = this.refs;
     refs.undoBtn.addEventListener("click", () => store.undo());
     refs.redoBtn.addEventListener("click", () => store.redo());
+    refs.markupsBtn.addEventListener("click", () => this.actions.toggleMarkups());
     refs.zoomOutBtn.addEventListener("click", () => this.canvas.zoomBy(1 / 1.2));
     refs.zoomInBtn.addEventListener("click", () => this.canvas.zoomBy(1.2));
     refs.zoomFitBtn.addEventListener("click", () => {
@@ -369,11 +371,9 @@ export class App {
           event.preventDefault();
           if (!event.altKey && !event.shiftKey) void this.quitFlow();
           return;
-        case "m":
-          if (event.shiftKey) {
-            event.preventDefault();
-            this.actions.toggleMarkups();
-          }
+        case "l":
+          event.preventDefault();
+          this.actions.toggleMarkups();
           return;
         case "d":
           event.preventDefault();
@@ -1141,21 +1141,11 @@ export class App {
     const project = store.project;
     if (!project) return;
     const target = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(page)));
-    const selection = store.primarySelection;
-    if (
-      target === store.ui.page &&
-      store.ui.selection.length === 1 &&
-      selection?.layerId === layerId &&
-      selection.itemId === itemId
-    ) {
-      this.canvas.fitPage();
-      this.canvas.invalidate();
-      return;
-    }
     if (target !== store.ui.page) store.setPage(target);
     await this.enqueuePageSize(target);
-    this.canvas.fitPage();
+    const found = findItem(project, itemId);
     store.setSelection({ layerId, itemId });
+    if (found) this.canvas.focusItem(found.item);
     this.canvas.invalidate();
   }
 

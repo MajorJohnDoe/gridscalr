@@ -182,7 +182,7 @@ try {
   await page.keyboard.press("Escape");
   await variants.waitFor({ state: "detached" });
 
-  await page.keyboard.press("Control+Shift+M");
+  await page.keyboard.press("Control+l");
   const markupsPanel = page.locator(".markups-panel");
   await markupsPanel.waitFor({ state: "visible" });
   await markupsPanel.getByLabel("Filter markups by page").selectOption("current");
@@ -194,15 +194,29 @@ try {
     9,
     "the Markups table should expose all nine columns",
   );
+  const zoomBeforeFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
+  await radiatorRow.locator(".markups-item-label").click();
+  await page.waitForTimeout(250);
+  const zoomAfterFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  assert.ok(
+    zoomAfterFocus > zoomBeforeFocus * 1.5,
+    `clicking a small Markups row should zoom in (${zoomBeforeFocus} -> ${zoomAfterFocus})`,
+  );
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),
+    "item_count_radiator",
+    "clicking a Markups row should select it without closing the panel",
+  );
+
   await markupsPanel.locator('[data-item-id="item_floor_living"] .markups-item-label').click();
   await page.waitForTimeout(250);
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.selection[0]?.itemId),
     "item_floor_living",
-    "clicking a Markups row should select it without closing the panel",
+    "clicking a large Markups row should still select it",
   );
 
-  const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
   await radiatorRow.hover();
   await radiatorRow.locator(".markups-rename").click();
   const markupRename = markupsPanel.locator(".markups-name-input");
@@ -221,7 +235,7 @@ try {
     "inline Markups rename should update the item label",
   );
 
-  await page.keyboard.press("Control+Shift+M");
+  await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
 
   const undo = page.getByRole("button", { name: "Undo" });

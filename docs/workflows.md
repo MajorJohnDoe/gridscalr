@@ -118,7 +118,7 @@ Reports always cover every page and every category. Dialog filters only affect t
 
 ### 6. Keep the project reviewable
 
-Use **View → Markups list…** (`Ctrl/Cmd+Shift+M`) to search, select and navigate every item across all pages. The docked panel stays open while you jump between sheets and is the quickest way to check that a room or category has not been missed.
+Use **View → Markups list…**, the **Markups** button at the bottom of the tool rail, or `Ctrl/Cmd+L` to search, select and navigate every item across all pages. Clicking a row zooms to that item with 25 % breathing room while keeping the whole sheet as the outer limit. The docked panel stays open while you jump between sheets and is the quickest way to check that a room or category has not been missed.
 
 ![Docked Markups list with all pages, search, layer picker and row actions](screenshots/markups-list.png)
 
