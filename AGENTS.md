@@ -43,18 +43,30 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Exports must use the same visibility and locking rules as the canvas.
 - Do not add cloud sync, accounts, telemetry, or network dependencies without an explicit decision.
 
-## Documentation requirement (non-negotiable)
+## Documentation policy
 
-Every change to the GUI, menu structure, shortcuts, or user-facing behaviour must update the in-app documentation in the same commit.
+Docs are maintained deliberately, not on every commit. Split the work in two.
 
-- Update `docs/user-guide.md` for any new feature, renamed command, moved panel, changed menu path, or changed workflow.
+**Same commit as the change (cheap, keeps the docs from being plainly wrong):**
+
 - Update `docs/shortcuts.md` and the README shortcut table whenever a keyboard shortcut is added, removed, or changed.
 - Update `README.md` when navigation, menus, panels, exports, or the architecture map change.
-- Keep role-based workflows in `docs/workflows.md` accurate when a tool or workflow changes.
-- When a change alters a visible screen or workflow, recapture the affected images with `npm run docs:capture`. Do not leave old screenshots that show a previous interface.
+- Fix any existing instruction that a change makes outright wrong, such as a menu path or panel name that moved.
 - Keep `Help → About` accurate. The version is read from `package.json` and the schema version from `SCHEMA_VERSION`; do not hardcode either in help content.
-- Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct. `npm run check:docs` must pass.
-- Do not report a GUI change as complete while the user guide describes the previous interface.
+
+**Deferred to a documentation pass (decided, never automatic):**
+
+- `docs/user-guide.md` prose for new features, renamed commands, moved panels, changed menu paths, and changed workflows.
+- `docs/workflows.md` role guides.
+- Screenshot recapture with `npm run docs:capture`.
+
+Rules that keep the deferral honest:
+
+- Every PR that defers documentation states it in the description: `Docs impact: deferred — <what>`, or `Docs impact: none`.
+- Deferred documentation is cleared before a release tag, or earlier when the user asks for a documentation pass.
+- `npm run check:docs` must pass. Stale-screenshot warnings are acceptable during development; `GRIDSCALR_DOCS_STRICT=1` is used for the release pass only.
+- Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct.
+- Never report a GUI change as documented while the user guide still describes the previous interface.
 
 ## Git workflow
 
@@ -94,12 +106,14 @@ npm run tauri build -- --no-bundle
 
 A docs-only change does not need the full build, but it must not leave broken links or contradictory instructions.
 
-Before committing a GUI or feature change, confirm that:
+Before committing, confirm that:
 
-- `docs/user-guide.md` describes the current menus, panels, and workflow.
 - `docs/shortcuts.md` and the README shortcut table include every shortcut that changed.
 - `README.md` highlights, workflow, and architecture map still match the code.
 - `Help → About` still reports the version from `package.json`.
+
+Before a feature or GUI change is reported as complete, either update `docs/user-guide.md`
+and the affected screenshots, or record `Docs impact: deferred — <what>` in the PR.
 
 ### Push and verify
 
@@ -135,9 +149,12 @@ Do not create or push a release tag, publish a GitHub Release, or bump the versi
 To create a Windows release build:
 
 1. Update the three app-version fields.
-2. Run the checks above.
-3. Commit and push.
-4. Tag the commit with `vX.Y.Z` and push the tag:
+2. Run the documentation pass: update `docs/user-guide.md` and `docs/workflows.md`,
+   run `npm run docs:capture`, and verify with
+   `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
+3. Run the checks above.
+4. Commit and push.
+5. Tag the commit with `vX.Y.Z` and push the tag:
 
 ```bash
 git tag v0.1.0
