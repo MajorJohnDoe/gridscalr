@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-27T11:21:27.895Z",
-  "appVersion": "0.4.1",
-  "sourceFingerprint": "14e2170248885b279d425513febb360bbf76a67ff5ad139238dda01ee18c6a4e",
+  "generatedAt": "2026-10-27T12:13:49.796Z",
+  "appVersion": "0.5.0",
+  "sourceFingerprint": "3e657fec5e268917ab6c77f6e4bea0d381f95ed7cebfdf410f9eebe532ed021c",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -41,8 +41,8 @@
     {
       "file": "markups-list.png",
       "title": "Markups list",
-      "alt": "The GridScalr Markups panel listing all three pages with name, type, page, layer, value, category and room columns.",
-      "description": "A docked, project-wide list for finding, filtering, renaming and navigating every measurement and drawing."
+      "alt": "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
+      "description": "A docked, project-wide list with saved views, configurable columns, grouping, filters, and row navigation."
     },
     {
       "file": "export.png",

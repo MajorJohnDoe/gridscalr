@@ -155,6 +155,27 @@ export function pageDisplayName(project: Pick<Project, "pages">, page: number): 
   return name || undefined;
 }
 
+export function pageBuilding(project: Pick<Project, "pages">, page: number): string | undefined {
+  const value = project.pages[String(page)]?.building?.trim();
+  return value || undefined;
+}
+
+export function pageFloor(project: Pick<Project, "pages">, page: number): string | undefined {
+  const value = project.pages[String(page)]?.floor?.trim();
+  return value || undefined;
+}
+
+/** Compact "Building · Floor" label, or undefined when the page has no location. */
+export function pageLocationLabel(
+  project: Pick<Project, "pages">,
+  page: number,
+): string | undefined {
+  const parts = [pageBuilding(project, page), pageFloor(project, page)].filter(
+    (part): part is string => Boolean(part),
+  );
+  return parts.length ? parts.join(" · ") : undefined;
+}
+
 function clonePageState(state: PageState | undefined): PageState {
   if (!state) return {};
   const copy: PageState = {};
@@ -210,6 +231,10 @@ export function duplicatePageFromProject(
 
   const sourceState = project.pages[String(sourcePage)];
   const newState = clonePageState(options.copyScale ? sourceState : undefined);
+  // Location is part of the sheet's identity and follows a duplicate even when
+  // scale, name or markups are not copied.
+  if (sourceState?.building) newState.building = sourceState.building;
+  if (sourceState?.floor) newState.floor = sourceState.floor;
   if (options.copyName) {
     const name = options.name.trim().slice(0, 80);
     if (name) newState.name = name;

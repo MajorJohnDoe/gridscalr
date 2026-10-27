@@ -2087,6 +2087,15 @@ textarea:disabled {
   white-space: nowrap;
 }
 
+.page-location {
+  margin-top: 2px;
+  color: var(--jade-bright);
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .page-size {
   font-size: 10px;
   color: var(--muted-2);
@@ -3891,6 +3900,7 @@ textarea:disabled {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
   padding: 7px 12px;
   background: var(--markups-head);
@@ -3925,6 +3935,7 @@ textarea:disabled {
   margin-left: auto;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 6px;
 }
 
@@ -3932,6 +3943,7 @@ textarea:disabled {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 6px 12px;
   border-bottom: 1px solid var(--markups-border);
@@ -3944,9 +3956,30 @@ textarea:disabled {
   font-size: 11px;
 }
 
+.markups-view-select {
+  width: 170px;
+  height: 24px;
+  font-size: 10.5px;
+}
+
+.markups-toolbar .markups-group-select {
+  max-width: 200px;
+}
+
+.markups-view-dirty {
+  color: var(--amber);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.markups-save-view:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
 .markups-search {
   flex: 1;
-  min-width: 180px;
+  min-width: 160px;
   height: 26px;
   font-size: 11px;
 }
@@ -3991,30 +4024,71 @@ textarea:disabled {
   white-space: nowrap;
 }
 
-.markups-table th:nth-child(1) {
-  width: 25%;
+.markups-sort-button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  text-transform: inherit;
 }
-.markups-table th:nth-child(2) {
-  width: 9%;
+
+.markups-sort-button:hover {
+  color: var(--text-strong);
 }
-.markups-table th:nth-child(3) {
-  width: 5%;
+
+.markups-sort-arrow {
+  color: var(--jade-bright);
+  font-size: 10px;
 }
-.markups-table th:nth-child(4) {
-  width: 14%;
+
+.markups-group-row td {
+  height: 28px;
+  background: var(--markups-head);
+  border-bottom: 1px solid var(--markups-border);
 }
-.markups-table th:nth-child(5) {
-  width: 9%;
+
+.markups-group-toggle {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: middle;
 }
-.markups-table th:nth-child(6) {
-  width: 10%;
+
+.markups-group-toggle:hover {
+  background: var(--markups-hover);
+  color: var(--jade-bright);
 }
-.markups-table th:nth-child(7) {
-  width: 10%;
+
+.markups-group-label {
+  margin-left: 3px;
+  color: var(--text-strong);
+  font-size: 10.5px;
+  font-weight: 650;
 }
-.markups-table th:nth-child(8),
-.markups-table th:nth-child(9) {
-  width: 4%;
+
+.markups-group-count {
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 7px;
+  background: var(--markups-hover);
+  color: var(--muted-2);
+  font-size: 9px;
+  font-variant-numeric: tabular-nums;
 }
 
 .markups-row {
@@ -4174,4 +4248,60 @@ textarea:disabled {
 
 .markups-foot-hint {
   color: var(--muted-2);
+}
+
+.markups-columns-dialog {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px 18px;
+}
+
+.markups-column-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 28px;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.markups-column-option input {
+  accent-color: var(--jade);
+}
+
+.markups-view-manager {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.markups-view-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.markups-view-row.is-removed {
+  opacity: 0.5;
+}
+
+.markups-view-remove {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.markups-view-remove input {
+  accent-color: var(--danger);
+}
+
+.modal-hint {
+  grid-column: 1 / -1;
+  margin: 6px 0 0;
+  color: var(--muted-2);
+  font-size: 10.5px;
 }

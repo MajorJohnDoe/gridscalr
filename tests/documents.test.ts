@@ -213,6 +213,8 @@ describe("page duplication", () => {
     const project = pageProject();
     project.pages["2"] = {
       name: "Windows",
+      building: "Building A",
+      floor: "Floor 2",
       calibration: {
         id: "cal_2",
         source: "reference",
@@ -246,6 +248,8 @@ describe("page duplication", () => {
     expect(copyDocument.copiedFrom).toEqual({ documentId: project.documents[0].id, page: 2 });
     expect(project.pages["5"]).toMatchObject({
       name: "Windows copy",
+      building: "Building A",
+      floor: "Floor 2",
       scaleLocked: true,
       calibration: { id: "cal_2", pointsPerMeter: 10 },
     });
@@ -265,7 +269,7 @@ describe("page duplication", () => {
       name: "Ignored",
     });
     expect(result?.page).toBe(5);
-    expect(project.pages["5"]).toBeUndefined();
+    expect(project.pages["5"]).toEqual({ building: "Building A", floor: "Floor 2" });
     expect(layer.items.filter((item) => item.page === 5)).toHaveLength(0);
     expect(layer.pageState?.["5"]).toEqual({ visible: false });
   });

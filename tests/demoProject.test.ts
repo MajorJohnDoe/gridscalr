@@ -18,6 +18,12 @@ describe("documentation demo project", () => {
     expect(project.pages["1"].name).toBe("Ground floor");
     expect(project.pages["2"].name).toBe("Mezzanine");
     expect(project.pages["3"].name).toBe("Site plan");
+    expect(project.pages["1"].building).toBe("Northgate");
+    expect(project.pages["2"].floor).toBe("Mezzanine");
+    expect(project.markupsViews.map((view) => view.name)).toEqual([
+      "Room review",
+      "Drawing checks",
+    ]);
     expect(project.pages["1"].calibration?.pointsPerMeter).toBeCloseTo(28.3464567, 4);
     expect(project.pages["2"].calibration?.source).toBe("manual");
     expect(project.pages["2"].calibration?.pointsPerMeter).toBeCloseTo(56.6929134, 4);

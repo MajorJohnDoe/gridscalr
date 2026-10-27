@@ -233,7 +233,7 @@ const drawItems = [
 ];
 
 const project = {
-  schemaVersion: 11,
+  schemaVersion: 12,
   id: "prj_demo_takeoff",
   name: "Northgate Logistics Hub - Takeoff",
   documents: [
@@ -268,6 +268,8 @@ const project = {
   pages: {
     1: {
       name: "Ground floor",
+      building: "Northgate",
+      floor: "Ground floor",
       calibration: {
         id: "cal_demo_page_1",
         source: "reference",
@@ -281,6 +283,8 @@ const project = {
     },
     2: {
       name: "Mezzanine",
+      building: "Northgate",
+      floor: "Mezzanine",
       calibration: {
         id: "cal_demo_page_2",
         source: "manual",
@@ -291,6 +295,8 @@ const project = {
     },
     3: {
       name: "Site plan",
+      building: "Northgate",
+      floor: "Site",
       calibration: {
         id: "cal_demo_page_3",
         source: "manual",
@@ -300,6 +306,30 @@ const project = {
       },
     },
   },
+  markupsViews: [
+    {
+      id: "view_room_review",
+      name: "Room review",
+      columns: ["name", "type", "page", "layer", "value", "category", "room", "visible", "locked"],
+      pageFilter: "all",
+      typeFilter: "measure",
+      categoryId: null,
+      search: "",
+      groupBy: ["building", "floor", "room"],
+      sort: { column: "page", direction: "asc" },
+    },
+    {
+      id: "view_drawing_checks",
+      name: "Drawing checks",
+      columns: ["name", "type", "page", "layer", "visible", "locked"],
+      pageFilter: "all",
+      typeFilter: "draw",
+      categoryId: null,
+      search: "",
+      groupBy: ["page"],
+      sort: { column: "name", direction: "asc" },
+    },
+  ],
   layers: [
     {
       id: "layer_markups",

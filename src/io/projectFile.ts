@@ -16,6 +16,7 @@ import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
+import { normalizeMarkupsViews } from "../model/markups";
 import type {
   AreaMode,
   AreaShape,
@@ -678,6 +679,10 @@ export function parseProject(text: string): Project {
     categories,
     assets,
     pages: {},
+    markupsViews: normalizeMarkupsViews(
+      raw.markupsViews,
+      new Set(categories.map((category) => category.id)),
+    ),
     layers: normalizeLayers(
       raw.layers,
       new Set(categories.map((category) => category.id)),
@@ -698,10 +703,15 @@ export function parseProject(text: string): Project {
         calibration?: unknown;
         scaleLocked?: unknown;
         name?: unknown;
+        building?: unknown;
+        floor?: unknown;
       } | null;
       const cal = normalizeCalibration(rawPage?.calibration);
       const name = typeof rawPage?.name === "string" ? rawPage.name.trim().slice(0, 80) : "";
-      if (!cal && !name) continue;
+      const building =
+        typeof rawPage?.building === "string" ? rawPage.building.trim().slice(0, 80) : "";
+      const floor = typeof rawPage?.floor === "string" ? rawPage.floor.trim().slice(0, 80) : "";
+      if (!cal && !name && !building && !floor) continue;
       const state: PageState = {};
       if (cal) {
         state.calibration = cal;
@@ -709,6 +719,8 @@ export function parseProject(text: string): Project {
         if (rawPage?.scaleLocked === true) state.scaleLocked = true;
       }
       if (name) state.name = name;
+      if (building) state.building = building;
+      if (floor) state.floor = floor;
       project.pages[key] = state;
     }
   }

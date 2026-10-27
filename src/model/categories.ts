@@ -179,6 +179,9 @@ export function removeCategory(
 
   project.categories = others;
   if (wasDefault) project.settings.quantity.defaultCategoryId = target.id;
+  for (const view of project.markupsViews) {
+    if (view.categoryId === id) view.categoryId = null;
+  }
   return { removed: true, moved };
 }
 

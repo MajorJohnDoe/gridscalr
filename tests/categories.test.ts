@@ -160,6 +160,27 @@ describe("categories", () => {
     expect(drawing.categoryId).toBe(wallId);
   });
 
+  it("clears deleted categories from saved Markups views", () => {
+    const project = makeProject();
+    const wallId = categoryId(project, "Wall");
+    const floorId = categoryId(project, "Floor");
+    project.markupsViews = [
+      {
+        id: "view_wall",
+        name: "Walls",
+        columns: ["name", "room"],
+        pageFilter: "all",
+        typeFilter: "measure",
+        categoryId: wallId,
+        search: "",
+        groupBy: ["category"],
+        sort: null,
+      },
+    ];
+    removeCategory(project, wallId, floorId);
+    expect(project.markupsViews[0].categoryId).toBeNull();
+  });
+
   it("keeps at least one category", () => {
     const project = makeProject();
     project.categories = [project.categories[0]];

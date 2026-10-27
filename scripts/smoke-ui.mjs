@@ -238,6 +238,85 @@ try {
   await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
 
+  await page.keyboard.press("Control+l");
+  await markupsPanel.waitFor({ state: "visible" });
+
+  await markupsPanel.getByRole("button", { name: "Columns" }).click();
+  const columnsDialog = page.getByRole("dialog");
+  await columnsDialog.waitFor();
+  await columnsDialog.getByLabel("Room").uncheck();
+  await columnsDialog.getByRole("button", { name: "Apply" }).click();
+  await columnsDialog.waitFor({ state: "detached" });
+  assert.equal(
+    await markupsPanel.locator("thead th").count(),
+    8,
+    "hiding a Markups column should remove its header",
+  );
+
+  await markupsPanel.getByRole("button", { name: "Columns" }).click();
+  const columnsAgain = page.getByRole("dialog");
+  await columnsAgain.getByLabel("Room").check();
+  await columnsAgain.getByRole("button", { name: "Apply" }).click();
+  await columnsAgain.waitFor({ state: "detached" });
+  assert.equal(
+    await markupsPanel.locator("thead th").count(),
+    9,
+    "restoring the Markups column should bring its header back",
+  );
+
+  await markupsPanel.getByRole("button", { name: "More view options" }).click();
+  await page.getByRole("button", { name: "Save as new view…" }).click();
+  const viewDialog = page.getByRole("dialog");
+  await viewDialog.getByLabel("Text").fill("QA view");
+  await viewDialog.getByRole("button", { name: "Apply" }).click();
+  await viewDialog.waitFor({ state: "detached" });
+  const savedView = await page.evaluate(() =>
+    window.__gridscalr.store.project.markupsViews.find((view) => view.name === "QA view"),
+  );
+  assert.ok(savedView, "saving a Markups view should store it in the project");
+  assert.equal(
+    await markupsPanel.getByLabel("Markups view").inputValue(),
+    savedView.id,
+    "the saved view should become active",
+  );
+
+  await markupsPanel.getByLabel("Markups view").selectOption("");
+  await markupsPanel.getByLabel("Filter markups by page").selectOption("all");
+  await markupsPanel.getByLabel("Markups view").selectOption(savedView.id);
+  assert.equal(
+    await markupsPanel.getByLabel("Filter markups by page").inputValue(),
+    "current",
+    "applying a saved view should restore its page filter",
+  );
+
+  await page.locator('.dock-tab[data-tab="pages"]').click();
+  await page.locator('.page-card[data-page="1"]').click({ button: "right" });
+  await page.getByRole("button", { name: "Set location…" }).click();
+  const locationDialog = page.getByRole("dialog");
+  await locationDialog.getByLabel("Building").fill("Building A");
+  await locationDialog.getByLabel("Floor").fill("Floor 2");
+  await locationDialog.getByRole("button", { name: "Apply" }).click();
+  await locationDialog.waitFor({ state: "detached" });
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.project.pages["1"]?.building),
+    "Building A",
+    "the page location should be stored in the project",
+  );
+
+  await markupsPanel.getByLabel("Group markups").selectOption({ label: "Building → Floor → Room" });
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await markupsPanel.locator(".markups-group-row").count()) > 0,
+    "grouping should add collapsible group rows",
+  );
+  assert.equal(
+    (await markupsPanel.locator(".markups-group-label").first().textContent())?.trim(),
+    "Building A",
+  );
+
+  await page.keyboard.press("Control+l");
+  await markupsPanel.waitFor({ state: "hidden" });
+
   const undo = page.getByRole("button", { name: "Undo" });
   const redo = page.getByRole("button", { name: "Redo" });
   assert.equal(await undo.isEnabled(), true, "undo should be enabled after earlier edits");

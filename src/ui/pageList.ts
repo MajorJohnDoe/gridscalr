@@ -1,8 +1,14 @@
-import { pageDisplayName, totalPageCount } from "../model/documents";
-import type { PageSize } from "../model/types";
+import {
+  pageBuilding,
+  pageDisplayName,
+  pageFloor,
+  pageLocationLabel,
+  totalPageCount,
+} from "../model/documents";
+import type { PageSize, Project } from "../model/types";
 import { store } from "../state/store";
 import { el } from "./dom";
-import { textDialog } from "./dialogs";
+import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -73,6 +79,85 @@ function beginPageRename(title: HTMLElement, page: number): void {
   input.addEventListener("dblclick", (event) => event.stopPropagation());
 }
 
+function locationValues(project: Project, field: "building" | "floor"): string[] {
+  const values = new Set<string>();
+  for (const state of Object.values(project.pages)) {
+    const value = field === "building" ? state.building?.trim() : state.floor?.trim();
+    if (value) values.add(value);
+  }
+  return [...values].sort((a, b) => a.localeCompare(b));
+}
+
+function pageLocationDialog(project: Project, page: number): void {
+  const body = el("div", "form-stack");
+  body.append(
+    el(
+      "p",
+      "modal-message",
+      "Building and floor are used for grouping the Markups list. They are optional and belong to this sheet.",
+    ),
+  );
+
+  const buildingField = el("label", "field");
+  buildingField.append(el("span", "field-label", "Building"));
+  const building = el("input", "input");
+  building.type = "text";
+  building.maxLength = 80;
+  building.value = pageBuilding(project, page) ?? "";
+  building.placeholder = "For example Building A";
+  const buildingList = el("datalist");
+  buildingList.id = `page-building-options-${page}`;
+  for (const value of locationValues(project, "building")) {
+    const item = el("option");
+    item.value = value;
+    buildingList.append(item);
+  }
+  building.setAttribute("list", buildingList.id);
+  buildingField.append(building, buildingList);
+
+  const floorField = el("label", "field");
+  floorField.append(el("span", "field-label", "Floor"));
+  const floor = el("input", "input");
+  floor.type = "text";
+  floor.maxLength = 80;
+  floor.value = pageFloor(project, page) ?? "";
+  floor.placeholder = "For example Floor 2";
+  const floorList = el("datalist");
+  floorList.id = `page-floor-options-${page}`;
+  for (const value of locationValues(project, "floor")) {
+    const item = el("option");
+    item.value = value;
+    floorList.append(item);
+  }
+  floor.setAttribute("list", floorList.id);
+  floorField.append(floor, floorList);
+
+  body.append(buildingField, floorField);
+  void showModal({
+    title: "Page location",
+    subtitle: `Page ${page}${pageDisplayName(project, page) ? ` · ${pageDisplayName(project, page)}` : ""}`,
+    body,
+    actions: [
+      { label: "Cancel", value: "__cancel__" },
+      { label: "Apply", value: "apply", primary: true },
+    ],
+  }).then((value) => {
+    if (value !== "apply") return;
+    const nextBuilding = building.value.replace(/\s+/g, " ").trim().slice(0, 80);
+    const nextFloor = floor.value.replace(/\s+/g, " ").trim().slice(0, 80);
+    store.mutate((current) => {
+      const key = String(page);
+      const pageState = current.pages[key] ?? {};
+      if (nextBuilding) pageState.building = nextBuilding;
+      else delete pageState.building;
+      if (nextFloor) pageState.floor = nextFloor;
+      else delete pageState.floor;
+      if (Object.keys(pageState).length) current.pages[key] = pageState;
+      else delete current.pages[key];
+    }, "change");
+  });
+}
+
 export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSize): void {
   const card = refs.dockBody.querySelector<HTMLElement>(`.page-card[data-page="${page}"]`);
   if (!card) return;
@@ -117,6 +202,12 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       beginPageRename(title, page);
     });
     info.append(title);
+    const location = pageLocationLabel(project, page);
+    if (location) {
+      const locationNode = el("div", "page-location", location);
+      locationNode.title = location;
+      info.append(locationNode);
+    }
     const sizeText = size
       ? `${Math.round(size.width)} × ${Math.round(size.height)} pt`
       : "Loading size…";
@@ -139,7 +230,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
     card.setAttribute(
       "aria-label",
-      `${pageName ?? `Page ${page}`}${pageName ? `, Page ${page}` : ""}${size ? `, ${Math.round(size.width)} by ${Math.round(size.height)} points` : ""}`,
+      `${pageName ?? `Page ${page}`}${pageName ? `, Page ${page}` : ""}${location ? `, ${location}` : ""}${size ? `, ${Math.round(size.width)} by ${Math.round(size.height)} points` : ""}`,
     );
     card.addEventListener("click", () => actions.goToPage(page, true));
     card.addEventListener("contextmenu", (event) => {
@@ -164,6 +255,11 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
               if (value !== null) store.renamePage(page, value);
             });
           },
+        },
+        {
+          label: "Set location…",
+          icon: "target",
+          action: () => pageLocationDialog(project, page),
         },
         {
           label: "Duplicate page…",

@@ -23,9 +23,9 @@ GridScalr uses a compact, drawing-first layout.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, and drawing tools, plus a **Markups** button at the bottom.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
-- **Left panel** – Pages and Layers only. Page cards can be renamed, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers only. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
+- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, and the active layer.
 
@@ -69,9 +69,9 @@ The **Pages** tab shows a preview of each sheet along with its page size, calibr
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
-Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Duplicate page…**, and **Delete page…**.
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Duplicate page…**, and **Delete page…**.
 
-Double-click a page name to rename it inline. Named pages show their title in the card and in the top bar; unnamed pages keep the automatic **Page N** label.
+Double-click a page name to rename it inline. Named pages show their title in the card and in the top bar; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
 
 ### Duplicate a page
 
@@ -81,7 +81,7 @@ Right-click a page card and choose **Duplicate page…**. Choose whether to copy
 - **Page scale** – keeps the calibration and scale lock.
 - **Markups and drawings** – copies every item on the source page.
 
-The copy is appended at the end and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility and lock settings follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
+The copy is appended at the end and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility, lock settings, building and floor labels always follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
 
 ### Delete a page
 
@@ -301,21 +301,26 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it with 25 % breathing room; the view never zooms out further than Fit page. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
 
-- Filter by **All pages** or **Current page**, by measurement/drawing type, or with the search field.
-- Columns show the name, type, page, layer, value, category and room.
+- Filter by **All pages** or **Current page**, measurement/drawing type, category, or the search field.
+- Use **Columns** to show or hide table columns. Name is always visible.
+- Use **Group by** to create collapsible groups by category, room, page, layer, or **Building → Floor → Room**. Building and floor come from **Pages → right-click → Set location…**.
+- Click a sortable column heading to sort, click again to reverse, and a third time to return to the default page/layer/name order.
 - Click a row to go to its page and select the markup.
 - Double-click a name or use the rename button to edit the label inline.
-- Change the layer from the row picker.
-- Use the eye and lock controls for per-item visibility and locking.
-- **Select all** selects every row matching the current filter; **Export CSV** writes the Markups CSV.
+- Change the layer from the row picker, and use the eye and lock controls for per-item visibility and locking.
+- Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
+- **Select all** selects every row matching the current filter. **Export CSV** writes the Markups CSV for the whole project, not only the visible view.
 - Close the panel with its close button, the tool rail button, or `Ctrl/Cmd+L`. The panel remembers its height between sessions.
 
-- Filter by current or all pages.
-- Search by label, type, layer, category, room, or count type.
-- Click a row to go to its page and select it.
-- Use the eye and lock buttons for per-item visibility and locking.
-- Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
-- Use **Select all** for the current filter.
+### Markups views
+
+A view stores the visible columns, page/type/category filters, search text, grouping and sort order. Views belong to the project, so a colleague who opens the same `.gridscalr` file gets the same set-up.
+
+- Start from **All markups**, configure the table, then choose **More view options → Save as new view…**.
+- Choose the view from the **Markups view** selector to apply it.
+- After changing a saved view, the amber dot marks unsaved changes. Click the check button to update the view.
+- **More view options → Manage views…** renames or removes saved views. Removing the active view returns the table to All markups.
+- Applying another view while there are unsaved changes asks before discarding them.
 
 ## Highlight modes
 
@@ -415,11 +420,11 @@ The help content is bundled with the application. It does not use the network. U
 
 ## Project files
 
-A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations, settings, categories, layers, markup items, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
+A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 11 is the current format. Older projects load normally and are migrated when opened.
+Schema version 12 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

@@ -97,6 +97,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     categories,
     assets: {},
     pages: {},
+    markupsViews: [],
     layers: normalizeLayerOrder(actualLayers),
     activeLayerId: measureLayer?.id ?? actualLayers[0].id,
     createdAt: now,

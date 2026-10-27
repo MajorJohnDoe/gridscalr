@@ -8,8 +8,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
-- Current app version: `0.4.0`.
-- Current project-file schema: `11`.
+- Current app version: `0.5.0`.
+- Current project-file schema: `12`.
 - Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
@@ -167,6 +167,7 @@ src/canvas/crop.ts         export crop mode, overlay and toolbar
 src/canvas/editors.ts      inline text and measurement-label editors
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
+src/model/markups.ts       saved Markups views, columns and grouping helpers
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
@@ -183,7 +184,7 @@ src/ui/inspector.ts        Properties scale and active-layer sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
-src/ui/markupsPanel.ts     docked project-wide Markups table and filters
+src/ui/markupsPanel.ts     Markups table, columns, saved views, grouping and filters
 src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
@@ -256,7 +257,9 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
 - **Etapp 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
 - **Etapp 4:** complete — embedded PNG/JPEG images, background/annotation modes, image handles, opacity/rotation, schema v5, and image-aware PDF export.
-- **Etapp 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6. Current schema is v11 after page names and page-scoped layers; smart length labels are v10 and earlier.
+- **Etapp 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6.
+- **0.4.1:** complete — Markups tool-rail button and `Ctrl/Cmd+L`, focused zoom to a selected markup, the dedicated Markups tint, and removal of the redundant local-only status.
+- **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels. Current schema is v12.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

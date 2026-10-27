@@ -51,9 +51,9 @@ const shots = [
   {
     file: "markups-list.png",
     title: "Markups list",
-    alt: "The GridScalr Markups panel listing all three pages with name, type, page, layer, value, category and room columns.",
+    alt: "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
     description:
-      "A docked, project-wide list for finding, filtering, renaming and navigating every measurement and drawing.",
+      "A docked, project-wide list with saved views, configurable columns, grouping, filters, and row navigation.",
   },
   {
     file: "export.png",
@@ -140,9 +140,11 @@ try {
   await page.keyboard.press("Control+l");
   const markupsPanel = page.locator(".markups-panel");
   await markupsPanel.waitFor({ state: "visible" });
-  await markupsPanel.getByLabel("Filter markups by page").selectOption("all");
-  await markupsPanel.getByLabel("Filter markups by type").selectOption("all");
+  await markupsPanel.getByLabel("Markups view").selectOption({ label: "Room review" });
   await markupsPanel.locator('[data-item-id="item_floor_living"] .markups-item-label').click();
+  await markupsPanel.locator(".markups-table-wrap").evaluate((node) => {
+    node.scrollTop = 0;
+  });
   await page.waitForTimeout(250);
   await capture("markups-list.png");
   await markupsPanel.getByRole("button", { name: "Close Markups list" }).click();

@@ -125,6 +125,74 @@ describe("project files", () => {
     });
   });
 
+  it("round-trips page locations and saved Markups views", () => {
+    const project = makeProject();
+    project.pages["1"].building = "Building A";
+    project.pages["1"].floor = "Floor 2";
+    project.markupsViews = [
+      {
+        id: "view_vent",
+        name: "Ventilation & Aggregat",
+        columns: ["name", "page", "room", "value"],
+        pageFilter: "current",
+        typeFilter: "measure",
+        categoryId: project.categories[0].id,
+        search: "AHU",
+        groupBy: ["building", "floor", "room"],
+        sort: { column: "name", direction: "asc" },
+      },
+    ];
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.pages["1"].building).toBe("Building A");
+    expect(parsed.pages["1"].floor).toBe("Floor 2");
+    expect(parsed.markupsViews).toHaveLength(1);
+    expect(parsed.markupsViews[0]).toMatchObject({
+      id: "view_vent",
+      name: "Ventilation & Aggregat",
+      columns: ["name", "page", "room", "value"],
+      pageFilter: "current",
+      categoryId: project.categories[0].id,
+      groupBy: ["building", "floor", "room"],
+    });
+  });
+
+  it("migrates a schema 11 project without locations or views", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 11;
+    delete raw.markupsViews;
+    delete raw.pages["1"].building;
+    delete raw.pages["1"].floor;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.markupsViews).toEqual([]);
+    expect(parsed.pages["1"].building).toBeUndefined();
+    expect(parsed.pages["1"].floor).toBeUndefined();
+  });
+
+  it("drops invalid page locations and stale view categories", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.pages["1"].building = "   ";
+    raw.pages["1"].floor = 42;
+    raw.markupsViews = [
+      {
+        id: "view_a",
+        name: "Vent",
+        columns: ["name", "room"],
+        pageFilter: "all",
+        typeFilter: "measure",
+        categoryId: "missing",
+        search: "",
+        groupBy: ["building"],
+        sort: null,
+      },
+    ];
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.pages["1"].building).toBeUndefined();
+    expect(parsed.pages["1"].floor).toBeUndefined();
+    expect(parsed.markupsViews[0].categoryId).toBeNull();
+  });
+
   it("migrates a schema 10 project to the page-name and page-scoped layer format", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 10;

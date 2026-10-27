@@ -24,7 +24,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 
 | Markups list | Workflows in the app |
 | --- | --- |
-| ![Docked Markups list with name, type, page, layer, value, category and room columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
+| ![Docked Markups list with a saved view, building/floor/room groups and configurable columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The Workflows tab explains the same tools for site work and procurement. |
 
 ## Highlights
@@ -50,7 +50,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Insert PNG or JPEG images from a file or directly from the clipboard. Images are embedded, compressed, and can be background underlays or annotations.
 - Use revision clouds with editable vertices, auto-sized scallops, optional translucent fill, and draggable anchored text with a leader arrow, callouts with leaders, status-coloured inspection stamps, and revision deltas.
 - Use right-click context menus on the canvas, Markups list, and layers for the same actions.
-- Search, navigate, select, and show or hide items from the docked **Markups** list while keeping the drawing visible.
+- Search, navigate, select, and show or hide items from the docked **Markups** list while keeping the drawing visible. Choose columns, collapse category or building/floor/room groups, and save project-specific views such as ventilation or fire-safety surveys.
 - Organise measurements with project-wide categories that can be renamed, reordered, and deleted; the default category is used for new measurements.
 - Tag measurements with a category and a free-text room. The **New measurement** popover keeps the last category, room, count type, and area mode for the next measurement, and room names autocomplete from rooms already used in the project.
 - Mark areas as additions or deductions. Deductions stay the same colour but are labelled **Deduction** on the plan and in the Markups list.
@@ -134,7 +134,7 @@ GridScalr uses a compact drawing-first layout:
 - **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides.
 - **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with page/type/search filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room so small items stay readable on large drawings.
+- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room so small items stay readable on large drawings.
 - **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, and the active layer.
 
@@ -168,15 +168,15 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 The **Pages** tab shows a preview of each sheet along with its page size, calibration badge, and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing rather than your markups. They are rendered lazily: only cards near the visible area of the list are rasterised, one at a time, and cached for the session. A 400-page project therefore does not render every page up front, though a very large scanned TIF can still take a moment the first time its preview is built.
 
-Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page**, **Rename page…**, **Duplicate page…**, and **Delete page…**.
+Right-click an empty spot below the page cards and choose **Add pages…** to import more sheets. Page cards have their own menu with **Go to page**, **Rename page…**, **Set location…**, **Duplicate page…**, and **Delete page…**.
 
-Double-click a page name to rename it inline. A named page appears as its title in the card and in the top bar; unnamed pages keep the automatic **Page N** label. Page names are undoable project data.
+Double-click a page name to rename it inline. A named page appears as its title in the card and in the top bar; unnamed pages keep the automatic **Page N** label. Page names are undoable project data. **Set location…** stores optional building and floor labels on the sheet for Markups grouping; they do not affect measurement or export output.
 
 #### Duplicate a page
 
 Right-click a page card and choose **Duplicate page…**. The dialog can copy the page scale, the page name, and, when wanted, every markup and drawing on the source page.
 
-The copy is appended after the last page and references the same source sheet, so the original PDF or TIF is never modified. Page-scale copies keep the calibration and lock. Page-scoped layer visibility and lock overrides follow the copy so the new sheet looks the same. Duplicating is structural and cannot be undone. Use it when the same drawing needs a separate takeoff, for example one sheet for windows and another for doors.
+The copy is appended after the last page and references the same source sheet, so the original PDF or TIF is never modified. Page-scale copies keep the calibration and lock. Page-scoped layer visibility, lock overrides, building and floor labels always follow the copy so the new sheet looks the same. Duplicating is structural and cannot be undone. Use it when the same drawing needs a separate takeoff, for example one sheet for windows and another for doors.
 
 #### Delete a page
 
@@ -300,7 +300,9 @@ Locking a layer leaves the layer's own settings editable, but prevents changing 
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
-Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked table of every measurement and drawing. Filter by all/current page, type, or a free-text search, then click a row to jump to its page, select it, and zoom to it with 25 % breathing room. The zoom never pulls back further than Fit page, so an oversized target still shows the whole sheet. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection without changing the view, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the current Markups CSV.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked table of every measurement and drawing. Filter by all/current page, type, category, or a free-text search, then click a row to jump to its page, select it, and zoom to it with 25 % breathing room. The zoom never pulls back further than Fit page, so an oversized target still shows the whole sheet. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection without changing the view, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the project-wide Markups CSV.
+
+Use **Columns** to hide fields that are not relevant to the current task. **Group by** creates collapsible groups by category, room, page, layer, or **Building → Floor → Room**; the building and floor labels are set from **Pages → right-click → Set location…**. A saved **Markups view** stores the columns, filters, grouping and sort order in the `.gridscalr` file, so operational set-ups such as ventilation surveys or fire-safety checks travel with the project. Views are created and managed from the view selector and **More view options**. Applying another view with unsaved changes asks before discarding them.
 
 With more than one item selected, Properties offers bulk actions for:
 
@@ -375,15 +377,15 @@ The Markdown is bundled by Vite at build time, so help works offline and does no
 
 ## Project files
 
-A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, per-page calibrations, settings, layers, markup items, and embedded images. Referenced PDFs are **not** embedded; a TIF's converted PDF is, because the scan cannot be read directly at render time.
+A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items, and embedded images. Referenced PDFs are **not** embedded; a TIF's converted PDF is, because the scan cannot be read directly at render time.
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 11: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map.
+Version 1–5 projects load normally and are migrated to schema 12: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load.
 
 ```json
 {
-  "schemaVersion": 11,
+  "schemaVersion": 12,
   "name": "Level 01",
   "documents": [
     {
@@ -541,6 +543,7 @@ src/
   canvas/editors.ts      inline text and measurement-label editors
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
+  model/markups.ts       saved Markups views, columns, filters and grouping rules
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
@@ -556,7 +559,7 @@ src/
   ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties scale and active-layer sections
-  ui/markupsPanel.ts     docked project-wide Markups table and filters
+  ui/markupsPanel.ts     docked Markups table, columns, views, grouping and filters
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
   ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts single and multi-selection Properties

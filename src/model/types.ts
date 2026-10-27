@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 11 as const;
+export const SCHEMA_VERSION = 12 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -179,6 +179,36 @@ export interface PageState {
   scaleLocked?: boolean;
   /** Optional user-facing page title, for example "Window count". */
   name?: string;
+  /** Optional building or property name used by Markups grouping. */
+  building?: string;
+  /** Optional floor or storey name used by Markups grouping. */
+  floor?: string;
+}
+
+export type MarkupsColumnId =
+  "name" | "type" | "page" | "layer" | "value" | "category" | "room" | "visible" | "locked";
+
+export type MarkupsPageFilter = "all" | "current";
+export type MarkupsTypeFilter = "all" | "measure" | "draw";
+export type MarkupsGroupField = "category" | "room" | "page" | "layer" | "building" | "floor";
+
+export interface MarkupsSort {
+  column: MarkupsColumnId;
+  direction: "asc" | "desc";
+}
+
+/** A reusable Markups table configuration stored in the project file. */
+export interface MarkupsView {
+  id: string;
+  name: string;
+  columns: MarkupsColumnId[];
+  pageFilter: MarkupsPageFilter;
+  typeFilter: MarkupsTypeFilter;
+  /** null means every category. Drawings have no category. */
+  categoryId: string | null;
+  search: string;
+  groupBy: MarkupsGroupField[];
+  sort: MarkupsSort | null;
 }
 
 export type DocumentKind = "pdf" | "tiff";
@@ -261,6 +291,8 @@ export interface Project {
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;
+  /** Saved Markups table configurations. Order is display order. */
+  markupsViews: MarkupsView[];
   layers: Layer[];
   activeLayerId: string;
   createdAt: string;
