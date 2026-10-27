@@ -454,16 +454,35 @@ export class CanvasView {
     return true;
   }
 
-  /** Fits one item in view, including its measurement label, with 25 % breathing room. */
+  /**
+   * Fits one item in view, including its measurement label, with 25 % breathing
+   * room. An item that already sits comfortably in view is left alone so
+   * clicking rows in Markups or Layers does not re-zoom the drawing.
+   */
   focusItem(item: MarkupItem): boolean {
     const size = this.ensurePageSize();
     if (!size || this.width < 1 || this.height < 1) return false;
-    const view = focusViewTransform(this.focusBoundsForItem(item), size, {
+    const bounds = this.focusBoundsForItem(item);
+    if (this.isBoundsVisible(bounds)) return true;
+    const view = focusViewTransform(bounds, size, {
       width: this.width,
       height: this.height,
     });
     store.setView(view.zoom, view.panX, view.panY);
     return true;
+  }
+
+  /** True when the bounds already sit inside the viewport with breathing room. */
+  private isBoundsVisible(bounds: Bounds): boolean {
+    const margin = 48;
+    const first = this.toScreen(bounds.min);
+    const second = this.toScreen(bounds.max);
+    return (
+      Math.min(first.x, second.x) >= margin &&
+      Math.min(first.y, second.y) >= margin &&
+      Math.max(first.x, second.x) <= this.width - margin &&
+      Math.max(first.y, second.y) <= this.height - margin
+    );
   }
 
   private focusBoundsForItem(item: MarkupItem): Bounds {

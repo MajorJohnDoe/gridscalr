@@ -25,7 +25,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages, Layers and Symbols. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
+- **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, and the active layer.
 
@@ -318,7 +318,7 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 ### Find and navigate measurements
 
-Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it with 25 % breathing room; the view never zooms out further than Fit page. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it, capped at four times Fit page; a markup that is already visible is left in place. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
 
 - Filter by **All pages** or **Current page**, measurements/drawings/symbols, measurement or symbol category, or the search field.
 - Use **Columns** to show or hide table columns, including **Status**. Name is always visible.

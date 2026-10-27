@@ -25,12 +25,19 @@ export interface FocusBoundsOptions {
   marginFactor?: number;
   maxZoom?: number;
   minZoom?: number;
+  /**
+   * Ceiling for the focus zoom as a multiple of Fit page. Keeps a small markup
+   * in the context of its drawing instead of filling the viewport.
+   */
+  maxFitRatio?: number;
 }
 
 /**
- * Centers target bounds in the viewport without zooming out further than Fit
- * page. Small markups get a close-up; oversized targets fall back to the whole
- * page so the drawing remains the frame of reference.
+ * Centres target bounds in the viewport while keeping the drawing as context.
+ * The zoom stops at a small multiple of Fit page, so clicking a tiny symbol
+ * does not fill the screen, and a large markup still gets its own framing
+ * instead of falling back to the whole page. Targets larger than the fit view
+ * keep Fit page zoom, centred on the target without scrolling the page out.
  */
 export function focusViewTransform(
   bounds: Bounds,
@@ -40,8 +47,9 @@ export function focusViewTransform(
 ): ViewTransform {
   const fitPadding = options.fitPadding ?? 42;
   const marginFactor = options.marginFactor ?? 1.25;
-  const maxZoom = options.maxZoom ?? 8;
+  const maxZoom = options.maxZoom ?? 6;
   const minZoom = options.minZoom ?? 0.03;
+  const maxFitRatio = options.maxFitRatio ?? 4;
   const innerWidth = Math.max(1, viewport.width - fitPadding * 2);
   const innerHeight = Math.max(1, viewport.height - fitPadding * 2);
   const fitZoom = Math.max(
@@ -51,24 +59,47 @@ export function focusViewTransform(
   const width = Math.max(1, bounds.max.x - bounds.min.x) * marginFactor;
   const height = Math.max(1, bounds.max.y - bounds.min.y) * marginFactor;
   const targetZoom = Math.min(innerWidth / width, innerHeight / height);
-
-  if (!Number.isFinite(targetZoom) || targetZoom <= fitZoom) {
-    return {
-      zoom: fitZoom,
-      panX: (viewport.width - pageSize.width * fitZoom) / 2,
-      panY: (viewport.height - pageSize.height * fitZoom) / 2,
-    };
-  }
-
-  const zoom = Math.min(Math.max(targetZoom, fitZoom), Math.max(fitZoom, maxZoom));
   const center = {
     x: (bounds.min.x + bounds.max.x) / 2,
     y: (bounds.min.y + bounds.max.y) / 2,
   };
+
+  if (!Number.isFinite(targetZoom) || targetZoom <= fitZoom) {
+    // The target is at least as large as the fit view. Keep Fit page and centre
+    // on the target without letting the page slide outside the viewport.
+    return {
+      zoom: fitZoom,
+      ...clampPan(center, fitZoom, pageSize, viewport),
+    };
+  }
+
+  const ceiling = Math.max(fitZoom, Math.min(maxZoom, fitZoom * maxFitRatio));
+  const zoom = Math.min(targetZoom, ceiling);
   return {
     zoom,
     panX: viewport.width / 2 - center.x * zoom,
     panY: viewport.height / 2 - center.y * zoom,
+  };
+}
+
+/** Pans to a page-space centre while keeping the whole page inside the viewport. */
+function clampPan(
+  center: Point,
+  zoom: number,
+  pageSize: PageSize,
+  viewport: { width: number; height: number },
+): { panX: number; panY: number } {
+  const pageWidth = pageSize.width * zoom;
+  const pageHeight = pageSize.height * zoom;
+  const rawX = viewport.width / 2 - center.x * zoom;
+  const rawY = viewport.height / 2 - center.y * zoom;
+  const minX = Math.min(0, viewport.width - pageWidth);
+  const maxX = Math.max(0, viewport.width - pageWidth);
+  const minY = Math.min(0, viewport.height - pageHeight);
+  const maxY = Math.max(0, viewport.height - pageHeight);
+  return {
+    panX: Math.max(minX, Math.min(maxX, rawX)),
+    panY: Math.max(minY, Math.min(maxY, rawY)),
   };
 }
 
