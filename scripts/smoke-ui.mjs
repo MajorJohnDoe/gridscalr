@@ -180,24 +180,6 @@ try {
   );
   await assertContextBarFits("Area options applied");
 
-  await page.getByRole("button", { name: /Canvas options/ }).click();
-  const canvasOptions = page.getByRole("dialog", { name: "Canvas options" });
-  await canvasOptions.waitFor();
-  assert.equal(
-    await page.evaluate(() => Boolean(document.activeElement?.closest(".canvas-options"))),
-    true,
-    "focus should move into the Canvas popover",
-  );
-  const gridToggle = canvasOptions.getByRole("button", { name: "Grid" });
-  assert.equal(await gridToggle.getAttribute("aria-pressed"), "false");
-  await gridToggle.click();
-  assert.equal(
-    await canvasOptions.getByRole("button", { name: "Grid" }).getAttribute("aria-pressed"),
-    "true",
-  );
-  await page.keyboard.press("Escape");
-  await canvasOptions.waitFor({ state: "detached" });
-
   await page.keyboard.press("d");
   await page.locator(".context-tool", { hasText: "Revision cloud" }).waitFor();
   await assertContextBarFits("Revision cloud");
@@ -576,27 +558,34 @@ try {
   );
   const inspectorOrder = await page.evaluate(() =>
     [...document.querySelectorAll(".inspector-section")].map((section) =>
-      section.classList.contains("selection-section")
-        ? "selection"
-        : section.classList.contains("active-layer-section")
-          ? "layer"
-          : "scale",
+      section.classList.contains("selection-section") ? "selection" : "layer",
     ),
   );
   assert.deepEqual(
     inspectorOrder,
-    ["scale", "selection", "layer"],
+    ["selection", "layer"],
     "a selected markup should sit above the active-layer settings",
   );
+  assert.equal(
+    await page.locator(".inspector-section").filter({ hasText: "Measurement units" }).count(),
+    0,
+    "units should live in Project settings, not in Properties",
+  );
 
-  const lengthUnit = page.getByLabel("Project length unit");
+  // The right panel header opens Project settings without the menu.
+  await page.getByRole("button", { name: "Project settings", exact: true }).click();
+  const headerSettings = page.getByRole("dialog");
+  await headerSettings.waitFor();
+  const lengthUnit = headerSettings.getByLabel("Project length unit");
   await lengthUnit.selectOption("m");
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.project.settings.lengthUnit),
     "m",
-    "the Properties unit selector should change the project length unit",
+    "Project settings should change the project length unit",
   );
   await lengthUnit.selectOption("mm");
+  await page.keyboard.press("Escape");
+  await headerSettings.waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+,");
   const settingsDialog = page.getByRole("dialog");

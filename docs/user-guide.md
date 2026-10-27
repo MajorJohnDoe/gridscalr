@@ -22,11 +22,11 @@ GridScalr uses a compact, drawing-first layout.
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom.
-- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
+- **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
+- **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
 - **Status bar** – the clickable page scale, cursor position with its unit, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions.
@@ -123,6 +123,8 @@ Manual scale assumes the PDF page is at its physical paper size: 1 mm on paper e
 - **Lock scale** prevents changing the scale through calibration, manual scale, editing, or clearing. The lock is undoable and does not affect measurements, exports, zoom, or page navigation.
 - Clearing a page scale does not delete measurements. Measurements created while a page was calibrated keep a scale snapshot and their original values.
 
+When a measurement keeps an older scale than the page, Markups and Properties show a small warning on that value, for example `Measured at 1:50; the page is now 1:100`. Recalibrating with **Update existing measurements** clears the warning; the value is never changed silently.
+
 Measurements without a scale are shown in PDF points (`pt` / `pt²`) and are excluded from quantity totals.
 
 ## Measure
@@ -157,7 +159,7 @@ Change a measurement's category, room, area mode, line style, or count type late
 
 ### Snapping
 
-When **Snap to geometry** is enabled in the **Canvas** popover, point placement can lock to:
+When **Snap to geometry** is enabled in **Project settings**, point placement can lock to:
 
 - Endpoints and corners of visible markup segments
 - Segment midpoints
@@ -224,7 +226,7 @@ The floating strip beside the editor sets font size, colour, rotation, bold, und
 
 Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal handles.
 
-- Drag a corner or edge handle to resize. Text corner handles scale the font size.
+- Drag a corner or edge handle to resize. Text and stamp corner handles scale the font size; symbol corner handles scale the sign plate.
 - Drag the round handle above the selection to rotate. Hold `Shift` to snap to 15° increments.
 - Line, arrow, pen, and highlight rotation is baked into their points; text, rectangles, and ellipses store a rotation angle.
 - Measurement geometry stays vertex-editable from its points. Rectangle and ellipse quick areas expose their two opposite defining points and have no rotation handle.
@@ -233,7 +235,7 @@ Each drag or inline edit is one undo step.
 
 ## Images
 
-Use **File → Import image…** or the context bar to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts an image when the clipboard contains one; when it does not, the same shortcut pastes markups.
+Use **File → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts an image when the clipboard contains one; when it does not, the same shortcut pastes markups.
 
 - Images are embedded in the project, so the `.gridscalr` file stays portable.
 - Each image is limited to 20 MB and 4000 px on its longest side. Larger images are proportionally downscaled.
@@ -416,10 +418,10 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 ## Settings
 
-Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
+Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project settings** button in the Properties header.
 
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
-- **Units** – length and area units for the project. The same controls are available under **Properties → Measurement units** and in the **Canvas** popover. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
+- **Units** – length and area units for the project. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.

@@ -833,16 +833,6 @@ textarea:disabled {
   color: var(--text);
 }
 
-.context-canvas-options {
-  flex: 0 0 auto;
-}
-
-.context-icon-button {
-  width: 30px;
-  padding: 0;
-  justify-content: center;
-}
-
 .context-measure-options {
   max-width: 200px;
 }
@@ -3634,6 +3624,33 @@ textarea:disabled {
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
+.inspector-restore {
+  position: absolute;
+  right: 7px;
+  top: 50px;
+  z-index: 12;
+  width: 24px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: rgba(30, 36, 40, 0.94);
+  color: var(--muted);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.inspector-restore:hover {
+  color: var(--jade-bright);
+  border-color: rgba(53, 194, 161, 0.35);
+}
+
+.inspector-restore[hidden] {
+  display: none;
+}
+
 .dock-restore:hover {
   color: var(--jade-bright);
   border-color: rgba(53, 194, 161, 0.35);
@@ -3646,6 +3663,51 @@ textarea:disabled {
 
 .inspector-header {
   justify-content: space-between;
+}
+
+.inspector-tabs {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg-deep);
+}
+
+.inspector-tab {
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+  padding: 4px 8px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.inspector-tab:hover {
+  color: var(--text);
+  background: var(--panel-hover);
+}
+
+.inspector-tab.is-active {
+  color: var(--jade-bright);
+  background: rgba(53, 194, 161, 0.12);
+}
+
+.inspector-tab:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.inspector-tab:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: 1px;
 }
 
 .inspector-settings {
@@ -3876,12 +3938,10 @@ textarea:disabled {
     min-width: 80px;
   }
 
-  .context-canvas-options span,
   .context-variant-btn span {
     display: none;
   }
 
-  .context-canvas-options,
   .context-variant-btn {
     width: 28px;
     padding: 0;

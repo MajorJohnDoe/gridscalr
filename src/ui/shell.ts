@@ -5,7 +5,13 @@ import { attachToolFlyout } from "./toolFlyouts";
 import { TOOLS } from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
-import { initPanelLayout, PANEL_LIMITS, setPanelWidth, setSidebarCollapsed } from "./sidebar";
+import {
+  initPanelLayout,
+  PANEL_LIMITS,
+  setInspectorCollapsed,
+  setPanelWidth,
+  setSidebarCollapsed,
+} from "./sidebar";
 
 export interface ShellRefs {
   root: HTMLElement;
@@ -31,6 +37,7 @@ export interface ShellRefs {
   dockFooter: HTMLElement;
   contextBar: HTMLElement;
   inspector: HTMLElement;
+  inspectorRestore: HTMLButtonElement;
   canvasHost: HTMLElement;
   markupsResizer: HTMLElement;
   markupsPanel: HTMLElement;
@@ -176,10 +183,27 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const inspectorResizer = el("div", "resizer");
 
+  const inspectorRestore = el("button", "inspector-restore");
+  inspectorRestore.type = "button";
+  inspectorRestore.hidden = true;
+  inspectorRestore.title = "Show properties (Ctrl/Cmd+Shift+\\)";
+  inspectorRestore.setAttribute("aria-label", "Show properties");
+  inspectorRestore.innerHTML = icon("chevronLeft", 14);
+  inspectorRestore.addEventListener("click", () => setInspectorCollapsed(false));
+
   const welcome = el("div", "welcome hidden");
   canvasHost.append(welcome);
 
-  workspace.append(toolRail, dock, dockRestore, dockResizer, main, inspectorResizer, inspector);
+  workspace.append(
+    toolRail,
+    dock,
+    dockRestore,
+    dockResizer,
+    main,
+    inspectorResizer,
+    inspector,
+    inspectorRestore,
+  );
 
   const statusbar = el("footer", "statusbar");
   const statusCalibration = el("div", "status-section");
@@ -239,6 +263,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     dockRestore,
     inspector,
     inspectorResizer,
+    inspectorRestore,
   });
 
   setupResizer(
@@ -284,6 +309,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     dockFooter,
     contextBar,
     inspector,
+    inspectorRestore,
     canvasHost,
     markupsResizer,
     markupsPanel,

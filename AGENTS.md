@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
-- Current app version: `0.7.0`.
+- Current app version: `0.7.1`.
 - Current project-file schema: `14`.
 - Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
@@ -196,10 +196,9 @@ src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model, quantity and markup CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
 src/styles/help.css        help dialog, search, TOC and image lightbox
-src/styles/popovers.css    tool flyouts, Canvas options and measurement options
-src/ui/canvasOptions.ts    units, snapping, grid and scale-line popover
+src/styles/popovers.css    tool flyouts and measurement options
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
-src/ui/inspector.ts        Properties scale and active-layer sections
+src/ui/inspector.ts        Properties header, active-layer and selection sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
@@ -282,7 +281,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
 - **0.6.1:** complete — all 52 built-in facilities symbols are redrawn as original classic sign plates with filled vector pictograms, category-coloured plates, a 24 pt default size and a white-ringed status badge. No schema change; the schema remains v13.
-- **0.7.0 (test build):** stamp and symbol corner resizing, schema 14 with optional `symbolSize` on facility symbols (missing means 24 pt), context-aware markup focus zoom, the page scale moved from Properties to the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
+- **0.7.1:** complete — the right panel gains **Properties** and **Project settings** buttons plus a restore tab when collapsed, the duplicate measurement units moved out of Properties, the layer explanation removed, and the redundant image and Canvas buttons removed from the context bar. Includes the 0.7.0 work: stamp and symbol corner resizing, schema 14 with optional `symbolSize` (missing means 24 pt), context-aware markup focus zoom, the page scale in the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

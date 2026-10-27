@@ -17,7 +17,6 @@ import {
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { clear, el, option } from "./dom";
-import { openCanvasOptions } from "./canvasOptions";
 import { openMeasureOptions } from "./measureOptions";
 import { textDialog } from "./dialogs";
 import { icon } from "./icons";
@@ -27,7 +26,7 @@ import { TOOL_BY_ID } from "./toolDefs";
 import { hasToolVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 
-export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
+export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
   clear(refs.contextBar);
   const project = store.project;
   const tool = TOOL_BY_ID.get(store.ui.activeTool);
@@ -99,17 +98,6 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     }
     controls.append(layerTarget, el("div", "divider-v"));
   }
-
-  const imageButton = el(
-    "button",
-    "btn btn-small btn-ghost context-image-button context-icon-button",
-  );
-  imageButton.type = "button";
-  imageButton.title = "Import a PNG or JPEG image (Ctrl+V also pastes images)";
-  imageButton.setAttribute("aria-label", "Import image");
-  imageButton.innerHTML = icon("image", 14);
-  imageButton.addEventListener("click", actions.insertImage);
-  controls.append(imageButton, el("div", "divider-v"));
 
   const measureTool =
     store.ui.activeTool === "length" ||
@@ -368,16 +356,6 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     fillField.append(fillSelect);
     controls.prepend(textToggle, fillField, el("div", "divider-v"));
   }
-
-  const canvasOptions = el("button", "btn btn-small btn-ghost context-canvas-options");
-  canvasOptions.type = "button";
-  canvasOptions.title = "Units, snapping and guides";
-  canvasOptions.setAttribute("aria-label", "Canvas options: units, snapping and guides");
-  canvasOptions.setAttribute("aria-expanded", "false");
-  canvasOptions.setAttribute("aria-haspopup", "dialog");
-  canvasOptions.innerHTML = `${icon("settings", 14)}<span>Canvas</span>`;
-  canvasOptions.addEventListener("click", () => openCanvasOptions(canvasOptions));
-  controls.append(canvasOptions);
 
   refs.contextBar.append(controls);
 }

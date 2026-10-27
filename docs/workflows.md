@@ -17,14 +17,14 @@ Use this workflow when you need to document a site visit, mark a deviation, or g
 
 1. Open the PDF or scanned TIF with **File → Open drawing…**.
 2. Choose the pages you need in the page picker.
-3. Calibrate page 1 against a known dimension, or enter the printed `1:N` scale in Properties.
+3. Calibrate page 1 against a known dimension, or enter the printed `1:N` scale from the page scale chip in the status bar.
 4. Lock the scale if the drawing must not be recalibrated by mistake.
 
-A calibrated page shows the scale in the status bar and the Reference calibration in Properties.
+A calibrated page shows the scale in the status bar; hover the chip for the reference length and the exact mm per point.
 
 ### 2. Measure what the job needs
 
-Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units, snapping and guides in the **Canvas** popover.
+Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units and snapping in **Project settings**.
 
 ![Length tool active with the Layers panel and measurement context](screenshots/measure.png)
 
@@ -86,7 +86,7 @@ Use **Lock scale** once the scale is verified. This prevents accidental recalibr
 
 ### 3. Measure by category and room
 
-Check the length and area units in the **Canvas** popover. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
+Check the length and area units in **Project settings → Units**. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
 
 - Measure gross floor area per room.
 - Add deductions for shafts, openings and other non-orderable areas with the **Deduct** switch in the context bar.

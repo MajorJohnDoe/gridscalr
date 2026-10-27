@@ -132,11 +132,11 @@ GridScalr uses a compact drawing-first layout:
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom that opens the docked list.
-- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category, and the next inspection status.
+- **Context bar** – the active tool, target layer, tool-specific controls, and a **New measurement** popover for category and room. With the Symbol tool it shows the chosen symbol, its category, and the next inspection status.
 - **Left panel** – Pages and Layers. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library instead of adding a third tab; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – an optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
+- **Properties** – the active layer and the selected item. The header has **Properties** and **Project settings** buttons plus a collapse chevron; when the panel is collapsed, a tab on the right edge brings it back. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Units, snapping, quantity defaults and stamp presets are under **Project settings**.
 - **Status bar** – the clickable page scale (calibrate, manual scale, lock and clear), cursor position with its unit, zoom and page controls, and the active layer.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…**, the tool rail button, or `Ctrl/Cmd+L` opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
@@ -203,14 +203,14 @@ Clearing a page scale does not delete the measurements. Measurements created whi
 ### 3. Measure
 
 - **Length (L):** click each vertex. Press **Enter** or double-click to finish. Hold **Shift** to constrain the angle. Choose **Solid** or **Dashed** under **Line style** in Properties. Drag the value label on the plan to place it manually; right-click it to **Reset label position** or **Choose connection point…** so the leader attaches exactly where you want. Labels connect to the nearest point on the actual line or outline, including multi-segment lengths.
-- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the unit selected in the Canvas popover. Choose **Add** or **Deduct** in the context bar before drawing, in the **New measurement** popover, or from the Area tool flyout. You can also change an existing area in Properties.
+- **Area (A):** choose **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover. Polygon works click-by-click: click around the perimeter, then click the first vertex or press **Enter** to close it. Rectangle and Ellipse are quick areas drawn by dragging from one corner to the opposite corner. Hold **Shift** while dragging a quick area to make a square or circle. Areas use the project area unit from **Settings → Project settings**. Choose **Add** or **Deduct** in the context bar before drawing, in the **New measurement** popover, or from the Area tool flyout. You can also change an existing area in Properties.
 - **Count (C):** choose an object type, then click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol for a door, window, radiator, fixture, or other object.
 
-Length and area units are project-wide. Choose mm, cm, m, in, ft, yd, or the matching area unit in **Properties → Measurement units**, **Canvas → Units**, or **Settings → Project settings**. Changing units only changes how values are displayed and reported. **Smart length labels** show metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
+Length and area units are project-wide. Choose mm, cm, m, in, ft, yd, or the matching area unit in **Project settings → Units**, opened from the right panel header or with `Ctrl/Cmd+,`. Changing units only changes how values are displayed and reported. **Smart length labels** show metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 
 Measurements are added to the active measurement layer. The value shown on the plan updates as the zoom changes, while the geometry stays in PDF coordinates. New measurements use a 0.75 pt paper-space line weight and new drawing items use 1.5 pt; both can be changed from 0.25 to 8 pt in Properties, and drawing tools also expose the weight in the context bar.
 
-When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Toggle snapping in the **Canvas** popover and set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
+When **Snap to geometry** is enabled, point placement can lock to visible markup endpoints and corners, segment midpoints, and intersections between straight markup segments. The marker names the target type (`Endpoint`, `Midpoint`, or `Intersection`). Snap applies to calibration, length, polygon and quick areas, lines, and arrows. Hidden items and hidden layers never provide snap targets; locked but visible items do. Toggle snapping and set the snap distance in **Settings → Project settings** from 2 to 24 screen pixels. Shift still provides the existing 45° constraint for segment tools and makes quick areas square or circular.
 
 While the Length, Area, or Count tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows an **Add / Deduct** switch directly in the context bar. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. These stay selected for the next measurement until you change them or open another project; the category starts on the project default and the room list suggests names already used in the project. The Markups list shows the category, count type, deduction marker, and room, and all of them can be changed later in Properties. An empty room is allowed and is not stored.
 
@@ -267,7 +267,7 @@ Select a symbol, choose the inspection status for the next placement, then click
 
 ### 5. Add images
 
-Use **File → Import image…** (or the context bar) to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
+Use **File → Import image…** to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
 
 Images are embedded in the project, so the `.gridscalr` file stays portable. Each image is limited to 20 MB and 4000 px on its longest side. Images larger than 4000 px are proportionally downscaled; an image that is still larger than 20 MB after encoding is rejected. PNG transparency is preserved; JPEG files are re-encoded at quality 0.85 when they need resizing or exceed the size limit.
 
@@ -576,9 +576,8 @@ src/
   ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, dialogs, status bar
   styles/help.css        help dialog, search, TOC and image lightbox
   styles/popovers.css    tool flyouts, Canvas options and measurement options
-  ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
-  ui/inspector.ts        Properties units, active-layer and selection sections
+  ui/inspector.ts        Properties header, active-layer and selection sections
   ui/markupsPanel.ts     docked Markups table, columns, views, grouping and filters
   ui/symbolLibrary.ts    searchable symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
