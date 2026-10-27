@@ -28,7 +28,7 @@ import {
   layersForKind,
   moveItemToLayer,
 } from "../model/layers";
-import { itemKindLabel, itemMetrics } from "../model/measure";
+import { itemKindLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
   AreaMode,
@@ -109,6 +109,14 @@ export function selectionSection(
     ),
   );
   section.append(card);
+
+  const scaleWarning = itemScaleWarning(item, project);
+  if (scaleWarning) {
+    const warning = el("div", "scale-warning-note");
+    warning.innerHTML = icon("warning", 13);
+    warning.append(el("span", "", scaleWarning));
+    section.append(warning);
+  }
 
   if (locked) {
     section.append(

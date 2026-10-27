@@ -4339,6 +4339,34 @@ textarea:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+/* A stale measurement scale is a quantity risk, so it gets a quiet warning. */
+.scale-warning {
+  display: inline-flex;
+  margin-left: 5px;
+  vertical-align: -1px;
+  color: var(--warning);
+  cursor: help;
+}
+
+.scale-warning-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 8px 9px;
+  border: 1px solid rgba(240, 179, 93, 0.28);
+  border-radius: 7px;
+  background: rgba(240, 179, 93, 0.08);
+  color: var(--warning);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.scale-warning-note .icon {
+  flex: 0 0 auto;
+  margin-top: 1px;
+}
+
 .markups-category,
 .markups-room,
 .markups-type {

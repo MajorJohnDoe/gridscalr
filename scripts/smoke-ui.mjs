@@ -81,6 +81,11 @@ try {
   );
   const scaleChip = page.locator(".status-chip-action");
   await scaleChip.waitFor();
+  assert.match(
+    (await scaleChip.textContent()) ?? "",
+    /1:\d/,
+    "the scale chip should show a compact 1:N ratio",
+  );
   await scaleChip.click();
   const scaleMenu = page.locator(".popover");
   await scaleMenu.waitFor();
@@ -89,6 +94,9 @@ try {
   assert.match(scaleMenuText, /Lock scale|Unlock scale/, "the scale menu should offer the lock");
   await page.keyboard.press("Escape");
   await scaleMenu.waitFor({ state: "detached" });
+
+  // Site coordinates read as a position, with a unit on each axis.
+  await page.locator(".statusbar .status-label", { hasText: "Position" }).waitFor();
 
   const assertContextBarFits = async (label) => {
     const size = await page.locator(".context-bar").evaluate((bar) => ({
@@ -211,6 +219,21 @@ try {
     10,
     "the Markups table should expose all ten columns",
   );
+
+  // A measurement drawn with an older page scale must warn, not fail silently.
+  await page.evaluate(() => {
+    window.__gridscalr.store.mutate((project) => {
+      const item = project.layers
+        .flatMap((layer) => layer.items)
+        .find((entry) => entry.id === "item_floor_living");
+      if (item?.scale) item.scale.pointsPerMeter *= 2;
+    }, "change");
+  });
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await markupsPanel.locator(".scale-warning").count()) >= 1,
+    "a stale measurement scale should warn in the Markups table",
+  );
   const zoomBeforeFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
   const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
   await radiatorRow.locator(".markups-item-label").click();
@@ -233,6 +256,7 @@ try {
     "item_floor_living",
     "clicking a large Markups row should still select it",
   );
+  await page.locator(".scale-warning-note").waitFor();
 
   await radiatorRow.hover();
   await radiatorRow.locator(".markups-rename").click();

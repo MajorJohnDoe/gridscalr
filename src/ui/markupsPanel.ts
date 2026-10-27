@@ -13,7 +13,7 @@ import {
   moveItemsToLayer,
 } from "../model/layers";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/commands";
-import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import {
   INSPECTION_STATUSES,
   INSPECTION_STATUS_LABELS,
@@ -636,7 +636,17 @@ function markupRowElement(
   layerCell.append(layerSelect);
   cells.set("layer", layerCell);
 
-  const valueCell = el("td", "markups-value", metrics?.primary ?? "–");
+  const valueCell = el("td", "markups-value");
+  valueCell.append(document.createTextNode(metrics?.primary ?? "–"));
+  const scaleWarning = itemScaleWarning(item, project);
+  if (scaleWarning) {
+    const badge = el("span", "scale-warning");
+    badge.innerHTML = icon("warning", 11);
+    badge.title = scaleWarning;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", scaleWarning);
+    valueCell.append(badge);
+  }
   cells.set("value", valueCell);
 
   const categoryCell = el(
