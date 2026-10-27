@@ -216,8 +216,8 @@ try {
   assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    10,
-    "the Markups table should expose all ten columns",
+    12,
+    "the Markups table should expose all twelve columns",
   );
 
   // A measurement drawn with an older page scale must warn, not fail silently.
@@ -258,6 +258,74 @@ try {
   );
   await page.locator(".scale-warning-note").waitFor();
 
+  // Created and Modified columns, range selection and bulk category edit.
+  assert.equal(
+    await markupsPanel.locator('th[data-column="created"]').count(),
+    1,
+    "the Markups table should expose a Created column",
+  );
+  assert.equal(
+    await markupsPanel.locator('th[data-column="modified"]').count(),
+    1,
+    "the Markups table should expose a Modified column",
+  );
+  assert.match(
+    (await markupsPanel.locator("td.markups-time").first().textContent()) ?? "",
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+    "the Created column should show YYYY-MM-DD HH:mm",
+  );
+
+  const tableRows = markupsPanel.locator("tbody tr.markups-row");
+  await tableRows.nth(0).click();
+  await page.waitForTimeout(120);
+  await tableRows.nth(2).click({ modifiers: ["Shift"] });
+  await page.waitForTimeout(150);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
+    3,
+    "Shift-click should select the whole range between two rows",
+  );
+  await tableRows.nth(1).click({ modifiers: ["Control"] });
+  await page.waitForTimeout(150);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
+    2,
+    "Ctrl-click should remove one row from the range",
+  );
+
+  const rangeIds = await page.evaluate(() =>
+    window.__gridscalr.store.ui.selection.map((ref) => ref.itemId),
+  );
+  await tableRows.nth(0).click({ button: "right" });
+  const rangeMenu = page.locator(".popover:not(.popover-submenu)");
+  await rangeMenu.waitFor();
+  await rangeMenu.getByText("Set category", { exact: true }).click();
+  const categorySubmenu = page.locator(".popover-submenu:not([hidden])");
+  await categorySubmenu.waitFor();
+  await categorySubmenu.getByText("Wall", { exact: true }).click();
+  await page.waitForTimeout(200);
+  const categoriesApplied = await page.evaluate(
+    (ids) =>
+      ids.map(
+        (id) =>
+          window.__gridscalr.store.project.layers
+            .flatMap((layer) => layer.items)
+            .find((item) => item.id === id)?.categoryId ?? null,
+      ),
+    rangeIds,
+  );
+  assert.equal(
+    categoriesApplied[0],
+    categoriesApplied[1],
+    "bulk category should apply to the range",
+  );
+  const wallCategory = await page.evaluate(
+    () =>
+      window.__gridscalr.store.project.categories.find((category) => category.name === "Wall")
+        ?.id ?? null,
+  );
+  assert.deepEqual(categoriesApplied, [wallCategory, wallCategory]);
+
   await radiatorRow.hover();
   await radiatorRow.locator(".markups-rename").click();
   const markupRename = markupsPanel.locator(".markups-name-input");
@@ -290,7 +358,7 @@ try {
   await columnsDialog.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    9,
+    11,
     "hiding a Markups column should remove its header",
   );
 
@@ -301,7 +369,7 @@ try {
   await columnsAgain.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    10,
+    12,
     "restoring the Markups column should bring its header back",
   );
 
@@ -429,6 +497,36 @@ try {
     "missing",
     "the Markups status cell should update symbol status",
   );
+
+  // Bulk status through the row context menu applies to every selected symbol.
+  const symbolRows = markupsPanel.locator("tbody tr.markups-row");
+  await symbolRows.nth(0).click();
+  await page.waitForTimeout(120);
+  await symbolRows.nth(1).click({ modifiers: ["Control"] });
+  await page.waitForTimeout(150);
+  const statusIds = await page.evaluate(() =>
+    window.__gridscalr.store.ui.selection.map((ref) => ref.itemId),
+  );
+  assert.equal(statusIds.length, 2, "two symbol rows should be selected");
+  await symbolRows.nth(1).click({ button: "right" });
+  const symbolMenu = page.locator(".popover:not(.popover-submenu)");
+  await symbolMenu.waitFor();
+  await symbolMenu.getByText("Set status", { exact: true }).click();
+  const statusSubmenu = page.locator(".popover-submenu:not([hidden])");
+  await statusSubmenu.waitFor();
+  await statusSubmenu.getByText("Approved", { exact: true }).click();
+  await page.waitForTimeout(200);
+  const bulkStatuses = await page.evaluate(
+    (ids) =>
+      ids.map(
+        (id) =>
+          window.__gridscalr.store.project.layers
+            .flatMap((layer) => layer.items)
+            .find((item) => item.id === id)?.status ?? null,
+      ),
+    statusIds,
+  );
+  assert.deepEqual(bulkStatuses, ["approved", "approved"]);
 
   await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });

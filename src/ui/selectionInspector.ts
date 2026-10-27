@@ -887,7 +887,7 @@ function multiSelectionSection(
       const categoryField = el("label", "field");
       categoryField.append(el("span", "field-label", "Category"));
       const categorySelect = el("select", "select");
-      categorySelect.append(option("", "Set category…", !commonCategory));
+      categorySelect.append(option("", "Multiple values", !commonCategory));
       for (const category of project.categories) {
         categorySelect.append(option(category.id, category.name, category.id === commonCategory));
       }
@@ -903,16 +903,17 @@ function multiSelectionSection(
       section.append(categoryField);
 
       const firstRoom = (measurements[0].item.room ?? "").trim();
-      const commonRoom = measurements.every((entry) => (entry.item.room ?? "").trim() === firstRoom)
-        ? firstRoom
-        : "";
+      const roomsMatch = measurements.every(
+        (entry) => (entry.item.room ?? "").trim() === firstRoom,
+      );
+      const commonRoom = roomsMatch ? firstRoom : "";
       const roomField = el("div", "field");
       roomField.append(el("span", "field-label", "Room"));
       const roomRow = el("div", "input-row");
       const roomInput = el("input", "input");
       roomInput.type = "text";
       roomInput.value = commonRoom;
-      roomInput.placeholder = "Set room…";
+      roomInput.placeholder = roomsMatch ? "Set room…" : "Multiple values";
       roomInput.disabled = allLocked;
       roomInput.title = allLocked
         ? "Unlock the selected measurements to edit them."
@@ -947,7 +948,7 @@ function multiSelectionSection(
         const modeField = el("label", "field");
         modeField.append(el("span", "field-label", "Area mode"));
         const modeSelect = el("select", "select");
-        modeSelect.append(option("", "Set area mode…", !commonMode));
+        modeSelect.append(option("", "Multiple values", !commonMode));
         modeSelect.append(
           option("add", "Add to area", commonMode === "add"),
           option("subtract", "Deduct from area", commonMode === "subtract"),
@@ -976,7 +977,7 @@ function multiSelectionSection(
         const countField = el("label", "field");
         countField.append(el("span", "field-label", "Object type"));
         const countSelect = el("select", "select");
-        countSelect.append(option("", "Set object type…", !commonType));
+        countSelect.append(option("", "Multiple values", !commonType));
         for (const type of COUNT_TYPES) {
           countSelect.append(option(type, COUNT_TYPE_LABELS[type], type === commonType));
         }
@@ -1013,11 +1014,12 @@ function multiSelectionSection(
   if (allSymbols) {
     const statuses = resolved.map((entry) => entry.item.status ?? "");
     const firstStatus = statuses[0] ?? "";
-    const commonStatus = statuses.every((status) => status === firstStatus) ? firstStatus : "";
+    const statusesMatch = statuses.every((status) => status === firstStatus);
+    const commonStatus = statusesMatch ? firstStatus : "";
     const statusField = el("label", "field");
     statusField.append(el("span", "field-label", "Status"));
     const statusSelect = el("select", "select");
-    statusSelect.append(option("", "Set status…", true));
+    statusSelect.append(option("", statusesMatch ? "Set status…" : "Multiple values", true));
     for (const status of INSPECTION_STATUSES) {
       statusSelect.append(
         option(status, INSPECTION_STATUS_LABELS[status], status === commonStatus),

@@ -49,6 +49,7 @@ import type {
   MarkupsGroupField,
   MarkupsView,
   Project,
+  SelectionRef,
   SymbolCategory,
 } from "../model/types";
 import { store } from "../state/store";
@@ -61,25 +62,29 @@ import type { PanelActions } from "./panels";
 import { showPopover } from "./popover";
 import { showSelectionMenuAt } from "./selectionMenu";
 import type { ShellRefs } from "./shell";
+import { selectionKey } from "../model/selection";
 
 const PREFS_KEY = "gridscalr.ui.markups.v1";
 const ACTIVE_VIEW_KEY = "gridscalr.ui.markups.active-view.v1";
 const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 140;
 
+/** Anchor row for Shift-click range selection in the Markups table. */
+let rangeAnchor: SelectionRef | null = null;
+
 const COLUMN_WIDTHS: Record<MarkupsColumnId, number> = {
-  name: 18,
-  type: 7,
-  page: 4,
-  layer: 10,
+  name: 17,
+  type: 6,
+  page: 5,
+  layer: 12,
   value: 6,
   category: 8,
-  room: 7,
-  status: 8,
-  created: 11,
-  modified: 11,
+  room: 6,
+  status: 7,
+  created: 12,
+  modified: 12,
   visible: 5,
-  locked: 5,
+  locked: 4,
 };
 
 interface MarkupsPreferences {
@@ -582,6 +587,7 @@ function markupRowElement(
 
   const tr = el("tr", "markups-row");
   tr.dataset.itemId = item.id;
+  tr.dataset.layerId = layer.id;
   tr.tabIndex = 0;
   tr.classList.toggle("is-selected", store.isSelected(ref));
   tr.setAttribute("aria-selected", String(store.isSelected(ref)));
@@ -635,6 +641,10 @@ function markupRowElement(
   layerSelect.addEventListener("change", (event) => {
     event.stopPropagation();
     const target = layerSelect.value;
+    if (store.isSelected(ref) && store.ui.selection.length > 1) {
+      actions.moveSelectionToLayer(target);
+      return;
+    }
     let moved = 0;
     store.mutate((project) => {
       const result = moveItemsToLayer(project, [ref], target);
@@ -687,8 +697,10 @@ function markupRowElement(
     status.addEventListener("click", (event) => event.stopPropagation());
     status.addEventListener("change", (event) => {
       event.stopPropagation();
+      const bulk = store.isSelected(ref) && store.ui.selection.length > 1;
+      const targets = bulk ? store.ui.selection : [ref];
       store.mutate((project) => {
-        setItemsStatus(project, [ref], status.value ? (status.value as InspectionStatus) : null);
+        setItemsStatus(project, targets, status.value ? (status.value as InspectionStatus) : null);
       }, "change");
     });
     statusCell.append(status);
@@ -748,11 +760,29 @@ function markupRowElement(
   tr.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, select, input, textarea")) return;
-    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    if (event.shiftKey) {
+      const rows = Array.from(
+        (tr.closest("tbody") ?? document).querySelectorAll<HTMLElement>("tr.markups-row"),
+      ).map((row) => ({ layerId: row.dataset.layerId ?? "", itemId: row.dataset.itemId ?? "" }));
+      const anchor = rangeAnchor ?? ref;
+      const start = rows.findIndex((entry) => selectionKey(entry) === selectionKey(anchor));
+      const end = rows.findIndex((entry) => selectionKey(entry) === selectionKey(ref));
       if (item.page !== store.ui.page) actions.goToPage(item.page, false);
-      store.toggleSelection(ref);
+      if (start >= 0 && end >= 0) {
+        const [from, to] = start <= end ? [start, end] : [end, start];
+        store.setSelectionMany(rows.slice(from, to + 1));
+      } else {
+        store.toggleSelection(ref);
+      }
       return;
     }
+    if (event.ctrlKey || event.metaKey) {
+      if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+      store.toggleSelection(ref);
+      rangeAnchor = ref;
+      return;
+    }
+    rangeAnchor = ref;
     navigate();
   });
   tr.addEventListener("dblclick", (event) => {
@@ -1046,7 +1076,11 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const foot = el("div", "markups-foot");
   const footLeft = el("span", "markups-foot-count", "");
-  const footRight = el("span", "markups-foot-hint", "Click a row to navigate · F2 rename");
+  const footRight = el(
+    "span",
+    "markups-foot-hint",
+    "Click to navigate · Shift-click for a range · F2 rename",
+  );
   foot.append(footLeft, footRight);
   panel.append(foot);
 
