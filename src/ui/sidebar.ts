@@ -3,6 +3,7 @@ import { clear, el } from "./dom";
 import { icon } from "./icons";
 import { renderLayers } from "./layerList";
 import { renderPages, disconnectPageThumbnails } from "./pageList";
+import { renderSymbolLibrary } from "./symbolLibrary";
 import type { PanelActions } from "./panels";
 import {
   clearPanelPreferences,
@@ -116,6 +117,9 @@ export function renderSidebar(refs: ShellRefs, actions: PanelActions): void {
       break;
     case "layers":
       renderLayers(refs, actions);
+      break;
+    case "symbols":
+      renderSymbolLibrary(refs, actions);
       break;
   }
 }

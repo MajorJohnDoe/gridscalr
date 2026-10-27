@@ -36,7 +36,9 @@ describe("markup CSV", () => {
 
     const csv = serializeMarkupCsv(project);
     const lines = csv.split("\r\n");
-    expect(lines[0]).toBe("Page,Type,Layer,Label,Value,Unit,Details,Points");
+    expect(lines[0]).toBe(
+      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status",
+    );
     expect(csv).toContain('"Wall, ""A"""');
     expect(csv).toContain("Text");
     expect(csv).not.toContain("\n\n");
@@ -85,10 +87,28 @@ describe("markup CSV", () => {
     measure.items.push(item("visible", "length", "Visible"));
     measure.items.push({ ...item("hidden", "length", "Hidden"), visible: false });
     measure.visible = false;
-    expect(serializeMarkupCsv(project)).toBe("Page,Type,Layer,Label,Value,Unit,Details,Points");
+    expect(serializeMarkupCsv(project)).toBe(
+      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status",
+    );
     measure.visible = true;
     const csv = serializeMarkupCsv(project);
     expect(csv).toContain("Visible");
     expect(csv).not.toContain("Hidden");
+  });
+
+  it("exports symbol names, categories, and inspection status", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      ...item("symbol", "symbol", "Extinguisher"),
+      points: [{ x: 50, y: 60 }],
+      symbolId: "fire.extinguisher",
+      status: "approved",
+      color: "#e5484d",
+    });
+    const csv = serializeMarkupCsv(project);
+    expect(csv).toContain("Symbol");
+    expect(csv).toContain("Fire extinguisher,Fire protection,Approved");
+    expect(csv).toContain("50.00 60.00");
   });
 });

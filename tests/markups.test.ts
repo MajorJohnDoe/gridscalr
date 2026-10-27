@@ -19,6 +19,7 @@ const view = (patch: Partial<MarkupsView> = {}): MarkupsView => ({
   pageFilter: "all",
   typeFilter: "measure",
   categoryId: "cat_hvac",
+  symbolCategory: null,
   search: "",
   groupBy: ["building", "floor", "room"],
   sort: null,
@@ -55,6 +56,35 @@ describe("Markups views", () => {
     expect(views[1].categoryId).toBeNull();
   });
 
+  it("normalizes symbol views and validates symbol categories", () => {
+    const views = normalizeMarkupsViews(
+      [
+        view({
+          id: "view_symbols",
+          name: "Fire symbols",
+          typeFilter: "symbol",
+          categoryId: null,
+          symbolCategory: "fire",
+        }),
+        view({
+          id: "view_bad",
+          name: "Bad symbols",
+          typeFilter: "symbol",
+          categoryId: "cat_hvac",
+          symbolCategory: "not-a-category" as never,
+        }),
+      ],
+      new Set(["cat_hvac"]),
+    );
+    expect(views[0]).toMatchObject({
+      typeFilter: "symbol",
+      categoryId: null,
+      symbolCategory: "fire",
+    });
+    expect(views[1].symbolCategory).toBeNull();
+    expect(views[1].categoryId).toBe("cat_hvac");
+  });
+
   it("always keeps Name visible and ignores unknown columns", () => {
     expect(normalizeMarkupsColumns(["value", "bogus", "value"])).toEqual(["name", "value"]);
     expect(normalizeMarkupsColumns(undefined)).toEqual([
@@ -65,6 +95,7 @@ describe("Markups views", () => {
       "value",
       "category",
       "room",
+      "status",
       "visible",
       "locked",
     ]);

@@ -133,6 +133,7 @@
       "pageFilter": "all",
       "typeFilter": "measure",
       "categoryId": null,
+      "symbolCategory": null,
       "search": "",
       "groupBy": [
         "building",
@@ -158,9 +159,36 @@
       "pageFilter": "all",
       "typeFilter": "draw",
       "categoryId": null,
+      "symbolCategory": null,
       "search": "",
       "groupBy": [
         "page"
+      ],
+      "sort": {
+        "column": "name",
+        "direction": "asc"
+      }
+    },
+    {
+      "id": "view_symbols_status",
+      "name": "Symbols & status",
+      "columns": [
+        "name",
+        "type",
+        "page",
+        "layer",
+        "category",
+        "status",
+        "visible",
+        "locked"
+      ],
+      "pageFilter": "all",
+      "typeFilter": "symbol",
+      "categoryId": null,
+      "symbolCategory": null,
+      "search": "",
+      "groupBy": [
+        "category"
       ],
       "sort": {
         "column": "name",
@@ -379,6 +407,122 @@
           "text": "Glass railing to warehouse void",
           "fontSize": 7.5,
           "rotation": 90
+        },
+        {
+          "id": "item_symbol_extinguisher",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 901.18110255,
+              "y": 487.74803145
+            }
+          ],
+          "color": "#e5484d",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "fire.extinguisher",
+          "status": "approved"
+        },
+        {
+          "id": "item_symbol_exit",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 824.64566946,
+              "y": 646.48818897
+            }
+          ],
+          "color": "#35c2a1",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "egress.exit",
+          "status": "not-approved",
+          "rotation": 90
+        },
+        {
+          "id": "item_symbol_supply",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 447.63779535000003,
+              "y": 147.59055104999993
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "hvac.supply",
+          "status": "action-required"
+        },
+        {
+          "id": "item_symbol_panel",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 793.46456709,
+              "y": 82.3937006399999
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "electrical.main-panel",
+          "status": "approved"
+        },
+        {
+          "id": "item_symbol_aed",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1042.91338605,
+              "y": 88.06299197999999
+            }
+          ],
+          "color": "#35c2a1",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "egress.aed",
+          "status": "missing"
+        },
+        {
+          "id": "item_symbol_cctv",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1091.10236244,
+              "y": 637.9842519599999
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z",
+          "symbolId": "electrical.cctv",
+          "status": "approved",
+          "rotation": 180
         }
       ]
     },

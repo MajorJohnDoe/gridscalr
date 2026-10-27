@@ -162,6 +162,33 @@ describe("selection handles", () => {
     expect(handles.some((handle) => handle.role === "rotate")).toBe(true);
   });
 
+  it("gives symbols a fixed paper-space box and a rotation handle", async () => {
+    const [{ itemBounds }, { selectionHandles }] = await Promise.all([
+      import("../src/model/geometry"),
+      import("../src/canvas/selectionHandles"),
+    ]);
+    const item = {
+      id: "symbol",
+      page: 1,
+      kind: "symbol" as const,
+      symbolId: "fire.extinguisher",
+      points: [{ x: 100, y: 100 }],
+      color: "#e5484d",
+      strokeWidth: 1,
+      rotation: 45,
+      createdAt: "",
+      updatedAt: "",
+    };
+    const bounds = itemBounds({ ...item, rotation: 0 });
+    expect(bounds.min.x).toBeCloseTo(90);
+    expect(bounds.min.y).toBeCloseTo(90);
+    expect(bounds.max.x).toBeCloseTo(110);
+    expect(bounds.max.y).toBeCloseTo(110);
+    expect(selectionHandles(item, (point) => point).map((handle) => handle.role)).toEqual([
+      "rotate",
+    ]);
+  });
+
   it("does not expose handles for counts", async () => {
     const { selectionHandles } = await import("../src/canvas/selectionHandles");
     const item = {

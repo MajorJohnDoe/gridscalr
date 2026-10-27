@@ -38,6 +38,18 @@ function hitItem(
 
   const localPoint = pointToItemLocal(item, point);
 
+  if (item.kind === "symbol") {
+    const anchor = item.points[0];
+    if (!anchor) return null;
+    const bounds = itemLocalBounds(item);
+    const inside =
+      localPoint.x >= bounds.min.x - tolerance &&
+      localPoint.y >= bounds.min.y - tolerance &&
+      localPoint.x <= bounds.max.x + tolerance &&
+      localPoint.y <= bounds.max.y + tolerance;
+    return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
   if (item.kind === "count") {
     const anchor = item.points[0];
     if (!anchor) return null;

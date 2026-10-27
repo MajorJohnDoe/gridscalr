@@ -120,6 +120,7 @@ import {
 import type {
   AreaShape,
   ImageAsset,
+  InspectionStatus,
   ItemKind,
   MarkupItem,
   PageSize,
@@ -128,6 +129,14 @@ import type {
 } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
+import {
+  inspectionStatusColor,
+  SYMBOL_SIZE,
+  SYMBOL_VIEWBOX,
+  symbolCategoryColor,
+  symbolCategoryOf,
+  symbolFor,
+} from "../model/symbols";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -793,6 +802,16 @@ export class CanvasView {
       this.createItem("count", [snapped]);
       this.drawInteraction();
     }
+
+    if (tool === "symbol") {
+      if (event.detail > 1) return;
+      const snapped = this.snapPoint(page);
+      this.createItem("symbol", [snapped], {
+        symbolId: store.ui.symbolId,
+        status: store.ui.symbolStatus ?? undefined,
+      });
+      this.drawInteraction();
+    }
   };
 
   private handleSelectDown(page: Point, event: PointerEvent): void {
@@ -1291,7 +1310,8 @@ export class CanvasView {
       item.kind === "text" ||
       item.kind === "rect" ||
       item.kind === "ellipse" ||
-      item.kind === "image"
+      item.kind === "image" ||
+      item.kind === "symbol"
     ) {
       item.rotation = normalizeDegrees((this.drag.startRotation ?? 0) + delta);
     } else {
@@ -1790,6 +1810,8 @@ export class CanvasView {
       text?: string;
       areaShape?: AreaShape;
       highlightShape?: "stroke" | "rectangle" | "polygon";
+      symbolId?: string;
+      status?: InspectionStatus;
     } = {},
   ): { layerId: string; itemId: string } | null {
     const project = store.project;
@@ -1843,9 +1865,11 @@ export class CanvasView {
         points: points.map((p) => ({ ...p })),
         color: isMeasure
           ? layer.color
-          : kind === "stamp"
-            ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-            : (cloudPreset ?? style.color),
+          : kind === "symbol"
+            ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
+            : kind === "stamp"
+              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+              : (cloudPreset ?? style.color),
         strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
@@ -1874,6 +1898,8 @@ export class CanvasView {
         areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
         areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
         countType: kind === "count" ? store.ui.measureCountType : undefined,
+        symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
+        status: kind === "symbol" ? options.status : undefined,
         createdAt: now,
         updatedAt: now,
       };
@@ -2373,7 +2399,8 @@ export class CanvasView {
       (item.kind === "text" ||
         item.kind === "rect" ||
         item.kind === "ellipse" ||
-        item.kind === "image");
+        item.kind === "image" ||
+        item.kind === "symbol");
     const center = rotatesInPlace ? this.toScreen(itemCenter(item)) : null;
     ctx.save();
     if (center) {
@@ -2440,6 +2467,49 @@ export class CanvasView {
           ctx.beginPath();
           ctx.arc(center.x, center.y, Math.max(0.6, dot.radius * zoom), 0, Math.PI * 2);
           ctx.fill();
+        }
+        break;
+      }
+      case "symbol": {
+        const anchor = points[0];
+        if (!anchor) break;
+        const definition = symbolFor(item.symbolId);
+        const color =
+          definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
+        const scale = (SYMBOL_SIZE * zoom) / SYMBOL_VIEWBOX;
+        const half = SYMBOL_VIEWBOX / 2;
+        const local = (point: { x: number; y: number }) => ({
+          x: anchor.x + (point.x - half) * scale,
+          y: anchor.y + (point.y - half) * scale,
+        });
+        ctx.strokeStyle = color;
+        ctx.fillStyle = color;
+        ctx.lineWidth = Math.max(1, 1.45 * scale);
+        for (const path of definition.paths) {
+          ctx.beginPath();
+          path.points.forEach((point, index) => {
+            const screen = local(point);
+            if (index === 0) ctx.moveTo(screen.x, screen.y);
+            else ctx.lineTo(screen.x, screen.y);
+          });
+          if (path.closed) ctx.closePath();
+          ctx.stroke();
+        }
+        for (const circle of definition.circles) {
+          const center = local(circle.center);
+          ctx.beginPath();
+          ctx.arc(center.x, center.y, Math.max(0.6, circle.radius * scale), 0, Math.PI * 2);
+          ctx.stroke();
+        }
+        if (item.status) {
+          const marker = local({ x: 19.5, y: 4.5 });
+          ctx.beginPath();
+          ctx.arc(marker.x, marker.y, Math.max(1, 2.2 * scale), 0, Math.PI * 2);
+          ctx.fillStyle = inspectionStatusColor(item.status);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(15, 19, 21, 0.8)";
+          ctx.lineWidth = Math.max(1, 0.7 * scale);
+          ctx.stroke();
         }
         break;
       }

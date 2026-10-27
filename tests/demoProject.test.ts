@@ -23,6 +23,7 @@ describe("documentation demo project", () => {
     expect(project.markupsViews.map((view) => view.name)).toEqual([
       "Room review",
       "Drawing checks",
+      "Symbols & status",
     ]);
     expect(project.pages["1"].calibration?.pointsPerMeter).toBeCloseTo(28.3464567, 4);
     expect(project.pages["2"].calibration?.source).toBe("manual");
@@ -35,13 +36,17 @@ describe("documentation demo project", () => {
     const measure = project.layers.find((layer) => layer.kind === "measure");
     const draw = project.layers.find((layer) => layer.kind === "draw");
     expect(measure?.items).toHaveLength(14);
-    expect(draw?.items).toHaveLength(8);
+    expect(draw?.items).toHaveLength(14);
     expect(measure?.items.some((item) => item.areaMode === "subtract")).toBe(true);
     expect(measure?.items.some((item) => item.kind === "count")).toBe(true);
     expect(measure?.items.some((item) => item.page === 3)).toBe(true);
     expect(draw?.items.some((item) => item.kind === "cloud")).toBe(true);
     expect(draw?.items.some((item) => item.kind === "stamp" && item.text === "INSPECTED")).toBe(
       true,
+    );
+    expect(draw?.items.filter((item) => item.kind === "symbol")).toHaveLength(6);
+    expect(draw?.items.find((item) => item.symbolId === "egress.exit")?.status).toBe(
+      "not-approved",
     );
   });
 });

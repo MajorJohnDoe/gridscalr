@@ -6,6 +6,7 @@ import {
   setItemsImageMode,
   setItemsLocked,
   setItemsOpacity,
+  setItemsStatus,
   setItemsStrokeWidth,
   setItemsVisible,
   translateItems,
@@ -117,6 +118,22 @@ describe("item commands", () => {
       skippedLocked: 1,
     });
     expect(measureItem.points[0]).toEqual({ x: before.x + 5, y: before.y + 7 });
+  });
+
+  it("updates inspection status only on symbols and respects locks", () => {
+    const { project, drawRef, drawItem } = setup();
+    drawItem.kind = "symbol";
+    drawItem.symbolId = "fire.extinguisher";
+    const result = setItemsStatus(project, [drawRef], "approved");
+    expect(result.changed).toBe(1);
+    expect(drawItem.status).toBe("approved");
+
+    drawItem.locked = true;
+    expect(setItemsStatus(project, [drawRef], "missing")).toMatchObject({
+      changed: 0,
+      skippedLocked: 1,
+    });
+    expect(drawItem.status).toBe("approved");
   });
 
   it("handles image mode and opacity without touching non-images", () => {

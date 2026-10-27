@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 12 as const;
+export const SCHEMA_VERSION = 13 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -6,6 +6,8 @@ export type LayerKind = "measure" | "draw";
 
 export type MeasurementKind = "length" | "area" | "count";
 export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
+export type SymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
+export type InspectionStatus = "approved" | "not-approved" | "action-required" | "missing";
 export type AreaMode = "add" | "subtract";
 /** Polygon is the original click-by-click area. Rectangle and ellipse use two opposite points. */
 export type AreaShape = "polygon" | "rectangle" | "ellipse";
@@ -26,7 +28,8 @@ export type DrawingKind =
   | "cloud"
   | "callout"
   | "stamp"
-  | "delta";
+  | "delta"
+  | "symbol";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -96,7 +99,7 @@ export interface MarkupItem {
   text?: string;
   label?: string;
   fontSize?: number;
-  /** Clockwise rotation in degrees. Used by text, rectangles, ellipses and images. */
+  /** Clockwise rotation in degrees. Used by text, rectangles, ellipses, images and symbols. */
   rotation?: number;
   /** Hidden items stay in the project but are not drawn or exported. Defaults to true. */
   visible?: boolean;
@@ -116,6 +119,10 @@ export interface MarkupItem {
   lineStyle?: LineStyle;
   /** Count items only. */
   countType?: CountType;
+  /** Symbols only: stable built-in symbol id. */
+  symbolId?: string;
+  /** Symbols only: inspection state shown in the Markups list and on the plan. */
+  status?: InspectionStatus;
   /** Highlights only. Missing means the original freehand stroke. */
   highlightShape?: HighlightShape;
   /** Arrows only. Missing means a single head at the end point. */
@@ -186,10 +193,19 @@ export interface PageState {
 }
 
 export type MarkupsColumnId =
-  "name" | "type" | "page" | "layer" | "value" | "category" | "room" | "visible" | "locked";
+  | "name"
+  | "type"
+  | "page"
+  | "layer"
+  | "value"
+  | "category"
+  | "room"
+  | "status"
+  | "visible"
+  | "locked";
 
 export type MarkupsPageFilter = "all" | "current";
-export type MarkupsTypeFilter = "all" | "measure" | "draw";
+export type MarkupsTypeFilter = "all" | "measure" | "draw" | "symbol";
 export type MarkupsGroupField = "category" | "room" | "page" | "layer" | "building" | "floor";
 
 export interface MarkupsSort {
@@ -206,6 +222,8 @@ export interface MarkupsView {
   typeFilter: MarkupsTypeFilter;
   /** null means every category. Drawings have no category. */
   categoryId: string | null;
+  /** null means every symbol category. Applies to symbol items. */
+  symbolCategory: SymbolCategory | null;
   search: string;
   groupBy: MarkupsGroupField[];
   sort: MarkupsSort | null;

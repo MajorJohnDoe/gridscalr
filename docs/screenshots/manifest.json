@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-27T12:13:49.796Z",
-  "appVersion": "0.5.0",
-  "sourceFingerprint": "3e657fec5e268917ab6c77f6e4bea0d381f95ed7cebfdf410f9eebe532ed021c",
+  "generatedAt": "2026-10-27T13:14:50.353Z",
+  "appVersion": "0.6.0",
+  "sourceFingerprint": "6aa68e5cf9ff2dedb457f20ac60d8934f15c7871afa78527ea60719b73072f7c",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -43,6 +43,12 @@
       "title": "Markups list",
       "alt": "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
       "description": "A docked, project-wide list with saved views, configurable columns, grouping, filters, and row navigation."
+    },
+    {
+      "file": "symbols.png",
+      "title": "Symbol library",
+      "alt": "The GridScalr Symbols tab with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
+      "description": "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list."
     },
     {
       "file": "export.png",

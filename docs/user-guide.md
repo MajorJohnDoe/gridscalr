@@ -21,11 +21,11 @@ GridScalr uses a compact, drawing-first layout.
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
-- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools, plus a **Markups** button at the bottom.
-- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides.
-- **Left panel** – Pages and Layers only. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom.
+- **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
+- **Left panel** – Pages, Layers and Symbols. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – optional docked table below the canvas for every measurement and drawing, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
+- **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup with 25 % breathing room, but never zooms out further than Fit page.
 - **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
 - **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, and the active layer.
 
@@ -243,6 +243,24 @@ Use **File → Import image…** or the context bar to add a PNG or JPEG. `Ctrl/
 - Properties exposes opacity, rotation, layer, visibility, lock state, duplicate, and delete. Corner handles resize proportionally; side handles change one dimension.
 - Images follow the same visibility and locking rules as other items.
 
+## Symbols
+
+Open the **Symbols** tab in the left panel or press `B`. The library is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
+
+- Categories: **Fire protection**, **Evacuation & safety**, **HVAC & plumbing**, **Electrical & controls**, **Building elements**, and **Waste & environment**.
+- Select a tile, choose the status for the next placement in the context bar, then click the drawing.
+- Symbols are drawing objects. They do not appear in quantity totals.
+- Category colour is fixed: red for fire, green for evacuation and safety, blue for HVAC, amber for electrical, violet for building elements, and green-brown for waste.
+- A small corner marker shows the inspection status: Approved, Not approved, Action required, Missing, or no marker for Not assessed.
+- Select a symbol and use its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
+- Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
+- The symbol name appears as the Markups label. You can still give an item a custom label.
+- Symbols are exported as vector line art in the drawing PDF, so they stay sharp and match the screen.
+
+Built-in symbols are original vector approximations inspired by common Swedish and European facility-safety practice. They are not certified reproductions of SS-EN ISO 7010 artwork.
+
+![Searchable symbol library with a selected fire extinguisher, Markups grouped by category and inspection status](screenshots/symbols.png)
+
 ## Layers
 
 Open the **Layers** tab in the left panel. The **This page / All pages** switch controls the scope.
@@ -301,13 +319,13 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it with 25 % breathing room; the view never zooms out further than Fit page. Ctrl/Shift/Cmd-click only changes the selection without moving the view.
 
-- Filter by **All pages** or **Current page**, measurement/drawing type, category, or the search field.
-- Use **Columns** to show or hide table columns. Name is always visible.
-- Use **Group by** to create collapsible groups by category, room, page, layer, or **Building → Floor → Room**. Building and floor come from **Pages → right-click → Set location…**.
+- Filter by **All pages** or **Current page**, measurements/drawings/symbols, measurement or symbol category, or the search field.
+- Use **Columns** to show or hide table columns, including **Status**. Name is always visible.
+- Use **Group by** to create collapsible groups by category, room, page, layer, or **Building → Floor → Room**. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group.
 - Click a sortable column heading to sort, click again to reverse, and a third time to return to the default page/layer/name order.
 - Click a row to go to its page and select the markup.
 - Double-click a name or use the rename button to edit the label inline.
-- Change the layer from the row picker, and use the eye and lock controls for per-item visibility and locking.
+- Change the layer from the row picker, change symbol status from its status picker, and use the eye and lock controls for per-item visibility and locking.
 - Right-click a row for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete.
 - **Select all** selects every row matching the current filter. **Export CSV** writes the Markups CSV for the whole project, not only the visible view.
 - Close the panel with its close button, the tool rail button, or `Ctrl/Cmd+L`. The panel remembers its height between sessions.
@@ -388,7 +406,7 @@ Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Al
 
   **Legend** adds a separate A4 page at the end of the export.
 - **View as PNG** – exports the rendered page and markup layers at the current view.
-- **Markups to CSV** – exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
+- **Markups to CSV** – exports page, type, layer, label, computed value, unit, details, PDF-coordinate vertices, symbol name, symbol category, and inspection status.
 - **Quantities to CSV** – writes `<project>-quantities.csv` for spreadsheets and procurement tools.
 - **Quantity report (PDF)** – writes `<project>-quantities.pdf`.
 - **Project to JSON** – exports the project payload without requiring a `.gridscalr` extension.
@@ -420,11 +438,11 @@ The help content is bundled with the application. It does not use the network. U
 
 ## Project files
 
-A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
+A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items including vector symbols and statuses, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 12 is the current format. Older projects load normally and are migrated when opened.
+Schema version 13 is the current format. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
@@ -432,6 +450,7 @@ The full list is in **Help → Keyboard shortcuts** and in [shortcuts.md](shortc
 
 - `V` select, `H` pan, `K` calibrate, `L` length, `A` area, `C` count.
 - `P` pen, `I` line, `U` arrow, `R` rectangle, `O` ellipse, `G` highlight, `T` text.
+- `B` opens the symbol library.
 - `Enter` finishes a shape; `Esc` cancels a draft, clears the selection, or returns to Select.
 - `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo.
 - `Ctrl/Cmd+0` fit page, `Ctrl/Cmd+1` actual size.

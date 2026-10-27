@@ -36,6 +36,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision clouds, callouts, stamps, revision deltas, and text notes.
+- Place searchable facility **symbols** from a built-in vector library: fire protection, evacuation, HVAC, electrical, building and waste. Symbols use category colours, can be rotated, and carry inspection statuses such as Approved, Not approved, Action required or Missing.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Drag measurement labels to place them manually when labels are tight, and choose **Solid** or **Dashed** line styles for length measurements.
 - Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings. **Smart length labels** show cm below 1 m and metres above, while quantity reports keep the selected project unit.
@@ -130,11 +131,11 @@ GridScalr uses a compact drawing-first layout:
 
 - **Menu bar** – File, Edit, View, Settings, and Help.
 - **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
-- **Tool rail** – Select, pan, calibrate, measurement, and drawing tools, plus a **Markups** button at the bottom that opens the docked list.
-- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides.
-- **Left panel** – Pages and Layers only. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom that opens the docked list.
+- **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category, and the next inspection status.
+- **Left panel** – Pages, Layers and Symbols. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
-- **Markups panel** – an optional docked table below the canvas for every measurement and drawing, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, and CSV export. Selecting a row zooms to that markup with 25 % breathing room so small items stay readable on large drawings.
+- **Markups panel** – an optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup with 25 % breathing room so small items stay readable on large drawings.
 - **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
 - **Status bar** – calibration, cursor coordinates, zoom and page controls, and the active layer.
 
@@ -250,6 +251,20 @@ Labels use compact paper-space sizes. On the canvas their on-screen size is capp
 
 Renaming in Properties changes the list/export label without changing the drawing text: select one item and edit **Label**, or press `F2` to focus the field. Renaming a text item changes its list/export label, not its text body. The project name in the top bar also supports double-click rename.
 
+### Facility symbols
+
+Press `B`, choose the **Symbol** tool, or open the **Symbols** tab in the left panel. The library is searchable in English and Swedish, for example **Fire extinguisher** or **brandsläckare**, and is grouped into fire protection, evacuation and safety, HVAC and plumbing, electrical and controls, building elements, and waste and environment.
+
+Select a symbol, choose the inspection status for the next placement, then click the drawing. Symbols are vector line art in PDF points, so they stay sharp on screen and in exported PDFs. Their colour follows the category: red for fire, green for evacuation and safety, blue for HVAC, amber for electrical, violet for building elements, and green-brown for waste. The small corner marker shows the inspection status.
+
+- Rotate a selected symbol with its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
+- Change **Approved**, **Not approved**, **Action required**, **Missing** or **Not assessed** in Properties or directly in the Markups list.
+- Symbols are drawing objects, not quantity measurements. They do not change the procurement totals.
+- Symbol colour is fixed by category; the normal colour and line-weight fields are hidden for symbols.
+- The built-in pictograms are original line-art approximations inspired by common Swedish and European facility-safety practice. They are not certified reproductions of SS-EN ISO 7010 artwork.
+
+![Searchable symbol library with a selected fire extinguisher, Markups grouped by symbol category and inspection status](docs/screenshots/symbols.png)
+
 ### 5. Add images
 
 Use **File → Import image…** (or the context bar) to choose a PNG or JPEG, or press `Ctrl/Cmd+V` when the clipboard contains an image. Clipboard images take precedence over pasted markups; when the clipboard has no image, `Ctrl/Cmd+V` pastes markups as before.
@@ -300,9 +315,9 @@ Locking a layer leaves the layer's own settings editable, but prevents changing 
 
 Use the Select tool to click one markup, `Shift`/`Ctrl`/`Cmd`-click to add or remove markups, or drag on empty canvas to marquee-select everything inside the box. Selected items move together as a group. Group resize and rotation are intentionally not supported.
 
-Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked table of every measurement and drawing. Filter by all/current page, type, category, or a free-text search, then click a row to jump to its page, select it, and zoom to it with 25 % breathing room. The zoom never pulls back further than Fit page, so an oversized target still shows the whole sheet. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection without changing the view, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the project-wide Markups CSV.
+Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked table of every measurement, drawing and symbol. Filter by all/current page, type (measurements, drawings or symbols), measurement or symbol category, or a free-text search, then click a row to jump to its page, select it, and zoom to it with 25 % breathing room. The zoom never pulls back further than Fit page, so an oversized target still shows the whole sheet. `Shift`/`Ctrl`/`Cmd`-click rows to build a selection without changing the view, use **Select all** for the current filter, and use each row's eye and lock controls for per-item visibility and locking. Rename inline, change the layer from the row picker, change symbol status from its row picker, or right-click for copy, cut, duplicate, hide/show, lock/unlock, move to layer, and delete. **Export CSV** writes the project-wide Markups CSV, including symbol name, category and status.
 
-Use **Columns** to hide fields that are not relevant to the current task. **Group by** creates collapsible groups by category, room, page, layer, or **Building → Floor → Room**; the building and floor labels are set from **Pages → right-click → Set location…**. A saved **Markups view** stores the columns, filters, grouping and sort order in the `.gridscalr` file, so operational set-ups such as ventilation surveys or fire-safety checks travel with the project. Views are created and managed from the view selector and **More view options**. Applying another view with unsaved changes asks before discarding them.
+Use **Columns** to hide fields that are not relevant to the current task. **Group by** creates collapsible groups by category, room, page, layer, or **Building → Floor → Room**; the building and floor labels are set from **Pages → right-click → Set location…**. Symbol items group by their symbol category in the Category group. A saved **Markups view** stores the columns, filters, grouping and sort order in the `.gridscalr` file, so operational set-ups such as ventilation surveys, fire-safety checks or symbol status reviews travel with the project. Views are created and managed from the view selector and **More view options**. Applying another view with unsaved changes asks before discarding them.
 
 With more than one item selected, Properties offers bulk actions for:
 
@@ -354,7 +369,7 @@ The CSV report uses UTF-8 with BOM, comma delimiters, CRLF line endings, point d
   - **Selected area** enters a one-off crop mode on the canvas. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**; `Esc` cancels. The crop is stored relative to the page and applied to every selected page, so pages with different sizes or rotation stay aligned. It clips PDF content, markups, labels, and the calibration line.
   - A layer hidden on every page is listed but disabled. A layer hidden on one page is skipped there and still exported on pages where it is visible. Hidden items are always excluded and locked items are exported.
   - **Legend** adds a separate A4 page at the end of the export. It is never drawn over the drawing and is not affected by the crop.
-- **File → Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, and PDF-coordinate vertices.
+- **File → Export → Markups to CSV** exports page, type, layer, label, computed value, unit, details, PDF-coordinate vertices, symbol name, symbol category, and inspection status.
 - **File → Export → Quantities to CSV** writes `<project>-quantities.csv` for spreadsheets and procurement tools.
 - **File → Export → Quantity report (PDF)** writes `<project>-quantities.pdf`, a print-friendly procurement report separate from the flattened drawing export.
 - **File → Export → Project to JSON** exports the project payload without requiring a `.gridscalr` extension.
@@ -381,11 +396,11 @@ A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, 
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 12: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load.
+Version 1–5 projects load normally and are migrated to schema 13: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Schema 13 adds vector facility symbols with a stable `symbolId`, category-derived colour, rotation, and optional inspection status. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load. Unknown symbol ids are preserved and render as a safe fallback; invalid statuses are dropped.
 
 ```json
 {
-  "schemaVersion": 12,
+  "schemaVersion": 13,
   "name": "Level 01",
   "documents": [
     {
@@ -502,6 +517,7 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 | Highlight / Text note | `G` / `T` |
 | Revision cloud / Callout | `D` / `N` |
 | Stamp / Revision delta | `S` / `Y` |
+| Symbol library | `B` |
 | Finish current shape | `Enter` or double-click |
 | Cancel draft / clear selection / return to Select | `Esc` |
 | Delete selection or remove last area/length point | `Delete` or `Backspace` |
@@ -544,6 +560,7 @@ src/
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
+  model/symbols.ts       vector facility symbols, categories and inspection statuses
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
@@ -560,6 +577,7 @@ src/
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties scale and active-layer sections
   ui/markupsPanel.ts     docked Markups table, columns, views, grouping and filters
+  ui/symbolLibrary.ts    searchable symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
   ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts single and multi-selection Properties
@@ -667,4 +685,5 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages can be deleted like any other page but cannot be rearranged, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.
 - New sheets are always added after the existing pages. A page can be deleted explicitly: its measurements and page scale are removed, later measurements move down one page number, and the operation is not undoable. Pages cannot be inserted or reordered.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
+- The symbol library is built in and vector-only: custom symbol uploads, per-symbol resizing, and symbol quantities in the procurement report are not supported yet. The pictograms are original approximations, not certified SS-EN ISO 7010 reproductions.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

@@ -1,4 +1,5 @@
 import { makeId } from "./calibration";
+import { SYMBOL_CATEGORIES } from "./symbols";
 import type {
   MarkupsColumnId,
   MarkupsGroupField,
@@ -6,6 +7,7 @@ import type {
   MarkupsSort,
   MarkupsTypeFilter,
   MarkupsView,
+  SymbolCategory,
 } from "./types";
 
 export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
@@ -16,6 +18,7 @@ export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
   "value",
   "category",
   "room",
+  "status",
   "visible",
   "locked",
 ];
@@ -30,6 +33,7 @@ export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = {
   value: "Value",
   category: "Category",
   room: "Room",
+  status: "Status",
   visible: "Vis.",
   locked: "Lock",
 };
@@ -73,6 +77,7 @@ export interface MarkupsViewSettings {
   pageFilter: MarkupsPageFilter;
   typeFilter: MarkupsTypeFilter;
   categoryId: string | null;
+  symbolCategory: SymbolCategory | null;
   search: string;
   groupBy: MarkupsGroupField[];
   sort: MarkupsSort | null;
@@ -84,6 +89,7 @@ export function defaultMarkupsViewSettings(): MarkupsViewSettings {
     pageFilter: "all",
     typeFilter: "all",
     categoryId: null,
+    symbolCategory: null,
     search: "",
     groupBy: [],
     sort: null,
@@ -96,6 +102,7 @@ export function settingsForView(view: MarkupsView): MarkupsViewSettings {
     pageFilter: view.pageFilter,
     typeFilter: view.typeFilter,
     categoryId: view.categoryId,
+    symbolCategory: view.symbolCategory,
     search: view.search,
     groupBy: [...view.groupBy],
     sort: view.sort ? { ...view.sort } : null,
@@ -114,6 +121,7 @@ export function viewFromSettings(
     pageFilter: settings.pageFilter,
     typeFilter: settings.typeFilter,
     categoryId: settings.categoryId,
+    symbolCategory: settings.symbolCategory,
     search: settings.search,
     groupBy: [...settings.groupBy],
     sort: settings.sort ? { ...settings.sort } : null,
@@ -179,6 +187,12 @@ function normalizeSearch(value: unknown): string {
   return typeof value === "string" ? value.trim().slice(0, 200) : "";
 }
 
+function normalizeSymbolCategory(value: unknown): SymbolCategory | null {
+  return typeof value === "string" && SYMBOL_CATEGORIES.includes(value as SymbolCategory)
+    ? (value as SymbolCategory)
+    : null;
+}
+
 /** Normalizes project-stored views and drops anything that no longer exists. */
 export function normalizeMarkupsViews(
   value: unknown,
@@ -201,16 +215,20 @@ export function normalizeMarkupsViews(
     const columns = normalizeColumns(raw.columns);
     const pageFilter: MarkupsPageFilter = raw.pageFilter === "current" ? "current" : "all";
     const typeFilter: MarkupsTypeFilter =
-      raw.typeFilter === "measure" || raw.typeFilter === "draw" ? raw.typeFilter : "all";
+      raw.typeFilter === "measure" || raw.typeFilter === "draw" || raw.typeFilter === "symbol"
+        ? raw.typeFilter
+        : "all";
     const categoryId =
       typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId) ? raw.categoryId : null;
+    const symbolCategory = normalizeSymbolCategory(raw.symbolCategory);
     views.push({
       id,
       name,
       columns,
       pageFilter,
       typeFilter,
-      categoryId,
+      categoryId: symbolCategory ? null : categoryId,
+      symbolCategory,
       search: normalizeSearch(raw.search),
       groupBy: normalizeGroupBy(raw.groupBy),
       sort: normalizeSort(raw.sort),

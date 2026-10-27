@@ -12,8 +12,19 @@ import {
   layersForKind,
   moveItemsToLayer,
 } from "../model/layers";
-import { setItemsLocked, setItemsVisible } from "../model/commands";
+import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/commands";
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import {
+  INSPECTION_STATUSES,
+  INSPECTION_STATUS_LABELS,
+  inspectionStatusColor,
+  inspectionStatusLabel,
+  SYMBOL_CATEGORIES,
+  SYMBOL_CATEGORY_LABELS,
+  symbolCategoryLabel,
+  symbolCategoryOf,
+  symbolName,
+} from "../model/symbols";
 import {
   MARKUPS_COLUMN_IDS,
   MARKUPS_COLUMN_LABELS,
@@ -30,12 +41,14 @@ import {
   type MarkupsViewSettings,
 } from "../model/markups";
 import type {
+  InspectionStatus,
   Layer,
   MarkupItem,
   MarkupsColumnId,
   MarkupsGroupField,
   MarkupsView,
   Project,
+  SymbolCategory,
 } from "../model/types";
 import { store } from "../state/store";
 import { clear, el, option } from "./dom";
@@ -54,15 +67,16 @@ const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 140;
 
 const COLUMN_WIDTHS: Record<MarkupsColumnId, number> = {
-  name: 27,
+  name: 24,
   type: 8,
   page: 5,
-  layer: 14,
-  value: 9,
+  layer: 13,
+  value: 8,
   category: 10,
-  room: 10,
-  visible: 5,
-  locked: 5,
+  room: 9,
+  status: 10,
+  visible: 4,
+  locked: 4,
 };
 
 interface MarkupsPreferences {
@@ -395,13 +409,21 @@ function filteredRows(project: Project): MarkupRow[] {
   for (const layer of project.layers) {
     for (const item of layer.items) {
       if (settings.pageFilter === "current" && item.page !== store.ui.page) continue;
-      const kind = isMeasurementKind(item.kind) ? "measure" : "draw";
+      const kind = isMeasurementKind(item.kind)
+        ? "measure"
+        : item.kind === "symbol"
+          ? "symbol"
+          : "draw";
       if (settings.typeFilter !== "all" && kind !== settings.typeFilter) continue;
       const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
-      if (settings.categoryId && category?.id !== settings.categoryId) continue;
+      if (settings.categoryId) {
+        if (!isMeasurementKind(item.kind) || category?.id !== settings.categoryId) continue;
+      }
+      const symbolCategory = item.kind === "symbol" ? symbolCategoryOf(item.symbolId) : undefined;
+      if (settings.symbolCategory && symbolCategory !== settings.symbolCategory) continue;
       if (query) {
         const haystack =
-          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""}`.toLocaleLowerCase();
+          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""}`.toLocaleLowerCase();
         if (!haystack.includes(query)) continue;
       }
       rows.push({ item, layer });
@@ -446,9 +468,15 @@ function sortValue(row: MarkupRow, column: MarkupsColumnId, project: Project): s
     case "value":
       return itemMetrics(row.item, project)?.rawPoints ?? 0;
     case "category":
-      return category?.name.toLocaleLowerCase() ?? "";
+      return row.item.kind === "symbol"
+        ? symbolCategoryLabel(symbolCategoryOf(row.item.symbolId)).toLocaleLowerCase()
+        : (category?.name.toLocaleLowerCase() ?? "");
     case "room":
       return (row.item.room ?? "").toLocaleLowerCase();
+    case "status":
+      return row.item.kind === "symbol"
+        ? inspectionStatusLabel(row.item.status).toLocaleLowerCase()
+        : "";
     case "visible":
       return itemIsVisible(row.item, row.layer) ? 0 : 1;
     case "locked":
@@ -459,6 +487,9 @@ function sortValue(row: MarkupRow, column: MarkupsColumnId, project: Project): s
 function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project): string {
   switch (field) {
     case "category": {
+      if (row.item.kind === "symbol") {
+        return symbolCategoryLabel(symbolCategoryOf(row.item.symbolId));
+      }
       if (!isMeasurementKind(row.item.kind)) return "Uncategorized";
       return categoryForItem(project, row.item)?.name ?? "Uncategorized";
     }
@@ -608,11 +639,43 @@ function markupRowElement(
   const valueCell = el("td", "markups-value", metrics?.primary ?? "–");
   cells.set("value", valueCell);
 
-  const categoryCell = el("td", "markups-category", category?.name ?? "–");
+  const categoryCell = el(
+    "td",
+    "markups-category",
+    item.kind === "symbol"
+      ? symbolCategoryLabel(symbolCategoryOf(item.symbolId))
+      : (category?.name ?? "–"),
+  );
   cells.set("category", categoryCell);
 
   const roomCell = el("td", "markups-room", item.room ?? "–");
   cells.set("room", roomCell);
+
+  const statusCell = el("td", "markups-status-cell");
+  if (item.kind === "symbol") {
+    const status = el("select", "markups-status-select");
+    status.setAttribute("aria-label", `Status for ${labelText}`);
+    status.title = locked ? "Unlock the item to change its status" : "Inspection status";
+    status.append(option("", "Not assessed", !item.status));
+    for (const inspection of INSPECTION_STATUSES) {
+      status.append(
+        option(inspection, INSPECTION_STATUS_LABELS[inspection], item.status === inspection),
+      );
+    }
+    status.disabled = locked;
+    status.style.color = inspectionStatusColor(item.status ?? undefined);
+    status.addEventListener("click", (event) => event.stopPropagation());
+    status.addEventListener("change", (event) => {
+      event.stopPropagation();
+      store.mutate((project) => {
+        setItemsStatus(project, [ref], status.value ? (status.value as InspectionStatus) : null);
+      }, "change");
+    });
+    statusCell.append(status);
+  } else {
+    statusCell.textContent = "–";
+  }
+  cells.set("status", statusCell);
 
   const visibleCell = el("td", "markups-flag-cell");
   const eye = layerAction(
@@ -852,12 +915,13 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     option("all", "All types", settings.typeFilter === "all"),
     option("measure", "Measurements", settings.typeFilter === "measure"),
     option("draw", "Drawings", settings.typeFilter === "draw"),
+    option("symbol", "Symbols", settings.typeFilter === "symbol"),
   );
   typeSelect.value = settings.typeFilter;
   typeSelect.addEventListener("change", () => {
     settings.typeFilter =
-      typeSelect.value === "measure" || typeSelect.value === "draw"
-        ? (typeSelect.value as "measure" | "draw")
+      typeSelect.value === "measure" || typeSelect.value === "draw" || typeSelect.value === "symbol"
+        ? (typeSelect.value as "measure" | "draw" | "symbol")
         : "all";
     collapsedGroups.clear();
     markViewDirty();
@@ -866,13 +930,42 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const categorySelect = el("select", "select markups-category-filter");
   categorySelect.setAttribute("aria-label", "Filter markups by category");
-  categorySelect.append(option("", "All categories", !settings.categoryId));
+  const categoryValue = settings.symbolCategory
+    ? `symbol:${settings.symbolCategory}`
+    : (settings.categoryId ?? "");
+  categorySelect.append(option("", "All categories", !categoryValue));
+  const measurementGroup = document.createElement("optgroup");
+  measurementGroup.label = "Measurement categories";
   for (const category of project.categories) {
-    categorySelect.append(option(category.id, category.name, category.id === settings.categoryId));
+    measurementGroup.append(
+      option(category.id, category.name, category.id === settings.categoryId),
+    );
   }
-  categorySelect.value = settings.categoryId ?? "";
+  if (measurementGroup.childElementCount) categorySelect.append(measurementGroup);
+  const symbolGroup = document.createElement("optgroup");
+  symbolGroup.label = "Symbol categories";
+  for (const category of SYMBOL_CATEGORIES) {
+    symbolGroup.append(
+      option(
+        `symbol:${category}`,
+        SYMBOL_CATEGORY_LABELS[category],
+        category === settings.symbolCategory,
+      ),
+    );
+  }
+  categorySelect.append(symbolGroup);
+  categorySelect.value = categoryValue;
   categorySelect.addEventListener("change", () => {
-    settings.categoryId = categorySelect.value || null;
+    if (categorySelect.value.startsWith("symbol:")) {
+      settings.symbolCategory = categorySelect.value.slice("symbol:".length) as SymbolCategory;
+      settings.categoryId = null;
+      settings.typeFilter = "symbol";
+    } else {
+      settings.symbolCategory = null;
+      settings.categoryId = categorySelect.value || null;
+      if (settings.categoryId && settings.typeFilter === "symbol") settings.typeFilter = "measure";
+    }
+    typeSelect.value = settings.typeFilter;
     collapsedGroups.clear();
     markViewDirty();
     refreshTable();

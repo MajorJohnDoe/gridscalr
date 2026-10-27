@@ -23,6 +23,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Callout | `N` |
 | Stamp | `S` |
 | Revision delta | `Y` |
+| Symbol library | `B` |
 
 ## Drawing and editing
 

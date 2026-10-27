@@ -137,6 +137,7 @@ describe("project files", () => {
         pageFilter: "current",
         typeFilter: "measure",
         categoryId: project.categories[0].id,
+        symbolCategory: null,
         search: "AHU",
         groupBy: ["building", "floor", "room"],
         sort: { column: "name", direction: "asc" },
@@ -182,6 +183,7 @@ describe("project files", () => {
         pageFilter: "all",
         typeFilter: "measure",
         categoryId: "missing",
+        symbolCategory: "fire",
         search: "",
         groupBy: ["building"],
         sort: null,
@@ -795,6 +797,61 @@ describe("project files", () => {
 
     expect(parsed.settings.quantity.wastePercent).toBe(10);
     expect(parsed.settings.quantity.roundingStep).toBe(0.5);
+  });
+
+  it("round-trips symbols, statuses and rotation", () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      id: "item_symbol",
+      page: 1,
+      kind: "symbol",
+      points: [{ x: 60, y: 80 }],
+      color: "#e5484d",
+      strokeWidth: 1,
+      symbolId: "fire.extinguisher",
+      status: "action-required",
+      rotation: 90,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    const parsed = parseProject(serializeProject(project));
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_symbol")!;
+    expect(item).toMatchObject({
+      kind: "symbol",
+      symbolId: "fire.extinguisher",
+      status: "action-required",
+      rotation: 90,
+    });
+  });
+
+  it("preserves unknown symbol ids and drops invalid statuses", () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      id: "item_symbol",
+      page: 1,
+      kind: "symbol",
+      points: [{ x: 60, y: 80 }],
+      color: "#e5484d",
+      strokeWidth: 1,
+      symbolId: "removed.vendor.symbol",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+    const raw = JSON.parse(serializeProject(project));
+    const rawItem = raw.layers
+      .flatMap((layer: { items: Array<Record<string, unknown>> }) => layer.items)
+      .find((item: Record<string, unknown>) => item.id === "item_symbol");
+    rawItem.status = "unexpected";
+    const parsed = parseProject(JSON.stringify(raw));
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_symbol")!;
+    expect(item.symbolId).toBe("removed.vendor.symbol");
+    expect(item.status).toBeUndefined();
   });
 
   it("round-trips count items with a single anchor point", () => {

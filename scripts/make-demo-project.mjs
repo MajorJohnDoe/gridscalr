@@ -230,6 +230,38 @@ const drawItems = [
     rotation: 90,
     color: "#f2a93b",
   }),
+  drawItem("item_symbol_extinguisher", "symbol", 1, [p1(26.5, 6.5)], {
+    symbolId: "fire.extinguisher",
+    status: "approved",
+    color: "#e5484d",
+  }),
+  drawItem("item_symbol_exit", "symbol", 1, [p1(23.8, 0.9)], {
+    symbolId: "egress.exit",
+    status: "not-approved",
+    color: "#35c2a1",
+    rotation: 90,
+  }),
+  drawItem("item_symbol_supply", "symbol", 1, [p1(10.5, 18.5)], {
+    symbolId: "hvac.supply",
+    status: "action-required",
+    color: "#4cc9f0",
+  }),
+  drawItem("item_symbol_panel", "symbol", 1, [p1(22.7, 20.8)], {
+    symbolId: "electrical.main-panel",
+    status: "approved",
+    color: "#f2a93b",
+  }),
+  drawItem("item_symbol_aed", "symbol", 1, [p1(31.5, 20.6)], {
+    symbolId: "egress.aed",
+    status: "missing",
+    color: "#35c2a1",
+  }),
+  drawItem("item_symbol_cctv", "symbol", 1, [p1(33.2, 1.2)], {
+    symbolId: "electrical.cctv",
+    status: "approved",
+    color: "#f2a93b",
+    rotation: 180,
+  }),
 ];
 
 const project = {
@@ -314,6 +346,7 @@ const project = {
       pageFilter: "all",
       typeFilter: "measure",
       categoryId: null,
+      symbolCategory: null,
       search: "",
       groupBy: ["building", "floor", "room"],
       sort: { column: "page", direction: "asc" },
@@ -325,8 +358,21 @@ const project = {
       pageFilter: "all",
       typeFilter: "draw",
       categoryId: null,
+      symbolCategory: null,
       search: "",
       groupBy: ["page"],
+      sort: { column: "name", direction: "asc" },
+    },
+    {
+      id: "view_symbols_status",
+      name: "Symbols & status",
+      columns: ["name", "type", "page", "layer", "category", "status", "visible", "locked"],
+      pageFilter: "all",
+      typeFilter: "symbol",
+      categoryId: null,
+      symbolCategory: null,
+      search: "",
+      groupBy: ["category"],
       sort: { column: "name", direction: "asc" },
     },
   ],

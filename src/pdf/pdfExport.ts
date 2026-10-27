@@ -46,6 +46,13 @@ import {
 } from "../model/text";
 import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
+import {
+  inspectionStatusColor,
+  SYMBOL_SIZE,
+  SYMBOL_VIEWBOX,
+  symbolCategoryColor,
+  symbolFor,
+} from "../model/symbols";
 import type { PdfRenderer } from "./pdfRenderer";
 
 interface ExportFonts {
@@ -588,6 +595,9 @@ function drawItem(
     case "count":
       drawCountSymbol(page, viewport, item, color, width, opacity);
       break;
+    case "symbol":
+      drawSymbolItem(page, viewport, item, opacity);
+      break;
     case "pen":
       drawPolyline(page, viewport, item.points, color, width, opacity, false);
       break;
@@ -1016,6 +1026,58 @@ function drawCountSymbol(
       size: dot.radius,
       color,
       opacity: clamp(opacity, 0, 1),
+    });
+  }
+}
+
+function drawSymbolItem(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  opacity: number,
+): void {
+  const anchor = item.points[0];
+  if (!anchor) return;
+  const definition = symbolFor(item.symbolId);
+  const color = pdfColor(
+    definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category),
+  );
+  const scale = SYMBOL_SIZE / SYMBOL_VIEWBOX;
+  const half = SYMBOL_VIEWBOX / 2;
+  const rotation = item.rotation ?? 0;
+  const width = Math.max(MIN_EXPORT_STROKE_WIDTH, 1.45 * scale);
+  const toPage = (point: Point): Point =>
+    rotatePoint(
+      {
+        x: anchor.x + (point.x - half) * scale,
+        y: anchor.y + (point.y - half) * scale,
+      },
+      anchor,
+      rotation,
+    );
+
+  for (const entry of definition.paths) {
+    drawPolyline(page, viewport, entry.points.map(toPage), color, width, opacity, entry.closed);
+  }
+  for (const circle of definition.circles) {
+    const center = toPdfPoint(viewport, toPage(circle.center));
+    page.drawCircle({
+      x: center.x,
+      y: center.y,
+      size: circle.radius * scale,
+      borderColor: color,
+      borderWidth: width,
+      borderOpacity: opacity,
+    });
+  }
+  if (item.status) {
+    const marker = toPdfPoint(viewport, toPage({ x: 19.5, y: 4.5 }));
+    page.drawCircle({
+      x: marker.x,
+      y: marker.y,
+      size: 2.2 * scale,
+      color: pdfColor(inspectionStatusColor(item.status)),
+      opacity,
     });
   }
 }

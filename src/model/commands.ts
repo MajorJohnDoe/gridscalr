@@ -1,7 +1,7 @@
 import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import { resolveSelection } from "./selection";
 import { translatePoints } from "./geometry";
-import type { ImageMode, Project, SelectionRef } from "./types";
+import type { ImageMode, InspectionStatus, Project, SelectionRef } from "./types";
 
 export interface ItemCommandResult {
   /** Items that were eligible and received the operation. */
@@ -117,6 +117,26 @@ export function setItemsColor(
       continue;
     }
     entry.item.color = color;
+    touch(entry.item);
+    result.changed += 1;
+  }
+  return result;
+}
+
+export function setItemsStatus(
+  project: Project,
+  refs: SelectionRef[],
+  status: InspectionStatus | null,
+): ItemCommandResult {
+  const result = emptyResult();
+  for (const entry of resolveSelection(project, refs)) {
+    if (entry.item.kind !== "symbol") continue;
+    if (entry.locked) {
+      result.skippedLocked += 1;
+      continue;
+    }
+    if (status) entry.item.status = status;
+    else delete entry.item.status;
     touch(entry.item);
     result.changed += 1;
   }

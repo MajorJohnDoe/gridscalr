@@ -16,7 +16,8 @@
     "cloud": "D",
     "callout": "N",
     "stamp": "S",
-    "delta": "Y"
+    "delta": "Y",
+    "symbol": "B"
   },
   "actions": {
     "newProject": "Ctrl+N",

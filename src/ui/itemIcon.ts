@@ -33,5 +33,7 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
       return "stamp";
     case "delta":
       return "delta";
+    case "symbol":
+      return "symbol";
   }
 }

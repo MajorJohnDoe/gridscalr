@@ -172,6 +172,7 @@ describe("categories", () => {
         pageFilter: "all",
         typeFilter: "measure",
         categoryId: wallId,
+        symbolCategory: null,
         search: "",
         groupBy: ["category"],
         sort: null,

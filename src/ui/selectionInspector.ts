@@ -2,6 +2,16 @@ import { allRooms, categoryForItem, normalizeRoom } from "../model/categories";
 import { COUNT_TYPES, COUNT_TYPE_LABELS } from "../model/countSymbols";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
+  INSPECTION_STATUSES,
+  INSPECTION_STATUS_LABELS,
+  inspectionStatusColor,
+  inspectionStatusLabel,
+  symbolCategoryLabel,
+  symbolCategoryOf,
+  symbolName,
+} from "../model/symbols";
+import { setItemsStatus } from "../model/commands";
+import {
   formatImageDimensions,
   IMAGE_MODE_LABELS,
   imageAssetForItem,
@@ -20,7 +30,13 @@ import {
 } from "../model/layers";
 import { itemKindLabel, itemMetrics } from "../model/measure";
 import { resolveSelection, selectionKind } from "../model/selection";
-import type { AreaMode, CountType, ImageMode, SelectionRef } from "../model/types";
+import type {
+  AreaMode,
+  CountType,
+  ImageMode,
+  InspectionStatus,
+  SelectionRef,
+} from "../model/types";
 import { formatBytes } from "../io/platform";
 import { store } from "../state/store";
 import { el, option } from "./dom";
@@ -62,6 +78,14 @@ export function selectionSection(
   if (metrics) {
     card.append(el("div", "selection-value", metrics.primary));
     if (metrics.secondary) card.append(el("div", "selection-secondary", metrics.secondary));
+  } else if (item.kind === "symbol") {
+    card.append(
+      el(
+        "div",
+        "selection-secondary",
+        `${symbolCategoryLabel(symbolCategoryOf(item.symbolId))} · ${inspectionStatusLabel(item.status)}`,
+      ),
+    );
   } else if (item.kind === "text") {
     card.append(el("div", "selection-secondary", "Text annotation"));
   } else if (item.kind === "image") {
@@ -307,7 +331,9 @@ export function selectionSection(
   labelInput.placeholder =
     item.kind === "delta"
       ? "YYYY-MM-DD"
-      : (metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label"));
+      : item.kind === "symbol"
+        ? symbolName(item.symbolId)
+        : (metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label"));
   labelInput.disabled = locked;
   labelInput.title = locked
     ? "Unlock the layer to edit this markup."
@@ -329,7 +355,43 @@ export function selectionSection(
         "empty-note small",
         item.kind === "delta"
           ? "The date is drawn below the revision triangle."
-          : "List labels are export and Markups metadata; they are not drawn on the page.",
+          : item.kind === "symbol"
+            ? "The symbol name is used in the Markups list and exports; it is not drawn on the page."
+            : "List labels are export and Markups metadata; they are not drawn on the page.",
+      ),
+    );
+  }
+
+  if (item.kind === "symbol") {
+    const statusField = el("label", "field");
+    statusField.append(el("span", "field-label", "Status"));
+    const statusSelect = el("select", "select");
+    statusSelect.append(option("", "Not assessed", !item.status));
+    for (const status of INSPECTION_STATUSES) {
+      statusSelect.append(option(status, INSPECTION_STATUS_LABELS[status], item.status === status));
+    }
+    statusSelect.value = item.status ?? "";
+    statusSelect.disabled = locked;
+    statusSelect.title = locked
+      ? "Unlock the layer to edit this status."
+      : "Inspection status shown in the Markups list";
+    statusSelect.style.color = inspectionStatusColor(item.status ?? undefined);
+    statusSelect.addEventListener("change", () => {
+      store.mutate((project) => {
+        setItemsStatus(
+          project,
+          [selection],
+          statusSelect.value ? (statusSelect.value as InspectionStatus) : null,
+        );
+      }, "change");
+    });
+    statusField.append(statusSelect);
+    section.append(statusField);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "Symbol colour follows its category. Rotate with the handle or the field below.",
       ),
     );
   }
@@ -545,7 +607,7 @@ export function selectionSection(
     section.append(modeField);
   }
 
-  if (item.kind !== "image") {
+  if (item.kind !== "image" && item.kind !== "symbol") {
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
     colorField.append(el("span", "field-label", item.kind === "text" ? "Text colour" : "Colour"));
@@ -644,7 +706,8 @@ export function selectionSection(
     item.kind === "text" ||
     item.kind === "rect" ||
     item.kind === "ellipse" ||
-    item.kind === "image"
+    item.kind === "image" ||
+    item.kind === "symbol"
   ) {
     const rotationField = el("label", "field");
     rotationField.append(el("span", "field-label", "Rotation"));
@@ -748,6 +811,8 @@ function multiSelectionSection(
     resolved.length > 0 && resolved.every((entry) => entry.item.color === resolved[0].item.color)
       ? resolved[0].item.color
       : "";
+  const allSymbols = resolved.length > 0 && resolved.every((entry) => entry.item.kind === "symbol");
+  const containsSymbols = resolved.some((entry) => entry.item.kind === "symbol");
 
   const card = el("div", "selection-card multi");
   card.append(el("div", "selection-value", `${resolved.length} selected`));
@@ -937,41 +1002,83 @@ function multiSelectionSection(
     }
   }
 
-  const colorField = el("label", "field");
-  colorField.append(el("span", "field-label", "Colour"));
-  const colorInput = el("input", "color-swatch");
-  colorInput.type = "color";
-  colorInput.value = commonColor || "#f2a93b";
-  colorInput.disabled = lockedCount === resolved.length;
-  colorInput.addEventListener("change", () => actions.setSelectionColor(colorInput.value));
-  colorField.append(colorInput);
-  section.append(colorField);
-
-  const weights = resolved.map((entry) => entry.item.strokeWidth);
-  const firstWeight = weights[0] ?? 1;
-  const commonWeight = weights.every((value) => Math.abs(value - firstWeight) < 0.01)
-    ? firstWeight
-    : null;
-  const weightField = el("label", "field");
-  weightField.append(el("span", "field-label", "Line weight"));
-  const weightSelect = el("select", "select");
-  weightSelect.append(
-    option("", commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`, true),
-  );
-  for (const value of STROKE_WIDTH_OPTIONS) {
-    weightSelect.append(option(String(value), `${value} pt`, false));
+  if (allSymbols) {
+    const statuses = resolved.map((entry) => entry.item.status ?? "");
+    const firstStatus = statuses[0] ?? "";
+    const commonStatus = statuses.every((status) => status === firstStatus) ? firstStatus : "";
+    const statusField = el("label", "field");
+    statusField.append(el("span", "field-label", "Status"));
+    const statusSelect = el("select", "select");
+    statusSelect.append(option("", "Set status…", true));
+    for (const status of INSPECTION_STATUSES) {
+      statusSelect.append(
+        option(status, INSPECTION_STATUS_LABELS[status], status === commonStatus),
+      );
+    }
+    statusSelect.disabled = lockedCount === resolved.length;
+    statusSelect.setAttribute("aria-label", "Status for selected symbols");
+    statusSelect.title =
+      lockedCount === resolved.length
+        ? "Unlock the selected symbols to edit them."
+        : "Apply one inspection status to the selected symbols";
+    statusSelect.addEventListener("change", () => {
+      if (!statusSelect.value) return;
+      store.mutate((project) => {
+        setItemsStatus(
+          project,
+          refs,
+          statusSelect.value ? (statusSelect.value as InspectionStatus) : null,
+        );
+      }, "change");
+    });
+    statusField.append(statusSelect);
+    section.append(statusField);
+    section.append(
+      el(
+        "div",
+        "empty-note small",
+        "Symbol colour follows its category. Use a single symbol selection to change rotation.",
+      ),
+    );
   }
-  weightSelect.disabled = lockedCount === resolved.length;
-  weightSelect.setAttribute("aria-label", "Line weight for selected items");
-  weightSelect.title =
-    lockedCount === resolved.length
-      ? "Unlock the selected items to change their line weight."
-      : "Apply one line weight to the selected items";
-  weightSelect.addEventListener("change", () => {
-    if (weightSelect.value) actions.setSelectionStrokeWidth(Number(weightSelect.value));
-  });
-  weightField.append(weightSelect);
-  section.append(weightField);
+
+  if (!containsSymbols) {
+    const colorField = el("label", "field");
+    colorField.append(el("span", "field-label", "Colour"));
+    const colorInput = el("input", "color-swatch");
+    colorInput.type = "color";
+    colorInput.value = commonColor || "#f2a93b";
+    colorInput.disabled = lockedCount === resolved.length;
+    colorInput.addEventListener("change", () => actions.setSelectionColor(colorInput.value));
+    colorField.append(colorInput);
+    section.append(colorField);
+
+    const weights = resolved.map((entry) => entry.item.strokeWidth);
+    const firstWeight = weights[0] ?? 1;
+    const commonWeight = weights.every((value) => Math.abs(value - firstWeight) < 0.01)
+      ? firstWeight
+      : null;
+    const weightField = el("label", "field");
+    weightField.append(el("span", "field-label", "Line weight"));
+    const weightSelect = el("select", "select");
+    weightSelect.append(
+      option("", commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`, true),
+    );
+    for (const value of STROKE_WIDTH_OPTIONS) {
+      weightSelect.append(option(String(value), `${value} pt`, false));
+    }
+    weightSelect.disabled = lockedCount === resolved.length;
+    weightSelect.setAttribute("aria-label", "Line weight for selected items");
+    weightSelect.title =
+      lockedCount === resolved.length
+        ? "Unlock the selected items to change their line weight."
+        : "Apply one line weight to the selected items";
+    weightSelect.addEventListener("change", () => {
+      if (weightSelect.value) actions.setSelectionStrokeWidth(Number(weightSelect.value));
+    });
+    weightField.append(weightSelect);
+    section.append(weightField);
+  }
 
   const toggles = el("div", "field-row");
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));

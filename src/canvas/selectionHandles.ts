@@ -41,6 +41,16 @@ export function handleAt(
 
 export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[] {
   if (item.kind === "count") return [];
+  if (item.kind === "symbol") {
+    return [
+      {
+        role: "rotate",
+        index: -1,
+        point: rotationHandlePoint(item, toScreen),
+        cursor: "grab",
+      },
+    ];
+  }
   if (
     item.kind === "length" ||
     item.kind === "area" ||

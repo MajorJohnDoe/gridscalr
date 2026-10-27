@@ -9,6 +9,7 @@ import {
 import type { CloudFillPreset } from "../model/cloud";
 import type { ArrowHeads } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
+import { DEFAULT_SYMBOL_ID } from "../model/symbols";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
   addCategory as addCategoryToProject,
@@ -38,6 +39,7 @@ import type {
   CountType,
   DocumentRef,
   ImageAsset,
+  InspectionStatus,
   LayerKind,
   Point,
   Project,
@@ -61,9 +63,10 @@ export type ToolId =
   | "cloud"
   | "callout"
   | "stamp"
-  | "delta";
+  | "delta"
+  | "symbol";
 
-export type LeftTab = "pages" | "layers";
+export type LeftTab = "pages" | "layers" | "symbols";
 
 export interface DrawStyle {
   color: string;
@@ -100,6 +103,10 @@ export interface UIState {
   measureAreaMode: AreaMode;
   /** Sticky quick-area shape for the area tool. */
   measureAreaShape: AreaShape;
+  /** Symbol used by the next placement. */
+  symbolId: string;
+  /** Sticky inspection status for new symbols. null means Not assessed. */
+  symbolStatus: InspectionStatus | null;
 }
 
 export type ChangeReason =
@@ -138,6 +145,7 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "callout":
     case "stamp":
     case "delta":
+    case "symbol":
       return "draw";
     default:
       return null;
@@ -172,6 +180,8 @@ function defaultUI(): UIState {
     measureCountType: "other",
     measureAreaMode: "add",
     measureAreaShape: "polygon",
+    symbolId: DEFAULT_SYMBOL_ID,
+    symbolStatus: null,
   };
 }
 
@@ -234,6 +244,8 @@ export class Store {
     this.ui.measureCountType = "other";
     this.ui.measureAreaMode = "add";
     this.ui.measureAreaShape = "polygon";
+    this.ui.symbolId = DEFAULT_SYMBOL_ID;
+    this.ui.symbolStatus = null;
     this.emit("project");
     this.scheduleAutosave();
   }
@@ -321,10 +333,21 @@ export class Store {
       if (kind) {
         ensureActiveLayer(this.project, kind, this.ui.page);
         // Every markup tool targets a layer, so surface the Layers tab while
-        // the user draws. Select and Pan leave the current tab alone.
-        this.ui.leftTab = "layers";
+        // the user draws. The symbol tool keeps the library in view.
+        this.ui.leftTab = tool === "symbol" ? "symbols" : "layers";
       }
     }
+    this.emit("tool");
+  }
+
+  /** Arms a built-in symbol and keeps the Symbols tab open for repeated use. */
+  selectSymbol(symbolId: string): void {
+    this.ui.symbolId = symbolId;
+    this.setTool("symbol");
+  }
+
+  setSymbolStatus(status: InspectionStatus | null): void {
+    this.ui.symbolStatus = status;
     this.emit("tool");
   }
 

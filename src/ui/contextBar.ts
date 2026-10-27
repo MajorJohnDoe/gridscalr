@@ -4,6 +4,16 @@ import { COUNT_TYPE_LABELS } from "../model/countSymbols";
 import { layersForKind, layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
+import {
+  INSPECTION_STATUSES,
+  INSPECTION_STATUS_LABELS,
+  inspectionStatusColor,
+  symbolCategoryColor,
+  symbolCategoryLabel,
+  symbolCategoryOf,
+  symbolFor,
+  symbolSvgMarkup,
+} from "../model/symbols";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { clear, el, option } from "./dom";
@@ -159,6 +169,42 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     );
     if (areaMode) controls.append(areaMode, el("div", "divider-v"));
     controls.append(measureOptions, el("div", "divider-v"));
+  }
+
+  if (store.ui.activeTool === "symbol") {
+    const definition = symbolFor(store.ui.symbolId);
+    const symbolButton = el("button", "btn btn-small btn-ghost context-symbol-button");
+    symbolButton.type = "button";
+    symbolButton.title = "Open the Symbols library";
+    symbolButton.setAttribute("aria-label", "Open the Symbols library");
+    const color = symbolCategoryColor(symbolCategoryOf(definition.id));
+    symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${definition.name}</span>`;
+    symbolButton.addEventListener("click", () => store.setLeftTab("symbols"));
+
+    const category = el(
+      "span",
+      "context-symbol-category",
+      symbolCategoryLabel(definition.category),
+    );
+    category.style.color = color;
+
+    const status = el("select", "select context-symbol-status");
+    status.setAttribute("aria-label", "Status for the next symbol");
+    status.title = "Inspection status for the next placed symbol";
+    status.append(option("", "Not assessed", !store.ui.symbolStatus));
+    for (const value of INSPECTION_STATUSES) {
+      status.append(
+        option(value, INSPECTION_STATUS_LABELS[value], store.ui.symbolStatus === value),
+      );
+    }
+    status.value = store.ui.symbolStatus ?? "";
+    status.style.color = inspectionStatusColor(store.ui.symbolStatus ?? undefined);
+    status.addEventListener("change", () => {
+      store.setSymbolStatus(
+        status.value ? (status.value as (typeof INSPECTION_STATUSES)[number]) : null,
+      );
+    });
+    controls.append(symbolButton, category, status, el("div", "divider-v"));
   }
 
   if (

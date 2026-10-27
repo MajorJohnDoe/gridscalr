@@ -1,6 +1,7 @@
 import { itemScale } from "./calibration";
 import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
+import { symbolName } from "./symbols";
 import { polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
 import { displayedLengthUnit, formatArea, formatLength, formatLengthCompact } from "./units";
@@ -64,6 +65,7 @@ export function itemLabel(item: MarkupItem, project: Project): string {
   if (item.kind === "stamp") return item.text?.slice(0, 32) || "Stamp";
   if (item.kind === "delta") return item.text ? `Rev ${item.text}` : "Revision";
   if (item.kind === "cloud") return item.text?.slice(0, 32) || "Revision cloud";
+  if (item.kind === "symbol") return symbolName(item.symbolId);
   return itemKindLabel(item.kind);
 }
 
@@ -99,5 +101,7 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Stamp";
     case "delta":
       return "Revision delta";
+    case "symbol":
+      return "Symbol";
   }
 }

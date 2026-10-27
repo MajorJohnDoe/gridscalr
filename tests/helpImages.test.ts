@@ -12,6 +12,7 @@ describe("help images", () => {
         "measure.png",
         "markups-list.png",
         "quantities.png",
+        "symbols.png",
         "workflows-help.png",
       ]),
     );

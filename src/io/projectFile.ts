@@ -17,6 +17,7 @@ import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
 import { normalizeMarkupsViews } from "../model/markups";
+import { isInspectionStatus } from "../model/symbols";
 import type {
   AreaMode,
   AreaShape,
@@ -59,6 +60,7 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "callout",
   "stamp",
   "delta",
+  "symbol",
 ]);
 
 const COUNT_TYPES: ReadonlySet<CountType> = new Set([
@@ -452,6 +454,13 @@ function normalizeItem(
           ? (raw.countType as CountType)
           : "other"
         : undefined,
+    symbolId:
+      raw.kind === "symbol"
+        ? typeof raw.symbolId === "string" && raw.symbolId.trim()
+          ? raw.symbolId.trim().slice(0, 120)
+          : "unknown"
+        : undefined,
+    status: raw.kind === "symbol" && isInspectionStatus(raw.status) ? raw.status : undefined,
     image,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : now,

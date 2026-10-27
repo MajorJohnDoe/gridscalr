@@ -181,6 +181,41 @@ describe("flattened PDF export", () => {
     expect(output.getPage(0).getRotation().angle).toBe(90);
   });
 
+  it("exports visible symbols as vectors and skips hidden ones", async () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.length = 0;
+    draw.items.push(
+      makeItem({
+        id: "item_symbol_visible",
+        kind: "symbol",
+        points: [{ x: 60, y: 60 }],
+        color: "#e5484d",
+        symbolId: "fire.extinguisher",
+        status: "approved",
+      }),
+      makeItem({
+        id: "item_symbol_hidden",
+        kind: "symbol",
+        points: [{ x: 120, y: 60 }],
+        color: "#35c2a1",
+        symbolId: "egress.exit",
+        visible: false,
+      }),
+    );
+    const content = await decodePageContent(
+      await exportProjectPdf(project, await makeRenderer(), {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: false,
+        includeCalibration: false,
+        includeLegend: false,
+      }),
+    );
+    expect(content).toMatch(/0\.898/); // visible fire symbol
+    expect(content).not.toMatch(/0\.208 0\.761 0\.631/); // hidden green exit symbol
+  });
+
   it("does not export editing endpoint markers", async () => {
     const bytes = await exportProjectPdf(makeProject(), await makeRenderer());
     const content = await decodePageContent(bytes);

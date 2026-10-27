@@ -56,6 +56,13 @@ const shots = [
       "A docked, project-wide list with saved views, configurable columns, grouping, filters, and row navigation.",
   },
   {
+    file: "symbols.png",
+    title: "Symbol library",
+    alt: "The GridScalr Symbols tab with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
+    description:
+      "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list.",
+  },
+  {
     file: "export.png",
     title: "Drawing export",
     alt: "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
@@ -147,7 +154,17 @@ try {
   });
   await page.waitForTimeout(250);
   await capture("markups-list.png");
-  await markupsPanel.getByRole("button", { name: "Close Markups list" }).click();
+
+  await markupsPanel.getByLabel("Markups view").selectOption({ label: "Symbols & status" });
+  await markupsPanel
+    .locator('[data-item-id="item_symbol_extinguisher"] .markups-item-label')
+    .click();
+  await page.locator('.dock-tab[data-tab="symbols"]').click();
+  await page.locator('[data-symbol-id="fire.extinguisher"]').click();
+  await page.keyboard.press("Control+0");
+  await page.waitForTimeout(250);
+  await capture("symbols.png");
+  await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
 
   await page.keyboard.press("F1");

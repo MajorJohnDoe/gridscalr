@@ -147,6 +147,14 @@ export const TOOLS: ToolDef[] = [
     hint: "Set the revision in the context bar and click to place the triangle",
     group: "draw",
   },
+  {
+    id: "symbol",
+    label: "Symbol",
+    icon: "symbol",
+    shortcut: TOOL_SHORTCUTS.symbol,
+    hint: "Pick a symbol · set status · click to place",
+    group: "draw",
+  },
 ];
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));

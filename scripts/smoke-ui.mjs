@@ -191,8 +191,8 @@ try {
   assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    9,
-    "the Markups table should expose all nine columns",
+    10,
+    "the Markups table should expose all ten columns",
   );
   const zoomBeforeFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
   const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
@@ -249,7 +249,7 @@ try {
   await columnsDialog.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    8,
+    9,
     "hiding a Markups column should remove its header",
   );
 
@@ -260,7 +260,7 @@ try {
   await columnsAgain.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    9,
+    10,
     "restoring the Markups column should bring its header back",
   );
 
@@ -312,6 +312,75 @@ try {
   assert.equal(
     (await markupsPanel.locator(".markups-group-label").first().textContent())?.trim(),
     "Building A",
+  );
+
+  await page.locator('.dock-tab[data-tab="symbols"]').click();
+  const symbolSearch = page.getByLabel("Search symbols");
+  await symbolSearch.fill("brandsläckare");
+  assert.ok(
+    (await page.locator(".symbol-tile:visible").count()) >= 1,
+    "symbol search should find the Swedish fire-extinguisher term",
+  );
+  await symbolSearch.fill("");
+  await page.locator('[data-symbol-id="fire.extinguisher"]').click();
+  await page.getByLabel("Status for the next symbol").selectOption("approved");
+
+  const interaction = page.locator("#canvas-interaction");
+  const canvasBox = await interaction.boundingBox();
+  assert.ok(canvasBox, "the canvas should be visible");
+  await interaction.click({
+    position: { x: canvasBox.width * 0.72, y: canvasBox.height * 0.55 },
+  });
+  await page.waitForTimeout(150);
+  const placedSymbol = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === selection?.itemId);
+    return item
+      ? {
+          id: item.id,
+          kind: item.kind,
+          symbolId: item.symbolId,
+          status: item.status,
+          rotation: item.rotation ?? 0,
+        }
+      : null;
+  });
+  assert.equal(placedSymbol?.kind, "symbol", "the symbol tool should place a symbol");
+  assert.equal(placedSymbol?.symbolId, "fire.extinguisher");
+  assert.equal(placedSymbol?.status, "approved", "the sticky symbol status should be applied");
+
+  await page.getByLabel("Rotation in degrees").fill("90");
+  await page.getByLabel("Rotation in degrees").press("Tab");
+  await page.waitForTimeout(100);
+  assert.equal(
+    await page.evaluate(() => {
+      const selection = window.__gridscalr.store.ui.selection[0];
+      return window.__gridscalr.store.project.layers
+        .flatMap((layer) => layer.items)
+        .find((entry) => entry.id === selection?.itemId)?.rotation;
+    }),
+    90,
+    "symbol rotation should be editable in Properties",
+  );
+
+  await markupsPanel.getByLabel("Filter markups by type").selectOption("symbol");
+  const placedRow = markupsPanel.locator(`[data-item-id="${placedSymbol?.id}"]`);
+  await placedRow.waitFor();
+  const statusSelect = placedRow.locator(".markups-status-select");
+  assert.equal(await statusSelect.inputValue(), "approved");
+  await statusSelect.selectOption("missing");
+  assert.equal(
+    await page.evaluate(
+      (id) =>
+        window.__gridscalr.store.project.layers
+          .flatMap((layer) => layer.items)
+          .find((item) => item.id === id)?.status,
+      placedSymbol?.id,
+    ),
+    "missing",
+    "the Markups status cell should update symbol status",
   );
 
   await page.keyboard.press("Control+l");

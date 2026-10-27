@@ -1,6 +1,6 @@
 [package]
 name = "gridscalr"
-version = "0.5.0"
+version = "0.6.0"
 description = "Local-first PDF plan viewer with calibration, measurement and layered markup tools"
 authors = ["GridScalr"]
 edition = "2021"
