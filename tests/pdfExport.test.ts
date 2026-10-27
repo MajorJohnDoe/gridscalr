@@ -198,8 +198,8 @@ describe("flattened PDF export", () => {
         id: "item_symbol_hidden",
         kind: "symbol",
         points: [{ x: 120, y: 60 }],
-        color: "#35c2a1",
-        symbolId: "egress.exit",
+        color: "#005eb8",
+        symbolId: "hvac.valve",
         visible: false,
       }),
     );
@@ -212,8 +212,9 @@ describe("flattened PDF export", () => {
         includeLegend: false,
       }),
     );
-    expect(content).toMatch(/0\.898/); // visible fire symbol
-    expect(content).not.toMatch(/0\.208 0\.761 0\.631/); // hidden green exit symbol
+    expect(content).toMatch(/0\.827/); // visible fire symbol
+    expect(content).toContain("f*"); // filled even-odd symbol artwork
+    expect(content).not.toMatch(/0\.368627/); // hidden blue valve symbol
   });
 
   it("does not export editing endpoint markers", async () => {

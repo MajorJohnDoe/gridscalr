@@ -245,19 +245,20 @@ Use **File → Import image…** or the context bar to add a PNG or JPEG. `Ctrl/
 
 ## Symbols
 
-Open the **Symbols** tab in the left panel or press `B`. The library is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
+Open the **Symbols** tab in the left panel or press `B`. The library contains 52 built-in signs and is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
 
 - Categories: **Fire protection**, **Evacuation & safety**, **HVAC & plumbing**, **Electrical & controls**, **Building elements**, and **Waste & environment**.
 - Select a tile, choose the status for the next placement in the context bar, then click the drawing.
 - Symbols are drawing objects. They do not appear in quantity totals.
-- Category colour is fixed: red for fire, green for evacuation and safety, blue for HVAC, amber for electrical, violet for building elements, and green-brown for waste.
+- Plate colour is fixed by category: red for fire equipment, green for evacuation and safety, blue for HVAC, yellow with a black pictogram for electrical, violet for building elements, and olive for waste.
 - A small corner marker shows the inspection status: Approved, Not approved, Action required, Missing, or no marker for Not assessed.
 - Select a symbol and use its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - The symbol name appears as the Markups label. You can still give an item a custom label.
-- Symbols are exported as vector line art in the drawing PDF, so they stay sharp and match the screen.
+- Symbols are classic sign plates with filled vector pictograms, placed at 24 pt by default. They are exported as vectors in the drawing PDF, so they stay sharp and match the screen.
+- The status marker is a small white-ringed badge in the corner; it is visible on both the dark canvas and white paper.
 
-Built-in symbols are original vector approximations inspired by common Swedish and European facility-safety practice. They are not certified reproductions of SS-EN ISO 7010 artwork.
+Built-in symbols are original filled-vector interpretations inspired by common Swedish and European facility-safety practice. They are not certified SS-EN ISO 7010 material and were not traced from an external sign or icon set.
 
 ![Searchable symbol library with a selected fire extinguisher, Markups grouped by category and inspection status](screenshots/symbols.png)
 

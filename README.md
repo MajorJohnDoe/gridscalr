@@ -36,7 +36,7 @@ See the [user guide](docs/user-guide.md) for the full workflow, the [role-based 
 - Measure multi-segment lengths, polygon areas, and quick rectangle/ellipse areas with live unit conversion, and count doors, windows, radiators, fixtures, and other objects as pieces.
 - Snap to endpoints, segment midpoints, and intersections between visible markup segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision clouds, callouts, stamps, revision deltas, and text notes.
-- Place searchable facility **symbols** from a built-in vector library: fire protection, evacuation, HVAC, electrical, building and waste. Symbols use category colours, can be rotated, and carry inspection statuses such as Approved, Not approved, Action required or Missing.
+- Place searchable facility **symbols** from a built-in library of 52 classic sign plates: fire protection, evacuation, HVAC, electrical, building and waste. Each sign is an original filled-vector pictogram on a category-coloured plate — white glyphs, or black glyphs on yellow electrical signs — and can be rotated and given an inspection status such as Approved, Not approved, Action required or Missing.
 - Edit text directly on the plan with multi-line input and a floating font-size, colour, and rotation strip.
 - Drag measurement labels to place them manually when labels are tight, and choose **Solid** or **Dashed** line styles for length measurements.
 - Switch project length and area units between mm, cm, m, in, ft and yd from Properties, Canvas, or Settings. **Smart length labels** show cm below 1 m and metres above, while quantity reports keep the selected project unit.
@@ -255,13 +255,13 @@ Renaming in Properties changes the list/export label without changing the drawin
 
 Press `B`, choose the **Symbol** tool, or open the **Symbols** tab in the left panel. The library is searchable in English and Swedish, for example **Fire extinguisher** or **brandsläckare**, and is grouped into fire protection, evacuation and safety, HVAC and plumbing, electrical and controls, building elements, and waste and environment.
 
-Select a symbol, choose the inspection status for the next placement, then click the drawing. Symbols are vector line art in PDF points, so they stay sharp on screen and in exported PDFs. Their colour follows the category: red for fire, green for evacuation and safety, blue for HVAC, amber for electrical, violet for building elements, and green-brown for waste. The small corner marker shows the inspection status.
+Select a symbol, choose the inspection status for the next placement, then click the drawing. Symbols are classic sign plates drawn as filled vectors at 24 pt by default, so they stay sharp on screen and in exported PDFs. The plate colour follows the category: red for fire equipment, green for evacuation and safety, blue for HVAC, yellow with a black pictogram for electrical, violet for building elements, and olive for waste. A small white-ringed badge in the corner shows the inspection status.
 
 - Rotate a selected symbol with its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
 - Change **Approved**, **Not approved**, **Action required**, **Missing** or **Not assessed** in Properties or directly in the Markups list.
 - Symbols are drawing objects, not quantity measurements. They do not change the procurement totals.
 - Symbol colour is fixed by category; the normal colour and line-weight fields are hidden for symbols.
-- The built-in pictograms are original line-art approximations inspired by common Swedish and European facility-safety practice. They are not certified reproductions of SS-EN ISO 7010 artwork.
+- The built-in pictograms are original filled-vector interpretations inspired by common Swedish and European facility-safety practice. They are not certified SS-EN ISO 7010 material and were not traced from an external sign or icon set.
 
 ![Searchable symbol library with a selected fire extinguisher, Markups grouped by symbol category and inspection status](docs/screenshots/symbols.png)
 
@@ -560,7 +560,8 @@ src/
   model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
-  model/symbols.ts       vector facility symbols, categories and inspection statuses
+  model/symbols.ts       classic sign artwork, categories and inspection statuses
+  model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
   state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
   state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
@@ -685,5 +686,5 @@ Running `npm run dev` without Tauri is useful for layout and interaction testing
 - TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages can be deleted like any other page but cannot be rearranged, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.
 - New sheets are always added after the existing pages. A page can be deleted explicitly: its measurements and page scale are removed, later measurements move down one page number, and the operation is not undoable. Pages cannot be inserted or reordered.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
-- The symbol library is built in and vector-only: custom symbol uploads, per-symbol resizing, and symbol quantities in the procurement report are not supported yet. The pictograms are original approximations, not certified SS-EN ISO 7010 reproductions.
+- The symbol library is built in and vector-only: custom symbol uploads, per-symbol resizing, and symbol quantities in the procurement report are not supported yet. The pictograms are original filled-vector interpretations, not certified SS-EN ISO 7010 reproductions.
 - XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.

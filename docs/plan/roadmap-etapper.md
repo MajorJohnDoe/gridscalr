@@ -7,6 +7,7 @@
 - **Etapp 3 – Mätverktyg, skala och export:** genomförd. 3A gav snabbarea, manuell skala, skallås och snap. 3B gav exportdialogen med sidval, beskärningsruta, lagerval, etiketter, kalibreringslinje och teckenförklaring.
 - **Etapp 4 – Bilder:** genomförd. Etapp 4 gav inbäddade PNG/JPEG-bilder, bakgrunds- och annotationsläge, bildhandtag, opacitet, rotation samt bildinbäddning i ritnings-PDF:en. Projektformatet höjdes till schema v5.
 - **Etapp 5 – TIF-ritningar och flera dokument:** genomförd. TIF-import som dokument via förlustfri CCITT G3/G4-passthrough, flera källdokument per projekt, append-only sidnumrering och schema v6.
+- **0.6.1 – Symbolspråk:** genomförd. Samtliga 52 inbyggda symboler är omritade som egna klassiska skyltbrickor med fylld vektorgrafik, kategorifärgade plattor, 24 pt standardstorlek och vitringad statusbadge. Ingen schemaändring; schemat är fortfarande v13.
 
 Etapp 2-planen finns i `etapp-2-mangddata.md`. Den är fastställd och innehåller de beslut som krävdes innan implementation, bland annat användardefinierade kategorier och klampat avdragsnetto. Samtliga steg 1–10 i genomförandeordningen är införda: kategorimodellen, schema v3, rum på mätningar, antalsverktyget, avdragsarea, Quantities-panelen, massredigeringen, svinn och avrundning samt CSV- och PDF-rapporterna. Etapp 1 finns sammanfattad längre ner i detta dokument; någon separat Etapp 1-plan finns inte i repot.
 

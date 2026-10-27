@@ -132,10 +132,10 @@ import { stampStatusColor } from "../model/stamps";
 import {
   inspectionStatusColor,
   SYMBOL_SIZE,
-  SYMBOL_VIEWBOX,
   symbolCategoryColor,
   symbolCategoryOf,
   symbolFor,
+  symbolRenderPlan,
 } from "../model/symbols";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
@@ -215,6 +215,17 @@ interface PanState {
 const ACCENT = "#35c2a1";
 const CALIBRATION_COLOR = "#a78bfa";
 const FONT_STACK = TEXT_FONT_STACK;
+
+const symbolPathCache = new Map<string, Path2D>();
+
+function symbolPath(data: string): Path2D {
+  let path = symbolPathCache.get(data);
+  if (!path) {
+    path = new Path2D(data);
+    symbolPathCache.set(data, path);
+  }
+  return path;
+}
 /**
  * Screen-space ceiling for canvas measurement labels. Paper-space labels keep
  * their true scale in exported PDFs, but at high zoom they would otherwise
@@ -2474,43 +2485,51 @@ export class CanvasView {
         const anchor = points[0];
         if (!anchor) break;
         const definition = symbolFor(item.symbolId);
-        const color =
+        const accent =
           definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
-        const scale = (SYMBOL_SIZE * zoom) / SYMBOL_VIEWBOX;
-        const half = SYMBOL_VIEWBOX / 2;
-        const local = (point: { x: number; y: number }) => ({
-          x: anchor.x + (point.x - half) * scale,
-          y: anchor.y + (point.y - half) * scale,
-        });
-        ctx.strokeStyle = color;
-        ctx.fillStyle = color;
-        ctx.lineWidth = Math.max(1, 1.45 * scale);
-        for (const path of definition.paths) {
-          ctx.beginPath();
-          path.points.forEach((point, index) => {
-            const screen = local(point);
-            if (index === 0) ctx.moveTo(screen.x, screen.y);
-            else ctx.lineTo(screen.x, screen.y);
-          });
-          if (path.closed) ctx.closePath();
-          ctx.stroke();
-        }
-        for (const circle of definition.circles) {
-          const center = local(circle.center);
-          ctx.beginPath();
-          ctx.arc(center.x, center.y, Math.max(0.6, circle.radius * scale), 0, Math.PI * 2);
-          ctx.stroke();
+        const plan = symbolRenderPlan(definition, accent);
+        const scale = (SYMBOL_SIZE * zoom) / plan.viewBox;
+        const half = plan.viewBox / 2;
+        ctx.save();
+        ctx.translate(anchor.x, anchor.y);
+        ctx.scale(scale, scale);
+        ctx.translate(-half, -half);
+        for (const shape of plan.shapes) {
+          ctx.save();
+          if (shape.scale !== 1) {
+            ctx.translate(half, half);
+            ctx.scale(shape.scale, shape.scale);
+            ctx.translate(-half, -half);
+          }
+          const path = symbolPath(shape.d);
+          if (shape.fill) {
+            ctx.fillStyle = shape.fill;
+            ctx.fill(path, shape.fillRule);
+          }
+          if (shape.stroke) {
+            ctx.strokeStyle = shape.stroke;
+            ctx.lineWidth = shape.strokeWidth;
+            ctx.lineCap = "round";
+            ctx.lineJoin = "round";
+            ctx.stroke(path);
+          }
+          ctx.restore();
         }
         if (item.status) {
-          const marker = local({ x: 19.5, y: 4.5 });
           ctx.beginPath();
-          ctx.arc(marker.x, marker.y, Math.max(1, 2.2 * scale), 0, Math.PI * 2);
+          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 1.4, 0, Math.PI * 2);
+          ctx.fillStyle = "rgba(15, 19, 21, 0.85)";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = "#ffffff";
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r, 0, Math.PI * 2);
           ctx.fillStyle = inspectionStatusColor(item.status);
           ctx.fill();
-          ctx.strokeStyle = "rgba(15, 19, 21, 0.8)";
-          ctx.lineWidth = Math.max(1, 0.7 * scale);
-          ctx.stroke();
         }
+        ctx.restore();
         break;
       }
       case "pen": {

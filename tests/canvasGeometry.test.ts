@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { SYMBOL_SIZE } from "../src/model/symbols";
 import {
   clampPointToPage,
   constrainSquare,
@@ -180,10 +181,11 @@ describe("selection handles", () => {
       updatedAt: "",
     };
     const bounds = itemBounds({ ...item, rotation: 0 });
-    expect(bounds.min.x).toBeCloseTo(90);
-    expect(bounds.min.y).toBeCloseTo(90);
-    expect(bounds.max.x).toBeCloseTo(110);
-    expect(bounds.max.y).toBeCloseTo(110);
+    const half = SYMBOL_SIZE / 2;
+    expect(bounds.min.x).toBeCloseTo(100 - half);
+    expect(bounds.min.y).toBeCloseTo(100 - half);
+    expect(bounds.max.x).toBeCloseTo(100 + half);
+    expect(bounds.max.y).toBeCloseTo(100 + half);
     expect(selectionHandles(item, (point) => point).map((handle) => handle.role)).toEqual([
       "rotate",
     ]);
