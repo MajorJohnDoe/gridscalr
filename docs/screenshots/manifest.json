@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-27T14:40:10.550Z",
-  "appVersion": "0.6.1",
-  "sourceFingerprint": "ce00a168e63fc471082d4acfaf1c260ec1127099e6f2346e2a3b9f0215e0876d",
+  "generatedAt": "2026-10-27T19:12:40.704Z",
+  "appVersion": "0.7.0",
+  "sourceFingerprint": "afd5f32fe67e1d5ceb68984c97b31910e30b5aaf54b5397a4b62b175dc87a4a9",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -47,7 +47,7 @@
     {
       "file": "symbols.png",
       "title": "Symbol library",
-      "alt": "The GridScalr Symbols tab with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
+      "alt": "The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
       "description": "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list."
     },
     {
