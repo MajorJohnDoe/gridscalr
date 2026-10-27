@@ -1245,7 +1245,7 @@ export class CanvasView {
     let factorX = signX === 0 ? 1 : (local.x - opposite.x) / dx;
     let factorY = signY === 0 ? 1 : (local.y - opposite.y) / dy;
 
-    if (item.kind === "text") {
+    if (item.kind === "text" || item.kind === "stamp") {
       let factor: number;
       if (signX !== 0 && signY !== 0) {
         const pointerX = local.x - opposite.x;
@@ -1292,6 +1292,14 @@ export class CanvasView {
       item.points[0] = {
         x: scaled.min.x + shiftX,
         y: scaled.min.y + shiftY,
+      };
+    } else if (item.kind === "stamp") {
+      // Stamps are centre-anchored: keep the opposite corner fixed by moving the
+      // centre to the middle of the scaled box.
+      item.fontSize = clampTextSize((this.drag.startFontSize ?? 12) * factorX);
+      item.points[0] = {
+        x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
+        y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
     } else if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
       item.points = [

@@ -86,8 +86,22 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
     }));
   }
 
-  if (item.kind === "stamp" || item.kind === "delta") {
+  if (item.kind === "delta") {
     return [];
+  }
+
+  if (item.kind === "stamp") {
+    // Stamps are centre-anchored and never rotated, so they only expose the
+    // four corner handles that scale the plate.
+    const bounds = itemLocalBounds(item);
+    const center = midpoint(bounds.min, bounds.max);
+    const rotation = itemRotation(item);
+    return (["nw", "ne", "se", "sw"] as BoxHandleRole[]).map((role) => ({
+      role,
+      index: -1,
+      point: toScreen(rotatePoint(handleLocalPoint(bounds, role), center, rotation)),
+      cursor: cursorForRole(role),
+    }));
   }
 
   if (item.kind === "line" || item.kind === "arrow") {
