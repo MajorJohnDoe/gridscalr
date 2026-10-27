@@ -52,7 +52,7 @@
 
 .canvas-options-subtitle {
   color: var(--muted-2);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -66,7 +66,7 @@
 .canvas-options-heading {
   margin: 0;
   color: var(--muted-2);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -170,7 +170,7 @@
 
 .measure-options-subtitle {
   color: var(--muted-2);
-  font-size: 10px;
+  font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -183,7 +183,7 @@
 
 .measure-option-label {
   color: var(--muted-2);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.5px;
   text-transform: uppercase;
@@ -246,7 +246,7 @@
 .tool-flyout-section {
   margin: 7px 6px 3px;
   color: var(--muted-2);
-  font-size: 9.5px;
+  font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.6px;
   text-transform: uppercase;
@@ -310,7 +310,7 @@
 
 .tool-variant-description {
   color: var(--muted-2);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.2;
 }
 
@@ -354,7 +354,7 @@
 .tool-flyout-note {
   padding: 6px 7px 3px;
   color: var(--muted-2);
-  font-size: 10px;
+  font-size: 11px;
   line-height: 1.45;
 }
 
@@ -373,7 +373,7 @@
 
 .tool-fill-label {
   color: var(--muted-2);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.1;
   text-align: center;
 }
