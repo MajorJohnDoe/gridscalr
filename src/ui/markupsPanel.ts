@@ -13,6 +13,7 @@ import {
   moveItemsToLayer,
 } from "../model/layers";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/commands";
+import { formatTimestamp, timestampValue } from "../model/dates";
 import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import {
   INSPECTION_STATUSES,
@@ -67,16 +68,18 @@ const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 140;
 
 const COLUMN_WIDTHS: Record<MarkupsColumnId, number> = {
-  name: 24,
-  type: 8,
-  page: 5,
-  layer: 13,
-  value: 8,
-  category: 10,
-  room: 9,
-  status: 10,
-  visible: 4,
-  locked: 4,
+  name: 18,
+  type: 7,
+  page: 4,
+  layer: 10,
+  value: 6,
+  category: 8,
+  room: 7,
+  status: 8,
+  created: 11,
+  modified: 11,
+  visible: 5,
+  locked: 5,
 };
 
 interface MarkupsPreferences {
@@ -422,8 +425,10 @@ function filteredRows(project: Project): MarkupRow[] {
       const symbolCategory = item.kind === "symbol" ? symbolCategoryOf(item.symbolId) : undefined;
       if (settings.symbolCategory && symbolCategory !== settings.symbolCategory) continue;
       if (query) {
+        const created = formatTimestamp(item.createdAt);
+        const modified = formatTimestamp(item.updatedAt);
         const haystack =
-          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""}`.toLocaleLowerCase();
+          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`.toLocaleLowerCase();
         if (!haystack.includes(query)) continue;
       }
       rows.push({ item, layer });
@@ -477,6 +482,10 @@ function sortValue(row: MarkupRow, column: MarkupsColumnId, project: Project): s
       return row.item.kind === "symbol"
         ? inspectionStatusLabel(row.item.status).toLocaleLowerCase()
         : "";
+    case "created":
+      return timestampValue(row.item.createdAt);
+    case "modified":
+      return timestampValue(row.item.updatedAt);
     case "visible":
       return itemIsVisible(row.item, row.layer) ? 0 : 1;
     case "locked":
@@ -575,6 +584,7 @@ function markupRowElement(
   tr.dataset.itemId = item.id;
   tr.tabIndex = 0;
   tr.classList.toggle("is-selected", store.isSelected(ref));
+  tr.setAttribute("aria-selected", String(store.isSelected(ref)));
   tr.classList.toggle("is-hidden", hidden);
   tr.classList.toggle("is-locked", locked);
   tr.classList.toggle("is-deduction", deduction);
@@ -686,6 +696,14 @@ function markupRowElement(
     statusCell.textContent = "–";
   }
   cells.set("status", statusCell);
+
+  const createdCell = el("td", "markups-time", formatTimestamp(item.createdAt));
+  createdCell.title = item.createdAt ?? "";
+  cells.set("created", createdCell);
+
+  const modifiedCell = el("td", "markups-time", formatTimestamp(item.updatedAt));
+  modifiedCell.title = item.updatedAt ?? "";
+  cells.set("modified", modifiedCell);
 
   const visibleCell = el("td", "markups-flag-cell");
   const eye = layerAction(

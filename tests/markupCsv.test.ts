@@ -37,7 +37,7 @@ describe("markup CSV", () => {
     const csv = serializeMarkupCsv(project);
     const lines = csv.split("\r\n");
     expect(lines[0]).toBe(
-      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status",
+      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status,Created,Modified",
     );
     expect(csv).toContain('"Wall, ""A"""');
     expect(csv).toContain("Text");
@@ -88,7 +88,7 @@ describe("markup CSV", () => {
     measure.items.push({ ...item("hidden", "length", "Hidden"), visible: false });
     measure.visible = false;
     expect(serializeMarkupCsv(project)).toBe(
-      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status",
+      "Page,Type,Layer,Label,Value,Unit,Details,Points,Symbol,Symbol category,Status,Created,Modified",
     );
     measure.visible = true;
     const csv = serializeMarkupCsv(project);

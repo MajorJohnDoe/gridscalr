@@ -158,6 +158,7 @@ describe("layers", () => {
     expect(itemCountForPage(project, 2)).toBe(1);
     expect(moveItemToLayer(project, measureA.id, "item_a", measureB.id)).toBe(true);
     expect(findItem(project, "item_a")?.layer.id).toBe(measureB.id);
+    expect(findItem(project, "item_a")?.item.updatedAt).not.toBe("2026-01-01T00:00:00.000Z");
     expect(removeItem(project, measureB.id, "item_a")?.id).toBe("item_a");
     expect(findItem(project, "item_a")).toBeUndefined();
   });

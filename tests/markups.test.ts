@@ -96,6 +96,8 @@ describe("Markups views", () => {
       "category",
       "room",
       "status",
+      "created",
+      "modified",
       "visible",
       "locked",
     ]);

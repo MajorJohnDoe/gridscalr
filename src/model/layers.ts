@@ -372,6 +372,7 @@ export function moveItemToLayer(
   if (index < 0) return false;
   const [item] = source.items.splice(index, 1);
   target.items.push(item);
+  item.updatedAt = new Date().toISOString();
   return true;
 }
 
@@ -425,6 +426,7 @@ export function moveItemsToLayer(
     }
     const [item] = source.items.splice(index, 1);
     target.items.push(item);
+    item.updatedAt = new Date().toISOString();
     result.moved++;
   }
   return result;

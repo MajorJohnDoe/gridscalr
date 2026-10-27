@@ -4339,6 +4339,12 @@ textarea:disabled {
   font-variant-numeric: tabular-nums;
 }
 
+.markups-time {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
 /* A stale measurement scale is a quantity risk, so it gets a quiet warning. */
 .scale-warning {
   display: inline-flex;

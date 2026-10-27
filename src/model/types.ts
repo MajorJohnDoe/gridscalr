@@ -203,6 +203,8 @@ export type MarkupsColumnId =
   | "category"
   | "room"
   | "status"
+  | "created"
+  | "modified"
   | "visible"
   | "locked";
 
