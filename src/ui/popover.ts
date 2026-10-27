@@ -8,6 +8,8 @@ export interface PopoverItem {
   danger?: boolean;
   disabled?: boolean;
   separator?: boolean;
+  /** Nested menu opened to the side of the parent item. */
+  children?: PopoverItem[];
 }
 
 function buildPopover(items: PopoverItem[]): HTMLElement {
@@ -22,6 +24,28 @@ function buildPopover(items: PopoverItem[]): HTMLElement {
     btn.disabled = item.disabled ?? false;
     if (item.icon) btn.innerHTML = icon(item.icon, 14);
     btn.append(el("span", "", item.label ?? ""));
+
+    if (item.children?.length) {
+      const submenu = buildPopover(item.children);
+      submenu.classList.add("popover-submenu");
+      submenu.hidden = true;
+      btn.classList.add("has-children");
+      btn.setAttribute("aria-haspopup", "menu");
+      btn.setAttribute("aria-expanded", "false");
+      const caret = el("span", "popover-caret");
+      caret.innerHTML = icon("chevronRight", 12);
+      btn.append(caret);
+      btn.addEventListener("click", (event) => {
+        // Keep the parent menu open; only the nested menu toggles.
+        event.stopPropagation();
+        if (!btn.disabled) toggleSubmenu(btn, submenu);
+      });
+      const row = el("div", "popover-row");
+      row.append(btn, submenu);
+      popover.append(row);
+      continue;
+    }
+
     btn.addEventListener("click", () => {
       popover.remove();
       item.action?.();
@@ -29,6 +53,22 @@ function buildPopover(items: PopoverItem[]): HTMLElement {
     popover.append(btn);
   }
   return popover;
+}
+
+function toggleSubmenu(parent: HTMLElement, submenu: HTMLElement): void {
+  const open = !submenu.hidden;
+  submenu.hidden = open;
+  parent.setAttribute("aria-expanded", String(!open));
+  if (open) return;
+  const rect = parent.getBoundingClientRect();
+  const width = submenu.offsetWidth;
+  const height = submenu.offsetHeight;
+  let left = rect.right - 4;
+  if (left + width > window.innerWidth - 8) left = rect.left - width + 4;
+  let top = rect.top - 4;
+  if (top + height > window.innerHeight - 8) top = window.innerHeight - height - 8;
+  submenu.style.left = `${Math.max(8, left)}px`;
+  submenu.style.top = `${Math.max(8, top)}px`;
 }
 
 function mountPopover(popover: HTMLElement, left: number, top: number): void {

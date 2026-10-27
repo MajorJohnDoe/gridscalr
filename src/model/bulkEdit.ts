@@ -62,7 +62,10 @@ export function applyMeasurementBulkEdit(
       entry.item.countType = patch.countType;
       changed = true;
     }
-    if (changed) result.updated += 1;
+    if (changed) {
+      entry.item.updatedAt = new Date().toISOString();
+      result.updated += 1;
+    }
   }
   return result;
 }

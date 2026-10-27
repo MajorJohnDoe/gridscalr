@@ -73,6 +73,31 @@ try {
     "redo should start disabled on a freshly loaded project",
   );
 
+  // The page scale lives in the status bar now, and its chip opens the scale menu.
+  assert.equal(
+    await page.locator(".scale-card").count(),
+    0,
+    "Properties should no longer host the scale card",
+  );
+  const scaleChip = page.locator(".status-chip-action");
+  await scaleChip.waitFor();
+  assert.match(
+    (await scaleChip.textContent()) ?? "",
+    /1:\d/,
+    "the scale chip should show a compact 1:N ratio",
+  );
+  await scaleChip.click();
+  const scaleMenu = page.locator(".popover");
+  await scaleMenu.waitFor();
+  const scaleMenuText = (await scaleMenu.textContent()) ?? "";
+  assert.match(scaleMenuText, /Manual scale/, "the scale menu should offer a manual scale");
+  assert.match(scaleMenuText, /Lock scale|Unlock scale/, "the scale menu should offer the lock");
+  await page.keyboard.press("Escape");
+  await scaleMenu.waitFor({ state: "detached" });
+
+  // Site coordinates read as a position, with a unit on each axis.
+  await page.locator(".statusbar .status-label", { hasText: "Position" }).waitFor();
+
   const assertContextBarFits = async (label) => {
     const size = await page.locator(".context-bar").evaluate((bar) => ({
       scrollWidth: bar.scrollWidth,
@@ -155,24 +180,6 @@ try {
   );
   await assertContextBarFits("Area options applied");
 
-  await page.getByRole("button", { name: /Canvas options/ }).click();
-  const canvasOptions = page.getByRole("dialog", { name: "Canvas options" });
-  await canvasOptions.waitFor();
-  assert.equal(
-    await page.evaluate(() => Boolean(document.activeElement?.closest(".canvas-options"))),
-    true,
-    "focus should move into the Canvas popover",
-  );
-  const gridToggle = canvasOptions.getByRole("button", { name: "Grid" });
-  assert.equal(await gridToggle.getAttribute("aria-pressed"), "false");
-  await gridToggle.click();
-  assert.equal(
-    await canvasOptions.getByRole("button", { name: "Grid" }).getAttribute("aria-pressed"),
-    "true",
-  );
-  await page.keyboard.press("Escape");
-  await canvasOptions.waitFor({ state: "detached" });
-
   await page.keyboard.press("d");
   await page.locator(".context-tool", { hasText: "Revision cloud" }).waitFor();
   await assertContextBarFits("Revision cloud");
@@ -191,8 +198,23 @@ try {
   assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    10,
-    "the Markups table should expose all ten columns",
+    12,
+    "the Markups table should expose all twelve columns",
+  );
+
+  // A measurement drawn with an older page scale must warn, not fail silently.
+  await page.evaluate(() => {
+    window.__gridscalr.store.mutate((project) => {
+      const item = project.layers
+        .flatMap((layer) => layer.items)
+        .find((entry) => entry.id === "item_floor_living");
+      if (item?.scale) item.scale.pointsPerMeter *= 2;
+    }, "change");
+  });
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await markupsPanel.locator(".scale-warning").count()) >= 1,
+    "a stale measurement scale should warn in the Markups table",
   );
   const zoomBeforeFocus = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
   const radiatorRow = markupsPanel.locator('[data-item-id="item_count_radiator"]');
@@ -216,6 +238,75 @@ try {
     "item_floor_living",
     "clicking a large Markups row should still select it",
   );
+  await page.locator(".scale-warning-note").waitFor();
+
+  // Created and Modified columns, range selection and bulk category edit.
+  assert.equal(
+    await markupsPanel.locator('th[data-column="created"]').count(),
+    1,
+    "the Markups table should expose a Created column",
+  );
+  assert.equal(
+    await markupsPanel.locator('th[data-column="modified"]').count(),
+    1,
+    "the Markups table should expose a Modified column",
+  );
+  assert.match(
+    (await markupsPanel.locator("td.markups-time").first().textContent()) ?? "",
+    /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}$/,
+    "the Created column should show YYYY-MM-DD HH:mm",
+  );
+
+  const tableRows = markupsPanel.locator("tbody tr.markups-row");
+  await tableRows.nth(0).click();
+  await page.waitForTimeout(120);
+  await tableRows.nth(2).click({ modifiers: ["Shift"] });
+  await page.waitForTimeout(150);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
+    3,
+    "Shift-click should select the whole range between two rows",
+  );
+  await tableRows.nth(1).click({ modifiers: ["Control"] });
+  await page.waitForTimeout(150);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.selection.length),
+    2,
+    "Ctrl-click should remove one row from the range",
+  );
+
+  const rangeIds = await page.evaluate(() =>
+    window.__gridscalr.store.ui.selection.map((ref) => ref.itemId),
+  );
+  await tableRows.nth(0).click({ button: "right" });
+  const rangeMenu = page.locator(".popover:not(.popover-submenu)");
+  await rangeMenu.waitFor();
+  await rangeMenu.getByText("Set category", { exact: true }).click();
+  const categorySubmenu = page.locator(".popover-submenu:not([hidden])");
+  await categorySubmenu.waitFor();
+  await categorySubmenu.getByText("Wall", { exact: true }).click();
+  await page.waitForTimeout(200);
+  const categoriesApplied = await page.evaluate(
+    (ids) =>
+      ids.map(
+        (id) =>
+          window.__gridscalr.store.project.layers
+            .flatMap((layer) => layer.items)
+            .find((item) => item.id === id)?.categoryId ?? null,
+      ),
+    rangeIds,
+  );
+  assert.equal(
+    categoriesApplied[0],
+    categoriesApplied[1],
+    "bulk category should apply to the range",
+  );
+  const wallCategory = await page.evaluate(
+    () =>
+      window.__gridscalr.store.project.categories.find((category) => category.name === "Wall")
+        ?.id ?? null,
+  );
+  assert.deepEqual(categoriesApplied, [wallCategory, wallCategory]);
 
   await radiatorRow.hover();
   await radiatorRow.locator(".markups-rename").click();
@@ -249,7 +340,7 @@ try {
   await columnsDialog.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    9,
+    11,
     "hiding a Markups column should remove its header",
   );
 
@@ -260,7 +351,7 @@ try {
   await columnsAgain.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    10,
+    12,
     "restoring the Markups column should bring its header back",
   );
 
@@ -314,8 +405,14 @@ try {
     "Building A",
   );
 
-  await page.locator('.dock-tab[data-tab="symbols"]').click();
+  assert.equal(
+    await page.locator('.dock-tab[data-tab="symbols"]').count(),
+    0,
+    "the Symbols tab should be gone; the Symbol tool opens the library",
+  );
+  await page.keyboard.press("b");
   const symbolSearch = page.getByLabel("Search symbols");
+  await symbolSearch.waitFor();
   await symbolSearch.fill("brandsläckare");
   assert.ok(
     (await page.locator(".symbol-tile:visible").count()) >= 1,
@@ -383,6 +480,53 @@ try {
     "the Markups status cell should update symbol status",
   );
 
+  // Bulk status through the row context menu applies to every selected symbol.
+  const symbolRows = markupsPanel.locator("tbody tr.markups-row");
+  await symbolRows.nth(0).click();
+  await page.waitForTimeout(120);
+  await symbolRows.nth(1).click({ modifiers: ["Control"] });
+  await page.waitForTimeout(150);
+  const statusIds = await page.evaluate(() =>
+    window.__gridscalr.store.ui.selection.map((ref) => ref.itemId),
+  );
+  assert.equal(statusIds.length, 2, "two symbol rows should be selected");
+  await symbolRows.nth(1).click({ button: "right" });
+  const symbolMenu = page.locator(".popover:not(.popover-submenu)");
+  await symbolMenu.waitFor();
+  await symbolMenu.getByText("Set status", { exact: true }).click();
+  const statusSubmenu = page.locator(".popover-submenu:not([hidden])");
+  await statusSubmenu.waitFor();
+  await statusSubmenu.getByText("Approved", { exact: true }).click();
+  await page.waitForTimeout(200);
+  const bulkStatuses = await page.evaluate(
+    (ids) =>
+      ids.map(
+        (id) =>
+          window.__gridscalr.store.project.layers
+            .flatMap((layer) => layer.items)
+            .find((item) => item.id === id)?.status ?? null,
+      ),
+    statusIds,
+  );
+  assert.deepEqual(bulkStatuses, ["approved", "approved"]);
+
+  // Delete removes every selected row while the table has focus, as one undo step.
+  const countItems = () =>
+    page.evaluate(() =>
+      window.__gridscalr.store.project.layers.reduce(
+        (total, layer) => total + layer.items.length,
+        0,
+      ),
+    );
+  const beforeDelete = await countItems();
+  await symbolRows.nth(1).focus();
+  await page.keyboard.press("Delete");
+  await page.waitForTimeout(200);
+  assert.equal(await countItems(), beforeDelete - 2, "Delete should remove the selected rows");
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(200);
+  assert.equal(await countItems(), beforeDelete, "the bulk delete should be one undo step");
+
   await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
 
@@ -414,27 +558,34 @@ try {
   );
   const inspectorOrder = await page.evaluate(() =>
     [...document.querySelectorAll(".inspector-section")].map((section) =>
-      section.classList.contains("selection-section")
-        ? "selection"
-        : section.classList.contains("active-layer-section")
-          ? "layer"
-          : "scale",
+      section.classList.contains("selection-section") ? "selection" : "layer",
     ),
   );
   assert.deepEqual(
     inspectorOrder,
-    ["scale", "selection", "layer"],
+    ["selection", "layer"],
     "a selected markup should sit above the active-layer settings",
   );
+  assert.equal(
+    await page.locator(".inspector-section").filter({ hasText: "Measurement units" }).count(),
+    0,
+    "units should live in Project settings, not in Properties",
+  );
 
-  const lengthUnit = page.getByLabel("Project length unit");
+  // The right panel header opens Project settings without the menu.
+  await page.getByRole("button", { name: "Project settings", exact: true }).click();
+  const headerSettings = page.getByRole("dialog");
+  await headerSettings.waitFor();
+  const lengthUnit = headerSettings.getByLabel("Project length unit");
   await lengthUnit.selectOption("m");
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.project.settings.lengthUnit),
     "m",
-    "the Properties unit selector should change the project length unit",
+    "Project settings should change the project length unit",
   );
   await lengthUnit.selectOption("mm");
+  await page.keyboard.press("Escape");
+  await headerSettings.waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+,");
   const settingsDialog = page.getByRole("dialog");

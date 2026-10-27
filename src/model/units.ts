@@ -140,6 +140,17 @@ export function formatScale(
   return `1 pt = ${formatNumber(mmPerPoint, 3)} mm`;
 }
 
+/**
+ * Compact 1:N label for the status bar. Real drawings round to whole ratios and
+ * the exact mm/pt value stays in the tooltip.
+ */
+export function formatScaleRatio(ratio: number | null | undefined): string {
+  if (ratio === null || ratio === undefined || !Number.isFinite(ratio) || ratio <= 0) {
+    return "Not calibrated";
+  }
+  return `1:${formatNumber(ratio, ratio >= 10 ? 0 : 1)}`;
+}
+
 export function formatCoordinate(
   value: number,
   scale: ScaleSnapshot | null,

@@ -22,6 +22,7 @@ interface PanelLayout {
   dockRestore: HTMLButtonElement;
   inspector: HTMLElement;
   inspectorResizer: HTMLElement;
+  inspectorRestore: HTMLButtonElement;
 }
 
 let layout: PanelLayout | null = null;
@@ -37,6 +38,7 @@ function applyPreferences(): void {
   layout.dockRestore.hidden = !prefs.leftCollapsed;
   layout.inspector.classList.toggle("is-collapsed", prefs.rightCollapsed);
   layout.inspectorResizer.hidden = prefs.rightCollapsed;
+  layout.inspectorRestore.hidden = !prefs.rightCollapsed;
   layout.dock.setAttribute("aria-hidden", String(prefs.leftCollapsed));
   layout.inspector.setAttribute("aria-hidden", String(prefs.rightCollapsed));
   layout.dock.inert = prefs.leftCollapsed;

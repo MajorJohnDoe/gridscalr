@@ -16,8 +16,22 @@ import type { InspectionStatus, SymbolCategory } from "./types";
  * the category colour system.
  */
 export const SYMBOL_SIZE = 24;
+export const SYMBOL_MIN_SIZE = 6;
+export const SYMBOL_MAX_SIZE = 300;
 export const SYMBOL_VIEWBOX = 64;
 export const DEFAULT_SYMBOL_ID = "fire.extinguisher";
+
+export function clampSymbolSize(value: number): number {
+  if (!Number.isFinite(value)) return SYMBOL_SIZE;
+  return Math.max(SYMBOL_MIN_SIZE, Math.min(SYMBOL_MAX_SIZE, value));
+}
+
+/** Plate size in PDF points for a symbol item, clamped to the supported range. */
+export function symbolSizeOf(item: { symbolSize?: number }): number {
+  const value = item.symbolSize;
+  if (typeof value !== "number") return SYMBOL_SIZE;
+  return clampSymbolSize(value);
+}
 
 export type SymbolStyle = "sign" | "glyph";
 

@@ -231,12 +231,12 @@ export class App {
     this.unsubscribe = store.subscribe((reason) => {
       if (this.disposed) return;
       if (reason === "cursor") {
-        updateStatus(this.refs);
+        updateStatus(this.refs, this.actions);
         return;
       }
       if (reason === "view") {
         renderTopbar(this.refs, this.actions);
-        updateStatus(this.refs);
+        updateStatus(this.refs, this.actions);
         this.updateTitle();
         return;
       }

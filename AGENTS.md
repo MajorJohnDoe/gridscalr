@@ -8,8 +8,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
-- Current app version: `0.6.1`.
-- Current project-file schema: `13`.
+- Current app version: `0.7.1`.
+- Current project-file schema: `14`.
 - Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
@@ -43,18 +43,30 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Exports must use the same visibility and locking rules as the canvas.
 - Do not add cloud sync, accounts, telemetry, or network dependencies without an explicit decision.
 
-## Documentation requirement (non-negotiable)
+## Documentation policy
 
-Every change to the GUI, menu structure, shortcuts, or user-facing behaviour must update the in-app documentation in the same commit.
+Docs are maintained deliberately, not on every commit. Split the work in two.
 
-- Update `docs/user-guide.md` for any new feature, renamed command, moved panel, changed menu path, or changed workflow.
+**Same commit as the change (cheap, keeps the docs from being plainly wrong):**
+
 - Update `docs/shortcuts.md` and the README shortcut table whenever a keyboard shortcut is added, removed, or changed.
 - Update `README.md` when navigation, menus, panels, exports, or the architecture map change.
-- Keep role-based workflows in `docs/workflows.md` accurate when a tool or workflow changes.
-- When a change alters a visible screen or workflow, recapture the affected images with `npm run docs:capture`. Do not leave old screenshots that show a previous interface.
+- Fix any existing instruction that a change makes outright wrong, such as a menu path or panel name that moved.
 - Keep `Help → About` accurate. The version is read from `package.json` and the schema version from `SCHEMA_VERSION`; do not hardcode either in help content.
-- Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct. `npm run check:docs` must pass.
-- Do not report a GUI change as complete while the user guide describes the previous interface.
+
+**Deferred to a documentation pass (decided, never automatic):**
+
+- `docs/user-guide.md` prose for new features, renamed commands, moved panels, changed menu paths, and changed workflows.
+- `docs/workflows.md` role guides.
+- Screenshot recapture with `npm run docs:capture`.
+
+Rules that keep the deferral honest:
+
+- Every PR that defers documentation states it in the description: `Docs impact: deferred — <what>`, or `Docs impact: none`.
+- Deferred documentation is cleared before a release tag, or earlier when the user asks for a documentation pass.
+- `npm run check:docs` must pass. Stale-screenshot warnings are acceptable during development; `GRIDSCALR_DOCS_STRICT=1` is used for the release pass only.
+- Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct.
+- Never report a GUI change as documented while the user guide still describes the previous interface.
 
 ## Git workflow
 
@@ -94,12 +106,14 @@ npm run tauri build -- --no-bundle
 
 A docs-only change does not need the full build, but it must not leave broken links or contradictory instructions.
 
-Before committing a GUI or feature change, confirm that:
+Before committing, confirm that:
 
-- `docs/user-guide.md` describes the current menus, panels, and workflow.
 - `docs/shortcuts.md` and the README shortcut table include every shortcut that changed.
 - `README.md` highlights, workflow, and architecture map still match the code.
 - `Help → About` still reports the version from `package.json`.
+
+Before a feature or GUI change is reported as complete, either update `docs/user-guide.md`
+and the affected screenshots, or record `Docs impact: deferred — <what>` in the PR.
 
 ### Push and verify
 
@@ -135,9 +149,12 @@ Do not create or push a release tag, publish a GitHub Release, or bump the versi
 To create a Windows release build:
 
 1. Update the three app-version fields.
-2. Run the checks above.
-3. Commit and push.
-4. Tag the commit with `vX.Y.Z` and push the tag:
+2. Run the documentation pass: update `docs/user-guide.md` and `docs/workflows.md`,
+   run `npm run docs:capture`, and verify with
+   `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
+3. Run the checks above.
+4. Commit and push.
+5. Tag the commit with `vX.Y.Z` and push the tag:
 
 ```bash
 git tag v0.1.0
@@ -179,10 +196,9 @@ src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/report/                pure report model, quantity and markup CSV serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
 src/styles/help.css        help dialog, search, TOC and image lightbox
-src/styles/popovers.css    tool flyouts, Canvas options and measurement options
-src/ui/canvasOptions.ts    units, snapping, grid and scale-line popover
+src/styles/popovers.css    tool flyouts and measurement options
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
-src/ui/inspector.ts        Properties scale and active-layer sections
+src/ui/inspector.ts        Properties header, active-layer and selection sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
@@ -192,7 +208,7 @@ src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
-src/ui/statusBar.ts        calibration, cursor and layer status
+src/ui/statusBar.ts        page scale menu, cursor position and layer status
 src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
@@ -265,6 +281,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
 - **0.6.1:** complete — all 52 built-in facilities symbols are redrawn as original classic sign plates with filled vector pictograms, category-coloured plates, a 24 pt default size and a white-ringed status badge. No schema change; the schema remains v13.
+- **0.7.1:** complete — the right panel gains **Properties** and **Project settings** buttons plus a restore tab when collapsed, the duplicate measurement units moved out of Properties, the layer explanation removed, and the redundant image and Canvas buttons removed from the context bar. Includes the 0.7.0 work: stamp and symbol corner resizing, schema 14 with optional `symbolSize` (missing means 24 pt), context-aware markup focus zoom, the page scale in the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.

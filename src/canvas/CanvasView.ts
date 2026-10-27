@@ -130,12 +130,14 @@ import type {
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import {
+  clampSymbolSize,
   inspectionStatusColor,
   SYMBOL_SIZE,
   symbolCategoryColor,
   symbolCategoryOf,
   symbolFor,
   symbolRenderPlan,
+  symbolSizeOf,
 } from "../model/symbols";
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
@@ -191,6 +193,7 @@ interface DragState {
   startPoints?: Point[];
   startSelection?: Array<{ ref: SelectionRef; points: Point[] }>;
   startFontSize?: number;
+  startSymbolSize?: number;
   startRotation?: number;
   startBounds?: Bounds;
   center?: Point;
@@ -451,16 +454,35 @@ export class CanvasView {
     return true;
   }
 
-  /** Fits one item in view, including its measurement label, with 25 % breathing room. */
+  /**
+   * Fits one item in view, including its measurement label, with 25 % breathing
+   * room. An item that already sits comfortably in view is left alone so
+   * clicking rows in Markups or Layers does not re-zoom the drawing.
+   */
   focusItem(item: MarkupItem): boolean {
     const size = this.ensurePageSize();
     if (!size || this.width < 1 || this.height < 1) return false;
-    const view = focusViewTransform(this.focusBoundsForItem(item), size, {
+    const bounds = this.focusBoundsForItem(item);
+    if (this.isBoundsVisible(bounds)) return true;
+    const view = focusViewTransform(bounds, size, {
       width: this.width,
       height: this.height,
     });
     store.setView(view.zoom, view.panX, view.panY);
     return true;
+  }
+
+  /** True when the bounds already sit inside the viewport with breathing room. */
+  private isBoundsVisible(bounds: Bounds): boolean {
+    const margin = 48;
+    const first = this.toScreen(bounds.min);
+    const second = this.toScreen(bounds.max);
+    return (
+      Math.min(first.x, second.x) >= margin &&
+      Math.min(first.y, second.y) >= margin &&
+      Math.max(first.x, second.x) <= this.width - margin &&
+      Math.max(first.y, second.y) <= this.height - margin
+    );
   }
 
   private focusBoundsForItem(item: MarkupItem): Bounds {
@@ -1044,6 +1066,7 @@ export class CanvasView {
         startPage: page,
         startPoints: item.points.map((point) => ({ ...point })),
         startFontSize: item.fontSize ?? 12,
+        startSymbolSize: symbolSizeOf(item),
         startRotation: itemRotation(item),
         startBounds: {
           min: { ...bounds.min },
@@ -1245,7 +1268,7 @@ export class CanvasView {
     let factorX = signX === 0 ? 1 : (local.x - opposite.x) / dx;
     let factorY = signY === 0 ? 1 : (local.y - opposite.y) / dy;
 
-    if (item.kind === "text") {
+    if (item.kind === "text" || item.kind === "stamp" || item.kind === "symbol") {
       let factor: number;
       if (signX !== 0 && signY !== 0) {
         const pointerX = local.x - opposite.x;
@@ -1255,8 +1278,13 @@ export class CanvasView {
         factor = signX !== 0 ? factorX : factorY;
       }
       factor = Math.max(0.01, Math.min(50, factor));
-      const nextFont = clampTextSize((this.drag.startFontSize ?? 12) * factor);
-      factor = nextFont / Math.max(0.5, this.drag.startFontSize ?? 12);
+      if (item.kind === "symbol") {
+        const start = this.drag.startSymbolSize ?? SYMBOL_SIZE;
+        factor = clampSymbolSize(start * factor) / start;
+      } else {
+        const start = this.drag.startFontSize ?? 12;
+        factor = clampTextSize(start * factor) / Math.max(0.5, start);
+      }
       factorX = factor;
       factorY = factor;
     } else {
@@ -1292,6 +1320,21 @@ export class CanvasView {
       item.points[0] = {
         x: scaled.min.x + shiftX,
         y: scaled.min.y + shiftY,
+      };
+    } else if (item.kind === "stamp") {
+      // Stamps are centre-anchored: keep the opposite corner fixed by moving the
+      // centre to the middle of the scaled box.
+      item.fontSize = clampTextSize((this.drag.startFontSize ?? 12) * factorX);
+      item.points[0] = {
+        x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
+        y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
+      };
+    } else if (item.kind === "symbol") {
+      // Symbols are square plates centred on their anchor point.
+      item.symbolSize = clampSymbolSize((this.drag.startSymbolSize ?? SYMBOL_SIZE) * factorX);
+      item.points[0] = {
+        x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
+        y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
     } else if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
       item.points = [
@@ -2488,7 +2531,7 @@ export class CanvasView {
         const accent =
           definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
         const plan = symbolRenderPlan(definition, accent);
-        const scale = (SYMBOL_SIZE * zoom) / plan.viewBox;
+        const scale = (symbolSizeOf(item) * zoom) / plan.viewBox;
         const half = plan.viewBox / 2;
         ctx.save();
         ctx.translate(anchor.x, anchor.y);

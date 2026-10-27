@@ -21,6 +21,8 @@ export const MARKUP_CSV_COLUMNS = [
   "Symbol",
   "Symbol category",
   "Status",
+  "Created",
+  "Modified",
 ] as const;
 
 /** Serializes every visible markup on every visible layer. */
@@ -43,6 +45,8 @@ export function serializeMarkupCsv(project: Project): string {
         isSymbol ? symbolName(item.symbolId) : "",
         isSymbol ? symbolCategoryLabel(symbolCategoryOf(item.symbolId)) : "",
         isSymbol ? inspectionStatusLabel(item.status) : "",
+        item.createdAt ?? "",
+        item.updatedAt ?? "",
       ]);
     }
   }

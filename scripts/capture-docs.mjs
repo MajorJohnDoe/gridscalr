@@ -26,7 +26,7 @@ const shots = [
   {
     file: "measure.png",
     title: "Measure and annotate",
-    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer, New measurement options and Canvas controls.",
+    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
     description: "Measurement and drawing tools share one canvas but stay on separate layer types.",
   },
   {
@@ -58,7 +58,7 @@ const shots = [
   {
     file: "symbols.png",
     title: "Symbol library",
-    alt: "The GridScalr Symbols tab with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
+    alt: "The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
     description:
       "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list.",
   },
@@ -159,7 +159,7 @@ try {
   await markupsPanel
     .locator('[data-item-id="item_symbol_extinguisher"] .markups-item-label')
     .click();
-  await page.locator('.dock-tab[data-tab="symbols"]').click();
+  await page.keyboard.press("b");
   await page.locator('[data-symbol-id="fire.extinguisher"]').click();
   await page.keyboard.press("Control+0");
   await page.waitForTimeout(250);

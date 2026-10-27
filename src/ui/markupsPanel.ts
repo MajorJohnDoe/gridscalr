@@ -13,7 +13,8 @@ import {
   moveItemsToLayer,
 } from "../model/layers";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/commands";
-import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import { formatTimestamp, timestampValue } from "../model/dates";
+import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import {
   INSPECTION_STATUSES,
   INSPECTION_STATUS_LABELS,
@@ -48,6 +49,7 @@ import type {
   MarkupsGroupField,
   MarkupsView,
   Project,
+  SelectionRef,
   SymbolCategory,
 } from "../model/types";
 import { store } from "../state/store";
@@ -60,22 +62,28 @@ import type { PanelActions } from "./panels";
 import { showPopover } from "./popover";
 import { showSelectionMenuAt } from "./selectionMenu";
 import type { ShellRefs } from "./shell";
+import { selectionKey } from "../model/selection";
 
 const PREFS_KEY = "gridscalr.ui.markups.v1";
 const ACTIVE_VIEW_KEY = "gridscalr.ui.markups.active-view.v1";
 const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 140;
 
+/** Anchor row for Shift-click range selection in the Markups table. */
+let rangeAnchor: SelectionRef | null = null;
+
 const COLUMN_WIDTHS: Record<MarkupsColumnId, number> = {
-  name: 24,
-  type: 8,
+  name: 17,
+  type: 6,
   page: 5,
-  layer: 13,
-  value: 8,
-  category: 10,
-  room: 9,
-  status: 10,
-  visible: 4,
+  layer: 12,
+  value: 6,
+  category: 8,
+  room: 6,
+  status: 7,
+  created: 12,
+  modified: 12,
+  visible: 5,
   locked: 4,
 };
 
@@ -422,8 +430,10 @@ function filteredRows(project: Project): MarkupRow[] {
       const symbolCategory = item.kind === "symbol" ? symbolCategoryOf(item.symbolId) : undefined;
       if (settings.symbolCategory && symbolCategory !== settings.symbolCategory) continue;
       if (query) {
+        const created = formatTimestamp(item.createdAt);
+        const modified = formatTimestamp(item.updatedAt);
         const haystack =
-          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""}`.toLocaleLowerCase();
+          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`.toLocaleLowerCase();
         if (!haystack.includes(query)) continue;
       }
       rows.push({ item, layer });
@@ -477,6 +487,10 @@ function sortValue(row: MarkupRow, column: MarkupsColumnId, project: Project): s
       return row.item.kind === "symbol"
         ? inspectionStatusLabel(row.item.status).toLocaleLowerCase()
         : "";
+    case "created":
+      return timestampValue(row.item.createdAt);
+    case "modified":
+      return timestampValue(row.item.updatedAt);
     case "visible":
       return itemIsVisible(row.item, row.layer) ? 0 : 1;
     case "locked":
@@ -573,8 +587,10 @@ function markupRowElement(
 
   const tr = el("tr", "markups-row");
   tr.dataset.itemId = item.id;
+  tr.dataset.layerId = layer.id;
   tr.tabIndex = 0;
   tr.classList.toggle("is-selected", store.isSelected(ref));
+  tr.setAttribute("aria-selected", String(store.isSelected(ref)));
   tr.classList.toggle("is-hidden", hidden);
   tr.classList.toggle("is-locked", locked);
   tr.classList.toggle("is-deduction", deduction);
@@ -625,6 +641,10 @@ function markupRowElement(
   layerSelect.addEventListener("change", (event) => {
     event.stopPropagation();
     const target = layerSelect.value;
+    if (store.isSelected(ref) && store.ui.selection.length > 1) {
+      actions.moveSelectionToLayer(target);
+      return;
+    }
     let moved = 0;
     store.mutate((project) => {
       const result = moveItemsToLayer(project, [ref], target);
@@ -636,7 +656,17 @@ function markupRowElement(
   layerCell.append(layerSelect);
   cells.set("layer", layerCell);
 
-  const valueCell = el("td", "markups-value", metrics?.primary ?? "–");
+  const valueCell = el("td", "markups-value");
+  valueCell.append(document.createTextNode(metrics?.primary ?? "–"));
+  const scaleWarning = itemScaleWarning(item, project);
+  if (scaleWarning) {
+    const badge = el("span", "scale-warning");
+    badge.innerHTML = icon("warning", 11);
+    badge.title = scaleWarning;
+    badge.setAttribute("role", "img");
+    badge.setAttribute("aria-label", scaleWarning);
+    valueCell.append(badge);
+  }
   cells.set("value", valueCell);
 
   const categoryCell = el(
@@ -667,8 +697,10 @@ function markupRowElement(
     status.addEventListener("click", (event) => event.stopPropagation());
     status.addEventListener("change", (event) => {
       event.stopPropagation();
+      const bulk = store.isSelected(ref) && store.ui.selection.length > 1;
+      const targets = bulk ? store.ui.selection : [ref];
       store.mutate((project) => {
-        setItemsStatus(project, [ref], status.value ? (status.value as InspectionStatus) : null);
+        setItemsStatus(project, targets, status.value ? (status.value as InspectionStatus) : null);
       }, "change");
     });
     statusCell.append(status);
@@ -676,6 +708,14 @@ function markupRowElement(
     statusCell.textContent = "–";
   }
   cells.set("status", statusCell);
+
+  const createdCell = el("td", "markups-time", formatTimestamp(item.createdAt));
+  createdCell.title = item.createdAt ?? "";
+  cells.set("created", createdCell);
+
+  const modifiedCell = el("td", "markups-time", formatTimestamp(item.updatedAt));
+  modifiedCell.title = item.updatedAt ?? "";
+  cells.set("modified", modifiedCell);
 
   const visibleCell = el("td", "markups-flag-cell");
   const eye = layerAction(
@@ -720,11 +760,29 @@ function markupRowElement(
   tr.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, select, input, textarea")) return;
-    if (event.shiftKey || event.ctrlKey || event.metaKey) {
+    if (event.shiftKey) {
+      const rows = Array.from(
+        (tr.closest("tbody") ?? document).querySelectorAll<HTMLElement>("tr.markups-row"),
+      ).map((row) => ({ layerId: row.dataset.layerId ?? "", itemId: row.dataset.itemId ?? "" }));
+      const anchor = rangeAnchor ?? ref;
+      const start = rows.findIndex((entry) => selectionKey(entry) === selectionKey(anchor));
+      const end = rows.findIndex((entry) => selectionKey(entry) === selectionKey(ref));
       if (item.page !== store.ui.page) actions.goToPage(item.page, false);
-      store.toggleSelection(ref);
+      if (start >= 0 && end >= 0) {
+        const [from, to] = start <= end ? [start, end] : [end, start];
+        store.setSelectionMany(rows.slice(from, to + 1));
+      } else {
+        store.toggleSelection(ref);
+      }
       return;
     }
+    if (event.ctrlKey || event.metaKey) {
+      if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+      store.toggleSelection(ref);
+      rangeAnchor = ref;
+      return;
+    }
+    rangeAnchor = ref;
     navigate();
   });
   tr.addEventListener("dblclick", (event) => {
@@ -1018,7 +1076,11 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const foot = el("div", "markups-foot");
   const footLeft = el("span", "markups-foot-count", "");
-  const footRight = el("span", "markups-foot-hint", "Click a row to navigate · F2 rename");
+  const footRight = el(
+    "span",
+    "markups-foot-hint",
+    "Click to navigate · Shift-click for a range · F2 rename",
+  );
   foot.append(footLeft, footRight);
   panel.append(foot);
 

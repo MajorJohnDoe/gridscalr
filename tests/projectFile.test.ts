@@ -811,6 +811,7 @@ describe("project files", () => {
       strokeWidth: 1,
       symbolId: "fire.extinguisher",
       status: "action-required",
+      symbolSize: 36,
       rotation: 90,
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
@@ -823,8 +824,38 @@ describe("project files", () => {
       kind: "symbol",
       symbolId: "fire.extinguisher",
       status: "action-required",
+      symbolSize: 36,
       rotation: 90,
     });
+  });
+
+  it("migrates a schema 13 project to the symbol plate size", () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const base = {
+      page: 1,
+      kind: "symbol" as const,
+      points: [{ x: 60, y: 80 }],
+      color: "#e5484d",
+      strokeWidth: 1,
+      symbolId: "fire.extinguisher",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    draw.items.push({ ...base, id: "sym_default" }, { ...base, id: "sym_small", symbolSize: 1 });
+    const raw = JSON.parse(serializeProject(project));
+    raw.schemaVersion = 13;
+    const items = raw.layers.flatMap(
+      (layer: { items: Array<Record<string, unknown>> }) => layer.items,
+    );
+    // Schema 13 projects have no symbolSize; the 24 pt default applies on load.
+    const fallback = items.find((item: Record<string, unknown>) => item.id === "sym_default");
+    if (fallback) delete fallback.symbolSize;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    const parsedItems = parsed.layers.flatMap((layer) => layer.items);
+    expect(parsedItems.find((entry) => entry.id === "sym_default")?.symbolSize).toBeUndefined();
+    expect(parsedItems.find((entry) => entry.id === "sym_small")?.symbolSize).toBe(6);
   });
 
   it("preserves unknown symbol ids and drops invalid statuses", () => {

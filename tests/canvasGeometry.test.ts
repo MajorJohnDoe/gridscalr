@@ -82,15 +82,17 @@ describe("canvas geometry", () => {
     expect(snapLabel("intersection")).toBe("Intersection");
   });
 
-  it("focuses small markups without zooming out past fit page", () => {
+  it("keeps markup focus zoom inside the drawing context", () => {
     const viewport = { width: 1000, height: 1000 };
     const page = { width: 1000, height: 1000 };
+    const fitZoom = 916 / 1000;
+    const ceiling = fitZoom * 4;
     const centered = focusViewTransform(
       { min: { x: 450, y: 450 }, max: { x: 550, y: 550 } },
       page,
       viewport,
     );
-    expect(centered.zoom).toBeCloseTo(916 / 125, 5);
+    expect(centered.zoom).toBeCloseTo(ceiling, 5);
     expect(centered.panX).toBeCloseTo(500 - 500 * centered.zoom, 5);
     expect(centered.panY).toBeCloseTo(500 - 500 * centered.zoom, 5);
 
@@ -99,16 +101,37 @@ describe("canvas geometry", () => {
       page,
       viewport,
     );
-    expect(tiny.zoom).toBe(8);
+    expect(tiny.zoom).toBeCloseTo(ceiling, 5);
+
+    // A markup between the fit view and the ceiling gets its own framing
+    // instead of falling back to the whole page.
+    const large = focusViewTransform(
+      { min: { x: 200, y: 200 }, max: { x: 800, y: 800 } },
+      page,
+      viewport,
+    );
+    expect(large.zoom).toBeCloseTo(916 / 750, 5);
+    expect(large.zoom).toBeGreaterThan(fitZoom);
 
     const oversized = focusViewTransform(
       { min: { x: -500, y: -500 }, max: { x: 1500, y: 1500 } },
       page,
       viewport,
     );
-    expect(oversized.zoom).toBeCloseTo(916 / 1000, 5);
+    expect(oversized.zoom).toBeCloseTo(fitZoom, 5);
     expect(oversized.panX).toBeCloseTo(42, 5);
     expect(oversized.panY).toBeCloseTo(42, 5);
+
+    // An oversized off-centre target keeps the page inside the viewport
+    // instead of scrolling it out of frame.
+    const offCentre = focusViewTransform(
+      { min: { x: 0, y: 0 }, max: { x: 900, y: 900 } },
+      page,
+      viewport,
+    );
+    expect(offCentre.zoom).toBeCloseTo(fitZoom, 5);
+    expect(offCentre.panX).toBeCloseTo(1000 - 916, 5);
+    expect(offCentre.panY).toBeCloseTo(1000 - 916, 5);
   });
 
   it("handles colour alpha and duplicate draft points", () => {
@@ -163,7 +186,7 @@ describe("selection handles", () => {
     expect(handles.some((handle) => handle.role === "rotate")).toBe(true);
   });
 
-  it("gives symbols a fixed paper-space box and a rotation handle", async () => {
+  it("gives symbols a resizable paper-space box and a rotation handle", async () => {
     const [{ itemBounds }, { selectionHandles }] = await Promise.all([
       import("../src/model/geometry"),
       import("../src/canvas/selectionHandles"),
@@ -186,9 +209,14 @@ describe("selection handles", () => {
     expect(bounds.min.y).toBeCloseTo(100 - half);
     expect(bounds.max.x).toBeCloseTo(100 + half);
     expect(bounds.max.y).toBeCloseTo(100 + half);
-    expect(selectionHandles(item, (point) => point).map((handle) => handle.role)).toEqual([
-      "rotate",
-    ]);
+    const handles = selectionHandles(item, (point) => point);
+    expect(
+      handles.filter((handle) => handle.role !== "rotate").map((handle) => handle.role),
+    ).toEqual(["nw", "ne", "se", "sw"]);
+    expect(handles.some((handle) => handle.role === "rotate")).toBe(true);
+
+    const larger = itemBounds({ ...item, rotation: 0, symbolSize: 40 });
+    expect(larger.max.x - larger.min.x).toBeCloseTo(40);
   });
 
   it("does not expose handles for counts", async () => {

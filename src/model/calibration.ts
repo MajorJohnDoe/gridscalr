@@ -101,6 +101,12 @@ export function itemScale(item: MarkupItem, project: Project | null): ScaleSnaps
   return item.scale ?? pageScale(project, item.page);
 }
 
+/** The drawing ratio (the N in 1:N) implied by a scale snapshot. */
+export function scaleRatio(scale: ScaleSnapshot | null | undefined): number | null {
+  if (!scale || !Number.isFinite(scale.pointsPerMeter) || scale.pointsPerMeter <= 0) return null;
+  return MANUAL_SCALE_POINTS_PER_METER / scale.pointsPerMeter;
+}
+
 function cloneCalibration(calibration: Calibration): Calibration {
   if (isManualCalibration(calibration)) return { ...calibration };
   return {

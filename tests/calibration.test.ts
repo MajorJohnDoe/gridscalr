@@ -9,6 +9,7 @@ import {
   pageCalibration,
   pageScale,
   pageScaleLocked,
+  scaleRatio,
   setPageCalibration,
   setPageScaleLocked,
 } from "../src/model/calibration";
@@ -197,5 +198,16 @@ describe("calibration", () => {
     });
     expect(third.scale).toBeUndefined();
     expect(itemScale(third, project)?.pointsPerMeter).toBe(20);
+  });
+
+  it("derives the 1:N ratio from a scale snapshot", () => {
+    expect(
+      scaleRatio({
+        pointsPerMeter: manualPointsPerMeter(100),
+        sourceUnit: "mm",
+      }),
+    ).toBeCloseTo(100, 6);
+    expect(scaleRatio(null)).toBeNull();
+    expect(scaleRatio({ pointsPerMeter: 0, sourceUnit: "mm" })).toBeNull();
   });
 });

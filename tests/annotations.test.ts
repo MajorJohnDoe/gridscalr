@@ -69,6 +69,14 @@ describe("annotation layouts", () => {
     expect(layout.lines).toEqual(["APPROVED"]);
   });
 
+  it("scales a stamp plate proportionally with its font size", () => {
+    const small = stampLayout({ ...base, text: "APPROVED", fontSize: 12 });
+    const large = stampLayout({ ...base, text: "APPROVED", fontSize: 24 });
+    expect(large.width / small.width).toBeCloseTo(2, 1);
+    expect(large.height / small.height).toBeCloseTo(2, 1);
+    expect(large.padding / small.padding).toBeCloseTo(2, 1);
+  });
+
   it("places the callout box around its second point and the leader on the box edge", () => {
     const layout = calloutLayout({
       ...base,

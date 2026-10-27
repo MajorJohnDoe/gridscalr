@@ -1,10 +1,16 @@
-import { itemScale } from "./calibration";
+import { itemScale, pageScale, scaleRatio } from "./calibration";
 import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
 import { symbolName } from "./symbols";
 import { polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
-import { displayedLengthUnit, formatArea, formatLength, formatLengthCompact } from "./units";
+import {
+  displayedLengthUnit,
+  formatArea,
+  formatLength,
+  formatLengthCompact,
+  formatScaleRatio,
+} from "./units";
 
 export interface ItemMetrics {
   primary: string;
@@ -54,6 +60,30 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
     };
   }
   return null;
+}
+
+/**
+ * Explains why a measurement may not match the page's current scale, so a stale
+ * value never reaches a quantity report unnoticed.
+ */
+export function itemScaleWarning(item: MarkupItem, project: Project): string | null {
+  if (item.kind !== "length" && item.kind !== "area") return null;
+  // Items without a snapshot predate the field and follow the page.
+  if (item.scale === undefined) return null;
+  const page = pageScale(project, item.page);
+  if (!item.scale) {
+    return page
+      ? "Measured before this page was calibrated, so this value is in PDF points. Redraw it to use the page scale."
+      : null;
+  }
+  if (!page) {
+    return "The page scale was cleared. This measurement keeps the scale it was drawn with.";
+  }
+  const relative = Math.abs(item.scale.pointsPerMeter - page.pointsPerMeter) / page.pointsPerMeter;
+  if (relative <= 0.0005) return null;
+  return `Measured at ${formatScaleRatio(scaleRatio(item.scale))}; the page is now ${formatScaleRatio(
+    scaleRatio(page),
+  )}. The value keeps its original scale.`;
 }
 
 export function itemLabel(item: MarkupItem, project: Project): string {

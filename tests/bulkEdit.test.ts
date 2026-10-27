@@ -83,6 +83,7 @@ describe("measurement bulk edits", () => {
     for (const item of [length, area, count]) {
       expect(item.categoryId).toBe(wall);
       expect(item.room).toBe("Room 9");
+      expect(item.updatedAt).not.toBe(NOW);
     }
     expect(drawing.categoryId).toBeUndefined();
     expect(drawing.room).toBeUndefined();

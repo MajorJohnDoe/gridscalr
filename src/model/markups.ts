@@ -19,6 +19,8 @@ export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
   "category",
   "room",
   "status",
+  "created",
+  "modified",
   "visible",
   "locked",
 ];
@@ -34,6 +36,8 @@ export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = {
   category: "Category",
   room: "Room",
   status: "Status",
+  created: "Created",
+  modified: "Modified",
   visible: "Vis.",
   locked: "Lock",
 };

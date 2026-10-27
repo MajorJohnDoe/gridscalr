@@ -10,6 +10,7 @@ import {
   formatLengthCompact,
   formatNumber,
   formatScale,
+  formatScaleRatio,
   lengthInUnit,
   unitLabel,
   unitToMeters,
@@ -75,6 +76,14 @@ describe("units", () => {
     expect(formatScale(null)).toBe("Not calibrated");
     expect(formatCoordinate(500, scale, "m")).toBe("5");
     expect(formatCoordinate(500, null, "m")).toBe("500");
+  });
+
+  it("formats a compact 1:N ratio for the status bar", () => {
+    expect(formatScaleRatio(201.5)).toBe("1:202");
+    expect(formatScaleRatio(204)).toBe("1:204");
+    expect(formatScaleRatio(0.5)).toBe("1:0.5");
+    expect(formatScaleRatio(null)).toBe("Not calibrated");
+    expect(formatScaleRatio(Number.NaN)).toBe("Not calibrated");
   });
 
   it("formats numbers compactly and labels area units", () => {

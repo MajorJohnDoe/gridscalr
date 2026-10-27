@@ -1,21 +1,13 @@
 import {
-  isManualCalibration,
-  pageCalibration,
-  pageScale,
-  pageScaleLocked,
-} from "../model/calibration";
-import {
   layerLockedOnPage,
   layerVisibleOnPage,
   removeLayer,
   setLayerLockedOnPage,
   setLayerVisibleOnPage,
 } from "../model/layers";
-import { AREA_UNITS, LENGTH_UNITS, formatNumber, formatScale } from "../model/units";
-import type { AreaUnit, LengthUnit } from "../model/types";
 import { store } from "../state/store";
 import { confirmDialog } from "./dialogs";
-import { clear, el, option } from "./dom";
+import { clear, el } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -26,33 +18,36 @@ import { setInspectorCollapsed } from "./sidebar";
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.inspector);
   const header = el("div", "inspector-header");
-  header.append(el("span", "", "Properties"));
+  const tabs = el("div", "inspector-tabs");
+  const propertiesTab = el("button", "inspector-tab is-active", "Properties");
+  propertiesTab.type = "button";
+  propertiesTab.setAttribute("aria-pressed", "true");
+  propertiesTab.title = "Layer and selection properties";
+  const settingsTab = el("button", "inspector-tab", "Project settings");
+  settingsTab.type = "button";
+  settingsTab.setAttribute("aria-pressed", "false");
+  settingsTab.title = "Units, snapping, quantities and stamps (Ctrl/Cmd+,)";
+  settingsTab.disabled = !store.project;
+  settingsTab.addEventListener("click", () => openSettingsDialog());
+  tabs.append(propertiesTab, settingsTab);
   const headerActions = el("span", "inspector-header-actions");
-  const settings = el("button", "icon-btn inspector-settings");
-  settings.type = "button";
-  settings.title = "Project settings (Ctrl/Cmd+,)";
-  settings.setAttribute("aria-label", "Project settings");
-  settings.innerHTML = icon("settings", 14);
-  settings.disabled = !store.project;
-  settings.addEventListener("click", () => openSettingsDialog());
   const collapse = el("button", "icon-btn inspector-settings");
   collapse.type = "button";
   collapse.title = "Hide properties (Ctrl/Cmd+Shift+\\)";
   collapse.setAttribute("aria-label", "Hide properties");
   collapse.innerHTML = icon("chevronRight", 14);
   collapse.addEventListener("click", () => setInspectorCollapsed(true));
-  headerActions.append(settings, collapse);
-  header.append(headerActions);
+  headerActions.append(collapse);
+  header.append(tabs, headerActions);
   refs.inspector.append(header);
   const project = store.project;
   if (!project) {
     const note = el("div", "empty-note");
-    note.innerHTML = `${icon("info", 26)}<div>Open a drawing to see scale, layer and selection properties.</div>`;
+    note.innerHTML = `${icon("info", 26)}<div>Open a drawing to see layer and selection properties.</div>`;
     refs.inspector.append(note);
     return;
   }
 
-  refs.inspector.append(scaleSection(project, actions));
   const layerSection = activeLayerSection(project, actions);
   layerSection.classList.add("active-layer-section");
   const selection = selectionSection(project, actions);
@@ -66,140 +61,6 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   }
 }
 
-function scaleSection(
-  project: NonNullable<typeof store.project>,
-  actions: PanelActions,
-): HTMLElement {
-  const section = el("section", "inspector-section");
-  const page = store.ui.page;
-  const head = el("div", "section-head");
-  head.append(el("h3", "", "Scale"));
-  const calibration = pageCalibration(project, page);
-  const locked = pageScaleLocked(project, page);
-  head.append(
-    el(
-      "span",
-      `status-chip${calibration ? " is-calibrated" : " is-warning"}`,
-      calibration ? (locked ? "Locked" : "Calibrated") : "No scale",
-    ),
-  );
-  section.append(head);
-
-  const card = el("div", `scale-card${calibration ? " is-calibrated" : ""}`);
-  const status = el("div", "scale-status");
-  const dot = el("span", "dot");
-  status.append(dot, el("span", "", `Page ${page}`));
-  card.append(status);
-  if (calibration) {
-    const detail = el("div", "scale-detail");
-    if (isManualCalibration(calibration)) {
-      detail.innerHTML = `Manual scale: <strong>1:${formatNumber(calibration.ratio, 6)}</strong><br>${formatScale(
-        pageScale(project, page),
-        calibration,
-      )}<br>Uses the physical PDF page size. Measurements on this page use this scale.`;
-    } else {
-      detail.innerHTML = `Reference: <strong>${formatNumber(calibration.knownLength, 2)} ${calibration.unit}</strong><br>${formatScale(
-        pageScale(project, page),
-        calibration,
-      )}<br>All measurements on this page use this scale.`;
-    }
-    if (locked) {
-      detail.append(
-        el(
-          "div",
-          "empty-note small",
-          "This scale is locked. Unlock it to recalibrate, set a manual scale, or clear it.",
-        ),
-      );
-    }
-    card.append(detail);
-  } else {
-    card.append(
-      el(
-        "div",
-        "scale-detail",
-        "Draw a line over a known dimension, or enter the printed 1:N ratio.",
-      ),
-    );
-  }
-  const buttons = el("div", "scale-actions");
-  const calibrate = el("button", "btn btn-small", calibration ? "Recalibrate" : "Calibrate");
-  calibrate.type = "button";
-  calibrate.disabled = locked;
-  calibrate.title = locked ? "Unlock the page scale first." : "Draw a reference line";
-  calibrate.addEventListener("click", actions.startCalibration);
-  const manual = el("button", "btn btn-small", "Manual scale…");
-  manual.type = "button";
-  manual.disabled = locked;
-  manual.title = locked ? "Unlock the page scale first." : "Enter a printed 1:N ratio";
-  manual.addEventListener("click", actions.openManualScale);
-  buttons.append(calibrate, manual);
-  if (calibration) {
-    const lock = el("button", "btn btn-small btn-ghost", locked ? "Unlock scale" : "Lock scale");
-    lock.type = "button";
-    lock.addEventListener("click", () => actions.setScaleLock(!locked));
-    buttons.append(lock);
-
-    const clearBtn = el("button", "btn btn-small btn-ghost", "Clear");
-    clearBtn.type = "button";
-    clearBtn.disabled = locked;
-    clearBtn.title = locked ? "Unlock the page scale first." : "Clear the page scale";
-    clearBtn.addEventListener("click", actions.clearCalibration);
-    buttons.append(clearBtn);
-  }
-  card.append(buttons);
-  section.append(card);
-
-  const units = el("div", "scale-units");
-  const unitsHead = el("div", "section-head");
-  unitsHead.append(el("h3", "", "Measurement units"));
-  unitsHead.append(el("span", "status-chip", "Project"));
-  units.append(unitsHead);
-  const unitsRow = el("div", "field-row");
-
-  const lengthField = el("label", "field");
-  lengthField.append(el("span", "field-label", "Length"));
-  const lengthUnit = el("select", "select");
-  lengthUnit.setAttribute("aria-label", "Project length unit");
-  lengthUnit.title = "Applies to every page and to quantity reports";
-  for (const unit of LENGTH_UNITS) {
-    lengthUnit.append(option(unit.id, unit.label, unit.id === project.settings.lengthUnit));
-  }
-  lengthUnit.addEventListener("change", () => {
-    store.mutate((current) => {
-      current.settings.lengthUnit = lengthUnit.value as LengthUnit;
-    }, "change");
-  });
-  lengthField.append(lengthUnit);
-
-  const areaField = el("label", "field");
-  areaField.append(el("span", "field-label", "Area"));
-  const areaUnit = el("select", "select");
-  areaUnit.setAttribute("aria-label", "Project area unit");
-  areaUnit.title = "Applies to every page and to quantity reports";
-  for (const unit of AREA_UNITS) {
-    areaUnit.append(option(unit.id, unit.label, unit.id === project.settings.areaUnit));
-  }
-  areaUnit.addEventListener("change", () => {
-    store.mutate((current) => {
-      current.settings.areaUnit = areaUnit.value as AreaUnit;
-    }, "change");
-  });
-  areaField.append(areaUnit);
-
-  unitsRow.append(lengthField, areaField);
-  units.append(unitsRow);
-  units.append(
-    el(
-      "div",
-      "empty-note small",
-      "Project-wide. Changing units only changes the display and reports.",
-    ),
-  );
-  section.append(units);
-  return section;
-}
-
 function activeLayerSection(
   project: NonNullable<typeof store.project>,
   actions: PanelActions,
@@ -209,13 +70,6 @@ function activeLayerSection(
   head.append(el("h3", "", "Active layer"));
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   section.append(head);
-  section.append(
-    el(
-      "div",
-      "empty-note small",
-      "Name, colour and opacity apply to the whole layer. Visibility and lock apply to the current page. To change one markup, use Selection.",
-    ),
-  );
   if (!active) {
     section.append(el("div", "empty-note small", "No active layer."));
     return section;
