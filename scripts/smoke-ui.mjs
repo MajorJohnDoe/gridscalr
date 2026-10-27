@@ -528,6 +528,23 @@ try {
   );
   assert.deepEqual(bulkStatuses, ["approved", "approved"]);
 
+  // Delete removes every selected row while the table has focus, as one undo step.
+  const countItems = () =>
+    page.evaluate(() =>
+      window.__gridscalr.store.project.layers.reduce(
+        (total, layer) => total + layer.items.length,
+        0,
+      ),
+    );
+  const beforeDelete = await countItems();
+  await symbolRows.nth(1).focus();
+  await page.keyboard.press("Delete");
+  await page.waitForTimeout(200);
+  assert.equal(await countItems(), beforeDelete - 2, "Delete should remove the selected rows");
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(200);
+  assert.equal(await countItems(), beforeDelete, "the bulk delete should be one undo step");
+
   await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
 

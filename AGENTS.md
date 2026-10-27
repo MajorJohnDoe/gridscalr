@@ -282,7 +282,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
 - **0.6.1:** complete — all 52 built-in facilities symbols are redrawn as original classic sign plates with filled vector pictograms, category-coloured plates, a 24 pt default size and a white-ringed status badge. No schema change; the schema remains v13.
-- **Unreleased:** stamp and symbol corner resizing, schema 14 with optional `symbolSize` on facility symbols (missing means 24 pt), context-aware markup focus zoom, and the page scale moved from Properties to the status bar.
+- **Unreleased:** stamp and symbol corner resizing, schema 14 with optional `symbolSize` on facility symbols (missing means 24 pt), context-aware markup focus zoom, the page scale moved from Properties to the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
 - XLSX is deferred until CSV proves insufficient.
 
 Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.
