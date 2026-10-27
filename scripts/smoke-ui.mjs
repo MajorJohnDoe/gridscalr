@@ -73,6 +73,23 @@ try {
     "redo should start disabled on a freshly loaded project",
   );
 
+  // The page scale lives in the status bar now, and its chip opens the scale menu.
+  assert.equal(
+    await page.locator(".scale-card").count(),
+    0,
+    "Properties should no longer host the scale card",
+  );
+  const scaleChip = page.locator(".status-chip-action");
+  await scaleChip.waitFor();
+  await scaleChip.click();
+  const scaleMenu = page.locator(".popover");
+  await scaleMenu.waitFor();
+  const scaleMenuText = (await scaleMenu.textContent()) ?? "";
+  assert.match(scaleMenuText, /Manual scale/, "the scale menu should offer a manual scale");
+  assert.match(scaleMenuText, /Lock scale|Unlock scale/, "the scale menu should offer the lock");
+  await page.keyboard.press("Escape");
+  await scaleMenu.waitFor({ state: "detached" });
+
   const assertContextBarFits = async (label) => {
     const size = await page.locator(".context-bar").evaluate((bar) => ({
       scrollWidth: bar.scrollWidth,

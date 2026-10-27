@@ -26,8 +26,8 @@ GridScalr uses a compact, drawing-first layout.
 - **Left panel** – Pages, Layers and Symbols. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – the current page scale, measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
-- **Status bar** – calibration state, cursor coordinates, zoom controls, page navigation, and the active layer.
+- **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
+- **Status bar** – the clickable page scale, cursor coordinates, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions.
 
@@ -106,14 +106,14 @@ A page scale is required for real-world length and area values. The scale is sto
 
 ### Calibrate against a known dimension
 
-1. Choose **Calibrate** in the tool rail, or open **Properties → Scale → Calibrate**.
+1. Choose **Calibrate** in the tool rail, or open the page scale chip in the status bar and choose **Calibrate…**.
 2. Click the two ends of a dimension with a known real-world length.
 3. Enter the length and choose its unit (mm, cm, m, in, ft, or yd).
 4. Optionally apply the scale to every page and update existing measurements.
 
 ### Enter a printed scale
 
-Choose **Properties → Scale → Manual scale…** and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are available.
+Choose **Manual scale…** from the page scale chip in the status bar and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are available.
 
 Manual scale assumes the PDF page is at its physical paper size: 1 mm on paper equals N mm in the real world. It replaces a reference calibration on the affected pages and draws no reference line or calibration label.
 
@@ -418,7 +418,7 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`).
 
-- **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it in **Properties → Scale**.
+- **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
 - **Units** – length and area units for the project. The same controls are available under **Properties → Measurement units** and in the **Canvas** popover. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.

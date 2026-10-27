@@ -1,17 +1,11 @@
 import {
-  isManualCalibration,
-  pageCalibration,
-  pageScale,
-  pageScaleLocked,
-} from "../model/calibration";
-import {
   layerLockedOnPage,
   layerVisibleOnPage,
   removeLayer,
   setLayerLockedOnPage,
   setLayerVisibleOnPage,
 } from "../model/layers";
-import { AREA_UNITS, LENGTH_UNITS, formatNumber, formatScale } from "../model/units";
+import { AREA_UNITS, LENGTH_UNITS } from "../model/units";
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { store } from "../state/store";
 import { confirmDialog } from "./dialogs";
@@ -52,7 +46,7 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
     return;
   }
 
-  refs.inspector.append(scaleSection(project, actions));
+  refs.inspector.append(unitsSection(project));
   const layerSection = activeLayerSection(project, actions);
   layerSection.classList.add("active-layer-section");
   const selection = selectionSection(project, actions);
@@ -66,95 +60,12 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   }
 }
 
-function scaleSection(
-  project: NonNullable<typeof store.project>,
-  actions: PanelActions,
-): HTMLElement {
+function unitsSection(project: NonNullable<typeof store.project>): HTMLElement {
   const section = el("section", "inspector-section");
-  const page = store.ui.page;
-  const head = el("div", "section-head");
-  head.append(el("h3", "", "Scale"));
-  const calibration = pageCalibration(project, page);
-  const locked = pageScaleLocked(project, page);
-  head.append(
-    el(
-      "span",
-      `status-chip${calibration ? " is-calibrated" : " is-warning"}`,
-      calibration ? (locked ? "Locked" : "Calibrated") : "No scale",
-    ),
-  );
-  section.append(head);
-
-  const card = el("div", `scale-card${calibration ? " is-calibrated" : ""}`);
-  const status = el("div", "scale-status");
-  const dot = el("span", "dot");
-  status.append(dot, el("span", "", `Page ${page}`));
-  card.append(status);
-  if (calibration) {
-    const detail = el("div", "scale-detail");
-    if (isManualCalibration(calibration)) {
-      detail.innerHTML = `Manual scale: <strong>1:${formatNumber(calibration.ratio, 6)}</strong><br>${formatScale(
-        pageScale(project, page),
-        calibration,
-      )}<br>Uses the physical PDF page size. Measurements on this page use this scale.`;
-    } else {
-      detail.innerHTML = `Reference: <strong>${formatNumber(calibration.knownLength, 2)} ${calibration.unit}</strong><br>${formatScale(
-        pageScale(project, page),
-        calibration,
-      )}<br>All measurements on this page use this scale.`;
-    }
-    if (locked) {
-      detail.append(
-        el(
-          "div",
-          "empty-note small",
-          "This scale is locked. Unlock it to recalibrate, set a manual scale, or clear it.",
-        ),
-      );
-    }
-    card.append(detail);
-  } else {
-    card.append(
-      el(
-        "div",
-        "scale-detail",
-        "Draw a line over a known dimension, or enter the printed 1:N ratio.",
-      ),
-    );
-  }
-  const buttons = el("div", "scale-actions");
-  const calibrate = el("button", "btn btn-small", calibration ? "Recalibrate" : "Calibrate");
-  calibrate.type = "button";
-  calibrate.disabled = locked;
-  calibrate.title = locked ? "Unlock the page scale first." : "Draw a reference line";
-  calibrate.addEventListener("click", actions.startCalibration);
-  const manual = el("button", "btn btn-small", "Manual scale…");
-  manual.type = "button";
-  manual.disabled = locked;
-  manual.title = locked ? "Unlock the page scale first." : "Enter a printed 1:N ratio";
-  manual.addEventListener("click", actions.openManualScale);
-  buttons.append(calibrate, manual);
-  if (calibration) {
-    const lock = el("button", "btn btn-small btn-ghost", locked ? "Unlock scale" : "Lock scale");
-    lock.type = "button";
-    lock.addEventListener("click", () => actions.setScaleLock(!locked));
-    buttons.append(lock);
-
-    const clearBtn = el("button", "btn btn-small btn-ghost", "Clear");
-    clearBtn.type = "button";
-    clearBtn.disabled = locked;
-    clearBtn.title = locked ? "Unlock the page scale first." : "Clear the page scale";
-    clearBtn.addEventListener("click", actions.clearCalibration);
-    buttons.append(clearBtn);
-  }
-  card.append(buttons);
-  section.append(card);
-
-  const units = el("div", "scale-units");
   const unitsHead = el("div", "section-head");
   unitsHead.append(el("h3", "", "Measurement units"));
   unitsHead.append(el("span", "status-chip", "Project"));
-  units.append(unitsHead);
+  section.append(unitsHead);
   const unitsRow = el("div", "field-row");
 
   const lengthField = el("label", "field");
@@ -188,15 +99,14 @@ function scaleSection(
   areaField.append(areaUnit);
 
   unitsRow.append(lengthField, areaField);
-  units.append(unitsRow);
-  units.append(
+  section.append(unitsRow);
+  section.append(
     el(
       "div",
       "empty-note small",
-      "Project-wide. Changing units only changes the display and reports.",
+      "Project-wide. Changing units only changes the display and reports. Set the page scale from the status bar.",
     ),
   );
-  section.append(units);
   return section;
 }
 

@@ -1623,12 +1623,6 @@ textarea:disabled {
   color: var(--muted-2);
 }
 
-.scale-units {
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px solid var(--border-soft);
-}
-
 .section-head {
   display: flex;
   align-items: center;
@@ -1638,58 +1632,6 @@ textarea:disabled {
 
 .section-head h3 {
   margin: 0;
-}
-
-.scale-card {
-  border: 1px solid var(--border);
-  border-radius: 7px;
-  background: var(--bg-deep);
-  padding: 10px;
-}
-
-.scale-card.is-calibrated {
-  border-color: rgba(53, 194, 161, 0.28);
-  background: linear-gradient(180deg, rgba(53, 194, 161, 0.07), rgba(15, 19, 21, 0.5));
-}
-
-.scale-status {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-weight: 600;
-  font-size: 12px;
-  margin-bottom: 4px;
-}
-
-.scale-status .dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--amber);
-  box-shadow: 0 0 0 3px rgba(242, 169, 59, 0.12);
-}
-
-.scale-card.is-calibrated .dot {
-  background: var(--jade);
-  box-shadow: 0 0 0 3px rgba(53, 194, 161, 0.12);
-}
-
-.scale-detail {
-  color: var(--muted);
-  font-size: 11px;
-  line-height: 1.5;
-  font-variant-numeric: tabular-nums;
-}
-
-.scale-actions {
-  display: flex;
-  gap: 6px;
-  margin-top: 9px;
-}
-
-.scale-actions .btn {
-  flex: 1;
-  justify-content: center;
 }
 
 .field {
@@ -2518,6 +2460,35 @@ textarea:disabled {
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-size: 9px;
+}
+
+/* The page scale chip opens the scale menu, so it behaves like a button. */
+.status-chip-action {
+  font: inherit;
+  font-variant-numeric: inherit;
+  cursor: pointer;
+  transition:
+    border-color 0.12s ease,
+    background 0.12s ease;
+}
+
+.status-chip-action:hover {
+  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.status-chip-action:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: 1px;
+}
+
+.status-chip-caret {
+  display: inline-flex;
+  opacity: 0.5;
+}
+
+.status-chip-caret svg {
+  transform: rotate(90deg);
 }
 
 .status-dot {

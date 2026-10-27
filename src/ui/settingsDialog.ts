@@ -64,7 +64,7 @@ function scaleSection(): HTMLElement {
   const hint = el(
     "p",
     "settings-note",
-    "Use Properties → Scale to calibrate the current page, enter a manual 1:N scale, apply it to all pages, or lock it.",
+    "Use the page scale chip in the status bar to calibrate the current page, enter a manual 1:N scale, apply it to all pages, or lock it.",
   );
   wrap.append(value, hint);
   return wrap;

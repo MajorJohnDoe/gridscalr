@@ -94,7 +94,7 @@ export function renderChrome(refs: ShellRefs, actions: PanelActions): void {
   renderContextBar(refs, actions);
   renderInspector(refs, actions);
   renderMarkupsPanel(refs, actions);
-  updateStatus(refs);
+  updateStatus(refs, actions);
   renderWelcome(refs, actions);
 }
 

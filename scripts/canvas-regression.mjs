@@ -202,6 +202,72 @@ try {
     "dragging the rotation handle should rotate the rectangle",
   );
 
+  // 3b. Stamps and symbols resize from their corner handles.
+  const savedView = await page.evaluate(() => ({
+    zoom: window.__gridscalr.store.ui.zoom,
+    panX: window.__gridscalr.store.ui.panX,
+    panY: window.__gridscalr.store.ui.panY,
+  }));
+  const centerOn = async (point) => {
+    await page.evaluate((target) => {
+      const canvas = document.querySelector("#canvas-interaction");
+      const zoom = 2;
+      window.__gridscalr.store.setView(
+        zoom,
+        canvas.clientWidth / 2 - target.x * zoom,
+        canvas.clientHeight / 2 - target.y * zoom,
+      );
+    }, point);
+    await page.waitForTimeout(120);
+  };
+
+  await page.keyboard.press("v");
+  await centerOn({ x: 725, y: 374 });
+  await selectItem("item_stamp_inspected");
+  const stampHandles = await handlesFor("item_stamp_inspected");
+  const stampSe = stampHandles?.find((handle) => handle.role === "se");
+  assert.ok(stampSe, "the selected stamp should expose a south-east handle");
+  const stampBefore = await itemById("item_stamp_inspected");
+  await dragScreen(
+    { x: canvasBox.x + stampSe.point.x, y: canvasBox.y + stampSe.point.y },
+    { x: canvasBox.x + stampSe.point.x + 40, y: canvasBox.y + stampSe.point.y + 30 },
+  );
+  const stampAfter = await itemById("item_stamp_inspected");
+  assert.ok(
+    stampAfter.fontSize > stampBefore.fontSize,
+    "dragging the stamp corner should grow the plate",
+  );
+
+  await centerOn({ x: 824, y: 646 });
+  await selectItem("item_symbol_exit");
+  const symbolHandles = await handlesFor("item_symbol_exit");
+  assert.deepEqual(
+    symbolHandles.filter((handle) => handle.role !== "rotate").map((handle) => handle.role),
+    ["nw", "ne", "se", "sw"],
+    "a symbol should expose four corner handles",
+  );
+  const symbolSe = symbolHandles.find((handle) => handle.role === "se");
+  assert.ok(symbolSe, "the selected symbol should expose a south-east handle");
+  await dragScreen(
+    { x: canvasBox.x + symbolSe.point.x, y: canvasBox.y + symbolSe.point.y },
+    { x: canvasBox.x + symbolSe.point.x + 36, y: canvasBox.y + symbolSe.point.y + 36 },
+  );
+  const symbolAfter = await itemById("item_symbol_exit");
+  assert.ok(
+    (symbolAfter.symbolSize ?? 24) > 24,
+    "dragging the symbol corner should grow the plate",
+  );
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(150);
+  const symbolUndone = await itemById("item_symbol_exit");
+  assert.equal(symbolUndone.symbolSize ?? 24, 24, "the symbol resize should be one undo step");
+
+  // Restore the view so the following gestures keep their original framing.
+  await page.evaluate((view) => {
+    window.__gridscalr.store.setView(view.zoom, view.panX, view.panY);
+  }, savedView);
+  await page.waitForTimeout(120);
+
   // 4. Rotate an existing text object from its rotation handle.
   await page.keyboard.press("v");
   await selectItem("item_text_hatch");
@@ -393,7 +459,7 @@ try {
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, text, label/callout editing, hidden/locked and crop.",
+    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked and crop.",
   );
 } finally {
   await page?.close();

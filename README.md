@@ -136,8 +136,8 @@ GridScalr uses a compact drawing-first layout:
 - **Left panel** – Pages, Layers and Symbols. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – an optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – the page scale, measurement units, active layer, and selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
-- **Status bar** – calibration, cursor coordinates, zoom and page controls, and the active layer.
+- **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
+- **Status bar** – the clickable page scale (calibrate, manual scale, lock and clear), cursor coordinates, zoom and page controls, and the active layer.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…**, the tool rail button, or `Ctrl/Cmd+L` opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
 
@@ -192,7 +192,7 @@ Use **Calibrate** for a reference dimension:
 3. Enter the length and choose its unit (mm, cm, m, in, ft, or yd).
 4. Optionally apply the scale to every page and update existing measurements.
 
-Alternatively, choose **Manual scale…** in Properties and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are provided, along with a free ratio field. Manual scale assumes the PDF page is at its physical paper size: 1 mm on paper equals N mm in the real world. It replaces a reference calibration on the affected pages and draws no reference line or calibration label.
+Alternatively, choose **Manual scale…** from the page scale chip in the status bar and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are provided, along with a free ratio field. Manual scale assumes the PDF page is at its physical paper size: 1 mm on paper equals N mm in the real world. It replaces a reference calibration on the affected pages and draws no reference line or calibration label.
 
 The scale is stored per page. Recalibrating a page or setting a manual scale can either preserve existing measurement scale snapshots or update them. **Apply to all pages** copies the scale but not the lock, and skips locked pages.
 
@@ -576,7 +576,7 @@ src/
   styles/popovers.css    tool flyouts, Canvas options and measurement options
   ui/canvasOptions.ts    units, snapping, grid and scale-line popover
   ui/contextBar.ts       tool-specific context bar and target layer controls
-  ui/inspector.ts        Properties scale and active-layer sections
+  ui/inspector.ts        Properties units, active-layer and selection sections
   ui/markupsPanel.ts     docked Markups table, columns, views, grouping and filters
   ui/symbolLibrary.ts    searchable symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
@@ -586,7 +586,7 @@ src/
   ui/itemIcon.ts         icon lookup shared by Layers and Markups
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
-  ui/statusBar.ts        calibration, cursor and layer status
+  ui/statusBar.ts        page scale menu, cursor and layer status
   ui/welcome.ts          empty-project welcome screen and recent files
   ui/pageImportDialog.ts page picker with previews for PDF/TIF import
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
