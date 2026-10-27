@@ -2413,6 +2413,25 @@ textarea:disabled {
   margin: 3px 2px;
 }
 
+/* Nested menus fly out to the side and are positioned when opened. */
+.popover-row {
+  display: block;
+}
+
+.popover[hidden] {
+  display: none;
+}
+
+.popover-submenu {
+  z-index: 2510;
+}
+
+.popover-caret {
+  display: inline-flex;
+  margin-left: auto;
+  opacity: 0.55;
+}
+
 /* ---------- Status bar ---------- */
 
 .statusbar {
@@ -4109,7 +4128,7 @@ textarea:disabled {
 
 .markups-table {
   width: 100%;
-  min-width: 900px;
+  min-width: 1100px;
   border-collapse: separate;
   border-spacing: 0;
   table-layout: fixed;
