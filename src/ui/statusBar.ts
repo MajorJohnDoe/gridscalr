@@ -3,8 +3,15 @@ import {
   pageCalibration,
   pageScale,
   pageScaleLocked,
+  scaleRatio,
 } from "../model/calibration";
-import { formatCoordinate, formatNumber, formatScale } from "../model/units";
+import {
+  displayedLengthUnit,
+  formatCoordinate,
+  formatNumber,
+  formatScale,
+  formatScaleRatio,
+} from "../model/units";
 import type { Project } from "../model/types";
 import { store } from "../state/store";
 import { clear, el, escapeHtml } from "./dom";
@@ -41,10 +48,27 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   }
 
   const cursor = store.ui.cursor;
-  const coords = cursor
-    ? `X ${formatCoordinate(cursor.x, scale, project.settings.lengthUnit)}  Y ${formatCoordinate(cursor.y, scale, project.settings.lengthUnit)} ${scale ? project.settings.lengthUnit : "pt"}`
-    : "X —  Y —";
-  refs.statusCoords.innerHTML = `<span class="status-label">Cursor</span> <span class="status-value">${coords}</span>`;
+  if (cursor) {
+    // Site coordinates, not a screen cursor. Both axes share one unit so the
+    // pair reads as a position; large plans switch to metres via the smart-unit
+    // setting instead of showing five-digit centimetres.
+    let coords: string;
+    if (!scale) {
+      coords = `X ${formatNumber(cursor.x, 1)} pt&nbsp;&nbsp;Y ${formatNumber(cursor.y, 1)} pt`;
+    } else {
+      const furthest = Math.max(Math.abs(cursor.x), Math.abs(cursor.y));
+      const unit = displayedLengthUnit(
+        furthest,
+        scale,
+        project.settings.lengthUnit,
+        project.settings.smartLengthUnits,
+      );
+      coords = `X ${formatCoordinate(cursor.x, scale, unit)} ${unit}&nbsp;&nbsp;Y ${formatCoordinate(cursor.y, scale, unit)} ${unit}`;
+    }
+    refs.statusCoords.innerHTML = `<span class="status-label">Position</span> <span class="status-value">${coords}</span>`;
+  } else {
+    refs.statusCoords.innerHTML = `<span class="status-label">Position</span> <span class="status-value">X —  Y —</span>`;
+  }
   const active = project.layers.find((layer) => layer.id === project.activeLayerId);
   refs.statusLayer.innerHTML = active
     ? `<span class="status-label">Layer</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
@@ -68,7 +92,7 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   button.append(
     document.createTextNode(
       calibration
-        ? `${locked ? "Scale locked" : "Calibrated"} · ${formatScale(pageScale(project, page), calibration)}`
+        ? `${locked ? "Scale locked" : "Calibrated"} · ${formatScaleRatio(scaleRatio(pageScale(project, page)))}`
         : "No scale on this page",
     ),
   );

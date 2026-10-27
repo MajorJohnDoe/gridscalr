@@ -27,7 +27,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
-- **Status bar** – the clickable page scale, cursor coordinates, zoom controls, page navigation, and the active layer.
+- **Status bar** – the clickable page scale, cursor position with its unit, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions.
 

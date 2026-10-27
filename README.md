@@ -137,7 +137,7 @@ GridScalr uses a compact drawing-first layout:
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – an optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
-- **Status bar** – the clickable page scale (calibrate, manual scale, lock and clear), cursor coordinates, zoom and page controls, and the active layer.
+- **Status bar** – the clickable page scale (calibrate, manual scale, lock and clear), cursor position with its unit, zoom and page controls, and the active layer.
 
 The Pages/Layers sidebar and Properties panel remember their width and collapsed state between sessions. **View → Markups list…**, the tool rail button, or `Ctrl/Cmd+L` opens a docked, project-wide table below the canvas and remembers its height; **View → Quantities…** remains an on-demand dialog.
 
@@ -586,7 +586,7 @@ src/
   ui/itemIcon.ts         icon lookup shared by Layers and Markups
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
-  ui/statusBar.ts        page scale menu, cursor and layer status
+  ui/statusBar.ts        page scale menu, cursor position and layer status
   ui/welcome.ts          empty-project welcome screen and recent files
   ui/pageImportDialog.ts page picker with previews for PDF/TIF import
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation

@@ -209,7 +209,7 @@ src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
-src/ui/statusBar.ts        calibration, cursor and layer status
+src/ui/statusBar.ts        page scale menu, cursor position and layer status
 src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
