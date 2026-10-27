@@ -80,6 +80,9 @@ function categorySection(category: SymbolDefinition["category"]): HTMLElement {
 
 export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): void {
   const library = el("div", "symbol-library");
+  const head = el("div", "symbol-library-head");
+  head.append(el("span", "", "Symbols"));
+  head.append(el("span", "symbol-library-count", `${SYMBOLS.length} built-in signs`));
   const searchWrap = el("label", "symbol-search");
   const search = el("input", "input");
   search.type = "search";
@@ -87,7 +90,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   search.setAttribute("aria-label", "Search symbols");
   search.value = searchQuery;
   searchWrap.append(search);
-  library.append(searchWrap);
+  library.append(head, searchWrap);
 
   const content = el("div", "symbol-library-content");
   const recent = loadRecent();

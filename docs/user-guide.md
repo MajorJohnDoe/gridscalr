@@ -23,7 +23,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Top bar** – project name, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom.
 - **Context bar** – the active tool, target layer, tool-specific options, a **New measurement** popover, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
-- **Left panel** – Pages, Layers and Symbols. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and is highlighted. Collapse it with **View → Properties**.
@@ -245,7 +245,7 @@ Use **File → Import image…** or the context bar to add a PNG or JPEG. `Ctrl/
 
 ## Symbols
 
-Open the **Symbols** tab in the left panel or press `B`. The library contains 52 built-in signs and is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
+Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library contains 52 built-in signs and is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
 
 - Categories: **Fire protection**, **Evacuation & safety**, **HVAC & plumbing**, **Electrical & controls**, **Building elements**, and **Waste & environment**.
 - Select a tile, choose the status for the next placement in the context bar, then click the drawing.

@@ -133,7 +133,7 @@ GridScalr uses a compact drawing-first layout:
 - **Top bar** – project name, drawing and page identity, undo/redo, and the unsaved-changes dot.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom that opens the docked list.
 - **Context bar** – the active tool, target layer, tool-specific controls, a **New measurement** popover for category and room, and a **Canvas** popover for units, smart length labels, snapping, and guides. With the Symbol tool it shows the chosen symbol, its category, and the next inspection status.
-- **Left panel** – Pages, Layers and Symbols. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool keeps the Symbols library open. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library instead of adding a third tab; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – an optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, project-stored views, grouping, page/type/category/search filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – measurement units, the active layer, and the selected item. When something is selected, **Selection** moves above the layer-wide settings and gets a distinct accent so a single markup is not confused with its layer. Quantity defaults and stamp presets are under **Settings → Project settings**.
@@ -253,7 +253,7 @@ Renaming in Properties changes the list/export label without changing the drawin
 
 ### Facility symbols
 
-Press `B`, choose the **Symbol** tool, or open the **Symbols** tab in the left panel. The library is searchable in English and Swedish, for example **Fire extinguisher** or **brandsläckare**, and is grouped into fire protection, evacuation and safety, HVAC and plumbing, electrical and controls, building elements, and waste and environment.
+Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library is searchable in English and Swedish, for example **Fire extinguisher** or **brandsläckare**, and is grouped into fire protection, evacuation and safety, HVAC and plumbing, electrical and controls, building elements, and waste and environment.
 
 Select a symbol, choose the inspection status for the next placement, then click the drawing. Symbols are classic sign plates drawn as filled vectors at 24 pt by default, so they stay sharp on screen and in exported PDFs. The plate colour follows the category: red for fire equipment, green for evacuation and safety, blue for HVAC, yellow with a black pictogram for electrical, violet for building elements, and olive for waste. A small white-ringed badge in the corner shows the inspection status.
 

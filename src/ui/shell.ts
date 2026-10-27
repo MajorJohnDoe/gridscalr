@@ -123,7 +123,6 @@ export function createShell(root: HTMLElement): ShellRefs {
   const tabDefs: Array<{ id: LeftTab; icon: string; label: string }> = [
     { id: "pages", icon: "pages", label: "Pages" },
     { id: "layers", icon: "layers", label: "Layers" },
-    { id: "symbols", icon: "symbol", label: "Symbols" },
   ];
   const dockTabButtons: HTMLElement[] = [];
   for (const tab of tabDefs) {

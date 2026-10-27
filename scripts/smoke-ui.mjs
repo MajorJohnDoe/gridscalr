@@ -331,8 +331,14 @@ try {
     "Building A",
   );
 
-  await page.locator('.dock-tab[data-tab="symbols"]').click();
+  assert.equal(
+    await page.locator('.dock-tab[data-tab="symbols"]').count(),
+    0,
+    "the Symbols tab should be gone; the Symbol tool opens the library",
+  );
+  await page.keyboard.press("b");
   const symbolSearch = page.getByLabel("Search symbols");
+  await symbolSearch.waitFor();
   await symbolSearch.fill("brandsläckare");
   assert.ok(
     (await page.locator(".symbol-tile:visible").count()) >= 1,

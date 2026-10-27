@@ -620,6 +620,22 @@ textarea:disabled {
   padding: 8px;
 }
 
+.symbol-library-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 2px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.2px;
+}
+
+.symbol-library-count {
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 500;
+}
+
 .symbol-search .input {
   width: 100%;
   height: 28px;
