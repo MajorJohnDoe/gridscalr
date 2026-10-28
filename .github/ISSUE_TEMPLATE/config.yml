@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: User guide and workflows
+    url: https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md
+    about: How to calibrate, measure, annotate, and export.
+  - name: Report a security issue
+    url: https://github.com/MajorJohnDoe/gridscalr/security/advisories/new
+    about: Please report vulnerabilities privately instead of opening an issue.

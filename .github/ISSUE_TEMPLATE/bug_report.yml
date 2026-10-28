@@ -1,0 +1,89 @@
+name: Bug report
+description: Something does not work as documented
+title: "bug: "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a problem.
+
+        **Do not attach real customer drawings or project files.** Any PDF, TIF or
+        `.gridscalr` file you upload becomes public. Reproduce with
+        `fixtures/industrial-plan.pdf` or a drawing you are allowed to share.
+
+  - type: input
+    id: version
+    attributes:
+      label: GridScalr version
+      description: Shown in Help → About, or in the installer file name.
+      placeholder: "0.7.1"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: platform
+    attributes:
+      label: Platform
+      options:
+        - Windows 11
+        - Windows 10
+        - macOS
+        - Linux
+        - Browser fallback (npm run dev)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install
+    attributes:
+      label: How did you install it?
+      options:
+        - Portable .exe from a release
+        - NSIS installer from a release
+        - MSI installer from a release
+        - Built from source
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open a drawing and calibrate the page
+        2. Draw an area
+        3. …
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error text
+      description: Paste any console output, toast message or dialog text.
+      render: text
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues for the same problem.
+          required: true
+        - label: This report contains no customer drawings, personal data or credentials.
+          required: true

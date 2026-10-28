@@ -1,0 +1,57 @@
+name: Feature request
+description: Suggest a measurement, markup or workflow improvement
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        GridScalr is deliberately local-first: no accounts, cloud sync, telemetry
+        or network dependencies. Requests that need a server are out of scope.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem are you trying to solve?
+      description: Describe the takeoff or documentation task, not only the UI you imagine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you have tried
+      description: Other tools, exports, or manual workarounds.
+
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Calibration and scale
+        - Length, area or count measurement
+        - Drawing and annotation
+        - Symbols
+        - Layers and selection
+        - Quantities and reports
+        - Import or export
+        - Project files and recovery
+        - Interface and shortcuts
+        - Documentation
+
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Before submitting
+      options:
+        - label: I searched the existing issues and the roadmap in docs/plan/.
+          required: true
+        - label: This request does not require cloud sync, accounts or telemetry.
+          required: true
