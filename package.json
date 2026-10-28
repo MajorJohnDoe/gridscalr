@@ -1,9 +1,32 @@
 {
   "name": "gridscalr",
   "private": true,
-  "version": "0.7.1",
-  "type": "module",
+  "version": "0.7.2",
   "description": "Local-first PDF plan viewer with calibration, measurement and layered markup tools.",
+  "license": "MIT",
+  "author": "MajorJohnDoe",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MajorJohnDoe/gridscalr.git"
+  },
+  "homepage": "https://github.com/MajorJohnDoe/gridscalr#readme",
+  "bugs": {
+    "url": "https://github.com/MajorJohnDoe/gridscalr/issues"
+  },
+  "keywords": [
+    "pdf",
+    "measurement",
+    "quantity-takeoff",
+    "floor-plan",
+    "construction",
+    "tauri",
+    "local-first",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=22.12"
+  },
+  "type": "module",
   "scripts": {
     "dev": "vite --port 1420 --strictPort",
     "build": "tsc --noEmit && vite build",

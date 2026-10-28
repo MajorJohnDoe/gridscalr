@@ -7,14 +7,14 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - GridScalr is a local-first Tauri 2 desktop app for measuring PDF drawings and producing procurement quantities.
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
-- Repository: `https://github.com/MajorJohnDoe/gridscalr` (private).
-- Current app version: `0.7.1`.
+- Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
+- Current app version: `0.7.2`.
 - Current project-file schema: `14`.
 - Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
 
-1. `README.md` — user-facing behaviour, architecture, shortcuts, and file format.
+1. `README.md` — the public landing page and the pointers to the detailed docs.
 2. `docs/user-guide.md` — the in-app user guide. Keep it accurate whenever the GUI or a user-facing workflow changes.
 3. `docs/workflows.md` — task-oriented guides for operations technicians and technical property managers.
 4. `docs/shortcuts.md` — the in-app shortcut reference.
@@ -24,7 +24,11 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 8. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
 9. `docs/plan/etapp-4-bilder.md` — approved Etapp 4 plan and image decisions.
 10. `docs/plan/etapp-5-tiff.md` — approved Etapp 5 plan, TIF decisions, and S1 results.
-11. The relevant source and tests for the area being changed.
+11. `docs/architecture.md` — source map and design choices.
+12. `docs/project-file.md` — the `.gridscalr` format and schema history.
+13. `docs/limitations.md` — known gaps that must not be regressed.
+14. `docs/releasing.md` — the manual release checklist.
+15. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -161,7 +165,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The `Windows build` workflow runs on `v*` tags and can also be started manually. It uploads the `gridscalr-windows` artifact containing the executable and installers. The workflow currently creates artifacts, not a GitHub Release; add a release job only when the release process is deliberately changed.
+The `Windows build` workflow runs on `v*` tags and can also be started manually. It uploads the `gridscalr-windows` artifact containing the executable and installers. Releases are published manually from those artifacts with `gh release create`; follow `docs/releasing.md`. Do not add an automatic release job without an explicit decision.
 
 ## CI and build hosts
 
@@ -281,6 +285,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
 - **0.6.1:** complete — all 52 built-in facilities symbols are redrawn as original classic sign plates with filled vector pictograms, category-coloured plates, a 24 pt default size and a white-ringed status badge. No schema change; the schema remains v13.
+- **0.7.2:** complete — new application icon (measured area on a gridded plate), a regenerated demo project on schema 14, a public README, MIT license and third-party notices, and the community files. No schema change; the schema remains v14.
 - **0.7.1:** complete — the right panel gains **Properties** and **Project settings** buttons plus a restore tab when collapsed, the duplicate measurement units moved out of Properties, the layer explanation removed, and the redundant image and Canvas buttons removed from the context bar. Includes the 0.7.0 work: stamp and symbol corner resizing, schema 14 with optional `symbolSize` (missing means 24 pt), context-aware markup focus zoom, the page scale in the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
 - XLSX is deferred until CSV proves insufficient.
 

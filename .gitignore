@@ -27,3 +27,6 @@ exports/
 
 # Local test drawings (never commit)
 temp_test_plans/
+
+# Local repository backups (never commit)
+/gridscalr-backup/

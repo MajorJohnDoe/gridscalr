@@ -1,8 +1,11 @@
 [package]
 name = "gridscalr"
-version = "0.7.1"
+version = "0.7.2"
 description = "Local-first PDF plan viewer with calibration, measurement and layered markup tools"
-authors = ["GridScalr"]
+authors = ["MajorJohnDoe"]
+license = "MIT"
+repository = "https://github.com/MajorJohnDoe/gridscalr"
+homepage = "https://github.com/MajorJohnDoe/gridscalr#readme"
 edition = "2021"
 rust-version = "1.77.2"
 
