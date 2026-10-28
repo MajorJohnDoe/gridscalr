@@ -1,7 +1,7 @@
 import { getRecent } from "../io/platform";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
-import { icon } from "./icons";
+import { brandMark, icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
 
@@ -15,8 +15,7 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.welcome);
   const card = el("div", "welcome-card");
   const brand = el("div", "welcome-brand");
-  brand.innerHTML = `${icon("grid", 42)}`;
-  brand.firstElementChild?.classList.add("brand-mark");
+  brand.innerHTML = brandMark(42);
   const title = el("h1", "welcome-title", "GridScalr");
   brand.append(title);
   card.append(brand);
