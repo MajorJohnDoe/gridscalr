@@ -18,6 +18,8 @@ src-tauri/Cargo.toml` and commit the resulting `src-tauri/Cargo.lock` change.
 The project-file `schemaVersion` is independent of the app version. Do not bump
 the schema because the app version changed.
 
+Update the current version line at the top of `docs/roadmap.md`.
+
 ## 2. Documentation pass
 
 ```bash

@@ -79,7 +79,7 @@ async function encodeBitmap(
 }
 
 /**
- * Reads a PNG or JPEG, downscales it to the Etapp 4 limits and returns an
+ * Reads a PNG or JPEG, downscales it to the milestone 4 limits and returns an
  * embedded asset. The source file is never referenced after this call.
  */
 export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAsset> {

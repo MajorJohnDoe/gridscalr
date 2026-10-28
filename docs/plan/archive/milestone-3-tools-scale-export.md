@@ -1,3 +1,8 @@
+> **Historical planning document.** Written in Swedish during implementation in 2026
+> and kept for provenance. It is not maintained. See [the roadmap](../../roadmap.md)
+> for the current status and [the project files guide](../../project-file.md) for the
+> schema that was eventually shipped.
+
 # Etapp 3 – Mätverktyg, skala och export
 
 **Status:** godkänd 2026-10-22. **3A – mätverktyg, skala och snap** och **3B – exportdialogen** är genomförda. Besluten om att ”valt område” är en användardragen rektangulär beskärningsruta och att samma relativa område används vid export av flera sidor är låsta.

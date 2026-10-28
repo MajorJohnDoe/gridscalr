@@ -1,6 +1,6 @@
 # AGENTS.md
 
-Persistent working instructions for agents and maintainers of GridScalr. Read this file first, then `README.md` and the plans in `docs/plan/`.
+Persistent working instructions for agents and maintainers of GridScalr. Read this file first, then `README.md` and `docs/roadmap.md`.
 
 ## Project
 
@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.7.2`.
 - Current project-file schema: `14`.
-- Etapp 1–5 are complete. Etapp 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Etapp 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Etapp 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Etapp 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Etapp 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Etapp 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
+- Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
 
@@ -19,16 +19,13 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 3. `docs/workflows.md` — task-oriented guides for operations technicians and technical property managers.
 4. `docs/shortcuts.md` — the in-app shortcut reference.
 5. `docs/screenshots/manifest.json` and the referenced screenshots — regenerate with `npm run docs:capture` when a visible screen changes.
-6. `docs/plan/roadmap-etapper.md` — Etapp 1–5 scope, product invariants, and open decisions.
-7. `docs/plan/etapp-2-mangddata.md` — detailed Etapp 2A/2B plan.
-8. `docs/plan/etapp-3-matverktyg-skala-export.md` — approved Etapp 3A/3B plan.
-9. `docs/plan/etapp-4-bilder.md` — approved Etapp 4 plan and image decisions.
-10. `docs/plan/etapp-5-tiff.md` — approved Etapp 5 plan, TIF decisions, and S1 results.
-11. `docs/architecture.md` — source map and design choices.
-12. `docs/project-file.md` — the `.gridscalr` format and schema history.
-13. `docs/limitations.md` — known gaps that must not be regressed.
-14. `docs/releasing.md` — the manual release checklist.
-15. The relevant source and tests for the area being changed.
+6. `docs/roadmap.md` — current status, milestones, deferred work and open decisions.
+7. `docs/plan/archive/` — historical planning documents from milestones 2–5. Written in Swedish; not maintained.
+8. `docs/architecture.md` — source map and design choices.
+9. `docs/project-file.md` — the `.gridscalr` format and schema history.
+10. `docs/limitations.md` — known gaps that must not be regressed.
+11. `docs/releasing.md` — the manual release checklist.
+12. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -76,13 +73,13 @@ Rules that keep the deferral honest:
 
 - `main` is the integration branch and should always pass CI.
 - Small fixes, documentation, and workflow changes may be committed directly to `main`.
-- Larger features should use a branch such as `feat/etapp-2a` or `fix/pdf-export`, followed by a pull request.
+- Larger features should use a branch such as `feat/markups-panel` or `fix/pdf-export`, followed by a pull request.
 - Never force-push `main`.
 - Keep commits focused. Do not mix unrelated refactors with a feature or bug fix.
 - Commit messages use the imperative mood and, where useful, a Conventional Commits prefix:
   - `feat: add count measurement tool`
   - `fix: exclude hidden layers from CSV export`
-  - `docs: record Etapp 2 decisions`
+  - `docs: record Milestone 2 decisions`
   - `chore: update Windows build workflow`
 - Do not commit `node_modules/`, `dist/`, `src-tauri/target/`, `exports/`, local environment files, or credentials.
 - Do not commit generated test output unless it is deliberately part of the fixture set.
@@ -136,7 +133,7 @@ gh run view <run-id> --repo MajorJohnDoe/gridscalr --log-failed
 
 ## Versioning and releases
 
-App versions follow [Semantic Versioning](https://semver.org/). The app is still pre-1.0, so minor versions may contain planned Etapp features and patch versions are fixes.
+App versions follow [Semantic Versioning](https://semver.org/). The app is still pre-1.0, so minor versions may contain planned Milestone features and patch versions are fixes.
 
 The app version must match in all three files:
 
@@ -269,18 +266,18 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
 - `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
 - The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.
-- `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Etapp 3 checklist only.
+- `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Milestone 3 checklist only.
 - Browser-only development (`npm run dev`) is a UI fallback. Native file paths and recents require Tauri.
 - Do not delete `tests/` fixtures or generated sample files without checking whether tests depend on them.
 
-## Etapp status
+## Milestone status
 
-- **Etapp 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
-- **Etapp 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
-- **Etapp 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
-- **Etapp 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
-- **Etapp 4:** complete — embedded PNG/JPEG images, background/annotation modes, image handles, opacity/rotation, schema v5, and image-aware PDF export.
-- **Etapp 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6.
+- **Milestone 1:** complete — layers, target layer, per-item visibility/lock, multi-select, group move, bulk edits, clipboard, context menus.
+- **Milestone 2A:** complete — categories, rooms, default category, schema v3 and migration, the count tool, deduction areas, quantities, and measurement bulk edits.
+- **Milestone 2B:** complete — waste, rounding, order quantities, CSV and print-friendly quantity reports.
+- **Milestone 3:** complete — 3A added quick areas, manual scale/lock, and markup snapping; 3B added the drawing export dialog, crop areas, and legend.
+- **Milestone 4:** complete — embedded PNG/JPEG images, background/annotation modes, image handles, opacity/rotation, schema v5, and image-aware PDF export.
+- **Milestone 5:** complete — TIF import as documents, lossless CCITT G3/G4 passthrough, multiple documents per project, append-only pages, schema v6.
 - **0.4.1:** complete — Markups tool-rail button and `Ctrl/Cmd+L`, focused zoom to a selected markup, the dedicated Markups tint, and removal of the redundant local-only status.
 - **0.5.0:** complete — configurable Markups columns, project-stored views, category/page/type/search filters, multi-level grouping with building/floor/room hierarchy, and page-location labels.
 - **0.6.0:** complete — the built-in vector symbol library, category colour coding, rotation, inspection statuses, Markups symbol/status views and CSV fields. Current schema is v13.
@@ -289,7 +286,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.7.1:** complete — the right panel gains **Properties** and **Project settings** buttons plus a restore tab when collapsed, the duplicate measurement units moved out of Properties, the layer explanation removed, and the redundant image and Canvas buttons removed from the context bar. Includes the 0.7.0 work: stamp and symbol corner resizing, schema 14 with optional `symbolSize` (missing means 24 pt), context-aware markup focus zoom, the page scale in the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
 - XLSX is deferred until CSV proves insufficient.
 
-Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.
+Update the status in `docs/roadmap.md` when a milestone is completed.
 
 ## Start-of-session checklist
 
@@ -297,5 +294,5 @@ Update the status in `docs/plan/roadmap-etapper.md` when an Etapp is completed.
 2. Run `git status` and check that the working tree is not carrying unexplained changes.
 3. Run `gh auth status` if GitHub operations are needed.
 4. Check the latest CI status with `gh run list --repo MajorJohnDoe/gridscalr`.
-5. Confirm which Etapp or fix is in scope before editing.
+5. Confirm which milestone or fix is in scope before editing.
 6. Make the smallest coherent change, run the checks, update the in-app documentation, commit, push, and verify CI.

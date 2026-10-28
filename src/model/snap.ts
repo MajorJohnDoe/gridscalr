@@ -72,7 +72,7 @@ function closedSegments(item: MarkupItem, points: Point[]): Segment[] {
 }
 
 /**
- * Straight segments that contribute midpoints and intersections in Etapp 3A.
+ * Straight segments that contribute midpoints and intersections in milestone 3A.
  * Freehand pen, highlight, ellipse, count and text are deliberately excluded.
  */
 function straightsForItem(item: MarkupItem): Segment[] {

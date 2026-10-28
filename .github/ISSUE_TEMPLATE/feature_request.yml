@@ -51,7 +51,7 @@ body:
     attributes:
       label: Before submitting
       options:
-        - label: I searched the existing issues and the roadmap in docs/plan/.
+        - label: I searched the existing issues and the roadmap in docs/roadmap.md.
           required: true
         - label: This request does not require cloud sync, accounts or telemetry.
           required: true

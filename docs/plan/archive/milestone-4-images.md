@@ -1,3 +1,8 @@
+> **Historical planning document.** Written in Swedish during implementation in 2026
+> and kept for provenance. It is not maintained. See [the roadmap](../../roadmap.md)
+> for the current status and [the project files guide](../../project-file.md) for the
+> schema that was eventually shipped.
+
 # Etapp 4 – Bilder
 
 **Status:** fastställd 2026-10-23. Besluten nedan är låsta för Etapp 4. Etapp 4 höjer projektformatet till schema v5.

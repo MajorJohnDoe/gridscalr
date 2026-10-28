@@ -148,7 +148,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 | [Project files](docs/project-file.md) | The `.gridscalr` format, schema history and migration rules. |
 | [Known limitations](docs/limitations.md) | What the app deliberately does not do yet. |
 | [Releasing](docs/releasing.md) | The manual release checklist. |
-| [Roadmap](docs/plan/roadmap-etapper.md) | Completed stages and open decisions. |
+| [Roadmap](docs/roadmap.md) | Shipped milestones, deferred work and open decisions. |
 
 The same reference material ships inside the app: **Help → User guide**,
 **Help → Workflows**, **Help → Keyboard shortcuts** and **Help → About**, which
@@ -189,7 +189,7 @@ hash does not match, do not run the file and report it through
 GridScalr is pre-1.0 and uses schema 14 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
-[roadmap](docs/plan/roadmap-etapper.md) lists what is done and what is
+[roadmap](docs/roadmap.md) lists what is done and what is
 deliberately deferred.
 
 ## Contributing

@@ -1,3 +1,8 @@
+> **Historical planning document.** Written in Swedish during implementation in 2026
+> and kept for provenance. It is not maintained. See [the roadmap](../../roadmap.md)
+> for the current status and [the project files guide](../../project-file.md) for the
+> schema that was eventually shipped.
+
 # Etapp 5 – TIF-ritningar och flera dokument
 
 **Status:** genomförd 2026-10-24. Besluten nedan är låsta för Etapp 5. Projektformatet är nu schema v6.

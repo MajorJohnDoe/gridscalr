@@ -1,3 +1,8 @@
+> **Historical planning document.** Written in Swedish during implementation in 2026
+> and kept for provenance. It is not maintained. See [the roadmap](../../roadmap.md)
+> for the current status and [the project files guide](../../project-file.md) for the
+> schema that was eventually shipped.
+
 # Etapp 2 – Mängddata och beställningsunderlag
 
 **Status:** planen är fastställd 2026-10-21. Etapp 2A steg 1–6 (kategorier, schema v3, migrering, rum på mätningar, antalsverktyg, avdragsarea, Quantities-panel, `yd²`, massredigering och polish) och Etapp 2B steg 7–10 (svinn, avrundning, beställningsmängd, CSV, utskriftsvänlig PDF, dokumentation och validering) är genomförda.

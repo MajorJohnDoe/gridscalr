@@ -1,0 +1,98 @@
+# Roadmap
+
+GridScalr is pre-1.0. This page is the current status: what is shipped, what is
+deliberately deferred, and which decisions are still open. Detailed planning
+documents from the implementation period live in
+[`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
+Swedish.
+
+Current version: **0.7.2** · Project-file schema: **14**
+
+## Product principles
+
+These are not negotiable without an explicit decision, and they apply to every
+milestone:
+
+- Local-first. A source PDF or TIF is referenced by path and SHA-256 and is never
+  overwritten.
+- Hidden items never render, hit-test or export. Hidden layers behave the same way.
+- Locked items stay visible and exportable but cannot be edited, moved or deleted.
+  Layer visibility and locking take precedence over per-item flags.
+- Measurement and drawing layers stay separate; a layer is `measure` or `draw`.
+- One bulk action is one undo step.
+- Project files stay backward compatible. Every schema change ships migration
+  tests for the current and previous version.
+- Derived quantities and summaries are calculated from item data, never stored as
+  a separate source of truth.
+- Exports use the same visibility and locking rules as the canvas.
+- No accounts, cloud sync, collaboration, telemetry or network dependencies.
+
+`AGENTS.md` carries the same rules for contributors, with more detail.
+
+## Milestones
+
+| Milestone | Scope | Status | Schema |
+| --- | --- | --- | --- |
+| 1 | Layers, target layer, selection, per-item visibility and locks, bulk edits, clipboard, context menus | Complete | v2 |
+| 2A | Categories, rooms, count tool, deduction areas, quantities panel, measurement bulk edits | Complete | v3 |
+| 2B | Waste, rounding, order quantities, quantity CSV and print PDF | Complete | v3 |
+| 3A | Quick areas, manual scale, per-page scale locks, markup snapping | Complete | v4 |
+| 3B | Drawing export dialog with page ranges, crop, layer selection, labels, calibration and legend | Complete | v4 |
+| 4 | Embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, image-aware PDF export | Complete | v5 |
+| 5 | TIF import as lossless CCITT G3/G4 pages, multiple documents per project, append-only page numbering | Complete | v6 |
+| 0.6 | Built-in vector facility symbols, inspection statuses, Markups symbol and status views | Complete | v13 |
+| 0.7 | Docked Markups list with saved views, grouping and filters; stamp and symbol corner resizing; context-aware focus zoom; new app icon | Complete | v14 |
+
+Schema history and migration rules are documented in
+[`project-file.md`](project-file.md).
+
+## Next
+
+There is no committed milestone after 0.7. The candidates below are ordered by
+expected value, not scheduled:
+
+1. **XLSX export** if CSV proves insufficient for quantity reports.
+2. **Custom count types** and count quantities greater than one piece per object.
+3. **PDF vector geometry snapping** as a separate spike. It needs extraction and
+   indexing of PDF operators and must not block other work.
+4. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF
+   scans, if users need them often enough to justify the dependency.
+5. **macOS and Linux release builds** next to the Windows installers.
+
+## Deferred by design
+
+These are known gaps, not bugs. See [`limitations.md`](limitations.md) for the
+full list.
+
+- No cloud sync, accounts, collaboration or automatic updates.
+- Pages are append-only. Deleting a page is an explicit structural action; pages
+  cannot be inserted or reordered.
+- Markups are stored in the project, not as PDF annotations or optional-content
+  groups. The drawing PDF export flattens visible markups into page content.
+- Images are embedded in the project file. External image assets are only worth
+  adding if project size becomes a practical problem.
+- Quantity reports are CSV and PDF. XLSX is not supported.
+- The symbol library is built in; custom symbol uploads and symbol quantities in
+  the procurement report are not supported.
+- Count types are limited to door, window, radiator, fixture and other.
+- Rectangle and ellipse quick areas cannot be rotated.
+- Text notes do not wrap in a fixed box; `Shift+Enter` inserts a line break.
+
+## Open decisions
+
+| Decision | Current position |
+| --- | --- |
+| Windows code signing | Not purchased. Installers are unsigned; the README explains how to verify SHA-256 checksums. |
+| External image assets | Deferred until embedded project files become too large in practice. |
+| TIF codecs beyond CCITT G3/G4 | Deferred until there is demand; would need a decoding fallback. |
+| PDF vector geometry snapping | A candidate spike, not scheduled. |
+| macOS and Linux release pipelines | Buildable from source; no automated artifacts yet. |
+
+## Project operations
+
+- The repository is public and MIT licensed. Releases are cut manually from the
+  Windows workflow; see [`releasing.md`](releasing.md).
+- CI runs the frontend tests, build, UI smoke tests and canvas regressions on
+  Ubuntu, plus `cargo fmt` and `cargo check`.
+- `main` is protected and requires both CI jobs. Dependabot proposes weekly
+  dependency updates.

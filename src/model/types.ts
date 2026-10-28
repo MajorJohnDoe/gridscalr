@@ -286,9 +286,9 @@ export interface Category {
   id: string;
   /** Editable display name, unique per project, case-insensitive. */
   name: string;
-  /** Overrides the project waste percentage. Reserved for Etapp 2B. */
+  /** Overrides the project waste percentage. Reserved for milestone 2B. */
   wastePercent?: number;
-  /** Overrides the project rounding step. Reserved for Etapp 2B. */
+  /** Overrides the project rounding step. Reserved for milestone 2B. */
   roundingStep?: number;
 }
 
