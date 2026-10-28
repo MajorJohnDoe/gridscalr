@@ -1,4 +1,4 @@
-import { stat, writeFile, mkdir } from "node:fs/promises";
+import { stat, writeFile, mkdir, readFile } from "node:fs/promises";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { MEZZANINE, PLAN, SITE } from "./plan-geometry.mjs";
@@ -8,6 +8,12 @@ const output = resolve(here, "..", "fixtures", "demo-project.gridscalr");
 const pdfPath = resolve(here, "..", "fixtures", "industrial-plan.pdf");
 const pdfStat = await stat(pdfPath);
 const now = "2026-10-26T09:00:00.000Z";
+
+// Keep the fixture on the current schema instead of freezing it at the version
+// it was first written with, so opening the demo never needs a migration.
+const typesSource = await readFile(resolve(here, "..", "src", "model", "types.ts"), "utf8");
+const schemaVersion = Number(/SCHEMA_VERSION = (\d+)/.exec(typesSource)?.[1]);
+if (!Number.isFinite(schemaVersion)) throw new Error("Could not read SCHEMA_VERSION from types.ts");
 
 const categories = [
   { id: "cat_floor", name: "Floor", wastePercent: 10, roundingStep: 0.5 },
@@ -265,7 +271,7 @@ const drawItems = [
 ];
 
 const project = {
-  schemaVersion: 12,
+  schemaVersion,
   id: "prj_demo_takeoff",
   name: "Northgate Logistics Hub - Takeoff",
   documents: [
