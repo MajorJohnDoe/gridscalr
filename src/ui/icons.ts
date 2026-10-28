@@ -77,11 +77,36 @@ export function icon(name: string, size = 18): string {
   return `<svg class="icon" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${body}</svg>`;
 }
 
-export function brandMark(): string {
-  return `<svg class="brand-mark" width="26" height="26" viewBox="0 0 32 32" aria-hidden="true">
-    <rect width="32" height="32" rx="8" fill="#14181b"/>
-    <path d="M7 11h18M7 16h18M7 21h18M11 7v18M16 7v18M21 7v18" stroke="#35c2a1" stroke-width=".8" opacity=".35"/>
-    <path d="M9 23 23 9" stroke="#4cc9f0" stroke-width="2" stroke-linecap="round"/>
-    <path d="M9 23v-8M9 23h8" stroke="#f2a93b" stroke-width="1.4" stroke-linecap="round"/>
+let brandMarkCount = 0;
+
+/** The app mark: a measured area on a gridded tile. Mirrors src-tauri/icons/app-icon.svg. */
+export function brandMark(size = 26): string {
+  const id = `brand-mark-${++brandMarkCount}`;
+  return `<svg class="brand-mark" width="${size}" height="${size}" viewBox="0 0 32 32" aria-hidden="true">
+    <defs>
+      <linearGradient id="${id}-rim" x1="2.5" y1=".6" x2="30" y2="31.9" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#63e7c9"/>
+        <stop offset="1" stop-color="#2aa7d8"/>
+      </linearGradient>
+      <linearGradient id="${id}-plate" x1="16" y1="0" x2="16" y2="32" gradientUnits="userSpaceOnUse">
+        <stop offset="0" stop-color="#15282c"/>
+        <stop offset="1" stop-color="#080f11"/>
+      </linearGradient>
+    </defs>
+    <rect width="32" height="32" rx="7" fill="url(#${id}-rim)"/>
+    <rect x="1" y="1" width="30" height="30" rx="6" fill="url(#${id}-plate)"/>
+    <g stroke="#4fe0bf" stroke-width=".22">
+      <path d="M16 0v32M0 16h32" stroke-opacity=".26"/>
+      <path d="M8 0v32M24 0v32M0 8h32M0 24h32" stroke-opacity=".156"/>
+    </g>
+    <path d="M7.88 18 10.38 8.88 19.63 7.5 24.13 16.25 16.63 24.5Z" fill="#5fe6c9" fill-opacity=".3"
+      stroke="#5fe6c9" stroke-width="1.63" stroke-linejoin="round" stroke-linecap="round"/>
+    <g fill="#9bf7e2">
+      <circle cx="7.88" cy="18" r="1.5"/>
+      <circle cx="10.38" cy="8.88" r="1.5"/>
+      <circle cx="19.63" cy="7.5" r="1.5"/>
+      <circle cx="24.13" cy="16.25" r="1.5"/>
+      <circle cx="16.63" cy="24.5" r="1.5"/>
+    </g>
   </svg>`;
 }

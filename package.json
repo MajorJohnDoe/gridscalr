@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build",
     "preview": "vite preview --port 1420 --strictPort",
     "tauri": "tauri",
+    "icons": "tauri icon src-tauri/icons/app-icon.svg --output src-tauri/icons",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:ui": "node scripts/smoke-ui.mjs",
