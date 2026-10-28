@@ -1,3 +1,5 @@
+![GridScalr — measure PDF plans, stay local](docs/social-preview.png)
+
 # GridScalr
 
 GridScalr is a local-first desktop app for opening PDF and TIF drawings,
