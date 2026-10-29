@@ -153,7 +153,7 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 ### Measurement labels
 
-Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** returns it to the project size. A label that does not fit inside an area moves outside with a leader line instead of shrinking, so the same drawing always uses the same text size.
+Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** in Properties or the label's context menu returns it to the project size. A label that does not fit inside an area moves outside with a leader line instead of shrinking, so the same drawing always uses the same text size.
 
 The project label size and compact area labels are in **Settings → Project settings… → Measurement labels**. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; the inspector and CSV keep the full wording. Existing projects keep the full wording until the setting is enabled.
 

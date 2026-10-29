@@ -1839,6 +1839,19 @@ export class CanvasView {
           }, "change");
         },
       },
+      {
+        label: "Reset label size",
+        icon: "undo",
+        disabled: item.labelSize === undefined,
+        action: () => {
+          store.mutate((project) => {
+            const target = findItem(project, item.id)?.item;
+            if (!target) return;
+            delete target.labelSize;
+            target.updatedAt = new Date().toISOString();
+          }, "change");
+        },
+      },
       { separator: true },
       {
         label: "Choose connection point…",
