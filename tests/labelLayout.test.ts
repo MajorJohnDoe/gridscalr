@@ -55,14 +55,30 @@ describe("measurement label placement", () => {
     expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(130);
   });
 
-  it("keeps the full size and moves a label outside a smaller area", () => {
+  it("keeps a new label centred in a tall narrow area", () => {
+    const source = areaSource("narrow", 100, 70, 145, 190);
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("center");
+    expect(layout.leader).toBeUndefined();
+    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(4);
+    expect(layout.box.x).toBeGreaterThanOrEqual(100);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(145);
+  });
+
+  it("shrinks a label to stay inside a smaller area", () => {
     const source = areaSource("medium", 100, 94, 145, 116);
     const layout = layoutOne(source);
 
-    expect(layout.placement).toBe("outside");
-    expect(layout.metrics.primarySize).toBe(LABEL_PRIMARY_SIZE);
-    expect(layout.leader).toBeDefined();
-    expect(overlaps(boxBounds(layout.box), source.obstacle)).toBe(false);
+    expect(layout.placement).toBe("center");
+    expect(layout.leader).toBeUndefined();
+    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(4);
+    expect(layout.box.x).toBeGreaterThanOrEqual(100);
+    expect(layout.box.y).toBeGreaterThanOrEqual(94);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(145);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(116);
   });
 
   it("honours a per-measurement label size", () => {

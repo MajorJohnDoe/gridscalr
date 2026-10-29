@@ -341,22 +341,29 @@ describe("flattened PDF export", () => {
     const countType = items.find((item) => item.text === "Door");
 
     expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
-    expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
-    expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
+    expect(area?.size).toBeGreaterThanOrEqual(4);
+    expect(area?.size).toBeLessThanOrEqual(LABEL_PRIMARY_SIZE);
+    expect(perimeter?.size).toBeCloseTo(
+      (area?.size ?? 0) * (LABEL_SECONDARY_SIZE / LABEL_PRIMARY_SIZE),
+      1,
+    );
     expect(count?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     expect(countType?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
 
     const sizedProject = makeProject();
     sizedProject.settings.labelSize = 9;
     sizedProject.settings.compactAreaLabels = true;
-    const sizedArea = sizedProject.layers
-      .find((layer) => layer.kind === "measure")!
-      .items.find((item) => item.id === "item_area")!;
-    sizedArea.labelSize = 12;
+    const sizedMeasure = sizedProject.layers.find((layer) => layer.kind === "measure")!;
+    sizedMeasure.items.find((item) => item.id === "item_length")!.labelSize = 11;
     const sizedItems = await textItems(await exportProjectPdf(sizedProject, renderer));
-    expect(sizedItems.find((item) => item.text.startsWith("Wall A"))?.size).toBeCloseTo(9, 1);
-    expect(sizedItems.find((item) => item.text.includes("m²"))?.size).toBeCloseTo(12, 1);
-    expect(sizedItems.find((item) => item.text.startsWith("P "))?.size).toBeCloseTo(10, 1);
+    expect(sizedItems.find((item) => item.text.startsWith("Wall A"))?.size).toBeCloseTo(11, 1);
+    const sizedArea = sizedItems.find((item) => item.text.includes("m²"));
+    expect(sizedArea?.size).toBeGreaterThanOrEqual(4);
+    expect(sizedArea?.size).toBeLessThanOrEqual(9);
+    expect(sizedItems.find((item) => item.text.startsWith("P "))?.size).toBeCloseTo(
+      (sizedArea?.size ?? 0) * (LABEL_SECONDARY_SIZE / LABEL_PRIMARY_SIZE),
+      1,
+    );
 
     const fitProject = makeProject();
     fitProject.settings.labelSize = 12;

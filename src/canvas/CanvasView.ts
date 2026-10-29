@@ -891,11 +891,7 @@ export class CanvasView {
               x: layout.box.x + layout.box.width / 2,
               y: layout.box.y + layout.box.height / 2,
             };
-            const startLabelSize = clampLabelSize(
-              found.item.labelFit
-                ? Math.round(layout.metrics.primarySize * 10) / 10
-                : (found.item.labelSize ?? project.settings.labelSize),
-            );
+            const startLabelSize = clampLabelSize(Math.round(layout.metrics.primarySize * 10) / 10);
             store.beginGesture();
             if (found.item.labelFit) {
               found.item.labelSize = startLabelSize;
@@ -933,14 +929,17 @@ export class CanvasView {
           };
           const anchor = labelAnchorForPoints(labelHit.item, labelHit.item.points);
           store.beginGesture();
-          if (labelHit.item.labelFit) {
-            // Dragging is the explicit escape hatch: keep the fitted size, but
-            // release the inside-area lock so the label follows the pointer.
-            labelHit.item.labelSize = clampLabelSize(
-              Math.round(layout.metrics.primarySize * 10) / 10,
-            );
-            delete labelHit.item.labelFit;
+          // Dragging is the explicit escape hatch: keep the size the user is
+          // looking at (which may be auto-fitted inside a narrow area) instead
+          // of jumping back to the project size.
+          const configuredSize = clampLabelSize(
+            labelHit.item.labelSize ?? project.settings.labelSize,
+          );
+          const currentSize = clampLabelSize(Math.round(layout.metrics.primarySize * 10) / 10);
+          if (Math.abs(currentSize - configuredSize) > 0.05) {
+            labelHit.item.labelSize = currentSize;
           }
+          delete labelHit.item.labelFit;
           this.drag = {
             mode: "measurement-label",
             itemId: labelHit.item.id,

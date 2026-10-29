@@ -184,6 +184,32 @@ export function layoutPageLabels(
   return layouts;
 }
 
+function searchInside(
+  source: LabelSource,
+  options: LabelLayoutOptions,
+  high: number,
+  anchorAt: (scale: number) => Point,
+  fits: (layout: LabelLayout) => boolean,
+): LabelLayout | null {
+  const minScale = LABEL_MIN_SIZE / LABEL_PRIMARY_SIZE;
+  const minimum = buildLayout(source, minScale, anchorAt(minScale), "center", options);
+  if (!fits(minimum)) return null;
+  let low = minScale;
+  let upper = Math.max(minScale, high);
+  let best = minimum;
+  for (let index = 0; index < 9; index += 1) {
+    const mid = (low + upper) / 2;
+    const layout = buildLayout(source, mid, anchorAt(mid), "center", options);
+    if (fits(layout)) {
+      best = layout;
+      low = mid;
+    } else {
+      upper = mid;
+    }
+  }
+  return best;
+}
+
 function fitLabelInArea(
   source: LabelSource,
   options: LabelLayoutOptions,
@@ -219,32 +245,19 @@ function fitLabelInArea(
   const fits = (layout: LabelLayout): boolean =>
     fitsInsideArea(layout.box, source) && fitsPage(layout.box, options.pageSize);
 
-  const search = (anchorAt: (scale: number) => Point): LabelLayout | null => {
-    const minimum = buildLayout(source, minScale, anchorAt(minScale), "center", options);
-    if (!fits(minimum)) return null;
-    let low = minScale;
-    let upper = high;
-    let best = minimum;
-    for (let index = 0; index < 9; index += 1) {
-      const mid = (low + upper) / 2;
-      const layout = buildLayout(source, mid, anchorAt(mid), "center", options);
-      if (fits(layout)) {
-        best = layout;
-        low = mid;
-      } else {
-        upper = mid;
-      }
-    }
-    return best;
-  };
-
   if (placement === "center") {
     for (const anchor of [source.anchor, boundsCenter(source.obstacle)]) {
-      const layout = search(() => anchor);
+      const layout = searchInside(source, options, high, () => anchor, fits);
       if (layout) return layout;
     }
   } else {
-    const layout = search((scale) => insideCornerAnchor(source.obstacle, placement, boxAt(scale)));
+    const layout = searchInside(
+      source,
+      options,
+      high,
+      (scale) => insideCornerAnchor(source.obstacle, placement, boxAt(scale)),
+      fits,
+    );
     if (layout) return layout;
   }
 
@@ -284,10 +297,9 @@ function layoutLabel(
   // fits, up to the project or per-measurement maximum.
   if (source.labelFit) return fitLabelInArea(source, options, source.labelFit);
 
-  // One size per label. The old placement loop shrank labels until they fit
-  // inside small areas, which made the same drawing produce inconsistent and
-  // barely readable text. A label now either fits at its real size or moves
-  // outside with a leader.
+  // Prefer the label inside its area. If the full size does not fit, shrink
+  // just enough to stay inside (down to the minimum) before moving the label
+  // outside with a leader. The same values drive the canvas and the export.
   const scale = labelScaleForSize(source.labelSize ?? options.labelSize ?? LABEL_PRIMARY_SIZE);
 
   if (source.labelOffset) {
@@ -301,16 +313,15 @@ function layoutLabel(
     );
   }
   if (source.kind === "area") {
-    const centers = [source.anchor, boundsCenter(source.obstacle)];
-    for (const center of centers) {
-      const layout = buildLayout(source, scale, center, "center", options);
-      if (
-        fitsInsideArea(layout.box, source) &&
-        fitsPage(layout.box, options.pageSize) &&
-        !collides(layout.box, occupied)
-      ) {
-        return layout;
-      }
+    const fits = (layout: LabelLayout): boolean =>
+      fitsInsideArea(layout.box, source) &&
+      fitsPage(layout.box, options.pageSize) &&
+      !collides(layout.box, occupied);
+    for (const center of [source.anchor, boundsCenter(source.obstacle)]) {
+      const full = buildLayout(source, scale, center, "center", options);
+      if (fits(full)) return full;
+      const fitted = searchInside(source, options, scale, () => center, fits);
+      if (fitted) return fitted;
     }
   } else {
     const preferred = buildLayout(source, scale, source.anchor, "line", options);

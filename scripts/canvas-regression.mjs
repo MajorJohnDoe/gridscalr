@@ -433,7 +433,7 @@ try {
   assert.equal(released.labelFit, undefined, "dragging the label should release the lock");
   assert.ok(released.labelOffset, "the released label should keep a manual offset");
   assert.ok(
-    released.labelSize >= 4 && released.labelSize <= 6,
+    released.labelSize === undefined || (released.labelSize >= 4 && released.labelSize <= 6),
     "the released label should keep the fitted paper-space size",
   );
 
