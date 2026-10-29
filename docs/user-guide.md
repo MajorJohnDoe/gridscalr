@@ -53,9 +53,9 @@ The comparison compares measurements, drawings, symbols and their properties. Th
 
 ## Search text
 
-**View → Search text…** (`Ctrl/Cmd+Shift+F`) searches the PDF text layer across every page. Type a room name, equipment tag, sheet number or phrase; results show the page and a snippet around each match. Select a result to jump to the page and highlight the matching text on the drawing. Use `↑` / `↓` and `Enter` to move through results without leaving the panel.
+**View → Search text…** (`Ctrl/Cmd+Shift+F`) searches across every page. Digital PDFs use their PDF text layer. For scanned TIF pages and image-only PDF pages, choose **OCR scans** in the search panel to run local OCR with bundled English and Swedish models. Type a room name, equipment tag, sheet number or phrase; results show the page and a snippet. Select a result to jump to the page and highlight the matching text on the drawing. Use `↑` / `↓` and `Enter` to move through results without leaving the panel.
 
-Search covers digital PDF text layers, including text inside PDF plans. Scanned TIF pages and image-only PDF pages have no text layer yet, so they are listed as not searchable until OCR support arrives. The index is built locally in memory when the panel opens and is discarded when the project closes; it never leaves the machine.
+OCR is a deliberate action because it takes time. The resulting words, bounding boxes, engine and source checksum are stored in the project file, so reopening the project does not OCR the same page again. The PDF text index itself is built in memory and discarded when the project closes. Search and OCR run entirely on the machine; nothing is uploaded. OCR quality depends on scan resolution and contrast, and only the bundled English and Swedish models are available.
 
 ## Open drawings and projects
 
@@ -482,7 +482,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 16 is the current format. It adds the optional measurement label size, inside-area label locks, and the project label-size and compact-area-label settings. Older projects load normally and are migrated when opened.
+Schema version 17 is the current format. It keeps the label sizing and inside-area label locks from schema 16 and adds optional per-page OCR data (words, bounding boxes, language and source checksum) for scanned pages. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
