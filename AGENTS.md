@@ -8,8 +8,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.10.0`.
-- Current project-file schema: `17`.
+- Current app version: `0.11.0`.
+- Current project-file schema: `18`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
 ## Read before changing code
@@ -295,6 +295,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.8.0:** complete — session-only revision comparison with side-by-side and overlay views, a markup difference list, warnings and a comparison PDF. No schema change; the schema remains v16.
 - **0.9.0:** complete — local PDF text-layer search with progress, snippets and canvas highlights. No schema change; the schema remains v16.
 - **0.10.0:** complete — bundled English/Swedish OCR for scanned pages, stored as a rebuildable per-page index with schema 17, and merged into the existing search results.
+- **0.11.0:** complete — radius, diameter and three-point arc measurements with labels, snapping, quantities, drawing export and schema 18.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

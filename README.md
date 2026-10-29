@@ -36,8 +36,9 @@ before the first launch. Linux and macOS builds can be produced from source.
   existing ones, so a set of plans shares one takeoff.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
-- Measure multi-segment lengths, polygon areas, quick rectangles and ellipses,
-  and count doors, windows, radiators and fixtures as pieces.
+- Measure multi-segment lengths, radius, diameter, three-point arcs, polygon
+  areas, quick rectangles and ellipses, and count doors, windows, radiators and
+  fixtures as pieces.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision
@@ -197,7 +198,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.10.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.11.0_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
@@ -206,7 +207,7 @@ hash does not match, do not run the file and report it through
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 17 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 18 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is

@@ -163,6 +163,16 @@ Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to 
 
 Length measurements can use a **Solid** or **Dashed** line style in Properties. With **Smart length labels** enabled, metric lengths below 1 m use the project unit and longer values switch to metres. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging and resizing works for areas and counts.
 
+### Radius and diameter
+
+Choose **Radius** (`Q`) or **Diameter** (`W`), click the circle centre and then a point on the circle. Radius shows `R 4.20 m`; diameter shows `Ø 8.40 m`. The circle is drawn on the plan and the value uses the page scale. The centre and edge points stay editable.
+
+### Arc
+
+Choose **Arc** (`Z`), then click the start point, a point on the curve, and the end point. The value is the arc length along the circle through those three points. A collinear three-point arc is invalid and is not created.
+
+Radius, diameter and arc measurements use the same category, room, label, visibility, lock, deduction-free quantity and PDF export paths as lengths. They are grouped as **length** rows in the quantity report.
+
 ### Area
 
 Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover.
@@ -482,7 +492,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 17 is the current format. It keeps the label sizing and inside-area label locks from schema 16 and adds optional per-page OCR data (words, bounding boxes, language and source checksum) for scanned pages. Older projects load normally and are migrated when opened.
+Schema version 18 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, and adds radius, diameter and three-point arc measurement kinds. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

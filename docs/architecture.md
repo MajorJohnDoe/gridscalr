@@ -18,7 +18,7 @@ src/
   canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
   canvas/crop.ts         export crop mode, overlay and toolbar
   canvas/editors.ts      inline text and measurement-label editors
-  model/                 project types, geometry, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
+  model/                 project types, geometry, radius/diameter/arc measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
   model/symbols.ts       classic sign artwork, categories and inspection statuses
