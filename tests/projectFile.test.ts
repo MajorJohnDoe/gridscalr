@@ -99,28 +99,77 @@ describe("project files", () => {
     expect(parseProject(JSON.stringify(raw)).settings.smartLengthUnits).toBe(true);
   });
 
-  it("round-trips measurement label sizes and compact area labels", () => {
+  it("round-trips measurement label sizes, inside-area locks and compact labels", () => {
     const project = makeProject();
     project.settings.labelSize = 9;
     project.settings.compactAreaLabels = true;
-    project.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize = 11.5;
+    const measureLayer = project.layers.find((layer) => layer.kind === "measure")!;
+    measureLayer.items[0].labelSize = 11.5;
+    measureLayer.items.push({
+      id: "item_area_fit",
+      page: 1,
+      kind: "area",
+      points: [
+        { x: 20, y: 20 },
+        { x: 80, y: 20 },
+        { x: 80, y: 80 },
+        { x: 20, y: 80 },
+      ],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      areaMode: "add",
+      areaShape: "polygon",
+      labelFit: "top-left",
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
 
     const parsed = parseProject(serializeProject(project));
     expect(parsed.settings.labelSize).toBe(9);
     expect(parsed.settings.compactAreaLabels).toBe(true);
     expect(parsed.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize).toBe(11.5);
+    expect(
+      parsed.layers
+        .find((layer) => layer.kind === "measure")!
+        .items.find((item) => item.id === "item_area_fit")?.labelFit,
+    ).toBe("top-left");
 
     const raw = JSON.parse(serializeProject(makeProject()));
-    raw.schemaVersion = 14;
+    raw.schemaVersion = 15;
     delete raw.settings.labelSize;
     delete raw.settings.compactAreaLabels;
-    delete raw.layers.find((layer: { kind: string }) => layer.kind === "measure").items[0]
-      .labelSize;
+    const rawMeasure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
+    delete rawMeasure.items[0].labelSize;
+    delete rawMeasure.items[0].labelFit;
     const old = parseProject(JSON.stringify(raw));
     expect(old.settings.labelSize).toBe(6);
     expect(old.settings.compactAreaLabels).toBe(false);
     expect(
       old.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize,
+    ).toBeUndefined();
+    expect(old.layers.find((layer) => layer.kind === "measure")!.items[0].labelFit).toBeUndefined();
+  });
+
+  it("drops invalid or non-area label-fit values", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    const rawMeasure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
+    rawMeasure.items[0].labelFit = "top-left";
+    rawMeasure.items.push({
+      ...rawMeasure.items[0],
+      id: "item_area_bad_fit",
+      kind: "area",
+      labelFit: "diagonal",
+    });
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(
+      parsed.layers
+        .find((layer) => layer.kind === "measure")!
+        .items.find((item) => item.id === "item_a")?.labelFit,
+    ).toBeUndefined();
+    expect(
+      parsed.layers
+        .find((layer) => layer.kind === "measure")!
+        .items.find((item) => item.id === "item_area_bad_fit")?.labelFit,
     ).toBeUndefined();
   });
 

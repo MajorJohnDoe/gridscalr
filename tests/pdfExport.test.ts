@@ -358,6 +358,16 @@ describe("flattened PDF export", () => {
     expect(sizedItems.find((item) => item.text.includes("m²"))?.size).toBeCloseTo(12, 1);
     expect(sizedItems.find((item) => item.text.startsWith("P "))?.size).toBeCloseTo(10, 1);
 
+    const fitProject = makeProject();
+    fitProject.settings.labelSize = 12;
+    fitProject.layers
+      .find((layer) => layer.kind === "measure")!
+      .items.find((item) => item.id === "item_area")!.labelFit = "top-left";
+    const fitItems = await textItems(await exportProjectPdf(fitProject, renderer));
+    const fitArea = fitItems.find((item) => item.text.includes("m²"));
+    expect(fitArea?.size).toBeGreaterThanOrEqual(4);
+    expect(fitArea?.size).toBeLessThan(12);
+
     const calibrationProject = makeProject();
     for (const layer of calibrationProject.layers) layer.items.length = 0;
     const calibrationItems = (

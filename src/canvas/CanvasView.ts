@@ -38,6 +38,8 @@ import {
 import {
   CALIBRATION_LABEL_ID,
   closestPointOnPolyline,
+  LABEL_FIT_LABELS,
+  LABEL_FIT_POSITIONS,
   layoutPageLabels,
   pageLabelSources,
   type LabelLayout,
@@ -126,6 +128,7 @@ import type {
   ImageAsset,
   InspectionStatus,
   ItemKind,
+  LabelFitPosition,
   MarkupItem,
   PageSize,
   Point,
@@ -889,9 +892,15 @@ export class CanvasView {
               y: layout.box.y + layout.box.height / 2,
             };
             const startLabelSize = clampLabelSize(
-              found.item.labelSize ?? project.settings.labelSize,
+              found.item.labelFit
+                ? Math.round(layout.metrics.primarySize * 10) / 10
+                : (found.item.labelSize ?? project.settings.labelSize),
             );
             store.beginGesture();
+            if (found.item.labelFit) {
+              found.item.labelSize = startLabelSize;
+              delete found.item.labelFit;
+            }
             this.drag = {
               mode: "measurement-label-size",
               itemId: found.item.id,
@@ -924,6 +933,14 @@ export class CanvasView {
           };
           const anchor = labelAnchorForPoints(labelHit.item, labelHit.item.points);
           store.beginGesture();
+          if (labelHit.item.labelFit) {
+            // Dragging is the explicit escape hatch: keep the fitted size, but
+            // release the inside-area lock so the label follows the pointer.
+            labelHit.item.labelSize = clampLabelSize(
+              Math.round(layout.metrics.primarySize * 10) / 10,
+            );
+            delete labelHit.item.labelFit;
+          }
           this.drag = {
             mode: "measurement-label",
             itemId: labelHit.item.id,
@@ -1823,7 +1840,7 @@ export class CanvasView {
   }
 
   private showMeasurementLabelMenu(x: number, y: number, item: MarkupItem, layerId: string): void {
-    const custom = Boolean(item.labelOffset || item.labelAnchor);
+    const custom = Boolean(item.labelOffset || item.labelAnchor || item.labelFit);
     showPopoverAt(x, y, [
       {
         label: "Reset label position",
@@ -1835,6 +1852,7 @@ export class CanvasView {
             if (!target) return;
             delete target.labelOffset;
             delete target.labelAnchor;
+            delete target.labelFit;
             target.updatedAt = new Date().toISOString();
           }, "change");
         },
@@ -1854,9 +1872,29 @@ export class CanvasView {
       },
       { separator: true },
       {
+        label: item.labelFit
+          ? `Lock inside area: ${LABEL_FIT_LABELS[item.labelFit]}`
+          : "Lock inside area",
+        icon: "target",
+        disabled: item.kind !== "area",
+        children: [
+          ...LABEL_FIT_POSITIONS.map((position) => ({
+            label: `${item.labelFit === position ? "✓ " : ""}${LABEL_FIT_LABELS[position]}`,
+            action: () => this.setMeasurementLabelFit(item.id, position),
+          })),
+          { separator: true },
+          {
+            label: "Release",
+            disabled: item.labelFit === undefined,
+            action: () => this.releaseMeasurementLabelFit(item.id),
+          },
+        ],
+      },
+      { separator: true },
+      {
         label: "Choose connection point…",
         icon: "target",
-        disabled: item.kind === "count",
+        disabled: item.kind === "count" || Boolean(item.labelFit),
         action: () => {
           this.labelConnect = { itemId: item.id, layerId };
           toast("Click the line or outline to set where the label connects.", "info");
@@ -1865,6 +1903,26 @@ export class CanvasView {
         },
       },
     ]);
+  }
+
+  private setMeasurementLabelFit(itemId: string, placement: LabelFitPosition): void {
+    store.mutate((project) => {
+      const target = findItem(project, itemId)?.item;
+      if (!target || target.kind !== "area") return;
+      target.labelFit = placement;
+      delete target.labelOffset;
+      delete target.labelAnchor;
+      target.updatedAt = new Date().toISOString();
+    }, "change");
+  }
+
+  private releaseMeasurementLabelFit(itemId: string): void {
+    store.mutate((project) => {
+      const target = findItem(project, itemId)?.item;
+      if (!target) return;
+      delete target.labelFit;
+      target.updatedAt = new Date().toISOString();
+    }, "change");
   }
 
   private commitLabelConnection(page: Point): void {

@@ -14,6 +14,7 @@ import {
 } from "../model/layers";
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { clampLabelSize } from "../model/label";
+import { isLabelFitPosition } from "../model/labelLayout";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
@@ -327,6 +328,8 @@ function normalizeItem(
     isMeasure && typeof raw.labelSize === "number" && Number.isFinite(raw.labelSize)
       ? clampLabelSize(raw.labelSize)
       : undefined;
+  const labelFit =
+    raw.kind === "area" && isLabelFitPosition(raw.labelFit) ? raw.labelFit : undefined;
   const lineStyle: MarkupItem["lineStyle"] =
     raw.kind === "length" && raw.lineStyle === "dashed" ? "dashed" : undefined;
   const cloudRadius =
@@ -448,6 +451,7 @@ function normalizeItem(
     labelOffset,
     labelAnchor,
     labelSize,
+    labelFit,
     lineStyle,
     cloudRadius,
     textBoxWidth,

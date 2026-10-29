@@ -12,6 +12,7 @@ import {
   LABEL_CALIBRATION_OFFSET,
   LABEL_COLLISION_GAP,
   LABEL_INSIDE_MARGIN,
+  LABEL_MIN_SIZE,
   LABEL_PAGE_MARGIN,
   LABEL_PRIMARY_SIZE,
   type LabelBox,
@@ -20,7 +21,7 @@ import {
   type LabelParts,
 } from "./label";
 import { formatNumber } from "./units";
-import type { PageSize, Point, Project } from "./types";
+import type { LabelFitPosition, PageSize, Point, Project } from "./types";
 
 export type LabelPlacement = "center" | "outside" | "line";
 
@@ -40,7 +41,29 @@ export interface LabelSource {
   outline?: Point[];
   /** Per-measurement primary size in PDF points. Omit to use the project size. */
   labelSize?: number;
+  /** Keep the label inside the area and fit its size to the available space. */
+  labelFit?: LabelFitPosition;
   color: string;
+}
+
+export const LABEL_FIT_POSITIONS: readonly LabelFitPosition[] = [
+  "center",
+  "top-left",
+  "top-right",
+  "bottom-right",
+  "bottom-left",
+];
+
+export const LABEL_FIT_LABELS: Record<LabelFitPosition, string> = {
+  center: "Center",
+  "top-left": "Top left",
+  "top-right": "Top right",
+  "bottom-right": "Bottom right",
+  "bottom-left": "Bottom left",
+};
+
+export function isLabelFitPosition(value: unknown): value is LabelFitPosition {
+  return typeof value === "string" && (LABEL_FIT_POSITIONS as readonly string[]).includes(value);
 }
 
 export interface LabelLeader {
@@ -76,6 +99,10 @@ export interface LabelSourceOptions {
 }
 
 export const CALIBRATION_LABEL_ID = "calibration";
+
+/** A locked label may use at most this share of its area's paper width/height. */
+const LABEL_FIT_WIDTH_RATIO = 0.6;
+const LABEL_FIT_HEIGHT_RATIO = 0.4;
 
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
@@ -115,6 +142,7 @@ export function pageLabelSources(
                 ? item.points.map((point) => ({ ...point }))
                 : undefined,
           labelSize: item.labelSize,
+          labelFit: item.labelFit,
           color: item.color,
         });
       }
@@ -156,11 +184,106 @@ export function layoutPageLabels(
   return layouts;
 }
 
+function fitLabelInArea(
+  source: LabelSource,
+  options: LabelLayoutOptions,
+  placement: LabelFitPosition,
+): LabelLayout {
+  const maxScale = labelScaleForSize(source.labelSize ?? options.labelSize ?? LABEL_PRIMARY_SIZE);
+  const minScale = LABEL_MIN_SIZE / LABEL_PRIMARY_SIZE;
+
+  const boxAt = (scale: number): LabelBox => {
+    const metrics = labelMetrics(scale);
+    const primaryWidth = options.measure(source.parts.text, metrics.primarySize, "bold");
+    const secondaryWidth = source.parts.secondary
+      ? options.measure(source.parts.secondary, metrics.secondarySize, "regular")
+      : 0;
+    return labelBox({ x: 0, y: 0 }, primaryWidth, secondaryWidth, source.parts.secondary, scale);
+  };
+
+  const base = boxAt(1);
+  const boundsWidth = source.obstacle.max.x - source.obstacle.min.x;
+  const boundsHeight = source.obstacle.max.y - source.obstacle.min.y;
+  // A locked label should stay visually subordinate to its room. Fitting only
+  // to overflow still produced a label covering most of a small A4 room, so
+  // cap the fitted size to a share of the area as well.
+  const high = Math.max(
+    minScale,
+    Math.min(
+      maxScale,
+      (boundsWidth * LABEL_FIT_WIDTH_RATIO) / Math.max(0.001, base.width),
+      (boundsHeight * LABEL_FIT_HEIGHT_RATIO) / Math.max(0.001, base.height),
+    ),
+  );
+
+  const fits = (layout: LabelLayout): boolean =>
+    fitsInsideArea(layout.box, source) && fitsPage(layout.box, options.pageSize);
+
+  const search = (anchorAt: (scale: number) => Point): LabelLayout | null => {
+    const minimum = buildLayout(source, minScale, anchorAt(minScale), "center", options);
+    if (!fits(minimum)) return null;
+    let low = minScale;
+    let upper = high;
+    let best = minimum;
+    for (let index = 0; index < 9; index += 1) {
+      const mid = (low + upper) / 2;
+      const layout = buildLayout(source, mid, anchorAt(mid), "center", options);
+      if (fits(layout)) {
+        best = layout;
+        low = mid;
+      } else {
+        upper = mid;
+      }
+    }
+    return best;
+  };
+
+  if (placement === "center") {
+    for (const anchor of [source.anchor, boundsCenter(source.obstacle)]) {
+      const layout = search(() => anchor);
+      if (layout) return layout;
+    }
+  } else {
+    const layout = search((scale) => insideCornerAnchor(source.obstacle, placement, boxAt(scale)));
+    if (layout) return layout;
+  }
+
+  // A concave or very small area may not hold even the minimum size at the
+  // requested position. Keep the label centred at the minimum rather than
+  // dropping it or moving it outside.
+  return buildLayout(source, minScale, source.anchor, "center", options);
+}
+
+function insideCornerAnchor(bounds: Bounds, placement: LabelFitPosition, box: LabelBox): Point {
+  const margin = LABEL_INSIDE_MARGIN;
+  const left = bounds.min.x + margin + box.width / 2;
+  const right = bounds.max.x - margin - box.width / 2;
+  const top = bounds.min.y + margin + box.height / 2;
+  const bottom = bounds.max.y - margin - box.height / 2;
+  switch (placement) {
+    case "top-left":
+      return { x: left, y: top };
+    case "top-right":
+      return { x: right, y: top };
+    case "bottom-right":
+      return { x: right, y: bottom };
+    case "bottom-left":
+      return { x: left, y: bottom };
+    default:
+      return boundsCenter(bounds);
+  }
+}
+
 function layoutLabel(
   source: LabelSource,
   options: LabelLayoutOptions,
   occupied: Bounds[],
 ): LabelLayout {
+  // An explicitly locked label ignores manual offsets and the automatic
+  // outside placement. It stays inside its area and uses the largest size that
+  // fits, up to the project or per-measurement maximum.
+  if (source.labelFit) return fitLabelInArea(source, options, source.labelFit);
+
   // One size per label. The old placement loop shrank labels until they fit
   // inside small areas, which made the same drawing produce inconsistent and
   // barely readable text. A label now either fits at its real size or moves
@@ -469,20 +592,24 @@ function fitsInsideArea(box: LabelBox, source: LabelSource): boolean {
 }
 
 function fitsInside(box: LabelBox, bounds: Bounds): boolean {
+  // The fit search places corner labels exactly on the margin. Allow a tiny
+  // tolerance so binary floating-point rounding does not reject a valid size.
+  const tolerance = 1e-6;
   return (
-    box.x >= bounds.min.x + LABEL_INSIDE_MARGIN &&
-    box.y >= bounds.min.y + LABEL_INSIDE_MARGIN &&
-    box.x + box.width <= bounds.max.x - LABEL_INSIDE_MARGIN &&
-    box.y + box.height <= bounds.max.y - LABEL_INSIDE_MARGIN
+    box.x >= bounds.min.x + LABEL_INSIDE_MARGIN - tolerance &&
+    box.y >= bounds.min.y + LABEL_INSIDE_MARGIN - tolerance &&
+    box.x + box.width <= bounds.max.x - LABEL_INSIDE_MARGIN + tolerance &&
+    box.y + box.height <= bounds.max.y - LABEL_INSIDE_MARGIN + tolerance
   );
 }
 
 function fitsPage(box: LabelBox, page: PageSize): boolean {
+  const tolerance = 1e-6;
   return (
-    box.x >= LABEL_PAGE_MARGIN &&
-    box.y >= LABEL_PAGE_MARGIN &&
-    box.x + box.width <= page.width - LABEL_PAGE_MARGIN &&
-    box.y + box.height <= page.height - LABEL_PAGE_MARGIN
+    box.x >= LABEL_PAGE_MARGIN - tolerance &&
+    box.y >= LABEL_PAGE_MARGIN - tolerance &&
+    box.x + box.width <= page.width - LABEL_PAGE_MARGIN + tolerance &&
+    box.y + box.height <= page.height - LABEL_PAGE_MARGIN + tolerance
   );
 }
 

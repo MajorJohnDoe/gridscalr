@@ -33,7 +33,7 @@ Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keep
 - Use Count for doors, windows, radiators, fixtures and other objects.
 - Use the **Deduct** switch in the context bar for shafts, openings and other areas that should not be ordered.
 
-Drag a measurement label to place it clear of nearby geometry, or drag its corner handle to resize the paper-space label; **Reset label position** and **Reset label size** in Properties return it to automatic placement and the project size. Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
+Drag a measurement label to place it clear of nearby geometry, or drag its corner handle to resize the paper-space label. Right-click an area label and choose **Lock inside area** to keep it inside a small room; the size adapts to the room. **Reset label position** and **Reset label size** in Properties return it to automatic placement and the project size. Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
 
 ### 3. Mark the deviation
 

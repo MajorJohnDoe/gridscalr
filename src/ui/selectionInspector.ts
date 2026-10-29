@@ -30,6 +30,7 @@ import {
 } from "../model/layers";
 import { itemKindLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
+import { LABEL_FIT_LABELS } from "../model/labelLayout";
 import { formatNumber } from "../model/units";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
@@ -150,10 +151,10 @@ export function selectionSection(
       el(
         "div",
         "empty-note small",
-        "Drag the value label to position it freely, or drag the corner handle to resize it. Reset returns it to automatic placement and the project label size.",
+        "Drag the value label to position it freely, or drag the corner handle to resize it. Reset label position and Reset label size return it to automatic placement and the project size.",
       ),
     );
-    if (item.labelOffset || item.labelAnchor) {
+    if (item.labelOffset || item.labelAnchor || item.labelFit) {
       const resetLabel = el("button", "btn btn-small btn-ghost", "Reset label position");
       resetLabel.type = "button";
       resetLabel.disabled = locked;
@@ -165,10 +166,34 @@ export function selectionSection(
           const target = findItem(project, item.id)?.item;
           if (!target) return;
           delete target.labelOffset;
+          delete target.labelAnchor;
+          delete target.labelFit;
           target.updatedAt = new Date().toISOString();
         }, "change");
       });
       section.append(resetLabel);
+    }
+
+    if (item.labelFit) {
+      section.append(
+        el(
+          "div",
+          "empty-note small",
+          `Locked inside area: ${LABEL_FIT_LABELS[item.labelFit]}. The size adapts to the available space. Drag the label to release it.`,
+        ),
+      );
+      const release = el("button", "btn btn-small btn-ghost", "Release inside area");
+      release.type = "button";
+      release.disabled = locked;
+      release.addEventListener("click", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          delete target.labelFit;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      section.append(release);
     }
 
     const projectLabelSize = clampLabelSize(project.settings.labelSize);

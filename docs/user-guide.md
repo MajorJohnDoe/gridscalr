@@ -153,7 +153,9 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 ### Measurement labels
 
-Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** in Properties or the label's context menu returns it to the project size. A label that does not fit inside an area moves outside with a leader line instead of shrinking, so the same drawing always uses the same text size.
+Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** in Properties or the label's context menu returns it to the project size. A free label that does not fit inside an area moves outside with a leader line instead of shrinking, so the same drawing always uses the same text size.
+
+Right-click an area label and choose **Lock inside area**, then **Center**, **Top left**, **Top right**, **Bottom right** or **Bottom left**. The label moves inside the measured area and uses the largest size that fits, up to the project or per-measurement size. This is useful on A4 sheets, where a 6 pt label would otherwise cover most of the room. Drag the label to release the lock and keep the fitted size, choose **Release** in the same menu, or use **Release inside area** in Properties.
 
 The project label size and compact area labels are in **Settings → Project settings… → Measurement labels**. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; the inspector and CSV keep the full wording. Existing projects keep the full wording until the setting is enabled.
 
@@ -452,7 +454,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 15 is the current format. It adds the optional measurement label size and the project label-size and compact-area-label settings. Older projects load normally and are migrated when opened.
+Schema version 16 is the current format. It adds the optional measurement label size, inside-area label locks, and the project label-size and compact-area-label settings. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

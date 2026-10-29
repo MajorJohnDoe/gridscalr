@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 15 as const;
+export const SCHEMA_VERSION = 16 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -14,6 +14,8 @@ export type AreaShape = "polygon" | "rectangle" | "ellipse";
 export type HighlightShape = "stroke" | "rectangle" | "polygon";
 export type ArrowHeads = "end" | "both";
 export type TextAlign = "left" | "center" | "right";
+/** Where an area label is locked inside its measured area. */
+export type LabelFitPosition = "center" | "top-left" | "top-right" | "bottom-right" | "bottom-left";
 /** Stroke pattern for measurement and drawing lines. Missing means solid. */
 export type LineStyle = "solid" | "dashed";
 export type DrawingKind =
@@ -137,6 +139,8 @@ export interface MarkupItem {
   labelAnchor?: Point;
   /** Measurements only: label text size in PDF points. Missing uses the project size. */
   labelSize?: number;
+  /** Areas only: keep the label inside the area at this position and fit its size. */
+  labelFit?: LabelFitPosition;
   /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
   cloudRadius?: number;
   /** Callout and cloud text boxes only: fixed box width in PDF points. */
