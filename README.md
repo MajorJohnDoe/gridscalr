@@ -56,8 +56,8 @@ before the first launch. Linux and macOS builds can be produced from source.
 - Compare a saved revision in side-by-side or overlay mode, review changed,
   added and removed markups, and export a comparison PDF without touching either
   source drawing.
-- Search the PDF text layer across every page, jump to a highlighted result, and
-  keep the index local. Scanned pages are ready for the OCR step.
+- Search every page, run local English/Swedish OCR on scanned sheets, jump to a
+  highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
 - Undo/redo, autosave recovery, recent files, and the user guide bundled under
@@ -92,8 +92,8 @@ calculated from item data.
 | Revision comparison | Full-text search |
 | --- | --- |
 | ![Current plan overlaid with a reference revision and a comparison panel listing changed, added and removed items](docs/screenshots/compare.png) | ![Search panel with an Office query and a highlighted match on the drawing](docs/screenshots/search.png) |
-| **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. | **Find text fast.** Search every PDF text layer and highlight the exact result on the plan. |
-| **No merge, no source changes.** The reference stays session-only and both drawings remain read-only. | **Local index.** Text is extracted in memory; scanned pages are the next OCR step. |
+| **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. | **Find text fast.** Search PDF text layers or run local OCR on scans, then highlight the exact result on the plan. |
+| **No merge, no source changes.** The reference stays session-only and both drawings remain read-only. | **Local index.** PDF text is indexed in memory; OCR words are stored in the project for reuse. |
 
 More screens, including the Markups table, the symbol library, revision
 comparison, full-text search and the in-app workflows, are captured in
@@ -197,7 +197,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.9.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.10.0_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
@@ -206,7 +206,7 @@ hash does not match, do not run the file and report it through
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 16 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 17 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is

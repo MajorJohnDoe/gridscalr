@@ -1,5 +1,8 @@
 import assert from "node:assert/strict";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { PDFDocument } from "pdf-lib";
 import {
   launchBrowser,
   makeReferenceProject,
@@ -387,8 +390,8 @@ try {
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();
   const locationDialog = page.getByRole("dialog");
-  await locationDialog.getByLabel("Building").fill("Building A");
-  await locationDialog.getByLabel("Floor").fill("Floor 2");
+  await locationDialog.getByPlaceholder("For example Building A").fill("Building A");
+  await locationDialog.getByPlaceholder("For example Floor 2").fill("Floor 2");
   await locationDialog.getByRole("button", { name: "Apply" }).click();
   await locationDialog.waitFor({ state: "detached" });
   assert.equal(
@@ -805,6 +808,56 @@ try {
   await page.getByText(/No layers on Page 4 yet/).waitFor();
   await page.getByRole("button", { name: "All pages", exact: true }).click();
   await page.locator(".layer-row").first().waitFor();
+
+  // OCR: append an image-only page, run local OCR and search the result.
+  const pngDataUrl = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 1200;
+    canvas.height = 700;
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("No canvas context");
+    context.fillStyle = "#ffffff";
+    context.fillRect(0, 0, canvas.width, canvas.height);
+    context.fillStyle = "#000000";
+    context.font = "bold 96px sans-serif";
+    context.fillText("ROOM A101", 90, 170);
+    context.font = "52px sans-serif";
+    context.fillText("VENTILATION UNIT V-12", 90, 330);
+    context.fillText("FIRE EXTINGUISHER", 90, 440);
+    context.fillText("SHEET A-101", 90, 550);
+    return canvas.toDataURL("image/png");
+  });
+  const ocrPdf = await PDFDocument.create();
+  const ocrImage = await ocrPdf.embedPng(pngDataUrl);
+  const ocrPage = ocrPdf.addPage([600, 350]);
+  ocrPage.drawImage(ocrImage, { x: 0, y: 0, width: 600, height: 350 });
+  const ocrPath = join(tmpdir(), `gridscalr-ocr-${Date.now()}.pdf`);
+  await writeFile(ocrPath, await ocrPdf.save());
+  await page.getByRole("menuitem", { name: "File" }).click();
+  const ocrChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "Open drawing…" }).click();
+  const ocrChooser = await ocrChooserPromise;
+  await ocrChooser.setFiles(ocrPath);
+  await page.waitForFunction(() => window.__gridscalr.store.project?.documents.length === 3, null, {
+    timeout: 15000,
+  });
+  await page.waitForTimeout(300);
+  await page.keyboard.press("Control+Shift+f");
+  await searchPanel.waitFor();
+  await searchPanel.getByLabel("Search drawing text").fill("ROOM");
+  await searchPanel.getByRole("button", { name: "OCR scans" }).click();
+  await page.waitForFunction(
+    () => /OCR indexed/.test(document.querySelector(".search-status")?.textContent ?? ""),
+    null,
+    { timeout: 180000 },
+  );
+  assert.ok(
+    (await searchPanel.locator(".search-result").count()) > 0,
+    "OCR should make the scanned page searchable",
+  );
+  await searchPanel.getByRole("button", { name: "Close search" }).click();
+  await searchPanel.waitFor({ state: "detached" });
+  await waitForToastsGone(page);
 
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);

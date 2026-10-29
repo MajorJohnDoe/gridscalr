@@ -131,6 +131,7 @@ export function searchTextPage(page: PageText, query: string): SearchHit[] {
  */
 export class PdfTextIndex {
   private readonly pages = new Map<number, PageText>();
+  private readonly stored = new Map<number, PageText>();
   private readonly pending = new Map<number, Promise<PageText>>();
   private disposed = false;
 
@@ -147,6 +148,17 @@ export class PdfTextIndex {
     return this.disposed;
   }
 
+  /** Adds OCR text that should win over an empty PDF text layer. */
+  seed(page: number, text: PageText): void {
+    this.stored.set(page, text);
+  }
+
+  /** Replaces one page after OCR, without waiting for a full reindex. */
+  setPageText(page: number, text: PageText): void {
+    this.stored.set(page, text);
+    this.pages.set(page, text);
+  }
+
   async page(page: number): Promise<PageText> {
     const cached = this.pages.get(page);
     if (cached) return cached;
@@ -156,9 +168,11 @@ export class PdfTextIndex {
       .then((proxy) => extractPageText(proxy, page))
       .catch(() => ({ page, text: "", words: [] }))
       .then((result) => {
-        this.pages.set(page, result);
+        const stored = this.stored.get(page);
+        const resolved = result.text.trim() || !stored ? result : stored;
+        this.pages.set(page, resolved);
         this.pending.delete(page);
-        return result;
+        return resolved;
       });
     this.pending.set(page, promise);
     return promise;
@@ -185,6 +199,7 @@ export class PdfTextIndex {
   dispose(): void {
     this.disposed = true;
     this.pages.clear();
+    this.stored.clear();
     this.pending.clear();
   }
 }

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 16 as const;
+export const SCHEMA_VERSION = 17 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -188,6 +188,30 @@ export interface Layer {
   homePage?: number;
 }
 
+export interface OcrWord {
+  text: string;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  confidence?: number;
+}
+
+/** Rebuildable OCR text for one scanned page. Stored because OCR is expensive. */
+export interface OcrPage {
+  text: string;
+  words: OcrWord[];
+  engine: "tesseract";
+  /** Plus-separated Tesseract language codes, for example "eng+swe". */
+  languages: string;
+  generatedAt: string;
+  /** Source document checksum and 1-based source page at the time of OCR. */
+  documentSha256: string;
+  sourcePage: number;
+  width: number;
+  height: number;
+}
+
 export interface PageState {
   calibration?: Calibration;
   /** Only valid when the page has a calibration. */
@@ -198,6 +222,8 @@ export interface PageState {
   building?: string;
   /** Optional floor or storey name used by Markups grouping. */
   floor?: string;
+  /** Optional local OCR index for a scanned page. */
+  ocr?: OcrPage;
 }
 
 export type MarkupsColumnId =

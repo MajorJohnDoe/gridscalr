@@ -15,12 +15,16 @@ the upstream notices with it.
 | PDF.js (`pdfjs-dist`) | `package.json` | Apache-2.0 | https://github.com/mozilla/pdf.js |
 | pdf-lib | `package.json` | MIT | https://github.com/Hopding/pdf-lib |
 | fflate | `package.json` | MIT | https://github.com/101arrowz/fflate |
+| Tesseract.js and tesseract.js-core | `package.json` | Apache-2.0 | https://github.com/naptha/tesseract.js |
+| English and Swedish Tesseract traineddata | `package.json` | MIT | https://github.com/naptha/tessdata |
 | @pdf-lib/fontkit | `package.json` | MIT | https://github.com/Hopding/fontkit |
 | Tauri (`tauri`, plugins) | `src-tauri/Cargo.toml` | MIT OR Apache-2.0 | https://github.com/tauri-apps/tauri |
 | Rust crate dependencies | `src-tauri/Cargo.lock` | MIT / Apache-2.0 (per crate) | https://crates.io |
 
 PDF.js is Apache-2.0. Its `LICENSE` file is part of the `pdfjs-dist` package and
-must be preserved in binary distributions.
+must be preserved in binary distributions. Tesseract.js and its WebAssembly core
+are Apache-2.0 and are bundled with their upstream license files; the English and
+Swedish traineddata files are MIT-licensed.
 
 ## Embedded fonts
 

@@ -5074,3 +5074,17 @@ textarea:disabled {
   font-size: 10px;
   line-height: 1.35;
 }
+
+.search-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 7px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border-soft);
+  background: #1a2024;
+}
+
+.search-footer .btn.is-busy {
+  color: var(--warning);
+  cursor: progress;
+}

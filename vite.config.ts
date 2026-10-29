@@ -7,6 +7,25 @@ import { defineConfig, type Plugin } from "vitest/config";
 const host = process.env.TAURI_DEV_HOST;
 const root = fileURLToPath(new URL(".", import.meta.url));
 const wasmDir = path.join(root, "node_modules/pdfjs-dist/wasm");
+const ocrFiles: Record<string, string> = {
+  "tesseract/worker.min.js": path.join(root, "node_modules/tesseract.js/dist/worker.min.js"),
+  "tesseract/tesseract-core-simd.wasm.js": path.join(
+    root,
+    "node_modules/tesseract.js-core/tesseract-core-simd.wasm.js",
+  ),
+  "tesseract/tesseract-core-simd.wasm": path.join(
+    root,
+    "node_modules/tesseract.js-core/tesseract-core-simd.wasm",
+  ),
+  "tessdata/eng.traineddata.gz": path.join(
+    root,
+    "node_modules/@tesseract.js-data/eng/4.0.0_best_int/eng.traineddata.gz",
+  ),
+  "tessdata/swe.traineddata.gz": path.join(
+    root,
+    "node_modules/@tesseract.js-data/swe/4.0.0_best_int/swe.traineddata.gz",
+  ),
+};
 const packageJson = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as {
   version: string;
 };
@@ -46,6 +65,45 @@ function pdfjsWasm(): Plugin {
   };
 }
 
+/** Serves and bundles the local OCR worker, WASM core and language data. */
+function ocrAssets(): Plugin {
+  return {
+    name: "ocr-assets",
+    configureServer(server) {
+      for (const prefix of ["/tesseract", "/tessdata"]) {
+        server.middlewares.use(prefix, (request, response, next) => {
+          const name = decodeURIComponent((request.url ?? "").split("?")[0]).replace(/^\/+/, "");
+          if (!name || name.includes("..") || name.includes("/")) {
+            next();
+            return;
+          }
+          const file = ocrFiles[`${prefix.slice(1)}/${name}`];
+          if (!file || !existsSync(file)) {
+            next();
+            return;
+          }
+          response.setHeader(
+            "Content-Type",
+            name.endsWith(".wasm")
+              ? "application/wasm"
+              : name.endsWith(".gz")
+                ? "application/gzip"
+                : "text/javascript",
+          );
+          createReadStream(file).pipe(response);
+        });
+      }
+    },
+    async closeBundle() {
+      for (const [relative, source] of Object.entries(ocrFiles)) {
+        const target = path.join(root, "dist", relative);
+        await mkdir(path.dirname(target), { recursive: true });
+        await cp(source, target);
+      }
+    },
+  };
+}
+
 export default defineConfig({
   // Tauri serves the production frontend from a custom protocol. Relative
   // asset URLs work on every platform and keep the built index.html portable.
@@ -54,7 +112,7 @@ export default defineConfig({
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
   },
-  plugins: [pdfjsWasm()],
+  plugins: [pdfjsWasm(), ocrAssets()],
   server: {
     port: 1420,
     strictPort: true,
