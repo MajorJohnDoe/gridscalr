@@ -124,6 +124,7 @@ import { exportComparisonPdf } from "../pdf/comparePdf";
 import { ComparePanel } from "../ui/comparePanel";
 import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
+import { disposeOcrWorker, isOcrCurrent, ocrPageToText, runOcrPage } from "../search/ocr";
 import { compareRevisions, type DiffItem, type RevisionDiff } from "../compare/revisionDiff";
 import { openReferenceSession, type ReferenceSession } from "../compare/referenceSession";
 import { syncViewport } from "../canvas/viewport";
@@ -156,6 +157,8 @@ export class App {
   private searchPanel: SearchPanel | null = null;
   private searchQuery = "";
   private searchDebounce: number | null = null;
+  private ocrBusy = false;
+  private ocrToken = 0;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -1809,10 +1812,17 @@ export class App {
     const index = new PdfTextIndex(totalPageCount(project.documents), (page) =>
       this.renderer!.getPage(page),
     );
+    for (let page = 1; page <= index.pageCount; page += 1) {
+      const stored = project.pages[String(page)]?.ocr;
+      if (stored && isOcrCurrent(project, page, stored)) {
+        index.seed(page, ocrPageToText(stored, page));
+      }
+    }
     this.textIndex = index;
     this.searchPanel = new SearchPanel(this.refs.canvasArea, {
       onQuery: (query) => this.onSearchQuery(query),
       onSelect: (hit) => void this.selectSearchHit(hit),
+      onOcr: () => void this.runOcrScans(),
       onClose: () => this.closeSearch(),
     });
     this.searchPanel.setProgress(0, index.pageCount);
@@ -1857,7 +1867,61 @@ export class App {
     this.canvas.invalidate();
   }
 
+  private async runOcrScans(): Promise<void> {
+    const index = this.textIndex;
+    const panel = this.searchPanel;
+    const renderer = this.renderer;
+    if (!index || !panel || !renderer || !store.project || this.ocrBusy) return;
+    this.ocrBusy = true;
+    panel.setOcrBusy(true);
+    const token = ++this.ocrToken;
+    let scanned = 0;
+    try {
+      for (let page = 1; page <= index.pageCount; page += 1) {
+        if (token !== this.ocrToken || this.textIndex !== index || !this.searchPanel) return;
+        const pageText = await index.page(page);
+        if (pageText.text.trim().length >= 8) continue;
+        const project = store.project;
+        if (!project) return;
+        const stored = project.pages[String(page)]?.ocr;
+        if (stored && isOcrCurrent(project, page, stored)) {
+          index.setPageText(page, ocrPageToText(stored, page));
+          continue;
+        }
+        panel.setStatus(`OCR page ${page} of ${index.pageCount}…`);
+        const ocr = await runOcrPage(project, page, renderer, (message, progress) => {
+          if (token !== this.ocrToken) return;
+          panel.setStatus(
+            `OCR page ${page} of ${index.pageCount}: ${message} ${Math.round(progress * 100)}%`,
+          );
+        });
+        if (token !== this.ocrToken || this.textIndex !== index) return;
+        store.setPageOcr(page, ocr);
+        index.setPageText(page, ocrPageToText(ocr, page));
+        scanned += 1;
+        this.runSearch(this.searchQuery);
+      }
+      if (token !== this.ocrToken) return;
+      if (scanned === 0) {
+        panel.setStatus("Every page already has searchable text.");
+      } else {
+        this.runSearch(this.searchQuery);
+        panel.setStatus(`OCR indexed ${scanned} page${scanned === 1 ? "" : "s"}.`);
+        toast(`OCR indexed ${scanned} page${scanned === 1 ? "" : "s"}.`, "success");
+      }
+    } catch (error) {
+      if (!this.disposed && token === this.ocrToken) {
+        await messageDialog("OCR failed", errorMessage(error), "warning");
+      }
+    } finally {
+      this.ocrBusy = false;
+      this.searchPanel?.setOcrBusy(false);
+    }
+  }
+
   private closeSearch(): void {
+    this.ocrToken += 1;
+    this.ocrBusy = false;
     if (this.searchDebounce !== null) {
       window.clearTimeout(this.searchDebounce);
       this.searchDebounce = null;
@@ -2161,6 +2225,7 @@ export class App {
     this.thumbnails?.destroy();
     this.thumbnails = null;
     this.closeSearch();
+    void disposeOcrWorker();
     this.comparePanel?.destroy();
     this.comparePanel = null;
     if (this.compare) void this.compare.destroy();

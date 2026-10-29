@@ -5,6 +5,7 @@ import { icon } from "./icons";
 export interface SearchPanelActions {
   onQuery: (query: string) => void;
   onSelect: (hit: SearchHit) => void;
+  onOcr: () => void;
   onClose: () => void;
 }
 
@@ -18,6 +19,7 @@ export class SearchPanel {
   private readonly status: HTMLElement;
   private readonly list: HTMLElement;
   private readonly note: HTMLElement;
+  private readonly ocrButton: HTMLButtonElement;
   private results: SearchHit[] = [];
   private active = -1;
   private query = "";
@@ -83,10 +85,18 @@ export class SearchPanel {
     this.note = el(
       "p",
       "search-note",
-      "Scanned pages without a text layer are not searchable yet. OCR support is a separate step.",
+      "Scanned pages without a text layer are not searchable until OCR runs. The OCR index is stored in the project.",
     );
 
-    this.element.append(header, field, this.status, this.list, this.note);
+    const footer = el("footer", "search-footer");
+    this.ocrButton = el("button", "btn btn-small", "OCR scans");
+    this.ocrButton.type = "button";
+    this.ocrButton.innerHTML = `${icon("target", 13)}<span>OCR scans</span>`;
+    this.ocrButton.title = "Run local OCR on pages without a PDF text layer";
+    this.ocrButton.addEventListener("click", () => this.actions.onOcr());
+    footer.append(this.ocrButton);
+
+    this.element.append(header, field, this.status, this.list, this.note, footer);
     host.append(this.element);
     this.focus();
   }
@@ -102,6 +112,18 @@ export class SearchPanel {
 
   setProgress(done: number, total: number): void {
     this.status.textContent = `Indexing ${done} / ${total} page${total === 1 ? "" : "s"}…`;
+  }
+
+  setStatus(message: string): void {
+    this.status.textContent = message;
+  }
+
+  setOcrBusy(busy: boolean): void {
+    this.ocrButton.disabled = busy;
+    this.ocrButton.classList.toggle("is-busy", busy);
+    this.ocrButton.innerHTML = busy
+      ? `${icon("target", 13)}<span>OCR running…</span>`
+      : `${icon("target", 13)}<span>OCR scans</span>`;
   }
 
   setIndexComplete(total: number): void {

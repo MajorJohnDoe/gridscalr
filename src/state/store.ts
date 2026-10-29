@@ -41,6 +41,7 @@ import type {
   ImageAsset,
   InspectionStatus,
   LayerKind,
+  OcrPage,
   Point,
   Project,
   SelectionRef,
@@ -490,6 +491,22 @@ export class Store {
     this.mutate((project) => {
       addLayer(project, kind, this.ui.page);
     }, "layers");
+  }
+
+  /** Stores or clears derived OCR data without adding an undo step. */
+  setPageOcr(page: number, ocr: OcrPage | undefined): void {
+    if (!this.project) return;
+    const target = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
+    const key = String(target);
+    const state = this.project.pages[key] ?? {};
+    if (ocr) state.ocr = ocr;
+    else delete state.ocr;
+    if (Object.keys(state).length) this.project.pages[key] = state;
+    else delete this.project.pages[key];
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("change");
+    this.scheduleAutosave();
   }
 
   renamePage(page: number, name: string): void {
