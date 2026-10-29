@@ -14,12 +14,17 @@ export function openQuantitiesDialog(actions: PanelActions): void {
   exportCsv.innerHTML = `${icon("csv", 13)}<span>Quantities CSV</span>`;
   exportCsv.title = "Export the quantity report as CSV";
   exportCsv.addEventListener("click", () => actions.exportAs("quantity-csv"));
+  const exportExcel = el("button", "btn btn-small", "Quantities Excel");
+  exportExcel.type = "button";
+  exportExcel.innerHTML = `${icon("file", 13)}<span>Quantities Excel</span>`;
+  exportExcel.title = "Export the quantity report as an Excel workbook";
+  exportExcel.addEventListener("click", () => actions.exportAs("quantity-xlsx"));
   const exportPdf = el("button", "btn btn-small", "Quantity PDF");
   exportPdf.type = "button";
   exportPdf.innerHTML = `${icon("file", 13)}<span>Quantity PDF</span>`;
   exportPdf.title = "Export a print-friendly quantity report as PDF";
   exportPdf.addEventListener("click", () => actions.exportAs("quantity-pdf"));
-  toolbar.append(exportCsv, exportPdf);
+  toolbar.append(exportCsv, exportExcel, exportPdf);
 
   const host = el("div", "quantity-dialog-body");
   body.append(toolbar, host);

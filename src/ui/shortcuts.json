@@ -37,6 +37,7 @@
     "rename": "F2",
     "sidebar": "Ctrl+\\",
     "properties": "Ctrl+Shift+\\",
+    "splitView": "Ctrl+Shift+2",
     "zoomIn": "Ctrl++",
     "zoomOut": "Ctrl+-",
     "fitPage": "Ctrl+0",

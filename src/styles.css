@@ -1112,6 +1112,51 @@ textarea:disabled {
   touch-action: none;
 }
 
+.canvas-area {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: row;
+  position: relative;
+}
+
+.canvas-area > .canvas-host {
+  flex: 1 1 0;
+  min-width: 0;
+}
+
+.canvas-area > .canvas-reference {
+  flex: 0 0 var(--reference-width, 50%);
+  min-width: 0;
+  border-left: 1px solid var(--border-soft);
+}
+
+.canvas-reference .canvas-interaction {
+  pointer-events: none;
+}
+
+.canvas-area > .canvas-split-resizer {
+  flex: 0 0 5px;
+  cursor: col-resize;
+  background: transparent;
+  position: relative;
+  z-index: 2;
+}
+
+.canvas-split-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 2px;
+  background: var(--border-soft);
+  transition: background 120ms ease;
+}
+
+.canvas-split-resizer:hover::after,
+.canvas-split-resizer.is-dragging::after {
+  background: rgba(53, 194, 161, 0.55);
+}
+
 .canvas-host canvas {
   position: absolute;
   inset: 0;
@@ -1120,41 +1165,41 @@ textarea:disabled {
   display: block;
 }
 
-.canvas-host #canvas-pdf,
-.canvas-host #canvas-content {
+.canvas-host .canvas-pdf,
+.canvas-host .canvas-content {
   pointer-events: none;
 }
 
-.canvas-host #canvas-interaction {
+.canvas-host .canvas-interaction {
   pointer-events: auto;
   cursor: default;
 }
 
-.canvas-host[data-cursor="crosshair"] #canvas-interaction {
+.canvas-host[data-cursor="crosshair"] .canvas-interaction {
   cursor: crosshair;
 }
-.canvas-host[data-cursor="grab"] #canvas-interaction {
+.canvas-host[data-cursor="grab"] .canvas-interaction {
   cursor: grab;
 }
-.canvas-host[data-cursor="grabbing"] #canvas-interaction {
+.canvas-host[data-cursor="grabbing"] .canvas-interaction {
   cursor: grabbing;
 }
-.canvas-host[data-cursor="move"] #canvas-interaction {
+.canvas-host[data-cursor="move"] .canvas-interaction {
   cursor: move;
 }
-.canvas-host[data-cursor="text"] #canvas-interaction {
+.canvas-host[data-cursor="text"] .canvas-interaction {
   cursor: text;
 }
-.canvas-host[data-cursor="nwse-resize"] #canvas-interaction {
+.canvas-host[data-cursor="nwse-resize"] .canvas-interaction {
   cursor: nwse-resize;
 }
-.canvas-host[data-cursor="nesw-resize"] #canvas-interaction {
+.canvas-host[data-cursor="nesw-resize"] .canvas-interaction {
   cursor: nesw-resize;
 }
-.canvas-host[data-cursor="ns-resize"] #canvas-interaction {
+.canvas-host[data-cursor="ns-resize"] .canvas-interaction {
   cursor: ns-resize;
 }
-.canvas-host[data-cursor="ew-resize"] #canvas-interaction {
+.canvas-host[data-cursor="ew-resize"] .canvas-interaction {
   cursor: ew-resize;
 }
 

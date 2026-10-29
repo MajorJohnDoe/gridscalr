@@ -38,7 +38,10 @@ export interface ShellRefs {
   contextBar: HTMLElement;
   inspector: HTMLElement;
   inspectorRestore: HTMLButtonElement;
+  canvasArea: HTMLElement;
   canvasHost: HTMLElement;
+  referenceHost: HTMLElement;
+  splitResizer: HTMLElement;
   markupsResizer: HTMLElement;
   markupsPanel: HTMLElement;
   welcome: HTMLElement;
@@ -166,14 +169,24 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const main = el("main", "main-area");
   const contextBar = el("div", "context-bar");
+  const canvasArea = el("div", "canvas-area");
   const canvasHost = el("div", "canvas-host");
+  const referenceHost = el("div", "canvas-host canvas-reference hidden");
+  referenceHost.setAttribute("aria-label", "Reference view");
+  const splitResizer = el("div", "canvas-split-resizer hidden");
+  splitResizer.title = "Resize reference view";
+  splitResizer.setAttribute("role", "separator");
+  splitResizer.setAttribute("aria-label", "Resize reference view");
+  splitResizer.setAttribute("aria-orientation", "vertical");
+  splitResizer.tabIndex = 0;
+  canvasArea.append(canvasHost, splitResizer, referenceHost);
   const markupsResizer = el("div", "markups-resizer");
   markupsResizer.hidden = true;
   markupsResizer.title = "Resize Markups list";
   const markupsPanel = el("section", "markups-panel");
   markupsPanel.hidden = true;
   markupsPanel.setAttribute("aria-label", "Markups list");
-  main.append(contextBar, canvasHost, markupsResizer, markupsPanel);
+  main.append(contextBar, canvasArea, markupsResizer, markupsPanel);
 
   const inspector = el("aside", "inspector");
   inspector.setAttribute("aria-label", "Properties");
@@ -310,7 +323,10 @@ export function createShell(root: HTMLElement): ShellRefs {
     contextBar,
     inspector,
     inspectorRestore,
+    canvasArea,
     canvasHost,
+    referenceHost,
+    splitResizer,
     markupsResizer,
     markupsPanel,
     welcome,

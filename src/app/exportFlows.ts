@@ -9,14 +9,17 @@ import { exportQuantityReportPdf } from "../pdf/reportPdf";
 import { serializeQuantityCsv } from "../report/csv";
 import { serializeMarkupCsv } from "../report/markupCsv";
 import { buildQuantityReport } from "../report/reportModel";
+import { exportQuantityWorkbook } from "../report/xlsx";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 
-export type ExportKind = "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf";
+export type ExportKind =
+  "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf" | "quantity-xlsx";
 
 const JSON_FILTERS = [{ name: "JSON project", extensions: ["json"] }];
 const CSV_FILTERS = [{ name: "CSV markups", extensions: ["csv"] }];
 const QUANTITY_CSV_FILTERS = [{ name: "Quantity CSV", extensions: ["csv"] }];
+const XLSX_FILTERS = [{ name: "Excel workbook", extensions: ["xlsx"] }];
 const PNG_FILTERS = [{ name: "PNG image", extensions: ["png"] }];
 const PDF_FILTERS = [{ name: "PDF document", extensions: ["pdf"] }];
 
@@ -52,6 +55,20 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
         forbiddenPaths: protectedPaths,
       });
       if (path) toast("Quantity report exported to CSV.", "success");
+      return;
+    }
+
+    if (kind === "quantity-xlsx") {
+      const report = buildQuantityReport(project);
+      const bytes = exportQuantityWorkbook(project, report);
+      const path = await saveBinaryFile(
+        bytes,
+        `${safe}-quantities.xlsx`,
+        XLSX_FILTERS,
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        { forbiddenPaths: protectedPaths },
+      );
+      if (path) toast("Quantity workbook exported to Excel.", "success");
       return;
     }
 

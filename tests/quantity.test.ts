@@ -8,7 +8,7 @@ import {
   layersForKind,
   setLayerVisibleOnPage,
 } from "../src/model/layers";
-import { calculateQuantities } from "../src/model/quantity";
+import { calculateQuantities, calculateQuantitiesByPage } from "../src/model/quantity";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -437,5 +437,47 @@ describe("quantity rows", () => {
     expect(row.wasteQuantity).toBe(0);
     expect(row.roundingStep).toBe(0);
     expect(row.orderQuantity).toBeCloseTo(row.net);
+  });
+});
+
+describe("quantity rows by page", () => {
+  it("groups the same measurements by page without double counting", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    lengthItem(project, { categoryId: floor, room: "A", page: 1 });
+    lengthItem(project, { categoryId: floor, room: "A", page: 2 });
+    areaItem(project, { categoryId: floor, room: "A", page: 2 });
+
+    const summary = calculateQuantitiesByPage(project);
+    expect(summary.rows).toHaveLength(3);
+    expect(summary.pages.map((page) => page.page)).toEqual([1, 2]);
+    expect(summary.pages[0].rows[0].type).toBe("length");
+    expect(summary.pages[1].rows.map((row) => row.type).sort()).toEqual(["area", "length"]);
+    expect(summary.pages[1].totals.find((total) => total.type === "length")?.items).toBe(1);
+    expect(summary.pages[0].rows[0].pageName).toBe("Page 1");
+  });
+
+  it("uses page names and location labels in the page sections", () => {
+    const project = makeProject();
+    project.pages["2"] = { name: "Mezzanine", building: "House A", floor: "Level 2" };
+    const floor = categoryId(project, "Floor");
+    lengthItem(project, { categoryId: floor, room: "A", page: 2 });
+
+    const page = calculateQuantitiesByPage(project).pages[0];
+    expect(page.pageName).toBe("Mezzanine");
+    expect(page.building).toBe("House A");
+    expect(page.floor).toBe("Level 2");
+  });
+
+  it("excludes hidden items and uncalibrated measurements like the main report", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    lengthItem(project, { categoryId: floor, room: "A", visible: false });
+    areaItem(project, { categoryId: floor, room: "A", scale: null });
+
+    const summary = calculateQuantitiesByPage(project);
+    expect(summary.rows).toHaveLength(0);
+    expect(summary.hiddenExcluded).toBe(1);
+    expect(summary.uncalibratedExcluded).toBe(1);
   });
 });

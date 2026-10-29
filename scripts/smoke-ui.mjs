@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
 import {
   launchBrowser,
   openDemoProject,
@@ -697,6 +698,14 @@ try {
     /-quantities\.csv$/,
     "expected a quantity CSV export",
   );
+  const quantityXlsx = await exportDownload("Quantities to Excel…");
+  assert.match(
+    quantityXlsx.suggestedFilename(),
+    /-quantities\.xlsx$/,
+    "expected a quantity XLSX export",
+  );
+  const workbookBytes = await readFile(await quantityXlsx.path());
+  assert.equal(workbookBytes.subarray(0, 2).toString(), "PK", "the XLSX export should be a ZIP");
   const quantityPdf = await exportDownload("Quantity report (PDF)");
   assert.match(
     quantityPdf.suggestedFilename(),

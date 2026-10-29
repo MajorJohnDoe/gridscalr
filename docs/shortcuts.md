@@ -56,6 +56,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Toggle left sidebar | `Ctrl+\` |
 | Toggle Properties panel | `Ctrl+Shift+\` |
 | Open Markups list | `Ctrl+L` |
+| Toggle split view | `Ctrl+Shift+2` |
 | Open Quantities | `Ctrl+Alt+Q` |
 
 ## Project and file

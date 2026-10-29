@@ -149,6 +149,15 @@ import {
 import { formatArea, formatLength, formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
+import {
+  clampZoom,
+  fitPageViewport,
+  pageToScreen as toScreenPoint,
+  screenToPage as toPagePoint,
+  viewportCenter,
+  zoomAt as zoomViewport,
+  type Viewport,
+} from "./viewport";
 import { calibrationDialog, textDialog } from "../ui/dialogs";
 import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
@@ -159,6 +168,15 @@ export interface CanvasHooks {
   ensurePageSize: (page: number) => void;
   onError?: (message: string) => void;
   onContextMenu?: (position: { page: Point; clientX: number; clientY: number }) => void;
+}
+
+export interface CanvasViewOptions {
+  /** The split reference pane renders the same scene but never edits it. */
+  readOnly?: boolean;
+  /** Optional viewport override used by the reference pane to stay centred on the primary view. */
+  view?: () => Viewport;
+  /** Base for the canvas element ids. Primary uses "canvas", the reference pane "reference". */
+  canvasIdPrefix?: string;
 }
 
 /** Dev-only coordinate bridge used by the Playwright canvas regression suite. */
@@ -256,6 +274,7 @@ export class CanvasView {
   private interactionCtx: CanvasRenderingContext2D;
   private loading: HTMLElement;
   private hooks: CanvasHooks;
+  private options: CanvasViewOptions;
   private observer: ResizeObserver;
   private unsubscribe: () => void;
   private width = 0;
@@ -283,17 +302,27 @@ export class CanvasView {
   private imageLoading = new Set<string>();
   private imageFailed = new Set<string>();
 
-  constructor(host: HTMLElement, hooks: CanvasHooks) {
+  constructor(host: HTMLElement, hooks: CanvasHooks, options: CanvasViewOptions = {}) {
     this.host = host;
     this.hooks = hooks;
+    this.options = options;
     this.base = document.createElement("canvas");
     this.content = document.createElement("canvas");
     this.interaction = document.createElement("canvas");
-    this.base.id = "canvas-pdf";
-    this.content.id = "canvas-content";
-    this.interaction.id = "canvas-interaction";
-    this.interaction.tabIndex = 0;
-    this.interaction.setAttribute("aria-label", "Drawing canvas");
+    const prefix = options.canvasIdPrefix ?? "canvas";
+    this.base.id = `${prefix}-pdf`;
+    this.content.id = `${prefix}-content`;
+    this.interaction.id = `${prefix}-interaction`;
+    this.base.className = "canvas-pdf";
+    this.content.className = "canvas-content";
+    this.interaction.className = "canvas-interaction";
+    if (options.readOnly) {
+      this.interaction.setAttribute("aria-label", "Reference drawing");
+      this.interaction.setAttribute("aria-hidden", "true");
+    } else {
+      this.interaction.tabIndex = 0;
+      this.interaction.setAttribute("aria-label", "Drawing canvas");
+    }
     host.append(this.base, this.content, this.interaction);
 
     this.baseCtx = this.base.getContext("2d")!;
@@ -343,14 +372,16 @@ export class CanvasView {
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
 
-    this.interaction.addEventListener("pointerdown", this.onPointerDown);
-    this.interaction.addEventListener("pointermove", this.onPointerMove);
-    this.interaction.addEventListener("pointerup", this.onPointerUp);
-    this.interaction.addEventListener("pointercancel", this.onPointerUp);
-    this.interaction.addEventListener("pointerleave", this.onPointerLeave);
-    this.interaction.addEventListener("dblclick", this.onDoubleClick);
-    this.interaction.addEventListener("wheel", this.onWheel, { passive: false });
-    this.interaction.addEventListener("contextmenu", this.onContextMenu);
+    if (!options.readOnly) {
+      this.interaction.addEventListener("pointerdown", this.onPointerDown);
+      this.interaction.addEventListener("pointermove", this.onPointerMove);
+      this.interaction.addEventListener("pointerup", this.onPointerUp);
+      this.interaction.addEventListener("pointercancel", this.onPointerUp);
+      this.interaction.addEventListener("pointerleave", this.onPointerLeave);
+      this.interaction.addEventListener("dblclick", this.onDoubleClick);
+      this.interaction.addEventListener("wheel", this.onWheel, { passive: false });
+      this.interaction.addEventListener("contextmenu", this.onContextMenu);
+    }
 
     this.unsubscribe = store.subscribe((reason) => this.onStoreChange(reason));
     this.resize();
@@ -361,10 +392,61 @@ export class CanvasView {
     });
   }
 
+  /** The viewport this canvas renders. The primary canvas follows the store. */
+  private get view(): Viewport {
+    return (
+      this.options.view?.() ?? {
+        page: store.ui.page,
+        zoom: store.ui.zoom,
+        panX: store.ui.panX,
+        panY: store.ui.panY,
+      }
+    );
+  }
+
+  private get viewPage(): number {
+    return this.view.page;
+  }
+
+  private get viewZoom(): number {
+    return this.view.zoom;
+  }
+
+  private get viewPanX(): number {
+    return this.view.panX;
+  }
+
+  private get viewPanY(): number {
+    return this.view.panY;
+  }
+
+  get viewportSize(): PageSize {
+    return { width: this.width, height: this.height };
+  }
+
+  get readOnly(): boolean {
+    return this.options.readOnly === true;
+  }
+
+  pageToScreen(point: Point): Point {
+    return toScreenPoint(this.view, point);
+  }
+
+  screenToPage(point: Point): Point {
+    return toPagePoint(this.view, point);
+  }
+
+  /** Zooms around a screen point owned by this canvas. */
+  zoomAtScreen(point: Point, factor: number): void {
+    if (this.readOnly) return;
+    const next = zoomViewport(this.view, point, factor);
+    store.setView(next.zoom, next.panX, next.panY);
+  }
+
   private onStoreChange(reason: string): void {
     if (reason === "cursor") return;
     this.editors.handleStoreChange(reason);
-    const page = store.ui.page;
+    const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
       this.lastRender = null;
       this.draft = null;
@@ -442,26 +524,21 @@ export class CanvasView {
   private pageSize(): PageSize | undefined {
     const project = store.project;
     if (!project) return undefined;
-    return this.hooks.getPageSize(store.ui.page);
+    return this.hooks.getPageSize(this.viewPage);
   }
 
   private ensurePageSize(): PageSize | undefined {
     const size = this.pageSize();
-    if (!size) this.hooks.ensurePageSize(store.ui.page);
+    if (!size) this.hooks.ensurePageSize(this.viewPage);
     return size;
   }
 
   fitPage(): boolean {
+    if (this.readOnly) return false;
     const size = this.ensurePageSize();
     if (!size || this.width < 1) return false;
-    const padding = 42;
-    const zoom = Math.max(
-      0.03,
-      Math.min((this.width - padding * 2) / size.width, (this.height - padding * 2) / size.height),
-    );
-    const panX = (this.width - size.width * zoom) / 2;
-    const panY = (this.height - size.height * zoom) / 2;
-    store.setView(zoom, panX, panY);
+    const view = fitPageViewport(size, this.width, this.height);
+    store.setView(view.zoom, view.panX, view.panY);
     return true;
   }
 
@@ -549,22 +626,22 @@ export class CanvasView {
   }
 
   private centerAtZoom(zoom: number): void {
+    if (this.readOnly) return;
     const size = this.pageSize();
     if (!size) return;
-    const centerPage = {
-      x: (this.width / 2 - store.ui.panX) / store.ui.zoom,
-      y: (this.height / 2 - store.ui.panY) / store.ui.zoom,
-    };
-    const panX = this.width / 2 - centerPage.x * zoom;
-    const panY = this.height / 2 - centerPage.y * zoom;
-    store.setView(zoom, panX, panY);
+    const centerPage = viewportCenter(this.view, this.width, this.height);
+    const clamped = clampZoom(zoom);
+    store.setView(
+      clamped,
+      this.width / 2 - centerPage.x * clamped,
+      this.height / 2 - centerPage.y * clamped,
+    );
   }
 
   private zoomAt(screen: Point, factor: number): void {
-    const { zoom, panX, panY } = store.ui;
-    const next = Math.max(0.03, Math.min(40, zoom * factor));
-    const page = { x: (screen.x - panX) / zoom, y: (screen.y - panY) / zoom };
-    store.setView(next, screen.x - page.x * next, screen.y - page.y * next);
+    if (this.readOnly) return;
+    const next = zoomViewport(this.view, screen, factor);
+    store.setView(next.zoom, next.panX, next.panY);
   }
 
   private localPoint(event: PointerEvent | WheelEvent | MouseEvent): Point {
@@ -573,24 +650,18 @@ export class CanvasView {
   }
 
   private toPage(screen: Point): Point {
-    return {
-      x: (screen.x - store.ui.panX) / store.ui.zoom,
-      y: (screen.y - store.ui.panY) / store.ui.zoom,
-    };
+    return toPagePoint(this.view, screen);
   }
 
   private toScreen(page: Point): Point {
-    return {
-      x: page.x * store.ui.zoom + store.ui.panX,
-      y: page.y * store.ui.zoom + store.ui.panY,
-    };
+    return toScreenPoint(this.view, page);
   }
 
   private pageLabelLayouts(): Map<string, LabelLayout> {
     const project = store.project;
     const size = this.pageSize();
     if (!project || !size) return new Map();
-    return layoutPageLabels(pageLabelSources(project, store.ui.page), {
+    return layoutPageLabels(pageLabelSources(project, this.viewPage), {
       pageSize: size,
       measure: measureLabelText,
       labelSize: project.settings.labelSize,
@@ -602,13 +673,13 @@ export class CanvasView {
    * add a screen-space cap here: it made the canvas disagree with the export.
    */
   private screenLabelBox(box: LabelBox, _metrics: LabelMetrics): LabelBox {
-    const zoom = store.ui.zoom;
+    const zoom = this.viewZoom;
     const centerX = box.x + box.width / 2;
     const centerY = box.y + box.height / 2;
     const width = box.width * zoom;
     const height = box.height * zoom;
-    const x = centerX * zoom + store.ui.panX - width / 2;
-    const y = centerY * zoom + store.ui.panY - height / 2;
+    const x = centerX * zoom + this.viewPanX - width / 2;
+    const y = centerY * zoom + this.viewPanY - height / 2;
     return {
       x,
       y,
@@ -633,6 +704,7 @@ export class CanvasView {
   }
 
   private updateCursor(): void {
+    if (this.readOnly) return;
     const tool = store.ui.activeTool;
     let cursor = "";
     if (this.crop.active) {
@@ -697,8 +769,8 @@ export class CanvasView {
       this.pan = {
         startX: event.clientX,
         startY: event.clientY,
-        panX: store.ui.panX,
-        panY: store.ui.panY,
+        panX: this.viewPanX,
+        panY: this.viewPanY,
       };
       this.capturePointer(event.pointerId);
       this.updateCursor();
@@ -772,7 +844,7 @@ export class CanvasView {
       } else if (
         polygonKind !== "length" &&
         this.draft.points.length >= 3 &&
-        distance(snapped, this.draft.points[0]) < 10 / store.ui.zoom
+        distance(snapped, this.draft.points[0]) < 10 / this.viewZoom
       ) {
         this.finishDraft();
         return;
@@ -816,8 +888,8 @@ export class CanvasView {
     }
 
     if (tool === "text") {
-      const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
-      if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, store.ui.page)) {
+      const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
+      if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPage)) {
         store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
         this.editors.startTextEdit(hit.item, hit.layer);
       } else {
@@ -1008,7 +1080,7 @@ export class CanvasView {
       }
     }
 
-    const hit = hitTest(project, store.ui.page, page, 7 / store.ui.zoom, {
+    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom, {
       includeLocked: true,
     });
     if (!hit) {
@@ -1046,7 +1118,7 @@ export class CanvasView {
         hit.item.kind === "line" ||
         hit.item.kind === "arrow" ||
         hit.item.kind === "pen");
-    const vertexIndex = vertexEditable ? findVertex(hit.item, page, 7 / store.ui.zoom) : -1;
+    const vertexIndex = vertexEditable ? findVertex(hit.item, page, 7 / this.viewZoom) : -1;
     const startSelection = resolveSelection(project, store.ui.selection)
       .filter((entry) => !entry.locked)
       .map((entry) => ({
@@ -1168,7 +1240,7 @@ export class CanvasView {
     if (this.pan) {
       const dx = event.clientX - this.pan.startX;
       const dy = event.clientY - this.pan.startY;
-      store.setView(store.ui.zoom, this.pan.panX + dx, this.pan.panY + dy);
+      store.setView(this.viewZoom, this.pan.panX + dx, this.pan.panY + dy);
       return;
     }
 
@@ -1214,7 +1286,7 @@ export class CanvasView {
         this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
-        if (distance(last, page) > 1.4 / store.ui.zoom) {
+        if (distance(last, page) > 1.4 / this.viewZoom) {
           this.draft.points.push({ ...page });
         }
         this.draft.cursor = page;
@@ -1257,7 +1329,7 @@ export class CanvasView {
         }
       }
       if (!this.hoverHandle && !this.hoverLabelResize) {
-        const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
+        const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
         store.setHover(
           hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null,
         );
@@ -1528,16 +1600,16 @@ export class CanvasView {
       return;
     }
     const rect = expandRect(marquee.start, marquee.current);
-    if (rect.width < 2 / store.ui.zoom && rect.height < 2 / store.ui.zoom) {
+    if (rect.width < 2 / this.viewZoom && rect.height < 2 / this.viewZoom) {
       this.updateCursor();
       this.drawInteraction();
       return;
     }
     const refs = marquee.additive ? [...store.ui.selection] : [];
     for (const layer of store.project.layers) {
-      if (!layerVisibleOnPage(layer, store.ui.page)) continue;
+      if (!layerVisibleOnPage(layer, this.viewPage)) continue;
       for (const item of layer.items) {
-        if (item.page !== store.ui.page || !itemIsVisible(item, layer)) continue;
+        if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
         const bounds = itemBounds(item);
         const intersects =
           bounds.max.x >= rect.x &&
@@ -1591,7 +1663,7 @@ export class CanvasView {
       return;
     }
 
-    const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
+    const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
     if (!hit || itemIsLocked(hit.item, hit.layer)) return;
     store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
 
@@ -1615,7 +1687,7 @@ export class CanvasView {
     const segment = findSegment(
       hit.item,
       page,
-      7 / store.ui.zoom,
+      7 / this.viewZoom,
       hit.item.kind === "area" ||
         hit.item.kind === "rect" ||
         hit.item.kind === "ellipse" ||
@@ -1654,7 +1726,7 @@ export class CanvasView {
       return;
     }
     const page = this.toPage(screen);
-    const hit = hitTest(project, store.ui.page, page, 7 / store.ui.zoom, {
+    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom, {
       includeLocked: true,
     });
     if (hit) {
@@ -1678,7 +1750,7 @@ export class CanvasView {
     }
     const dx = event.shiftKey ? event.deltaY : event.deltaX;
     const dy = event.shiftKey ? 0 : event.deltaY;
-    store.setView(store.ui.zoom, store.ui.panX - dx, store.ui.panY - dy);
+    store.setView(this.viewZoom, this.viewPanX - dx, this.viewPanY - dy);
   };
 
   private snapCandidates(): readonly SnapCandidate[] {
@@ -1687,12 +1759,12 @@ export class CanvasView {
     if (
       !this.snapCache ||
       this.snapCache.revision !== store.revision ||
-      this.snapCache.page !== store.ui.page
+      this.snapCache.page !== this.viewPage
     ) {
       this.snapCache = {
         revision: store.revision,
-        page: store.ui.page,
-        candidates: collectSnapCandidates(project, store.ui.page),
+        page: this.viewPage,
+        candidates: collectSnapCandidates(project, this.viewPage),
       };
     }
     return this.snapCache.candidates;
@@ -1709,7 +1781,7 @@ export class CanvasView {
       point,
       candidates,
       project.settings.snapTolerancePx ?? 8,
-      store.ui.zoom,
+      this.viewZoom,
     );
     if (!result) return point;
     this.snap = result;
@@ -1719,7 +1791,7 @@ export class CanvasView {
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {
     const project = store.project;
     if (!project) return;
-    const page = store.ui.page;
+    const page = this.viewPage;
     if (pageScaleLocked(project, page)) {
       this.draft = null;
       toast("This page scale is locked. Unlock it before calibrating.", "warning");
@@ -1772,7 +1844,7 @@ export class CanvasView {
   private editCalibration = async (): Promise<void> => {
     const project = store.project;
     if (!project) return;
-    const page = store.ui.page;
+    const page = this.viewPage;
     const calibration = pageCalibration(project, page);
     if (!calibration) return;
     if (pageScaleLocked(project, page)) {
@@ -1933,7 +2005,7 @@ export class CanvasView {
       return;
     }
     const found = findItem(project, connect.itemId);
-    if (!found || itemIsLocked(found.item, found.layer) || found.item.page !== store.ui.page) {
+    if (!found || itemIsLocked(found.item, found.layer) || found.item.page !== this.viewPage) {
       this.updateCursor();
       return;
     }
@@ -1968,10 +2040,10 @@ export class CanvasView {
     const layouts = this.pageLabelLayouts();
     for (let l = project.layers.length - 1; l >= 0; l--) {
       const layer = project.layers[l];
-      if (!layerVisibleOnPage(layer, store.ui.page) || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, this.viewPage) || layer.opacity <= 0) continue;
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
-        if (item.page !== store.ui.page || !itemIsVisible(item, layer)) continue;
+        if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
@@ -2023,20 +2095,20 @@ export class CanvasView {
     );
     if (
       active &&
-      (!layerVisibleOnPage(active, store.ui.page) || layerLockedOnPage(active, store.ui.page))
+      (!layerVisibleOnPage(active, this.viewPage) || layerLockedOnPage(active, this.viewPage))
     ) {
       toast(
-        `“${active.name}” is ${layerLockedOnPage(active, store.ui.page) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
+        `“${active.name}” is ${layerLockedOnPage(active, this.viewPage) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
         "warning",
       );
       return null;
     }
-    const projectPage = store.ui.page;
+    const projectPage = this.viewPage;
     let layerId = "";
     let itemId = "";
     const scale = pageScale(project, projectPage);
     store.mutate((project) => {
-      const layer = ensureActiveLayer(project, layerKind, store.ui.page);
+      const layer = ensureActiveLayer(project, layerKind, this.viewPage);
       const now = new Date().toISOString();
       const style = store.ui.style;
       const isMeasure = layerKind === "measure";
@@ -2122,7 +2194,7 @@ export class CanvasView {
       this.drawInteraction();
       return;
     }
-    const simplified = simplifyPolyline(points, 0.8 / store.ui.zoom);
+    const simplified = simplifyPolyline(points, 0.8 / this.viewZoom);
     this.createItem(kind, simplified);
     this.drawInteraction();
   }
@@ -2141,7 +2213,7 @@ export class CanvasView {
     const { kind, start, current } = this.draft;
     this.draft = null;
     this.snap = null;
-    if (distance(start, current) < 3 / store.ui.zoom) {
+    if (distance(start, current) < 3 / this.viewZoom) {
       this.drawInteraction();
       return;
     }
@@ -2158,7 +2230,7 @@ export class CanvasView {
     const start = this.draft.start;
     this.draft = null;
     this.snap = null;
-    if (distance(start, current) < 3 / store.ui.zoom) {
+    if (distance(start, current) < 3 / this.viewZoom) {
       this.drawInteraction();
       return;
     }
@@ -2222,7 +2294,7 @@ export class CanvasView {
     const { start, current } = this.draft;
     this.draft = null;
     this.snap = null;
-    if (distance(start, current) < 3 / store.ui.zoom) {
+    if (distance(start, current) < 3 / this.viewZoom) {
       this.drawInteraction();
       return;
     }
@@ -2361,6 +2433,8 @@ export class CanvasView {
 
   private schedulePdfRender(): void {
     if (!store.project) return;
+    const bounds = this.host.getBoundingClientRect();
+    if (bounds.width < 2 || bounds.height < 2) return;
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
     this.renderTimer = window.setTimeout(() => {
       this.renderTimer = null;
@@ -2372,12 +2446,14 @@ export class CanvasView {
     const renderer = this.hooks.getRenderer();
     const size = this.pageSize();
     if (!renderer || !size || !store.project) return;
-    const page = store.ui.page;
+    const bounds = this.host.getBoundingClientRect();
+    if (bounds.width < 2 || bounds.height < 2) return;
+    const page = this.viewPage;
     const crop = cropRectForView(
       size,
-      store.ui.zoom,
-      store.ui.panX,
-      store.ui.panY,
+      this.viewZoom,
+      this.viewPanX,
+      this.viewPanY,
       this.width,
       this.height,
       70,
@@ -2386,9 +2462,9 @@ export class CanvasView {
     this.rendering = true;
     this.loading.classList.add("is-visible");
     try {
-      const result = await renderer.renderCrop(page, crop, store.ui.zoom * this.dpr);
+      const result = await renderer.renderCrop(page, crop, this.viewZoom * this.dpr);
       if (generation !== this.renderGeneration) return;
-      if (page !== store.ui.page) return;
+      if (page !== this.viewPage) return;
       this.lastRender = result;
       this.drawBase();
     } catch (error) {
@@ -2427,7 +2503,7 @@ export class CanvasView {
     if (!project) return;
     const size = this.pageSize();
     if (!size) return;
-    const { zoom, panX, panY } = store.ui;
+    const { zoom, panX, panY } = this.view;
     const x = panX;
     const y = panY;
     const w = size.width * zoom;
@@ -2441,7 +2517,7 @@ export class CanvasView {
     ctx.fillRect(x, y, w, h);
     ctx.restore();
 
-    if (this.lastRender && this.lastRender.pageNumber === store.ui.page) {
+    if (this.lastRender && this.lastRender.pageNumber === this.viewPage) {
       const rect = this.lastRender.rect;
       ctx.drawImage(
         this.lastRender.canvas,
@@ -2497,7 +2573,7 @@ export class CanvasView {
     if (!project) return;
     const size = this.pageSize();
     if (!size) return;
-    const page = store.ui.page;
+    const page = this.viewPage;
     const labels = this.pageLabelLayouts();
 
     // Background images sit above the PDF but below every markup layer.
@@ -2590,7 +2666,7 @@ export class CanvasView {
     ) {
       return;
     }
-    const zoom = store.ui.zoom;
+    const zoom = this.viewZoom;
     const points = item.points.map((p) => this.toScreen(p));
     if (points.length === 0) return;
     const lineWidth = Math.max(1, item.strokeWidth * zoom);
@@ -3032,7 +3108,7 @@ export class CanvasView {
       leader,
       style,
       (point) => this.toScreen(point),
-      store.ui.zoom,
+      this.viewZoom,
     );
   }
 
@@ -3045,7 +3121,7 @@ export class CanvasView {
       ctx,
       layout,
       (point) => this.toScreen(point),
-      () => store.ui.zoom,
+      () => this.viewZoom,
       (box, metrics) => this.screenLabelBox(box, metrics),
     );
   }
@@ -3077,7 +3153,7 @@ export class CanvasView {
   private drawInteraction(): void {
     const ctx = this.interactionCtx;
     this.prepare(ctx);
-    if (!store.project) return;
+    if (this.readOnly || !store.project) return;
     if (this.crop.draw(ctx)) return;
     const selected = resolveSelection(store.project, store.ui.selection).filter(
       (entry) =>
@@ -3253,7 +3329,7 @@ export class CanvasView {
       ctx.arc(
         screen.x,
         screen.y,
-        Math.max(6, (COUNT_SYMBOL_RADIUS + 2) * store.ui.zoom),
+        Math.max(6, (COUNT_SYMBOL_RADIUS + 2) * this.viewZoom),
         0,
         Math.PI * 2,
       );
@@ -3286,9 +3362,9 @@ export class CanvasView {
 
   private drawDraft(ctx: CanvasRenderingContext2D): void {
     if (!this.draft) return;
-    const zoom = store.ui.zoom;
+    const zoom = this.viewZoom;
     const project = store.project!;
-    const scale = pageScale(project, store.ui.page);
+    const scale = pageScale(project, this.viewPage);
     const unit = project.settings.lengthUnit;
     const areaUnit = project.settings.areaUnit;
 
