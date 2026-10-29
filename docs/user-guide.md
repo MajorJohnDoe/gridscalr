@@ -37,6 +37,20 @@ Panels remember their width, height and collapsed state between sessions.
 
 The reference pane is for comparison only: selection, editing, layers and undo belong to the primary canvas. Closing split view does not change the drawing, the project or the undo history, and the split layout is not stored in the project file.
 
+## Compare revisions
+
+**File → Compare revisions…** opens another `.gridscalr` file as a session reference. The reference is never merged into the current project, and neither source drawing is modified. The comparison appears in a panel beside the canvas:
+
+- **Side by side** shows the current and reference page next to each other with the same pan, zoom and page.
+- **Overlay** stacks the reference over the current drawing. Use **Opacity** to make the reference lighter or heavier; white page areas are transparent in this mode.
+- **Changed**, **Added** and **Removed** count the differences. The list can be filtered to changes only, one status, or every item, including unchanged items.
+- Click a row to jump to that page and item. A reference-only item keeps its position on the reference page even when it no longer exists in the current project.
+- Warnings call out different page counts, drawing names and page scales.
+
+The comparison compares measurements, drawings, symbols and their properties. The visual pages show the source drawings; the **Differences** table lists the markup changes. It is not a semantic diff of the PDF's raw vector operators. Edits made while comparing refresh the list after a short pause, and **Refresh** forces it immediately.
+
+**Export PDF** writes `<project>-comparison.pdf` with a summary, page-by-page visuals, warnings and the difference table. The export refuses to overwrite either project's source drawings. Close the comparison with **Close comparison**; the split-view layout is restored if it was open before.
+
 ## Open drawings and projects
 
 ### New project

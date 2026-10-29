@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.7.3`.
+- Current app version: `0.8.0`.
 - Current project-file schema: `16`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 
@@ -179,6 +179,7 @@ src/app/App.ts             app wiring, file flows, shortcuts
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
+src/compare/               session reference loading, item matching and revision diff
 src/canvas/geometry.ts     crop, handle, rotation and colour helpers
 src/canvas/selectionHandles.ts selection and rotation handles
 src/canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
@@ -195,6 +196,7 @@ src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
 src/pdf/pdfExport.ts       flattened vector PDF export
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
+src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tables
 src/report/                pure report model, shared table rows, CSV and XLSX serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
 src/styles/help.css        help dialog, search, TOC and image lightbox
@@ -211,7 +213,8 @@ src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
 src/ui/statusBar.ts        page scale menu, cursor position and layer status
-src/ui/splitView.ts        synchronized read-only reference pane and divider
+src/ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
+src/ui/comparePanel.ts     revision summary, filters, difference list and controls
 src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
@@ -257,7 +260,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 ## Testing and fixtures
 
-- `npm test -- --run` runs the Vitest suite, including viewport math and XLSX package generation.
+- `npm test -- --run` runs the Vitest suite, including viewport math, revision matching and XLSX package generation.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback.
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items, crop and split view.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
@@ -287,6 +290,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.7.2:** complete — new application icon (measured area on a gridded plate), a regenerated demo project on schema 14, a public README, MIT license and third-party notices, and the community files. No schema change; the schema remains v14.
 - **0.7.3:** complete — synchronized read-only split view, a shared quantity/markup row model, and a six-sheet XLSX quantity workbook. The documentation now reflects schema 16. No schema change; the schema remains v16.
 - **0.7.1:** complete — the right panel gains **Properties** and **Project settings** buttons plus a restore tab when collapsed, the duplicate measurement units moved out of Properties, the layer explanation removed, and the redundant image and Canvas buttons removed from the context bar. Includes the 0.7.0 work: stamp and symbol corner resizing, schema 14 with optional `symbolSize` (missing means 24 pt), context-aware markup focus zoom, the page scale in the status bar, Created/Modified Markups columns with bulk actions, range selection, status/category/room context-menu actions, and the symbol library opened from the tool rail only.
+- **0.8.0:** complete — session-only revision comparison with side-by-side and overlay views, a markup difference list, warnings and a comparison PDF. No schema change; the schema remains v16.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 
