@@ -51,6 +51,12 @@ The comparison compares measurements, drawings, symbols and their properties. Th
 
 **Export PDF** writes `<project>-comparison.pdf` with a summary, page-by-page visuals, warnings and the difference table. The export refuses to overwrite either project's source drawings. Close the comparison with **Close comparison**; the split-view layout is restored if it was open before.
 
+## Search text
+
+**View → Search text…** (`Ctrl/Cmd+Shift+F`) searches the PDF text layer across every page. Type a room name, equipment tag, sheet number or phrase; results show the page and a snippet around each match. Select a result to jump to the page and highlight the matching text on the drawing. Use `↑` / `↓` and `Enter` to move through results without leaving the panel.
+
+Search covers digital PDF text layers, including text inside PDF plans. Scanned TIF pages and image-only PDF pages have no text layer yet, so they are listed as not searchable until OCR support arrives. The index is built locally in memory when the panel opens and is discarded when the project closes; it never leaves the machine.
+
 ## Open drawings and projects
 
 ### New project
