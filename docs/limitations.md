@@ -13,4 +13,6 @@
 - New sheets are always added after the existing pages. A page can be deleted explicitly: its measurements and page scale are removed, later measurements move down one page number, and the operation is not undoable. Pages cannot be inserted or reordered.
 - Count types are fixed to door, window, radiator, fixture, and other. Custom count types and count quantities greater than one piece per object are not supported yet.
 - The symbol library is built in and vector-only: custom symbol uploads and symbol quantities in the procurement report are not supported yet. Symbols can be resized by dragging a corner. The pictograms are original filled-vector interpretations, not certified SS-EN ISO 7010 reproductions.
-- XLSX is not supported; quantity reports are available as CSV and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step.
+- Quantity reports are available as CSV, XLSX and PDF. CSV uses comma separators because that is the documented interchange format, so Excel on a locale with another list separator may need an import step; the XLSX workbook does not have that problem.
+- The split reference pane is read-only and always shows the same page as the primary canvas. Independent page navigation in the two panes is not supported.
+- Revision comparison and OCR/full-text search are not implemented yet.

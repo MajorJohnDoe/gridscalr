@@ -109,9 +109,10 @@ Measurements without a page scale are excluded and reported in the dialog. Hidde
 
 ### 5. Export the procurement report
 
-Use **Quantities CSV** or **Quantity PDF** in the Quantities dialog, or **File → Export**.
+Use **Quantities CSV**, **Quantities to Excel…** or **Quantity PDF** in the Quantities dialog, or **File → Export**.
 
-- CSV is intended for spreadsheets and procurement tools. It uses UTF-8 with BOM, comma separators and point decimals.
+- CSV is intended for spreadsheet imports and simple procurement tools. It uses UTF-8 with BOM, comma separators and point decimals.
+- The Excel workbook is the usual handoff when the buyer wants to sort, filter or annotate the takeoff. It includes summary, category, room, page, markup and source-notes sheets, all derived from the same item data.
 - The PDF report is A4 portrait with category sections, subtotals, totals, repeated headers and page numbers.
 
 Reports always cover every page and every category. Dialog filters only affect the live summary, not the exported report.

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-29T14:18:45.188Z",
-  "appVersion": "0.7.2",
-  "sourceFingerprint": "52b770cdfa5fec4d993018df7790dd7d7bec1ee71c35b5739f5a3b045c13a5cb",
+  "generatedAt": "2026-10-29T18:22:18.071Z",
+  "appVersion": "0.7.3",
+  "sourceFingerprint": "f10c8b389a74faedbec96a22960a27bed573c0b37b20f7ebd63600b32f15a366",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -55,6 +55,12 @@
       "title": "Drawing export",
       "alt": "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
       "description": "Export visible markups as a flattened drawing PDF without modifying the source drawing."
+    },
+    {
+      "file": "split-view.png",
+      "title": "Synchronized split view",
+      "alt": "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom.",
+      "description": "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place."
     },
     {
       "file": "workflows-help.png",
