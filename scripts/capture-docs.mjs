@@ -3,6 +3,8 @@ import { docsSourceFingerprint } from "./docs-fingerprint.mjs";
 import { resolve } from "node:path";
 import {
   launchBrowser,
+  makeReferenceProject,
+  openCompareProject,
   openDemoProject,
   openMarkupsItem,
   repoRoot as root,
@@ -75,6 +77,13 @@ const shots = [
     alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom.",
     description:
       "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place.",
+  },
+  {
+    file: "compare.png",
+    title: "Revision comparison",
+    alt: "GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items.",
+    description:
+      "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF.",
   },
   {
     file: "workflows-help.png",
@@ -182,6 +191,20 @@ try {
   await page.waitForTimeout(350);
   await capture("split-view.png");
   await page.keyboard.press("Control+Shift+2");
+
+  const referencePath = await makeReferenceProject();
+  await openCompareProject(page, referencePath);
+  await waitForToastsGone(page);
+  await page.getByRole("button", { name: "Hide properties" }).click();
+  await page.locator('.compare-mode[data-mode="overlay"]').click();
+  await page.locator(".compare-opacity-input").fill("45");
+  await page.locator(".compare-row").first().click();
+  await page.keyboard.press("Escape");
+  await page.keyboard.press("Control+0");
+  await page.waitForTimeout(300);
+  await capture("compare.png");
+  await page.getByRole("button", { name: "Close comparison" }).click();
+  await page.locator(".compare-panel").waitFor({ state: "detached" });
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

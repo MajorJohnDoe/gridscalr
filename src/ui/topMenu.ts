@@ -85,6 +85,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action("New project…", actions.newProject, { shortcut: APP_SHORTCUTS.newProject }),
         action("Open project…", actions.openProject, { shortcut: APP_SHORTCUTS.openProject }),
         action("Open drawing…", actions.openPdf, { shortcut: APP_SHORTCUTS.openDrawing }),
+        action("Compare revisions…", actions.openCompare, { disabled: !hasProject }),
         {
           kind: "submenu",
           label: "Open recent",

@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import {
   launchBrowser,
+  makeReferenceProject,
+  openCompareProject,
   openDemoProject,
   repoRoot,
   startVite,
@@ -722,6 +724,31 @@ try {
   await drawingDialog.getByRole("button", { name: "Export" }).click();
   const drawingPdf = await drawingPending;
   assert.match(drawingPdf.suggestedFilename(), /-markups\.pdf$/, "expected a drawing PDF export");
+  await waitForToastsGone(page);
+
+  // Revision comparison: load a session reference, switch to overlay and export.
+  const referencePath = await makeReferenceProject();
+  await openCompareProject(page, referencePath);
+  const comparePanel = page.locator(".compare-panel");
+  assert.match(await comparePanel.innerText(), /CHANGED/i, "expected changed items");
+  await comparePanel.getByRole("button", { name: "Overlay" }).click();
+  assert.equal(
+    await page.locator(".canvas-area.is-compare-overlay").count(),
+    1,
+    "overlay mode should stack the reference pane",
+  );
+  await comparePanel.locator(".compare-row").first().click();
+  await waitForApp(page);
+  const comparisonDownload = page.waitForEvent("download");
+  await comparePanel.getByRole("button", { name: "Export PDF" }).click();
+  const comparisonPdf = await comparisonDownload;
+  assert.match(
+    comparisonPdf.suggestedFilename(),
+    /-comparison\.pdf$/,
+    "expected a comparison PDF export",
+  );
+  await comparePanel.getByRole("button", { name: "Close comparison" }).click();
+  await comparePanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
 
   // Page names and page duplication.
