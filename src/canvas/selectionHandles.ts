@@ -44,6 +44,9 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
   if (
     item.kind === "length" ||
     item.kind === "area" ||
+    item.kind === "radius" ||
+    item.kind === "diameter" ||
+    item.kind === "arc" ||
     item.kind === "cloud" ||
     (item.kind === "highlight" && item.highlightShape !== "stroke")
   ) {

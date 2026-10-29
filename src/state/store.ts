@@ -54,6 +54,9 @@ export type ToolId =
   | "length"
   | "area"
   | "count"
+  | "radius"
+  | "diameter"
+  | "arc"
   | "pen"
   | "line"
   | "arrow"
@@ -133,6 +136,9 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "length":
     case "area":
     case "count":
+    case "radius":
+    case "diameter":
+    case "arc":
     case "calibrate":
       return "measure";
     case "pen":

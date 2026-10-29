@@ -553,10 +553,36 @@ try {
   await page.waitForTimeout(150);
   assert.equal(await reference.isVisible(), false, "the reference pane should close");
 
+  // 11. Radius, diameter and arc measurements.
+  const beforeCurves = await itemIds();
+  await page.keyboard.press("q");
+  await clickPage({ x: 700, y: 250 });
+  await clickPage({ x: 760, y: 250 });
+  const radiusId = (await itemIds()).find((id) => !beforeCurves.includes(id));
+  assert.ok(radiusId, "a radius measurement should be created");
+  assert.equal((await itemById(radiusId)).kind, "radius");
+
+  const beforeDiameter = await itemIds();
+  await page.keyboard.press("w");
+  await clickPage({ x: 700, y: 350 });
+  await clickPage({ x: 740, y: 350 });
+  const diameterId = (await itemIds()).find((id) => !beforeDiameter.includes(id));
+  assert.ok(diameterId, "a diameter measurement should be created");
+  assert.equal((await itemById(diameterId)).kind, "diameter");
+
+  const beforeArc = await itemIds();
+  await page.keyboard.press("z");
+  await clickPage({ x: 650, y: 450 });
+  await clickPage({ x: 700, y: 400 });
+  await clickPage({ x: 750, y: 450 });
+  const arcId = (await itemIds()).find((id) => !beforeArc.includes(id));
+  assert.ok(arcId, "an arc measurement should be created");
+  assert.equal((await itemById(arcId)).kind, "arc");
+
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
+    "Canvas regression passed: length, area, radius, diameter, arc, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
   );
 } finally {
   await page?.close();

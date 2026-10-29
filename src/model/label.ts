@@ -109,6 +109,14 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
   if (item.kind === "rect" || item.kind === "ellipse") {
     return { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
   }
+  if (item.kind === "radius" || item.kind === "diameter") {
+    const center = points[0];
+    const edge = points[1] ?? center;
+    return { x: (center.x + edge.x) / 2, y: (center.y + edge.y) / 2 };
+  }
+  if (item.kind === "arc" && points.length >= 2) {
+    return points[Math.min(points.length - 1, 1)];
+  }
   if (item.kind === "length" || item.kind === "line" || item.kind === "arrow") {
     const index = Math.max(0, Math.floor((points.length - 1) / 2));
     const a = points[index];

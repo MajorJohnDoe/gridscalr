@@ -1,5 +1,8 @@
 import {
+  arcGeometry,
+  arcPolyline,
   arrowHeadGeometry,
+  circlePolyline,
   constrainAngle,
   distance,
   expandRect,
@@ -9,11 +12,13 @@ import {
   itemLocalBounds,
   itemLocalToPage,
   itemRotation,
+  measurementValue,
   midpoint,
   nearestPointOnSegment,
   normalizeDegrees,
   polylineLength,
   pointToItemLocal,
+  radiusCircle,
   rotatePoint,
   rotatePointsAround,
   simplifyPolyline,
@@ -191,6 +196,7 @@ export interface CanvasTestApi {
   labelScreenPoint(itemId: string): Point | null;
   labelResizeScreenPoint(itemId: string): Point | null;
   annotationScreenPoint(itemId: string): Point | null;
+  draftKind(): string | null;
   searchHighlights(): {
     page: number;
     rects: Array<{ x: number; y: number; width: number; height: number }>;
@@ -200,6 +206,7 @@ export interface CanvasTestApi {
 type Draft =
   | { kind: "calibrate"; points: Point[]; cursor: Point }
   | { kind: "length"; points: Point[]; cursor: Point }
+  | { kind: "radius" | "diameter" | "arc"; points: Point[]; cursor: Point }
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
   | { kind: "highlight"; points: Point[]; cursor: Point }
@@ -857,6 +864,42 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "radius" || tool === "diameter") {
+      const snapped = this.snapPoint(page);
+      if (!this.draft || (this.draft.kind !== "radius" && this.draft.kind !== "diameter")) {
+        this.draft = { kind: tool, points: [snapped], cursor: snapped };
+        this.drawInteraction();
+      } else {
+        const points = [this.draft.points[0], snapped];
+        this.draft = null;
+        this.snap = null;
+        this.createItem(tool, points);
+        this.drawInteraction();
+      }
+      return;
+    }
+
+    if (tool === "arc") {
+      const snapped = this.snapPoint(page);
+      if (!this.draft || this.draft.kind !== "arc") {
+        this.draft = { kind: "arc", points: [snapped], cursor: snapped };
+        this.drawInteraction();
+      } else {
+        this.draft.points.push(snapped);
+        this.draft.cursor = snapped;
+        if (this.draft.points.length >= 3) {
+          const points = this.draft.points.slice(0, 3);
+          this.draft = null;
+          this.snap = null;
+          const preview = { kind: "arc", points } as MarkupItem;
+          if (arcGeometry(preview)) this.createItem("arc", points);
+          else toast("Choose a third point that is not on the same line.", "warning");
+        }
+        this.drawInteraction();
+      }
+      return;
+    }
+
     if (tool === "area" && store.ui.measureAreaShape !== "polygon") {
       if (event.detail > 1) return;
       const snapped = this.snapPoint(page);
@@ -1169,6 +1212,9 @@ export class CanvasView {
       single &&
       (hit.item.kind === "length" ||
         hit.item.kind === "area" ||
+        hit.item.kind === "radius" ||
+        hit.item.kind === "diameter" ||
+        hit.item.kind === "arc" ||
         hit.item.kind === "cloud" ||
         hit.item.kind === "callout" ||
         (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
@@ -2066,6 +2112,7 @@ export class CanvasView {
       this.updateCursor();
       return;
     }
+    const circle = radiusCircle(found.item);
     const point =
       found.item.kind === "length"
         ? closestPointOnPolyline(found.item.points, page, false)
@@ -2075,7 +2122,11 @@ export class CanvasView {
               page,
               true,
             )
-          : found.item.points[0];
+          : found.item.kind === "arc"
+            ? closestPointOnPolyline(arcPolyline(found.item), page, false)
+            : circle
+              ? closestPointOnPolyline(circlePolyline(circle.center, circle.radius), page, true)
+              : found.item.points[0];
     if (!point) {
       this.updateCursor();
       return;
@@ -2101,7 +2152,7 @@ export class CanvasView {
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
         if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
-        if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
+        if (!isMeasurementKind(item.kind)) continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
         if (this.hitLabelBox(screen, this.screenLabelBox(layout.box, layout.metrics))) {
@@ -2365,6 +2416,28 @@ export class CanvasView {
       return;
     }
     if (!this.draft) return;
+    if (
+      this.draft.kind === "radius" ||
+      this.draft.kind === "diameter" ||
+      this.draft.kind === "arc"
+    ) {
+      const kind = this.draft.kind;
+      const points = dedupeLast(this.draft.points);
+      const minimum = kind === "arc" ? 3 : 2;
+      this.draft = null;
+      this.snap = null;
+      if (points.length >= minimum) {
+        const selected = points.slice(0, minimum);
+        const preview = { kind, points: selected } as MarkupItem;
+        if (kind !== "arc" || arcGeometry(preview)) this.createItem(kind, selected);
+        else toast("Choose a third point that is not on the same line.", "warning");
+      } else {
+        toast("Click the remaining measurement points.", "warning");
+      }
+      this.drawInteraction();
+      return;
+    }
+
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
     } else if (
@@ -2760,6 +2833,53 @@ export class CanvasView {
         this.drawEndpoints(ctx, points, item.color);
         break;
       }
+      case "radius":
+      case "diameter": {
+        const circle = radiusCircle(item);
+        if (!circle) break;
+        const center = this.toScreen(circle.center);
+        const edge = this.toScreen(circle.edge);
+        const opposite = this.toScreen({
+          x: circle.center.x - (circle.edge.x - circle.center.x),
+          y: circle.center.y - (circle.edge.y - circle.center.y),
+        });
+        ctx.beginPath();
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
+        ctx.arc(center.x, center.y, circle.radius * zoom, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        if (item.kind === "diameter") {
+          ctx.moveTo(opposite.x, opposite.y);
+          ctx.lineTo(edge.x, edge.y);
+        } else {
+          ctx.moveTo(center.x, center.y);
+          ctx.lineTo(edge.x, edge.y);
+        }
+        ctx.stroke();
+        this.drawEndpoints(
+          ctx,
+          item.kind === "diameter" ? [opposite, edge] : [center, edge],
+          item.color,
+        );
+        break;
+      }
+      case "arc": {
+        const curve = arcPolyline(item).map((point) => this.toScreen(point));
+        ctx.beginPath();
+        curve.forEach((point, index) =>
+          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+        );
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        this.drawEndpoints(ctx, [curve[0], curve[curve.length - 1]].filter(Boolean), item.color);
+        break;
+      }
       case "area": {
         const shape = areaShapeOf(item);
         const outline = areaOutline(item.points, shape).map((point) =>
@@ -3131,7 +3251,7 @@ export class CanvasView {
     }
     ctx.restore();
 
-    if (item.kind === "length" || item.kind === "area" || item.kind === "count") {
+    if (isMeasurementKind(item.kind)) {
       const layout = labels.get(item.id);
       if (layout && this.editors.editingLabelId !== item.id) {
         this.drawLabelLayout(ctx, layout);
@@ -3244,7 +3364,7 @@ export class CanvasView {
 
       if (selected.length === 1 && !selected[0].locked) {
         const item = selected[0].item;
-        const measured = item.kind === "length" || item.kind === "area" || item.kind === "count";
+        const measured = isMeasurementKind(item.kind);
         const handles = selectionHandles(item, (page) => this.toScreen(page));
         const rotation = handles.find((handle) => handle.role === "rotate");
         ctx.save();
@@ -3406,6 +3526,21 @@ export class CanvasView {
       );
       return;
     }
+    if (item.kind === "radius" || item.kind === "diameter") {
+      const circle = radiusCircle(item);
+      if (!circle) return;
+      const center = this.toScreen(circle.center);
+      ctx.arc(center.x, center.y, circle.radius * this.viewZoom, 0, Math.PI * 2);
+      return;
+    }
+    if (item.kind === "arc") {
+      arcPolyline(item).forEach((point, index) => {
+        const screen = this.toScreen(point);
+        if (index === 0) ctx.moveTo(screen.x, screen.y);
+        else ctx.lineTo(screen.x, screen.y);
+      });
+      return;
+    }
     if (item.kind === "length") {
       item.points.forEach((point, index) => {
         const screen = this.toScreen(itemLocalToPage(item, point));
@@ -3546,6 +3681,67 @@ export class CanvasView {
       return;
     }
 
+    if (
+      this.draft.kind === "radius" ||
+      this.draft.kind === "diameter" ||
+      this.draft.kind === "arc"
+    ) {
+      const points = this.draft.points.map((point) => this.toScreen(point));
+      const cursor = this.toScreen(this.draft.cursor);
+      const fake = {
+        kind: this.draft.kind,
+        points: [...this.draft.points, this.draft.cursor],
+      } as MarkupItem;
+      ctx.save();
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 1.6;
+      if (this.draft.kind === "arc") {
+        const curve = arcPolyline(fake).map((point) => this.toScreen(point));
+        ctx.beginPath();
+        curve.forEach((point, index) =>
+          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+        );
+        ctx.stroke();
+      } else {
+        const center = points[0];
+        const radius = Math.hypot(cursor.x - center.x, cursor.y - center.y);
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(center.x, center.y);
+        ctx.lineTo(cursor.x, cursor.y);
+        ctx.stroke();
+      }
+      const value = measurementValue(fake);
+      if (value !== null) {
+        const prefix =
+          this.draft.kind === "radius" ? "R " : this.draft.kind === "diameter" ? "Ø " : "Arc ";
+        const anchor =
+          this.draft.kind === "arc"
+            ? (this.draft.points[1] ?? this.draft.points[0])
+            : {
+                x: (this.draft.points[0].x + this.draft.cursor.x) / 2,
+                y: (this.draft.points[0].y + this.draft.cursor.y) / 2,
+              };
+        this.drawPreviewLabel(
+          ctx,
+          `${prefix}${formatLength(value, scale, unit, project.settings.smartLengthUnits)}`,
+          anchor,
+          ACCENT,
+        );
+      }
+      ctx.fillStyle = "#f7fbfc";
+      for (const point of points) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
+
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
       const pagePoints = [this.draft.start, this.draft.current];
@@ -3601,8 +3797,9 @@ export class CanvasView {
       return;
     }
 
-    const start = this.toScreen(this.draft.start);
-    const current = this.toScreen(this.draft.current);
+    const shapeDraft = this.draft as Extract<Draft, { start: Point; current: Point }>;
+    const start = this.toScreen(shapeDraft.start);
+    const current = this.toScreen(shapeDraft.current);
     ctx.save();
     ctx.strokeStyle = store.ui.style.color;
     ctx.fillStyle = hexAlpha(store.ui.style.color, store.ui.style.fillOpacity);
@@ -3693,6 +3890,7 @@ export class CanvasView {
           ? this.labelResizePoint(found.item)
           : null;
       },
+      draftKind: () => this.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
       annotationScreenPoint: (itemId) => {
         const project = store.project;

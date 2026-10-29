@@ -1,6 +1,7 @@
 import { distanceToAreaShape, areaShapeOf, pointInAreaShape } from "./area";
 import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import {
+  arcPolyline,
   distanceToPolyline,
   expandRect,
   itemBounds,
@@ -9,6 +10,7 @@ import {
   pointInPolygon,
   pointToItemLocal,
   pointToSegmentDistance,
+  radiusCircle,
 } from "./geometry";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import type { Layer, MarkupItem, Point, Project } from "./types";
@@ -54,6 +56,24 @@ function hitItem(
     const anchor = item.points[0];
     if (!anchor) return null;
     const distance = Math.hypot(localPoint.x - anchor.x, localPoint.y - anchor.y);
+    return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
+  if (item.kind === "radius" || item.kind === "diameter") {
+    const circle = radiusCircle(item);
+    if (!circle) return null;
+    const distanceFromCenter = Math.hypot(
+      localPoint.x - circle.center.x,
+      localPoint.y - circle.center.y,
+    );
+    const onCircle = Math.abs(distanceFromCenter - circle.radius);
+    const onLine = pointToSegmentDistance(localPoint, circle.center, circle.edge);
+    const distance = Math.min(onCircle, onLine);
+    return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
+  if (item.kind === "arc") {
+    const distance = distanceToPolyline(localPoint, arcPolyline(item), false);
     return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 

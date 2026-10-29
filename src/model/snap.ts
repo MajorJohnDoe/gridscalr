@@ -1,6 +1,13 @@
 import { areaShapeOf, rectangleCorners } from "./area";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
-import { distance, itemCorners, itemLocalToPage } from "./geometry";
+import {
+  arcPolyline,
+  circlePolyline,
+  distance,
+  itemCorners,
+  itemLocalToPage,
+  radiusCircle,
+} from "./geometry";
 import type { MarkupItem, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
 
@@ -81,6 +88,13 @@ function straightsForItem(item: MarkupItem): Segment[] {
       item,
       item.points.map((point) => itemLocalToPage(item, point)),
     );
+  }
+  if (item.kind === "radius" || item.kind === "diameter") {
+    const circle = radiusCircle(item);
+    return circle ? closedSegments(item, circlePolyline(circle.center, circle.radius)) : [];
+  }
+  if (item.kind === "arc") {
+    return openSegments(item, arcPolyline(item));
   }
   if (item.kind === "area") {
     const shape = areaShapeOf(item);

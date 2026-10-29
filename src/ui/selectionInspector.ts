@@ -760,7 +760,7 @@ export function selectionSection(
     styleRow.append(sizeField);
     section.append(styleRow);
 
-    if (item.kind === "length") {
+    if (isMeasurementKind(item.kind)) {
       const lineField = el("label", "field");
       lineField.append(el("span", "field-label", "Line style"));
       const lineStyle = el("select", "select");

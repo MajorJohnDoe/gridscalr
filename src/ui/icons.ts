@@ -7,6 +7,11 @@ const paths: Record<string, string> = {
   area: '<path d="m4 16 3-10 10-2 3 10-8 5-8-3Z"/><circle cx="7" cy="6" r="1.4" fill="currentColor"/><circle cx="17" cy="4" r="1.4" fill="currentColor"/><circle cx="20" cy="14" r="1.4" fill="currentColor"/><circle cx="12" cy="19" r="1.4" fill="currentColor"/>',
   count:
     '<circle cx="8" cy="8" r="2.2"/><circle cx="16" cy="8" r="2.2"/><circle cx="8" cy="16" r="2.2"/><circle cx="16" cy="16" r="2.2"/>',
+  radius:
+    '<circle cx="12" cy="12" r="8"/><path d="M12 12h8"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  diameter:
+    '<circle cx="12" cy="12" r="8"/><path d="M4 12h16"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  arc: '<path d="M4 17a8 8 0 0 1 16 0"/><circle cx="4" cy="17" r="1.4" fill="currentColor"/><circle cx="20" cy="17" r="1.4" fill="currentColor"/>',
   pen: '<path d="m4 20 1.5-5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18 4 20Z"/><path d="m14.5 6 3 3"/>',
   line: '<path d="M5 19 19 5"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/>',
   arrow: '<path d="M5 19 19 5"/><path d="M11 5h8v8"/>',

@@ -1,10 +1,10 @@
-export const SCHEMA_VERSION = 17 as const;
+export const SCHEMA_VERSION = 18 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
 export type LayerKind = "measure" | "draw";
 
-export type MeasurementKind = "length" | "area" | "count";
+export type MeasurementKind = "length" | "area" | "count" | "radius" | "diameter" | "arc";
 export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
 export type SymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
 export type InspectionStatus = "approved" | "not-approved" | "action-required" | "missing";

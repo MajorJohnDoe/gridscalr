@@ -9,6 +9,12 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
       return "area";
     case "count":
       return "count";
+    case "radius":
+      return "radius";
+    case "diameter":
+      return "diameter";
+    case "arc":
+      return "arc";
     case "pen":
       return "pen";
     case "line":

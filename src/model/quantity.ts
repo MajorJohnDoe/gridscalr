@@ -4,7 +4,7 @@ import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
 import { areaInUnit, lengthInUnit, unitLabel } from "./units";
-import { polylineLength } from "./geometry";
+import { measurementValue, polylineLength } from "./geometry";
 import type { MarkupItem, Project } from "./types";
 
 export type QuantityType = "length" | "area" | "count";
@@ -152,6 +152,7 @@ function roundUpToStep(value: number, step: number): number {
 
 function quantityType(item: MarkupItem): QuantityType | null {
   if (item.kind === "length" || item.kind === "area" || item.kind === "count") return item.kind;
+  if (item.kind === "radius" || item.kind === "diameter" || item.kind === "arc") return "length";
   return null;
 }
 
@@ -248,7 +249,11 @@ function forEachMeasuredItem(
           continue;
         }
         if (type === "length") {
-          gross = lengthInUnit(polylineLength(item.points), scale.pointsPerMeter, lengthUnit);
+          gross = lengthInUnit(
+            measurementValue(item) ?? polylineLength(item.points),
+            scale.pointsPerMeter,
+            lengthUnit,
+          );
         } else {
           const area = areaInUnit(
             areaValue(item.points, areaShapeOf(item)),
