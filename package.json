@@ -1,7 +1,7 @@
 {
   "name": "gridscalr",
   "private": true,
-  "version": "0.7.2",
+  "version": "0.7.3",
   "description": "Local-first PDF plan viewer with calibration, measurement and layered markup tools.",
   "license": "MIT",
   "author": "MajorJohnDoe",
@@ -51,6 +51,7 @@
     "@pdf-lib/fontkit": "^1.1.1",
     "@tauri-apps/api": "^2.12.4",
     "@tauri-apps/plugin-dialog": "^2.8.3",
+    "fflate": "^0.8.3",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "6.4.299"
   },
