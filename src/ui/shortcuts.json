@@ -43,6 +43,7 @@
     "fitPage": "Ctrl+0",
     "actualSize": "Ctrl+1",
     "markups": "Ctrl+L",
+    "searchText": "Ctrl+Shift+F",
     "quantities": "Ctrl+Alt+Q",
     "settings": "Ctrl+,",
     "userGuide": "F1",

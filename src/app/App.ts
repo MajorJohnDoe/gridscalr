@@ -122,6 +122,8 @@ import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SplitView } from "../ui/splitView";
 import { exportComparisonPdf } from "../pdf/comparePdf";
 import { ComparePanel } from "../ui/comparePanel";
+import { SearchPanel } from "../ui/searchPanel";
+import { PdfTextIndex, type SearchHit } from "../search/textIndex";
 import { compareRevisions, type DiffItem, type RevisionDiff } from "../compare/revisionDiff";
 import { openReferenceSession, type ReferenceSession } from "../compare/referenceSession";
 import { syncViewport } from "../canvas/viewport";
@@ -150,6 +152,10 @@ export class App {
   private referencePageSizes = new Map<number, PageSize>();
   private referenceSizePromises = new Map<number, Promise<PageSize | undefined>>();
   private referenceSizeEpoch = 0;
+  private textIndex: PdfTextIndex | null = null;
+  private searchPanel: SearchPanel | null = null;
+  private searchQuery = "";
+  private searchDebounce: number | null = null;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -209,6 +215,7 @@ export class App {
       },
       isSplitViewOpen: () => this.splitView.isOpen,
       openCompare: () => void this.openCompareFlow(),
+      openSearch: () => this.openSearchFlow(),
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
@@ -322,6 +329,7 @@ export class App {
         const autosaveError = store.consumeAutosaveError();
         if (autosaveError) toast(autosaveError, "warning");
       }
+      if (reason === "project" && this.searchPanel) this.closeSearch();
       if (
         this.compare &&
         (reason === "change" || reason === "project" || reason === "undo" || reason === "layers")
@@ -440,6 +448,11 @@ export class App {
       if (event.shiftKey && event.code === "Digit2") {
         event.preventDefault();
         this.actions.toggleSplitView();
+        return;
+      }
+      if (event.shiftKey && event.code === "KeyF") {
+        event.preventDefault();
+        this.openSearchFlow();
         return;
       }
       switch (key) {
@@ -778,6 +791,7 @@ export class App {
   }
 
   private async resetProject(): Promise<void> {
+    this.closeSearch();
     await this.closeCompare(false);
     this.splitView.setOpen(false);
     store.closeProject();
@@ -982,6 +996,7 @@ export class App {
     projectPath: string | null,
     dirty: boolean,
   ): Promise<void> {
+    this.closeSearch();
     const loaded: PDFDocumentProxy[] = [];
     const loadedById = new Map<string, PDFDocumentProxy>();
     const loadedByKey = new Map<string, PDFDocumentProxy>();
@@ -1783,6 +1798,78 @@ export class App {
     }
   }
 
+  private openSearchFlow(): void {
+    const project = store.project;
+    if (!project || !this.renderer) return;
+    if (this.searchPanel) {
+      this.searchPanel.focus();
+      return;
+    }
+    this.searchQuery = "";
+    const index = new PdfTextIndex(totalPageCount(project.documents), (page) =>
+      this.renderer!.getPage(page),
+    );
+    this.textIndex = index;
+    this.searchPanel = new SearchPanel(this.refs.canvasArea, {
+      onQuery: (query) => this.onSearchQuery(query),
+      onSelect: (hit) => void this.selectSearchHit(hit),
+      onClose: () => this.closeSearch(),
+    });
+    this.searchPanel.setProgress(0, index.pageCount);
+    this.searchPanel.setResults([], "", 0, index.pageCount);
+    void this.indexTextSearch(index);
+  }
+
+  private onSearchQuery(query: string): void {
+    this.searchQuery = query;
+    if (this.searchDebounce !== null) window.clearTimeout(this.searchDebounce);
+    this.searchDebounce = window.setTimeout(() => {
+      this.searchDebounce = null;
+      this.runSearch(query);
+    }, 120);
+  }
+
+  private runSearch(query: string): void {
+    const index = this.textIndex;
+    if (!index || !this.searchPanel) return;
+    this.searchPanel.setResults(index.search(query), query, index.indexedCount, index.pageCount);
+  }
+
+  private async indexTextSearch(index: PdfTextIndex): Promise<void> {
+    await index.indexAll((done, total) => {
+      if (this.textIndex !== index || !this.searchPanel) return;
+      this.searchPanel.setProgress(done, total);
+      if (this.searchQuery.trim()) this.runSearch(this.searchQuery);
+    });
+    if (this.textIndex !== index || !this.searchPanel) return;
+    this.searchPanel.setIndexComplete(index.indexedCount);
+    if (this.searchQuery.trim()) this.runSearch(this.searchQuery);
+  }
+
+  private async selectSearchHit(hit: SearchHit): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    if (hit.page < 1 || hit.page > totalPageCount(project.documents)) return;
+    await this.enqueuePageSize(hit.page);
+    if (store.ui.page !== hit.page) store.setPage(hit.page);
+    this.canvas.setSearchHits(hit.page, hit.rects);
+    this.canvas.focusBounds(hit.bounds);
+    this.canvas.invalidate();
+  }
+
+  private closeSearch(): void {
+    if (this.searchDebounce !== null) {
+      window.clearTimeout(this.searchDebounce);
+      this.searchDebounce = null;
+    }
+    this.searchPanel?.destroy();
+    this.searchPanel = null;
+    this.textIndex?.dispose();
+    this.textIndex = null;
+    this.searchQuery = "";
+    this.canvas.clearSearchHits();
+  }
+
   private async openCompareFlow(): Promise<void> {
     if (!store.project) return;
     try {
@@ -2073,6 +2160,7 @@ export class App {
     this.unlistenClose = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
+    this.closeSearch();
     this.comparePanel?.destroy();
     this.comparePanel = null;
     if (this.compare) void this.compare.destroy();

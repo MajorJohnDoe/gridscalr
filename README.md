@@ -56,6 +56,8 @@ before the first launch. Linux and macOS builds can be produced from source.
 - Compare a saved revision in side-by-side or overlay mode, review changed,
   added and removed markups, and export a comparison PDF without touching either
   source drawing.
+- Search the PDF text layer across every page, jump to a highlighted result, and
+  keep the index local. Scanned pages are ready for the OCR step.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
 - Undo/redo, autosave recovery, recent files, and the user guide bundled under
@@ -87,13 +89,14 @@ calculated from item data.
 | ![Primary canvas and a read-only reference pane showing the same plan at the same pan and zoom](docs/screenshots/split-view.png) | **Procurement workbook.** Export summary, category, room, page, markup and source-notes sheets from the same takeoff data. |
 | **Compare while you work.** The reference pane follows every pan, zoom and page change and never edits the project. | **No second source of truth.** The XLSX workbook is generated on demand from the measurements. |
 
-| Revision comparison | Differences at a glance |
+| Revision comparison | Full-text search |
 | --- | --- |
-| ![Current plan overlaid with a reference revision and a comparison panel listing changed, added and removed items](docs/screenshots/compare.png) | **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. |
-| **No merge, no source changes.** The reference stays session-only and both drawings remain read-only. | **Export the review.** Write a comparison PDF with visuals, warnings and the difference table. |
+| ![Current plan overlaid with a reference revision and a comparison panel listing changed, added and removed items](docs/screenshots/compare.png) | ![Search panel with an Office query and a highlighted match on the drawing](docs/screenshots/search.png) |
+| **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. | **Find text fast.** Search every PDF text layer and highlight the exact result on the plan. |
+| **No merge, no source changes.** The reference stays session-only and both drawings remain read-only. | **Local index.** Text is extracted in memory; scanned pages are the next OCR step. |
 
 More screens, including the Markups table, the symbol library, revision
-comparison and the in-app workflows, are captured in
+comparison, full-text search and the in-app workflows, are captured in
 [docs/screenshots](docs/screenshots).
 
 ## Requirements
@@ -194,7 +197,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.8.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.9.0_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a

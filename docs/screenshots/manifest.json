@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-29T18:48:50.134Z",
-  "appVersion": "0.8.0",
-  "sourceFingerprint": "2da7ab7cbf3c75e7eb7e4c03c86ac6d3457889bc207dcc13f2bac2b0d3582919",
+  "generatedAt": "2026-10-29T19:13:46.608Z",
+  "appVersion": "0.9.0",
+  "sourceFingerprint": "3820e02975016b51d2b0bf7a8eb380f054e2d40cb26fb3f6f9e0ca70e0c65f9b",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -67,6 +67,12 @@
       "title": "Revision comparison",
       "alt": "GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items.",
       "description": "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF."
+    },
+    {
+      "file": "search.png",
+      "title": "Full-text search",
+      "alt": "GridScalr search panel with a text query, page results and a highlighted match on the drawing.",
+      "description": "Search the PDF text layer across every page and jump to a highlighted result."
     },
     {
       "file": "workflows-help.png",

@@ -86,6 +86,12 @@ const shots = [
       "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF.",
   },
   {
+    file: "search.png",
+    title: "Full-text search",
+    alt: "GridScalr search panel with a text query, page results and a highlighted match on the drawing.",
+    description: "Search the PDF text layer across every page and jump to a highlighted result.",
+  },
+  {
     file: "workflows-help.png",
     title: "Workflows in the help dialog",
     alt: "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
@@ -205,6 +211,18 @@ try {
   await capture("compare.png");
   await page.getByRole("button", { name: "Close comparison" }).click();
   await page.locator(".compare-panel").waitFor({ state: "detached" });
+
+  await page.keyboard.press("Control+Shift+f");
+  await page.locator(".search-panel").waitFor();
+  await page.getByLabel("Search drawing text").fill("Office");
+  await page.waitForFunction(() => document.querySelectorAll(".search-result").length > 0, null, {
+    timeout: 15000,
+  });
+  await page.locator(".search-result").first().click();
+  await page.waitForTimeout(300);
+  await capture("search.png");
+  await page.getByRole("button", { name: "Close search" }).click();
+  await page.locator(".search-panel").waitFor({ state: "detached" });
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

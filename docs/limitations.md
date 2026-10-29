@@ -17,4 +17,4 @@
 - The split reference pane is read-only and always shows the same page as the primary canvas. Independent page navigation in the two panes is not supported.
 - Revision comparison compares measurement and markup data plus the rendered source pages. It does not perform a semantic diff of the PDF's raw vector operators. Comparison visual pages show the source drawings; markup changes are listed in the difference table.
 - A comparison opens the reference project's source drawings as well as the project file. If those drawings have moved, the reference cannot be loaded until they are restored or the project is reopened from its original location.
-- OCR and full-text search are not implemented yet.
+- Full-text search covers PDF text layers only. Scanned TIF pages and image-only PDF pages are not searchable until the OCR index is added.

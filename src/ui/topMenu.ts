@@ -229,6 +229,11 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           disabled: !hasProject,
         }),
         separator(),
+        action("Search text…", actions.openSearch, {
+          shortcut: APP_SHORTCUTS.searchText,
+          disabled: !hasProject,
+        }),
+        separator(),
         action("Markups list…", actions.toggleMarkups, {
           shortcut: APP_SHORTCUTS.markups,
           disabled: !hasProject,
