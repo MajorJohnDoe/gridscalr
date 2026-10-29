@@ -443,8 +443,15 @@ export class CanvasView {
     store.setView(next.zoom, next.panX, next.panY);
   }
 
+  /** Hidden reference panes skip drawing and rendering until they are shown again. */
+  private get isVisible(): boolean {
+    const bounds = this.host.getBoundingClientRect();
+    return bounds.width >= 2 && bounds.height >= 2;
+  }
+
   private onStoreChange(reason: string): void {
     if (reason === "cursor") return;
+    if (this.readOnly && !this.isVisible) return;
     this.editors.handleStoreChange(reason);
     const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
@@ -496,6 +503,7 @@ export class CanvasView {
   }
 
   invalidate(): void {
+    if (this.readOnly && !this.isVisible) return;
     this.drawAll();
     this.schedulePdfRender();
   }
