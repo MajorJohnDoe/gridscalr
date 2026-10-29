@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.11.0** · Project-file schema: **18**
+Current version: **0.12.0** · Project-file schema: **19**
 
 ## Product principles
 
@@ -47,18 +47,17 @@ milestone:
 | 0.9.0 | Local PDF text-layer search with highlighted hits | Complete | v16 |
 | 0.10.0 | Bundled English/Swedish OCR for scanned pages, stored as a rebuildable schema 17 index | Complete | v17 |
 | 0.11.0 | Radius, diameter and three-point arc measurements with labels, quantities and PDF export | Complete | v18 |
+| 0.12.0 | Angle, slope and volume measurements with their own quantity units and depth input | Complete | v19 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.11.0. The candidates below are ordered by
+There is no committed milestone after 0.12.0. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **Angle, slope and volume measurements**, with the quantity and unit model
-   that each dimension needs.
-2. **Custom count types** and count quantities greater than one piece per object.
+1. **Custom count types** and count quantities greater than one piece per object.
 3. **Semantic PDF vector comparison** as a separate spike. It needs extraction and
    indexing of PDF operators and must not block other work.
 4. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF

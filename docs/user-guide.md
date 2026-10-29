@@ -173,6 +173,18 @@ Choose **Arc** (`Z`), then click the start point, a point on the curve, and the 
 
 Radius, diameter and arc measurements use the same category, room, label, visibility, lock, deduction-free quantity and PDF export paths as lengths. They are grouped as **length** rows in the quantity report.
 
+### Angle
+
+Choose **Angle** (`E`), then click the first ray, the vertex, and the second ray. The label shows the angle in degrees. The two rays and the angle arc are drawn on the plan; the three points stay editable.
+
+### Slope
+
+Choose **Slope** (`J`) and click the start and end of the run. The value is the drawn grade: rise over run, shown as a percentage, with the corresponding angle as secondary text. This is a geometric slope from the two points, not an elevation input.
+
+### Volume
+
+Choose **Volume** (`M`) and draw a polygon like an area, then finish with `Enter` or a double-click. A new volume starts with **Depth 1** in the project length unit. Set the real depth in **Properties → Depth**. The value is polygon area × depth, shown in the matching cubic unit (`m³`, `ft³` and so on). Volume uses the page scale, category, room and waste/rounding settings, and is exported in the drawing PDF.
+
 ### Area
 
 Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover.
@@ -492,7 +504,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 18 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, and adds radius, diameter and three-point arc measurement kinds. Older projects load normally and are migrated when opened.
+Schema version 19 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, and adds angle, slope and volume measurements with an optional `depth`. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
