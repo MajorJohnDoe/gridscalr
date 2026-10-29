@@ -191,6 +191,10 @@ export interface CanvasTestApi {
   labelScreenPoint(itemId: string): Point | null;
   labelResizeScreenPoint(itemId: string): Point | null;
   annotationScreenPoint(itemId: string): Point | null;
+  searchHighlights(): {
+    page: number;
+    rects: Array<{ x: number; y: number; width: number; height: number }>;
+  } | null;
 }
 
 type Draft =
@@ -294,6 +298,10 @@ export class CanvasView {
   private pointerScreen: Point | null = null;
   private snap: SnapResult | null = null;
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
+  private searchHits: {
+    page: number;
+    rects: Array<{ x: number; y: number; width: number; height: number }>;
+  } | null = null;
   private spaceDown = false;
   private renderedPage = 0;
   private editors: CanvasEditorController;
@@ -522,6 +530,21 @@ export class CanvasView {
     this.imageCache.clear();
     this.imageLoading.clear();
     this.imageFailed.clear();
+    this.invalidate();
+  }
+
+  /** Highlights text-search rectangles on one page. */
+  setSearchHits(
+    page: number,
+    rects: Array<{ x: number; y: number; width: number; height: number }>,
+  ): void {
+    this.searchHits = { page, rects };
+    this.invalidate();
+  }
+
+  clearSearchHits(): void {
+    if (!this.searchHits) return;
+    this.searchHits = null;
     this.invalidate();
   }
 
@@ -3189,6 +3212,20 @@ export class CanvasView {
     this.prepare(ctx);
     if (this.readOnly || !store.project) return;
     if (this.crop.draw(ctx)) return;
+    if (this.searchHits && this.searchHits.page === this.viewPage) {
+      ctx.save();
+      ctx.fillStyle = "rgba(242, 169, 59, 0.22)";
+      ctx.strokeStyle = "rgba(242, 169, 59, 0.9)";
+      ctx.lineWidth = 1.2;
+      for (const rect of this.searchHits.rects) {
+        const topLeft = this.toScreen({ x: rect.x, y: rect.y });
+        const width = rect.width * this.viewZoom;
+        const height = rect.height * this.viewZoom;
+        ctx.fillRect(topLeft.x, topLeft.y, width, height);
+        ctx.strokeRect(topLeft.x + 0.5, topLeft.y + 0.5, width - 1, height - 1);
+      }
+      ctx.restore();
+    }
     const selected = resolveSelection(store.project, store.ui.selection).filter(
       (entry) =>
         layerVisibleOnPage(entry.layer, entry.item.page) && itemIsVisible(entry.item, entry.layer),
@@ -3656,6 +3693,7 @@ export class CanvasView {
           ? this.labelResizePoint(found.item)
           : null;
       },
+      searchHighlights: () => this.searchHits,
       annotationScreenPoint: (itemId) => {
         const project = store.project;
         const found = project ? findItem(project, itemId) : undefined;

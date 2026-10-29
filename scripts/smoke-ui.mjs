@@ -751,6 +751,20 @@ try {
   await comparePanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
 
+  // Full-text search over the PDF text layer.
+  await page.keyboard.press("Control+Shift+f");
+  const searchPanel = page.locator(".search-panel");
+  await searchPanel.waitFor();
+  await searchPanel.getByLabel("Search drawing text").fill("Warehouse");
+  await page.waitForFunction(() => document.querySelectorAll(".search-result").length > 0, null, {
+    timeout: 15000,
+  });
+  assert.ok((await searchPanel.locator(".search-result").count()) > 0);
+  await searchPanel.locator(".search-result").first().click();
+  await waitForApp(page);
+  await searchPanel.getByRole("button", { name: "Close search" }).click();
+  await searchPanel.waitFor({ state: "detached" });
+
   // Page names and page duplication.
   await page.getByRole("button", { name: "Pages", exact: true }).click();
   await page.waitForTimeout(150);
