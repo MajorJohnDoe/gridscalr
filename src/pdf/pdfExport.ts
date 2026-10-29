@@ -49,6 +49,7 @@ import {
   type NormalizedCrop,
 } from "../model/export";
 import {
+  angleArcPolyline,
   arcPolyline,
   arrowHeadGeometry,
   itemCenter,
@@ -569,6 +570,17 @@ function drawItem(
         item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
       );
       break;
+    case "angle": {
+      const [start, vertex, end] = item.points;
+      if (!start || !vertex || !end) break;
+      drawPolyline(page, viewport, [vertex, start], color, width, opacity, false);
+      drawPolyline(page, viewport, [vertex, end], color, width, opacity, false);
+      drawPolyline(page, viewport, angleArcPolyline(item), color, width, opacity, false);
+      break;
+    }
+    case "slope":
+      drawPolyline(page, viewport, item.points, color, width, opacity, false);
+      break;
     case "radius":
     case "diameter": {
       const circle = radiusCircle(item);
@@ -616,7 +628,8 @@ function drawItem(
         item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
       );
       break;
-    case "area": {
+    case "area":
+    case "volume": {
       const shape = areaShapeOf(item);
       if (shape === "rectangle") {
         const corners = itemRectCorners(item);

@@ -25,6 +25,9 @@ const MEASUREMENT_KINDS: ReadonlySet<ItemKind> = new Set([
   "radius",
   "diameter",
   "arc",
+  "angle",
+  "slope",
+  "volume",
 ]);
 
 export function isMeasurementItem(item: MarkupItem): boolean {

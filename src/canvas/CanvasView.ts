@@ -1,4 +1,6 @@
 import {
+  angleArcPolyline,
+  angleValue,
   arcGeometry,
   arcPolyline,
   arrowHeadGeometry,
@@ -20,6 +22,7 @@ import {
   pointToItemLocal,
   radiusCircle,
   rotatePoint,
+  slopeValue,
   rotatePointsAround,
   simplifyPolyline,
   translatePoints,
@@ -152,7 +155,13 @@ import {
   symbolRenderPlan,
   symbolSizeOf,
 } from "../model/symbols";
-import { formatArea, formatLength, formatNumber } from "../model/units";
+import {
+  formatArea,
+  formatLength,
+  formatNumber,
+  volumeInUnit,
+  volumeUnitLabel,
+} from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import {
@@ -206,7 +215,9 @@ export interface CanvasTestApi {
 type Draft =
   | { kind: "calibrate"; points: Point[]; cursor: Point }
   | { kind: "length"; points: Point[]; cursor: Point }
-  | { kind: "radius" | "diameter" | "arc"; points: Point[]; cursor: Point }
+  | { kind: "radius" | "diameter" | "slope"; points: Point[]; cursor: Point }
+  | { kind: "arc" | "angle"; points: Point[]; cursor: Point }
+  | { kind: "volume"; points: Point[]; cursor: Point }
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
   | { kind: "highlight"; points: Point[]; cursor: Point }
@@ -879,6 +890,40 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "slope") {
+      const snapped = this.snapPoint(page);
+      if (!this.draft || this.draft.kind !== "slope") {
+        this.draft = { kind: "slope", points: [snapped], cursor: snapped };
+        this.drawInteraction();
+      } else {
+        const points = [this.draft.points[0], snapped];
+        this.draft = null;
+        this.snap = null;
+        this.createItem("slope", points);
+        this.drawInteraction();
+      }
+      return;
+    }
+
+    if (tool === "angle") {
+      const snapped = this.snapPoint(page);
+      if (!this.draft || this.draft.kind !== "angle") {
+        this.draft = { kind: "angle", points: [snapped], cursor: snapped };
+        this.drawInteraction();
+      } else {
+        this.draft.points.push(snapped);
+        this.draft.cursor = snapped;
+        if (this.draft.points.length >= 3) {
+          const points = this.draft.points.slice(0, 3);
+          this.draft = null;
+          this.snap = null;
+          this.createItem("angle", points);
+        }
+        this.drawInteraction();
+      }
+      return;
+    }
+
     if (tool === "arc") {
       const snapped = this.snapPoint(page);
       if (!this.draft || this.draft.kind !== "arc") {
@@ -918,11 +963,13 @@ export class CanvasView {
         ? "length"
         : tool === "area"
           ? "area"
-          : tool === "cloud"
-            ? "cloud"
-            : tool === "highlight" && store.ui.highlightShape === "polygon"
-              ? "highlight-polygon"
-              : null;
+          : tool === "volume"
+            ? "volume"
+            : tool === "cloud"
+              ? "cloud"
+              : tool === "highlight" && store.ui.highlightShape === "polygon"
+                ? "highlight-polygon"
+                : null;
     if (polygonKind) {
       if (event.detail > 1) {
         this.finishDraft();
@@ -1215,6 +1262,9 @@ export class CanvasView {
         hit.item.kind === "radius" ||
         hit.item.kind === "diameter" ||
         hit.item.kind === "arc" ||
+        hit.item.kind === "angle" ||
+        hit.item.kind === "slope" ||
+        hit.item.kind === "volume" ||
         hit.item.kind === "cloud" ||
         hit.item.kind === "callout" ||
         (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
@@ -1746,7 +1796,7 @@ export class CanvasView {
   private onDoubleClick = (event: MouseEvent): void => {
     if (!store.project || this.crop.active) return;
     const tool = store.ui.activeTool;
-    if (tool === "length" || tool === "area") {
+    if (tool === "length" || tool === "area" || tool === "volume") {
       this.finishDraft();
       return;
     }
@@ -2276,8 +2326,10 @@ export class CanvasView {
         scale: isMeasure && scale ? { ...scale } : null,
         categoryId: category?.id,
         room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
+        depth: kind === "volume" ? 1 : undefined,
         areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
-        areaShape: kind === "area" ? (options.areaShape ?? "polygon") : undefined,
+        areaShape:
+          kind === "area" || kind === "volume" ? (options.areaShape ?? "polygon") : undefined,
         countType: kind === "count" ? store.ui.measureCountType : undefined,
         symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
         status: kind === "symbol" ? options.status : undefined,
@@ -2419,11 +2471,13 @@ export class CanvasView {
     if (
       this.draft.kind === "radius" ||
       this.draft.kind === "diameter" ||
-      this.draft.kind === "arc"
+      this.draft.kind === "arc" ||
+      this.draft.kind === "angle" ||
+      this.draft.kind === "slope"
     ) {
       const kind = this.draft.kind;
       const points = dedupeLast(this.draft.points);
-      const minimum = kind === "arc" ? 3 : 2;
+      const minimum = kind === "arc" || kind === "angle" ? 3 : 2;
       this.draft = null;
       this.snap = null;
       if (points.length >= minimum) {
@@ -2443,6 +2497,7 @@ export class CanvasView {
     } else if (
       this.draft.kind === "length" ||
       this.draft.kind === "area" ||
+      this.draft.kind === "volume" ||
       this.draft.kind === "cloud" ||
       this.draft.kind === "highlight-polygon"
     ) {
@@ -2833,6 +2888,41 @@ export class CanvasView {
         this.drawEndpoints(ctx, points, item.color);
         break;
       }
+      case "angle": {
+        const [startPage, vertexPage, endPage] = item.points;
+        if (!startPage || !vertexPage || !endPage) break;
+        const start = this.toScreen(startPage);
+        const vertex = this.toScreen(vertexPage);
+        const end = this.toScreen(endPage);
+        ctx.beginPath();
+        ctx.moveTo(vertex.x, vertex.y);
+        ctx.lineTo(start.x, start.y);
+        ctx.moveTo(vertex.x, vertex.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+        const curve = angleArcPolyline(item).map((point) => this.toScreen(point));
+        if (curve.length > 1) {
+          ctx.beginPath();
+          curve.forEach((point, index) =>
+            index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+          );
+          ctx.stroke();
+        }
+        this.drawEndpoints(ctx, [start, vertex, end], item.color);
+        break;
+      }
+      case "slope": {
+        const [startPage, endPage] = item.points;
+        if (!startPage || !endPage) break;
+        const start = this.toScreen(startPage);
+        const end = this.toScreen(endPage);
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(end.x, end.y);
+        ctx.stroke();
+        this.drawEndpoints(ctx, [start, end], item.color);
+        break;
+      }
       case "radius":
       case "diameter": {
         const circle = radiusCircle(item);
@@ -2880,7 +2970,8 @@ export class CanvasView {
         this.drawEndpoints(ctx, [curve[0], curve[curve.length - 1]].filter(Boolean), item.color);
         break;
       }
-      case "area": {
+      case "area":
+      case "volume": {
         const shape = areaShapeOf(item);
         const outline = areaOutline(item.points, shape).map((point) =>
           this.toScreen(itemLocalToPage(item, point)),
@@ -3549,7 +3640,28 @@ export class CanvasView {
       });
       return;
     }
-    if (item.kind === "area") {
+    if (item.kind === "angle") {
+      const [startPage, vertexPage, endPage] = item.points;
+      if (!startPage || !vertexPage || !endPage) return;
+      const start = this.toScreen(startPage);
+      const vertex = this.toScreen(vertexPage);
+      const end = this.toScreen(endPage);
+      ctx.moveTo(vertex.x, vertex.y);
+      ctx.lineTo(start.x, start.y);
+      ctx.moveTo(vertex.x, vertex.y);
+      ctx.lineTo(end.x, end.y);
+      return;
+    }
+    if (item.kind === "slope") {
+      const [startPage, endPage] = item.points;
+      if (!startPage || !endPage) return;
+      const start = this.toScreen(startPage);
+      const end = this.toScreen(endPage);
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      return;
+    }
+    if (item.kind === "area" || item.kind === "volume") {
       areaOutline(item.points, areaShapeOf(item)).forEach((point, index) => {
         const screen = this.toScreen(itemLocalToPage(item, point));
         if (index === 0) ctx.moveTo(screen.x, screen.y);
@@ -3578,6 +3690,7 @@ export class CanvasView {
       this.draft.kind === "calibrate" ||
       this.draft.kind === "length" ||
       this.draft.kind === "area" ||
+      this.draft.kind === "volume" ||
       this.draft.kind === "cloud" ||
       this.draft.kind === "highlight-polygon"
     ) {
@@ -3592,6 +3705,7 @@ export class CanvasView {
         points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         if (
           (this.draft.kind === "area" ||
+            this.draft.kind === "volume" ||
             this.draft.kind === "cloud" ||
             this.draft.kind === "highlight-polygon") &&
           points.length >= 3
@@ -3609,7 +3723,9 @@ export class CanvasView {
       ctx.setLineDash([]);
 
       if (
-        (this.draft.kind === "area" || this.draft.kind === "highlight-polygon") &&
+        (this.draft.kind === "area" ||
+          this.draft.kind === "volume" ||
+          this.draft.kind === "highlight-polygon") &&
         points.length >= 2
       ) {
         const pagePoints = this.draft.points;
@@ -3630,6 +3746,20 @@ export class CanvasView {
           this.drawPreviewLabel(
             ctx,
             formatArea(areaValue(preview, "polygon"), scale, areaUnit),
+            areaCentroid(preview, "polygon"),
+            ACCENT,
+          );
+        } else if (preview.length >= 3 && this.draft.kind === "volume") {
+          const volume = volumeInUnit(
+            areaValue(preview, "polygon"),
+            scale?.pointsPerMeter ?? 1,
+            areaUnit,
+            1,
+            unit,
+          );
+          this.drawPreviewLabel(
+            ctx,
+            `${formatNumber(volume, 2)} ${volumeUnitLabel(areaUnit)}`,
             areaCentroid(preview, "polygon"),
             ACCENT,
           );
@@ -3733,6 +3863,64 @@ export class CanvasView {
       }
       ctx.fillStyle = "#f7fbfc";
       for (const point of points) {
+        ctx.beginPath();
+        ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (this.draft.kind === "slope" || this.draft.kind === "angle") {
+      const start = this.toScreen(this.draft.points[0]);
+      const cursor = this.toScreen(this.draft.cursor);
+      const fake = {
+        kind: this.draft.kind,
+        points: [...this.draft.points, this.draft.cursor],
+      } as MarkupItem;
+      ctx.save();
+      ctx.strokeStyle = ACCENT;
+      ctx.lineWidth = 1.6;
+      if (this.draft.kind === "slope") {
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(cursor.x, cursor.y);
+        ctx.stroke();
+        this.drawPreviewLabel(
+          ctx,
+          `${formatNumber(slopeValue(fake) ?? 0, 1)}%`,
+          { x: (start.x + cursor.x) / 2, y: (start.y + cursor.y) / 2 },
+          ACCENT,
+        );
+      } else {
+        const vertex =
+          this.draft.points[1] !== undefined ? this.toScreen(this.draft.points[1]) : cursor;
+        ctx.beginPath();
+        ctx.moveTo(start.x, start.y);
+        ctx.lineTo(vertex.x, vertex.y);
+        ctx.stroke();
+        if (this.draft.points.length >= 2) {
+          ctx.beginPath();
+          ctx.moveTo(vertex.x, vertex.y);
+          ctx.lineTo(cursor.x, cursor.y);
+          ctx.stroke();
+          const curve = angleArcPolyline({
+            kind: "angle",
+            points: [this.draft.points[0], this.draft.points[1], this.draft.cursor],
+          } as MarkupItem).map((point) => this.toScreen(point));
+          if (curve.length > 1) {
+            ctx.beginPath();
+            curve.forEach((point, index) =>
+              index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+            );
+            ctx.stroke();
+          }
+          this.drawPreviewLabel(ctx, `${formatNumber(angleValue(fake) ?? 0, 1)}°`, vertex, ACCENT);
+        }
+      }
+      ctx.fillStyle = "#f7fbfc";
+      for (const point of [start, cursor]) {
         ctx.beginPath();
         ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
         ctx.fill();

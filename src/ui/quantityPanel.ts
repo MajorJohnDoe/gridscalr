@@ -34,7 +34,7 @@ function resetFilters(): void {
 }
 
 function formatValue(value: number, type: QuantityType): string {
-  return formatNumber(value, type === "count" ? 0 : 2);
+  return formatNumber(value, type === "count" ? 0 : type === "angle" || type === "slope" ? 1 : 2);
 }
 
 function formatTotal(total: QuantityTypeTotal): string {
@@ -48,6 +48,9 @@ function plural(count: number, singular: string): string {
 function typeLabel(type: QuantityType): string {
   if (type === "length") return "Length";
   if (type === "area") return "Area";
+  if (type === "angle") return "Angle";
+  if (type === "slope") return "Slope";
+  if (type === "volume") return "Volume";
   return "Count";
 }
 

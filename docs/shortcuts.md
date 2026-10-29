@@ -15,6 +15,9 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Radius | `Q` |
 | Diameter | `W` |
 | Arc | `Z` |
+| Angle | `E` |
+| Slope | `J` |
+| Volume | `M` |
 | Pen | `P` |
 | Line | `I` |
 | Arrow | `U` |

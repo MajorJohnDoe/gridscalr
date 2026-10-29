@@ -34,8 +34,9 @@ function decimalNumber(value: number): ReportCell {
 
 /** Quantity cells keep the three-decimal display used by CSV, except counts. */
 function quantityNumber(value: number, type: QuantityType): ReportCell {
+  const decimals = type === "count" ? 0 : type === "angle" || type === "slope" ? 1 : 3;
   return {
-    text: type === "count" ? String(Math.round(value)) : value.toFixed(3),
+    text: type === "count" ? String(Math.round(value)) : value.toFixed(decimals),
     value: type === "count" ? Math.round(value) : value,
   };
 }

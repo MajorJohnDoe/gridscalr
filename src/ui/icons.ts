@@ -12,6 +12,9 @@ const paths: Record<string, string> = {
   diameter:
     '<circle cx="12" cy="12" r="8"/><path d="M4 12h16"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   arc: '<path d="M4 17a8 8 0 0 1 16 0"/><circle cx="4" cy="17" r="1.4" fill="currentColor"/><circle cx="20" cy="17" r="1.4" fill="currentColor"/>',
+  angle: '<path d="M4 19h16M4 19l12-12"/><path d="M11 19a7 7 0 0 1 2-5"/>',
+  slope: '<path d="M3 18 21 6"/><path d="M3 18h18M16 6h5v5"/>',
+  volume: '<path d="m12 3 8 4.5v9L12 21l-8-4.5v-9L12 3Z"/><path d="m4 7.5 8 4.5 8-4.5M12 12v9"/>',
   pen: '<path d="m4 20 1.5-5L16 4.5a2.1 2.1 0 0 1 3 3L8.5 18 4 20Z"/><path d="m14.5 6 3 3"/>',
   line: '<path d="M5 19 19 5"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/>',
   arrow: '<path d="M5 19 19 5"/><path d="M11 5h8v8"/>',

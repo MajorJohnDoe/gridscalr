@@ -18,5 +18,6 @@
 - Revision comparison compares measurement and markup data plus the rendered source pages. It does not perform a semantic diff of the PDF's raw vector operators. Comparison visual pages show the source drawings; markup changes are listed in the difference table.
 - A comparison opens the reference project's source drawings as well as the project file. If those drawings have moved, the reference cannot be loaded until they are restored or the project is reopened from its original location.
 - Radius, diameter and arc measurements are reported as **length** quantities; they do not create separate quantity types.
+- Slope is measured from the two drawn points (rise over run). There is no elevation input for a slope between two real-world levels. Volume depth is entered in the project length unit, not measured from the drawing.
 - OCR uses the bundled English (`eng`) and Swedish (`swe`) Tesseract models only. Other languages are not available, and OCR quality depends on scan resolution, contrast and skew.
 - OCR runs on demand and can take several seconds per scanned page. The stored OCR index makes later searches fast, but re-running OCR replaces the page's stored words.

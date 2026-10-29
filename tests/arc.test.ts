@@ -97,7 +97,7 @@ describe("radius, diameter and arc geometry", () => {
     );
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(18);
+    expect(parsed.schemaVersion).toBe(19);
     expect(parsed.layers.flatMap((entry) => entry.items.map((entry) => entry.kind))).toEqual(
       expect.arrayContaining(["radius", "diameter", "arc"]),
     );

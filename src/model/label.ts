@@ -99,7 +99,7 @@ export function labelMetrics(scale = 1): LabelMetrics {
 
 /** Label anchor in the same coordinate space as the supplied item points. */
 export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
-  if (item.kind === "area") {
+  if (item.kind === "area" || item.kind === "volume") {
     return areaCentroid(item.points, areaShapeOf(item));
   }
   if (item.kind === "count" && points.length === 1) {
@@ -116,6 +116,12 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
   }
   if (item.kind === "arc" && points.length >= 2) {
     return points[Math.min(points.length - 1, 1)];
+  }
+  if (item.kind === "angle" && points.length >= 2) {
+    return points[1];
+  }
+  if (item.kind === "slope" && points.length >= 2) {
+    return { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
   }
   if (item.kind === "length" || item.kind === "line" || item.kind === "arrow") {
     const index = Math.max(0, Math.floor((points.length - 1) / 2));

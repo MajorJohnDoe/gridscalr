@@ -96,6 +96,12 @@ function straightsForItem(item: MarkupItem): Segment[] {
   if (item.kind === "arc") {
     return openSegments(item, arcPolyline(item));
   }
+  if (item.kind === "angle" || item.kind === "slope") {
+    return openSegments(item, item.points);
+  }
+  if (item.kind === "volume") {
+    return closedSegments(item, item.points);
+  }
   if (item.kind === "area") {
     const shape = areaShapeOf(item);
     if (shape === "ellipse") return [];
