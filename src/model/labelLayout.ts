@@ -7,12 +7,13 @@ import {
   labelAnchorForPoints,
   labelBox,
   labelMetrics,
+  labelScaleForSize,
   measurementLabelParts,
   LABEL_CALIBRATION_OFFSET,
   LABEL_COLLISION_GAP,
   LABEL_INSIDE_MARGIN,
-  LABEL_MIN_SCALE,
   LABEL_PAGE_MARGIN,
+  LABEL_PRIMARY_SIZE,
   type LabelBox,
   type LabelMeasure,
   type LabelMetrics,
@@ -37,6 +38,8 @@ export interface LabelSource {
   labelAnchor?: Point;
   /** Line or outline used to find the nearest connection point. */
   outline?: Point[];
+  /** Per-measurement primary size in PDF points. Omit to use the project size. */
+  labelSize?: number;
   color: string;
 }
 
@@ -59,6 +62,8 @@ export interface LabelLayout {
 export interface LabelLayoutOptions {
   pageSize: PageSize;
   measure: LabelMeasure;
+  /** Project-wide primary size in PDF points. */
+  labelSize?: number;
 }
 
 export interface LabelSourceOptions {
@@ -71,10 +76,6 @@ export interface LabelSourceOptions {
 }
 
 export const CALIBRATION_LABEL_ID = "calibration";
-
-const LABEL_SCALES = [1, 0.95, 0.9, 0.85, LABEL_MIN_SCALE].filter(
-  (scale, index, values) => values.indexOf(scale) === index,
-);
 
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
@@ -113,6 +114,7 @@ export function pageLabelSources(
               : item.kind === "length"
                 ? item.points.map((point) => ({ ...point }))
                 : undefined,
+          labelSize: item.labelSize,
           color: item.color,
         });
       }
@@ -159,60 +161,61 @@ function layoutLabel(
   options: LabelLayoutOptions,
   occupied: Bounds[],
 ): LabelLayout {
+  // One size per label. The old placement loop shrank labels until they fit
+  // inside small areas, which made the same drawing produce inconsistent and
+  // barely readable text. A label now either fits at its real size or moves
+  // outside with a leader.
+  const scale = labelScaleForSize(source.labelSize ?? options.labelSize ?? LABEL_PRIMARY_SIZE);
+
   if (source.labelOffset) {
     const anchor = {
       x: source.anchor.x + source.labelOffset.x,
       y: source.anchor.y + source.labelOffset.y,
     };
     return clampToPage(
-      withLeader(buildLayout(source, 1, anchor, "line", options), source),
+      withLeader(buildLayout(source, scale, anchor, "line", options), source),
       options.pageSize,
     );
   }
   if (source.kind === "area") {
     const centers = [source.anchor, boundsCenter(source.obstacle)];
-    for (const scale of LABEL_SCALES) {
-      for (const center of centers) {
-        const layout = buildLayout(source, scale, center, "center", options);
-        if (
-          fitsInsideArea(layout.box, source) &&
-          fitsPage(layout.box, options.pageSize) &&
-          !collides(layout.box, occupied)
-        ) {
-          return layout;
-        }
+    for (const center of centers) {
+      const layout = buildLayout(source, scale, center, "center", options);
+      if (
+        fitsInsideArea(layout.box, source) &&
+        fitsPage(layout.box, options.pageSize) &&
+        !collides(layout.box, occupied)
+      ) {
+        return layout;
       }
     }
   } else {
-    const preferred = buildLayout(source, 1, source.anchor, "line", options);
+    const preferred = buildLayout(source, scale, source.anchor, "line", options);
     if (fitsPage(preferred.box, options.pageSize) && !collides(preferred.box, occupied)) {
       return preferred;
     }
 
     const oppositeAnchor = reflectPoint(source.anchor, boundsCenter(source.obstacle));
-    const opposite = buildLayout(source, 1, oppositeAnchor, "line", options);
+    const opposite = buildLayout(source, scale, oppositeAnchor, "line", options);
     if (fitsPage(opposite.box, options.pageSize) && !collides(opposite.box, occupied)) {
       return withLeader(opposite, source);
     }
   }
 
-  for (const scale of LABEL_SCALES) {
-    for (const anchor of outsideAnchors(source, scale, options.measure)) {
-      const layout = buildLayout(source, scale, anchor, "outside", options);
-      if (
-        fitsPage(layout.box, options.pageSize) &&
-        !overlapsSource(layout.box, source) &&
-        !collides(layout.box, occupied)
-      ) {
-        return withLeader(layout, source);
-      }
+  for (const anchor of outsideAnchors(source, scale, options.measure)) {
+    const layout = buildLayout(source, scale, anchor, "outside", options);
+    if (
+      fitsPage(layout.box, options.pageSize) &&
+      !overlapsSource(layout.box, source) &&
+      !collides(layout.box, occupied)
+    ) {
+      return withLeader(layout, source);
     }
   }
 
-  const fallbackScale = LABEL_SCALES[LABEL_SCALES.length - 1];
-  const fallbackAnchor = outsideAnchors(source, fallbackScale, options.measure)[0] ?? source.anchor;
+  const fallbackAnchor = outsideAnchors(source, scale, options.measure)[0] ?? source.anchor;
   const fallback = clampToPage(
-    buildLayout(source, fallbackScale, fallbackAnchor, "outside", options),
+    buildLayout(source, scale, fallbackAnchor, "outside", options),
     options.pageSize,
   );
   return withLeader(fallback, source);

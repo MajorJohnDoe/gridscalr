@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { layoutPageLabels, type LabelSource } from "../src/model/labelLayout";
 import type { Bounds } from "../src/model/geometry";
-import { LABEL_MIN_PRIMARY_SIZE, LABEL_PRIMARY_SIZE, type LabelMeasure } from "../src/model/label";
+import { LABEL_PRIMARY_SIZE, type LabelMeasure } from "../src/model/label";
 import type { PageSize } from "../src/model/types";
 
 const page: PageSize = { width: 300, height: 200 };
@@ -55,15 +55,51 @@ describe("measurement label placement", () => {
     expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(130);
   });
 
-  it("shrinks a label before moving it outside a smaller area", () => {
-    const layout = layoutOne(areaSource("medium", 100, 94, 145, 116));
+  it("keeps the full size and moves a label outside a smaller area", () => {
+    const source = areaSource("medium", 100, 94, 145, 116);
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("outside");
+    expect(layout.metrics.primarySize).toBe(LABEL_PRIMARY_SIZE);
+    expect(layout.leader).toBeDefined();
+    expect(overlaps(boxBounds(layout.box), source.obstacle)).toBe(false);
+  });
+
+  it("honours a per-measurement label size", () => {
+    const source = areaSource("sized", 100, 70, 200, 130);
+    source.labelSize = 12;
+    const layout = layoutOne(source);
 
     expect(layout.placement).toBe("center");
-    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
-    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(LABEL_MIN_PRIMARY_SIZE);
-    expect(layout.leader).toBeUndefined();
-    expect(layout.box.x).toBeGreaterThanOrEqual(100);
-    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(160);
+    expect(layout.metrics.primarySize).toBe(12);
+    expect(layout.box.width).toBeGreaterThan(
+      layoutPageLabels([{ ...source, labelSize: undefined }], { pageSize: page, measure }).get(
+        source.id,
+      )!.box.width,
+    );
+  });
+
+  it("uses the project label size when the item has no override", () => {
+    const source = areaSource("project-size", 100, 70, 200, 130);
+    const layout = layoutPageLabels([source], {
+      pageSize: page,
+      measure,
+      labelSize: 10,
+    }).get(source.id)!;
+
+    expect(layout.metrics.primarySize).toBe(10);
+  });
+
+  it("lets an item label size override the project size", () => {
+    const source = areaSource("override", 100, 70, 200, 130);
+    source.labelSize = 8;
+    const layout = layoutPageLabels([source], {
+      pageSize: page,
+      measure,
+      labelSize: 12,
+    }).get(source.id)!;
+
+    expect(layout.metrics.primarySize).toBe(8);
   });
 
   it("moves a label outside a tiny area with a leader line", () => {

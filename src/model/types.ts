@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 14 as const;
+export const SCHEMA_VERSION = 15 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -135,6 +135,8 @@ export interface MarkupItem {
   labelOffset?: Point;
   /** Measurements only: manual leader connection point in PDF coordinates. */
   labelAnchor?: Point;
+  /** Measurements only: label text size in PDF points. Missing uses the project size. */
+  labelSize?: number;
   /** Clouds only: fixed scallop radius in PDF points. Missing means automatic. */
   cloudRadius?: number;
   /** Callout and cloud text boxes only: fixed box width in PDF points. */
@@ -270,6 +272,10 @@ export interface ProjectSettings {
   areaUnit: AreaUnit;
   /** Show cm below 1 m and metres above 1 m on lengths and labels. */
   smartLengthUnits: boolean;
+  /** Primary measurement-label size in PDF points. */
+  labelSize: number;
+  /** Draw area labels as "P 14.48 m" instead of "Perimeter 14.48 m". */
+  compactAreaLabels: boolean;
   showGrid: boolean;
   showCalibration: boolean;
   snapToGeometry: boolean;

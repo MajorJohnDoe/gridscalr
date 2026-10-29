@@ -99,6 +99,53 @@ describe("project files", () => {
     expect(parseProject(JSON.stringify(raw)).settings.smartLengthUnits).toBe(true);
   });
 
+  it("round-trips measurement label sizes and compact area labels", () => {
+    const project = makeProject();
+    project.settings.labelSize = 9;
+    project.settings.compactAreaLabels = true;
+    project.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize = 11.5;
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.settings.labelSize).toBe(9);
+    expect(parsed.settings.compactAreaLabels).toBe(true);
+    expect(parsed.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize).toBe(11.5);
+
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 14;
+    delete raw.settings.labelSize;
+    delete raw.settings.compactAreaLabels;
+    delete raw.layers.find((layer: { kind: string }) => layer.kind === "measure").items[0]
+      .labelSize;
+    const old = parseProject(JSON.stringify(raw));
+    expect(old.settings.labelSize).toBe(6);
+    expect(old.settings.compactAreaLabels).toBe(false);
+    expect(
+      old.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize,
+    ).toBeUndefined();
+  });
+
+  it("clamps invalid stored label sizes and ignores them on drawings", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    const measure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
+    measure.items[0].labelSize = 200;
+    raw.settings.labelSize = 1;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.settings.labelSize).toBe(4);
+    expect(parsed.layers.find((layer) => layer.kind === "measure")!.items[0].labelSize).toBe(16);
+
+    raw.layers
+      .find((layer: { kind: string }) => layer.kind === "draw")
+      .items.push({
+        ...measure.items[0],
+        id: "item_draw",
+        kind: "rect",
+        labelSize: 12,
+      });
+    const withDrawing = parseProject(JSON.stringify(raw));
+    const draw = withDrawing.layers.find((layer) => layer.kind === "draw")!;
+    expect(draw.items.find((item) => item.id === "item_draw")?.labelSize).toBeUndefined();
+  });
+
   it("round-trips page names, page-scoped layer state and copied page references", () => {
     const project = makeProject();
     project.pages["1"].name = "Windows";

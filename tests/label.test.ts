@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  clampLabelSize,
   labelBox,
   labelMetrics,
-  LABEL_MIN_PRIMARY_SIZE,
+  labelMetricsForSize,
+  LABEL_MAX_SIZE,
+  LABEL_MIN_SIZE,
   LABEL_PADDING_X,
   LABEL_PRIMARY_SIZE,
   LABEL_SECONDARY_SIZE,
@@ -34,7 +37,15 @@ describe("measurement label geometry", () => {
     );
     expect(metrics.primarySize).toBeCloseTo(LABEL_PRIMARY_SIZE * scale);
     expect(metrics.secondarySize).toBeCloseTo(LABEL_SECONDARY_SIZE * scale);
-    expect(metrics.primarySize).toBeGreaterThanOrEqual(LABEL_MIN_PRIMARY_SIZE);
+  });
+
+  it("clamps stored label sizes to the supported paper-space range", () => {
+    expect(clampLabelSize(undefined)).toBe(LABEL_PRIMARY_SIZE);
+    expect(clampLabelSize(Number.NaN)).toBe(LABEL_PRIMARY_SIZE);
+    expect(clampLabelSize(1)).toBe(LABEL_MIN_SIZE);
+    expect(clampLabelSize(99)).toBe(LABEL_MAX_SIZE);
+    expect(labelMetricsForSize(12).primarySize).toBe(12);
+    expect(labelMetricsForSize(12).secondarySize).toBeCloseTo(LABEL_SECONDARY_SIZE * 2);
   });
 
   it("lays out a single-line label without reserving space for the second row", () => {

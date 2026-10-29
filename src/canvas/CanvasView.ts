@@ -24,11 +24,14 @@ import { areaCentroid, areaOutline, areaShapeOf, areaValue, rectangleCorners } f
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
+  clampLabelSize,
   labelAnchorForPoints,
   labelBox,
   labelMetrics,
+  labelScaleForSize,
   LABEL_CALIBRATION_OFFSET,
   LABEL_LINE_OFFSET,
+  LABEL_PRIMARY_SIZE,
   type LabelBox,
   type LabelMetrics,
 } from "../model/label";
@@ -44,6 +47,7 @@ import {
   addItem,
   ensureActiveLayer,
   findItem,
+  isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
   layerLockedOnPage,
@@ -161,6 +165,7 @@ export interface CanvasTestApi {
   pageSize(): PageSize | undefined;
   selectionHandles(itemId: string): Handle[] | null;
   labelScreenPoint(itemId: string): Point | null;
+  labelResizeScreenPoint(itemId: string): Point | null;
   annotationScreenPoint(itemId: string): Point | null;
 }
 
@@ -182,7 +187,14 @@ type Draft =
   | { kind: "area-ellipse"; start: Point; current: Point };
 
 interface DragState {
-  mode: "move" | "vertex" | "resize" | "rotate" | "label" | "measurement-label";
+  mode:
+    | "move"
+    | "vertex"
+    | "resize"
+    | "rotate"
+    | "label"
+    | "measurement-label"
+    | "measurement-label-size";
   itemId: string;
   layerId: string;
   vertexIndex: number;
@@ -200,6 +212,8 @@ interface DragState {
   startAngle?: number;
   startTextOffset?: Point;
   startLabelOffset?: Point;
+  startLabelSize?: number;
+  startLabelDistance?: number;
 }
 
 interface MarqueeState {
@@ -229,14 +243,6 @@ function symbolPath(data: string): Path2D {
   }
   return path;
 }
-/**
- * Screen-space ceiling for canvas measurement labels. Paper-space labels keep
- * their true scale in exported PDFs, but at high zoom they would otherwise
- * cover the area the user is drawing. The cap keeps the label readable while
- * leaving the plan visible.
- */
-const CANVAS_LABEL_MAX_PRIMARY_PX = 16;
-
 export class CanvasView {
   readonly host: HTMLElement;
   private base: HTMLCanvasElement;
@@ -267,6 +273,7 @@ export class CanvasView {
   private renderedPage = 0;
   private editors: CanvasEditorController;
   private hoverHandle: Handle | null = null;
+  private hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
   private crop: CropController;
   private imageCache = new Map<string, HTMLImageElement>();
@@ -318,6 +325,7 @@ export class CanvasView {
         this.marquee = null;
         this.pan = null;
         this.hoverHandle = null;
+        this.hoverLabelResize = false;
         this.snap = null;
         this.snapCache = null;
         store.clearSelection();
@@ -582,23 +590,20 @@ export class CanvasView {
     return layoutPageLabels(pageLabelSources(project, store.ui.page), {
       pageSize: size,
       measure: measureLabelText,
+      labelSize: project.settings.labelSize,
     });
   }
 
-  private labelScreenScale(metrics: LabelMetrics): number {
-    return Math.min(
-      store.ui.zoom,
-      CANVAS_LABEL_MAX_PRIMARY_PX / Math.max(0.1, metrics.primarySize),
-    );
-  }
-
-  private screenLabelBox(box: LabelBox, metrics: LabelMetrics): LabelBox {
+  /**
+   * Labels use the same paper-space size on screen and in PDF export. Do not
+   * add a screen-space cap here: it made the canvas disagree with the export.
+   */
+  private screenLabelBox(box: LabelBox, _metrics: LabelMetrics): LabelBox {
     const zoom = store.ui.zoom;
-    const scale = this.labelScreenScale(metrics);
     const centerX = box.x + box.width / 2;
     const centerY = box.y + box.height / 2;
-    const width = box.width * scale;
-    const height = box.height * scale;
+    const width = box.width * zoom;
+    const height = box.height * zoom;
     const x = centerX * zoom + store.ui.panX - width / 2;
     const y = centerY * zoom + store.ui.panY - height / 2;
     return {
@@ -606,10 +611,22 @@ export class CanvasView {
       y,
       width,
       height,
-      primaryCenterY: y + (box.primaryCenterY - box.y) * scale,
+      primaryCenterY: y + (box.primaryCenterY - box.y) * zoom,
       secondaryCenterY:
-        box.secondaryCenterY === undefined ? undefined : y + (box.secondaryCenterY - box.y) * scale,
+        box.secondaryCenterY === undefined ? undefined : y + (box.secondaryCenterY - box.y) * zoom,
     };
+  }
+
+  private labelResizePoint(item: MarkupItem): Point | null {
+    const layout = this.pageLabelLayouts().get(item.id);
+    if (!layout) return null;
+    const box = this.screenLabelBox(layout.box, layout.metrics);
+    return { x: box.x + box.width, y: box.y + box.height };
+  }
+
+  private labelResizeAt(item: MarkupItem, screen: Point): boolean {
+    const point = this.labelResizePoint(item);
+    return point ? distance(screen, point) <= 9 : false;
   }
 
   private updateCursor(): void {
@@ -623,10 +640,12 @@ export class CanvasView {
       else if (this.drag.mode === "resize" && this.drag.handle) {
         cursor = cursorForRole(this.drag.handle);
       } else if (this.drag.mode === "vertex") cursor = "crosshair";
+      else if (this.drag.mode === "measurement-label-size") cursor = "nwse-resize";
       else cursor = "move";
     } else if (this.labelConnect) cursor = "crosshair";
     else if (this.spaceDown || tool === "pan") cursor = "grab";
     else if (this.marquee) cursor = "crosshair";
+    else if (this.hoverLabelResize) cursor = "nwse-resize";
     else if (this.hoverHandle) cursor = this.hoverHandle.cursor;
     else if (tool === "text") cursor = "text";
     else if (tool !== "select") cursor = "crosshair";
@@ -855,6 +874,44 @@ export class CanvasView {
     const primary = store.primarySelection;
 
     if (!modifier) {
+      if (selection.length === 1 && primary) {
+        const found = findItem(project, primary.itemId);
+        if (
+          found &&
+          isMeasurementKind(found.item.kind) &&
+          !itemIsLocked(found.item, found.layer) &&
+          this.labelResizeAt(found.item, screen)
+        ) {
+          const layout = this.pageLabelLayouts().get(found.item.id);
+          if (layout) {
+            const center = {
+              x: layout.box.x + layout.box.width / 2,
+              y: layout.box.y + layout.box.height / 2,
+            };
+            const startLabelSize = clampLabelSize(
+              found.item.labelSize ?? project.settings.labelSize,
+            );
+            store.beginGesture();
+            this.drag = {
+              mode: "measurement-label-size",
+              itemId: found.item.id,
+              layerId: found.layer.id,
+              vertexIndex: -1,
+              last: page,
+              moved: false,
+              startPage: page,
+              startLabelSize,
+              startLabelDistance: Math.max(0.001, Math.hypot(page.x - center.x, page.y - center.y)),
+              center,
+            };
+            this.capturePointer(event.pointerId);
+            this.updateCursor();
+            this.drawInteraction();
+            return;
+          }
+        }
+      }
+
       const labelHit = this.measurementLabelHit(screen);
       if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
         const layout = this.pageLabelLayouts().get(labelHit.item.id);
@@ -1170,14 +1227,20 @@ export class CanvasView {
 
     if (tool === "select") {
       this.hoverHandle = null;
+      this.hoverLabelResize = false;
       const selection = store.primarySelection;
       if (selection && store.ui.selection.length === 1) {
         const found = findItem(store.project, selection.itemId);
         if (found && !itemIsLocked(found.item, found.layer)) {
-          this.hoverHandle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
+          if (isMeasurementKind(found.item.kind)) {
+            this.hoverLabelResize = this.labelResizeAt(found.item, screen);
+          }
+          if (!this.hoverLabelResize) {
+            this.hoverHandle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
+          }
         }
       }
-      if (!this.hoverHandle) {
+      if (!this.hoverHandle && !this.hoverLabelResize) {
         const hit = hitTest(store.project, store.ui.page, page, 7 / store.ui.zoom);
         store.setHover(
           hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null,
@@ -1189,6 +1252,7 @@ export class CanvasView {
       this.drawInteraction();
     } else {
       this.hoverHandle = null;
+      this.hoverLabelResize = false;
       this.updateCursor();
     }
   };
@@ -1241,6 +1305,17 @@ export class CanvasView {
       };
       item.updatedAt = new Date().toISOString();
       this.drag.moved = true;
+    } else if (this.drag.mode === "measurement-label-size") {
+      if (!this.drag.center || !this.drag.startLabelDistance) return;
+      const pointerDistance = Math.hypot(page.x - this.drag.center.x, page.y - this.drag.center.y);
+      const factor = pointerDistance / this.drag.startLabelDistance;
+      const next = clampLabelSize((this.drag.startLabelSize ?? LABEL_PRIMARY_SIZE) * factor);
+      const rounded = Math.round(next * 10) / 10;
+      if (rounded !== item.labelSize) {
+        item.labelSize = rounded;
+        item.updatedAt = new Date().toISOString();
+        this.drag.moved = true;
+      }
     } else if (this.drag.mode === "resize") {
       this.applyResize(item, page, shiftKey);
     } else {
@@ -1421,6 +1496,7 @@ export class CanvasView {
     const moved = this.drag.moved;
     this.drag = null;
     this.hoverHandle = null;
+    this.hoverLabelResize = false;
     if (moved) store.endGesture("change");
     else store.cancelGesture();
     this.updateCursor();
@@ -1468,6 +1544,7 @@ export class CanvasView {
     if (this.drag || this.pan) return;
     this.pointerScreen = null;
     this.hoverHandle = null;
+    this.hoverLabelResize = false;
     store.setCursor(null);
     store.setHover(null);
     this.snap = null;
@@ -2898,7 +2975,7 @@ export class CanvasView {
       ctx,
       layout,
       (point) => this.toScreen(point),
-      (metrics) => this.labelScreenScale(metrics),
+      () => store.ui.zoom,
       (box, metrics) => this.screenLabelBox(box, metrics),
     );
   }
@@ -2910,7 +2987,8 @@ export class CanvasView {
     color: string,
     secondary?: string,
   ): void {
-    const metrics = labelMetrics(1);
+    const scale = labelScaleForSize(store.project?.settings.labelSize ?? LABEL_PRIMARY_SIZE);
+    const metrics = labelMetrics(scale);
     const primaryWidth = measureLabelText(text, metrics.primarySize, "bold");
     const secondaryWidth = secondary
       ? measureLabelText(secondary, metrics.secondarySize, "regular")
@@ -2920,7 +2998,7 @@ export class CanvasView {
       text,
       secondary,
       color,
-      box: labelBox(anchor, primaryWidth, secondaryWidth, secondary),
+      box: labelBox(anchor, primaryWidth, secondaryWidth, secondary, scale),
       metrics,
       placement: "center",
     });
@@ -2986,6 +3064,24 @@ export class CanvasView {
             ctx.beginPath();
             ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
             ctx.fill();
+            ctx.stroke();
+          }
+        }
+        if (measured) {
+          const resizePoint = this.labelResizePoint(item);
+          if (resizePoint) {
+            ctx.fillStyle = this.hoverLabelResize ? ACCENT : "#101619";
+            ctx.strokeStyle = ACCENT;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.rect(resizePoint.x - 4, resizePoint.y - 4, 8, 8);
+            ctx.fill();
+            ctx.stroke();
+            ctx.strokeStyle = this.hoverLabelResize ? "#101619" : ACCENT;
+            ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(resizePoint.x - 1.5, resizePoint.y + 1.5);
+            ctx.lineTo(resizePoint.x + 1.5, resizePoint.y - 1.5);
             ctx.stroke();
           }
         }
@@ -3372,6 +3468,13 @@ export class CanvasView {
         if (!layout) return null;
         const box = this.screenLabelBox(layout.box, layout.metrics);
         return { x: box.x + box.width / 2, y: box.y + box.height / 2 };
+      },
+      labelResizeScreenPoint: (itemId) => {
+        const project = store.project;
+        const found = project ? findItem(project, itemId) : undefined;
+        return found && isMeasurementKind(found.item.kind)
+          ? this.labelResizePoint(found.item)
+          : null;
       },
       annotationScreenPoint: (itemId) => {
         const project = store.project;

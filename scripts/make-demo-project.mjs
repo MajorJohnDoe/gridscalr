@@ -290,6 +290,8 @@ const project = {
     lengthUnit: "m",
     areaUnit: "m2",
     smartLengthUnits: true,
+    labelSize: 6,
+    compactAreaLabels: true,
     showGrid: false,
     showCalibration: false,
     snapToGeometry: true,

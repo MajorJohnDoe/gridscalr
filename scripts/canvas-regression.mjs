@@ -374,6 +374,37 @@ try {
   await page.waitForTimeout(100);
   assert.equal((await itemById("item_floor_living")).label, "QA living");
 
+  // 6b. Measurement labels resize from their corner handle and reset to the
+  // project size. The stored size is paper-space, so export uses it too.
+  await page.keyboard.press("v");
+  await selectItem("item_floor_living");
+  const resizeLabelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelResizeScreenPoint("item_floor_living"),
+  );
+  assert.ok(resizeLabelPoint, "the measurement label should have a resize handle");
+  const sizeBeforeDrag = (await itemById("item_floor_living")).labelSize ?? 6;
+  await dragScreen(
+    {
+      x: canvasBox.x + resizeLabelPoint.x,
+      y: canvasBox.y + resizeLabelPoint.y,
+    },
+    {
+      x: canvasBox.x + resizeLabelPoint.x + 48,
+      y: canvasBox.y + resizeLabelPoint.y + 36,
+    },
+  );
+  const resizedLabel = await itemById("item_floor_living");
+  assert.ok(
+    resizedLabel.labelSize > sizeBeforeDrag,
+    "dragging the label corner should increase its paper-space size",
+  );
+  await page.getByRole("button", { name: "Reset label size" }).click();
+  assert.equal(
+    (await itemById("item_floor_living")).labelSize,
+    undefined,
+    "Reset label size should remove the per-measurement override",
+  );
+
   // 7. Callout text editor.
   await page.keyboard.press("v");
   await selectItem("item_callout_window");

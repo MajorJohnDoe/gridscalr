@@ -135,7 +135,7 @@ Measurements are added to the active **measurement layer**. Choose the target la
 
 Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to finish. Hold `Shift` to constrain the angle.
 
-Length measurements can use a **Solid** or **Dashed** line style in Properties. With **Smart length labels** enabled, metric lengths below 1 m use the project unit and longer values switch to metres. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging works for areas and counts.
+Length measurements can use a **Solid** or **Dashed** line style in Properties. With **Smart length labels** enabled, metric lengths below 1 m use the project unit and longer values switch to metres. Drag the value label on the plan to place it manually when labels are tight; a visible leader line connects it to the nearest point on the line or outline. Right-click the label to **Reset label position** or **Choose connection point…** and then click the exact point on the line. The same label dragging and resizing works for areas and counts.
 
 ### Area
 
@@ -150,6 +150,12 @@ Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in t
 ### Count
 
 Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object type, and click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol.
+
+### Measurement labels
+
+Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** returns it to the project size. A label that does not fit inside an area moves outside with a leader line instead of shrinking, so the same drawing always uses the same text size.
+
+The project label size and compact area labels are in **Settings → Project settings… → Measurement labels**. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; the inspector and CSV keep the full wording. Existing projects keep the full wording until the setting is enabled.
 
 ### Category and room
 
@@ -422,6 +428,7 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project 
 
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
 - **Units** – length and area units for the project. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
+- **Measurement labels** – the project label size from 4 to 16 pt and compact area labels (`P 14.48 m` instead of `Perimeter 14.48 m`). Individual measurements can override the size in Properties.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
@@ -445,7 +452,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 14 is the current format. Older projects load normally and are migrated when opened.
+Schema version 15 is the current format. It adds the optional measurement label size and the project label-size and compact-area-label settings. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

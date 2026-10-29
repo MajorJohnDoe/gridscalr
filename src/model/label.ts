@@ -40,14 +40,17 @@ export type LabelMeasure = (text: string, size: number, weight: LabelWeight) => 
  * Keeping the source values in points prevents labels from growing relative
  * to the drawing when the user zooms or when the page is printed.
  *
+ * There is deliberately no on-screen size cap: the canvas must show the same
+ * relative label size as the exported PDF. Users who need larger labels can
+ * raise the project size or resize an individual label.
+ *
  * Keep these compact: measurement labels are annotations on top of the plan,
- * not headings. The canvas additionally caps their on-screen size while the
- * user draws; PDF export always uses the true paper-space values below.
+ * not headings.
  */
 export const LABEL_PRIMARY_SIZE = 6;
 export const LABEL_SECONDARY_SIZE = 5;
-export const LABEL_MIN_PRIMARY_SIZE = 5;
-export const LABEL_MIN_SECONDARY_SIZE = 4.2;
+export const LABEL_MIN_SIZE = 4;
+export const LABEL_MAX_SIZE = 16;
 export const LABEL_PADDING_X = 4.2;
 export const LABEL_PADDING_Y = 2.6;
 export const LABEL_ROW_GAP = 0.4;
@@ -57,13 +60,24 @@ export const LABEL_LEADER_WIDTH = 0.6;
 export const LABEL_GAP = 5;
 export const LABEL_LINE_OFFSET = 11;
 export const LABEL_CALIBRATION_OFFSET = 13;
-export const LABEL_MIN_SCALE = Math.max(
-  LABEL_MIN_PRIMARY_SIZE / LABEL_PRIMARY_SIZE,
-  LABEL_MIN_SECONDARY_SIZE / LABEL_SECONDARY_SIZE,
-);
 export const LABEL_INSIDE_MARGIN = 1.5;
 export const LABEL_PAGE_MARGIN = 1.5;
 export const LABEL_COLLISION_GAP = 1.5;
+
+/** Keeps a stored or user-entered label size inside the supported range. */
+export function clampLabelSize(size: number | null | undefined): number {
+  if (typeof size !== "number" || !Number.isFinite(size)) return LABEL_PRIMARY_SIZE;
+  return Math.max(LABEL_MIN_SIZE, Math.min(LABEL_MAX_SIZE, size));
+}
+
+/** Converts a primary label size in points to the shared metrics scale. */
+export function labelScaleForSize(size: number | null | undefined): number {
+  return clampLabelSize(size) / LABEL_PRIMARY_SIZE;
+}
+
+export function labelMetricsForSize(size: number | null | undefined): LabelMetrics {
+  return labelMetrics(labelScaleForSize(size));
+}
 
 export function labelMetrics(scale = 1): LabelMetrics {
   const primarySize = LABEL_PRIMARY_SIZE * scale;
@@ -114,9 +128,15 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
 export function measurementLabelParts(item: MarkupItem, project: Project): LabelParts | null {
   const metrics = itemMetrics(item, project);
   if (!metrics) return null;
+  // Compact labels only change the drawn annotation. The inspector and CSV
+  // keep the descriptive "Perimeter" wording.
+  const secondary =
+    item.kind === "area" && project.settings.compactAreaLabels && metrics.secondary
+      ? metrics.secondary.replace("Perimeter ", "P ")
+      : metrics.secondary;
   return {
     text: item.label ? `${item.label} · ${metrics.primary}` : metrics.primary,
-    secondary: metrics.secondary,
+    secondary,
   };
 }
 

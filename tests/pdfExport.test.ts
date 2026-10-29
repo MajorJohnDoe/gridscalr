@@ -336,7 +336,7 @@ describe("flattened PDF export", () => {
 
     const length = items.find((item) => item.text.startsWith("Wall A"));
     const area = items.find((item) => item.text.includes("m²"));
-    const perimeter = items.find((item) => item.text.startsWith("Perimeter"));
+    const perimeter = items.find((item) => /^(Perimeter|P) /.test(item.text));
     const count = items.find((item) => item.text === "1 pcs");
     const countType = items.find((item) => item.text === "Door");
 
@@ -345,6 +345,18 @@ describe("flattened PDF export", () => {
     expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
     expect(count?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     expect(countType?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
+
+    const sizedProject = makeProject();
+    sizedProject.settings.labelSize = 9;
+    sizedProject.settings.compactAreaLabels = true;
+    const sizedArea = sizedProject.layers
+      .find((layer) => layer.kind === "measure")!
+      .items.find((item) => item.id === "item_area")!;
+    sizedArea.labelSize = 12;
+    const sizedItems = await textItems(await exportProjectPdf(sizedProject, renderer));
+    expect(sizedItems.find((item) => item.text.startsWith("Wall A"))?.size).toBeCloseTo(9, 1);
+    expect(sizedItems.find((item) => item.text.includes("m²"))?.size).toBeCloseTo(12, 1);
+    expect(sizedItems.find((item) => item.text.startsWith("P "))?.size).toBeCloseTo(10, 1);
 
     const calibrationProject = makeProject();
     for (const layer of calibrationProject.layers) layer.items.length = 0;

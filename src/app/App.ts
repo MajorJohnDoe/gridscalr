@@ -202,6 +202,7 @@ export class App {
       setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
       setSelectionRoom: (room) => this.setSelectionRoom(room),
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
+      setSelectionLabelSize: (size) => this.setSelectionLabelSize(size),
       setSelectionCountType: (type) => this.setSelectionCountType(type),
       insertImage: () => void this.insertImageFlow(),
       setSelectionImageMode: (mode) => this.setSelectionImageMode(mode),
@@ -1561,6 +1562,11 @@ export class App {
 
   private setSelectionCountType(type: CountType): void {
     this.bulkEditMeasurementSelection({ countType: type });
+  }
+
+  private setSelectionLabelSize(size: number): void {
+    if (!Number.isFinite(size)) return;
+    this.bulkEditMeasurementSelection({ labelSize: size });
   }
 
   private async saveProjectFlow(saveAs: boolean): Promise<void> {

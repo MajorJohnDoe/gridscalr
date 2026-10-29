@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 14,
+  "schemaVersion": 15,
   "id": "prj_demo_takeoff",
   "name": "Northgate Logistics Hub - Takeoff",
   "documents": [
@@ -18,6 +18,8 @@
     "lengthUnit": "m",
     "areaUnit": "m2",
     "smartLengthUnits": true,
+    "labelSize": 6,
+    "compactAreaLabels": true,
     "showGrid": false,
     "showCalibration": false,
     "snapToGeometry": true,

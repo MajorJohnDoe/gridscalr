@@ -1,4 +1,5 @@
 import { normalizeRoom } from "./categories";
+import { clampLabelSize } from "./label";
 import { isMeasurementKind, itemIsLocked } from "./layers";
 import { resolveSelection } from "./selection";
 import type { AreaMode, CountType, Project, SelectionRef } from "./types";
@@ -12,6 +13,8 @@ export interface MeasurementBulkPatch {
   areaMode?: AreaMode;
   /** Only applied to count measurements. */
   countType?: CountType;
+  /** Primary label size in PDF points, clamped to the supported range. */
+  labelSize?: number;
 }
 
 export interface MeasurementBulkResult {
@@ -60,6 +63,10 @@ export function applyMeasurementBulkEdit(
     }
     if (patch.countType !== undefined && entry.item.kind === "count") {
       entry.item.countType = patch.countType;
+      changed = true;
+    }
+    if (patch.labelSize !== undefined) {
+      entry.item.labelSize = clampLabelSize(patch.labelSize);
       changed = true;
     }
     if (changed) {
