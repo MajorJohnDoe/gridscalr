@@ -5,6 +5,7 @@ import {
   pageScaleLocked,
 } from "../model/calibration";
 import type { AreaUnit, LengthUnit } from "../model/types";
+import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
 import { AREA_UNITS, formatNumber, formatScale, LENGTH_UNITS } from "../model/units";
 import {
   loadGlobalStampPresets,
@@ -111,6 +112,53 @@ function unitsSection(): HTMLElement {
       "p",
       "settings-note",
       "Metric lengths under 1 m use the selected unit and longer values switch to metres. Quantity reports keep the project unit.",
+    ),
+  );
+  return wrap;
+}
+
+function labelsSection(): HTMLElement {
+  const project = store.project!;
+  const wrap = section(
+    "Measurement labels",
+    "Labels use the same paper-space size on the canvas and in PDF exports.",
+  );
+
+  const sizeField = field("Label size", el("div", "settings-range"));
+  const range = sizeField.querySelector<HTMLElement>(".settings-range")!;
+  const input = el("input", "input");
+  input.type = "range";
+  input.min = String(LABEL_MIN_SIZE);
+  input.max = String(LABEL_MAX_SIZE);
+  input.step = "0.5";
+  const current = clampLabelSize(project.settings.labelSize);
+  input.value = String(current);
+  input.setAttribute("aria-label", "Project measurement label size in points");
+  input.title = "Primary label size in PDF points.";
+  const readout = el("span", "settings-range-value", `${formatNumber(current, 1)} pt`);
+  input.addEventListener("input", () => {
+    readout.textContent = `${formatNumber(Number(input.value), 1)} pt`;
+  });
+  input.addEventListener("change", () => {
+    const value = clampLabelSize(Number(input.value));
+    store.mutate((project) => {
+      project.settings.labelSize = value;
+    }, "change");
+  });
+  range.append(input, readout);
+  wrap.append(
+    sizeField,
+    checkRow("Compact area labels", project.settings.compactAreaLabels, (checked) => {
+      store.mutate((project) => {
+        project.settings.compactAreaLabels = checked;
+      }, "change");
+    }),
+  );
+  wrap.append(
+    el(
+      "p",
+      "settings-note",
+      "Compact area labels show “P 14.48 m” instead of “Perimeter 14.48 m”. The inspector and CSV keep the full wording.",
     ),
   );
   return wrap;
@@ -378,6 +426,7 @@ export function openSettingsDialog(): void {
     content.replaceChildren(
       scaleSection(),
       unitsSection(),
+      labelsSection(),
       displaySection(),
       quantitiesSection(),
       stampsSection(),

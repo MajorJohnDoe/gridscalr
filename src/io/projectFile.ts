@@ -13,6 +13,8 @@ import {
   normalizeLayerOrder,
 } from "../model/layers";
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
+import { clampLabelSize } from "../model/label";
+import { isLabelFitPosition } from "../model/labelLayout";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
@@ -192,6 +194,8 @@ function normalizeSettings(
       ? (value!.areaUnit as AreaUnit)
       : DEFAULT_SETTINGS.areaUnit,
     smartLengthUnits: value?.smartLengthUnits !== false,
+    labelSize: clampLabelSize(value?.labelSize),
+    compactAreaLabels: value?.compactAreaLabels === true,
     showGrid: value?.showGrid ?? DEFAULT_SETTINGS.showGrid,
     showCalibration: value?.showCalibration ?? DEFAULT_SETTINGS.showCalibration,
     snapToGeometry: value?.snapToGeometry ?? DEFAULT_SETTINGS.snapToGeometry,
@@ -320,6 +324,12 @@ function normalizeItem(
     raw.kind === "cloud" && isPoint(raw.textOffset) ? { ...raw.textOffset } : undefined;
   const labelOffset = isMeasure && isPoint(raw.labelOffset) ? { ...raw.labelOffset } : undefined;
   const labelAnchor = isMeasure && isPoint(raw.labelAnchor) ? { ...raw.labelAnchor } : undefined;
+  const labelSize =
+    isMeasure && typeof raw.labelSize === "number" && Number.isFinite(raw.labelSize)
+      ? clampLabelSize(raw.labelSize)
+      : undefined;
+  const labelFit =
+    raw.kind === "area" && isLabelFitPosition(raw.labelFit) ? raw.labelFit : undefined;
   const lineStyle: MarkupItem["lineStyle"] =
     raw.kind === "length" && raw.lineStyle === "dashed" ? "dashed" : undefined;
   const cloudRadius =
@@ -440,6 +450,8 @@ function normalizeItem(
     textOffset,
     labelOffset,
     labelAnchor,
+    labelSize,
+    labelFit,
     lineStyle,
     cloudRadius,
     textBoxWidth,

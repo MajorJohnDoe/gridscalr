@@ -134,6 +134,7 @@ export async function exportProjectPdf(
         pageSize: { width: viewport.width, height: viewport.height },
         measure: (text, size, weight) =>
           (weight === "bold" ? fonts.bold : fonts.regular).widthOfTextAtSize(text, size),
+        labelSize: project.settings.labelSize,
       },
     );
 

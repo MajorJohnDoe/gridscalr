@@ -29,6 +29,9 @@ import {
   moveItemToLayer,
 } from "../model/layers";
 import { itemKindLabel, itemMetrics, itemScaleWarning } from "../model/measure";
+import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
+import { LABEL_FIT_LABELS } from "../model/labelLayout";
+import { formatNumber } from "../model/units";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
   AreaMode,
@@ -148,10 +151,10 @@ export function selectionSection(
       el(
         "div",
         "empty-note small",
-        "Drag the value label on the plan to position it freely. Reset returns it to automatic placement.",
+        "Drag the value label to position it freely, or drag the corner handle to resize it. Reset label position and Reset label size return it to automatic placement and the project size.",
       ),
     );
-    if (item.labelOffset || item.labelAnchor) {
+    if (item.labelOffset || item.labelAnchor || item.labelFit) {
       const resetLabel = el("button", "btn btn-small btn-ghost", "Reset label position");
       resetLabel.type = "button";
       resetLabel.disabled = locked;
@@ -163,10 +166,84 @@ export function selectionSection(
           const target = findItem(project, item.id)?.item;
           if (!target) return;
           delete target.labelOffset;
+          delete target.labelAnchor;
+          delete target.labelFit;
           target.updatedAt = new Date().toISOString();
         }, "change");
       });
       section.append(resetLabel);
+    }
+
+    if (item.labelFit) {
+      section.append(
+        el(
+          "div",
+          "empty-note small",
+          `Locked inside area: ${LABEL_FIT_LABELS[item.labelFit]}. The size adapts to the available space. Drag the label to release it.`,
+        ),
+      );
+      const release = el("button", "btn btn-small btn-ghost", "Release inside area");
+      release.type = "button";
+      release.disabled = locked;
+      release.addEventListener("click", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          delete target.labelFit;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      section.append(release);
+    }
+
+    const projectLabelSize = clampLabelSize(project.settings.labelSize);
+    const currentLabelSize = clampLabelSize(item.labelSize ?? projectLabelSize);
+    const sizeField = el("label", "field");
+    const sizeHead = el("div", "section-head");
+    sizeHead.style.marginBottom = "4px";
+    sizeHead.append(el("span", "field-label", "Label size"));
+    const sizeValue = el("span", "range-value", `${formatNumber(currentLabelSize, 1)} pt`);
+    sizeHead.append(sizeValue);
+    const sizeRange = el("input");
+    sizeRange.type = "range";
+    sizeRange.min = String(LABEL_MIN_SIZE);
+    sizeRange.max = String(LABEL_MAX_SIZE);
+    sizeRange.step = "0.5";
+    sizeRange.value = String(currentLabelSize);
+    sizeRange.disabled = locked;
+    sizeRange.setAttribute("aria-label", "Measurement label size in points");
+    sizeRange.title = "Paper-space label size. The canvas and the PDF export use the same value.";
+    sizeRange.addEventListener("input", () => {
+      sizeValue.textContent = `${formatNumber(Number(sizeRange.value), 1)} pt`;
+    });
+    sizeRange.addEventListener("change", () => {
+      const value = clampLabelSize(Number(sizeRange.value));
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        target.labelSize = value;
+        target.updatedAt = new Date().toISOString();
+      }, "change");
+    });
+    sizeField.append(sizeHead, sizeRange);
+    section.append(sizeField);
+
+    if (item.labelSize !== undefined) {
+      const resetSize = el("button", "btn btn-small btn-ghost", "Reset label size");
+      resetSize.type = "button";
+      resetSize.disabled = locked;
+      resetSize.title = locked
+        ? "Unlock the layer to reset this label."
+        : `Follow the project default (${formatNumber(projectLabelSize, 1)} pt)`;
+      resetSize.addEventListener("click", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          delete target.labelSize;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      section.append(resetSize);
     }
 
     if (item.kind === "count") {
@@ -937,6 +1014,45 @@ function multiSelectionSection(
       roomRow.append(roomInput, roomButton);
       roomField.append(roomRow, roomList);
       section.append(roomField);
+
+      const sizeField = el("div", "field");
+      sizeField.append(el("span", "field-label", "Label size"));
+      const sizeRow = el("div", "input-row");
+      const sizeInput = el("input", "input");
+      sizeInput.type = "number";
+      sizeInput.min = String(LABEL_MIN_SIZE);
+      sizeInput.max = String(LABEL_MAX_SIZE);
+      sizeInput.step = "0.5";
+      sizeInput.placeholder = `Project default (${formatNumber(
+        clampLabelSize(project.settings.labelSize),
+        1,
+      )} pt)`;
+      sizeInput.disabled = allLocked;
+      sizeInput.title = allLocked
+        ? "Unlock the selected measurements to edit them."
+        : "Set one paper-space label size for the selected measurements";
+      sizeInput.setAttribute("aria-label", "Label size for selected measurements");
+      const applySize = () => {
+        const value = Number(sizeInput.value);
+        if (sizeInput.value.trim() === "" || !Number.isFinite(value)) {
+          sizeInput.value = "";
+          return;
+        }
+        actions.setSelectionLabelSize(clampLabelSize(value));
+      };
+      sizeInput.addEventListener("keydown", (event) => {
+        if (event.key === "Enter") {
+          event.preventDefault();
+          applySize();
+        }
+      });
+      const sizeButton = el("button", "btn btn-small", "Apply");
+      sizeButton.type = "button";
+      sizeButton.disabled = allLocked;
+      sizeButton.addEventListener("click", applySize);
+      sizeRow.append(sizeInput, sizeButton);
+      sizeField.append(sizeRow);
+      section.append(sizeField);
 
       if (measurements.every((entry) => entry.item.kind === "area")) {
         const firstMode = measurements[0].item.areaMode ?? "add";

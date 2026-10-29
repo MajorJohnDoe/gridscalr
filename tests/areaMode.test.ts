@@ -46,8 +46,15 @@ describe("deduction areas", () => {
     expect(subtract?.primary).toBe(add?.primary);
   });
 
-  it("carries the deduction marker into the measurement label", () => {
+  it("carries the deduction marker into the compact measurement label", () => {
     const project = makeProject();
+    const parts = measurementLabelParts(makeArea({ areaMode: "subtract" }), project);
+    expect(parts?.secondary).toMatch(/^Deduction · P /);
+  });
+
+  it("keeps the full perimeter wording when compact labels are off", () => {
+    const project = makeProject();
+    project.settings.compactAreaLabels = false;
     const parts = measurementLabelParts(makeArea({ areaMode: "subtract" }), project);
     expect(parts?.secondary).toMatch(/^Deduction · Perimeter /);
   });

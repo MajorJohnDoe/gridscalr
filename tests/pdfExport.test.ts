@@ -336,15 +336,44 @@ describe("flattened PDF export", () => {
 
     const length = items.find((item) => item.text.startsWith("Wall A"));
     const area = items.find((item) => item.text.includes("m²"));
-    const perimeter = items.find((item) => item.text.startsWith("Perimeter"));
+    const perimeter = items.find((item) => /^(Perimeter|P) /.test(item.text));
     const count = items.find((item) => item.text === "1 pcs");
     const countType = items.find((item) => item.text === "Door");
 
     expect(length?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
-    expect(area?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
-    expect(perimeter?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
+    expect(area?.size).toBeGreaterThanOrEqual(4);
+    expect(area?.size).toBeLessThanOrEqual(LABEL_PRIMARY_SIZE);
+    expect(perimeter?.size).toBeCloseTo(
+      (area?.size ?? 0) * (LABEL_SECONDARY_SIZE / LABEL_PRIMARY_SIZE),
+      1,
+    );
     expect(count?.size).toBeCloseTo(LABEL_PRIMARY_SIZE, 1);
     expect(countType?.size).toBeCloseTo(LABEL_SECONDARY_SIZE, 1);
+
+    const sizedProject = makeProject();
+    sizedProject.settings.labelSize = 9;
+    sizedProject.settings.compactAreaLabels = true;
+    const sizedMeasure = sizedProject.layers.find((layer) => layer.kind === "measure")!;
+    sizedMeasure.items.find((item) => item.id === "item_length")!.labelSize = 11;
+    const sizedItems = await textItems(await exportProjectPdf(sizedProject, renderer));
+    expect(sizedItems.find((item) => item.text.startsWith("Wall A"))?.size).toBeCloseTo(11, 1);
+    const sizedArea = sizedItems.find((item) => item.text.includes("m²"));
+    expect(sizedArea?.size).toBeGreaterThanOrEqual(4);
+    expect(sizedArea?.size).toBeLessThanOrEqual(9);
+    expect(sizedItems.find((item) => item.text.startsWith("P "))?.size).toBeCloseTo(
+      (sizedArea?.size ?? 0) * (LABEL_SECONDARY_SIZE / LABEL_PRIMARY_SIZE),
+      1,
+    );
+
+    const fitProject = makeProject();
+    fitProject.settings.labelSize = 12;
+    fitProject.layers
+      .find((layer) => layer.kind === "measure")!
+      .items.find((item) => item.id === "item_area")!.labelFit = "top-left";
+    const fitItems = await textItems(await exportProjectPdf(fitProject, renderer));
+    const fitArea = fitItems.find((item) => item.text.includes("m²"));
+    expect(fitArea?.size).toBeGreaterThanOrEqual(4);
+    expect(fitArea?.size).toBeLessThan(12);
 
     const calibrationProject = makeProject();
     for (const layer of calibrationProject.layers) layer.items.length = 0;

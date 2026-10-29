@@ -7,19 +7,21 @@ import {
   labelAnchorForPoints,
   labelBox,
   labelMetrics,
+  labelScaleForSize,
   measurementLabelParts,
   LABEL_CALIBRATION_OFFSET,
   LABEL_COLLISION_GAP,
   LABEL_INSIDE_MARGIN,
-  LABEL_MIN_SCALE,
+  LABEL_MIN_SIZE,
   LABEL_PAGE_MARGIN,
+  LABEL_PRIMARY_SIZE,
   type LabelBox,
   type LabelMeasure,
   type LabelMetrics,
   type LabelParts,
 } from "./label";
 import { formatNumber } from "./units";
-import type { PageSize, Point, Project } from "./types";
+import type { LabelFitPosition, PageSize, Point, Project } from "./types";
 
 export type LabelPlacement = "center" | "outside" | "line";
 
@@ -37,7 +39,31 @@ export interface LabelSource {
   labelAnchor?: Point;
   /** Line or outline used to find the nearest connection point. */
   outline?: Point[];
+  /** Per-measurement primary size in PDF points. Omit to use the project size. */
+  labelSize?: number;
+  /** Keep the label inside the area and fit its size to the available space. */
+  labelFit?: LabelFitPosition;
   color: string;
+}
+
+export const LABEL_FIT_POSITIONS: readonly LabelFitPosition[] = [
+  "center",
+  "top-left",
+  "top-right",
+  "bottom-right",
+  "bottom-left",
+];
+
+export const LABEL_FIT_LABELS: Record<LabelFitPosition, string> = {
+  center: "Center",
+  "top-left": "Top left",
+  "top-right": "Top right",
+  "bottom-right": "Bottom right",
+  "bottom-left": "Bottom left",
+};
+
+export function isLabelFitPosition(value: unknown): value is LabelFitPosition {
+  return typeof value === "string" && (LABEL_FIT_POSITIONS as readonly string[]).includes(value);
 }
 
 export interface LabelLeader {
@@ -59,6 +85,8 @@ export interface LabelLayout {
 export interface LabelLayoutOptions {
   pageSize: PageSize;
   measure: LabelMeasure;
+  /** Project-wide primary size in PDF points. */
+  labelSize?: number;
 }
 
 export interface LabelSourceOptions {
@@ -72,9 +100,9 @@ export interface LabelSourceOptions {
 
 export const CALIBRATION_LABEL_ID = "calibration";
 
-const LABEL_SCALES = [1, 0.95, 0.9, 0.85, LABEL_MIN_SCALE].filter(
-  (scale, index, values) => values.indexOf(scale) === index,
-);
+/** A locked label may use at most this share of its area's paper width/height. */
+const LABEL_FIT_WIDTH_RATIO = 0.6;
+const LABEL_FIT_HEIGHT_RATIO = 0.4;
 
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
@@ -113,6 +141,8 @@ export function pageLabelSources(
               : item.kind === "length"
                 ? item.points.map((point) => ({ ...point }))
                 : undefined,
+          labelSize: item.labelSize,
+          labelFit: item.labelFit,
           color: item.color,
         });
       }
@@ -154,65 +184,172 @@ export function layoutPageLabels(
   return layouts;
 }
 
+function searchInside(
+  source: LabelSource,
+  options: LabelLayoutOptions,
+  high: number,
+  anchorAt: (scale: number) => Point,
+  fits: (layout: LabelLayout) => boolean,
+): LabelLayout | null {
+  const minScale = LABEL_MIN_SIZE / LABEL_PRIMARY_SIZE;
+  const minimum = buildLayout(source, minScale, anchorAt(minScale), "center", options);
+  if (!fits(minimum)) return null;
+  let low = minScale;
+  let upper = Math.max(minScale, high);
+  let best = minimum;
+  for (let index = 0; index < 9; index += 1) {
+    const mid = (low + upper) / 2;
+    const layout = buildLayout(source, mid, anchorAt(mid), "center", options);
+    if (fits(layout)) {
+      best = layout;
+      low = mid;
+    } else {
+      upper = mid;
+    }
+  }
+  return best;
+}
+
+function fitLabelInArea(
+  source: LabelSource,
+  options: LabelLayoutOptions,
+  placement: LabelFitPosition,
+): LabelLayout {
+  const maxScale = labelScaleForSize(source.labelSize ?? options.labelSize ?? LABEL_PRIMARY_SIZE);
+  const minScale = LABEL_MIN_SIZE / LABEL_PRIMARY_SIZE;
+
+  const boxAt = (scale: number): LabelBox => {
+    const metrics = labelMetrics(scale);
+    const primaryWidth = options.measure(source.parts.text, metrics.primarySize, "bold");
+    const secondaryWidth = source.parts.secondary
+      ? options.measure(source.parts.secondary, metrics.secondarySize, "regular")
+      : 0;
+    return labelBox({ x: 0, y: 0 }, primaryWidth, secondaryWidth, source.parts.secondary, scale);
+  };
+
+  const base = boxAt(1);
+  const boundsWidth = source.obstacle.max.x - source.obstacle.min.x;
+  const boundsHeight = source.obstacle.max.y - source.obstacle.min.y;
+  // A locked label should stay visually subordinate to its room. Fitting only
+  // to overflow still produced a label covering most of a small A4 room, so
+  // cap the fitted size to a share of the area as well.
+  const high = Math.max(
+    minScale,
+    Math.min(
+      maxScale,
+      (boundsWidth * LABEL_FIT_WIDTH_RATIO) / Math.max(0.001, base.width),
+      (boundsHeight * LABEL_FIT_HEIGHT_RATIO) / Math.max(0.001, base.height),
+    ),
+  );
+
+  const fits = (layout: LabelLayout): boolean =>
+    fitsInsideArea(layout.box, source) && fitsPage(layout.box, options.pageSize);
+
+  if (placement === "center") {
+    for (const anchor of [source.anchor, boundsCenter(source.obstacle)]) {
+      const layout = searchInside(source, options, high, () => anchor, fits);
+      if (layout) return layout;
+    }
+  } else {
+    const layout = searchInside(
+      source,
+      options,
+      high,
+      (scale) => insideCornerAnchor(source.obstacle, placement, boxAt(scale)),
+      fits,
+    );
+    if (layout) return layout;
+  }
+
+  // A concave or very small area may not hold even the minimum size at the
+  // requested position. Keep the label centred at the minimum rather than
+  // dropping it or moving it outside.
+  return buildLayout(source, minScale, source.anchor, "center", options);
+}
+
+function insideCornerAnchor(bounds: Bounds, placement: LabelFitPosition, box: LabelBox): Point {
+  const margin = LABEL_INSIDE_MARGIN;
+  const left = bounds.min.x + margin + box.width / 2;
+  const right = bounds.max.x - margin - box.width / 2;
+  const top = bounds.min.y + margin + box.height / 2;
+  const bottom = bounds.max.y - margin - box.height / 2;
+  switch (placement) {
+    case "top-left":
+      return { x: left, y: top };
+    case "top-right":
+      return { x: right, y: top };
+    case "bottom-right":
+      return { x: right, y: bottom };
+    case "bottom-left":
+      return { x: left, y: bottom };
+    default:
+      return boundsCenter(bounds);
+  }
+}
+
 function layoutLabel(
   source: LabelSource,
   options: LabelLayoutOptions,
   occupied: Bounds[],
 ): LabelLayout {
+  // An explicitly locked label ignores manual offsets and the automatic
+  // outside placement. It stays inside its area and uses the largest size that
+  // fits, up to the project or per-measurement maximum.
+  if (source.labelFit) return fitLabelInArea(source, options, source.labelFit);
+
+  // Prefer the label inside its area. If the full size does not fit, shrink
+  // just enough to stay inside (down to the minimum) before moving the label
+  // outside with a leader. The same values drive the canvas and the export.
+  const scale = labelScaleForSize(source.labelSize ?? options.labelSize ?? LABEL_PRIMARY_SIZE);
+
   if (source.labelOffset) {
     const anchor = {
       x: source.anchor.x + source.labelOffset.x,
       y: source.anchor.y + source.labelOffset.y,
     };
     return clampToPage(
-      withLeader(buildLayout(source, 1, anchor, "line", options), source),
+      withLeader(buildLayout(source, scale, anchor, "line", options), source),
       options.pageSize,
     );
   }
   if (source.kind === "area") {
-    const centers = [source.anchor, boundsCenter(source.obstacle)];
-    for (const scale of LABEL_SCALES) {
-      for (const center of centers) {
-        const layout = buildLayout(source, scale, center, "center", options);
-        if (
-          fitsInsideArea(layout.box, source) &&
-          fitsPage(layout.box, options.pageSize) &&
-          !collides(layout.box, occupied)
-        ) {
-          return layout;
-        }
-      }
+    const fits = (layout: LabelLayout): boolean =>
+      fitsInsideArea(layout.box, source) &&
+      fitsPage(layout.box, options.pageSize) &&
+      !collides(layout.box, occupied);
+    for (const center of [source.anchor, boundsCenter(source.obstacle)]) {
+      const full = buildLayout(source, scale, center, "center", options);
+      if (fits(full)) return full;
+      const fitted = searchInside(source, options, scale, () => center, fits);
+      if (fitted) return fitted;
     }
   } else {
-    const preferred = buildLayout(source, 1, source.anchor, "line", options);
+    const preferred = buildLayout(source, scale, source.anchor, "line", options);
     if (fitsPage(preferred.box, options.pageSize) && !collides(preferred.box, occupied)) {
       return preferred;
     }
 
     const oppositeAnchor = reflectPoint(source.anchor, boundsCenter(source.obstacle));
-    const opposite = buildLayout(source, 1, oppositeAnchor, "line", options);
+    const opposite = buildLayout(source, scale, oppositeAnchor, "line", options);
     if (fitsPage(opposite.box, options.pageSize) && !collides(opposite.box, occupied)) {
       return withLeader(opposite, source);
     }
   }
 
-  for (const scale of LABEL_SCALES) {
-    for (const anchor of outsideAnchors(source, scale, options.measure)) {
-      const layout = buildLayout(source, scale, anchor, "outside", options);
-      if (
-        fitsPage(layout.box, options.pageSize) &&
-        !overlapsSource(layout.box, source) &&
-        !collides(layout.box, occupied)
-      ) {
-        return withLeader(layout, source);
-      }
+  for (const anchor of outsideAnchors(source, scale, options.measure)) {
+    const layout = buildLayout(source, scale, anchor, "outside", options);
+    if (
+      fitsPage(layout.box, options.pageSize) &&
+      !overlapsSource(layout.box, source) &&
+      !collides(layout.box, occupied)
+    ) {
+      return withLeader(layout, source);
     }
   }
 
-  const fallbackScale = LABEL_SCALES[LABEL_SCALES.length - 1];
-  const fallbackAnchor = outsideAnchors(source, fallbackScale, options.measure)[0] ?? source.anchor;
+  const fallbackAnchor = outsideAnchors(source, scale, options.measure)[0] ?? source.anchor;
   const fallback = clampToPage(
-    buildLayout(source, fallbackScale, fallbackAnchor, "outside", options),
+    buildLayout(source, scale, fallbackAnchor, "outside", options),
     options.pageSize,
   );
   return withLeader(fallback, source);
@@ -466,20 +603,24 @@ function fitsInsideArea(box: LabelBox, source: LabelSource): boolean {
 }
 
 function fitsInside(box: LabelBox, bounds: Bounds): boolean {
+  // The fit search places corner labels exactly on the margin. Allow a tiny
+  // tolerance so binary floating-point rounding does not reject a valid size.
+  const tolerance = 1e-6;
   return (
-    box.x >= bounds.min.x + LABEL_INSIDE_MARGIN &&
-    box.y >= bounds.min.y + LABEL_INSIDE_MARGIN &&
-    box.x + box.width <= bounds.max.x - LABEL_INSIDE_MARGIN &&
-    box.y + box.height <= bounds.max.y - LABEL_INSIDE_MARGIN
+    box.x >= bounds.min.x + LABEL_INSIDE_MARGIN - tolerance &&
+    box.y >= bounds.min.y + LABEL_INSIDE_MARGIN - tolerance &&
+    box.x + box.width <= bounds.max.x - LABEL_INSIDE_MARGIN + tolerance &&
+    box.y + box.height <= bounds.max.y - LABEL_INSIDE_MARGIN + tolerance
   );
 }
 
 function fitsPage(box: LabelBox, page: PageSize): boolean {
+  const tolerance = 1e-6;
   return (
-    box.x >= LABEL_PAGE_MARGIN &&
-    box.y >= LABEL_PAGE_MARGIN &&
-    box.x + box.width <= page.width - LABEL_PAGE_MARGIN &&
-    box.y + box.height <= page.height - LABEL_PAGE_MARGIN
+    box.x >= LABEL_PAGE_MARGIN - tolerance &&
+    box.y >= LABEL_PAGE_MARGIN - tolerance &&
+    box.x + box.width <= page.width - LABEL_PAGE_MARGIN + tolerance &&
+    box.y + box.height <= page.height - LABEL_PAGE_MARGIN + tolerance
   );
 }
 

@@ -19,6 +19,10 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   lengthUnit: "mm",
   areaUnit: "m2",
   smartLengthUnits: true,
+  labelSize: 6,
+  // Existing projects keep the full "Perimeter" wording; createProject turns
+  // this on for new projects.
+  compactAreaLabels: false,
   showGrid: false,
   showCalibration: true,
   snapToGeometry: true,
@@ -91,6 +95,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     documents: [document],
     settings: {
       ...DEFAULT_SETTINGS,
+      compactAreaLabels: true,
       stampPresets: [...DEFAULT_SETTINGS.stampPresets],
       quantity: createDefaultQuantitySettings(categories),
     },

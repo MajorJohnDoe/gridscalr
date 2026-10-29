@@ -338,7 +338,7 @@ try {
   await page.mouse.click(canvasBox.x + movedLabelPoint.x, canvasBox.y + movedLabelPoint.y, {
     button: "right",
   });
-  const labelMenu = page.locator(".popover");
+  const labelMenu = page.locator(".popover:not(.popover-submenu)").first();
   await labelMenu.waitFor();
   await labelMenu.getByRole("button", { name: /Choose connection point/ }).click();
   await clickPage({ x: 240, y: 48 });
@@ -373,6 +373,69 @@ try {
   await page.keyboard.press("Enter");
   await page.waitForTimeout(100);
   assert.equal((await itemById("item_floor_living")).label, "QA living");
+
+  // 6b. Measurement labels resize from their corner handle and reset to the
+  // project size. The stored size is paper-space, so export uses it too.
+  await page.keyboard.press("v");
+  await selectItem("item_floor_living");
+  const resizeLabelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelResizeScreenPoint("item_floor_living"),
+  );
+  assert.ok(resizeLabelPoint, "the measurement label should have a resize handle");
+  const sizeBeforeDrag = (await itemById("item_floor_living")).labelSize ?? 6;
+  await dragScreen(
+    {
+      x: canvasBox.x + resizeLabelPoint.x,
+      y: canvasBox.y + resizeLabelPoint.y,
+    },
+    {
+      x: canvasBox.x + resizeLabelPoint.x + 48,
+      y: canvasBox.y + resizeLabelPoint.y + 36,
+    },
+  );
+  const resizedLabel = await itemById("item_floor_living");
+  assert.ok(
+    resizedLabel.labelSize > sizeBeforeDrag,
+    "dragging the label corner should increase its paper-space size",
+  );
+  await page.getByRole("button", { name: "Reset label size" }).click();
+  assert.equal(
+    (await itemById("item_floor_living")).labelSize,
+    undefined,
+    "Reset label size should remove the per-measurement override",
+  );
+
+  // 6c. Lock the label inside the area, then drag it out again.
+  const fitLabelPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  assert.ok(fitLabelPoint, "the measurement label should have a screen position");
+  await page.mouse.click(canvasBox.x + fitLabelPoint.x, canvasBox.y + fitLabelPoint.y, {
+    button: "right",
+  });
+  const fitMenu = page.locator(".popover:not(.popover-submenu)").first();
+  await fitMenu.waitFor();
+  await fitMenu.getByRole("button", { name: /Lock inside area/ }).click();
+  const fitSubmenu = page.locator(".popover-submenu");
+  await fitSubmenu.waitFor();
+  await fitSubmenu.getByRole("button", { name: /^Top left$/ }).click();
+  const fitted = await itemById("item_floor_living");
+  assert.equal(fitted.labelFit, "top-left", "the label should be locked inside the area");
+
+  const fittedPoint = await page.evaluate(() =>
+    window.__gridscalr.canvas.labelScreenPoint("item_floor_living"),
+  );
+  await dragScreen(
+    { x: canvasBox.x + fittedPoint.x, y: canvasBox.y + fittedPoint.y },
+    { x: canvasBox.x + fittedPoint.x + 70, y: canvasBox.y + fittedPoint.y + 45 },
+  );
+  const released = await itemById("item_floor_living");
+  assert.equal(released.labelFit, undefined, "dragging the label should release the lock");
+  assert.ok(released.labelOffset, "the released label should keep a manual offset");
+  assert.ok(
+    released.labelSize === undefined || (released.labelSize >= 4 && released.labelSize <= 6),
+    "the released label should keep the fitted paper-space size",
+  );
 
   // 7. Callout text editor.
   await page.keyboard.press("v");

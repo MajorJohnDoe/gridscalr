@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { layoutPageLabels, type LabelSource } from "../src/model/labelLayout";
 import type { Bounds } from "../src/model/geometry";
-import { LABEL_MIN_PRIMARY_SIZE, LABEL_PRIMARY_SIZE, type LabelMeasure } from "../src/model/label";
+import { LABEL_PRIMARY_SIZE, type LabelMeasure } from "../src/model/label";
 import type { PageSize } from "../src/model/types";
 
 const page: PageSize = { width: 300, height: 200 };
@@ -55,15 +55,105 @@ describe("measurement label placement", () => {
     expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(130);
   });
 
-  it("shrinks a label before moving it outside a smaller area", () => {
-    const layout = layoutOne(areaSource("medium", 100, 94, 145, 116));
+  it("keeps a new label centred in a tall narrow area", () => {
+    const source = areaSource("narrow", 100, 70, 145, 190);
+    const layout = layoutOne(source);
 
     expect(layout.placement).toBe("center");
-    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
-    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(LABEL_MIN_PRIMARY_SIZE);
     expect(layout.leader).toBeUndefined();
+    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(4);
     expect(layout.box.x).toBeGreaterThanOrEqual(100);
-    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(160);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(145);
+  });
+
+  it("shrinks a label to stay inside a smaller area", () => {
+    const source = areaSource("medium", 100, 94, 145, 116);
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("center");
+    expect(layout.leader).toBeUndefined();
+    expect(layout.metrics.primarySize).toBeLessThan(LABEL_PRIMARY_SIZE);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(4);
+    expect(layout.box.x).toBeGreaterThanOrEqual(100);
+    expect(layout.box.y).toBeGreaterThanOrEqual(94);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(145);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(116);
+  });
+
+  it("honours a per-measurement label size", () => {
+    const source = areaSource("sized", 100, 70, 200, 130);
+    source.labelSize = 12;
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("center");
+    expect(layout.metrics.primarySize).toBe(12);
+    expect(layout.box.width).toBeGreaterThan(
+      layoutPageLabels([{ ...source, labelSize: undefined }], { pageSize: page, measure }).get(
+        source.id,
+      )!.box.width,
+    );
+  });
+
+  it("uses the project label size when the item has no override", () => {
+    const source = areaSource("project-size", 100, 70, 200, 130);
+    const layout = layoutPageLabels([source], {
+      pageSize: page,
+      measure,
+      labelSize: 10,
+    }).get(source.id)!;
+
+    expect(layout.metrics.primarySize).toBe(10);
+  });
+
+  it("lets an item label size override the project size", () => {
+    const source = areaSource("override", 100, 70, 200, 130);
+    source.labelSize = 8;
+    const layout = layoutPageLabels([source], {
+      pageSize: page,
+      measure,
+      labelSize: 12,
+    }).get(source.id)!;
+
+    expect(layout.metrics.primarySize).toBe(8);
+  });
+
+  it("fits a locked label inside a small area and shrinks it", () => {
+    const source = areaSource("fitted", 100, 94, 145, 116);
+    source.labelFit = "center";
+    const layout = layoutOne(source);
+
+    expect(layout.placement).toBe("center");
+    expect(layout.leader).toBeUndefined();
+    expect(layout.metrics.primarySize).toBeLessThan(6);
+    expect(layout.metrics.primarySize).toBeGreaterThanOrEqual(4);
+    expect(layout.box.x).toBeGreaterThanOrEqual(100);
+    expect(layout.box.y).toBeGreaterThanOrEqual(94);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(145);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(116);
+  });
+
+  it("places a locked label at the requested inside corner", () => {
+    const source = areaSource("corner", 100, 70, 200, 130);
+    source.labelFit = "top-left";
+    const layout = layoutOne(source);
+
+    expect(layout.box.x).toBeCloseTo(101.5, 1);
+    expect(layout.box.y).toBeCloseTo(71.5, 1);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(200);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(130);
+    expect(layout.metrics.primarySize).toBeCloseTo(6, 1);
+  });
+
+  it("uses the per-measurement maximum when locking a label", () => {
+    const source = areaSource("fit-size", 100, 70, 300, 190);
+    source.labelFit = "bottom-right";
+    source.labelSize = 9;
+    const layout = layoutOne(source);
+
+    expect(layout.metrics.primarySize).toBeCloseTo(9, 1);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(300);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(190);
   });
 
   it("moves a label outside a tiny area with a leader line", () => {
