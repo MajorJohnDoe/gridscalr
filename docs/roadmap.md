@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.7.3** · Project-file schema: **16**
+Current version: **0.8.0** · Project-file schema: **16**
 
 ## Product principles
 
@@ -43,27 +43,26 @@ milestone:
 | 0.6 | Built-in vector facility symbols, inspection statuses, Markups symbol and status views | Complete | v13 |
 | 0.7 | Docked Markups list with saved views, grouping and filters; stamp and symbol corner resizing; context-aware focus zoom; new app icon | Complete | v14 |
 | 0.7.3 | Synchronized read-only split view and XLSX quantity workbook; schema 16 docs sync | Complete | v16 |
+| 0.8.0 | Session-only revision comparison with overlay and side-by-side views, markup diff and comparison PDF | Complete | v16 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.7.3. The candidates below are ordered by
+There is no committed milestone after 0.8.0. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **Revision comparison** with a session-only reference project, overlay and
-   side-by-side views, and a list of added, removed and changed markups.
-2. **OCR and full-text search** for scanned pages, built on the PDF.js text layer
+1. **OCR and full-text search** for scanned pages, built on the PDF.js text layer
    for digital drawings and a local OCR index for scans.
-3. **More measurement types** such as radius, diameter, arc, angle, slope and
+2. **More measurement types** such as radius, diameter, arc, angle, slope and
    volume, with the quantity and unit model that each dimension needs.
-4. **Custom count types** and count quantities greater than one piece per object.
-5. **PDF vector geometry snapping** as a separate spike. It needs extraction and
+3. **Custom count types** and count quantities greater than one piece per object.
+4. **Semantic PDF vector comparison** as a separate spike. It needs extraction and
    indexing of PDF operators and must not block other work.
-6. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF
+5. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF
    scans, if users need them often enough to justify the dependency.
-7. **macOS and Linux release builds** next to the Windows installers.
+6. **macOS and Linux release builds** next to the Windows installers.
 
 ## Deferred by design
 
@@ -92,7 +91,7 @@ full list.
 | Windows code signing | Not purchased. Installers are unsigned; the README explains how to verify SHA-256 checksums. |
 | External image assets | Deferred until embedded project files become too large in practice. |
 | TIF codecs beyond CCITT G3/G4 | Deferred until there is demand; would need a decoding fallback. |
-| Revision comparison scope | Start with visual overlay, side-by-side and markup diff. Semantic PDF vector diff is a separate spike. |
+| Revision comparison scope | Shipped with visual overlay, side-by-side and a markup diff. Semantic PDF vector diff is a separate spike. |
 | OCR engine | A local WASM OCR dependency is the leading option; not yet committed. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
 | macOS and Linux release pipelines | Buildable from source; no automated artifacts yet. |

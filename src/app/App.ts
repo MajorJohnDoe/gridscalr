@@ -79,6 +79,7 @@ import {
   pickDrawing,
   readFileBytes,
   readFileText,
+  saveBinaryFile,
   saveTextFile,
   sha256Hex,
   writeTextFile,
@@ -119,6 +120,10 @@ import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SplitView } from "../ui/splitView";
+import { exportComparisonPdf } from "../pdf/comparePdf";
+import { ComparePanel } from "../ui/comparePanel";
+import { compareRevisions, type DiffItem, type RevisionDiff } from "../compare/revisionDiff";
+import { openReferenceSession, type ReferenceSession } from "../compare/referenceSession";
 import { syncViewport } from "../canvas/viewport";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
@@ -137,6 +142,14 @@ export class App {
   private canvas: CanvasView;
   private referenceView: CanvasView;
   private splitView: SplitView;
+  private compare: ReferenceSession | null = null;
+  private compareDiff: RevisionDiff | null = null;
+  private comparePanel: ComparePanel | null = null;
+  private comparePreviousSplit = false;
+  private compareRefreshTimer: number | null = null;
+  private referencePageSizes = new Map<number, PageSize>();
+  private referenceSizePromises = new Map<number, Promise<PageSize | undefined>>();
+  private referenceSizeEpoch = 0;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -187,10 +200,15 @@ export class App {
       },
       toggleSplitView: () => {
         if (!store.project) return;
+        if (this.compare) {
+          toast("Close the revision comparison first.", "info");
+          return;
+        }
         this.splitView.toggle();
         this.referenceView.invalidate();
       },
       isSplitViewOpen: () => this.splitView.isOpen,
+      openCompare: () => void this.openCompareFlow(),
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
@@ -243,14 +261,19 @@ export class App {
     this.referenceView = new CanvasView(
       this.refs.referenceHost,
       {
-        getRenderer: () => this.renderer,
-        getPageSize: (page) => this.pageSizes.get(page),
-        ensurePageSize: (page) => void this.enqueuePageSize(page),
-        onError: (message) => toast(message, "error"),
+        getRenderer: () => this.compare?.renderer ?? this.renderer,
+        getPageSize: (page) =>
+          this.compare ? this.referencePageSizes.get(page) : this.pageSizes.get(page),
+        ensurePageSize: (page) => {
+          if (this.compare) void this.enqueueReferencePageSize(page);
+          else void this.enqueuePageSize(page);
+        },
+        onError: (message) => toast(`Reference: ${message}`, "error"),
       },
       {
         readOnly: true,
         canvasIdPrefix: "reference",
+        project: () => this.compare?.project ?? store.project,
         view: () => {
           const rect = this.refs.referenceHost.getBoundingClientRect();
           const target = this.referenceView?.viewportSize ?? {
@@ -298,6 +321,12 @@ export class App {
       if (reason === "save") {
         const autosaveError = store.consumeAutosaveError();
         if (autosaveError) toast(autosaveError, "warning");
+      }
+      if (
+        this.compare &&
+        (reason === "change" || reason === "project" || reason === "undo" || reason === "layers")
+      ) {
+        this.scheduleCompareRefresh();
       }
       this.renderAll();
     });
@@ -749,6 +778,7 @@ export class App {
   }
 
   private async resetProject(): Promise<void> {
+    await this.closeCompare(false);
     this.splitView.setOpen(false);
     store.closeProject();
     const renderer = this.renderer;
@@ -1753,6 +1783,174 @@ export class App {
     }
   }
 
+  private async openCompareFlow(): Promise<void> {
+    if (!store.project) return;
+    try {
+      const picked = await pickProject();
+      if (!picked) return;
+      if (this.compare) await this.closeCompare(false);
+      await this.loadCompare(picked.text, picked.path);
+    } catch (error) {
+      await messageDialog("Could not compare revisions", errorMessage(error), "warning");
+    }
+  }
+
+  private async loadCompare(text: string, projectPath: string | null): Promise<void> {
+    const current = store.project;
+    if (!current) return;
+    let session: ReferenceSession;
+    try {
+      session = await openReferenceSession(text, projectPath);
+    } catch (error) {
+      await messageDialog("Could not open the reference revision", errorMessage(error), "warning");
+      return;
+    }
+    this.comparePreviousSplit = this.splitView.isOpen;
+    this.compare = session;
+    this.referenceSizeEpoch += 1;
+    this.referencePageSizes.clear();
+    this.referenceSizePromises.clear();
+    this.compareDiff = compareRevisions(current, session.project);
+    this.splitView.setMode("side");
+    this.splitView.setOpacity(0.5);
+    this.splitView.setOpen(true);
+    this.referenceView.resetScene();
+    this.comparePanel = new ComparePanel(this.refs.canvasArea, {
+      setMode: (mode) => {
+        this.splitView.setMode(mode);
+        this.referenceView.invalidate();
+      },
+      setOpacity: (value) => this.splitView.setOpacity(value),
+      selectItem: (item) => void this.selectDiffItem(item),
+      refresh: () => this.refreshCompareDiff(),
+      exportPdf: () => void this.exportComparePdf(),
+      close: () => void this.closeCompare(),
+    });
+    this.comparePanel.update(current.name, session.project.name, this.compareDiff);
+    void this.enqueueReferencePageSize(store.ui.page);
+    this.renderAll();
+    toast(`Comparing with ${session.project.name}.`, "info");
+  }
+
+  private enqueueReferencePageSize(page: number): Promise<PageSize | undefined> {
+    const session = this.compare;
+    if (!session) return Promise.resolve(undefined);
+    const known = this.referencePageSizes.get(page);
+    if (known) return Promise.resolve(known);
+    const pending = this.referenceSizePromises.get(page);
+    if (pending) return pending;
+    const epoch = this.referenceSizeEpoch;
+    const promise = session.renderer
+      .getPageSize(page)
+      .then((size) => {
+        if (this.compare !== session || epoch !== this.referenceSizeEpoch) return undefined;
+        this.referencePageSizes.set(page, size);
+        this.referenceView.invalidate();
+        return size;
+      })
+      .catch((error) => {
+        if (this.compare === session) {
+          toast(`Could not read reference page ${page}: ${errorMessage(error)}`, "warning");
+        }
+        return undefined;
+      })
+      .finally(() => {
+        this.referenceSizePromises.delete(page);
+      });
+    this.referenceSizePromises.set(page, promise);
+    return promise;
+  }
+
+  private scheduleCompareRefresh(): void {
+    if (!this.compare) return;
+    if (this.compareRefreshTimer !== null) window.clearTimeout(this.compareRefreshTimer);
+    this.compareRefreshTimer = window.setTimeout(() => {
+      this.compareRefreshTimer = null;
+      this.refreshCompareDiff();
+    }, 160);
+  }
+
+  private refreshCompareDiff(): void {
+    const project = store.project;
+    const session = this.compare;
+    if (!project || !session) return;
+    this.compareDiff = compareRevisions(project, session.project);
+    this.comparePanel?.update(project.name, session.project.name, this.compareDiff);
+  }
+
+  private async selectDiffItem(item: DiffItem): Promise<void> {
+    const project = store.project;
+    if (!project) return;
+    if (item.page > totalPageCount(project.documents)) {
+      toast(`Page ${item.page} exists only in the reference revision.`, "info");
+      return;
+    }
+    if (store.ui.page !== item.page) store.setPage(item.page);
+    await this.enqueuePageSize(item.page);
+    if (item.current) {
+      store.setSelection({
+        layerId: item.current.layer.id,
+        itemId: item.current.item.id,
+      });
+    } else {
+      store.clearSelection();
+    }
+    this.canvas.focusBounds(item.bounds);
+    this.canvas.invalidate();
+  }
+
+  private async closeCompare(restoreSplit = true): Promise<void> {
+    this.comparePanel?.destroy();
+    this.comparePanel = null;
+    if (this.compareRefreshTimer !== null) {
+      window.clearTimeout(this.compareRefreshTimer);
+      this.compareRefreshTimer = null;
+    }
+    const session = this.compare;
+    this.compare = null;
+    this.compareDiff = null;
+    this.referencePageSizes.clear();
+    this.referenceSizePromises.clear();
+    this.referenceSizeEpoch += 1;
+    this.referenceView.resetScene();
+    this.splitView.setMode("side");
+    this.splitView.setOpen(restoreSplit ? this.comparePreviousSplit : false);
+    if (session) await session.destroy();
+    this.renderAll();
+  }
+
+  private async exportComparePdf(): Promise<void> {
+    const project = store.project;
+    const session = this.compare;
+    const diff = this.compareDiff;
+    if (!project || !session || !diff || !this.renderer) return;
+    try {
+      const bytes = await exportComparisonPdf({
+        current: project,
+        reference: session.project,
+        diff,
+        currentRenderer: this.renderer,
+        referenceRenderer: session.renderer,
+      });
+      const safe = project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
+      const path = await saveBinaryFile(
+        bytes,
+        `${safe}-comparison.pdf`,
+        [{ name: "PDF document", extensions: ["pdf"] }],
+        "application/pdf",
+        {
+          forbiddenPaths: [
+            ...sourceDocumentPaths(project, store.projectPath),
+            ...session.sourcePaths,
+          ],
+        },
+      );
+      if (path) toast("Comparison PDF exported.", "success");
+    } catch (error) {
+      await messageDialog("Comparison export failed", errorMessage(error), "warning");
+    }
+  }
+
   private async exportAs(kind: ExportKind): Promise<void> {
     const project = store.project;
     if (!project) return;
@@ -1875,6 +2073,11 @@ export class App {
     this.unlistenClose = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
+    this.comparePanel?.destroy();
+    this.comparePanel = null;
+    if (this.compare) void this.compare.destroy();
+    this.compare = null;
+    if (this.compareRefreshTimer !== null) window.clearTimeout(this.compareRefreshTimer);
     this.splitView.destroy();
     this.referenceView.destroy();
     this.canvas.destroy();

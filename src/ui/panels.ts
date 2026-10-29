@@ -14,6 +14,7 @@ import { toast } from "./toast";
 export interface PanelActions {
   openPdf: () => void;
   openProject: () => void;
+  openCompare: () => void;
   newProject: () => void;
   closeProject: () => void;
   quit: () => void;

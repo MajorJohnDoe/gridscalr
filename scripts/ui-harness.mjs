@@ -1,7 +1,8 @@
 import { spawn } from "node:child_process";
 import { createServer } from "node:net";
-import { readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { mkdtemp, readFile, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
 
@@ -151,5 +152,55 @@ export async function openMarkupsItem(page, itemId, kind = "all") {
     await panel.getByRole("button", { name: "Close Markups list" }).click();
     await panel.waitFor({ state: "hidden" });
   }
+  await waitForApp(page);
+}
+
+/**
+ * Builds a session reference project from the demo takeoff. The reference PDF
+ * is embedded as a TIF-style document so the browser fallback can compare it
+ * without native file paths.
+ */
+export async function makeReferenceProject() {
+  const project = JSON.parse(
+    await readFile(resolve(repoRoot, "fixtures", "demo-project.gridscalr"), "utf8"),
+  );
+  const pdf = await readFile(resolve(repoRoot, "fixtures", "industrial-plan.pdf"));
+  const document = project.documents[0];
+  project.name = `${project.name} — revision B`;
+  project.documents = [
+    {
+      ...document,
+      kind: "tiff",
+      path: null,
+      relativePath: null,
+      embeddedPdf: pdf.toString("base64"),
+      source: { format: "tiff", dpi: [300, 300], originalName: "industrial-plan.pdf" },
+    },
+  ];
+  const measure = project.layers.find((layer) => layer.kind === "measure");
+  const draw = project.layers.find((layer) => layer.kind === "draw");
+  const changed = measure.items.find((item) => item.kind === "length") ?? measure.items[0];
+  changed.label = `${changed.label ?? "Item"} — revised`;
+  changed.color = "#ff3366";
+  if (draw.items.length) draw.items.pop();
+  const added = structuredClone(changed);
+  added.id = "item_reference_added";
+  added.points = added.points.map((point) => ({ x: point.x + 40, y: point.y + 20 }));
+  added.label = "Reference-only measurement";
+  measure.items.push(added);
+  const directory = await mkdtemp(join(tmpdir(), "gridscalr-compare-"));
+  const path = join(directory, "reference.gridscalr");
+  await writeFile(path, JSON.stringify(project));
+  return path;
+}
+
+/** Opens the revision comparison through File → Compare revisions…. */
+export async function openCompareProject(page, path) {
+  await page.getByRole("menuitem", { name: "File" }).click();
+  const chooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "Compare revisions…" }).click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles(path);
+  await page.locator(".compare-panel").waitFor();
   await waitForApp(page);
 }

@@ -117,7 +117,18 @@ Use **Quantities CSV**, **Quantities to Excel…** or **Quantity PDF** in the Qu
 
 Reports always cover every page and every category. Dialog filters only affect the live summary, not the exported report.
 
-### 6. Keep the project reviewable
+### 6. Compare the revision before ordering
+
+When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare revisions…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project.
+
+- Use **Side by side** to check the geometry, or **Overlay** and the opacity slider to line up the revisions.
+- Review **Changed**, **Added** and **Removed** in the panel. Click a row to jump to the item.
+- Read the warnings for page-count, drawing-name and scale differences before trusting the comparison.
+- Choose **Export PDF** for a review file with page visuals, warnings and the difference table.
+
+The reference is not merged and neither drawing is modified. Close the comparison when the review is done, or save the current project as the new working revision.
+
+### 7. Keep the project reviewable
 
 Use **View → Markups list…**, the **Markups** button at the bottom of the tool rail, or `Ctrl/Cmd+L` to search, select and navigate every item across all pages. Clicking a row zooms to that item with 25 % breathing room while keeping the whole sheet as the outer limit. The docked panel stays open while you jump between sheets and is the quickest way to check that a room or category has not been missed.
 
@@ -137,7 +148,8 @@ Save the `.gridscalr` project next to the drawing set. If the project or drawing
 - Deductions are inside the correct room and category.
 - Waste and rounding are deliberate.
 - Hidden content is intentional.
-- The exported CSV or PDF matches the reviewed quantities.
+- The exported CSV, Excel workbook or PDF matches the reviewed quantities.
+- When comparing revisions, the diff list and comparison PDF were checked before the new quantities were ordered.
 
 ## Related reference
 

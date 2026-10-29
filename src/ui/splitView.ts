@@ -1,5 +1,7 @@
 import type { CanvasView } from "../canvas/CanvasView";
 
+export type ComparisonMode = "side" | "overlay";
+
 export interface SplitViewOptions {
   area: HTMLElement;
   referenceHost: HTMLElement;
@@ -15,6 +17,7 @@ export interface SplitViewOptions {
  */
 export class SplitView {
   private open = false;
+  private mode: ComparisonMode = "side";
   private width: number | null = null;
   private readonly minPaneWidth: number;
 
@@ -29,11 +32,30 @@ export class SplitView {
     return this.open;
   }
 
+  get comparisonMode(): ComparisonMode {
+    return this.mode;
+  }
+
+  setMode(mode: ComparisonMode): void {
+    if (mode === this.mode) return;
+    this.mode = mode;
+    this.updateChrome();
+    requestAnimationFrame(() => {
+      if (!this.open) return;
+      this.options.reference.resize();
+      this.options.reference.invalidate();
+    });
+  }
+
+  setOpacity(value: number): void {
+    const clamped = Math.max(0.05, Math.min(1, value));
+    this.options.area.style.setProperty("--compare-opacity", String(clamped));
+  }
+
   setOpen(open: boolean): void {
     if (open === this.open) return;
     this.open = open;
-    this.options.referenceHost.classList.toggle("hidden", !open);
-    this.options.resizer.classList.toggle("hidden", !open);
+    this.updateChrome();
     if (open) {
       this.applyWidth(this.width ?? Math.max(this.minPaneWidth, this.areaWidth() / 2));
       requestAnimationFrame(() => {
@@ -54,6 +76,13 @@ export class SplitView {
     this.options.resizer.removeEventListener("pointerdown", this.onResizerDown);
     this.options.resizer.removeEventListener("keydown", this.onResizerKey);
     this.options.referenceHost.removeEventListener("wheel", this.onReferenceWheel);
+  }
+
+  private updateChrome(): void {
+    this.options.referenceHost.classList.toggle("hidden", !this.open);
+    this.options.referenceHost.classList.toggle("is-overlay", this.open && this.mode === "overlay");
+    this.options.area.classList.toggle("is-compare-overlay", this.open && this.mode === "overlay");
+    this.options.resizer.classList.toggle("hidden", !this.open || this.mode === "overlay");
   }
 
   private areaWidth(): number {

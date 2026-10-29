@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-29T18:28:41.400Z",
-  "appVersion": "0.7.3",
-  "sourceFingerprint": "d259750c2a2e81923bca0abcb18cd1f185a6ad97bdb0a1fada56b57bd3434ec8",
+  "generatedAt": "2026-10-29T18:48:50.134Z",
+  "appVersion": "0.8.0",
+  "sourceFingerprint": "2da7ab7cbf3c75e7eb7e4c03c86ac6d3457889bc207dcc13f2bac2b0d3582919",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -61,6 +61,12 @@
       "title": "Synchronized split view",
       "alt": "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom.",
       "description": "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place."
+    },
+    {
+      "file": "compare.png",
+      "title": "Revision comparison",
+      "alt": "GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items.",
+      "description": "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF."
     },
     {
       "file": "workflows-help.png",

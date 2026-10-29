@@ -132,6 +132,7 @@ import type {
   MarkupItem,
   PageSize,
   Point,
+  Project,
   SelectionRef,
 } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
@@ -177,6 +178,8 @@ export interface CanvasViewOptions {
   view?: () => Viewport;
   /** Base for the canvas element ids. Primary uses "canvas", the reference pane "reference". */
   canvasIdPrefix?: string;
+  /** Optional project source for a read-only comparison pane. Defaults to the open project. */
+  project?: () => Project | null;
 }
 
 /** Dev-only coordinate bridge used by the Playwright canvas regression suite. */
@@ -386,7 +389,7 @@ export class CanvasView {
     this.unsubscribe = store.subscribe((reason) => this.onStoreChange(reason));
     this.resize();
     void ensureLabelFonts().then(() => {
-      if (!store.project) return;
+      if (!this.sceneProject) return;
       this.drawContent();
       this.drawInteraction();
     });
@@ -402,6 +405,10 @@ export class CanvasView {
         panY: store.ui.panY,
       }
     );
+  }
+
+  private get sceneProject(): Project | null {
+    return this.options.project?.() ?? store.project;
   }
 
   private get viewPage(): number {
@@ -508,6 +515,25 @@ export class CanvasView {
     this.schedulePdfRender();
   }
 
+  /** Drops raster and image caches when a comparison session replaces the scene. */
+  resetScene(): void {
+    this.lastRender = null;
+    this.renderedPage = 0;
+    this.imageCache.clear();
+    this.imageLoading.clear();
+    this.imageFailed.clear();
+    this.invalidate();
+  }
+
+  /** Centres page-space bounds in this viewport. Used by the revision diff list. */
+  focusBounds(bounds: Bounds): boolean {
+    const size = this.ensurePageSize();
+    if (!size || this.width < 1 || this.height < 1) return false;
+    const view = focusViewTransform(bounds, size, { width: this.width, height: this.height });
+    store.setView(view.zoom, view.panX, view.panY);
+    return true;
+  }
+
   setSpaceDown(down: boolean): void {
     this.spaceDown = down;
     this.updateCursor();
@@ -530,7 +556,7 @@ export class CanvasView {
   }
 
   private pageSize(): PageSize | undefined {
-    const project = store.project;
+    const project = this.sceneProject;
     if (!project) return undefined;
     return this.hooks.getPageSize(this.viewPage);
   }
@@ -666,7 +692,7 @@ export class CanvasView {
   }
 
   private pageLabelLayouts(): Map<string, LabelLayout> {
-    const project = store.project;
+    const project = this.sceneProject;
     const size = this.pageSize();
     if (!project || !size) return new Map();
     return layoutPageLabels(pageLabelSources(project, this.viewPage), {
@@ -2440,7 +2466,7 @@ export class CanvasView {
   }
 
   private schedulePdfRender(): void {
-    if (!store.project) return;
+    if (!this.sceneProject) return;
     const bounds = this.host.getBoundingClientRect();
     if (bounds.width < 2 || bounds.height < 2) return;
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
@@ -2453,7 +2479,7 @@ export class CanvasView {
   private async renderPdf(): Promise<void> {
     const renderer = this.hooks.getRenderer();
     const size = this.pageSize();
-    if (!renderer || !size || !store.project) return;
+    if (!renderer || !size || !this.sceneProject) return;
     const bounds = this.host.getBoundingClientRect();
     if (bounds.width < 2 || bounds.height < 2) return;
     const page = this.viewPage;
@@ -2507,7 +2533,7 @@ export class CanvasView {
   private drawBase(): void {
     const ctx = this.baseCtx;
     this.prepare(ctx);
-    const project = store.project;
+    const project = this.sceneProject;
     if (!project) return;
     const size = this.pageSize();
     if (!size) return;
@@ -2577,7 +2603,7 @@ export class CanvasView {
   private drawContent(): void {
     const ctx = this.contentCtx;
     this.prepare(ctx);
-    const project = store.project;
+    const project = this.sceneProject;
     if (!project) return;
     const size = this.pageSize();
     if (!size) return;
@@ -3067,7 +3093,7 @@ export class CanvasView {
       }
       case "image": {
         if (points.length < 2) break;
-        const project = store.project;
+        const project = this.sceneProject;
         const asset = project ? imageAssetForItem(project, item) : undefined;
         if (!asset) break;
         const image = this.imageElement(asset);
