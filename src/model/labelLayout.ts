@@ -2,7 +2,16 @@ import { isReferenceCalibration, pageCalibration } from "./calibration";
 import { layerVisibleOnPage } from "./layers";
 import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
-import { boundingBox, itemBounds, midpoint, pointInPolygon, type Bounds } from "./geometry";
+import {
+  arcPolyline,
+  boundingBox,
+  circlePolyline,
+  itemBounds,
+  midpoint,
+  pointInPolygon,
+  radiusCircle,
+  type Bounds,
+} from "./geometry";
 import {
   labelAnchorForPoints,
   labelBox,
@@ -120,12 +129,22 @@ export function pageLabelSources(
       if (options.layerIds && !options.layerIds.has(layer.id)) continue;
       for (const item of layer.items) {
         if (item.page !== page || item.visible === false) continue;
-        if (item.kind !== "length" && item.kind !== "area" && item.kind !== "count") continue;
+        if (
+          item.kind !== "length" &&
+          item.kind !== "area" &&
+          item.kind !== "count" &&
+          item.kind !== "radius" &&
+          item.kind !== "diameter" &&
+          item.kind !== "arc"
+        ) {
+          continue;
+        }
         const parts = measurementLabelParts(item, project);
         if (!parts) continue;
+        const circle = radiusCircle(item);
         sources.push({
           id: item.id,
-          kind: item.kind,
+          kind: item.kind === "area" ? "area" : item.kind === "count" ? "count" : "length",
           parts,
           anchor: labelAnchorForPoints(item, item.points),
           obstacle:
@@ -140,7 +159,11 @@ export function pageLabelSources(
               ? areaOutline(item.points, areaShapeOf(item))
               : item.kind === "length"
                 ? item.points.map((point) => ({ ...point }))
-                : undefined,
+                : circle
+                  ? circlePolyline(circle.center, circle.radius)
+                  : item.kind === "arc"
+                    ? arcPolyline(item)
+                    : undefined,
           labelSize: item.labelSize,
           labelFit: item.labelFit,
           color: item.color,

@@ -33,7 +33,14 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },
 };
 
-const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set(["length", "area", "count"]);
+const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set([
+  "length",
+  "area",
+  "count",
+  "radius",
+  "diameter",
+  "arc",
+]);
 
 export function isMeasurementKind(kind: ItemKind): boolean {
   return MEASURE_KINDS.has(kind);

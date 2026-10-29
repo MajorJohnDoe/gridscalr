@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.10.0** · Project-file schema: **17**
+Current version: **0.11.0** · Project-file schema: **18**
 
 ## Product principles
 
@@ -46,17 +46,18 @@ milestone:
 | 0.8.0 | Session-only revision comparison with overlay and side-by-side views, markup diff and comparison PDF | Complete | v16 |
 | 0.9.0 | Local PDF text-layer search with highlighted hits | Complete | v16 |
 | 0.10.0 | Bundled English/Swedish OCR for scanned pages, stored as a rebuildable schema 17 index | Complete | v17 |
+| 0.11.0 | Radius, diameter and three-point arc measurements with labels, quantities and PDF export | Complete | v18 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.10.0. The candidates below are ordered by
+There is no committed milestone after 0.11.0. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **More measurement types** such as radius, diameter, arc, angle, slope and
-   volume, with the quantity and unit model that each dimension needs.
+1. **Angle, slope and volume measurements**, with the quantity and unit model
+   that each dimension needs.
 2. **Custom count types** and count quantities greater than one piece per object.
 3. **Semantic PDF vector comparison** as a separate spike. It needs extraction and
    indexing of PDF operators and must not block other work.

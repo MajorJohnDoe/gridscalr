@@ -280,6 +280,110 @@ export function itemRotation(item: MarkupItem): number {
 }
 
 /** Unrotated item bounds in page coordinates. */
+export interface ArcGeometry {
+  center: Point;
+  radius: number;
+  startAngle: number;
+  endAngle: number;
+  /** Positive sweep in radians from start to end through the middle point. */
+  sweep: number;
+  length: number;
+}
+
+function normalizeRadians(angle: number): number {
+  const full = Math.PI * 2;
+  return ((angle % full) + full) % full;
+}
+
+/** Circle through three page-space points, or null when they are collinear. */
+export function circleFromPoints(
+  a: Point,
+  b: Point,
+  c: Point,
+): { center: Point; radius: number } | null {
+  const d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y));
+  if (Math.abs(d) < 1e-9) return null;
+  const a2 = a.x * a.x + a.y * a.y;
+  const b2 = b.x * b.x + b.y * b.y;
+  const c2 = c.x * c.x + c.y * c.y;
+  const center = {
+    x: (a2 * (b.y - c.y) + b2 * (c.y - a.y) + c2 * (a.y - b.y)) / d,
+    y: (a2 * (c.x - b.x) + b2 * (a.x - c.x) + c2 * (b.x - a.x)) / d,
+  };
+  return { center, radius: Math.hypot(center.x - a.x, center.y - a.y) };
+}
+
+/** Radius edge and centre for a radius or diameter item. */
+export function radiusCircle(
+  item: MarkupItem,
+): { center: Point; edge: Point; radius: number } | null {
+  if (item.kind !== "radius" && item.kind !== "diameter") return null;
+  const [center, edge] = item.points;
+  if (!center || !edge) return null;
+  return { center, edge, radius: Math.hypot(edge.x - center.x, edge.y - center.y) };
+}
+
+/** Arc through start, middle and end points. */
+export function arcGeometry(item: MarkupItem): ArcGeometry | null {
+  if (item.kind !== "arc") return null;
+  const [start, middle, end] = item.points;
+  if (!start || !middle || !end) return null;
+  const circle = circleFromPoints(start, middle, end);
+  if (!circle || circle.radius < 1e-6) return null;
+  const startAngle = Math.atan2(start.y - circle.center.y, start.x - circle.center.x);
+  const middleAngle = Math.atan2(middle.y - circle.center.y, middle.x - circle.center.x);
+  const endAngle = Math.atan2(end.y - circle.center.y, end.x - circle.center.x);
+  const ccwSweep = normalizeRadians(endAngle - startAngle);
+  const middleSweep = normalizeRadians(middleAngle - startAngle);
+  const sweep = middleSweep <= ccwSweep ? ccwSweep : Math.PI * 2 - ccwSweep;
+  return {
+    center: circle.center,
+    radius: circle.radius,
+    startAngle,
+    endAngle,
+    sweep,
+    length: circle.radius * sweep,
+  };
+}
+
+/** Sampled page-space polyline for a full circle. */
+export function circlePolyline(center: Point, radius: number, segments = 64): Point[] {
+  const points: Point[] = [];
+  for (let index = 0; index <= segments; index += 1) {
+    const angle = (Math.PI * 2 * index) / segments;
+    points.push({ x: center.x + Math.cos(angle) * radius, y: center.y + Math.sin(angle) * radius });
+  }
+  return points;
+}
+
+/** Sampled page-space polyline for an arc, used by hit testing and bounds. */
+export function arcPolyline(item: MarkupItem, segments = 64): Point[] {
+  const arc = arcGeometry(item);
+  if (!arc) return item.points.map((point) => ({ ...point }));
+  const points: Point[] = [];
+  const direction = arc.sweep >= 0 ? 1 : -1;
+  for (let index = 0; index <= segments; index += 1) {
+    const angle = arc.startAngle + direction * arc.sweep * (index / segments);
+    points.push({
+      x: arc.center.x + Math.cos(angle) * arc.radius,
+      y: arc.center.y + Math.sin(angle) * arc.radius,
+    });
+  }
+  return points;
+}
+
+/** Length value for a measurement kind, in PDF points. */
+export function measurementValue(item: MarkupItem): number | null {
+  if (item.kind === "length") return polylineLength(item.points);
+  if (item.kind === "radius") return radiusCircle(item)?.radius ?? null;
+  if (item.kind === "diameter") {
+    const circle = radiusCircle(item);
+    return circle ? circle.radius * 2 : null;
+  }
+  if (item.kind === "arc") return arcGeometry(item)?.length ?? null;
+  return null;
+}
+
 export function itemLocalBounds(item: MarkupItem): Bounds {
   if (item.kind === "symbol") {
     const anchor = item.points[0] ?? { x: 0, y: 0 };
@@ -323,6 +427,17 @@ export function itemLocalBounds(item: MarkupItem): Bounds {
       min: { x: layout.center.x - layout.size / 2, y: layout.center.y - layout.size / 2 },
       max: { x: layout.center.x + layout.size / 2, y: layout.center.y + layout.size / 2 },
     };
+  }
+  if (item.kind === "radius" || item.kind === "diameter") {
+    const circle = radiusCircle(item);
+    if (!circle) return boundingBox(item.points);
+    return {
+      min: { x: circle.center.x - circle.radius, y: circle.center.y - circle.radius },
+      max: { x: circle.center.x + circle.radius, y: circle.center.y + circle.radius },
+    };
+  }
+  if (item.kind === "arc") {
+    return boundingBox(arcPolyline(item));
   }
   if (item.kind === "cloud") {
     const bounds = boundingBox(item.points);

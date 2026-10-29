@@ -12,6 +12,9 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Length | `L` |
 | Area | `A` |
 | Count | `C` |
+| Radius | `Q` |
+| Diameter | `W` |
+| Arc | `Z` |
 | Pen | `P` |
 | Line | `I` |
 | Arrow | `U` |

@@ -48,7 +48,14 @@ import {
   type DrawingExportOptions,
   type NormalizedCrop,
 } from "../model/export";
-import { arrowHeadGeometry, itemCenter, midpoint, rotatePoint } from "../model/geometry";
+import {
+  arcPolyline,
+  arrowHeadGeometry,
+  itemCenter,
+  midpoint,
+  radiusCircle,
+  rotatePoint,
+} from "../model/geometry";
 import { imageOpacity } from "../model/images";
 import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
 import type { LabelLayout } from "../model/labelLayout";
@@ -554,6 +561,53 @@ function drawItem(
         page,
         viewport,
         item.points,
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Round,
+        item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
+      );
+      break;
+    case "radius":
+    case "diameter": {
+      const circle = radiusCircle(item);
+      if (!circle) break;
+      const center = toPdfPoint(viewport, circle.center);
+      page.drawCircle({
+        x: center.x,
+        y: center.y,
+        size: circle.radius * viewport.scale,
+        borderColor: color,
+        borderWidth: width,
+        borderOpacity: opacity,
+      });
+      drawPolyline(
+        page,
+        viewport,
+        item.kind === "diameter"
+          ? [
+              {
+                x: circle.center.x - (circle.edge.x - circle.center.x),
+                y: circle.center.y - (circle.edge.y - circle.center.y),
+              },
+              circle.edge,
+            ]
+          : [circle.center, circle.edge],
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Round,
+        item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
+      );
+      break;
+    }
+    case "arc":
+      drawPolyline(
+        page,
+        viewport,
+        arcPolyline(item),
         color,
         width,
         opacity,

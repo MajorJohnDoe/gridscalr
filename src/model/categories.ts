@@ -18,7 +18,14 @@ export const DEFAULT_CATEGORY_NAMES = [
 export const CATEGORY_NAME_MAX_LENGTH = 40;
 
 /** Kept local so this module stays free of a cycle through `layers.ts`. */
-const MEASUREMENT_KINDS: ReadonlySet<ItemKind> = new Set(["length", "area", "count"]);
+const MEASUREMENT_KINDS: ReadonlySet<ItemKind> = new Set([
+  "length",
+  "area",
+  "count",
+  "radius",
+  "diameter",
+  "arc",
+]);
 
 export function isMeasurementItem(item: MarkupItem): boolean {
   return MEASUREMENT_KINDS.has(item.kind);

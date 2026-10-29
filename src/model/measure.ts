@@ -2,7 +2,7 @@ import { itemScale, pageScale, scaleRatio } from "./calibration";
 import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
 import { symbolName } from "./symbols";
-import { polylineLength } from "./geometry";
+import { measurementValue, polylineLength } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
 import {
   displayedLengthUnit,
@@ -26,11 +26,25 @@ export function itemScaleForDisplay(item: MarkupItem, project: Project): ScaleSn
 
 export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | null {
   const scale = itemScale(item, project);
-  if (item.kind === "length") {
-    const points = polylineLength(item.points);
+  if (
+    item.kind === "length" ||
+    item.kind === "radius" ||
+    item.kind === "diameter" ||
+    item.kind === "arc"
+  ) {
+    const points =
+      measurementValue(item) ?? (item.kind === "length" ? polylineLength(item.points) : 0);
     const smart = project.settings.smartLengthUnits;
+    const prefix =
+      item.kind === "radius"
+        ? "R "
+        : item.kind === "diameter"
+          ? "Ø "
+          : item.kind === "arc"
+            ? "Arc "
+            : "";
     return {
-      primary: formatLength(points, scale, project.settings.lengthUnit, smart),
+      primary: `${prefix}${formatLength(points, scale, project.settings.lengthUnit, smart)}`,
       rawPoints: points,
       scale,
       unit: scale ? displayedLengthUnit(points, scale, project.settings.lengthUnit, smart) : "pt",
@@ -67,7 +81,15 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
  * value never reaches a quantity report unnoticed.
  */
 export function itemScaleWarning(item: MarkupItem, project: Project): string | null {
-  if (item.kind !== "length" && item.kind !== "area") return null;
+  if (
+    item.kind !== "length" &&
+    item.kind !== "area" &&
+    item.kind !== "radius" &&
+    item.kind !== "diameter" &&
+    item.kind !== "arc"
+  ) {
+    return null;
+  }
   // Items without a snapshot predate the field and follow the page.
   if (item.scale === undefined) return null;
   const page = pageScale(project, item.page);
@@ -107,6 +129,12 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Area";
     case "count":
       return "Count";
+    case "radius":
+      return "Radius";
+    case "diameter":
+      return "Diameter";
+    case "arc":
+      return "Arc";
     case "pen":
       return "Pen";
     case "line":
