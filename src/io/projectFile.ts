@@ -55,6 +55,9 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "radius",
   "diameter",
   "arc",
+  "angle",
+  "slope",
+  "volume",
   "pen",
   "line",
   "arrow",
@@ -315,6 +318,15 @@ function normalizeItem(
     if (points.length < 2) return null;
     if (points.length > 2) points.length = 2;
   }
+  if (raw.kind === "radius" || raw.kind === "diameter" || raw.kind === "slope") {
+    if (points.length < 2) return null;
+    points.length = 2;
+  }
+  if (raw.kind === "arc" || raw.kind === "angle") {
+    if (points.length < 3) return null;
+    points.length = 3;
+  }
+  if (raw.kind === "volume" && points.length < 3) return null;
   if (raw.kind === "cloud" && points.length < 3) return null;
   if (raw.kind === "callout") {
     if (points.length < 2) return null;
@@ -336,7 +348,13 @@ function normalizeItem(
   const labelFit =
     raw.kind === "area" && isLabelFitPosition(raw.labelFit) ? raw.labelFit : undefined;
   const lineStyle: MarkupItem["lineStyle"] =
-    raw.kind === "length" && raw.lineStyle === "dashed" ? "dashed" : undefined;
+    (raw.kind === "length" ||
+      raw.kind === "radius" ||
+      raw.kind === "diameter" ||
+      raw.kind === "arc") &&
+    raw.lineStyle === "dashed"
+      ? "dashed"
+      : undefined;
   const cloudRadius =
     raw.kind === "cloud" &&
     typeof raw.cloudRadius === "number" &&
@@ -358,6 +376,15 @@ function normalizeItem(
     raw.textBoxHeight > 0
       ? Math.max(15, Math.min(2000, raw.textBoxHeight))
       : undefined;
+  const depth =
+    raw.kind === "volume" &&
+    typeof raw.depth === "number" &&
+    Number.isFinite(raw.depth) &&
+    raw.depth > 0
+      ? Math.max(0.001, Math.min(1_000_000, raw.depth))
+      : raw.kind === "volume"
+        ? 1
+        : undefined;
   const textColor =
     (raw.kind === "cloud" ||
       raw.kind === "callout" ||
@@ -421,6 +448,7 @@ function normalizeItem(
         : undefined,
     visible: raw.visible !== false,
     locked: raw.locked === true,
+    depth,
     scale:
       scale === undefined
         ? undefined

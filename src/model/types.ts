@@ -1,10 +1,11 @@
-export const SCHEMA_VERSION = 18 as const;
+export const SCHEMA_VERSION = 19 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
 export type LayerKind = "measure" | "draw";
 
-export type MeasurementKind = "length" | "area" | "count" | "radius" | "diameter" | "arc";
+export type MeasurementKind =
+  "length" | "area" | "count" | "radius" | "diameter" | "arc" | "angle" | "slope" | "volume";
 export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
 export type SymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
 export type InspectionStatus = "approved" | "not-approved" | "action-required" | "missing";
@@ -115,8 +116,10 @@ export interface MarkupItem {
   room?: string;
   /** Areas only. Defaults to add. */
   areaMode?: AreaMode;
-  /** Areas only. Missing means polygon. */
+  /** Areas and volumes. Missing means polygon. */
   areaShape?: AreaShape;
+  /** Volumes only. Depth in the project length unit. */
+  depth?: number;
   /** Length measurements only. Missing means solid. */
   lineStyle?: LineStyle;
   /** Count items only. */

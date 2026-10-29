@@ -105,7 +105,10 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     store.ui.activeTool === "count" ||
     store.ui.activeTool === "radius" ||
     store.ui.activeTool === "diameter" ||
-    store.ui.activeTool === "arc";
+    store.ui.activeTool === "arc" ||
+    store.ui.activeTool === "angle" ||
+    store.ui.activeTool === "slope" ||
+    store.ui.activeTool === "volume";
   if (measureTool) {
     const measureOptions = el("button", "btn btn-small btn-ghost context-measure-options");
     measureOptions.type = "button";

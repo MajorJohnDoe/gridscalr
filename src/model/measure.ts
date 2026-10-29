@@ -2,14 +2,18 @@ import { itemScale, pageScale, scaleRatio } from "./calibration";
 import { areaPerimeter, areaShapeOf, areaValue } from "./area";
 import { countTypeLabel } from "./countSymbols";
 import { symbolName } from "./symbols";
-import { measurementValue, polylineLength } from "./geometry";
+import { angleValue, measurementValue, polylineLength, slopeDegrees, slopeValue } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";
 import {
+  areaInUnit,
   displayedLengthUnit,
   formatArea,
   formatLength,
   formatLengthCompact,
+  formatNumber,
   formatScaleRatio,
+  volumeInUnit,
+  volumeUnitLabel,
 } from "./units";
 
 export interface ItemMetrics {
@@ -73,6 +77,44 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
       unit: "pcs",
     };
   }
+  if (item.kind === "angle") {
+    const degrees = angleValue(item) ?? 0;
+    return {
+      primary: `${formatNumber(degrees, 1)}°`,
+      rawPoints: degrees,
+      scale: null,
+      unit: "°",
+    };
+  }
+  if (item.kind === "slope") {
+    const percent = slopeValue(item) ?? 0;
+    return {
+      primary: `${formatNumber(percent, 1)}%`,
+      secondary: `${formatNumber(slopeDegrees(item) ?? 0, 1)}°`,
+      rawPoints: percent,
+      scale: null,
+      unit: "%",
+    };
+  }
+  if (item.kind === "volume") {
+    const depth = item.depth ?? 1;
+    const volume = scale
+      ? volumeInUnit(
+          areaValue(item.points, "polygon"),
+          scale.pointsPerMeter,
+          project.settings.areaUnit,
+          depth,
+          project.settings.lengthUnit,
+        )
+      : areaInUnit(areaValue(item.points, "polygon"), 1, project.settings.areaUnit) * depth;
+    return {
+      primary: `${formatNumber(volume, 2)} ${volumeUnitLabel(project.settings.areaUnit)}`,
+      secondary: `${formatNumber(depth, 2)} ${project.settings.lengthUnit} deep`,
+      rawPoints: volume,
+      scale,
+      unit: scale ? volumeUnitLabel(project.settings.areaUnit) : "pt²",
+    };
+  }
   return null;
 }
 
@@ -86,7 +128,8 @@ export function itemScaleWarning(item: MarkupItem, project: Project): string | n
     item.kind !== "area" &&
     item.kind !== "radius" &&
     item.kind !== "diameter" &&
-    item.kind !== "arc"
+    item.kind !== "arc" &&
+    item.kind !== "volume"
   ) {
     return null;
   }
@@ -135,6 +178,12 @@ export function itemKindLabel(kind: MarkupItem["kind"]): string {
       return "Diameter";
     case "arc":
       return "Arc";
+    case "angle":
+      return "Angle";
+    case "slope":
+      return "Slope";
+    case "volume":
+      return "Volume";
     case "pen":
       return "Pen";
     case "line":

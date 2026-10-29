@@ -3,11 +3,11 @@ import { pageBuilding, pageDisplayName, pageFloor } from "./documents";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
-import { areaInUnit, lengthInUnit, unitLabel } from "./units";
-import { measurementValue, polylineLength } from "./geometry";
+import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
+import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
 import type { MarkupItem, Project } from "./types";
 
-export type QuantityType = "length" | "area" | "count";
+export type QuantityType = "length" | "area" | "count" | "angle" | "slope" | "volume";
 
 export interface QuantityFilters {
   /** A page number, or "all" for every page. */
@@ -137,6 +137,9 @@ const TYPE_ORDER: Record<QuantityType, number> = {
   length: 0,
   area: 1,
   count: 2,
+  angle: 3,
+  slope: 4,
+  volume: 5,
 };
 
 const ROUND_TOLERANCE = 1e-9;
@@ -153,6 +156,9 @@ function roundUpToStep(value: number, step: number): number {
 function quantityType(item: MarkupItem): QuantityType | null {
   if (item.kind === "length" || item.kind === "area" || item.kind === "count") return item.kind;
   if (item.kind === "radius" || item.kind === "diameter" || item.kind === "arc") return "length";
+  if (item.kind === "angle") return "angle";
+  if (item.kind === "slope") return "slope";
+  if (item.kind === "volume") return "volume";
   return null;
 }
 
@@ -242,6 +248,10 @@ function forEachMeasuredItem(
       let deduction = 0;
       if (type === "count") {
         gross = 1;
+      } else if (type === "angle") {
+        gross = angleValue(item) ?? 0;
+      } else if (type === "slope") {
+        gross = slopeValue(item) ?? 0;
       } else {
         const scale = itemScaleForDisplay(item, project);
         if (!scale) {
@@ -252,6 +262,14 @@ function forEachMeasuredItem(
           gross = lengthInUnit(
             measurementValue(item) ?? polylineLength(item.points),
             scale.pointsPerMeter,
+            lengthUnit,
+          );
+        } else if (type === "volume") {
+          gross = volumeInUnit(
+            areaValue(item.points, "polygon"),
+            scale.pointsPerMeter,
+            areaUnit,
+            item.depth ?? 1,
             lengthUnit,
           );
         } else {
@@ -273,8 +291,14 @@ function forEachMeasuredItem(
         type,
         gross,
         deduction,
-        wastePercent: category.wastePercent ?? project.settings.quantity.wastePercent,
-        roundingStep: category.roundingStep ?? project.settings.quantity.roundingStep,
+        wastePercent:
+          type === "angle" || type === "slope"
+            ? 0
+            : (category.wastePercent ?? project.settings.quantity.wastePercent),
+        roundingStep:
+          type === "angle" || type === "slope"
+            ? 0
+            : (category.roundingStep ?? project.settings.quantity.roundingStep),
       });
     }
   }
@@ -284,10 +308,11 @@ function forEachMeasuredItem(
 
 function rowFromGroup(
   group: GroupAccumulator,
-  units: { length: string; area: string },
+  units: { length: string; area: string; volume: string },
 ): QuantityRow {
   const net = Math.max(0, group.gross - group.deduction);
-  const wasteQuantity = net * (group.wastePercent / 100);
+  const special = group.type === "angle" || group.type === "slope";
+  const wasteQuantity = special ? 0 : net * (group.wastePercent / 100);
   const rawOrder = net + wasteQuantity;
   const orderQuantity = Math.max(
     net,
@@ -300,21 +325,36 @@ function rowFromGroup(
     categoryName: group.categoryName,
     room: group.room,
     type: group.type,
-    unit: group.type === "length" ? units.length : group.type === "area" ? units.area : "pcs",
+    unit:
+      group.type === "length"
+        ? units.length
+        : group.type === "area"
+          ? units.area
+          : group.type === "volume"
+            ? units.volume
+            : group.type === "angle"
+              ? "°"
+              : group.type === "slope"
+                ? "%"
+                : "pcs",
     gross: group.gross,
     deduction: group.deduction,
     net,
     wastePercent: group.wastePercent,
     wasteQuantity,
     roundingStep: group.roundingStep,
-    orderQuantity,
+    orderQuantity: special ? net : orderQuantity,
     items: group.items,
     clamped: group.type === "area" && group.deduction > group.gross,
   };
 }
 
-function projectUnits(project: Project): { length: string; area: string } {
-  return { length: project.settings.lengthUnit, area: unitLabel(project.settings.areaUnit) };
+function projectUnits(project: Project): { length: string; area: string; volume: string } {
+  return {
+    length: project.settings.lengthUnit,
+    area: unitLabel(project.settings.areaUnit),
+    volume: volumeUnitLabel(project.settings.areaUnit),
+  };
 }
 
 /**

@@ -579,10 +579,42 @@ try {
   assert.ok(arcId, "an arc measurement should be created");
   assert.equal((await itemById(arcId)).kind, "arc");
 
+  // 12. Angle, slope and volume measurements.
+  const beforeAngle = await itemIds();
+  await page.keyboard.press("e");
+  await clickPage({ x: 700, y: 500 });
+  await clickPage({ x: 740, y: 500 });
+  await clickPage({ x: 740, y: 540 });
+  const angleId = (await itemIds()).find((id) => !beforeAngle.includes(id));
+  assert.ok(angleId, "an angle measurement should be created");
+  assert.equal((await itemById(angleId)).kind, "angle");
+
+  const beforeSlope = await itemIds();
+  await page.keyboard.press("j");
+  await clickPage({ x: 600, y: 600 });
+  await clickPage({ x: 700, y: 620 });
+  const slopeId = (await itemIds()).find((id) => !beforeSlope.includes(id));
+  assert.ok(slopeId, "a slope measurement should be created");
+  assert.equal((await itemById(slopeId)).kind, "slope");
+
+  const beforeVolume = await itemIds();
+  await page.keyboard.press("m");
+  await clickPage({ x: 600, y: 700 });
+  await clickPage({ x: 700, y: 700 });
+  await clickPage({ x: 700, y: 780 });
+  await clickPage({ x: 600, y: 780 });
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(120);
+  const volumeId = (await itemIds()).find((id) => !beforeVolume.includes(id));
+  assert.ok(volumeId, "a volume measurement should be created");
+  const volume = await itemById(volumeId);
+  assert.equal(volume.kind, "volume");
+  assert.equal(volume.depth, 1);
+
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, radius, diameter, arc, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
+    "Canvas regression passed: length, area, radius, diameter, arc, angle, slope, volume, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
   );
 } finally {
   await page?.close();

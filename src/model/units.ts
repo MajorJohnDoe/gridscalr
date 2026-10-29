@@ -61,6 +61,37 @@ export function areaInUnit(pointArea: number, ppm: number, unit: AreaUnit): numb
   return pointArea / (ppm * ppm) / areaUnitToSquareMeters(unit);
 }
 
+export function volumeUnitLabel(unit: AreaUnit): string {
+  switch (unit) {
+    case "mm2":
+      return "mm³";
+    case "cm2":
+      return "cm³";
+    case "in2":
+      return "in³";
+    case "ft2":
+      return "ft³";
+    case "yd2":
+      return "yd³";
+    default:
+      return "m³";
+  }
+}
+
+/** Volume in the area unit's matching cubic unit. Depth is in the project length unit. */
+export function volumeInUnit(
+  pointArea: number,
+  ppm: number,
+  areaUnit: AreaUnit,
+  depth: number,
+  depthUnit: LengthUnit,
+): number {
+  const area = areaInUnit(pointArea, ppm, areaUnit);
+  const baseLengthMeters = Math.sqrt(areaUnitToSquareMeters(areaUnit));
+  const depthInAreaUnit = (depth * unitToMeters(depthUnit)) / baseLengthMeters;
+  return area * depthInAreaUnit;
+}
+
 function usesSmartMetric(unit: LengthUnit): boolean {
   return unit === "mm" || unit === "cm";
 }

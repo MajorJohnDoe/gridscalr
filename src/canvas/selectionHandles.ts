@@ -47,6 +47,9 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
     item.kind === "radius" ||
     item.kind === "diameter" ||
     item.kind === "arc" ||
+    item.kind === "angle" ||
+    item.kind === "slope" ||
+    item.kind === "volume" ||
     item.kind === "cloud" ||
     (item.kind === "highlight" && item.highlightShape !== "stroke")
   ) {

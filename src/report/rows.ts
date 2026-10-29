@@ -69,11 +69,15 @@ function round3(value: number): number {
 }
 
 function measuredText(value: number, row: QuantityRow): string {
-  return row.type === "count" ? String(Math.round(value)) : fixed3(value);
+  if (row.type === "count") return String(Math.round(value));
+  if (row.type === "angle" || row.type === "slope") return value.toFixed(1);
+  return fixed3(value);
 }
 
 function measuredNumber(value: number, row: QuantityRow): number {
-  return row.type === "count" ? Math.round(value) : round3(value);
+  if (row.type === "count") return Math.round(value);
+  if (row.type === "angle" || row.type === "slope") return Math.round(value * 10) / 10;
+  return round3(value);
 }
 
 function header(columns: readonly string[]): ReportCell[] {

@@ -135,7 +135,10 @@ export function pageLabelSources(
           item.kind !== "count" &&
           item.kind !== "radius" &&
           item.kind !== "diameter" &&
-          item.kind !== "arc"
+          item.kind !== "arc" &&
+          item.kind !== "angle" &&
+          item.kind !== "slope" &&
+          item.kind !== "volume"
         ) {
           continue;
         }
@@ -151,11 +154,14 @@ export function pageLabelSources(
             item.kind === "count" && item.points[0]
               ? countSymbolBounds(item.points[0])
               : itemBounds(item),
-          polygon: item.kind === "area" ? areaOutline(item.points, areaShapeOf(item)) : undefined,
+          polygon:
+            item.kind === "area" || item.kind === "volume"
+              ? areaOutline(item.points, areaShapeOf(item))
+              : undefined,
           labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
           labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
           outline:
-            item.kind === "area"
+            item.kind === "area" || item.kind === "volume"
               ? areaOutline(item.points, areaShapeOf(item))
               : item.kind === "length"
                 ? item.points.map((point) => ({ ...point }))

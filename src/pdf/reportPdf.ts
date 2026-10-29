@@ -49,6 +49,9 @@ for (const column of COLUMNS) {
 function typeLabel(type: QuantityType): string {
   if (type === "length") return "Length";
   if (type === "area") return "Area";
+  if (type === "angle") return "Angle";
+  if (type === "slope") return "Slope";
+  if (type === "volume") return "Volume";
   return "Count";
 }
 
@@ -84,7 +87,7 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
 }
 
 function measured(value: number, type: QuantityType): string {
-  return formatNumber(value, type === "count" ? 0 : 2);
+  return formatNumber(value, type === "count" ? 0 : type === "angle" || type === "slope" ? 1 : 2);
 }
 
 function wasteValue(value: number): string {

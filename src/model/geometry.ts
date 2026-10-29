@@ -372,6 +372,69 @@ export function arcPolyline(item: MarkupItem, segments = 64): Point[] {
   return points;
 }
 
+export interface AngleGeometry {
+  start: Point;
+  vertex: Point;
+  end: Point;
+  startAngle: number;
+  endAngle: number;
+  sweep: number;
+  degrees: number;
+}
+
+/** Angle between two rays from the middle point, in degrees. */
+export function angleGeometry(item: MarkupItem): AngleGeometry | null {
+  if (item.kind !== "angle") return null;
+  const [start, vertex, end] = item.points;
+  if (!start || !vertex || !end) return null;
+  const startAngle = Math.atan2(start.y - vertex.y, start.x - vertex.x);
+  const endAngle = Math.atan2(end.y - vertex.y, end.x - vertex.x);
+  let sweep = normalizeRadians(endAngle - startAngle);
+  if (sweep > Math.PI) sweep = Math.PI * 2 - sweep;
+  return { start, vertex, end, startAngle, endAngle, sweep, degrees: (sweep * 180) / Math.PI };
+}
+
+export function angleValue(item: MarkupItem): number | null {
+  return angleGeometry(item)?.degrees ?? null;
+}
+
+/** Signed grade percentage from the horizontal run between two points. */
+export function slopeValue(item: MarkupItem): number | null {
+  if (item.kind !== "slope") return null;
+  const [start, end] = item.points;
+  if (!start || !end) return null;
+  const run = Math.abs(end.x - start.x);
+  const rise = Math.abs(end.y - start.y);
+  return (rise / Math.max(run, 1e-6)) * 100;
+}
+
+export function slopeDegrees(item: MarkupItem): number | null {
+  if (item.kind !== "slope") return null;
+  const [start, end] = item.points;
+  if (!start || !end) return null;
+  return (Math.atan2(Math.abs(end.y - start.y), Math.abs(end.x - start.x)) * 180) / Math.PI;
+}
+
+/** Sampled polyline for the angle arc between its two rays. */
+export function angleArcPolyline(item: MarkupItem, segments = 32): Point[] {
+  const angle = angleGeometry(item);
+  if (!angle) return [];
+  const radius =
+    Math.min(
+      Math.hypot(angle.start.x - angle.vertex.x, angle.start.y - angle.vertex.y),
+      Math.hypot(angle.end.x - angle.vertex.x, angle.end.y - angle.vertex.y),
+    ) * 0.35;
+  const points: Point[] = [];
+  for (let index = 0; index <= segments; index += 1) {
+    const value = angle.startAngle + (angle.sweep * index) / segments;
+    points.push({
+      x: angle.vertex.x + Math.cos(value) * radius,
+      y: angle.vertex.y + Math.sin(value) * radius,
+    });
+  }
+  return points;
+}
+
 /** Length value for a measurement kind, in PDF points. */
 export function measurementValue(item: MarkupItem): number | null {
   if (item.kind === "length") return polylineLength(item.points);

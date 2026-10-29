@@ -760,6 +760,35 @@ export function selectionSection(
     styleRow.append(sizeField);
     section.append(styleRow);
 
+    if (item.kind === "volume") {
+      const depthField = el("label", "field");
+      depthField.append(el("span", "field-label", "Depth"));
+      const depthWrap = el("div", "input-row");
+      const depth = el("input", "input");
+      depth.type = "number";
+      depth.min = "0.001";
+      depth.step = "0.1";
+      depth.value = String(item.depth ?? 1);
+      depth.disabled = locked;
+      depth.setAttribute("aria-label", "Volume depth");
+      depth.addEventListener("change", () => {
+        const value = Number(depth.value);
+        if (!Number.isFinite(value) || value <= 0) {
+          depth.value = String(item.depth ?? 1);
+          return;
+        }
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          target.depth = Math.max(0.001, Math.min(1_000_000, value));
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      depthWrap.append(depth, el("span", "context-unit", project.settings.lengthUnit));
+      depthField.append(depthWrap);
+      section.append(depthField);
+    }
+
     if (isMeasurementKind(item.kind)) {
       const lineField = el("label", "field");
       lineField.append(el("span", "field-label", "Line style"));

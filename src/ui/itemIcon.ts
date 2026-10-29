@@ -15,6 +15,12 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
       return "diameter";
     case "arc":
       return "arc";
+    case "angle":
+      return "angle";
+    case "slope":
+      return "slope";
+    case "volume":
+      return "volume";
     case "pen":
       return "pen";
     case "line":

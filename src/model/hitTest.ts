@@ -59,6 +59,11 @@ function hitItem(
     return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 
+  if (item.kind === "angle" || item.kind === "slope") {
+    const d = distanceToPolyline(localPoint, item.points, false);
+    return d <= tolerance ? { distance: d, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
   if (item.kind === "radius" || item.kind === "diameter") {
     const circle = radiusCircle(item);
     if (!circle) return null;
@@ -77,7 +82,7 @@ function hitItem(
     return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 
-  if (item.kind === "area") {
+  if (item.kind === "area" || item.kind === "volume") {
     const shape = areaShapeOf(item);
     const inside = pointInAreaShape(localPoint, item.points, shape);
     const edgeDistance = distanceToAreaShape(localPoint, item.points, shape);

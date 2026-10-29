@@ -52,7 +52,7 @@ describe("OCR index", () => {
     const project = makeProject();
     project.pages["1"] = { ocr: makeOcr() };
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(18);
+    expect(parsed.schemaVersion).toBe(19);
     expect(parsed.pages["1"].ocr).toEqual(makeOcr());
   });
 
@@ -66,12 +66,12 @@ describe("OCR index", () => {
     expect(parsed.pages["1"].ocr).toBeUndefined();
   });
 
-  it("loads a schema 16 project without OCR and upgrades it to schema 18", () => {
+  it("loads a schema 16 project without OCR and upgrades it to schema 19", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
     raw.schemaVersion = 16;
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(18);
+    expect(parsed.schemaVersion).toBe(19);
     expect(parsed.pages["1"]?.ocr).toBeUndefined();
   });
 });
