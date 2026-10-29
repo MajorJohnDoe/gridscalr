@@ -9,7 +9,7 @@ Version 1–5 projects load normally and are migrated to schema 16: the old `doc
 
 ```json
 {
-  "schemaVersion": 14,
+  "schemaVersion": 16,
   "name": "Level 01",
   "documents": [
     {

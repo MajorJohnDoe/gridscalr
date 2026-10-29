@@ -48,8 +48,11 @@ before the first launch. Linux and macOS builds can be produced from source.
 - Organise everything in separate measurement and drawing layers with per-item
   visibility and locks, multi-select, bulk edits and a docked Markups table with
   saved views, filters and grouping.
-- Review gross, deduction, net, waste and order quantities per category and
-  room, then export a quantity CSV or a print-friendly PDF report.
+- Review gross, deduction, net, waste and order quantities per category,
+  room and page, then export a CSV, an Excel workbook or a print-friendly PDF
+  report.
+- Open a synchronized split view to keep a second, read-only reference of the
+  same page beside the primary canvas. Pan, zoom and page changes stay in step.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
 - Undo/redo, autosave recovery, recent files, and the user guide bundled under
@@ -75,6 +78,11 @@ calculated from item data.
 | --- | --- |
 | ![Docked Markups list with a saved view, building/floor/room groups and configurable columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The same guides ship inside the app under **Help**. |
+
+| Synchronized split view | Excel handoff |
+| --- | --- |
+| ![Primary canvas and a read-only reference pane showing the same plan at the same pan and zoom](docs/screenshots/split-view.png) | **Procurement workbook.** Export summary, category, room, page, markup and source-notes sheets from the same takeoff data. |
+| **Compare while you work.** The reference pane follows every pan, zoom and page change and never edits the project. | **No second source of truth.** The XLSX workbook is generated on demand from the measurements. |
 
 More screens, including the Markups table, the symbol library and the in-app
 workflows, are captured in [docs/screenshots](docs/screenshots).
@@ -177,7 +185,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.7.2_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.7.3_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a

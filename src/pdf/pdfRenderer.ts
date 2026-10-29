@@ -75,7 +75,8 @@ export interface RenderResult {
 
 export class PdfRenderer {
   private pages = new Map<number, PDFPageProxy>();
-  private activeTask: { cancel: () => void } | null = null;
+  /** Concurrent renders are allowed so the primary and split reference canvases do not cancel each other. */
+  private activeTasks = new Set<{ cancel: () => void }>();
   /** 1-based global page where each document starts. */
   private starts: number[] = [];
   /** Source-local pages included for each document, in global order. */
@@ -187,7 +188,7 @@ export class PdfRenderer {
 
   /** True while the main canvas render is running, so background work can yield. */
   get busy(): boolean {
-    return this.activeTask !== null;
+    return this.activeTasks.size > 0;
   }
 
   /**
@@ -207,14 +208,14 @@ export class PdfRenderer {
   }
 
   cancel(): void {
-    if (this.activeTask) {
+    for (const task of this.activeTasks) {
       try {
-        this.activeTask.cancel();
+        task.cancel();
       } catch {
         // Rendering may already be complete.
       }
-      this.activeTask = null;
     }
+    this.activeTasks.clear();
   }
 
   async renderCrop(
@@ -248,7 +249,6 @@ export class PdfRenderer {
     canvas.width = Math.max(1, Math.ceil(width * scale));
     canvas.height = Math.max(1, Math.ceil(height * scale));
 
-    this.cancel();
     const viewport = base.clone({
       scale,
       offsetX: -x * scale,
@@ -260,11 +260,11 @@ export class PdfRenderer {
       background: "#ffffff",
       intent: "display",
     });
-    this.activeTask = task;
+    this.activeTasks.add(task);
     try {
       await task.promise;
     } finally {
-      if (this.activeTask === task) this.activeTask = null;
+      this.activeTasks.delete(task);
     }
     return {
       pageNumber,

@@ -31,6 +31,12 @@ GridScalr uses a compact, drawing-first layout.
 
 Panels remember their width, height and collapsed state between sessions.
 
+## Split view
+
+**View → Split view** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Both panes show the same page and stay synchronized when you pan, zoom or change pages. Drag the divider to change how much room each pane gets, and use the mouse wheel over either pane to zoom.
+
+The reference pane is for comparison only: selection, editing, layers and undo belong to the primary canvas. Closing split view does not change the drawing, the project or the undo history, and the split layout is not stored in the project file.
+
 ## Open drawings and projects
 
 ### New project
@@ -388,11 +394,12 @@ Set project defaults under **Settings → Project settings → Quantities**:
 
 ### Export quantity reports
 
-Use the **CSV** or **PDF** buttons in the Quantities dialog, or **File → Export → Quantities to CSV / Quantity report (PDF)**.
+Use the **CSV**, **Excel** or **PDF** buttons in the Quantities dialog, or **File → Export → Quantities to CSV / Quantities to Excel… / Quantity report (PDF)**.
 
 Reports cover every page and every category, exclude hidden items and hidden layers, and include locked items. Dialog filters do not affect the exported report. Reports are generated on demand and never stored in the project file.
 
 - CSV is UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for counts.
+- The Excel workbook contains **Summary**, **By category**, **By room**, **By page**, **Markups** and **Source notes** sheets. It is generated from the same item data as the CSV and PDF exports, applies the same visibility rules and never becomes a second source of truth.
 - The PDF report is A4 portrait with category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
 ## Save and export
@@ -419,6 +426,7 @@ Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Al
 - **View as PNG** – exports the rendered page and markup layers at the current view.
 - **Markups to CSV** – exports page, type, layer, label, computed value, unit, details, PDF-coordinate vertices, symbol name, symbol category, and inspection status.
 - **Quantities to CSV** – writes `<project>-quantities.csv` for spreadsheets and procurement tools.
+- **Quantities to Excel…** – writes `<project>-quantities.xlsx` with summary, category, room, page, markup and source-notes sheets.
 - **Quantity report (PDF)** – writes `<project>-quantities.pdf`.
 - **Project to JSON** – exports the project payload without requiring a `.gridscalr` extension.
 

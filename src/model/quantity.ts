@@ -1,4 +1,5 @@
 import { categoryForItem, normalizeRoom } from "./categories";
+import { pageBuilding, pageDisplayName, pageFloor } from "./documents";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
@@ -91,6 +92,45 @@ interface GroupAccumulator {
   items: number;
   wastePercent: number;
   roundingStep: number;
+  page?: number;
+}
+
+export interface QuantityByPageRow extends QuantityRow {
+  page: number;
+  /** Page title, or "Page N" when the page has no title. */
+  pageName: string;
+  building: string;
+  floor: string;
+}
+
+export interface QuantityPageSection {
+  page: number;
+  pageName: string;
+  building: string;
+  floor: string;
+  rows: QuantityByPageRow[];
+  totals: QuantityTypeTotal[];
+}
+
+export interface QuantityByPageSummary {
+  pages: QuantityPageSection[];
+  rows: QuantityByPageRow[];
+  hiddenExcluded: number;
+  uncalibratedExcluded: number;
+}
+
+export type QuantityPageFilters = Omit<QuantityFilters, "page">;
+
+interface MeasuredItem {
+  item: MarkupItem;
+  categoryId: string;
+  categoryName: string;
+  room: string;
+  type: QuantityType;
+  gross: number;
+  deduction: number;
+  wastePercent: number;
+  roundingStep: number;
 }
 
 const TYPE_ORDER: Record<QuantityType, number> = {
@@ -157,14 +197,21 @@ function totalsFromRows(rows: QuantityRow[]): QuantityTypeTotal[] {
 }
 
 /**
- * Builds report rows from current item data. Nothing is stored on the project.
- *
- * Area deductions are netted inside one category and room only. Totals are
- * sums of the clamped row nets so a deduction can never make an order row
- * negative.
+ * Applies the shared page, layer, category, room and visibility filters and
+ * measures each matching item. Both the category/room report and the by-page
+ * report use this function so their numbers can never diverge.
  */
-export function calculateQuantities(project: Project, filters: QuantityFilters): QuantitySummary {
-  const groups = new Map<string, GroupAccumulator>();
+function forEachMeasuredItem(
+  project: Project,
+  filters: {
+    page?: number | "all";
+    layerIds?: readonly string[] | null;
+    categoryId?: string | null;
+    room?: string;
+    includeHidden?: boolean;
+  },
+  visit: (entry: MeasuredItem) => void,
+): { hiddenExcluded: number; uncalibratedExcluded: number } {
   let hiddenExcluded = 0;
   let uncalibratedExcluded = 0;
   const lengthUnit = project.settings.lengthUnit;
@@ -179,7 +226,9 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
       const category = categoryForItem(project, item);
       if (!category) continue;
       const room = normalizeRoom(item.room ?? "") ?? "";
-      if (filters.page !== "all" && item.page !== filters.page) continue;
+      if (filters.page !== undefined && filters.page !== "all" && item.page !== filters.page) {
+        continue;
+      }
       if (filters.layerIds && !filters.layerIds.includes(layer.id)) continue;
       if (filters.categoryId && category.id !== filters.categoryId) continue;
       if (roomFilter && !room.toLowerCase().includes(roomFilter)) continue;
@@ -211,56 +260,92 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
         }
       }
 
-      const key = `${category.id}\u0000${roomKey(room)}\u0000${type}`;
-      let group = groups.get(key);
-      if (!group) {
-        group = {
-          categoryId: category.id,
-          categoryName: category.name,
-          room,
-          type,
-          gross: 0,
-          deduction: 0,
-          items: 0,
-          wastePercent: category.wastePercent ?? project.settings.quantity.wastePercent,
-          roundingStep: category.roundingStep ?? project.settings.quantity.roundingStep,
-        };
-        groups.set(key, group);
-      }
-      group.gross += gross;
-      group.deduction += deduction;
-      group.items += 1;
+      visit({
+        item,
+        categoryId: category.id,
+        categoryName: category.name,
+        room,
+        type,
+        gross,
+        deduction,
+        wastePercent: category.wastePercent ?? project.settings.quantity.wastePercent,
+        roundingStep: category.roundingStep ?? project.settings.quantity.roundingStep,
+      });
     }
   }
 
-  const rows: QuantityRow[] = [...groups.values()].map((group) => {
-    const net = Math.max(0, group.gross - group.deduction);
-    const wasteQuantity = net * (group.wastePercent / 100);
-    const rawOrder = net + wasteQuantity;
-    const orderQuantity = Math.max(
-      net,
-      group.type === "count"
-        ? roundUpToStep(rawOrder, 1)
-        : roundUpToStep(rawOrder, group.roundingStep),
-    );
-    return {
-      categoryId: group.categoryId,
-      categoryName: group.categoryName,
-      room: group.room,
-      type: group.type,
-      unit:
-        group.type === "length" ? lengthUnit : group.type === "area" ? unitLabel(areaUnit) : "pcs",
-      gross: group.gross,
-      deduction: group.deduction,
-      net,
-      wastePercent: group.wastePercent,
-      wasteQuantity,
-      roundingStep: group.roundingStep,
-      orderQuantity,
-      items: group.items,
-      clamped: group.type === "area" && group.deduction > group.gross,
-    };
+  return { hiddenExcluded, uncalibratedExcluded };
+}
+
+function rowFromGroup(
+  group: GroupAccumulator,
+  units: { length: string; area: string },
+): QuantityRow {
+  const net = Math.max(0, group.gross - group.deduction);
+  const wasteQuantity = net * (group.wastePercent / 100);
+  const rawOrder = net + wasteQuantity;
+  const orderQuantity = Math.max(
+    net,
+    group.type === "count"
+      ? roundUpToStep(rawOrder, 1)
+      : roundUpToStep(rawOrder, group.roundingStep),
+  );
+  return {
+    categoryId: group.categoryId,
+    categoryName: group.categoryName,
+    room: group.room,
+    type: group.type,
+    unit: group.type === "length" ? units.length : group.type === "area" ? units.area : "pcs",
+    gross: group.gross,
+    deduction: group.deduction,
+    net,
+    wastePercent: group.wastePercent,
+    wasteQuantity,
+    roundingStep: group.roundingStep,
+    orderQuantity,
+    items: group.items,
+    clamped: group.type === "area" && group.deduction > group.gross,
+  };
+}
+
+function projectUnits(project: Project): { length: string; area: string } {
+  return { length: project.settings.lengthUnit, area: unitLabel(project.settings.areaUnit) };
+}
+
+/**
+ * Builds report rows from current item data. Nothing is stored on the project.
+ *
+ * Area deductions are netted inside one category and room only. Totals are
+ * sums of the clamped row nets so a deduction can never make an order row
+ * negative.
+ */
+export function calculateQuantities(project: Project, filters: QuantityFilters): QuantitySummary {
+  const groups = new Map<string, GroupAccumulator>();
+  const units = projectUnits(project);
+
+  const counters = forEachMeasuredItem(project, filters, (entry) => {
+    const key = `${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        categoryId: entry.categoryId,
+        categoryName: entry.categoryName,
+        room: entry.room,
+        type: entry.type,
+        gross: 0,
+        deduction: 0,
+        items: 0,
+        wastePercent: entry.wastePercent,
+        roundingStep: entry.roundingStep,
+      };
+      groups.set(key, group);
+    }
+    group.gross += entry.gross;
+    group.deduction += entry.deduction;
+    group.items += 1;
   });
+
+  const rows = [...groups.values()].map((group) => rowFromGroup(group, units));
 
   const categoryOrder = new Map(project.categories.map((category, index) => [category.id, index]));
   rows.sort((a, b) => {
@@ -301,7 +386,84 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
     categories,
     rows,
     totals: totalsFromRows(rows),
-    hiddenExcluded,
-    uncalibratedExcluded,
+    ...counters,
   };
+}
+
+/**
+ * Groups the same measurements by page. This is a separate view of the item
+ * data for the XLSX workbook; the project itself never stores page totals.
+ */
+export function calculateQuantitiesByPage(
+  project: Project,
+  filters: QuantityPageFilters = {},
+): QuantityByPageSummary {
+  const groups = new Map<string, GroupAccumulator>();
+  const units = projectUnits(project);
+
+  const counters = forEachMeasuredItem(project, filters, (entry) => {
+    const key = `${entry.item.page}\u0000${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}`;
+    let group = groups.get(key);
+    if (!group) {
+      group = {
+        categoryId: entry.categoryId,
+        categoryName: entry.categoryName,
+        room: entry.room,
+        type: entry.type,
+        gross: 0,
+        deduction: 0,
+        items: 0,
+        wastePercent: entry.wastePercent,
+        roundingStep: entry.roundingStep,
+        page: entry.item.page,
+      };
+      groups.set(key, group);
+    }
+    group.gross += entry.gross;
+    group.deduction += entry.deduction;
+    group.items += 1;
+  });
+
+  const categoryOrder = new Map(project.categories.map((category, index) => [category.id, index]));
+  const rows: QuantityByPageRow[] = [...groups.values()]
+    .map((group) => ({
+      ...rowFromGroup(group, units),
+      page: group.page ?? 1,
+      pageName: "",
+      building: "",
+      floor: "",
+    }))
+    .sort((a, b) => {
+      if (a.page !== b.page) return a.page - b.page;
+      const categoryDiff =
+        (categoryOrder.get(a.categoryId) ?? Number.MAX_SAFE_INTEGER) -
+        (categoryOrder.get(b.categoryId) ?? Number.MAX_SAFE_INTEGER);
+      if (categoryDiff) return categoryDiff;
+      const roomDiff = compareRooms(a.room, b.room);
+      if (roomDiff) return roomDiff;
+      return TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
+    });
+
+  const pages: QuantityPageSection[] = [];
+  for (const row of rows) {
+    row.pageName = pageDisplayName(project, row.page) ?? `Page ${row.page}`;
+    row.building = pageBuilding(project, row.page) ?? "";
+    row.floor = pageFloor(project, row.page) ?? "";
+    let page = pages[pages.length - 1];
+    if (!page || page.page !== row.page) {
+      page = {
+        page: row.page,
+        pageName: row.pageName,
+        building: row.building,
+        floor: row.floor,
+        rows: [],
+        totals: [],
+      };
+      pages.push(page);
+    }
+    page.rows.push(row);
+  }
+  for (const page of pages) page.totals = totalsFromRows(page.rows);
+
+  return { pages, rows, ...counters };
 }

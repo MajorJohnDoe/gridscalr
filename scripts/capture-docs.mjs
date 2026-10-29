@@ -70,6 +70,13 @@ const shots = [
       "Export visible markups as a flattened drawing PDF without modifying the source drawing.",
   },
   {
+    file: "split-view.png",
+    title: "Synchronized split view",
+    alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom.",
+    description:
+      "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place.",
+  },
+  {
     file: "workflows-help.png",
     title: "Workflows in the help dialog",
     alt: "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
@@ -166,6 +173,15 @@ try {
   await capture("symbols.png");
   await page.keyboard.press("Control+l");
   await markupsPanel.waitFor({ state: "hidden" });
+  await page.keyboard.press("v");
+  await page.evaluate(() => window.__gridscalr.store.clearSelection());
+  await page.getByRole("button", { name: "Pages", exact: true }).click();
+  await page.keyboard.press("Control+0");
+  await page.waitForTimeout(150);
+  await page.keyboard.press("Control+Shift+2");
+  await page.waitForTimeout(350);
+  await capture("split-view.png");
+  await page.keyboard.press("Control+Shift+2");
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

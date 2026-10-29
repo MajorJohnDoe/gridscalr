@@ -130,6 +130,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
             separator(),
             action("Markups to CSV", () => actions.exportAs("csv")),
             action("Quantities to CSV", () => actions.exportAs("quantity-csv")),
+            action("Quantities to Excel…", () => actions.exportAs("quantity-xlsx")),
             action("Quantity report (PDF)", () => actions.exportAs("quantity-pdf")),
             separator(),
             action("Project to JSON", () => actions.exportAs("json")),
@@ -189,6 +190,12 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action("Properties", toggleInspector, {
           shortcut: APP_SHORTCUTS.properties,
           checked: !isInspectorCollapsed(),
+        }),
+        separator(),
+        action("Split view", actions.toggleSplitView, {
+          shortcut: APP_SHORTCUTS.splitView,
+          checked: actions.isSplitViewOpen(),
+          disabled: !hasProject,
         }),
         separator(),
         action("Zoom in", actions.zoomIn, {

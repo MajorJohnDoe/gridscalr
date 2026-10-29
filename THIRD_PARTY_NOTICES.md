@@ -14,6 +14,7 @@ the upstream notices with it.
 | --- | --- | --- | --- |
 | PDF.js (`pdfjs-dist`) | `package.json` | Apache-2.0 | https://github.com/mozilla/pdf.js |
 | pdf-lib | `package.json` | MIT | https://github.com/Hopding/pdf-lib |
+| fflate | `package.json` | MIT | https://github.com/101arrowz/fflate |
 | @pdf-lib/fontkit | `package.json` | MIT | https://github.com/Hopding/fontkit |
 | Tauri (`tauri`, plugins) | `src-tauri/Cargo.toml` | MIT OR Apache-2.0 | https://github.com/tauri-apps/tauri |
 | Rust crate dependencies | `src-tauri/Cargo.lock` | MIT / Apache-2.0 (per crate) | https://crates.io |

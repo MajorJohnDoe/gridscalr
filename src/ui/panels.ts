@@ -19,7 +19,9 @@ export interface PanelActions {
   quit: () => void;
   saveProject: () => void;
   saveProjectAs: () => void;
-  exportAs: (kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf") => void;
+  exportAs: (
+    kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf" | "quantity-xlsx",
+  ) => void;
   undo: () => void;
   redo: () => void;
   zoomIn: () => void;
@@ -28,6 +30,8 @@ export interface PanelActions {
   zoomActual: () => void;
   renameSelection: () => void;
   toggleMarkups: () => void;
+  toggleSplitView: () => void;
+  isSplitViewOpen: () => boolean;
   openQuantities: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;

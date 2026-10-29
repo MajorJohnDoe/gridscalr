@@ -118,6 +118,8 @@ import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
+import { SplitView } from "../ui/splitView";
+import { syncViewport } from "../canvas/viewport";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 
@@ -133,6 +135,8 @@ interface SizeTask {
 export class App {
   private refs: ShellRefs;
   private canvas: CanvasView;
+  private referenceView: CanvasView;
+  private splitView: SplitView;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -181,6 +185,12 @@ export class App {
         setMarkupsOpen(!isMarkupsOpen());
         this.renderAll();
       },
+      toggleSplitView: () => {
+        if (!store.project) return;
+        this.splitView.toggle();
+        this.referenceView.invalidate();
+      },
+      isSplitViewOpen: () => this.splitView.isOpen,
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
@@ -227,6 +237,50 @@ export class App {
       ensurePageSize: (page) => void this.enqueuePageSize(page),
       onError: (message) => toast(message, "error"),
       onContextMenu: ({ clientX, clientY }) => showSelectionMenuAt(clientX, clientY, this.actions),
+    });
+
+    const referenceViewport = { page: 1, zoom: 1, panX: 0, panY: 0 };
+    this.referenceView = new CanvasView(
+      this.refs.referenceHost,
+      {
+        getRenderer: () => this.renderer,
+        getPageSize: (page) => this.pageSizes.get(page),
+        ensurePageSize: (page) => void this.enqueuePageSize(page),
+        onError: (message) => toast(message, "error"),
+      },
+      {
+        readOnly: true,
+        canvasIdPrefix: "reference",
+        view: () => {
+          const rect = this.refs.referenceHost.getBoundingClientRect();
+          const target = this.referenceView?.viewportSize ?? {
+            width: rect.width,
+            height: rect.height,
+          };
+          const synced = syncViewport(
+            {
+              page: store.ui.page,
+              zoom: store.ui.zoom,
+              panX: store.ui.panX,
+              panY: store.ui.panY,
+            },
+            this.canvas.viewportSize,
+            target,
+          );
+          referenceViewport.page = synced.page;
+          referenceViewport.zoom = synced.zoom;
+          referenceViewport.panX = synced.panX;
+          referenceViewport.panY = synced.panY;
+          return referenceViewport;
+        },
+      },
+    );
+    this.splitView = new SplitView({
+      area: this.refs.canvasArea,
+      referenceHost: this.refs.referenceHost,
+      resizer: this.refs.splitResizer,
+      primary: this.canvas,
+      reference: this.referenceView,
     });
 
     this.unsubscribe = store.subscribe((reason) => {
@@ -352,6 +406,11 @@ export class App {
       if (event.altKey && event.code === "KeyQ") {
         event.preventDefault();
         openQuantitiesDialog(this.actions);
+        return;
+      }
+      if (event.shiftKey && event.code === "Digit2") {
+        event.preventDefault();
+        this.actions.toggleSplitView();
         return;
       }
       switch (key) {
@@ -690,6 +749,7 @@ export class App {
   }
 
   private async resetProject(): Promise<void> {
+    this.splitView.setOpen(false);
     store.closeProject();
     const renderer = this.renderer;
     const thumbnails = this.thumbnails;
@@ -1815,6 +1875,8 @@ export class App {
     this.unlistenClose = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
+    this.splitView.destroy();
+    this.referenceView.destroy();
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
   }

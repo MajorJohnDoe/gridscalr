@@ -519,10 +519,44 @@ try {
   await page.getByText(/Same relative area on every selected page/).waitFor();
   await closeDialog();
 
+  // 10. Split view: the reference pane mirrors the view and stays read-only.
+  await page.keyboard.press("Control+Shift+2");
+  await waitForApp(page);
+  const reference = page.locator(".canvas-reference");
+  assert.equal(await reference.isVisible(), true, "the reference pane should open");
+  const referenceBox = await reference.boundingBox();
+  assert.ok(referenceBox && referenceBox.width > 200, "the reference pane should have a width");
+  const referencePixels = await page.evaluate(
+    () => document.querySelector("#reference-pdf")?.toDataURL().length ?? 0,
+  );
+  assert.ok(referencePixels > 1000, "the reference pane should render the page");
+  const zoomBeforeReferenceWheel = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  await page.mouse.move(referenceBox.x + referenceBox.width / 2, referenceBox.y + 200);
+  await page.mouse.wheel(0, -120);
+  await page.waitForTimeout(250);
+  assert.ok(
+    (await page.evaluate(() => window.__gridscalr.store.ui.zoom)) > zoomBeforeReferenceWheel,
+    "wheeling over the reference pane should zoom the primary view",
+  );
+  const divider = await page.locator(".canvas-split-resizer").boundingBox();
+  assert.ok(divider, "the split divider should exist");
+  await dragScreen(
+    { x: divider.x + 2, y: divider.y + 120 },
+    { x: divider.x - 100, y: divider.y + 120 },
+  );
+  const resizedReference = await reference.boundingBox();
+  assert.ok(
+    resizedReference && resizedReference.width > referenceBox.width + 60,
+    "dragging the divider should widen the reference pane",
+  );
+  await page.keyboard.press("Control+Shift+2");
+  await page.waitForTimeout(150);
+  assert.equal(await reference.isVisible(), false, "the reference pane should close");
+
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked and crop.",
+    "Canvas regression passed: length, area, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
   );
 } finally {
   await page?.close();
