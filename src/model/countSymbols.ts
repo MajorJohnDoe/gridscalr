@@ -1,5 +1,5 @@
 import type { Bounds } from "./geometry";
-import type { CountType, Point } from "./types";
+import type { CountGlyph, Point } from "./types";
 
 /**
  * Count symbols are paper-space vector geometry. The same primitives are used
@@ -12,9 +12,9 @@ export const COUNT_SYMBOL_RADIUS = COUNT_SYMBOL_SIZE / 2;
 /** Distance from the anchor to the label center, clear of the symbol. */
 export const COUNT_LABEL_OFFSET = COUNT_SYMBOL_RADIUS + 11;
 
-export const COUNT_TYPES: CountType[] = ["door", "window", "radiator", "fixture", "other"];
+export const COUNT_GLYPHS: CountGlyph[] = ["door", "window", "radiator", "fixture", "other"];
 
-export const COUNT_TYPE_LABELS: Record<CountType, string> = {
+export const COUNT_GLYPH_LABELS: Record<CountGlyph, string> = {
   door: "Door",
   window: "Window",
   radiator: "Radiator",
@@ -37,8 +37,11 @@ export interface CountSymbol {
   dots: CountSymbolDot[];
 }
 
-export function countTypeLabel(type: CountType | undefined): string {
-  return type ? COUNT_TYPE_LABELS[type] : COUNT_TYPE_LABELS.other;
+/** The pieces represented by one count object. Missing or invalid means 1. */
+export function countQuantityOf(item: { countQuantity?: number }): number {
+  const value = item.countQuantity;
+  if (typeof value !== "number" || !Number.isFinite(value)) return 1;
+  return Math.max(1, Math.round(value));
 }
 
 export function countSymbolBounds(anchor: Point): Bounds {
@@ -48,9 +51,9 @@ export function countSymbolBounds(anchor: Point): Bounds {
   };
 }
 
-/** Returns the vector primitives for a count type, centered on the origin. */
-export function countSymbol(type: CountType | undefined): CountSymbol {
-  switch (type ?? "other") {
+/** Returns the vector primitives for a count glyph, centered on the origin. */
+export function countSymbol(glyph: CountGlyph | undefined): CountSymbol {
+  switch (glyph ?? "other") {
     case "door":
       return {
         paths: [line(-5, -5, -5, 5), arc(-5, -5, 10, Math.PI / 2, 0)],

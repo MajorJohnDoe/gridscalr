@@ -20,6 +20,7 @@ import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
 import { normalizeMarkupsViews } from "../model/markups";
 import { isInspectionStatus, SYMBOL_MAX_SIZE, SYMBOL_MIN_SIZE } from "../model/symbols";
+import { normalizeCountTypes } from "../features/countTypes/model";
 import type {
   AreaMode,
   AreaShape,
@@ -28,7 +29,6 @@ import type {
   HighlightShape,
   Calibration,
   Category,
-  CountType,
   DocumentRef,
   ImageAsset,
   ImageMode,
@@ -71,14 +71,6 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "stamp",
   "delta",
   "symbol",
-]);
-
-const COUNT_TYPES: ReadonlySet<CountType> = new Set([
-  "door",
-  "window",
-  "radiator",
-  "fixture",
-  "other",
 ]);
 
 const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
@@ -281,6 +273,7 @@ function normalizeItem(
   categoryIds: ReadonlySet<string>,
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
+  countTypeIds: ReadonlySet<string>,
 ): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
@@ -495,9 +488,17 @@ function normalizeItem(
     textAlign,
     countType:
       raw.kind === "count"
-        ? COUNT_TYPES.has(raw.countType as CountType)
-          ? (raw.countType as CountType)
+        ? typeof raw.countType === "string" && countTypeIds.has(raw.countType)
+          ? raw.countType
           : "other"
+        : undefined,
+    countQuantity:
+      raw.kind === "count" &&
+      typeof raw.countQuantity === "number" &&
+      Number.isFinite(raw.countQuantity)
+        ? Math.max(1, Math.min(100000, Math.round(raw.countQuantity))) > 1
+          ? Math.max(1, Math.min(100000, Math.round(raw.countQuantity)))
+          : undefined
         : undefined,
     symbolId:
       raw.kind === "symbol"
@@ -538,6 +539,7 @@ function normalizeLayerPageState(
 function normalizeLayers(
   rawLayers: unknown,
   categoryIds: ReadonlySet<string>,
+  countTypeIds: ReadonlySet<string>,
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
   totalPages: number,
@@ -589,6 +591,7 @@ function normalizeLayers(
             categoryIds,
             fallbackCategoryId,
             assetIds,
+            countTypeIds,
           );
           if (normalized) layer.items.push(normalized);
         }
@@ -805,6 +808,7 @@ export function parseProject(text: string): Project {
   if (total < 1) throw new Error("Project file has no remaining pages.");
   const base = createProject(documents[0], createDefaultLayers());
   const categories = normalizeCategories(raw.categories);
+  const countTypes = normalizeCountTypes(raw.countTypes);
   const settings = normalizeSettings(raw.settings, categories);
   const assets = normalizeAssets(raw.assets);
   const project: Project = {
@@ -814,6 +818,7 @@ export function parseProject(text: string): Project {
     documents,
     settings,
     categories,
+    countTypes,
     assets,
     pages: {},
     markupsViews: normalizeMarkupsViews(
@@ -823,6 +828,7 @@ export function parseProject(text: string): Project {
     layers: normalizeLayers(
       raw.layers,
       new Set(categories.map((category) => category.id)),
+      new Set(countTypes.map((countType) => countType.id)),
       settings.quantity.defaultCategoryId,
       new Set(Object.keys(assets)),
       total,

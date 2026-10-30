@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 19 as const;
+export const SCHEMA_VERSION = 20 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -6,7 +6,8 @@ export type LayerKind = "measure" | "draw";
 
 export type MeasurementKind =
   "length" | "area" | "count" | "radius" | "diameter" | "arc" | "angle" | "slope" | "volume";
-export type CountType = "door" | "window" | "radiator" | "fixture" | "other";
+export type CountType = string;
+export type CountGlyph = "door" | "window" | "radiator" | "fixture" | "other";
 export type SymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
 export type InspectionStatus = "approved" | "not-approved" | "action-required" | "missing";
 export type AreaMode = "add" | "subtract";
@@ -59,6 +60,16 @@ export interface ImageRef {
 export interface Point {
   x: number;
   y: number;
+}
+
+/** One count type available in the project. Order is display order. */
+export interface CountTypeDef {
+  /** Stable id stored on count items. Never reused. */
+  id: CountType;
+  /** Editable display name, unique per project, case-insensitive. */
+  label: string;
+  /** One of the built-in count glyphs. */
+  glyph: CountGlyph;
 }
 
 export interface ScaleSnapshot {
@@ -124,6 +135,8 @@ export interface MarkupItem {
   lineStyle?: LineStyle;
   /** Count items only. */
   countType?: CountType;
+  /** Count items only. Pieces represented by this object. Missing means 1. */
+  countQuantity?: number;
   /** Symbols only: stable built-in symbol id. */
   symbolId?: string;
   /** Symbols only: plate size in PDF points. Missing means the 24 pt default. */
@@ -349,6 +362,8 @@ export interface Project {
   settings: ProjectSettings;
   /** Ordered category list. At least one category always exists. */
   categories: Category[];
+  /** Ordered count-type definitions. Always contains the `other` fallback. */
+  countTypes: CountTypeDef[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;

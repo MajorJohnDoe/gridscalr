@@ -9,6 +9,7 @@ import {
   layersForKind,
 } from "../src/model/layers";
 import { calculateQuantities } from "../src/model/quantity";
+import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem } from "../src/model/types";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 
@@ -102,7 +103,7 @@ describe("angle, slope and volume", () => {
     expect(summary.rows.find((row) => row.type === "volume")?.gross).toBeCloseTo(2);
   });
 
-  it("round-trips depth and the new kinds through schema 19", () => {
+  it("round-trips depth and the new kinds through the current schema", () => {
     const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
     const layer = layersForKind(project, "measure")[0];
     addItem(
@@ -120,7 +121,7 @@ describe("angle, slope and volume", () => {
       ),
     );
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(19);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(
       parsed.layers.flatMap((entry) => entry.items).find((entry) => entry.kind === "volume")?.depth,
     ).toBe(2.5);

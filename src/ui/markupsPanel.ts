@@ -1,6 +1,6 @@
 import { makeId } from "../model/calibration";
 import { categoryForItem } from "../model/categories";
-import { countTypeLabel } from "../model/countSymbols";
+import { countTypeLabel } from "../features/countTypes/model";
 import { pageBuilding, pageDisplayName, pageFloor } from "../model/documents";
 import {
   findItem,
@@ -433,7 +433,7 @@ function filteredRows(project: Project): MarkupRow[] {
         const created = formatTimestamp(item.createdAt);
         const modified = formatTimestamp(item.updatedAt);
         const haystack =
-          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`.toLocaleLowerCase();
+          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(project, item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`.toLocaleLowerCase();
         if (!haystack.includes(query)) continue;
       }
       rows.push({ item, layer });

@@ -26,6 +26,7 @@ import {
 } from "../model/geometry";
 import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
+import { countTypeGlyph } from "../features/countTypes/model";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
   clampLabelSize,
@@ -2993,7 +2994,9 @@ export class CanvasView {
       case "count": {
         const anchorPage = item.points[0];
         if (!anchorPage) break;
-        const symbol = countSymbol(item.countType);
+        const project = this.sceneProject;
+        if (!project) break;
+        const symbol = countSymbol(countTypeGlyph(project, item.countType));
         for (const path of symbol.paths) {
           ctx.beginPath();
           path.points.forEach((point, index) => {

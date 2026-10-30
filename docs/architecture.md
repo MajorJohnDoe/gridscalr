@@ -11,6 +11,7 @@ src/
   app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
   app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
   features/              feature modules; see docs/adr/0001-feature-modules.md
+  features/countTypes/model.ts count definitions, normalization, management and quantity helpers
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing

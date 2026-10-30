@@ -1,5 +1,4 @@
 import { allRooms, categoryForItem, normalizeRoom } from "../model/categories";
-import { COUNT_TYPES, COUNT_TYPE_LABELS } from "../model/countSymbols";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
   INSPECTION_STATUSES,
@@ -250,10 +249,8 @@ export function selectionSection(
       const typeField = el("label", "field");
       typeField.append(el("span", "field-label", "Object type"));
       const typeSelect = el("select", "select");
-      for (const type of COUNT_TYPES) {
-        typeSelect.append(
-          option(type, COUNT_TYPE_LABELS[type], type === (item.countType ?? "other")),
-        );
+      for (const type of project.countTypes) {
+        typeSelect.append(option(type.id, type.label, type.id === (item.countType ?? "other")));
       }
       typeSelect.disabled = locked;
       typeSelect.title = locked
@@ -1123,8 +1120,8 @@ function multiSelectionSection(
         countField.append(el("span", "field-label", "Object type"));
         const countSelect = el("select", "select");
         countSelect.append(option("", "Multiple values", !commonType));
-        for (const type of COUNT_TYPES) {
-          countSelect.append(option(type, COUNT_TYPE_LABELS[type], type === commonType));
+        for (const type of project.countTypes) {
+          countSelect.append(option(type.id, type.label, type.id === commonType));
         }
         countSelect.disabled = allLocked;
         countSelect.setAttribute("aria-label", "Object type for selected counts");

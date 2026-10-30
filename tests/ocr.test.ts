@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { SCHEMA_VERSION } from "../src/model/types";
 import type { OcrPage, Project } from "../src/model/types";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 import { isOcrCurrent, ocrPageToText } from "../src/search/ocr";
@@ -52,7 +53,7 @@ describe("OCR index", () => {
     const project = makeProject();
     project.pages["1"] = { ocr: makeOcr() };
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(19);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.pages["1"].ocr).toEqual(makeOcr());
   });
 
@@ -66,12 +67,12 @@ describe("OCR index", () => {
     expect(parsed.pages["1"].ocr).toBeUndefined();
   });
 
-  it("loads a schema 16 project without OCR and upgrades it to schema 19", () => {
+  it("loads a schema 16 project without OCR and upgrades it to the current schema", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
     raw.schemaVersion = 16;
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(19);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.pages["1"]?.ocr).toBeUndefined();
   });
 });
