@@ -201,7 +201,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.14.1_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.15.0_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
@@ -210,7 +210,7 @@ hash does not match, do not run the file and report it through
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 19 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 20 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is

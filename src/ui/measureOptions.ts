@@ -1,5 +1,4 @@
 import { allRooms, measurementCategory } from "../model/categories";
-import { COUNT_TYPES, COUNT_TYPE_LABELS } from "../model/countSymbols";
 import type { AreaMode, AreaShape, CountType } from "../model/types";
 import { store } from "../state/store";
 import { el, option } from "./dom";
@@ -134,10 +133,10 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     if (store.ui.activeTool === "count") {
       const type = select(
         "Object type",
-        COUNT_TYPES.map((entry) => ({
-          value: entry,
-          label: COUNT_TYPE_LABELS[entry],
-          selected: entry === store.ui.measureCountType,
+        project.countTypes.map((entry) => ({
+          value: entry.id,
+          label: entry.label,
+          selected: entry.id === store.ui.measureCountType,
         })),
         (value) => store.setMeasureCountType(value as CountType),
       );

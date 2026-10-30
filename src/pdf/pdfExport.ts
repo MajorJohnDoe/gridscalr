@@ -28,7 +28,8 @@ import {
 import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
-import { COUNT_TYPES, COUNT_TYPE_LABELS, countSymbol } from "../model/countSymbols";
+import { countSymbol } from "../model/countSymbols";
+import { countQuantityOf, countTypeGlyph } from "../features/countTypes/model";
 import { areaShapeOf, rectangleCorners } from "../model/area";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
 import {
@@ -157,7 +158,7 @@ export async function exportProjectPdf(
       for (const item of layer.items) {
         if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
-        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
+        drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
       }
     }
 
@@ -171,7 +172,7 @@ export async function exportProjectPdf(
       for (const item of layer.items) {
         if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind === "image" && item.image?.mode !== "annotation") continue;
-        drawItem(pdfPage, viewport, item, layer.opacity, fonts, labels, images);
+        drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
       }
     }
 
@@ -436,10 +437,10 @@ function drawLegendPage(
       color: rule,
     });
     y -= 18;
-    for (const type of COUNT_TYPES) {
-      const total = counts.get(type) ?? 0;
+    for (const type of project.countTypes) {
+      const total = counts.get(type.id) ?? 0;
       if (!total) continue;
-      page.drawText(COUNT_TYPE_LABELS[type], {
+      page.drawText(type.label, {
         x: margin,
         y,
         size: 10.5,
@@ -470,7 +471,7 @@ function exportedCounts(
     for (const item of layer.items) {
       if (item.kind !== "count" || !itemIsVisible(item, layer) || !pageSet.has(item.page)) continue;
       const type = item.countType ?? "other";
-      counts.set(type, (counts.get(type) ?? 0) + 1);
+      counts.set(type, (counts.get(type) ?? 0) + countQuantityOf(item));
     }
   }
   return counts;
@@ -546,6 +547,7 @@ async function embedImages(
 function drawItem(
   page: PDFPage,
   viewport: PageViewport,
+  project: Project,
   item: MarkupItem,
   layerOpacity: number,
   fonts: ExportFonts,
@@ -678,7 +680,7 @@ function drawItem(
       break;
     }
     case "count":
-      drawCountSymbol(page, viewport, item, color, width, opacity);
+      drawCountSymbol(page, viewport, item, project, color, width, opacity);
       break;
     case "symbol":
       drawSymbolItem(page, viewport, item, opacity);
@@ -1086,13 +1088,14 @@ function drawCountSymbol(
   page: PDFPage,
   viewport: PageViewport,
   item: MarkupItem,
+  project: Project,
   color: RGB,
   width: number,
   opacity: number,
 ): void {
   const anchor = item.points[0];
   if (!anchor) return;
-  const symbol = countSymbol(item.countType);
+  const symbol = countSymbol(countTypeGlyph(project, item.countType));
   for (const path of symbol.paths) {
     const points = path.points.map((point) => ({
       x: anchor.x + point.x,

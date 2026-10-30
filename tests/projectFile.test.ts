@@ -1563,4 +1563,71 @@ describe("project files", () => {
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.pages["9"]).toBeUndefined();
   });
+
+  it("migrates a schema 19 project to count types and default quantities", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.schemaVersion = 19;
+    delete raw.countTypes;
+    const measure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
+    measure.items.push({
+      id: "count_legacy",
+      page: 1,
+      kind: "count",
+      points: [{ x: 20, y: 30 }],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      countType: "window",
+      categoryId: project.categories[0].id,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.schemaVersion).toBe(20);
+    expect(parsed.countTypes.map((entry) => entry.id)).toEqual([
+      "door",
+      "window",
+      "radiator",
+      "fixture",
+      "other",
+    ]);
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "count_legacy")!;
+    expect(item.countType).toBe("window");
+    expect(item.countQuantity).toBeUndefined();
+  });
+
+  it("round-trips custom count types and count quantities", () => {
+    const project = makeProject();
+    project.countTypes.push({ id: "count_socket", label: "Socket", glyph: "fixture" });
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      id: "count_socket",
+      page: 1,
+      kind: "count",
+      points: [{ x: 40, y: 50 }],
+      color: "#f70808",
+      strokeWidth: 2,
+      countType: "count_socket",
+      countQuantity: 4,
+      categoryId: project.categories[0].id,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    });
+
+    const parsed = parseProject(serializeProject(project));
+    expect(parsed.countTypes.find((entry) => entry.id === "count_socket")).toEqual({
+      id: "count_socket",
+      label: "Socket",
+      glyph: "fixture",
+    });
+    const item = parsed.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "count_socket")!;
+    expect(item.countType).toBe("count_socket");
+    expect(item.countQuantity).toBe(4);
+  });
 });

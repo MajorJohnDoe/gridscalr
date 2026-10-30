@@ -1,6 +1,6 @@
 import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
-import { COUNT_TYPE_LABELS } from "../model/countSymbols";
+import { countTypeLabel } from "../features/countTypes/model";
 import { layersForKind, layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
@@ -382,7 +382,7 @@ function measurementSummary(project: Project): string {
     );
     parts.push(store.ui.measureAreaMode === "subtract" ? "Deduct" : "Add");
   } else if (store.ui.activeTool === "count") {
-    parts.push(COUNT_TYPE_LABELS[store.ui.measureCountType]);
+    parts.push(countTypeLabel(project, store.ui.measureCountType));
   }
   const category = measurementCategory(project, store.ui.measureCategoryId);
   parts.push(category?.name ?? "Category");

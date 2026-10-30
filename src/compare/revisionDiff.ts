@@ -2,7 +2,7 @@ import { pageBuilding, pageDisplayName, pageFloor, totalPageCount } from "../mod
 import { itemBounds, itemCenter, type Bounds } from "../model/geometry";
 import { itemKindLabel } from "../model/measure";
 import { pageCalibration } from "../model/calibration";
-import { COUNT_TYPE_LABELS } from "../model/countSymbols";
+import { countTypeLabel } from "../features/countTypes/model";
 import { inspectionStatusLabel } from "../model/symbols";
 import { formatScale } from "../model/units";
 import type { Layer, MarkupItem, Point, Project } from "../model/types";
@@ -164,7 +164,7 @@ function displayValue(project: Project, item: MarkupItem, field: string): string
     case "categoryId":
       return categoryName(project, item) || "No category";
     case "countType":
-      return item.countType ? COUNT_TYPE_LABELS[item.countType] : "Other";
+      return countTypeLabel(project, item.countType);
     case "status":
       return inspectionStatusLabel(item.status);
     case "scale":

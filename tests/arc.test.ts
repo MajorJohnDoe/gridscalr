@@ -9,6 +9,7 @@ import {
   layersForKind,
 } from "../src/model/layers";
 import { calculateQuantities } from "../src/model/quantity";
+import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem } from "../src/model/types";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 
@@ -97,7 +98,7 @@ describe("radius, diameter and arc geometry", () => {
     );
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.schemaVersion).toBe(19);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.layers.flatMap((entry) => entry.items.map((entry) => entry.kind))).toEqual(
       expect.arrayContaining(["radius", "diameter", "arc"]),
     );

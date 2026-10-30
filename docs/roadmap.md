@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.14.1** · Project-file schema: **19**
+Current version: **0.15.0** · Project-file schema: **20**
 
 ## Product principles
 

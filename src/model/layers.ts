@@ -1,5 +1,6 @@
 import { makeId } from "./calibration";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
+import { defaultCountTypes } from "../features/countTypes/model";
 import { SCHEMA_VERSION } from "./types";
 import type {
   DocumentRef,
@@ -147,6 +148,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
       quantity: createDefaultQuantitySettings(categories),
     },
     categories,
+    countTypes: defaultCountTypes(),
     assets: {},
     pages: {},
     markupsViews: [],

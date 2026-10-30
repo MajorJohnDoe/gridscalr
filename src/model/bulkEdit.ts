@@ -13,6 +13,8 @@ export interface MeasurementBulkPatch {
   areaMode?: AreaMode;
   /** Only applied to count measurements. */
   countType?: CountType;
+  /** Only applied to count measurements. Pieces per object, clamped to at least 1. */
+  countQuantity?: number;
   /** Primary label size in PDF points, clamped to the supported range. */
   labelSize?: number;
 }
@@ -63,6 +65,16 @@ export function applyMeasurementBulkEdit(
     }
     if (patch.countType !== undefined && entry.item.kind === "count") {
       entry.item.countType = patch.countType;
+      changed = true;
+    }
+    if (
+      patch.countQuantity !== undefined &&
+      entry.item.kind === "count" &&
+      Number.isFinite(patch.countQuantity)
+    ) {
+      const quantity = Math.max(1, Math.round(patch.countQuantity));
+      if (quantity > 1) entry.item.countQuantity = quantity;
+      else delete entry.item.countQuantity;
       changed = true;
     }
     if (patch.labelSize !== undefined) {

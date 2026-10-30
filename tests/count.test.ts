@@ -10,12 +10,12 @@ import {
 } from "../src/model/layers";
 import { hitTest } from "../src/model/hitTest";
 import {
+  COUNT_GLYPHS,
   COUNT_LABEL_OFFSET,
   COUNT_SYMBOL_RADIUS,
-  COUNT_TYPES,
   countSymbol,
-  countTypeLabel,
 } from "../src/model/countSymbols";
+import { countTypeLabel } from "../src/features/countTypes/model";
 import { itemLabel, itemMetrics } from "../src/model/measure";
 import { labelAnchorForPoints, measurementLabelParts } from "../src/model/label";
 import { layoutPageLabels, pageLabelSources } from "../src/model/labelLayout";
@@ -48,7 +48,7 @@ function makeCount(overrides: Partial<MarkupItem> = {}): MarkupItem {
 
 describe("count symbols", () => {
   it("provides vector geometry for every built-in type", () => {
-    for (const type of COUNT_TYPES) {
+    for (const type of COUNT_GLYPHS) {
       const symbol = countSymbol(type);
       expect(symbol.paths.length).toBeGreaterThan(0);
       for (const path of symbol.paths) {
@@ -59,8 +59,9 @@ describe("count symbols", () => {
       }
     }
     expect(countSymbol("door")).not.toEqual(countSymbol("other"));
-    expect(countTypeLabel("window")).toBe("Window");
-    expect(countTypeLabel(undefined)).toBe("Other");
+    const project = makeProject();
+    expect(countTypeLabel(project, "window")).toBe("Window");
+    expect(countTypeLabel(project, undefined)).toBe("Other");
   });
 });
 

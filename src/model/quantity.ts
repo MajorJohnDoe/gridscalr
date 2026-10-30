@@ -3,6 +3,7 @@ import { pageBuilding, pageDisplayName, pageFloor } from "./documents";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
+import { countQuantityOf } from "../features/countTypes/model";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
 import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
 import type { MarkupItem, Project } from "./types";
@@ -247,7 +248,7 @@ function forEachMeasuredItem(
       let gross = 0;
       let deduction = 0;
       if (type === "count") {
-        gross = 1;
+        gross = countQuantityOf(item);
       } else if (type === "angle") {
         gross = angleValue(item) ?? 0;
       } else if (type === "slope") {

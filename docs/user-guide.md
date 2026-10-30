@@ -515,7 +515,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 19 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, and adds angle, slope and volume measurements with an optional `depth`. Older projects load normally and are migrated when opened.
+Schema version 20 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, and adds project count-type definitions and an optional count quantity per object. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
