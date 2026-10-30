@@ -448,7 +448,7 @@ function compareRows(a: MarkupRow, b: MarkupRow, project: Project): number {
   if (sort) {
     const left = sortValue(a, sort.column, project);
     const right = sortValue(b, sort.column, project);
-    let result = 0;
+    let result: number;
     if (typeof left === "number" && typeof right === "number") result = left - right;
     else result = String(left).localeCompare(String(right), undefined, { numeric: true });
     if (result !== 0) return sort.direction === "desc" ? -result : result;

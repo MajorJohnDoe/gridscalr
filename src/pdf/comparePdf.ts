@@ -47,6 +47,7 @@ export interface ComparisonPdfOptions {
 }
 
 function sanitize(text: string): string {
+  // eslint-disable-next-line no-control-regex -- the PDF font window is Latin-1
   return text.replace(/[^\u0000-\u00ff]/g, "?");
 }
 

@@ -50,7 +50,7 @@ export function countSymbolBounds(anchor: Point): Bounds {
 
 /** Returns the vector primitives for a count type, centered on the origin. */
 export function countSymbol(type: CountType | undefined): CountSymbol {
-  switch (type) {
+  switch (type ?? "other") {
     case "door":
       return {
         paths: [line(-5, -5, -5, 5), arc(-5, -5, 10, Math.PI / 2, 0)],
@@ -77,7 +77,6 @@ export function countSymbol(type: CountType | undefined): CountSymbol {
         dots: [],
       };
     case "other":
-    default:
       return {
         paths: [circle(0, 0, 4)],
         dots: [{ center: { x: 0, y: 0 }, radius: 1.2 }],

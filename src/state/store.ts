@@ -160,6 +160,9 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "delta":
     case "symbol":
       return "draw";
+    case "pan":
+    case "select":
+      return null;
     default:
       return null;
   }

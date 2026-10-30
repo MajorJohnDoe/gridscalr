@@ -208,7 +208,6 @@ function wrapLines(
       }
       if (current) {
         result.push(current);
-        current = "";
       }
       if (fits(word)) {
         current = word;

@@ -9,6 +9,7 @@
 - [ ] Export or report change
 - [ ] Desktop shell or file I/O change
 - [ ] Documentation only
+- [ ] New feature logic lives in a feature module; `App.ts`/`CanvasView.ts` only wire it
 
 ## Documentation impact
 
@@ -25,6 +26,7 @@
 - [ ] `npm run check:versions`
 - [ ] `npm run check:docs`
 - [ ] `npx tsc --noEmit`
+- [ ] `npm run lint`
 - [ ] `npm test -- --run`
 - [ ] `npm run build`
 - [ ] `cargo fmt --manifest-path src-tauri/Cargo.toml --check`

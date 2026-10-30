@@ -37,6 +37,7 @@ run it after the version bump. Review the screenshots for a previous interface.
 npm run check:versions
 npm run check:docs
 npm run format:check
+npm run lint
 npx tsc --noEmit
 npm test -- --run
 npm run build

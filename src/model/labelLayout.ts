@@ -344,7 +344,7 @@ function insideCornerAnchor(bounds: Bounds, placement: LabelFitPosition, box: La
       return { x: right, y: bottom };
     case "bottom-left":
       return { x: left, y: bottom };
-    default:
+    case "center":
       return boundsCenter(bounds);
   }
 }

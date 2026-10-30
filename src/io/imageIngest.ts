@@ -99,7 +99,7 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
   let source: CanvasImageSource;
   let width: number;
   let height: number;
-  let release = () => {};
+  let release: () => void;
   if (typeof createImageBitmap === "function") {
     const bitmap = await createImageBitmap(blob);
     source = bitmap;

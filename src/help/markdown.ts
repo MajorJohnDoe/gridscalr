@@ -61,6 +61,7 @@ function renderInline(raw: string, options: MarkdownRenderOptions): string {
 
   return text
     .replace(
+      // eslint-disable-next-line no-control-regex -- code spans use a private sentinel
       /\u0001(\d+)\u0001/g,
       (_match, index: string) => `<code>${codeSpans[Number(index)] ?? ""}</code>`,
     )
