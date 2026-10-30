@@ -57,40 +57,43 @@ on `v*`). It uploads the `gridscalr-windows` artifact containing:
 
 ## 5. Checksums
 
-On Windows, after downloading the artifact:
+The Windows workflow creates `SHA256SUMS.txt` from the portable executable, NSIS
+installer and MSI, then uploads it with the artifact. Download the artifact and
+confirm that `SHA256SUMS.txt` lists all three files.
+
+To verify after downloading, for example:
 
 ```powershell
-Get-FileHash .\*.exe, .\*.msi -Algorithm SHA256 |
-  Format-Table -AutoSize |
-  Out-File SHA256SUMS.txt
+Get-FileHash .\GridScalr_<version>_x64-setup.exe -Algorithm SHA256
 ```
 
-The checksums are published with the release so users can verify an unsigned
-download. The README explains why the build is not code-signed.
+Compare the value with the matching line in `SHA256SUMS.txt`. The checksums are
+published with the release so users can verify an unsigned download. The README
+explains why the build is not code-signed.
 
 ## 6. Publish
 
 ```bash
-git tag v0.13.2
-git push origin v0.13.2
-gh release create v0.13.2 \
+git tag v0.13.3
+git push origin v0.13.3
+gh release create v0.13.3 \
   --repo MajorJohnDoe/gridscalr \
-  --title "GridScalr 0.13.2" \
-  --notes-file release-notes.md \
+  --title "GridScalr 0.13.3" \
+  --notes-file docs/release-notes/0.13.3.md \
   path/to/gridscalr.exe \
-  path/to/GridScalr_0.13.2_x64-setup.exe \
-  path/to/GridScalr_0.13.2_x64_en-US.msi \
+  path/to/GridScalr_0.13.3_x64-setup.exe \
+  path/to/GridScalr_0.13.3_x64_en-US.msi \
   path/to/SHA256SUMS.txt
 ```
 
-Mark the newest release as latest (`gh release edit v0.13.2 --latest`) if an older
+Mark the newest release as latest (`gh release edit v0.13.3 --latest`) if an older
 tag was published afterwards.
 
 ## 7. Verify
 
 ```bash
 gh release list --repo MajorJohnDoe/gridscalr
-gh release view v0.13.2 --repo MajorJohnDoe/gridscalr
+gh release view v0.13.3 --repo MajorJohnDoe/gridscalr
 ```
 
 Open the release page, check that the README download link resolves to it, and
