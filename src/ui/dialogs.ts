@@ -222,6 +222,41 @@ export function textDialog(
   }).then((value) => (value === "apply" ? input.value.trim() : null));
 }
 
+export function depthDialog(unit: LengthUnit, initial = 1): Promise<number | null> {
+  const body = el("div", "form-stack");
+  body.append(
+    el(
+      "p",
+      "modal-message",
+      "Enter the height or depth used to turn the measured area into a volume.",
+    ),
+  );
+  const field = el("label", "field");
+  field.append(el("span", "field-label", "Depth"));
+  const wrap = el("div", "input-row");
+  const input = el("input", "input");
+  input.type = "number";
+  input.min = "0.001";
+  input.step = "0.01";
+  input.value = String(initial);
+  input.setAttribute("aria-label", "Volume depth");
+  wrap.append(input, el("span", "context-unit", unit));
+  field.append(wrap);
+  body.append(field);
+  return showModal({
+    title: "Volume depth",
+    body,
+    actions: [
+      { label: "Cancel", value: "__cancel__" },
+      { label: "Apply", value: "apply", primary: true },
+    ],
+    onValidate: () => {
+      const value = Number(input.value);
+      return Number.isFinite(value) && value > 0 ? null : "Enter a depth greater than zero.";
+    },
+  }).then((value) => (value === "apply" ? Number(input.value) : null));
+}
+
 export function passwordDialog(filename: string): Promise<string | null> {
   const body = el("div", "form-stack");
   body.append(

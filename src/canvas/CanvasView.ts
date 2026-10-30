@@ -22,6 +22,7 @@ import {
   pointToItemLocal,
   radiusCircle,
   rotatePoint,
+  slopeDegrees,
   slopeValue,
   rotatePointsAround,
   simplifyPolyline,
@@ -174,7 +175,7 @@ import {
   zoomAt as zoomViewport,
   type Viewport,
 } from "./viewport";
-import { calibrationDialog, textDialog } from "../ui/dialogs";
+import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
 import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
 
@@ -1811,6 +1812,10 @@ export class CanvasView {
     const labelHit = this.measurementLabelHit(screen);
     if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
       store.setSelection({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
+      if (labelHit.item.kind === "volume") {
+        this.promptVolumeDepth({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
+        return;
+      }
       this.editors.startLabelEdit(labelHit);
       return;
     }
@@ -1818,6 +1823,11 @@ export class CanvasView {
     const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
     if (!hit || itemIsLocked(hit.item, hit.layer)) return;
     store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
+
+    if (hit.item.kind === "volume") {
+      this.promptVolumeDepth({ layerId: hit.layer.id, itemId: hit.item.id });
+      return;
+    }
 
     if (hit.item.kind === "text") {
       this.editors.startTextEdit(hit.item, hit.layer);
@@ -2093,13 +2103,23 @@ export class CanvasView {
           }, "change");
         },
       },
+      ...(item.kind === "volume"
+        ? [
+            { separator: true as const },
+            {
+              label: "Set volume depth…",
+              icon: "volume",
+              action: () => this.promptVolumeDepth({ layerId, itemId: item.id }),
+            },
+          ]
+        : []),
       { separator: true },
       {
         label: item.labelFit
           ? `Lock inside area: ${LABEL_FIT_LABELS[item.labelFit]}`
           : "Lock inside area",
         icon: "target",
-        disabled: item.kind !== "area",
+        disabled: item.kind !== "area" && item.kind !== "volume",
         children: [
           ...LABEL_FIT_POSITIONS.map((position) => ({
             label: `${item.labelFit === position ? "✓ " : ""}${LABEL_FIT_LABELS[position]}`,
@@ -2131,7 +2151,7 @@ export class CanvasView {
   private setMeasurementLabelFit(itemId: string, placement: LabelFitPosition): void {
     store.mutate((project) => {
       const target = findItem(project, itemId)?.item;
-      if (!target || target.kind !== "area") return;
+      if (!target || (target.kind !== "area" && target.kind !== "volume")) return;
       target.labelFit = placement;
       delete target.labelOffset;
       delete target.labelAnchor;
@@ -2344,6 +2364,24 @@ export class CanvasView {
     return { layerId, itemId };
   }
 
+  /** Asks for the depth that turns a newly drawn or double-clicked volume into m³. */
+  private promptVolumeDepth(itemRef: { layerId: string; itemId: string } | null): void {
+    const project = store.project;
+    if (!itemRef || !project) return;
+    const found = findItem(project, itemRef.itemId);
+    if (!found || found.item.kind !== "volume") return;
+    void depthDialog(project.settings.lengthUnit, found.item.depth ?? 1).then((depth) => {
+      if (depth === null) return;
+      const value = Math.max(0.001, Math.min(1_000_000, depth));
+      store.mutate((current) => {
+        const target = findItem(current, itemRef.itemId)?.item;
+        if (!target || target.kind !== "volume") return;
+        target.depth = value;
+        target.updatedAt = new Date().toISOString();
+      }, "change");
+    });
+  }
+
   private finishPen(): void {
     if (!this.draft || (this.draft.kind !== "pen" && this.draft.kind !== "highlight")) return;
     const points = this.draft.points;
@@ -2525,7 +2563,8 @@ export class CanvasView {
       } else if (kind === "highlight-polygon") {
         this.createItem("highlight", points, { highlightShape: "polygon" });
       } else {
-        this.createItem(kind, points);
+        const created = this.createItem(kind, points);
+        if (kind === "volume") this.promptVolumeDepth(created);
       }
       this.drawInteraction();
     } else if (this.draft.kind === "callout") {
@@ -3425,6 +3464,7 @@ export class CanvasView {
     item: MarkupItem,
     text: string,
     color: string,
+    secondary?: string,
   ): void {
     const size = this.pageSize();
     if (!size) return;
@@ -3439,6 +3479,7 @@ export class CanvasView {
           labelSize: store.project?.settings.labelSize,
         },
         color,
+        secondary,
       ),
     );
   }
@@ -3910,6 +3951,7 @@ export class CanvasView {
           fake,
           `${formatNumber(slopeValue(fake) ?? 0, 1)}%`,
           ACCENT,
+          `${formatNumber(slopeDegrees(fake) ?? 0, 1)}°`,
         );
       } else {
         const vertex =

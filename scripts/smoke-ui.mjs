@@ -390,8 +390,11 @@ try {
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();
   const locationDialog = page.getByRole("dialog");
-  await locationDialog.getByPlaceholder("For example Building A").fill("Building A");
-  await locationDialog.getByPlaceholder("For example Floor 2").fill("Floor 2");
+  const locationInputs = locationDialog.locator("input");
+  await locationInputs.nth(0).fill("Building A");
+  await locationInputs.nth(1).fill("Floor 2");
+  assert.equal(await locationInputs.nth(0).inputValue(), "Building A");
+  assert.equal(await locationInputs.nth(1).inputValue(), "Floor 2");
   await locationDialog.getByRole("button", { name: "Apply" }).click();
   await locationDialog.waitFor({ state: "detached" });
   assert.equal(
@@ -777,6 +780,12 @@ try {
     /industrial-plan\.pdf · 3 pages/,
     "the reference bar should name the drawing and page count",
   );
+  await comparePanel.getByRole("button", { name: "Hide comparison panel" }).click();
+  await comparePanel.waitFor({ state: "hidden" });
+  const compareRestore = page.getByRole("button", { name: "Show comparison panel" });
+  await compareRestore.waitFor();
+  await compareRestore.click();
+  await comparePanel.waitFor({ state: "visible" });
   const drawingComparisonDownload = page.waitForEvent("download");
   await comparePanel.getByRole("button", { name: "Export PDF" }).click();
   const drawingComparisonPdf = await drawingComparisonDownload;

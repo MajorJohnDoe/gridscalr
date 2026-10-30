@@ -56,9 +56,9 @@ before the first launch. Linux and macOS builds can be produced from source.
   a raw PDF drawing beside the primary canvas. Pan, zoom and page changes stay in
   step.
 - Compare a saved revision in side-by-side or overlay mode, review changed,
-  added and removed markups, and export a comparison PDF without touching either
-  source drawing. A PDF drawing reference supports the same visuals and export
-  without a markup diff.
+  added and removed markups, hide the comparison panel while you work, and
+  export a comparison PDF without touching either source drawing. A PDF drawing
+  reference supports the same visuals and export without a markup diff.
 - Search every page, run local English/Swedish OCR on scanned sheets, jump to a
   highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
