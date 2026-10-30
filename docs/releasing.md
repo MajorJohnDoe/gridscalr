@@ -73,27 +73,31 @@ explains why the build is not code-signed.
 
 ## 6. Publish
 
+Set `VERSION` to the version in `package.json`, then tag and publish from the
+staged Windows artifacts:
+
 ```bash
-git tag v0.13.3
-git push origin v0.13.3
-gh release create v0.13.3 \
+VERSION=0.14.0
+git tag "v$VERSION"
+git push origin "v$VERSION"
+gh release create "v$VERSION" \
   --repo MajorJohnDoe/gridscalr \
-  --title "GridScalr 0.13.3" \
-  --notes-file docs/release-notes/0.13.3.md \
+  --title "GridScalr $VERSION" \
+  --notes-file "docs/release-notes/$VERSION.md" \
   path/to/gridscalr.exe \
-  path/to/GridScalr_0.13.3_x64-setup.exe \
-  path/to/GridScalr_0.13.3_x64_en-US.msi \
+  path/to/GridScalr_${VERSION}_x64-setup.exe \
+  path/to/GridScalr_${VERSION}_x64_en-US.msi \
   path/to/SHA256SUMS.txt
 ```
 
-Mark the newest release as latest (`gh release edit v0.13.3 --latest`) if an older
-tag was published afterwards.
+Mark the newest release as latest (`gh release edit "v$VERSION" --latest`) if an
+older tag was published afterwards.
 
 ## 7. Verify
 
 ```bash
 gh release list --repo MajorJohnDoe/gridscalr
-gh release view v0.13.3 --repo MajorJohnDoe/gridscalr
+gh release view "v$VERSION" --repo MajorJohnDoe/gridscalr
 ```
 
 Open the release page, check that the README download link resolves to it, and

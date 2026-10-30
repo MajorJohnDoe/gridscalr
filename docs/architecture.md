@@ -8,7 +8,9 @@ writes and path checks. There is no server, database or background service.
 ```text
 src/
   app/App.ts             application wiring, file flows, shortcuts
+  app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
   app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+  features/              feature modules; see docs/adr/0001-feature-modules.md
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
@@ -106,6 +108,8 @@ Key design choices:
 - **On-demand page thumbnails.** The Pages panel rasterises only the cards near the viewport, one page at a time, at a capped pixel size, and caches the result. Thumbnail work yields while the main canvas renders, so page previews never block drawing.
 - **Snapshot history.** Store mutations clone the project before applying changes, giving undo/redo without mutable shared state.
 - **One scene or one session, two viewports.** The primary canvas follows the store's viewport. In same-page mode the reference pane reuses the same renderer and scene with a read-only canvas; in revision or drawing mode it uses the reference session's renderer and either its project scene or a projectless PDF scene. Both modes centre the read-only viewport on the primary pane, so pan, zoom and page changes stay synchronized without a second editing path.
+- **Reference lifecycle is one controller.** `src/app/referenceController.ts` owns the reference canvas, split view, toolbar, session, diff and comparison panel. `App.ts` only binds menus and delegates; the primary project, undo history and source files are never replaced by a reference.
+- **Features are modules.** New user-facing features live under `src/features/<feature>/` with pure model code, UI, renderer and controller separated. `App.ts` and `CanvasView.ts` stay integration points; see [`adr/0001-feature-modules.md`](adr/0001-feature-modules.md).
 - **Derived exports share one row model.** Quantity and markup tables are built once in `src/report/rows.ts` and serialized to CSV and XLSX from the same cells. The workbook never stores a second copy of the takeoff.
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.

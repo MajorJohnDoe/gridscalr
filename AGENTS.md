@@ -8,9 +8,10 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.13.3`.
+- Current app version: `0.14.0`.
 - Current project-file schema: `19`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
+- `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
 
 ## Read before changing code
 
@@ -176,7 +177,9 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 
 ```text
 src/app/App.ts             app wiring, file flows, shortcuts
+src/app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
 src/compare/               session reference loading, item matching and revision diff
