@@ -58,6 +58,13 @@ const shots = [
       "Name the objects you count and choose the vector glyph used on the plan and in exports.",
   },
   {
+    file: "count-schedule.png",
+    title: "Count schedule",
+    alt: "The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures.",
+    description:
+      "Group the Markups table by count type to review a door, window or fixture schedule without custom columns.",
+  },
+  {
     file: "markups-list.png",
     title: "Markups list",
     alt: "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
@@ -200,10 +207,38 @@ try {
   await page.waitForTimeout(250);
   await capture("markups-list.png");
 
+  await markupsPanel.getByRole("button", { name: "Columns" }).click();
+  const countColumns = page.getByRole("dialog");
+  await countColumns.waitFor();
+  await countColumns.getByLabel("Count type").check();
+  await countColumns.getByRole("button", { name: "Apply" }).click();
+  await countColumns.waitFor({ state: "detached" });
+  await markupsPanel.getByLabel("Group markups").selectOption("count-type");
+  await page.waitForTimeout(250);
+  await capture("count-schedule.png");
+
+  if (await page.locator(".modal-backdrop").count()) {
+    await page.keyboard.press("Escape");
+    await page.locator(".modal-backdrop").waitFor({ state: "detached" });
+  }
+
   await markupsPanel.getByLabel("Markups view").selectOption({ label: "Symbols & status" });
-  await markupsPanel
-    .locator('[data-item-id="item_symbol_extinguisher"] .markups-item-label')
-    .click();
+  await page.waitForTimeout(250);
+  const discardView = page.getByRole("button", { name: "Discard changes" });
+  if (await discardView.count()) await discardView.click();
+  await page.waitForTimeout(400);
+  await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    for (const layer of store.project.layers) {
+      if (layer.items.some((item) => item.id === "item_symbol_extinguisher")) {
+        store.setSelection({ layerId: layer.id, itemId: "item_symbol_extinguisher" });
+        return;
+      }
+    }
+    document.activeElement instanceof HTMLElement ? document.activeElement.blur() : undefined;
+  });
+  await page.locator("#canvas-interaction").click({ position: { x: 8, y: 8 } });
+  await page.waitForTimeout(150);
   await page.keyboard.press("b");
   await page.locator('[data-symbol-id="fire.extinguisher"]').click();
   await page.keyboard.press("Control+0");

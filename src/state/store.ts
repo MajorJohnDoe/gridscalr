@@ -106,6 +106,8 @@ export interface UIState {
   measureRoom: string;
   /** Sticky object type for new count measurements. */
   measureCountType: CountType;
+  /** Sticky pieces per count object for new count measurements. */
+  measureCountQuantity: number;
   /** Sticky add/subtract mode for new area measurements. */
   measureAreaMode: AreaMode;
   /** Sticky quick-area shape for the area tool. */
@@ -194,6 +196,7 @@ function defaultUI(): UIState {
     measureCategoryId: null,
     measureRoom: "",
     measureCountType: "other",
+    measureCountQuantity: 1,
     measureAreaMode: "add",
     measureAreaShape: "polygon",
     symbolId: DEFAULT_SYMBOL_ID,
@@ -479,6 +482,14 @@ export class Store {
   setMeasureCountType(type: CountType): void {
     if (this.ui.measureCountType === type) return;
     this.ui.measureCountType = type;
+    this.emit("cursor");
+  }
+
+  setMeasureCountQuantity(quantity: number): void {
+    if (!Number.isFinite(quantity)) return;
+    const value = Math.max(1, Math.min(100000, Math.round(quantity)));
+    if (this.ui.measureCountQuantity === value) return;
+    this.ui.measureCountQuantity = value;
     this.emit("cursor");
   }
 

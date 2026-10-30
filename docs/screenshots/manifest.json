@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-30T15:12:16.765Z",
-  "appVersion": "0.15.0",
-  "sourceFingerprint": "eb1dd4ab6ebe6c818d08cbf9da3def2d2de8bd5fbe74a350704f2a7b1ee5b001",
+  "generatedAt": "2026-10-30T21:41:45.716Z",
+  "appVersion": "0.16.0",
+  "sourceFingerprint": "94799989e5fa4e231a4ebe523d9ffeb89b4d57ff694092b8b953d81436624527",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -43,6 +43,12 @@
       "title": "Count types",
       "alt": "The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form.",
       "description": "Name the objects you count and choose the vector glyph used on the plan and in exports."
+    },
+    {
+      "file": "count-schedule.png",
+      "title": "Count schedule",
+      "alt": "The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures.",
+      "description": "Group the Markups table by count type to review a door, window or fixture schedule without custom columns."
     },
     {
       "file": "markups-list.png",

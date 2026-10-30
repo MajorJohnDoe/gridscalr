@@ -16,6 +16,7 @@ export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
   "page",
   "layer",
   "value",
+  "countType",
   "category",
   "room",
   "status",
@@ -33,6 +34,7 @@ export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = {
   page: "Page",
   layer: "Layer",
   value: "Value",
+  countType: "Count type",
   category: "Category",
   room: "Room",
   status: "Status",
@@ -45,6 +47,7 @@ export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = {
 export const MARKUPS_GROUP_FIELDS: MarkupsGroupField[] = [
   "category",
   "room",
+  "countType",
   "page",
   "layer",
   "building",
@@ -61,6 +64,7 @@ export const MARKUPS_GROUP_PRESETS: MarkupsGroupPreset[] = [
   { id: "none", label: "No grouping", fields: [] },
   { id: "category", label: "Category", fields: ["category"] },
   { id: "room", label: "Room", fields: ["room"] },
+  { id: "count-type", label: "Count schedule", fields: ["countType", "room"] },
   { id: "page", label: "Page", fields: ["page"] },
   { id: "layer", label: "Layer", fields: ["layer"] },
   { id: "category-room", label: "Category → Room", fields: ["category", "room"] },
@@ -82,6 +86,7 @@ export interface MarkupsViewSettings {
   typeFilter: MarkupsTypeFilter;
   categoryId: string | null;
   symbolCategory: SymbolCategory | null;
+  countType: string | null;
   search: string;
   groupBy: MarkupsGroupField[];
   sort: MarkupsSort | null;
@@ -94,6 +99,7 @@ export function defaultMarkupsViewSettings(): MarkupsViewSettings {
     typeFilter: "all",
     categoryId: null,
     symbolCategory: null,
+    countType: null,
     search: "",
     groupBy: [],
     sort: null,
@@ -107,6 +113,7 @@ export function settingsForView(view: MarkupsView): MarkupsViewSettings {
     typeFilter: view.typeFilter,
     categoryId: view.categoryId,
     symbolCategory: view.symbolCategory,
+    countType: view.countType,
     search: view.search,
     groupBy: [...view.groupBy],
     sort: view.sort ? { ...view.sort } : null,
@@ -126,6 +133,7 @@ export function viewFromSettings(
     typeFilter: settings.typeFilter,
     categoryId: settings.categoryId,
     symbolCategory: settings.symbolCategory,
+    countType: settings.countType,
     search: settings.search,
     groupBy: [...settings.groupBy],
     sort: settings.sort ? { ...settings.sort } : null,
@@ -201,6 +209,7 @@ function normalizeSymbolCategory(value: unknown): SymbolCategory | null {
 export function normalizeMarkupsViews(
   value: unknown,
   categoryIds: ReadonlySet<string>,
+  countTypeIds: ReadonlySet<string> = new Set(),
 ): MarkupsView[] {
   if (!Array.isArray(value)) return [];
   const views: MarkupsView[] = [];
@@ -219,12 +228,17 @@ export function normalizeMarkupsViews(
     const columns = normalizeColumns(raw.columns);
     const pageFilter: MarkupsPageFilter = raw.pageFilter === "current" ? "current" : "all";
     const typeFilter: MarkupsTypeFilter =
-      raw.typeFilter === "measure" || raw.typeFilter === "draw" || raw.typeFilter === "symbol"
+      raw.typeFilter === "measure" ||
+      raw.typeFilter === "draw" ||
+      raw.typeFilter === "symbol" ||
+      raw.typeFilter === "count"
         ? raw.typeFilter
         : "all";
     const categoryId =
       typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId) ? raw.categoryId : null;
     const symbolCategory = normalizeSymbolCategory(raw.symbolCategory);
+    const countType =
+      typeof raw.countType === "string" && countTypeIds.has(raw.countType) ? raw.countType : null;
     views.push({
       id,
       name,
@@ -233,6 +247,7 @@ export function normalizeMarkupsViews(
       typeFilter,
       categoryId: symbolCategory ? null : categoryId,
       symbolCategory,
+      countType,
       search: normalizeSearch(raw.search),
       groupBy: normalizeGroupBy(raw.groupBy),
       sort: normalizeSort(raw.sort),

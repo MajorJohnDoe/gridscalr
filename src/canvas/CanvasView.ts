@@ -2314,6 +2314,10 @@ export class CanvasView {
         areaShape:
           kind === "area" || kind === "volume" ? (options.areaShape ?? "polygon") : undefined,
         countType: kind === "count" ? store.ui.measureCountType : undefined,
+        countQuantity:
+          kind === "count" && store.ui.measureCountQuantity > 1
+            ? store.ui.measureCountQuantity
+            : undefined,
         symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
         status: kind === "symbol" ? options.status : undefined,
         createdAt: now,

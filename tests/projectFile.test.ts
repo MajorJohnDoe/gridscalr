@@ -234,6 +234,7 @@ describe("project files", () => {
         typeFilter: "measure",
         categoryId: project.categories[0].id,
         symbolCategory: null,
+        countType: null,
         search: "AHU",
         groupBy: ["building", "floor", "room"],
         sort: { column: "name", direction: "asc" },
@@ -1585,7 +1586,8 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(20);
+    expect(parsed.schemaVersion).toBe(21);
+    expect(parsed.countPresets).toEqual([]);
     expect(parsed.countTypes.map((entry) => entry.id)).toEqual([
       "door",
       "window",
@@ -1603,6 +1605,13 @@ describe("project files", () => {
   it("round-trips custom count types and count quantities", () => {
     const project = makeProject();
     project.countTypes.push({ id: "count_socket", label: "Socket", glyph: "fixture" });
+    project.countPresets.push({
+      id: "preset_socket",
+      countType: "count_socket",
+      categoryId: project.categories[0].id,
+      room: "A-101",
+      quantity: 2,
+    });
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push({
       id: "count_socket",
@@ -1629,5 +1638,46 @@ describe("project files", () => {
       .find((entry) => entry.id === "count_socket")!;
     expect(item.countType).toBe("count_socket");
     expect(item.countQuantity).toBe(4);
+    expect(parsed.countPresets).toEqual([
+      {
+        id: "preset_socket",
+        countType: "count_socket",
+        categoryId: project.categories[0].id,
+        room: "A-101",
+        quantity: 2,
+      },
+    ]);
+  });
+
+  it("migrates schema 20 count-type Markups views to schema 21", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.schemaVersion = 20;
+    delete raw.countPresets;
+    raw.markupsViews = [
+      {
+        id: "view_doors",
+        name: "Door schedule",
+        columns: ["name", "countType", "room", "value"],
+        pageFilter: "all",
+        typeFilter: "measure",
+        categoryId: null,
+        symbolCategory: null,
+        countType: "door",
+        search: "",
+        groupBy: ["countType", "room"],
+        sort: null,
+      },
+    ];
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.schemaVersion).toBe(21);
+    expect(parsed.countPresets).toEqual([]);
+    expect(parsed.markupsViews[0]).toMatchObject({
+      name: "Door schedule",
+      countType: "door",
+      groupBy: ["countType", "room"],
+    });
   });
 });

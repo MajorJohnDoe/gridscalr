@@ -1,7 +1,14 @@
 import { allRooms, measurementCategory } from "../model/categories";
+import {
+  addCountPreset,
+  countPresetLabel,
+  findCountPreset,
+  removeCountPreset,
+} from "../features/countTypes/model";
 import type { AreaMode, AreaShape, CountType } from "../model/types";
 import { store } from "../state/store";
 import { el, option } from "./dom";
+import { toast } from "./toast";
 
 let optionsRoot: HTMLElement | null = null;
 let optionsAnchor: HTMLElement | null = null;
@@ -131,6 +138,39 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     }
 
     if (store.ui.activeTool === "count") {
+      const currentCategoryId = () =>
+        measurementCategory(currentProject, store.ui.measureCategoryId)?.id ??
+        currentProject.settings.quantity.defaultCategoryId;
+      const categoryId = currentCategoryId();
+      const matchingPreset = findCountPreset(
+        currentProject,
+        store.ui.measureCountType,
+        categoryId,
+        store.ui.measureRoom,
+        store.ui.measureCountQuantity,
+      );
+      const preset = select(
+        "Count preset",
+        [
+          { value: "", label: "Current settings", selected: !matchingPreset },
+          ...currentProject.countPresets.map((entry) => ({
+            value: entry.id,
+            label: countPresetLabel(currentProject, entry),
+            selected: entry.id === matchingPreset?.id,
+          })),
+        ],
+        (value) => {
+          const selected = currentProject.countPresets.find((entry) => entry.id === value);
+          if (!selected) return;
+          store.setMeasureCategory(selected.categoryId);
+          store.setMeasureRoom(selected.room);
+          store.setMeasureCountType(selected.countType);
+          store.setMeasureCountQuantity(selected.quantity);
+          render();
+        },
+      );
+      panel.append(field("Preset", preset));
+
       const type = select(
         "Object type",
         project.countTypes.map((entry) => ({
@@ -141,6 +181,62 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
         (value) => store.setMeasureCountType(value as CountType),
       );
       panel.append(field("Type", type));
+
+      const quantity = el("input", "input");
+      quantity.type = "number";
+      quantity.min = "1";
+      quantity.max = "100000";
+      quantity.step = "1";
+      quantity.value = String(store.ui.measureCountQuantity);
+      quantity.setAttribute("aria-label", "Pieces per new count");
+      quantity.title = "Pieces represented by each new count object";
+      quantity.addEventListener("change", () => {
+        const value = Number(quantity.value);
+        if (!Number.isFinite(value) || value < 1) {
+          quantity.value = String(store.ui.measureCountQuantity);
+          toast("Count quantity must be one piece or more.", "warning");
+          return;
+        }
+        store.setMeasureCountQuantity(value);
+        changed();
+      });
+      panel.append(field("Pieces", quantity));
+
+      const presetActions = el("div", "input-row");
+      const savePreset = el("button", "btn btn-small", "Save preset");
+      savePreset.type = "button";
+      savePreset.addEventListener("click", () => {
+        let saved: boolean = false;
+        store.mutate((next) => {
+          const created = addCountPreset(
+            next,
+            store.ui.measureCountType,
+            currentCategoryId(),
+            store.ui.measureRoom,
+            store.ui.measureCountQuantity,
+          );
+          saved = created !== null;
+        }, "change");
+        toast(
+          saved ? "Count preset saved." : "Could not save the count preset.",
+          saved ? "success" : "warning",
+        );
+        if (saved) render();
+      });
+      presetActions.append(savePreset);
+      if (matchingPreset) {
+        const deletePreset = el("button", "btn btn-small btn-ghost", "Delete preset");
+        deletePreset.type = "button";
+        deletePreset.addEventListener("click", () => {
+          store.mutate((next) => {
+            removeCountPreset(next, matchingPreset.id);
+          }, "change");
+          toast("Count preset deleted.");
+          render();
+        });
+        presetActions.append(deletePreset);
+      }
+      panel.append(presetActions);
     }
   };
 

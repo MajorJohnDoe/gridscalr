@@ -20,7 +20,7 @@ import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
 import { normalizeMarkupsViews } from "../model/markups";
 import { isInspectionStatus, SYMBOL_MAX_SIZE, SYMBOL_MIN_SIZE } from "../model/symbols";
-import { normalizeCountTypes } from "../features/countTypes/model";
+import { normalizeCountPresets, normalizeCountTypes } from "../features/countTypes/model";
 import type {
   AreaMode,
   AreaShape,
@@ -810,6 +810,12 @@ export function parseProject(text: string): Project {
   const categories = normalizeCategories(raw.categories);
   const countTypes = normalizeCountTypes(raw.countTypes);
   const settings = normalizeSettings(raw.settings, categories);
+  const countPresets = normalizeCountPresets(
+    raw.countPresets,
+    new Set(categories.map((category) => category.id)),
+    new Set(countTypes.map((countType) => countType.id)),
+    settings.quantity.defaultCategoryId,
+  );
   const assets = normalizeAssets(raw.assets);
   const project: Project = {
     ...base,
@@ -819,11 +825,13 @@ export function parseProject(text: string): Project {
     settings,
     categories,
     countTypes,
+    countPresets,
     assets,
     pages: {},
     markupsViews: normalizeMarkupsViews(
       raw.markupsViews,
       new Set(categories.map((category) => category.id)),
+      new Set(countTypes.map((countType) => countType.id)),
     ),
     layers: normalizeLayers(
       raw.layers,

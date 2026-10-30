@@ -3,7 +3,7 @@ import { pageBuilding, pageDisplayName, pageFloor } from "./documents";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
-import { countQuantityOf } from "../features/countTypes/model";
+import { countQuantityOf, countTypeFor } from "../features/countTypes/model";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
 import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
 import type { MarkupItem, Project } from "./types";
@@ -30,8 +30,12 @@ export interface QuantityRow {
   room: string;
   type: QuantityType;
   unit: string;
-  /** Area additions, length, or number of count objects. */
+  /** Area additions, length, or pieces for count rows. */
   gross: number;
+  /** Count rows only: stable count-type id. */
+  countTypeId?: string;
+  /** Count rows only: display label for the count type. */
+  countTypeLabel?: string;
   /** Area deductions. Always zero for length and count. */
   deduction: number;
   net: number;
@@ -88,6 +92,8 @@ interface GroupAccumulator {
   categoryName: string;
   room: string;
   type: QuantityType;
+  countTypeId?: string;
+  countTypeLabel?: string;
   gross: number;
   deduction: number;
   items: number;
@@ -128,6 +134,8 @@ interface MeasuredItem {
   categoryName: string;
   room: string;
   type: QuantityType;
+  countTypeId?: string;
+  countTypeLabel?: string;
   gross: number;
   deduction: number;
   wastePercent: number;
@@ -231,6 +239,7 @@ function forEachMeasuredItem(
     for (const item of layer.items) {
       const type = quantityType(item);
       if (!type) continue;
+      const countType = type === "count" ? countTypeFor(project, item.countType) : undefined;
       const category = categoryForItem(project, item);
       if (!category) continue;
       const room = normalizeRoom(item.room ?? "") ?? "";
@@ -290,6 +299,8 @@ function forEachMeasuredItem(
         categoryName: category.name,
         room,
         type,
+        countTypeId: countType?.id,
+        countTypeLabel: countType?.label,
         gross,
         deduction,
         wastePercent:
@@ -326,6 +337,8 @@ function rowFromGroup(
     categoryName: group.categoryName,
     room: group.room,
     type: group.type,
+    countTypeId: group.countTypeId,
+    countTypeLabel: group.countTypeLabel,
     unit:
       group.type === "length"
         ? units.length
@@ -370,7 +383,7 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
   const units = projectUnits(project);
 
   const counters = forEachMeasuredItem(project, filters, (entry) => {
-    const key = `${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}`;
+    const key = `${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}\u0000${entry.countTypeId ?? ""}`;
     let group = groups.get(key);
     if (!group) {
       group = {
@@ -378,6 +391,8 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
         categoryName: entry.categoryName,
         room: entry.room,
         type: entry.type,
+        countTypeId: entry.countTypeId,
+        countTypeLabel: entry.countTypeLabel,
         gross: 0,
         deduction: 0,
         items: 0,
@@ -401,7 +416,11 @@ export function calculateQuantities(project: Project, filters: QuantityFilters):
     if (categoryDiff) return categoryDiff;
     const roomDiff = compareRooms(a.room, b.room);
     if (roomDiff) return roomDiff;
-    return TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
+    const typeDiff = TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
+    if (typeDiff) return typeDiff;
+    return (a.countTypeLabel ?? "").localeCompare(b.countTypeLabel ?? "", undefined, {
+      numeric: true,
+    });
   });
 
   const categories: QuantityCategorySection[] = [];
@@ -448,7 +467,7 @@ export function calculateQuantitiesByPage(
   const units = projectUnits(project);
 
   const counters = forEachMeasuredItem(project, filters, (entry) => {
-    const key = `${entry.item.page}\u0000${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}`;
+    const key = `${entry.item.page}\u0000${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}\u0000${entry.countTypeId ?? ""}`;
     let group = groups.get(key);
     if (!group) {
       group = {
@@ -456,6 +475,8 @@ export function calculateQuantitiesByPage(
         categoryName: entry.categoryName,
         room: entry.room,
         type: entry.type,
+        countTypeId: entry.countTypeId,
+        countTypeLabel: entry.countTypeLabel,
         gross: 0,
         deduction: 0,
         items: 0,
@@ -487,7 +508,11 @@ export function calculateQuantitiesByPage(
       if (categoryDiff) return categoryDiff;
       const roomDiff = compareRooms(a.room, b.room);
       if (roomDiff) return roomDiff;
-      return TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
+      const typeDiff = TYPE_ORDER[a.type] - TYPE_ORDER[b.type];
+      if (typeDiff) return typeDiff;
+      return (a.countTypeLabel ?? "").localeCompare(b.countTypeLabel ?? "", undefined, {
+        numeric: true,
+      });
     });
 
   const pages: QuantityPageSection[] = [];

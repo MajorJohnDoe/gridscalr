@@ -142,10 +142,39 @@ try {
   await room.waitFor();
   const countRow = room.locator(".quantity-row").filter({ hasText: /Count/ });
   await countRow.waitFor();
+  assert.match(
+    (await countRow.locator(".quantity-type-name").textContent()) ?? "",
+    /Count · Power socket/,
+    "the quantity row should name the count type",
+  );
   const net = countRow.locator(".quantity-stat.is-net .quantity-stat-value");
   assert.equal((await net.textContent())?.trim(), "4", "the room should report 3 + 1 pieces");
   await page.keyboard.press("Escape");
   await quantities.waitFor({ state: "detached" });
+
+  // Save the current count settings as a reusable preset and apply it again.
+  await page.keyboard.press("c");
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const presetOptions = page.getByRole("dialog", { name: "New measurement options" });
+  await presetOptions.waitFor();
+  await presetOptions.getByLabel("Object type").selectOption(customType.id);
+  await presetOptions.getByLabel("Room for new measurements").fill("Count test");
+  await presetOptions.getByLabel("Pieces per new count").fill("2");
+  await presetOptions.getByLabel("Pieces per new count").press("Tab");
+  await presetOptions.getByRole("button", { name: "Save preset" }).click();
+  await page.waitForTimeout(150);
+  const preset = await page.evaluate(() => window.__gridscalr.store.project.countPresets[0]);
+  assert.ok(preset, "saving the current count settings should create a preset");
+  assert.equal(preset.quantity, 2);
+  await presetOptions.getByLabel("Object type").selectOption("other");
+  await presetOptions.getByLabel("Count preset").selectOption(preset.id);
+  const applied = await page.evaluate(() => ({
+    type: window.__gridscalr.store.ui.measureCountType,
+    quantity: window.__gridscalr.store.ui.measureCountQuantity,
+  }));
+  assert.deepEqual(applied, { type: customType.id, quantity: 2 });
+  await page.keyboard.press("Escape");
+  await presetOptions.waitFor({ state: "detached" });
 
   assert.deepEqual(pageErrors, [], "the count workflow should not raise page errors");
   await waitForApp(page);

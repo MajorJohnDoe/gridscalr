@@ -68,7 +68,7 @@ import {
   textItemLayout,
   textLineX,
 } from "../model/text";
-import type { CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
+import type { CountGlyph, CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
 import {
   inspectionStatusColor,
@@ -440,8 +440,9 @@ function drawLegendPage(
     for (const type of project.countTypes) {
       const total = counts.get(type.id) ?? 0;
       if (!total) continue;
+      drawLegendCountGlyph(page, type.glyph, { x: margin + 6, y: y + 4 }, ink, 0.8);
       page.drawText(type.label, {
-        x: margin,
+        x: margin + 20,
         y,
         size: 10.5,
         font: fonts.regular,
@@ -1114,6 +1115,46 @@ function drawCountSymbol(
       size: dot.radius,
       color,
       opacity: clamp(opacity, 0, 1),
+    });
+  }
+}
+
+function drawLegendCountGlyph(
+  page: PDFPage,
+  glyph: CountGlyph,
+  anchor: Point,
+  color: RGB,
+  width: number,
+): void {
+  const symbol = countSymbol(glyph);
+  for (const path of symbol.paths) {
+    for (let index = 1; index < path.points.length; index += 1) {
+      const previous = path.points[index - 1];
+      const current = path.points[index];
+      page.drawLine({
+        start: { x: anchor.x + previous.x, y: anchor.y + previous.y },
+        end: { x: anchor.x + current.x, y: anchor.y + current.y },
+        thickness: width,
+        color,
+      });
+    }
+    if (path.closed && path.points.length > 1) {
+      const first = path.points[0];
+      const last = path.points[path.points.length - 1];
+      page.drawLine({
+        start: { x: anchor.x + last.x, y: anchor.y + last.y },
+        end: { x: anchor.x + first.x, y: anchor.y + first.y },
+        thickness: width,
+        color,
+      });
+    }
+  }
+  for (const dot of symbol.dots) {
+    page.drawCircle({
+      x: anchor.x + dot.center.x,
+      y: anchor.y + dot.center.y,
+      size: dot.radius,
+      color,
     });
   }
 }

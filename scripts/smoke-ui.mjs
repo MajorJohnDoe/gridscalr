@@ -261,8 +261,8 @@ try {
   assert.ok(rows >= 10, `expected at least 10 measurements on page 1, got ${rows}`);
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    12,
-    "the Markups table should expose all twelve columns",
+    13,
+    "the Markups table should expose all thirteen columns",
   );
 
   // A measurement drawn with an older page scale must warn, not fail silently.
@@ -403,7 +403,7 @@ try {
   await columnsDialog.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    11,
+    12,
     "hiding a Markups column should remove its header",
   );
 
@@ -414,7 +414,7 @@ try {
   await columnsAgain.waitFor({ state: "detached" });
   assert.equal(
     await markupsPanel.locator("thead th").count(),
-    12,
+    13,
     "restoring the Markups column should bring its header back",
   );
 

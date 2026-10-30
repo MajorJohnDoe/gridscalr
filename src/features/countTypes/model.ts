@@ -1,6 +1,7 @@
 import { makeId } from "../../model/calibration";
+import { normalizeRoom } from "../../model/categories";
 import { countQuantityOf, COUNT_GLYPH_LABELS, COUNT_GLYPHS } from "../../model/countSymbols";
-import type { CountGlyph, CountType, CountTypeDef, Project } from "../../model/types";
+import type { CountGlyph, CountPreset, CountType, CountTypeDef, Project } from "../../model/types";
 
 export const COUNT_TYPE_NAME_MAX_LENGTH = 60;
 export const COUNT_TYPE_ID_MAX_LENGTH = 80;
@@ -84,6 +85,104 @@ export function normalizeCountTypes(value: unknown): CountTypeDef[] {
   return types;
 }
 
+export function normalizeCountPresets(
+  value: unknown,
+  categoryIds: ReadonlySet<string>,
+  countTypeIds: ReadonlySet<string>,
+  fallbackCategoryId: string,
+): CountPreset[] {
+  if (!Array.isArray(value)) return [];
+  const presets: CountPreset[] = [];
+  const ids = new Set<string>();
+  for (const entry of value) {
+    if (typeof entry !== "object" || entry === null) continue;
+    const raw = entry as Partial<CountPreset>;
+    const countType =
+      typeof raw.countType === "string" && countTypeIds.has(raw.countType)
+        ? raw.countType
+        : "other";
+    if (!countTypeIds.has(countType)) continue;
+    const categoryId =
+      typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId)
+        ? raw.categoryId
+        : fallbackCategoryId;
+    let id =
+      typeof raw.id === "string" && raw.id.trim() ? raw.id.trim().slice(0, 80) : makeId("preset");
+    if (ids.has(id)) id = makeId("preset");
+    const quantity =
+      typeof raw.quantity === "number" && Number.isFinite(raw.quantity)
+        ? Math.max(1, Math.min(100000, Math.round(raw.quantity)))
+        : 1;
+    presets.push({
+      id,
+      countType,
+      categoryId,
+      room: typeof raw.room === "string" ? raw.room.trim().slice(0, 80) : "",
+      quantity,
+    });
+    ids.add(id);
+    if (presets.length >= 40) break;
+  }
+  return presets;
+}
+
+export function countPresetLabel(project: Project, preset: CountPreset): string {
+  const type = countTypeLabel(project, preset.countType);
+  const category = project.categories.find((entry) => entry.id === preset.categoryId)?.name;
+  const room = preset.room ? ` · ${preset.room}` : "";
+  const categoryLabel = category ? ` · ${category}` : "";
+  return `${type}${categoryLabel}${room} · ${preset.quantity} pcs`;
+}
+
+export function findCountPreset(
+  project: Project,
+  countType: CountType,
+  categoryId: string,
+  room: string,
+  quantity: number,
+): CountPreset | undefined {
+  const normalizedRoom = normalizeRoom(room) ?? "";
+  return project.countPresets.find(
+    (preset) =>
+      preset.countType === countType &&
+      preset.categoryId === categoryId &&
+      preset.room === normalizedRoom &&
+      preset.quantity === quantity,
+  );
+}
+
+export function addCountPreset(
+  project: Project,
+  countType: CountType,
+  categoryId: string,
+  room: string,
+  quantity: number,
+): CountPreset | null {
+  if (!project.countTypes.some((entry) => entry.id === countType)) return null;
+  if (!project.categories.some((entry) => entry.id === categoryId)) return null;
+  const normalizedRoom = normalizeRoom(room) ?? "";
+  const pieces = Math.max(1, Math.min(100000, Math.round(quantity)));
+  const existing = findCountPreset(project, countType, categoryId, normalizedRoom, pieces);
+  if (existing) return existing;
+  if (project.countPresets.length >= 40) return null;
+  const preset: CountPreset = {
+    id: makeId("preset"),
+    countType,
+    categoryId,
+    room: normalizedRoom,
+    quantity: pieces,
+  };
+  project.countPresets.push(preset);
+  return preset;
+}
+
+export function removeCountPreset(project: Project, id: string): boolean {
+  const index = project.countPresets.findIndex((entry) => entry.id === id);
+  if (index < 0) return false;
+  project.countPresets.splice(index, 1);
+  return true;
+}
+
 export function countTypeFor(project: Project, id: CountType | undefined): CountTypeDef {
   const types = project.countTypes ?? DEFAULT_COUNT_TYPES;
   return (
@@ -164,6 +263,7 @@ export function removeCountType(project: Project, id: CountType): RemoveCountTyp
     for (const item of layer.items) {
       if (item.kind !== "count" || item.countType !== id) continue;
       item.countType = "other";
+      item.updatedAt = new Date().toISOString();
       reassigned += 1;
     }
   }
