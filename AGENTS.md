@@ -182,6 +182,7 @@ src/app/referenceController.ts reference pane, comparison session and comparison
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/features/countTypes/model.ts count definitions, normalization, management and quantity helpers
+src/features/countTypes/ui.ts count-type management dialog
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
@@ -275,6 +276,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion and XLSX package generation.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback.
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items, crop and split view.
+- `npm run test:count` drives the count workflow through Project settings, custom type creation, placement, pieces per object, Markups and quantities.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
@@ -313,6 +315,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.13.3:** complete — release hardening adds Save/Discard/Cancel close handling, safe dialog focus, automatic Windows checksums, context-bar family switching, a reference-view menu state, clearer layer-default copy and the documented Tauri/GTK glib advisory. No schema change; the schema remains v19.
 - **0.14.0:** complete — internal refactors extract the reference/comparison controller and canvas draft renderer, share the tool-flyout mount helper, add ESLint with type-aware CI linting and direct dialog/flyout/preview-colour tests, and record ADR 0001 for feature modules. No schema change; the schema remains v19.
 - **0.14.1:** complete — OCR, PDF exports, XLSX and TIF import load on demand; production builds no longer ship source maps. No schema change; the schema remains v19.
+- **0.15.0:** complete — custom project count types, pieces per count object and schema 20; the first feature module under `src/features/countTypes/`. Schema is v20.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-30T14:59:53.503Z",
+  "generatedAt": "2026-10-30T15:12:16.765Z",
   "appVersion": "0.15.0",
-  "sourceFingerprint": "9332cf3f7e01c193c6f5d3aec790b6ca2a3228ccfa7e17705a22cdf6c5d6faf6",
+  "sourceFingerprint": "eb1dd4ab6ebe6c818d08cbf9da3def2d2de8bd5fbe74a350704f2a7b1ee5b001",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -37,6 +37,12 @@
       "title": "Quantities",
       "alt": "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
       "description": "Live quantities with deductions, waste and rounding for procurement."
+    },
+    {
+      "file": "count-types.png",
+      "title": "Count types",
+      "alt": "The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form.",
+      "description": "Name the objects you count and choose the vector glyph used on the plan and in exports."
     },
     {
       "file": "markups-list.png",

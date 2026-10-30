@@ -64,6 +64,7 @@ export interface PanelActions {
   setSelectionRoom: (room: string) => void;
   setSelectionAreaMode: (mode: AreaMode) => void;
   setSelectionCountType: (type: CountType) => void;
+  setSelectionCountQuantity: (quantity: number) => void;
   setSelectionLabelSize: (size: number) => void;
   insertImage: () => void;
   setSelectionImageMode: (mode: ImageMode) => void;

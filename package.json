@@ -37,6 +37,7 @@
     "test:watch": "vitest",
     "test:ui": "node scripts/smoke-ui.mjs",
     "test:canvas": "node scripts/canvas-regression.mjs",
+    "test:count": "node scripts/count-workflow.mjs",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" vite.config.ts eslint.config.mjs",
     "format:check": "prettier --check \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" vite.config.ts eslint.config.mjs",
     "lint": "eslint src tests vite.config.ts",

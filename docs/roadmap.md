@@ -54,22 +54,22 @@ milestone:
 | 0.13.3 | Release hardening: Save/Discard/Cancel, safe dialog focus, automated checksums, context-bar family switching and reference menu state | Complete | v19 |
 | 0.14.0 | Internal refactors: reference/comparison controller, canvas draft renderer, shared flyout mount, ESLint in CI, direct UI tests and ADR 0001 | Complete | v19 |
 | 0.14.1 | Lazy-loaded OCR, PDF exports, XLSX and TIF import; production source maps removed | Complete | v19 |
+| 0.15.0 | Custom count types, pieces per count object, schema 20 and the first feature module | Complete | v20 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed feature milestone after 0.14.1. The candidates below are ordered by
+There is no committed feature milestone after 0.15.0. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **Custom count types** ([#22](https://github.com/MajorJohnDoe/gridscalr/issues/22)) as the first feature module under `src/features/countTypes/`, with count quantities greater than one piece per object.
-2. **Independent page navigation in the reference pane** ([#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)), so the primary and reference views can inspect different sheets.
+1. **Independent page navigation in the reference pane** ([#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)), so the primary and reference views can inspect different sheets.
+2. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans, if users need them often enough to justify the dependency.
 3. **Snap directly to PDF vector geometry** as a separate spike. It needs extraction and indexing of drawing paths.
 4. **Semantic PDF vector comparison** as a separate spike. It needs extraction and indexing of PDF operators and must not block other work.
-5. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans, if users need them often enough to justify the dependency.
-6. **Additional OCR languages** if users need them, with the matching traineddata bundle and license review.
-7. **macOS and Linux release builds** next to the Windows installers.
+5. **Additional OCR languages** if users need them, with the matching traineddata bundle and license review.
+6. **macOS and Linux release builds** next to the Windows installers.
 
 ## Deferred by design
 

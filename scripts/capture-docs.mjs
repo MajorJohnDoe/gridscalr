@@ -51,6 +51,13 @@ const shots = [
     description: "Live quantities with deductions, waste and rounding for procurement.",
   },
   {
+    file: "count-types.png",
+    title: "Count types",
+    alt: "The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form.",
+    description:
+      "Name the objects you count and choose the vector glyph used on the plan and in exports.",
+  },
+  {
     file: "markups-list.png",
     title: "Markups list",
     alt: "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
@@ -153,6 +160,22 @@ try {
   await page.getByLabel("Filter quantities by page").selectOption("all");
   await page.waitForTimeout(150);
   await capture("quantities.png");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+
+  await page.keyboard.press("Control+,");
+  await page.getByRole("dialog").waitFor();
+  await page.getByRole("button", { name: /Manage count types/ }).click();
+  const countTypesDialog = page.getByRole("dialog", { name: "Count types" });
+  await countTypesDialog.getByLabel("New count type name").waitFor();
+  await countTypesDialog.getByLabel("New count type name").fill("Socket");
+  await countTypesDialog.getByLabel("Glyph for the new count type").selectOption("fixture");
+  await countTypesDialog.getByRole("button", { name: "Add", exact: true }).click();
+  await countTypesDialog.getByLabel("Count type name: Socket").waitFor();
+  await page.waitForTimeout(300);
+  await capture("count-types.png");
+  await countTypesDialog.getByRole("button", { name: "Done" }).click();
+  await page.getByRole("dialog").waitFor();
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
