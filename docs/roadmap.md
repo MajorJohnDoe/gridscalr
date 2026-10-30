@@ -107,7 +107,7 @@ These are internal improvements, not user-facing promises. Concrete items should
 become GitHub issues with the `tech-debt` or `refactor` label rather than
 anonymous `TODO` comments in code.
 
-- Split `CanvasView.ts` into draft rendering, label rendering, annotation drawing and pointer interaction modules.
+- Split `CanvasView.ts` further into label rendering, annotation drawing and pointer interaction modules.
 - Extract project save/open flows from `App.ts` into focused `src/app/` modules.
 - Share one flyout-mount helper in `toolFlyouts.ts` instead of duplicating positioning and dismissal logic.
 - Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.

@@ -1,6 +1,5 @@
 import {
   angleArcPolyline,
-  angleValue,
   arcGeometry,
   arcPolyline,
   arrowHeadGeometry,
@@ -14,32 +13,23 @@ import {
   itemLocalBounds,
   itemLocalToPage,
   itemRotation,
-  measurementValue,
   midpoint,
   nearestPointOnSegment,
   normalizeDegrees,
-  polylineLength,
   pointToItemLocal,
   radiusCircle,
   rotatePoint,
-  slopeDegrees,
-  slopeValue,
   rotatePointsAround,
   simplifyPolyline,
   translatePoints,
   type Bounds,
 } from "../model/geometry";
-import { areaCentroid, areaOutline, areaShapeOf, areaValue, rectangleCorners } from "../model/area";
+import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
   clampLabelSize,
   labelAnchorForPoints,
-  labelBox,
-  labelMetrics,
-  labelScaleForSize,
-  LABEL_CALIBRATION_OFFSET,
-  LABEL_LINE_OFFSET,
   LABEL_PRIMARY_SIZE,
   type LabelBox,
   type LabelMetrics,
@@ -51,7 +41,6 @@ import {
   LABEL_FIT_POSITIONS,
   layoutPageLabels,
   pageLabelSources,
-  previewLabelLayout,
   type LabelLayout,
 } from "../model/labelLayout";
 import { ensureLabelFonts, measureLabelText } from "../model/labelFont";
@@ -65,7 +54,6 @@ import {
   layerLockedOnPage,
   layerVisibleOnPage,
   layerKindForItem,
-  measurementLayerColor,
 } from "../model/layers";
 import { deleteItems, translateItems } from "../model/commands";
 import {
@@ -86,6 +74,7 @@ import {
   type BoxHandleRole,
 } from "./geometry";
 import { CropController } from "./crop";
+import { CALIBRATION_COLOR, drawDraft as paintDraft, type Draft } from "./draftRenderer";
 import { CanvasEditorController, type LabelHit } from "./editors";
 import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
 import {
@@ -158,13 +147,7 @@ import {
   symbolRenderPlan,
   symbolSizeOf,
 } from "../model/symbols";
-import {
-  formatArea,
-  formatLength,
-  formatNumber,
-  volumeInUnit,
-  volumeUnitLabel,
-} from "../model/units";
+import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import {
@@ -215,26 +198,6 @@ export interface CanvasTestApi {
   } | null;
 }
 
-type Draft =
-  | { kind: "calibrate"; points: Point[]; cursor: Point }
-  | { kind: "length"; points: Point[]; cursor: Point }
-  | { kind: "radius" | "diameter" | "slope"; points: Point[]; cursor: Point }
-  | { kind: "arc" | "angle"; points: Point[]; cursor: Point }
-  | { kind: "volume"; points: Point[]; cursor: Point }
-  | { kind: "area"; points: Point[]; cursor: Point }
-  | { kind: "pen"; points: Point[]; cursor: Point }
-  | { kind: "highlight"; points: Point[]; cursor: Point }
-  | { kind: "highlight-polygon"; points: Point[]; cursor: Point }
-  | { kind: "cloud"; points: Point[]; cursor: Point }
-  | { kind: "callout"; start: Point; current: Point }
-  | { kind: "line"; start: Point; current: Point }
-  | { kind: "arrow"; start: Point; current: Point }
-  | { kind: "rect"; start: Point; current: Point }
-  | { kind: "ellipse"; start: Point; current: Point }
-  | { kind: "highlight-rect"; start: Point; current: Point }
-  | { kind: "area-rect"; start: Point; current: Point }
-  | { kind: "area-ellipse"; start: Point; current: Point };
-
 interface DragState {
   mode:
     | "move"
@@ -279,7 +242,6 @@ interface PanState {
 }
 
 const ACCENT = "#35c2a1";
-const CALIBRATION_COLOR = "#a78bfa";
 const FONT_STACK = TEXT_FONT_STACK;
 
 const symbolPathCache = new Map<string, Path2D>();
@@ -3432,59 +3394,6 @@ export class CanvasView {
     );
   }
 
-  private drawPreviewLabel(
-    ctx: CanvasRenderingContext2D,
-    text: string,
-    anchor: Point,
-    color: string,
-    secondary?: string,
-  ): void {
-    const scale = labelScaleForSize(store.project?.settings.labelSize ?? LABEL_PRIMARY_SIZE);
-    const metrics = labelMetrics(scale);
-    const primaryWidth = measureLabelText(text, metrics.primarySize, "bold");
-    const secondaryWidth = secondary
-      ? measureLabelText(secondary, metrics.secondarySize, "regular")
-      : 0;
-    this.drawLabelLayout(ctx, {
-      id: "preview",
-      text,
-      secondary,
-      color,
-      box: labelBox(anchor, primaryWidth, secondaryWidth, secondary, scale),
-      metrics,
-      placement: "center",
-    });
-  }
-
-  /**
-   * Draws a measurement preview through the same layout rules as the saved
-   * label. The item points are page-space, never screen-space.
-   */
-  private drawMeasurePreviewLabel(
-    ctx: CanvasRenderingContext2D,
-    item: MarkupItem,
-    text: string,
-    color: string,
-    secondary?: string,
-  ): void {
-    const size = this.pageSize();
-    if (!size) return;
-    this.drawLabelLayout(
-      ctx,
-      previewLabelLayout(
-        item,
-        text,
-        {
-          pageSize: size,
-          measure: measureLabelText,
-          labelSize: store.project?.settings.labelSize,
-        },
-        color,
-        secondary,
-      ),
-    );
-  }
-
   private drawInteraction(): void {
     const ctx = this.interactionCtx;
     this.prepare(ctx);
@@ -3746,388 +3655,19 @@ export class CanvasView {
   }
 
   private drawDraft(ctx: CanvasRenderingContext2D): void {
-    if (!this.draft) return;
-    const zoom = this.viewZoom;
-    const project = store.project!;
-    const scale = pageScale(project, this.viewPage);
-    const unit = project.settings.lengthUnit;
-    const areaUnit = project.settings.areaUnit;
-    const measureColor = measurementLayerColor(project, this.viewPage);
-    const draftColor =
-      this.draft.kind === "calibrate"
-        ? CALIBRATION_COLOR
-        : this.draft.kind === "cloud"
-          ? (cloudFillColor(store.ui.cloudFill) ?? store.ui.style.color)
-          : this.draft.kind === "highlight-polygon"
-            ? store.ui.style.color
-            : measureColor;
-    const draftFill = this.draft.kind === "highlight-polygon" ? store.ui.style.color : measureColor;
-
-    if (
-      this.draft.kind === "calibrate" ||
-      this.draft.kind === "length" ||
-      this.draft.kind === "area" ||
-      this.draft.kind === "volume" ||
-      this.draft.kind === "cloud" ||
-      this.draft.kind === "highlight-polygon"
-    ) {
-      const points = this.draft.points.map((p) => this.toScreen(p));
-      const cursor = this.toScreen(this.draft.cursor);
-      ctx.save();
-      ctx.strokeStyle = draftColor;
-      ctx.lineWidth = 1.6;
-      ctx.setLineDash([]);
-      if (points.length > 1) {
-        ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        if (
-          (this.draft.kind === "area" ||
-            this.draft.kind === "volume" ||
-            this.draft.kind === "cloud" ||
-            this.draft.kind === "highlight-polygon") &&
-          points.length >= 3
-        ) {
-          ctx.closePath();
-        }
-        ctx.stroke();
-      }
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      const last = points[points.length - 1];
-      ctx.moveTo(last.x, last.y);
-      ctx.lineTo(cursor.x, cursor.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-
-      if (
-        (this.draft.kind === "area" ||
-          this.draft.kind === "volume" ||
-          this.draft.kind === "highlight-polygon") &&
-        points.length >= 2
-      ) {
-        const pagePoints = this.draft.points;
-        const preview = [...pagePoints, this.draft.cursor];
-        ctx.save();
-        ctx.globalAlpha = 0.1;
-        ctx.fillStyle = draftFill;
-        ctx.beginPath();
-        preview.forEach((p, index) => {
-          const s = this.toScreen(p);
-          if (index === 0) ctx.moveTo(s.x, s.y);
-          else ctx.lineTo(s.x, s.y);
-        });
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-        if (preview.length >= 3 && this.draft.kind === "area") {
-          this.drawPreviewLabel(
-            ctx,
-            formatArea(areaValue(preview, "polygon"), scale, areaUnit),
-            areaCentroid(preview, "polygon"),
-            measureColor,
-          );
-        } else if (preview.length >= 3 && this.draft.kind === "volume") {
-          const volume = volumeInUnit(
-            areaValue(preview, "polygon"),
-            scale?.pointsPerMeter ?? 1,
-            areaUnit,
-            1,
-            unit,
-          );
-          this.drawPreviewLabel(
-            ctx,
-            `${formatNumber(volume, 2)} ${volumeUnitLabel(areaUnit)}`,
-            areaCentroid(preview, "polygon"),
-            measureColor,
-          );
-        }
-      } else if (this.draft.kind === "length" && points.length >= 1) {
-        const preview = [...this.draft.points, this.draft.cursor];
-        const a = preview[preview.length - 2];
-        const b = preview[preview.length - 1];
-        const mid = midpoint(a, b);
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const length = Math.hypot(dx, dy) || 1;
-        this.drawPreviewLabel(
-          ctx,
-          formatLength(polylineLength(preview), scale, unit, project.settings.smartLengthUnits),
-          {
-            x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
-            y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
-          },
-          measureColor,
-        );
-      } else if (this.draft.kind === "calibrate") {
-        const a = this.draft.points[0];
-        const b = this.draft.cursor;
-        const mid = midpoint(a, b);
-        const dx = b.x - a.x;
-        const dy = b.y - a.y;
-        const length = Math.hypot(dx, dy) || 1;
-        this.drawPreviewLabel(
-          ctx,
-          `${formatNumber(distance(a, b), 1)} pt`,
-          {
-            x: mid.x + (dy / length) * LABEL_CALIBRATION_OFFSET,
-            y: mid.y - (dx / length) * LABEL_CALIBRATION_OFFSET,
-          },
-          CALIBRATION_COLOR,
-        );
-      }
-
-      ctx.fillStyle = "#f7fbfc";
-      ctx.strokeStyle = draftColor;
-      for (const p of points) {
-        ctx.beginPath();
-        ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
-      return;
-    }
-
-    if (
-      this.draft.kind === "radius" ||
-      this.draft.kind === "diameter" ||
-      this.draft.kind === "arc"
-    ) {
-      const points = this.draft.points.map((point) => this.toScreen(point));
-      const cursor = this.toScreen(this.draft.cursor);
-      const fake = {
-        kind: this.draft.kind,
-        points: [...this.draft.points, this.draft.cursor],
-      } as MarkupItem;
-      ctx.save();
-      ctx.strokeStyle = measureColor;
-      ctx.lineWidth = 1.6;
-      if (this.draft.kind === "arc") {
-        const curve = arcPolyline(fake).map((point) => this.toScreen(point));
-        ctx.beginPath();
-        curve.forEach((point, index) =>
-          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-        );
-        ctx.stroke();
-      } else {
-        const center = points[0];
-        const radius = Math.hypot(cursor.x - center.x, cursor.y - center.y);
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, radius, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(center.x, center.y);
-        ctx.lineTo(cursor.x, cursor.y);
-        ctx.stroke();
-      }
-      const value = measurementValue(fake);
-      if (value !== null) {
-        const prefix =
-          this.draft.kind === "radius" ? "R " : this.draft.kind === "diameter" ? "Ø " : "Arc ";
-        this.drawMeasurePreviewLabel(
-          ctx,
-          fake,
-          `${prefix}${formatLength(value, scale, unit, project.settings.smartLengthUnits)}`,
-          measureColor,
-        );
-      }
-      ctx.fillStyle = "#f7fbfc";
-      for (const point of points) {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
-      return;
-    }
-
-    if (this.draft.kind === "slope" || this.draft.kind === "angle") {
-      const start = this.toScreen(this.draft.points[0]);
-      const cursor = this.toScreen(this.draft.cursor);
-      const fake = {
-        kind: this.draft.kind,
-        points: [...this.draft.points, this.draft.cursor],
-      } as MarkupItem;
-      ctx.save();
-      ctx.strokeStyle = measureColor;
-      ctx.lineWidth = 1.6;
-      if (this.draft.kind === "slope") {
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(cursor.x, cursor.y);
-        ctx.stroke();
-        this.drawMeasurePreviewLabel(
-          ctx,
-          fake,
-          `${formatNumber(slopeValue(fake) ?? 0, 1)}%`,
-          measureColor,
-          `${formatNumber(slopeDegrees(fake) ?? 0, 1)}°`,
-        );
-      } else {
-        const vertex =
-          this.draft.points[1] !== undefined ? this.toScreen(this.draft.points[1]) : cursor;
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(vertex.x, vertex.y);
-        ctx.stroke();
-        if (this.draft.points.length >= 2) {
-          ctx.beginPath();
-          ctx.moveTo(vertex.x, vertex.y);
-          ctx.lineTo(cursor.x, cursor.y);
-          ctx.stroke();
-          const curve = angleArcPolyline({
-            kind: "angle",
-            points: [this.draft.points[0], this.draft.points[1], this.draft.cursor],
-          } as MarkupItem).map((point) => this.toScreen(point));
-          if (curve.length > 1) {
-            ctx.beginPath();
-            curve.forEach((point, index) =>
-              index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-            );
-            ctx.stroke();
-          }
-          this.drawMeasurePreviewLabel(
-            ctx,
-            fake,
-            `${formatNumber(angleValue(fake) ?? 0, 1)}°`,
-            measureColor,
-          );
-        }
-      }
-      ctx.fillStyle = "#f7fbfc";
-      for (const point of [start, cursor]) {
-        ctx.beginPath();
-        ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-      }
-      ctx.restore();
-      return;
-    }
-
-    if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
-      const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
-      const pagePoints = [this.draft.start, this.draft.current];
-      const outline = areaOutline(pagePoints, shape).map((point) => this.toScreen(point));
-      ctx.save();
-      ctx.strokeStyle = measureColor;
-      ctx.fillStyle = hexAlpha(measureColor, 0.1);
-      ctx.lineWidth = 1.6;
-      ctx.beginPath();
-      outline.forEach((point, index) =>
-        index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-      );
-      ctx.closePath();
-      ctx.fill();
-      ctx.stroke();
-      if (shape !== "ellipse") {
-        const corners = rectangleCorners(pagePoints).map((point) => this.toScreen(point));
-        ctx.fillStyle = "#f7fbfc";
-        for (const point of corners) {
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, 3.5, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.stroke();
-        }
-      }
-      this.drawPreviewLabel(
-        ctx,
-        formatArea(areaValue(pagePoints, shape), scale, areaUnit),
-        areaCentroid(pagePoints, shape),
-        measureColor,
-      );
-      ctx.restore();
-      return;
-    }
-
-    if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
-      const points = this.draft.points.map((p) => this.toScreen(p));
-      ctx.save();
-      ctx.strokeStyle =
-        this.draft.kind === "highlight"
-          ? hexAlpha(store.ui.style.color, 0.4)
-          : store.ui.style.color;
-      ctx.lineWidth =
-        this.draft.kind === "highlight"
-          ? store.ui.style.strokeWidth * zoom * 4
-          : store.ui.style.strokeWidth * zoom;
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
-      ctx.beginPath();
-      points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-      ctx.stroke();
-      ctx.restore();
-      return;
-    }
-
-    const shapeDraft = this.draft as Extract<Draft, { start: Point; current: Point }>;
-    const start = this.toScreen(shapeDraft.start);
-    const current = this.toScreen(shapeDraft.current);
-    ctx.save();
-    ctx.strokeStyle = store.ui.style.color;
-    ctx.fillStyle = hexAlpha(store.ui.style.color, store.ui.style.fillOpacity);
-    ctx.lineWidth = Math.max(1, store.ui.style.strokeWidth * zoom);
-    ctx.lineCap = "round";
-    if (this.draft.kind === "line" || this.draft.kind === "arrow") {
-      const head = this.draft.kind === "arrow" ? arrowHeadGeometry(start, current, 10) : null;
-      const startHead =
-        this.draft.kind === "arrow" && store.ui.arrowHeads === "both"
-          ? arrowHeadGeometry(current, start, 10)
-          : null;
-      ctx.beginPath();
-      ctx.moveTo(
-        startHead ? startHead.shaftEnd.x : start.x,
-        startHead ? startHead.shaftEnd.y : start.y,
-      );
-      ctx.lineTo(head ? head.shaftEnd.x : current.x, head ? head.shaftEnd.y : current.y);
-      ctx.stroke();
-      if (startHead) drawArrowHead(ctx, start, startHead, store.ui.style.color);
-      if (head) drawArrowHead(ctx, current, head, store.ui.style.color);
-    } else if (this.draft.kind === "rect" || this.draft.kind === "highlight-rect") {
-      const rect = expandRect(start, current);
-      if (this.draft.kind === "highlight-rect") {
-        ctx.save();
-        ctx.globalAlpha = 0.3;
-        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        ctx.restore();
-      } else {
-        if (store.ui.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-      }
-    } else if (this.draft.kind === "ellipse") {
-      const rect = expandRect(start, current);
-      ctx.beginPath();
-      ctx.ellipse(
-        rect.x + rect.width / 2,
-        rect.y + rect.height / 2,
-        Math.max(0.5, rect.width / 2),
-        Math.max(0.5, rect.height / 2),
-        0,
-        0,
-        Math.PI * 2,
-      );
-      if (store.ui.style.fillOpacity > 0) ctx.fill();
-      ctx.stroke();
-    } else if (this.draft.kind === "callout") {
-      ctx.setLineDash([5, 4]);
-      ctx.beginPath();
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(current.x, current.y);
-      ctx.stroke();
-      ctx.setLineDash([]);
-      const width = 76;
-      const height = 24;
-      ctx.fillStyle = "rgba(12, 16, 18, 0.9)";
-      ctx.fillRect(current.x - width / 2, current.y - height / 2, width, height);
-      ctx.strokeRect(current.x - width / 2, current.y - height / 2, width, height);
-      ctx.fillStyle = store.ui.style.color;
-      ctx.font = `600 ${Math.max(9, store.ui.style.fontSize * zoom)}px ${TEXT_FONT_STACK}`;
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("Callout", current.x, current.y);
-    }
-    ctx.restore();
+    if (!this.draft || !store.project) return;
+    paintDraft(ctx, {
+      draft: this.draft,
+      project: store.project,
+      viewPage: this.viewPage,
+      zoom: this.viewZoom,
+      pageSize: this.pageSize(),
+      toScreen: (point) => this.toScreen(point),
+      style: store.ui.style,
+      cloudFill: store.ui.cloudFill,
+      arrowHeads: store.ui.arrowHeads,
+      paintLabel: (layout) => this.drawLabelLayout(ctx, layout),
+    });
   }
 
   /** Dev-only bridge used by Playwright; the production UI never calls it. */
