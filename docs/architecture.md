@@ -14,6 +14,7 @@ src/
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
+  canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
   canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
   canvas/geometry.ts     crop, handle, rotation and colour helpers
   canvas/selectionHandles.ts selection and rotation handles

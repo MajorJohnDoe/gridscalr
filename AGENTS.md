@@ -181,6 +181,7 @@ src/app/referenceController.ts reference pane, comparison session and comparison
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
+src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
 src/compare/               session reference loading, item matching and revision diff
 src/search/                local PDF text-layer extraction, index, search hits and OCR
