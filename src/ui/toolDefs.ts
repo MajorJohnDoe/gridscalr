@@ -206,3 +206,49 @@ export const TOOLS: ToolDef[] = [
 ];
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));
+
+export type ToolFamilyId = "circle-arc" | "angle-slope";
+
+export interface ToolFamily {
+  id: ToolFamilyId;
+  label: string;
+  tools: ToolId[];
+}
+
+export const TOOL_FAMILIES: ToolFamily[] = [
+  { id: "circle-arc", label: "Circle & arc", tools: ["radius", "diameter", "arc"] },
+  { id: "angle-slope", label: "Angle & slope", tools: ["angle", "slope"] },
+];
+
+export const TOOL_FAMILY_BY_ID = new Map(TOOL_FAMILIES.map((family) => [family.id, family]));
+export const TOOL_FAMILY_BY_TOOL = new Map<ToolId, ToolFamily>(
+  TOOL_FAMILIES.flatMap((family) => family.tools.map((tool) => [tool, family] as const)),
+);
+
+const lastFamilyTools = new Map<ToolFamilyId, ToolId>();
+
+export function familyForTool(toolId: ToolId): ToolFamily | undefined {
+  return TOOL_FAMILY_BY_TOOL.get(toolId);
+}
+
+/** True for the member that owns the rail slot. */
+export function isFamilyLeader(toolId: ToolId): boolean {
+  const family = familyForTool(toolId);
+  return Boolean(family && family.tools[0] === toolId);
+}
+
+/** Remembers the most recently used member of a family for this session. */
+export function rememberFamilyTool(toolId: ToolId): void {
+  const family = familyForTool(toolId);
+  if (family) lastFamilyTools.set(family.id, toolId);
+}
+
+/** The active member, the last used member, or the family's default leader. */
+export function familyToolForDisplay(family: ToolFamily, activeTool: ToolId): ToolId {
+  if (family.tools.includes(activeTool)) return activeTool;
+  return lastFamilyTools.get(family.id) ?? family.tools[0];
+}
+
+export function resetFamilyToolMemory(): void {
+  lastFamilyTools.clear();
+}

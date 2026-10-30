@@ -135,6 +135,7 @@ import {
 import { syncViewport } from "../canvas/viewport";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
+import { loadLayerColorDefaults } from "../io/layerDefaults";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
 
@@ -180,6 +181,7 @@ export class App {
   private unlistenClose: (() => void) | null = null;
 
   constructor(root: HTMLElement) {
+    loadLayerColorDefaults();
     this.refs = createShell(root);
     this.actions = {
       openPdf: () => void this.openPdfFlow(),

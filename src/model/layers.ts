@@ -13,8 +13,45 @@ import type {
   SelectionRef,
 } from "./types";
 
-export const DEFAULT_MEASURE_COLOR = "#4cc9f0";
+export const DEFAULT_MEASURE_COLOR = "#f70808";
 export const DEFAULT_DRAW_COLOR = "#f2a93b";
+
+export interface LayerColorDefaults {
+  measure: string;
+  draw: string;
+}
+
+export const DEFAULT_LAYER_COLORS: LayerColorDefaults = {
+  measure: DEFAULT_MEASURE_COLOR,
+  draw: DEFAULT_DRAW_COLOR,
+};
+
+let layerColorDefaults: LayerColorDefaults = { ...DEFAULT_LAYER_COLORS };
+
+function normalizeLayerColor(value: unknown, fallback: string): string {
+  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)
+    ? value.toLowerCase()
+    : fallback;
+}
+
+/** App-level colours used by every newly created layer. */
+export function setDefaultLayerColors(colors: Partial<LayerColorDefaults>): LayerColorDefaults {
+  layerColorDefaults = {
+    measure: normalizeLayerColor(colors.measure, layerColorDefaults.measure),
+    draw: normalizeLayerColor(colors.draw, layerColorDefaults.draw),
+  };
+  return { ...layerColorDefaults };
+}
+
+export function defaultLayerColors(): LayerColorDefaults {
+  return { ...layerColorDefaults };
+}
+
+export function resetDefaultLayerColors(): LayerColorDefaults {
+  layerColorDefaults = { ...DEFAULT_LAYER_COLORS };
+  return defaultLayerColors();
+}
+
 export const DEFAULT_SETTINGS: ProjectSettings = {
   lengthUnit: "mm",
   areaUnit: "m2",
@@ -67,7 +104,7 @@ export function createLayer(
     visible: true,
     locked: false,
     opacity: 1,
-    color: color ?? (kind === "measure" ? DEFAULT_MEASURE_COLOR : DEFAULT_DRAW_COLOR),
+    color: color ?? layerColorDefaults[kind],
     items: [],
     ...(homePage ? { homePage } : {}),
   };

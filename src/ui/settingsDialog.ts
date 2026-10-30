@@ -12,6 +12,11 @@ import {
   resetGlobalStampPresets,
   saveGlobalStampPresets,
 } from "../io/stampDefaults";
+import {
+  currentLayerColorDefaults,
+  resetLayerColorDefaults,
+  saveLayerColorDefaults,
+} from "../io/layerDefaults";
 import { normalizeStampPresets } from "../model/stamps";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
@@ -400,6 +405,59 @@ function stampsSection(): HTMLElement {
   return wrap;
 }
 
+function layerDefaultsSection(): HTMLElement {
+  const wrap = section(
+    "Layer defaults",
+    "Colours for new measurement and drawing layers. Stored locally and not saved in the project file.",
+  );
+  let colors = currentLayerColorDefaults();
+  const row = el("div", "field-row");
+
+  const colorField = (label: string, value: string) => {
+    const fieldWrap = el("label", "field settings-field");
+    const input = el("input", "color-swatch");
+    input.type = "color";
+    input.value = value;
+    input.setAttribute("aria-label", label);
+    fieldWrap.append(el("span", "field-label", label), input);
+    return { fieldWrap, input };
+  };
+
+  const measure = colorField("Measurement layer colour", colors.measure);
+  const draw = colorField("Drawing layer colour", colors.draw);
+  row.append(measure.fieldWrap, draw.fieldWrap);
+
+  const save = () => {
+    colors = saveLayerColorDefaults({
+      measure: measure.input.value,
+      draw: draw.input.value,
+    });
+  };
+  measure.input.addEventListener("change", save);
+  draw.input.addEventListener("change", save);
+
+  const actions = el("div", "settings-actions");
+  const signalRed = el("button", "btn btn-small btn-ghost", "Use signal red for both");
+  signalRed.type = "button";
+  signalRed.addEventListener("click", () => {
+    measure.input.value = "#f70808";
+    draw.input.value = "#f70808";
+    save();
+    toast("Layer colours set to signal red.", "success");
+  });
+  const reset = el("button", "btn btn-small btn-ghost", "Reset layer colours");
+  reset.type = "button";
+  reset.addEventListener("click", () => {
+    colors = resetLayerColorDefaults();
+    measure.input.value = colors.measure;
+    draw.input.value = colors.draw;
+    toast("Layer colour defaults reset.", "success");
+  });
+  actions.append(signalRed, reset);
+  wrap.append(row, actions);
+  return wrap;
+}
+
 function interfaceSection(): HTMLElement {
   const wrap = section(
     "Interface",
@@ -430,6 +488,7 @@ export function openSettingsDialog(): void {
       displaySection(),
       quantitiesSection(),
       stampsSection(),
+      layerDefaultsSection(),
       interfaceSection(),
     );
   };

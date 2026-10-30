@@ -1,8 +1,15 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
 import { createMenuBar } from "./topMenu";
-import { attachToolFlyout } from "./toolFlyouts";
-import { TOOLS } from "./toolDefs";
+import { attachToolFamilyFlyout, attachToolFlyout } from "./toolFlyouts";
+import {
+  TOOLS,
+  TOOL_BY_ID,
+  TOOL_FAMILY_BY_TOOL,
+  familyToolForDisplay,
+  isFamilyLeader,
+  rememberFamilyTool,
+} from "./toolDefs";
 import { store, type LeftTab } from "../state/store";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import {
@@ -109,14 +116,37 @@ export function createShell(root: HTMLElement): ShellRefs {
       toolRail.append(el("div", "tool-separator"));
     }
     lastGroup = tool.group;
-    const btn = el("button", "tool-btn");
+    const family = TOOL_FAMILY_BY_TOOL.get(tool.id);
+    if (family && !isFamilyLeader(tool.id)) continue;
+    const btn = el("button", family ? "tool-btn tool-family" : "tool-btn");
     btn.type = "button";
-    btn.dataset.tool = tool.id;
-    btn.innerHTML = icon(tool.icon, 19);
-    btn.title = `${tool.label} (${tool.shortcut})`;
-    btn.setAttribute("aria-label", tool.label);
-    btn.addEventListener("click", () => store.setTool(tool.id));
-    attachToolFlyout(btn, tool.id);
+    if (family) {
+      const member = familyToolForDisplay(family, store.ui.activeTool);
+      const memberTool = TOOL_BY_ID.get(member);
+      const shortcuts = family.tools
+        .map((id) => TOOL_BY_ID.get(id)?.shortcut)
+        .filter(Boolean)
+        .join(" / ");
+      btn.dataset.toolGroup = family.id;
+      btn.dataset.displayTool = member;
+      btn.innerHTML = icon(memberTool?.icon ?? "cursor", 19);
+      btn.title = `${family.label} (${shortcuts})`;
+      btn.setAttribute("aria-label", `${family.label} tools`);
+      btn.setAttribute("aria-haspopup", "menu");
+      btn.addEventListener("click", () => {
+        const next = familyToolForDisplay(family, store.ui.activeTool);
+        rememberFamilyTool(next);
+        store.setTool(next);
+      });
+      attachToolFamilyFlyout(btn, family);
+    } else {
+      btn.dataset.tool = tool.id;
+      btn.innerHTML = icon(tool.icon, 19);
+      btn.title = `${tool.label} (${tool.shortcut})`;
+      btn.setAttribute("aria-label", tool.label);
+      btn.addEventListener("click", () => store.setTool(tool.id));
+      attachToolFlyout(btn, tool.id);
+    }
     toolRail.append(btn);
   }
   toolRail.append(el("div", "tool-spacer"));
