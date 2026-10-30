@@ -394,6 +394,8 @@ function renderHighlight(panel: HTMLElement, render: () => void): void {
       },
     });
   }
+  panel.append(el("div", "tool-flyout-section", "Colour"));
+  renderColorSwatches(panel, render);
 }
 
 function renderCallout(panel: HTMLElement, render: () => void): void {

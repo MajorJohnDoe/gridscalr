@@ -183,6 +183,19 @@ try {
   await page.locator(".context-tool", { hasText: "Area" }).waitFor();
   await assertContextBarFits("Area");
 
+  await page.keyboard.press("g");
+  await page.getByRole("button", { name: "Choose variants for Highlight" }).click();
+  const highlightMenu = page.getByRole("menu", { name: "Highlight variants" });
+  await highlightMenu.waitFor();
+  assert.ok(
+    (await highlightMenu.locator(".tool-fill-swatch").count()) >= 5,
+    "Highlight variants should offer the colour palette",
+  );
+  await page.keyboard.press("Escape");
+  await highlightMenu.waitFor({ state: "detached" });
+  await page.keyboard.press("a");
+  await page.locator(".context-tool", { hasText: "Area" }).waitFor();
+
   const areaMode = page.locator(".area-mode-toggle");
   await areaMode.getByRole("button", { name: "Deduct", exact: true }).click();
   assert.equal(

@@ -417,7 +417,7 @@ Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow button
 - **Rectangle** – drag a translucent highlight box.
 - **Polygon** – click a translucent highlight area and close it with `Enter` or the first point.
 
-Existing projects keep their freehand highlights; new highlights use the selected mode.
+The Highlight variants menu also includes the shared colour palette, so the stroke and fill colour can be chosen before drawing. Existing projects keep their freehand highlights; new highlights use the selected mode.
 
 ## Quantities
 
