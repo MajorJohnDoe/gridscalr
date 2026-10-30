@@ -65,6 +65,7 @@ import {
   layerLockedOnPage,
   layerVisibleOnPage,
   layerKindForItem,
+  measurementLayerColor,
 } from "../model/layers";
 import { deleteItems, translateItems } from "../model/commands";
 import {
@@ -3751,6 +3752,16 @@ export class CanvasView {
     const scale = pageScale(project, this.viewPage);
     const unit = project.settings.lengthUnit;
     const areaUnit = project.settings.areaUnit;
+    const measureColor = measurementLayerColor(project, this.viewPage);
+    const draftColor =
+      this.draft.kind === "calibrate"
+        ? CALIBRATION_COLOR
+        : this.draft.kind === "cloud"
+          ? (cloudFillColor(store.ui.cloudFill) ?? store.ui.style.color)
+          : this.draft.kind === "highlight-polygon"
+            ? store.ui.style.color
+            : measureColor;
+    const draftFill = this.draft.kind === "highlight-polygon" ? store.ui.style.color : measureColor;
 
     if (
       this.draft.kind === "calibrate" ||
@@ -3763,7 +3774,7 @@ export class CanvasView {
       const points = this.draft.points.map((p) => this.toScreen(p));
       const cursor = this.toScreen(this.draft.cursor);
       ctx.save();
-      ctx.strokeStyle = this.draft.kind === "calibrate" ? CALIBRATION_COLOR : ACCENT;
+      ctx.strokeStyle = draftColor;
       ctx.lineWidth = 1.6;
       ctx.setLineDash([]);
       if (points.length > 1) {
@@ -3798,7 +3809,7 @@ export class CanvasView {
         const preview = [...pagePoints, this.draft.cursor];
         ctx.save();
         ctx.globalAlpha = 0.1;
-        ctx.fillStyle = ACCENT;
+        ctx.fillStyle = draftFill;
         ctx.beginPath();
         preview.forEach((p, index) => {
           const s = this.toScreen(p);
@@ -3813,7 +3824,7 @@ export class CanvasView {
             ctx,
             formatArea(areaValue(preview, "polygon"), scale, areaUnit),
             areaCentroid(preview, "polygon"),
-            ACCENT,
+            measureColor,
           );
         } else if (preview.length >= 3 && this.draft.kind === "volume") {
           const volume = volumeInUnit(
@@ -3827,7 +3838,7 @@ export class CanvasView {
             ctx,
             `${formatNumber(volume, 2)} ${volumeUnitLabel(areaUnit)}`,
             areaCentroid(preview, "polygon"),
-            ACCENT,
+            measureColor,
           );
         }
       } else if (this.draft.kind === "length" && points.length >= 1) {
@@ -3845,7 +3856,7 @@ export class CanvasView {
             x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
             y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
           },
-          ACCENT,
+          measureColor,
         );
       } else if (this.draft.kind === "calibrate") {
         const a = this.draft.points[0];
@@ -3866,7 +3877,7 @@ export class CanvasView {
       }
 
       ctx.fillStyle = "#f7fbfc";
-      ctx.strokeStyle = this.draft.kind === "calibrate" ? CALIBRATION_COLOR : ACCENT;
+      ctx.strokeStyle = draftColor;
       for (const p of points) {
         ctx.beginPath();
         ctx.arc(p.x, p.y, 3.5, 0, Math.PI * 2);
@@ -3889,7 +3900,7 @@ export class CanvasView {
         points: [...this.draft.points, this.draft.cursor],
       } as MarkupItem;
       ctx.save();
-      ctx.strokeStyle = ACCENT;
+      ctx.strokeStyle = measureColor;
       ctx.lineWidth = 1.6;
       if (this.draft.kind === "arc") {
         const curve = arcPolyline(fake).map((point) => this.toScreen(point));
@@ -3917,7 +3928,7 @@ export class CanvasView {
           ctx,
           fake,
           `${prefix}${formatLength(value, scale, unit, project.settings.smartLengthUnits)}`,
-          ACCENT,
+          measureColor,
         );
       }
       ctx.fillStyle = "#f7fbfc";
@@ -3939,7 +3950,7 @@ export class CanvasView {
         points: [...this.draft.points, this.draft.cursor],
       } as MarkupItem;
       ctx.save();
-      ctx.strokeStyle = ACCENT;
+      ctx.strokeStyle = measureColor;
       ctx.lineWidth = 1.6;
       if (this.draft.kind === "slope") {
         ctx.beginPath();
@@ -3950,7 +3961,7 @@ export class CanvasView {
           ctx,
           fake,
           `${formatNumber(slopeValue(fake) ?? 0, 1)}%`,
-          ACCENT,
+          measureColor,
           `${formatNumber(slopeDegrees(fake) ?? 0, 1)}°`,
         );
       } else {
@@ -3980,7 +3991,7 @@ export class CanvasView {
             ctx,
             fake,
             `${formatNumber(angleValue(fake) ?? 0, 1)}°`,
-            ACCENT,
+            measureColor,
           );
         }
       }
@@ -4000,8 +4011,8 @@ export class CanvasView {
       const pagePoints = [this.draft.start, this.draft.current];
       const outline = areaOutline(pagePoints, shape).map((point) => this.toScreen(point));
       ctx.save();
-      ctx.strokeStyle = ACCENT;
-      ctx.fillStyle = hexAlpha(ACCENT, 0.1);
+      ctx.strokeStyle = measureColor;
+      ctx.fillStyle = hexAlpha(measureColor, 0.1);
       ctx.lineWidth = 1.6;
       ctx.beginPath();
       outline.forEach((point, index) =>
@@ -4024,7 +4035,7 @@ export class CanvasView {
         ctx,
         formatArea(areaValue(pagePoints, shape), scale, areaUnit),
         areaCentroid(pagePoints, shape),
-        ACCENT,
+        measureColor,
       );
       ctx.restore();
       return;

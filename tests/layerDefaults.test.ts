@@ -8,6 +8,7 @@ import {
   createProject,
   defaultDocument,
   defaultLayerColors,
+  measurementLayerColor,
   resetDefaultLayerColors,
   setDefaultLayerColors,
 } from "../src/model/layers";
@@ -38,5 +39,19 @@ describe("layer colour defaults", () => {
     expect(defaultLayerColors().measure).toBe(DEFAULT_MEASURE_COLOR);
     expect(defaultLayerColors().draw).toBe("#123456");
     expect(resetDefaultLayerColors()).toEqual(DEFAULT_LAYER_COLORS);
+  });
+
+  it("uses the editable measurement layer colour for live previews", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    project.activeLayerId = measure.id;
+    measure.color = "#123456";
+    expect(measurementLayerColor(project, 1)).toBe("#123456");
+
+    measure.visible = false;
+    const fallback = addLayer(project, "measure");
+    fallback.color = "#654321";
+    project.activeLayerId = measure.id;
+    expect(measurementLayerColor(project, 1)).toBe("#654321");
   });
 });

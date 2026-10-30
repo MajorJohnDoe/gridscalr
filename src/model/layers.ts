@@ -280,6 +280,17 @@ export function ensureActiveLayer(project: Project, kind: LayerKind, page?: numb
   return layer;
 }
 
+/** Colour of the layer that will receive a new measurement on this page. */
+export function measurementLayerColor(project: Project, page: number): string {
+  const layers = project.layers.filter((layer) => layer.kind === "measure");
+  const editable = (layer: Layer) =>
+    layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page);
+  const target =
+    layers.find((layer) => layer.id === project.activeLayerId && editable(layer)) ??
+    layers.find(editable);
+  return target?.color ?? layerColorDefaults.measure;
+}
+
 export function addLayer(project: Project, kind: LayerKind, page?: number): Layer {
   const existing = layersForKind(project, kind).length;
   const layer = createLayer(
