@@ -22,25 +22,29 @@ import { textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
-import { TOOL_BY_ID } from "./toolDefs";
-import { hasToolVariants, openToolVariants } from "./toolFlyouts";
+import { TOOL_BY_ID, familyForTool } from "./toolDefs";
+import { hasToolVariants, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 
 export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
   clear(refs.contextBar);
   const project = store.project;
   const tool = TOOL_BY_ID.get(store.ui.activeTool);
+  const family = tool ? familyForTool(tool.id) : undefined;
   const toolWrap = el("div", "context-tool");
   if (tool) {
     toolWrap.innerHTML = icon(tool.icon, 17);
     toolWrap.append(el("span", "", tool.label));
-    if (hasToolVariants(tool.id)) {
+    if (hasToolVariants(tool.id) || family) {
       const variants = el("button", "context-variant-btn");
       variants.type = "button";
       variants.title = "Choose variants and presets";
       variants.setAttribute("aria-label", `Choose variants for ${tool.label}`);
       variants.innerHTML = `${icon("chevronDown", 12)}<span>Variants</span>`;
-      variants.addEventListener("click", () => openToolVariants(variants, tool.id));
+      variants.addEventListener("click", () => {
+        if (family) openToolFamilyVariants(variants, family);
+        else openToolVariants(variants, tool.id);
+      });
       toolWrap.append(variants);
     }
   }

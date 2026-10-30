@@ -74,6 +74,11 @@ export function openToolVariants(anchor: HTMLElement, toolId: string): void {
   openToolFlyout(anchor, toolId);
 }
 
+/** Opens a shared tool-family menu from the context bar. */
+export function openToolFamilyVariants(anchor: HTMLElement, family: ToolFamily): void {
+  openToolFamilyFlyout(anchor, family);
+}
+
 function openToolFlyout(button: HTMLElement, toolId: string): void {
   closeToolFlyout();
   store.setTool(toolId as ToolId);

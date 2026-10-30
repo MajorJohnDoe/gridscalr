@@ -43,6 +43,7 @@ export interface PanelActions {
   toggleMarkups: () => void;
   toggleSplitView: () => void;
   isSplitViewOpen: () => boolean;
+  hasReferenceSession: () => boolean;
   openQuantities: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;

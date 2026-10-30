@@ -408,7 +408,7 @@ function stampsSection(): HTMLElement {
 function layerDefaultsSection(): HTMLElement {
   const wrap = section(
     "Layer defaults",
-    "Colours for new measurement and drawing layers. Stored locally and not saved in the project file.",
+    "Applies to new measurement and drawing layers only. Existing layers keep their colour. Stored locally and not saved in the project file.",
   );
   let colors = currentLayerColorDefaults();
   const row = el("div", "field-row");

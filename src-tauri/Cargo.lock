@@ -1122,7 +1122,7 @@ dependencies = [
 
 [[package]]
 name = "gridscalr"
-version = "0.13.2"
+version = "0.13.3"
 dependencies = [
  "base64 0.23.1",
  "serde",
