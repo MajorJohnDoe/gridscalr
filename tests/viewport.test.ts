@@ -5,6 +5,7 @@ import {
   pageToScreen,
   screenToPage,
   syncViewport,
+  viewForGesture,
   viewportCenter,
   zoomAt,
   MAX_ZOOM,
@@ -30,6 +31,22 @@ describe("viewport transforms", () => {
     expect(after.y).toBeCloseTo(before.y, 6);
     expect(next.zoom).toBeCloseTo(1.875);
     expect(next.page).toBe(view.page);
+  });
+
+  it("keeps the pinch anchor under the moving midpoint", () => {
+    const anchor = screenToPage(view, { x: 200, y: 150 });
+    const next = viewForGesture(view, anchor, { x: 260, y: 180 }, 2.25);
+    expect(next.zoom).toBeCloseTo(2.25);
+    expect(pageToScreen(next, anchor)).toEqual({ x: 260, y: 180 });
+    expect(next.page).toBe(view.page);
+  });
+
+  it("clamps pinch zoom while preserving the anchor", () => {
+    const anchor = screenToPage(view, { x: 100, y: 100 });
+    const next = viewForGesture(view, anchor, { x: 100, y: 100 }, 1000);
+    expect(next.zoom).toBe(MAX_ZOOM);
+    expect(pageToScreen(next, anchor).x).toBeCloseTo(100);
+    expect(pageToScreen(next, anchor).y).toBeCloseTo(100);
   });
 
   it("clamps zoom to the supported range", () => {
