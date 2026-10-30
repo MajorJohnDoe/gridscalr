@@ -31,6 +31,7 @@ jobs:
       - run: npm run test:ui
       - run: npm run test:canvas
       - run: npm run test:count
+      - run: npm run test:touch
 
   rust:
     name: Rust format and check

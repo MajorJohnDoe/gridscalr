@@ -69,6 +69,7 @@ npx playwright install chromium   # once
 npm run test:ui
 npm run test:canvas
 npm run test:count
+npm run test:touch
 ```
 
 ## Tests and fixtures

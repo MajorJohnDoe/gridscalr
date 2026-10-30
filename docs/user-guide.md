@@ -31,6 +31,8 @@ GridScalr uses a compact, drawing-first layout.
 
 Panels remember their width, height and collapsed state between sessions.
 
+On a touch screen, one finger draws or selects with the active tool. Use **two fingers** to pan and pinch to zoom around the point between them. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again.
+
 ## Reference view
 
 **View → Reference view (same page)** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Its toolbar selects the source:

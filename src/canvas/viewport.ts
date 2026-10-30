@@ -43,6 +43,25 @@ export function zoomAt(viewport: Viewport, screen: Point, factor: number): Viewp
   };
 }
 
+/**
+ * Places a fixed page point under a moving screen point at a new zoom. Used by
+ * two-finger pan and pinch gestures so the point under the fingers stays put.
+ */
+export function viewForGesture(
+  viewport: Viewport,
+  anchorPage: Point,
+  screen: Point,
+  zoom: number,
+): Viewport {
+  const nextZoom = clampZoom(zoom);
+  return {
+    page: viewport.page,
+    zoom: nextZoom,
+    panX: screen.x - anchorPage.x * nextZoom,
+    panY: screen.y - anchorPage.y * nextZoom,
+  };
+}
+
 /** Fits a page inside a viewport with padding, centred on both axes. */
 export function fitPageViewport(
   size: PageSize,

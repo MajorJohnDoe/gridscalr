@@ -157,6 +157,7 @@ import {
   pageToScreen as toScreenPoint,
   screenToPage as toPagePoint,
   viewportCenter,
+  viewForGesture,
   zoomAt as zoomViewport,
   type Viewport,
 } from "./viewport";
@@ -280,6 +281,14 @@ export class CanvasView {
   private marquee: MarqueeState | null = null;
   private pan: PanState | null = null;
   private pointerScreen: Point | null = null;
+  private touchPointers = new Map<number, Point>();
+  private touchGesture: {
+    ids: [number, number];
+    anchorPage: Point;
+    startDistance: number;
+    startZoom: number;
+  } | null = null;
+  private suppressTouchUntilUp = false;
   private snap: SnapResult | null = null;
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
   private searchHits: {
@@ -784,11 +793,76 @@ export class CanvasView {
     }
   }
 
+  private beginTouchGesture(): void {
+    const entries = [...this.touchPointers.entries()].slice(0, 2);
+    if (entries.length < 2) return;
+    const first = entries[0][1];
+    const second = entries[1][1];
+    const startDistance = Math.hypot(first.x - second.x, first.y - second.y);
+    if (startDistance < 4) return;
+    const rect = this.interaction.getBoundingClientRect();
+    const mid = {
+      x: (first.x + second.x) / 2 - rect.left,
+      y: (first.y + second.y) / 2 - rect.top,
+    };
+    this.pan = null;
+    this.marquee = null;
+    this.drag = null;
+    store.cancelGesture();
+    this.cancelDraft();
+    this.touchGesture = {
+      ids: [entries[0][0], entries[1][0]],
+      anchorPage: this.toPage(mid),
+      startDistance,
+      startZoom: this.viewZoom,
+    };
+    this.suppressTouchUntilUp = true;
+    this.updateCursor();
+  }
+
+  private updateTouchGesture(event: PointerEvent): void {
+    const gesture = this.touchGesture;
+    if (!gesture) return;
+    this.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    const first = this.touchPointers.get(gesture.ids[0]);
+    const second = this.touchPointers.get(gesture.ids[1]);
+    if (!first || !second) return;
+    const rect = this.interaction.getBoundingClientRect();
+    const mid = {
+      x: (first.x + second.x) / 2 - rect.left,
+      y: (first.y + second.y) / 2 - rect.top,
+    };
+    const distance = Math.hypot(first.x - second.x, first.y - second.y);
+    const next = viewForGesture(
+      this.view,
+      gesture.anchorPage,
+      mid,
+      gesture.startZoom * (distance / gesture.startDistance),
+    );
+    store.setView(next.zoom, next.panX, next.panY);
+  }
+
+  private endTouchGesture(): void {
+    this.touchGesture = null;
+    this.suppressTouchUntilUp = this.touchPointers.size > 0;
+    this.updateCursor();
+  }
+
   private onPointerDown = (event: PointerEvent): void => {
     if (!store.project) return;
     this.editors.commitActiveEditors();
     this.interaction.focus({ preventScroll: true });
     const screen = this.localPoint(event);
+
+    if (event.pointerType === "touch") {
+      this.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      this.capturePointer(event.pointerId);
+      if (this.touchPointers.size >= 2) {
+        this.beginTouchGesture();
+        return;
+      }
+      if (this.suppressTouchUntilUp) return;
+    }
 
     if (this.crop.active) {
       if (event.button !== 0) return;
@@ -1345,6 +1419,17 @@ export class CanvasView {
   private onPointerMove = (event: PointerEvent): void => {
     if (!store.project) return;
     const screen = this.localPoint(event);
+
+    if (event.pointerType === "touch" && this.touchPointers.has(event.pointerId)) {
+      this.touchPointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (this.touchGesture) {
+        event.preventDefault();
+        this.updateTouchGesture(event);
+        return;
+      }
+      if (this.suppressTouchUntilUp) return;
+    }
+
     this.pointerScreen = screen;
     const page = this.toPage(screen);
     store.setCursor(page);
@@ -1660,6 +1745,17 @@ export class CanvasView {
     if (this.interaction.hasPointerCapture(event.pointerId)) {
       this.releasePointer(event.pointerId);
     }
+    if (event.pointerType === "touch") {
+      const tracked = this.touchPointers.delete(event.pointerId);
+      if (this.touchGesture) {
+        this.endTouchGesture();
+        return;
+      }
+      if (tracked && this.suppressTouchUntilUp) {
+        if (this.touchPointers.size === 0) this.suppressTouchUntilUp = false;
+        return;
+      }
+    }
     if (this.crop.active) {
       this.crop.pointerUp();
       return;
@@ -1758,6 +1854,7 @@ export class CanvasView {
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
+    if (this.touchGesture || this.suppressTouchUntilUp) return;
     if (!store.project || this.crop.active) return;
     const tool = store.ui.activeTool;
     if (tool === "length" || tool === "area" || tool === "volume") {

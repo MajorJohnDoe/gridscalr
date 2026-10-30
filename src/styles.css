@@ -1293,6 +1293,7 @@ textarea:disabled {
 
 .canvas-host .canvas-interaction {
   pointer-events: auto;
+  touch-action: none;
   cursor: default;
 }
 
