@@ -79,6 +79,43 @@ try {
     "redo should start disabled on a freshly loaded project",
   );
 
+  // Family rail buttons share a slot and remember the last used variant.
+  const circleFamily = page.locator('.tool-family[data-tool-group="circle-arc"]');
+  await circleFamily.waitFor();
+  assert.equal(await circleFamily.getAttribute("data-display-tool"), "radius");
+  await circleFamily.click({ button: "right" });
+  const circleMenu = page.getByRole("menu", { name: "Circle & arc tools" });
+  await circleMenu.waitFor();
+  await circleMenu.getByRole("menuitemradio", { name: /Arc/ }).click();
+  await circleMenu.waitFor({ state: "detached" });
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
+    "arc",
+    "choosing Arc from the family flyout should activate it",
+  );
+  assert.equal(await circleFamily.getAttribute("data-display-tool"), "arc");
+  assert.equal(await circleFamily.getAttribute("aria-pressed"), "true");
+  await page.keyboard.press("w");
+  await page.waitForTimeout(100);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
+    "diameter",
+    "the Diameter shortcut should still work without its own rail button",
+  );
+  assert.equal(await circleFamily.getAttribute("data-display-tool"), "diameter");
+  const angleFamily = page.locator('.tool-family[data-tool-group="angle-slope"]');
+  await angleFamily.click({ button: "right" });
+  const angleMenu = page.getByRole("menu", { name: "Angle & slope tools" });
+  await angleMenu.waitFor();
+  assert.equal(await angleMenu.getByRole("menuitemradio", { name: /Slope/ }).count(), 1);
+  await page.keyboard.press("Escape");
+  await angleMenu.waitFor({ state: "detached" });
+  const volumeIcon = await page.locator('[data-tool="volume"]').innerHTML();
+  const symbolIcon = await page.locator('[data-tool="symbol"]').innerHTML();
+  assert.notEqual(volumeIcon, symbolIcon, "symbol and volume should use different icons");
+  await page.keyboard.press("v");
+  await page.waitForTimeout(100);
+
   // The page scale lives in the status bar now, and its chip opens the scale menu.
   assert.equal(
     await page.locator(".scale-card").count(),
@@ -606,6 +643,16 @@ try {
   assert.ok(
     await settingsDialog.getByText("Smart length labels", { exact: true }).count(),
     "project settings should expose smart length labels",
+  );
+  assert.equal(
+    await settingsDialog.getByLabel("Measurement layer colour").inputValue(),
+    "#f70808",
+    "new measurement layers should default to signal red",
+  );
+  assert.equal(
+    await settingsDialog.getByLabel("Drawing layer colour").inputValue(),
+    "#f2a93b",
+    "new drawing layers should keep the orange default",
   );
   await page.keyboard.press("Escape");
   await settingsDialog.waitFor({ state: "detached" });

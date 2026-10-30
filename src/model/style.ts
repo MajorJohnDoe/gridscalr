@@ -10,6 +10,7 @@ export const DRAW_COLOR_PRESETS = [
   { label: "Orange", color: "#f2a93b" },
   { label: "Green", color: "#35c2a1" },
   { label: "Red", color: "#f26d6d" },
+  { label: "Signal red", color: "#f70808" },
   { label: "Violet", color: "#a78bfa" },
   { label: "Graphite", color: "#14181b" },
 ] as const;

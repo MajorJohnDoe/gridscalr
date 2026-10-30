@@ -10,6 +10,14 @@ import { isMarkupsOpen, renderMarkupsPanel } from "./markupsPanel";
 import { updateStatus } from "./statusBar";
 import { renderWelcome } from "./welcome";
 import { toast } from "./toast";
+import { icon } from "./icons";
+import {
+  familyToolForDisplay,
+  rememberFamilyTool,
+  TOOL_BY_ID,
+  TOOL_FAMILY_BY_ID,
+  type ToolFamilyId,
+} from "./toolDefs";
 
 export interface PanelActions {
   openPdf: () => void;
@@ -137,8 +145,25 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
 }
 
 function renderToolRail(refs: ShellRefs): void {
-  for (const btn of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool]")) {
+  rememberFamilyTool(store.ui.activeTool);
+  for (const btn of refs.toolRail.querySelectorAll<HTMLElement>(
+    "[data-tool]:not([data-tool-group])",
+  )) {
     const active = btn.dataset.tool === store.ui.activeTool;
+    btn.classList.toggle("is-active", active);
+    btn.setAttribute("aria-pressed", String(active));
+  }
+  for (const btn of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool-group]")) {
+    const family = TOOL_FAMILY_BY_ID.get(btn.dataset.toolGroup as ToolFamilyId);
+    if (!family) continue;
+    const memberId = familyToolForDisplay(family, store.ui.activeTool);
+    const member = TOOL_BY_ID.get(memberId);
+    const active = family.tools.includes(store.ui.activeTool);
+    if (member) {
+      btn.dataset.displayTool = memberId;
+      btn.innerHTML = icon(member.icon, 19);
+      btn.title = `${member.label} (${member.shortcut}) · ${family.label}`;
+    }
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
   }

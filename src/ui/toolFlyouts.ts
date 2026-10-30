@@ -6,6 +6,7 @@ import { store, type ToolId } from "../state/store";
 import { textDialog } from "./dialogs";
 import { el } from "./dom";
 import { icon } from "./icons";
+import { familyToolForDisplay, rememberFamilyTool, TOOL_BY_ID, type ToolFamily } from "./toolDefs";
 
 const LONG_PRESS_MS = 320;
 
@@ -22,17 +23,24 @@ export function hasToolVariants(toolId: string): boolean {
 export function attachToolFlyout(button: HTMLButtonElement, toolId: string): void {
   if (!VARIANT_TOOLS.has(toolId)) return;
   button.classList.add("has-variants");
+  attachPressHandlers(button, () => openToolFlyout(button, toolId));
+}
 
-  const open = () => {
-    longPressTimer = null;
-    button.dataset.longPressed = "1";
-    openToolFlyout(button, toolId);
-  };
+/** Opens the shared rail slot for a tool family on long-press or right-click. */
+export function attachToolFamilyFlyout(button: HTMLButtonElement, family: ToolFamily): void {
+  button.classList.add("has-variants");
+  attachPressHandlers(button, () => openToolFamilyFlyout(button, family));
+}
 
+function attachPressHandlers(button: HTMLButtonElement, open: () => void): void {
   button.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
     if (longPressTimer !== null) window.clearTimeout(longPressTimer);
-    longPressTimer = window.setTimeout(open, LONG_PRESS_MS);
+    longPressTimer = window.setTimeout(() => {
+      longPressTimer = null;
+      button.dataset.longPressed = "1";
+      open();
+    }, LONG_PRESS_MS);
   });
   for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
     button.addEventListener(type, () => {
@@ -57,7 +65,7 @@ export function attachToolFlyout(button: HTMLButtonElement, toolId: string): voi
   button.addEventListener("contextmenu", (event) => {
     event.preventDefault();
     event.stopPropagation();
-    openToolFlyout(button, toolId);
+    open();
   });
 }
 
@@ -139,6 +147,67 @@ function outsideHandler(event: MouseEvent): void {
   const target = event.target as Node;
   if (flyoutRoot.contains(target)) return;
   closeToolFlyout();
+}
+
+function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
+  closeToolFlyout();
+  const root = el("div", "tool-flyout-root");
+  root.addEventListener("mousedown", (event) => {
+    if (event.target === root) closeToolFlyout();
+  });
+  const panel = el("div", "tool-flyout");
+  panel.setAttribute("role", "menu");
+  panel.setAttribute("aria-label", `${family.label} tools`);
+  panel.append(el("div", "tool-flyout-title", family.label));
+  panel.append(el("div", "tool-flyout-section", "Tools"));
+  const displayed = familyToolForDisplay(family, store.ui.activeTool);
+  for (const toolId of family.tools) {
+    const tool = TOOL_BY_ID.get(toolId);
+    if (!tool) continue;
+    variantRow(panel, {
+      label: `${tool.label} · ${tool.shortcut}`,
+      description: tool.hint,
+      iconName: tool.icon,
+      selected: displayed === toolId,
+      onSelect: () => {
+        rememberFamilyTool(toolId);
+        store.setTool(toolId);
+        closeToolFlyout();
+      },
+    });
+  }
+  root.append(panel);
+  document.body.append(root);
+  flyoutRoot = root;
+
+  const rect = button.getBoundingClientRect();
+  panel.style.left = `${rect.right + 5}px`;
+  panel.style.top = `${rect.top}px`;
+  const box = panel.getBoundingClientRect();
+  if (box.right > window.innerWidth - 8) {
+    panel.style.left = `${Math.max(8, rect.left - box.width - 5)}px`;
+  }
+  if (box.bottom > window.innerHeight - 8) {
+    panel.style.top = `${Math.max(8, window.innerHeight - box.height - 8)}px`;
+  }
+
+  const onKey = (event: KeyboardEvent) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeToolFlyout();
+    }
+  };
+  document.addEventListener("keydown", onKey);
+  document.addEventListener("mousedown", outsideHandler, true);
+  window.addEventListener("resize", closeToolFlyout);
+  window.addEventListener("blur", closeToolFlyout);
+  flyoutCleanup = () => {
+    document.removeEventListener("keydown", onKey);
+    document.removeEventListener("mousedown", outsideHandler, true);
+    window.removeEventListener("resize", closeToolFlyout);
+    window.removeEventListener("blur", closeToolFlyout);
+  };
 }
 
 function closeToolFlyout(): void {

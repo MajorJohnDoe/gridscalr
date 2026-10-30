@@ -51,6 +51,8 @@ src/
   ui/itemIcon.ts         icon lookup shared by Layers and Markups
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
+  ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
+  ui/toolFlyouts.ts      long-press/right-click variant and family panels
   ui/statusBar.ts        page scale menu, cursor position and layer status
   ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
   ui/referencePane.ts    reference source selector, reference name and Open/Close controls
@@ -65,6 +67,7 @@ src/
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults
   io/stampDefaults.ts    global stamp presets for new projects
+  io/layerDefaults.ts    local default colours for new measurement and drawing layers
   help/markdown.ts       safe Markdown renderer for bundled help
   help/content.ts        Vite raw imports of the user guide, workflows and shortcuts
   help/images.ts         Vite asset URLs for bundled help screenshots

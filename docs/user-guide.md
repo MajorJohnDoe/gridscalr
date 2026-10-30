@@ -165,6 +165,8 @@ Measurements without a scale are shown in PDF points (`pt` / `pt²`) and are exc
 
 Measurements are added to the active **measurement layer**. Choose the target layer in the context bar or the Layers tab. New measurements use a **0.75 pt** paper-space line weight; change it in **Properties → Stroke width** from 0.25 to 8 pt. The line weight is stored per item and is used by the PDF export.
 
+Radius, diameter and arc share one **Circle & arc** button in the tool rail, and angle and slope share an **Angle & slope** button. Click the button to reuse the last variant, or long-press/right-click it to choose another variant. The shortcuts `Q`/`W`/`Z` and `E`/`J` keep working directly.
+
 ### Length
 
 Choose **Length** (`L`) and click each vertex. Press `Enter` or double-click to finish. Hold `Shift` to constrain the angle.
@@ -492,6 +494,7 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project 
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
 - **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
+- **Layer defaults** – app-level colours for new measurement and drawing layers. The default measurement colour is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour; the choice is stored locally and is not part of the project file.
 - **Manage categories…** – rename, reorder, delete, and override waste/rounding per category.
 - **Reset panel layout** – restores the default sidebar and Properties widths and expands both panels.
 
