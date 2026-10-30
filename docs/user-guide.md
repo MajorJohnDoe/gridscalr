@@ -57,6 +57,8 @@ The comparison compares measurements, drawings, symbols and their properties. Th
 
 A **Drawing** reference is a raw PDF, so it has no markup list. The panel still shows the drawing name and page count, keeps **Side by side**, **Overlay** and **Opacity**, and explains that no markup comparison is available. **Export PDF** writes `<project>-comparison.pdf` with a summary and page-by-page visuals. For a revision it also includes warnings and the difference table. The export refuses to overwrite any source drawing. Close the comparison with **Close comparison**; the reference pane returns to the same-page layout if it was open before.
 
+Use the collapse chevron in the panel header to hide the comparison panel while you work on the drawing. A **Compare** tab at the right edge of the canvas brings it back; closing the reference pane removes the tab.
+
 ## Search text
 
 **View → Search text…** (`Ctrl/Cmd+Shift+F`) searches across every page. Digital PDFs use their PDF text layer. For scanned TIF pages and image-only PDF pages, choose **OCR scans** in the search panel to run local OCR with bundled English and Swedish models. Type a room name, equipment tag, sheet number or phrase; results show the page and a snippet. Select a result to jump to the page and highlight the matching text on the drawing. Use `↑` / `↓` and `Enter` to move through results without leaving the panel.
@@ -189,7 +191,7 @@ Choose **Slope** (`J`) and click the start and end of the run. The value is the 
 
 ### Volume
 
-Choose **Volume** (`M`) and draw a polygon like an area, then finish with `Enter` or a double-click. A new volume starts with **Depth 1** in the project length unit. Set the real depth in **Properties → Depth**. The value is polygon area × depth, shown in the matching cubic unit (`m³`, `ft³` and so on). Volume uses the page scale, category, room and waste/rounding settings, and is exported in the drawing PDF.
+Choose **Volume** (`M`) and draw a polygon like an area, then finish with `Enter` or a double-click. GridScalr opens a **Volume depth** dialog where you enter the height in the project length unit. Double-click the volume or its label later to change the depth, or use **Properties → Depth**; the label's right-click menu also has **Set volume depth…**. The value is polygon area × depth, shown in the matching cubic unit (`m³`, `ft³` and so on). Volume uses the page scale, category, room and waste/rounding settings, and is exported in the drawing PDF. Like an area label, a volume label can be locked inside its measured shape from the label's right-click menu.
 
 ### Area
 
