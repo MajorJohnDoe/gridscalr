@@ -35,8 +35,12 @@ interface Fonts {
 
 export interface ComparisonPdfOptions {
   current: Project;
-  reference: Project;
-  diff: RevisionDiff;
+  referenceName: string;
+  referencePageCount: number;
+  /** Present when the reference is a .gridscalr project. */
+  reference?: Project;
+  /** Absent for a raw PDF reference, which has no markup diff. */
+  diff?: RevisionDiff | null;
   currentRenderer: PdfRenderer;
   referenceRenderer: PdfRenderer;
   generatedAt?: string;
@@ -196,24 +200,31 @@ function drawPageSlot(
 }
 
 function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptions): PDFPage {
+  const diff = options.diff ?? null;
   const page = newPage(
     pdf,
     fonts,
-    "Revision comparison",
-    `${options.current.name} versus ${options.reference.name}`,
+    diff ? "Revision comparison" : "Drawing reference comparison",
+    `${options.current.name} versus ${options.referenceName}`,
   );
   let y = PAGE_HEIGHT - MARGIN - 62;
   const generated = options.generatedAt ?? new Date().toISOString();
   const rows: Array<[string, string]> = [
     ["Current revision", options.current.name],
-    ["Reference revision", options.reference.name],
+    [diff ? "Reference revision" : "Reference drawing", options.referenceName],
     ["Generated at", generated],
-    ["Pages", String(options.diff.summary.pages)],
-    ["Changed", String(options.diff.summary.changed)],
-    ["Added", String(options.diff.summary.added)],
-    ["Removed", String(options.diff.summary.removed)],
-    ["Unchanged", String(options.diff.summary.unchanged)],
+    ["Pages", String(diff?.summary.pages ?? options.referencePageCount)],
   ];
+  if (diff) {
+    rows.push(
+      ["Changed", String(diff.summary.changed)],
+      ["Added", String(diff.summary.added)],
+      ["Removed", String(diff.summary.removed)],
+      ["Unchanged", String(diff.summary.unchanged)],
+    );
+  } else {
+    rows.push(["Markup comparison", "Not available for a drawing reference"]);
+  }
   for (const [label, value] of rows) {
     page.drawText(label, { x: MARGIN, y, size: 9, font: fonts.regular, color: MUTED });
     page.drawText(fitText(value, fonts.bold, 9, PAGE_WIDTH - MARGIN * 2 - 150), {
@@ -226,10 +237,10 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
     y -= 15;
   }
   y -= 6;
-  if (options.diff.warnings.length) {
+  if (diff?.warnings.length) {
     page.drawText("Warnings", { x: MARGIN, y, size: 10, font: fonts.bold, color: WARNING });
     y -= 14;
-    for (const warning of options.diff.warnings) {
+    for (const warning of diff.warnings) {
       for (const line of wrapText(warning, fonts.regular, 8.5, PAGE_WIDTH - MARGIN * 2 - 8)) {
         page.drawText(line, { x: MARGIN + 8, y, size: 8.5, font: fonts.regular, color: WARNING });
         y -= 11;
@@ -237,6 +248,10 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
       y -= 3;
     }
     y -= 8;
+  }
+  if (!diff) {
+    drawFooter(page, fonts, "GridScalr drawing reference comparison");
+    return page;
   }
   page.drawText("Pages", { x: MARGIN, y, size: 10, font: fonts.bold, color: INK });
   y -= 14;
@@ -248,7 +263,7 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
     x += columns[index];
   }
   y -= 10;
-  for (const entry of options.diff.pages) {
+  for (const entry of diff.pages) {
     if (y < MARGIN + 20) break;
     x = MARGIN;
     const values = [
@@ -280,12 +295,10 @@ async function visualPages(
   fonts: Fonts,
   options: ComparisonPdfOptions,
 ): Promise<void> {
-  const pageCount = Math.max(
-    totalPageCount(options.current.documents),
-    totalPageCount(options.reference.documents),
-  );
+  const diff = options.diff ?? null;
   const currentCount = totalPageCount(options.current.documents);
-  const referenceCount = totalPageCount(options.reference.documents);
+  const referenceCount = options.referencePageCount;
+  const pageCount = Math.max(currentCount, referenceCount);
   const slotWidth = (PAGE_WIDTH - MARGIN * 2 - GAP) / 2;
   const slotHeight = PAGE_HEIGHT - MARGIN * 2 - HEADER - FOOTER - 18;
 
@@ -298,7 +311,8 @@ async function visualPages(
       pdf,
       fonts,
       `Page ${pageNumber}`,
-      options.diff.pages[pageNumber - 1]?.pageName ?? "Revision comparison",
+      diff?.pages[pageNumber - 1]?.pageName ??
+        (diff ? "Revision comparison" : options.referenceName),
     );
     const y = MARGIN + FOOTER;
     drawPageSlot(
@@ -318,19 +332,23 @@ async function visualPages(
       y,
       slotWidth,
       slotHeight,
-      `Reference · ${options.reference.name}`,
+      `Reference · ${options.referenceName}`,
       fonts,
     );
-    const counts = options.diff.pages[pageNumber - 1];
+    const counts = diff?.pages[pageNumber - 1];
     const footer = counts
       ? `${counts.changed} changed · ${counts.added} added · ${counts.removed} removed · ${counts.unchanged} unchanged`
-      : "No comparison data";
+      : diff
+        ? "No comparison data"
+        : `${referenceCount} reference page${referenceCount === 1 ? "" : "s"} · no markup comparison`;
     drawFooter(page, fonts, footer);
   }
 }
 
 function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptions): void {
-  const items = options.diff.items.filter((item) => item.status !== "unchanged");
+  const diff = options.diff;
+  if (!diff) return;
+  const items = diff.items.filter((item) => item.status !== "unchanged");
   const columns = [52, 32, 48, 150, PAGE_WIDTH - MARGIN * 2 - 52 - 32 - 48 - 150];
   const headers = ["Status", "Page", "Type", "Label", "Changes"];
   let page = newPage(
@@ -384,7 +402,7 @@ function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOption
     const rowHeight = Math.max(TABLE_ROW_HEIGHT, lineCount * 9 + 4);
     if (y - rowHeight < MARGIN + 18) {
       drawFooter(page, fonts, "GridScalr revision comparison");
-      page = newPage(pdf, fonts, "Differences (continued)", options.reference.name);
+      page = newPage(pdf, fonts, "Differences (continued)", options.referenceName);
       y = PAGE_HEIGHT - MARGIN - HEADER - 10;
       drawTableHeader();
     }

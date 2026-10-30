@@ -1129,11 +1129,106 @@ textarea:disabled {
 .canvas-area > .canvas-reference {
   flex: 0 0 var(--reference-width, 50%);
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   border-left: 1px solid var(--border-soft);
+}
+
+.reference-canvas {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
 }
 
 .canvas-reference .canvas-interaction {
   pointer-events: none;
+}
+
+.reference-bar {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  background: rgba(24, 30, 34, 0.96);
+  border-bottom: 1px solid var(--border-soft);
+  z-index: 2;
+}
+
+.reference-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.reference-bar-label {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  flex: 0 0 auto;
+}
+
+.reference-sources {
+  display: inline-flex;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.reference-source {
+  background: #1a2024;
+  color: var(--muted);
+  border: 0;
+  padding: 4px 7px;
+  font: inherit;
+  font-size: 10.5px;
+  cursor: pointer;
+}
+
+.reference-source + .reference-source {
+  border-left: 1px solid var(--border);
+}
+
+.reference-source:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.reference-source.is-active {
+  background: var(--jade-dim);
+  color: var(--jade-bright);
+}
+
+.reference-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-strong);
+  font-size: 11px;
+}
+
+.reference-open {
+  flex: 0 0 auto;
+}
+
+.reference-close {
+  flex: 0 0 auto;
+}
+
+.reference-hint {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.35;
+}
+
+.reference-hint[hidden] {
+  display: none;
 }
 
 .canvas-area.is-compare-overlay .canvas-reference {
@@ -1146,6 +1241,10 @@ textarea:disabled {
   opacity: var(--compare-opacity, 0.5);
   mix-blend-mode: multiply;
   z-index: 1;
+}
+
+.canvas-area.is-compare-overlay .reference-bar {
+  display: none;
 }
 
 .canvas-area.is-compare-overlay .canvas-split-resizer {
@@ -4714,8 +4813,18 @@ textarea:disabled {
 }
 
 .compare-warnings[hidden],
-.compare-opacity[hidden] {
+.compare-opacity[hidden],
+.compare-filter[hidden] {
   display: none;
+}
+
+.compare-note {
+  grid-column: 1 / -1;
+  padding: 8px 10px;
+  background: #1a2024;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.35;
 }
 
 .compare-warnings {

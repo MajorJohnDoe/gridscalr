@@ -754,6 +754,57 @@ try {
   await comparePanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
 
+  // A raw PDF drawing can be the reference: no diff list, but visuals and export.
+  await page.getByRole("menuitem", { name: "File" }).click();
+  const drawingReferenceChooserPromise = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "Compare with drawing…" }).click();
+  const drawingReferenceChooser = await drawingReferenceChooserPromise;
+  await drawingReferenceChooser.setFiles(join(repoRoot, "fixtures", "industrial-plan.pdf"));
+  await comparePanel.waitFor();
+  await waitForApp(page);
+  assert.match(
+    await comparePanel.innerText(),
+    /Drawing reference · 3 pages · no markup comparison/i,
+    "a drawing reference should report its page count without a diff",
+  );
+  assert.equal(
+    await comparePanel.locator(".compare-row").count(),
+    0,
+    "a drawing reference should not show diff rows",
+  );
+  assert.match(
+    (await page.locator(".reference-name").textContent()) ?? "",
+    /industrial-plan\.pdf · 3 pages/,
+    "the reference bar should name the drawing and page count",
+  );
+  const drawingComparisonDownload = page.waitForEvent("download");
+  await comparePanel.getByRole("button", { name: "Export PDF" }).click();
+  const drawingComparisonPdf = await drawingComparisonDownload;
+  assert.match(
+    drawingComparisonPdf.suggestedFilename(),
+    /-comparison\.pdf$/,
+    "expected a drawing comparison PDF export",
+  );
+  await page.getByRole("button", { name: "Close reference pane" }).click();
+  await page.locator(".canvas-reference").waitFor({ state: "hidden" });
+
+  // The same-page reference view explains how to load a revision.
+  await page.keyboard.press("Control+Shift+2");
+  await page.locator(".canvas-reference").waitFor({ state: "visible" });
+  await page.locator(".reference-hint").waitFor();
+  assert.match(
+    (await page.locator(".reference-hint").textContent()) ?? "",
+    /Showing the same page/,
+  );
+  assert.equal(
+    await page.locator('.reference-source[data-source="same"]').getAttribute("aria-pressed"),
+    "true",
+    "the same-page source should be active by default",
+  );
+  await page.getByRole("button", { name: "Close reference pane" }).click();
+  await page.locator(".canvas-reference").waitFor({ state: "hidden" });
+  await waitForToastsGone(page);
+
   // Full-text search over the PDF text layer.
   await page.keyboard.press("Control+Shift+f");
   const searchPanel = page.locator(".search-panel");

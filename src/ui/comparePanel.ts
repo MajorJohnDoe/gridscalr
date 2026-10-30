@@ -3,6 +3,10 @@ import { el } from "./dom";
 import { icon } from "./icons";
 import type { ComparisonMode } from "./splitView";
 
+export interface CompareReferenceInfo {
+  pageCount?: number;
+}
+
 export interface ComparePanelActions {
   setMode: (mode: ComparisonMode) => void;
   setOpacity: (value: number) => void;
@@ -47,12 +51,15 @@ export class ComparePanel {
   private readonly opacityInput: HTMLInputElement;
   private readonly modeButtons: HTMLButtonElement[];
   private readonly filterSelect: HTMLSelectElement;
+  private readonly filterField: HTMLElement;
   private readonly title: HTMLElement;
+  private readonly kicker: HTMLElement;
   private filter: CompareFilter = "changes";
   private mode: ComparisonMode = "side";
   private opacity = 0.5;
   private selected: string | null = null;
   private diff: RevisionDiff | null = null;
+  private info: CompareReferenceInfo = {};
 
   constructor(
     host: HTMLElement,
@@ -64,6 +71,7 @@ export class ComparePanel {
     const header = el("header", "compare-header");
     const heading = el("div", "compare-heading");
     const kicker = el("span", "compare-kicker", "Compare revisions");
+    this.kicker = kicker;
     this.title = el("strong", "compare-title", "Loading comparison…");
     heading.append(kicker, this.title);
     const closeButton = el("button", "icon-btn compare-close");
@@ -125,6 +133,7 @@ export class ComparePanel {
       this.renderList();
     });
     filterLabel.append(this.filterSelect);
+    this.filterField = filterLabel;
     controls.append(modeGroup, this.opacityControl, filterLabel);
 
     this.list = el("div", "compare-list");
@@ -145,10 +154,18 @@ export class ComparePanel {
     this.updateOpacityControl();
   }
 
-  update(currentName: string, referenceName: string, diff: RevisionDiff): void {
+  update(
+    currentName: string,
+    referenceName: string,
+    diff: RevisionDiff | null,
+    info: CompareReferenceInfo = {},
+  ): void {
     this.diff = diff;
+    this.info = info;
+    this.kicker.textContent = diff ? "Compare revisions" : "Compare drawing";
     this.title.textContent = `${currentName} → ${referenceName}`;
     this.title.title = this.title.textContent;
+    this.filterField.hidden = !diff;
     this.renderSummary();
     this.renderWarnings();
     this.renderList();
@@ -160,7 +177,19 @@ export class ComparePanel {
 
   private renderSummary(): void {
     this.summary.textContent = "";
-    if (!this.diff) return;
+    if (!this.diff) {
+      const pages = this.info.pageCount;
+      this.summary.append(
+        el(
+          "div",
+          "compare-note",
+          pages
+            ? `Drawing reference · ${pages} page${pages === 1 ? "" : "s"} · no markup comparison`
+            : "Drawing reference · no markup comparison",
+        ),
+      );
+      return;
+    }
     const entries: Array<{ key: DiffStatus; label: string }> = [
       { key: "changed", label: "Changed" },
       { key: "added", label: "Added" },
@@ -189,6 +218,10 @@ export class ComparePanel {
 
   private renderList(): void {
     this.list.textContent = "";
+    if (!this.diff) {
+      this.list.append(el("div", "compare-empty", "No markup comparison for a drawing reference."));
+      return;
+    }
     const items = (this.diff?.items ?? []).filter((item) => {
       if (this.filter === "all") return true;
       if (this.filter === "changes") return item.status !== "unchanged";

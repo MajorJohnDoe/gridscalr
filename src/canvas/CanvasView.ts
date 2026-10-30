@@ -435,7 +435,7 @@ export class CanvasView {
   }
 
   private get sceneProject(): Project | null {
-    return this.options.project?.() ?? store.project;
+    return this.options.project ? this.options.project() : store.project;
   }
 
   private get viewPage(): number {
@@ -598,8 +598,6 @@ export class CanvasView {
   }
 
   private pageSize(): PageSize | undefined {
-    const project = this.sceneProject;
-    if (!project) return undefined;
     return this.hooks.getPageSize(this.viewPage);
   }
 
@@ -2618,7 +2616,7 @@ export class CanvasView {
   }
 
   private schedulePdfRender(): void {
-    if (!this.sceneProject) return;
+    if (!this.hooks.getRenderer()) return;
     const bounds = this.host.getBoundingClientRect();
     if (bounds.width < 2 || bounds.height < 2) return;
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
@@ -2631,7 +2629,7 @@ export class CanvasView {
   private async renderPdf(): Promise<void> {
     const renderer = this.hooks.getRenderer();
     const size = this.pageSize();
-    if (!renderer || !size || !this.sceneProject) return;
+    if (!renderer || !size) return;
     const bounds = this.host.getBoundingClientRect();
     if (bounds.width < 2 || bounds.height < 2) return;
     const page = this.viewPage;
@@ -2686,7 +2684,6 @@ export class CanvasView {
     const ctx = this.baseCtx;
     this.prepare(ctx);
     const project = this.sceneProject;
-    if (!project) return;
     const size = this.pageSize();
     if (!size) return;
     const { zoom, panX, panY } = this.view;
@@ -2722,7 +2719,7 @@ export class CanvasView {
       ctx.restore();
     }
 
-    if (project.settings.showGrid) {
+    if (project?.settings.showGrid) {
       ctx.save();
       ctx.beginPath();
       ctx.rect(x, y, w, h);
