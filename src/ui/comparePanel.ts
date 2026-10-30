@@ -54,12 +54,14 @@ export class ComparePanel {
   private readonly filterField: HTMLElement;
   private readonly title: HTMLElement;
   private readonly kicker: HTMLElement;
+  private readonly restore: HTMLButtonElement;
   private filter: CompareFilter = "changes";
   private mode: ComparisonMode = "side";
   private opacity = 0.5;
   private selected: string | null = null;
   private diff: RevisionDiff | null = null;
   private info: CompareReferenceInfo = {};
+  private collapsed = false;
 
   constructor(
     host: HTMLElement,
@@ -74,13 +76,19 @@ export class ComparePanel {
     this.kicker = kicker;
     this.title = el("strong", "compare-title", "Loading comparison…");
     heading.append(kicker, this.title);
+    const collapseButton = el("button", "icon-btn compare-collapse");
+    collapseButton.type = "button";
+    collapseButton.title = "Hide comparison panel";
+    collapseButton.setAttribute("aria-label", "Hide comparison panel");
+    collapseButton.innerHTML = icon("chevronRight", 15);
+    collapseButton.addEventListener("click", () => this.setCollapsed(true));
     const closeButton = el("button", "icon-btn compare-close");
     closeButton.type = "button";
     closeButton.title = "Close comparison";
     closeButton.setAttribute("aria-label", "Close comparison");
     closeButton.innerHTML = icon("close", 15);
     closeButton.addEventListener("click", () => this.actions.close());
-    header.append(heading, closeButton);
+    header.append(heading, collapseButton, closeButton);
 
     this.summary = el("div", "compare-summary");
     this.warnings = el("div", "compare-warnings");
@@ -150,6 +158,14 @@ export class ComparePanel {
 
     this.element.append(header, this.summary, this.warnings, controls, this.list, footer);
     host.append(this.element);
+    this.restore = el("button", "compare-restore");
+    this.restore.type = "button";
+    this.restore.title = "Show comparison panel";
+    this.restore.setAttribute("aria-label", "Show comparison panel");
+    this.restore.innerHTML = icon("compare", 16);
+    this.restore.hidden = true;
+    this.restore.addEventListener("click", () => this.setCollapsed(false));
+    host.append(this.restore);
     this.updateModeButtons();
     this.updateOpacityControl();
   }
@@ -173,6 +189,14 @@ export class ComparePanel {
 
   destroy(): void {
     this.element.remove();
+    this.restore.remove();
+  }
+
+  private setCollapsed(collapsed: boolean): void {
+    if (collapsed === this.collapsed) return;
+    this.collapsed = collapsed;
+    this.element.hidden = collapsed;
+    this.restore.hidden = !collapsed;
   }
 
   private renderSummary(): void {

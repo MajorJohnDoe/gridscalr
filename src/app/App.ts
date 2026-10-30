@@ -304,6 +304,13 @@ export class App {
             width: rect.width,
             height: rect.height,
           };
+          // The reference toolbar sits above the reference canvas. Use the
+          // primary canvas height for the vertical centre so both pages stay
+          // level in side-by-side mode instead of drifting by half the bar.
+          const alignedTarget = {
+            width: target.width,
+            height: this.canvas.viewportSize.height || target.height,
+          };
           const synced = syncViewport(
             {
               page: store.ui.page,
@@ -312,7 +319,7 @@ export class App {
               panY: store.ui.panY,
             },
             this.canvas.viewportSize,
-            target,
+            alignedTarget,
           );
           referenceViewport.page = synced.page;
           referenceViewport.zoom = synced.zoom;

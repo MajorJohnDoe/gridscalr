@@ -777,6 +777,12 @@ try {
     /industrial-plan\.pdf · 3 pages/,
     "the reference bar should name the drawing and page count",
   );
+  await comparePanel.getByRole("button", { name: "Hide comparison panel" }).click();
+  await comparePanel.waitFor({ state: "hidden" });
+  const compareRestore = page.getByRole("button", { name: "Show comparison panel" });
+  await compareRestore.waitFor();
+  await compareRestore.click();
+  await comparePanel.waitFor({ state: "visible" });
   const drawingComparisonDownload = page.waitForEvent("download");
   await comparePanel.getByRole("button", { name: "Export PDF" }).click();
   const drawingComparisonPdf = await drawingComparisonDownload;
