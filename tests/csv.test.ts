@@ -83,9 +83,9 @@ describe("quantity CSV", () => {
     const lines = csv.slice(1).split("\r\n");
     expect(lines[0]).toBe(QUANTITY_CSV_COLUMNS.join(","));
     expect(lines[1]).toBe(
-      'Floor,"Room, ""A""",area,m²,1.000,0.000,1.000,10.000,0.100,0.500,1.500,1',
+      'Floor,"Room, ""A""",area,,m²,1.000,0.000,1.000,10.000,0.100,0.500,1.500,1',
     );
-    expect(lines[2]).toBe('Floor,"Room, ""A""",count,pcs,1,0,1,10.000,0.100,0.500,2,1');
+    expect(lines[2]).toBe('Floor,"Room, ""A""",count,Door,pcs,1,0,1,10.000,0.100,0.500,2,1');
   });
 
   it("puts metadata after two blank lines and escapes project metadata", () => {

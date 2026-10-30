@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.15.0** · Project-file schema: **20**
+Current version: **0.16.0** · Project-file schema: **21**
 
 ## Product principles
 
@@ -55,13 +55,14 @@ milestone:
 | 0.14.0 | Internal refactors: reference/comparison controller, canvas draft renderer, shared flyout mount, ESLint in CI, direct UI tests and ADR 0001 | Complete | v19 |
 | 0.14.1 | Lazy-loaded OCR, PDF exports, XLSX and TIF import; production source maps removed | Complete | v19 |
 | 0.15.0 | Custom count types, pieces per count object, schema 20 and the first feature module | Complete | v20 |
+| 0.16.0 | Count schedule: quantity rows per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable presets | Complete | v21 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed feature milestone after 0.15.0. The candidates below are ordered by
+There is no committed feature milestone after 0.16.0. The candidates below are ordered by
 expected value, not scheduled:
 
 1. **Independent page navigation in the reference pane** ([#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)), so the primary and reference views can inspect different sheets.

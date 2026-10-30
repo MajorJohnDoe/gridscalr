@@ -78,7 +78,7 @@ Set `VERSION` to the version in `package.json`, then tag and publish from the
 staged Windows artifacts:
 
 ```bash
-VERSION=0.15.0
+VERSION=0.16.0
 git tag "v$VERSION"
 git push origin "v$VERSION"
 gh release create "v$VERSION" \

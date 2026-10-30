@@ -121,12 +121,17 @@ describe("quantity rows", () => {
       ["Floor", "Room A", "area"],
       ["Floor", "Room B", "length"],
       ["Floor", "Room B", "count"],
+      ["Floor", "Room B", "count"],
       ["Wall", "Room A", "length"],
     ]);
 
     const roomA = summary.categories[0].rooms[0];
     expect(roomA.rows.map((row) => row.net)).toEqual([2, 1]);
-    expect(summary.categories[0].rooms[1].rows[1].gross).toBe(2);
+    expect(
+      summary.categories[0].rooms[1].rows
+        .filter((row) => row.type === "count")
+        .reduce((sum, row) => sum + row.gross, 0),
+    ).toBe(2);
 
     const floorTotals = summary.categories[0].totals;
     expect(floorTotals.map((total) => total.type)).toEqual(["length", "area", "count"]);
@@ -479,5 +484,27 @@ describe("quantity rows by page", () => {
     expect(summary.rows).toHaveLength(0);
     expect(summary.hiddenExcluded).toBe(1);
     expect(summary.uncalibratedExcluded).toBe(1);
+  });
+
+  it("splits count rows by count type and sums pieces per type", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    countItem(project, { categoryId: floor, room: "A", countType: "door", countQuantity: 2 });
+    countItem(project, { categoryId: floor, room: "A", countType: "door" });
+    countItem(project, { categoryId: floor, room: "A", countType: "window", countQuantity: 4 });
+
+    const summary = calculateQuantities(project, { page: "all" });
+    const counts = summary.rows.filter((row) => row.type === "count");
+    expect(counts).toHaveLength(2);
+    expect(counts[0]).toMatchObject({ countTypeLabel: "Door", gross: 3, net: 3, orderQuantity: 3 });
+    expect(counts[1]).toMatchObject({
+      countTypeLabel: "Window",
+      gross: 4,
+      net: 4,
+      orderQuantity: 4,
+    });
+
+    const byPage = calculateQuantitiesByPage(project);
+    expect(byPage.rows.filter((row) => row.type === "count")).toHaveLength(2);
   });
 });

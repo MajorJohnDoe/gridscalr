@@ -73,16 +73,17 @@ const MIN_HEIGHT = 140;
 let rangeAnchor: SelectionRef | null = null;
 
 const COLUMN_WIDTHS: Record<MarkupsColumnId, number> = {
-  name: 17,
+  name: 14,
   type: 6,
   page: 5,
-  layer: 12,
+  layer: 11,
   value: 6,
+  countType: 8,
   category: 8,
   room: 6,
   status: 7,
-  created: 12,
-  modified: 12,
+  created: 10,
+  modified: 10,
   visible: 5,
   locked: 4,
 };
@@ -208,6 +209,9 @@ function syncProject(project: Project): void {
     !project.categories.some((entry) => entry.id === settings.categoryId)
   ) {
     settings.categoryId = null;
+  }
+  if (settings.countType && !project.countTypes.some((entry) => entry.id === settings.countType)) {
+    settings.countType = null;
   }
 }
 
@@ -422,13 +426,21 @@ function filteredRows(project: Project): MarkupRow[] {
         : item.kind === "symbol"
           ? "symbol"
           : "draw";
-      if (settings.typeFilter !== "all" && kind !== settings.typeFilter) continue;
+      if (settings.typeFilter === "count") {
+        if (item.kind !== "count") continue;
+      } else if (settings.typeFilter !== "all" && kind !== settings.typeFilter) continue;
       const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
       if (settings.categoryId) {
         if (!isMeasurementKind(item.kind) || category?.id !== settings.categoryId) continue;
       }
       const symbolCategory = item.kind === "symbol" ? symbolCategoryOf(item.symbolId) : undefined;
       if (settings.symbolCategory && symbolCategory !== settings.symbolCategory) continue;
+      if (
+        settings.countType &&
+        (item.kind !== "count" || (item.countType ?? "other") !== settings.countType)
+      ) {
+        continue;
+      }
       if (query) {
         const created = formatTimestamp(item.createdAt);
         const modified = formatTimestamp(item.updatedAt);
@@ -477,6 +489,10 @@ function sortValue(row: MarkupRow, column: MarkupsColumnId, project: Project): s
       return row.layer.name.toLocaleLowerCase();
     case "value":
       return itemMetrics(row.item, project)?.rawPoints ?? 0;
+    case "countType":
+      return row.item.kind === "count"
+        ? countTypeLabel(project, row.item.countType).toLocaleLowerCase()
+        : "";
     case "category":
       return row.item.kind === "symbol"
         ? symbolCategoryLabel(symbolCategoryOf(row.item.symbolId)).toLocaleLowerCase()
@@ -509,6 +525,10 @@ function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project):
     }
     case "room":
       return row.item.room?.trim() || "Unassigned";
+    case "countType":
+      return row.item.kind === "count"
+        ? countTypeLabel(project, row.item.countType)
+        : "Other markups";
     case "page": {
       const name = pageDisplayName(project, row.item.page);
       return name ? `Page ${row.item.page} · ${name}` : `Page ${row.item.page}`;
@@ -668,6 +688,15 @@ function markupRowElement(
     valueCell.append(badge);
   }
   cells.set("value", valueCell);
+
+  cells.set(
+    "countType",
+    el(
+      "td",
+      "markups-count-type",
+      item.kind === "count" ? countTypeLabel(project, item.countType) : "–",
+    ),
+  );
 
   const categoryCell = el(
     "td",
@@ -974,12 +1003,16 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     option("measure", "Measurements", settings.typeFilter === "measure"),
     option("draw", "Drawings", settings.typeFilter === "draw"),
     option("symbol", "Symbols", settings.typeFilter === "symbol"),
+    option("count", "Counts", settings.typeFilter === "count"),
   );
   typeSelect.value = settings.typeFilter;
   typeSelect.addEventListener("change", () => {
     settings.typeFilter =
-      typeSelect.value === "measure" || typeSelect.value === "draw" || typeSelect.value === "symbol"
-        ? (typeSelect.value as "measure" | "draw" | "symbol")
+      typeSelect.value === "measure" ||
+      typeSelect.value === "draw" ||
+      typeSelect.value === "symbol" ||
+      typeSelect.value === "count"
+        ? (typeSelect.value as "measure" | "draw" | "symbol" | "count")
         : "all";
     collapsedGroups.clear();
     markViewDirty();
@@ -1029,6 +1062,24 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     refreshTable();
   });
 
+  const countTypeSelect = el("select", "select markups-count-type-filter");
+  countTypeSelect.setAttribute("aria-label", "Filter markups by count type");
+  countTypeSelect.append(option("", "All count types", !settings.countType));
+  for (const type of project.countTypes) {
+    countTypeSelect.append(option(type.id, type.label, type.id === settings.countType));
+  }
+  countTypeSelect.value = settings.countType ?? "";
+  countTypeSelect.addEventListener("change", () => {
+    settings.countType = countTypeSelect.value || null;
+    if (settings.countType) {
+      settings.typeFilter = "count";
+      typeSelect.value = "count";
+    }
+    collapsedGroups.clear();
+    markViewDirty();
+    refreshTable();
+  });
+
   const groupSelect = el("select", "select markups-group-select");
   groupSelect.setAttribute("aria-label", "Group markups");
   const groupPreset = markupsGroupPresetFor(settings.groupBy);
@@ -1043,6 +1094,10 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     const preset = MARKUPS_GROUP_PRESETS.find((entry) => entry.id === groupSelect.value);
     if (!preset) return;
     settings.groupBy = [...preset.fields];
+    if (preset.id === "count-type") {
+      settings.typeFilter = "count";
+      typeSelect.value = "count";
+    }
     collapsedGroups.clear();
     markViewDirty();
     refreshTable();
@@ -1066,7 +1121,15 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     store.setSelectionMany(rows.map((row) => ({ layerId: row.layer.id, itemId: row.item.id })));
   });
 
-  toolbar.append(pageSelect, typeSelect, categorySelect, groupSelect, search, selectAll);
+  toolbar.append(
+    pageSelect,
+    typeSelect,
+    categorySelect,
+    countTypeSelect,
+    groupSelect,
+    search,
+    selectAll,
+  );
   panel.append(head, toolbar);
 
   const wrap = el("div", "markups-table-wrap");

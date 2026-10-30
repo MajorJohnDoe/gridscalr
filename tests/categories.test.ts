@@ -173,6 +173,7 @@ describe("categories", () => {
         typeFilter: "measure",
         categoryId: wallId,
         symbolCategory: null,
+        countType: null,
         search: "",
         groupBy: ["category"],
         sort: null,

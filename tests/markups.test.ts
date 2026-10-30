@@ -20,6 +20,7 @@ const view = (patch: Partial<MarkupsView> = {}): MarkupsView => ({
   typeFilter: "measure",
   categoryId: "cat_hvac",
   symbolCategory: null,
+  countType: null,
   search: "",
   groupBy: ["building", "floor", "room"],
   sort: null,
@@ -85,6 +86,29 @@ describe("Markups views", () => {
     expect(views[1].categoryId).toBe("cat_hvac");
   });
 
+  it("keeps valid count-type filters and drops stale count types", () => {
+    const views = normalizeMarkupsViews(
+      [
+        view({
+          id: "view_count",
+          name: "Door schedule",
+          typeFilter: "count",
+          countType: "door",
+          groupBy: ["countType"],
+        }),
+        view({ id: "view_stale", name: "Stale", countType: "deleted-type" }),
+      ],
+      new Set(["cat_hvac"]),
+      new Set(["door", "window", "other"]),
+    );
+    expect(views[0]).toMatchObject({
+      typeFilter: "count",
+      countType: "door",
+      groupBy: ["countType"],
+    });
+    expect(views[1].countType).toBeNull();
+  });
+
   it("always keeps Name visible and ignores unknown columns", () => {
     expect(normalizeMarkupsColumns(["value", "bogus", "value"])).toEqual(["name", "value"]);
     expect(normalizeMarkupsColumns(undefined)).toEqual([
@@ -93,6 +117,7 @@ describe("Markups views", () => {
       "page",
       "layer",
       "value",
+      "countType",
       "category",
       "room",
       "status",

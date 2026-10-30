@@ -140,7 +140,13 @@ function renderRows(summary: QuantitySummary): HTMLElement {
         const rowHead = el("div", "quantity-row-head");
         const type = el("span", "quantity-row-type");
         type.append(
-          el("span", "quantity-type-name", typeLabel(row.type)),
+          el(
+            "span",
+            "quantity-type-name",
+            row.countTypeLabel
+              ? `${typeLabel(row.type)} · ${row.countTypeLabel}`
+              : typeLabel(row.type),
+          ),
           el("span", "quantity-unit", row.unit),
         );
         rowHead.append(type, el("span", "quantity-items", plural(row.items, "item")));

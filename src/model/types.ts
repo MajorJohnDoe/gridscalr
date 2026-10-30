@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 20 as const;
+export const SCHEMA_VERSION = 21 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -70,6 +70,15 @@ export interface CountTypeDef {
   label: string;
   /** One of the built-in count glyphs. */
   glyph: CountGlyph;
+}
+
+/** Reusable count settings: type, category, room and default pieces. */
+export interface CountPreset {
+  id: string;
+  countType: CountType;
+  categoryId: string;
+  room: string;
+  quantity: number;
 }
 
 export interface ScaleSnapshot {
@@ -248,6 +257,7 @@ export type MarkupsColumnId =
   | "page"
   | "layer"
   | "value"
+  | "countType"
   | "category"
   | "room"
   | "status"
@@ -257,8 +267,9 @@ export type MarkupsColumnId =
   | "locked";
 
 export type MarkupsPageFilter = "all" | "current";
-export type MarkupsTypeFilter = "all" | "measure" | "draw" | "symbol";
-export type MarkupsGroupField = "category" | "room" | "page" | "layer" | "building" | "floor";
+export type MarkupsTypeFilter = "all" | "measure" | "draw" | "symbol" | "count";
+export type MarkupsGroupField =
+  "category" | "room" | "countType" | "page" | "layer" | "building" | "floor";
 
 export interface MarkupsSort {
   column: MarkupsColumnId;
@@ -276,6 +287,8 @@ export interface MarkupsView {
   categoryId: string | null;
   /** null means every symbol category. Applies to symbol items. */
   symbolCategory: SymbolCategory | null;
+  /** null means every count type. A value shows only counts of that type. */
+  countType: string | null;
   search: string;
   groupBy: MarkupsGroupField[];
   sort: MarkupsSort | null;
@@ -364,6 +377,8 @@ export interface Project {
   categories: Category[];
   /** Ordered count-type definitions. Always contains the `other` fallback. */
   countTypes: CountTypeDef[];
+  /** Reusable Count tool presets stored in the project. */
+  countPresets: CountPreset[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;

@@ -9,12 +9,17 @@ import {
 import { calculateQuantities } from "../src/model/quantity";
 import { itemMetrics } from "../src/model/measure";
 import {
+  addCountPreset,
   addCountType,
+  countPresetLabel,
   countQuantityOf,
   countTypeItemCount,
   countTypeLabel,
   defaultCountTypes,
+  findCountPreset,
+  normalizeCountPresets,
   normalizeCountTypes,
+  removeCountPreset,
   removeCountType,
   renameCountType,
 } from "../src/features/countTypes/model";
@@ -124,5 +129,46 @@ describe("count quantities", () => {
     const summary = calculateQuantities(project, { page: "all" });
     const row = summary.rows.find((entry) => entry.type === "count");
     expect(row).toMatchObject({ gross: 3, net: 3, orderQuantity: 3, items: 1 });
+  });
+});
+
+describe("count presets", () => {
+  it("stores, deduplicates and removes reusable count settings", () => {
+    const project = makeProject();
+    const categoryId = project.categories[0].id;
+    const preset = addCountPreset(project, "window", categoryId, " Floor 1 ", 2);
+    expect(preset).not.toBeNull();
+    expect(preset).toMatchObject({ countType: "window", categoryId, room: "Floor 1", quantity: 2 });
+    expect(countPresetLabel(project, preset!)).toBe(
+      `${project.categories[0].name} · Floor 1 · 2 pcs`.replace(/^/, "Window · "),
+    );
+    expect(addCountPreset(project, "window", categoryId, "Floor 1", 2)).toBe(preset);
+    expect(project.countPresets).toHaveLength(1);
+    expect(findCountPreset(project, "window", categoryId, "Floor 1", 2)?.id).toBe(preset!.id);
+    expect(removeCountPreset(project, preset!.id)).toBe(true);
+    expect(project.countPresets).toHaveLength(0);
+  });
+
+  it("repairs invalid presets and fills the default category", () => {
+    const project = makeProject();
+    const presets = normalizeCountPresets(
+      [
+        { id: "p1", countType: "missing", categoryId: "missing", room: "A", quantity: 0 },
+        { id: "p2", countType: "window", categoryId: "missing", room: "B", quantity: 3 },
+        {
+          id: "p2",
+          countType: "door",
+          categoryId: project.categories[0].id,
+          room: "C",
+          quantity: 1,
+        },
+      ],
+      new Set(project.categories.map((entry) => entry.id)),
+      new Set(project.countTypes.map((entry) => entry.id)),
+      project.categories[0].id,
+    );
+    expect(presets).toHaveLength(3);
+    expect(presets[0]).toMatchObject({ countType: "other", quantity: 1 });
+    expect(new Set(presets.map((entry) => entry.id)).size).toBe(3);
   });
 });

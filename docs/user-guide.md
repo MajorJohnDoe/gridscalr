@@ -209,9 +209,15 @@ Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in t
 
 Choose **Count** (`C`), pick a project count type, and click the plan. Each count is one piece by default and uses the vector glyph assigned to its type. Set **Pieces per object** in Properties when one symbol represents several identical objects, or apply it to a mixed selection in one undoable action.
 
-Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports.
+The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
+
+Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a door schedule and a window schedule no longer collapse into one Count row.
+
+In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
 ![Count types dialog with built-in and custom types](screenshots/count-types.png)
+
+![Markups table grouped by count type](screenshots/count-schedule.png)
 
 ### Measurement labels
 
@@ -392,9 +398,9 @@ The internal clipboard supports `Ctrl/Cmd+C`, `X`, and `V`, and `Ctrl/Cmd+D` dup
 
 Open **View → Markups list…**, click the **Markups** button at the bottom of the tool rail, or press `Ctrl/Cmd+L` for a docked, searchable table of every measurement and drawing across the project. The table stays open while you navigate the drawing. Clicking a row selects the item and zooms to it, capped at four times Fit page; a markup that is already visible is left in place. Ctrl/Cmd-click toggles single rows and Shift-click selects a range; the table and the canvas share one selection.
 
-- Filter by **All pages** or **Current page**, measurements/drawings/symbols, measurement or symbol category, or the search field. The search also matches **Created** and **Modified** dates.
-- Use **Columns** to show or hide table columns, including **Status**, **Created** and **Modified**. Name is always visible.
-- Use **Group by** to create collapsible groups by category, room, page, layer, or **Building → Floor → Room**. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group.
+- Filter by **All pages** or **Current page**, measurements/drawings/symbols/counts, measurement or symbol category, count type, or the search field. The search also matches **Created** and **Modified** dates.
+- Use **Columns** to show or hide table columns, including **Count type**, **Status**, **Created** and **Modified**. Name is always visible.
+- Use **Group by** to create collapsible groups by category, room, count type, page, layer, or **Building → Floor → Room**. **Count schedule** groups counts by type and room. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group.
 - Click a sortable column heading to sort, click again to reverse, and a third time to return to the default page/layer/name order.
 - Click a row to go to its page and select the markup.
 - Double-click a name or use the rename button to edit the label inline.
@@ -405,7 +411,7 @@ Open **View → Markups list…**, click the **Markups** button at the bottom of
 
 ### Markups views
 
-A view stores the visible columns, page/type/category filters, search text, grouping and sort order. Views belong to the project, so a colleague who opens the same `.gridscalr` file gets the same set-up.
+A view stores the visible columns, page/type/category/count-type filters, search text, grouping and sort order. Views belong to the project, so a colleague who opens the same `.gridscalr` file gets the same set-up.
 
 - Start from **All markups**, configure the table, then choose **More view options → Save as new view…**.
 - Choose the view from the **Markups view** selector to apply it.
@@ -427,13 +433,13 @@ The Highlight variants menu also includes the shared colour palette, so the stro
 
 Open **View → Quantities…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters.
 
-Each row covers one category, room, and measurement type and shows gross, deduction, net, waste, order quantity, and item count. Category and room headers provide subtotals, and a total row summarises each measurement type.
+Each row covers one category, room, and measurement type; count rows also carry the count type, so doors, windows and sockets stay separate. Every row shows gross, deduction, net, waste, order quantity, and item count. Category and room headers provide subtotals, and a total row summarises each measurement type.
 
 - Filter by current or all pages, one category, a room substring, or any combination of measurement layers.
 - Hidden items and hidden layers are excluded by default and reported in a note. Locked items are included.
 - **Include hidden items and layers** counts them in the live dialog.
 - Area deductions are subtracted inside the same category and room only. If a deduction exceeds its gross area, the net is clamped to zero and the row shows a warning.
-- Length and area values use the project units, including yd². Counts always use pcs.
+- Length and area values use the project units, including yd². Counts always use pcs and are grouped by count type.
 - Measurements without a scale are excluded and counted in a note.
 
 Quantities are derived from the current items every time the data changes and are never stored in the project file.
@@ -454,7 +460,7 @@ Use the **CSV**, **Excel** or **PDF** buttons in the Quantities dialog, or **Fil
 
 Reports cover every page and every category, exclude hidden items and hidden layers, and include locked items. Dialog filters do not affect the exported report. Reports are generated on demand and never stored in the project file.
 
-- CSV is UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for counts.
+- CSV is UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for counts. Count rows include a `count_type` column.
 - The Excel workbook contains **Summary**, **By category**, **By room**, **By page**, **Markups** and **Source notes** sheets. It is generated from the same item data as the CSV and PDF exports, applies the same visibility rules and never becomes a second source of truth.
 - The PDF report is A4 portrait with category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
@@ -519,7 +525,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 20 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, and adds project count-type definitions and an optional count quantity per object. Older projects load normally and are migrated when opened.
+Schema version 21 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, and adds reusable count presets and count-type columns, filters and grouping in saved Markups views. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

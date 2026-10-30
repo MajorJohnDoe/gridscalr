@@ -149,6 +149,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     },
     categories,
     countTypes: defaultCountTypes(),
+    countPresets: [],
     assets: {},
     pages: {},
     markupsViews: [],
