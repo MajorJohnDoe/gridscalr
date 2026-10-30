@@ -50,6 +50,7 @@ import {
   LABEL_FIT_POSITIONS,
   layoutPageLabels,
   pageLabelSources,
+  previewLabelLayout,
   type LabelLayout,
 } from "../model/labelLayout";
 import { ensureLabelFonts, measureLabelText } from "../model/labelFont";
@@ -3418,6 +3419,33 @@ export class CanvasView {
     });
   }
 
+  /**
+   * Draws a measurement preview through the same layout rules as the saved
+   * label. The item points are page-space, never screen-space.
+   */
+  private drawMeasurePreviewLabel(
+    ctx: CanvasRenderingContext2D,
+    item: MarkupItem,
+    text: string,
+    color: string,
+  ): void {
+    const size = this.pageSize();
+    if (!size) return;
+    this.drawLabelLayout(
+      ctx,
+      previewLabelLayout(
+        item,
+        text,
+        {
+          pageSize: size,
+          measure: measureLabelText,
+          labelSize: store.project?.settings.labelSize,
+        },
+        color,
+      ),
+    );
+  }
+
   private drawInteraction(): void {
     const ctx = this.interactionCtx;
     this.prepare(ctx);
@@ -3847,17 +3875,10 @@ export class CanvasView {
       if (value !== null) {
         const prefix =
           this.draft.kind === "radius" ? "R " : this.draft.kind === "diameter" ? "Ø " : "Arc ";
-        const anchor =
-          this.draft.kind === "arc"
-            ? (this.draft.points[1] ?? this.draft.points[0])
-            : {
-                x: (this.draft.points[0].x + this.draft.cursor.x) / 2,
-                y: (this.draft.points[0].y + this.draft.cursor.y) / 2,
-              };
-        this.drawPreviewLabel(
+        this.drawMeasurePreviewLabel(
           ctx,
+          fake,
           `${prefix}${formatLength(value, scale, unit, project.settings.smartLengthUnits)}`,
-          anchor,
           ACCENT,
         );
       }
@@ -3887,10 +3908,10 @@ export class CanvasView {
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(cursor.x, cursor.y);
         ctx.stroke();
-        this.drawPreviewLabel(
+        this.drawMeasurePreviewLabel(
           ctx,
+          fake,
           `${formatNumber(slopeValue(fake) ?? 0, 1)}%`,
-          { x: (start.x + cursor.x) / 2, y: (start.y + cursor.y) / 2 },
           ACCENT,
         );
       } else {
@@ -3916,7 +3937,12 @@ export class CanvasView {
             );
             ctx.stroke();
           }
-          this.drawPreviewLabel(ctx, `${formatNumber(angleValue(fake) ?? 0, 1)}°`, vertex, ACCENT);
+          this.drawMeasurePreviewLabel(
+            ctx,
+            fake,
+            `${formatNumber(angleValue(fake) ?? 0, 1)}°`,
+            ACCENT,
+          );
         }
       }
       ctx.fillStyle = "#f7fbfc";

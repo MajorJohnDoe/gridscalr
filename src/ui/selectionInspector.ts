@@ -28,7 +28,7 @@ import {
   layersForKind,
   moveItemToLayer,
 } from "../model/layers";
-import { itemKindLabel, itemMetrics, itemScaleWarning } from "../model/measure";
+import { itemKindLabel, itemMetrics, itemNeedsPageScale, itemScaleWarning } from "../model/measure";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
 import { LABEL_FIT_LABELS } from "../model/labelLayout";
 import { formatNumber } from "../model/units";
@@ -136,7 +136,7 @@ export function selectionSection(
     section.append(el("div", "empty-note small", "This markup is hidden."));
   }
 
-  if (metrics && !metrics.scale && item.kind !== "count") {
+  if (metrics && !metrics.scale && itemNeedsPageScale(item)) {
     section.append(
       el(
         "div",

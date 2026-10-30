@@ -13,9 +13,9 @@ import {
   type Bounds,
 } from "./geometry";
 import {
-  labelAnchorForPoints,
   labelBox,
   labelMetrics,
+  labelPlacementHintForPoints,
   labelScaleForSize,
   measurementLabelParts,
   LABEL_CALIBRATION_OFFSET,
@@ -30,7 +30,7 @@ import {
   type LabelParts,
 } from "./label";
 import { formatNumber } from "./units";
-import type { LabelFitPosition, PageSize, Point, Project } from "./types";
+import type { LabelFitPosition, MarkupItem, PageSize, Point, Project } from "./types";
 
 export type LabelPlacement = "center" | "outside" | "line";
 
@@ -48,6 +48,10 @@ export interface LabelSource {
   labelAnchor?: Point;
   /** Line or outline used to find the nearest connection point. */
   outline?: Point[];
+  /** Reject placements whose box touches the outline or obstacle. */
+  avoidSource?: boolean;
+  /** Unit vector pointing away from a curve, line or wedge. */
+  outward?: Point;
   /** Per-measurement primary size in PDF points. Omit to use the project size. */
   labelSize?: number;
   /** Keep the label inside the area and fit its size to the available space. */
@@ -113,6 +117,50 @@ export const CALIBRATION_LABEL_ID = "calibration";
 const LABEL_FIT_WIDTH_RATIO = 0.6;
 const LABEL_FIT_HEIGHT_RATIO = 0.4;
 
+/** A label source for one measurement item, shared by the canvas and exports. */
+export function measurementLabelSource(
+  item: MarkupItem,
+  parts: LabelParts,
+  color: string,
+): LabelSource {
+  const hint = labelPlacementHintForPoints(item, item.points);
+  const circle = radiusCircle(item);
+  const outline =
+    item.kind === "area" || item.kind === "volume"
+      ? areaOutline(item.points, areaShapeOf(item))
+      : item.kind === "length"
+        ? item.points.map((point) => ({ ...point }))
+        : circle
+          ? circlePolyline(circle.center, circle.radius)
+          : item.kind === "arc"
+            ? arcPolyline(item)
+            : item.kind === "angle" || item.kind === "slope"
+              ? item.points.map((point) => ({ ...point }))
+              : undefined;
+  return {
+    id: item.id,
+    kind: item.kind === "area" ? "area" : item.kind === "count" ? "count" : "length",
+    parts,
+    anchor: hint.anchor,
+    outward: hint.outward,
+    avoidSource: hint.avoidSource,
+    obstacle:
+      item.kind === "count" && item.points[0]
+        ? countSymbolBounds(item.points[0])
+        : itemBounds(item),
+    polygon:
+      item.kind === "area" || item.kind === "volume"
+        ? areaOutline(item.points, areaShapeOf(item))
+        : undefined,
+    labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
+    labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
+    outline,
+    labelSize: item.labelSize,
+    labelFit: item.labelFit,
+    color,
+  };
+}
+
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
   project: Project,
@@ -144,36 +192,7 @@ export function pageLabelSources(
         }
         const parts = measurementLabelParts(item, project);
         if (!parts) continue;
-        const circle = radiusCircle(item);
-        sources.push({
-          id: item.id,
-          kind: item.kind === "area" ? "area" : item.kind === "count" ? "count" : "length",
-          parts,
-          anchor: labelAnchorForPoints(item, item.points),
-          obstacle:
-            item.kind === "count" && item.points[0]
-              ? countSymbolBounds(item.points[0])
-              : itemBounds(item),
-          polygon:
-            item.kind === "area" || item.kind === "volume"
-              ? areaOutline(item.points, areaShapeOf(item))
-              : undefined,
-          labelOffset: item.labelOffset ? { ...item.labelOffset } : undefined,
-          labelAnchor: item.labelAnchor ? { ...item.labelAnchor } : undefined,
-          outline:
-            item.kind === "area" || item.kind === "volume"
-              ? areaOutline(item.points, areaShapeOf(item))
-              : item.kind === "length"
-                ? item.points.map((point) => ({ ...point }))
-                : circle
-                  ? circlePolyline(circle.center, circle.radius)
-                  : item.kind === "arc"
-                    ? arcPolyline(item)
-                    : undefined,
-          labelSize: item.labelSize,
-          labelFit: item.labelFit,
-          color: item.color,
-        });
+        sources.push(measurementLabelSource(item, parts, item.color));
       }
     }
   }
@@ -211,6 +230,19 @@ export function layoutPageLabels(
   }
 
   return layouts;
+}
+
+/**
+ * Lays out a live drawing preview with the same rules as a saved label, so the
+ * preview cannot drift away from the final placement.
+ */
+export function previewLabelLayout(
+  item: MarkupItem,
+  text: string,
+  options: LabelLayoutOptions,
+  color = "#35c2a1",
+): LabelLayout {
+  return layoutLabel(measurementLabelSource(item, { text }, color), options, []);
 }
 
 function searchInside(
@@ -352,6 +384,27 @@ function layoutLabel(
       const fitted = searchInside(source, options, scale, () => center, fits);
       if (fitted) return fitted;
     }
+  } else if (source.avoidSource) {
+    // Curves, wedges and slopes start outside their own geometry: offset the
+    // preferred anchor along the outward direction by half the label box, so
+    // the box never covers the measured line.
+    const outward = source.outward ? outwardLayout(source, scale, options) : null;
+    if (
+      outward &&
+      fitsPage(outward.box, options.pageSize) &&
+      !overlapsSource(outward.box, source) &&
+      !collides(outward.box, occupied)
+    ) {
+      return withLeader(outward, source);
+    }
+    const preferred = buildLayout(source, scale, source.anchor, "line", options);
+    if (
+      fitsPage(preferred.box, options.pageSize) &&
+      !overlapsSource(preferred.box, source) &&
+      !collides(preferred.box, occupied)
+    ) {
+      return withLeader(preferred, source);
+    }
   } else {
     const preferred = buildLayout(source, scale, source.anchor, "line", options);
     if (fitsPage(preferred.box, options.pageSize) && !collides(preferred.box, occupied)) {
@@ -407,6 +460,39 @@ function buildLayout(
   };
 }
 
+function outwardLayout(
+  source: LabelSource,
+  scale: number,
+  options: LabelLayoutOptions,
+): LabelLayout | null {
+  const outward = source.outward;
+  if (!outward) return null;
+  const metrics = labelMetrics(scale);
+  const primaryWidth = options.measure(source.parts.text, metrics.primarySize, "bold");
+  const secondaryWidth = source.parts.secondary
+    ? options.measure(source.parts.secondary, metrics.secondarySize, "regular")
+    : 0;
+  const size = labelBox(
+    { x: 0, y: 0 },
+    primaryWidth,
+    secondaryWidth,
+    source.parts.secondary,
+    scale,
+  );
+  const offset =
+    metrics.gap + (Math.abs(outward.x) * size.width + Math.abs(outward.y) * size.height) / 2;
+  return buildLayout(
+    source,
+    scale,
+    {
+      x: source.anchor.x + outward.x * offset,
+      y: source.anchor.y + outward.y * offset,
+    },
+    "outside",
+    options,
+  );
+}
+
 function outsideAnchors(source: LabelSource, scale: number, measure: LabelMeasure): Point[] {
   const metrics = labelMetrics(scale);
   const primaryWidth = measure(source.parts.text, metrics.primarySize, "bold");
@@ -424,6 +510,15 @@ function outsideAnchors(source: LabelSource, scale: number, measure: LabelMeasur
   const center = boundsCenter(bounds);
   const gap = metrics.gap;
   const anchors: Point[] = [];
+  if (source.outward) {
+    const offset =
+      gap +
+      (Math.abs(source.outward.x) * size.width + Math.abs(source.outward.y) * size.height) / 2;
+    anchors.push({
+      x: source.anchor.x + source.outward.x * offset,
+      y: source.anchor.y + source.outward.y * offset,
+    });
+  }
   if (source.kind === "length" && source.outline && source.outline.length > 1) {
     const count = source.outline.length - 1;
     const step = Math.max(1, Math.ceil(count / 12));
