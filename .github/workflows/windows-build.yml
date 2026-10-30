@@ -32,31 +32,25 @@ jobs:
       - name: Build Tauri app
         run: npm run tauri build
 
-      - name: Create SHA-256 checksums
+      - name: Stage release files and create SHA-256 checksums
         shell: pwsh
         run: |
-          $patterns = @(
-            "src-tauri/target/release/gridscalr.exe",
-            "src-tauri/target/release/bundle/nsis/*.exe",
-            "src-tauri/target/release/bundle/msi/*.msi"
-          )
-          $files = foreach ($pattern in $patterns) {
-            Get-ChildItem -Path $pattern -File
-          }
+          $release = "release"
+          New-Item -ItemType Directory -Force -Path $release | Out-Null
+          Copy-Item "src-tauri/target/release/gridscalr.exe" $release
+          Copy-Item "src-tauri/target/release/bundle/nsis/*.exe" $release
+          Copy-Item "src-tauri/target/release/bundle/msi/*.msi" $release
+          $files = Get-ChildItem -Path $release -File
           if (-not $files) {
             throw "No release artifacts found for checksums."
           }
           $files | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
-          } | Set-Content -Path "SHA256SUMS.txt" -Encoding utf8
+          } | Set-Content -Path "$release/SHA256SUMS.txt" -Encoding utf8
 
       - uses: actions/upload-artifact@v7
         with:
           name: gridscalr-windows
           if-no-files-found: error
-          path: |
-            src-tauri/target/release/gridscalr.exe
-            src-tauri/target/release/bundle/nsis/*.exe
-            src-tauri/target/release/bundle/msi/*.msi
-            SHA256SUMS.txt
+          path: release/*
