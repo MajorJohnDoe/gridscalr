@@ -44,10 +44,16 @@ jobs:
           if (-not $files) {
             throw "No release artifacts found for checksums."
           }
-          $files | Sort-Object Name | ForEach-Object {
+          $lines = $files | Sort-Object Name | ForEach-Object {
             $hash = (Get-FileHash -Path $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
             "$hash  $($_.Name)"
-          } | Set-Content -Path "$release/SHA256SUMS.txt" -Encoding utf8
+          }
+          $content = ($lines -join "`n") + "`n"
+          [System.IO.File]::WriteAllText(
+            (Join-Path $release "SHA256SUMS.txt"),
+            $content,
+            [System.Text.UTF8Encoding]::new($false)
+          )
 
       - uses: actions/upload-artifact@v7
         with:
