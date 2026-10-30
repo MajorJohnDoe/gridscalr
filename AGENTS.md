@@ -213,6 +213,8 @@ src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
+src/ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
+src/ui/toolFlyouts.ts      long-press/right-click variant and family panels
 src/ui/statusBar.ts        page scale menu, cursor position and layer status
 src/ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
 src/ui/referencePane.ts    reference source selector, name and Open/Close controls
@@ -236,6 +238,7 @@ src/model/annotations.ts   callout, stamp, delta, and cloud-label layout
 src/model/cloud.ts         revision-cloud bezier geometry
 src/model/stamps.ts        stamp preset normalization and defaults
 src/io/stampDefaults.ts    global stamp presets for new projects
+src/io/layerDefaults.ts    local default colours for new measurement and drawing layers
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src-tauri/src/commands.rs  atomic file writes and path checks
 docs/user-guide.md         in-app user guide
