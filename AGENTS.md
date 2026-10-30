@@ -93,6 +93,7 @@ Run the relevant checks from the repository root:
 npm run check:versions
 npm run check:docs
 npm run format:check
+npm run lint
 npx tsc --noEmit
 npm test -- --run
 npm run build
@@ -167,7 +168,7 @@ The `Windows build` workflow runs on `v*` tags and can also be started manually.
 
 ## CI and build hosts
 
-- `.github/workflows/ci.yml` runs frontend tests/build and Rust formatting/checking on pushes and pull requests.
+- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting/checking on pushes and pull requests.
 - `.github/workflows/windows-build.yml` builds the Windows `.exe`, NSIS installer, and MSI on manual dispatch or `v*` tags.
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the Windows workflow for Windows artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
@@ -309,6 +310,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.13.1:** complete — slope previews match the saved percentage-and-degree label, volume creation and double-click editing open a depth dialog, volume labels can lock inside their area, reference panes stay vertically level and the comparison panel can collapse to a Compare tab. No schema change; the schema remains v19.
 - **0.13.2:** complete — Radius/Diameter/Arc and Angle/Slope share rail buttons with long-press/right-click family flyouts, Symbol gains a distinct sign icon, and new measurement layers default to signal red with local app-level layer colour defaults. No schema change; the schema remains v19.
 - **0.13.3:** complete — release hardening adds Save/Discard/Cancel close handling, safe dialog focus, automatic Windows checksums, context-bar family switching, a reference-view menu state, clearer layer-default copy and the documented Tauri/GTK glib advisory. No schema change; the schema remains v19.
+- **0.14.0:** complete — internal refactors extract the reference/comparison controller and canvas draft renderer, share the tool-flyout mount helper, add ESLint with type-aware CI linting and direct dialog/flyout/preview-colour tests, and record ADR 0001 for feature modules. No schema change; the schema remains v19.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

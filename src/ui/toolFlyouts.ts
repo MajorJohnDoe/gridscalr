@@ -80,71 +80,24 @@ export function openToolFamilyVariants(anchor: HTMLElement, family: ToolFamily):
 }
 
 function openToolFlyout(button: HTMLElement, toolId: string): void {
-  closeToolFlyout();
   store.setTool(toolId as ToolId);
-  const root = el("div", "tool-flyout-root");
-  root.addEventListener("mousedown", (event) => {
-    if (event.target === root) closeToolFlyout();
+  mountFlyout(button, toolFlyoutLabel(toolId), (panel, rerender) => {
+    if (toolId === "area") renderArea(panel, rerender);
+    else if (toolId === "cloud") renderCloud(panel, rerender);
+    else if (toolId === "highlight") renderHighlight(panel, rerender);
+    else if (toolId === "callout") renderCallout(panel, rerender);
+    else if (toolId === "stamp") renderStamp(panel, rerender);
+    else renderArrow(panel, rerender);
   });
-  const panel = el("div", "tool-flyout");
-  panel.setAttribute("role", "menu");
-  panel.setAttribute(
-    "aria-label",
-    toolId === "area"
-      ? "Area options"
-      : toolId === "cloud"
-        ? "Revision cloud variants"
-        : toolId === "highlight"
-          ? "Highlight variants"
-          : toolId === "callout"
-            ? "Callout colours"
-            : toolId === "stamp"
-              ? "Stamp presets"
-              : "Arrow variants",
-  );
-  root.append(panel);
-  document.body.append(root);
-  flyoutRoot = root;
+}
 
-  const render = () => {
-    panel.replaceChildren();
-    if (toolId === "area") renderArea(panel, render);
-    else if (toolId === "cloud") renderCloud(panel, render);
-    else if (toolId === "highlight") renderHighlight(panel, render);
-    else if (toolId === "callout") renderCallout(panel, render);
-    else if (toolId === "stamp") renderStamp(panel, render);
-    else renderArrow(panel, render);
-  };
-  render();
-
-  const rect = button.getBoundingClientRect();
-  panel.style.left = `${rect.right + 5}px`;
-  panel.style.top = `${rect.top}px`;
-  const box = panel.getBoundingClientRect();
-  if (box.right > window.innerWidth - 8) {
-    panel.style.left = `${Math.max(8, rect.left - box.width - 5)}px`;
-  }
-  if (box.bottom > window.innerHeight - 8) {
-    panel.style.top = `${Math.max(8, window.innerHeight - box.height - 8)}px`;
-  }
-
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeToolFlyout();
-    }
-  };
-  document.addEventListener("keydown", onKey);
-  document.addEventListener("mousedown", outsideHandler, true);
-  window.addEventListener("resize", closeToolFlyout);
-  window.addEventListener("blur", closeToolFlyout);
-  flyoutCleanup = () => {
-    document.removeEventListener("keydown", onKey);
-    document.removeEventListener("mousedown", outsideHandler, true);
-    window.removeEventListener("resize", closeToolFlyout);
-    window.removeEventListener("blur", closeToolFlyout);
-  };
+function toolFlyoutLabel(toolId: string): string {
+  if (toolId === "area") return "Area options";
+  if (toolId === "cloud") return "Revision cloud variants";
+  if (toolId === "highlight") return "Highlight variants";
+  if (toolId === "callout") return "Callout colours";
+  if (toolId === "stamp") return "Stamp presets";
+  return "Arrow variants";
 }
 
 function outsideHandler(event: MouseEvent): void {
@@ -155,6 +108,33 @@ function outsideHandler(event: MouseEvent): void {
 }
 
 function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
+  mountFlyout(button, `${family.label} tools`, (panel) => {
+    panel.append(el("div", "tool-flyout-title", family.label));
+    panel.append(el("div", "tool-flyout-section", "Tools"));
+    const displayed = familyToolForDisplay(family, store.ui.activeTool);
+    for (const toolId of family.tools) {
+      const tool = TOOL_BY_ID.get(toolId);
+      if (!tool) continue;
+      variantRow(panel, {
+        label: `${tool.label} · ${tool.shortcut}`,
+        description: tool.hint,
+        iconName: tool.icon,
+        selected: displayed === toolId,
+        onSelect: () => {
+          rememberFamilyTool(toolId);
+          store.setTool(toolId);
+          closeToolFlyout();
+        },
+      });
+    }
+  });
+}
+
+function mountFlyout(
+  anchor: HTMLElement,
+  ariaLabel: string,
+  render: (panel: HTMLElement, rerender: () => void) => void,
+): void {
   closeToolFlyout();
   const root = el("div", "tool-flyout-root");
   root.addEventListener("mousedown", (event) => {
@@ -162,39 +142,17 @@ function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
   });
   const panel = el("div", "tool-flyout");
   panel.setAttribute("role", "menu");
-  panel.setAttribute("aria-label", `${family.label} tools`);
-  panel.append(el("div", "tool-flyout-title", family.label));
-  panel.append(el("div", "tool-flyout-section", "Tools"));
-  const displayed = familyToolForDisplay(family, store.ui.activeTool);
-  for (const toolId of family.tools) {
-    const tool = TOOL_BY_ID.get(toolId);
-    if (!tool) continue;
-    variantRow(panel, {
-      label: `${tool.label} · ${tool.shortcut}`,
-      description: tool.hint,
-      iconName: tool.icon,
-      selected: displayed === toolId,
-      onSelect: () => {
-        rememberFamilyTool(toolId);
-        store.setTool(toolId);
-        closeToolFlyout();
-      },
-    });
-  }
+  panel.setAttribute("aria-label", ariaLabel);
   root.append(panel);
   document.body.append(root);
   flyoutRoot = root;
 
-  const rect = button.getBoundingClientRect();
-  panel.style.left = `${rect.right + 5}px`;
-  panel.style.top = `${rect.top}px`;
-  const box = panel.getBoundingClientRect();
-  if (box.right > window.innerWidth - 8) {
-    panel.style.left = `${Math.max(8, rect.left - box.width - 5)}px`;
-  }
-  if (box.bottom > window.innerHeight - 8) {
-    panel.style.top = `${Math.max(8, window.innerHeight - box.height - 8)}px`;
-  }
+  const rerender = () => {
+    panel.replaceChildren();
+    render(panel, rerender);
+    positionFlyout(anchor, panel);
+  };
+  rerender();
 
   const onKey = (event: KeyboardEvent) => {
     if (event.key === "Escape") {
@@ -213,6 +171,19 @@ function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
     window.removeEventListener("resize", closeToolFlyout);
     window.removeEventListener("blur", closeToolFlyout);
   };
+}
+
+function positionFlyout(anchor: HTMLElement, panel: HTMLElement): void {
+  const rect = anchor.getBoundingClientRect();
+  panel.style.left = `${rect.right + 5}px`;
+  panel.style.top = `${rect.top}px`;
+  const box = panel.getBoundingClientRect();
+  if (box.right > window.innerWidth - 8) {
+    panel.style.left = `${Math.max(8, rect.left - box.width - 5)}px`;
+  }
+  if (box.bottom > window.innerHeight - 8) {
+    panel.style.top = `${Math.max(8, window.innerHeight - box.height - 8)}px`;
+  }
 }
 
 function closeToolFlyout(): void {

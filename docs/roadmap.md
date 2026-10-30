@@ -52,13 +52,14 @@ milestone:
 | 0.13.1 | Slope preview matches the saved label, volume depth dialog and volume label locking, level reference panes and a collapsible comparison panel | Complete | v19 |
 | 0.13.2 | Shared Circle & arc and Angle & slope tool families, a distinct symbol icon, and signal-red default measurement layers with local layer colour defaults | Complete | v19 |
 | 0.13.3 | Release hardening: Save/Discard/Cancel, safe dialog focus, automated checksums, context-bar family switching and reference menu state | Complete | v19 |
+| 0.14.0 | Internal refactors: reference/comparison controller, canvas draft renderer, shared flyout mount, ESLint in CI, direct UI tests and ADR 0001 | Complete | v19 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.13.3. The candidates below are ordered by
+There is no committed feature milestone after 0.14.0. The candidates below are ordered by
 expected value, not scheduled:
 
 1. **Independent page navigation in the reference pane**, so the primary and reference views can inspect different sheets.
@@ -109,18 +110,15 @@ anonymous `TODO` comments in code.
 
 - Split `CanvasView.ts` further into label rendering, annotation drawing and pointer interaction modules.
 - Extract project save/open flows from `App.ts` into focused `src/app/` modules.
-- Share one flyout-mount helper in `toolFlyouts.ts` instead of duplicating positioning and dismissal logic.
 - Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.
-- Add ESLint alongside the strict TypeScript and Prettier checks.
 - Lazy-load OCR and PDF.js-heavy code paths to reduce the main bundle and improve startup.
-- Add direct regression coverage for preview colours, dialog focus defaults, family-flyout keyboard access and layer-default persistence.
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared.
 
 ## Project operations
 
 - The repository is public and MIT licensed. Releases are cut manually from the
   Windows workflow; see [`releasing.md`](releasing.md).
-- CI runs the frontend tests, build, UI smoke tests and canvas regressions on
+- CI runs lint, frontend tests, build, UI smoke tests and canvas regressions on
   Ubuntu, plus `cargo fmt` and `cargo check`.
 - `main` is protected and requires both CI jobs. Dependabot proposes weekly
   dependency updates.

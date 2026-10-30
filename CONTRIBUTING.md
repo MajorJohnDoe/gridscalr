@@ -44,6 +44,7 @@ Run the same checks as CI from the repository root:
 npm run check:versions
 npm run check:docs
 npm run format:check
+npm run lint
 npx tsc --noEmit
 npm test -- --run
 npm run build
@@ -56,6 +57,10 @@ Changes that touch the desktop shell also need:
 ```bash
 npm run tauri build -- --no-bundle
 ```
+
+`npx tsc` is TypeScript 7. ESLint uses the official `@typescript/typescript6`
+alias because TypeScript 7 does not ship a compiler API yet; keep both aliases
+in `package.json` when updating TypeScript.
 
 UI and canvas regressions:
 

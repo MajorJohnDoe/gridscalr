@@ -223,6 +223,7 @@ version:
 
 ```bash
 npm test -- --run
+npm run lint
 npm run build
 npm run check:docs
 cargo check --manifest-path src-tauri/Cargo.toml

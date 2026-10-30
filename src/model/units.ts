@@ -73,6 +73,8 @@ export function volumeUnitLabel(unit: AreaUnit): string {
       return "ft³";
     case "yd2":
       return "yd³";
+    case "m2":
+      return "m³";
     default:
       return "m³";
   }

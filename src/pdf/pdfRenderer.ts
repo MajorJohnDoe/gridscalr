@@ -310,7 +310,7 @@ export async function renderPagePreview(
   await task.promise;
   if (!trimMargins) return canvas;
 
-  let bounds = null;
+  let bounds: ReturnType<typeof contentBoundsFromPixels>;
   try {
     const context = canvas.getContext("2d", { willReadFrequently: true });
     if (!context) return canvas;

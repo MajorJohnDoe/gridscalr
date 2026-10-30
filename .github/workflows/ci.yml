@@ -24,6 +24,7 @@ jobs:
       - run: npm run check:versions
       - run: npm run check:docs
       - run: npm run format:check
+      - run: npm run lint
       - run: npm test -- --run
       - run: npm run build
       - run: npx playwright install --with-deps chromium
