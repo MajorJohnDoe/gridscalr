@@ -1,4 +1,5 @@
 import { allRooms, categoryForItem, normalizeRoom } from "../model/categories";
+import { countQuantityOf } from "../features/countTypes/model";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
   INSPECTION_STATUSES,
@@ -44,6 +45,7 @@ import { store } from "../state/store";
 import { el, option } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
+import { toast } from "./toast";
 
 export function selectionSection(
   project: NonNullable<typeof store.project>,
@@ -264,6 +266,38 @@ export function selectionSection(
       });
       typeField.append(typeSelect);
       section.append(typeField);
+
+      const quantityField = el("label", "field");
+      quantityField.append(el("span", "field-label", "Pieces per object"));
+      const quantityInput = el("input", "input");
+      quantityInput.type = "number";
+      quantityInput.min = "1";
+      quantityInput.max = "100000";
+      quantityInput.step = "1";
+      quantityInput.value = String(countQuantityOf(item));
+      quantityInput.disabled = locked;
+      quantityInput.title = locked
+        ? "Unlock the layer to edit this count."
+        : "How many pieces this one count symbol represents";
+      quantityInput.setAttribute("aria-label", "Pieces represented by this count");
+      quantityInput.addEventListener("change", () => {
+        const value = Number(quantityInput.value);
+        if (!Number.isFinite(value) || value < 1) {
+          quantityInput.value = String(countQuantityOf(item));
+          toast("Count quantity must be one piece or more.", "warning");
+          return;
+        }
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          const quantity = Math.max(1, Math.round(value));
+          if (quantity > 1) target.countQuantity = quantity;
+          else delete target.countQuantity;
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      quantityField.append(quantityInput);
+      section.append(quantityField);
     }
 
     const categoryField = el("label", "field");
@@ -1135,6 +1169,38 @@ function multiSelectionSection(
         });
         countField.append(countSelect);
         section.append(countField);
+
+        const quantities = measurements.map((entry) => countQuantityOf(entry.item));
+        const firstQuantity = quantities[0];
+        const commonQuantity = quantities.every((value) => value === firstQuantity)
+          ? firstQuantity
+          : null;
+        const quantityField = el("label", "field");
+        quantityField.append(el("span", "field-label", "Pieces per object"));
+        const quantityInput = el("input", "input");
+        quantityInput.type = "number";
+        quantityInput.min = "1";
+        quantityInput.max = "100000";
+        quantityInput.step = "1";
+        quantityInput.value = commonQuantity === null ? "" : String(commonQuantity);
+        quantityInput.placeholder =
+          commonQuantity === null ? "Multiple values" : String(commonQuantity);
+        quantityInput.disabled = allLocked;
+        quantityInput.setAttribute("aria-label", "Pieces per object for selected counts");
+        quantityInput.title = allLocked
+          ? "Unlock the selected measurements to edit them."
+          : "Apply one pieces-per-object value to the selected counts";
+        quantityInput.addEventListener("change", () => {
+          const value = Number(quantityInput.value);
+          if (!Number.isFinite(value) || value < 1) {
+            quantityInput.value = commonQuantity === null ? "" : String(commonQuantity);
+            toast("Count quantity must be one piece or more.", "warning");
+            return;
+          }
+          actions.setSelectionCountQuantity(value);
+        });
+        quantityField.append(quantityInput);
+        section.append(quantityField);
       }
 
       if (allLocked) {

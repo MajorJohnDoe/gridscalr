@@ -1,6 +1,6 @@
 import { makeId } from "../../model/calibration";
 import { countQuantityOf, COUNT_GLYPH_LABELS, COUNT_GLYPHS } from "../../model/countSymbols";
-import type { CountGlyph, CountType, CountTypeDef, MarkupItem, Project } from "../../model/types";
+import type { CountGlyph, CountType, CountTypeDef, Project } from "../../model/types";
 
 export const COUNT_TYPE_NAME_MAX_LENGTH = 60;
 export const COUNT_TYPE_ID_MAX_LENGTH = 80;
@@ -168,10 +168,6 @@ export function removeCountType(project: Project, id: CountType): RemoveCountTyp
     }
   }
   return { removed: true, reassigned };
-}
-
-export function countQuantityLabel(item: MarkupItem): string {
-  return `${countQuantityOf(item)} pcs`;
 }
 
 export { countQuantityOf };

@@ -162,6 +162,7 @@ export function itemScaleWarning(item: MarkupItem, project: Project): string | n
 
 export function itemLabel(item: MarkupItem, project: Project): string {
   if (item.label) return item.label;
+  if (item.kind === "count") return countTypeLabel(project, item.countType);
   const metrics = itemMetrics(item, project);
   if (metrics) return metrics.primary;
   if (item.kind === "text") return item.text?.slice(0, 32) || "Text";

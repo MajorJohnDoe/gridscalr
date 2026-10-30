@@ -68,6 +68,7 @@ UI and canvas regressions:
 npx playwright install chromium   # once
 npm run test:ui
 npm run test:canvas
+npm run test:count
 ```
 
 ## Tests and fixtures

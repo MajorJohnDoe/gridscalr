@@ -3139,6 +3139,10 @@ textarea:disabled {
   min-width: 0;
 }
 
+.count-type-glyph {
+  flex: 0 0 112px;
+}
+
 .category-meta {
   flex: 0 0 auto;
   font-size: 11px;

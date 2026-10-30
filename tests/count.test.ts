@@ -90,7 +90,7 @@ describe("count hit testing", () => {
 });
 
 describe("count metrics and labels", () => {
-  it("always measures one piece and names the object type", () => {
+  it("uses the count type as the default label and keeps the quantity in metrics", () => {
     const project = makeProject();
     const item = makeCount();
     const metrics = itemMetrics(item, project);
@@ -99,7 +99,7 @@ describe("count metrics and labels", () => {
     expect(metrics?.secondary).toBe("Door");
     expect(metrics?.unit).toBe("pcs");
     expect(metrics?.rawPoints).toBe(1);
-    expect(itemLabel(item, project)).toBe("1 pcs");
+    expect(itemLabel(item, project)).toBe("Door");
     expect(measurementLabelParts(item, project)).toEqual({
       text: "1 pcs",
       secondary: "Door",

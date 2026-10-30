@@ -38,7 +38,8 @@ before the first launch. Linux and macOS builds can be produced from source.
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
   slopes, polygon volumes from area and depth, polygon areas, quick rectangles
-  and ellipses, and count doors, windows, radiators and fixtures as pieces.
+  and ellipses, and count doors, windows, radiators, fixtures and custom object
+  types as pieces.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision

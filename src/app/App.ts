@@ -223,6 +223,7 @@ export class App {
       setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
       setSelectionLabelSize: (size) => this.setSelectionLabelSize(size),
       setSelectionCountType: (type) => this.setSelectionCountType(type),
+      setSelectionCountQuantity: (quantity) => this.setSelectionCountQuantity(quantity),
       insertImage: () => void this.insertImageFlow(),
       setSelectionImageMode: (mode) => this.setSelectionImageMode(mode),
       setSelectionOpacity: (opacity) => this.setSelectionOpacity(opacity),
@@ -1615,6 +1616,11 @@ export class App {
 
   private setSelectionCountType(type: CountType): void {
     this.bulkEditMeasurementSelection({ countType: type });
+  }
+
+  private setSelectionCountQuantity(quantity: number): void {
+    if (!Number.isFinite(quantity) || quantity < 1) return;
+    this.bulkEditMeasurementSelection({ countQuantity: quantity });
   }
 
   private setSelectionLabelSize(size: number): void {

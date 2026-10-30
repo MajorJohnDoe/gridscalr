@@ -18,6 +18,7 @@ import {
   saveLayerColorDefaults,
 } from "../io/layerDefaults";
 import { normalizeStampPresets } from "../model/stamps";
+import { openCountTypesDialog } from "../features/countTypes/ui";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
 import { showModal } from "./dialogs";
@@ -284,6 +285,23 @@ function quantitiesSection(): HTMLElement {
   return wrap;
 }
 
+function countTypesSection(): HTMLElement {
+  const project = store.project!;
+  const wrap = section(
+    "Count types",
+    "Name the objects you count and choose the glyph used on the plan and in exports.",
+  );
+  const manage = el("button", "btn btn-small", `Manage count types (${project.countTypes.length})`);
+  manage.type = "button";
+  manage.addEventListener("click", () => {
+    void openCountTypesDialog().then(() => {
+      openSettingsDialog();
+    });
+  });
+  wrap.append(manage);
+  return wrap;
+}
+
 function presetEditor(
   values: readonly string[],
   onChange: (next: string[]) => void,
@@ -487,6 +505,7 @@ export function openSettingsDialog(): void {
       labelsSection(),
       displaySection(),
       quantitiesSection(),
+      countTypesSection(),
       stampsSection(),
       layerDefaultsSection(),
       interfaceSection(),

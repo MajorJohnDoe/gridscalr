@@ -207,7 +207,11 @@ Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in t
 
 ### Count
 
-Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object type, and click the plan. Every count is exactly `1 pcs` and carries a built-in vector symbol.
+Choose **Count** (`C`), pick a project count type, and click the plan. Each count is one piece by default and uses the vector glyph assigned to its type. Set **Pieces per object** in Properties when one symbol represents several identical objects, or apply it to a mixed selection in one undoable action.
+
+Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports.
+
+![Count types dialog with built-in and custom types](screenshots/count-types.png)
 
 ### Measurement labels
 

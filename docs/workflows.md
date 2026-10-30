@@ -30,7 +30,7 @@ Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keep
 
 - Use Length for pipe runs, cable routes, skirting and other linear work.
 - Use a rectangle or polygon area for floor, wall or ceiling areas.
-- Use Count for doors, windows, radiators, fixtures and other objects.
+- Use Count for doors, windows, radiators, fixtures and project-specific object types.
 - Use the **Deduct** switch in the context bar for shafts, openings and other areas that should not be ordered.
 
 Drag a measurement label to place it clear of nearby geometry, or drag its corner handle to resize the paper-space label. Right-click an area label and choose **Lock inside area** to keep it inside a small room; the size adapts to the room. **Reset label position** and **Reset label size** in Properties return it to automatic placement and the project size. Measurements capture the page scale when they are created. They stay usable if the page is recalibrated later, unless you deliberately update existing measurements.
@@ -91,11 +91,11 @@ Check the length and area units in **Project settings → Units**. Set the proje
 - Measure gross floor area per room.
 - Add deductions for shafts, openings and other non-orderable areas with the **Deduct** switch in the context bar.
 - Measure wall, facade, roof and ground quantities in their own categories.
-- Count doors, windows, radiators and fixtures as pieces.
+- Count doors, windows, radiators and fixtures as pieces, and use **Pieces per object** when one symbol represents several identical objects.
 
 ![Selected floor area with category, room and deduction controls in Properties](screenshots/hero.png)
 
-Use **Shift**/`Ctrl`/`Cmd`-click or a marquee to select several measurements, then apply one category, room, area mode or count type in a single undoable action. Expand a layer in the Layers tab to check every item it contains; click an item to jump to it on the plan.
+Use **Shift**/`Ctrl`/`Cmd`-click or a marquee to select several measurements, then apply one category, room, area mode, count type or count quantity in a single undoable action. Expand a layer in the Layers tab to check every item it contains; click an item to jump to it on the plan.
 
 ### 4. Review quantities and order settings
 
