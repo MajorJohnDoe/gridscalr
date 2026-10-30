@@ -103,6 +103,13 @@ try {
     "the Diameter shortcut should still work without its own rail button",
   );
   assert.equal(await circleFamily.getAttribute("data-display-tool"), "diameter");
+  const diameterVariants = page.getByRole("button", { name: "Choose variants for Diameter" });
+  await diameterVariants.waitFor();
+  await diameterVariants.click();
+  const contextFamilyMenu = page.getByRole("menu", { name: "Circle & arc tools" });
+  await contextFamilyMenu.waitFor();
+  await page.keyboard.press("Escape");
+  await contextFamilyMenu.waitFor({ state: "detached" });
   const angleFamily = page.locator('.tool-family[data-tool-group="angle-slope"]');
   await angleFamily.click({ button: "right" });
   const angleMenu = page.getByRole("menu", { name: "Angle & slope tools" });
@@ -746,6 +753,25 @@ try {
   await page.locator(".context-tool", { hasText: "Select" }).waitFor();
   await waitForApp(page);
 
+  // Closing with unsaved changes offers Save, Discard and Cancel, with Save focused.
+  assert.equal(await page.evaluate(() => window.__gridscalr.store.dirty), true);
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "Close project" }).click();
+  const unsavedDialog = page.getByRole("dialog");
+  await unsavedDialog.waitFor();
+  assert.equal(await unsavedDialog.getByRole("button", { name: "Save" }).count(), 1);
+  assert.equal(await unsavedDialog.getByRole("button", { name: "Discard changes" }).count(), 1);
+  assert.equal(await unsavedDialog.getByRole("button", { name: "Cancel" }).count(), 1);
+  await page.waitForTimeout(100);
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.textContent),
+    "Save",
+    "the safe Save action should receive focus",
+  );
+  await unsavedDialog.getByRole("button", { name: "Cancel" }).click();
+  await unsavedDialog.waitFor({ state: "detached" });
+  assert.equal(await page.evaluate(() => Boolean(window.__gridscalr.store.project)), true);
+
   const downloadPromise = page.waitForEvent("download");
   await page.keyboard.press("Control+s");
   const download = await downloadPromise;
@@ -801,6 +827,13 @@ try {
   await openCompareProject(page, referencePath);
   const comparePanel = page.locator(".compare-panel");
   assert.match(await comparePanel.innerText(), /CHANGED/i, "expected changed items");
+  await page.getByRole("menuitem", { name: "View" }).click();
+  assert.equal(
+    await page.getByRole("menuitemcheckbox", { name: /Reference view \(same page\)/ }).isDisabled(),
+    true,
+    "the reference-view menu item should be disabled while a comparison is open",
+  );
+  await page.keyboard.press("Escape");
   await comparePanel.getByRole("button", { name: "Overlay" }).click();
   assert.equal(
     await page.locator(".canvas-area.is-compare-overlay").count(),
@@ -895,6 +928,18 @@ try {
   // Page names and page duplication.
   await page.getByRole("button", { name: "Pages", exact: true }).click();
   await page.waitForTimeout(150);
+  await page.locator('.page-card[data-page="2"]').click({ button: "right" });
+  await page.getByRole("button", { name: "Delete page…" }).click();
+  const deletePageDialog = page.getByRole("dialog");
+  await deletePageDialog.waitFor();
+  await page.waitForTimeout(100);
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.textContent),
+    "Cancel",
+    "destructive dialogs should focus Cancel",
+  );
+  await page.keyboard.press("Escape");
+  await deletePageDialog.waitFor({ state: "detached" });
   await page.locator('.page-card[data-page="2"]').click({ button: "right" });
   await page.getByRole("button", { name: "Rename page…" }).click();
   const pageRename = page.getByRole("dialog");

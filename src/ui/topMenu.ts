@@ -197,7 +197,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action("Reference view (same page)", actions.toggleSplitView, {
           shortcut: APP_SHORTCUTS.splitView,
           checked: actions.isSplitViewOpen(),
-          disabled: !hasProject,
+          disabled: !hasProject || actions.hasReferenceSession(),
         }),
         separator(),
         action("Zoom in", actions.zoomIn, {

@@ -105,6 +105,7 @@ import {
   manualScaleDialog,
   messageDialog,
   passwordDialog,
+  unsavedChangesDialog,
 } from "../ui/dialogs";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
@@ -227,6 +228,7 @@ export class App {
         this.updateReferencePane();
       },
       isSplitViewOpen: () => this.splitView.isOpen,
+      hasReferenceSession: () => this.referenceSession !== null,
       openCompare: () => void this.openRevisionReferenceFlow(),
       openDrawingReference: () => void this.openDrawingReferenceFlow(),
       openSearch: () => this.openSearchFlow(),
@@ -752,7 +754,13 @@ export class App {
     try {
       const picked = await pickDrawing();
       if (!picked) return;
-      if (!(await this.confirmDiscardChanges())) return;
+      if (
+        !(await this.confirmUnsavedChanges(
+          "Starting a new project will replace the current project.",
+        ))
+      ) {
+        return;
+      }
       await this.resetProject();
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
@@ -761,14 +769,18 @@ export class App {
   }
 
   private async closeProjectFlow(): Promise<void> {
-    if (!(await this.confirmDiscardChanges())) return;
+    if (!(await this.confirmUnsavedChanges("Closing the project will discard unsaved changes."))) {
+      return;
+    }
     await this.resetProject();
     toast("Project closed.", "info");
   }
 
   private async quitFlow(): Promise<void> {
-    if (!(await this.confirmDiscardChanges())) return;
-    if (store.dirty) await store.clearAutosave();
+    if (!(await this.confirmUnsavedChanges("Quitting GridScalr will discard unsaved changes."))) {
+      return;
+    }
+    await store.clearAutosave();
     if (!isTauri) {
       window.close();
       toast("Close the browser tab to quit.", "info");
@@ -790,7 +802,11 @@ export class App {
         if (this.closeInProgress) return;
         this.closeInProgress = true;
         try {
-          if (!(await this.confirmDiscardChanges())) return;
+          if (
+            !(await this.confirmUnsavedChanges("Closing GridScalr will discard unsaved changes."))
+          ) {
+            return;
+          }
           await store.clearAutosave();
           await this.destroyWindow("The window could not be closed. Close it from the title bar.");
         } finally {
@@ -813,14 +829,12 @@ export class App {
     }
   }
 
-  private async confirmDiscardChanges(): Promise<boolean> {
+  private async confirmUnsavedChanges(message: string): Promise<boolean> {
     if (!store.project || !store.dirty) return true;
-    return confirmDialog(
-      "Discard unsaved changes?",
-      "The current project has unsaved changes. Continuing will discard them.",
-      "Discard changes",
-      { danger: true },
-    );
+    const choice = await unsavedChangesDialog(message);
+    if (choice === "cancel") return false;
+    if (choice === "discard") return true;
+    return this.saveProjectFlow(false);
   }
 
   private async resetProject(): Promise<void> {
@@ -870,16 +884,6 @@ export class App {
     }
   }
 
-  private async confirmReplaceProject(): Promise<boolean> {
-    if (!store.project || !store.dirty) return true;
-    return confirmDialog(
-      "Discard unsaved changes?",
-      "The current project has unsaved changes. Opening another file will replace it and discard those changes.",
-      "Discard changes",
-      { danger: true },
-    );
-  }
-
   private async loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void> {
     const tiff = isTiff(bytes);
     let pdfBytes = bytes;
@@ -921,7 +925,6 @@ export class App {
     const project = store.project;
 
     if (!project) {
-      if (!(await this.confirmReplaceProject())) return;
       const pdf = await this.openDocument(pdfBytes, name);
       if (!pdf) return;
       const pages = await this.chooseImportPages(pdf, name, null);
@@ -1013,7 +1016,11 @@ export class App {
   }
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
-    if (!(await this.confirmReplaceProject())) return;
+    if (
+      !(await this.confirmUnsavedChanges("Opening another project will replace the current one."))
+    ) {
+      return;
+    }
     let project: Project;
     try {
       project = parseProject(text);
@@ -1707,9 +1714,9 @@ export class App {
     this.bulkEditMeasurementSelection({ labelSize: size });
   }
 
-  private async saveProjectFlow(saveAs: boolean): Promise<void> {
+  private async saveProjectFlow(saveAs: boolean): Promise<boolean> {
     const project = store.project;
-    if (!project) return;
+    if (!project) return false;
     try {
       const protectedPaths = sourceDocumentPaths(project, store.projectPath);
       const suggested = suggestedProjectName(project);
@@ -1719,16 +1726,16 @@ export class App {
         const result = await saveTextFile(json, suggested, PROJECT_FILTERS, {
           forbiddenPaths: protectedPaths,
         });
-        if (!result) return;
+        if (!result) return false;
         store.markSaved(null);
         toast("Project downloaded.", "success");
-        return;
+        return true;
       }
 
       let path = store.projectPath;
       if (saveAs || !path) {
         const chosen = await chooseSavePath(suggested, PROJECT_FILTERS);
-        if (!chosen) return;
+        if (!chosen) return false;
         path = chosen;
       }
       assertWritablePath(path, protectedPaths);
@@ -1743,8 +1750,10 @@ export class App {
         at: new Date().toISOString(),
       });
       toast("Project saved.", "success");
+      return true;
     } catch (error) {
       await messageDialog("Could not save project", errorMessage(error), "warning");
+      return false;
     }
   }
 

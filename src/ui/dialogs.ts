@@ -153,11 +153,34 @@ export function showModal(options: {
     };
     document.addEventListener("keydown", onKeyDown);
 
-    const focusable = modal.querySelector<HTMLElement>(
-      "input, textarea, select, button.btn-primary",
+    const input = [...modal.querySelectorAll<HTMLElement>("input, textarea, select")].find(
+      (element) => !element.hasAttribute("disabled"),
     );
-    requestAnimationFrame(() => focusable?.focus());
+    const primary = footer.querySelector<HTMLButtonElement>("button.btn-primary:not([disabled])");
+    const safe = [...footer.querySelectorAll<HTMLButtonElement>("button.btn:not([disabled])")].find(
+      (button) => !button.classList.contains("btn-danger"),
+    );
+    // Destructive primary actions must not receive focus by default.
+    const target =
+      input ?? (primary && !primary.classList.contains("btn-danger") ? primary : safe) ?? primary;
+    requestAnimationFrame(() => target?.focus());
   });
+}
+
+export type UnsavedChangesChoice = "save" | "discard" | "cancel";
+
+export function unsavedChangesDialog(message: string): Promise<UnsavedChangesChoice> {
+  const body = el("div");
+  body.append(el("p", "modal-message", message));
+  return showModal({
+    title: "Unsaved changes",
+    body,
+    actions: [
+      { label: "Cancel", value: "cancel" },
+      { label: "Discard changes", value: "discard", danger: true },
+      { label: "Save", value: "save", primary: true },
+    ],
+  }).then((value) => (value === "save" || value === "discard" ? value : "cancel"));
 }
 
 export function confirmDialog(
