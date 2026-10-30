@@ -1,4 +1,4 @@
-import { createWorker, type Worker } from "tesseract.js";
+import type { Worker } from "tesseract.js";
 import { localPageNumber, projectDocumentForPage } from "../model/documents";
 import type { OcrPage, OcrWord, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
@@ -18,19 +18,23 @@ function assetUrl(path: string): string {
 
 function getWorker(): Promise<Worker> {
   if (!workerPromise) {
-    workerPromise = createWorker(OCR_LANGUAGES, 1, {
-      workerPath: assetUrl("tesseract/worker.min.js"),
-      corePath: assetUrl("tesseract/tesseract-core-simd.wasm.js"),
-      langPath: assetUrl("tessdata/"),
-      gzip: true,
-      workerBlobURL: false,
-      logger: (message) => {
-        activeProgress?.(message.status, message.progress);
-      },
-    }).catch((error) => {
-      workerPromise = null;
-      throw error;
-    });
+    workerPromise = import("tesseract.js")
+      .then(({ createWorker }) =>
+        createWorker(OCR_LANGUAGES, 1, {
+          workerPath: assetUrl("tesseract/worker.min.js"),
+          corePath: assetUrl("tesseract/tesseract-core-simd.wasm.js"),
+          langPath: assetUrl("tessdata/"),
+          gzip: true,
+          workerBlobURL: false,
+          logger: (message) => {
+            activeProgress?.(message.status, message.progress);
+          },
+        }),
+      )
+      .catch((error) => {
+        workerPromise = null;
+        throw error;
+      });
   }
   return workerPromise;
 }

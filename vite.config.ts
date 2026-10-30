@@ -129,7 +129,9 @@ export default defineConfig({
   },
   build: {
     target: ["es2022", "chrome120", "safari16"],
-    sourcemap: true,
+    // Production builds do not ship source maps. Set GRIDSCALR_SOURCEMAPS=1
+    // when a debuggable build is needed.
+    sourcemap: process.env.GRIDSCALR_SOURCEMAPS === "1",
   },
   test: {
     environment: "node",

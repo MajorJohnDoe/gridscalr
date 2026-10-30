@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.14.0`.
+- Current app version: `0.14.1`.
 - Current project-file schema: `19`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -311,6 +311,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.13.2:** complete — Radius/Diameter/Arc and Angle/Slope share rail buttons with long-press/right-click family flyouts, Symbol gains a distinct sign icon, and new measurement layers default to signal red with local app-level layer colour defaults. No schema change; the schema remains v19.
 - **0.13.3:** complete — release hardening adds Save/Discard/Cancel close handling, safe dialog focus, automatic Windows checksums, context-bar family switching, a reference-view menu state, clearer layer-default copy and the documented Tauri/GTK glib advisory. No schema change; the schema remains v19.
 - **0.14.0:** complete — internal refactors extract the reference/comparison controller and canvas draft renderer, share the tool-flyout mount helper, add ESLint with type-aware CI linting and direct dialog/flyout/preview-colour tests, and record ADR 0001 for feature modules. No schema change; the schema remains v19.
+- **0.14.1:** complete — OCR, PDF exports, XLSX and TIF import load on demand; production builds no longer ship source maps. No schema change; the schema remains v19.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

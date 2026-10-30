@@ -3,13 +3,10 @@ import type { DrawingExportOptions } from "../model/export";
 import type { Project } from "../model/types";
 import { serializeProject, sourceDocumentPaths } from "../io/projectFile";
 import { saveBinaryFile, saveTextFile } from "../io/platform";
-import { exportProjectPdf } from "../pdf/pdfExport";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
-import { exportQuantityReportPdf } from "../pdf/reportPdf";
 import { serializeQuantityCsv } from "../report/csv";
 import { serializeMarkupCsv } from "../report/markupCsv";
 import { buildQuantityReport } from "../report/reportModel";
-import { exportQuantityWorkbook } from "../report/xlsx";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 
@@ -59,6 +56,7 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
     }
 
     if (kind === "quantity-xlsx") {
+      const { exportQuantityWorkbook } = await import("../report/xlsx");
       const report = buildQuantityReport(project);
       const bytes = exportQuantityWorkbook(project, report);
       const path = await saveBinaryFile(
@@ -73,6 +71,7 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
     }
 
     if (kind === "quantity-pdf") {
+      const { exportQuantityReportPdf } = await import("../pdf/reportPdf");
       const bytes = await exportQuantityReportPdf(buildQuantityReport(project));
       const path = await saveBinaryFile(
         bytes,
@@ -99,6 +98,7 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
       try {
         const options = await context.chooseDrawingExport(project);
         if (!options) return;
+        const { exportProjectPdf } = await import("../pdf/pdfExport");
         const bytes = await exportProjectPdf(project, renderer, options);
         const path = await saveBinaryFile(
           bytes,

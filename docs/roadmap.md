@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.14.0** · Project-file schema: **19**
+Current version: **0.14.1** · Project-file schema: **19**
 
 ## Product principles
 
@@ -53,13 +53,14 @@ milestone:
 | 0.13.2 | Shared Circle & arc and Angle & slope tool families, a distinct symbol icon, and signal-red default measurement layers with local layer colour defaults | Complete | v19 |
 | 0.13.3 | Release hardening: Save/Discard/Cancel, safe dialog focus, automated checksums, context-bar family switching and reference menu state | Complete | v19 |
 | 0.14.0 | Internal refactors: reference/comparison controller, canvas draft renderer, shared flyout mount, ESLint in CI, direct UI tests and ADR 0001 | Complete | v19 |
+| 0.14.1 | Lazy-loaded OCR, PDF exports, XLSX and TIF import; production source maps removed | Complete | v19 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed feature milestone after 0.14.0. The candidates below are ordered by
+There is no committed feature milestone after 0.14.1. The candidates below are ordered by
 expected value, not scheduled:
 
 1. **Custom count types** ([#22](https://github.com/MajorJohnDoe/gridscalr/issues/22)) as the first feature module under `src/features/countTypes/`, with count quantities greater than one piece per object.
@@ -111,7 +112,7 @@ anonymous `TODO` comments in code.
 - Split `CanvasView.ts` further into label rendering, annotation drawing and pointer interaction modules.
 - Extract project save/open flows from `App.ts` into focused `src/app/` modules.
 - Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.
-- Lazy-load OCR and PDF.js-heavy code paths to reduce the main bundle and improve startup.
+- Lazy-load the PDF.js renderer so the welcome screen and project shell do not parse the PDF runtime before a drawing is opened.
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
 ## Project operations
