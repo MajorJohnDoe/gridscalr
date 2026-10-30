@@ -1,7 +1,7 @@
 {
   "name": "gridscalr",
   "private": true,
-  "version": "0.13.2",
+  "version": "0.13.3",
   "description": "Local-first PDF plan viewer with calibration, measurement and layered markup tools.",
   "license": "MIT",
   "author": "MajorJohnDoe",

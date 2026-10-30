@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.13.2** · Project-file schema: **19**
+Current version: **0.13.3** · Project-file schema: **19**
 
 ## Product principles
 
@@ -51,23 +51,23 @@ milestone:
 | 0.13.0 | Reference pane with same-page, revision and raw PDF drawing sources; curve, angle and slope labels placed outside their geometry | Complete | v19 |
 | 0.13.1 | Slope preview matches the saved label, volume depth dialog and volume label locking, level reference panes and a collapsible comparison panel | Complete | v19 |
 | 0.13.2 | Shared Circle & arc and Angle & slope tool families, a distinct symbol icon, and signal-red default measurement layers with local layer colour defaults | Complete | v19 |
+| 0.13.3 | Release hardening: Save/Discard/Cancel, safe dialog focus, automated checksums, context-bar family switching and reference menu state | Complete | v19 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.13.2. The candidates below are ordered by
+There is no committed milestone after 0.13.3. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **Custom count types** and count quantities greater than one piece per object.
-3. **Semantic PDF vector comparison** as a separate spike. It needs extraction and
-   indexing of PDF operators and must not block other work.
-4. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF
-   scans, if users need them often enough to justify the dependency.
-5. **Additional OCR languages** if users need them, with the matching traineddata
-   bundle and license review.
-6. **macOS and Linux release builds** next to the Windows installers.
+1. **Independent page navigation in the reference pane**, so the primary and reference views can inspect different sheets.
+2. **Custom count types** and count quantities greater than one piece per object.
+3. **Snap directly to PDF vector geometry** as a separate spike. It needs extraction and indexing of drawing paths.
+4. **Semantic PDF vector comparison** as a separate spike. It needs extraction and indexing of PDF operators and must not block other work.
+5. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans, if users need them often enough to justify the dependency.
+6. **Additional OCR languages** if users need them, with the matching traineddata bundle and license review.
+7. **macOS and Linux release builds** next to the Windows installers.
 
 ## Deferred by design
 
@@ -100,6 +100,21 @@ full list.
 | OCR engine | Bundled Tesseract.js with English and Swedish models. Additional languages require new traineddata assets and license review. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
 | macOS and Linux release pipelines | Buildable from source; no automated artifacts yet. |
+
+## Technical debt and post-release refactors
+
+These are internal improvements, not user-facing promises. Concrete items should
+become GitHub issues with the `tech-debt` or `refactor` label rather than
+anonymous `TODO` comments in code.
+
+- Split `CanvasView.ts` into draft rendering, label rendering, annotation drawing and pointer interaction modules.
+- Extract reference/comparison flows and project save/open flows from `App.ts` into focused `src/app/` modules.
+- Share one flyout-mount helper in `toolFlyouts.ts` instead of duplicating positioning and dismissal logic.
+- Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.
+- Add ESLint alongside the strict TypeScript and Prettier checks.
+- Lazy-load OCR and PDF.js-heavy code paths to reduce the main bundle and improve startup.
+- Add direct regression coverage for preview colours, dialog focus defaults, family-flyout keyboard access and layer-default persistence.
+- Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared.
 
 ## Project operations
 
