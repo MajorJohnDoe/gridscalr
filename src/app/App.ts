@@ -42,7 +42,6 @@ import {
 } from "../model/documents";
 import { base64ToBytes } from "../io/base64";
 import { isTiff } from "../io/tiff";
-import { createTiffDocumentRef, tiffToPdf } from "../io/tiffImport";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { resolveSelection } from "../model/selection";
@@ -799,15 +798,16 @@ export class App {
     let dpiWarning = false;
 
     if (tiff) {
+      const tiffModule = await import("../io/tiffImport");
       let conversion;
       try {
-        conversion = await tiffToPdf(bytes);
+        conversion = await tiffModule.tiffToPdf(bytes);
       } catch (error) {
         await messageDialog("Could not import TIF", errorMessage(error), "warning");
         return;
       }
       const hash = await this.hashBytes(bytes);
-      documentRef = createTiffDocumentRef({
+      documentRef = tiffModule.createTiffDocumentRef({
         name,
         path,
         sha256: hash,

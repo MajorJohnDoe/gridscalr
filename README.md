@@ -141,6 +141,7 @@ Production builds:
 
 ```bash
 npm run build                        # type-check and build the Vite frontend
+GRIDSCALR_SOURCEMAPS=1 npm run build # frontend build with source maps
 npm run tauri build                  # desktop app and platform bundles
 npm run tauri build -- --no-bundle   # desktop binary only
 ```
@@ -200,7 +201,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.14.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.14.1_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a

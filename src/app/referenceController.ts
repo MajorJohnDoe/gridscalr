@@ -10,7 +10,6 @@ import { pickPdf, pickProject, saveBinaryFile } from "../io/platform";
 import { sourceDocumentPaths } from "../io/projectFile";
 import { totalPageCount } from "../model/documents";
 import type { PageSize } from "../model/types";
-import { exportComparisonPdf } from "../pdf/comparePdf";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import { ComparePanel } from "../ui/comparePanel";
@@ -384,6 +383,7 @@ export class ReferenceController {
     const renderer = this.options.getRenderer();
     if (!project || !session || !renderer) return;
     try {
+      const { exportComparisonPdf } = await import("../pdf/comparePdf");
       const bytes = await exportComparisonPdf({
         current: project,
         referenceName: session.name,
