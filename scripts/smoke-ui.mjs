@@ -390,11 +390,15 @@ try {
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();
   const locationDialog = page.getByRole("dialog");
-  const locationInputs = locationDialog.locator("input");
-  await locationInputs.nth(0).fill("Building A");
-  await locationInputs.nth(1).fill("Floor 2");
-  assert.equal(await locationInputs.nth(0).inputValue(), "Building A");
-  assert.equal(await locationInputs.nth(1).inputValue(), "Floor 2");
+  await locationDialog.evaluate((dialog) => {
+    // Set values directly; browser autofill in CI can merge consecutive fills
+    // into the first input when the fields share a datalist.
+    const inputs = dialog.querySelectorAll("input");
+    inputs[0].value = "Building A";
+    inputs[0].dispatchEvent(new Event("input", { bubbles: true }));
+    inputs[1].value = "Floor 2";
+    inputs[1].dispatchEvent(new Event("input", { bubbles: true }));
+  });
   await locationDialog.getByRole("button", { name: "Apply" }).click();
   await locationDialog.waitFor({ state: "detached" });
   assert.equal(
