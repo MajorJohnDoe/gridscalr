@@ -73,17 +73,17 @@ const shots = [
   },
   {
     file: "split-view.png",
-    title: "Synchronized split view",
-    alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom.",
+    title: "Reference view",
+    alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing.",
     description:
-      "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place.",
+      "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place. Switch its source between the same page, a saved revision or a raw PDF drawing.",
   },
   {
     file: "compare.png",
-    title: "Revision comparison",
+    title: "Revision or drawing comparison",
     alt: "GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items.",
     description:
-      "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF.",
+      "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF. A raw PDF drawing reference keeps the visuals and export without a markup diff.",
   },
   {
     file: "search.png",

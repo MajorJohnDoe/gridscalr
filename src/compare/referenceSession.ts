@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { base64ToBytes } from "../io/base64";
-import { readFileBytes, pathExists } from "../io/platform";
+import { readFileBytes, pathExists, sha256Hex } from "../io/platform";
 import { parseProject, resolveRelativePath, sourceDocumentPaths } from "../io/projectFile";
 import { documentPageMaps, totalPageCount } from "../model/documents";
 import type { PageSize, Project } from "../model/types";
@@ -24,6 +24,7 @@ export interface PdfReferenceSession {
   kind: "pdf";
   documentName: string;
   path: string | null;
+  sha256: string;
   name: string;
   pageCount: number;
   renderer: PdfRenderer;
@@ -152,6 +153,7 @@ export async function openPdfReferenceSession(
   name: string,
   path: string | null,
 ): Promise<PdfReferenceSession> {
+  const sha256 = await sha256Hex(bytes);
   const document = await loadPdfDocument(bytes);
   if (document.numPages < 1) {
     await document.loadingTask.destroy().catch(() => undefined);
@@ -162,6 +164,7 @@ export async function openPdfReferenceSession(
     kind: "pdf",
     documentName: name,
     path,
+    sha256,
     name,
     pageCount: document.numPages,
     renderer,

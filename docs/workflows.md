@@ -119,12 +119,14 @@ Reports always cover every page and every category. Dialog filters only affect t
 
 ### 6. Compare the revision before ordering
 
-When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare revisions…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project.
+When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare with revision…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project. You can also press `Ctrl/Cmd+Shift+2` to open **View → Reference view (same page)**, choose **Revision** in the pane toolbar and use **Open…**.
 
 - Use **Side by side** to check the geometry, or **Overlay** and the opacity slider to line up the revisions.
 - Review **Changed**, **Added** and **Removed** in the panel. Click a row to jump to the item.
 - Read the warnings for page-count, drawing-name and scale differences before trusting the comparison.
 - Choose **Export PDF** for a review file with page visuals, warnings and the difference table.
+
+If only a new PDF drawing arrived, choose **File → Compare with drawing…** instead. A raw PDF reference still supports side-by-side, overlay, opacity and the comparison PDF with page visuals, but it has no markup list or difference table.
 
 The reference is not merged and neither drawing is modified. Close the comparison when the review is done, or save the current project as the new working revision.
 

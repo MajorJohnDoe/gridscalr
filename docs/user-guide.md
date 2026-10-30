@@ -31,15 +31,21 @@ GridScalr uses a compact, drawing-first layout.
 
 Panels remember their width, height and collapsed state between sessions.
 
-## Split view
+## Reference view
 
-**View → Split view** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Both panes show the same page and stay synchronized when you pan, zoom or change pages. Drag the divider to change how much room each pane gets, and use the mouse wheel over either pane to zoom.
+**View → Reference view (same page)** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Its toolbar selects the source:
 
-The reference pane is for comparison only: selection, editing, layers and undo belong to the primary canvas. Closing split view does not change the drawing, the project or the undo history, and the split layout is not stored in the project file.
+- **Same page** mirrors the current page. Both panes stay synchronized when you pan, zoom or change pages. The bar shows a short hint explaining that this is not a second drawing.
+- **Revision** compares a saved `.gridscalr` project. Choose **File → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
+- **Drawing** compares a raw PDF drawing. Choose **File → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
 
-## Compare revisions
+The bar also names the loaded reference and shows its page count. **Open…** replaces the reference for the current source, and the close button restores the primary canvas. Drag the divider to change how much room each pane gets, and use the mouse wheel over either pane to zoom.
 
-**File → Compare revisions…** opens another `.gridscalr` file as a session reference. The reference is never merged into the current project, and neither source drawing is modified. The comparison appears in a panel beside the canvas:
+The reference pane is for comparison only: selection, editing, layers and undo belong to the primary canvas. Closing the pane does not change the drawing, the project or the undo history, and the reference state is not stored in the project file.
+
+## Compare a revision or drawing
+
+A revision reference opens a comparison panel beside the canvas:
 
 - **Side by side** shows the current and reference page next to each other with the same pan, zoom and page.
 - **Overlay** stacks the reference over the current drawing. Use **Opacity** to make the reference lighter or heavier; white page areas are transparent in this mode.
@@ -49,7 +55,7 @@ The reference pane is for comparison only: selection, editing, layers and undo b
 
 The comparison compares measurements, drawings, symbols and their properties. The visual pages show the source drawings; the **Differences** table lists the markup changes. It is not a semantic diff of the PDF's raw vector operators. Edits made while comparing refresh the list after a short pause, and **Refresh** forces it immediately.
 
-**Export PDF** writes `<project>-comparison.pdf` with a summary, page-by-page visuals, warnings and the difference table. The export refuses to overwrite either project's source drawings. Close the comparison with **Close comparison**; the split-view layout is restored if it was open before.
+A **Drawing** reference is a raw PDF, so it has no markup list. The panel still shows the drawing name and page count, keeps **Side by side**, **Overlay** and **Opacity**, and explains that no markup comparison is available. **Export PDF** writes `<project>-comparison.pdf` with a summary and page-by-page visuals. For a revision it also includes warnings and the difference table. The export refuses to overwrite any source drawing. Close the comparison with **Close comparison**; the reference pane returns to the same-page layout if it was open before.
 
 ## Search text
 
@@ -175,11 +181,11 @@ Radius, diameter and arc measurements use the same category, room, label, visibi
 
 ### Angle
 
-Choose **Angle** (`E`), then click the first ray, the vertex, and the second ray. The label shows the angle in degrees. The two rays and the angle arc are drawn on the plan; the three points stay editable.
+Choose **Angle** (`E`), then click the first ray, the vertex, and the second ray. The label shows the angle in degrees. The two rays and the angle arc are drawn on the plan; the three points stay editable. Angles are dimensionless, so they do not require a calibrated page.
 
 ### Slope
 
-Choose **Slope** (`J`) and click the start and end of the run. The value is the drawn grade: rise over run, shown as a percentage, with the corresponding angle as secondary text. This is a geometric slope from the two points, not an elevation input.
+Choose **Slope** (`J`) and click the start and end of the run. The value is the drawn grade: rise over run, shown as a percentage, with the corresponding angle as secondary text. This is a geometric slope from the two points, not an elevation input. Slope is dimensionless and does not require a calibrated page.
 
 ### Volume
 
@@ -201,7 +207,7 @@ Choose **Count** (`C`), pick a door, window, radiator, fixture, or other object 
 
 ### Measurement labels
 
-Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** in Properties or the label's context menu returns it to the project size. An automatic area label is centred and shrinks down to 4 pt if needed to stay inside the area. Only when even the minimum size does not fit does it move outside with a leader line.
+Labels are paper-space annotations: the size on the canvas matches the exported PDF at every zoom. Select a measurement and drag the square handle at the label's lower-right corner to resize it, or set **Properties → Label size** from 4 to 16 pt. **Reset label size** in Properties or the label's context menu returns it to the project size. An automatic area label is centred and shrinks down to 4 pt if needed to stay inside the area. Only when even the minimum size does not fit does it move outside with a leader line. Radius, diameter, arc, angle and slope labels are always placed outside their geometry with a leader line, so the value never covers the measured curve, ray or line.
 
 Right-click an area label and choose **Lock inside area**, then **Center**, **Top left**, **Top right**, **Bottom right** or **Bottom left**. The label moves inside the measured area and uses the largest size that fits, up to the project or per-measurement size. This is useful on A4 sheets, where a 6 pt label would otherwise cover most of the room. Drag the label to release the lock and keep the fitted size, choose **Release** in the same menu, or use **Release inside area** in Properties.
 

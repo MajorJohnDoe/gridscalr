@@ -52,11 +52,13 @@ before the first launch. Linux and macOS builds can be produced from source.
 - Review gross, deduction, net, waste and order quantities per category,
   room and page, then export a CSV, an Excel workbook or a print-friendly PDF
   report.
-- Open a synchronized split view to keep a second, read-only reference of the
-  same page beside the primary canvas. Pan, zoom and page changes stay in step.
+- Open a synchronized reference pane showing the same page, a saved revision or
+  a raw PDF drawing beside the primary canvas. Pan, zoom and page changes stay in
+  step.
 - Compare a saved revision in side-by-side or overlay mode, review changed,
   added and removed markups, and export a comparison PDF without touching either
-  source drawing.
+  source drawing. A PDF drawing reference supports the same visuals and export
+  without a markup diff.
 - Search every page, run local English/Swedish OCR on scanned sheets, jump to a
   highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
@@ -85,15 +87,15 @@ calculated from item data.
 | ![Docked Markups list with a saved view, building/floor/room groups and configurable columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The same guides ship inside the app under **Help**. |
 
-| Synchronized split view | Excel handoff |
+| Reference pane | Excel handoff |
 | --- | --- |
 | ![Primary canvas and a read-only reference pane showing the same plan at the same pan and zoom](docs/screenshots/split-view.png) | **Procurement workbook.** Export summary, category, room, page, markup and source-notes sheets from the same takeoff data. |
-| **Compare while you work.** The reference pane follows every pan, zoom and page change and never edits the project. | **No second source of truth.** The XLSX workbook is generated on demand from the measurements. |
+| **Compare while you work.** Choose the same page, a revision or a PDF drawing; the reference follows every pan, zoom and page change and never edits the project. | **No second source of truth.** The XLSX workbook is generated on demand from the measurements. |
 
-| Revision comparison | Full-text search |
+| Revision or drawing comparison | Full-text search |
 | --- | --- |
 | ![Current plan overlaid with a reference revision and a comparison panel listing changed, added and removed items](docs/screenshots/compare.png) | ![Search panel with an Office query and a highlighted match on the drawing](docs/screenshots/search.png) |
-| **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. | **Find text fast.** Search PDF text layers or run local OCR on scans, then highlight the exact result on the plan. |
+| **Review before you act.** Switch between side-by-side and overlay, follow warnings, and jump to every changed item. A PDF drawing reference compares the visuals only. | **Find text fast.** Search PDF text layers or run local OCR on scans, then highlight the exact result on the plan. |
 | **No merge, no source changes.** The reference stays session-only and both drawings remain read-only. | **Local index.** PDF text is indexed in memory; OCR words are stored in the project for reuse. |
 
 More screens, including the Markups table, the symbol library, revision
@@ -198,7 +200,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.12.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.13.0_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
