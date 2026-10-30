@@ -187,6 +187,16 @@ describe("curve, angle and slope label placement", () => {
       Math.hypot(slope.box.x + slope.box.width / 2 - 350, slope.box.y + slope.box.height / 2 - 310),
     ).toBeLessThan(80);
 
+    const slopeWithDegrees = previewLabelLayout(
+      slopeItem,
+      "10.0%",
+      { pageSize: PAGE, measure },
+      "#35c2a1",
+      "29.6°",
+    );
+    expect(slopeWithDegrees.secondary).toBe("29.6°");
+    expect(slopeWithDegrees.box.height).toBeGreaterThan(slope.box.height);
+
     const angleItem = {
       kind: "angle",
       points: [
@@ -202,6 +212,29 @@ describe("curve, angle and slope label placement", () => {
     const geometry = angleGeometry(angleItem)!;
     expect(segmentIntersectsBox(geometry.vertex, geometry.start, angle)).toBe(false);
     expect(segmentIntersectsBox(geometry.vertex, geometry.end, angle)).toBe(false);
+  });
+
+  it("locks a volume label inside its measured area like an area label", () => {
+    const { project, items } = projectWith([
+      {
+        kind: "volume",
+        labelFit: "bottom-right",
+        depth: 2,
+        points: [
+          { x: 200, y: 200 },
+          { x: 360, y: 200 },
+          { x: 360, y: 320 },
+          { x: 200, y: 320 },
+        ],
+      },
+    ]);
+    const layout = layoutFor(project, items[0]);
+
+    expect(layout.placement).toBe("center");
+    expect(layout.box.x).toBeGreaterThanOrEqual(200);
+    expect(layout.box.y).toBeGreaterThanOrEqual(200);
+    expect(layout.box.x + layout.box.width).toBeLessThanOrEqual(360);
+    expect(layout.box.y + layout.box.height).toBeLessThanOrEqual(320);
   });
 
   it("does not ask for a page scale on dimensionless measurements", () => {

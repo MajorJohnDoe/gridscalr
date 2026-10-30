@@ -241,8 +241,9 @@ export function previewLabelLayout(
   text: string,
   options: LabelLayoutOptions,
   color = "#35c2a1",
+  secondary?: string,
 ): LabelLayout {
-  return layoutLabel(measurementLabelSource(item, { text }, color), options, []);
+  return layoutLabel(measurementLabelSource(item, { text, secondary }, color), options, []);
 }
 
 function searchInside(

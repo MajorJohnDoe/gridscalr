@@ -605,11 +605,27 @@ try {
   await clickPage({ x: 600, y: 780 });
   await page.keyboard.press("Enter");
   await page.waitForTimeout(120);
+  const volumeDepth = page.getByRole("dialog").getByLabel("Volume depth");
+  await volumeDepth.waitFor();
+  await volumeDepth.fill("2.5");
+  await page.getByRole("dialog").getByRole("button", { name: "Apply" }).click();
+  await page.getByRole("dialog").waitFor({ state: "detached" });
   const volumeId = (await itemIds()).find((id) => !beforeVolume.includes(id));
   assert.ok(volumeId, "a volume measurement should be created");
   const volume = await itemById(volumeId);
   assert.equal(volume.kind, "volume");
-  assert.equal(volume.depth, 1);
+  assert.equal(volume.depth, 2.5);
+
+  // Double-clicking the volume asks for a new depth.
+  await page.keyboard.press("v");
+  const volumeCenter = await mousePoint({ x: 650, y: 740 });
+  await page.mouse.dblclick(volumeCenter.x, volumeCenter.y);
+  const editDepth = page.getByRole("dialog").getByLabel("Volume depth");
+  await editDepth.waitFor();
+  await editDepth.fill("3.2");
+  await page.getByRole("dialog").getByRole("button", { name: "Apply" }).click();
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+  assert.equal((await itemById(volumeId)).depth, 3.2);
 
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
