@@ -6,7 +6,7 @@ documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.13.0** · Project-file schema: **19**
+Current version: **0.13.1** · Project-file schema: **19**
 
 ## Product principles
 
@@ -49,13 +49,14 @@ milestone:
 | 0.11.0 | Radius, diameter and three-point arc measurements with labels, quantities and PDF export | Complete | v18 |
 | 0.12.0 | Angle, slope and volume measurements with their own quantity units and depth input | Complete | v19 |
 | 0.13.0 | Reference pane with same-page, revision and raw PDF drawing sources; curve, angle and slope labels placed outside their geometry | Complete | v19 |
+| 0.13.1 | Slope preview matches the saved label, volume depth dialog and volume label locking, level reference panes and a collapsible comparison panel | Complete | v19 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Next
 
-There is no committed milestone after 0.13.0. The candidates below are ordered by
+There is no committed milestone after 0.13.1. The candidates below are ordered by
 expected value, not scheduled:
 
 1. **Custom count types** and count quantities greater than one piece per object.

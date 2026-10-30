@@ -71,26 +71,26 @@ download. The README explains why the build is not code-signed.
 ## 6. Publish
 
 ```bash
-git tag v0.13.0
-git push origin v0.13.0
-gh release create v0.13.0 \
+git tag v0.13.1
+git push origin v0.13.1
+gh release create v0.13.1 \
   --repo MajorJohnDoe/gridscalr \
-  --title "GridScalr 0.13.0" \
+  --title "GridScalr 0.13.1" \
   --notes-file release-notes.md \
   path/to/gridscalr.exe \
-  path/to/GridScalr_0.13.0_x64-setup.exe \
-  path/to/GridScalr_0.13.0_x64_en-US.msi \
+  path/to/GridScalr_0.13.1_x64-setup.exe \
+  path/to/GridScalr_0.13.1_x64_en-US.msi \
   path/to/SHA256SUMS.txt
 ```
 
-Mark the newest release as latest (`gh release edit v0.13.0 --latest`) if an older
+Mark the newest release as latest (`gh release edit v0.13.1 --latest`) if an older
 tag was published afterwards.
 
 ## 7. Verify
 
 ```bash
 gh release list --repo MajorJohnDoe/gridscalr
-gh release view v0.13.0 --repo MajorJohnDoe/gridscalr
+gh release view v0.13.1 --repo MajorJohnDoe/gridscalr
 ```
 
 Open the release page, check that the README download link resolves to it, and
