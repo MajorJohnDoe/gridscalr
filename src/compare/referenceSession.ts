@@ -1,14 +1,17 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { base64ToBytes } from "../io/base64";
-import { readFileBytes, pathExists } from "../io/platform";
+import { readFileBytes, pathExists, sha256Hex } from "../io/platform";
 import { parseProject, resolveRelativePath, sourceDocumentPaths } from "../io/projectFile";
 import { documentPageMaps, totalPageCount } from "../model/documents";
 import type { PageSize, Project } from "../model/types";
 import { loadPdfDocument, PdfRenderer } from "../pdf/pdfRenderer";
 
-export interface ReferenceSession {
+export interface ProjectReferenceSession {
+  kind: "project";
   project: Project;
   projectPath: string | null;
+  name: string;
+  pageCount: number;
   renderer: PdfRenderer;
   /** Lazily filled by the comparison pane. */
   pageSizes: Map<number, PageSize>;
@@ -16,6 +19,23 @@ export interface ReferenceSession {
   sourcePaths: string[];
   destroy: () => Promise<void>;
 }
+
+export interface PdfReferenceSession {
+  kind: "pdf";
+  documentName: string;
+  path: string | null;
+  sha256: string;
+  name: string;
+  pageCount: number;
+  renderer: PdfRenderer;
+  /** Lazily filled by the comparison pane. */
+  pageSizes: Map<number, PageSize>;
+  /** The reference file itself must stay read-only during an export. */
+  sourcePaths: string[];
+  destroy: () => Promise<void>;
+}
+
+export type ReferenceSession = ProjectReferenceSession | PdfReferenceSession;
 
 function referenceSourceCandidates(
   document: Project["documents"][number],
@@ -37,7 +57,7 @@ function referenceSourceCandidates(
 export async function openReferenceSession(
   text: string,
   projectPath: string | null,
-): Promise<ReferenceSession> {
+): Promise<ProjectReferenceSession> {
   const project = parseProject(text);
   if (totalPageCount(project.documents) < 1) {
     throw new Error("The reference project has no pages.");
@@ -96,8 +116,11 @@ export async function openReferenceSession(
 
     const renderer = new PdfRenderer(loaded, documentPageMaps(project.documents));
     return {
+      kind: "project",
       project,
       projectPath,
+      name: project.name,
+      pageCount: totalPageCount(project.documents),
       renderer,
       pageSizes: new Map(),
       sourcePaths: sourceDocumentPaths(project, projectPath),
@@ -119,4 +142,40 @@ export async function openReferenceSession(
     }
     throw error;
   }
+}
+
+/**
+ * Opens a raw PDF drawing as a session-only reference. It has no markups or
+ * diff, but supports side-by-side, overlay and the comparison PDF.
+ */
+export async function openPdfReferenceSession(
+  bytes: Uint8Array,
+  name: string,
+  path: string | null,
+): Promise<PdfReferenceSession> {
+  const sha256 = await sha256Hex(bytes);
+  const document = await loadPdfDocument(bytes);
+  if (document.numPages < 1) {
+    await document.loadingTask.destroy().catch(() => undefined);
+    throw new Error("The reference drawing has no pages.");
+  }
+  const renderer = new PdfRenderer([document]);
+  return {
+    kind: "pdf",
+    documentName: name,
+    path,
+    sha256,
+    name,
+    pageCount: document.numPages,
+    renderer,
+    pageSizes: new Map(),
+    sourcePaths: path ? [path] : [],
+    destroy: async () => {
+      try {
+        await renderer.destroy();
+      } catch {
+        // The document may already be closed.
+      }
+    },
+  };
 }

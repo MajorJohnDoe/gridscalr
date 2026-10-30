@@ -194,11 +194,11 @@ export async function makeReferenceProject() {
   return path;
 }
 
-/** Opens the revision comparison through File → Compare revisions…. */
+/** Opens the revision comparison through File → Compare with revision…. */
 export async function openCompareProject(page, path) {
   await page.getByRole("menuitem", { name: "File" }).click();
   const chooserPromise = page.waitForEvent("filechooser");
-  await page.getByRole("menuitem", { name: "Compare revisions…" }).click();
+  await page.getByRole("menuitem", { name: "Compare with revision…" }).click();
   const chooser = await chooserPromise;
   await chooser.setFiles(path);
   await page.locator(".compare-panel").waitFor();

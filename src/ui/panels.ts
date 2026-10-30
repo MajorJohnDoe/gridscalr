@@ -15,6 +15,7 @@ export interface PanelActions {
   openPdf: () => void;
   openProject: () => void;
   openCompare: () => void;
+  openDrawingReference: () => void;
   openSearch: () => void;
   newProject: () => void;
   closeProject: () => void;

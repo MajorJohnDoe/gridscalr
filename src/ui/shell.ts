@@ -40,6 +40,7 @@ export interface ShellRefs {
   inspectorRestore: HTMLButtonElement;
   canvasArea: HTMLElement;
   canvasHost: HTMLElement;
+  referencePane: HTMLElement;
   referenceHost: HTMLElement;
   splitResizer: HTMLElement;
   markupsResizer: HTMLElement;
@@ -171,15 +172,18 @@ export function createShell(root: HTMLElement): ShellRefs {
   const contextBar = el("div", "context-bar");
   const canvasArea = el("div", "canvas-area");
   const canvasHost = el("div", "canvas-host");
-  const referenceHost = el("div", "canvas-host canvas-reference hidden");
-  referenceHost.setAttribute("aria-label", "Reference view");
+  const referencePane = el("div", "canvas-reference hidden");
+  referencePane.setAttribute("aria-label", "Reference view");
+  const referenceHost = el("div", "canvas-host reference-canvas");
+  referenceHost.setAttribute("aria-label", "Reference drawing");
+  referencePane.append(referenceHost);
   const splitResizer = el("div", "canvas-split-resizer hidden");
   splitResizer.title = "Resize reference view";
   splitResizer.setAttribute("role", "separator");
   splitResizer.setAttribute("aria-label", "Resize reference view");
   splitResizer.setAttribute("aria-orientation", "vertical");
   splitResizer.tabIndex = 0;
-  canvasArea.append(canvasHost, splitResizer, referenceHost);
+  canvasArea.append(canvasHost, splitResizer, referencePane);
   const markupsResizer = el("div", "markups-resizer");
   markupsResizer.hidden = true;
   markupsResizer.title = "Resize Markups list";
@@ -325,6 +329,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     inspectorRestore,
     canvasArea,
     canvasHost,
+    referencePane,
     referenceHost,
     splitResizer,
     markupsResizer,

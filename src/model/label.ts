@@ -1,5 +1,6 @@
 import { areaCentroid, areaShapeOf } from "./area";
 import { COUNT_LABEL_OFFSET } from "./countSymbols";
+import { angleGeometry, arcGeometry } from "./geometry";
 import { itemMetrics } from "./measure";
 import type { MarkupItem, Point, Project } from "./types";
 
@@ -97,31 +98,114 @@ export function labelMetrics(scale = 1): LabelMetrics {
   };
 }
 
-/** Label anchor in the same coordinate space as the supplied item points. */
-export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
+/**
+ * Preferred label placement for a measurement. `anchor` is a point on or near
+ * the geometry; `outward` is a unit vector that points away from the drawn
+ * curve, line or wedge. The layout offsets the label along `outward` by its own
+ * half extent, so previews and saved labels share the same starting point.
+ */
+export interface LabelPlacementHint {
+  anchor: Point;
+  outward?: Point;
+  /** True when a label box must never touch the measured geometry. */
+  avoidSource: boolean;
+}
+
+function unitVector(from: Point, to: Point): Point | null {
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const length = Math.hypot(dx, dy);
+  if (length < 1e-9) return null;
+  return { x: dx / length, y: dy / length };
+}
+
+function angleOutward(start: Point, vertex: Point, end: Point): Point | null {
+  const first = unitVector(vertex, start);
+  const second = unitVector(vertex, end);
+  if (!first) return null;
+  if (!second) return { x: -first.x, y: -first.y };
+  const sum = { x: first.x + second.x, y: first.y + second.y };
+  const length = Math.hypot(sum.x, sum.y);
+  if (length < 1e-9) return { x: -first.y, y: first.x };
+  // The sum bisects the measured wedge; the outer bisector points the other way.
+  return { x: -sum.x / length, y: -sum.y / length };
+}
+
+export function labelPlacementHintForPoints(item: MarkupItem, points: Point[]): LabelPlacementHint {
   if (item.kind === "area" || item.kind === "volume") {
-    return areaCentroid(item.points, areaShapeOf(item));
+    return { anchor: areaCentroid(item.points, areaShapeOf(item)), avoidSource: false };
   }
   if (item.kind === "count" && points.length === 1) {
-    return { x: points[0].x, y: points[0].y - COUNT_LABEL_OFFSET };
+    return {
+      anchor: { x: points[0].x, y: points[0].y - COUNT_LABEL_OFFSET },
+      avoidSource: false,
+    };
   }
-  if (points.length === 1) return points[0];
+  if (points.length === 1) return { anchor: points[0], avoidSource: false };
   if (item.kind === "rect" || item.kind === "ellipse") {
-    return { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+    return {
+      anchor: { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 },
+      avoidSource: false,
+    };
   }
   if (item.kind === "radius" || item.kind === "diameter") {
     const center = points[0];
     const edge = points[1] ?? center;
-    return { x: (center.x + edge.x) / 2, y: (center.y + edge.y) / 2 };
+    const outward = unitVector(center, edge);
+    return {
+      anchor: outward ? edge : center,
+      outward: outward ?? undefined,
+      avoidSource: true,
+    };
   }
   if (item.kind === "arc" && points.length >= 2) {
-    return points[Math.min(points.length - 1, 1)];
+    const arc = arcGeometry(item);
+    if (!arc) {
+      return {
+        anchor: points[Math.min(points.length - 1, 1)],
+        avoidSource: true,
+      };
+    }
+    const middleAngle = arc.startAngle + arc.sweep / 2;
+    const outward = { x: Math.cos(middleAngle), y: Math.sin(middleAngle) };
+    return {
+      anchor: {
+        x: arc.center.x + outward.x * arc.radius,
+        y: arc.center.y + outward.y * arc.radius,
+      },
+      outward,
+      avoidSource: true,
+    };
   }
-  if (item.kind === "angle" && points.length >= 2) {
-    return points[1];
+  if (item.kind === "angle") {
+    const geometry = angleGeometry(item);
+    const vertex = points[1] ?? points[0];
+    if (!geometry) {
+      return { anchor: vertex, avoidSource: true };
+    }
+    const outward = angleOutward(geometry.start, geometry.vertex, geometry.end);
+    if (!outward) return { anchor: vertex, avoidSource: true };
+    const reach =
+      Math.min(
+        Math.hypot(geometry.start.x - vertex.x, geometry.start.y - vertex.y),
+        Math.hypot(geometry.end.x - vertex.x, geometry.end.y - vertex.y),
+      ) * 0.35;
+    return {
+      anchor: { x: vertex.x + outward.x * reach, y: vertex.y + outward.y * reach },
+      outward,
+      avoidSource: true,
+    };
   }
   if (item.kind === "slope" && points.length >= 2) {
-    return { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+    const mid = { x: (points[0].x + points[1].x) / 2, y: (points[0].y + points[1].y) / 2 };
+    const dx = points[1].x - points[0].x;
+    const dy = points[1].y - points[0].y;
+    const length = Math.hypot(dx, dy) || 1;
+    return {
+      anchor: mid,
+      outward: { x: -dy / length, y: dx / length },
+      avoidSource: true,
+    };
   }
   if (item.kind === "length" || item.kind === "line" || item.kind === "arrow") {
     const index = Math.max(0, Math.floor((points.length - 1) / 2));
@@ -132,11 +216,19 @@ export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
     const dy = b.y - a.y;
     const length = Math.hypot(dx, dy) || 1;
     return {
-      x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
-      y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
+      anchor: {
+        x: mid.x - (dy / length) * LABEL_LINE_OFFSET,
+        y: mid.y + (dx / length) * LABEL_LINE_OFFSET,
+      },
+      avoidSource: false,
     };
   }
-  return points[0];
+  return { anchor: points[0], avoidSource: false };
+}
+
+/** Label anchor in the same coordinate space as the supplied item points. */
+export function labelAnchorForPoints(item: MarkupItem, points: Point[]): Point {
+  return labelPlacementHintForPoints(item, points).anchor;
 }
 
 export function measurementLabelParts(item: MarkupItem, project: Project): LabelParts | null {

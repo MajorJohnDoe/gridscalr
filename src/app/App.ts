@@ -120,13 +120,18 @@ import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SplitView } from "../ui/splitView";
+import { ReferencePaneHeader, type ReferenceSource } from "../ui/referencePane";
 import { exportComparisonPdf } from "../pdf/comparePdf";
 import { ComparePanel } from "../ui/comparePanel";
 import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
 import { disposeOcrWorker, isOcrCurrent, ocrPageToText, runOcrPage } from "../search/ocr";
 import { compareRevisions, type DiffItem, type RevisionDiff } from "../compare/revisionDiff";
-import { openReferenceSession, type ReferenceSession } from "../compare/referenceSession";
+import {
+  openPdfReferenceSession,
+  openReferenceSession,
+  type ReferenceSession,
+} from "../compare/referenceSession";
 import { syncViewport } from "../canvas/viewport";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
@@ -145,11 +150,13 @@ export class App {
   private canvas: CanvasView;
   private referenceView: CanvasView;
   private splitView: SplitView;
-  private compare: ReferenceSession | null = null;
-  private compareDiff: RevisionDiff | null = null;
-  private comparePanel: ComparePanel | null = null;
-  private comparePreviousSplit = false;
-  private compareRefreshTimer: number | null = null;
+  private referencePane: ReferencePaneHeader | null = null;
+  private referenceMode: ReferenceSource = "same";
+  private referenceSession: ReferenceSession | null = null;
+  private referenceDiff: RevisionDiff | null = null;
+  private referencePanel: ComparePanel | null = null;
+  private referencePreviousOpen = false;
+  private referenceRefreshTimer: number | null = null;
   private referencePageSizes = new Map<number, PageSize>();
   private referenceSizePromises = new Map<number, Promise<PageSize | undefined>>();
   private referenceSizeEpoch = 0;
@@ -209,15 +216,17 @@ export class App {
       },
       toggleSplitView: () => {
         if (!store.project) return;
-        if (this.compare) {
+        if (this.referenceSession) {
           toast("Close the revision comparison first.", "info");
           return;
         }
         this.splitView.toggle();
         this.referenceView.invalidate();
+        this.updateReferencePane();
       },
       isSplitViewOpen: () => this.splitView.isOpen,
-      openCompare: () => void this.openCompareFlow(),
+      openCompare: () => void this.openRevisionReferenceFlow(),
+      openDrawingReference: () => void this.openDrawingReferenceFlow(),
       openSearch: () => this.openSearchFlow(),
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
@@ -271,11 +280,11 @@ export class App {
     this.referenceView = new CanvasView(
       this.refs.referenceHost,
       {
-        getRenderer: () => this.compare?.renderer ?? this.renderer,
+        getRenderer: () => this.referenceSession?.renderer ?? this.renderer,
         getPageSize: (page) =>
-          this.compare ? this.referencePageSizes.get(page) : this.pageSizes.get(page),
+          this.referenceSession ? this.referencePageSizes.get(page) : this.pageSizes.get(page),
         ensurePageSize: (page) => {
-          if (this.compare) void this.enqueueReferencePageSize(page);
+          if (this.referenceSession) void this.enqueueReferencePageSize(page);
           else void this.enqueuePageSize(page);
         },
         onError: (message) => toast(`Reference: ${message}`, "error"),
@@ -283,7 +292,12 @@ export class App {
       {
         readOnly: true,
         canvasIdPrefix: "reference",
-        project: () => this.compare?.project ?? store.project,
+        project: () =>
+          this.referenceSession
+            ? this.referenceSession.kind === "project"
+              ? this.referenceSession.project
+              : null
+            : store.project,
         view: () => {
           const rect = this.refs.referenceHost.getBoundingClientRect();
           const target = this.referenceView?.viewportSize ?? {
@@ -310,11 +324,18 @@ export class App {
     );
     this.splitView = new SplitView({
       area: this.refs.canvasArea,
+      referencePane: this.refs.referencePane,
       referenceHost: this.refs.referenceHost,
       resizer: this.refs.splitResizer,
       primary: this.canvas,
       reference: this.referenceView,
     });
+    this.referencePane = new ReferencePaneHeader(this.refs.referencePane, {
+      setSource: (source) => this.setReferenceSource(source),
+      open: () => this.openReferenceFromBar(),
+      close: () => void this.closeReference(false),
+    });
+    this.updateReferencePane();
 
     this.unsubscribe = store.subscribe((reason) => {
       if (this.disposed) return;
@@ -334,10 +355,10 @@ export class App {
       }
       if (reason === "project" && this.searchPanel) this.closeSearch();
       if (
-        this.compare &&
+        this.referenceSession &&
         (reason === "change" || reason === "project" || reason === "undo" || reason === "layers")
       ) {
-        this.scheduleCompareRefresh();
+        this.scheduleReferenceRefresh();
       }
       this.renderAll();
     });
@@ -795,7 +816,7 @@ export class App {
 
   private async resetProject(): Promise<void> {
     this.closeSearch();
-    await this.closeCompare(false);
+    await this.closeReference(false);
     this.splitView.setOpen(false);
     store.closeProject();
     const renderer = this.renderer;
@@ -1934,19 +1955,29 @@ export class App {
     this.canvas.clearSearchHits();
   }
 
-  private async openCompareFlow(): Promise<void> {
+  private async openRevisionReferenceFlow(): Promise<void> {
     if (!store.project) return;
     try {
       const picked = await pickProject();
       if (!picked) return;
-      if (this.compare) await this.closeCompare(false);
-      await this.loadCompare(picked.text, picked.path);
+      await this.loadRevisionReference(picked.text, picked.path);
     } catch (error) {
       await messageDialog("Could not compare revisions", errorMessage(error), "warning");
     }
   }
 
-  private async loadCompare(text: string, projectPath: string | null): Promise<void> {
+  private async openDrawingReferenceFlow(): Promise<void> {
+    if (!store.project) return;
+    try {
+      const picked = await pickPdf();
+      if (!picked) return;
+      await this.loadDrawingReference(picked.bytes, picked.name, picked.path);
+    } catch (error) {
+      await messageDialog("Could not open the reference drawing", errorMessage(error), "warning");
+    }
+  }
+
+  private async loadRevisionReference(text: string, projectPath: string | null): Promise<void> {
     const current = store.project;
     if (!current) return;
     let session: ReferenceSession;
@@ -1956,35 +1987,129 @@ export class App {
       await messageDialog("Could not open the reference revision", errorMessage(error), "warning");
       return;
     }
-    this.comparePreviousSplit = this.splitView.isOpen;
-    this.compare = session;
+    await this.enterReferenceSession(session, "revision");
+  }
+
+  private async loadDrawingReference(
+    bytes: Uint8Array,
+    name: string,
+    path: string | null,
+  ): Promise<void> {
+    const current = store.project;
+    if (!current) return;
+    let session: ReferenceSession;
+    try {
+      session = await openPdfReferenceSession(bytes, name, path);
+    } catch (error) {
+      await messageDialog("Could not open the reference drawing", errorMessage(error), "warning");
+      return;
+    }
+    await this.enterReferenceSession(session, "drawing");
+  }
+
+  private async enterReferenceSession(
+    session: ReferenceSession,
+    mode: Exclude<ReferenceSource, "same">,
+  ): Promise<void> {
+    const current = store.project;
+    if (!current) {
+      await session.destroy();
+      return;
+    }
+    this.referencePreviousOpen = this.splitView.isOpen;
+    await this.clearReferenceSession();
+    this.referenceSession = session;
+    this.referenceMode = mode;
     this.referenceSizeEpoch += 1;
     this.referencePageSizes.clear();
     this.referenceSizePromises.clear();
-    this.compareDiff = compareRevisions(current, session.project);
+    this.referenceDiff =
+      session.kind === "project" ? compareRevisions(current, session.project) : null;
     this.splitView.setMode("side");
     this.splitView.setOpacity(0.5);
     this.splitView.setOpen(true);
     this.referenceView.resetScene();
-    this.comparePanel = new ComparePanel(this.refs.canvasArea, {
-      setMode: (mode) => {
-        this.splitView.setMode(mode);
+    this.referencePanel = new ComparePanel(this.refs.canvasArea, {
+      setMode: (next) => {
+        this.splitView.setMode(next);
         this.referenceView.invalidate();
       },
       setOpacity: (value) => this.splitView.setOpacity(value),
       selectItem: (item) => void this.selectDiffItem(item),
-      refresh: () => this.refreshCompareDiff(),
-      exportPdf: () => void this.exportComparePdf(),
-      close: () => void this.closeCompare(),
+      refresh: () => this.refreshReferenceDiff(),
+      exportPdf: () => void this.exportReferencePdf(),
+      close: () => void this.closeReference(false),
     });
-    this.comparePanel.update(current.name, session.project.name, this.compareDiff);
+    this.referencePanel.update(current.name, session.name, this.referenceDiff, {
+      pageCount: session.pageCount,
+    });
     void this.enqueueReferencePageSize(store.ui.page);
+    this.updateReferencePane();
     this.renderAll();
-    toast(`Comparing with ${session.project.name}.`, "info");
+    toast(
+      mode === "revision"
+        ? `Comparing with ${session.name}.`
+        : `Showing ${session.name} as the reference drawing.`,
+      "info",
+    );
+  }
+
+  private async enterSamePageReference(): Promise<void> {
+    await this.clearReferenceSession();
+    this.referenceMode = "same";
+    this.referencePageSizes.clear();
+    this.referenceSizePromises.clear();
+    this.referenceSizeEpoch += 1;
+    this.referenceView.resetScene();
+    this.splitView.setMode("side");
+    this.splitView.setOpen(true);
+    this.updateReferencePane();
+    this.renderAll();
+  }
+
+  private async clearReferenceSession(): Promise<void> {
+    this.referencePanel?.destroy();
+    this.referencePanel = null;
+    if (this.referenceRefreshTimer !== null) {
+      window.clearTimeout(this.referenceRefreshTimer);
+      this.referenceRefreshTimer = null;
+    }
+    const session = this.referenceSession;
+    this.referenceSession = null;
+    this.referenceDiff = null;
+    this.referencePageSizes.clear();
+    this.referenceSizePromises.clear();
+    this.referenceSizeEpoch += 1;
+    if (session) await session.destroy();
+  }
+
+  private updateReferencePane(): void {
+    this.referencePane?.update({
+      source: this.referenceMode,
+      referenceName: this.referenceSession?.name ?? null,
+      pageCount: this.referenceSession?.pageCount,
+    });
+  }
+
+  private setReferenceSource(source: ReferenceSource): void {
+    if (source === "same") {
+      if (this.referenceMode !== "same" || this.referenceSession) {
+        void this.enterSamePageReference();
+      }
+      return;
+    }
+    if (source === this.referenceMode && this.referenceSession) return;
+    if (source === "drawing") void this.openDrawingReferenceFlow();
+    else void this.openRevisionReferenceFlow();
+  }
+
+  private openReferenceFromBar(): void {
+    if (this.referenceMode === "drawing") void this.openDrawingReferenceFlow();
+    else void this.openRevisionReferenceFlow();
   }
 
   private enqueueReferencePageSize(page: number): Promise<PageSize | undefined> {
-    const session = this.compare;
+    const session = this.referenceSession;
     if (!session) return Promise.resolve(undefined);
     const known = this.referencePageSizes.get(page);
     if (known) return Promise.resolve(known);
@@ -1994,13 +2119,14 @@ export class App {
     const promise = session.renderer
       .getPageSize(page)
       .then((size) => {
-        if (this.compare !== session || epoch !== this.referenceSizeEpoch) return undefined;
+        if (this.referenceSession !== session || epoch !== this.referenceSizeEpoch)
+          return undefined;
         this.referencePageSizes.set(page, size);
         this.referenceView.invalidate();
         return size;
       })
       .catch((error) => {
-        if (this.compare === session) {
+        if (this.referenceSession === session) {
           toast(`Could not read reference page ${page}: ${errorMessage(error)}`, "warning");
         }
         return undefined;
@@ -2012,21 +2138,24 @@ export class App {
     return promise;
   }
 
-  private scheduleCompareRefresh(): void {
-    if (!this.compare) return;
-    if (this.compareRefreshTimer !== null) window.clearTimeout(this.compareRefreshTimer);
-    this.compareRefreshTimer = window.setTimeout(() => {
-      this.compareRefreshTimer = null;
-      this.refreshCompareDiff();
+  private scheduleReferenceRefresh(): void {
+    if (!this.referenceSession) return;
+    if (this.referenceRefreshTimer !== null) window.clearTimeout(this.referenceRefreshTimer);
+    this.referenceRefreshTimer = window.setTimeout(() => {
+      this.referenceRefreshTimer = null;
+      this.refreshReferenceDiff();
     }, 160);
   }
 
-  private refreshCompareDiff(): void {
+  private refreshReferenceDiff(): void {
     const project = store.project;
-    const session = this.compare;
+    const session = this.referenceSession;
     if (!project || !session) return;
-    this.compareDiff = compareRevisions(project, session.project);
-    this.comparePanel?.update(project.name, session.project.name, this.compareDiff);
+    if (session.kind !== "project") return;
+    this.referenceDiff = compareRevisions(project, session.project);
+    this.referencePanel?.update(project.name, session.name, this.referenceDiff, {
+      pageCount: session.pageCount,
+    });
   }
 
   private async selectDiffItem(item: DiffItem): Promise<void> {
@@ -2050,36 +2179,27 @@ export class App {
     this.canvas.invalidate();
   }
 
-  private async closeCompare(restoreSplit = true): Promise<void> {
-    this.comparePanel?.destroy();
-    this.comparePanel = null;
-    if (this.compareRefreshTimer !== null) {
-      window.clearTimeout(this.compareRefreshTimer);
-      this.compareRefreshTimer = null;
-    }
-    const session = this.compare;
-    this.compare = null;
-    this.compareDiff = null;
-    this.referencePageSizes.clear();
-    this.referenceSizePromises.clear();
-    this.referenceSizeEpoch += 1;
+  private async closeReference(restoreSplit = true): Promise<void> {
+    await this.clearReferenceSession();
+    this.referenceMode = "same";
     this.referenceView.resetScene();
     this.splitView.setMode("side");
-    this.splitView.setOpen(restoreSplit ? this.comparePreviousSplit : false);
-    if (session) await session.destroy();
+    this.splitView.setOpen(restoreSplit ? this.referencePreviousOpen : false);
+    this.updateReferencePane();
     this.renderAll();
   }
 
-  private async exportComparePdf(): Promise<void> {
+  private async exportReferencePdf(): Promise<void> {
     const project = store.project;
-    const session = this.compare;
-    const diff = this.compareDiff;
-    if (!project || !session || !diff || !this.renderer) return;
+    const session = this.referenceSession;
+    if (!project || !session || !this.renderer) return;
     try {
       const bytes = await exportComparisonPdf({
         current: project,
-        reference: session.project,
-        diff,
+        referenceName: session.name,
+        referencePageCount: session.pageCount,
+        reference: session.kind === "project" ? session.project : undefined,
+        diff: this.referenceDiff,
         currentRenderer: this.renderer,
         referenceRenderer: session.renderer,
       });
@@ -2226,11 +2346,11 @@ export class App {
     this.thumbnails = null;
     this.closeSearch();
     void disposeOcrWorker();
-    this.comparePanel?.destroy();
-    this.comparePanel = null;
-    if (this.compare) void this.compare.destroy();
-    this.compare = null;
-    if (this.compareRefreshTimer !== null) window.clearTimeout(this.compareRefreshTimer);
+    this.referencePanel?.destroy();
+    this.referencePanel = null;
+    if (this.referenceSession) void this.referenceSession.destroy();
+    this.referenceSession = null;
+    if (this.referenceRefreshTimer !== null) window.clearTimeout(this.referenceRefreshTimer);
     this.splitView.destroy();
     this.referenceView.destroy();
     this.canvas.destroy();

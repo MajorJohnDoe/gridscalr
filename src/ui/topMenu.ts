@@ -85,7 +85,8 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action("New project…", actions.newProject, { shortcut: APP_SHORTCUTS.newProject }),
         action("Open project…", actions.openProject, { shortcut: APP_SHORTCUTS.openProject }),
         action("Open drawing…", actions.openPdf, { shortcut: APP_SHORTCUTS.openDrawing }),
-        action("Compare revisions…", actions.openCompare, { disabled: !hasProject }),
+        action("Compare with revision…", actions.openCompare, { disabled: !hasProject }),
+        action("Compare with drawing…", actions.openDrawingReference, { disabled: !hasProject }),
         {
           kind: "submenu",
           label: "Open recent",
@@ -193,7 +194,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           checked: !isInspectorCollapsed(),
         }),
         separator(),
-        action("Split view", actions.toggleSplitView, {
+        action("Reference view (same page)", actions.toggleSplitView, {
           shortcut: APP_SHORTCUTS.splitView,
           checked: actions.isSplitViewOpen(),
           disabled: !hasProject,

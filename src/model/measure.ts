@@ -119,18 +119,26 @@ export function itemMetrics(item: MarkupItem, project: Project): ItemMetrics | n
 }
 
 /**
+ * True for measurements whose display value depends on the page scale. Angle,
+ * slope and count are dimensionless and must not ask for calibration.
+ */
+export function itemNeedsPageScale(item: MarkupItem): boolean {
+  return (
+    item.kind === "length" ||
+    item.kind === "area" ||
+    item.kind === "radius" ||
+    item.kind === "diameter" ||
+    item.kind === "arc" ||
+    item.kind === "volume"
+  );
+}
+
+/**
  * Explains why a measurement may not match the page's current scale, so a stale
  * value never reaches a quantity report unnoticed.
  */
 export function itemScaleWarning(item: MarkupItem, project: Project): string | null {
-  if (
-    item.kind !== "length" &&
-    item.kind !== "area" &&
-    item.kind !== "radius" &&
-    item.kind !== "diameter" &&
-    item.kind !== "arc" &&
-    item.kind !== "volume"
-  ) {
+  if (!itemNeedsPageScale(item)) {
     return null;
   }
   // Items without a snapshot predate the field and follow the page.

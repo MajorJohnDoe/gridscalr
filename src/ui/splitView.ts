@@ -4,6 +4,9 @@ export type ComparisonMode = "side" | "overlay";
 
 export interface SplitViewOptions {
   area: HTMLElement;
+  /** The pane container that is shown, hidden and resized. */
+  referencePane: HTMLElement;
+  /** The canvas host inside the pane, used for wheel mapping. */
   referenceHost: HTMLElement;
   resizer: HTMLElement;
   primary: CanvasView;
@@ -79,8 +82,8 @@ export class SplitView {
   }
 
   private updateChrome(): void {
-    this.options.referenceHost.classList.toggle("hidden", !this.open);
-    this.options.referenceHost.classList.toggle("is-overlay", this.open && this.mode === "overlay");
+    this.options.referencePane.classList.toggle("hidden", !this.open);
+    this.options.referencePane.classList.toggle("is-overlay", this.open && this.mode === "overlay");
     this.options.area.classList.toggle("is-compare-overlay", this.open && this.mode === "overlay");
     this.options.resizer.classList.toggle("hidden", !this.open || this.mode === "overlay");
   }
@@ -118,7 +121,7 @@ export class SplitView {
   private onResizerKey = (event: KeyboardEvent): void => {
     if (!this.open || (event.key !== "ArrowLeft" && event.key !== "ArrowRight")) return;
     event.preventDefault();
-    const current = this.options.referenceHost.getBoundingClientRect().width;
+    const current = this.options.referencePane.getBoundingClientRect().width;
     this.applyWidth(current + (event.key === "ArrowLeft" ? 24 : -24));
     this.options.reference.invalidate();
   };
