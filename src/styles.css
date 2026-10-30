@@ -1157,8 +1157,9 @@ textarea:disabled {
 
 .reference-bar-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 7px;
+  gap: 6px;
   min-width: 0;
 }
 
@@ -1173,7 +1174,8 @@ textarea:disabled {
 
 .reference-sources {
   display: inline-flex;
-  flex: 0 0 auto;
+  flex: 0 1 auto;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 5px;
   overflow: hidden;
@@ -1183,9 +1185,9 @@ textarea:disabled {
   background: #1a2024;
   color: var(--muted);
   border: 0;
-  padding: 4px 7px;
+  padding: 4px 6px;
   font: inherit;
-  font-size: 10.5px;
+  font-size: 10px;
   cursor: pointer;
 }
 
@@ -1204,7 +1206,7 @@ textarea:disabled {
 }
 
 .reference-name {
-  flex: 1 1 auto;
+  flex: 1 1 120px;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1245,6 +1247,10 @@ textarea:disabled {
 
 .canvas-area.is-compare-overlay .reference-bar {
   display: none;
+}
+
+.canvas-area.is-compare-overlay .compare-panel {
+  top: 12px;
 }
 
 .canvas-area.is-compare-overlay .canvas-split-resizer {
@@ -4720,7 +4726,7 @@ textarea:disabled {
 
 .compare-panel {
   position: absolute;
-  top: 12px;
+  top: calc(12px + var(--reference-bar-height, 0px));
   right: 12px;
   bottom: 12px;
   width: min(380px, calc(100% - 24px));

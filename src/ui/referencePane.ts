@@ -32,6 +32,7 @@ export class ReferencePaneHeader {
   private readonly name: HTMLElement;
   private readonly hint: HTMLElement;
   private readonly openButton: HTMLButtonElement;
+  private readonly observer: ResizeObserver;
 
   constructor(
     host: HTMLElement,
@@ -80,6 +81,9 @@ export class ReferencePaneHeader {
     );
     this.element.append(top, this.hint);
     host.prepend(this.element);
+    this.observer = new ResizeObserver(() => this.syncHeight());
+    this.observer.observe(this.element);
+    this.syncHeight();
     this.update({ source: "same", referenceName: null });
   }
 
@@ -105,5 +109,13 @@ export class ReferencePaneHeader {
         : state.source === "revision"
           ? "Open a .gridscalr revision as the reference"
           : "Open a revision project to compare";
+    requestAnimationFrame(() => this.syncHeight());
+  }
+
+  private syncHeight(): void {
+    const container =
+      this.element.closest<HTMLElement>(".canvas-area") ?? this.element.parentElement;
+    if (!container) return;
+    container.style.setProperty("--reference-bar-height", `${this.element.offsetHeight}px`);
   }
 }
