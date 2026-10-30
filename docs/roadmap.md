@@ -62,8 +62,8 @@ Schema history and migration rules are documented in
 There is no committed feature milestone after 0.14.0. The candidates below are ordered by
 expected value, not scheduled:
 
-1. **Independent page navigation in the reference pane**, so the primary and reference views can inspect different sheets.
-2. **Custom count types** and count quantities greater than one piece per object.
+1. **Custom count types** ([#22](https://github.com/MajorJohnDoe/gridscalr/issues/22)) as the first feature module under `src/features/countTypes/`, with count quantities greater than one piece per object.
+2. **Independent page navigation in the reference pane** ([#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)), so the primary and reference views can inspect different sheets.
 3. **Snap directly to PDF vector geometry** as a separate spike. It needs extraction and indexing of drawing paths.
 4. **Semantic PDF vector comparison** as a separate spike. It needs extraction and indexing of PDF operators and must not block other work.
 5. **A TIF fallback decoder** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans, if users need them often enough to justify the dependency.
@@ -112,7 +112,7 @@ anonymous `TODO` comments in code.
 - Extract project save/open flows from `App.ts` into focused `src/app/` modules.
 - Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.
 - Lazy-load OCR and PDF.js-heavy code paths to reduce the main bundle and improve startup.
-- Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared.
+- Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
 ## Project operations
 
