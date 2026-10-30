@@ -200,7 +200,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.13.0_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_0.13.1_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
