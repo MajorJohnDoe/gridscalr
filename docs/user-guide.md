@@ -31,7 +31,7 @@ GridScalr uses a compact, drawing-first layout.
 
 Panels remember their width, height and collapsed state between sessions.
 
-On a touch screen, one finger draws or selects with the active tool. Use **two fingers** to pan and pinch to zoom around the point between them. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again.
+On a touch screen, one finger draws or selects with the active tool. Use **two fingers** to pan and pinch to zoom around the point between them, over either the primary canvas or the reference pane. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again. While a pen is active, or just after it was used, touch is treated as palm input and does not draw. Long-press an item with the Select tool to open the same context menu as a right-click.
 
 ## Reference view
 

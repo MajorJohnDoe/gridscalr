@@ -24,7 +24,7 @@ A calibrated page shows the scale in the status bar; hover the chip for the refe
 
 ### 2. Measure what the job needs
 
-Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units and snapping in **Project settings**. On a touch screen, use one finger to draw and two fingers to pan or pinch-zoom.
+Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units and snapping in **Project settings**. On a touch screen, use one finger to draw and two fingers to pan or pinch-zoom; a pen takes priority over palm touches. Long-press an item for its context menu.
 
 ![Length tool active with the Layers panel and measurement context](screenshots/measure.png)
 

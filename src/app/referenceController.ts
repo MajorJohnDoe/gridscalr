@@ -1,4 +1,5 @@
 import { CanvasView } from "../canvas/CanvasView";
+import { TouchNavigation } from "../canvas/touchNavigation";
 import { syncViewport } from "../canvas/viewport";
 import { compareRevisions, type DiffItem, type RevisionDiff } from "../compare/revisionDiff";
 import {
@@ -38,6 +39,7 @@ export class ReferenceController {
   readonly view: CanvasView;
   readonly splitView: SplitView;
   private readonly pane: ReferencePaneHeader;
+  private readonly touchCleanup: () => void;
   private mode: ReferenceSource = "same";
   private session: ReferenceSession | null = null;
   private diff: RevisionDiff | null = null;
@@ -110,6 +112,39 @@ export class ReferenceController {
       primary: options.primaryCanvas,
       reference: this.view,
     });
+    let primaryStart = { zoom: store.ui.zoom, panX: store.ui.panX, panY: store.ui.panY };
+    const touch = new TouchNavigation({
+      getView: () => this.view.currentView,
+      toLocal: (clientX, clientY) => {
+        const rect = options.referenceHost.getBoundingClientRect();
+        return { x: clientX - rect.left, y: clientY - rect.top };
+      },
+      onGestureStart: () => {
+        primaryStart = { zoom: store.ui.zoom, panX: store.ui.panX, panY: store.ui.panY };
+      },
+      setView: (next, start) => {
+        store.setView(
+          next.zoom,
+          primaryStart.panX + (next.panX - start.panX),
+          primaryStart.panY + (next.panY - start.panY),
+        );
+      },
+      capturePointer: (pointerId) => {
+        try {
+          options.referenceHost.setPointerCapture(pointerId);
+        } catch {
+          // Some platforms release the pointer before capture is requested.
+        }
+      },
+      releasePointer: (pointerId) => {
+        try {
+          options.referenceHost.releasePointerCapture(pointerId);
+        } catch {
+          // The pointer may already be released.
+        }
+      },
+    });
+    this.touchCleanup = touch.attach(options.referenceHost);
     this.pane = new ReferencePaneHeader(options.referencePaneHost, {
       setSource: (source) => this.setSource(source),
       open: () => this.openFromBar(),
@@ -413,6 +448,7 @@ export class ReferenceController {
   }
 
   dispose(): void {
+    this.touchCleanup();
     this.panel?.destroy();
     this.panel = null;
     if (this.refreshTimer !== null) {

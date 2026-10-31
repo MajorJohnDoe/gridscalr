@@ -101,34 +101,124 @@ try {
   assert.ok(Math.abs(afterPan.panY - beforePan.panY - 40) < 2, "two-finger drag should pan Y");
   await touch("touchEnd", []);
 
-  // One-finger touch must still place a count after the gesture ends.
+  // The same gesture navigates the primary view from the reference pane.
+  await page.keyboard.press("Control+Shift+2");
+  const reference = page.locator(".reference-canvas");
+  await reference.waitFor({ state: "visible" });
+  await page.waitForTimeout(250);
+  const referenceBox = await reference.boundingBox();
+  assert.ok(referenceBox, "the reference pane should have a canvas");
+  const referenceCenter = {
+    x: referenceBox.x + referenceBox.width / 2,
+    y: referenceBox.y + referenceBox.height / 2,
+  };
+  const beforeReference = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  await touch("touchStart", [
+    { x: referenceCenter.x - 50, y: referenceCenter.y },
+    { x: referenceCenter.x + 50, y: referenceCenter.y },
+  ]);
+  await touch("touchMove", [
+    { x: referenceCenter.x - 110, y: referenceCenter.y },
+    { x: referenceCenter.x + 110, y: referenceCenter.y },
+  ]);
+  await page.waitForTimeout(120);
+  const afterReference = await page.evaluate(() => window.__gridscalr.store.ui.zoom);
+  assert.ok(
+    afterReference > beforeReference * 1.5,
+    "pinching the reference pane should zoom the primary view",
+  );
+  await touch("touchEnd", []);
+  await page.keyboard.press("Control+Shift+2");
+  await page.waitForTimeout(200);
+
+  // A pen hit suppresses a following palm touch, then touch works again.
+  const tap = {
+    x: canvasBox.x + canvasBox.width * 0.18,
+    y: canvasBox.y + canvasBox.height * 0.8,
+  };
   await page.evaluate((view) => {
     window.__gridscalr.store.setView(view.zoom, view.panX, view.panY);
   }, initial);
+  await page.keyboard.press("v");
+  const penPoint = {
+    x: canvasBox.x + canvasBox.width * 0.35,
+    y: canvasBox.y + canvasBox.height * 0.72,
+  };
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mousePressed",
+    x: penPoint.x,
+    y: penPoint.y,
+    button: "left",
+    buttons: 1,
+    clickCount: 1,
+    pointerType: "pen",
+  });
+  await cdp.send("Input.dispatchMouseEvent", {
+    type: "mouseReleased",
+    x: penPoint.x,
+    y: penPoint.y,
+    button: "left",
+    buttons: 0,
+    clickCount: 1,
+    pointerType: "pen",
+  });
   await page.keyboard.press("c");
-  await page.locator(".context-tool", { hasText: "Count" }).waitFor();
-  const beforeCount = await page.evaluate(() =>
+  const countBeforePalm = await page.evaluate(() =>
     window.__gridscalr.store.project.layers.reduce(
       (total, layer) => total + layer.items.filter((item) => item.kind === "count").length,
       0,
     ),
   );
-  const tap = { x: canvasBox.x + canvasBox.width * 0.18, y: canvasBox.y + canvasBox.height * 0.8 };
   await touch("touchStart", [tap]);
   await touch("touchEnd", []);
-  await page.waitForTimeout(150);
-  const afterCount = await page.evaluate(() =>
+  await page.waitForTimeout(120);
+  const countAfterPalm = await page.evaluate(() =>
     window.__gridscalr.store.project.layers.reduce(
       (total, layer) => total + layer.items.filter((item) => item.kind === "count").length,
       0,
     ),
   );
-  assert.equal(afterCount, beforeCount + 1, "one-finger touch should still place a count");
+  assert.equal(countAfterPalm, countBeforePalm, "a palm touch after a pen should be ignored");
+  await page.waitForTimeout(900);
+  await touch("touchStart", [tap]);
+  await touch("touchEnd", []);
+  await page.waitForTimeout(120);
+  const countAfterWait = await page.evaluate(() =>
+    window.__gridscalr.store.project.layers.reduce(
+      (total, layer) => total + layer.items.filter((item) => item.kind === "count").length,
+      0,
+    ),
+  );
+  assert.equal(countAfterWait, countBeforePalm + 1, "touch should work after the pen window");
+
+  // Long-press on a selectable item opens the same context menu as right-click.
+  await page.keyboard.press("v");
+  await page.evaluate(() => window.__gridscalr.store.clearSelection());
+  const itemScreen = await page.evaluate(() => {
+    const project = window.__gridscalr.store.project;
+    const item = project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === "item_count_radiator");
+    return item ? window.__gridscalr.canvas.pageToScreen(item.points[0]) : null;
+  });
+  assert.ok(itemScreen, "the demo count should be available for the long-press test");
+  const longPressPoint = {
+    x: canvasBox.x + itemScreen.x,
+    y: canvasBox.y + itemScreen.y,
+  };
+  await touch("touchStart", [longPressPoint]);
+  await page.waitForTimeout(650);
+  assert.ok(
+    (await page.locator(".popover").count()) > 0,
+    "long-press should open the item context menu",
+  );
+  await touch("touchEnd", []);
+  await page.keyboard.press("Escape");
 
   assert.deepEqual(pageErrors, [], "touch navigation should not raise page errors");
   await waitForApp(page);
   console.log(
-    "Touch navigation passed: pinch zoom, two-finger pan and one-finger count placement.",
+    "Touch passed: primary/reference pinch and pan, pen priority, palm rejection, long-press menu and one-finger count placement.",
   );
 } finally {
   await page?.close().catch(() => undefined);
