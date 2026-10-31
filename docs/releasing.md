@@ -107,18 +107,6 @@ gh release view "v$VERSION" --repo MajorJohnDoe/gridscalr
 Open the release page, check that the README download link resolves to it, and
 download one artifact to confirm the checksum.
 
-Verify the landing site as well:
-
-```text
-https://majorjohndoe.github.io/gridscalr/
-https://majorjohndoe.github.io/gridscalr/sv/
-https://majorjohndoe.github.io/gridscalr/features/
-https://majorjohndoe.github.io/gridscalr/sv/funktioner/
-```
-
-Both language pairs should load, the language switch should work, and the download
-buttons should open the newest public release.
-
 ## 8. Update the landing site
 
 The landing site is updated for every tagged release, not for ordinary pull
@@ -137,8 +125,20 @@ a missing asset.
    npm run site:check
    ```
 
-4. Commit and push `main`, then confirm that the **Pages** workflow succeeded and
-   that the live pages show the new version and download links.
+4. Commit and push `main`, then confirm that the **Pages** workflow succeeded.
+
+5. Verify the live pages and the download links:
+
+   ```text
+   https://majorjohndoe.github.io/gridscalr/
+   https://majorjohndoe.github.io/gridscalr/sv/
+   https://majorjohndoe.github.io/gridscalr/features/
+   https://majorjohndoe.github.io/gridscalr/sv/funktioner/
+   ```
+
+   Both language pairs should load, the language switch should work, the version
+   should match the release, and the download buttons should open the published
+   assets.
 
 ## Notes
 
