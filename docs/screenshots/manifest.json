@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-10-31T07:20:42.878Z",
+  "generatedAt": "2026-10-31T21:57:28.676Z",
   "appVersion": "0.16.1",
-  "sourceFingerprint": "a8f8645fd0c234e72f40ef7b86e99316e67245aac09fd9fa62ac1f7daa6c9264",
+  "sourceFingerprint": "97c10e60510866601d1873de538f7e2b36b030edb7731c7bf7ad6f20174c0e65",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -19,6 +19,12 @@
       "title": "Measure and annotate",
       "alt": "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
       "description": "Measurement and drawing tools share one canvas but stay on separate layer types."
+    },
+    {
+      "file": "calibration.png",
+      "title": "Calibration",
+      "alt": "The GridScalr Edit calibration dialog for page 1, showing a 10 m reference length, a unit selector, and the option to update existing measurements while the calibration line stays visible on the plan.",
+      "description": "Calibrate a page against a known dimension or enter a printed scale, then lock it against accidental changes."
     },
     {
       "file": "markups.png",
@@ -61,6 +67,12 @@
       "title": "Symbol library",
       "alt": "The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
       "description": "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list."
+    },
+    {
+      "file": "images.png",
+      "title": "Embedded images",
+      "alt": "The GridScalr plan with an embedded inspection photo of a loading dock selected, showing image handles and the Properties panel with image mode, opacity and rotation controls.",
+      "description": "Embed PNG or JPEG photos in a project, place them above the PDF or below markups, and adjust size, rotation and opacity."
     },
     {
       "file": "export.png",

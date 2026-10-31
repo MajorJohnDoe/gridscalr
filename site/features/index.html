@@ -1,0 +1,898 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GridScalr features — PDF takeoff, counts and exports</title>
+    <meta
+      name="description"
+      content="Explore GridScalr features: calibration, measurement, custom counts, count schedules, revision comparison, local OCR and CSV, Excel and PDF exports."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/features/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/features/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/funktioner/" />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/features/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#14181b" />
+    <link rel="icon" href="../assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="../assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../assets/app-icon-128.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="GridScalr features — PDF takeoff, counts and exports" />
+    <meta
+      property="og:description"
+      content="Explore GridScalr features: calibration, measurement, custom counts, count schedules, revision comparison, local OCR and CSV, Excel and PDF exports."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/features/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — measure PDF plans locally, with a calibrated industrial floor plan and quantities"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:locale:alternate" content="sv_SE" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GridScalr features — PDF takeoff, counts and exports" />
+    <meta
+      name="twitter:description"
+      content="Explore GridScalr features: calibration, measurement, custom counts, count schedules, revision comparison, local OCR and CSV, Excel and PDF exports."
+    />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script src="../assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "GridScalr features — PDF takeoff, counts and exports",
+        "url": "https://majorjohndoe.github.io/gridscalr/features/",
+        "inLanguage": "en",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Features",
+            "item": "https://majorjohndoe.github.io/gridscalr/features/"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="../#hero" aria-label="GridScalr home">
+          <img class="logo" src="../assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true" />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Primary">
+          <a href="./" aria-current="page">Features</a>
+          <a href="../#download">Download</a>
+          <a href="../#docs">Documentation</a>
+          <a href="../#faq">FAQ</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Language" data-lang-switch>
+          <a href="./" hreflang="en" lang="en" aria-current="page">English</a>
+          <a href="../sv/funktioner/" hreflang="sv" lang="sv">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero">
+        <div class="wrap">
+          <nav class="breadcrumb" aria-label="Breadcrumb">
+            <a href="../">GridScalr</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Features</span>
+          </nav>
+          <p class="eyebrow">Feature tour</p>
+          <h1>Every GridScalr feature for PDF takeoff and TIF drawings</h1>
+          <p class="lede">
+            From calibration and counting to revision comparison, local OCR and procurement
+            exports. Here is what each part of the app does, with screenshots from the current
+            release.
+          </p>
+
+          <div class="release-badge">
+            <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
+            <span>Released {{RELEASE_DATE}}</span>
+            <a href="{{RELEASE_NOTES_URL}}">What’s new in {{RELEASE_VERSION}}</a>
+          </div>
+
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Release page and checksums</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature-tour">
+        <div class="wrap feature-layout">
+          <nav class="feature-toc" aria-label="Feature sections">
+            <p class="toc-heading">On this page</p>
+            <a href="#open-organise">Open and organise</a>
+            <a href="#calibrate-measure">Calibrate and measure</a>
+            <a href="#count-schedule">Count and schedule</a>
+            <a href="#layers-rooms">Layers, categories and rooms</a>
+            <a href="#annotate">Draw and annotate</a>
+            <a href="#symbols">Facility symbols</a>
+            <a href="#images">Embedded images</a>
+            <a href="#quantities">Quantities and order settings</a>
+            <a href="#export">Export and reports</a>
+            <a href="#reference-compare">Reference and comparison</a>
+            <a href="#search-ocr">Search and OCR</a>
+            <a href="#help-files">Help, files and resilience</a>
+            <a href="#all-features">Complete feature list</a>
+          </nav>
+
+          <div class="feature-content">
+            <section class="feature-row" id="open-organise">
+              <div class="feature-copy">
+                <p class="eyebrow">Drawing sets</p>
+                <h2>Open and organise the whole drawing set</h2>
+                <p>
+                  Open PDF plans, import scanned TIF pages and keep several source documents in one
+                  project. Pages are append-only, so an existing takeoff keeps its page references
+                  when a new drawing arrives.
+                </p>
+                <ul class="feature-list">
+                  <li>PDF rendering with page thumbnails, page names, building and floor labels.</li>
+                  <li>
+                    Lossless CCITT G3/G4 TIF import for scanned drawings, without converting the
+                    source first.
+                  </li>
+                  <li>
+                    Multiple documents per project with new pages appended at the end, never inserted
+                    or reordered.
+                  </li>
+                  <li>
+                    Fit, zoom, split view, explicit page duplication and page deletion with safe item
+                    remapping.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> multi-sheet facilities drawings and revision sets.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/hero.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: calibrated drawing set"
+                  >
+                    <img
+                      src="../screenshots/hero.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    A calibrated industrial takeoff with rectangle areas, counts, a deduction and
+                    drawing annotations.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="calibrate-measure">
+              <div class="feature-copy">
+                <p class="eyebrow">Measurement</p>
+                <h2>Calibrate once and measure with confidence</h2>
+                <p>
+                  Set the real-world scale from a known dimension or the printed 1:N ratio, lock it
+                  against accidental changes and measure directly on the plan.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    Multi-segment lengths, polygon areas, quick rectangles and ellipses, radius,
+                    diameter, three-point arcs, angles, slopes and volumes.
+                  </li>
+                  <li>
+                    Snap to endpoints, midpoints and intersections between visible segments, with an
+                    adjustable threshold.
+                  </li>
+                  <li>
+                    Labels use paper-space sizing and stay consistent on screen and in PDF exports.
+                  </li>
+                  <li>
+                    Category, room, deduction areas and per-page scale locks keep the takeoff
+                    reviewable.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> room areas, wall lengths, slopes and volume takeoffs.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/calibration.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: calibration dialog"
+                  >
+                    <img
+                      src="../screenshots/calibration.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Edit calibration dialog for page 1, showing a 10 m reference length, a unit selector, and the option to update existing measurements while the calibration line stays visible on the plan."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Calibrate against a known dimension, then lock the page scale against accidental
+                    changes.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/measure.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: measurement tools"
+                  >
+                    <img
+                      src="../screenshots/measure.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Measurement and drawing tools share one canvas but stay on separate layer types.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="count-schedule">
+              <div class="feature-copy">
+                <p class="eyebrow">Counting</p>
+                <h2>Count once and review a count schedule</h2>
+                <p>
+                  Count doors, windows, radiators, fixtures and your own object types. Each type can
+                  carry its own glyph and quantity, and one placed object can represent several
+                  pieces.
+                </p>
+                <ul class="feature-list">
+                  <li>Built-in count types plus custom project types with a name and vector glyph.</li>
+                  <li>Pieces per count object for grouped doors, windows or equipment.</li>
+                  <li>
+                    Count schedule rows per type, a Count type column in Markups, filtering and
+                    grouping, and count legend glyphs.
+                  </li>
+                  <li>Reusable count presets so a new project starts with the same definitions.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> door schedules, window schedules and fixture inventories.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/count-types.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: count types dialog"
+                  >
+                    <img
+                      src="../screenshots/count-types.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Name the objects you count and choose the vector glyph used on the plan and in
+                    exports.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/count-schedule.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: count schedule"
+                  >
+                    <img
+                      src="../screenshots/count-schedule.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Group the Markups table by count type to review a door, window or fixture
+                    schedule without custom columns.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="layers-rooms">
+              <div class="feature-copy">
+                <p class="eyebrow">Organisation</p>
+                <h2>Layers, categories and rooms keep the takeoff readable</h2>
+                <p>
+                  Measurement layers and drawing layers stay separate. Within them, categories,
+                  rooms and per-item visibility make a large project easy to review and export.
+                </p>
+                <ul class="feature-list">
+                  <li>Separate measurement and drawing layers, page-scoped and visible by page.</li>
+                  <li>
+                    Per-item visibility and locks, with layer visibility and locking taking
+                    precedence.
+                  </li>
+                  <li>Categories, rooms, deduction areas and measurement bulk edits.</li>
+                  <li>
+                    Markups views with configurable columns, filters, multi-level grouping and
+                    row navigation.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> projects with many rooms, buildings or revision rounds.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/layers.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: layers panel"
+                  >
+                    <img
+                      src="../screenshots/layers.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr Layers panel with page-scoped layers, a measurement layer expanded to show items on the current page, and the Add/Deduct switch in the context bar."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Expand a layer to inspect every item, select it on the plan and choose additive
+                    or deduction areas.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/markups-list.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: Markups list with views and grouping"
+                  >
+                    <img
+                      src="../screenshots/markups-list.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    A docked, project-wide list with saved views, configurable columns, grouping,
+                    filters and row navigation.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="annotate">
+              <div class="feature-copy">
+                <p class="eyebrow">Annotation</p>
+                <h2>Draw and annotate without leaving the plan</h2>
+                <p>
+                  Add the field notes, revision marks and handoff comments your team needs on
+                  separate drawing layers, so they never mix with measured quantities.
+                </p>
+                <ul class="feature-list">
+                  <li>Pen strokes, lines, arrows, rectangles, ellipses and highlights.</li>
+                  <li>Revision clouds, callouts, stamps, revision deltas and text notes.</li>
+                  <li>Resize and rotate drawings, stamps and symbols with visible handles.</li>
+                  <li>Hidden items never render, hit-test or export; locked items stay visible.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> condition notes, work orders and contractor handoff.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/markups.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: drawing notes and layers"
+                  >
+                    <img
+                      src="../screenshots/markups.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr Layers panel with a revision cloud around a loading dock, a callout at the entrance and an inspected stamp."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Revision clouds, callouts and status stamps live on drawing layers.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="symbols">
+              <div class="feature-copy">
+                <p class="eyebrow">Facility symbols</p>
+                <h2>Place searchable facility symbols</h2>
+                <p>
+                  Use a built-in library of 52 original sign plates for fire, evacuation, HVAC,
+                  electrical, building and waste equipment, then review them by category and status.
+                </p>
+                <ul class="feature-list">
+                  <li>Searchable symbol library with recent symbols and category colours.</li>
+                  <li>Rotation, corner resizing and a 24 pt default size.</li>
+                  <li>Inspection statuses shown as a badge on the plan and in Markups.</li>
+                  <li>Symbol and status views for a quick facilities review.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> equipment inventories, inspections and maintenance planning.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/symbols.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: facility symbol library"
+                  >
+                    <img
+                      src="../screenshots/symbols.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Place vector facility symbols with category colours, rotation and inspection
+                    status, then review them in the Markups list.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="images">
+              <div class="feature-copy">
+                <p class="eyebrow">Embedded images</p>
+                <h2>Keep photos and scans inside the project</h2>
+                <p>
+                  Embed PNG or JPEG images such as inspection photos, detail scans or reference
+                  pictures and place them on the plan without adding another file to manage.
+                </p>
+                <ul class="feature-list">
+                  <li>Embedded assets stored in the project file, with source images untouched.</li>
+                  <li>Background mode below markups, or annotation mode above the plan.</li>
+                  <li>Drag handles, opacity and rotation; images are included in PDF export.</li>
+                  <li>Downscaling and byte limits keep a project portable.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> condition photos, equipment details and site references.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/images.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: embedded inspection image"
+                  >
+                    <img
+                      src="../screenshots/images.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr plan with an embedded inspection photo of a loading dock selected, showing image handles and the Properties panel with image mode, opacity and rotation controls."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Embedded inspection photos can sit below markups or above the plan, with their
+                    own opacity and rotation.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="quantities">
+              <div class="feature-copy">
+                <p class="eyebrow">Quantities</p>
+                <h2>Review procurement quantities and order settings</h2>
+                <p>
+                  Quantities are calculated from the same item data you measured and counted.
+                  Review gross, deduction, net, waste and order quantities before anything leaves
+                  the app.
+                </p>
+                <ul class="feature-list">
+                  <li>Group quantities by category, room and page.</li>
+                  <li>Waste percentage, rounding and minimum order quantities.</li>
+                  <li>Separate quantity rows for every count type.</li>
+                  <li>No stored summary: every report is derived from the current project.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> procurement, contractor handoff and internal review.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/quantities.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: quantities dialog"
+                  >
+                    <img
+                      src="../screenshots/quantities.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Live quantities with deductions, waste and rounding for procurement.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="export">
+              <div class="feature-copy">
+                <p class="eyebrow">Exports</p>
+                <h2>Export the drawing, the quantities or both</h2>
+                <p>
+                  Choose the output the next person needs: a marked-up drawing, a quantity workbook,
+                  a print-friendly report or the raw project data.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    Flattened drawing PDF with page ranges, crop areas, visible layers, labels and an
+                    optional legend.
+                  </li>
+                  <li>Quantity CSV, six-sheet XLSX workbook and print-friendly A4 PDF report.</li>
+                  <li>Markup CSV, project JSON and PNG for other systems.</li>
+                  <li>Exports follow the same visibility and locking rules as the canvas.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> procurement packages, work orders and archive copies.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/export.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: drawing PDF export dialog"
+                  >
+                    <img
+                      src="../screenshots/export.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Export visible markups as a flattened drawing PDF without modifying the source
+                    drawing.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="reference-compare">
+              <div class="feature-copy">
+                <p class="eyebrow">Review</p>
+                <h2>Compare a reference or a revision before you act</h2>
+                <p>
+                  Show the same page, a saved revision or a raw PDF drawing beside the editable
+                  canvas. The reference follows every pan, zoom and page change, but never edits the
+                  project.
+                </p>
+                <ul class="feature-list">
+                  <li>Synchronized read-only reference pane with three source types.</li>
+                  <li>Side-by-side or overlay comparison with adjustable opacity.</li>
+                  <li>Changed, added and removed markups listed with warnings and row navigation.</li>
+                  <li>Comparison PDF export without merging either source drawing.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> revision review before ordering or handoff.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/split-view.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: synchronized reference pane"
+                  >
+                    <img
+                      src="../screenshots/split-view.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    The read-only reference pane follows the primary canvas while edits stay in one
+                    place.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/compare.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: revision comparison"
+                  >
+                    <img
+                      src="../screenshots/compare.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Overlay or side-by-side comparison with a difference list and comparison PDF.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="search-ocr">
+              <div class="feature-copy">
+                <p class="eyebrow">Search</p>
+                <h2>Find text in PDF plans and scanned drawings</h2>
+                <p>
+                  Search the PDF text layer across every page, or run local English and Swedish OCR
+                  on a scan and keep the results on your machine.
+                </p>
+                <ul class="feature-list">
+                  <li>Page results, snippets and a highlighted hit on the drawing.</li>
+                  <li>Local Tesseract OCR for scanned pages, with English and Swedish models.</li>
+                  <li>Per-page OCR data stored in the project so a reopened scan is not rebuilt.</li>
+                  <li>No search request leaves the app.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> finding room names, equipment tags and drawing notes.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/search.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: full-text search"
+                  >
+                    <img
+                      src="../screenshots/search.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr search panel with a text query, page results and a highlighted match on the drawing."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Search the PDF text layer across every page and jump to a highlighted result.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="help-files">
+              <div class="feature-copy">
+                <p class="eyebrow">Workflow</p>
+                <h2>Help, recovery and touch input in the same app</h2>
+                <p>
+                  The guide, role-based workflows, shortcuts and About panel ship inside the
+                  application, next to autosave recovery and undo history.
+                </p>
+                <ul class="feature-list">
+                  <li>In-app user guide, workflows for two roles, shortcut reference and Help search.</li>
+                  <li>Autosave recovery, recent files and undo/redo across bulk edits.</li>
+                  <li>Two-finger pan and pinch zoom, pen priority, palm rejection and long-press menus.</li>
+                  <li>Project schema migration when an older project is opened.</li>
+                </ul>
+                <p class="feature-role"><strong>Good for:</strong> technicians learning the app on site and teams sharing a method.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../screenshots/workflows-help.png"
+                    data-lightbox
+                    aria-label="Enlarge screenshot: in-app workflows"
+                  >
+                    <img
+                      src="../screenshots/workflows-help.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers."
+                    />
+                    <span class="zoom-hint">Click to enlarge</span>
+                  </a>
+                  <figcaption>
+                    Task-oriented workflows sit beside the full user guide, shortcuts and About.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row complete" id="all-features">
+              <div class="feature-copy">
+                <p class="eyebrow">Complete list</p>
+                <h2>Every feature area at a glance</h2>
+                <p>
+                  A grouped checklist for evaluation. The user guide has the full panel-by-panel
+                  detail.
+                </p>
+              </div>
+              <div class="complete-grid">
+                <div>
+                  <h3>Drawings and pages</h3>
+                  <ul>
+                    <li>PDF and TIF drawing sets</li>
+                    <li>Multiple documents per project</li>
+                    <li>Append-only page numbering</li>
+                    <li>Page thumbnails, names and building/floor labels</li>
+                    <li>Page duplication and explicit page deletion</li>
+                    <li>Fit, zoom, split view and page scale locks</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Measure and count</h3>
+                  <ul>
+                    <li>Reference calibration and manual 1:N scale</li>
+                    <li>Length, area, radius, diameter and arc</li>
+                    <li>Angle, slope and volume</li>
+                    <li>Quick rectangles and ellipses</li>
+                    <li>Count types, pieces per object and count schedule</li>
+                    <li>Snapping and paper-space labels</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Organise and annotate</h3>
+                  <ul>
+                    <li>Measurement and drawing layers</li>
+                    <li>Categories, rooms and deductions</li>
+                    <li>Visibility, locks, bulk edits and clipboard</li>
+                    <li>Markups views, columns, filters and grouping</li>
+                    <li>Revision clouds, callouts, stamps, deltas and text</li>
+                    <li>Facility symbols with inspection status</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Review and export</h3>
+                  <ul>
+                    <li>Reference pane and revision comparison</li>
+                    <li>PDF text search and local English/Swedish OCR</li>
+                    <li>Gross, deduction, net, waste and order quantities</li>
+                    <li>CSV, XLSX and print-friendly PDF reports</li>
+                    <li>Drawing PDF, markup CSV, project JSON and PNG</li>
+                    <li>Hidden and locked rules applied to every export</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta-band" id="get-gridscalr">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Ready to measure</p>
+            <h2>Put GridScalr to work on your next drawing</h2>
+            <p>
+              Version {{RELEASE_VERSION}} for Windows 10/11 (64-bit). Local project files, no
+              account and no cloud.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Download GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Release page and checksums</a
+            >
+            <a class="button ghost" href="../#docs">Read the documentation</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="../#hero" aria-label="GridScalr home">
+            <img class="logo" src="../assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p class="muted">
+            Local-first PDF and TIF takeoff for drawing measurement and procurement quantities.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed
+          </p>
+        </div>
+        <nav aria-label="Project">
+          <h2 class="footer-heading">Project</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub repository</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT license</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD_PARTY_NOTICES.md"
+                >Third-party notices</a
+              >
+            </li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/SECURITY.md">Security policy</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Documentation">
+          <h2 class="footer-heading">Documentation</h2>
+          <ul>
+            <li><a href="./">All features</a></li>
+            <li><a href="../#docs">User guide and workflows</a></li>
+            <li><a href="{{RELEASE_NOTES_URL}}">Release notes</a></li>
+            <li><a href="../#download">Download</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="wrap footer-bottom">
+        <p>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</p>
+        <p>Windows installers are not code-signed. Verify the SHA-256 checksums.</p>
+      </div>
+    </footer>
+  </body>
+</html>

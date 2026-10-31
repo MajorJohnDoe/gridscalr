@@ -1,0 +1,895 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Funktioner i GridScalr — mängdning av PDF och TIF</title>
+    <meta
+      name="description"
+      content="Utforska GridScalr: kalibrering, längd- och areamätning, egna count-typer, Count schedule, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/funktioner/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/features/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/funktioner/" />
+    <link
+      rel="alternate"
+      hreflang="x-default"
+      href="https://majorjohndoe.github.io/gridscalr/features/"
+    />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#14181b" />
+    <link rel="icon" href="../../assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="../../assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="../../assets/app-icon-128.png" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="Funktioner i GridScalr — mängdning av PDF och TIF" />
+    <meta
+      property="og:description"
+      content="Utforska GridScalr: kalibrering, längd- och areamätning, egna count-typer, Count schedule, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/funktioner/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — mät PDF-planer lokalt, med en kalibrerad industriplan och mängder"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Funktioner i GridScalr — mängdning av PDF och TIF" />
+    <meta
+      name="twitter:description"
+      content="Utforska GridScalr: kalibrering, längd- och areamätning, egna count-typer, Count schedule, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF."
+    />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="../../assets/site.css" />
+    <script src="../../assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebPage",
+        "name": "Funktioner i GridScalr — mängdning av PDF och TIF",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/funktioner/",
+        "inLanguage": "sv",
+        "isPartOf": {
+          "@type": "WebSite",
+          "name": "GridScalr",
+          "url": "https://majorjohndoe.github.io/gridscalr/sv/"
+        }
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        "itemListElement": [
+          {
+            "@type": "ListItem",
+            "position": 1,
+            "name": "GridScalr",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/"
+          },
+          {
+            "@type": "ListItem",
+            "position": 2,
+            "name": "Funktioner",
+            "item": "https://majorjohndoe.github.io/gridscalr/sv/funktioner/"
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Hoppa till innehållet</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="../#hero" aria-label="GridScalr startsida">
+          <img class="logo" src="../../assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true" />
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="./" aria-current="page">Funktioner</a>
+          <a href="../#download">Ladda ner</a>
+          <a href="../#docs">Dokumentation</a>
+          <a href="../#faq">Frågor</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="../../features/" hreflang="en" lang="en">English</a>
+          <a href="./" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="page-hero">
+        <div class="wrap">
+          <nav class="breadcrumb" aria-label="Brödsmulor">
+            <a href="../">GridScalr</a>
+            <span aria-hidden="true">/</span>
+            <span aria-current="page">Funktioner</span>
+          </nav>
+          <p class="eyebrow">Funktionsgenomgång</p>
+          <h1>Alla funktioner för mängdning av PDF- och TIF-ritningar</h1>
+          <p class="lede">
+            Från kalibrering och räkning till revisionsjämförelse, lokal OCR och inköpsunderlag. Här
+            är vad varje del av appen gör, med skärmbilder från aktuell release.
+          </p>
+
+          <div class="release-badge">
+            <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
+            <span>Publicerad {{RELEASE_DATE}}</span>
+            <a href="{{RELEASE_NOTES_URL}}">Nyheter i {{RELEASE_VERSION}}</a>
+          </div>
+
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Releasesida och kontrollsummor</a
+            >
+          </div>
+        </div>
+      </section>
+
+      <section class="section feature-tour">
+        <div class="wrap feature-layout">
+          <nav class="feature-toc" aria-label="Funktionsavsnitt">
+            <p class="toc-heading">På den här sidan</p>
+            <a href="#open-organise">Öppna och organisera</a>
+            <a href="#calibrate-measure">Kalibrera och mät</a>
+            <a href="#count-schedule">Räkna och schemalägg</a>
+            <a href="#layers-rooms">Layers, kategorier och rum</a>
+            <a href="#annotate">Rita och annotera</a>
+            <a href="#symbols">Fastighetssymboler</a>
+            <a href="#images">Inbäddade bilder</a>
+            <a href="#quantities">Mängder och beställningsinställningar</a>
+            <a href="#export">Export och rapporter</a>
+            <a href="#reference-compare">Referens och jämförelse</a>
+            <a href="#search-ocr">Sökning och OCR</a>
+            <a href="#help-files">Hjälp, filer och robusthet</a>
+            <a href="#all-features">Komplett funktionslista</a>
+          </nav>
+
+          <div class="feature-content">
+            <section class="feature-row" id="open-organise">
+              <div class="feature-copy">
+                <p class="eyebrow">Ritningspaket</p>
+                <h2>Öppna och organisera hela ritningspaketet</h2>
+                <p>
+                  Öppna PDF-planer, importera skannade TIF-sidor och håll flera källdokument i ett
+                  projekt. Sidorna läggs alltid till i slutet, så en befintlig mängdning behåller
+                  sina sidnummer när en ny ritning kommer.
+                </p>
+                <ul class="feature-list">
+                  <li>PDF-rendering med sidminiatyrer, sidnamn samt byggnads- och våningsetiketter.</li>
+                  <li>
+                    Förlustfri import av CCITT G3/G4-TIF för skannade ritningar, utan att först
+                    konvertera källfilen.
+                  </li>
+                  <li>
+                    Flera dokument per projekt där nya sidor läggs till i slutet och aldrig infogas
+                    eller flyttas om.
+                  </li>
+                  <li>
+                    Anpassa, zooma, dela vy, duplicera sidor och radera sidor med säker omnumrering
+                    av objekt.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> fastighetsritningar med många sidor och revisioner.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/hero.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: kalibrerat ritningspaket"
+                  >
+                    <img
+                      src="../../screenshots/hero.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr visar en kalibrerad industriplan med mätningar för lager, kontor och verkstad samt panelen Properties."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    En kalibrerad industrimängdning med rektangelareor, antal, ett avdrag och
+                    ritningsanteckningar.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="calibrate-measure">
+              <div class="feature-copy">
+                <p class="eyebrow">Mätning</p>
+                <h2>Kalibrera en gång och mät med kontroll</h2>
+                <p>
+                  Ange skalan från ett känt mått eller tryckskalan 1:N, lås den mot oavsiktliga
+                  ändringar och mät direkt på planen.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    Flerdelade längder, polygonareor, snabba rektanglar och ellipser, radie,
+                    diameter, trepunkters bågar, vinklar, lutningar och volymer.
+                  </li>
+                  <li>
+                    Snap till ändpunkter, mittpunkter och skärningar mellan synliga segment, med
+                    justerbar tröskel.
+                  </li>
+                  <li>
+                    Etiketter använder pappersbaserad storlek och blir lika stora på skärmen och i
+                    PDF-export.
+                  </li>
+                  <li>
+                    Kategori, rum, avdragsytor och låsta sid skalor gör mängdningen granskningsbar.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> rumsareor, vägglängder, lutningar och volymmängder.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/calibration.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: kalibreringsdialog"
+                  >
+                    <img
+                      src="../../screenshots/calibration.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs kalibreringsdialog för sida 1 som visar ett referensmått på 10 m, val av enhet och alternativet att uppdatera befintliga mätningar medan kalibreringslinjen ligger kvar på planen."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Kalibrera mot ett känt mått och lås sedan sidans skala mot oavsiktliga ändringar.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/measure.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: mätverktyg"
+                  >
+                    <img
+                      src="../../screenshots/measure.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr med Length-verktyget aktivt, Layers-panelen öppen och kontextraden som visar mållager och alternativ för ny mätning, med Properties till höger."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Mät- och ritverktyg delar en yta men ligger på separata lagertyper.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="count-schedule">
+              <div class="feature-copy">
+                <p class="eyebrow">Räkning</p>
+                <h2>Räkna en gång och granska ett Count schedule</h2>
+                <p>
+                  Räkna dörrar, fönster, radiatorer, inventarier och egna objekttyper. Varje typ kan
+                  ha egen symbol och mängd, och ett placerat objekt kan representera flera stycken.
+                </p>
+                <ul class="feature-list">
+                  <li>Inbyggda count-typer plus egna projekttyper med namn och vektorsymbol.</li>
+                  <li>Stycken per count-objekt för grupperade dörrar, fönster eller utrustning.</li>
+                  <li>
+                    Count schedule per typ, kolumnen Count type i Markups, filtrering och gruppering
+                    samt count-symboler i teckenförklaringen.
+                  </li>
+                  <li>Återanvändbara count-presets så att nya projekt startar med samma definitioner.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> dörrlistor, fönsterlistor och inventarieförteckningar.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/count-types.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: count-typer"
+                  >
+                    <img
+                      src="../../screenshots/count-types.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Count types-dialog med inbyggda typer för dörr, fönster, radiator, inventarie och övrigt, en egen Socket-typ med inventariesymbol och formuläret för att lägga till."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Namnge objekten du räknar och välj vektorsymbolen som används på planen och i
+                    exporter.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/count-schedule.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: Count schedule"
+                  >
+                    <img
+                      src="../../screenshots/count-schedule.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Markups-tabell grupperad efter count-typ med kolumnen Count type synlig och rader för dörrar, fönster och inventarier."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Gruppera Markups-tabellen efter count-typ för att granska en dörr-, fönster-
+                    eller inventarielista utan egna kolumner.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="layers-rooms">
+              <div class="feature-copy">
+                <p class="eyebrow">Organisering</p>
+                <h2>Layers, kategorier och rum håller mängdningen läsbar</h2>
+                <p>
+                  Mätlager och ritlager hålls åtskilda. Inom dem gör kategorier, rum och synlighet per
+                  objekt ett stort projekt lätt att granska och exportera.
+                </p>
+                <ul class="feature-list">
+                  <li>Separata mät- och ritlager, sidbundna och synliga per sida.</li>
+                  <li>
+                    Synlighet och lås per objekt, där lagrets synlighet och lås har företräde.
+                  </li>
+                  <li>Kategorier, rum, avdragsytor och massändring av mätningar.</li>
+                  <li>
+                    Markups-vyer med valbara kolumner, filter, flernivågruppering och navigering
+                    mellan rader.
+                  </li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> projekt med många rum, byggnader eller revisioner.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/layers.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: Layers-panelen"
+                  >
+                    <img
+                      src="../../screenshots/layers.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Layers-panel med sidbundna lager, ett mätlager expanderat för att visa objekten på aktuell sida och växeln Add/Deduct i kontextraden."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Expandera ett lager för att granska varje objekt, markera det på planen och välja
+                    additiv eller avdragsyta.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/markups-list.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: Markups-lista med vyer och gruppering"
+                  >
+                    <img
+                      src="../../screenshots/markups-list.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Markups-panel med en sparad Room review-vy, grupper för byggnad, våning och rum samt kolumnerna Name, Type, Page, Layer, Value, Category och Room."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    En dockad projektlista med sparade vyer, valbara kolumner, gruppering, filter och
+                    navigering.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="annotate">
+              <div class="feature-copy">
+                <p class="eyebrow">Annotering</p>
+                <h2>Rita och annotera utan att lämna planen</h2>
+                <p>
+                  Lägg till fältanteckningar, revisionsmarkeringar och kommentarer på separata
+                  ritlager, så att de aldrig blandas ihop med uppmätta mängder.
+                </p>
+                <ul class="feature-list">
+                  <li>Pennstreck, linjer, pilar, rektanglar, ellipser och överstrykningar.</li>
+                  <li>Revisionsmoln, hänvisningar, stämplar, revisionsdeltan och textanteckningar.</li>
+                  <li>Ändra storlek och rotera ritningar, stämplar och symboler med synliga handtag.</li>
+                  <li>Dolda objekt renderas, träffas eller exporteras aldrig; låsta objekt förblir synliga.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> skickanteckningar, arbetsorder och överlämning.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/markups.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: ritningsanteckningar och lager"
+                  >
+                    <img
+                      src="../../screenshots/markups.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Layers-panel med ett revisionsmoln runt en lastkaj, en hänvisning vid entrén och en stämpel med besiktningsstatus."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Revisionsmoln, hänvisningar och statusstämplar ligger på ritlager.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="symbols">
+              <div class="feature-copy">
+                <p class="eyebrow">Fastighetssymboler</p>
+                <h2>Placera sökbara fastighetssymboler</h2>
+                <p>
+                  Använd ett inbyggt bibliotek med 52 originalsymboler för brand, utrymning,
+                  ventilation, el, byggnad och avfall och granska dem sedan efter kategori och status.
+                </p>
+                <ul class="feature-list">
+                  <li>Sökbart symbibliotek med senast använda symboler och kategorifärger.</li>
+                  <li>Rotation, storleksändring i hörnet och standardstorlek 24 pt.</li>
+                  <li>Besiktningsstatus som märke på planen och i Markups.</li>
+                  <li>Symbol- och statusvyer för en snabb genomgång av fastigheten.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> utrustningsinventering, besiktning och underhållsplanering.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/symbols.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: symbibliotek"
+                  >
+                    <img
+                      src="../../screenshots/symbols.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs symbibliotek öppnat från verktygsraden med sökbara symboler för brand, utrymning, ventilation, el, byggnad och avfall, en vald brandsläckare på planen och Markups grupperade efter symbolkategori och status."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Placera vektorsymboler med kategorifärg, rotation och besiktningsstatus och
+                    granska dem i Markups-listan.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="images">
+              <div class="feature-copy">
+                <p class="eyebrow">Inbäddade bilder</p>
+                <h2>Håll foton och skanningar inne i projektet</h2>
+                <p>
+                  Bädda in PNG- eller JPEG-bilder som besiktningsfoton, detaljskanningar eller
+                  referensbilder och placera dem på planen utan att hantera ännu en fil.
+                </p>
+                <ul class="feature-list">
+                  <li>Inbäddade resurser lagras i projektfilen medan originalbilderna lämnas orörda.</li>
+                  <li>Bakgrundsläge under markeringar eller annoteringsläge ovanpå planen.</li>
+                  <li>Handtag, opacitet och rotation; bilder följer med i PDF-export.</li>
+                  <li>Nedskalning och storleksgränser håller projektet hanterbart.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> skickfoton, utrustningsdetaljer och platsreferenser.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/images.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: inbäddad besiktningsbild"
+                  >
+                    <img
+                      src="../../screenshots/images.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs plan med ett inbäddat besiktningsfoto av en lastkaj markerat, med bildhandtag och Properties-panelen som visar bildläge, opacitet och rotation."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Inbäddade besiktningsfoton kan ligga under markeringar eller ovanpå planen, med
+                    egen opacitet och rotation.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="quantities">
+              <div class="feature-copy">
+                <p class="eyebrow">Mängder</p>
+                <h2>Granska mängder och beställningsinställningar</h2>
+                <p>
+                  Mängderna beräknas från samma objektdata som du mätt och räknat. Granska
+                  bruttomängd, avdrag, nettomängd, spill och beställningsmängd innan något lämnar
+                  appen.
+                </p>
+                <ul class="feature-list">
+                  <li>Gruppera mängder efter kategori, rum och sida.</li>
+                  <li>Spillprocent, avrundning och minsta beställningsmängd.</li>
+                  <li>Separat mängdrad för varje count-typ.</li>
+                  <li>Ingen sparad sammanställning: varje rapport härleds från aktuellt projekt.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> inköp, överlämning till entreprenör och intern granskning.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/quantities.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: mängddialog"
+                  >
+                    <img
+                      src="../../screenshots/quantities.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs mängddialog som visar bruttomängd, avdrag, nettomängd, spill och beställningsmängd per kategori och rum."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Live-mängder med avdrag, spill och avrundning för inköp.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="export">
+              <div class="feature-copy">
+                <p class="eyebrow">Export</p>
+                <h2>Exportera ritningen, mängderna eller båda</h2>
+                <p>
+                  Välj det resultat nästa person behöver: en markerad ritning, en mängdarbetsbok, en
+                  utskriftsvänlig rapport eller rå projektdata.
+                </p>
+                <ul class="feature-list">
+                  <li>
+                    Plattad ritnings-PDF med sidintervall, beskärning, synliga lager, etiketter och
+                    valfri teckenförklaring.
+                  </li>
+                  <li>Mängd-CSV, XLSX-arbetsbok med sex blad och utskriftsvänlig A4-PDF.</li>
+                  <li>Markup-CSV, projekt-JSON och PNG för andra system.</li>
+                  <li>Exporter följer samma synlighets- och låsregler som arbetsytan.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> inköpspaket, arbetsorder och arkivkopior.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/export.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: exportdialog för ritnings-PDF"
+                  >
+                    <img
+                      src="../../screenshots/export.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs exportdialog för Drawing PDF med sidintervall, beskärningsyta, lagerval, etiketter och teckenförklaring."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Exportera synliga markeringar som en plattad ritnings-PDF utan att ändra
+                    källritningen.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="reference-compare">
+              <div class="feature-copy">
+                <p class="eyebrow">Granskning</p>
+                <h2>Jämför en referens eller revision innan du agerar</h2>
+                <p>
+                  Visa samma sida, en sparad revision eller en rå PDF-ritning bredvid den redigerbara
+                  ytan. Referensen följer panorering, zoom och sidbyten men redigerar aldrig
+                  projektet.
+                </p>
+                <ul class="feature-list">
+                  <li>Synkroniserad skrivskyddad referenspanel med tre källtyper.</li>
+                  <li>Jämförelse sida vid sida eller i överlägg med justerbar opacitet.</li>
+                  <li>Ändrade, tillagda och borttagna markeringar med varningar och radnavigering.</li>
+                  <li>Jämförelse-PDF utan att slå samman någon av källritningarna.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> revisionsgranskning före beställning eller överlämning.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/split-view.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: synkroniserad referenspanel"
+                  >
+                    <img
+                      src="../../screenshots/split-view.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr med en redigerbar huvudvy och en skrivskyddad referenspanel som visar samma kalibrerade plan vid samma panorering och zoom, med val av källa för Same page, Revision och Drawing."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Den skrivskyddade referenspanelen följer huvudytan medan redigeringen sker på ett
+                    ställe.
+                  </figcaption>
+                </figure>
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/compare.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: revisionsjämförelse"
+                  >
+                    <img
+                      src="../../screenshots/compare.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalr jämför aktuell mängdning med en referensrevision i överläggsläge och en skillnadspanel som visar ändrade, tillagda och borttagna objekt."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Överlägg eller sida vid sida med skillnadslista och jämförelse-PDF.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row" id="search-ocr">
+              <div class="feature-copy">
+                <p class="eyebrow">Sökning</p>
+                <h2>Hitta text i PDF-planer och skannade ritningar</h2>
+                <p>
+                  Sök i PDF-textlagret på alla sidor eller kör lokal OCR på engelska och svenska på
+                  en skanning och behåll resultaten på din dator.
+                </p>
+                <ul class="feature-list">
+                  <li>Sidresultat, utdrag och en markerad träff på ritningen.</li>
+                  <li>Lokal Tesseract-OCR för skannade sidor med engelska och svenska modeller.</li>
+                  <li>OCR-data per sida sparas i projektet så att en öppnad skanning inte byggs om.</li>
+                  <li>Ingen sökförfrågan lämnar appen.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> att hitta rumsnamn, utrustningstaggär och ritningsanteckningar.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/search.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: fritextsökning"
+                  >
+                    <img
+                      src="../../screenshots/search.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs sökpanel med en textfråga, sidresultat och en markerad träff på ritningen."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Sök i PDF-textlagret på alla sidor och hoppa till en markerad träff.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row reverse" id="help-files">
+              <div class="feature-copy">
+                <p class="eyebrow">Arbetsflöde</p>
+                <h2>Hjälp, återställning och touchinmatning i samma app</h2>
+                <p>
+                  Guiden, de rollbaserade arbetsflödena, genvägarna och About-panelen finns i
+                  applikationen, tillsammans med autosparning och ångrahistorik.
+                </p>
+                <ul class="feature-list">
+                  <li>Inbyggd användarguide, arbetsflöden för två roller, genvägar och Help-sökning.</li>
+                  <li>Autosparning, senaste filer och ångra/gör om över massändringar.</li>
+                  <li>Tvåfingerspanorering och nypzoom, pennprioritet, palmavvisning och långtrycksmenyer.</li>
+                  <li>Schemamigrering när ett äldre projekt öppnas.</li>
+                </ul>
+                <p class="feature-role"><strong>Passar för:</strong> tekniker som lär sig appen på plats och team som delar en metod.</p>
+              </div>
+              <div class="feature-media">
+                <figure class="shot">
+                  <a
+                    class="shot-link"
+                    href="../../screenshots/workflows-help.png"
+                    data-lightbox
+                    aria-label="Förstora skärmbild: arbetsflöden i appen"
+                  >
+                    <img
+                      src="../../screenshots/workflows-help.png"
+                      width="1920"
+                      height="1080"
+                      loading="lazy"
+                      alt="GridScalrs Help-dialog öppen på fliken Workflows med guider för drifttekniker och tekniska förvaltare."
+                    />
+                    <span class="zoom-hint">Klicka för att förstora</span>
+                  </a>
+                  <figcaption>
+                    Uppgiftsorienterade arbetsflöden finns bredvid användarguiden, genvägarna och
+                    About.
+                  </figcaption>
+                </figure>
+              </div>
+            </section>
+
+            <section class="feature-row complete" id="all-features">
+              <div class="feature-copy">
+                <p class="eyebrow">Komplett lista</p>
+                <h2>Alla funktionsområden i korthet</h2>
+                <p>
+                  En grupperad checklista för utvärdering. Användarguiden har hela detaljen panel för
+                  panel.
+                </p>
+              </div>
+              <div class="complete-grid">
+                <div>
+                  <h3>Ritningar och sidor</h3>
+                  <ul>
+                    <li>PDF- och TIF-ritningspaket</li>
+                    <li>Flera dokument per projekt</li>
+                    <li>Sidnummer läggs bara till i slutet</li>
+                    <li>Sidminiatyrer, sidnamn och byggnad/våning</li>
+                    <li>Duplicera sidor och radera sidor explicit</li>
+                    <li>Anpassa, zooma, delad vy och låsta sid skalor</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Mät och räkna</h3>
+                  <ul>
+                    <li>Referenskalibrering och manuell 1:N-skala</li>
+                    <li>Längd, area, radie, diameter och båge</li>
+                    <li>Vinkel, lutning och volym</li>
+                    <li>Snabba rektanglar och ellipser</li>
+                    <li>Count-typer, stycken per objekt och Count schedule</li>
+                    <li>Snap och pappersbaserade etiketter</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Organisera och annotera</h3>
+                  <ul>
+                    <li>Mätlager och ritlager</li>
+                    <li>Kategorier, rum och avdrag</li>
+                    <li>Synlighet, lås, massändringar och urklipp</li>
+                    <li>Markups-vyer, kolumner, filter och gruppering</li>
+                    <li>Revisionsmoln, hänvisningar, stämplar, deltan och text</li>
+                    <li>Fastighetssymboler med besiktningsstatus</li>
+                  </ul>
+                </div>
+                <div>
+                  <h3>Granska och exportera</h3>
+                  <ul>
+                    <li>Referenspanel och revisionsjämförelse</li>
+                    <li>PDF-textsökning och lokal engelsk/svensk OCR</li>
+                    <li>Brutto, avdrag, netto, spill och beställningsmängd</li>
+                    <li>CSV, XLSX och utskriftsvänlig PDF-rapport</li>
+                    <li>Ritnings-PDF, markup-CSV, projekt-JSON och PNG</li>
+                    <li>Dolda och låsta regler gäller i varje export</li>
+                  </ul>
+                </div>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="section cta-band" id="get-gridscalr">
+        <div class="wrap cta-band-inner">
+          <div>
+            <p class="eyebrow">Redo att mäta</p>
+            <h2>Sätt GridScalr i arbete på nästa ritning</h2>
+            <p>
+              Version {{RELEASE_VERSION}} för Windows 10/11 (64-bit). Lokala projektfiler, inget
+              konto och inget moln.
+            </p>
+          </div>
+          <div class="actions">
+            <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+              >Ladda ner GridScalr {{RELEASE_VERSION}}</a
+            >
+            <a class="button secondary" data-release-page href="{{RELEASE_URL}}"
+              >Releasesida och kontrollsummor</a
+            >
+            <a class="button ghost" href="../#docs">Läs dokumentationen</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="../#hero" aria-label="GridScalr startsida">
+            <img class="logo" src="../../assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
+            <span>GridScalr</span>
+          </a>
+          <p class="muted">
+            Lokal mängdning av PDF- och TIF-ritningar för ritningsmätning och inköpsunderlag.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT-licens
+          </p>
+        </div>
+        <nav aria-label="Projekt">
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD_PARTY_NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/SECURITY.md">Säkerhetspolicy</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Dokumentation">
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="./">Alla funktioner</a></li>
+            <li><a href="../#docs">Användarguide och arbetsflöden</a></li>
+            <li><a href="{{RELEASE_NOTES_URL}}">Release notes</a></li>
+            <li><a href="../#download">Ladda ner</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="wrap footer-bottom">
+        <p>© 2026 MajorJohnDoe. GridScalr är programvara före 1.0.</p>
+        <p>Windows-installationerna är inte kodsignerade. Verifiera SHA-256-kontrollsummorna.</p>
+      </div>
+    </footer>
+  </body>
+</html>

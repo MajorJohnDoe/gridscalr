@@ -32,6 +32,13 @@ const shots = [
     description: "Measurement and drawing tools share one canvas but stay on separate layer types.",
   },
   {
+    file: "calibration.png",
+    title: "Calibration",
+    alt: "The GridScalr Edit calibration dialog for page 1, showing a 10 m reference length, a unit selector, and the option to update existing measurements while the calibration line stays visible on the plan.",
+    description:
+      "Calibrate a page against a known dimension or enter a printed scale, then lock it against accidental changes.",
+  },
+  {
     file: "markups.png",
     title: "Markups and layers",
     alt: "GridScalr Layers panel with a revision cloud around a loading dock, a callout at the entrance and an inspected stamp.",
@@ -77,6 +84,13 @@ const shots = [
     alt: "The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
     description:
       "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list.",
+  },
+  {
+    file: "images.png",
+    title: "Embedded images",
+    alt: "The GridScalr plan with an embedded inspection photo of a loading dock selected, showing image handles and the Properties panel with image mode, opacity and rotation controls.",
+    description:
+      "Embed PNG or JPEG photos in a project, place them above the PDF or below markups, and adjust size, rotation and opacity.",
   },
   {
     file: "export.png",
@@ -281,6 +295,134 @@ try {
   await capture("search.png");
   await page.getByRole("button", { name: "Close search" }).click();
   await page.locator(".search-panel").waitFor({ state: "detached" });
+
+  await page.evaluate(() => {
+    window.__gridscalr.store.setPage(1);
+    window.__gridscalr.store.setTool("select");
+  });
+  await page.keyboard.press("Control+0");
+  await page.waitForTimeout(350);
+  const calibrationPoints = await page.evaluate(() => {
+    const calibration = window.__gridscalr.store.project.pages[1].calibration;
+    if (!calibration || calibration.source !== "reference") return null;
+    const host = document.querySelector("#canvas-interaction").getBoundingClientRect();
+    const first = window.__gridscalr.canvas.pageToScreen(calibration.p1);
+    const second = window.__gridscalr.canvas.pageToScreen(calibration.p2);
+    return [
+      { x: first.x + host.left, y: first.y + host.top },
+      { x: second.x + host.left, y: second.y + host.top },
+    ];
+  });
+  if (!calibrationPoints) throw new Error("Demo page 1 has no reference calibration.");
+  await page.evaluate(() => window.__gridscalr.store.setTool("calibrate"));
+  await page.mouse.click(calibrationPoints[0].x, calibrationPoints[0].y);
+  await page.mouse.click(calibrationPoints[1].x, calibrationPoints[1].y);
+  await page.getByRole("dialog").waitFor();
+  await page.getByRole("dialog").getByLabel("Known length").fill("10");
+  await page.waitForTimeout(250);
+  await capture("calibration.png");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+  await page.evaluate(() => window.__gridscalr.store.setTool("select"));
+
+  const embeddedPhoto = await page.evaluate(() => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 480;
+    canvas.height = 300;
+    const context = canvas.getContext("2d");
+    if (!context) return null;
+    const gradient = context.createLinearGradient(0, 0, 480, 300);
+    gradient.addColorStop(0, "#273238");
+    gradient.addColorStop(1, "#101719");
+    context.fillStyle = gradient;
+    context.fillRect(0, 0, 480, 300);
+    context.strokeStyle = "rgba(79, 224, 191, 0.18)";
+    context.lineWidth = 1;
+    for (let x = 0; x <= 480; x += 24) {
+      context.beginPath();
+      context.moveTo(x, 0);
+      context.lineTo(x, 300);
+      context.stroke();
+    }
+    for (let y = 0; y <= 300; y += 24) {
+      context.beginPath();
+      context.moveTo(0, y);
+      context.lineTo(480, y);
+      context.stroke();
+    }
+    context.fillStyle = "#33434a";
+    context.fillRect(34, 54, 412, 198);
+    context.fillStyle = "#223034";
+    context.fillRect(54, 82, 176, 150);
+    context.fillStyle = "#b9c9ce";
+    context.fillRect(72, 102, 140, 110);
+    context.strokeStyle = "#65767c";
+    context.lineWidth = 4;
+    context.strokeRect(72, 102, 140, 110);
+    context.beginPath();
+    context.moveTo(142, 102);
+    context.lineTo(142, 212);
+    context.stroke();
+    context.fillStyle = "#4a5a60";
+    context.fillRect(258, 128, 164, 104);
+    context.fillStyle = "#d9e4e7";
+    context.font = "600 18px system-ui, sans-serif";
+    context.fillText("Loading dock", 54, 42);
+    context.font = "500 13px system-ui, sans-serif";
+    context.fillStyle = "#9fb0b5";
+    context.fillText("Inspection photo · Northgate", 54, 276);
+    context.fillStyle = "#f26d6d";
+    context.fillRect(330, 42, 116, 26);
+    context.fillStyle = "#1a1111";
+    context.font = "700 13px system-ui, sans-serif";
+    context.fillText("CHECK", 372, 60);
+    return canvas.toDataURL("image/png");
+  });
+  if (!embeddedPhoto) throw new Error("Could not render the demo inspection image.");
+  const photoBuffer = Buffer.from(embeddedPhoto.split(",")[1], "base64");
+  const fileChooser = page.waitForEvent("filechooser");
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "Import image…" }).click();
+  await (
+    await fileChooser
+  ).setFiles({
+    name: "loading-dock-inspection.png",
+    mimeType: "image/png",
+    buffer: photoBuffer,
+  });
+  await page.waitForTimeout(700);
+  await waitForToastsGone(page);
+  const showProperties = page.getByRole("button", { name: "Show properties" });
+  if (await showProperties.count()) await showProperties.click();
+  const imagePlacement = await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    const project = store.project;
+    const layer = project.layers.find((candidate) =>
+      candidate.items.some((item) => item.kind === "image"),
+    );
+    const item = layer?.items.find((candidate) => candidate.kind === "image");
+    if (!layer || !item) return false;
+    const width = item.points[1].x - item.points[0].x;
+    const height = item.points[1].y - item.points[0].y;
+    const center = { x: 860, y: 610 };
+    store.mutate((next) => {
+      const target = next.layers
+        .find((candidate) => candidate.id === layer.id)
+        ?.items.find((candidate) => candidate.id === item.id);
+      if (!target) return;
+      target.points = [
+        { x: center.x - width / 2, y: center.y - height / 2 },
+        { x: center.x + width / 2, y: center.y + height / 2 },
+      ];
+    }, "change");
+    store.setSelection({ layerId: layer.id, itemId: item.id });
+    return true;
+  });
+  if (!imagePlacement) throw new Error("Could not place the embedded inspection image.");
+  await page.waitForTimeout(350);
+  await capture("images.png");
+  await page.keyboard.press("Control+z");
+  await waitForToastsGone(page);
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

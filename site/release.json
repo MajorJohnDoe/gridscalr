@@ -1,0 +1,12 @@
+{
+  "version": "0.16.1",
+  "releasedAt": "2026-10-31",
+  "tag": "v0.16.1",
+  "releaseUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/tag/v0.16.1",
+  "latestUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/latest",
+  "notesUrl": "https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/0.16.1.md",
+  "installerUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/GridScalr_0.16.1_x64-setup.exe",
+  "msiUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/GridScalr_0.16.1_x64_en-US.msi",
+  "portableUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/gridscalr.exe",
+  "checksumsUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/SHA256SUMS.txt"
+}
