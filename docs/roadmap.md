@@ -107,9 +107,9 @@ full list.
 
 ## Technical debt and post-release refactors
 
-These are internal improvements, not user-facing promises. Concrete items should
-become GitHub issues with the `tech-debt` or `refactor` label rather than
-anonymous `TODO` comments in code.
+These are internal improvements, not user-facing promises. Record concrete
+items as GitHub issues with the `tech-debt` or `refactor` label rather than
+anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 
 - Split `CanvasView.ts` further into label rendering, annotation drawing and pointer interaction modules.
 - Extract project save/open flows from `App.ts` into focused `src/app/` modules.

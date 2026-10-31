@@ -70,6 +70,28 @@ Rules that keep the deferral honest:
 - Documentation-only changes do not need the full build, but links, images, anchors, and instructions must remain correct.
 - Never report a GUI change as documented while the user guide still describes the previous interface.
 
+## Issue tracking
+
+An issue is the unit of intent; a pull request is the unit of change.
+
+- Features, user-visible bugs, schema changes, architecture changes, security
+  follow-ups and refactors larger than roughly half a day get a GitHub issue.
+- Small fixes, documentation links, formatting and routine dependency bumps may
+  go directly to a pull request.
+- Use type labels: `bug`, `enhancement`, `refactor`, `tech-debt`, `tooling`,
+  `tests`, `post-release`, `dependencies`, `documentation`.
+- Use milestones for release scope, not priority labels. Only work that is
+  actually planned for a release belongs in its milestone; everything else
+  stays in the backlog.
+- Link the issue from the pull request with `Closes #N`. One pull request may
+  close more than one issue when the work is genuinely one change.
+- Keep the problem, scope, non-goals, acceptance criteria and decisions in the
+  issue. Keep implementation detail and verification in the pull request.
+- Do not add anonymous `TODO` comments. Record technical debt as an issue or a
+  roadmap item.
+- Security and dependency alerts stay open until they are fixed or explicitly
+  accepted. A tracking issue may reference them but must not replace them.
+
 ## Git workflow
 
 - `main` is the integration branch and should always pass CI.
