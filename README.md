@@ -7,6 +7,10 @@ calibrating their scale, measuring lengths and areas, and turning the result int
 procurement quantities. Everything stays on your machine: no account, no cloud,
 no telemetry.
 
+**Website:** [majorjohndoe.github.io/gridscalr](https://majorjohndoe.github.io/gridscalr/) —
+a bilingual landing page with screenshots, requirements and download links. It is
+a development preview; the latest public release remains the download source.
+
 [![CI](https://github.com/MajorJohnDoe/gridscalr/actions/workflows/ci.yml/badge.svg)](https://github.com/MajorJohnDoe/gridscalr/actions/workflows/ci.yml)
 [![Latest release](https://img.shields.io/github/v/release/MajorJohnDoe/gridscalr)](https://github.com/MajorJohnDoe/gridscalr/releases/latest)
 [![License](https://img.shields.io/github/license/MajorJohnDoe/gridscalr)](LICENSE)

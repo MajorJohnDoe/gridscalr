@@ -288,6 +288,10 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
+scripts/build-site.mjs     builds site-dist from site/, screenshots and metadata
+scripts/check-site.mjs     link, asset, language parity and SEO checks for the built site
+site/                      static bilingual landing page; English at /, Swedish at /sv/
+.github/workflows/pages.yml GitHub Pages build and deploy
 ```
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
@@ -307,6 +311,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
+- `npm run site:build` copies `site/`, the selected screenshots and `docs/social-preview.png` into `site-dist/` and generates `sitemap.xml` and `robots.txt`; `npm run site:check` validates the built site.
 - `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
 - The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.
 - `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Milestone 3 checklist only.

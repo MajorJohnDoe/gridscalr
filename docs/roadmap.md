@@ -123,5 +123,9 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
   Windows workflow; see [`releasing.md`](releasing.md).
 - CI runs lint, frontend tests, build, UI smoke tests and canvas regressions on
   Ubuntu, plus `cargo fmt` and `cargo check`.
+- The bilingual landing page is generated from `site/` and deployed to GitHub
+  Pages by `.github/workflows/pages.yml`. Its English page is at `/` and the
+  Swedish page at `/sv/`; both point to the latest public release and are a
+  development preview, not a release announcement.
 - `main` is protected and requires both CI jobs. Dependabot proposes weekly
   dependency updates.
