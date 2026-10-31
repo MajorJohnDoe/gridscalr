@@ -6,6 +6,9 @@ schedule.
 
 ## 1. Prepare the version
 
+Create or update `docs/release-notes/<version>.md`. It is used for the GitHub
+Release notes and linked from the landing site.
+
 The app version must match in all three files:
 
 - `package.json`
@@ -109,13 +112,33 @@ Verify the landing site as well:
 ```text
 https://majorjohndoe.github.io/gridscalr/
 https://majorjohndoe.github.io/gridscalr/sv/
+https://majorjohndoe.github.io/gridscalr/features/
+https://majorjohndoe.github.io/gridscalr/sv/funktioner/
 ```
 
-Both pages should load, the language switch should work in both directions, and
-the download buttons should open the newest public release. The site is a
-development preview and is not tied to the app version. If `site/` or a selected
-screenshot changed, confirm that the **Pages** workflow built and deployed after
-the push to `main`.
+Both language pairs should load, the language switch should work, and the download
+buttons should open the newest public release.
+
+## 8. Update the landing site
+
+The landing site is updated for every tagged release, not for ordinary pull
+requests. Do this after the GitHub Release is published so the site never links to
+a missing asset.
+
+1. Update `site/release.json` with `version`, `releasedAt`, `tag`, `releaseUrl`,
+   `notesUrl` and the `installerUrl`, `msiUrl`, `portableUrl` and `checksumsUrl`
+   asset links for the published release.
+2. Review any release-specific copy on `site/index.html`, `site/sv/index.html` and
+   the feature pages. Version text is injected from `site/release.json`.
+3. Run:
+
+   ```bash
+   npm run site:build
+   npm run site:check
+   ```
+
+4. Commit and push `main`, then confirm that the **Pages** workflow succeeded and
+   that the live pages show the new version and download links.
 
 ## Notes
 

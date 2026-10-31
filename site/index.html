@@ -14,6 +14,9 @@
     <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/" />
     <meta name="robots" content="index, follow" />
     <meta name="theme-color" content="#14181b" />
+    <link rel="icon" href="assets/favicon.ico" sizes="any" />
+    <link rel="icon" href="assets/app-icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/app-icon-128.png" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="GridScalr" />
@@ -52,8 +55,10 @@
         "url": "https://majorjohndoe.github.io/gridscalr/",
         "applicationCategory": "BusinessApplication",
         "operatingSystem": "Windows, Linux, macOS",
+        "softwareVersion": "{{RELEASE_VERSION}}",
         "license": "https://opensource.org/licenses/MIT",
-        "downloadUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/latest",
+        "downloadUrl": "{{RELEASE_URL}}",
+        "releaseNotes": "{{RELEASE_NOTES_URL}}",
         "description": "Local-first desktop app for measuring PDF and TIF drawings, counting objects and producing procurement quantities for facilities operations and technical property management.",
         "offers": {
           "@type": "Offer",
@@ -132,17 +137,12 @@
     <header class="site-header">
       <div class="wrap header-inner">
         <a class="brand" href="#hero" aria-label="GridScalr home">
-          <svg class="logo" width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
-            <rect x="1.5" y="3.5" width="27" height="23" rx="4" fill="#0f1315" stroke="#35c2a1" stroke-width="2" />
-            <path d="M7 10h16M7 15h16M7 20h16M11 7v16M15 7v16M19 7v16" stroke="#2f6f62" stroke-width="1" />
-            <circle cx="19" cy="15" r="2.6" fill="#f26d6d" />
-          </svg>
+          <img class="logo" src="assets/app-icon.svg" width="30" height="30" alt="" aria-hidden="true" />
           <span>GridScalr</span>
         </a>
 
         <nav class="primary-nav" aria-label="Primary">
-          <a href="#features">Features</a>
-          <a href="#screenshots">Screenshots</a>
+          <a href="features/">Features</a>
           <a href="#download">Download</a>
           <a href="#docs">Documentation</a>
           <a href="#faq">FAQ</a>
@@ -166,36 +166,28 @@
         <div class="wrap hero-grid">
           <div class="hero-copy">
             <p class="eyebrow">Local-first PDF &amp; TIF takeoff</p>
-            <h1>Measure PDF and TIF drawings. Keep everything local.</h1>
+            <h1>Turn PDF and TIF drawings into procurement quantities — locally.</h1>
             <p class="lede">
-              GridScalr is a local-first desktop app for calibrating PDF and TIF drawings, measuring
-              lengths, areas and counts, and producing procurement quantities. No account, no cloud,
-              no telemetry.
+              Calibrate the plan, measure areas, count doors and fixtures, and export CSV, Excel
+              or PDF. No account, no cloud, no upload.
             </p>
 
-            <div class="notice" role="note">
-              <strong>Development preview</strong>
-              <p>
-                The public installer is older than the features shown here. Build from source for the
-                current code.
-              </p>
+            <div class="release-badge">
+              <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
+              <span>Released {{RELEASE_DATE}}</span>
+              <a href="{{RELEASE_NOTES_URL}}">What’s new in {{RELEASE_VERSION}}</a>
             </div>
 
             <div class="actions">
-              <a
-                class="button primary"
-                data-download
-                href="https://github.com/MajorJohnDoe/gridscalr/releases/latest"
-                >Download latest public release</a
+              <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+                >Download GridScalr {{RELEASE_VERSION}} for Windows</a
               >
-              <a class="button secondary" href="#docs">Read the documentation</a>
-              <a
-                class="button ghost"
-                data-build-from-source
-                href="https://github.com/MajorJohnDoe/gridscalr#install-and-run"
-                >Build from source</a
-              >
+              <a class="button secondary" href="features/">See every feature</a>
             </div>
+            <p class="download-note">
+              Installer for Windows 10/11 (64-bit).
+              <a data-release-page href="{{RELEASE_URL}}">All downloads and checksums</a>
+            </p>
 
             <ul class="trust">
               <li>No account</li>
@@ -206,13 +198,21 @@
           </div>
 
           <figure class="hero-shot">
-            <img
-              src="screenshots/hero.png"
-              width="1920"
-              height="1080"
-              fetchpriority="high"
-              alt="GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel."
-            />
+            <a
+              class="shot-link"
+              href="screenshots/hero.png"
+              data-lightbox
+              aria-label="Enlarge screenshot: calibrated industrial takeoff"
+            >
+              <img
+                src="screenshots/hero.png"
+                width="1920"
+                height="1080"
+                fetchpriority="high"
+                alt="GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel."
+              />
+              <span class="zoom-hint">Click to enlarge</span>
+            </a>
             <figcaption>
               A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing
               annotations.
@@ -225,44 +225,102 @@
         <div class="wrap">
           <div class="section-head">
             <p class="eyebrow">Private by default</p>
-            <h2>Local-first and offline by design</h2>
+            <h2>Your drawings never leave your machine</h2>
             <p>
-              GridScalr is built for drawings that should not leave the machine they arrived on.
-              There is no server, no database in the cloud and no background service.
+              GridScalr reads the drawing from disk, stores the takeoff locally and writes only the
+              exports you ask for. There is no account, cloud or background service in between.
             </p>
+          </div>
+
+          <div class="flow" aria-label="Local drawing workflow">
+            <div class="flow-step">
+              <span class="flow-kicker">Source</span>
+              <strong>PDF or TIF drawing</strong>
+              <span>Referenced by path and SHA-256. Never modified.</span>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-step">
+              <span class="flow-kicker">Project</span>
+              <strong>Takeoff on your machine</strong>
+              <span>Layers, measurements, counts, quantities and autosave.</span>
+            </div>
+            <span class="flow-arrow" aria-hidden="true">→</span>
+            <div class="flow-step">
+              <span class="flow-kicker">Output</span>
+              <strong>CSV, Excel or PDF</strong>
+              <span>Written where you choose. Nothing is uploaded.</span>
+            </div>
           </div>
 
           <div class="card-grid three">
             <article class="card">
               <h3>No account, cloud or telemetry</h3>
               <p>
-                The desktop app reads drawings from disk and writes only where you ask it to. There
-                is no network access, no telemetry and no automatic update service.
+                Measuring, counting, project files and exports work without a network connection.
+                There is no telemetry and no automatic update service.
               </p>
             </article>
             <article class="card">
-              <h3>Source drawings are never modified</h3>
+              <h3>Source drawings are protected</h3>
               <p>
-                A project references the PDF or TIF by path plus a SHA-256 checksum. Every save and
-                export refuses to overwrite a drawing that belongs to the project.
+                Every save and export refuses to overwrite a drawing that belongs to the project.
+                The source file and its checksum stay under your control.
               </p>
             </article>
             <article class="card">
-              <h3>Project data stays on your machine</h3>
+              <h3>One local project, every sheet</h3>
               <p>
-                Projects and autosave recovery live locally. You decide where a project is saved,
-                which pages are exported and what leaves the app.
+                Multiple PDFs and TIF scans share one project. New drawings append pages instead of
+                replacing the set you already measured.
               </p>
             </article>
           </div>
         </div>
       </section>
 
+      <section class="section how" id="how-it-works">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">From drawing to order</p>
+            <h2>Three steps from plan to procurement quantities</h2>
+          </div>
+
+          <ol class="steps">
+            <li>
+              <span class="step-number" aria-hidden="true">1</span>
+              <h3>Open and calibrate</h3>
+              <p>
+                Open a PDF plan or import a scanned TIF. Calibrate against a known dimension or enter
+                the printed 1:N scale, then lock it.
+              </p>
+            </li>
+            <li>
+              <span class="step-number" aria-hidden="true">2</span>
+              <h3>Measure, count and annotate</h3>
+              <p>
+                Measure lengths and areas, count doors and fixtures, organise by category and room,
+                and add the notes your team needs.
+              </p>
+            </li>
+            <li>
+              <span class="step-number" aria-hidden="true">3</span>
+              <h3>Review and export</h3>
+              <p>
+                Check gross, deduction, net, waste and order quantities, then export CSV, XLSX, a
+                print-friendly PDF report or a marked-up drawing.
+              </p>
+            </li>
+          </ol>
+
+          <p class="section-link"><a href="features/">See the full feature tour →</a></p>
+        </div>
+      </section>
+
       <section class="section use-cases" id="use-cases">
         <div class="wrap">
           <div class="section-head">
-            <p class="eyebrow">Built for site work and procurement</p>
-            <h2>For facilities operations and technical property management</h2>
+            <p class="eyebrow">Built for site work and property management</p>
+            <h2>For the people who maintain the building</h2>
             <p>
               Use one takeoff for area follow-up, inventories, schedules, maintenance planning and
               contractor handoff instead of copying numbers between spreadsheets.
@@ -272,7 +330,7 @@
           <div class="card-grid four">
             <article class="card">
               <p class="card-kicker">Facilities operations</p>
-              <h3>Drifttekniker</h3>
+              <h3>For drifttekniker</h3>
               <p>
                 Measure room areas, inventory fixtures and equipment, add condition notes and keep
                 drawing updates tied to the plan.
@@ -280,7 +338,7 @@
             </article>
             <article class="card">
               <p class="card-kicker">Technical property management</p>
-              <h3>Tekniska förvaltare</h3>
+              <h3>For tekniska förvaltare</h3>
               <p>
                 Follow up areas, prepare a door schedule and a window schedule, review revision
                 changes and prepare procurement quantities.
@@ -288,17 +346,17 @@
             </article>
             <article class="card">
               <p class="card-kicker">Procurement</p>
-              <h3>Contractor handoff</h3>
+              <h3>One quantity set for the order</h3>
               <p>
-                Review gross, deduction, net, waste and order quantities, then export CSV, XLSX or a
-                print-friendly PDF report.
+                Review gross, deduction, net, waste and order quantities, then hand off CSV, XLSX or
+                a print-friendly PDF report.
               </p>
             </article>
             <article class="card">
               <p class="card-kicker">Drawing updates</p>
-              <h3>Revision review</h3>
+              <h3>Review before you order</h3>
               <p>
-                Open a saved revision beside the current plan, compare changed, added and removed
+                Compare a saved revision with the current plan, follow changed, added and removed
                 markups and keep both drawings read-only.
               </p>
             </article>
@@ -310,60 +368,45 @@
         <div class="wrap">
           <div class="section-head">
             <p class="eyebrow">One takeoff, every sheet</p>
-            <h2>PDF takeoff for floor plans and site plans</h2>
+            <h2>Measure, count and export from the same project</h2>
             <p>
-              Calibrate, measure, count and annotate the whole drawing set. PDF measurement and
-              quantity takeoff share the same item data, and nothing is sent to a third party.
+              PDF takeoff and PDF measurement share the same item data, so the quantities,
+              schedules and exports stay in sync. There is no second spreadsheet to update.
             </p>
           </div>
 
-          <div class="card-grid three">
+          <div class="card-grid four">
             <article class="card">
-              <h3>Scanned TIF/TIFF drawings with local OCR</h3>
+              <h3>Measure with confidence</h3>
               <p>
-                Import scanned TIF drawings as lossless CCITT G3/G4 pages, calibrate them like a PDF
-                and index their text with bundled English and Swedish OCR.
+                Calibrate once, lock the scale and measure lengths, areas, radius, diameter, arcs,
+                angles, slopes and volumes with snapping.
               </p>
             </article>
             <article class="card">
-              <h3>Count doors, windows, fixtures and custom object types</h3>
+              <h3>Count once, schedule everywhere</h3>
               <p>
-                Place count objects as pieces, define your own types and review a quantity row and a
-                count schedule per type. The Count schedule makes a door, window or fixture list
-                without custom columns.
+                Create your own count types, count pieces per object and review a count schedule per
+                type in the Markups table.
               </p>
             </article>
             <article class="card">
-              <h3>Calibration and measurement</h3>
+              <h3>Compare revisions safely</h3>
               <p>
-                Calibrate against a known dimension or enter the printed 1:N scale. Measure
-                multi-segment lengths, radius, diameter, arcs, angles, slopes, polygon areas,
-                volumes, quick rectangles and ellipses.
+                Open a saved revision or PDF drawing beside the plan, compare changes and export a
+                comparison PDF without merging either file.
               </p>
             </article>
             <article class="card">
-              <h3>Quantities and schedules for facilities operations</h3>
+              <h3>Export what the order needs</h3>
               <p>
-                Organise items by category, room and page. Review gross, deduction, net, waste and
-                order quantities, then export a CSV, an Excel workbook or a PDF report.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Layers, markups and facility symbols</h3>
-              <p>
-                Keep measurement and drawing layers separate. Add revision clouds, callouts, stamps
-                and text notes, or place searchable facility symbols with rotation and inspection
-                status.
-              </p>
-            </article>
-            <article class="card">
-              <h3>Reference pane and revision comparison</h3>
-              <p>
-                Show the same page, a saved revision or a raw PDF drawing beside the editable canvas.
-                Pan, zoom and page changes stay in step, and the reference never edits the project.
+                Produce CSV, a six-sheet XLSX workbook, a print-friendly quantity report and a
+                labelled drawing PDF.
               </p>
             </article>
           </div>
+
+          <p class="section-link"><a href="features/">See all features and screenshots →</a></p>
         </div>
       </section>
 
@@ -371,103 +414,129 @@
         <div class="wrap">
           <div class="section-head">
             <p class="eyebrow">The real interface</p>
-            <h2>See the takeoff workflow</h2>
+            <h2>See the workflow on a real drawing</h2>
             <p>
-              Screenshots come from the current code and the bundled demo project. The public
-              installer is older; use the build-from-source path for the latest features.
+              These screenshots come from the current code and the bundled demo project. Click any
+              image to inspect the interface at full size.
             </p>
           </div>
 
           <div class="shot-grid">
             <figure class="shot">
-              <img
-                src="screenshots/count-schedule.png"
-                width="1920"
-                height="1080"
-                loading="lazy"
-                alt="The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures."
-              />
+              <a
+                class="shot-link"
+                href="screenshots/measure.png"
+                data-lightbox
+                aria-label="Enlarge screenshot: measurement and annotation tools"
+              >
+                <img
+                  src="screenshots/measure.png"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right."
+                />
+                <span class="zoom-hint">Click to enlarge</span>
+              </a>
+              <figcaption>
+                <strong>Measure and annotate.</strong> Measurement and drawing tools share one
+                canvas but stay on separate layer types.
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <a
+                class="shot-link"
+                href="screenshots/count-schedule.png"
+                data-lightbox
+                aria-label="Enlarge screenshot: count schedule grouped by count type"
+              >
+                <img
+                  src="screenshots/count-schedule.png"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures."
+                />
+                <span class="zoom-hint">Click to enlarge</span>
+              </a>
               <figcaption>
                 <strong>Count schedule.</strong> Group the Markups table by count type to review a
                 door, window or fixture schedule.
               </figcaption>
             </figure>
             <figure class="shot">
-              <img
-                src="screenshots/quantities.png"
-                width="1920"
-                height="1080"
-                loading="lazy"
-                alt="The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room."
-              />
+              <a
+                class="shot-link"
+                href="screenshots/quantities.png"
+                data-lightbox
+                aria-label="Enlarge screenshot: quantities dialog"
+              >
+                <img
+                  src="screenshots/quantities.png"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room."
+                />
+                <span class="zoom-hint">Click to enlarge</span>
+              </a>
               <figcaption>
                 <strong>Procurement quantities.</strong> Live quantities with deductions, waste and
                 rounding for orders.
               </figcaption>
             </figure>
             <figure class="shot">
-              <img
-                src="screenshots/split-view.png"
-                width="1920"
-                height="1080"
-                loading="lazy"
-                alt="GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing."
-              />
+              <a
+                class="shot-link"
+                href="screenshots/split-view.png"
+                data-lightbox
+                aria-label="Enlarge screenshot: reference pane and revision comparison"
+              >
+                <img
+                  src="screenshots/split-view.png"
+                  width="1920"
+                  height="1080"
+                  loading="lazy"
+                  alt="GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing."
+                />
+                <span class="zoom-hint">Click to enlarge</span>
+              </a>
               <figcaption>
                 <strong>Reference view.</strong> Compare the same page, a revision or a PDF drawing
                 while edits stay in one place.
-              </figcaption>
-            </figure>
-            <figure class="shot">
-              <img
-                src="screenshots/symbols.png"
-                width="1920"
-                height="1080"
-                loading="lazy"
-                alt="The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status."
-              />
-              <figcaption>
-                <strong>Facility symbols.</strong> Place vector symbols with category colours,
-                rotation and inspection status.
               </figcaption>
             </figure>
           </div>
         </div>
       </section>
 
-      <section class="section how" id="how-it-works">
-        <div class="wrap">
-          <div class="section-head">
-            <p class="eyebrow">From drawing to quantities</p>
-            <h2>How it works</h2>
+      <section class="section demo" id="demo">
+        <div class="wrap demo-grid">
+          <div>
+            <p class="eyebrow">Try before you download</p>
+            <h2>Open the demo project</h2>
+            <p>
+              Explore a calibrated three-sheet takeoff with categories, rooms, deductions,
+              annotations and a saved revision. The sample drawing is the same industrial plan used
+              in the screenshots.
+            </p>
           </div>
-
-          <ol class="steps">
-            <li>
-              <span class="step-number" aria-hidden="true">1</span>
-              <h3>Open a drawing</h3>
-              <p>
-                Open a PDF plan or import scanned TIF pages. New drawings append to the project, so a
-                full set shares one takeoff.
-              </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">2</span>
-              <h3>Calibrate and measure</h3>
-              <p>
-                Set the page scale, measure lengths and areas, count objects and annotate the plan
-                with layers, markups and symbols.
-              </p>
-            </li>
-            <li>
-              <span class="step-number" aria-hidden="true">3</span>
-              <h3>Review quantities and export</h3>
-              <p>
-                Check gross, deduction, net, waste and order quantities, then export CSV, XLSX or a
-                print-friendly PDF report.
-              </p>
-            </li>
-          </ol>
+          <div class="demo-actions">
+            <a
+              class="button primary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/demo-project.gridscalr"
+              >Download demo project</a
+            >
+            <a
+              class="button secondary"
+              href="https://github.com/MajorJohnDoe/gridscalr/raw/main/fixtures/industrial-plan.pdf"
+              >Download sample PDF</a
+            >
+            <p class="muted">
+              Install GridScalr first, then open the <code>.gridscalr</code> project. The source PDF
+              is referenced, not copied into the project.
+            </p>
+          </div>
         </div>
       </section>
 
@@ -475,46 +544,63 @@
         <div class="wrap">
           <div class="section-head">
             <p class="eyebrow">Download</p>
-            <h2>Download and requirements</h2>
+            <h2>Download GridScalr {{RELEASE_VERSION}}</h2>
             <p>
-              The primary download is the latest public GitHub Release. It is an older build than
-              the features shown on this page.
+              The current public release for Windows. Get the installer here, or open the release
+              page for every file and checksum.
             </p>
           </div>
 
           <div class="download-grid">
             <article class="card download-card">
-              <h3>Latest public release</h3>
+              <div class="release-heading">
+                <span class="version-pill" data-release-version>{{RELEASE_VERSION}}</span>
+                <span class="muted">Released {{RELEASE_DATE}}</span>
+              </div>
+              <h3>Windows installer</h3>
               <p>
-                Download the newest published Windows build, then verify it against
-                <code>SHA256SUMS.txt</code> on the release page.
+                Recommended for most machines. Windows 10 or 11, 64-bit. The installer is not
+                code-signed; verify the checksum before running it.
               </p>
-              <a
-                class="button primary"
-                data-download
-                href="https://github.com/MajorJohnDoe/gridscalr/releases/latest"
-                >Download latest public release</a
+              <a class="button primary" data-installer href="{{INSTALLER_URL}}"
+                >Download installer for Windows</a
               >
-              <ul class="download-files">
-                <li><code>GridScalr_&lt;version&gt;_x64-setup.exe</code> — NSIS installer</li>
-                <li><code>GridScalr_&lt;version&gt;_x64_en-US.msi</code> — MSI</li>
-                <li><code>gridscalr.exe</code> — portable executable</li>
-                <li><code>SHA256SUMS.txt</code> — checksums</li>
+              <ul class="download-options">
+                <li>
+                  <a data-msi href="{{MSI_URL}}">MSI package</a>
+                  <span>For managed Windows machines.</span>
+                </li>
+                <li>
+                  <a data-portable href="{{PORTABLE_URL}}">Portable executable</a>
+                  <span>No installation required.</span>
+                </li>
+                <li>
+                  <a data-checksums href="{{CHECKSUMS_URL}}">SHA256SUMS.txt</a>
+                  <span>Verify every downloaded file.</span>
+                </li>
+                <li>
+                  <a data-release-page href="{{RELEASE_URL}}">Release page and release notes</a>
+                  <span>All assets and version details.</span>
+                </li>
               </ul>
-              <h4>Windows SmartScreen</h4>
-              <p>
-                The installers are not code-signed, so Windows may show “Windows protected your PC”.
-                Choose <strong>More info → Run anyway</strong> after comparing the SHA-256 hash with
-                the release checksums. Unsigned builds can also trigger antivirus false positives.
-              </p>
+
+              <details class="small-details">
+                <summary>Windows SmartScreen</summary>
+                <p>
+                  The installers are not code-signed, so Windows may show “Windows protected your
+                  PC”. Choose <strong>More info → Run anyway</strong> after comparing the SHA-256
+                  hash with the release checksums. Unsigned builds can also trigger antivirus false
+                  positives.
+                </p>
+                <pre><code>Get-FileHash .\GridScalr_{{RELEASE_VERSION}}_x64-setup.exe -Algorithm SHA256</code></pre>
+              </details>
             </article>
 
             <article class="card download-card" id="build-from-source">
               <h3>Build from source</h3>
               <p>
-                The published installers are Windows builds. Linux and macOS builds can be produced
-                from source with Node.js 22.12 or newer, Rust 1.77.2 or newer and the Tauri 2
-                platform prerequisites.
+                Linux and macOS builds can be produced from source with Node.js 22.12 or newer, Rust
+                1.77.2 or newer and the Tauri 2 platform prerequisites.
               </p>
               <pre><code>git clone https://github.com/MajorJohnDoe/gridscalr.git
 cd gridscalr
@@ -647,15 +733,14 @@ npm run tauri build</code></pre>
       <div class="wrap footer-grid">
         <div>
           <a class="brand footer-brand" href="#hero" aria-label="GridScalr home">
-            <svg class="logo" width="26" height="26" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
-              <rect x="1.5" y="3.5" width="27" height="23" rx="4" fill="#0f1315" stroke="#35c2a1" stroke-width="2" />
-              <path d="M7 10h16M7 15h16M7 20h16M11 7v16M15 7v16M19 7v16" stroke="#2f6f62" stroke-width="1" />
-              <circle cx="19" cy="15" r="2.6" fill="#f26d6d" />
-            </svg>
+            <img class="logo" src="assets/app-icon.svg" width="26" height="26" alt="" aria-hidden="true" />
             <span>GridScalr</span>
           </a>
           <p class="muted">
             Local-first PDF and TIF takeoff for drawing measurement and procurement quantities.
+          </p>
+          <p class="footer-version">
+            Version <span data-release-version>{{RELEASE_VERSION}}</span> · MIT licensed
           </p>
         </div>
         <nav aria-label="Project">
@@ -674,15 +759,16 @@ npm run tauri build</code></pre>
         <nav aria-label="Documentation">
           <h2 class="footer-heading">Documentation</h2>
           <ul>
-            <li><a href="#docs">User guide and workflows</a></li>
-            <li><a href="#download">Download</a></li>
-            <li><a href="#faq">FAQ</a></li>
+            <li><a href="features/">All features</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md">User guide</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md">Workflows</a></li>
+            <li><a href="{{RELEASE_NOTES_URL}}">Release notes</a></li>
           </ul>
         </nav>
       </div>
       <div class="wrap footer-bottom">
         <p>© 2026 MajorJohnDoe. GridScalr is pre-1.0 software.</p>
-        <p>Development preview — no release or version is implied by this page.</p>
+        <p>Windows installers are not code-signed. Verify the SHA-256 checksums.</p>
       </div>
     </footer>
   </body>

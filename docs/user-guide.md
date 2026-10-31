@@ -147,6 +147,8 @@ A page scale is required for real-world length and area values. The scale is sto
 3. Enter the length and choose its unit (mm, cm, m, in, ft, or yd).
 4. Optionally apply the scale to every page and update existing measurements.
 
+![Calibration dialog with a known length and options to update measurements](screenshots/calibration.png)
+
 ### Enter a printed scale
 
 Choose **Manual scale…** from the page scale chip in the status bar and enter the printed drawing ratio as `1:N`. Presets for 1:50, 1:100, 1:200, and 1:400 are available.
@@ -322,6 +324,8 @@ Use **File → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts
 - Choose **Background** mode to place the image above the PDF but below every markup, or **Annotation** mode to use normal layer order.
 - Properties exposes opacity, rotation, layer, visibility, lock state, duplicate, and delete. Corner handles resize proportionally; side handles change one dimension.
 - Images follow the same visibility and locking rules as other items.
+
+![An embedded inspection photo selected on the plan with image properties](screenshots/images.png)
 
 ## Symbols
 

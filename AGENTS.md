@@ -173,7 +173,8 @@ Do not create or push a release tag, publish a GitHub Release, or bump the versi
 
 To create a Windows release build:
 
-1. Update the three app-version fields.
+1. Update the three app-version fields and create or update
+   `docs/release-notes/<version>.md`.
 2. Run the documentation pass: update `docs/user-guide.md` and `docs/workflows.md`,
    run `npm run docs:capture`, and verify with
    `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
@@ -187,6 +188,13 @@ git push origin v0.1.0
 ```
 
 The `Windows build` workflow runs on `v*` tags and can also be started manually. It uploads the `gridscalr-windows` artifact containing the executable and installers. Releases are published manually from those artifacts with `gh release create`; follow `docs/releasing.md`. Do not add an automatic release job without an explicit decision.
+
+Every tagged release must also update the landing site. Update `site/release.json`
+with the published version, date, release URL, release notes URL and asset URLs,
+then run `npm run site:build` and `npm run site:check`. The site must never name a
+version that is not published. Commit and push `main`, and confirm that the
+**Pages** workflow deployed successfully. Ordinary pull requests and commits that
+do not change the released version must not change the version shown on the site.
 
 ## CI and build hosts
 
@@ -288,9 +296,12 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
-scripts/build-site.mjs     builds site-dist from site/, screenshots and metadata
-scripts/check-site.mjs     link, asset, language parity and SEO checks for the built site
-site/                      static bilingual landing page; English at /, Swedish at /sv/
+scripts/build-site.mjs     builds site-dist from site/, icons, screenshots and release metadata
+scripts/check-site.mjs     link, asset, language parity, release and SEO checks for the built site
+site/                      bilingual landing page and feature tour; English at /, Swedish at /sv/
+site/features/index.html   English feature tour
+site/sv/funktioner/index.html Swedish feature tour
+site/release.json          displayed release version, date, notes URL and download asset URLs
 .github/workflows/pages.yml GitHub Pages build and deploy
 ```
 
@@ -311,7 +322,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
 - `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
-- `npm run site:build` copies `site/`, the selected screenshots and `docs/social-preview.png` into `site-dist/` and generates `sitemap.xml` and `robots.txt`; `npm run site:check` validates the built site. Preview it with `python3 -m http.server -d site-dist 8080`.
+- `npm run site:build` copies `site/`, the app icon, all selected screenshots and `docs/social-preview.png` into `site-dist/`, injects `site/release.json`, and generates `sitemap.xml` and `robots.txt`; `npm run site:check` validates all four pages, release metadata, links and structured data. Preview it with `python3 -m http.server -d site-dist 8080`.
 - `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
 - The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.
 - `npm run fixture:legacy` regenerates the older A4 `fixtures/sample-plan.pdf`; it is kept for the historical Milestone 3 checklist only.

@@ -7,6 +7,7 @@ on:
       - "site/**"
       - "docs/screenshots/**"
       - "docs/social-preview.png"
+      - "src-tauri/icons/**"
       - "scripts/build-site.mjs"
       - "scripts/check-site.mjs"
       - "package.json"
