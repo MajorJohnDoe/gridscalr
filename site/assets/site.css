@@ -1042,6 +1042,12 @@ pre code {
   opacity: 1;
 }
 
+@media (hover: none) {
+  .zoom-hint {
+    opacity: 1;
+  }
+}
+
 .lightbox {
   width: min(1500px, 96vw);
   max-width: 96vw;
