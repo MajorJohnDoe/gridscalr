@@ -17,6 +17,7 @@ src/
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
   canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
+  canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
   canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
   canvas/geometry.ts     crop, handle, rotation and colour helpers
   canvas/selectionHandles.ts selection and rotation handles
@@ -117,7 +118,7 @@ Key design choices:
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
 - **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum.
-- **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted.
+- **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint on both the primary canvas and the reference pane, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted. A pen takes priority and recent palm touches are ignored. Long-press on an item opens the shared context menu on touch.
 - **Bundles follow user intent.** OCR, PDF exports, XLSX and TIF import load through dynamic imports only when used. Production builds omit source maps unless `GRIDSCALR_SOURCEMAPS=1` is set for a debuggable build.
 - **Tauri prototype freezing stays off.** `@pdf-lib/fontkit` assigns to a prototype property inherited from `Object.prototype`; Tauri's `freezePrototype` makes that assignment throw and prevents the window from starting. GridScalr does not execute untrusted JavaScript, so this hardening is left disabled.
 

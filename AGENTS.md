@@ -185,6 +185,7 @@ src/features/countTypes/model.ts count definitions, normalization, management an
 src/features/countTypes/ui.ts count-type management dialog
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
+src/canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
 src/compare/               session reference loading, item matching and revision diff
 src/search/                local PDF text-layer extraction, index, search hits and OCR
@@ -318,7 +319,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.14.1:** complete — OCR, PDF exports, XLSX and TIF import load on demand; production builds no longer ship source maps. No schema change; the schema remains v19.
 - **0.15.0:** complete — custom project count types, pieces per count object and schema 20; the first feature module under `src/features/countTypes/`. Schema is v20.
 - **0.16.0:** complete — count schedule with a quantity row per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable count presets. Schema is v21.
-- **0.16.1:** complete — two-finger touch pan and pinch zoom, with one-finger drawing preserved. No schema change; the schema remains v21.
+- **0.16.1:** complete — two-finger touch pan and pinch zoom on both canvases, pen/palm priority and a long-press context menu, with one-finger drawing preserved. No schema change; the schema remains v21.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

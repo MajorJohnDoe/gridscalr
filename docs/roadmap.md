@@ -56,7 +56,7 @@ milestone:
 | 0.14.1 | Lazy-loaded OCR, PDF exports, XLSX and TIF import; production source maps removed | Complete | v19 |
 | 0.15.0 | Custom count types, pieces per count object, schema 20 and the first feature module | Complete | v20 |
 | 0.16.0 | Count schedule: quantity rows per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable presets | Complete | v21 |
-| 0.16.1 | Two-finger touch pan and pinch zoom on the canvas | Complete | v21 |
+| 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
