@@ -104,6 +104,19 @@ gh release view "v$VERSION" --repo MajorJohnDoe/gridscalr
 Open the release page, check that the README download link resolves to it, and
 download one artifact to confirm the checksum.
 
+Verify the landing site as well:
+
+```text
+https://majorjohndoe.github.io/gridscalr/
+https://majorjohndoe.github.io/gridscalr/sv/
+```
+
+Both pages should load, the language switch should work in both directions, and
+the download buttons should open the newest public release. The site is a
+development preview and is not tied to the app version. If `site/` or a selected
+screenshot changed, confirm that the **Pages** workflow built and deployed after
+the push to `main`.
+
 ## Notes
 
 - Never publish a release from a working tree with uncommitted changes.

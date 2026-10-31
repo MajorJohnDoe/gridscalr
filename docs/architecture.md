@@ -101,6 +101,10 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark with 2,000+ items
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
+scripts/build-site.mjs build site-dist from site/, screenshots and metadata
+scripts/check-site.mjs link, asset, language parity and SEO checks for the built site
+site/                  static bilingual landing page; English at /, Swedish at /sv/
+.github/workflows/pages.yml GitHub Pages build and deploy
 ```
 
 Key design choices:
@@ -120,6 +124,7 @@ Key design choices:
 - **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum.
 - **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint on both the primary canvas and the reference pane, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted. A pen takes priority and recent palm touches are ignored. Long-press on an item opens the shared context menu on touch.
 - **Bundles follow user intent.** OCR, PDF exports, XLSX and TIF import load through dynamic imports only when used. Production builds omit source maps unless `GRIDSCALR_SOURCEMAPS=1` is set for a debuggable build.
+- **The landing site is separate from the app.** `site/` is hand-authored HTML, CSS and a small progressive-enhancement script. `scripts/build-site.mjs` copies it with selected screenshots into the gitignored `site-dist/`, and `.github/workflows/pages.yml` deploys that output. The site reuses screenshots but no application code or build output.
 - **Tauri prototype freezing stays off.** `@pdf-lib/fontkit` assigns to a prototype property inherited from `Object.prototype`; Tauri's `freezePrototype` makes that assignment throw and prevents the window from starting. GridScalr does not execute untrusted JavaScript, so this hardening is left disabled.
 
 ## Testing and fixtures

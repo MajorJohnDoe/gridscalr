@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GridScalr — mängdning av PDF- och TIF-ritningar</title>
+    <meta
+      name="description"
+      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+    />
+    <link rel="canonical" href="https://majorjohndoe.github.io/gridscalr/sv/" />
+    <link rel="alternate" hreflang="en" href="https://majorjohndoe.github.io/gridscalr/" />
+    <link rel="alternate" hreflang="sv" href="https://majorjohndoe.github.io/gridscalr/sv/" />
+    <link rel="alternate" hreflang="x-default" href="https://majorjohndoe.github.io/gridscalr/" />
+    <meta name="robots" content="index, follow" />
+    <meta name="theme-color" content="#14181b" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="GridScalr" />
+    <meta property="og:title" content="GridScalr — mängdning av PDF- och TIF-ritningar" />
+    <meta
+      property="og:description"
+      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+    />
+    <meta property="og:url" content="https://majorjohndoe.github.io/gridscalr/sv/" />
+    <meta property="og:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+    <meta
+      property="og:image:alt"
+      content="GridScalr — mät PDF-planer lokalt, med en kalibrerad industriplan och mängder"
+    />
+    <meta property="og:image:width" content="1280" />
+    <meta property="og:image:height" content="640" />
+    <meta property="og:locale" content="sv_SE" />
+    <meta property="og:locale:alternate" content="en_US" />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="GridScalr — mängdning av PDF- och TIF-ritningar" />
+    <meta
+      name="twitter:description"
+      content="Mät och mängda PDF- och TIF-ritningar lokalt. Kalibrera planer, räkna dörrar, fönster och inventarier samt exportera inköpsunderlag för drift och förvaltning."
+    />
+    <meta name="twitter:image" content="https://majorjohndoe.github.io/gridscalr/social-preview.png" />
+
+    <link rel="stylesheet" href="../assets/site.css" />
+    <script src="../assets/site.js" defer></script>
+
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "GridScalr",
+        "url": "https://majorjohndoe.github.io/gridscalr/sv/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Windows, Linux, macOS",
+        "license": "https://opensource.org/licenses/MIT",
+        "downloadUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/latest",
+        "description": "Lokal skrivbordsapp för mätning av PDF- och TIF-ritningar, räkning av objekt och framtagning av inköpsunderlag för drifttekniker och tekniska förvaltare.",
+        "offers": {
+          "@type": "Offer",
+          "price": "0",
+          "priceCurrency": "USD"
+        },
+        "featureList": [
+          "Kalibrera PDF- och TIF-ritningar och mät längder, areor, vinklar, lutningar och volymer",
+          "Räkna dörrar, fönster, inventarier och egna objekttyper och granska ett Count schedule",
+          "Jämför revisioner sida vid sida eller i överlägg och exportera en jämförelse-PDF",
+          "Sök i PDF-textlager och kör lokal OCR på engelska och svenska på skannade ritningar",
+          "Exportera mängder som CSV, XLSX och en utskriftsvänlig PDF-rapport"
+        ]
+      }
+    </script>
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Kan jag mäta i skannade TIF-ritningar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. GridScalr importerar skannade TIF/TIFF-ritningar som förlustfria CCITT G3/G4-sidor, så du kan kalibrera och mäta dem utan att först konvertera till PDF. Lokal OCR på engelska och svenska kan dessutom indexera texten i en skanning."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Fungerar GridScalr offline?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Mätning, räkning, projektfiler och exporter fungerar utan nätanslutning. Skrivbordsappen använder inget konto, ingen molnlagring, ingen telemetri och ingen automatisk uppdateringstjänst."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Var lagras projekt och ritningar?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "På din dator. Ett projekt sparar en referens till källritningens PDF- eller TIF-sökväg plus dess SHA-256-kontrollsumma, och källritningen ändras aldrig. Autosparningen använder ett lokalt IndexedDB-lager i appen."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Kan jag exportera mängder till Excel?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Mängderna kan exporteras som en XLSX-arbetsbok, en CSV-fil eller en utskriftsvänlig PDF-rapport. Arbetsboken innehåller blad för sammanställning, kategori, rum, sida, markeringar och källanteckningar som genereras från samma mängddata."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Behöver jag kalibrera ritningen?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja för att mätningarna ska bli tillförlitliga. Du kan kalibrera en sida mot ett känt mått eller ange tryckskalan 1:N och sedan låsa sidans skala så att den inte ändras av misstag. Räkning kräver ingen skala, men längder, areor och volymer gör det."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Passar GridScalr för drifttekniker och tekniska förvaltare?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Arbetsflödena täcker rumsareor, inventarier av fasta installationer och utrustning, dörr- och fönsterlistor, underhållsplanering, skickbedömning, revisionsgranskning och inköpsunderlag. Samma användarguide och rollbaserade arbetsflöden finns i appen under Help."
+            }
+          }
+        ]
+      }
+    </script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Hoppa till innehållet</a>
+
+    <header class="site-header">
+      <div class="wrap header-inner">
+        <a class="brand" href="#hero" aria-label="GridScalr startsida">
+          <svg class="logo" width="30" height="30" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+            <rect x="1.5" y="3.5" width="27" height="23" rx="4" fill="#0f1315" stroke="#35c2a1" stroke-width="2" />
+            <path d="M7 10h16M7 15h16M7 20h16M11 7v16M15 7v16M19 7v16" stroke="#2f6f62" stroke-width="1" />
+            <circle cx="19" cy="15" r="2.6" fill="#f26d6d" />
+          </svg>
+          <span>GridScalr</span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Huvudmeny">
+          <a href="#features">Funktioner</a>
+          <a href="#screenshots">Skärmbilder</a>
+          <a href="#download">Ladda ner</a>
+          <a href="#docs">Dokumentation</a>
+          <a href="#faq">Frågor</a>
+        </nav>
+
+        <nav class="lang-switch" aria-label="Språk" data-lang-switch>
+          <a href="../" hreflang="en" lang="en">English</a>
+          <a href="./" hreflang="sv" lang="sv" aria-current="page">Svenska</a>
+        </nav>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero" id="hero">
+        <div class="wrap hero-grid">
+          <div class="hero-copy">
+            <p class="eyebrow">Lokal mängdning av PDF- och TIF-ritningar</p>
+            <h1>Mät och mängda PDF- och TIF-ritningar. Behåll allt lokalt.</h1>
+            <p class="lede">
+              GridScalr är en lokal skrivbordsapp för att kalibrera PDF- och TIF-ritningar, mäta
+              längder, areor och antal samt ta fram inköpsunderlag. Inget konto, inget moln, ingen
+              telemetri.
+            </p>
+
+            <div class="notice" role="note">
+              <strong>Utvecklingsförhandsvisning</strong>
+              <p>
+                Den publika installationen är äldre än funktionerna som visas här. Bygg från
+                källkoden för aktuell version.
+              </p>
+            </div>
+
+            <div class="actions">
+              <a
+                class="button primary"
+                data-download
+                href="https://github.com/MajorJohnDoe/gridscalr/releases/latest"
+                >Ladda ner senaste publika release</a
+              >
+              <a class="button secondary" href="#docs">Läs dokumentationen</a>
+              <a
+                class="button ghost"
+                data-build-from-source
+                href="https://github.com/MajorJohnDoe/gridscalr#install-and-run"
+                >Bygg från källkoden</a
+              >
+            </div>
+
+            <ul class="trust">
+              <li>Inget konto</li>
+              <li>Inget moln</li>
+              <li>Ingen telemetri</li>
+              <li>Källritningar ändras aldrig</li>
+            </ul>
+          </div>
+
+          <figure class="hero-shot">
+            <img
+              src="../screenshots/hero.png"
+              width="1920"
+              height="1080"
+              fetchpriority="high"
+              alt="GridScalr visar en kalibrerad industriplan med mätningar för lager, kontor och verkstad samt panelen Properties."
+            />
+            <figcaption>
+              En kalibrerad industrimängdning med rektangelareor, antal, ett avdrag och
+              ritningsanteckningar.
+            </figcaption>
+          </figure>
+        </div>
+      </section>
+
+      <section class="section local-first" id="local-first">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Privat från början</p>
+            <h2>Lokalt och offline från början</h2>
+            <p>
+              GridScalr är byggt för ritningar som inte ska lämna datorn de kom till. Det finns
+              ingen server, ingen molndatabas och ingen bakgrundstjänst.
+            </p>
+          </div>
+
+          <div class="card-grid three">
+            <article class="card">
+              <h3>Inget konto, moln eller telemetri</h3>
+              <p>
+                Skrivbordsappen läser ritningar från disk och skriver bara där du ber den. Det finns
+                ingen nätverksåtkomst, ingen telemetri och ingen automatisk uppdateringstjänst.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Källritningarna ändras aldrig</h3>
+              <p>
+                Ett projekt refererar till PDF- eller TIF-filen via sökväg och en
+                SHA-256-kontrollsumma. Varje sparning och export vägrar skriva över en ritning som
+                tillhör projektet.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Projektdata stannar på din dator</h3>
+              <p>
+                Projekt och autosparning ligger lokalt. Du bestämmer var ett projekt sparas, vilka
+                sidor som exporteras och vad som lämnar appen.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section use-cases" id="use-cases">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">För drift, förvaltning och inköp</p>
+            <h2>För drifttekniker och tekniska förvaltare</h2>
+            <p>
+              Använd samma mängdning för areauppföljning, inventering, förteckningar,
+              underhållsplanering och överlämning till entreprenör i stället för att kopiera siffror
+              mellan kalkylark.
+            </p>
+          </div>
+
+          <div class="card-grid four">
+            <article class="card">
+              <p class="card-kicker">Drift och underhåll</p>
+              <h3>Drifttekniker</h3>
+              <p>
+                Mät rumsareor, inventera fasta installationer och utrustning, lägg till
+                skickanteckningar och håll ritningsuppdateringar knutna till planen.
+              </p>
+            </article>
+            <article class="card">
+              <p class="card-kicker">Teknisk förvaltning</p>
+              <h3>Tekniska förvaltare</h3>
+              <p>
+                Följ upp areor, ta fram en dörrlista och en fönsterlista, granska revisioner och
+                förbered inköpsunderlag.
+              </p>
+            </article>
+            <article class="card">
+              <p class="card-kicker">Inköp</p>
+              <h3>Överlämning till entreprenör</h3>
+              <p>
+                Granska bruttomängd, avdrag, nettomängd, spill och beställningsmängd och exportera
+                sedan CSV, XLSX eller en utskriftsvänlig PDF-rapport.
+              </p>
+            </article>
+            <article class="card">
+              <p class="card-kicker">Ritningsuppdateringar</p>
+              <h3>Revisionsgranskning</h3>
+              <p>
+                Öppna en sparad revision bredvid den aktuella planen, jämför ändrade, tillagda och
+                borttagna markeringar och håll båda ritningarna skrivskyddade.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section features" id="features">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">En mängdning för hela ritningspaketet</p>
+            <h2>Mängdning av PDF-ritningar och planritningar</h2>
+            <p>
+              Kalibrera, mät, räkna och annotera hela ritningspaketet. PDF-mätning och mängdning
+              delar samma objektdata, och inget skickas till en tredje part.
+            </p>
+          </div>
+
+          <div class="card-grid three">
+            <article class="card">
+              <h3>Skannade TIF/TIFF-ritningar med lokal OCR</h3>
+              <p>
+                Importera skannade TIF-ritningar som förlustfria CCITT G3/G4-sidor, kalibrera dem
+                som en PDF och indexera texten med inbyggd OCR på engelska och svenska.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Räkna dörrar, fönster, inventarier och egna objekttyper</h3>
+              <p>
+                Placera Count-objekt som stycken, definiera egna typer och granska en mängdrad och
+                ett Count schedule per typ. Count schedule ger en dörr-, fönster- eller
+                inventarielista utan egna kolumner.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Kalibrering och ritningsmätning</h3>
+              <p>
+                Kalibrera mot ett känt mått eller ange tryckskalan 1:N. Mät flerdelade längder,
+                radie, diameter, bågar, vinklar, lutningar, polygonareor, volymer, snabba
+                rektanglar och ellipser.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Mängder och förteckningar för drift och teknisk förvaltning</h3>
+              <p>
+                Gruppera objekt efter kategori, rum och sida. Granska bruttomängd, avdrag,
+                nettomängd, spill och beställningsmängd och exportera CSV, Excel eller PDF.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Lager, Markups och fastighetssymboler</h3>
+              <p>
+                Håll mätlager och ritlager åtskilda. Lägg till revisionsmoln, hänvisningar, stämplar
+                och textanteckningar, eller placera sökbara fastighetssymboler med rotation och
+                besiktningsstatus.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Referenspanel och revisionsjämförelse</h3>
+              <p>
+                Visa samma sida, en sparad revision eller en rå PDF-ritning bredvid den redigerbara
+                ytan. Panorering, zoom och sidbyten följs åt, och referensen redigerar aldrig
+                projektet.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section screenshots" id="screenshots">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Det riktiga gränssnittet</p>
+            <h2>Se arbetsflödet för mängdning</h2>
+            <p>
+              Skärmbilderna kommer från aktuell kod och demoprojektet. Den publika installationen är
+              äldre; använd vägen via källkoden för de senaste funktionerna.
+            </p>
+          </div>
+
+          <div class="shot-grid">
+            <figure class="shot">
+              <img
+                src="../screenshots/count-schedule.png"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalrs Markups-tabell grupperad efter count-typ med kolumnen Count type synlig och rader för dörrar, fönster och inventarier."
+              />
+              <figcaption>
+                <strong>Count schedule.</strong> Gruppera Markups-tabellen efter count-typ för att
+                granska en dörr-, fönster- eller inventarielista.
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <img
+                src="../screenshots/quantities.png"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalrs mängddialog som visar bruttomängd, avdrag, nettomängd, spill och beställningsmängd per kategori och rum."
+              />
+              <figcaption>
+                <strong>Inköpsunderlag.</strong> Live-mängder med avdrag, spill och avrundning för
+                beställningar.
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <img
+                src="../screenshots/split-view.png"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalr med en redigerbar huvudvy och en skrivskyddad referenspanel som visar samma kalibrerade plan vid samma panorering och zoom, med val av källa för Same page, Revision och Drawing."
+              />
+              <figcaption>
+                <strong>Referensvy.</strong> Jämför samma sida, en revision eller en PDF-ritning
+                medan redigeringen sker på ett ställe.
+              </figcaption>
+            </figure>
+            <figure class="shot">
+              <img
+                src="../screenshots/symbols.png"
+                width="1920"
+                height="1080"
+                loading="lazy"
+                alt="GridScalrs symbibliotek öppnat från verktygsraden med sökbara symboler för brand, utrymning, ventilation, el, byggnad och avfall, en vald brandsläckare på planen och Markups grupperade efter symbolkategori och status."
+              />
+              <figcaption>
+                <strong>Fastighetssymboler.</strong> Placera vektorsymboler med kategorifärg,
+                rotation och besiktningsstatus.
+              </figcaption>
+            </figure>
+          </div>
+        </div>
+      </section>
+
+      <section class="section how" id="how-it-works">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Från ritning till mängder</p>
+            <h2>Så fungerar det</h2>
+          </div>
+
+          <ol class="steps">
+            <li>
+              <span class="step-number" aria-hidden="true">1</span>
+              <h3>Öppna en ritning</h3>
+              <p>
+                Öppna en PDF-plan eller importera skannade TIF-sidor. Nya ritningar läggs till efter
+                de befintliga sidorna, så ett helt paket delar en mängdning.
+              </p>
+            </li>
+            <li>
+              <span class="step-number" aria-hidden="true">2</span>
+              <h3>Kalibrera och mät</h3>
+              <p>
+                Ange sidans skala, mät längder och areor, räkna objekt och annotera planen med
+                lager, Markups och symboler.
+              </p>
+            </li>
+            <li>
+              <span class="step-number" aria-hidden="true">3</span>
+              <h3>Granska mängder och exportera</h3>
+              <p>
+                Kontrollera bruttomängd, avdrag, nettomängd, spill och beställningsmängd och
+                exportera CSV, XLSX eller en utskriftsvänlig PDF-rapport.
+              </p>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section download" id="download">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Ladda ner</p>
+            <h2>Ladda ner och systemkrav</h2>
+            <p>
+              Den primära nedladdningen är den senaste publika GitHub-releasen. Den är äldre än
+              funktionerna som visas på den här sidan.
+            </p>
+          </div>
+
+          <div class="download-grid">
+            <article class="card download-card">
+              <h3>Senaste publika release</h3>
+              <p>
+                Ladda ner den nyaste publicerade Windows-versionen och verifiera den mot
+                <code>SHA256SUMS.txt</code> på releasesidan.
+              </p>
+              <a
+                class="button primary"
+                data-download
+                href="https://github.com/MajorJohnDoe/gridscalr/releases/latest"
+                >Ladda ner senaste publika release</a
+              >
+              <ul class="download-files">
+                <li><code>GridScalr_&lt;version&gt;_x64-setup.exe</code> — NSIS-installation</li>
+                <li><code>GridScalr_&lt;version&gt;_x64_en-US.msi</code> — MSI</li>
+                <li><code>gridscalr.exe</code> — portabel körbar fil</li>
+                <li><code>SHA256SUMS.txt</code> — kontrollsummor</li>
+              </ul>
+              <h4>Windows SmartScreen</h4>
+              <p>
+                Installationerna är inte kodsignerade, så Windows kan visa ”Windows protected your
+                PC”. Välj <strong>More info → Run anyway</strong> efter att ha jämfört SHA-256-hashen
+                med kontrollsummorna på releasesidan. Osignerade byggen kan också ge falska träffar
+                i antivirusprogram.
+              </p>
+            </article>
+
+            <article class="card download-card" id="build-from-source">
+              <h3>Bygg från källkoden</h3>
+              <p>
+                De publicerade installationerna är Windows-byggen. Linux- och macOS-byggen kan skapas
+                från källkoden med Node.js 22.12 eller nyare, Rust 1.77.2 eller nyare och Tauri 2:s
+                plattformskrav.
+              </p>
+              <pre><code>git clone https://github.com/MajorJohnDoe/gridscalr.git
+cd gridscalr
+npm ci
+npm run tauri build</code></pre>
+              <a
+                class="button secondary"
+                data-build-from-source
+                href="https://github.com/MajorJohnDoe/gridscalr#install-and-run"
+                >Bygg från källkoden</a
+              >
+              <p class="muted">
+                Ingen kodsignering används. Jämför en nedladdad fil med
+                <code>SHA256SUMS.txt</code> innan den körs.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section docs" id="docs">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Dokumentation</p>
+            <h2>Läs dokumentationen</h2>
+            <p>
+              Användarguiden, arbetsflödena och genvägarna finns också i appen under
+              <strong>Help</strong>.
+            </p>
+            <p class="docs-note">Den fullständiga dokumentationen är på engelska.</p>
+          </div>
+
+          <ul class="doc-list">
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/user-guide.md"
+                >Användarguide</a
+              >
+              <span>Hela arbetsflödet, panel för panel.</span>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/workflows.md"
+                >Arbetsflöden</a
+              >
+              <span>Uppgiftsorienterade guider för drift och teknisk förvaltning.</span>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/shortcuts.md"
+                >Tangentbordsgenvägar</a
+              >
+              <span>Alla genvägar i appen.</span>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/roadmap.md">Roadmap</a>
+              <span>Slutförda milstolpar, uppskjutet arbete och öppna beslut.</span>
+            </li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/limitations.md"
+                >Kända begränsningar</a
+              >
+              <span>Det appen medvetet inte gör ännu.</span>
+            </li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section faq" id="faq">
+        <div class="wrap">
+          <div class="section-head">
+            <p class="eyebrow">Frågor</p>
+            <h2>Vanliga frågor</h2>
+          </div>
+
+          <div class="faq-list">
+            <details>
+              <summary>Kan jag mäta i skannade TIF-ritningar?</summary>
+              <p>
+                Ja. GridScalr importerar skannade TIF/TIFF-ritningar som förlustfria CCITT G3/G4-sidor,
+                så du kan kalibrera och mäta dem utan att först konvertera till PDF. Lokal OCR på
+                engelska och svenska kan dessutom indexera texten i en skanning.
+              </p>
+            </details>
+            <details>
+              <summary>Fungerar GridScalr offline?</summary>
+              <p>
+                Ja. Mätning, räkning, projektfiler och exporter fungerar utan nätanslutning.
+                Skrivbordsappen använder inget konto, ingen molnlagring, ingen telemetri och ingen
+                automatisk uppdateringstjänst.
+              </p>
+            </details>
+            <details>
+              <summary>Var lagras projekt och ritningar?</summary>
+              <p>
+                På din dator. Ett projekt sparar en referens till källritningens PDF- eller
+                TIF-sökväg plus dess SHA-256-kontrollsumma, och källritningen ändras aldrig.
+                Autosparningen använder ett lokalt IndexedDB-lager i appen.
+              </p>
+            </details>
+            <details>
+              <summary>Kan jag exportera mängder till Excel?</summary>
+              <p>
+                Ja. Mängderna kan exporteras som en XLSX-arbetsbok, en CSV-fil eller en
+                utskriftsvänlig PDF-rapport. Arbetsboken innehåller blad för sammanställning,
+                kategori, rum, sida, markeringar och källanteckningar som genereras från samma
+                mängddata.
+              </p>
+            </details>
+            <details>
+              <summary>Behöver jag kalibrera ritningen?</summary>
+              <p>
+                Ja för att mätningarna ska bli tillförlitliga. Du kan kalibrera en sida mot ett känt
+                mått eller ange tryckskalan 1:N och sedan låsa sidans skala så att den inte ändras av
+                misstag. Räkning kräver ingen skala, men längder, areor och volymer gör det.
+              </p>
+            </details>
+            <details>
+              <summary>Passar GridScalr för drifttekniker och tekniska förvaltare?</summary>
+              <p>
+                Ja. Arbetsflödena täcker rumsareor, inventarier av fasta installationer och
+                utrustning, dörr- och fönsterlistor, underhållsplanering, skickbedömning,
+                revisionsgranskning och inköpsunderlag. Samma användarguide och rollbaserade
+                arbetsflöden finns i appen under Help.
+              </p>
+            </details>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap footer-grid">
+        <div>
+          <a class="brand footer-brand" href="#hero" aria-label="GridScalr startsida">
+            <svg class="logo" width="26" height="26" viewBox="0 0 30 30" aria-hidden="true" focusable="false">
+              <rect x="1.5" y="3.5" width="27" height="23" rx="4" fill="#0f1315" stroke="#35c2a1" stroke-width="2" />
+              <path d="M7 10h16M7 15h16M7 20h16M11 7v16M15 7v16M19 7v16" stroke="#2f6f62" stroke-width="1" />
+              <circle cx="19" cy="15" r="2.6" fill="#f26d6d" />
+            </svg>
+            <span>GridScalr</span>
+          </a>
+          <p class="muted">
+            Lokal mängdning av PDF- och TIF-ritningar för ritningsmätning och inköpsunderlag.
+          </p>
+        </div>
+        <nav aria-label="Projekt">
+          <h2 class="footer-heading">Projekt</h2>
+          <ul>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr">GitHub-repositoriet</a></li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/LICENSE">MIT-licens</a></li>
+            <li>
+              <a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/THIRD_PARTY_NOTICES.md"
+                >Tredjepartsnotiser</a
+              >
+            </li>
+            <li><a href="https://github.com/MajorJohnDoe/gridscalr/blob/main/SECURITY.md">Säkerhetspolicy</a></li>
+          </ul>
+        </nav>
+        <nav aria-label="Dokumentation">
+          <h2 class="footer-heading">Dokumentation</h2>
+          <ul>
+            <li><a href="#docs">Användarguide och arbetsflöden</a></li>
+            <li><a href="#download">Ladda ner</a></li>
+            <li><a href="#faq">Vanliga frågor</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="wrap footer-bottom">
+        <p>© 2026 MajorJohnDoe. GridScalr är programvara före 1.0.</p>
+        <p>Utvecklingsförhandsvisning — sidan innebär ingen release eller versionsutfästelse.</p>
+      </div>
+    </footer>
+  </body>
+</html>

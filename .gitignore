@@ -25,6 +25,9 @@ Thumbs.db
 coverage/
 exports/
 
+# Generated landing site
+site-dist/
+
 # Local test drawings (never commit)
 temp_test_plans/
 
