@@ -110,6 +110,8 @@ site/release.json      displayed release version, date, notes and asset URLs
 .github/workflows/pages.yml GitHub Pages build and deploy
 ```
 
+Architecture decisions are recorded in [`docs/adr/`](adr/README.md). The source map below describes the current code; accepted ADRs describe decisions that constrain future changes.
+
 Key design choices:
 
 - **Local first.** PDF bytes are read only when needed. Project data autosaves to a local IndexedDB recovery store; no data leaves the machine. A localStorage fallback is used only when the browser disables IndexedDB.

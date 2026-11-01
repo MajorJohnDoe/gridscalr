@@ -127,3 +127,28 @@ Version 1–5 projects load normally and are migrated to schema 21: the old `doc
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
 Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, text styling, category IDs, per-item visibility/lock flags, snap settings, stamp presets, annotation text and layouts, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.
+
+## Portable project packages
+
+A project can be exported as a standard ZIP named `<project>.gridscalr.zip`. The
+package is a transport container; it does not change the project schema.
+
+```text
+README.txt
+manifest.json
+<project>.gridscalr
+documents/<safe-name>.pdf
+exports/...            optional
+source-scans/...       optional original TIF scans
+```
+
+The packaged project file clears absolute document paths and stores relative paths
+under `documents/`. TIF documents keep their embedded PDF. `manifest.json` records
+the package format version, app version, project checksum and the size and SHA-256
+of every included file. Exported reports and original TIF scans are optional.
+
+Packages are created and extracted with streaming in Rust. Extraction rejects
+absolute names, `..`, symlinks, encrypted archives and entries outside the package
+root, then verifies checksums before the project is opened. Manual unzip followed
+by opening the extracted `.gridscalr` also works. The package format is defined by
+[ADR 0002](adr/0002-project-package.md) and is implemented in 0.17.0.

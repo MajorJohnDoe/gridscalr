@@ -11,6 +11,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Current app version: `0.16.1`.
 - Latest public release: `v0.16.1` (2026-10-31).
 - Current project-file schema: `21`.
+- 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
 
@@ -23,7 +24,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 5. `docs/screenshots/manifest.json` and the referenced screenshots — regenerate with `npm run docs:capture` when a visible screen changes.
 6. `docs/roadmap.md` — current status, milestones, deferred work and open decisions.
 7. `docs/plan/archive/` — historical planning documents from milestones 2–5. Written in Swedish; not maintained.
-8. `docs/architecture.md` — source map and design choices.
+8. `docs/architecture.md` and `docs/adr/` — source map, design choices and accepted architecture decisions.
 9. `docs/project-file.md` — the `.gridscalr` format and schema history.
 10. `docs/limitations.md` — known gaps that must not be regressed.
 11. `docs/releasing.md` — the manual release checklist.

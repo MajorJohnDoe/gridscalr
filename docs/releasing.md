@@ -4,6 +4,11 @@ Releases are cut manually by the maintainer. The Windows build produces the
 portable executable, the NSIS installer and the MSI; no release job runs on a
 schedule.
 
+> The published 0.x flow is Windows-only. The 0.17.0 milestone extends the workflow
+> to Windows, macOS and Linux. Update this checklist with the cross-platform
+> artifacts, checksums and clean-install tests before the first cross-platform
+> release.
+
 ## 1. Prepare the version
 
 Create or update `docs/release-notes/<version>.md`. It is used for the GitHub

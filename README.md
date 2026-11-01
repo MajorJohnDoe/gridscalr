@@ -175,6 +175,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 | [Workflows](docs/workflows.md) | Task-oriented guides for site work and technical property management. |
 | [Shortcuts](docs/shortcuts.md) | Every keyboard shortcut. |
 | [Architecture](docs/architecture.md) | Source map, design choices, tests and fixtures. |
+| [Architecture decisions](docs/adr/README.md) | Accepted ADRs for modules, packaging, localization, release and performance. |
 | [Project files](docs/project-file.md) | The `.gridscalr` format, schema history and migration rules. |
 | [Known limitations](docs/limitations.md) | What the app deliberately does not do yet. |
 | [Releasing](docs/releasing.md) | The manual release checklist. |
@@ -221,6 +222,10 @@ migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
 deliberately deferred.
+
+The 1.0 target adds Windows, macOS and Linux artifacts, English and Swedish UI,
+portable `.gridscalr.zip` project packages and tested large-project performance.
+Architecture decisions are recorded in [docs/adr](docs/adr/README.md).
 
 ## Contributing
 
