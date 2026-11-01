@@ -2,7 +2,9 @@ import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import {
+  AutosaveError,
   clearAutosave,
+  describeAutosaveFailure,
   readAutosave,
   readAutosavePreview,
   writeAutosave,
@@ -10,9 +12,15 @@ import {
 } from "../src/state/autosave";
 
 const storage = new Map<string, string>();
+let failLocalStorageWrites = false;
 const localStorageStub = {
   getItem: (key: string) => storage.get(key) ?? null,
   setItem: (key: string, value: string) => {
+    if (failLocalStorageWrites) {
+      const error = new Error("The quota has been exceeded.");
+      error.name = "QuotaExceededError";
+      throw error;
+    }
     storage.set(key, value);
   },
   removeItem: (key: string) => {
@@ -51,6 +59,7 @@ async function deleteDatabase(): Promise<void> {
 describe("autosave storage", () => {
   beforeEach(async () => {
     storage.clear();
+    failLocalStorageWrites = false;
     await deleteDatabase();
   });
 
@@ -102,5 +111,56 @@ describe("autosave storage", () => {
   it("ignores an invalid legacy snapshot", () => {
     storage.set("gridscalr.autosave.v1", JSON.stringify({ project: { documents: [] } }));
     expect(readAutosavePreview()).toBeNull();
+  });
+
+  it("describes a full quota with the action that recovers it", () => {
+    const quota = new Error("The quota has been exceeded.");
+    quota.name = "QuotaExceededError";
+
+    const described = describeAutosaveFailure(quota);
+
+    expect(described).toBeInstanceOf(AutosaveError);
+    expect(described.quotaExceeded).toBe(true);
+    expect(described.message).toMatch(/local storage is full/i);
+    expect(described.message).toMatch(/save the project to a file/i);
+  });
+
+  it("keeps the storage detail for failures that are not a full quota", () => {
+    const described = describeAutosaveFailure(new Error("IndexedDB is not available."));
+
+    expect(described.quotaExceeded).toBe(false);
+    expect(described.message).toContain("IndexedDB is not available.");
+    expect(described.message).toMatch(/save the project to a file/i);
+  });
+
+  it("fails loudly when both recovery stores are full", async () => {
+    const originalIndexedDb = globalThis.indexedDB;
+    Object.defineProperty(globalThis, "indexedDB", {
+      configurable: true,
+      value: {
+        open: () => {
+          const request: { onerror?: () => void; error?: unknown } = {};
+          queueMicrotask(() => request.onerror?.());
+          return request;
+        },
+      },
+    });
+    failLocalStorageWrites = true;
+    let caught: unknown;
+    try {
+      await writeAutosave(payload());
+    } catch (error) {
+      caught = error;
+    } finally {
+      failLocalStorageWrites = false;
+      Object.defineProperty(globalThis, "indexedDB", {
+        configurable: true,
+        value: originalIndexedDb,
+      });
+    }
+
+    expect(caught).toBeInstanceOf(AutosaveError);
+    expect((caught as AutosaveError).quotaExceeded).toBe(true);
+    expect((caught as AutosaveError).message).toMatch(/local storage is full/i);
   });
 });

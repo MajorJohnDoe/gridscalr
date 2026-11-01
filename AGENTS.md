@@ -200,7 +200,7 @@ do not change the released version must not change the version shown on the site
 
 ## CI and build hosts
 
-- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting/checking on pushes and pull requests.
+- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests.
 - `.github/workflows/windows-build.yml` builds the Windows `.exe`, NSIS installer, and MSI on manual dispatch or `v*` tags.
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the Windows workflow for Windows artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
@@ -280,7 +280,7 @@ src/model/stamps.ts        stamp preset normalization and defaults
 src/io/stampDefaults.ts    global stamp presets for new projects
 src/io/layerDefaults.ts    local default colours for new measurement and drawing layers
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
-src-tauri/src/commands.rs  atomic file writes and path checks
+src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks and Tauri file commands
 docs/user-guide.md         in-app user guide
 docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference

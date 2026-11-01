@@ -124,6 +124,10 @@ Version 1–5 projects load normally and are migrated to schema 21: the old `doc
 }
 ```
 
+Saving a project is atomic. GridScalr flushes a temporary file in the project's folder and replaces the project with one rename. A failed write or a failed replacement leaves the previous file unchanged; an interrupted save leaves either the old or the new project at the expected path. **File → Save a copy…** writes the same payload to another folder and recomputes the document relative paths for that location without changing the open project.
+
+Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The Rust side resolves real paths, including symlinks and junctions, and compares file identities when the destination exists, so a source drawing cannot be reached through an alternate spelling or link.
+
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
 Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, text styling, category IDs, per-item visibility/lock flags, snap settings, stamp presets, annotation text and layouts, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.

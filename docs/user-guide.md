@@ -475,9 +475,14 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 ### Save
 
 - **File → Save** (`Ctrl/Cmd+S`) writes a `.gridscalr` project file.
-- **File → Save as…** (`Ctrl/Cmd+Shift+S`) writes to a new path.
+- **File → Save as…** (`Ctrl/Cmd+Shift+S`) writes to a new path and keeps working there.
+- **File → Save a copy…** writes a backup copy without changing the open project or its saved state. The copy stores document links relative to its own folder, so it stays usable on its own. Use it before a risky edit or before moving a project.
 
-The source PDF is never overwritten. Every save and export refuses a destination that matches any source document in the project, including a second PDF or TIF in a multi-document project. Autosave keeps a recovery snapshot in a local IndexedDB database; a localStorage fallback is used only when IndexedDB is unavailable. If neither can be written, GridScalr reports the problem instead of failing silently.
+Saving is atomic. GridScalr writes and flushes a temporary file next to the project and then replaces the project file in one rename. If writing or replacing fails, the previous file is left unchanged and the error message says so. A crash during a save therefore leaves either the old project or the new one, never neither. An interrupted save can leave a hidden `.tmp` file next to the project; the project file itself is intact, and the leftover can be deleted.
+
+The source PDF or TIF is never overwritten. Every save and export resolves real paths, including symlinks and junctions, before comparing the destination with the source documents. A protected file is refused even when it is reached through another spelling or a link, including a second PDF or TIF in a multi-document project.
+
+Autosave keeps a recovery snapshot in a local IndexedDB database; a localStorage fallback is used only when IndexedDB is unavailable. If recovery storage is full or unavailable, GridScalr shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
 

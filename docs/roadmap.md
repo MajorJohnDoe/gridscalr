@@ -294,7 +294,7 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 - The release workflow will expand from Windows-only to a Windows/macOS/Linux matrix
   in 0.17.0. Until then, Linux and macOS remain source builds.
 - CI runs lint, frontend tests, build, UI smoke tests and canvas regressions on
-  Ubuntu, plus `cargo fmt` and `cargo check`.
+  Ubuntu, plus `cargo fmt`, `cargo check` and the Rust unit tests.
 - The bilingual landing page and feature tour are generated from `site/` and
   deployed to GitHub Pages by `.github/workflows/pages.yml`. English pages are at
   `/` and `/features/`; Swedish pages at `/sv/` and `/sv/funktioner/`.

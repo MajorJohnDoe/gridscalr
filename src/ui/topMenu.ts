@@ -119,6 +119,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           shortcut: APP_SHORTCUTS.saveAs,
           disabled: !hasProject,
         }),
+        action("Save a copy…", actions.saveProjectCopy, {
+          disabled: !hasProject,
+        }),
         separator(),
         action("Import image…", actions.insertImage, { disabled: !hasProject }),
         {

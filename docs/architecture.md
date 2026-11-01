@@ -82,7 +82,7 @@ src/
   io/writeGuard.ts       conservative source-path matching for every save and export
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
-  src/commands.rs        atomic text/binary writes, reads, and path checks
+  src/commands.rs        atomic text/binary replacement, canonical path checks, reads and commands
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
 docs/user-guide.md       in-app user guide and workflow reference
@@ -135,6 +135,7 @@ Key design choices:
 ## Testing and fixtures
 
 - `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry and autosave.
+- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes and canonical source-path protection. CI runs the same tests.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:ui` and `npm run test:canvas` drive the browser fallback with Playwright.
 - `npm run test:count` drives the full count workflow: custom type creation, placement, pieces per object, Markups count-type filtering/grouping, quantities and presets.

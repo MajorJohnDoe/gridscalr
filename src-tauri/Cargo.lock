@@ -1125,6 +1125,7 @@ name = "gridscalr"
 version = "0.16.1"
 dependencies = [
  "base64 0.23.1",
+ "same-file",
  "serde",
  "serde_json",
  "tauri",

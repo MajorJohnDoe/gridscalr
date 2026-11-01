@@ -62,6 +62,7 @@ import {
   relativeDocumentPath,
   resolveRelativePath,
   serializeProject,
+  serializeProjectCopy,
   sourceDocumentPaths,
   suggestedProjectName,
   updateRelativeDocumentPaths,
@@ -169,6 +170,7 @@ export class App {
       quit: () => void this.quitFlow(),
       saveProject: () => void this.saveProjectFlow(false),
       saveProjectAs: () => void this.saveProjectFlow(true),
+      saveProjectCopy: () => void this.saveProjectCopyFlow(),
       exportAs: (kind) => void this.exportAs(kind),
       undo: () => store.undo(),
       redo: () => store.redo(),
@@ -275,7 +277,9 @@ export class App {
       }
       if (reason === "save") {
         const autosaveError = store.consumeAutosaveError();
-        if (autosaveError) toast(autosaveError, "warning");
+        if (autosaveError) {
+          toast(autosaveError.message, "warning", autosaveError.quotaExceeded ? 10000 : 7000);
+        }
       }
       if (reason === "project" && this.searchPanel) this.closeSearch();
       this.reference.onStoreChange(reason);
@@ -1667,6 +1671,45 @@ export class App {
       return true;
     } catch (error) {
       await messageDialog("Could not save project", errorMessage(error), "warning");
+      return false;
+    }
+  }
+
+  /**
+   * Writes a backup copy without changing the open project's path or its saved
+   * state. Document links in the copy are relative to the copy's folder so the
+   * backup stays usable if the original project is moved or replaced.
+   */
+  private async saveProjectCopyFlow(): Promise<boolean> {
+    const project = store.project;
+    if (!project) return false;
+    try {
+      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
+      const suggested = suggestedProjectName(project).replace(/\.gridscalr$/i, "-copy.gridscalr");
+      if (!isTauri) {
+        const result = await saveTextFile(serializeProject(project), suggested, PROJECT_FILTERS, {
+          forbiddenPaths: protectedPaths,
+        });
+        if (!result) return false;
+        toast("Copy downloaded.", "success");
+        return true;
+      }
+
+      const path = await chooseSavePath(suggested, PROJECT_FILTERS);
+      if (!path) return false;
+      assertWritablePath(path, protectedPaths);
+      const json = serializeProjectCopy(project, path);
+      await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
+      addRecent({
+        kind: "project",
+        path,
+        name: basename(path),
+        at: new Date().toISOString(),
+      });
+      toast(`Copy saved to ${basename(path)}.`, "success");
+      return true;
+    } catch (error) {
+      await messageDialog("Could not save a copy", errorMessage(error), "warning");
       return false;
     }
   }

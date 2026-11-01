@@ -13,6 +13,7 @@ import {
   relativeDocumentPath,
   resolveRelativePath,
   serializeProject,
+  serializeProjectCopy,
   sourceDocumentPaths,
   suggestedProjectName,
   updateRelativeDocumentPaths,
@@ -695,6 +696,25 @@ describe("project files", () => {
     expect(sourceDocumentPaths(project, "C:\\Projekt\\Nytt projekt.gridscalr")).toEqual(
       expect.arrayContaining(["C:\\Ritningar\\Plan 1.pdf", "C:\\Ritningar\\Fasad Ö.pdf"]),
     );
+  });
+
+  it("serializes a copy with links relative to the copy without moving the project", () => {
+    const project = makeProject();
+    project.documents[0].path = "/home/ana/drawings/Floor Plan.pdf";
+    project.documents[0].relativePath = "../drawings/Floor Plan.pdf";
+
+    const copy = JSON.parse(
+      serializeProjectCopy(project, "/home/ana/backups/plan-copy.gridscalr"),
+    ) as Project;
+
+    expect(copy.documents[0].relativePath).toBe("../drawings/Floor Plan.pdf");
+    expect(project.documents[0].relativePath).toBe("../drawings/Floor Plan.pdf");
+
+    const elsewhere = JSON.parse(
+      serializeProjectCopy(project, "D:\\Backup\\plan-copy.gridscalr"),
+    ) as Project;
+    expect(elsewhere.documents[0].relativePath).toBeNull();
+    expect(project.documents[0].relativePath).toBe("../drawings/Floor Plan.pdf");
   });
 
   it("collects every source document path that a write must protect", () => {
