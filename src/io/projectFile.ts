@@ -960,6 +960,23 @@ export function updateRelativeDocumentPaths(project: Project, projectPath: strin
   }
 }
 
+/**
+ * Serializes the project for a destination without changing the open project's
+ * stored links. Used by **Save a copy** so the copy finds its drawings through
+ * paths relative to the copy's own folder while the original stays untouched.
+ */
+export function serializeProjectCopy(project: Project, projectPath: string | null): string {
+  const previous = project.documents.map((document) => document.relativePath);
+  try {
+    updateRelativeDocumentPaths(project, projectPath);
+    return serializeProject(project);
+  } finally {
+    project.documents.forEach((document, index) => {
+      document.relativePath = previous[index] ?? null;
+    });
+  }
+}
+
 export function remapPageItems(project: Project, pageCount: number): void {
   for (const layer of project.layers) {
     layer.items = layer.items.filter((item) => item.page <= pageCount);

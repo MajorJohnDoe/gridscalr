@@ -18,6 +18,51 @@ const RECORD_KEY = "current";
 const META_KEY = "gridscalr.autosave.meta.v1";
 const LEGACY_KEY = "gridscalr.autosave.v1";
 
+const QUOTA_MESSAGE =
+  "Recovery autosave is off because local storage is full. Save the project to a file now, then free up space in GridScalr or in your browser storage. Autosave resumes after the next change.";
+
+/** A recovery-snapshot failure the user has to act on. */
+export class AutosaveError extends Error {
+  readonly quotaExceeded: boolean;
+
+  constructor(message: string, quotaExceeded = false) {
+    super(message);
+    this.name = "AutosaveError";
+    this.quotaExceeded = quotaExceeded;
+  }
+}
+
+function isQuotaExceeded(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  const name = error.name;
+  const code = (error as { code?: unknown }).code;
+  return (
+    name === "QuotaExceededError" ||
+    name === "NS_ERROR_DOM_QUOTA_REACHED" ||
+    code === 22 ||
+    code === 1014 ||
+    /quota|storage is full|out of space/i.test(error.message)
+  );
+}
+
+/** Turns storage failures into a message that names the next action. */
+export function describeAutosaveFailure(primary: unknown, fallback?: unknown): AutosaveError {
+  if (isQuotaExceeded(primary) || isQuotaExceeded(fallback)) {
+    return new AutosaveError(QUOTA_MESSAGE, true);
+  }
+  const detail =
+    primary instanceof Error && primary.message
+      ? primary.message
+      : fallback instanceof Error && fallback.message
+        ? fallback.message
+        : "";
+  return new AutosaveError(
+    detail
+      ? `Recovery autosave failed: ${detail}. Save the project to a file to protect your work.`
+      : "Recovery autosave failed. Save the project to a file to protect your work.",
+  );
+}
+
 function hasProject(value: unknown): value is AutosavePayload {
   if (typeof value !== "object" || value === null) return false;
   const payload = value as AutosavePayload;
@@ -125,12 +170,8 @@ async function writeAutosaveNow(payload: AutosavePayload): Promise<void> {
       localStorage.setItem(LEGACY_KEY, JSON.stringify(payload));
       writeMeta(preview);
       return;
-    } catch {
-      throw new Error(
-        error instanceof Error
-          ? `The recovery snapshot could not be saved: ${error.message}`
-          : "The recovery snapshot could not be saved.",
-      );
+    } catch (fallbackError) {
+      throw describeAutosaveFailure(error, fallbackError);
     }
   }
 }

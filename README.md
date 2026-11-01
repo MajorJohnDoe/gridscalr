@@ -69,8 +69,8 @@ before the first launch. Linux and macOS builds can be produced from source.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
 - Pan and zoom with the mouse, wheel, or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
-- Undo/redo, autosave recovery, recent files, and the user guide bundled under
-  **Help**.
+- Undo/redo, atomic saves with **Save a copy** backups, autosave recovery,
+  recent files, and the user guide bundled under **Help**.
 
 Hidden items never render, hit-test or export. Locked items stay visible and
 exportable but cannot be moved, edited or deleted. Derived quantities are always
@@ -189,9 +189,11 @@ reports the running version and the project-file schema read from the code.
 
 GridScalr reads drawings from disk and writes only where you ask it to. There is
 no network access, no account, no telemetry and no automatic update service. The
-source PDF or TIF is never modified; every save and export refuses to overwrite
-any document that belongs to the project. Project data autosaves to a local
-IndexedDB recovery store.
+source PDF or TIF is never modified; every save and export resolves real paths,
+including symlinks and junctions, and refuses to overwrite any document that
+belongs to the project. Project files are replaced atomically, so a failed save
+keeps the previous file. Project data autosaves to a local IndexedDB recovery
+store.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

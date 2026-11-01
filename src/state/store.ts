@@ -28,6 +28,8 @@ import {
   readAutosavePreview,
   readAutosave as readAutosaveStorage,
   writeAutosave as writeAutosaveStorage,
+  AutosaveError,
+  describeAutosaveFailure,
   type AutosavePayload,
   type AutosavePreview,
 } from "./autosave";
@@ -210,7 +212,7 @@ export class Store {
   projectPath: string | null = null;
   dirty = false;
   /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
-  autosaveError: string | null = null;
+  autosaveError: AutosaveError | null = null;
   /** Increments whenever project data changes, including undo and redo. */
   revision = 0;
   private listeners = new Set<Listener>();
@@ -218,6 +220,7 @@ export class Store {
   private redoStack: string[] = [];
   private gestureSnapshot: string | null = null;
   private autosaveTimer: number | null = null;
+  private lastAutosaveError: string | null = null;
   private assetPayloads = new Map<string, string>();
 
   subscribe(listener: Listener): () => void {
@@ -819,10 +822,16 @@ export class Store {
     try {
       await writeAutosaveStorage(payload);
       this.autosaveError = null;
+      this.lastAutosaveError = null;
     } catch (error) {
-      this.autosaveError =
-        error instanceof Error ? error.message : "The recovery snapshot could not be saved.";
-      this.emit("save");
+      const failure = error instanceof AutosaveError ? error : describeAutosaveFailure(error);
+      // Autosave runs after every edit. Only alert when the message changes so
+      // a full storage quota does not produce a warning on each keystroke.
+      if (this.lastAutosaveError !== failure.message) {
+        this.lastAutosaveError = failure.message;
+        this.autosaveError = failure;
+        this.emit("save");
+      }
     }
   }
 
@@ -834,7 +843,7 @@ export class Store {
     return readAutosaveStorage();
   }
 
-  consumeAutosaveError(): string | null {
+  consumeAutosaveError(): AutosaveError | null {
     const error = this.autosaveError;
     this.autosaveError = null;
     return error;

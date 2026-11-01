@@ -25,4 +25,6 @@
 - Slope is measured from the two drawn points (rise over run). There is no elevation input for a slope between two real-world levels. Volume depth is entered in the project length unit, not measured from the drawing.
 - OCR uses the bundled English (`eng`) and Swedish (`swe`) Tesseract models only. Other languages are not available, and OCR quality depends on scan resolution, contrast and skew.
 - OCR runs on demand and can take several seconds per scanned page. The stored OCR index makes later searches fast, but re-running OCR replaces the page's stored words.
+- Project saves replace the file with a single rename after flushing a temporary file. A folder or file system that cannot rename over an existing file, such as some read-only or network shares, refuses the save and keeps the previous project; save locally or use **File → Save a copy…**.
+- Recovery autosave needs local IndexedDB or, as a fallback, localStorage space. When storage is full, GridScalr warns and keeps working but cannot keep a recovery snapshot until space is freed.
 - The Linux GTK stack currently resolves `glib 0.18.5`, which has a medium-severity soundness advisory fixed in `glib 0.20.0`. GridScalr cannot upgrade it independently because Tauri's GTK 0.18 dependencies pin that generation. The Windows artifacts do not use this code path; revisit with a future Tauri/GTK upgrade.
