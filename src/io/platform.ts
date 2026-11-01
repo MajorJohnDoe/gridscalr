@@ -183,6 +183,32 @@ export async function chooseSavePath(
   return save({ defaultPath: filename, filters });
 }
 
+/** Picks an existing folder, such as a package extraction destination. */
+export async function chooseDirectory(): Promise<string | null> {
+  if (!isTauri) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const path = await open({ directory: true, multiple: false });
+  return path && !Array.isArray(path) ? path : null;
+}
+
+/** Picks a `.gridscalr.zip` package without reading it into the browser. */
+export async function pickProjectPackage(): Promise<string | null> {
+  if (!isTauri) return null;
+  const { open } = await import("@tauri-apps/plugin-dialog");
+  const path = await open({
+    multiple: false,
+    directory: false,
+    filters: [{ name: "GridScalr project package", extensions: ["zip"] }],
+  });
+  return path && !Array.isArray(path) ? path : null;
+}
+
+/** Joins a folder and a child name with the separator used by the folder. */
+export function joinPath(folder: string, name: string): string {
+  const separator = folder.includes("\\") && !folder.includes("/") ? "\\" : "/";
+  return `${folder.replace(/[\\/]+$/, "")}${separator}${name}`;
+}
+
 export async function writeTextFile(
   path: string,
   contents: string,

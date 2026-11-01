@@ -79,6 +79,26 @@ try {
     "redo should start disabled on a freshly loaded project",
   );
 
+  // Package commands are visible but disabled in the browser fallback.
+  await page.getByRole("menuitem", { name: "File" }).click();
+  const packageItem = page.getByRole("menuitem", { name: /Package project/ });
+  const openPackageItem = page.getByRole("menuitem", { name: /Open package/ });
+  assert.equal(await packageItem.isDisabled(), true, "package should be desktop-only");
+  assert.equal(await openPackageItem.isDisabled(), true, "open package should be desktop-only");
+  await page.getByRole("menuitem", { name: "Project packages require the desktop app" }).waitFor();
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => window.__gridscalr.app.openPackageDialogForDocs());
+  const packageDialog = page.getByRole("dialog", { name: "Package project" });
+  await packageDialog.waitFor();
+  assert.equal(
+    await packageDialog.getByRole("button", { name: "Create package" }).isDisabled(),
+    true,
+    "Create package should be disabled in the browser fallback",
+  );
+  await packageDialog.getByText("Project packages require the desktop app.").waitFor();
+  await page.keyboard.press("Escape");
+  await packageDialog.waitFor({ state: "detached" });
+
   // Family rail buttons share a slot and remember the last used variant.
   const circleFamily = page.locator('.tool-family[data-tool-group="circle-arc"]');
   await circleFamily.waitFor();

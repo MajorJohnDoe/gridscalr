@@ -215,6 +215,10 @@ src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/features/countTypes/model.ts count definitions, normalization, management and quantity helpers
 src/features/countTypes/ui.ts count-type management dialog
+src/features/projectPackage/model.ts package manifest, safe names and portable project paths
+src/features/projectPackage/controller.ts package and open-package flows
+src/features/projectPackage/ui.ts package dialogs and progress UI
+src/features/projectPackage/ipc.ts package command wrappers
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
@@ -281,6 +285,7 @@ src/io/stampDefaults.ts    global stamp presets for new projects
 src/io/layerDefaults.ts    local default colours for new measurement and drawing layers
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
 src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks and Tauri file commands
+src-tauri/src/package.rs   streaming ZIP package create/inspect/extract with manifest checks
 docs/user-guide.md         in-app user guide
 docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
@@ -313,11 +318,12 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 ## Testing and fixtures
 
-- `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion and XLSX package generation.
-- `npm run test:ui` runs the Playwright smoke test against the browser fallback.
+- `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
+- `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items, crop and split view.
 - `npm run test:count` drives the count workflow through Project settings, custom type creation, placement, pieces per object, Markups count-type filtering, quantities and presets.
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
+- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.

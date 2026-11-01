@@ -100,6 +100,13 @@ const shots = [
       "Export visible markups as a flattened drawing PDF without modifying the source drawing.",
   },
   {
+    file: "package.png",
+    title: "Project package",
+    alt: "The GridScalr Package project dialog with optional quantity exports, drawing PDF and original TIF scans switched off, and a note that packages require the desktop app in the browser fallback.",
+    description:
+      "Package the project and its drawings as a standard ZIP with a manifest and checksums; reports and original scans stay opt-in.",
+  },
+  {
     file: "split-view.png",
     title: "Reference view",
     alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing.",
@@ -207,6 +214,13 @@ try {
   await page.getByRole("checkbox", { name: /^Legend/ }).check();
   await page.waitForTimeout(300);
   await capture("export.png");
+  await page.keyboard.press("Escape");
+  await page.getByRole("dialog").waitFor({ state: "detached" });
+
+  await page.evaluate(() => window.__gridscalr.app.openPackageDialogForDocs());
+  await page.getByRole("dialog", { name: "Package project" }).waitFor();
+  await page.waitForTimeout(250);
+  await capture("package.png");
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 

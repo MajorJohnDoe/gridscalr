@@ -123,6 +123,13 @@ import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
 import { disposeOcrWorker, isOcrCurrent, ocrPageToText, runOcrPage } from "../search/ocr";
 import { ReferenceController } from "./referenceController";
+import {
+  openPackageFlow,
+  packageProjectFlow,
+  showPackageDialogPreview,
+  type PackageHost,
+} from "../features/projectPackage";
+import { validatePackagedProjectJson } from "../features/projectPackage/model";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
@@ -171,6 +178,8 @@ export class App {
       saveProject: () => void this.saveProjectFlow(false),
       saveProjectAs: () => void this.saveProjectFlow(true),
       saveProjectCopy: () => void this.saveProjectCopyFlow(),
+      packageProject: () => void packageProjectFlow(this.packageHost()),
+      openPackage: () => void openPackageFlow(this.packageHost()),
       exportAs: (kind) => void this.exportAs(kind),
       undo: () => store.undo(),
       redo: () => store.redo(),
@@ -1712,6 +1721,50 @@ export class App {
       await messageDialog("Could not save a copy", errorMessage(error), "warning");
       return false;
     }
+  }
+
+  private packageHost(): PackageHost {
+    return {
+      confirmDiscard: () =>
+        this.confirmUnsavedChanges("Opening a package will replace the current project."),
+      openProject: (path, validatePackage) => this.openPackagedProject(path, validatePackage),
+      createDrawingPdf: (project) => this.createPackageDrawingPdf(project),
+    };
+  }
+
+  private async openPackagedProject(path: string, validatePackage: boolean): Promise<void> {
+    const text = await readFileText(path);
+    if (validatePackage) validatePackagedProjectJson(text);
+    const project = parseProject(text);
+    await this.loadProjectData(project, path, false);
+    if (store.projectPath !== path) {
+      throw new Error("The extracted project was not opened. Relink its drawings and try again.");
+    }
+  }
+
+  private async createPackageDrawingPdf(project: Project): Promise<Uint8Array | null> {
+    if (!this.renderer) throw new Error("The source PDF is not available.");
+    const pages = Array.from(
+      { length: totalPageCount(project.documents) },
+      (_, index) => index + 1,
+    );
+    const layerIds = project.layers
+      .filter((layer) => pages.some((page) => layerVisibleOnPage(layer, page)))
+      .map((layer) => layer.id);
+    const { exportProjectPdf } = await import("../pdf/pdfExport");
+    return exportProjectPdf(project, this.renderer, {
+      pages,
+      layerIds,
+      includeLabels: true,
+      includeCalibration: true,
+      includeLegend: false,
+    });
+  }
+
+  /** Opens the package options dialog for documentation screenshots. */
+  openPackageDialogForDocs(): void {
+    if (!store.project) return;
+    showPackageDialogPreview(store.project);
   }
 
   private beginProjectRename(): void {

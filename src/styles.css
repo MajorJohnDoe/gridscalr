@@ -3080,6 +3080,33 @@ textarea:disabled {
   font-size: 11px;
 }
 
+.package-destination {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-deep);
+  color: var(--text);
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.package-progress {
+  gap: 10px;
+}
+
+.package-progress-bar {
+  width: 100%;
+  height: 8px;
+  accent-color: var(--jade);
+}
+
+.package-progress-file {
+  min-height: 16px;
+  color: var(--muted-2);
+  font-size: 11px;
+  word-break: break-all;
+}
+
 /* ---------- Category manager ---------- */
 
 .category-list {

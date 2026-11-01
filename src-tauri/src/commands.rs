@@ -35,13 +35,19 @@ fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
         ));
     }
 
-    match fs::rename(&temp, path) {
+    replace_file(&temp, path, &display_name)
+}
+
+/// Moves a finished, flushed temporary file over its destination. The previous
+/// file is only ever replaced by this single rename.
+pub(crate) fn replace_file(temp: &Path, path: &Path, display_name: &str) -> Result<(), String> {
+    match fs::rename(temp, path) {
         Ok(()) => {
-            sync_directory(&parent);
+            sync_directory(path.parent().unwrap_or_else(|| Path::new(".")));
             Ok(())
         }
         Err(error) => {
-            let _ = fs::remove_file(&temp);
+            let _ = fs::remove_file(temp);
             Err(format!(
                 "Could not replace {display_name}. The previous file was left unchanged: {error}"
             ))
@@ -57,7 +63,7 @@ fn write_flushed(path: &Path, data: &[u8]) -> std::io::Result<()> {
 }
 
 #[cfg(unix)]
-fn sync_directory(directory: &Path) {
+pub(crate) fn sync_directory(directory: &Path) {
     // Persist the rename itself, not only the file contents.
     if let Ok(handle) = File::open(directory) {
         let _ = handle.sync_all();
@@ -65,9 +71,9 @@ fn sync_directory(directory: &Path) {
 }
 
 #[cfg(not(unix))]
-fn sync_directory(_directory: &Path) {}
+pub(crate) fn sync_directory(_directory: &Path) {}
 
-fn unique_sibling(path: &Path, suffix: &str) -> PathBuf {
+pub(crate) fn unique_sibling(path: &Path, suffix: &str) -> PathBuf {
     let parent = match path.parent() {
         Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
         _ => PathBuf::from("."),
@@ -89,7 +95,7 @@ fn unique_sibling(path: &Path, suffix: &str) -> PathBuf {
 
 /// The guard compares resolved targets, so a symlink, junction or an alternate
 /// spelling such as `drawings/../drawings/plan.pdf` cannot reach a source file.
-fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), String> {
+pub(crate) fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), String> {
     let target = Path::new(path);
     let target_key = comparison_key(&resolved_path(target));
     let protected: Vec<&String> = protected_paths
@@ -120,10 +126,7 @@ fn resolved_path(path: &Path) -> PathBuf {
     }
     let mut existing = path.to_path_buf();
     let mut tail: Vec<std::ffi::OsString> = Vec::new();
-    loop {
-        let Some(name) = existing.file_name() else {
-            break;
-        };
+    while let Some(name) = existing.file_name() {
         tail.push(name.to_os_string());
         let Some(parent) = existing.parent() else {
             break;
