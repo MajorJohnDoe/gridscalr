@@ -31,6 +31,8 @@ export interface PanelActions {
   saveProject: () => void;
   saveProjectAs: () => void;
   saveProjectCopy: () => void;
+  packageProject: () => void;
+  openPackage: () => void;
   exportAs: (
     kind: "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf" | "quantity-xlsx",
   ) => void;

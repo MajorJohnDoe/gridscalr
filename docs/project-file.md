@@ -134,8 +134,9 @@ Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale lo
 
 ## Portable project packages
 
-A project can be exported as a standard ZIP named `<project>.gridscalr.zip`. The
-package is a transport container; it does not change the project schema.
+A project can be packaged as a standard ZIP named `<project>.gridscalr.zip`. The
+package is a transport container; it does not change the project schema. The
+format is defined by [ADR 0002](adr/0002-project-package.md).
 
 ```text
 README.txt
@@ -146,13 +147,47 @@ exports/...            optional
 source-scans/...       optional original TIF scans
 ```
 
-The packaged project file clears absolute document paths and stores relative paths
-under `documents/`. TIF documents keep their embedded PDF. `manifest.json` records
-the package format version, app version, project checksum and the size and SHA-256
-of every included file. Exported reports and original TIF scans are optional.
+The packaged project file clears absolute document paths, links each PDF through
+`documents/`, and sets TIF document paths to null. A TIF document keeps its
+embedded derived PDF; original TIF scans are optional and off by default.
+Quantity CSV/XLSX/PDF reports and a flattened drawing PDF are also opt-in.
 
-Packages are created and extracted with streaming in Rust. Extraction rejects
-absolute names, `..`, symlinks, encrypted archives and entries outside the package
-root, then verifies checksums before the project is opened. Manual unzip followed
-by opening the extracted `.gridscalr` also works. The package format is defined by
-[ADR 0002](adr/0002-project-package.md) and is implemented in 0.17.0.
+`manifest.json` version 1 is independent of the project schema and contains:
+
+```json
+{
+  "format": "gridscalr-package",
+  "formatVersion": 1,
+  "createdAt": "2026-11-01T10:00:00.000Z",
+  "appVersion": "0.16.1",
+  "projectFile": "Level 01.gridscalr",
+  "projectSha256": "…",
+  "projectSchema": 21,
+  "documents": [
+    { "file": "documents/Level 01.pdf", "sha256": "…", "sizeBytes": 4839201, "kind": "pdf" }
+  ],
+  "exports": [],
+  "sourceScans": []
+}
+```
+
+Each `documents`, `exports` and `sourceScans` entry records a relative archive
+path, SHA-256 and uncompressed size. `kind` is `pdf` or `tiff` for documents,
+`tiff` for source scans, and a descriptive value for optional exports.
+
+Packages are created and extracted with streaming in Rust. PDFs are stored
+uncompressed while JSON, README and CSV entries use deflate. A package is written
+to a temporary file and moved into place atomically; a failed create or cancel
+leaves no package or temporary file.
+
+Extraction validates the manifest before writing anything, then rejects absolute
+names, `..`, symlinks, encrypted archives, duplicate names, unknown files, more
+than 4096 entries, a single file over 4 GiB, a total over 16 GiB and suspicious
+compression ratios. Every file is checksum-verified before the project opens.
+Extraction happens in a temporary sibling folder that is moved into place
+atomically; an existing extraction can be reused or replaced, and cancel removes
+the temporary folder. Manual unzip followed by opening the extracted `.gridscalr`
+also works.
+
+Packages are not encrypted and are not cryptographically signed. Checksums detect
+corruption and accidental changes, not deliberate tampering.

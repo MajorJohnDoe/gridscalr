@@ -486,6 +486,26 @@ Autosave keeps a recovery snapshot in a local IndexedDB database; a localStorage
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
 
+### Package a project
+
+**File → Package project…** writes the project and its drawings as one standard ZIP named `<project>.gridscalr.zip`. The package is a transport container; the `.gridscalr` format is unchanged.
+
+![Package project dialog with optional exports and TIF scans](screenshots/package.png)
+
+- The package contains `README.txt`, `manifest.json`, the project file and the referenced PDFs under `documents/`.
+- Absolute document paths from your computer are removed. PDFs are linked through `documents/`.
+- TIF documents keep their embedded PDF, which is enough to open and edit the project. Original TIF scans are optional and off by default.
+- Quantity CSV, Excel and PDF reports and a flattened drawing PDF are optional and off by default. Select them in the package dialog when the recipient needs the output.
+- `manifest.json` records the package format version, app version, creation time, project schema, project checksum, and the size and SHA-256 of every included file. The manifest version is independent of the project schema.
+- If a referenced drawing is missing, packaging stops and lists the missing files. If a drawing no longer matches the checksum stored in the project, choose **Cancel** and relink, or **Use current drawings** to update only the copy inside the package. The open project is never changed.
+- The output file is subject to the same source-drawing guard as every other export.
+
+**File → Open package…** verifies the manifest and every checksum before a fresh extraction opens the project. The package is extracted to `<package folder>/<project name>/`. If that folder exists, open the existing extraction (including any edits made there) or replace it with a fresh one; you can also choose another folder. Cancel removes temporary files and leaves the package untouched. The extracted copy can be edited; the package file itself is not modified.
+
+You can also unzip the package yourself and open the `.gridscalr` file with **File → Open project…**. Keep the `documents/` folder next to the project file so the relative links resolve.
+
+Packages are not encrypted and are not cryptographically signed; the checksums detect corruption and accidental changes. Package project and Open package require the desktop app and are disabled in the browser fallback.
+
 ### Export
 
 **File → Export** contains:

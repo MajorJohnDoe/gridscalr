@@ -2,7 +2,8 @@
 
 GridScalr is a Tauri 2 desktop shell around a TypeScript frontend. The frontend
 owns the project model, rendering and interaction; Rust performs atomic file
-writes and path checks. There is no server, database or background service.
+writes, canonical path checks and streaming project-package creation and
+extraction. There is no server, database or background service.
 
 
 ```text
@@ -13,6 +14,10 @@ src/
   features/              feature modules; see docs/adr/0001-feature-modules.md
   features/countTypes/model.ts count definitions, normalization, management and quantity helpers
   features/countTypes/ui.ts count-type management dialog
+  features/projectPackage/model.ts package manifest validation, safe archive names and portable project paths
+  features/projectPackage/controller.ts package creation and open-package flows, checksums and progress
+  features/projectPackage/ui.ts package options, destination and progress dialogs
+  features/projectPackage/ipc.ts Tauri package command wrappers and progress channels
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
@@ -83,6 +88,7 @@ src/
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
   src/commands.rs        atomic text/binary replacement, canonical path checks, reads and commands
+  src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
 docs/user-guide.md       in-app user guide and workflow reference
@@ -126,7 +132,7 @@ Key design choices:
 - **Derived exports share one row model.** Quantity and markup tables are built once in `src/report/rows.ts` and serialized to CSV and XLSX from the same cells. The workbook never stores a second copy of the takeoff.
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
-- **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum.
+- **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum. Portable packages are streamed in Rust so large PDFs never pass through the JavaScript heap: PDFs use ZIP store mode, text uses deflate, and every entry is checked against the manifest before extraction.
 - **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint on both the primary canvas and the reference pane, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted. A pen takes priority and recent palm touches are ignored. Long-press on an item opens the shared context menu on touch.
 - **Bundles follow user intent.** OCR, PDF exports, XLSX and TIF import load through dynamic imports only when used. Production builds omit source maps unless `GRIDSCALR_SOURCEMAPS=1` is set for a debuggable build.
 - **The landing site is separate from the app.** `site/` is hand-authored HTML, CSS and a small progressive-enhancement script with a native-dialog screenshot lightbox. `scripts/build-site.mjs` copies it with the app icon, all documentation screenshots and `site/release.json` values into the gitignored `site-dist/`, and `.github/workflows/pages.yml` deploys that output. The site reuses screenshots and brand assets but no application code or build output. `site/release.json` is the single source for the displayed release version and download links and is updated for every tagged release.
@@ -134,8 +140,8 @@ Key design choices:
 
 ## Testing and fixtures
 
-- `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry and autosave.
-- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes and canonical source-path protection. CI runs the same tests.
+- `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry, autosave and project-package manifest/path rules.
+- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes, canonical source-path protection and package create/extract security, checksums, cancellation and limits. CI runs the same tests.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:ui` and `npm run test:canvas` drive the browser fallback with Playwright.
 - `npm run test:count` drives the full count workflow: custom type creation, placement, pieces per object, Markups count-type filtering/grouping, quantities and presets.

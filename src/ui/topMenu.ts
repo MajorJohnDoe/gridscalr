@@ -1,5 +1,5 @@
 import { hasClipboard } from "../model/clipboard";
-import { clearRecent, getRecent } from "../io/platform";
+import { clearRecent, getRecent, isTauri } from "../io/platform";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
 import { el } from "./dom";
@@ -122,6 +122,20 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action("Save a copy…", actions.saveProjectCopy, {
           disabled: !hasProject,
         }),
+        separator(),
+        action("Package project…", actions.packageProject, {
+          disabled: !hasProject || !isTauri,
+        }),
+        action("Open package…", actions.openPackage, {
+          disabled: !isTauri,
+        }),
+        ...(isTauri
+          ? []
+          : [
+              action("Project packages require the desktop app", () => undefined, {
+                disabled: true,
+              }),
+            ]),
         separator(),
         action("Import image…", actions.insertImage, { disabled: !hasProject }),
         {

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-01T09:33:29.747Z",
+  "generatedAt": "2026-11-01T10:25:22.154Z",
   "appVersion": "0.16.1",
-  "sourceFingerprint": "f6d7d9d7825e3a0044ab8c6aaa5cb6a023759a606fde34aa642373062a8bbcf3",
+  "sourceFingerprint": "bc1cd88147f1693263b87ce7c9136d11832ab85bc2a74dc50b41992d462c4fff",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -79,6 +79,12 @@
       "title": "Drawing export",
       "alt": "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
       "description": "Export visible markups as a flattened drawing PDF without modifying the source drawing."
+    },
+    {
+      "file": "package.png",
+      "title": "Project package",
+      "alt": "The GridScalr Package project dialog with optional quantity exports, drawing PDF and original TIF scans switched off, and a note that packages require the desktop app in the browser fallback.",
+      "description": "Package the project and its drawings as a standard ZIP with a manifest and checksums; reports and original scans stay opt-in."
     },
     {
       "file": "split-view.png",

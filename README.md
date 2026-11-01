@@ -68,6 +68,9 @@ before the first launch. Linux and macOS builds can be produced from source.
   highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
+- Package a project and its drawings into a portable `.gridscalr.zip` with a
+  versioned manifest, relative links and SHA-256 checksums, then open the package
+  on another machine without relinking. Reports and original TIF scans are opt-in.
 - Pan and zoom with the mouse, wheel, or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, atomic saves with **Save a copy** backups, autosave recovery,
   recent files, and the user guide bundled under **Help**.
