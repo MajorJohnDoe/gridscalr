@@ -63,7 +63,7 @@ milestone:
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | **0.17.0** | **Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation** | **Planned** | v21 |
 | **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Planned** | v22 |
-| **0.19.0** | **Large-project performance, independent reference page navigation** | **Planned** | v22 |
+| **0.19.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v22 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v22 |
 
 Schema history and migration rules are documented in
@@ -134,13 +134,19 @@ Exit criteria:
 
 ### 0.19.0 — Scale and workflow
 
-**Goal:** large drawing sets and many objects are a tested, supported use case.
+**Goal:** large drawing sets and many objects are a tested, supported use case, and the code and shell are ready for a 1.0 maintenance cycle.
 
 Deliverables:
 
 - Reference project, benchmarks, virtualised Markups, adaptive history, faster
   autosave and canvas viewport culling —
   [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52)
+- Split the integration modules, UI sections and stylesheet before 1.0 —
+  [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60)
+- Coverage, fuzzing and visual regression gates —
+  [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61)
+- Shell status feedback, project size, source-file status and small-screen layout —
+  [#63](https://github.com/MajorJohnDoe/gridscalr/issues/63)
 - Independent page navigation in the reference pane —
   [#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)
 
@@ -151,6 +157,10 @@ Exit criteria:
 - No UI freeze over two seconds without progress and cancel.
 - Memory and autosave limits are documented in `docs/limitations.md`.
 - The same budgets are checked on Windows, macOS and Linux.
+- Integration modules and styles are split without behaviour changes.
+- Coverage, fuzzing and visual regression gates run in CI.
+- Autosave, project size and source-file status are visible in the shell.
+- Common laptop resolutions and 150–200 % scaling remain usable.
 
 ### 1.0.0 — Release candidate and hardening
 
@@ -164,6 +174,8 @@ Deliverables:
   [#54](https://github.com/MajorJohnDoe/gridscalr/issues/54)
 - Accessibility and performance release gates —
   [#55](https://github.com/MajorJohnDoe/gridscalr/issues/55)
+- Security audit of Tauri capabilities, CSP, path handling and dependency surface —
+  [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62)
 
 Exit criteria:
 
@@ -185,6 +197,8 @@ Exit criteria:
 7. The schema and migration promise are frozen and documented.
 8. No P0/P1 bugs, no unaccepted dependency alerts, and the release checklist is
    complete.
+9. The Tauri capability, CSP and path-handling review is complete.
+10. Coverage, fuzzing and visual regression gates are part of CI.
 
 ## After 1.0
 
@@ -202,7 +216,13 @@ Candidates in expected-value order, not scheduled:
 6. **Snap directly to PDF vector geometry** as a separate spike.
 7. **Semantic PDF vector comparison** as a separate spike.
 8. **Additional OCR languages** with matching traineddata and license review.
-9. **Automatic update check** only with an explicit local-first decision.
+9. **Wall and ceiling areas from length × height**, and elevation-aware slopes.
+10. **Custom measurement fields** for richer door, window and equipment schedules.
+11. **Statutory area classification** (BTA/BRA/NTA/LOA) only with an explicit
+    decision and a separate validation model.
+12. **Read-only package review mode** for contractors without edit access.
+13. **Light theme or high-contrast theme** for daylight field use.
+14. **Automatic update check** only with an explicit local-first decision.
 
 ## Deferred by design
 
@@ -243,6 +263,8 @@ full list.
 | OCR engine | Bundled Tesseract.js with English and Swedish models. Additional languages require new traineddata assets and license review. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
 | Door and window schedule attributes | Count schedule only for 1.0; no width, height or fire rating. |
+| Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
+| Theme | Dark theme only for 1.0; a light or high-contrast theme is a post-1.0 candidate. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |
 
 ## Technical debt and post-release refactors
@@ -258,8 +280,11 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 - Virtualise the Markups table and adapt history/autosave for large projects — [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52).
 - Add viewport culling for canvas items.
 - Replace full-snapshot history for large projects.
+- Split `App.ts`, `CanvasView.ts`, the stylesheet and large UI sections — [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60).
+- Add coverage, fuzzing and visual regression gates — [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61).
 - Extract UI strings into the localization catalog — [#47](https://github.com/MajorJohnDoe/gridscalr/issues/47).
 - Harden atomic saving and canonicalise protected paths — [#44](https://github.com/MajorJohnDoe/gridscalr/issues/44).
+- Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
 ## Project operations

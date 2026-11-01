@@ -13,6 +13,7 @@
 - New sheets are always added after the existing pages. A page can be deleted explicitly: its measurements and page scale are removed, later measurements move down one page number, and the operation is not undoable. Pages cannot be inserted or reordered.
 - Custom count types use one of the five built-in vector glyphs. Uploaded or custom-drawn count artwork is not supported. A count can represent several pieces with **Pieces per object**.
 - Door and window schedules are Count schedules by type, category and room. They do not store width, height, fire rating or other schedule attributes.
+- Statutory Swedish area classifications such as BTA, BRA, NTA and LOA are not calculated. Categories and rooms are user-defined grouping labels, not a statutory area model.
 - The 1.0 Windows and macOS builds are unsigned. Windows shows SmartScreen warnings and macOS requires the user to approve the app through System Settings → Privacy & Security. Verify published SHA-256 checksums before running a download.
 - The full user guide and workflows are English-only in 1.0. The Swedish UI includes a Swedish quick start and an explicit English fallback for the full guides.
 - The symbol library is built in and vector-only: custom symbol uploads and symbol quantities in the procurement report are not supported yet. Symbols can be resized by dragging a corner. The pictograms are original filled-vector interpretations, not certified SS-EN ISO 7010 reproductions.
