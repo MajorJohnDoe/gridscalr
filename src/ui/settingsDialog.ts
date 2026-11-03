@@ -7,52 +7,15 @@ import {
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
 import { AREA_UNITS, formatNumber, formatScale, LENGTH_UNITS } from "../model/units";
-import {
-  loadGlobalStampPresets,
-  resetGlobalStampPresets,
-  saveGlobalStampPresets,
-} from "../io/stampDefaults";
-import {
-  currentLayerColorDefaults,
-  resetLayerColorDefaults,
-  saveLayerColorDefaults,
-} from "../io/layerDefaults";
-import { normalizeStampPresets } from "../model/stamps";
+import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { normalizeProjectName, PROJECT_NAME_MAX_LENGTH } from "../model/projectName";
 import { openCountTypesDialog } from "../features/countTypes/ui";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
 import { showModal } from "./dialogs";
 import { el, option } from "./dom";
-import { resetPanelLayout } from "./sidebar";
+import { checkRow, field, presetEditor, section } from "./settingsControls";
 import { toast } from "./toast";
-
-function section(title: string, note?: string): HTMLElement {
-  const wrap = el("section", "settings-section");
-  wrap.append(el("h3", "", title));
-  if (note) wrap.append(el("p", "settings-note", note));
-  return wrap;
-}
-
-function checkRow(
-  label: string,
-  checked: boolean,
-  onChange: (checked: boolean) => void,
-): HTMLElement {
-  const row = el("label", "check-row");
-  const input = el("input");
-  input.type = "checkbox";
-  input.checked = checked;
-  input.addEventListener("change", () => onChange(input.checked));
-  row.append(input, el("span", "", label));
-  return row;
-}
-
-function field(label: string, control: HTMLElement): HTMLElement {
-  const wrap = el("label", "field settings-field");
-  wrap.append(el("span", "field-label", label), control);
-  return wrap;
-}
 
 function projectSection(): HTMLElement {
   const project = store.project!;
@@ -341,77 +304,14 @@ function countTypesSection(): HTMLElement {
   return wrap;
 }
 
-function presetEditor(
-  values: readonly string[],
-  onChange: (next: string[]) => void,
-  addLabel: string,
-): HTMLElement {
-  const wrap = el("div", "stamp-preset-editor");
-  let currentValues = [...values];
-  const rebuild = () => {
-    wrap.replaceChildren();
-    currentValues.forEach((value, index) => {
-      const row = el("div", "stamp-preset-row");
-      const input = el("input", "input");
-      input.type = "text";
-      input.value = value;
-      input.maxLength = 40;
-      input.setAttribute("aria-label", `Stamp preset ${index + 1}`);
-      input.addEventListener("change", () => {
-        const next = [...currentValues];
-        next[index] = input.value;
-        currentValues = normalizeStampPresets(next);
-        onChange(currentValues);
-      });
-      const remove = el("button", "icon-btn", "×");
-      remove.type = "button";
-      remove.title = "Remove preset";
-      remove.setAttribute("aria-label", `Remove ${value}`);
-      remove.addEventListener("click", () => {
-        currentValues = currentValues.filter((_entry, entryIndex) => entryIndex !== index);
-        onChange(currentValues);
-        rebuild();
-      });
-      row.append(input, remove);
-      wrap.append(row);
-    });
-    const addRow = el("div", "input-row");
-    const addInput = el("input", "input");
-    addInput.type = "text";
-    addInput.placeholder = addLabel;
-    addInput.maxLength = 40;
-    addInput.setAttribute("aria-label", addLabel);
-    const add = el("button", "btn btn-small", "Add");
-    add.type = "button";
-    add.addEventListener("click", () => {
-      const text = addInput.value.trim();
-      if (!text) return;
-      currentValues = normalizeStampPresets([...currentValues, text]);
-      onChange(currentValues);
-      rebuild();
-    });
-    addInput.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        add.click();
-      }
-    });
-    addRow.append(addInput, add);
-    wrap.append(addRow);
-  };
-  rebuild();
-  return wrap;
-}
-
 function stampsSection(): HTMLElement {
   const project = store.project!;
   const wrap = section(
     "Stamps",
-    "Presets are stored in the project. New projects start from the app defaults.",
+    "Presets are stored in the project. App defaults for new projects live in Preferences.",
   );
 
-  const projectLabel = el("div", "settings-subhead", "Project presets");
-  const projectEditor = presetEditor(
+  const editor = presetEditor(
     project.settings.stampPresets,
     (next) => {
       store.mutate((current) => {
@@ -421,26 +321,9 @@ function stampsSection(): HTMLElement {
     "New project preset",
   );
 
-  const globalValues = loadGlobalStampPresets();
-  const globalLabel = el("div", "settings-subhead", "App defaults for new projects");
-  const globalEditor = presetEditor(
-    globalValues,
-    (next) => {
-      saveGlobalStampPresets(next);
-    },
-    "New default preset",
-  );
-
-  const copyToDefaults = el("button", "btn btn-small btn-ghost", "Use project presets as defaults");
-  copyToDefaults.type = "button";
-  copyToDefaults.addEventListener("click", () => {
-    saveGlobalStampPresets(store.project?.settings.stampPresets ?? []);
-    toast("App stamp defaults updated.", "success");
-    openSettingsDialog();
-  });
-  const copyToProject = el("button", "btn btn-small btn-ghost", "Load app defaults into project");
-  copyToProject.type = "button";
-  copyToProject.addEventListener("click", () => {
+  const loadDefaults = el("button", "btn btn-small btn-ghost", "Load app defaults into project");
+  loadDefaults.type = "button";
+  loadDefaults.addEventListener("click", () => {
     const next = loadGlobalStampPresets();
     store.mutate((current) => {
       current.settings.stampPresets = next;
@@ -448,85 +331,10 @@ function stampsSection(): HTMLElement {
     toast("Project stamp presets updated.", "success");
     openSettingsDialog();
   });
-  const reset = el("button", "btn btn-small btn-ghost", "Reset app defaults");
-  reset.type = "button";
-  reset.addEventListener("click", () => {
-    resetGlobalStampPresets();
-    toast("App stamp defaults reset.", "success");
-    openSettingsDialog();
-  });
-  const actions = el("div", "settings-actions");
-  actions.append(copyToDefaults, copyToProject, reset);
-
-  wrap.append(projectLabel, projectEditor, globalLabel, globalEditor, actions);
-  return wrap;
-}
-
-function layerDefaultsSection(): HTMLElement {
-  const wrap = section(
-    "Layer defaults",
-    "Applies to new measurement and drawing layers only. Existing layers keep their colour. Stored locally and not saved in the project file.",
-  );
-  let colors = currentLayerColorDefaults();
-  const row = el("div", "field-row");
-
-  const colorField = (label: string, value: string) => {
-    const fieldWrap = el("label", "field settings-field");
-    const input = el("input", "color-swatch");
-    input.type = "color";
-    input.value = value;
-    input.setAttribute("aria-label", label);
-    fieldWrap.append(el("span", "field-label", label), input);
-    return { fieldWrap, input };
-  };
-
-  const measure = colorField("Measurement layer colour", colors.measure);
-  const draw = colorField("Drawing layer colour", colors.draw);
-  row.append(measure.fieldWrap, draw.fieldWrap);
-
-  const save = () => {
-    colors = saveLayerColorDefaults({
-      measure: measure.input.value,
-      draw: draw.input.value,
-    });
-  };
-  measure.input.addEventListener("change", save);
-  draw.input.addEventListener("change", save);
 
   const actions = el("div", "settings-actions");
-  const signalRed = el("button", "btn btn-small btn-ghost", "Use signal red for both");
-  signalRed.type = "button";
-  signalRed.addEventListener("click", () => {
-    measure.input.value = "#f70808";
-    draw.input.value = "#f70808";
-    save();
-    toast("Layer colours set to signal red.", "success");
-  });
-  const reset = el("button", "btn btn-small btn-ghost", "Reset layer colours");
-  reset.type = "button";
-  reset.addEventListener("click", () => {
-    colors = resetLayerColorDefaults();
-    measure.input.value = colors.measure;
-    draw.input.value = colors.draw;
-    toast("Layer colour defaults reset.", "success");
-  });
-  actions.append(signalRed, reset);
-  wrap.append(row, actions);
-  return wrap;
-}
-
-function interfaceSection(): HTMLElement {
-  const wrap = section(
-    "Interface",
-    "Panel layout is stored locally and is not part of the project file.",
-  );
-  const reset = el("button", "btn btn-small", "Reset panel layout");
-  reset.type = "button";
-  reset.addEventListener("click", () => {
-    resetPanelLayout();
-    toast("Panel layout reset.", "success");
-  });
-  wrap.append(reset);
+  actions.append(loadDefaults);
+  wrap.append(el("div", "settings-subhead", "Project presets"), editor, actions);
   return wrap;
 }
 
@@ -547,15 +355,13 @@ export function openSettingsDialog(): void {
       quantitiesSection(),
       countTypesSection(),
       stampsSection(),
-      layerDefaultsSection(),
-      interfaceSection(),
     );
   };
   render();
 
   void showModal({
     title: "Project settings",
-    subtitle: "Project defaults and local interface preferences",
+    subtitle: "Project data saved in the .gridscalr file",
     body,
     wide: true,
     className: "modal-settings",

@@ -534,6 +534,18 @@ All export formats exclude hidden items and hidden layers. Locked items are stil
 
 ## Settings
 
+Settings is split in two. **Preferences** are stored on this computer and never change the project file; **Project settings** are stored in the `.gridscalr` file and travel with it.
+
+### Preferences
+
+Open **Settings → Preferences…**. The dialog groups app-level choices by category:
+
+- **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
+- **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
+- **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
+
+### Project settings
+
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project settings** button in the Properties header.
 
 - **Project** – the project name shown in the title row, reports, exports and suggested file names. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that.
@@ -542,12 +554,10 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project 
 - **Measurement labels** – the project label size from 4 to 16 pt and compact area labels (`P 14.48 m` instead of `Perimeter 14.48 m`). Individual measurements can override the size in Properties.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, and rounding step.
-- **Stamps** – edit the project's stamp presets, edit the app defaults used by new projects, and copy between them.
-- **Layer defaults** – app-level colours for new measurement and drawing layers. The default measurement colour is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour; the choice is stored locally and is not part of the project file.
+- **Stamps** – the project's own stamp presets, plus **Load app defaults into project** to copy the preferences list.
 - **Manage categories…** – rename, reorder, delete, and override waste/rounding per category.
-- **Reset panel layout** – restores the default sidebar and Properties widths and expands both panels.
 
-Project settings are stored in the `.gridscalr` file and are undoable while the project is open. Interface preferences such as collapsed panels are stored locally and are not part of the project.
+Project settings are stored in the `.gridscalr` file and are undoable while the project is open. Preferences, panel layout, layer colours and app stamp defaults are stored locally and are not part of the project.
 
 ## Help
 

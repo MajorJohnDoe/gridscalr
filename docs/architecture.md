@@ -75,7 +75,9 @@ src/
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
   ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
-  ui/settingsDialog.ts   project-wide units, snapping, quantity defaults
+  ui/settingsDialog.ts   project name, scale, units, snapping, quantities, count types and project stamps
+  ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
+  ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults

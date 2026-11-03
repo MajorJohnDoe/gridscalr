@@ -4053,6 +4053,75 @@ html[data-platform="macos"] .topbar {
   text-align: right;
 }
 
+/* ---------- Preferences ---------- */
+
+.modal-preferences {
+  width: min(820px, 96vw);
+}
+
+.preferences-dialog {
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
+  gap: 18px;
+  min-height: min(48vh, 420px);
+  max-height: min(68vh, 640px);
+}
+
+.preferences-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: 12px;
+  border-right: 1px solid var(--border-soft);
+}
+
+.preferences-tab {
+  padding: 7px 9px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  text-align: left;
+}
+
+.preferences-tab:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.preferences-tab.is-active {
+  background: var(--panel-hover);
+  border-color: var(--border);
+  color: var(--text-strong);
+}
+
+.preferences-body {
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+@media (max-width: 700px) {
+  .preferences-dialog {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+  }
+
+  .preferences-nav {
+    flex-direction: row;
+    gap: 4px;
+    padding: 0 0 8px;
+    border-right: 0;
+    border-bottom: 1px solid var(--border-soft);
+    overflow-x: auto;
+  }
+
+  .preferences-body {
+    overflow-y: visible;
+  }
+}
+
 /* ---------- Measurements and quantities dialogs ---------- */
 
 .modal-measurements,
