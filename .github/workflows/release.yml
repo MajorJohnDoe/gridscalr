@@ -115,19 +115,16 @@ jobs:
         run: |
           set -euo pipefail
           version="$(node -p "require('./package.json').version")"
-          bundle="src-tauri/target/universal-apple-darwin/release/bundle"
+          target="universal-apple-darwin"
+          bundle="src-tauri/target/$target/release/bundle"
           release="release"
           mkdir -p "$release"
+          # DMG bundling deletes the intermediate .app, so bundle the app again
+          # (the compile is cached) and zip it before copying the disk image.
+          npm run tauri build -- --target "$target" --bundles app
+          ditto -c -k --keepParent "$bundle/macos/GridScalr.app" \
+            "$release/GridScalr_${version}_universal.app.zip"
           cp "$bundle"/dmg/*.dmg "$release"/
-          # The bundler deletes the .app after creating the DMG, so zip it from
-          # the mounted image instead of the intermediate bundle folder.
-          mount="$(mktemp -d)"
-          dmg="$(find "$release" -maxdepth 1 -name '*.dmg' -print -quit)"
-          hdiutil attach "$dmg" -mountpoint "$mount" -nobrowse -quiet
-          app="$(find "$mount" -maxdepth 1 -name '*.app' -print -quit)"
-          ditto -c -k --keepParent "$app" "$release/GridScalr_${version}_universal.app.zip"
-          hdiutil detach "$mount" -quiet
-          rmdir "$mount"
           (cd "$release" && shasum -a 256 * > SHA256SUMS-macos.txt)
 
       - name: Stage Linux files and checksums
