@@ -13,6 +13,10 @@ use tauri::{Emitter, Manager};
 #[derive(Default)]
 struct LaunchPaths(Mutex<Vec<String>>);
 
+/// Output directory requested by `--smoke-test`, consumed by the frontend.
+#[derive(Default)]
+struct SmokeTest(Mutex<Option<String>>);
+
 impl LaunchPaths {
     fn push<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<String>) {
         if paths.is_empty() {
@@ -25,13 +29,26 @@ impl LaunchPaths {
     }
 }
 
-/// Start arguments without the executable and without flags such as `--flag`.
-fn argument_paths(argv: &[String]) -> Vec<String> {
-    argv.iter()
-        .skip(1)
-        .filter(|argument| !argument.starts_with('-'))
-        .cloned()
-        .collect()
+/// Start arguments split into files to open and an optional smoke-test output
+/// directory. `--smoke-test` consumes the next argument so the directory is
+/// never mistaken for a project to open.
+fn launch_arguments(argv: &[String]) -> (Vec<String>, Option<String>) {
+    let mut paths = Vec::new();
+    let mut smoke = None;
+    let mut index = 1;
+    while index < argv.len() {
+        let argument = &argv[index];
+        if argument == "--smoke-test" {
+            smoke = argv.get(index + 1).cloned();
+            index += 2;
+            continue;
+        }
+        if !argument.starts_with('-') {
+            paths.push(argument.clone());
+        }
+        index += 1;
+    }
+    (paths, smoke)
 }
 
 fn focus_main_window<R: tauri::Runtime>(app: &tauri::AppHandle<R>) {
@@ -57,6 +74,16 @@ fn handle_opened_files<R: tauri::Runtime>(app: &tauri::AppHandle<R>, event: taur
 }
 
 #[tauri::command]
+fn smoke_test_dir(state: tauri::State<'_, SmokeTest>) -> Option<String> {
+    state.0.lock().ok().and_then(|directory| directory.clone())
+}
+
+#[tauri::command]
+fn finish_smoke_test(app: tauri::AppHandle, code: i32) {
+    app.exit(code);
+}
+
+#[tauri::command]
 fn take_launch_paths(state: tauri::State<'_, LaunchPaths>) -> Vec<String> {
     match state.0.lock() {
         Ok(mut queued) => std::mem::take(&mut *queued),
@@ -75,7 +102,7 @@ pub fn run() {
         builder = builder
             .plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
                 focus_main_window(app);
-                LaunchPaths::push(app, argument_paths(&argv));
+                LaunchPaths::push(app, launch_arguments(&argv).0);
             }))
             .plugin(
                 tauri_plugin_window_state::Builder::default()
@@ -91,6 +118,7 @@ pub fn run() {
     let app = builder
         .plugin(tauri_plugin_dialog::init())
         .manage(LaunchPaths::default())
+        .manage(SmokeTest::default())
         .invoke_handler(tauri::generate_handler![
             commands::read_binary,
             commands::read_text,
@@ -103,10 +131,16 @@ pub fn run() {
             package::package_extract,
             package::package_cancel,
             take_launch_paths,
+            smoke_test_dir,
+            finish_smoke_test,
         ])
         .setup(|app| {
             let argv: Vec<String> = std::env::args().collect();
-            LaunchPaths::push(app.handle(), argument_paths(&argv));
+            let (paths, smoke) = launch_arguments(&argv);
+            if let Ok(mut directory) = app.state::<SmokeTest>().0.lock() {
+                *directory = smoke;
+            }
+            LaunchPaths::push(app.handle(), paths);
             Ok(())
         })
         .build(tauri::generate_context!())
@@ -125,7 +159,7 @@ pub fn run() {
 
 #[cfg(test)]
 mod tests {
-    use super::argument_paths;
+    use super::launch_arguments;
 
     #[test]
     fn keeps_file_arguments_and_drops_flags() {
@@ -135,13 +169,28 @@ mod tests {
             "/tmp/plan.gridscalr".to_string(),
         ];
         assert_eq!(
-            argument_paths(&argv),
+            launch_arguments(&argv).0,
             vec!["/tmp/plan.gridscalr".to_string()]
         );
     }
 
     #[test]
     fn ignores_a_bare_launch() {
-        assert!(argument_paths(&["gridscalr".to_string()]).is_empty());
+        let (paths, smoke) = launch_arguments(&["gridscalr".to_string()]);
+        assert!(paths.is_empty());
+        assert!(smoke.is_none());
+    }
+
+    #[test]
+    fn reads_the_smoke_test_directory_without_treating_it_as_a_file() {
+        let argv = vec![
+            "gridscalr".to_string(),
+            "--smoke-test".to_string(),
+            "/tmp/smoke".to_string(),
+            "/tmp/plan.gridscalr".to_string(),
+        ];
+        let (paths, smoke) = launch_arguments(&argv);
+        assert_eq!(paths, vec!["/tmp/plan.gridscalr".to_string()]);
+        assert_eq!(smoke.as_deref(), Some("/tmp/smoke"));
     }
 }

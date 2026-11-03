@@ -100,9 +100,9 @@ src/
   io/writeGuard.ts       conservative source-path matching for every save and export
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
-  src/commands.rs        atomic text/binary replacement, canonical path checks, reads, demo copy and commands
+  src/commands.rs        atomic text/binary replacement, canonical path checks, reads, demo copy, smoke exit and commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
-  src/lib.rs             Tauri command registration, OS launch queue, single instance and window state
+  src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions
   tauri.conf.json        undecorated Windows/Linux window drawn by ui/windowChrome.ts
   tauri.macos.conf.json  overlay title bar so macOS keeps the native traffic lights
@@ -147,6 +147,7 @@ Key design choices:
 - **Derived exports share one row model.** Quantity and markup tables are built once in `src/report/rows.ts` and serialized to CSV and XLSX from the same cells. The workbook never stores a second copy of the takeoff.
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
+- **Packaged smoke mode is in the app.** `--smoke-test <dir>` is parsed with the other launch arguments, stored in Rust and consumed once by `App.bindSmokeTest`. The app runs its real open/save/reopen/quit-prompt flows against the bundled demo, writes `result.json` and exits through `finish_smoke_test`. CI runs it against the built desktop shell on all three platforms and against release artifacts, which covers the packaged binary without WebDriver (tauri-driver has no macOS support).
 - **The demo is a copy.** `commands::prepare_demo_project` copies the bundled `fixtures/demo-project.gridscalr` and `industrial-plan.pdf` from the Tauri resource directory into a `demo` folder under the app data directory, and never overwrites an existing copy. The demo is therefore editable and saveable while the bundled resources stay read-only. The welcome screen opens it through the same `openPath` flow as a dropped project.
 - **New UI strings go through one catalog.** `src/i18n` resolves System/English/Svenska to a locale, falls back to English per key and interpolates `{name}` parameters. `scripts/check-i18n.mjs` freezes the pre-migration strings in `src/i18n/hardcoded-baseline.json`; new hard-coded interface prose fails `npm run check:i18n`, so the 0.18.0 translation pass starts from a gate rather than a rewrite. Help bundles resolve through `i18n/help.ts` and fall back to English until translated.
 - **Support data is local and anonymised.** `features/diagnostics/model.ts` builds the report from version, schema, platform, WebView, viewport and aggregate project statistics only, and strips absolute paths from every field. `features/diagnostics/log.ts` keeps the last 80 runtime events in localStorage; nothing is uploaded. Autosave failures stay visible in the status bar until a later autosave succeeds, and the same chip opens the report dialog.

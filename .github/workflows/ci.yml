@@ -63,7 +63,8 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
             patchelf \
-            wget
+            wget \
+            xvfb
 
       - name: Check Rust formatting
         working-directory: src-tauri
@@ -112,9 +113,40 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
             patchelf \
-            wget
+            wget \
+            xvfb
 
       - run: npm ci
 
       - name: Build the desktop shell
         run: npm run tauri build -- --debug --no-bundle
+
+      - name: Smoke test the packaged app (Linux)
+        if: matrix.os == 'ubuntu-22.04'
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/gridscalr-smoke"
+          xvfb-run -a src-tauri/target/debug/gridscalr --smoke-test "$directory"
+          cat "$directory/result.json"
+
+      - name: Smoke test the packaged app (macOS)
+        if: matrix.os == 'macos-latest'
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/gridscalr-smoke"
+          src-tauri/target/debug/gridscalr --smoke-test "$directory"
+          cat "$directory/result.json"
+
+      - name: Smoke test the packaged app (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP "gridscalr-smoke"
+          $process = Start-Process -FilePath "src-tauri/target/debug/gridscalr.exe" `
+            -ArgumentList "--smoke-test `"$directory`"" -Wait -PassThru
+          Get-Content (Join-Path $directory "result.json")
+          if ($process.ExitCode -ne 0) {
+            throw "Packaged smoke test failed with exit code $($process.ExitCode)"
+          }

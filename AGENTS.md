@@ -321,6 +321,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
+- The CI `desktop` job builds the Tauri shell on Ubuntu, Windows and macOS and runs the packaged app with `--smoke-test <dir>`. The app opens its bundled demo, saves to the directory, reopens it, checks the unsaved-changes prompt and exits 0/1 with `result.json`. Use the same flag locally against `src-tauri/target/debug/gridscalr` (prefix with `xvfb-run -a` on headless Linux).
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items, crop and split view.
 - `npm run test:count` drives the count workflow through Project settings, custom type creation, placement, pieces per object, Markups count-type filtering, quantities and presets.
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.

@@ -69,7 +69,8 @@ jobs:
             libwebkit2gtk-4.1-dev \
             libxdo-dev \
             patchelf \
-            wget
+            wget \
+            xvfb
 
       - run: npm ci
 
@@ -140,6 +141,37 @@ jobs:
           tar -czf "$release/gridscalr_${version}_amd64.tar.gz" \
             -C src-tauri/target/release gridscalr
           (cd "$release" && sha256sum * > SHA256SUMS-linux.txt)
+
+      - name: Smoke test the packaged app (Linux)
+        if: matrix.platform == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/gridscalr-smoke"
+          xvfb-run -a src-tauri/target/release/gridscalr --smoke-test "$directory"
+          cat "$directory/result.json"
+
+      - name: Smoke test the packaged app (macOS)
+        if: matrix.platform == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          directory="$RUNNER_TEMP/gridscalr-smoke"
+          "src-tauri/target/universal-apple-darwin/release/bundle/macos/GridScalr.app/Contents/MacOS/gridscalr" \
+            --smoke-test "$directory"
+          cat "$directory/result.json"
+
+      - name: Smoke test the packaged app (Windows)
+        if: matrix.platform == 'Windows'
+        shell: pwsh
+        run: |
+          $directory = Join-Path $env:RUNNER_TEMP "gridscalr-smoke"
+          $process = Start-Process -FilePath "src-tauri/target/release/gridscalr.exe" `
+            -ArgumentList "--smoke-test `"$directory`"" -Wait -PassThru
+          Get-Content (Join-Path $directory "result.json")
+          if ($process.ExitCode -ne 0) {
+            throw "Packaged smoke test failed with exit code $($process.ExitCode)"
+          }
 
       - uses: actions/upload-artifact@v7
         with:
