@@ -59,7 +59,7 @@
   --hover-softer: rgba(255, 255, 255, 0.04);
   --hover-strong: rgba(255, 255, 255, 0.2);
 
-  --canvas-grid: rgba(140, 175, 215, 0.05);
+  --canvas-grid: rgba(140, 175, 215, 0.032);
   --canvas-glow: rgba(53, 194, 161, 0.05);
 
   --scrollbar: #33425a;
