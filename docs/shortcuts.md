@@ -42,8 +42,8 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Nudge selected item | Arrow keys |
 | Nudge by 10 screen pixels | `Shift` + Arrow keys |
 | Rename selected markup | `F2` |
+| Rename the project | `F2` with nothing selected, or double-click the project name |
 | Edit selected text or measurement label | Double-click with Select or Text tool |
-| Rename the project | Double-click the project name |
 | Copy / cut / paste markups | `Ctrl+C` / `Ctrl+X` / `Ctrl+V` |
 | Paste an image from the clipboard | `Ctrl+V` when the clipboard contains an image |
 | Duplicate selection | `Ctrl+D` |

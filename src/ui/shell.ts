@@ -96,8 +96,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const projectName = el("span", "project-name", "No project open");
   // Opt out of the title-row drag region: double-clicking the name renames it.
   projectName.setAttribute("data-tauri-drag-region", "false");
-  projectName.title = "Double-click to rename project";
-  projectName.setAttribute("aria-label", "Project name; double-click to rename");
+  projectName.title = "Double-click or press F2 to rename the project";
+  projectName.setAttribute("aria-label", "Project name; double-click or press F2 to rename");
   const docLine = el("span", "doc-line");
   const docName = el("span", "doc-name", "No drawing open");
   const docMeta = el("span", "doc-meta", "");

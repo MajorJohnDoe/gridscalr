@@ -31,6 +31,7 @@ import {
   moveItemsToLayer,
 } from "../model/layers";
 import { makeId } from "../model/calibration";
+import { normalizeProjectName } from "../model/projectName";
 import { createImageItem } from "../model/images";
 import {
   documentIndexForPage,
@@ -513,7 +514,8 @@ export class App {
 
     if (event.key === "F2") {
       event.preventDefault();
-      requestMarkupRename(this.refs);
+      if (store.ui.selection.length === 1) requestMarkupRename(this.refs);
+      else this.beginProjectRename();
       return;
     }
 
@@ -1785,8 +1787,8 @@ export class App {
       name.classList.remove("is-editing");
       name.removeEventListener("keydown", onKey);
       name.removeEventListener("blur", onBlur);
-      const value = name.textContent?.replace(/\s+/g, " ").trim() ?? "";
-      if (!commit || !value || value === original) {
+      const value = normalizeProjectName(name.textContent ?? "", original);
+      if (!commit || value === original) {
         name.textContent = original;
         return;
       }

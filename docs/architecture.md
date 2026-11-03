@@ -78,6 +78,7 @@ src/
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults
+  model/projectName.ts   shared project-name trimming, length cap and empty fallback
   io/stampDefaults.ts    global stamp presets for new projects
   io/layerDefaults.ts    local default colours for new measurement and drawing layers
   help/markdown.ts       safe Markdown renderer for bundled help

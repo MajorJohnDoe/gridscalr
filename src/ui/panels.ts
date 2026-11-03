@@ -126,7 +126,7 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   if (!refs.projectName.isContentEditable) {
     refs.projectName.textContent = project?.name ?? "";
   }
-  refs.projectName.title = "Double-click to rename project";
+  refs.projectName.title = "Double-click or press F2 to rename the project";
   refs.docName.textContent = project
     ? (primaryDocument(project.documents)?.name ?? "No drawing open")
     : "No drawing open";
