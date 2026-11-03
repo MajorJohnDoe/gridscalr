@@ -1,0 +1,79 @@
+/**
+ * English source catalog. New UI strings go here first; `sv.ts` provides the
+ * Swedish text and falls back to these values for anything missing.
+ */
+export const en = {
+  "common.close": "Close",
+
+  "window.controls": "Window controls",
+  "window.minimize": "Minimize",
+  "window.maximize": "Maximize",
+  "window.restore": "Restore",
+  "window.close": "Close window",
+
+  "preferences.title": "Preferences",
+  "preferences.subtitle": "Stored on this computer; not part of the project file",
+  "preferences.categories": "Preference categories",
+  "preferences.general": "General",
+  "preferences.workspace": "Workspace",
+  "preferences.layers": "Layers",
+  "preferences.stamps": "Stamps",
+
+  "language.label": "Language",
+  "language.system": "System ({language})",
+  "language.english": "English",
+  "language.swedish": "Svenska",
+  "language.note":
+    "Swedish currently covers the interface added in 0.17. The rest of the UI stays in English until the 0.18 translation pass.",
+  "language.changed": "Language preference saved.",
+
+  "preferences.workspace.note":
+    "Panel widths and collapsed state are stored on this computer and are not part of the project file.",
+  "preferences.workspace.summary":
+    "Sidebar {left} px{leftNote} · Properties {right} px{rightNote}.",
+  "preferences.workspace.collapsed": " (collapsed)",
+  "preferences.workspace.expand": "Expand both panels",
+  "preferences.workspace.reset": "Reset panel layout",
+  "preferences.workspace.expanded": "Panels expanded.",
+  "preferences.workspace.resetDone": "Panel layout reset.",
+
+  "preferences.layers.title": "Layer defaults",
+  "preferences.layers.note":
+    "Applies to new measurement and drawing layers only. Existing layers keep their colour.",
+  "preferences.layers.measure": "Measurement layer colour",
+  "preferences.layers.draw": "Drawing layer colour",
+  "preferences.layers.signalRed": "Use signal red for both",
+  "preferences.layers.reset": "Reset layer colours",
+  "preferences.layers.signalRedDone": "Layer colours set to signal red.",
+  "preferences.layers.resetDone": "Layer colour defaults reset.",
+
+  "preferences.stamps.title": "Stamps",
+  "preferences.stamps.note":
+    "Defaults for new projects. The open project keeps its own preset list in Project settings.",
+  "preferences.stamps.add": "New default preset",
+  "preferences.stamps.fromProject": "Use the project's presets as defaults",
+  "preferences.stamps.fromProjectTitle": "Copy this project's stamp presets into the app defaults.",
+  "preferences.stamps.fromProjectDisabled": "Open a project to copy its presets.",
+  "preferences.stamps.reset": "Reset app defaults",
+  "preferences.stamps.updated": "App stamp defaults updated.",
+  "preferences.stamps.resetDone": "App stamp defaults reset.",
+
+  "diagnostics.title": "Report a problem",
+  "diagnostics.subtitle": "Attach the diagnostics to a new GitHub issue",
+  "diagnostics.note":
+    "GridScalr uploads nothing. The diagnostics contain version, platform and project statistics only — no drawing content, labels or file paths.",
+  "diagnostics.copy": "Copy diagnostics",
+  "diagnostics.copyLink": "Copy issue link",
+  "diagnostics.issue": "Issue tracker",
+  "diagnostics.issueLabel": "Issue tracker link",
+  "diagnostics.copied": "Diagnostics copied.",
+  "diagnostics.copyFailed": "Could not copy the diagnostics.",
+  "diagnostics.linkCopied": "Issue link copied.",
+
+  "launch.nothingTitle": "Nothing to open",
+  "launch.nothingMessage":
+    "The operating system asked GridScalr to open a file it does not handle. Use a .gridscalr project, a PDF or a TIF drawing.",
+  "launch.oneFile": "GridScalr opens one file per window and ignored the rest.",
+} as const;
+
+export type MessageKey = keyof typeof en;
