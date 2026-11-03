@@ -28,7 +28,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
 - **Status bar** – the clickable page scale, cursor position with its unit, zoom controls, page navigation, and the active layer.
 
-Panels remember their width, height and collapsed state between sessions.
+Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
 
 On a touch screen, one finger draws or selects with the active tool. Use **two fingers** to pan and pinch to zoom around the point between them, over either the primary canvas or the reference pane. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again. While a pen is active, or just after it was used, touch is treated as palm input and does not draw. Long-press an item with the Select tool to open the same context menu as a right-click.
 
@@ -83,6 +83,14 @@ With a project already open, the selected pages are **added after the existing p
 ### Open a project
 
 **File → Open project…** (`Ctrl/Cmd+Shift+O`) opens a `.gridscalr` file. The source PDFs are referenced by path and SHA-256; if a PDF has moved, GridScalr asks you to locate it.
+
+### Open from Explorer or Finder
+
+Installing GridScalr registers `.gridscalr` as a project file type, so double-clicking a project opens it in GridScalr. If GridScalr is already running, the existing window comes to the front and opens the project there instead of starting a second copy.
+
+The same start argument accepts a PDF or TIF drawing: with no project open it starts a new project, and with a project open it opens the page picker and appends the selected pages, exactly like **File → Open drawing…**. GridScalr keeps one project per window, so only the first file in a multi-file launch is opened.
+
+The portable executable and the AppImage do not register file types. Use the installer (`.msi`, NSIS setup, `.deb` or `.dmg`), or open the file from inside GridScalr. GridScalr does not claim `.pdf`, so double-clicking a PDF only opens it here after **Open with…**.
 
 ### Recent files
 
