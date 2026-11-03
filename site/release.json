@@ -1,12 +1,17 @@
 {
-  "version": "0.16.1",
-  "releasedAt": "2026-10-31",
-  "tag": "v0.16.1",
-  "releaseUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/tag/v0.16.1",
+  "version": "0.17.0",
+  "releasedAt": "2026-11-03",
+  "tag": "v0.17.0",
+  "releaseUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/tag/v0.17.0",
   "latestUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/latest",
-  "notesUrl": "https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/0.16.1.md",
-  "installerUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/GridScalr_0.16.1_x64-setup.exe",
-  "msiUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/GridScalr_0.16.1_x64_en-US.msi",
-  "portableUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/gridscalr.exe",
-  "checksumsUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.16.1/SHA256SUMS.txt"
+  "notesUrl": "https://github.com/MajorJohnDoe/gridscalr/blob/main/docs/release-notes/0.17.0.md",
+  "installerUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_x64-setup.exe",
+  "msiUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_x64_en-US.msi",
+  "portableUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/gridscalr.exe",
+  "checksumsUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/SHA256SUMS.txt",
+  "macosDmgUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_universal.dmg",
+  "macosZipUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_universal.app.zip",
+  "linuxAppImageUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_amd64.AppImage",
+  "linuxDebUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/GridScalr_0.17.0_amd64.deb",
+  "linuxTarballUrl": "https://github.com/MajorJohnDoe/gridscalr/releases/download/v0.17.0/gridscalr_0.17.0_amd64.tar.gz"
 }

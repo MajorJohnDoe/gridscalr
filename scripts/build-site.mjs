@@ -140,16 +140,20 @@ async function walkHtml(dir) {
 const release = await readRelease();
 
 function platformDownloads(lang) {
-  return platformAssets
-    .filter((asset) => typeof release[asset.field] === "string")
-    .map((asset) => {
-      const [label, note] = asset[lang];
-      return `<li>
+  const assets = platformAssets.filter((asset) => typeof release[asset.field] === "string");
+  if (!assets.length) return "";
+  const heading = lang === "sv" ? "macOS och Linux" : "macOS and Linux";
+  const rows = assets.map((asset) => {
+    const [label, note] = asset[lang];
+    return `<li>
                   <a ${asset.attribute} href="${release[asset.field]}">${label}</a>
                   <span>${note}</span>
                 </li>`;
-    })
-    .join("\n                ");
+  });
+  return [
+    `<li class="download-platform-heading"><span>${heading}</span></li>`,
+    ...rows,
+  ].join("\n                ");
 }
 
 const tokens = {
