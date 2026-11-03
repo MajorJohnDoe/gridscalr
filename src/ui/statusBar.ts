@@ -23,11 +23,31 @@ import type { ShellRefs } from "./shell";
 
 /** Signature of the page scale chip, so pointer moves do not rebuild the DOM. */
 let scaleChipKey = "";
+/** Same idea for the persistent autosave warning. */
+let warningKey: string | null = null;
 
 export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   clear(refs.statusCoords);
   clear(refs.statusLayer);
+
+  // Autosave failures stay visible until a later autosave succeeds, so the
+  // warning cannot scroll away like the toast does. Only rebuild on change:
+  // updateStatus also runs for every cursor move.
+  const autosaveMessage = store.autosaveError?.message ?? null;
+  if (autosaveMessage !== warningKey) {
+    warningKey = autosaveMessage;
+    clear(refs.statusWarning);
+    if (autosaveMessage) {
+      const chip = el("button", "status-chip is-warning status-chip-action");
+      chip.type = "button";
+      chip.innerHTML = `<span class="status-dot"></span>`;
+      chip.append(document.createTextNode("Autosave failing"));
+      chip.title = "Autosave is failing. Open the diagnostics for details.";
+      chip.addEventListener("click", () => actions.reportProblem());
+      refs.statusWarning.append(chip);
+    }
+  }
 
   if (!project) {
     scaleChipKey = "";

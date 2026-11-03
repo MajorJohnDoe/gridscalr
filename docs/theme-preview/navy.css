@@ -1,0 +1,85 @@
+/*
+ * Preview palette: Navy — blue-shifted dark chrome that picks up the hue of
+ * the Markups table, with the jade accent unchanged.
+ * Injected on top of the shipped dark stylesheet by scripts/theme-preview.mjs.
+ */
+
+:root {
+  color-scheme: dark;
+
+  --bg: #121a26;
+  --bg-deep: #0d141e;
+  --panel: #19232f;
+  --panel-raised: #1f2a3a;
+  --panel-hover: #25324a;
+  --border: #2e3d52;
+  --border-soft: #243044;
+  --text: #e6edf7;
+  --text-strong: #f6fafe;
+  --muted: #93a2b8;
+  --muted-2: #7f8fa6;
+
+  --jade: #35c2a1;
+  --jade-bright: #4fd7b6;
+  --jade-dim: rgba(53, 194, 161, 0.15);
+
+  --shadow: 0 18px 50px rgba(3, 8, 14, 0.55);
+
+  --markups-bg: #161f2c;
+  --markups-head: #1d2736;
+  --markups-toolbar: #131b26;
+  --markups-header: #1f2a3a;
+  --markups-hover: #243145;
+  --markups-border: #2b3849;
+  --markups-row-border: #232e3d;
+
+  --chrome-topbar: linear-gradient(180deg, #1a2432 0%, #151e2a 100%);
+  --chrome-rail: linear-gradient(180deg, #18212e 0%, #131b26 100%);
+  --surface-tab: #17202d;
+  --surface-sunken: #17202d;
+  --statusbar-bg: #101823;
+
+  --glass-panel: rgba(22, 31, 44, 0.96);
+  --glass-cropbar: rgba(19, 27, 38, 0.94);
+  --glass-strip: rgba(21, 30, 42, 0.97);
+  --glass-editor: rgba(12, 18, 27, 0.97);
+  --glass-editor-strong: rgba(12, 18, 27, 0.95);
+  --glass-editor-input: rgba(10, 16, 24, 0.6);
+  --glass-loading: rgba(16, 23, 33, 0.85);
+  --glass-controls: rgba(28, 38, 52, 0.94);
+  --glass-welcome: linear-gradient(180deg, rgba(32, 43, 58, 0.97), rgba(22, 31, 44, 0.98));
+  --modal-grad: linear-gradient(180deg, #222d3d, #17202d);
+  --modal-border: #36465c;
+  --toast-bg: #202b3b;
+  --input-sunken: #131c28;
+
+  --overlay-modal: rgba(4, 9, 15, 0.68);
+  --overlay-lightbox: rgba(4, 9, 15, 0.9);
+  --hover-soft: rgba(255, 255, 255, 0.07);
+  --hover-softer: rgba(255, 255, 255, 0.04);
+  --hover-strong: rgba(255, 255, 255, 0.2);
+
+  --canvas-grid: rgba(140, 175, 215, 0.032);
+  --canvas-glow: rgba(53, 194, 161, 0.05);
+
+  --scrollbar: #33425a;
+  --scrollbar-hover: #45576f;
+  --border-hover: #3a4c64;
+
+  --shadow-pop: 0 18px 48px rgba(2, 6, 12, 0.6);
+  --shadow-pop-sm: 0 12px 36px rgba(2, 6, 12, 0.55);
+  --shadow-toast: 0 8px 28px rgba(2, 6, 12, 0.45);
+  --shadow-soft: 0 2px 10px rgba(2, 6, 12, 0.35);
+  --shadow-strip: 0 8px 26px rgba(2, 6, 12, 0.45);
+  --shadow-label: 0 6px 22px rgba(2, 6, 12, 0.5);
+
+  --markups-inset: inset 0 1px 0 rgba(95, 143, 179, 0.18);
+  --hover-row: rgba(255, 255, 255, 0.014);
+  --placeholder: rgba(214, 226, 240, 0.42);
+  --hint: rgba(214, 226, 240, 0.58);
+  --mark: rgba(242, 169, 59, 0.32);
+  --tool-dot-ring: rgba(255, 255, 255, 0.22);
+  --help-row: rgba(255, 255, 255, 0.03);
+  --help-figure-shadow: rgba(2, 6, 12, 0.5);
+  --export-list: rgba(2, 6, 12, 0.2);
+}

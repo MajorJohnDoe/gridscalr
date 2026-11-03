@@ -564,6 +564,8 @@ Project settings are stored in the `.gridscalr` file and are undoable while the 
 - **Help → Workflows** opens task-oriented guides for operations technicians and technical property managers.
 - **Help → User guide** (`F1`) opens this guide inside the app.
 - **Help → Keyboard shortcuts** (`?`) opens the shortcut reference.
+- **Help → Copy diagnostics** copies a report with the app version, project schema, platform, WebView version, build mode, viewport, autosave state and anonymised project statistics (documents, pages, layers, items by kind, categories, count types, embedded data size). It never includes the project name, drawing names, labels or file paths. The last few runtime events are included; see [Troubleshooting](#troubleshooting).
+- **Help → Report a problem…** shows the same diagnostics next to the issue tracker link, with buttons to copy both.
 - **Help → About GridScalr** shows the installed version and project schema.
 
 The help content is bundled with the application. It does not use the network. Use the search field to filter the current topic, or the table of contents to jump between sections. Screenshots can be clicked to open them at full size.
@@ -615,3 +617,11 @@ Browser development mode uses the file picker and downloads. Native paths, recen
 ### The window fails to start
 
 Restart the app and make sure Microsoft Edge WebView2 is up to date. On Linux, check the Tauri prerequisites in the README. The boot screen can show technical details for a bug report.
+
+### Autosave is failing
+
+When the recovery snapshot cannot be written, the status bar shows a persistent **Autosave failing** chip until an autosave succeeds again. The project stays open and saving to a file still works; free local storage or close other browser tabs, then continue editing. Click the chip or use **Help → Copy diagnostics** to include the message and recent events in a bug report. Autosave never stores drawing content in the log; paths and names are stripped.
+
+### Something failed without a message
+
+Runtime errors are recorded in a local, rolling log of the last 80 events (no drawing content, labels or paths). **Help → Copy diagnostics** includes the most recent entries so a maintainer can see what happened after startup. The log is stored on this computer only and is never uploaded.

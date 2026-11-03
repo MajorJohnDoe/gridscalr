@@ -46,6 +46,7 @@ import { isTiff } from "../io/tiff";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { resolveSelection } from "../model/selection";
+import { SCHEMA_VERSION } from "../model/types";
 import type {
   AreaMode,
   CountType,
@@ -119,7 +120,7 @@ import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
-import { mountWindowControls, type WindowControls } from "../ui/windowChrome";
+import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
@@ -136,6 +137,9 @@ import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
+import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
+import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
+import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
 
@@ -170,6 +174,7 @@ export class App {
   private unlistenClose: (() => void) | null = null;
   private unlistenLaunch: (() => void) | null = null;
   private windowControls: WindowControls | null = null;
+  private autosaveWarned: string | null = null;
 
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
@@ -254,6 +259,8 @@ export class App {
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosavePreview(),
       openRecent: (entry) => void this.openRecent(entry),
+      copyDiagnostics: () => void this.copyDiagnosticsFlow(),
+      reportProblem: () => this.reportProblemFlow(),
     };
     setMenuActions(this.actions);
     this.windowControls = mountWindowControls(this.refs.topbar, {
@@ -293,10 +300,13 @@ export class App {
         return;
       }
       if (reason === "save") {
-        const autosaveError = store.consumeAutosaveError();
-        if (autosaveError) {
+        const autosaveError = store.autosaveError;
+        if (autosaveError && autosaveError.message !== this.autosaveWarned) {
+          this.autosaveWarned = autosaveError.message;
           toast(autosaveError.message, "warning", autosaveError.quotaExceeded ? 10000 : 7000);
+          logEvent("warn", `autosave failed: ${autosaveError.message}`);
         }
+        if (!autosaveError) this.autosaveWarned = null;
       }
       if (reason === "project" && this.searchPanel) this.closeSearch();
       this.reference.onStoreChange(reason);
@@ -695,6 +705,7 @@ export class App {
       await this.resetProject();
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
+      logEvent("error", `open drawing failed: ${errorMessage(error)}`);
       await messageDialog("Could not open drawing", errorMessage(error), "warning");
     }
   }
@@ -801,6 +812,7 @@ export class App {
       if (!picked) return;
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
+      logEvent("error", `open drawing failed: ${errorMessage(error)}`);
       await messageDialog("Could not open drawing", errorMessage(error), "warning");
     }
   }
@@ -811,6 +823,7 @@ export class App {
       if (!picked) return;
       await this.loadProjectText(picked.text, picked.path);
     } catch (error) {
+      logEvent("error", `open project failed: ${errorMessage(error)}`);
       await messageDialog("Could not open project", errorMessage(error), "warning");
     }
   }
@@ -957,6 +970,7 @@ export class App {
     try {
       project = parseProject(text);
     } catch (error) {
+      logEvent("error", `open project failed: ${errorMessage(error)}`);
       await messageDialog("Could not open project", errorMessage(error), "warning");
       return;
     }
@@ -1689,6 +1703,7 @@ export class App {
       toast("Project saved.", "success");
       return true;
     } catch (error) {
+      logEvent("error", `save failed: ${errorMessage(error)}`);
       await messageDialog("Could not save project", errorMessage(error), "warning");
       return false;
     }
@@ -1728,6 +1743,7 @@ export class App {
       toast(`Copy saved to ${basename(path)}.`, "success");
       return true;
     } catch (error) {
+      logEvent("error", `save copy failed: ${errorMessage(error)}`);
       await messageDialog("Could not save a copy", errorMessage(error), "warning");
       return false;
     }
@@ -2015,6 +2031,7 @@ export class App {
     try {
       project = parseProject(JSON.stringify(payload.project));
     } catch (error) {
+      logEvent("error", `restore session failed: ${errorMessage(error)}`);
       await messageDialog("Could not restore session", errorMessage(error), "warning");
       return;
     }
@@ -2035,6 +2052,7 @@ export class App {
         await this.loadProjectText(text, entry.path);
       }
     } catch (error) {
+      logEvent("error", `open recent failed: ${errorMessage(error)}`);
       await messageDialog("Could not open recent file", errorMessage(error), "warning");
     }
   }
@@ -2055,8 +2073,38 @@ export class App {
         toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
       }
     } catch (error) {
+      logEvent("error", `open file failed: ${errorMessage(error)}`);
       await messageDialog(failureTitle, errorMessage(error), "warning");
     }
+  }
+
+  /** Version, platform and anonymised project statistics for a bug report. */
+  private diagnosticsText(): string {
+    return buildDiagnostics({
+      version: __APP_VERSION__,
+      schemaVersion: SCHEMA_VERSION,
+      platform: detectPlatform(),
+      desktop: isTauri,
+      userAgent: navigator.userAgent,
+      mode: import.meta.env.PROD ? "production" : "development",
+      locale: navigator.language,
+      viewport: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        dpr: window.devicePixelRatio,
+      },
+      project: store.project ? projectStats(store.project) : null,
+      autosaveFailure: store.autosaveError?.message ?? null,
+      log: readDiagnosticsLog().slice(-25),
+    });
+  }
+
+  private async copyDiagnosticsFlow(): Promise<void> {
+    await copyDiagnostics(() => this.diagnosticsText());
+  }
+
+  private reportProblemFlow(): void {
+    reportProblemDialog(() => this.diagnosticsText());
   }
 
   /**
@@ -2113,6 +2161,7 @@ export class App {
         toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
       }
     } catch (error) {
+      logEvent("error", `dropped file failed: ${errorMessage(error)}`);
       await messageDialog("Could not open dropped file", errorMessage(error), "warning");
     }
   }

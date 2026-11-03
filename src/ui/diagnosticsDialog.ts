@@ -1,0 +1,66 @@
+import { copyPlainText } from "../io/clipboardText";
+import { showModal } from "./dialogs";
+import { el } from "./dom";
+import { toast } from "./toast";
+
+export const ISSUE_URL =
+  "https://github.com/MajorJohnDoe/gridscalr/issues/new?template=bug_report.yml";
+
+export async function copyDiagnostics(diagnostics: () => string): Promise<boolean> {
+  const copied = await copyPlainText(diagnostics());
+  toast(
+    copied ? "Diagnostics copied." : "Could not copy the diagnostics.",
+    copied ? "success" : "warning",
+  );
+  return copied;
+}
+
+/**
+ * Support path without network access: the diagnostics text and the issue
+ * tracker link are selectable and copyable, so a user can attach both to a new
+ * GitHub issue.
+ */
+export function reportProblemDialog(diagnostics: () => string): void {
+  const body = el("div", "diagnostics-dialog");
+  body.append(
+    el(
+      "p",
+      "settings-note",
+      "GridScalr uploads nothing. The diagnostics contain version, platform and project statistics only — no drawing content, labels or file paths.",
+    ),
+  );
+
+  const pre = el("pre", "diagnostics-text");
+  pre.textContent = diagnostics();
+
+  const actions = el("div", "settings-actions");
+  const copy = el("button", "btn btn-small", "Copy diagnostics");
+  copy.type = "button";
+  copy.addEventListener("click", () => {
+    void copyPlainText(pre.textContent ?? "");
+    toast("Diagnostics copied.", "success");
+  });
+  const copyLink = el("button", "btn btn-small btn-ghost", "Copy issue link");
+  copyLink.type = "button";
+  copyLink.addEventListener("click", () => {
+    void copyPlainText(ISSUE_URL);
+    toast("Issue link copied.", "success");
+  });
+  actions.append(copy, copyLink);
+
+  const link = el("input", "input diagnostics-link");
+  link.value = ISSUE_URL;
+  link.readOnly = true;
+  link.setAttribute("aria-label", "Issue tracker link");
+
+  body.append(pre, el("div", "settings-subhead", "Issue tracker"), link, actions);
+
+  void showModal({
+    title: "Report a problem",
+    subtitle: "Attach the diagnostics to a new GitHub issue",
+    body,
+    wide: true,
+    className: "modal-diagnostics",
+    actions: [{ label: "Close", value: "close", primary: true }],
+  });
+}

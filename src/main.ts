@@ -2,6 +2,7 @@ import "./styles.css";
 import "./styles/help.css";
 import "./styles/popovers.css";
 import { App } from "./app/App";
+import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
@@ -27,6 +28,7 @@ function formatStartupError(error: unknown): string {
 function showStartupError(error: unknown): void {
   if (!root) return;
   console.error("GridScalr failed to start", error);
+  logEvent("error", `startup failed: ${formatStartupError(error)}`);
 
   const fallback = document.createElement("div");
   fallback.className = "boot-fallback";
@@ -79,6 +81,8 @@ document.addEventListener(
   },
   { capture: true },
 );
+
+installDiagnosticsLogging();
 
 try {
   const app = new App(root);
