@@ -799,12 +799,6 @@
     "Zoom in",
     "Zoom out"
   ],
-  "src/ui/welcome.ts": [
-    "Open architectural or engineering drawings as PDF or scanned TIF, calibrate the scale, and measure lengths and areas. Add several sheets to one project. Everything stays on your device.",
-    "Open drawing",
-    "Open project",
-    "Restore last session"
-  ],
   "src/ui/windowChrome.ts": [
     "The window could not be minimized.",
     "The window could not be resized."

@@ -1667,6 +1667,29 @@ html[data-platform="macos"] .topbar {
   opacity: 0.7;
 }
 
+.welcome-steps {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-soft);
+}
+
+.welcome-steps h3 {
+  margin: 0 0 6px;
+  color: var(--muted-2);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+}
+
+.welcome-step-list {
+  margin: 0;
+  padding-left: 18px;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.7;
+}
+
 .welcome-brand {
   display: flex;
   align-items: center;

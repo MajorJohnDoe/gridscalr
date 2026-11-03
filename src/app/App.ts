@@ -260,6 +260,7 @@ export class App {
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosavePreview(),
       openRecent: (entry) => void this.openRecent(entry),
+      openDemoProject: () => void this.openDemoProjectFlow(),
       copyDiagnostics: () => void this.copyDiagnosticsFlow(),
       reportProblem: () => this.reportProblemFlow(),
     };
@@ -2076,6 +2077,26 @@ export class App {
     } catch (error) {
       logEvent("error", `open file failed: ${errorMessage(error)}`);
       await messageDialog(failureTitle, errorMessage(error), "warning");
+    }
+  }
+
+  /**
+   * Copies the bundled demo into the app data folder and opens it from there,
+   * so the demo can be measured, edited and saved without touching the
+   * installation directory or the bundled fixture.
+   */
+  private async openDemoProjectFlow(): Promise<void> {
+    if (!isTauri) {
+      toast(t("welcome.demoUnavailable"), "info");
+      return;
+    }
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const path = await invoke<string>("prepare_demo_project");
+      await this.openPath(path, t("welcome.demoFailed"));
+    } catch (error) {
+      logEvent("error", `demo failed: ${errorMessage(error)}`);
+      await messageDialog(t("welcome.demoFailed"), errorMessage(error), "warning");
     }
   }
 

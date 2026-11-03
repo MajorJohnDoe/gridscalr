@@ -70,6 +70,23 @@ export const en = {
   "diagnostics.copyFailed": "Could not copy the diagnostics.",
   "diagnostics.linkCopied": "Issue link copied.",
 
+  "welcome.subtitle":
+    "Open architectural or engineering drawings as PDF or scanned TIF, calibrate the scale, and measure lengths and areas. Add several sheets to one project. Everything stays on your device.",
+  "welcome.openDrawing": "Open drawing",
+  "welcome.openProject": "Open project",
+  "welcome.demo": "Open demo project",
+  "welcome.demoUnavailable": "The demo project is available in the desktop app.",
+  "welcome.demoFailed": "Could not open the demo project",
+  "welcome.restore": "Restore last session",
+  "welcome.autosavedAt": "Autosaved {time}",
+  "welcome.quickStart": "Quick start",
+  "welcome.step.open": "Open a drawing or the demo project.",
+  "welcome.step.calibrate":
+    "Calibrate the page against a known dimension, or enter the printed scale.",
+  "welcome.step.measure": "Measure, then review the quantities in View → Quantities.",
+  "welcome.recent": "Recent",
+  "welcome.footnote": "Local-first. Drawings are read from your disk and never uploaded.",
+
   "launch.nothingTitle": "Nothing to open",
   "launch.nothingMessage":
     "The operating system asked GridScalr to open a file it does not handle. Use a .gridscalr project, a PDF or a TIF drawing.",
