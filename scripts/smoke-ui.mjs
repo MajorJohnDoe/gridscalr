@@ -685,17 +685,33 @@ try {
     "project settings should expose smart length labels",
   );
   assert.equal(
-    await settingsDialog.getByLabel("Measurement layer colour").inputValue(),
+    await settingsDialog.getByLabel("Measurement layer colour").count(),
+    0,
+    "layer colours should live in Preferences, not Project settings",
+  );
+  await page.keyboard.press("Escape");
+  await settingsDialog.waitFor({ state: "detached" });
+
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await page.getByRole("menuitem", { name: "Preferences…" }).click();
+  const preferencesDialog = page.getByRole("dialog", { name: "Preferences" });
+  await preferencesDialog.waitFor();
+  await preferencesDialog
+    .getByRole("navigation", { name: "Preference categories" })
+    .getByRole("button", { name: "Layers" })
+    .click();
+  assert.equal(
+    await preferencesDialog.getByLabel("Measurement layer colour").inputValue(),
     "#f70808",
     "new measurement layers should default to signal red",
   );
   assert.equal(
-    await settingsDialog.getByLabel("Drawing layer colour").inputValue(),
+    await preferencesDialog.getByLabel("Drawing layer colour").inputValue(),
     "#f2a93b",
     "new drawing layers should keep the orange default",
   );
   await page.keyboard.press("Escape");
-  await settingsDialog.waitFor({ state: "detached" });
+  await preferencesDialog.waitFor({ state: "detached" });
 
   await page.evaluate(() => {
     window.__gridscalrContextPrevented = null;

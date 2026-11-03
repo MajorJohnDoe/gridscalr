@@ -9,10 +9,10 @@ import type { PanelActions } from "./panels";
 import {
   isInspectorCollapsed,
   isSidebarCollapsed,
-  resetPanelLayout,
   toggleInspector,
   toggleSidebar,
 } from "./sidebar";
+import { openPreferencesDialog } from "./preferencesDialog";
 import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
@@ -267,17 +267,13 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       id: "settings",
       label: "Settings",
       items: () => [
+        action("Preferences…", () => openPreferencesDialog()),
         action("Project settings…", () => openSettingsDialog(), {
           shortcut: APP_SHORTCUTS.settings,
           disabled: !hasProject,
         }),
         action("Manage categories…", () => void openCategoriesDialog(), {
           disabled: !hasProject,
-        }),
-        separator(),
-        action("Reset panel layout", () => {
-          resetPanelLayout();
-          toast("Panel layout reset.", "success");
         }),
       ],
     },
