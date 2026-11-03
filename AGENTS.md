@@ -105,7 +105,7 @@ An issue is the unit of intent; a pull request is the unit of change.
   - `feat: add count measurement tool`
   - `fix: exclude hidden layers from CSV export`
   - `docs: record Milestone 2 decisions`
-  - `chore: update Windows build workflow`
+  - `chore: update the release workflow`
 - Do not commit `node_modules/`, `dist/`, `src-tauri/target/`, `exports/`, local environment files, or credentials.
 - Do not commit generated test output unless it is deliberately part of the fixture set.
 
@@ -189,7 +189,7 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
-The `Windows build` workflow runs on `v*` tags and can also be started manually. It uploads the `gridscalr-windows` artifact containing the executable and installers. Releases are published manually from those artifacts with `gh release create`; follow `docs/releasing.md`. Do not add an automatic release job without an explicit decision.
+The `Release build` workflow runs on `v*` tags and can also be started manually. It builds Windows, macOS and Linux in one matrix and uploads `gridscalr-windows`, `gridscalr-macos`, `gridscalr-linux` and a merged `gridscalr-checksums` artifact. Releases are published manually from those artifacts with `gh release create`; follow `docs/releasing.md`. Do not add an automatic release job without an explicit decision.
 
 Every tagged release must also update the landing site. Update `site/release.json`
 with the published version, date, release URL, release notes URL and asset URLs,
@@ -200,9 +200,9 @@ do not change the released version must not change the version shown on the site
 
 ## CI and build hosts
 
-- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests.
-- `.github/workflows/windows-build.yml` builds the Windows `.exe`, NSIS installer, and MSI on manual dispatch or `v*` tags.
-- The Linux build host produces a Linux binary, not a Windows `.exe`. Use the Windows workflow for Windows artifacts.
+- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests. Its `desktop` job compiles the Tauri shell on Ubuntu, Windows and macOS, so platform-specific code is checked before a tag exists.
+- `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags.
+- The Linux build host produces a Linux binary, not a Windows `.exe`. Use the `Release build` workflow for Windows and macOS artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
 - If GitHub rejects a push because the OAuth token lacks a scope, refresh it with `gh auth refresh -h github.com -s workflow` when adding or changing workflow files.
 
