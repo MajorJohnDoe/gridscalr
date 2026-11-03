@@ -22,6 +22,7 @@ import {
 
 export interface ShellRefs {
   root: HTMLElement;
+  topbar: HTMLElement;
   projectName: HTMLElement;
   docName: HTMLElement;
   docMeta: HTMLElement;
@@ -76,9 +77,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const topbar = el("header", "topbar");
   const brand = el("div", "brand");
   brand.innerHTML = brandMark();
-  const brandName = el("div", "brand-name");
-  brandName.innerHTML = "Grid<span>Scalr</span>";
-  brand.append(brandName);
+  brand.title = "GridScalr";
+  brand.setAttribute("data-tauri-drag-region", "deep");
 
   const menuBar = createMenuBar();
   const history = el("div", "topbar-history");
@@ -91,7 +91,11 @@ export function createShell(root: HTMLElement): ShellRefs {
   history.append(undoBtn, redoBtn);
 
   const identity = el("div", "doc-identity");
+  // The title row drags from the identity block, but the project name keeps its
+  // double-click rename, so it opts out of the drag region.
+  identity.setAttribute("data-tauri-drag-region", "deep");
   const projectName = el("span", "project-name", "No project open");
+  projectName.setAttribute("data-tauri-drag-region", "false");
   projectName.title = "Double-click to rename project";
   projectName.setAttribute("aria-label", "Project name; double-click to rename");
   const docLine = el("span", "doc-line");
@@ -103,6 +107,10 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const spacer = el("div", "topbar-spacer");
   const spacerEnd = el("div", "topbar-spacer");
+  // Only non-interactive surfaces start a window drag; menu buttons, undo/redo,
+  // the project name and the window controls keep their own click behaviour.
+  spacer.setAttribute("data-tauri-drag-region", "");
+  spacerEnd.setAttribute("data-tauri-drag-region", "");
   topbar.append(brand, menuBar, history, spacer, identity, spacerEnd);
 
   const workspace = el("div", "workspace");
@@ -334,6 +342,7 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   return {
     root,
+    topbar,
     projectName,
     docName,
     docMeta,

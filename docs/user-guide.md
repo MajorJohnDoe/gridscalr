@@ -19,8 +19,7 @@ The welcome screen also offers **Open drawing**, **Open project**, **Restore las
 
 GridScalr uses a compact, drawing-first layout.
 
-- **Menu bar** – File, Edit, View, Settings, and Help.
-- **Top bar** – project name, undo/redo, and the unsaved-changes dot.
+- **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom.
 - **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
@@ -107,7 +106,7 @@ Previews are produced on demand: only the cards near the visible part of the lis
 
 Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Duplicate page…**, and **Delete page…**.
 
-Double-click a page name to rename it inline. Named pages show their title in the card and in the top bar; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
+Double-click a page name to rename it inline. Named pages show their title in the card and in the title row; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
 
 ### Duplicate a page
 
