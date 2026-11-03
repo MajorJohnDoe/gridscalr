@@ -118,6 +118,7 @@ import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
+import { mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
@@ -165,6 +166,7 @@ export class App {
   private disposed = false;
   private closeInProgress = false;
   private unlistenClose: (() => void) | null = null;
+  private windowControls: WindowControls | null = null;
 
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
@@ -251,6 +253,9 @@ export class App {
       openRecent: (entry) => void this.openRecent(entry),
     };
     setMenuActions(this.actions);
+    this.windowControls = mountWindowControls(this.refs.topbar, {
+      quit: () => void this.quitFlow(),
+    });
 
     this.canvas = new CanvasView(this.refs.canvasHost, {
       getRenderer: () => this.renderer,
@@ -2103,6 +2108,8 @@ export class App {
     window.removeEventListener("paste", this.onPaste);
     this.unlistenClose?.();
     this.unlistenClose = null;
+    this.windowControls?.dispose();
+    this.windowControls = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
     this.closeSearch();

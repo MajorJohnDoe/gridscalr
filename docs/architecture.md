@@ -72,6 +72,7 @@ src/
   ui/welcome.ts          empty-project welcome screen and recent files
   ui/pageImportDialog.ts page picker with previews for PDF/TIF import
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
+  ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   project-wide units, snapping, quantity defaults
   model/cloud.ts         revision-cloud bezier geometry
@@ -91,6 +92,8 @@ src-tauri/
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/lib.rs             Tauri command registration
   capabilities/          desktop permissions
+  tauri.conf.json        undecorated Windows/Linux window drawn by ui/windowChrome.ts
+  tauri.macos.conf.json  overlay title bar so macOS keeps the native traffic lights
 docs/user-guide.md       in-app user guide and workflow reference
 docs/workflows.md        role-based guides for operations and property management
 docs/shortcuts.md        in-app keyboard reference
@@ -134,6 +137,7 @@ Key design choices:
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
 - **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum. Portable packages are streamed in Rust so large PDFs never pass through the JavaScript heap: PDFs use ZIP store mode, text uses deflate, and every entry is checked against the manifest before extraction.
 - **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint on both the primary canvas and the reference pane, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted. A pen takes priority and recent palm touches are ignored. Long-press on an item opens the shared context menu on touch.
+- **The title row is app-drawn on Windows and Linux.** `src-tauri/tauri.conf.json` turns the native decorations off and `src/ui/windowChrome.ts` draws minimize, maximize/restore and close at the end of the menu row; close routes through the unsaved-changes flow. macOS keeps the native traffic lights through `src-tauri/tauri.macos.conf.json` with an overlay title bar. Tauri replaces the `app.windows` array on platform merge, so the window block in that file must stay in sync with the base config. The browser fallback renders no window buttons.
 - **Bundles follow user intent.** OCR, PDF exports, XLSX and TIF import load through dynamic imports only when used. Production builds omit source maps unless `GRIDSCALR_SOURCEMAPS=1` is set for a debuggable build.
 - **The landing site is separate from the app.** `site/` is hand-authored HTML, CSS and a small progressive-enhancement script with a native-dialog screenshot lightbox. `scripts/build-site.mjs` copies it with the app icon, all documentation screenshots and `site/release.json` values into the gitignored `site-dist/`, and `.github/workflows/pages.yml` deploys that output. The site reuses screenshots and brand assets but no application code or build output. `site/release.json` is the single source for the displayed release version and download links and is updated for every tagged release.
 - **Tauri prototype freezing stays off.** `@pdf-lib/fontkit` assigns to a prototype property inherited from `Object.prototype`; Tauri's `freezePrototype` makes that assignment throw and prevents the window from starting. GridScalr does not execute untrusted JavaScript, so this hardening is left disabled.

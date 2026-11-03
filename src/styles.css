@@ -28,7 +28,7 @@
   --markups-row-border: #252c38;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
   --radius: 7px;
-  --topbar-h: 42px;
+  --topbar-h: 40px;
   --status-h: 28px;
   --rail-w: 52px;
   --dock-w: 272px;
@@ -136,7 +136,6 @@ textarea:disabled {
   gap: 8px;
   padding-right: 10px;
   border-right: 1px solid var(--border-soft);
-  min-width: 122px;
 }
 
 .brand-mark {
@@ -144,15 +143,55 @@ textarea:disabled {
   filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.4));
 }
 
-.brand-name {
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: 0.2px;
+/* ---------- Window chrome ---------- */
+
+.window-controls {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: stretch;
+  margin-right: -10px;
+}
+
+.window-control-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  transition:
+    background 0.1s,
+    color 0.1s;
+}
+
+.window-control-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
   color: var(--text-strong);
 }
 
-.brand-name span {
-  color: var(--jade);
+.window-control-btn:active {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.window-control-btn:focus-visible {
+  outline-offset: -2px;
+}
+
+.window-control-btn.is-close:hover {
+  background: #c42b1c;
+  color: #fff;
+}
+
+.window-control-btn.is-close:active {
+  background: #9f2316;
+}
+
+/* macOS keeps the native traffic lights with the overlay title bar. */
+html[data-platform="macos"] .topbar {
+  padding-left: 78px;
 }
 
 .topbar-history {
@@ -4097,6 +4136,10 @@ textarea:disabled {
 @media (max-width: 900px) {
   .doc-identity {
     max-width: 200px;
+  }
+
+  .brand {
+    display: none;
   }
 
   .menu-trigger {

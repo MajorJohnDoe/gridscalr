@@ -22,6 +22,7 @@ import {
 
 export interface ShellRefs {
   root: HTMLElement;
+  topbar: HTMLElement;
   projectName: HTMLElement;
   docName: HTMLElement;
   docMeta: HTMLElement;
@@ -74,11 +75,12 @@ export function createShell(root: HTMLElement): ShellRefs {
   const shell = el("div", "app-shell");
 
   const topbar = el("header", "topbar");
+  // The whole title row drags the window. Tauri treats buttons as clickable and
+  // skips them, and the project name opts out below so double-click rename works.
+  topbar.setAttribute("data-tauri-drag-region", "deep");
   const brand = el("div", "brand");
   brand.innerHTML = brandMark();
-  const brandName = el("div", "brand-name");
-  brandName.innerHTML = "Grid<span>Scalr</span>";
-  brand.append(brandName);
+  brand.title = "GridScalr";
 
   const menuBar = createMenuBar();
   const history = el("div", "topbar-history");
@@ -92,6 +94,8 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const identity = el("div", "doc-identity");
   const projectName = el("span", "project-name", "No project open");
+  // Opt out of the title-row drag region: double-clicking the name renames it.
+  projectName.setAttribute("data-tauri-drag-region", "false");
   projectName.title = "Double-click to rename project";
   projectName.setAttribute("aria-label", "Project name; double-click to rename");
   const docLine = el("span", "doc-line");
@@ -334,6 +338,7 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   return {
     root,
+    topbar,
     projectName,
     docName,
     docMeta,
