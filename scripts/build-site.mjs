@@ -45,6 +45,44 @@ async function requireFile(path) {
   }
 }
 
+/**
+ * Optional per-platform downloads. Each field is rendered only when
+ * site/release.json provides it, so the site never links to an asset that the
+ * published release does not contain.
+ */
+const platformAssets = [
+  {
+    field: "macosDmgUrl",
+    attribute: "data-macos-dmg",
+    en: ["macOS disk image (DMG)", "Universal build for Intel and Apple Silicon."],
+    sv: ["macOS-skivavbild (DMG)", "Universellt bygge för Intel och Apple Silicon."],
+  },
+  {
+    field: "macosZipUrl",
+    attribute: "data-macos-zip",
+    en: ["macOS app bundle (.zip)", "Portable app bundle without an installer."],
+    sv: ["macOS-apppaket (.zip)", "Portabelt app-paket utan installerare."],
+  },
+  {
+    field: "linuxAppImageUrl",
+    attribute: "data-linux-appimage",
+    en: ["Linux AppImage", "Portable x86_64 build for any distribution."],
+    sv: ["Linux AppImage", "Portabelt x86_64-bygge för alla distributioner."],
+  },
+  {
+    field: "linuxDebUrl",
+    attribute: "data-linux-deb",
+    en: ["Linux .deb package", "Debian, Ubuntu and derivatives."],
+    sv: ["Linux .deb-paket", "Debian, Ubuntu och derivat."],
+  },
+  {
+    field: "linuxTarballUrl",
+    attribute: "data-linux-tarball",
+    en: ["Linux tarball", "Binary archive for x86_64 systems."],
+    sv: ["Linux-tarball", "Binärarkiv för x86_64-system."],
+  },
+];
+
 async function readRelease() {
   const path = resolve(siteDir, "release.json");
   await requireFile(path);
@@ -76,6 +114,16 @@ async function readRelease() {
   if (release.tag !== `v${release.version}`) {
     throw new Error("site/release.json tag must match the version");
   }
+  for (const asset of platformAssets) {
+    const url = release[asset.field];
+    if (url === undefined) continue;
+    if (typeof url !== "string" || !url.startsWith("https://")) {
+      throw new Error(`site/release.json ${asset.field} must be an HTTPS URL`);
+    }
+    if (!url.includes(`/download/${release.tag}/`)) {
+      throw new Error(`site/release.json ${asset.field} must point to the tagged release asset`);
+    }
+  }
   return release;
 }
 
@@ -90,6 +138,20 @@ async function walkHtml(dir) {
 }
 
 const release = await readRelease();
+
+function platformDownloads(lang) {
+  return platformAssets
+    .filter((asset) => typeof release[asset.field] === "string")
+    .map((asset) => {
+      const [label, note] = asset[lang];
+      return `<li>
+                  <a ${asset.attribute} href="${release[asset.field]}">${label}</a>
+                  <span>${note}</span>
+                </li>`;
+    })
+    .join("\n                ");
+}
+
 const tokens = {
   "{{RELEASE_VERSION}}": release.version,
   "{{RELEASE_DATE}}": release.releasedAt,
@@ -99,6 +161,8 @@ const tokens = {
   "{{MSI_URL}}": release.msiUrl,
   "{{PORTABLE_URL}}": release.portableUrl,
   "{{CHECKSUMS_URL}}": release.checksumsUrl,
+  "{{PLATFORM_DOWNLOADS}}": platformDownloads("en"),
+  "{{PLATFORM_DOWNLOADS_SV}}": platformDownloads("sv"),
 };
 
 const sitemap = `<?xml version="1.0" encoding="UTF-8"?>

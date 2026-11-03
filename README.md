@@ -30,7 +30,10 @@ Grab the newest build from [Releases](https://github.com/MajorJohnDoe/gridscalr/
 | `SHA256SUMS.txt` | Checksums for verifying the download |
 
 The Windows builds are not code-signed. Read [Windows SmartScreen](#windows-smartscreen)
-before the first launch. Linux and macOS builds can be produced from source.
+before the first launch. The same tag also builds a universal macOS DMG with an
+`.app.zip`, and an x86_64 Linux AppImage, `.deb` and `.tar.gz`; those files appear
+here and on the release page once a release includes them. Until then, Linux and
+macOS builds can be produced from source.
 
 ## What it does
 
@@ -222,6 +225,15 @@ Get-FileHash .\GridScalr_0.16.1_x64-setup.exe -Algorithm SHA256
 Unsigned builds also trigger more false positives in some antivirus engines. If a
 hash does not match, do not run the file and report it through
 [SECURITY.md](SECURITY.md).
+
+## macOS Gatekeeper
+
+macOS builds are not notarized either. On first launch macOS may say that
+GridScalr cannot be opened because the developer cannot be verified. Open
+**System Settings → Privacy & Security**, choose **Open Anyway**, and confirm.
+The DMG is universal, so the same download runs on Intel and Apple Silicon.
+Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
+`shasum -a 256` before opening it.
 
 ## Project status
 

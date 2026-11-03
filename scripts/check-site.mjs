@@ -440,6 +440,22 @@ function checkRelease(document, page, release) {
         `${page.file}: ${attribute} must be ${expected}`,
       );
     }
+
+    for (const [field, attribute] of platformAssets) {
+      const nodes = [...document.querySelectorAll(`[${attribute}]`)];
+      if (typeof release[field] === "string") {
+        assert(nodes.length === 1, `${page.file}: expected exactly one ${attribute}`);
+        assert(
+          nodes[0]?.getAttribute("href") === release[field],
+          `${page.file}: ${attribute} must be ${release[field]}`,
+        );
+      } else {
+        assert(
+          nodes.length === 0,
+          `${page.file}: ${attribute} must not appear without release.json ${field}`,
+        );
+      }
+    }
   }
 
   for (const link of document.querySelectorAll("[data-build-from-source]")) {
@@ -749,6 +765,7 @@ function checkPairParity(pageData) {
       "data-msi",
       "data-portable",
       "data-checksums",
+      ...platformAssets.map(([, attribute]) => attribute),
     ]) {
       const firstHrefs = [...first.document.querySelectorAll(`[${attribute}]`)]
         .map((node) => node.href)
@@ -765,6 +782,15 @@ function checkPairParity(pageData) {
     }
   }
 }
+
+/** Optional per-platform assets; rendered only when site/release.json has them. */
+const platformAssets = [
+  ["macosDmgUrl", "data-macos-dmg"],
+  ["macosZipUrl", "data-macos-zip"],
+  ["linuxAppImageUrl", "data-linux-appimage"],
+  ["linuxDebUrl", "data-linux-deb"],
+  ["linuxTarballUrl", "data-linux-tarball"],
+];
 
 const releasePath = resolve(root, "site/release.json");
 assert(await exists(releasePath), "site/release.json is missing");
@@ -798,6 +824,18 @@ for (const field of ["notesUrl", "msiUrl", "portableUrl", "checksumsUrl", "lates
   assert(
     typeof release[field] === "string" && release[field].startsWith("https://"),
     `release.json: ${field} must be an HTTPS URL`,
+  );
+}
+for (const [field] of platformAssets) {
+  const url = release[field];
+  if (url === undefined) continue;
+  assert(
+    typeof url === "string" && url.startsWith("https://"),
+    `release.json: ${field} must be an HTTPS URL`,
+  );
+  assert(
+    url.includes(`/download/${release.tag}/`),
+    `release.json: ${field} must point to the tagged release asset`,
   );
 }
 
