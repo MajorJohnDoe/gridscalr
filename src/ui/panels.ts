@@ -85,6 +85,7 @@ export interface PanelActions {
   restoreAutosave: () => void;
   getAutosave: () => AutosavePreview | null;
   openRecent: (entry: RecentEntry) => void;
+  openDemoProject: () => void;
   copyDiagnostics: () => void;
   reportProblem: () => void;
 }

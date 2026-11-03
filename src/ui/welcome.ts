@@ -1,9 +1,16 @@
-import { getRecent } from "../io/platform";
+import { t } from "../i18n";
+import { getRecent, isTauri } from "../io/platform";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
 import { brandMark, icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
+
+const QUICK_START_STEPS = [
+  "welcome.step.open",
+  "welcome.step.calibrate",
+  "welcome.step.measure",
+] as const;
 
 export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   const show = !store.project;
@@ -19,39 +26,51 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   const title = el("h1", "welcome-title", "GridScalr");
   brand.append(title);
   card.append(brand);
-  card.append(
-    el(
-      "p",
-      "welcome-subtitle",
-      "Open architectural or engineering drawings as PDF or scanned TIF, calibrate the scale, and measure lengths and areas. Add several sheets to one project. Everything stays on your device.",
-    ),
-  );
+  card.append(el("p", "welcome-subtitle", t("welcome.subtitle")));
+
   const actionsWrap = el("div", "welcome-actions");
-  const open = el("button", "btn btn-primary", "Open drawing");
+  const open = el("button", "btn btn-primary", t("welcome.openDrawing"));
   open.type = "button";
-  open.innerHTML = `${icon("folder", 16)}<span>Open drawing</span>`;
+  open.innerHTML = `${icon("folder", 16)}<span>${t("welcome.openDrawing")}</span>`;
   open.addEventListener("click", actions.openPdf);
-  const openProject = el("button", "btn", "Open project");
+  const openProject = el("button", "btn", t("welcome.openProject"));
   openProject.type = "button";
-  openProject.innerHTML = `${icon("file", 15)}<span>Open project</span>`;
+  openProject.innerHTML = `${icon("file", 15)}<span>${t("welcome.openProject")}</span>`;
   openProject.addEventListener("click", actions.openProject);
   actionsWrap.append(open, openProject);
 
+  if (isTauri) {
+    const demo = el("button", "btn", t("welcome.demo"));
+    demo.type = "button";
+    demo.innerHTML = `${icon("layers", 15)}<span>${t("welcome.demo")}</span>`;
+    demo.addEventListener("click", actions.openDemoProject);
+    actionsWrap.append(demo);
+  }
+
   const autosave = actions.getAutosave();
   if (autosave) {
-    const restore = el("button", "btn", "Restore last session");
+    const restore = el("button", "btn", t("welcome.restore"));
     restore.type = "button";
-    restore.innerHTML = `${icon("undo", 15)}<span>Restore last session</span>`;
-    restore.title = `Autosaved ${new Date(autosave.savedAt).toLocaleString()}`;
+    restore.innerHTML = `${icon("undo", 15)}<span>${t("welcome.restore")}</span>`;
+    restore.title = t("welcome.autosavedAt", {
+      time: new Date(autosave.savedAt).toLocaleString(),
+    });
     restore.addEventListener("click", actions.restoreAutosave);
     actionsWrap.append(restore);
   }
   card.append(actionsWrap);
 
+  const steps = el("div", "welcome-steps");
+  steps.append(el("h3", "", t("welcome.quickStart")));
+  const list = el("ol", "welcome-step-list");
+  for (const key of QUICK_START_STEPS) list.append(el("li", "", t(key)));
+  steps.append(list);
+  card.append(steps);
+
   const recent = getRecent();
   if (recent.length) {
     const recents = el("div", "welcome-recents");
-    recents.append(el("h3", "", "Recent"));
+    recents.append(el("h3", "", t("welcome.recent")));
     const list = el("div", "recent-list");
     for (const entry of recent.slice(0, 10)) {
       const row = el("button", "recent-item");
@@ -67,7 +86,7 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   }
 
   const note = el("p", "welcome-footnote");
-  note.innerHTML = `${icon("lock", 14)}<span>Local-first. Drawings are read from your disk and never uploaded.</span>`;
+  note.innerHTML = `${icon("lock", 14)}<span>${t("welcome.footnote")}</span>`;
   card.append(note);
   refs.welcome.append(card);
 }

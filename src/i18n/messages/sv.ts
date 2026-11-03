@@ -74,6 +74,22 @@ export const sv: Partial<Record<MessageKey, string>> = {
   "diagnostics.copyFailed": "Kunde inte kopiera diagnostiken.",
   "diagnostics.linkCopied": "Ärendelänken kopierad.",
 
+  "welcome.subtitle":
+    "Öppna arkitektur- och konstruktionsritningar som PDF eller skannad TIF, kalibrera skalan och mät längder och areor. Lägg flera blad i samma projekt. Allt stannar på din dator.",
+  "welcome.openDrawing": "Öppna ritning",
+  "welcome.openProject": "Öppna projekt",
+  "welcome.demo": "Öppna demoprojekt",
+  "welcome.demoUnavailable": "Demoprojektet finns i skrivbordsappen.",
+  "welcome.demoFailed": "Kunde inte öppna demoprojektet",
+  "welcome.restore": "Återställ senaste sessionen",
+  "welcome.autosavedAt": "Autosparat {time}",
+  "welcome.quickStart": "Snabbstart",
+  "welcome.step.open": "Öppna en ritning eller demoprojektet.",
+  "welcome.step.calibrate": "Kalibrera sidan mot ett känt mått eller ange den tryckta skalan.",
+  "welcome.step.measure": "Mät och granska sedan mängderna under Visa → Mängder.",
+  "welcome.recent": "Senaste",
+  "welcome.footnote": "Lokalt först. Ritningar läses från din disk och laddas aldrig upp.",
+
   "launch.nothingTitle": "Inget att öppna",
   "launch.nothingMessage":
     "Operativsystemet bad GridScalr öppna en fil som appen inte hanterar. Använd ett .gridscalr-projekt, en PDF eller en TIF-ritning.",

@@ -64,6 +64,10 @@
       "rpm": {
         "desktopTemplate": "linux/gridscalr.desktop"
       }
+    },
+    "resources": {
+      "../fixtures/demo-project.gridscalr": "demo/demo-project.gridscalr",
+      "../fixtures/industrial-plan.pdf": "demo/industrial-plan.pdf"
     }
   }
 }

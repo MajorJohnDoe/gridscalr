@@ -231,6 +231,46 @@ pub fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+/// Copies the bundled demo project and drawing into the app data folder so the
+/// demo can be edited and saved without writing into the installation. An
+/// existing copy is kept, so edits and a moved drawing survive later launches.
+#[tauri::command]
+pub fn prepare_demo_project(app: tauri::AppHandle) -> Result<String, String> {
+    use tauri::Manager;
+
+    let data_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("Could not locate the app data folder: {error}"))?
+        .join("demo");
+    let resource_dir = app
+        .path()
+        .resource_dir()
+        .map_err(|error| format!("Could not locate the bundled demo: {error}"))?;
+    copy_demo_assets(&resource_dir, &data_dir)
+}
+
+fn copy_demo_assets(resource_dir: &Path, data_dir: &Path) -> Result<String, String> {
+    fs::create_dir_all(data_dir)
+        .map_err(|error| format!("Could not create the demo folder: {error}"))?;
+    for (name, resource) in [
+        ("demo-project.gridscalr", "demo/demo-project.gridscalr"),
+        ("industrial-plan.pdf", "demo/industrial-plan.pdf"),
+    ] {
+        let target = data_dir.join(name);
+        if target.exists() {
+            continue;
+        }
+        let source = resource_dir.join(resource);
+        fs::copy(&source, &target)
+            .map_err(|error| format!("Could not copy the demo file {name}: {error}"))?;
+    }
+    Ok(data_dir
+        .join("demo-project.gridscalr")
+        .to_string_lossy()
+        .into_owned())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -421,6 +461,28 @@ mod tests {
                     .expect("canonical dir")
                     .join("not-created.yet")
             )
+        );
+    }
+
+    #[test]
+    fn copies_demo_assets_once_and_keeps_edits() {
+        let directory = TestDir::new();
+        let resources = directory.file("resources");
+        fs::create_dir_all(resources.join("demo")).expect("resource dir");
+        fs::write(resources.join("demo/demo-project.gridscalr"), "{}").expect("project");
+        fs::write(resources.join("demo/industrial-plan.pdf"), "pdf").expect("drawing");
+
+        let data = directory.file("data/demo");
+        let project = copy_demo_assets(&resources, &data).expect("first demo copy should succeed");
+        assert!(project.ends_with("demo-project.gridscalr"));
+        assert!(data.join("industrial-plan.pdf").exists());
+
+        fs::write(&project, "edited").expect("edit demo");
+        copy_demo_assets(&resources, &data).expect("second demo copy should succeed");
+        assert_eq!(
+            fs::read_to_string(&project).expect("read demo"),
+            "edited",
+            "an existing demo copy must not be overwritten"
         );
     }
 }
