@@ -80,6 +80,12 @@ The macOS job builds `universal-apple-darwin`, so one DMG runs on Intel and
 Apple Silicon. Linux packages are built on Ubuntu 22.04 and the AppImage is a
 portable x86_64 build. No artifact is code-signed or notarized.
 
+Each platform job also runs the packaged app with `--smoke-test <dir>`: the app
+opens its bundled demo, saves, reopens, checks the unsaved-changes prompt and
+writes `result.json` before exiting with code 0 or 1. A failing smoke test fails
+the build before any artifact is uploaded. Native dialogs and menu clicks are
+covered by the manual install checks in step 7, not by the smoke test.
+
 Download the artifacts:
 
 ```bash

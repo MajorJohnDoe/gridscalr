@@ -318,6 +318,7 @@ export class App {
     this.bind();
     this.renderAll();
     void this.bindWindowClose();
+    void this.bindSmokeTest();
     void this.bindLaunchFiles();
     void this.setupDragDrop();
   }
@@ -2098,6 +2099,83 @@ export class App {
       logEvent("error", `demo failed: ${errorMessage(error)}`);
       await messageDialog(t("welcome.demoFailed"), errorMessage(error), "warning");
     }
+  }
+
+  /**
+   * Packaged smoke test used by CI on all three platforms. The app runs the
+   * real open/save/reopen/close flows against its own bundled demo, writes a
+   * JSON report next to the requested directory and exits with the result.
+   */
+  private async bindSmokeTest(): Promise<void> {
+    if (!isTauri) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const directory = await invoke<string | null>("smoke_test_dir");
+      if (directory) await this.runSmokeTest(directory);
+    } catch (error) {
+      logEvent("error", `smoke test failed: ${errorMessage(error)}`);
+    }
+  }
+
+  private async runSmokeTest(directory: string): Promise<void> {
+    const base = directory.replace(/[\\/]+$/, "");
+    const savePath = `${base}/smoke.gridscalr`;
+    const resultPath = `${base}/result.json`;
+    const steps: Array<{ name: string; ok: boolean; detail?: string }> = [];
+    const record = (name: string, ok: boolean, detail?: string) => {
+      steps.push(detail ? { name, ok, detail } : { name, ok });
+    };
+
+    try {
+      await this.openDemoProjectFlow();
+      record("demo opened", Boolean(store.project && store.project.documents.length > 0));
+
+      await this.saveProjectToPath(savePath);
+      record("project saved", await pathExists(savePath));
+
+      const text = await readFileText(savePath);
+      await this.loadProjectText(text, savePath);
+      record("project reopened", store.projectPath === savePath);
+
+      store.mutate((project) => {
+        project.settings.showGrid = !project.settings.showGrid;
+      }, "change");
+      const pending = this.confirmUnsavedChanges("smoke test close prompt");
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
+      const cancel = [...document.querySelectorAll<HTMLButtonElement>(".modal-footer button")].find(
+        (button) => button.textContent === "Cancel",
+      );
+      record("unsaved prompt shown", Boolean(cancel));
+      cancel?.click();
+      record("cancel keeps project", (await pending) === false);
+    } catch (error) {
+      record("exception", false, errorMessage(error));
+    }
+
+    const report = {
+      ok: steps.every((step) => step.ok),
+      version: __APP_VERSION__,
+      platform: detectPlatform(),
+      steps,
+    };
+    try {
+      await writeTextFile(resultPath, JSON.stringify(report, null, 2));
+    } catch (error) {
+      report.ok = false;
+      logEvent("error", `smoke report failed: ${errorMessage(error)}`);
+    }
+    const { invoke } = await import("@tauri-apps/api/core");
+    await invoke("finish_smoke_test", { code: report.ok ? 0 : 1 });
+  }
+
+  /** Writes the open project to a known path exactly like Save, without a dialog. */
+  private async saveProjectToPath(path: string): Promise<void> {
+    const project = store.project;
+    if (!project) throw new Error("no-open-project");
+    const protectedPaths = sourceDocumentPaths(project, store.projectPath);
+    updateRelativeDocumentPaths(project, path);
+    await writeTextFile(path, serializeProject(project), { forbiddenPaths: protectedPaths });
+    store.markSaved(path);
   }
 
   /** Version, platform and anonymised project statistics for a bug report. */
