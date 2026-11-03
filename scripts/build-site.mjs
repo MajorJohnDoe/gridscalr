@@ -150,10 +150,9 @@ function platformDownloads(lang) {
                   <span>${note}</span>
                 </li>`;
   });
-  return [
-    `<li class="download-platform-heading"><span>${heading}</span></li>`,
-    ...rows,
-  ].join("\n                ");
+  return [`<li class="download-platform-heading"><span>${heading}</span></li>`, ...rows].join(
+    "\n                ",
+  );
 }
 
 const tokens = {
