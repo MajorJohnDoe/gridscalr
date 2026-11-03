@@ -137,6 +137,7 @@ import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
+import { t } from "../i18n";
 import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
 import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
 import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
@@ -2124,16 +2125,12 @@ export class App {
           if (!paths.length) return;
           const path = firstLaunchPath(paths);
           if (!path) {
-            await messageDialog(
-              "Nothing to open",
-              "The operating system asked GridScalr to open a file it does not handle. Use a .gridscalr project, a PDF or a TIF drawing.",
-              "warning",
-            );
+            await messageDialog(t("launch.nothingTitle"), t("launch.nothingMessage"), "warning");
             return;
           }
           const supported = paths.filter((entry) => classifyLaunchPath(entry) !== "unknown");
           if (supported.length > 1) {
-            toast("GridScalr opens one file per window and ignored the rest.", "info");
+            toast(t("launch.oneFile"), "info");
           }
           await this.openPath(path, "Could not open the file from the operating system");
         } catch {

@@ -41,6 +41,7 @@ npm run check:versions
 npm run check:docs
 npm run format:check
 npm run lint
+npm run check:i18n
 npx tsc --noEmit
 npm test -- --run
 npm run build

@@ -540,6 +540,7 @@ Settings is split in two. **Preferences** are stored on this computer and never 
 
 Open **Settings → Preferences…**. The dialog groups app-level choices by category:
 
+- **General** – the interface language: **System**, **English** or **Svenska**. The choice is stored on this computer. Swedish currently covers the strings added in 0.17; the rest of the interface stays in English until the full translation lands in 0.18.
 - **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.

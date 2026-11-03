@@ -3,6 +3,7 @@ import "./styles/help.css";
 import "./styles/popovers.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
+import { applyStoredLanguage } from "./i18n";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
@@ -83,6 +84,7 @@ document.addEventListener(
 );
 
 installDiagnosticsLogging();
+applyStoredLanguage();
 
 try {
   const app = new App(root);

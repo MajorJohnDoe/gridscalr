@@ -1,3 +1,4 @@
+import { t } from "../i18n";
 import { copyPlainText } from "../io/clipboardText";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
@@ -9,7 +10,7 @@ export const ISSUE_URL =
 export async function copyDiagnostics(diagnostics: () => string): Promise<boolean> {
   const copied = await copyPlainText(diagnostics());
   toast(
-    copied ? "Diagnostics copied." : "Could not copy the diagnostics.",
+    copied ? t("diagnostics.copied") : t("diagnostics.copyFailed"),
     copied ? "success" : "warning",
   );
   return copied;
@@ -22,45 +23,39 @@ export async function copyDiagnostics(diagnostics: () => string): Promise<boolea
  */
 export function reportProblemDialog(diagnostics: () => string): void {
   const body = el("div", "diagnostics-dialog");
-  body.append(
-    el(
-      "p",
-      "settings-note",
-      "GridScalr uploads nothing. The diagnostics contain version, platform and project statistics only — no drawing content, labels or file paths.",
-    ),
-  );
+  body.append(el("p", "settings-note", t("diagnostics.note")));
 
   const pre = el("pre", "diagnostics-text");
   pre.textContent = diagnostics();
 
   const actions = el("div", "settings-actions");
-  const copy = el("button", "btn btn-small", "Copy diagnostics");
+  const copy = el("button", "btn btn-small", t("diagnostics.copy"));
   copy.type = "button";
   copy.addEventListener("click", () => {
     void copyPlainText(pre.textContent ?? "");
-    toast("Diagnostics copied.", "success");
+    toast(t("diagnostics.copied"), "success");
   });
-  const copyLink = el("button", "btn btn-small btn-ghost", "Copy issue link");
+  const copyLink = el("button", "btn btn-small btn-ghost", t("diagnostics.copyLink"));
   copyLink.type = "button";
   copyLink.addEventListener("click", () => {
     void copyPlainText(ISSUE_URL);
-    toast("Issue link copied.", "success");
+    toast(t("diagnostics.linkCopied"), "success");
   });
   actions.append(copy, copyLink);
 
   const link = el("input", "input diagnostics-link");
   link.value = ISSUE_URL;
   link.readOnly = true;
-  link.setAttribute("aria-label", "Issue tracker link");
+  link.setAttribute("aria-label", t("diagnostics.issueLabel"));
 
-  body.append(pre, el("div", "settings-subhead", "Issue tracker"), link, actions);
+  body.append(pre, el("div", "settings-subhead", t("diagnostics.issue")), link, actions);
 
   void showModal({
-    title: "Report a problem",
-    subtitle: "Attach the diagnostics to a new GitHub issue",
+    title: t("diagnostics.title"),
+    subtitle: t("diagnostics.subtitle"),
     body,
     wide: true,
     className: "modal-diagnostics",
-    actions: [{ label: "Close", value: "close", primary: true }],
+    actions: [{ label: t("common.close"), value: "close", primary: true }],
   });
 }

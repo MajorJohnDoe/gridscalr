@@ -8,45 +8,72 @@ import {
   resetGlobalStampPresets,
   saveGlobalStampPresets,
 } from "../io/stampDefaults";
+import { languagePreference, setLanguagePreference, t, type LanguagePreference } from "../i18n";
 import { store } from "../state/store";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
 import { loadPanelPreferences } from "./preferences";
 import { resetPanelLayout, setInspectorCollapsed, setSidebarCollapsed } from "./sidebar";
-import { presetEditor, section } from "./settingsControls";
+import { field, presetEditor, section } from "./settingsControls";
 import { toast } from "./toast";
 
-type PreferenceCategory = "workspace" | "layers" | "stamps";
+type PreferenceCategory = "general" | "workspace" | "layers" | "stamps";
+
+function generalSection(): HTMLElement {
+  const wrap = section(t("preferences.general"), t("language.note"));
+  const select = el("select", "select");
+  select.setAttribute("aria-label", t("language.label"));
+  const options: Array<[LanguagePreference, string]> = [
+    ["system", t("language.system", { language: navigator.language })],
+    ["en", t("language.english")],
+    ["sv", t("language.swedish")],
+  ];
+  for (const [value, label] of options) {
+    const option = el("option", "", label);
+    option.value = value;
+    select.append(option);
+  }
+  select.value = languagePreference();
+  select.addEventListener("change", () => {
+    setLanguagePreference(select.value as LanguagePreference);
+    openPreferencesDialog();
+    toast(t("language.changed"), "success");
+  });
+  wrap.append(field(t("language.label"), select));
+  return wrap;
+}
 
 function workspaceSection(): HTMLElement {
-  const wrap = section(
-    "Workspace",
-    "Panel widths and collapsed state are stored on this computer and are not part of the project file.",
-  );
+  const wrap = section(t("preferences.workspace"), t("preferences.workspace.note"));
   const prefs = loadPanelPreferences();
   wrap.append(
     el(
       "p",
       "settings-note",
-      `Sidebar ${prefs.leftWidth} px${prefs.leftCollapsed ? " (collapsed)" : ""} · Properties ${prefs.rightWidth} px${prefs.rightCollapsed ? " (collapsed)" : ""}.`,
+      t("preferences.workspace.summary", {
+        left: prefs.leftWidth,
+        right: prefs.rightWidth,
+        leftNote: prefs.leftCollapsed ? t("preferences.workspace.collapsed") : "",
+        rightNote: prefs.rightCollapsed ? t("preferences.workspace.collapsed") : "",
+      }),
     ),
   );
 
   const actions = el("div", "settings-actions");
-  const expand = el("button", "btn btn-small btn-ghost", "Expand both panels");
+  const expand = el("button", "btn btn-small btn-ghost", t("preferences.workspace.expand"));
   expand.type = "button";
   expand.addEventListener("click", () => {
     setSidebarCollapsed(false);
     setInspectorCollapsed(false);
     openPreferencesDialog();
-    toast("Panels expanded.", "success");
+    toast(t("preferences.workspace.expanded"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", "Reset panel layout");
+  const reset = el("button", "btn btn-small btn-ghost", t("preferences.workspace.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetPanelLayout();
     openPreferencesDialog();
-    toast("Panel layout reset.", "success");
+    toast(t("preferences.workspace.resetDone"), "success");
   });
   actions.append(expand, reset);
   wrap.append(actions);
@@ -54,10 +81,7 @@ function workspaceSection(): HTMLElement {
 }
 
 function layersSection(): HTMLElement {
-  const wrap = section(
-    "Layer defaults",
-    "Applies to new measurement and drawing layers only. Existing layers keep their colour.",
-  );
+  const wrap = section(t("preferences.layers.title"), t("preferences.layers.note"));
   let colors = currentLayerColorDefaults();
   const row = el("div", "field-row");
 
@@ -71,8 +95,8 @@ function layersSection(): HTMLElement {
     return { fieldWrap, input };
   };
 
-  const measure = colorField("Measurement layer colour", colors.measure);
-  const draw = colorField("Drawing layer colour", colors.draw);
+  const measure = colorField(t("preferences.layers.measure"), colors.measure);
+  const draw = colorField(t("preferences.layers.draw"), colors.draw);
   row.append(measure.fieldWrap, draw.fieldWrap);
 
   const save = () => {
@@ -85,21 +109,21 @@ function layersSection(): HTMLElement {
   draw.input.addEventListener("change", save);
 
   const actions = el("div", "settings-actions");
-  const signalRed = el("button", "btn btn-small btn-ghost", "Use signal red for both");
+  const signalRed = el("button", "btn btn-small btn-ghost", t("preferences.layers.signalRed"));
   signalRed.type = "button";
   signalRed.addEventListener("click", () => {
     measure.input.value = "#f70808";
     draw.input.value = "#f70808";
     save();
-    toast("Layer colours set to signal red.", "success");
+    toast(t("preferences.layers.signalRedDone"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", "Reset layer colours");
+  const reset = el("button", "btn btn-small btn-ghost", t("preferences.layers.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     colors = resetLayerColorDefaults();
     measure.input.value = colors.measure;
     draw.input.value = colors.draw;
-    toast("Layer colour defaults reset.", "success");
+    toast(t("preferences.layers.resetDone"), "success");
   });
   actions.append(signalRed, reset);
   wrap.append(row, actions);
@@ -107,17 +131,14 @@ function layersSection(): HTMLElement {
 }
 
 function stampsSection(): HTMLElement {
-  const wrap = section(
-    "Stamps",
-    "Defaults for new projects. The open project keeps its own preset list in Project settings.",
-  );
+  const wrap = section(t("preferences.stamps.title"), t("preferences.stamps.note"));
 
   const editor = presetEditor(
     loadGlobalStampPresets(),
     (next) => {
       saveGlobalStampPresets(next);
     },
-    "New default preset",
+    t("preferences.stamps.add"),
   );
 
   const actions = el("div", "settings-actions");
@@ -129,21 +150,21 @@ function stampsSection(): HTMLElement {
   fromProject.type = "button";
   fromProject.disabled = !store.project;
   fromProject.title = store.project
-    ? "Copy this project's stamp presets into the app defaults."
-    : "Open a project to copy its presets.";
+    ? t("preferences.stamps.fromProjectTitle")
+    : t("preferences.stamps.fromProjectDisabled");
   fromProject.addEventListener("click", () => {
     const project = store.project;
     if (!project) return;
     saveGlobalStampPresets(project.settings.stampPresets);
     openPreferencesDialog();
-    toast("App stamp defaults updated.", "success");
+    toast(t("preferences.stamps.updated"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", "Reset app defaults");
+  const reset = el("button", "btn btn-small btn-ghost", t("preferences.stamps.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetGlobalStampPresets();
     openPreferencesDialog();
-    toast("App stamp defaults reset.", "success");
+    toast(t("preferences.stamps.resetDone"), "success");
   });
   actions.append(fromProject, reset);
   wrap.append(editor, actions);
@@ -153,14 +174,15 @@ function stampsSection(): HTMLElement {
 export function openPreferencesDialog(): void {
   const body = el("div", "preferences-dialog");
   const nav = el("nav", "preferences-nav");
-  nav.setAttribute("aria-label", "Preference categories");
+  nav.setAttribute("aria-label", t("preferences.categories"));
   const content = el("div", "preferences-body");
   body.append(nav, content);
 
   const categories: Array<{ id: PreferenceCategory; label: string; render: () => HTMLElement }> = [
-    { id: "workspace", label: "Workspace", render: workspaceSection },
-    { id: "layers", label: "Layers", render: layersSection },
-    { id: "stamps", label: "Stamps", render: stampsSection },
+    { id: "general", label: t("preferences.general"), render: generalSection },
+    { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
+    { id: "layers", label: t("preferences.layers"), render: layersSection },
+    { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
   ];
 
   const buttons = new Map<PreferenceCategory, HTMLButtonElement>();
@@ -182,14 +204,14 @@ export function openPreferencesDialog(): void {
     nav.append(button);
     buttons.set(category.id, button);
   }
-  select("workspace");
+  select("general");
 
   void showModal({
-    title: "Preferences",
-    subtitle: "Stored on this computer; not part of the project file",
+    title: t("preferences.title"),
+    subtitle: t("preferences.subtitle"),
     body,
     wide: true,
     className: "modal-preferences",
-    actions: [{ label: "Close", value: "close", primary: true }],
+    actions: [{ label: t("common.close"), value: "close", primary: true }],
   });
 }

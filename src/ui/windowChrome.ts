@@ -1,3 +1,4 @@
+import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 import { isTauri } from "../io/platform";
 import { el } from "./dom";
 import { icon } from "./icons";
@@ -60,13 +61,16 @@ async function desktopWindow(): Promise<DesktopWindow | null> {
   }
 }
 
-function controlButton(glyph: string, label: string): HTMLButtonElement {
+function controlButton(glyph: string): HTMLButtonElement {
   const button = el("button", "window-control-btn");
   button.type = "button";
   button.innerHTML = icon(glyph, 10);
+  return button;
+}
+
+function setLabel(button: HTMLButtonElement, label: string): void {
   button.title = label;
   button.setAttribute("aria-label", label);
-  return button;
 }
 
 /**
@@ -86,23 +90,32 @@ export function mountWindowControls(
 
   const group = el("div", "window-controls");
   group.setAttribute("role", "group");
-  group.setAttribute("aria-label", "Window controls");
 
-  const minimizeBtn = controlButton("windowMinimize", "Minimize");
-  const maximizeBtn = controlButton("windowMaximize", "Maximize");
-  const closeBtn = controlButton("close", "Close window");
+  const minimizeBtn = controlButton("windowMinimize");
+  const maximizeBtn = controlButton("windowMaximize");
+  const closeBtn = controlButton("close");
   closeBtn.classList.add("is-close");
 
   let disposed = false;
   let frame = 0;
   let unlisten: (() => void) | null = null;
+  let maximized = false;
 
-  const applyMaximized = (maximized: boolean): void => {
-    const label = maximized ? "Restore" : "Maximize";
-    maximizeBtn.innerHTML = icon(restoreGlyph(maximized), 10);
-    maximizeBtn.title = label;
-    maximizeBtn.setAttribute("aria-label", label);
+  const updateLabels = (): void => {
+    group.setAttribute("aria-label", t("window.controls"));
+    setLabel(minimizeBtn, t("window.minimize"));
+    setLabel(maximizeBtn, maximized ? t("window.restore") : t("window.maximize"));
+    setLabel(closeBtn, t("window.close"));
   };
+
+  const applyMaximized = (next: boolean): void => {
+    maximized = next;
+    maximizeBtn.innerHTML = icon(restoreGlyph(maximized), 10);
+    updateLabels();
+  };
+
+  updateLabels();
+  window.addEventListener(LANGUAGE_CHANGED_EVENT, updateLabels);
 
   const act = async (
     run: (win: DesktopWindow) => Promise<void>,
@@ -158,6 +171,7 @@ export function mountWindowControls(
       frame = 0;
       unlisten?.();
       unlisten = null;
+      window.removeEventListener(LANGUAGE_CHANGED_EVENT, updateLabels);
       group.remove();
     },
   };

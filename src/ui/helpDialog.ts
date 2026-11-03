@@ -1,4 +1,5 @@
-import { HELP_CONTENT, type HelpTopic } from "../help/content";
+import { helpContentFor } from "../i18n/help";
+import type { HelpTopic } from "../help/content";
 import { resolveHelpImage } from "../help/images";
 import { renderMarkdown } from "../help/markdown";
 import { SCHEMA_VERSION } from "../model/types";
@@ -181,7 +182,7 @@ export function openHelp(topic: HelpTopic = "guide"): void {
       content.replaceChildren(aboutPane());
       sections = [];
     } else {
-      content.innerHTML = renderMarkdown(HELP_CONTENT[next], {
+      content.innerHTML = renderMarkdown(helpContentFor(next), {
         resolveImage: (src) => resolveHelpImage(src),
       });
       const markdown = content.querySelector<HTMLElement>(".markdown");
