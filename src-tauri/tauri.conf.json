@@ -46,7 +46,24 @@
       "icons/icon.ico"
     ],
     "publisher": "MajorJohnDoe",
-    "copyright": "Copyright © 2026 MajorJohnDoe",
-    "licenseFile": "../LICENSE"
+    "copyright": "Copyright \u00a9 2026 MajorJohnDoe",
+    "licenseFile": "../LICENSE",
+    "fileAssociations": [
+      {
+        "ext": ["gridscalr"],
+        "name": "GridScalr project",
+        "description": "GridScalr measurement project",
+        "role": "Editor",
+        "mimeType": "application/x-gridscalr"
+      }
+    ],
+    "linux": {
+      "deb": {
+        "desktopTemplate": "linux/gridscalr.desktop"
+      },
+      "rpm": {
+        "desktopTemplate": "linux/gridscalr.desktop"
+      }
+    }
   }
 }

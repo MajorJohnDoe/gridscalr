@@ -135,6 +135,7 @@ import { validatePackagedProjectJson } from "../features/projectPackage/model";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
+import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
 
 const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
 
@@ -167,6 +168,7 @@ export class App {
   private disposed = false;
   private closeInProgress = false;
   private unlistenClose: (() => void) | null = null;
+  private unlistenLaunch: (() => void) | null = null;
   private windowControls: WindowControls | null = null;
 
   constructor(root: HTMLElement) {
@@ -304,6 +306,7 @@ export class App {
     this.bind();
     this.renderAll();
     void this.bindWindowClose();
+    void this.bindLaunchFiles();
     void this.setupDragDrop();
   }
 
@@ -2036,7 +2039,10 @@ export class App {
     }
   }
 
-  private async openPath(path: string): Promise<void> {
+  private async openPath(
+    path: string,
+    failureTitle = "Could not open dropped file",
+  ): Promise<void> {
     const lower = path.toLowerCase();
     try {
       if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
@@ -2049,7 +2055,47 @@ export class App {
         toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
       }
     } catch (error) {
-      await messageDialog("Could not open dropped file", errorMessage(error), "warning");
+      await messageDialog(failureTitle, errorMessage(error), "warning");
+    }
+  }
+
+  /**
+   * Consumes files handed over by the operating system: start arguments, a
+   * Finder open event, or a second launch that the single-instance callback
+   * forwarded. Only the first supported path opens; GridScalr keeps one project
+   * per window.
+   */
+  private async bindLaunchFiles(): Promise<void> {
+    if (!isTauri) return;
+    try {
+      const { invoke } = await import("@tauri-apps/api/core");
+      const { listen } = await import("@tauri-apps/api/event");
+      const consume = async (): Promise<void> => {
+        try {
+          const paths = await invoke<string[]>("take_launch_paths");
+          if (!paths.length) return;
+          const path = firstLaunchPath(paths);
+          if (!path) {
+            await messageDialog(
+              "Nothing to open",
+              "The operating system asked GridScalr to open a file it does not handle. Use a .gridscalr project, a PDF or a TIF drawing.",
+              "warning",
+            );
+            return;
+          }
+          const supported = paths.filter((entry) => classifyLaunchPath(entry) !== "unknown");
+          if (supported.length > 1) {
+            toast("GridScalr opens one file per window and ignored the rest.", "info");
+          }
+          await this.openPath(path, "Could not open the file from the operating system");
+        } catch {
+          // A failed launch read must not break the running session.
+        }
+      };
+      this.unlistenLaunch = await listen("gridscalr:paths-queued", () => void consume());
+      await consume();
+    } catch {
+      // The OS integration is optional; File → Open still works.
     }
   }
 
@@ -2110,6 +2156,8 @@ export class App {
     window.removeEventListener("paste", this.onPaste);
     this.unlistenClose?.();
     this.unlistenClose = null;
+    this.unlistenLaunch?.();
+    this.unlistenLaunch = null;
     this.windowControls?.dispose();
     this.windowControls = null;
     this.thumbnails?.destroy();

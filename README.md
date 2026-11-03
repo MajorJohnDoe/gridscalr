@@ -36,6 +36,9 @@ before the first launch. Linux and macOS builds can be produced from source.
 
 - Open PDF plans locally with PDF.js, or scanned TIF drawings with lossless
   CCITT G3/G4 import.
+- Open a project by double-clicking `.gridscalr` in Explorer or Finder in the
+  installed builds, hand a drawing to an already running window, and keep the
+  window size, position and maximised state between sessions.
 - Keep several sheets in one project. Every new drawing appends pages after the
   existing ones, so a set of plans shares one takeoff.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
