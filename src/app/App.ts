@@ -31,6 +31,7 @@ import {
   moveItemsToLayer,
 } from "../model/layers";
 import { makeId } from "../model/calibration";
+import { normalizeProjectName } from "../model/projectName";
 import { createImageItem } from "../model/images";
 import {
   documentIndexForPage,
@@ -118,6 +119,7 @@ import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
+import { mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { SearchPanel } from "../ui/searchPanel";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
@@ -165,6 +167,7 @@ export class App {
   private disposed = false;
   private closeInProgress = false;
   private unlistenClose: (() => void) | null = null;
+  private windowControls: WindowControls | null = null;
 
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
@@ -251,6 +254,9 @@ export class App {
       openRecent: (entry) => void this.openRecent(entry),
     };
     setMenuActions(this.actions);
+    this.windowControls = mountWindowControls(this.refs.topbar, {
+      quit: () => void this.quitFlow(),
+    });
 
     this.canvas = new CanvasView(this.refs.canvasHost, {
       getRenderer: () => this.renderer,
@@ -508,7 +514,8 @@ export class App {
 
     if (event.key === "F2") {
       event.preventDefault();
-      requestMarkupRename(this.refs);
+      if (store.ui.selection.length === 1) requestMarkupRename(this.refs);
+      else this.beginProjectRename();
       return;
     }
 
@@ -1780,8 +1787,8 @@ export class App {
       name.classList.remove("is-editing");
       name.removeEventListener("keydown", onKey);
       name.removeEventListener("blur", onBlur);
-      const value = name.textContent?.replace(/\s+/g, " ").trim() ?? "";
-      if (!commit || !value || value === original) {
+      const value = normalizeProjectName(name.textContent ?? "", original);
+      if (!commit || value === original) {
         name.textContent = original;
         return;
       }
@@ -2103,6 +2110,8 @@ export class App {
     window.removeEventListener("paste", this.onPaste);
     this.unlistenClose?.();
     this.unlistenClose = null;
+    this.windowControls?.dispose();
+    this.windowControls = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
     this.closeSearch();
