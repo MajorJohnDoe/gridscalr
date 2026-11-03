@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
+import { createShell } from "../src/ui/shell";
 import {
   detectPlatform,
   markPlatform,
@@ -46,5 +47,16 @@ describe("window controls in the browser fallback", () => {
     expect(controls).toBeNull();
     expect(host.children).toHaveLength(0);
     expect(host.querySelector(".window-controls")).toBeNull();
+  });
+});
+
+describe("title row drag regions", () => {
+  it("drags from the whole row but not from the project name", () => {
+    const host = document.createElement("div");
+    const refs = createShell(host);
+    // "deep" so empty areas with no box of their own still start a drag.
+    expect(refs.topbar.getAttribute("data-tauri-drag-region")).toBe("deep");
+    // Double-clicking the project name renames it instead of maximizing.
+    expect(refs.projectName.getAttribute("data-tauri-drag-region")).toBe("false");
   });
 });

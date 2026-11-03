@@ -75,10 +75,12 @@ export function createShell(root: HTMLElement): ShellRefs {
   const shell = el("div", "app-shell");
 
   const topbar = el("header", "topbar");
+  // The whole title row drags the window. Tauri treats buttons as clickable and
+  // skips them, and the project name opts out below so double-click rename works.
+  topbar.setAttribute("data-tauri-drag-region", "deep");
   const brand = el("div", "brand");
   brand.innerHTML = brandMark();
   brand.title = "GridScalr";
-  brand.setAttribute("data-tauri-drag-region", "deep");
 
   const menuBar = createMenuBar();
   const history = el("div", "topbar-history");
@@ -91,10 +93,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   history.append(undoBtn, redoBtn);
 
   const identity = el("div", "doc-identity");
-  // The title row drags from the identity block, but the project name keeps its
-  // double-click rename, so it opts out of the drag region.
-  identity.setAttribute("data-tauri-drag-region", "deep");
   const projectName = el("span", "project-name", "No project open");
+  // Opt out of the title-row drag region: double-clicking the name renames it.
   projectName.setAttribute("data-tauri-drag-region", "false");
   projectName.title = "Double-click to rename project";
   projectName.setAttribute("aria-label", "Project name; double-click to rename");
@@ -107,10 +107,6 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const spacer = el("div", "topbar-spacer");
   const spacerEnd = el("div", "topbar-spacer");
-  // Only non-interactive surfaces start a window drag; menu buttons, undo/redo,
-  // the project name and the window controls keep their own click behaviour.
-  spacer.setAttribute("data-tauri-drag-region", "");
-  spacerEnd.setAttribute("data-tauri-drag-region", "");
   topbar.append(brand, menuBar, history, spacer, identity, spacerEnd);
 
   const workspace = el("div", "workspace");
