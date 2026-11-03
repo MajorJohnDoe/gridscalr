@@ -8,8 +8,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.16.1`.
-- Latest public release: `v0.16.1` (2026-10-31).
+- Current app version: `0.17.0`.
+- Latest public release: `v0.17.0` (2026-11-03).
 - Current project-file schema: `21`.
 - 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
@@ -368,6 +368,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.15.0:** complete — custom project count types, pieces per count object and schema 20; the first feature module under `src/features/countTypes/`. Schema is v20.
 - **0.16.0:** complete — count schedule with a quantity row per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable count presets. Schema is v21.
 - **0.16.1:** complete — two-finger touch pan and pinch zoom on both canvases, pen/palm priority and a long-press context menu, with one-finger drawing preserved. No schema change; the schema remains v21.
+- **0.17.0:** complete — portable `.gridscalr.zip` packages, Windows/macOS/Linux release artifacts with one merged checksum file, safer atomic saving, app preferences separated from Project settings, local diagnostics with a rolling log and a persistent autosave warning, `.gridscalr` file association with single instance and window state, the app-drawn title row, project rename from settings and `F2`, bundled demo with quick start, the i18n foundation with System/English/Svenska, and packaged smoke tests on all three platforms. No schema change; the schema remains v21.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 
