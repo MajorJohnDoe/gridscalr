@@ -555,10 +555,22 @@ fn validate_project_json(json: &str, document_paths: &HashSet<String>) -> Result
     Ok(())
 }
 
+/// Lowercase hex encoding of a digest. sha2 0.11 returns a hybrid-array that no
+/// longer implements `LowerHex`, so the conversion is explicit.
+fn hex_digest(bytes: &[u8]) -> String {
+    use std::fmt::Write as _;
+
+    let mut hex = String::with_capacity(bytes.len() * 2);
+    for byte in bytes {
+        let _ = write!(hex, "{byte:02x}");
+    }
+    hex
+}
+
 fn hash_bytes(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
-    format!("{:x}", hasher.finalize())
+    hex_digest(&hasher.finalize())
 }
 
 pub(crate) fn create_package(
@@ -913,7 +925,7 @@ fn write_source(
     }
     Ok(manifest_entry(
         &source.archive_path,
-        format!("{:x}", hasher.finalize()),
+        hex_digest(&hasher.finalize()),
         written,
         &source.kind,
     ))
@@ -1346,7 +1358,7 @@ pub(crate) fn extract_package(
                 message: error.to_string(),
             })?;
             output_file.sync_all()?;
-            let actual = format!("{:x}", hasher.finalize());
+            let actual = hex_digest(&hasher.finalize());
             if entry.name.eq_ignore_ascii_case("manifest.json")
                 || entry.name.eq_ignore_ascii_case("README.txt")
             {
