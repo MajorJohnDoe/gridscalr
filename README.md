@@ -27,13 +27,15 @@ Grab the newest build from [Releases](https://github.com/MajorJohnDoe/gridscalr/
 | `GridScalr_<version>_x64-setup.exe` | NSIS installer, recommended on Windows |
 | `GridScalr_<version>_x64_en-US.msi` | MSI for managed Windows machines |
 | `gridscalr.exe` | Portable executable, no installation |
-| `SHA256SUMS.txt` | Checksums for verifying the download |
+| `GridScalr_<version>_universal.dmg` | macOS disk image, Intel and Apple Silicon |
+| `GridScalr_<version>_universal.app.zip` | Portable macOS app bundle |
+| `GridScalr_<version>_amd64.AppImage` | Portable Linux x86_64 build |
+| `GridScalr_<version>_amd64.deb` | Debian and Ubuntu package |
+| `gridscalr_<version>_amd64.tar.gz` | Linux x86_64 binary archive |
+| `SHA256SUMS.txt` | Checksums for every downloaded file |
 
-The Windows builds are not code-signed. Read [Windows SmartScreen](#windows-smartscreen)
-before the first launch. The same tag also builds a universal macOS DMG with an
-`.app.zip`, and an x86_64 Linux AppImage, `.deb` and `.tar.gz`; those files appear
-here and on the release page once a release includes them. Until then, Linux and
-macOS builds can be produced from source.
+The builds are not code-signed or notarized. Read [Windows SmartScreen](#windows-smartscreen)
+and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 
 ## What it does
 
@@ -219,7 +221,7 @@ published here, compare its SHA-256 hash with `SHA256SUMS.txt` on the release
 page:
 
 ```powershell
-Get-FileHash .\GridScalr_0.16.1_x64-setup.exe -Algorithm SHA256
+Get-FileHash .\GridScalr_<version>_x64-setup.exe -Algorithm SHA256
 ```
 
 Unsigned builds also trigger more false positives in some antivirus engines. If a
