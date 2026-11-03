@@ -82,6 +82,10 @@ const paths: Record<string, string> = {
   alignLeft: '<path d="M4 6h16M4 10h10M4 14h16M4 18h10"/>',
   alignCenter: '<path d="M4 6h16M7 10h10M4 14h16M7 18h10"/>',
   alignRight: '<path d="M4 6h16M10 10h10M4 14h16M10 18h10"/>',
+  windowMinimize: '<path d="M5 12h14"/>',
+  windowMaximize: '<rect x="5" y="5" width="14" height="14" rx="1"/>',
+  windowRestore:
+    '<rect x="4.5" y="8.5" width="10.5" height="10.5" rx="1"/><path d="M8 8.5V6.2A1.2 1.2 0 0 1 9.2 5h8.6A1.2 1.2 0 0 1 19 6.2v8.6a1.2 1.2 0 0 1-1.2 1.2h-2.3"/>',
 };
 
 export function icon(name: string, size = 18): string {

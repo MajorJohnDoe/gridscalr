@@ -18,6 +18,7 @@ import {
   saveLayerColorDefaults,
 } from "../io/layerDefaults";
 import { normalizeStampPresets } from "../model/stamps";
+import { normalizeProjectName, PROJECT_NAME_MAX_LENGTH } from "../model/projectName";
 import { openCountTypesDialog } from "../features/countTypes/ui";
 import { store } from "../state/store";
 import { openCategoriesDialog } from "./categoriesDialog";
@@ -50,6 +51,44 @@ function checkRow(
 function field(label: string, control: HTMLElement): HTMLElement {
   const wrap = el("label", "field settings-field");
   wrap.append(el("span", "field-label", label), control);
+  return wrap;
+}
+
+function projectSection(): HTMLElement {
+  const project = store.project!;
+  const wrap = section(
+    "Project",
+    "The name appears in the title row, reports and exports, and in suggested file names.",
+  );
+  const input = el("input", "input");
+  input.type = "text";
+  input.value = project.name;
+  input.maxLength = PROJECT_NAME_MAX_LENGTH;
+  input.setAttribute("aria-label", "Project name");
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      input.blur();
+    }
+  });
+  input.addEventListener("change", () => {
+    const current = store.project;
+    if (!current) return;
+    const name = normalizeProjectName(input.value, current.name);
+    input.value = name;
+    if (name === current.name) return;
+    store.mutate((next) => {
+      next.name = name;
+    }, "change");
+  });
+  wrap.append(
+    field("Project name", input),
+    el(
+      "p",
+      "settings-note",
+      "The project file name is separate; use File → Save as… to change it.",
+    ),
+  );
   return wrap;
 }
 
@@ -500,6 +539,7 @@ export function openSettingsDialog(): void {
   const render = () => {
     if (!store.project) return;
     content.replaceChildren(
+      projectSection(),
       scaleSection(),
       unitsSection(),
       labelsSection(),
