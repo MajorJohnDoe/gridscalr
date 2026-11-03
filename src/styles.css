@@ -4122,6 +4122,43 @@ html[data-platform="macos"] .topbar {
   }
 }
 
+/* ---------- Diagnostics ---------- */
+
+.modal-diagnostics {
+  width: min(760px, 96vw);
+}
+
+.diagnostics-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.diagnostics-text {
+  margin: 0;
+  padding: 10px 12px;
+  max-height: min(42vh, 380px);
+  overflow: auto;
+  background: var(--bg-deep);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text);
+  font-family: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  font-size: 11px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  user-select: text;
+}
+
+.diagnostics-link {
+  width: 100%;
+  font-size: 11px;
+}
+
+.status-warning {
+  padding-left: 4px;
+}
+
 /* ---------- Measurements and quantities dialogs ---------- */
 
 .modal-measurements,

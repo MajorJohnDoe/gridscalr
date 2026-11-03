@@ -85,6 +85,8 @@ export interface PanelActions {
   restoreAutosave: () => void;
   getAutosave: () => AutosavePreview | null;
   openRecent: (entry: RecentEntry) => void;
+  copyDiagnostics: () => void;
+  reportProblem: () => void;
 }
 
 /** Focuses the selection label in Properties for rename. */

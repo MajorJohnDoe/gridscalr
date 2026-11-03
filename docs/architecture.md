@@ -19,6 +19,8 @@ src/
   features/projectPackage/ui.ts package options, destination and progress dialogs
   features/projectPackage/ipc.ts Tauri package command wrappers and progress channels
   features/launch/model.ts OS launch path classification for projects and drawings
+  features/diagnostics/model.ts sanitised diagnostics text and anonymised project statistics
+  features/diagnostics/log.ts local 80-entry event log and runtime error capture
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
@@ -78,6 +80,7 @@ src/
   ui/settingsDialog.ts   project name, scale, units, snapping, quantities, count types and project stamps
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
+  ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults
@@ -139,6 +142,7 @@ Key design choices:
 - **Derived exports share one row model.** Quantity and markup tables are built once in `src/report/rows.ts` and serialized to CSV and XLSX from the same cells. The workbook never stores a second copy of the takeoff.
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
+- **Support data is local and anonymised.** `features/diagnostics/model.ts` builds the report from version, schema, platform, WebView, viewport and aggregate project statistics only, and strips absolute paths from every field. `features/diagnostics/log.ts` keeps the last 80 runtime events in localStorage; nothing is uploaded. Autosave failures stay visible in the status bar until a later autosave succeeds, and the same chip opens the report dialog.
 - **Files opened by the OS go through one queue.** Windows and Linux pass a file as a start argument, macOS delivers `RunEvent::Opened`, and a second launch is forwarded by the single-instance plugin. All three append to a Rust queue that the frontend drains with `take_launch_paths` on startup and after a `gridscalr:paths-queued` event, so the open path is identical to a dropped file. Only the window's size, position and maximised state are persisted by `tauri-plugin-window-state`; decorations stay app-controlled. The queue and the association live in `src-tauri/src/lib.rs` and `tauri.conf.json`, path classification in `src/features/launch/model.ts`.
 - **Native I/O, portable format.** Rust commands perform atomic writes; the project file records both an absolute and relative PDF path plus a SHA-256 checksum. Portable packages are streamed in Rust so large PDFs never pass through the JavaScript heap: PDFs use ZIP store mode, text uses deflate, and every entry is checked against the manifest before extraction.
 - **Touch keeps tools and navigation separate.** One finger draws or selects with the active tool. Two fingers pan and pinch-zoom around their midpoint on both the primary canvas and the reference pane, cancel an unfinished touch draft, and suppress the remaining finger until all touches are lifted. A pen takes priority and recent palm touches are ignored. Long-press on an item opens the shared context menu on touch.

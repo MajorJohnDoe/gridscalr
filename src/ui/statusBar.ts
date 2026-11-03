@@ -28,6 +28,19 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   clear(refs.statusCoords);
   clear(refs.statusLayer);
+  clear(refs.statusWarning);
+
+  // Autosave failures stay visible until a later autosave succeeds, so the
+  // warning cannot scroll away like the toast does.
+  if (store.autosaveError) {
+    const chip = el("button", "status-chip is-warning status-chip-action");
+    chip.type = "button";
+    chip.innerHTML = `<span class="status-dot"></span>`;
+    chip.append(document.createTextNode("Autosave failing"));
+    chip.title = "Autosave is failing. Open the diagnostics for details.";
+    chip.addEventListener("click", () => actions.reportProblem());
+    refs.statusWarning.append(chip);
+  }
 
   if (!project) {
     scaleChipKey = "";

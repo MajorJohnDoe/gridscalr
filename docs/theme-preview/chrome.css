@@ -1,0 +1,224 @@
+/*
+ * Shared chrome mapping for the light and navy theme previews.
+ *
+ * The app still hardcodes a set of dark surface, overlay and shadow colours
+ * next to the token palette in src/styles.css. This file replaces those
+ * literals with named preview variables whose fallback is the current dark
+ * value, so the file on its own does not change the Slate theme.
+ *
+ * The fallbacks stay at the usage site on purpose: a palette injected later
+ * must be able to win. When the themes are implemented for real, these rules
+ * move into src/styles.css and the fallbacks disappear.
+ */
+
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar, #384148);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-hover, #4c585f);
+}
+
+.topbar {
+  background: var(--chrome-topbar, linear-gradient(180deg, #1d2428 0%, #181e22 100%));
+}
+
+.window-control-btn:hover {
+  background: var(--hover-soft, rgba(255, 255, 255, 0.08));
+}
+
+.window-control-btn:active {
+  background: var(--hover-softer, rgba(255, 255, 255, 0.05));
+}
+
+.tool-rail {
+  background: var(--chrome-rail, linear-gradient(180deg, #1b2125 0%, #171c20 100%));
+}
+
+.dock-tabs,
+.dock-footer,
+.dock-header,
+.inspector-header,
+.quantity-category-head {
+  background: var(--surface-tab, #1b2125);
+}
+
+.context-bar {
+  background: var(--surface-sunken, #1a2024);
+}
+
+.statusbar {
+  background: var(--statusbar-bg, #111619);
+}
+
+.canvas-host {
+  background-image:
+    radial-gradient(
+      circle at 50% 35%,
+      var(--canvas-glow, rgba(53, 194, 161, 0.045)),
+      transparent 55%
+    ),
+    linear-gradient(var(--canvas-grid, rgba(255, 255, 255, 0.018)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--canvas-grid, rgba(255, 255, 255, 0.018)) 1px, transparent 1px);
+}
+
+.reference-bar,
+.compare-panel,
+.search-panel {
+  background: var(--glass-panel, rgba(24, 30, 34, 0.96));
+}
+
+.canvas-crop-bar {
+  background: var(--glass-cropbar, rgba(20, 26, 29, 0.94));
+}
+
+.inline-style-strip {
+  background: var(--glass-strip, rgba(22, 28, 32, 0.97));
+  box-shadow: var(--shadow-strip, 0 8px 26px rgba(0, 0, 0, 0.42));
+}
+
+.canvas-text-editor-input {
+  background: var(--glass-editor-input, rgba(12, 16, 18, 0.55));
+}
+
+.canvas-text-editor-input::placeholder,
+.canvas-label-editor-input::placeholder {
+  color: var(--placeholder, rgba(210, 222, 227, 0.42));
+}
+
+.canvas-text-editor-resize {
+  background: var(--glass-editor-strong, rgba(12, 16, 18, 0.95));
+}
+
+.canvas-label-editor {
+  background: var(--glass-editor, rgba(12, 16, 18, 0.97));
+  box-shadow: var(--shadow-label, 0 6px 22px rgba(0, 0, 0, 0.45));
+}
+
+.canvas-label-editor-input {
+  color: var(--text-strong);
+}
+
+.canvas-label-editor-hint {
+  color: var(--hint, rgba(210, 222, 227, 0.58));
+}
+
+.canvas-loading {
+  background: var(--glass-loading, rgba(16, 21, 24, 0.84));
+}
+
+.welcome-card {
+  background: var(
+    --glass-welcome,
+    linear-gradient(180deg, rgba(34, 42, 47, 0.97), rgba(24, 30, 34, 0.98))
+  );
+}
+
+.dock-restore,
+.inspector-restore,
+.compare-restore {
+  background: var(--glass-controls, rgba(30, 36, 40, 0.94));
+  box-shadow: var(--shadow-soft, 0 2px 10px rgba(0, 0, 0, 0.3));
+}
+
+.modal-backdrop {
+  background: var(--overlay-modal, rgba(4, 7, 8, 0.68));
+}
+
+.modal {
+  background: var(--modal-grad, linear-gradient(180deg, #252d32, #1b2125));
+  border-color: var(--modal-border, #3a444a);
+}
+
+.modal-message {
+  color: var(--text);
+}
+
+.toast {
+  background: var(--toast-bg, #242c31);
+  box-shadow: var(--shadow-toast, 0 8px 28px rgba(0, 0, 0, 0.42));
+}
+
+.quantity-category {
+  background: var(--hover-row, rgba(255, 255, 255, 0.012));
+}
+
+.menu-panel,
+.measure-options,
+.tool-flyout {
+  box-shadow: var(--shadow-pop, 0 18px 48px rgba(0, 0, 0, 0.55));
+}
+
+.popover {
+  box-shadow: var(--shadow-pop-sm, 0 12px 36px rgba(0, 0, 0, 0.5));
+}
+
+.compare-pill,
+.compare-note,
+.compare-mode,
+.compare-filter-select,
+.compare-footer,
+.search-footer {
+  background: var(--surface-sunken, #1a2024);
+}
+
+.search-field {
+  background: var(--input-sunken, #14191c);
+}
+
+.btn:hover,
+.page-card:hover,
+.page-import-tile:hover {
+  border-color: var(--border-hover, #3b454b);
+}
+
+.layer-disclosure:hover:not(:disabled),
+.layer-action:hover {
+  background: var(--hover-soft, rgba(255, 255, 255, 0.08));
+}
+
+.status-chip-action:hover {
+  border-color: var(--hover-strong, rgba(255, 255, 255, 0.22));
+  background: var(--hover-softer, rgba(255, 255, 255, 0.05));
+}
+
+.tool-status-dot {
+  border-color: var(--tool-dot-ring, rgba(255, 255, 255, 0.25));
+}
+
+.help-content .markdown {
+  color: var(--text);
+}
+
+.help-content .markdown tr:nth-child(even) td {
+  background: var(--help-row, rgba(0, 0, 0, 0.12));
+}
+
+.help-content .markdown .help-figure img {
+  box-shadow: 0 1px 3px var(--help-figure-shadow, rgba(0, 0, 0, 0.22));
+}
+
+.help-lightbox {
+  background: var(--overlay-lightbox, rgba(4, 7, 8, 0.9));
+}
+
+.export-layer-list {
+  background: var(--export-list, rgba(0, 0, 0, 0.14));
+}
+
+.search-result-text mark {
+  background: var(--mark, rgba(242, 169, 59, 0.35));
+}
+
+.page-thumb-placeholder,
+.page-import-placeholder {
+  color: var(--muted-2);
+}
+
+.markups-panel {
+  box-shadow: var(--markups-inset, inset 0 1px 0 rgba(95, 143, 179, 0.2));
+}
+
+.markups-resizer::after {
+  background: var(--border);
+}

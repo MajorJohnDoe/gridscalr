@@ -821,8 +821,11 @@ export class Store {
     };
     try {
       await writeAutosaveStorage(payload);
+      const hadError = this.autosaveError !== null;
       this.autosaveError = null;
       this.lastAutosaveError = null;
+      // Re-render the persistent warning once autosave recovers.
+      if (hadError) this.emit("save");
     } catch (error) {
       const failure = error instanceof AutosaveError ? error : describeAutosaveFailure(error);
       // Autosave runs after every edit. Only alert when the message changes so
@@ -841,12 +844,6 @@ export class Store {
 
   readAutosave(): Promise<AutosavePayload | null> {
     return readAutosaveStorage();
-  }
-
-  consumeAutosaveError(): AutosaveError | null {
-    const error = this.autosaveError;
-    this.autosaveError = null;
-    return error;
   }
 
   clearAutosave(): Promise<void> {
