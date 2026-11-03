@@ -119,8 +119,15 @@ jobs:
           release="release"
           mkdir -p "$release"
           cp "$bundle"/dmg/*.dmg "$release"/
-          ditto -c -k --keepParent "$bundle/macos/GridScalr.app" \
-            "$release/GridScalr_${version}_universal.app.zip"
+          # The bundler deletes the .app after creating the DMG, so zip it from
+          # the mounted image instead of the intermediate bundle folder.
+          mount="$(mktemp -d)"
+          dmg="$(find "$release" -maxdepth 1 -name '*.dmg' -print -quit)"
+          hdiutil attach "$dmg" -mountpoint "$mount" -nobrowse -quiet
+          app="$(find "$mount" -maxdepth 1 -name '*.app' -print -quit)"
+          ditto -c -k --keepParent "$app" "$release/GridScalr_${version}_universal.app.zip"
+          hdiutil detach "$mount" -quiet
+          rmdir "$mount"
           (cd "$release" && shasum -a 256 * > SHA256SUMS-macos.txt)
 
       - name: Stage Linux files and checksums
