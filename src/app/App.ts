@@ -58,6 +58,7 @@ import type {
   Project,
   RecentEntry,
   SelectionRef,
+  SheetPaperSize,
   SheetTemplateRef,
 } from "../model/types";
 import {
@@ -278,7 +279,10 @@ export class App {
       getPageThumbnail: (page) => this.thumbnails?.get(page) ?? null,
       requestPageThumbnail: (page) => this.thumbnails?.request(page) ?? Promise.resolve(null),
       addPages: () => void this.addPageFlow(),
-      editSheetFields: (page) => void openSheetFieldsDialog(page),
+      editSheetFields: (page) =>
+        void openSheetFieldsDialog(page, {
+          onChangePaper: (paper) => this.changeSheetPaper(page, paper),
+        }),
       refresh: () => this.renderAll(),
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosavePreview(),
@@ -823,6 +827,33 @@ export class App {
       logEvent("error", `add page failed: ${errorMessage(error)}`);
       await messageDialog(t("sheet.addFailed"), errorMessage(error), "warning");
     }
+  }
+
+  private async changeSheetPaper(page: number, paper: SheetPaperSize): Promise<void> {
+    const project = store.project;
+    const renderer = this.renderer;
+    if (!project || !renderer) return;
+    const sheet = projectDocumentForPage(project, page);
+    if (!sheet?.template || sheet.template.paper === paper) return;
+    const index = documentIndexForPage(project.documents, page);
+    const next: SheetTemplateRef = {
+      ...sheet.template,
+      paper,
+      fields: { ...sheet.template.fields },
+    };
+    const bytes = await this.sheetBytes(next);
+    const proxy = await this.openDocument(bytes, sheet.name);
+    if (!proxy) return;
+    renderer.replaceDocument(index, proxy, [1]);
+    this.thumbnails?.clear();
+    this.sizeEpoch += 1;
+    this.pageSizes.delete(page);
+    this.pageSizePromises.delete(page);
+    await this.enqueuePageSize(page);
+    this.canvas.fitPage();
+    store.setTemplatePaper(page, paper);
+    this.canvas.invalidate();
+    toast(t("sheet.paperChanged", { paper }), "success");
   }
 
   private async addSheetFlow(choice: SheetSourceChoice): Promise<void> {

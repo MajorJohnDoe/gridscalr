@@ -1,13 +1,14 @@
 import {
   deletePageFromProject,
   duplicatePageFromProject,
+  projectDocumentForPage,
   totalPageCount,
   type DeletePageResult,
   type DuplicatePageOptions,
   type DuplicatePageResult,
 } from "../model/documents";
 import type { CloudFillPreset } from "../model/cloud";
-import type { ArrowHeads } from "../model/types";
+import type { ArrowHeads, SheetPaperSize } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
 import { DEFAULT_SYMBOL_ID } from "../model/symbols";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
@@ -307,6 +308,20 @@ export class Store {
   addDocument(document: DocumentRef): void {
     if (!this.project) return;
     this.project.documents.push(document);
+    this.undoStack = [];
+    this.redoStack = [];
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    this.scheduleAutosave();
+  }
+
+  /** Changes a template sheet's paper. Structural like adding or deleting a page. */
+  setTemplatePaper(page: number, paper: SheetPaperSize): void {
+    if (!this.project) return;
+    const document = projectDocumentForPage(this.project, page);
+    if (!document?.template) return;
+    document.template.paper = paper;
     this.undoStack = [];
     this.redoStack = [];
     this.dirty = true;

@@ -2,8 +2,10 @@ import { describe, expect, it } from "vitest";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument } from "pdf-lib";
 import {
+  buildDataSummaryTemplate,
   buildDrawingFrameTemplate,
   MM_TO_PT,
+  resolveSheetLabels,
   type SheetLabels,
 } from "../src/features/schematics/model/sheetTemplate";
 import { buildSheetPdf, buildStaticSheetPdf } from "../src/features/schematics/render/sheetPdf";
@@ -50,6 +52,20 @@ describe("static sheet PDF", () => {
     expect(text).toContain("Bet.");
     expect(text).toContain("Handled");
     expect(text).toContain("Card");
+  });
+
+  it("creates the data-summary table with its headers", async () => {
+    const template = buildDataSummaryTemplate(
+      "A3",
+      resolveSheetLabels((key) => key),
+    );
+    const bytes = await buildStaticSheetPdf(template);
+    const document = await PDFDocument.load(bytes);
+
+    expect(document.getPageCount()).toBe(1);
+    expect(document.getPage(0).getWidth()).toBeCloseTo(420 * MM_TO_PT, 2);
+    const text = await pageText(bytes);
+    expect(text).toContain("sheet.table.title");
   });
 
   it("creates an A2 page when requested", async () => {

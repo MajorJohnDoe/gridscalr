@@ -81,11 +81,12 @@ OCR is a deliberate action because it takes time. The resulting words, bounding 
 An operation card sheet is a page created from a built-in template instead of a PDF. It has a title block and revision table on every sheet.
 
 - **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
-- **Fill in fields:** double-click a title-block cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet.
+- **Fill in fields:** double-click a cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet. Table cells can also be filled directly on the canvas.
+- **Data summary:** choose the **Data summary** template for a sheet with a table. The table has fixed column headers and 9 mm rows; the number of rows depends on the paper (about 23 on A3, more on A2). Fill the cells in the form or double-click them. Need more rows? Create another data-summary sheet and continue there.
 - **Page number:** the **Page** field is free text. It is prefilled with the sheet ordinal and never updated automatically.
-- **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block.
+- **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block or table.
 - **Not to scale:** template sheets show **Sheet · not to scale** in the status bar and do not need calibration.
-- **Paper:** choose A3 or A2 when the sheet is created. The title block keeps its physical size; the drawing area grows on A2.
+- **Paper:** choose A3 or A2 when the sheet is created, or change it under **Edit sheet fields → Paper**. The title block keeps its physical size; the drawing area grows on A2 and the data table gains rows. Field values are kept, including table cells in rows that are currently hidden on a smaller sheet.
 
 ### Open a drawing
 

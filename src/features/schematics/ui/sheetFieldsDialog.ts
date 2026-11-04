@@ -3,15 +3,23 @@ import { store } from "../../../state/store";
 import { showModal } from "../../../ui/dialogs";
 import { el } from "../../../ui/dom";
 import { toast } from "../../../ui/toast";
+import type { SheetPaperSize } from "../../../model/types";
 import { templateDocumentForPage } from "../model/sheetDocument";
 import {
   resolveSheetLabels,
   revisionFieldId,
   SHEET_FIELD,
   sheetTemplateFor,
+  TABLE_COLUMNS,
+  tableFieldId,
   type RevisionColumn,
   type SheetLabels,
+  type SheetTemplateSpec,
 } from "../model/sheetTemplate";
+
+export interface SheetFieldsDialogOptions {
+  onChangePaper?: (paper: SheetPaperSize) => void | Promise<void>;
+}
 
 function labels(): SheetLabels {
   return resolveSheetLabels((key) => t(key));
@@ -71,8 +79,62 @@ function revisionGrid(
   body.append(grid);
 }
 
+function tableGrid(
+  body: HTMLElement,
+  inputs: Map<string, HTMLInputElement>,
+  spec: SheetTemplateSpec,
+  values: Record<string, string>,
+  sheetLabels: SheetLabels,
+): void {
+  const tableFields = spec.fields.filter((field) => field.id.startsWith("table."));
+  if (!tableFields.length) return;
+
+  const rows = Math.max(
+    1,
+    ...tableFields.map((field) => {
+      const match = /^table\.r(\d+)\.c\d+$/.exec(field.id);
+      return match ? Number(match[1]) : 1;
+    }),
+  );
+
+  body.append(el("h3", "", t("sheet.dialog.table")));
+  const wrap = el("div");
+  wrap.style.overflowX = "auto";
+  const grid = el("div");
+  grid.style.display = "grid";
+  grid.style.gridTemplateColumns = `auto repeat(${TABLE_COLUMNS.length}, minmax(84px, 1fr))`;
+  grid.style.gap = "4px";
+  grid.style.alignItems = "center";
+  grid.style.minWidth = "1320px";
+
+  grid.append(el("span"));
+  for (const column of TABLE_COLUMNS) {
+    grid.append(el("span", "field-label", sheetLabels.table?.[column.key] ?? ""));
+  }
+
+  for (let row = 1; row <= rows; row += 1) {
+    grid.append(el("span", "field-label", String(row)));
+    for (let column = 1; column <= TABLE_COLUMNS.length; column += 1) {
+      const id = tableFieldId(row, column);
+      const input = el("input", "input");
+      input.type = "text";
+      input.maxLength = 500;
+      input.value = values[id] ?? "";
+      input.dataset.fieldId = id;
+      inputs.set(id, input);
+      grid.append(input);
+    }
+  }
+
+  wrap.append(grid);
+  body.append(wrap);
+}
+
 /** Opens the editable field form for one template sheet. */
-export async function openSheetFieldsDialog(page: number): Promise<void> {
+export async function openSheetFieldsDialog(
+  page: number,
+  options: SheetFieldsDialogOptions = {},
+): Promise<void> {
   const project = store.project;
   if (!project) return;
   const document = templateDocumentForPage(project, page);
@@ -85,11 +147,24 @@ export async function openSheetFieldsDialog(page: number): Promise<void> {
   }
 
   const values = { ...document.template.fields };
+  const originalPaper = document.template.paper;
   const inputs = new Map<string, HTMLInputElement>();
   const body = el("div", "form-stack");
   body.append(el("p", "modal-message", t("sheet.dialog.note")));
 
   body.append(el("h3", "", t("sheet.dialog.project")));
+  const paperField = el("label", "field");
+  paperField.append(el("span", "field-label", t("sheet.source.paper")));
+  const paperSelect = el("select", "input");
+  for (const paper of ["A3", "A2"] as const) {
+    const item = el("option");
+    item.value = paper;
+    item.textContent = paper;
+    item.selected = paper === originalPaper;
+    paperSelect.append(item);
+  }
+  paperField.append(paperSelect);
+  body.append(paperField);
   fieldRow(
     body,
     inputs,
@@ -119,6 +194,7 @@ export async function openSheetFieldsDialog(page: number): Promise<void> {
 
   body.append(el("h3", "", t("sheet.dialog.revisions")));
   revisionGrid(body, inputs, values, sheetLabels);
+  tableGrid(body, inputs, spec, values, sheetLabels);
 
   const result = await showModal({
     title: t("sheet.dialog.title"),
@@ -138,4 +214,14 @@ export async function openSheetFieldsDialog(page: number): Promise<void> {
     const target = templateDocumentForPage(current, page);
     if (target?.template) target.template.fields = next;
   }, "change");
+
+  const paper: SheetPaperSize = paperSelect.value === "A2" ? "A2" : "A3";
+  if (paper !== originalPaper && options.onChangePaper) {
+    try {
+      await options.onChangePaper(paper);
+    } catch (error) {
+      console.error("sheet paper change failed", error);
+      toast(t("sheet.paperFailed"), "warning");
+    }
+  }
 }

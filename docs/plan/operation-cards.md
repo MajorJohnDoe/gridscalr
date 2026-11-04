@@ -1,6 +1,6 @@
 # Operation cards and schematic sheets
 
-**Status:** agreed 2026-11-04. Phases 0–2 are complete; Phase 3 has not started.
+**Status:** agreed 2026-11-04. Phases 0–3 are complete; Phase 4 has not started.
 **Scope:** an authoring workflow for operation cards built from blank sheet templates,
 starting with the title-block frame and the data-summary table.
 **Naming:** code, paths and identifiers use English. User-facing Swedish labels come
@@ -569,6 +569,23 @@ Outcome:
 - Paper-dependent row count.
 
 Acceptance: a filled data summary survives save, reopen, paper switch and export.
+
+Outcome:
+
+- The second built-in template, `gridscalr.operation-card.data`, keeps the same frame
+  and title block and fills the drawing area with a 15-column table.
+- Columns use fixed weights so the table fills A3 and A2. Group headers are
+  `EQUIPMENT`, `BOUNDARY WORK`, `ELECTRICAL DATA`, `HVAC DATA` and `REMARKS`.
+- Data rows use 9 mm height: about 23 on A3 and 36 on A2. Cell ids are
+  `table.r{row}.c{column}` and values are retained when the row count changes.
+- Table cells can be edited in a scrollable grid in **Edit sheet fields…** or by
+  double-clicking the cell on the canvas.
+- The sheet field form now changes paper. The renderer replaces the document in
+  place, keeps page order, clears the page-size and thumbnail caches and refits the
+  view. Paper changes are structural and clear undo.
+- Tests cover the template registry, paper-dependent row counts, field bounds, the
+  data-summary PDF headers and in-place renderer replacement. The app flow was
+  checked with a Playwright round trip from A3 to A2 with a saved cell value.
 
 ### Phase 4 — rail and drawing tools
 

@@ -4,6 +4,11 @@ import { fitText } from "./sheetText";
 
 const INK = rgb(0, 0, 0);
 
+function hexColor(hex: string) {
+  const value = Number.parseInt(hex.replace("#", ""), 16);
+  return rgb(((value >> 16) & 255) / 255, ((value >> 8) & 255) / 255, (value & 255) / 255);
+}
+
 export { fitText };
 
 /** Converts a top-left rectangle into pdf-lib's bottom-left page space. */
@@ -86,13 +91,15 @@ function drawPrimitives(page: PDFPage, template: SheetTemplateSpec, fonts: Sheet
   const pageHeight = template.height;
   for (const primitive of template.staticPrimitives) {
     if (primitive.kind === "rect") {
+      const fill = primitive.fill ? hexColor(primitive.fill) : undefined;
+      const strokeWidth = primitive.strokeWidth ?? 0.5;
       page.drawRectangle({
         x: primitive.rect.x,
         y: pageHeight - primitive.rect.y - primitive.rect.height,
         width: primitive.rect.width,
         height: primitive.rect.height,
-        borderWidth: primitive.strokeWidth ?? 0.5,
-        borderColor: INK,
+        ...(fill ? { color: fill } : {}),
+        ...(strokeWidth > 0 ? { borderWidth: strokeWidth, borderColor: INK } : {}),
       });
     } else if (primitive.kind === "line") {
       page.drawLine({

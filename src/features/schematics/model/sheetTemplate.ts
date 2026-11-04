@@ -10,6 +10,7 @@ import type { SheetPaperSize } from "../../../model/types";
 export type PaperSize = SheetPaperSize;
 
 export const DRAWING_FRAME_TEMPLATE_ID = "gridscalr.operation-card.frame";
+export const DATA_SUMMARY_TEMPLATE_ID = "gridscalr.operation-card.data";
 
 export const MM_TO_PT = 72 / 25.4;
 
@@ -27,6 +28,30 @@ export interface Rect {
 export type TextAlign = "left" | "center" | "right";
 export type VerticalAlign = "top" | "middle" | "bottom";
 
+export interface SheetTableLabels {
+  title: string;
+  equipment: string;
+  boundary: string;
+  electrical: string;
+  hvac: string;
+  remarks: string;
+  object: string;
+  makeCode: string;
+  supplier: string;
+  installer: string;
+  connection: string;
+  commissioning: string;
+  approval: string;
+  phase: string;
+  power: string;
+  current: string;
+  flow: string;
+  pressure: string;
+  dn: string;
+  area: string;
+  remark: string;
+}
+
 /** User-visible labels baked into the static template, not field values. */
 export interface SheetLabels {
   handledBy: string;
@@ -38,9 +63,13 @@ export interface SheetLabels {
   bet: string;
   rev: string;
   sign: string;
+  /** Only required by the data-summary template. */
+  table?: SheetTableLabels;
 }
 
-export const SHEET_LABEL_KEYS: Record<keyof SheetLabels, MessageKey> = {
+type SheetLabelKey = Exclude<keyof SheetLabels, "table">;
+
+export const SHEET_LABEL_KEYS: Record<SheetLabelKey, MessageKey> = {
   handledBy: "sheet.label.handledBy",
   card: "sheet.label.card",
   date: "sheet.label.date",
@@ -50,6 +79,30 @@ export const SHEET_LABEL_KEYS: Record<keyof SheetLabels, MessageKey> = {
   bet: "sheet.label.bet",
   rev: "sheet.label.rev",
   sign: "sheet.label.sign",
+};
+
+export const SHEET_TABLE_LABEL_KEYS: Record<keyof SheetTableLabels, MessageKey> = {
+  title: "sheet.table.title",
+  equipment: "sheet.table.equipment",
+  boundary: "sheet.table.boundary",
+  electrical: "sheet.table.electrical",
+  hvac: "sheet.table.hvac",
+  remarks: "sheet.table.remarks",
+  object: "sheet.table.object",
+  makeCode: "sheet.table.makeCode",
+  supplier: "sheet.table.supplier",
+  installer: "sheet.table.installer",
+  connection: "sheet.table.connection",
+  commissioning: "sheet.table.commissioning",
+  approval: "sheet.table.approval",
+  phase: "sheet.table.phase",
+  power: "sheet.table.power",
+  current: "sheet.table.current",
+  flow: "sheet.table.flow",
+  pressure: "sheet.table.pressure",
+  dn: "sheet.table.dn",
+  area: "sheet.table.area",
+  remark: "sheet.table.remark",
 };
 
 export function resolveSheetLabels(resolve: (key: MessageKey) => string): SheetLabels {
@@ -63,6 +116,29 @@ export function resolveSheetLabels(resolve: (key: MessageKey) => string): SheetL
     bet: resolve(SHEET_LABEL_KEYS.bet),
     rev: resolve(SHEET_LABEL_KEYS.rev),
     sign: resolve(SHEET_LABEL_KEYS.sign),
+    table: {
+      title: resolve(SHEET_TABLE_LABEL_KEYS.title),
+      equipment: resolve(SHEET_TABLE_LABEL_KEYS.equipment),
+      boundary: resolve(SHEET_TABLE_LABEL_KEYS.boundary),
+      electrical: resolve(SHEET_TABLE_LABEL_KEYS.electrical),
+      hvac: resolve(SHEET_TABLE_LABEL_KEYS.hvac),
+      remarks: resolve(SHEET_TABLE_LABEL_KEYS.remarks),
+      object: resolve(SHEET_TABLE_LABEL_KEYS.object),
+      makeCode: resolve(SHEET_TABLE_LABEL_KEYS.makeCode),
+      supplier: resolve(SHEET_TABLE_LABEL_KEYS.supplier),
+      installer: resolve(SHEET_TABLE_LABEL_KEYS.installer),
+      connection: resolve(SHEET_TABLE_LABEL_KEYS.connection),
+      commissioning: resolve(SHEET_TABLE_LABEL_KEYS.commissioning),
+      approval: resolve(SHEET_TABLE_LABEL_KEYS.approval),
+      phase: resolve(SHEET_TABLE_LABEL_KEYS.phase),
+      power: resolve(SHEET_TABLE_LABEL_KEYS.power),
+      current: resolve(SHEET_TABLE_LABEL_KEYS.current),
+      flow: resolve(SHEET_TABLE_LABEL_KEYS.flow),
+      pressure: resolve(SHEET_TABLE_LABEL_KEYS.pressure),
+      dn: resolve(SHEET_TABLE_LABEL_KEYS.dn),
+      area: resolve(SHEET_TABLE_LABEL_KEYS.area),
+      remark: resolve(SHEET_TABLE_LABEL_KEYS.remark),
+    },
   };
 }
 
@@ -73,7 +149,7 @@ export const PAPER_SIZES: Record<PaperSize, { widthMm: number; heightMm: number 
 
 /** A tiny vector language for the static frame. It is not a general editor. */
 export type FramePrimitive =
-  | { kind: "rect"; rect: Rect; strokeWidth?: number }
+  | { kind: "rect"; rect: Rect; strokeWidth?: number; fill?: string }
   | { kind: "line"; x1: number; y1: number; x2: number; y2: number; strokeWidth?: number }
   | {
       kind: "text";
@@ -131,6 +207,45 @@ export function revisionFieldId(row: number, column: RevisionColumn): string {
   return `rev.${row}.${column}`;
 }
 
+export type TableGroupId = "equipment" | "boundary" | "electrical" | "hvac" | "remarks";
+
+export interface TableColumn {
+  key: keyof SheetTableLabels;
+  weight: number;
+  group: TableGroupId;
+}
+
+/** Column order, widths and header groups for the data-summary template. */
+export const TABLE_COLUMNS: TableColumn[] = [
+  { key: "object", weight: 16, group: "equipment" },
+  { key: "makeCode", weight: 8, group: "equipment" },
+  { key: "supplier", weight: 5, group: "boundary" },
+  { key: "installer", weight: 5, group: "boundary" },
+  { key: "connection", weight: 5, group: "boundary" },
+  { key: "commissioning", weight: 5, group: "boundary" },
+  { key: "approval", weight: 6, group: "boundary" },
+  { key: "phase", weight: 6, group: "electrical" },
+  { key: "power", weight: 6, group: "electrical" },
+  { key: "current", weight: 5, group: "electrical" },
+  { key: "flow", weight: 5, group: "hvac" },
+  { key: "pressure", weight: 5, group: "hvac" },
+  { key: "dn", weight: 4, group: "hvac" },
+  { key: "area", weight: 4, group: "hvac" },
+  { key: "remark", weight: 15, group: "remarks" },
+];
+
+export const TABLE_GROUPS: { id: TableGroupId; labelKey: keyof SheetTableLabels }[] = [
+  { id: "equipment", labelKey: "equipment" },
+  { id: "boundary", labelKey: "boundary" },
+  { id: "electrical", labelKey: "electrical" },
+  { id: "hvac", labelKey: "hvac" },
+  { id: "remarks", labelKey: "remarks" },
+];
+
+export function tableFieldId(row: number, column: number): string {
+  return `table.r${row}.c${column}`;
+}
+
 const REVISION_COLUMNS: { key: RevisionColumn; width: number }[] = [
   { key: "bet", width: 12 },
   { key: "rev", width: 40 },
@@ -142,7 +257,7 @@ const REVISION_COLUMNS: { key: RevisionColumn; width: number }[] = [
  * Three title-block rows: two label/value pairs each. The first column is the
  * label, the second a value, the third a label and the fourth a value.
  */
-const TITLE_ROWS: { left: keyof SheetLabels; right: keyof SheetLabels }[] = [
+const TITLE_ROWS: { left: SheetLabelKey; right: SheetLabelKey }[] = [
   { left: "handledBy", right: "card" },
   { left: "date", right: "system" },
   { left: "assignment", right: "page" },
@@ -381,6 +496,161 @@ export function buildDrawingFrameTemplate(
   };
 }
 
+/**
+ * The data-summary sheet keeps the same frame and title block, and fills the
+ * drawing area with a fixed-width table. Rows depend on the paper height.
+ */
+export function buildDataSummaryTemplate(paper: PaperSize, labels: SheetLabels): SheetTemplateSpec {
+  const base = buildDrawingFrameTemplate(paper, labels);
+  const table = labels.table;
+  const inner = mm(12);
+  const innerRight = base.width - inner;
+  const bandTop = base.height - inner - mm(38);
+  const titleHeight = mm(11);
+  const groupHeight = mm(8);
+  const headerHeight = mm(8);
+  const rowHeight = mm(9);
+  const totalWidth = innerRight - inner;
+  const totalWeight = TABLE_COLUMNS.reduce((sum, column) => sum + column.weight, 0);
+
+  let cursor = inner;
+  const columns = TABLE_COLUMNS.map((column) => {
+    const width = (totalWidth * column.weight) / totalWeight;
+    const x = cursor;
+    cursor += width;
+    return { ...column, x, width };
+  });
+
+  const rows = Math.max(
+    1,
+    Math.floor((bandTop - inner - titleHeight - groupHeight - headerHeight) / rowHeight),
+  );
+  const groupTop = inner + titleHeight;
+  const headerTop = groupTop + groupHeight;
+  const dataTop = headerTop + headerHeight;
+  const tableBottom = dataTop + rows * rowHeight;
+
+  const primitives: FramePrimitive[] = [...base.staticPrimitives];
+  primitives.push(
+    {
+      kind: "rect",
+      rect: { x: inner, y: inner, width: totalWidth, height: titleHeight },
+      fill: "#f2f2f2",
+      strokeWidth: 0,
+    },
+    {
+      kind: "rect",
+      rect: { x: inner, y: groupTop, width: totalWidth, height: groupHeight },
+      fill: "#f7f7f7",
+      strokeWidth: 0,
+    },
+    {
+      kind: "rect",
+      rect: { x: inner, y: headerTop, width: totalWidth, height: headerHeight },
+      fill: "#ededed",
+      strokeWidth: 0,
+    },
+    {
+      kind: "rect",
+      rect: { x: inner, y: inner, width: totalWidth, height: tableBottom - inner },
+      strokeWidth: 0.8,
+    },
+  );
+
+  for (const column of columns) {
+    if (column.x > inner + 0.01) {
+      primitives.push({
+        kind: "line",
+        x1: column.x,
+        y1: inner,
+        x2: column.x,
+        y2: tableBottom,
+        strokeWidth: 0.5,
+      });
+    }
+  }
+  for (const y of [inner + titleHeight, groupTop + groupHeight, headerTop + headerHeight]) {
+    primitives.push({ kind: "line", x1: inner, y1: y, x2: innerRight, y2: y, strokeWidth: 0.5 });
+  }
+  for (let row = 1; row <= rows; row += 1) {
+    const y = dataTop + row * rowHeight;
+    primitives.push({ kind: "line", x1: inner, y1: y, x2: innerRight, y2: y, strokeWidth: 0.5 });
+  }
+
+  primitives.push({
+    kind: "text",
+    rect: {
+      x: inner + mm(2),
+      y: inner,
+      width: totalWidth - mm(4),
+      height: titleHeight,
+    },
+    text: table?.title ?? "",
+    size: 11,
+    bold: true,
+    padding: mm(2),
+  });
+
+  for (const group of TABLE_GROUPS) {
+    const members = columns.filter((column) => column.group === group.id);
+    if (!members.length) continue;
+    const x = members[0].x;
+    const width = members.reduce((sum, column) => sum + column.width, 0);
+    primitives.push({
+      kind: "text",
+      rect: { x, y: groupTop, width, height: groupHeight },
+      text: table?.[group.labelKey] ?? "",
+      size: 6.5,
+      bold: true,
+      align: "center",
+      padding: mm(1),
+    });
+  }
+
+  for (const column of columns) {
+    primitives.push({
+      kind: "text",
+      rect: {
+        x: column.x,
+        y: headerTop,
+        width: column.width,
+        height: headerHeight,
+      },
+      text: table?.[column.key] ?? "",
+      size: 6,
+      bold: true,
+      align: "center",
+      padding: mm(0.5),
+    });
+  }
+
+  const fields = [...base.fields];
+  for (let row = 1; row <= rows; row += 1) {
+    for (let column = 1; column <= columns.length; column += 1) {
+      const entry = columns[column - 1];
+      fields.push(
+        field(
+          tableFieldId(row, column),
+          {
+            x: entry.x,
+            y: dataTop + (row - 1) * rowHeight,
+            width: entry.width,
+            height: rowHeight,
+          },
+          { fontSize: 6.5, padding: mm(1) },
+        ),
+      );
+    }
+  }
+
+  return {
+    ...base,
+    id: DATA_SUMMARY_TEMPLATE_ID,
+    staticPrimitives: primitives,
+    fields,
+  };
+}
+
 export interface SheetTemplateDefinition {
   id: string;
   nameKey: MessageKey;
@@ -393,6 +663,11 @@ export const SHEET_TEMPLATES: SheetTemplateDefinition[] = [
     id: DRAWING_FRAME_TEMPLATE_ID,
     nameKey: "sheet.template.frame",
     build: buildDrawingFrameTemplate,
+  },
+  {
+    id: DATA_SUMMARY_TEMPLATE_ID,
+    nameKey: "sheet.template.table",
+    build: buildDataSummaryTemplate,
   },
 ];
 

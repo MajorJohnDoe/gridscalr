@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
 import {
+  buildDataSummaryTemplate,
   buildDrawingFrameTemplate,
+  DATA_SUMMARY_TEMPLATE_ID,
   MM_TO_PT,
   PAPER_SIZES,
   resolveSheetLabels,
   revisionFieldId,
   SHEET_FIELD,
+  SHEET_TEMPLATES,
+  TABLE_COLUMNS,
+  tableFieldId,
   type SheetLabels,
+  type SheetTableLabels,
 } from "../src/features/schematics/model/sheetTemplate";
 import { baselineY, fitText, toPdfRect } from "../src/features/schematics/render/sheetPdf";
 
@@ -111,6 +117,66 @@ describe("drawing frame template", () => {
     expect(resolved.handledBy).toBe("sheet.label.handledBy");
     expect(resolved.card).toBe("sheet.label.card");
     expect(resolved.sign).toBe("sheet.label.sign");
+  });
+});
+
+const tableLabels: SheetTableLabels = {
+  title: "DATA",
+  equipment: "EQUIP",
+  boundary: "BOUND",
+  electrical: "EL",
+  hvac: "VVS",
+  remarks: "REM",
+  object: "OBJ",
+  makeCode: "CODE",
+  supplier: "LEV",
+  installer: "MONT",
+  connection: "ANSL",
+  commissioning: "INK",
+  approval: "AVP",
+  phase: "FAS",
+  power: "P",
+  current: "I",
+  flow: "Q",
+  pressure: "PR",
+  dn: "DN",
+  area: "A",
+  remark: "REMARK",
+};
+
+describe("data summary template", () => {
+  it("registers both built-in templates", () => {
+    expect(SHEET_TEMPLATES.map((entry) => entry.id)).toEqual([
+      "gridscalr.operation-card.frame",
+      DATA_SUMMARY_TEMPLATE_ID,
+    ]);
+  });
+
+  it("fills the drawing area with a paper-dependent number of rows", () => {
+    const a3 = buildDataSummaryTemplate("A3", { ...labels, table: tableLabels });
+    const a2 = buildDataSummaryTemplate("A2", { ...labels, table: tableLabels });
+    const rows = (template: typeof a3) =>
+      template.fields.filter((field) => field.id.startsWith("table.")).length /
+      TABLE_COLUMNS.length;
+
+    expect(a3.id).toBe(DATA_SUMMARY_TEMPLATE_ID);
+    expect(rows(a3)).toBeGreaterThanOrEqual(20);
+    expect(rows(a3)).toBeLessThanOrEqual(28);
+    expect(rows(a2)).toBeGreaterThan(rows(a3));
+    expect(a3.fields.some((field) => field.id === tableFieldId(1, 1))).toBe(true);
+    expect(a3.fields.some((field) => field.id === tableFieldId(rows(a3), 15))).toBe(true);
+  });
+
+  it("keeps table fields inside the page", () => {
+    const template = buildDataSummaryTemplate("A2", { ...labels, table: tableLabels });
+    for (const field of template.fields) {
+      expect(field.rect.width).toBeGreaterThan(0);
+      expect(field.rect.height).toBeGreaterThan(0);
+      expect(field.rect.x).toBeGreaterThanOrEqual(0);
+      expect(field.rect.y).toBeGreaterThanOrEqual(0);
+      expect(field.rect.x + field.rect.width).toBeLessThanOrEqual(template.width + 1e-6);
+      expect(field.rect.y + field.rect.height).toBeLessThanOrEqual(template.height + 1e-6);
+    }
   });
 });
 

@@ -4,6 +4,8 @@
 - Markup layers are stored in the project, not written into the PDF's own annotation or optional-content structures. The drawing PDF export bakes visible markups into page content as vectors.
 - Operation card sheets use built-in templates only. Custom frames, image logos, automatic page numbering and automatic equipment tags are not supported yet. The page field is free text and is not renumbered when sheets are added or removed.
 - Template field values are stored in the project and exported as searchable PDF text, but the in-app search does not index them. Page thumbnails and the read-only reference pane show the static frame without field values.
+- Data-summary sheets have a fixed fifteen-column layout and a paper-dependent number of 9 mm rows (about 23 on A3 and 36 on A2). Columns cannot be added, removed or reordered; extra rows require another data-summary sheet. Cells are single-line and shrink to fit.
+- Changing a sheet's paper is structural and cannot be undone. Field values, including table cells in rows that no longer fit, are retained and reappear when the larger paper is selected again.
 - Text notes placed with the Text tool do not wrap; use `Shift+Enter` for an explicit line break or the Text box tool for a fixed-width box that wraps automatically. Text boxes support one style per box; formatting a selected range is not available yet.
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
