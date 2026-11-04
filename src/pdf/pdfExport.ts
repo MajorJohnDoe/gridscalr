@@ -81,6 +81,9 @@ import {
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
 import type { PdfRenderer } from "./pdfRenderer";
 import { t } from "../i18n";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
+import { drawSheetFields } from "../features/schematics/render/sheetPdf";
 
 interface ExportFonts {
   regular: PDFFont;
@@ -160,6 +163,18 @@ export async function exportProjectPdf(
         if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
         drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+      }
+    }
+
+    const sheetDocument = templateDocumentForPage(project, pageNumber);
+    if (sheetDocument?.template) {
+      const sheetSpec = sheetTemplateFor(
+        sheetDocument.template.id,
+        sheetDocument.template.paper,
+        resolveSheetLabels((key) => t(key)),
+      );
+      if (sheetSpec) {
+        drawSheetFields(pdfPage, sheetSpec, sheetDocument.template.fields, fonts);
       }
     }
 

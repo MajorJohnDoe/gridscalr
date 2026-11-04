@@ -7,6 +7,7 @@ import {
 } from "../model/documents";
 import type { PageSize, Project } from "../model/types";
 import { store } from "../state/store";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { el } from "./dom";
 import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
@@ -195,6 +196,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const cached = actions.getPageThumbnail(page);
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
+    const sheetDocument = templateDocumentForPage(project, page);
     const pageName = pageDisplayName(project, page);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
     title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
@@ -216,6 +218,9 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
     info.append(sizeNode);
     const badges = el("div", "page-badges");
+    if (sheetDocument) {
+      badges.append(el("span", "page-badge", t("page.sheetBadge")));
+    }
     if (project.pages[String(page)]?.calibration) {
       badges.append(el("span", "page-badge is-calibrated", t("page.calibrated")));
     }
@@ -267,6 +272,16 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
             });
           },
         },
+        ...(sheetDocument
+          ? [
+              {
+                label: t("page.editSheetFields"),
+                icon: "text",
+                action: () => actions.editSheetFields(page),
+              },
+              { separator: true as const },
+            ]
+          : []),
         {
           label: t("page.setLocation"),
           icon: "target",

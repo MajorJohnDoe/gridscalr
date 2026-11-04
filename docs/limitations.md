@@ -2,6 +2,8 @@
 
 
 - Markup layers are stored in the project, not written into the PDF's own annotation or optional-content structures. The drawing PDF export bakes visible markups into page content as vectors.
+- Operation card sheets use built-in templates only. Custom frames, image logos, automatic page numbering and automatic equipment tags are not supported yet. The page field is free text and is not renumbered when sheets are added or removed.
+- Template field values are stored in the project and exported as searchable PDF text, but the in-app search does not index them. Page thumbnails and the read-only reference pane show the static frame without field values.
 - Text notes do not wrap inside a fixed text box; use `Shift+Enter` for an explicit line break.
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.

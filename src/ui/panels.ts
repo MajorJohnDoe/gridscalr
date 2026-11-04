@@ -80,6 +80,7 @@ export interface PanelActions {
   getPageThumbnail: (page: number) => string | null;
   requestPageThumbnail: (page: number) => Promise<string | null>;
   addPages: () => void;
+  editSheetFields: (page: number) => void;
   deletePage: (page: number) => void;
   duplicatePage: (page: number) => void;
   refresh: () => void;

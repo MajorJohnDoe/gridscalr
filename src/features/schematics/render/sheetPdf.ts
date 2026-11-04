@@ -1,56 +1,10 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Rect, SheetTemplateSpec, TextAlign, VerticalAlign } from "../model/sheetTemplate";
+import { fitText } from "./sheetText";
 
 const INK = rgb(0, 0, 0);
 
-/** The subset of pdf-lib's PDFFont that text fitting needs. */
-export interface TextMeasurer {
-  widthOfTextAtSize(text: string, size: number): number;
-}
-
-export interface FittedText {
-  text: string;
-  size: number;
-}
-
-/**
- * Shrinks text until it fits the available width, then ellipsizes. The full
- * value stays in the project; this only controls what is drawn.
- */
-export function fitText(
-  text: string,
-  measurer: TextMeasurer,
-  size: number,
-  maxWidth: number,
-  minSize = 4,
-): FittedText {
-  const value = text.trim();
-  const floor = Math.min(minSize, size);
-  if (!value || maxWidth <= 0) return { text: "", size };
-  if (measurer.widthOfTextAtSize(value, size) <= maxWidth) return { text: value, size };
-
-  let currentSize = size;
-  while (currentSize > floor && measurer.widthOfTextAtSize(value, currentSize) > maxWidth) {
-    currentSize = Math.max(floor, currentSize - 0.25);
-  }
-  if (measurer.widthOfTextAtSize(value, currentSize) <= maxWidth) {
-    return { text: value, size: currentSize };
-  }
-
-  const suffix = "...";
-  if (measurer.widthOfTextAtSize(suffix, currentSize) > maxWidth) {
-    return { text: "", size: currentSize };
-  }
-  let low = 0;
-  let high = value.length;
-  while (low < high) {
-    const middle = Math.ceil((low + high) / 2);
-    const candidate = `${value.slice(0, middle).trimEnd()}${suffix}`;
-    if (measurer.widthOfTextAtSize(candidate, currentSize) <= maxWidth) low = middle;
-    else high = middle - 1;
-  }
-  return { text: `${value.slice(0, low).trimEnd()}${suffix}`, size: currentSize };
-}
+export { fitText };
 
 /** Converts a top-left rectangle into pdf-lib's bottom-left page space. */
 export function toPdfRect(pageHeight: number, rect: Rect): Rect {
@@ -81,7 +35,7 @@ export function baselineY(
   return pageHeight - top;
 }
 
-interface SheetFonts {
+export interface SheetFonts {
   regular: PDFFont;
   bold: PDFFont;
 }
@@ -105,7 +59,13 @@ function drawTextInRect(
   if (!text) return;
   const font = options.bold ? fonts.bold : fonts.regular;
   const maxWidth = Math.max(1, rect.width - options.padding * 2);
-  const fitted = fitText(text, font, options.size, maxWidth, options.shrink ? 4 : options.size);
+  const fitted = fitText(
+    text,
+    (value, size) => font.widthOfTextAtSize(value, size),
+    options.size,
+    maxWidth,
+    options.shrink ? 4 : options.size,
+  );
   if (!fitted.text) return;
 
   const width = font.widthOfTextAtSize(fitted.text, fitted.size);
@@ -159,6 +119,27 @@ function normalizeFieldValue(value: string): string {
   return value.replace(/\s+/g, " ").trim();
 }
 
+/** Draws the field values onto an existing (static) sheet page. */
+export function drawSheetFields(
+  page: PDFPage,
+  template: SheetTemplateSpec,
+  values: Record<string, string>,
+  fonts: SheetFonts,
+): void {
+  for (const spec of template.fields) {
+    const value = values[spec.id];
+    if (!value) continue;
+    drawTextInRect(page, fonts, normalizeFieldValue(value), spec.rect, {
+      size: spec.fontSize,
+      bold: spec.bold,
+      align: spec.align,
+      verticalAlign: spec.verticalAlign,
+      padding: spec.padding,
+      shrink: spec.shrink,
+    });
+  }
+}
+
 async function createSheetPdf(
   template: SheetTemplateSpec,
   values?: Record<string, string>,
@@ -171,21 +152,7 @@ async function createSheetPdf(
   };
 
   drawPrimitives(page, template, fonts);
-
-  if (values) {
-    for (const spec of template.fields) {
-      const value = values[spec.id];
-      if (!value) continue;
-      drawTextInRect(page, fonts, normalizeFieldValue(value), spec.rect, {
-        size: spec.fontSize,
-        bold: spec.bold,
-        align: spec.align,
-        verticalAlign: spec.verticalAlign,
-        padding: spec.padding,
-        shrink: spec.shrink,
-      });
-    }
-  }
+  if (values) drawSheetFields(page, template, values, fonts);
 
   return document.save();
 }

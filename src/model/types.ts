@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 22 as const;
+export const SCHEMA_VERSION = 23 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -294,7 +294,17 @@ export interface MarkupsView {
   sort: MarkupsSort | null;
 }
 
-export type DocumentKind = "pdf" | "tiff";
+export type DocumentKind = "pdf" | "tiff" | "template";
+
+export type SheetPaperSize = "A3" | "A2";
+
+/** A page created from a built-in sheet template, with its user-entered values. */
+export interface SheetTemplateRef {
+  id: string;
+  version: number;
+  paper: SheetPaperSize;
+  fields: Record<string, string>;
+}
 
 /** Provenance for a document that GridScalr derived itself, such as a converted TIF. */
 export interface DocumentSourceInfo {
@@ -322,6 +332,8 @@ export interface DocumentRef {
   embeddedPdf?: string;
   /** Only for kind "tiff". */
   source?: DocumentSourceInfo;
+  /** Only for kind "template". */
+  template?: SheetTemplateRef;
   /** Set when this reference is a duplicated page of another document entry. */
   copiedFrom?: { documentId: string; page: number };
 }

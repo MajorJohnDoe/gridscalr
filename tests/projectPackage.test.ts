@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef, Project } from "../src/model/types";
+import { createTemplateDocument } from "../src/features/schematics/model/sheetDocument";
 import {
   DEFAULT_PACKAGE_OPTIONS,
   describePackageFailure,
@@ -76,6 +77,31 @@ function validManifest(): PackageManifest {
 }
 
 describe("project package model", () => {
+  it("keeps template sheets out of the archive document list", () => {
+    const project = projectWithDocuments();
+    const sheet = createTemplateDocument("gridscalr.operation-card.frame", "A2", "Sheet A2");
+    sheet.template!.fields["title.card"] = "56-01-01";
+    project.documents.push(sheet);
+
+    const paths = documentArchivePaths(project);
+    expect(paths.has(sheet.id)).toBe(false);
+
+    const json = portableProjectJson(project, paths);
+    const parsed = JSON.parse(json) as {
+      documents: Array<Record<string, unknown>>;
+    };
+    const entry = parsed.documents.find((document) => document.id === sheet.id)!;
+    expect(entry.kind).toBe("template");
+    expect(entry.path).toBeNull();
+    expect(entry.relativePath).toBeNull();
+    expect(entry.template).toMatchObject({
+      id: "gridscalr.operation-card.frame",
+      paper: "A2",
+      fields: { "title.card": "56-01-01" },
+    });
+    expect(() => validatePackagedProjectJson(json)).not.toThrow();
+  });
+
   it("suggests safe package and project file names", () => {
     const project = projectWithDocuments();
     expect(suggestedProjectFileName(project)).toBe("Level 01.gridscalr");

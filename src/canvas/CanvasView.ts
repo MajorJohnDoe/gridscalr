@@ -112,6 +112,13 @@ import {
   textLineX,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
+import {
+  layoutFieldText,
+  measureSheetText,
+  SHEET_FONT_STACK,
+} from "../features/schematics/render/sheetText";
 import {
   CLOUD_FILL_OPACITY,
   cloudCurves,
@@ -301,6 +308,11 @@ export class CanvasView {
   private hoverHandle: Handle | null = null;
   private hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
+  private sheetFieldEditor: {
+    input: HTMLInputElement;
+    page: number;
+    fieldId: string;
+  } | null = null;
   private crop: CropController;
   private imageCache = new Map<string, HTMLImageElement>();
   private imageLoading = new Set<string>();
@@ -484,6 +496,9 @@ export class CanvasView {
   private onStoreChange(reason: string): void {
     if (reason === "cursor") return;
     if (this.readOnly && !this.isVisible) return;
+    if (reason === "view" || reason === "page" || reason === "project" || reason === "undo") {
+      this.commitSheetField(false);
+    }
     this.editors.handleStoreChange(reason);
     const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
@@ -1894,7 +1909,11 @@ export class CanvasView {
     }
 
     const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
-    if (!hit || itemIsLocked(hit.item, hit.layer)) return;
+    if (!hit) {
+      if (tool === "select") this.editSheetFieldAt(this.viewPage, screen);
+      return;
+    }
+    if (itemIsLocked(hit.item, hit.layer)) return;
     store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
 
     if (hit.item.kind === "volume") {
@@ -2910,6 +2929,8 @@ export class CanvasView {
       ctx.restore();
     }
 
+    this.drawSheetFields(ctx);
+
     for (const layer of project.layers) {
       if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
       ctx.save();
@@ -2948,6 +2969,124 @@ export class CanvasView {
         ctx.restore();
       }
     }
+  }
+
+  /** Draws template field values above the PDF page and below every item. */
+  private drawSheetFields(ctx: CanvasRenderingContext2D): void {
+    const project = this.sceneProject;
+    if (!project) return;
+    const sheetDocument = templateDocumentForPage(project, this.viewPage);
+    if (!sheetDocument?.template) return;
+    const spec = sheetTemplateFor(
+      sheetDocument.template.id,
+      sheetDocument.template.paper,
+      resolveSheetLabels((key) => t(key)),
+    );
+    if (!spec) return;
+
+    const zoom = this.viewZoom;
+    ctx.save();
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    for (const field of spec.fields) {
+      const value = sheetDocument.template.fields[field.id] ?? "";
+      if (!value) continue;
+      const placement = layoutFieldText(field, value, measureSheetText);
+      if (!placement) continue;
+      const point = this.toScreen({ x: placement.x, y: placement.baseline });
+      ctx.font = `${placement.size * zoom}px ${SHEET_FONT_STACK}`;
+      ctx.fillText(placement.text, point.x, point.y);
+    }
+    ctx.restore();
+  }
+
+  /** Opens an inline editor when a double-click lands on an empty sheet cell. */
+  private editSheetFieldAt(pageNumber: number, screen: Point): boolean {
+    const project = store.project;
+    if (!project) return false;
+    const sheetDocument = templateDocumentForPage(project, pageNumber);
+    if (!sheetDocument?.template) return false;
+    const spec = sheetTemplateFor(
+      sheetDocument.template.id,
+      sheetDocument.template.paper,
+      resolveSheetLabels((key) => t(key)),
+    );
+    if (!spec) return false;
+
+    const pagePoint = this.toPage(screen);
+    const field = spec.fields.find(
+      (candidate) =>
+        pagePoint.x >= candidate.rect.x &&
+        pagePoint.x <= candidate.rect.x + candidate.rect.width &&
+        pagePoint.y >= candidate.rect.y &&
+        pagePoint.y <= candidate.rect.y + candidate.rect.height,
+    );
+    if (!field) return false;
+
+    const start = this.toScreen({ x: field.rect.x, y: field.rect.y });
+    const end = this.toScreen({
+      x: field.rect.x + field.rect.width,
+      y: field.rect.y + field.rect.height,
+    });
+    const zoom = this.viewZoom;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "sheet-field-input";
+    input.value = sheetDocument.template.fields[field.id] ?? "";
+    input.maxLength = 500;
+    input.style.position = "absolute";
+    input.style.left = `${start.x}px`;
+    input.style.top = `${start.y}px`;
+    input.style.width = `${Math.max(24, end.x - start.x)}px`;
+    input.style.height = `${Math.max(16, end.y - start.y)}px`;
+    input.style.boxSizing = "border-box";
+    input.style.fontFamily = SHEET_FONT_STACK;
+    input.style.fontSize = `${Math.max(7, field.fontSize * zoom)}px`;
+    input.style.fontWeight = field.bold ? "700" : "400";
+    input.style.textAlign = field.align;
+    input.style.padding = `0 ${field.padding * zoom}px`;
+    input.style.lineHeight = `${Math.max(1, end.y - start.y)}px`;
+    input.style.background = "#ffffff";
+    input.style.border = "1px solid #2b7fff";
+    input.style.outline = "none";
+    input.style.boxShadow = "0 0 0 2px rgba(43, 127, 255, 0.25)";
+    input.style.zIndex = "20";
+
+    this.commitSheetField(false);
+    this.sheetFieldEditor = { input, page: pageNumber, fieldId: field.id };
+    this.host.append(input);
+    input.focus();
+    input.select();
+
+    input.addEventListener("pointerdown", (event) => event.stopPropagation());
+    input.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (event.key === "Enter") {
+        event.preventDefault();
+        this.commitSheetField(true);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        this.commitSheetField(false);
+      }
+    });
+    input.addEventListener("blur", () => this.commitSheetField(true));
+    return true;
+  }
+
+  private commitSheetField(save: boolean): void {
+    const editor = this.sheetFieldEditor;
+    if (!editor) return;
+    this.sheetFieldEditor = null;
+    editor.input.remove();
+    if (!save) return;
+    const project = store.project;
+    if (!project || store.ui.page !== editor.page) return;
+    const value = editor.input.value;
+    store.mutate((current) => {
+      const sheetDocument = templateDocumentForPage(current, editor.page);
+      if (sheetDocument?.template) sheetDocument.template.fields[editor.fieldId] = value;
+    }, "change");
   }
 
   private imageElement(asset: ImageAsset): HTMLImageElement | null {
@@ -3865,6 +4004,7 @@ export class CanvasView {
     this.crop.destroy();
     this.observer.disconnect();
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
+    this.commitSheetField(false);
     this.editors.destroy();
     this.interaction.removeEventListener("pointerdown", this.onPointerDown);
     this.interaction.removeEventListener("pointermove", this.onPointerMove);

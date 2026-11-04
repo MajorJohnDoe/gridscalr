@@ -7,7 +7,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 ## Quick start
 
 1. Choose **File → New project…** or **File → Open drawing…**.
-2. Pick a PDF or a scanned TIF drawing.
+2. Pick a PDF or a scanned TIF drawing, or start from an operation card sheet template.
 3. Calibrate the page against a known dimension, or enter the printed scale.
 4. Choose a measurement tool and draw on the plan.
 5. Review **View → Quantities…**.
@@ -74,7 +74,18 @@ OCR is a deliberate action because it takes time. The resulting words, bounding 
 
 ### New project
 
-**File → New project…** starts a fresh project from a drawing. If the current project has unsaved changes, GridScalr asks before discarding them.
+**File → New project…** asks for the source: a PDF/TIF drawing or an operation card sheet. For a sheet, choose a template, paper (A3 or A2) and a project name. The first sheet is added immediately with its title block ready to fill in. If the current project has unsaved changes, GridScalr asks before discarding them.
+
+### Operation card sheets
+
+An operation card sheet is a page created from a built-in template instead of a PDF. It has a title block and revision table on every sheet.
+
+- **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
+- **Fill in fields:** double-click a title-block cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet.
+- **Page number:** the **Page** field is free text. It is prefilled with the sheet ordinal and never updated automatically.
+- **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block.
+- **Not to scale:** template sheets show **Sheet · not to scale** in the status bar and do not need calibration.
+- **Paper:** choose A3 or A2 when the sheet is created. The title block keeps its physical size; the drawing area grows on A2.
 
 ### Open a drawing
 
@@ -583,7 +594,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 22 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and adds optional report metadata and an embedded report-logo reference. Older projects load normally and are migrated when opened.
+Schema version 23 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and the optional report metadata and report-logo reference from schema 22. Schema 23 adds operation card sheet documents with a template id and version, an A3/A2 paper size and a map of title-block field values. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

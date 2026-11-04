@@ -1,6 +1,6 @@
 # Operation cards and schematic sheets
 
-**Status:** agreed 2026-11-04. Phase 0 (spike) is complete; Phase 1 has not started.
+**Status:** agreed 2026-11-04. Phases 0 and 1 are complete; Phase 2 has not started.
 **Scope:** an authoring workflow for operation cards built from blank sheet templates,
 starting with the title-block frame and the data-summary table.
 **Naming:** code, paths and identifiers use English. User-facing Swedish labels come
@@ -522,6 +522,25 @@ Acceptance met:
 Acceptance: create a three-sheet project, fill every title-block field, draw with the
 existing tools, save, reopen, export, package and reopen; delete a sheet and verify
 the remaining pages; switch paper and back with values preserved.
+
+Outcome:
+
+- Schema 23 adds `kind: "template"` documents with a template id/version, A3/A2 paper
+  and a string map of field values. Template fields are capped at 500 characters and
+  unknown ids are preserved.
+- `File → New project…` and the Pages panel add action share a source dialog for
+  PDF/TIF or a template sheet.
+- The drawing frame is generated once per template/version/paper/locale and shared
+  by every sheet in the project.
+- Title-block values can be edited by double-clicking a cell or with **Edit sheet
+  fields…** on the page card.
+- Fields render above the page and below items, are unaffected by layer visibility
+  and are drawn into the exported PDF with searchable text.
+- Save, reopen, package and export round trips were verified in the app. Duplicated
+  sheets deep-copy their field values.
+- Remaining from the acceptance list: an automated three-sheet canvas regression and
+  the paper switch A3 → A2 → A3 in the app; both are covered by unit tests and the
+  dev lab but not yet by the canvas regression script.
 
 ### Phase 2 — text box
 

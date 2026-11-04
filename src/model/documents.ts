@@ -227,6 +227,12 @@ export function duplicatePageFromProject(
       ? { ...sourceDocument.copiedFrom }
       : { documentId: sourceDocument.id, page: sourceLocalPage },
   };
+  if (sourceDocument.template) {
+    copyDocument.template = {
+      ...sourceDocument.template,
+      fields: { ...sourceDocument.template.fields },
+    };
+  }
   project.documents.push(copyDocument);
 
   const sourceState = project.pages[String(sourcePage)];

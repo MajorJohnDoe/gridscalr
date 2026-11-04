@@ -139,28 +139,26 @@ describe("sheet coordinate conversion", () => {
 });
 
 describe("field text fitting", () => {
-  const font = {
-    widthOfTextAtSize: (text: string, size: number) => text.length * size * 0.5,
-  };
+  const measure = (text: string, size: number) => text.length * size * 0.5;
 
   it("keeps text that fits", () => {
-    expect(fitText("ABC", font, 10, 100)).toEqual({ text: "ABC", size: 10 });
+    expect(fitText("ABC", measure, 10, 100)).toEqual({ text: "ABC", size: 10 });
   });
 
   it("shrinks text before truncating", () => {
-    const fitted = fitText("ABCDEFGHIJ", font, 10, 20);
+    const fitted = fitText("ABCDEFGHIJ", measure, 10, 20);
     expect(fitted.text).toBe("ABCDEFGHIJ");
     expect(fitted.size).toBeLessThan(10);
-    expect(font.widthOfTextAtSize(fitted.text, fitted.size)).toBeLessThanOrEqual(20);
+    expect(measure(fitted.text, fitted.size)).toBeLessThanOrEqual(20);
   });
 
   it("ellipsizes text that cannot be shrunk enough", () => {
-    const fitted = fitText("ABCDEFGHIJKLMNOPQRSTUVWXYZ", font, 10, 20);
+    const fitted = fitText("ABCDEFGHIJKLMNOPQRSTUVWXYZ", measure, 10, 20);
     expect(fitted.text.endsWith("...")).toBe(true);
-    expect(font.widthOfTextAtSize(fitted.text, fitted.size)).toBeLessThanOrEqual(20);
+    expect(measure(fitted.text, fitted.size)).toBeLessThanOrEqual(20);
   });
 
   it("returns empty text when even an ellipsis does not fit", () => {
-    expect(fitText("ABC", font, 10, 2)).toEqual({ text: "", size: 4 });
+    expect(fitText("ABC", measure, 10, 2)).toEqual({ text: "", size: 4 });
   });
 });

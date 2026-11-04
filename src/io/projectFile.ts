@@ -619,13 +619,23 @@ function normalizeLayers(
   );
 }
 
+function normalizeSheetFields(rawValue: unknown): Record<string, string> {
+  if (typeof rawValue !== "object" || rawValue === null) return {};
+  const fields: Record<string, string> = {};
+  for (const [id, value] of Object.entries(rawValue)) {
+    if (!id || id.length > 120 || typeof value !== "string") continue;
+    fields[id] = value.slice(0, 500);
+  }
+  return fields;
+}
+
 function normalizeDocument(rawValue: unknown): DocumentRef {
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
   ) as Partial<DocumentRef> & {
     source?: { format?: unknown; dpi?: unknown; originalName?: unknown };
   };
-  const kind = rawDoc.kind === "tiff" ? "tiff" : "pdf";
+  const kind = rawDoc.kind === "tiff" ? "tiff" : rawDoc.kind === "template" ? "template" : "pdf";
   const document: DocumentRef = {
     id: typeof rawDoc.id === "string" && rawDoc.id ? rawDoc.id : makeId("doc"),
     kind,
@@ -634,7 +644,9 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
         ? rawDoc.name
         : kind === "tiff"
           ? "Untitled.tif"
-          : "Untitled.pdf",
+          : kind === "template"
+            ? t("sheet.untitled")
+            : "Untitled.pdf",
     path: typeof rawDoc.path === "string" && rawDoc.path ? rawDoc.path : null,
     relativePath:
       typeof rawDoc.relativePath === "string" && rawDoc.relativePath ? rawDoc.relativePath : null,
@@ -648,6 +660,30 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
         ? Math.max(0, Math.round(rawDoc.sizeBytes))
         : 0,
   };
+  if (kind === "template") {
+    const rawTemplate = (
+      typeof rawDoc.template === "object" && rawDoc.template !== null ? rawDoc.template : {}
+    ) as Partial<NonNullable<DocumentRef["template"]>>;
+    document.template = {
+      id:
+        typeof rawTemplate.id === "string" && rawTemplate.id.trim()
+          ? rawTemplate.id
+          : "gridscalr.operation-card.frame",
+      version:
+        typeof rawTemplate.version === "number" && Number.isFinite(rawTemplate.version)
+          ? Math.max(1, Math.round(rawTemplate.version))
+          : 1,
+      paper: rawTemplate.paper === "A2" ? "A2" : "A3",
+      fields: normalizeSheetFields(rawTemplate.fields),
+    };
+    document.path = null;
+    document.relativePath = null;
+    document.sha256 = "";
+    document.pageCount = 1;
+    document.sizeBytes = 0;
+    return document;
+  }
+
   if (Array.isArray(rawDoc.excludedPages)) {
     const excluded = [
       ...new Set(

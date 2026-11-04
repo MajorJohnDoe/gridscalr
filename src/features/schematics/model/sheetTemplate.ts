@@ -1,4 +1,5 @@
 import type { MessageKey } from "../../../i18n";
+import type { SheetPaperSize } from "../../../model/types";
 
 /**
  * Sheet templates are the static furniture of a schematic sheet: the frame,
@@ -6,7 +7,9 @@ import type { MessageKey } from "../../../i18n";
  * and converted to PDF points. All rectangles use the same coordinate system
  * as the canvas: the top-left origin of a PDF.js viewport at scale 1.
  */
-export type PaperSize = "A3" | "A2";
+export type PaperSize = SheetPaperSize;
+
+export const DRAWING_FRAME_TEMPLATE_ID = "gridscalr.operation-card.frame";
 
 export const MM_TO_PT = 72 / 25.4;
 
@@ -362,7 +365,7 @@ export function buildDrawingFrameTemplate(
   }
 
   return {
-    id: "gridscalr.operation-card.frame",
+    id: DRAWING_FRAME_TEMPLATE_ID,
     version: SHEET_TEMPLATE_VERSION,
     paper,
     width,
@@ -376,4 +379,29 @@ export function buildDrawingFrameTemplate(
     staticPrimitives: primitives,
     fields,
   };
+}
+
+export interface SheetTemplateDefinition {
+  id: string;
+  nameKey: MessageKey;
+  build(paper: PaperSize, labels: SheetLabels): SheetTemplateSpec;
+}
+
+/** Built-in templates in picker order. New templates append; ids never change. */
+export const SHEET_TEMPLATES: SheetTemplateDefinition[] = [
+  {
+    id: DRAWING_FRAME_TEMPLATE_ID,
+    nameKey: "sheet.template.frame",
+    build: buildDrawingFrameTemplate,
+  },
+];
+
+export const DEFAULT_SHEET_TEMPLATE_ID = SHEET_TEMPLATES[0].id;
+
+export function sheetTemplateFor(
+  id: string,
+  paper: PaperSize,
+  labels: SheetLabels,
+): SheetTemplateSpec | null {
+  return SHEET_TEMPLATES.find((entry) => entry.id === id)?.build(paper, labels) ?? null;
 }
