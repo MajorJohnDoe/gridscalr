@@ -226,7 +226,7 @@ Choose **Count** (`C`), pick a project count type, and click the plan. Each coun
 
 The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
 
-Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
+Manage types in **Settings → Project settings… → Count types**. Built-in types are named by the interface language and cannot be renamed or deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
 
 In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
@@ -544,7 +544,7 @@ Settings is split in two. **Preferences** are stored on this computer and never 
 
 Open **Settings → Preferences…**. The dialog groups app-level choices by category:
 
-- **General** – the interface language: **System**, **English** or **Svenska**. The choice is stored on this computer. Swedish currently covers the strings added in 0.17; the rest of the interface stays in English until the full translation lands in 0.18. **CSV format** chooses **Locale (Excel)** for the language's delimiter and decimal mark, or **Interchange (RFC 4180)** for commas and points in scripts and other tools.
+- **General** – the interface language: **System**, **English** or **Svenska**. The choice is stored on this computer and applies immediately, without restarting the app. **CSV format** chooses **Locale (Excel)** for the language's delimiter and decimal mark, or **Interchange (RFC 4180)** for commas and points in scripts and other tools.
 - **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.

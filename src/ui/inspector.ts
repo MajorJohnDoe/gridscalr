@@ -174,7 +174,12 @@ function activeLayerSection(
   deleteLayerBtn.addEventListener("click", () => {
     void confirmDialog(
       t("inspector.deleteLayerTitle"),
-      `Delete “${active.name}”${active.items.length ? ` and its ${active.items.length} items` : ""}?`,
+      active.items.length
+        ? t("inspector.deleteLayerWithItems", {
+            name: active.name,
+            count: active.items.length,
+          })
+        : t("inspector.deleteLayerEmpty", { name: active.name }),
       t("common.delete"),
       { danger: true },
     ).then((confirmed) => {

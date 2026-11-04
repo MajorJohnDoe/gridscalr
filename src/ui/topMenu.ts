@@ -322,31 +322,50 @@ function toggleSetting(key: "showGrid" | "showCalibration" | "snapToGeometry"): 
 
 let menuActions: PanelActions | null = null;
 const menuButtons = new Map<string, HTMLButtonElement>();
+let menuBarRoot: HTMLElement | null = null;
 let menuRoot: HTMLElement | null = null;
 let openMenuId: string | null = null;
 let openedByHover = false;
 let panels: HTMLElement[] = [];
 
+/** Top-level menu buttons, shared by the initial build and the relabel pass. */
+const MENU_TRIGGERS = [
+  { id: "file", label: () => t("menu.file") },
+  { id: "edit", label: () => t("menu.edit") },
+  { id: "view", label: () => t("menu.view") },
+  { id: "settings", label: () => t("menu.settings") },
+  { id: "help", label: () => t("menu.help") },
+] as const;
+
 export function setMenuActions(actions: PanelActions): void {
   menuActions = actions;
+}
+
+/** Re-applies the active language to the top-level menu buttons. */
+export function relabelMenuBar(): void {
+  if (!menuBarRoot) return;
+  menuBarRoot.setAttribute("aria-label", t("menu.mainAria"));
+  for (const definition of MENU_TRIGGERS) {
+    const button = menuButtons.get(definition.id);
+    if (!button) continue;
+    const label = definition.label();
+    button.textContent = label;
+    button.accessKey = label.charAt(0).toLowerCase();
+  }
 }
 
 export function createMenuBar(): HTMLElement {
   const bar = el("nav", "menubar");
   bar.setAttribute("role", "menubar");
   bar.setAttribute("aria-label", t("menu.mainAria"));
+  menuBarRoot = bar;
 
-  for (const [index, definition] of [
-    { id: "file", label: t("menu.file") },
-    { id: "edit", label: t("menu.edit") },
-    { id: "view", label: t("menu.view") },
-    { id: "settings", label: t("menu.settings") },
-    { id: "help", label: t("menu.help") },
-  ].entries()) {
-    const button = el("button", "menu-trigger", definition.label);
+  for (const [index, definition] of MENU_TRIGGERS.entries()) {
+    const label = definition.label();
+    const button = el("button", "menu-trigger", label);
     button.type = "button";
     button.dataset.menu = definition.id;
-    button.accessKey = definition.label.charAt(0).toLowerCase();
+    button.accessKey = label.charAt(0).toLowerCase();
     button.setAttribute("role", "menuitem");
     button.setAttribute("aria-haspopup", "menu");
     button.setAttribute("aria-expanded", "false");

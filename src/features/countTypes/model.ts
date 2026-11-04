@@ -7,6 +7,10 @@ import { t } from "../../i18n";
 export const COUNT_TYPE_NAME_MAX_LENGTH = 60;
 export const COUNT_TYPE_ID_MAX_LENGTH = 80;
 
+/**
+ * Stable default records. The `label` stays English so the project file is
+ * language-neutral; built-in names are displayed through the message catalog.
+ */
 export const DEFAULT_COUNT_TYPES: readonly CountTypeDef[] = [
   { id: "door", label: "Door", glyph: "door" },
   { id: "window", label: "Window", glyph: "window" },
@@ -252,7 +256,10 @@ export function addCountType(
 
 export function renameCountType(project: Project, id: CountType, name: string): boolean {
   const type = project.countTypes.find((entry) => entry.id === id);
-  if (!type || countTypeNameError(project.countTypes, name, id)) return false;
+  // Built-in names come from the message catalog so they follow the interface language.
+  if (!type || isBuiltInCountType(id) || countTypeNameError(project.countTypes, name, id)) {
+    return false;
+  }
   type.label = normalizeCountTypeName(name);
   return true;
 }

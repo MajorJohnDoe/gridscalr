@@ -310,8 +310,8 @@ function openColumnsDialog(actions: PanelActions): void {
     subtitle: t("markups.columnsIntro"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Apply", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.apply"), value: "apply", primary: true },
     ],
   }).then((value) => {
     if (value !== "apply") return;
@@ -345,7 +345,7 @@ function openManageViews(project: Project, actions: PanelActions): void {
     const removeLabel = el("label", "markups-view-remove");
     const remove = el("input");
     remove.type = "checkbox";
-    removeLabel.append(remove, el("span", "", "Remove"));
+    removeLabel.append(remove, el("span", "", t("common.remove")));
     remove.addEventListener("change", () => {
       name.disabled = remove.checked;
       row.classList.toggle("is-removed", remove.checked);
@@ -361,8 +361,8 @@ function openManageViews(project: Project, actions: PanelActions): void {
     body,
     wide: true,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Apply", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.apply"), value: "apply", primary: true },
     ],
     onValidate: () => {
       const kept = rows.filter((entry) => !entry.remove.checked);
@@ -506,11 +506,11 @@ function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project):
       if (row.item.kind === "symbol") {
         return symbolCategoryLabel(symbolCategoryOf(row.item.symbolId));
       }
-      if (!isMeasurementKind(row.item.kind)) return "Uncategorized";
-      return categoryForItem(project, row.item)?.name ?? "Uncategorized";
+      if (!isMeasurementKind(row.item.kind)) return t("markups.uncategorized");
+      return categoryForItem(project, row.item)?.name ?? t("markups.uncategorized");
     }
     case "room":
-      return row.item.room?.trim() || "Unassigned";
+      return row.item.room?.trim() || t("markups.unassigned");
     case "countType":
       return row.item.kind === "count"
         ? countTypeLabel(project, row.item.countType)
@@ -524,9 +524,9 @@ function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project):
     case "layer":
       return row.layer.name;
     case "building":
-      return pageBuilding(project, row.item.page) ?? "Unassigned";
+      return pageBuilding(project, row.item.page) ?? t("markups.unassigned");
     case "floor":
-      return pageFloor(project, row.item.page) ?? "Unassigned";
+      return pageFloor(project, row.item.page) ?? t("markups.unassigned");
   }
 }
 
@@ -622,7 +622,7 @@ function markupRowElement(
     beginMarkupRename(label, item.id, labelText);
   });
   nameWrap.append(itemIcon, label, rename);
-  if (deduction) nameWrap.append(el("span", "markups-deduct", "Deduct"));
+  if (deduction) nameWrap.append(el("span", "markups-deduct", t("context.deduct")));
   nameCell.append(nameWrap);
   cells.set("name", nameCell);
 
@@ -741,7 +741,7 @@ function markupRowElement(
       ? hidden
         ? t("markups.showItem")
         : t("markups.hideItem")
-      : `Layer is hidden on Page ${item.page}`,
+      : t("markups.layerHiddenOnPage", { page: item.page }),
   );
   eye.classList.toggle("is-on", !hidden);
   eye.disabled = !layerShown;
@@ -759,7 +759,7 @@ function markupRowElement(
   const lock = layerAction(
     locked ? "lock" : "unlock",
     layerLocked
-      ? `Layer is locked on Page ${item.page}`
+      ? t("markups.layerLockedOnPage", { page: item.page })
       : locked
         ? t("markups.unlockItem")
         : t("markups.lockItem"),
@@ -889,7 +889,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const head = el("div", "markups-head");
   const title = el("div", "markups-title");
-  title.append(el("span", "markups-title-text", "Markups"));
+  title.append(el("span", "markups-title-text", t("shell.markups")));
   const count = el("span", "markups-count", "0");
   title.append(count);
   const headActions = el("div", "markups-head-actions");
@@ -952,7 +952,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     ]),
   );
 
-  const columns = el("button", "btn btn-small btn-ghost", "Columns");
+  const columns = el("button", "btn btn-small btn-ghost", t("markups.columns"));
   columns.type = "button";
   columns.title = t("markups.columnsToggle");
   columns.innerHTML = `${icon("grid", 13)}<span>${t("markups.columns")}</span>`;
@@ -960,7 +960,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const exportCsv = el("button", "btn btn-small btn-ghost", t("markups.exportCsv"));
   exportCsv.type = "button";
-  exportCsv.innerHTML = `${icon("csv", 13)}<span>Export CSV</span>`;
+  exportCsv.innerHTML = `${icon("csv", 13)}<span>${t("markups.exportCsv")}</span>`;
   exportCsv.title = t("markups.exportCsvTitle");
   exportCsv.addEventListener("click", () => actions.exportAs("csv"));
 
@@ -1000,10 +1000,10 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   typeSelect.setAttribute("aria-label", t("markups.filterType"));
   typeSelect.append(
     option("all", t("markups.allTypes"), settings.typeFilter === "all"),
-    option("measure", "Measurements", settings.typeFilter === "measure"),
-    option("draw", "Drawings", settings.typeFilter === "draw"),
-    option("symbol", "Symbols", settings.typeFilter === "symbol"),
-    option("count", "Counts", settings.typeFilter === "count"),
+    option("measure", t("context.measurements"), settings.typeFilter === "measure"),
+    option("draw", t("context.drawings"), settings.typeFilter === "draw"),
+    option("symbol", t("symbols.title"), settings.typeFilter === "symbol"),
+    option("count", t("markups.typeCounts"), settings.typeFilter === "count"),
   );
   typeSelect.value = settings.typeFilter;
   typeSelect.addEventListener("change", () => {
@@ -1066,7 +1066,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   countTypeSelect.setAttribute("aria-label", t("markups.filterCountType"));
   countTypeSelect.append(option("", t("markups.allCountTypes"), !settings.countType));
   for (const type of project.countTypes) {
-    countTypeSelect.append(option(type.id, type.label, type.id === settings.countType));
+    countTypeSelect.append(
+      option(type.id, countTypeLabel(project, type.id), type.id === settings.countType),
+    );
   }
   countTypeSelect.value = settings.countType ?? "";
   countTypeSelect.addEventListener("change", () => {

@@ -1,16 +1,18 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
-import { createMenuBar } from "./topMenu";
+import { createMenuBar, relabelMenuBar } from "./topMenu";
 import { attachToolFamilyFlyout, attachToolFlyout } from "./toolFlyouts";
 import {
   TOOLS,
   TOOL_BY_ID,
+  TOOL_FAMILY_BY_ID,
   TOOL_FAMILY_BY_TOOL,
   familyToolForDisplay,
   isFamilyLeader,
   rememberFamilyTool,
+  type ToolFamilyId,
 } from "./toolDefs";
-import { store, type LeftTab } from "../state/store";
+import { store, type LeftTab, type ToolId } from "../state/store";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import {
   initPanelLayout,
@@ -24,6 +26,7 @@ import { t } from "../i18n";
 export interface ShellRefs {
   root: HTMLElement;
   topbar: HTMLElement;
+  menuBar: HTMLElement;
   projectName: HTMLElement;
   docName: HTMLElement;
   docMeta: HTMLElement;
@@ -42,11 +45,16 @@ export interface ShellRefs {
   toolRail: HTMLElement;
   markupsBtn: HTMLButtonElement;
   dockTabs: HTMLElement[];
+  dockCollapse: HTMLButtonElement;
+  dockRestore: HTMLButtonElement;
+  dockResizer: HTMLElement;
   dockBody: HTMLElement;
   dockFooter: HTMLElement;
   contextBar: HTMLElement;
   inspector: HTMLElement;
+  inspectorHeaderLabel: HTMLElement;
   inspectorRestore: HTMLButtonElement;
+  inspectorResizer: HTMLElement;
   canvasArea: HTMLElement;
   canvasHost: HTMLElement;
   referencePane: HTMLElement;
@@ -59,16 +67,22 @@ export interface ShellRefs {
   statusCoords: HTMLElement;
   statusWarning: HTMLElement;
   statusZoom: HTMLElement;
+  statusZoomLabel: HTMLElement;
   statusPage: HTMLElement;
+  statusPageLabel: HTMLElement;
   statusLayer: HTMLElement;
+}
+
+function setIconButtonLabels(button: HTMLButtonElement, label: string, shortcut?: string): void {
+  button.title = shortcut ? `${label} (${shortcut})` : label;
+  button.setAttribute("aria-label", label);
 }
 
 function makeIconButton(iconName: string, label: string, shortcut?: string): HTMLButtonElement {
   const btn = el("button", "icon-btn");
   btn.type = "button";
   btn.innerHTML = icon(iconName, 16);
-  btn.title = shortcut ? `${label} (${shortcut})` : label;
-  btn.setAttribute("aria-label", label);
+  setIconButtonLabels(btn, label, shortcut);
   return btn;
 }
 
@@ -233,7 +247,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const inspector = el("aside", "inspector");
   inspector.setAttribute("aria-label", t("shell.properties"));
   const inspectorHeader = el("div", "inspector-header");
-  inspectorHeader.append(el("span", "", t("shell.properties")));
+  const inspectorHeaderLabel = el("span", "", t("shell.properties"));
+  inspectorHeader.append(inspectorHeaderLabel);
   inspector.append(inspectorHeader);
 
   const inspectorResizer = el("div", "resizer");
@@ -276,14 +291,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const zoomInBtn = makeIconButton("zoomIn", t("shell.zoomIn"), "Ctrl++");
   const zoomFitBtn = makeIconButton("fit", t("shell.fitPage"), "Ctrl+0");
   const zoomActualBtn = makeIconButton("target", t("shell.actualSize"));
-  statusZoom.append(
-    el("span", "status-label", t("shell.zoom")),
-    zoomOutBtn,
-    zoomReadout,
-    zoomInBtn,
-    zoomFitBtn,
-    zoomActualBtn,
-  );
+  const statusZoomLabel = el("span", "status-label", t("shell.zoom"));
+  statusZoom.append(statusZoomLabel, zoomOutBtn, zoomReadout, zoomInBtn, zoomFitBtn, zoomActualBtn);
 
   const pagePrevBtn = makeIconButton("chevronLeft", t("shell.previousPage"), t("shortcut.pageUp"));
   const pageInput = el("input", "page-input");
@@ -293,13 +302,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   pageInput.setAttribute("aria-label", t("shell.pageNumber"));
   const pageTotal = el("span", "page-total", "/ 0");
   const pageNextBtn = makeIconButton("chevronRight", t("shell.nextPage"), t("shortcut.pageDown"));
-  statusPage.append(
-    el("span", "status-label", t("shell.page")),
-    pagePrevBtn,
-    pageInput,
-    pageTotal,
-    pageNextBtn,
-  );
+  const statusPageLabel = el("span", "status-label", t("shell.page"));
+  statusPage.append(statusPageLabel, pagePrevBtn, pageInput, pageTotal, pageNextBtn);
 
   statusbar.append(
     statusCalibration,
@@ -345,6 +349,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   return {
     root,
     topbar,
+    menuBar,
     projectName,
     docName,
     docMeta,
@@ -363,11 +368,16 @@ export function createShell(root: HTMLElement): ShellRefs {
     toolRail,
     markupsBtn,
     dockTabs: dockTabButtons,
+    dockCollapse: collapse,
+    dockRestore,
+    dockResizer,
     dockBody,
     dockFooter,
     contextBar,
     inspector,
+    inspectorHeaderLabel,
     inspectorRestore,
+    inspectorResizer,
     canvasArea,
     canvasHost,
     referencePane,
@@ -380,9 +390,79 @@ export function createShell(root: HTMLElement): ShellRefs {
     statusCoords,
     statusWarning,
     statusZoom,
+    statusZoomLabel,
     statusPage,
+    statusPageLabel,
     statusLayer,
   };
+}
+
+function relabelToolRail(refs: ShellRefs): void {
+  for (const button of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool]")) {
+    const tool = TOOL_BY_ID.get(button.dataset.tool as ToolId);
+    if (!tool) continue;
+    setIconButtonLabels(button as HTMLButtonElement, t(tool.label), tool.shortcut);
+  }
+  for (const button of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool-group]")) {
+    const family = TOOL_FAMILY_BY_ID.get(button.dataset.toolGroup as ToolFamilyId);
+    if (!family) continue;
+    const shortcuts = family.tools
+      .map((id) => TOOL_BY_ID.get(id)?.shortcut)
+      .filter(Boolean)
+      .join(" / ");
+    button.title = `${t(family.label)} (${shortcuts})`;
+    button.setAttribute("aria-label", t("tool.familyTools", { name: t(family.label) }));
+  }
+  const markupsLabel = refs.markupsBtn.querySelector("span");
+  if (markupsLabel) markupsLabel.textContent = t("shell.markups");
+  refs.markupsBtn.title = t("shell.markupsListTitle", {
+    shortcut: formatShortcut(APP_SHORTCUTS.markups),
+  });
+  refs.markupsBtn.setAttribute("aria-label", t("shell.markupsList"));
+}
+
+/** Re-applies the active language to the static shell chrome. */
+export function relabelShell(refs: ShellRefs): void {
+  relabelMenuBar();
+  relabelToolRail(refs);
+
+  refs.toolRail.setAttribute("aria-label", t("shell.toolsAria"));
+  for (const button of refs.dockTabs) {
+    const label = button.querySelector("span");
+    if (label) {
+      label.textContent = button.dataset.tab === "pages" ? t("shell.pages") : t("shell.layers");
+    }
+  }
+  refs.dockCollapse.title = t("shell.hideSidebarTitle", { shortcut: "Ctrl+\\" });
+  refs.dockCollapse.setAttribute("aria-label", t("shell.hideSidebar"));
+  refs.dockRestore.title = t("shell.showSidebarTitle", { shortcut: "Ctrl+\\" });
+  refs.dockRestore.setAttribute("aria-label", t("shell.showSidebar"));
+  refs.dockResizer.title = t("shell.resizeSidebar");
+  refs.inspector.setAttribute("aria-label", t("shell.properties"));
+  refs.inspectorHeaderLabel.textContent = t("shell.properties");
+  refs.inspectorRestore.title = t("shell.showPropertiesTitle", {
+    shortcut: "Ctrl/Cmd+Shift+\\",
+  });
+  refs.inspectorRestore.setAttribute("aria-label", t("shell.showProperties"));
+  refs.referencePane.setAttribute("aria-label", t("shell.referenceView"));
+  refs.referenceHost.setAttribute("aria-label", t("shell.referenceDrawing"));
+  refs.splitResizer.title = t("shell.resizeReference");
+  refs.splitResizer.setAttribute("aria-label", t("shell.resizeReference"));
+  refs.markupsResizer.title = t("shell.resizeMarkups");
+  refs.markupsPanel.setAttribute("aria-label", t("shell.markupsList"));
+  refs.statusZoomLabel.textContent = t("shell.zoom");
+  refs.statusPageLabel.textContent = t("shell.page");
+
+  setIconButtonLabels(refs.undoBtn, t("menu.edit.undo"), formatShortcut(APP_SHORTCUTS.undo));
+  setIconButtonLabels(refs.redoBtn, t("menu.edit.redo"), formatShortcut(APP_SHORTCUTS.redo));
+  setIconButtonLabels(refs.zoomOutBtn, t("shell.zoomOut"), "Ctrl+-");
+  setIconButtonLabels(refs.zoomInBtn, t("shell.zoomIn"), "Ctrl++");
+  setIconButtonLabels(refs.zoomFitBtn, t("shell.fitPage"), "Ctrl+0");
+  setIconButtonLabels(refs.zoomActualBtn, t("shell.actualSize"));
+  refs.zoomReadout.title = t("shell.resetZoom");
+  setIconButtonLabels(refs.pagePrevBtn, t("shell.previousPage"), t("shortcut.pageUp"));
+  setIconButtonLabels(refs.pageNextBtn, t("shell.nextPage"), t("shortcut.pageDown"));
+  refs.pageInput.setAttribute("aria-label", t("shell.pageNumber"));
 }
 
 function setupResizer(

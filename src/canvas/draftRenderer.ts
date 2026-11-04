@@ -525,7 +525,7 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
     ctx.font = `600 ${Math.max(9, scene.style.fontSize * zoom)}px ${TEXT_FONT_STACK}`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText("Callout", current.x, current.y);
+    ctx.fillText(t("kind.callout"), current.x, current.y);
   }
   ctx.restore();
 }

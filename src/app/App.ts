@@ -110,8 +110,8 @@ import {
 } from "../ui/dialogs";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
-import { updateStatus } from "../ui/statusBar";
-import { createShell, type ShellRefs } from "../ui/shell";
+import { updateStatus, resetStatusBar } from "../ui/statusBar";
+import { createShell, relabelShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
@@ -140,7 +140,7 @@ import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
 import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
 import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
 import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
-import { t } from "../i18n";
+import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 
 function projectFilters() {
   return [{ name: t("app.projectFilter"), extensions: ["gridscalr"] }];
@@ -319,11 +319,21 @@ export class App {
 
     this.bind();
     this.renderAll();
+    window.addEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     void this.bindWindowClose();
     void this.bindSmokeTest();
     void this.bindLaunchFiles();
     void this.setupDragDrop();
   }
+
+  private readonly onLanguageChanged = (): void => {
+    relabelShell(this.refs);
+    resetStatusBar();
+    this.renderAll();
+    this.canvas.invalidate();
+    this.reference.onStoreChange("view");
+    this.reference.view.invalidate();
+  };
 
   private renderAll(): void {
     renderChrome(this.refs, this.actions);
@@ -2300,6 +2310,7 @@ export class App {
   dispose(): void {
     this.disposed = true;
     this.unsubscribe();
+    window.removeEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);

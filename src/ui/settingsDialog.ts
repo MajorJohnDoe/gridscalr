@@ -163,9 +163,17 @@ function scaleSection(): HTMLElement {
     value.textContent = t("settings.scaleNone", { page });
   } else {
     const detail = isManualCalibration(calibration)
-      ? `Manual 1:${formatNumber(calibration.ratio, 6)}`
-      : `Reference ${formatNumber(calibration.knownLength, 2)} ${calibration.unit}`;
-    value.textContent = `Page ${page}: ${detail} · ${formatScale(pageScale(project, page), calibration)}${locked ? t("settings.scaleLockedSuffix") : ""}`;
+      ? t("settings.scaleManual", { ratio: formatNumber(calibration.ratio, 6) })
+      : t("settings.scaleReference", {
+          length: formatNumber(calibration.knownLength, 2),
+          unit: calibration.unit,
+        });
+    value.textContent = t("settings.scaleValue", {
+      page,
+      detail,
+      scale: formatScale(pageScale(project, page), calibration),
+      locked: locked ? t("settings.scaleLockedSuffix") : "",
+    });
   }
   const hint = el("p", "settings-note", t("settings.scaleHint"));
   wrap.append(value, hint);

@@ -1,5 +1,5 @@
 import { allRooms, categoryForItem, normalizeRoom } from "../model/categories";
-import { countQuantityOf } from "../features/countTypes/model";
+import { countQuantityOf, countTypeLabel } from "../features/countTypes/model";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
   INSPECTION_STATUSES,
@@ -56,15 +56,16 @@ export function selectionSection(
 
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", "Selection"));
-  if (refs.length) head.append(el("span", "status-chip is-selected", "Selected"));
+  head.append(el("h3", "", t("inspector.selectionHeader")));
+  if (refs.length) head.append(el("span", "status-chip is-selected", t("inspector.selectedChip")));
   section.append(head);
   const selection = refs[0] ?? null;
   const found = selection ? findItem(project, selection.itemId) : undefined;
   if (!selection || !found) {
     const note = el("div", "empty-note small");
     note.style.padding = "12px 6px";
-    note.innerHTML = `${icon("cursor", 18)}<div>Select a markup to edit it. Shift-click or drag a box to select several.</div>`;
+    note.innerHTML = icon("cursor", 18);
+    note.append(el("div", "", t("inspector.emptySelection")));
     section.append(note);
     return section;
   }
@@ -102,14 +103,24 @@ export function selectionSection(
       ),
     );
     if (asset) {
-      card.append(el("div", "selection-secondary", `${formatBytes(asset.byteSize)} embedded`));
+      card.append(
+        el(
+          "div",
+          "selection-secondary",
+          t("selection.embedded", { size: formatBytes(asset.byteSize) }),
+        ),
+      );
     }
   }
   card.append(
     el(
       "div",
       "selection-secondary",
-      `Page ${item.page} · ${layer.name} · ${item.points.length} point${item.points.length === 1 ? "" : "s"}`,
+      t("selection.pageSummary", {
+        page: item.page,
+        layer: layer.name,
+        count: item.points.length,
+      }),
     ),
   );
   section.append(card);
@@ -128,7 +139,7 @@ export function selectionSection(
         "div",
         "empty-note small",
         layerLockedOnPage(layer, item.page)
-          ? `“${layer.name}” is locked on Page ${item.page}. Unlock it to edit this markup.`
+          ? t("inspector.lockedOnPageMessage", { name: layer.name, page: item.page })
           : t("inspector.lockedEdit"),
       ),
     );
@@ -168,7 +179,7 @@ export function selectionSection(
         el(
           "div",
           "empty-note small",
-          `Locked inside area: ${labelFitLabel(item.labelFit)}. The size adapts to the available space. Drag the label to release it.`,
+          t("inspector.labelLockedInside", { placement: labelFitLabel(item.labelFit) }),
         ),
       );
       const release = el("button", "btn btn-small btn-ghost", t("inspector.releaseInsideArea"));
@@ -223,7 +234,7 @@ export function selectionSection(
       resetSize.disabled = locked;
       resetSize.title = locked
         ? t("inspector.unlockLayerResetLabel")
-        : `Follow the project default (${formatNumber(projectLabelSize, 1)} pt)`;
+        : t("inspector.followProjectDefault", { size: formatNumber(projectLabelSize, 1) });
       resetSize.addEventListener("click", () => {
         store.mutate((project) => {
           const target = findItem(project, item.id)?.item;
@@ -240,7 +251,13 @@ export function selectionSection(
       typeField.append(el("span", "field-label", t("inspector.objectType")));
       const typeSelect = el("select", "select");
       for (const type of project.countTypes) {
-        typeSelect.append(option(type.id, type.label, type.id === (item.countType ?? "other")));
+        typeSelect.append(
+          option(
+            type.id,
+            countTypeLabel(project, type.id),
+            type.id === (item.countType ?? "other"),
+          ),
+        );
       }
       typeSelect.disabled = locked;
       typeSelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.countType");
@@ -287,7 +304,7 @@ export function selectionSection(
     }
 
     const categoryField = el("label", "field");
-    categoryField.append(el("span", "field-label", "Category"));
+    categoryField.append(el("span", "field-label", t("measureOptions.category")));
     const categorySelect = el("select", "select");
     const currentCategory = categoryForItem(project, item);
     for (const category of project.categories) {
@@ -327,11 +344,11 @@ export function selectionSection(
     }
 
     const roomField = el("label", "field");
-    roomField.append(el("span", "field-label", "Room"));
+    roomField.append(el("span", "field-label", t("measureOptions.room")));
     const roomInput = el("input", "input");
     roomInput.type = "text";
     roomInput.value = item.room ?? "";
-    roomInput.placeholder = "Optional";
+    roomInput.placeholder = t("common.optional");
     roomInput.disabled = locked;
     roomInput.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.roomHelp");
     const roomList = el("datalist");
@@ -373,7 +390,7 @@ export function selectionSection(
     const opacityField = el("label", "field");
     const opacityHead = el("div", "section-head");
     opacityHead.style.marginBottom = "4px";
-    opacityHead.append(el("span", "field-label", "Opacity"));
+    opacityHead.append(el("span", "field-label", t("inspector.opacity")));
     const opacityValue = el("span", "range-value", `${Math.round(imageOpacity(item) * 100)}%`);
     opacityHead.append(opacityValue);
     const opacityRange = el("input");
@@ -427,7 +444,8 @@ export function selectionSection(
       ? "YYYY-MM-DD"
       : item.kind === "symbol"
         ? symbolName(item.symbolId)
-        : (metrics?.primary ?? (item.kind === "text" ? t("inspector.textNote") : "Label"));
+        : (metrics?.primary ??
+          (item.kind === "text" ? t("inspector.textNote") : t("report.markup.label")));
   labelInput.disabled = locked;
   labelInput.title = locked
     ? t("inspector.unlockLayerEdit")
@@ -458,7 +476,7 @@ export function selectionSection(
 
   if (item.kind === "symbol") {
     const statusField = el("label", "field");
-    statusField.append(el("span", "field-label", "Status"));
+    statusField.append(el("span", "field-label", t("markups.column.status")));
     const statusSelect = el("select", "select");
     statusSelect.append(option("", t("inspector.notAssessed"), !item.status));
     for (const status of INSPECTION_STATUSES) {
@@ -497,8 +515,8 @@ export function selectionSection(
         item.kind === "stamp"
           ? t("inspector.stampText")
           : item.kind === "delta"
-            ? "Revision"
-            : "Text",
+            ? t("reference.revision")
+            : t("dialogs.textLabel"),
       ),
     );
     const edit = el("button", "btn btn-small", t("inspector.editText"));
@@ -518,7 +536,7 @@ export function selectionSection(
     widthInput.min = "20";
     widthInput.max = "2000";
     widthInput.step = "5";
-    widthInput.placeholder = "Auto";
+    widthInput.placeholder = t("common.auto");
     widthInput.value = item.textBoxWidth ? String(item.textBoxWidth) : "";
     widthInput.disabled = locked;
     widthInput.addEventListener("change", () => {
@@ -539,7 +557,7 @@ export function selectionSection(
     heightInput.min = "15";
     heightInput.max = "2000";
     heightInput.step = "5";
-    heightInput.placeholder = "Auto";
+    heightInput.placeholder = t("common.auto");
     heightInput.value = item.textBoxHeight ? String(item.textBoxHeight) : "";
     heightInput.disabled = locked;
     heightInput.addEventListener("change", () => {
@@ -567,7 +585,7 @@ export function selectionSection(
     radius.min = "2";
     radius.max = "40";
     radius.step = "0.5";
-    radius.placeholder = "Auto";
+    radius.placeholder = t("common.auto");
     radius.value = item.cloudRadius ? String(item.cloudRadius) : "";
     radius.disabled = locked;
     radius.addEventListener("change", () => {
@@ -603,7 +621,7 @@ export function selectionSection(
         }
       }, "change");
     });
-    fillRow.append(fillToggle, el("span", "", "Fill"));
+    fillRow.append(fillToggle, el("span", "", t("context.fill")));
     section.append(fillRow);
 
     const fillColorField = el("label", "field");
@@ -656,9 +674,9 @@ export function selectionSection(
     modeField.append(el("span", "field-label", t("inspector.highlightMode")));
     const mode = el("select", "select");
     mode.append(
-      option("stroke", "Pen", (item.highlightShape ?? "stroke") === "stroke"),
-      option("rectangle", "Rectangle", item.highlightShape === "rectangle"),
-      option("polygon", "Polygon", item.highlightShape === "polygon"),
+      option("stroke", t("tool.pen"), (item.highlightShape ?? "stroke") === "stroke"),
+      option("rectangle", t("measureOptions.rectangle"), item.highlightShape === "rectangle"),
+      option("polygon", t("context.polygon"), item.highlightShape === "polygon"),
     );
     mode.disabled = locked;
     mode.addEventListener("change", () => {
@@ -689,7 +707,11 @@ export function selectionSection(
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
     colorField.append(
-      el("span", "field-label", item.kind === "text" ? t("inspector.textColour") : "Colour"),
+      el(
+        "span",
+        "field-label",
+        item.kind === "text" ? t("inspector.textColour") : t("toolFlyout.colour"),
+      ),
     );
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
@@ -757,7 +779,7 @@ export function selectionSection(
 
     if (item.kind === "volume") {
       const depthField = el("label", "field");
-      depthField.append(el("span", "field-label", "Depth"));
+      depthField.append(el("span", "field-label", t("dialogs.depth.label")));
       const depthWrap = el("div", "input-row");
       const depth = el("input", "input");
       depth.type = "number";
@@ -789,8 +811,8 @@ export function selectionSection(
       lineField.append(el("span", "field-label", t("inspector.lineStyle")));
       const lineStyle = el("select", "select");
       lineStyle.append(
-        option("solid", "Solid", item.lineStyle !== "dashed"),
-        option("dashed", "Dashed", item.lineStyle === "dashed"),
+        option("solid", t("inspector.solid"), item.lineStyle !== "dashed"),
+        option("dashed", t("inspector.dashed"), item.lineStyle === "dashed"),
       );
       lineStyle.disabled = locked;
       lineStyle.setAttribute("aria-label", t("inspector.measurementLineStyle"));
@@ -817,7 +839,7 @@ export function selectionSection(
     item.kind === "symbol"
   ) {
     const rotationField = el("label", "field");
-    rotationField.append(el("span", "field-label", "Rotation"));
+    rotationField.append(el("span", "field-label", t("inspector.rotation")));
     const rotationWrap = el("div", "input-row");
     const rotation = el("input", "input");
     rotation.type = "number";
@@ -869,7 +891,7 @@ export function selectionSection(
   const layerShown = layerVisibleOnPage(layer, item.page);
   visibleToggle.disabled = !layerShown;
   visibleToggle.title = layerShown ? t("inspector.showHideMarkup") : t("inspector.showLayerFirst");
-  visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? "Hidden" : "Visible"}</span>`;
+  visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? t("common.hidden") : t("common.visible")}</span>`;
   visibleToggle.addEventListener("click", () => actions.setSelectionVisible(hidden));
   const lockToggle = el("button", `toggle${locked ? " is-on" : ""}`);
   lockToggle.type = "button";
@@ -877,21 +899,21 @@ export function selectionSection(
   lockToggle.title = layerLockedOnPage(layer, item.page)
     ? t("inspector.unlockLayerFirst")
     : t("inspector.lockUnlockMarkup");
-  lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? "Locked" : "Unlocked"}</span>`;
+  lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? t("layer.locked") : t("common.unlocked")}</span>`;
   lockToggle.addEventListener("click", () => actions.setSelectionLocked(!item.locked));
   visibilityRow.append(visibleToggle, lockToggle);
   section.append(visibilityRow);
 
   const actionsWrap = el("div", "selection-actions");
-  const duplicate = el("button", "btn btn-small", "Duplicate");
+  const duplicate = el("button", "btn btn-small", t("layer.duplicate"));
   duplicate.type = "button";
   duplicate.disabled = locked;
-  duplicate.innerHTML = `${icon("copy", 13)}<span>Duplicate</span>`;
+  duplicate.innerHTML = `${icon("copy", 13)}<span>${t("layer.duplicate")}</span>`;
   duplicate.addEventListener("click", actions.duplicateSelection);
-  const remove = el("button", "btn btn-small btn-danger", "Delete");
+  const remove = el("button", "btn btn-small btn-danger", t("common.delete"));
   remove.type = "button";
   remove.disabled = locked;
-  remove.innerHTML = `${icon("trash", 13)}<span>Delete</span>`;
+  remove.innerHTML = `${icon("trash", 13)}<span>${t("common.delete")}</span>`;
   remove.addEventListener("click", actions.deleteSelection);
   actionsWrap.append(duplicate, remove);
   section.append(actionsWrap);
@@ -906,8 +928,8 @@ function multiSelectionSection(
 ): HTMLElement {
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", "Selection"));
-  head.append(el("span", "status-chip", `${refs.length} items`));
+  head.append(el("h3", "", t("inspector.selectionHeader")));
+  head.append(el("span", "status-chip", t("inspector.selectedCount", { count: refs.length })));
   section.append(head);
 
   const resolved = resolveSelection(project, refs);
@@ -928,7 +950,7 @@ function multiSelectionSection(
       "div",
       "selection-secondary",
       kind
-        ? `${kind === "measure" ? "Measurement" : "Drawing"} marks`
+        ? t(kind === "measure" ? "selection.measurementMarks" : "selection.drawingMarks")
         : t("inspector.mixedSelection"),
     ),
   );
@@ -978,7 +1000,7 @@ function multiSelectionSection(
         ? firstCategory
         : "";
       const categoryField = el("label", "field");
-      categoryField.append(el("span", "field-label", "Category"));
+      categoryField.append(el("span", "field-label", t("measureOptions.category")));
       const categorySelect = el("select", "select");
       categorySelect.append(option("", t("inspector.multipleValues"), !commonCategory));
       for (const category of project.categories) {
@@ -1001,7 +1023,7 @@ function multiSelectionSection(
       );
       const commonRoom = roomsMatch ? firstRoom : "";
       const roomField = el("div", "field");
-      roomField.append(el("span", "field-label", "Room"));
+      roomField.append(el("span", "field-label", t("measureOptions.room")));
       const roomRow = el("div", "input-row");
       const roomInput = el("input", "input");
       roomInput.type = "text";
@@ -1023,7 +1045,7 @@ function multiSelectionSection(
           applyRoom();
         }
       });
-      const roomButton = el("button", "btn btn-small", "Apply");
+      const roomButton = el("button", "btn btn-small", t("common.apply"));
       roomButton.type = "button";
       roomButton.disabled = allLocked;
       roomButton.addEventListener("click", applyRoom);
@@ -1039,10 +1061,9 @@ function multiSelectionSection(
       sizeInput.min = String(LABEL_MIN_SIZE);
       sizeInput.max = String(LABEL_MAX_SIZE);
       sizeInput.step = "0.5";
-      sizeInput.placeholder = `Project default (${formatNumber(
-        clampLabelSize(project.settings.labelSize),
-        1,
-      )} pt)`;
+      sizeInput.placeholder = t("inspector.projectDefaultPlaceholder", {
+        size: formatNumber(clampLabelSize(project.settings.labelSize), 1),
+      });
       sizeInput.disabled = allLocked;
       sizeInput.title = allLocked
         ? t("inspector.unlockSelectedMeasurements")
@@ -1062,7 +1083,7 @@ function multiSelectionSection(
           applySize();
         }
       });
-      const sizeButton = el("button", "btn btn-small", "Apply");
+      const sizeButton = el("button", "btn btn-small", t("common.apply"));
       sizeButton.type = "button";
       sizeButton.disabled = allLocked;
       sizeButton.addEventListener("click", applySize);
@@ -1111,7 +1132,9 @@ function multiSelectionSection(
         const countSelect = el("select", "select");
         countSelect.append(option("", t("inspector.multipleValues"), !commonType));
         for (const type of project.countTypes) {
-          countSelect.append(option(type.id, type.label, type.id === commonType));
+          countSelect.append(
+            option(type.id, countTypeLabel(project, type.id), type.id === commonType),
+          );
         }
         countSelect.disabled = allLocked;
         countSelect.setAttribute("aria-label", t("inspector.objectTypeSelected"));
@@ -1173,7 +1196,7 @@ function multiSelectionSection(
     const statusesMatch = statuses.every((status) => status === firstStatus);
     const commonStatus = statusesMatch ? firstStatus : "";
     const statusField = el("label", "field");
-    statusField.append(el("span", "field-label", "Status"));
+    statusField.append(el("span", "field-label", t("markups.column.status")));
     const statusSelect = el("select", "select");
     statusSelect.append(
       option("", statusesMatch ? t("inspector.setStatus") : t("inspector.multipleValues"), true),
@@ -1204,7 +1227,7 @@ function multiSelectionSection(
 
   if (!containsSymbols) {
     const colorField = el("label", "field");
-    colorField.append(el("span", "field-label", "Colour"));
+    colorField.append(el("span", "field-label", t("toolFlyout.colour")));
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
     colorInput.value = commonColor || "#f2a93b";
@@ -1251,7 +1274,7 @@ function multiSelectionSection(
   visible.type = "button";
   visible.disabled = !anyVisible && !canShow;
   visible.title = visible.disabled ? t("inspector.layersHidden") : "";
-  visible.innerHTML = `${icon(anyVisible ? "eye" : "eyeOff", 13)}<span>${anyVisible ? "Hide" : "Show"}</span>`;
+  visible.innerHTML = `${icon(anyVisible ? "eye" : "eyeOff", 13)}<span>${anyVisible ? t("common.hide") : t("common.show")}</span>`;
   visible.addEventListener("click", () => actions.setSelectionVisible(!anyVisible));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
   const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
@@ -1259,22 +1282,22 @@ function multiSelectionSection(
   lock.type = "button";
   lock.disabled = !anyUnlocked && !canUnlock;
   lock.title = lock.disabled ? t("inspector.layersLocked") : "";
-  lock.innerHTML = `${icon(anyUnlocked ? "unlock" : "lock", 13)}<span>${anyUnlocked ? "Lock" : "Unlock"}</span>`;
+  lock.innerHTML = `${icon(anyUnlocked ? "unlock" : "lock", 13)}<span>${anyUnlocked ? t("common.lock") : t("common.unlock")}</span>`;
   lock.addEventListener("click", () => actions.setSelectionLocked(anyUnlocked));
   toggles.append(visible, lock);
   section.append(toggles);
 
   const actionsWrap = el("div", "selection-actions");
   const allLocked = lockedCount === resolved.length;
-  const duplicate = el("button", "btn btn-small", "Duplicate");
+  const duplicate = el("button", "btn btn-small", t("layer.duplicate"));
   duplicate.type = "button";
   duplicate.disabled = allLocked;
-  duplicate.innerHTML = `${icon("copy", 13)}<span>Duplicate</span>`;
+  duplicate.innerHTML = `${icon("copy", 13)}<span>${t("layer.duplicate")}</span>`;
   duplicate.addEventListener("click", actions.duplicateSelection);
-  const remove = el("button", "btn btn-small btn-danger", "Delete");
+  const remove = el("button", "btn btn-small btn-danger", t("common.delete"));
   remove.type = "button";
   remove.disabled = allLocked;
-  remove.innerHTML = `${icon("trash", 13)}<span>Delete</span>`;
+  remove.innerHTML = `${icon("trash", 13)}<span>${t("common.delete")}</span>`;
   remove.addEventListener("click", actions.deleteSelection);
   actionsWrap.append(duplicate, remove);
   section.append(actionsWrap);

@@ -104,9 +104,7 @@ export async function openReferenceSession(
         }
       }
       if (!bytes) {
-        throw new Error(
-          `The reference drawing “${document.name}” could not be found. Put it back in its original location, or open the reference project in the desktop app next to its drawings.`,
-        );
+        throw new Error(t("reference.drawingMissing", { name: document.name }));
       }
       const pdf = await loadPdfDocument(bytes);
       document.pageCount = pdf.numPages;

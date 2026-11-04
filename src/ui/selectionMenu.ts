@@ -120,9 +120,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
           : "";
         void textDialog(
           t("selection.setRoom"),
-          `Apply one room to ${measurements.length} selected measurement${
-            measurements.length === 1 ? "" : "s"
-          }.`,
+          t("selection.applyRoom", { count: measurements.length }),
           common,
           t("selection.roomName"),
         ).then((room) => {

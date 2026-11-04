@@ -260,9 +260,7 @@ const ORIENTATION_ROTATION: Record<number, number> = { 1: 0, 3: 180, 6: 90, 8: 2
 export function rotationForOrientation(orientation: number): number {
   const rotation = ORIENTATION_ROTATION[orientation];
   if (rotation === undefined) {
-    throw new TiffImportError(
-      `TIFF orientation ${orientation} is not supported. Supported values are 1, 3, 6 and 8.`,
-    );
+    throw new TiffImportError(t("tiff.unsupportedOrientation", { orientation }));
   }
   return rotation;
 }
@@ -287,9 +285,7 @@ export function faxParameters(page: TiffPage): FaxParameters {
         ? { k: -1, compressionName: t("tiff.ccittG4") }
         : null;
   if (!compression) {
-    throw new TiffImportError(
-      `Unsupported TIFF compression ${page.compression}. Only CCITT G3 and G4 scanned drawings are supported.`,
-    );
+    throw new TiffImportError(t("tiff.unsupportedCompression", { compression: page.compression }));
   }
   if (page.bitsPerSample !== 1 || page.samplesPerPixel !== 1 || page.planarConfig !== 1) {
     throw new TiffImportError(t("tiff.only1Bit"));

@@ -204,7 +204,7 @@ export class PdfRenderer {
 
   async getDocumentData(index: number): Promise<Uint8Array> {
     const document = this.documents[index];
-    if (!document) throw new Error(`Document ${index + 1} is not loaded.`);
+    if (!document) throw new Error(t("pdf.documentNotLoaded", { index: index + 1 }));
     return document.getData();
   }
 

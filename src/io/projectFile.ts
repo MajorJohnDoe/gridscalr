@@ -901,7 +901,7 @@ export function serializeProject(project: Project): string {
 }
 
 export function suggestedProjectName(project: Project): string {
-  const safe = project.name.replace(/[^\w\-. ]+/g, "").trim() || "Untitled";
+  const safe = project.name.replace(/[^\w\-. ]+/g, "").trim() || t("app.untitledProject");
   return `${safe}.gridscalr`;
 }
 
