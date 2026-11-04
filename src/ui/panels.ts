@@ -55,6 +55,7 @@ export interface PanelActions {
   setScaleLock: (locked: boolean) => void;
   deleteSelection: () => void;
   editSelectedText: () => void;
+  editRail: (itemId: string) => void;
   copySelection: () => void;
   cutSelection: () => void;
   pasteSelection: () => void;
@@ -80,6 +81,7 @@ export interface PanelActions {
   getPageThumbnail: (page: number) => string | null;
   requestPageThumbnail: (page: number) => Promise<string | null>;
   addPages: () => void;
+  editSheetFields: (page: number) => void;
   deletePage: (page: number) => void;
   duplicatePage: (page: number) => void;
   refresh: () => void;

@@ -141,6 +141,7 @@ async function missingSources(
 ): Promise<{ name: string; path: string }[]> {
   const missing: { name: string; path: string }[] = [];
   for (const document of project.documents) {
+    if (document.kind === "template") continue;
     if (document.kind === "tiff" && !includeScans) continue;
     const path = sourcePathFor(document, projectPath);
     if (!path || !(await pathExists(path))) {

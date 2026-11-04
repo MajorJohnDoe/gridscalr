@@ -1,6 +1,7 @@
 import { areaCentroid, areaOutline, areaValue, rectangleCorners } from "../model/area";
 import { pageScale } from "../model/calibration";
 import { cloudFillColor, type CloudFillPreset } from "../model/cloud";
+import { RAIL_ROW_SPACING } from "../model/rail";
 import {
   angleArcPolyline,
   angleValue,
@@ -47,6 +48,7 @@ export type Draft =
   | { kind: "volume"; points: Point[]; cursor: Point }
   | { kind: "area"; points: Point[]; cursor: Point }
   | { kind: "pen"; points: Point[]; cursor: Point }
+  | { kind: "polyline"; points: Point[]; cursor: Point }
   | { kind: "highlight"; points: Point[]; cursor: Point }
   | { kind: "highlight-polygon"; points: Point[]; cursor: Point }
   | { kind: "cloud"; points: Point[]; cursor: Point }
@@ -54,6 +56,8 @@ export type Draft =
   | { kind: "line"; start: Point; current: Point }
   | { kind: "arrow"; start: Point; current: Point }
   | { kind: "rect"; start: Point; current: Point }
+  | { kind: "textbox"; start: Point; current: Point }
+  | { kind: "rail"; start: Point; current: Point }
   | { kind: "ellipse"; start: Point; current: Point }
   | { kind: "highlight-rect"; start: Point; current: Point }
   | { kind: "area-rect"; start: Point; current: Point }
@@ -85,7 +89,10 @@ export function draftColors(draft: Draft, input: DraftColorInput): DraftColors {
       ? input.calibrationColor
       : draft.kind === "cloud"
         ? (cloudFillColor(input.cloudFill) ?? input.styleColor)
-        : draft.kind === "highlight-polygon"
+        : draft.kind === "highlight-polygon" ||
+            draft.kind === "polyline" ||
+            draft.kind === "textbox" ||
+            draft.kind === "rail"
           ? input.styleColor
           : input.measureColor;
   const fill = draft.kind === "highlight-polygon" ? input.styleColor : input.measureColor;
@@ -177,6 +184,7 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
     draft.kind === "length" ||
     draft.kind === "area" ||
     draft.kind === "volume" ||
+    draft.kind === "polyline" ||
     draft.kind === "cloud" ||
     draft.kind === "highlight-polygon"
   ) {
@@ -467,6 +475,23 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
   ctx.save();
   ctx.strokeStyle = scene.style.color;
   ctx.fillStyle = hexAlpha(scene.style.color, scene.style.fillOpacity);
+
+  if (draft.kind === "rail") {
+    const left = Math.min(start.x, current.x);
+    const right = Math.max(start.x, current.x);
+    const top = Math.min(start.y, current.y);
+    const spacing = RAIL_ROW_SPACING * zoom;
+    ctx.setLineDash([6, 4]);
+    for (let row = 0; row < 5; row += 1) {
+      const y = top + row * spacing;
+      ctx.beginPath();
+      ctx.moveTo(left, y);
+      ctx.lineTo(right, y);
+      ctx.stroke();
+    }
+    ctx.restore();
+    return;
+  }
   ctx.lineWidth = Math.max(1, scene.style.strokeWidth * zoom);
   ctx.lineCap = "round";
   if (draft.kind === "line" || draft.kind === "arrow") {
@@ -484,9 +509,20 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
     ctx.stroke();
     if (startHead) drawArrowHead(ctx, start, startHead, scene.style.color);
     if (head) drawArrowHead(ctx, current, head, scene.style.color);
-  } else if (draft.kind === "rect" || draft.kind === "highlight-rect") {
+  } else if (draft.kind === "rect" || draft.kind === "textbox" || draft.kind === "highlight-rect") {
     const rect = expandRect(start, current);
-    if (draft.kind === "highlight-rect") {
+    if (draft.kind === "textbox") {
+      ctx.save();
+      ctx.globalAlpha *= 0.7;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.restore();
+      ctx.save();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = scene.style.color;
+      ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.restore();
+    } else if (draft.kind === "highlight-rect") {
       ctx.save();
       ctx.globalAlpha = 0.3;
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);

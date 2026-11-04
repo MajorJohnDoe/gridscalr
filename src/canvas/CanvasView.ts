@@ -110,8 +110,17 @@ import {
   TEXT_UNDERLINE_WIDTH,
   textItemLayout,
   textLineX,
+  wrapText,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
+import {
+  layoutFieldText,
+  measureSheetText,
+  SHEET_FONT_STACK,
+} from "../features/schematics/render/sheetText";
+import { defaultRailRows, railGeometry, railLegendY, RAIL_ROW_SPACING } from "../model/rail";
 import {
   CLOUD_FILL_OPACITY,
   cloudCurves,
@@ -247,6 +256,13 @@ interface PanState {
 
 const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
+const SCHEMATIC_GRID_STEP = (5 * 72) / 25.4;
+
+function orthoPoint(last: Point, current: Point): Point {
+  return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
+    ? { x: current.x, y: last.y }
+    : { x: last.x, y: current.y };
+}
 
 const symbolPathCache = new Map<string, Path2D>();
 
@@ -301,6 +317,11 @@ export class CanvasView {
   private hoverHandle: Handle | null = null;
   private hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
+  private sheetFieldEditor: {
+    input: HTMLInputElement;
+    page: number;
+    fieldId: string;
+  } | null = null;
   private crop: CropController;
   private imageCache = new Map<string, HTMLImageElement>();
   private imageLoading = new Set<string>();
@@ -484,6 +505,9 @@ export class CanvasView {
   private onStoreChange(reason: string): void {
     if (reason === "cursor") return;
     if (this.readOnly && !this.isVisible) return;
+    if (reason === "view" || reason === "page" || reason === "project" || reason === "undo") {
+      this.commitSheetField(false);
+    }
     this.editors.handleStoreChange(reason);
     const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
@@ -991,6 +1015,31 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "polyline") {
+      if (event.detail > 1) {
+        this.finishDraft();
+        return;
+      }
+      let snapped = this.snapPolylinePoint(page);
+      const existing = this.draft?.kind === "polyline" ? this.draft : null;
+      if (existing && existing.points.length) {
+        snapped = this.constrainPolyline(
+          existing.points[existing.points.length - 1],
+          snapped,
+          event.shiftKey,
+        );
+      }
+      if (!existing) {
+        this.draft = { kind: "polyline", points: [snapped], cursor: snapped };
+      } else {
+        const last = existing.points[existing.points.length - 1];
+        if (distance(last, snapped) > 0.001) existing.points.push(snapped);
+        existing.cursor = snapped;
+      }
+      this.drawInteraction();
+      return;
+    }
+
     if (tool === "area" && store.ui.measureAreaShape !== "polygon") {
       if (event.detail > 1) return;
       const snapped = this.snapPoint(page);
@@ -1070,7 +1119,14 @@ export class CanvasView {
       return;
     }
 
-    if (tool === "line" || tool === "arrow" || tool === "rect" || tool === "ellipse") {
+    if (
+      tool === "line" ||
+      tool === "arrow" ||
+      tool === "rect" ||
+      tool === "ellipse" ||
+      tool === "textbox" ||
+      tool === "rail"
+    ) {
       const snaps = tool === "line" || tool === "arrow";
       const snapped = snaps ? this.snapPoint(page) : page;
       if (!snaps) this.snap = null;
@@ -1311,6 +1367,7 @@ export class CanvasView {
         hit.item.kind === "angle" ||
         hit.item.kind === "slope" ||
         hit.item.kind === "volume" ||
+        hit.item.kind === "polyline" ||
         hit.item.kind === "cloud" ||
         hit.item.kind === "callout" ||
         (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
@@ -1488,11 +1545,17 @@ export class CanvasView {
         this.draft.current = current;
       } else if (
         this.draft.kind === "rect" ||
+        this.draft.kind === "textbox" ||
+        this.draft.kind === "rail" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
         this.snap = null;
         this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
+      } else if (this.draft.kind === "polyline") {
+        const last = this.draft.points[this.draft.points.length - 1];
+        const snapped = this.snapPolylinePoint(page);
+        this.draft.cursor = this.constrainPolyline(last, snapped, event.shiftKey);
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
         if (distance(last, page) > 1.4 / this.viewZoom) {
@@ -1708,7 +1771,18 @@ export class CanvasView {
         x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
         y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
-    } else if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
+    } else if (item.kind === "rail") {
+      const startPoints = this.drag.startPoints ?? item.points;
+      item.points = [
+        { x: scaled.min.x + shiftX, y: startPoints[0].y },
+        { x: scaled.max.x + shiftX, y: startPoints[1].y },
+      ];
+    } else if (
+      item.kind === "rect" ||
+      item.kind === "textbox" ||
+      item.kind === "ellipse" ||
+      item.kind === "image"
+    ) {
       item.points = [
         { x: scaled.min.x + shiftX, y: scaled.min.y + shiftY },
         { x: scaled.max.x + shiftX, y: scaled.max.y + shiftY },
@@ -1734,6 +1808,7 @@ export class CanvasView {
     if (delta === 0) return;
     if (
       item.kind === "text" ||
+      item.kind === "textbox" ||
       item.kind === "rect" ||
       item.kind === "ellipse" ||
       item.kind === "image" ||
@@ -1795,6 +1870,8 @@ export class CanvasView {
         this.draft.kind === "line" ||
         this.draft.kind === "arrow" ||
         this.draft.kind === "rect" ||
+        this.draft.kind === "textbox" ||
+        this.draft.kind === "rail" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
@@ -1869,7 +1946,7 @@ export class CanvasView {
     if (this.touchNavigation.active || this.touchNavigation.suppressed) return;
     if (!store.project || this.crop.active) return;
     const tool = store.ui.activeTool;
-    if (tool === "length" || tool === "area" || tool === "volume") {
+    if (tool === "length" || tool === "area" || tool === "volume" || tool === "polyline") {
       this.finishDraft();
       return;
     }
@@ -1894,7 +1971,11 @@ export class CanvasView {
     }
 
     const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
-    if (!hit || itemIsLocked(hit.item, hit.layer)) return;
+    if (!hit) {
+      if (tool === "select") this.editSheetFieldAt(this.viewPage, screen);
+      return;
+    }
+    if (itemIsLocked(hit.item, hit.layer)) return;
     store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
 
     if (hit.item.kind === "volume") {
@@ -1904,6 +1985,10 @@ export class CanvasView {
 
     if (hit.item.kind === "text") {
       this.editors.startTextEdit(hit.item, hit.layer);
+      return;
+    }
+    if (hit.item.kind === "textbox") {
+      this.editors.startTextBoxEdit(hit.item, hit.layer);
       return;
     }
     if (hit.item.kind === "cloud") {
@@ -2029,6 +2114,22 @@ export class CanvasView {
     return { ...result.point };
   }
 
+  private snapPolylinePoint(point: Point): Point {
+    const snapped = this.snapPoint(point);
+    if (this.snap) return snapped;
+    return {
+      x: Math.round(point.x / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
+      y: Math.round(point.y / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
+    };
+  }
+
+  private constrainPolyline(last: Point, point: Point, free: boolean): Point {
+    if (free) return point;
+    const constrained = orthoPoint(last, point);
+    if (distance(constrained, point) > 1e-6) this.snap = null;
+    return constrained;
+  }
+
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {
     const project = store.project;
     if (!project) return;
@@ -2143,6 +2244,10 @@ export class CanvasView {
     store.setTool("select");
     if (found.item.kind === "text") {
       this.editors.startTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "textbox") {
+      this.editors.startTextBoxEdit(found.item, found.layer);
       return;
     }
     if (found.item.kind === "cloud") {
@@ -2396,11 +2501,16 @@ export class CanvasView {
           (kind === "highlight" && highlightShape !== "stroke"));
       const textLike =
         kind === "text" ||
+        kind === "textbox" ||
         kind === "cloud" ||
         kind === "callout" ||
         kind === "stamp" ||
         kind === "delta";
       const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
+      const lineType =
+        kind === "polyline"
+          ? project.lineTypes.find((entry) => entry.id === store.ui.lineTypeId)
+          : undefined;
       const item: MarkupItem = {
         id: makeId("item"),
         page: projectPage,
@@ -2408,12 +2518,24 @@ export class CanvasView {
         points: points.map((p) => ({ ...p })),
         color: isMeasure
           ? layer.color
-          : kind === "symbol"
-            ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
-            : kind === "stamp"
-              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-              : (cloudPreset ?? style.color),
-        strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
+          : kind === "textbox"
+            ? "#1a2024"
+            : kind === "polyline"
+              ? (lineType?.color ?? style.color)
+              : kind === "rail"
+                ? "#4a4a4a"
+                : kind === "symbol"
+                  ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
+                  : kind === "stamp"
+                    ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+                    : (cloudPreset ?? style.color),
+        strokeWidth: isMeasure
+          ? DEFAULT_MEASUREMENT_STROKE_WIDTH
+          : kind === "polyline"
+            ? (lineType?.widthPt ?? style.strokeWidth)
+            : kind === "rail"
+              ? 0.6
+              : style.strokeWidth,
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
           !isMeasure &&
@@ -2432,6 +2554,13 @@ export class CanvasView {
               ? 0.35
               : undefined,
         text: options.text,
+        textColor: kind === "textbox" ? "#1a2024" : undefined,
+        textBackground: kind === "textbox" ? "white" : undefined,
+        padding: kind === "textbox" ? 4 : undefined,
+        lineTypeId: kind === "polyline" ? lineType?.id : undefined,
+        lineStyle: kind === "polyline" && lineType?.style === "dashed" ? "dashed" : undefined,
+        rows: kind === "rail" ? defaultRailRows("plc") : undefined,
+        rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
         highlightShape,
         arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
@@ -2499,6 +2628,8 @@ export class CanvasView {
       (this.draft.kind !== "line" &&
         this.draft.kind !== "arrow" &&
         this.draft.kind !== "rect" &&
+        this.draft.kind !== "textbox" &&
+        this.draft.kind !== "rail" &&
         this.draft.kind !== "ellipse" &&
         this.draft.kind !== "highlight-rect")
     ) {
@@ -2513,6 +2644,13 @@ export class CanvasView {
     }
     if (kind === "highlight-rect") {
       this.createItem("highlight", [start, current], { highlightShape: "rectangle" });
+    } else if (kind === "textbox") {
+      const created = this.createItem("textbox", [start, current], { text: "" });
+      const project = store.project;
+      const found = created && project ? findItem(project, created.itemId) : undefined;
+      if (found) this.editors.startTextBoxEdit(found.item, found.layer);
+    } else if (kind === "rail") {
+      this.createItem("rail", [start, current]);
     } else {
       this.createItem(kind, [start, current]);
     }
@@ -2630,6 +2768,15 @@ export class CanvasView {
       return;
     }
 
+    if (this.draft.kind === "polyline") {
+      const points = dedupeLast(this.draft.points);
+      this.draft = null;
+      this.snap = null;
+      if (points.length >= 2) this.createItem("polyline", points);
+      this.drawInteraction();
+      return;
+    }
+
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
     } else if (
@@ -2676,6 +2823,7 @@ export class CanvasView {
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
+      this.draft.kind === "textbox" ||
       this.draft.kind === "ellipse" ||
       this.draft.kind === "highlight-rect"
     ) {
@@ -2691,6 +2839,8 @@ export class CanvasView {
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
+      this.draft.kind === "textbox" ||
+      this.draft.kind === "rail" ||
       this.draft.kind === "ellipse" ||
       this.draft.kind === "highlight-rect" ||
       this.draft.kind === "area-rect" ||
@@ -2910,6 +3060,8 @@ export class CanvasView {
       ctx.restore();
     }
 
+    this.drawSheetFields(ctx);
+
     for (const layer of project.layers) {
       if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
       ctx.save();
@@ -2948,6 +3100,124 @@ export class CanvasView {
         ctx.restore();
       }
     }
+  }
+
+  /** Draws template field values above the PDF page and below every item. */
+  private drawSheetFields(ctx: CanvasRenderingContext2D): void {
+    const project = this.sceneProject;
+    if (!project) return;
+    const sheetDocument = templateDocumentForPage(project, this.viewPage);
+    if (!sheetDocument?.template) return;
+    const spec = sheetTemplateFor(
+      sheetDocument.template.id,
+      sheetDocument.template.paper,
+      resolveSheetLabels((key) => t(key)),
+    );
+    if (!spec) return;
+
+    const zoom = this.viewZoom;
+    ctx.save();
+    ctx.fillStyle = "#000000";
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+    for (const field of spec.fields) {
+      const value = sheetDocument.template.fields[field.id] ?? "";
+      if (!value) continue;
+      const placement = layoutFieldText(field, value, measureSheetText);
+      if (!placement) continue;
+      const point = this.toScreen({ x: placement.x, y: placement.baseline });
+      ctx.font = `${placement.size * zoom}px ${SHEET_FONT_STACK}`;
+      ctx.fillText(placement.text, point.x, point.y);
+    }
+    ctx.restore();
+  }
+
+  /** Opens an inline editor when a double-click lands on an empty sheet cell. */
+  private editSheetFieldAt(pageNumber: number, screen: Point): boolean {
+    const project = store.project;
+    if (!project) return false;
+    const sheetDocument = templateDocumentForPage(project, pageNumber);
+    if (!sheetDocument?.template) return false;
+    const spec = sheetTemplateFor(
+      sheetDocument.template.id,
+      sheetDocument.template.paper,
+      resolveSheetLabels((key) => t(key)),
+    );
+    if (!spec) return false;
+
+    const pagePoint = this.toPage(screen);
+    const field = spec.fields.find(
+      (candidate) =>
+        pagePoint.x >= candidate.rect.x &&
+        pagePoint.x <= candidate.rect.x + candidate.rect.width &&
+        pagePoint.y >= candidate.rect.y &&
+        pagePoint.y <= candidate.rect.y + candidate.rect.height,
+    );
+    if (!field) return false;
+
+    const start = this.toScreen({ x: field.rect.x, y: field.rect.y });
+    const end = this.toScreen({
+      x: field.rect.x + field.rect.width,
+      y: field.rect.y + field.rect.height,
+    });
+    const zoom = this.viewZoom;
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "sheet-field-input";
+    input.value = sheetDocument.template.fields[field.id] ?? "";
+    input.maxLength = 500;
+    input.style.position = "absolute";
+    input.style.left = `${start.x}px`;
+    input.style.top = `${start.y}px`;
+    input.style.width = `${Math.max(24, end.x - start.x)}px`;
+    input.style.height = `${Math.max(16, end.y - start.y)}px`;
+    input.style.boxSizing = "border-box";
+    input.style.fontFamily = SHEET_FONT_STACK;
+    input.style.fontSize = `${Math.max(7, field.fontSize * zoom)}px`;
+    input.style.fontWeight = field.bold ? "700" : "400";
+    input.style.textAlign = field.align;
+    input.style.padding = `0 ${field.padding * zoom}px`;
+    input.style.lineHeight = `${Math.max(1, end.y - start.y)}px`;
+    input.style.background = "#ffffff";
+    input.style.border = "1px solid #2b7fff";
+    input.style.outline = "none";
+    input.style.boxShadow = "0 0 0 2px rgba(43, 127, 255, 0.25)";
+    input.style.zIndex = "20";
+
+    this.commitSheetField(false);
+    this.sheetFieldEditor = { input, page: pageNumber, fieldId: field.id };
+    this.host.append(input);
+    input.focus();
+    input.select();
+
+    input.addEventListener("pointerdown", (event) => event.stopPropagation());
+    input.addEventListener("keydown", (event) => {
+      event.stopPropagation();
+      if (event.key === "Enter") {
+        event.preventDefault();
+        this.commitSheetField(true);
+      } else if (event.key === "Escape") {
+        event.preventDefault();
+        this.commitSheetField(false);
+      }
+    });
+    input.addEventListener("blur", () => this.commitSheetField(true));
+    return true;
+  }
+
+  private commitSheetField(save: boolean): void {
+    const editor = this.sheetFieldEditor;
+    if (!editor) return;
+    this.sheetFieldEditor = null;
+    editor.input.remove();
+    if (!save) return;
+    const project = store.project;
+    if (!project || store.ui.page !== editor.page) return;
+    const value = editor.input.value;
+    store.mutate((current) => {
+      const sheetDocument = templateDocumentForPage(current, editor.page);
+      if (sheetDocument?.template) sheetDocument.template.fields[editor.fieldId] = value;
+    }, "change");
   }
 
   private imageElement(asset: ImageAsset): HTMLImageElement | null {
@@ -2995,6 +3265,7 @@ export class CanvasView {
     const rotatesInPlace =
       rotation !== 0 &&
       (item.kind === "text" ||
+        item.kind === "textbox" ||
         item.kind === "rect" ||
         item.kind === "ellipse" ||
         item.kind === "image" ||
@@ -3435,6 +3706,117 @@ export class CanvasView {
         ctx.restore();
         break;
       }
+      case "polyline": {
+        ctx.beginPath();
+        points.forEach((point, index) =>
+          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+        );
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        break;
+      }
+      case "rail": {
+        const geometry = railGeometry(item);
+        if (!geometry) break;
+        const left = this.toScreen({ x: geometry.left, y: geometry.top });
+        const right = this.toScreen({ x: geometry.right, y: geometry.top });
+        const width = Math.max(0.5, item.strokeWidth * zoom);
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = width;
+
+        for (const row of geometry.rows) {
+          const y = this.toScreen({ x: geometry.left, y: row.y }).y;
+          ctx.beginPath();
+          ctx.moveTo(left.x, y);
+          ctx.lineTo(right.x, y);
+          ctx.stroke();
+
+          if (item.showBadges !== false) {
+            const fontSize = Math.max(5, 6.5 * zoom);
+            const badgeHeight = Math.max(8, geometry.rowSpacing * zoom * 0.82);
+            const padding = Math.max(2, 3 * zoom);
+            ctx.font = `600 ${fontSize}px ${FONT_STACK}`;
+            const textWidth = ctx.measureText(row.label).width;
+            const badgeWidth = textWidth + padding * 2;
+            ctx.save();
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = item.color;
+            ctx.lineWidth = Math.max(0.6, 0.8 * zoom);
+            roundRect(ctx, left.x, y - badgeHeight / 2, badgeWidth, badgeHeight, badgeHeight / 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = "#1a2024";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(row.label, left.x + padding, y);
+          }
+        }
+
+        const legends = geometry.rows.filter((row) => row.legend?.trim());
+        if (item.showLegend !== false && legends.length) {
+          const y = this.toScreen({ x: geometry.left, y: railLegendY(geometry) }).y;
+          const step = (right.x - left.x) / Math.max(1, legends.length);
+          const fontSize = Math.max(5, 6 * zoom);
+          ctx.font = `400 ${fontSize}px ${FONT_STACK}`;
+          ctx.fillStyle = "#1a2024";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          legends.forEach((row, index) => {
+            ctx.fillText(`${row.label}= ${row.legend}`, left.x + index * step, y);
+          });
+        }
+        break;
+      }
+      case "textbox": {
+        if (points.length < 2) break;
+        const rect = expandRect(points[0], points[1]);
+        const fontSize = Math.max(0.3, clampTextSize(item.fontSize ?? 12) * zoom);
+        const padding = Math.max(0, (item.padding ?? 4) * zoom);
+        const lineHeight = fontSize * 1.28;
+        const color = item.textColor ?? item.color;
+        ctx.font = `${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+
+        if (item.textBackground === "white") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        }
+
+        const innerWidth = Math.max(1, rect.width - padding * 2);
+        const lines = wrapText(item.text ?? "", innerWidth, (line) => ctx.measureText(line).width);
+        ctx.fillStyle = color;
+        lines.forEach((line, index) => {
+          if (!line) return;
+          const lineWidth = ctx.measureText(line).width;
+          const x =
+            rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, lineWidth);
+          const y = rect.y + padding + index * lineHeight;
+          ctx.fillText(line, x, y);
+          if (item.textUnderline) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
+            const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
+            ctx.beginPath();
+            ctx.moveTo(x, underlineY);
+            ctx.lineTo(x + lineWidth, underlineY);
+            ctx.stroke();
+          }
+        });
+
+        if (lines.length * lineHeight + padding * 2 > rect.height) {
+          ctx.save();
+          ctx.strokeStyle = "#d3202a";
+          ctx.setLineDash([5, 3]);
+          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.restore();
+        }
+        break;
+      }
       case "text": {
         const layout = textItemLayout(item);
         const fontSize = Math.max(0.3, layout.fontSize * zoom);
@@ -3865,6 +4247,7 @@ export class CanvasView {
     this.crop.destroy();
     this.observer.disconnect();
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
+    this.commitSheetField(false);
     this.editors.destroy();
     this.interaction.removeEventListener("pointerdown", this.onPointerDown);
     this.interaction.removeEventListener("pointermove", this.onPointerMove);

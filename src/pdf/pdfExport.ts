@@ -53,6 +53,7 @@ import {
   angleArcPolyline,
   arcPolyline,
   arrowHeadGeometry,
+  expandRect,
   itemCenter,
   midpoint,
   radiusCircle,
@@ -60,13 +61,17 @@ import {
 } from "../model/geometry";
 import { imageOpacity } from "../model/images";
 import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
+import { railGeometry, railLegendY } from "../model/rail";
 import type { LabelLayout } from "../model/labelLayout";
 import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import {
+  TEXT_LINE_HEIGHT,
   TEXT_UNDERLINE_OFFSET,
   TEXT_UNDERLINE_WIDTH,
+  clampTextSize,
   textItemLayout,
   textLineX,
+  wrapText,
 } from "../model/text";
 import type { CountGlyph, CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
@@ -81,6 +86,9 @@ import {
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
 import type { PdfRenderer } from "./pdfRenderer";
 import { t } from "../i18n";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
+import { drawSheetFields } from "../features/schematics/render/sheetPdf";
 
 interface ExportFonts {
   regular: PDFFont;
@@ -160,6 +168,18 @@ export async function exportProjectPdf(
         if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
         drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+      }
+    }
+
+    const sheetDocument = templateDocumentForPage(project, pageNumber);
+    if (sheetDocument?.template) {
+      const sheetSpec = sheetTemplateFor(
+        sheetDocument.template.id,
+        sheetDocument.template.paper,
+        resolveSheetLabels((key) => t(key)),
+      );
+      if (sheetSpec) {
+        drawSheetFields(pdfPage, sheetSpec, sheetDocument.template.fields, fonts);
       }
     }
 
@@ -823,6 +843,25 @@ function drawItem(
     case "text":
       drawTextItem(page, viewport, item, layerOpacity, fonts);
       break;
+    case "textbox":
+      drawTextBoxItem(page, viewport, item, layerOpacity, fonts);
+      break;
+    case "polyline":
+      drawPolyline(
+        page,
+        viewport,
+        item.points,
+        color,
+        Math.max(0.35, item.strokeWidth),
+        opacity,
+        false,
+        LineCapStyle.Butt,
+        item.lineStyle === "dashed" ? [5, 3] : undefined,
+      );
+      break;
+    case "rail":
+      drawRailItem(page, viewport, item, layerOpacity, fonts);
+      break;
     case "image": {
       if (item.points.length < 2 || !item.image) break;
       const image = images.get(item.image.assetId);
@@ -905,6 +944,146 @@ function drawTextItem(
         opacity,
       });
     }
+  });
+}
+
+function drawTextBoxItem(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  layerOpacity: number,
+  fonts: ExportFonts,
+): void {
+  if (item.points.length < 2) return;
+  const rect = expandRect(item.points[0], item.points[1]);
+  const fontSize = clampTextSize(item.fontSize ?? 12);
+  const padding = Math.max(0, item.padding ?? 4);
+  const maxWidth = Math.max(1, rect.width - padding * 2);
+  const font = item.textBold ? fonts.bold : fonts.regular;
+  const lines = wrapText(item.text ?? "", maxWidth, (line) =>
+    font.widthOfTextAtSize(line, fontSize),
+  );
+  const lineHeight = fontSize * TEXT_LINE_HEIGHT;
+  const color = pdfColor(item.textColor ?? item.color);
+  const opacity = clamp(layerOpacity, 0, 1);
+  const center = itemCenter(item);
+  const rotation = item.rotation ?? 0;
+  const angle = pdfAngle(viewport, rotation);
+  const baseline = font.heightAtSize(fontSize, { descender: false });
+
+  if (item.textBackground === "white") {
+    const background = pdfRectFromCorners(viewport, itemRectCorners(item));
+    page.drawRectangle({
+      x: background.x,
+      y: background.y,
+      width: background.width,
+      height: background.height,
+      rotate: degrees(background.angle),
+      color: rgb(1, 1, 1),
+      opacity,
+    });
+  }
+
+  const align = item.textAlign ?? "left";
+  lines.forEach((line, index) => {
+    if (!line) return;
+    const lineWidth = font.widthOfTextAtSize(line, fontSize);
+    const offsetX = textLineX(align, 0, maxWidth, lineWidth);
+    const baselineY = rect.y + padding + baseline + index * lineHeight;
+    const start = rotatePoint({ x: rect.x + padding + offsetX, y: baselineY }, center, rotation);
+    const pdfPoint = toPdfPoint(viewport, start);
+    page.drawText(line, {
+      x: pdfPoint.x,
+      y: pdfPoint.y,
+      size: fontSize,
+      font,
+      color,
+      opacity,
+      rotate: degrees(angle),
+    });
+    if (item.textUnderline) {
+      const underlineY = baselineY + fontSize * TEXT_UNDERLINE_OFFSET;
+      const from = rotatePoint({ x: rect.x + padding + offsetX, y: underlineY }, center, rotation);
+      const to = rotatePoint(
+        { x: rect.x + padding + offsetX + lineWidth, y: underlineY },
+        center,
+        rotation,
+      );
+      page.drawLine({
+        start: toPdfPoint(viewport, from),
+        end: toPdfPoint(viewport, to),
+        thickness: Math.max(0.35, fontSize * TEXT_UNDERLINE_WIDTH),
+        color,
+        opacity,
+      });
+    }
+  });
+}
+
+function drawRailItem(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  layerOpacity: number,
+  fonts: ExportFonts,
+): void {
+  const geometry = railGeometry(item);
+  if (!geometry) return;
+  const color = pdfColor(item.color);
+  const textColor = pdfColor("#1a2024");
+  const opacity = clamp(layerOpacity, 0, 1);
+  const width = Math.max(0.35, item.strokeWidth);
+
+  for (const row of geometry.rows) {
+    page.drawLine({
+      start: toPdfPoint(viewport, { x: geometry.left, y: row.y }),
+      end: toPdfPoint(viewport, { x: geometry.right, y: row.y }),
+      thickness: width,
+      color,
+      opacity,
+    });
+
+    if (item.showBadges === false) continue;
+    const fontSize = 6.5;
+    const padding = 3;
+    const badgeHeight = Math.max(8, geometry.rowSpacing * 0.82);
+    const textWidth = fonts.regular.widthOfTextAtSize(row.label, fontSize);
+    const badgeWidth = textWidth + padding * 2;
+    const center = toPdfPoint(viewport, { x: geometry.left, y: row.y });
+    page.drawRectangle({
+      x: center.x,
+      y: center.y - badgeHeight / 2,
+      width: badgeWidth,
+      height: badgeHeight,
+      borderWidth: 0.7,
+      borderColor: color,
+      color: rgb(1, 1, 1),
+      opacity,
+    });
+    page.drawText(row.label, {
+      x: center.x + padding,
+      y: center.y - fontSize * 0.35,
+      size: fontSize,
+      font: fonts.regular,
+      color: textColor,
+      opacity,
+    });
+  }
+
+  const legends = geometry.rows.filter((row) => row.legend?.trim());
+  if (item.showLegend === false || !legends.length) return;
+  const baseline = toPdfPoint(viewport, { x: geometry.left, y: railLegendY(geometry) });
+  const right = toPdfPoint(viewport, { x: geometry.right, y: railLegendY(geometry) });
+  const step = (right.x - baseline.x) / legends.length;
+  legends.forEach((row, index) => {
+    page.drawText(`${row.label}= ${row.legend}`, {
+      x: baseline.x + index * step,
+      y: baseline.y,
+      size: 6,
+      font: fonts.regular,
+      color: textColor,
+      opacity,
+    });
   });
 }
 

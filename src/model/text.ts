@@ -27,6 +27,38 @@ export function textLines(text: string | undefined): string[] {
   return lines.length ? lines : [""];
 }
 
+/**
+ * Wraps text to a maximum line width. Explicit newlines are preserved and a
+ * single word that is wider than the box is kept on its own line.
+ */
+export function wrapText(
+  text: string,
+  maxWidth: number,
+  measure: (line: string) => number,
+): string[] {
+  const paragraphs = (text ?? "").replace(/\r\n?/g, "\n").split("\n");
+  const lines: string[] = [];
+  for (const paragraph of paragraphs) {
+    if (!paragraph) {
+      lines.push("");
+      continue;
+    }
+    const words = paragraph.split(/\s+/).filter(Boolean);
+    let current = "";
+    for (const word of words) {
+      const candidate = current ? `${current} ${word}` : word;
+      if (!current || measure(candidate) <= maxWidth) {
+        current = candidate;
+      } else {
+        lines.push(current);
+        current = word;
+      }
+    }
+    if (current) lines.push(current);
+  }
+  return lines.length ? lines : [""];
+}
+
 export function measureTextWidth(text: string, fontSize: number): number {
   const measured = canvasMeasure(text, fontSize);
   if (measured !== null) return measured;

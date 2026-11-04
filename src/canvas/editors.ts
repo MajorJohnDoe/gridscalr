@@ -1,6 +1,6 @@
 import { calloutLayout, cloudLabelLayout, textBoxLayout } from "../model/annotations";
 import { makeId } from "../model/calibration";
-import { itemCenter, itemRotation, normalizeDegrees } from "../model/geometry";
+import { expandRect, itemCenter, itemRotation, normalizeDegrees } from "../model/geometry";
 import {
   addItem,
   ensureActiveLayer,
@@ -12,7 +12,13 @@ import {
 import type { LabelBox, LabelMetrics } from "../model/label";
 import type { LabelLayout } from "../model/labelLayout";
 import { itemMetrics } from "../model/measure";
-import { TEXT_FONT_STACK, clampTextSize, measureTextWidth, textItemLayout } from "../model/text";
+import {
+  TEXT_FONT_STACK,
+  TEXT_LINE_HEIGHT,
+  clampTextSize,
+  measureTextWidth,
+  textItemLayout,
+} from "../model/text";
 import type { Layer, MarkupItem, Point, TextAlign } from "../model/types";
 import { store } from "../state/store";
 import { icon } from "../ui/icons";
@@ -35,7 +41,7 @@ interface TextStyleSnapshot {
 }
 
 export interface TextEditSession {
-  mode: "text" | "cloud" | "callout";
+  mode: "text" | "textbox" | "cloud" | "callout";
   itemId: string | null;
   layerId: string | null;
   page: number;
@@ -49,6 +55,7 @@ export interface TextEditSession {
   align: TextAlign;
   boxWidth?: number;
   boxHeight?: number;
+  padding?: number;
   original?: TextStyleSnapshot;
   closing: boolean;
   container: HTMLDivElement;
@@ -179,6 +186,47 @@ export class CanvasEditorController {
         bold: item.textBold === true,
         underline: item.textUnderline === true,
         align: item.textAlign ?? "left",
+      },
+    });
+  }
+
+  startTextBoxEdit(item: MarkupItem, layer: Layer): void {
+    if (itemIsLocked(item, layer)) {
+      toast(t("editors.itemLocked"), "warning");
+      return;
+    }
+    if (item.points.length < 2) return;
+    if (this.text) void this.commitTextEdit();
+    const rect = expandRect(item.points[0], item.points[1]);
+    const fontSize = clampTextSize(item.fontSize ?? 12);
+    const color = item.textColor ?? item.color;
+    const align = item.textAlign ?? "left";
+    this.beginTextEditSession({
+      mode: "textbox",
+      itemId: item.id,
+      layerId: layer.id,
+      page: item.page,
+      anchor: { x: rect.x, y: rect.y },
+      text: item.text ?? "",
+      color,
+      fontSize,
+      rotation: 0,
+      bold: item.textBold === true,
+      underline: item.textUnderline === true,
+      align,
+      boxWidth: rect.width,
+      boxHeight: rect.height,
+      padding: item.padding ?? 4,
+      original: {
+        text: item.text ?? "",
+        color,
+        fontSize,
+        rotation: 0,
+        bold: item.textBold === true,
+        underline: item.textUnderline === true,
+        align,
+        boxWidth: rect.width,
+        boxHeight: rect.height,
       },
     });
   }
@@ -343,7 +391,18 @@ export class CanvasEditorController {
     let rotation = edit.rotation;
     let lineHeight: number;
     let fontSize: number;
-    if (edit.mode === "cloud" || edit.mode === "callout") {
+    if (edit.mode === "textbox") {
+      width = Math.max(20, (edit.boxWidth ?? 100) * zoom);
+      height = Math.max(16, (edit.boxHeight ?? 40) * zoom);
+      left = anchor.x;
+      top = anchor.y;
+      lineHeight = Math.max(1, edit.fontSize * TEXT_LINE_HEIGHT * zoom);
+      fontSize = Math.max(1, edit.fontSize * zoom);
+      rotation = 0;
+      const pad = Math.max(1, (edit.padding ?? 4) * zoom);
+      textarea.style.padding = `${pad}px`;
+      textarea.style.whiteSpace = "pre-wrap";
+    } else if (edit.mode === "cloud" || edit.mode === "callout") {
       const layout = textBoxLayout(edit.text, edit.fontSize, edit.boxWidth, edit.boxHeight);
       width = Math.max(40, layout.width * zoom);
       height = Math.max(20, layout.height * zoom);
@@ -548,16 +607,9 @@ export class CanvasEditorController {
     doneButton.type = "button";
     doneButton.className = "inline-strip-button is-primary";
     doneButton.textContent = t("common.done");
-    strip.append(
-      sizeField,
-      colorField,
-      boldButton,
-      underlineButton,
-      alignGroup,
-      rotationField,
-      cancelButton,
-      doneButton,
-    );
+    strip.append(sizeField, colorField, boldButton, underlineButton, alignGroup);
+    if (session.mode !== "textbox") strip.append(rotationField);
+    strip.append(cancelButton, doneButton);
     const resizeHandle = document.createElement("div");
     resizeHandle.className = "canvas-text-editor-resize";
     resizeHandle.title = t("editors.resizeTextBox");
@@ -611,6 +663,7 @@ export class CanvasEditorController {
         event.stopPropagation();
         this.cancelTextEdit();
       } else if (event.key === "Enter" && !event.shiftKey) {
+        if (edit.mode === "textbox" && !event.ctrlKey && !event.metaKey) return;
         event.preventDefault();
         event.stopPropagation();
         void this.commitTextEdit();
@@ -704,6 +757,33 @@ export class CanvasEditorController {
       const found = findItem(project, edit.itemId);
       if (!found || itemIsLocked(found.item, found.layer)) {
         this.closeTextEditor();
+        return;
+      }
+      if (edit.mode === "textbox") {
+        const original = edit.original!;
+        const changed =
+          value !== original.text ||
+          edit.color !== original.color ||
+          Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
+          edit.bold !== original.bold ||
+          edit.underline !== original.underline ||
+          edit.align !== original.align;
+        this.closeTextEditor();
+        if (!changed) return;
+        store.mutate((project) => {
+          const item = findItem(project, edit.itemId!)?.item;
+          if (!item) return;
+          item.text = value;
+          item.textColor = edit.color;
+          item.fontSize = clampTextSize(edit.fontSize);
+          if (edit.bold) item.textBold = true;
+          else delete item.textBold;
+          if (edit.underline) item.textUnderline = true;
+          else delete item.textUnderline;
+          if (edit.align === "left") delete item.textAlign;
+          else item.textAlign = edit.align;
+          item.updatedAt = new Date().toISOString();
+        }, "change");
         return;
       }
       if (edit.mode === "cloud" || edit.mode === "callout") {

@@ -1,14 +1,16 @@
 import {
   deletePageFromProject,
   duplicatePageFromProject,
+  projectDocumentForPage,
   totalPageCount,
   type DeletePageResult,
   type DuplicatePageOptions,
   type DuplicatePageResult,
 } from "../model/documents";
 import type { CloudFillPreset } from "../model/cloud";
-import type { ArrowHeads } from "../model/types";
+import type { ArrowHeads, SheetPaperSize } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
+import { DEFAULT_LINE_TYPE_ID } from "../model/lineTypes";
 import { DEFAULT_SYMBOL_ID } from "../model/symbols";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
@@ -69,6 +71,9 @@ export type ToolId =
   | "ellipse"
   | "highlight"
   | "text"
+  | "textbox"
+  | "polyline"
+  | "rail"
   | "cloud"
   | "callout"
   | "stamp"
@@ -118,6 +123,8 @@ export interface UIState {
   symbolId: string;
   /** Sticky inspection status for new symbols. null means Not assessed. */
   symbolStatus: InspectionStatus | null;
+  /** Sticky line type for new schematic polylines. */
+  lineTypeId: string;
 }
 
 export type ChangeReason =
@@ -158,6 +165,9 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "ellipse":
     case "highlight":
     case "text":
+    case "textbox":
+    case "polyline":
+    case "rail":
     case "cloud":
     case "callout":
     case "stamp":
@@ -203,6 +213,7 @@ function defaultUI(): UIState {
     measureAreaShape: "polygon",
     symbolId: DEFAULT_SYMBOL_ID,
     symbolStatus: null,
+    lineTypeId: DEFAULT_LINE_TYPE_ID,
   };
 }
 
@@ -267,6 +278,9 @@ export class Store {
     this.ui.measureAreaMode = "add";
     this.ui.measureAreaShape = "polygon";
     this.ui.symbolId = DEFAULT_SYMBOL_ID;
+    this.ui.lineTypeId = project.lineTypes.some((entry) => entry.id === this.ui.lineTypeId)
+      ? this.ui.lineTypeId
+      : (project.lineTypes[0]?.id ?? DEFAULT_LINE_TYPE_ID);
     this.ui.symbolStatus = null;
     this.emit("project");
     this.scheduleAutosave();
@@ -313,6 +327,20 @@ export class Store {
     this.scheduleAutosave();
   }
 
+  /** Changes a template sheet's paper. Structural like adding or deleting a page. */
+  setTemplatePaper(page: number, paper: SheetPaperSize): void {
+    if (!this.project) return;
+    const document = projectDocumentForPage(this.project, page);
+    if (!document?.template) return;
+    document.template.paper = paper;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    this.scheduleAutosave();
+  }
+
   /**
    * Deletes one page and remaps measurements on later pages. Structural like
    * importing a document: the source files are untouched and the operation is
@@ -336,6 +364,12 @@ export class Store {
     this.emit("project");
     this.scheduleAutosave();
     return result;
+  }
+
+  setLineType(id: string): void {
+    if (!this.project?.lineTypes.some((entry) => entry.id === id)) return;
+    this.ui.lineTypeId = id;
+    this.emit("tool");
   }
 
   setPage(page: number): void {

@@ -168,7 +168,9 @@ export function itemLabel(item: MarkupItem, project: Project): string {
   if (item.kind === "count") return countTypeLabel(project, item.countType);
   const metrics = itemMetrics(item, project);
   if (metrics) return metrics.primary;
-  if (item.kind === "text") return item.text?.slice(0, 32) || t("kind.text");
+  if (item.kind === "text" || item.kind === "textbox") {
+    return item.text?.slice(0, 32) || t(`kind.${item.kind}` as MessageKey);
+  }
   if (item.kind === "callout") return item.text?.slice(0, 32) || t("kind.callout");
   if (item.kind === "stamp") return item.text?.slice(0, 32) || t("kind.stamp");
   if (item.kind === "delta")

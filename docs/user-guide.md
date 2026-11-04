@@ -7,7 +7,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 ## Quick start
 
 1. Choose **File → New project…** or **File → Open drawing…**.
-2. Pick a PDF or a scanned TIF drawing.
+2. Pick a PDF or a scanned TIF drawing, or start from an operation card sheet template.
 3. Calibrate the page against a known dimension, or enter the printed scale.
 4. Choose a measurement tool and draw on the plan.
 5. Review **View → Quantities…**.
@@ -74,7 +74,19 @@ OCR is a deliberate action because it takes time. The resulting words, bounding 
 
 ### New project
 
-**File → New project…** starts a fresh project from a drawing. If the current project has unsaved changes, GridScalr asks before discarding them.
+**File → New project…** asks for the source: a PDF/TIF drawing or an operation card sheet. For a sheet, choose a template, paper (A3 or A2) and a project name. The first sheet is added immediately with its title block ready to fill in. If the current project has unsaved changes, GridScalr asks before discarding them.
+
+### Operation card sheets
+
+An operation card sheet is a page created from a built-in template instead of a PDF. It has a title block and revision table on every sheet.
+
+- **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
+- **Fill in fields:** double-click a cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet. Table cells can also be filled directly on the canvas.
+- **Data summary:** choose the **Data summary** template for a sheet with a table. The table has fixed column headers and 9 mm rows; the number of rows depends on the paper (about 23 on A3, more on A2). Fill the cells in the form or double-click them. Need more rows? Create another data-summary sheet and continue there.
+- **Page number:** the **Page** field is free text. It is prefilled with the sheet ordinal and never updated automatically.
+- **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block or table.
+- **Not to scale:** template sheets show **Sheet · not to scale** in the status bar and do not need calibration.
+- **Paper:** choose A3 or A2 when the sheet is created, or change it under **Edit sheet fields → Paper**. The title block keeps its physical size; the drawing area grows on A2 and the data table gains rows. Field values are kept, including table cells in rows that are currently hidden on a smaller sheet.
 
 ### Open a drawing
 
@@ -312,6 +324,36 @@ Choose **Text** (`T`) and click the plan. The inline editor accepts multiple lin
 - Clicking outside the editor also commits.
 
 The floating strip beside the editor sets font size, colour, rotation, bold, underline, and left/center/right alignment. Text notes and annotation boxes are drawn at the same weight on the canvas and in exports; bold text uses the bold export font. Double-click an existing text note with the Select or Text tool to reopen it.
+
+### Text boxes
+
+Choose **Text box** (`Shift+T`) and drag a rectangle. The text wraps to the box width, so several boxes can form columns without manual line breaks.
+
+- `Enter` inserts a line break. `Ctrl/Cmd+Enter`, the done button, or clicking outside commits the text.
+- `Esc` cancels the edit.
+- The strip sets font size, colour, bold, underline and left/center/right alignment for the whole box.
+- A white background is on by default; turn it off in Properties. Text colour and font size are also editable there.
+- Drag the box handles to resize it; the text reflows. If the text becomes taller than the box, a red dashed outline warns you and the text is never silently clipped.
+- Double-click an existing text box with the Select tool to reopen it.
+
+Text boxes are useful for function descriptions, notes over drawings and multi-column text on a sheet.
+
+### Pipes, ducts and line types
+
+Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle. The tool snaps to a 5 mm grid and to existing item endpoints, midpoints, rail rows and intersections. `Enter` or a double-click finishes the run; `Esc` cancels it.
+
+The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Changing a class later in Project settings does not restyle existing runs, so the drawing stays stable.
+
+### I/O rails
+
+Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Select it and choose **Edit rail…** in Properties to:
+
+- Load the `PLC/DI/AI/DU/AU` or `M-Bus/DUC/DI/AI/DU/AU` preset.
+- Rename rows and edit their legends.
+- Add or remove rows.
+- Show or hide the left badges and the legend line.
+
+Rail rows are snap targets for pipes and control cables. Connection dots are ordinary small filled ellipses; a cable can cross a row without connecting, so the dots are placed explicitly.
 
 ### Resize and rotate
 
@@ -583,7 +625,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 22 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and adds optional report metadata and an embedded report-logo reference. Older projects load normally and are migrated when opened.
+Schema version 23 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and the optional report metadata and report-logo reference from schema 22. Schema 23 adds operation card sheet documents with a template id and version, an A3/A2 paper size and a map of title-block field values. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

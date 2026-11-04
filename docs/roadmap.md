@@ -6,7 +6,7 @@ Detailed planning documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.18.0** · Project-file schema: **22**
+Current version: **0.18.0** · Project-file schema: **23**
 
 1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
 packages, and tested large-project performance. The 1.0 architecture decisions are
@@ -63,8 +63,9 @@ milestone:
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | 0.17.0 | Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation | Complete | v21 |
 | **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Complete** | v22 |
-| **0.19.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v22 |
-| **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v22 |
+| **Schematic sheets** | **Template pages, title-block fields, text boxes, rails, schematic drawing tools and symbols** | **In progress** | v23 |
+| **0.19.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v23 |
+| **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
@@ -137,6 +138,32 @@ Exit criteria:
 - Project metadata renders on reports and survives packaging.
 - Missing translations fail CI.
 - English remains complete.
+
+### Schematic sheets (in progress)
+
+**Goal:** a technician can create an operation card from a blank sheet template,
+fill in the title block and table cells, draw the schematic and export the result
+without preparing a PDF first.
+
+Deliverables:
+
+- Template sheet documents and schema 23
+- Built-in drawing frame and data-summary templates on A3/A2
+- Editable title-block and table fields on the canvas and in a form
+- Wrapped text boxes with an optional white background
+- Configurable I/O rails, polyline drawing with an ortho constraint and media
+  line types
+- Schematic symbol library and generated review catalogue
+
+The locked decisions, phases and acceptance criteria live in
+[`plan/operation-cards.md`](plan/operation-cards.md).
+
+Exit criteria:
+
+- A blank operation card can be created, saved, reopened, packaged and exported.
+- Template values are visible in the export even when every layer is hidden.
+- Template-only packages reopen without external files.
+- The same document model, undo, layer visibility and locking rules apply.
 
 ### 0.19.0 — Scale and workflow
 

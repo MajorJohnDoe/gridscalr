@@ -148,6 +148,23 @@ export class PdfRenderer {
     }
   }
 
+  /** Replaces one document in place, for example after a sheet paper change. */
+  replaceDocument(index: number, document: PDFDocumentProxy, pageMap?: number[]): void {
+    if (index < 0 || index >= this.documents.length) return;
+    const previous = this.documents[index];
+    this.cancel();
+    for (const page of new Set(this.pages.values())) page.cleanup();
+    this.pages.clear();
+    this.documents[index] = document;
+    this.pageMaps[index] =
+      pageMap?.filter((page) => page >= 1 && page <= document.numPages) ??
+      Array.from({ length: document.numPages }, (_, page) => page + 1);
+    this.recomputeStarts();
+    if (previous && !this.documents.includes(previous)) {
+      void previous.loadingTask.destroy().catch(() => undefined);
+    }
+  }
+
   get documentCount(): number {
     return this.documents.length;
   }

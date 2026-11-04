@@ -2,11 +2,17 @@
 
 
 - Markup layers are stored in the project, not written into the PDF's own annotation or optional-content structures. The drawing PDF export bakes visible markups into page content as vectors.
-- Text notes do not wrap inside a fixed text box; use `Shift+Enter` for an explicit line break.
+- Operation card sheets use built-in templates only. Custom frames, image logos, automatic page numbering and automatic equipment tags are not supported yet. The page field is free text and is not renumbered when sheets are added or removed.
+- Template field values are stored in the project and exported as searchable PDF text, but the in-app search does not index them. Page thumbnails and the read-only reference pane show the static frame without field values.
+- Data-summary sheets have a fixed fifteen-column layout and a paper-dependent number of 9 mm rows (about 23 on A3 and 36 on A2). Columns cannot be added, removed or reordered; extra rows require another data-summary sheet. Cells are single-line and shrink to fit.
+- Changing a sheet's paper is structural and cannot be undone. Field values, including table cells in rows that no longer fit, are retained and reappear when the larger paper is selected again.
+- Text notes placed with the Text tool do not wrap; use `Shift+Enter` for an explicit line break or the Text box tool for a fixed-width box that wraps automatically. Text boxes support one style per box; formatting a selected range is not available yet.
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
 - Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
-- Snapping targets markup endpoints, midpoints, and intersections only. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Snapping targets markup endpoints, midpoints, intersections, I/O rail rows and a 5 mm grid for the Pipe / duct tool. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Schematic pipes do not build a connectivity graph. There is no automatic cable routing, junction detection or I/O extraction; control cables snap to rail rows and connection dots are placed explicitly.
+- A line type sets the colour, width and dash when a run is created. Changing a line type later does not restyle existing runs, so old drawings remain stable. Line type names and colours are project data, not a shared company standard.
 - Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
 - Images support PNG and JPEG only. They are embedded in the project and count toward its file size; there is no external `assets/` folder. Image cropping, filters, and colour correction are not available.
 - TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages can be deleted like any other page but cannot be rearranged, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.

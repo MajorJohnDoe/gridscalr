@@ -3,6 +3,7 @@ import { defaultProjectMetadata } from "./metadata";
 import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
 import { defaultCountTypes } from "../features/countTypes/model";
+import { defaultLineTypes } from "./lineTypes";
 import { SCHEMA_VERSION } from "./types";
 import type {
   DocumentRef,
@@ -157,6 +158,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     categories,
     countTypes: defaultCountTypes(),
     countPresets: [],
+    lineTypes: defaultLineTypes(),
     assets: {},
     pages: {},
     markupsViews: [],

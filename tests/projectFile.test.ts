@@ -9,6 +9,10 @@ import { createDefaultLayers, createProject, defaultDocument } from "../src/mode
 import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem, Project } from "../src/model/types";
 import {
+  createTemplateDocument,
+  prefillSheetFields,
+} from "../src/features/schematics/model/sheetDocument";
+import {
   parseProject,
   relativeDocumentPath,
   resolveRelativePath,
@@ -1606,7 +1610,6 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(22);
     expect(parsed.countPresets).toEqual([]);
     expect(parsed.countTypes.map((entry) => entry.id)).toEqual([
       "door",
@@ -1698,7 +1701,6 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(22);
     expect(parsed.metadata).toEqual({
       facility: "Northgate",
       client: "Example AB",
@@ -1754,12 +1756,43 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(22);
     expect(parsed.countPresets).toEqual([]);
     expect(parsed.markupsViews[0]).toMatchObject({
       name: "Door schedule",
       countType: "door",
       groupBy: ["countType", "room"],
     });
+  });
+
+  it("migrates schema 22 projects to schema 23", () => {
+    const raw = JSON.parse(serializeProject(makeProject()));
+    raw.schemaVersion = 22;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(23);
+    expect(parsed.documents.every((document) => document.kind !== "template")).toBe(true);
+  });
+
+  it("round-trips a template sheet document and its field values", () => {
+    const project = makeProject();
+    const sheet = createTemplateDocument("gridscalr.operation-card.frame", "A2", "Sheet A2");
+    project.documents.push(sheet);
+    prefillSheetFields(project, sheet, 2);
+    sheet.template!.fields["title.card"] = "56-01-01";
+
+    const parsed = parseProject(serializeProject(project));
+    const document = parsed.documents.find((entry) => entry.id === sheet.id)!;
+    expect(document.kind).toBe("template");
+    expect(document.pageCount).toBe(1);
+    expect(document.path).toBeNull();
+    expect(document.relativePath).toBeNull();
+    expect(document.sha256).toBe("");
+    expect(document.template).toMatchObject({
+      id: "gridscalr.operation-card.frame",
+      version: 1,
+      paper: "A2",
+    });
+    expect(document.template!.fields["title.card"]).toBe("56-01-01");
+    expect(document.template!.fields["title.page"]).toBe("2");
+    expect(document.template!.fields["project.name"]).toBe(parsed.name);
   });
 });

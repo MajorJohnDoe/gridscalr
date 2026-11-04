@@ -15,6 +15,7 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { clampLabelSize } from "../model/label";
 import { isLabelFitPosition } from "../model/labelLayout";
+import { defaultLineTypes } from "../model/lineTypes";
 import { normalizeProjectMetadata } from "../model/metadata";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
@@ -38,7 +39,9 @@ import type {
   LayerKind,
   LayerPageState,
   LengthUnit,
+  LineType,
   MarkupItem,
+  RailRow,
   OcrPage,
   OcrWord,
   PageState,
@@ -73,6 +76,9 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "stamp",
   "delta",
   "symbol",
+  "textbox",
+  "polyline",
+  "rail",
 ]);
 
 const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
@@ -317,6 +323,22 @@ function normalizeItem(
     if (points.length < 2) return null;
     points.length = 2;
   }
+  if (raw.kind === "textbox") {
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+    const width = Math.abs(points[1].x - points[0].x);
+    const height = Math.abs(points[1].y - points[0].y);
+    if (width < 2 || height < 2) return null;
+  }
+  if (raw.kind === "polyline") {
+    if (points.length < 2) return null;
+    if (points.length > 500) points.length = 500;
+  }
+  if (raw.kind === "rail") {
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+    if (Math.abs(points[1].x - points[0].x) < 1) return null;
+  }
   if (raw.kind === "arc" || raw.kind === "angle") {
     if (points.length < 3) return null;
     points.length = 3;
@@ -346,7 +368,8 @@ function normalizeItem(
     (raw.kind === "length" ||
       raw.kind === "radius" ||
       raw.kind === "diameter" ||
-      raw.kind === "arc") &&
+      raw.kind === "arc" ||
+      raw.kind === "polyline") &&
     raw.lineStyle === "dashed"
       ? "dashed"
       : undefined;
@@ -384,12 +407,23 @@ function normalizeItem(
     (raw.kind === "cloud" ||
       raw.kind === "callout" ||
       raw.kind === "stamp" ||
-      raw.kind === "delta") &&
+      raw.kind === "delta" ||
+      raw.kind === "textbox") &&
     typeof raw.textColor === "string" &&
     raw.textColor
       ? raw.textColor
       : undefined;
-  const supportsTextStyle = raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout";
+  const textBackground =
+    raw.kind === "textbox" && raw.textBackground === "white" ? ("white" as const) : undefined;
+  const padding =
+    raw.kind === "textbox" &&
+    typeof raw.padding === "number" &&
+    Number.isFinite(raw.padding) &&
+    raw.padding >= 0
+      ? Math.min(40, raw.padding)
+      : undefined;
+  const supportsTextStyle =
+    raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout" || raw.kind === "textbox";
   const textBold = supportsTextStyle && raw.textBold === true ? true : undefined;
   const textUnderline = supportsTextStyle && raw.textUnderline === true ? true : undefined;
   const textAlign: TextAlign | undefined =
@@ -407,10 +441,22 @@ function normalizeItem(
           : raw.kind === "delta"
             ? "A"
             : undefined;
+  const lineTypeId =
+    raw.kind === "polyline" && typeof raw.lineTypeId === "string" ? raw.lineTypeId : undefined;
+  const rows = raw.kind === "rail" ? normalizeRailRows(raw.rows) : undefined;
+  const rowSpacing =
+    raw.kind === "rail" && typeof raw.rowSpacing === "number" && Number.isFinite(raw.rowSpacing)
+      ? Math.max(2, Math.min(60, raw.rowSpacing))
+      : undefined;
+  const showBadges = raw.kind === "rail" && raw.showBadges === false ? false : undefined;
+  const showLegend = raw.kind === "rail" && raw.showLegend === false ? false : undefined;
   const fontSize =
     typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize) && raw.fontSize > 0
       ? Math.max(0.5, Math.min(300, raw.fontSize))
-      : raw.kind === "callout" || raw.kind === "cloud" || raw.kind === "stamp"
+      : raw.kind === "callout" ||
+          raw.kind === "cloud" ||
+          raw.kind === "stamp" ||
+          raw.kind === "textbox"
         ? 12
         : raw.kind === "delta"
           ? 14
@@ -430,7 +476,9 @@ function normalizeItem(
           ? raw.color
           : raw.kind === "image"
             ? "#7aa2f7"
-            : "#4cc9f0",
+            : raw.kind === "textbox"
+              ? "#1a2024"
+              : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
@@ -485,9 +533,16 @@ function normalizeItem(
     textBoxWidth,
     textBoxHeight,
     textColor,
+    textBackground,
+    padding,
     textBold,
     textUnderline,
     textAlign,
+    lineTypeId,
+    rows,
+    rowSpacing,
+    showBadges,
+    showLegend,
     countType:
       raw.kind === "count"
         ? typeof raw.countType === "string" && countTypeIds.has(raw.countType)
@@ -619,13 +674,78 @@ function normalizeLayers(
   );
 }
 
+function normalizeLineTypes(rawValue: unknown): LineType[] {
+  const defaults = defaultLineTypes();
+  if (!Array.isArray(rawValue)) return defaults;
+  const result: LineType[] = [];
+  const seen = new Set<string>();
+  for (const entry of rawValue) {
+    if (!entry || typeof entry !== "object") continue;
+    const source = entry as Partial<LineType>;
+    const id =
+      typeof source.id === "string" && source.id.trim() ? source.id.trim().slice(0, 60) : "";
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    result.push({
+      id,
+      name:
+        typeof source.name === "string" && source.name.trim()
+          ? source.name.trim().slice(0, 80)
+          : id,
+      color:
+        typeof source.color === "string" && /^#[0-9a-f]{6}$/i.test(source.color)
+          ? source.color
+          : "#4cc9f0",
+      widthPt:
+        typeof source.widthPt === "number" && Number.isFinite(source.widthPt)
+          ? Math.max(0.3, Math.min(20, source.widthPt))
+          : 2,
+      style: source.style === "dashed" ? "dashed" : "solid",
+    });
+  }
+  return result.length ? result : defaults;
+}
+
+function normalizeRailRows(rawValue: unknown): RailRow[] | undefined {
+  if (!Array.isArray(rawValue)) return undefined;
+  const rows: RailRow[] = [];
+  for (const entry of rawValue.slice(0, 16)) {
+    if (!entry || typeof entry !== "object") continue;
+    const source = entry as Partial<RailRow>;
+    const label = typeof source.label === "string" ? source.label.trim().slice(0, 20) : "";
+    if (!label) continue;
+    rows.push({
+      id:
+        typeof source.id === "string" && source.id
+          ? source.id.slice(0, 40)
+          : `row_${rows.length + 1}`,
+      label,
+      legend:
+        typeof source.legend === "string" && source.legend.trim()
+          ? source.legend.trim().slice(0, 80)
+          : undefined,
+    });
+  }
+  return rows.length ? rows : undefined;
+}
+
+function normalizeSheetFields(rawValue: unknown): Record<string, string> {
+  if (typeof rawValue !== "object" || rawValue === null) return {};
+  const fields: Record<string, string> = {};
+  for (const [id, value] of Object.entries(rawValue)) {
+    if (!id || id.length > 120 || typeof value !== "string") continue;
+    fields[id] = value.slice(0, 500);
+  }
+  return fields;
+}
+
 function normalizeDocument(rawValue: unknown): DocumentRef {
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
   ) as Partial<DocumentRef> & {
     source?: { format?: unknown; dpi?: unknown; originalName?: unknown };
   };
-  const kind = rawDoc.kind === "tiff" ? "tiff" : "pdf";
+  const kind = rawDoc.kind === "tiff" ? "tiff" : rawDoc.kind === "template" ? "template" : "pdf";
   const document: DocumentRef = {
     id: typeof rawDoc.id === "string" && rawDoc.id ? rawDoc.id : makeId("doc"),
     kind,
@@ -634,7 +754,9 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
         ? rawDoc.name
         : kind === "tiff"
           ? "Untitled.tif"
-          : "Untitled.pdf",
+          : kind === "template"
+            ? t("sheet.untitled")
+            : "Untitled.pdf",
     path: typeof rawDoc.path === "string" && rawDoc.path ? rawDoc.path : null,
     relativePath:
       typeof rawDoc.relativePath === "string" && rawDoc.relativePath ? rawDoc.relativePath : null,
@@ -648,6 +770,30 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
         ? Math.max(0, Math.round(rawDoc.sizeBytes))
         : 0,
   };
+  if (kind === "template") {
+    const rawTemplate = (
+      typeof rawDoc.template === "object" && rawDoc.template !== null ? rawDoc.template : {}
+    ) as Partial<NonNullable<DocumentRef["template"]>>;
+    document.template = {
+      id:
+        typeof rawTemplate.id === "string" && rawTemplate.id.trim()
+          ? rawTemplate.id
+          : "gridscalr.operation-card.frame",
+      version:
+        typeof rawTemplate.version === "number" && Number.isFinite(rawTemplate.version)
+          ? Math.max(1, Math.round(rawTemplate.version))
+          : 1,
+      paper: rawTemplate.paper === "A2" ? "A2" : "A3",
+      fields: normalizeSheetFields(rawTemplate.fields),
+    };
+    document.path = null;
+    document.relativePath = null;
+    document.sha256 = "";
+    document.pageCount = 1;
+    document.sizeBytes = 0;
+    return document;
+  }
+
   if (Array.isArray(rawDoc.excludedPages)) {
     const excluded = [
       ...new Set(
@@ -827,6 +973,7 @@ export function parseProject(text: string): Project {
     categories,
     countTypes,
     countPresets,
+    lineTypes: normalizeLineTypes(raw.lineTypes),
     assets,
     pages: {},
     metadata: normalizeProjectMetadata(raw.metadata),

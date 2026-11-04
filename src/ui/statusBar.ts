@@ -13,6 +13,7 @@ import {
   formatScaleRatio,
 } from "../model/units";
 import type { Project } from "../model/types";
+import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { store } from "../state/store";
 import { clear, el, escapeHtml } from "./dom";
 import { icon } from "./icons";
@@ -67,7 +68,8 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   const calibration = pageCalibration(project, page);
   const scale = pageScale(project, page);
   const locked = pageScaleLocked(project, page);
-  const key = `${project.id}|${page}|${calibration ? 1 : 0}|${locked ? 1 : 0}|${scale}`;
+  const isSheet = templateDocumentForPage(project, page) ? 1 : 0;
+  const key = `${project.id}|${page}|${calibration ? 1 : 0}|${locked ? 1 : 0}|${scale}|${isSheet}`;
   if (key !== scaleChipKey) {
     scaleChipKey = key;
     clear(refs.statusCalibration);
@@ -108,6 +110,11 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
  */
 function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   const page = store.ui.page;
+  if (templateDocumentForPage(project, page)) {
+    const chip = el("span", "status-chip");
+    chip.append(document.createTextNode(t("status.sheet")));
+    return chip;
+  }
   const calibration = pageCalibration(project, page);
   const locked = pageScaleLocked(project, page);
   const button = el(

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 22 as const;
+export const SCHEMA_VERSION = 23 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -33,7 +33,10 @@ export type DrawingKind =
   | "callout"
   | "stamp"
   | "delta"
-  | "symbol";
+  | "symbol"
+  | "textbox"
+  | "polyline"
+  | "rail";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -174,6 +177,20 @@ export interface MarkupItem {
   textBoxHeight?: number;
   /** Text colour for annotation text boxes. Missing uses the default light text. */
   textColor?: string;
+  /** Text boxes only. Missing means transparent. */
+  textBackground?: "none" | "white";
+  /** Text boxes only: inner padding in PDF points. Missing means 4 pt. */
+  padding?: number;
+  /** Polyline only: the project line type used at creation. */
+  lineTypeId?: string;
+  /** Rails only: editable row labels and legends. */
+  rows?: RailRow[];
+  /** Rails only: distance between rows in PDF points. Missing means 5 mm. */
+  rowSpacing?: number;
+  /** Rails only: draw rounded labels on the left. Missing means true. */
+  showBadges?: boolean;
+  /** Rails only: draw a legend line below the rail. Missing means true. */
+  showLegend?: boolean;
   /** Text, callout and cloud text: bold weight. Missing means regular. */
   textBold?: boolean;
   /** Text, callout and cloud text: underline. Missing means no underline. */
@@ -294,7 +311,32 @@ export interface MarkupsView {
   sort: MarkupsSort | null;
 }
 
-export type DocumentKind = "pdf" | "tiff";
+export type DocumentKind = "pdf" | "tiff" | "template";
+
+export interface RailRow {
+  id: string;
+  label: string;
+  legend?: string;
+}
+
+/** A project-level media class for schematic pipes, ducts and cables. */
+export interface LineType {
+  id: string;
+  name: string;
+  color: string;
+  widthPt: number;
+  style: "solid" | "dashed";
+}
+
+export type SheetPaperSize = "A3" | "A2";
+
+/** A page created from a built-in sheet template, with its user-entered values. */
+export interface SheetTemplateRef {
+  id: string;
+  version: number;
+  paper: SheetPaperSize;
+  fields: Record<string, string>;
+}
 
 /** Provenance for a document that GridScalr derived itself, such as a converted TIF. */
 export interface DocumentSourceInfo {
@@ -322,6 +364,8 @@ export interface DocumentRef {
   embeddedPdf?: string;
   /** Only for kind "tiff". */
   source?: DocumentSourceInfo;
+  /** Only for kind "template". */
+  template?: SheetTemplateRef;
   /** Set when this reference is a duplicated page of another document entry. */
   copiedFrom?: { documentId: string; page: number };
 }
@@ -394,6 +438,8 @@ export interface Project {
   countTypes: CountTypeDef[];
   /** Reusable Count tool presets stored in the project. */
   countPresets: CountPreset[];
+  /** Media classes for schematic polylines. Order is picker order. */
+  lineTypes: LineType[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;

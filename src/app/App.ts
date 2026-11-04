@@ -58,6 +58,8 @@ import type {
   Project,
   RecentEntry,
   SelectionRef,
+  SheetPaperSize,
+  SheetTemplateRef,
 } from "../model/types";
 import {
   parseProject,
@@ -141,7 +143,25 @@ import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
 import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
 import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
 import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
-import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
+import {
+  DEFAULT_SHEET_TEMPLATE_ID,
+  resolveSheetLabels,
+  sheetTemplateFor,
+  type SheetLabels,
+} from "../features/schematics/model/sheetTemplate";
+import { buildStaticSheetPdf } from "../features/schematics/render/sheetPdf";
+import {
+  createTemplateDocument,
+  prefillSheetFields,
+  templateSheetCount,
+} from "../features/schematics/model/sheetDocument";
+import {
+  chooseProjectSource,
+  type SheetSourceChoice,
+} from "../features/schematics/ui/sheetSourceDialog";
+import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
+import { openRailDialog } from "../features/schematics/ui/railDialog";
+import { LANGUAGE_CHANGED_EVENT, currentLocale, t } from "../i18n";
 
 function projectFilters() {
   return [{ name: t("app.projectFilter"), extensions: ["gridscalr"] }];
@@ -179,6 +199,7 @@ export class App {
   private unlistenLaunch: (() => void) | null = null;
   private windowControls: WindowControls | null = null;
   private autosaveWarned: string | null = null;
+  private sheetBytesCache = new Map<string, Promise<Uint8Array>>();
 
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
@@ -232,6 +253,7 @@ export class App {
       setScaleLock: (locked) => this.setScaleLock(locked),
       deleteSelection: () => this.canvas.deleteSelection(),
       editSelectedText: () => this.canvas.editSelectedText(),
+      editRail: (itemId) => void openRailDialog(itemId),
       copySelection: () => this.copySelection(),
       cutSelection: () => this.cutSelection(),
       pasteSelection: () => this.pasteSelection(),
@@ -258,7 +280,11 @@ export class App {
       getPageSize: (page) => this.pageSizes.get(page),
       getPageThumbnail: (page) => this.thumbnails?.get(page) ?? null,
       requestPageThumbnail: (page) => this.thumbnails?.request(page) ?? Promise.resolve(null),
-      addPages: () => void this.openPdfFlow(),
+      addPages: () => void this.addPageFlow(),
+      editSheetFields: (page) =>
+        void openSheetFieldsDialog(page, {
+          onChangePaper: (paper) => this.changeSheetPaper(page, paper),
+        }),
       refresh: () => this.renderAll(),
       restoreAutosave: () => void this.restoreAutosave(),
       getAutosave: () => store.readAutosavePreview(),
@@ -602,8 +628,9 @@ export class App {
     }
 
     if (!store.project) return;
-    const tool = TOOL_KEYS[key];
-    if (tool && !event.shiftKey) {
+    const combo = `${event.shiftKey ? "shift+" : ""}${key}`;
+    const tool = TOOL_KEYS[combo] ?? (event.shiftKey ? undefined : TOOL_KEYS[key]);
+    if (tool) {
       event.preventDefault();
       store.setTool(tool);
       return;
@@ -709,18 +736,150 @@ export class App {
   }
 
   private async newProjectFlow(): Promise<void> {
+    let sheetChoice = false;
     try {
-      const picked = await pickDrawing();
-      if (!picked) return;
+      const choice = await chooseProjectSource("new");
+      if (!choice) return;
+      sheetChoice = choice.kind === "sheet";
+
+      if (choice.kind === "pdf") {
+        const picked = await pickDrawing();
+        if (!picked) return;
+        if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
+          return;
+        }
+        await this.resetProject();
+        await this.loadNewPdf(picked.bytes, picked.name, picked.path);
+        return;
+      }
+
       if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
         return;
       }
       await this.resetProject();
-      await this.loadNewPdf(picked.bytes, picked.name, picked.path);
+      await this.createSheetProject(choice);
     } catch (error) {
-      logEvent("error", `open drawing failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotOpenDrawing"), errorMessage(error), "warning");
+      logEvent("error", `new project failed: ${errorMessage(error)}`);
+      await messageDialog(
+        sheetChoice ? t("sheet.createFailed") : t("app.couldNotOpenDrawing"),
+        errorMessage(error),
+        "warning",
+      );
     }
+  }
+
+  private sheetLabels(): SheetLabels {
+    return resolveSheetLabels((key) => t(key));
+  }
+
+  /** Static template bytes are immutable per template, paper and language. */
+  private async sheetBytes(template: SheetTemplateRef): Promise<Uint8Array> {
+    const key = `${template.id}:${template.version}:${template.paper}:${currentLocale()}`;
+    const cached = this.sheetBytesCache.get(key);
+    if (cached) return cached;
+
+    const promise = (async () => {
+      const spec = sheetTemplateFor(template.id, template.paper, this.sheetLabels());
+      if (spec) return buildStaticSheetPdf(spec);
+      const fallback = sheetTemplateFor(
+        DEFAULT_SHEET_TEMPLATE_ID,
+        template.paper,
+        this.sheetLabels(),
+      );
+      if (!fallback) throw new Error(t("sheet.template.unknown"));
+      return buildStaticSheetPdf(fallback);
+    })();
+    this.sheetBytesCache.set(key, promise);
+    try {
+      return await promise;
+    } catch (error) {
+      this.sheetBytesCache.delete(key);
+      throw error;
+    }
+  }
+
+  private async createSheetProject(choice: SheetSourceChoice): Promise<void> {
+    const documentRef = createTemplateDocument(choice.templateId, choice.paper, choice.name);
+    const project = createProject(documentRef);
+    project.name = normalizeProjectName(choice.name, documentRef.name);
+    prefillSheetFields(project, documentRef, 1);
+    project.activeLayerId =
+      project.layers.find((layer) => layer.kind === "draw")?.id ?? project.activeLayerId;
+    if (!documentRef.template) return;
+    const bytes = await this.sheetBytes(documentRef.template);
+    const pdf = await this.openDocument(bytes, documentRef.name);
+    if (!pdf) return;
+    await this.installDocuments([pdf], project, null, false);
+    toast(t("sheet.created", { name: project.name }), "success");
+  }
+
+  private async addPageFlow(): Promise<void> {
+    if (!store.project) {
+      await this.openPdfFlow();
+      return;
+    }
+    try {
+      const choice = await chooseProjectSource("add");
+      if (!choice) return;
+      if (choice.kind === "pdf") {
+        await this.openPdfFlow();
+        return;
+      }
+      await this.addSheetFlow(choice);
+    } catch (error) {
+      logEvent("error", `add page failed: ${errorMessage(error)}`);
+      await messageDialog(t("sheet.addFailed"), errorMessage(error), "warning");
+    }
+  }
+
+  private async changeSheetPaper(page: number, paper: SheetPaperSize): Promise<void> {
+    const project = store.project;
+    const renderer = this.renderer;
+    if (!project || !renderer) return;
+    const sheet = projectDocumentForPage(project, page);
+    if (!sheet?.template || sheet.template.paper === paper) return;
+    const index = documentIndexForPage(project.documents, page);
+    const next: SheetTemplateRef = {
+      ...sheet.template,
+      paper,
+      fields: { ...sheet.template.fields },
+    };
+    const bytes = await this.sheetBytes(next);
+    const proxy = await this.openDocument(bytes, sheet.name);
+    if (!proxy) return;
+    renderer.replaceDocument(index, proxy, [1]);
+    this.thumbnails?.clear();
+    this.sizeEpoch += 1;
+    this.pageSizes.delete(page);
+    this.pageSizePromises.delete(page);
+    await this.enqueuePageSize(page);
+    this.canvas.fitPage();
+    store.setTemplatePaper(page, paper);
+    this.canvas.invalidate();
+    toast(t("sheet.paperChanged", { paper }), "success");
+  }
+
+  private async addSheetFlow(choice: SheetSourceChoice): Promise<void> {
+    const project = store.project;
+    const renderer = this.renderer;
+    if (!project || !renderer) return;
+
+    const startPage = totalPageCount(project.documents) + 1;
+    const documentRef = createTemplateDocument(choice.templateId, choice.paper, choice.name);
+    prefillSheetFields(project, documentRef, templateSheetCount(project) + 1);
+    if (!documentRef.template) return;
+
+    const bytes = await this.sheetBytes(documentRef.template);
+    const pdf = await this.openDocument(bytes, documentRef.name);
+    if (!pdf) return;
+
+    store.addDocument(documentRef);
+    renderer.addDocument(pdf, [1]);
+    store.setPage(startPage);
+    await this.enqueuePageSize(startPage);
+    this.canvas.fitPage();
+    this.canvas.invalidate();
+    toast(t("sheet.added", { name: documentRef.name }), "success");
   }
 
   private async closeProjectFlow(): Promise<void> {
@@ -1006,6 +1165,26 @@ export class App {
           : null;
 
     for (const documentRef of project.documents) {
+      if (documentRef.kind === "template") {
+        if (!documentRef.template) return;
+        const cacheKey = `template:${documentRef.template.id}:${documentRef.template.version}:${documentRef.template.paper}:${currentLocale()}`;
+        const cached = loadedByKey.get(cacheKey);
+        if (cached) {
+          documentRef.pageCount = 1;
+          loaded.push(cached);
+          loadedById.set(documentRef.id, cached);
+          continue;
+        }
+        const bytes = await this.sheetBytes(documentRef.template);
+        const document = await this.openDocument(bytes, documentRef.name);
+        if (!document) return;
+        documentRef.pageCount = 1;
+        loaded.push(document);
+        loadedById.set(documentRef.id, document);
+        loadedByKey.set(cacheKey, document);
+        continue;
+      }
+
       const copiedSource = documentRef.copiedFrom
         ? loadedById.get(documentRef.copiedFrom.documentId)
         : undefined;

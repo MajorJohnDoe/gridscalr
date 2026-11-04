@@ -2777,7 +2777,10 @@ html[data-platform="macos"] .topbar {
 }
 
 .modal {
+  display: flex;
+  flex-direction: column;
   width: min(468px, 100%);
+  max-height: min(90vh, 900px);
   background: linear-gradient(180deg, #252d32, #1b2125);
   border: 1px solid #3a444a;
   border-radius: 11px;
@@ -2836,7 +2839,14 @@ html[data-platform="macos"] .topbar {
 }
 
 .modal-body {
+  min-height: 0;
+  overflow-y: auto;
   padding: 14px 16px 6px;
+}
+
+.modal-header,
+.modal-footer {
+  flex: 0 0 auto;
 }
 
 .modal-footer {

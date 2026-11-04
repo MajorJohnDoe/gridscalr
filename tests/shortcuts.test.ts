@@ -3,11 +3,11 @@ import { APP_SHORTCUTS, TOOL_KEYS, TOOL_SHORTCUTS, formatShortcut } from "../src
 import { TOOLS } from "../src/ui/toolDefs";
 
 describe("shortcut definitions", () => {
-  it("covers every tool with a unique single-key shortcut", () => {
+  it("covers every tool with a unique shortcut", () => {
     expect(Object.keys(TOOL_SHORTCUTS).sort()).toEqual(TOOLS.map((tool) => tool.id).sort());
     const keys = Object.values(TOOL_SHORTCUTS);
     expect(new Set(keys.map((key) => key.toLowerCase())).size).toBe(keys.length);
-    for (const key of keys) expect(key).toMatch(/^[A-Z]$/);
+    for (const key of keys) expect(key).toMatch(/^(?:Shift\+)?[A-Z]$/);
   });
 
   it("builds the keyboard map from the same data as the tool rail", () => {
