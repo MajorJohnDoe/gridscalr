@@ -1,24 +1,30 @@
 import {
+  SCHEMATIC_CATEGORIES,
+  SCHEMATIC_SYMBOL_COUNT,
+  SIGN_CATEGORIES,
+  SIGN_SYMBOL_COUNT,
   SYMBOLS,
   SYMBOL_CATEGORY_COLORS,
-  SYMBOL_CATEGORIES,
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
   symbolSearchText,
   symbolSvgMarkup,
+  symbolsForSet,
   type SymbolDefinition,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import { store } from "../state/store";
 import { el } from "./dom";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
 import { t } from "../i18n";
+import type { SymbolSet } from "../model/types";
 
 const RECENT_KEY = "gridscalr.ui.symbols.recent.v1";
 const RECENT_LIMIT = 8;
 
 let searchQuery = "";
+let activeSet: SymbolSet = "sign";
 
 function loadRecent(): string[] {
   try {
@@ -68,7 +74,7 @@ function categorySection(category: SymbolDefinition["category"]): HTMLElement {
   dot.style.background = SYMBOL_CATEGORY_COLORS[category];
   head.append(dot, el("span", "", symbolCategoryLabel(category)));
   const grid = el("div", "symbol-grid");
-  for (const symbol of SYMBOLS.filter((entry) => entry.category === category)) {
+  for (const symbol of symbolsForSet(activeSet).filter((entry) => entry.category === category)) {
     grid.append(symbolTile(symbol));
   }
   section.append(head, grid);
@@ -79,7 +85,40 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   const library = el("div", "symbol-library");
   const head = el("div", "symbol-library-head");
   head.append(el("span", "", t("symbols.title")));
-  head.append(el("span", "symbol-library-count", t("symbols.count", { count: SYMBOLS.length })));
+  const count = el("span", "symbol-library-count");
+  head.append(count);
+
+  const tabs = el("div", "symbol-set-tabs");
+  tabs.setAttribute("role", "tablist");
+  const tabButtons: Array<{ set: SymbolSet; button: HTMLButtonElement }> = [];
+  for (const set of ["sign", "schematic"] as const) {
+    const button = el(
+      "button",
+      "symbol-set-tab",
+      set === "sign" ? t("symbols.setSigns") : t("symbols.setSchematic"),
+    );
+    button.type = "button";
+    button.dataset.set = set;
+    button.setAttribute("role", "tab");
+    button.addEventListener("click", () => {
+      activeSet = set;
+      syncTabs();
+      renderContent();
+    });
+    tabs.append(button);
+    tabButtons.push({ set, button });
+  }
+  const syncTabs = () => {
+    for (const entry of tabButtons) {
+      const active = entry.set === activeSet;
+      entry.button.classList.toggle("is-active", active);
+      entry.button.setAttribute("aria-selected", String(active));
+    }
+    count.textContent = t(activeSet === "sign" ? "symbols.countSigns" : "symbols.countSchematic", {
+      count: activeSet === "sign" ? SIGN_SYMBOL_COUNT : SCHEMATIC_SYMBOL_COUNT,
+    });
+  };
+
   const searchWrap = el("label", "symbol-search");
   const search = el("input", "input");
   search.type = "search";
@@ -87,27 +126,9 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   search.setAttribute("aria-label", t("symbols.searchAria"));
   search.value = searchQuery;
   searchWrap.append(search);
-  library.append(head, searchWrap);
+  library.append(head, tabs, searchWrap);
 
   const content = el("div", "symbol-library-content");
-  const recent = loadRecent();
-  if (recent.length && !searchQuery) {
-    const section = el("section", "symbol-category symbol-recent");
-    const head = el("div", "symbol-category-head");
-    head.append(el("span", "", t("symbols.recent")));
-    const grid = el("div", "symbol-grid");
-    for (const id of recent) {
-      const symbol = SYMBOLS.find((entry) => entry.id === id);
-      if (symbol) grid.append(symbolTile(symbol));
-    }
-    section.append(head, grid);
-    content.append(section);
-  }
-
-  for (const category of SYMBOL_CATEGORIES) content.append(categorySection(category));
-  const empty = el("div", "empty-note small symbol-empty", t("symbols.empty"));
-  empty.hidden = true;
-  content.append(empty);
   library.append(content);
 
   const filter = () => {
@@ -126,10 +147,40 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
       }
       section.hidden = sectionVisible === 0;
     }
-    empty.hidden = visible !== 0;
+    const empty = content.querySelector<HTMLElement>(".symbol-empty");
+    if (empty) empty.hidden = visible !== 0;
   };
+
+  const renderContent = () => {
+    content.replaceChildren();
+    const recent = loadRecent().filter((id) => {
+      const symbol = SYMBOLS.find((entry) => entry.id === id);
+      return symbol && (symbol.set === "schematic") === (activeSet === "schematic");
+    });
+    if (recent.length && !searchQuery) {
+      const section = el("section", "symbol-category symbol-recent");
+      const recentHead = el("div", "symbol-category-head");
+      recentHead.append(el("span", "", t("symbols.recent")));
+      const grid = el("div", "symbol-grid");
+      for (const id of recent) {
+        const symbol = SYMBOLS.find((entry) => entry.id === id);
+        if (symbol) grid.append(symbolTile(symbol));
+      }
+      section.append(recentHead, grid);
+      content.append(section);
+    }
+
+    const categories = activeSet === "schematic" ? SCHEMATIC_CATEGORIES : SIGN_CATEGORIES;
+    for (const category of categories) content.append(categorySection(category));
+    const empty = el("div", "empty-note small symbol-empty", t("symbols.empty"));
+    empty.hidden = true;
+    content.append(empty);
+    filter();
+  };
+
   search.addEventListener("input", filter);
-  if (searchQuery) filter();
+  syncTabs();
+  renderContent();
 
   refs.dockBody.append(library);
   refs.dockFooter.append(el("span", "symbol-library-hint", t("symbols.hint")));

@@ -14,7 +14,7 @@ import {
   symbolFor,
   symbolName,
   symbolSvgMarkup,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { clear, el, option } from "./dom";

@@ -28,6 +28,19 @@ import {
   symbolSvgMarkup,
 } from "../src/model/symbols";
 import { parseSymbolPath } from "../src/model/symbolPaths";
+import {
+  ALL_SYMBOLS,
+  ALL_SYMBOL_CATEGORIES,
+  SCHEMATIC_CATEGORIES,
+  SCHEMATIC_SYMBOLS,
+  SCHEMATIC_STROKE_WIDTH,
+  SYMBOL_CATEGORY_COLORS as ALL_CATEGORY_COLORS,
+  symbolDefaultSize,
+  symbolFor as symbolForAll,
+  symbolSetOf,
+  symbolTagPrefix,
+  symbolsForSet,
+} from "../src/features/schematics/symbols/registry";
 import sv from "../src/i18n/locales/sv.json";
 
 const STABLE_SYMBOL_IDS = [
@@ -99,7 +112,7 @@ describe("symbol library", () => {
   });
 
   it("covers all Swedish facility categories and common keyword searches", () => {
-    expect(Object.keys(SYMBOL_CATEGORY_LABELS).sort()).toEqual([...SYMBOL_CATEGORIES].sort());
+    expect(Object.keys(SYMBOL_CATEGORY_LABELS).sort()).toEqual([...ALL_SYMBOL_CATEGORIES].sort());
     for (const category of SYMBOL_CATEGORIES) {
       expect(SYMBOLS.some((symbol) => symbol.category === category)).toBe(true);
       expect(SYMBOL_CATEGORY_COLORS[category]).toMatch(/^#[0-9a-f]{6}$/i);
@@ -212,5 +225,61 @@ describe("symbol library", () => {
       expect(inspectionStatusColor(status)).toMatch(/^#[0-9a-f]{6}$/i);
     }
     expect(inspectionStatusLabel(undefined)).toBe("Not assessed");
+  });
+});
+
+describe("schematic symbol set", () => {
+  it("keeps the facility signs unchanged and adds the schematic set", () => {
+    expect(SYMBOLS).toHaveLength(52);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(10);
+    expect(ALL_SYMBOLS).toHaveLength(62);
+    expect(symbolsForSet("sign")).toHaveLength(52);
+    expect(symbolsForSet("schematic")).toHaveLength(10);
+    expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
+      ...SYMBOLS.map((symbol) => symbol.id),
+      ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
+    ]);
+  });
+
+  it("gives every schematic symbol metadata, ports and fixed-width artwork", () => {
+    for (const symbol of SCHEMATIC_SYMBOLS) {
+      expect(symbol.set).toBe("schematic");
+      expect(symbol.style).toBe("schematic");
+      expect(symbol.tagPrefix, symbol.id).toBeTruthy();
+      expect(symbol.defaultSize, symbol.id).toBeGreaterThan(0);
+      expect(SCHEMATIC_CATEGORIES).toContain(symbol.category);
+      expect(symbol.ports?.length, symbol.id).toBeGreaterThan(0);
+      for (const port of symbol.ports ?? []) {
+        expect(port.x).toBeGreaterThanOrEqual(0);
+        expect(port.x).toBeLessThanOrEqual(SYMBOL_VIEWBOX);
+        expect(port.y).toBeGreaterThanOrEqual(0);
+        expect(port.y).toBeLessThanOrEqual(SYMBOL_VIEWBOX);
+      }
+      expect(symbol.art.shapes.length).toBeGreaterThan(0);
+      expect(symbol.art.shapes.every((shape) => shape.stroke === true)).toBe(true);
+      const plan = symbolRenderPlan(symbol, "#000000");
+      expect(plan.fixedStrokeWidth).toBe(SCHEMATIC_STROKE_WIDTH);
+      expect(plan.shapes.every((shape) => shape.fill === null || shape.fill === "#111111")).toBe(
+        true,
+      );
+      expect(symbolSvgMarkup(symbol)).toContain("stroke-linecap");
+    }
+  });
+
+  it("resolves set membership, prefixes and defaults through the registry", () => {
+    expect(ALL_SYMBOLS.every((symbol) => symbolForAll(symbol.id).id === symbol.id)).toBe(true);
+    expect(symbolSetOf("schematic.fan")).toBe("schematic");
+    expect(symbolSetOf("fire.extinguisher")).toBe("sign");
+    expect(symbolTagPrefix("schematic.duct-sensor")).toBe("GT");
+    expect(symbolDefaultSize("schematic.fan")).toBeGreaterThan(24);
+    expect(ALL_CATEGORY_COLORS.instrument).toMatch(/^#[0-9a-f]{6}$/i);
+  });
+
+  it("has Swedish and English names for every schematic symbol", () => {
+    const swedish = sv as Record<string, string>;
+    for (const symbol of SCHEMATIC_SYMBOLS) {
+      expect(swedish[`symbol.${symbol.id}`], symbol.id).toBeTruthy();
+      expect(symbol.name, symbol.id).toBeTruthy();
+    }
   });
 });

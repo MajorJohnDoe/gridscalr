@@ -96,6 +96,19 @@ describe("template sheet export", () => {
         createdAt: now,
         updatedAt: now,
       },
+      {
+        id: "item_symbol",
+        page: 1,
+        kind: "symbol",
+        points: [{ x: 360, y: 300 }],
+        color: "#2d7dd2",
+        strokeWidth: 1,
+        symbolId: "schematic.fan",
+        symbolSize: 40,
+        tag: "FF-01",
+        createdAt: now,
+        updatedAt: now,
+      },
     );
 
     const renderer = {
@@ -121,5 +134,6 @@ describe("template sheet export", () => {
     expect(text).toContain("Export sheet");
     expect(text).toContain("Box text");
     expect(text).toContain("PLC");
+    expect(text).toContain("FF-01");
   });
 });

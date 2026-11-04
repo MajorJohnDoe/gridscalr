@@ -568,6 +568,23 @@ function normalizeItem(
         ? Math.max(SYMBOL_MIN_SIZE, Math.min(SYMBOL_MAX_SIZE, raw.symbolSize))
         : undefined,
     status: raw.kind === "symbol" && isInspectionStatus(raw.status) ? raw.status : undefined,
+    tag:
+      raw.kind === "symbol" && typeof raw.tag === "string"
+        ? raw.tag.replace(/\s+/g, " ").trim().slice(0, 40) || undefined
+        : undefined,
+    tagOffset:
+      raw.kind === "symbol" &&
+      raw.tagOffset &&
+      typeof raw.tagOffset === "object" &&
+      typeof (raw.tagOffset as { x?: unknown }).x === "number" &&
+      typeof (raw.tagOffset as { y?: unknown }).y === "number" &&
+      Number.isFinite((raw.tagOffset as { x: number }).x) &&
+      Number.isFinite((raw.tagOffset as { y: number }).y)
+        ? {
+            x: Math.max(-2000, Math.min(2000, (raw.tagOffset as { x: number }).x)),
+            y: Math.max(-2000, Math.min(2000, (raw.tagOffset as { y: number }).y)),
+          }
+        : undefined,
     image,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : now,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : now,

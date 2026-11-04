@@ -5,7 +5,7 @@ import {
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import type { MarkupItem, Project } from "../model/types";
 import type { QuantityReport } from "./reportModel";
 import type { QuantityRow } from "../model/quantity";

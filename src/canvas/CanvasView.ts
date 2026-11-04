@@ -148,16 +148,18 @@ import type {
 } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
+import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
 import {
   clampSymbolSize,
   inspectionStatusColor,
   SYMBOL_SIZE,
   symbolCategoryColor,
   symbolCategoryOf,
+  symbolDefaultSize,
   symbolFor,
   symbolRenderPlan,
   symbolSizeOf,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -2577,6 +2579,8 @@ export class CanvasView {
             ? store.ui.measureCountQuantity
             : undefined,
         symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
+        symbolSize:
+          kind === "symbol" ? symbolDefaultSize(options.symbolId ?? store.ui.symbolId) : undefined,
         status: kind === "symbol" ? options.status : undefined,
         createdAt: now,
         updatedAt: now,
@@ -3451,7 +3455,9 @@ export class CanvasView {
           }
           if (shape.stroke) {
             ctx.strokeStyle = shape.stroke;
-            ctx.lineWidth = shape.strokeWidth;
+            ctx.lineWidth = plan.fixedStrokeWidth
+              ? plan.fixedStrokeWidth / scale
+              : shape.strokeWidth;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
             ctx.stroke(path);
@@ -3473,6 +3479,19 @@ export class CanvasView {
           ctx.fill();
         }
         ctx.restore();
+        if (item.tag) {
+          const tagPosition = symbolTagPosition(item);
+          if (tagPosition) {
+            const screen = this.toScreen(tagPosition);
+            ctx.save();
+            ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
+            ctx.fillStyle = "#111111";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(item.tag, screen.x, screen.y);
+            ctx.restore();
+          }
+        }
         break;
       }
       case "pen": {

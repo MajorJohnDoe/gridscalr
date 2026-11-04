@@ -82,8 +82,9 @@ import {
   symbolRenderPlan,
   symbolSizeOf,
   type SymbolRenderShape,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
+import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
 import type { PdfRenderer } from "./pdfRenderer";
 import { t } from "../i18n";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
@@ -704,7 +705,7 @@ function drawItem(
       drawCountSymbol(page, viewport, item, project, color, width, opacity);
       break;
     case "symbol":
-      drawSymbolItem(page, viewport, item, opacity);
+      drawSymbolItem(page, viewport, item, opacity, fonts);
       break;
     case "pen":
       drawPolyline(page, viewport, item.points, color, width, opacity, false);
@@ -1380,6 +1381,7 @@ function drawSymbolItem(
   viewport: PageViewport,
   item: MarkupItem,
   opacity: number,
+  fonts: ExportFonts,
 ): void {
   const anchor = item.points[0];
   if (!anchor) return;
@@ -1426,7 +1428,9 @@ function drawSymbolItem(
     if (shape.stroke) {
       operators.push(
         setStrokingColor(pdfColor(shape.stroke)),
-        setLineWidth(Math.max(0.2, shape.strokeWidth * shape.scale * scale)),
+        setLineWidth(
+          Math.max(0.2, plan.fixedStrokeWidth ?? shape.strokeWidth * shape.scale * scale),
+        ),
         setLineCap(LineCapStyle.Round),
         setLineJoin(LineJoinStyle.Round),
       );
@@ -1459,6 +1463,20 @@ function drawSymbolItem(
       color: pdfColor(inspectionStatusColor(item.status)),
       opacity: clamp(opacity, 0, 1),
     });
+  }
+  if (item.tag) {
+    const tagPosition = symbolTagPosition(item);
+    if (tagPosition) {
+      const point = toPdfPoint(viewport, tagPosition);
+      page.drawText(item.tag, {
+        x: point.x,
+        y: point.y - SYMBOL_TAG_FONT_SIZE,
+        size: SYMBOL_TAG_FONT_SIZE,
+        font: fonts.regular,
+        color: rgb(0.067, 0.075, 0.082),
+        opacity: clamp(opacity, 0, 1),
+      });
+    }
   }
 }
 
