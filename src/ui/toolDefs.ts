@@ -173,6 +173,22 @@ export const TOOLS: ToolDef[] = [
     group: "draw",
   },
   {
+    id: "polyline",
+    label: "tool.polyline",
+    icon: "polyline",
+    shortcut: TOOL_SHORTCUTS.polyline,
+    hint: "tool.polyline.hint",
+    group: "draw",
+  },
+  {
+    id: "rail",
+    label: "tool.rail",
+    icon: "rail",
+    shortcut: TOOL_SHORTCUTS.rail,
+    hint: "tool.rail.hint",
+    group: "draw",
+  },
+  {
     id: "cloud",
     label: "tool.cloud",
     icon: "cloud",

@@ -61,6 +61,7 @@ import {
 } from "../model/geometry";
 import { imageOpacity } from "../model/images";
 import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
+import { railGeometry, railLegendY } from "../model/rail";
 import type { LabelLayout } from "../model/labelLayout";
 import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import {
@@ -845,6 +846,22 @@ function drawItem(
     case "textbox":
       drawTextBoxItem(page, viewport, item, layerOpacity, fonts);
       break;
+    case "polyline":
+      drawPolyline(
+        page,
+        viewport,
+        item.points,
+        color,
+        Math.max(0.35, item.strokeWidth),
+        opacity,
+        false,
+        LineCapStyle.Butt,
+        item.lineStyle === "dashed" ? [5, 3] : undefined,
+      );
+      break;
+    case "rail":
+      drawRailItem(page, viewport, item, layerOpacity, fonts);
+      break;
     case "image": {
       if (item.points.length < 2 || !item.image) break;
       const image = images.get(item.image.assetId);
@@ -1000,6 +1017,73 @@ function drawTextBoxItem(
         opacity,
       });
     }
+  });
+}
+
+function drawRailItem(
+  page: PDFPage,
+  viewport: PageViewport,
+  item: MarkupItem,
+  layerOpacity: number,
+  fonts: ExportFonts,
+): void {
+  const geometry = railGeometry(item);
+  if (!geometry) return;
+  const color = pdfColor(item.color);
+  const textColor = pdfColor("#1a2024");
+  const opacity = clamp(layerOpacity, 0, 1);
+  const width = Math.max(0.35, item.strokeWidth);
+
+  for (const row of geometry.rows) {
+    page.drawLine({
+      start: toPdfPoint(viewport, { x: geometry.left, y: row.y }),
+      end: toPdfPoint(viewport, { x: geometry.right, y: row.y }),
+      thickness: width,
+      color,
+      opacity,
+    });
+
+    if (item.showBadges === false) continue;
+    const fontSize = 6.5;
+    const padding = 3;
+    const badgeHeight = Math.max(8, geometry.rowSpacing * 0.82);
+    const textWidth = fonts.regular.widthOfTextAtSize(row.label, fontSize);
+    const badgeWidth = textWidth + padding * 2;
+    const center = toPdfPoint(viewport, { x: geometry.left, y: row.y });
+    page.drawRectangle({
+      x: center.x,
+      y: center.y - badgeHeight / 2,
+      width: badgeWidth,
+      height: badgeHeight,
+      borderWidth: 0.7,
+      borderColor: color,
+      color: rgb(1, 1, 1),
+      opacity,
+    });
+    page.drawText(row.label, {
+      x: center.x + padding,
+      y: center.y - fontSize * 0.35,
+      size: fontSize,
+      font: fonts.regular,
+      color: textColor,
+      opacity,
+    });
+  }
+
+  const legends = geometry.rows.filter((row) => row.legend?.trim());
+  if (item.showLegend === false || !legends.length) return;
+  const baseline = toPdfPoint(viewport, { x: geometry.left, y: railLegendY(geometry) });
+  const right = toPdfPoint(viewport, { x: geometry.right, y: railLegendY(geometry) });
+  const step = (right.x - baseline.x) / legends.length;
+  legends.forEach((row, index) => {
+    page.drawText(`${row.label}= ${row.legend}`, {
+      x: baseline.x + index * step,
+      y: baseline.y,
+      size: 6,
+      font: fonts.regular,
+      color: textColor,
+      opacity,
+    });
   });
 }
 

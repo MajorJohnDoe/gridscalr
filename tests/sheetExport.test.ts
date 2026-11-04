@@ -13,6 +13,7 @@ import {
   resolveSheetLabels,
 } from "../src/features/schematics/model/sheetTemplate";
 import { buildStaticSheetPdf } from "../src/features/schematics/render/sheetPdf";
+import { defaultRailRows, RAIL_ROW_SPACING } from "../src/model/rail";
 
 async function pageText(bytes: Uint8Array): Promise<string> {
   const task = pdfjs.getDocument({
@@ -63,6 +64,39 @@ describe("template sheet export", () => {
       createdAt: now,
       updatedAt: now,
     });
+    draw.items.push(
+      {
+        id: "item_polyline",
+        page: 1,
+        kind: "polyline",
+        points: [
+          { x: 60, y: 200 },
+          { x: 220, y: 200 },
+          { x: 220, y: 280 },
+        ],
+        color: "#e30613",
+        strokeWidth: 2,
+        lineTypeId: "control",
+        lineStyle: "dashed",
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
+        id: "item_rail",
+        page: 1,
+        kind: "rail",
+        points: [
+          { x: 60, y: 380 },
+          { x: 420, y: 380 },
+        ],
+        color: "#4a4a4a",
+        strokeWidth: 0.6,
+        rows: defaultRailRows("plc"),
+        rowSpacing: RAIL_ROW_SPACING,
+        createdAt: now,
+        updatedAt: now,
+      },
+    );
 
     const renderer = {
       getDocumentData: async () => staticBytes,
@@ -86,5 +120,6 @@ describe("template sheet export", () => {
     expect(text).toContain("Värmesystem");
     expect(text).toContain("Export sheet");
     expect(text).toContain("Box text");
+    expect(text).toContain("PLC");
   });
 });

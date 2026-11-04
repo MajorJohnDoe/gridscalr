@@ -13,6 +13,7 @@ import {
   radiusCircle,
 } from "./geometry";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
+import { railGeometry } from "./rail";
 import type { Layer, MarkupItem, Point, Project } from "./types";
 
 export interface HitResult {
@@ -157,6 +158,27 @@ function hitItem(
       Math.abs(localPoint.x - layout.center.x) <= layout.size / 2 + tolerance &&
       Math.abs(localPoint.y - layout.center.y) <= layout.size / 2 + tolerance;
     return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
+  if (item.kind === "polyline") {
+    const distance = distanceToPolyline(localPoint, item.points, false);
+    return distance <= tolerance ? { distance, vertexIndex: -1, segmentIndex: -1 } : null;
+  }
+
+  if (item.kind === "rail") {
+    const geometry = railGeometry(item);
+    if (!geometry) return null;
+    for (const row of geometry.rows) {
+      const distance = pointToSegmentDistance(
+        localPoint,
+        { x: geometry.left, y: row.y },
+        { x: geometry.right, y: row.y },
+      );
+      if (distance <= tolerance) {
+        return { distance, vertexIndex: -1, segmentIndex: -1 };
+      }
+    }
+    return null;
   }
 
   if (item.kind === "textbox") {

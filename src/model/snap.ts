@@ -10,6 +10,7 @@ import {
 } from "./geometry";
 import type { MarkupItem, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
+import { railGeometry } from "./rail";
 
 export type SnapKind = "endpoint" | "midpoint" | "intersection";
 
@@ -57,6 +58,15 @@ function endpointCandidates(item: MarkupItem): Point[] {
       ...points,
       ...rectangleCorners(item.points).map((point) => itemLocalToPage(item, point)),
     ];
+  }
+  if (item.kind === "rail") {
+    const geometry = railGeometry(item);
+    if (!geometry) return points;
+    return geometry.rows.flatMap((row) => [
+      { x: geometry.left, y: row.y },
+      { x: (geometry.left + geometry.right) / 2, y: row.y },
+      { x: geometry.right, y: row.y },
+    ]);
   }
   return points;
 }
@@ -119,6 +129,15 @@ function straightsForItem(item: MarkupItem): Segment[] {
       item,
       item.points.map((point) => itemLocalToPage(item, point)),
     );
+  }
+  if (item.kind === "rail") {
+    const geometry = railGeometry(item);
+    if (!geometry) return [];
+    return geometry.rows.map((row) => ({
+      a: { x: geometry.left, y: row.y },
+      b: { x: geometry.right, y: row.y },
+      itemId: item.id,
+    }));
   }
   if (item.kind === "highlight" && item.highlightShape && item.highlightShape !== "stroke") {
     const points =

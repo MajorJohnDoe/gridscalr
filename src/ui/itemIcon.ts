@@ -36,6 +36,10 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
     case "text":
     case "textbox":
       return "text";
+    case "polyline":
+      return "polyline";
+    case "rail":
+      return "rail";
     case "image":
       return "image";
     case "cloud":

@@ -10,7 +10,9 @@
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
 - Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
-- Snapping targets markup endpoints, midpoints, and intersections only. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Snapping targets markup endpoints, midpoints, intersections, I/O rail rows and a 5 mm grid for the Pipe / duct tool. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Schematic pipes do not build a connectivity graph. There is no automatic cable routing, junction detection or I/O extraction; control cables snap to rail rows and connection dots are placed explicitly.
+- A line type sets the colour, width and dash when a run is created. Changing a line type later does not restyle existing runs, so old drawings remain stable. Line type names and colours are project data, not a shared company standard.
 - Rectangle and ellipse quick areas can be moved and reshaped from their two opposite points but cannot be rotated.
 - Images support PNG and JPEG only. They are embedded in the project and count toward its file size; there is no external `assets/` folder. Image cropping, filters, and colour correction are not available.
 - TIF import supports 1-bit CCITT G3/G4 scans only. Colour, greyscale, LZW/Deflate-compressed, tiled, and JPEG-in-TIFF files are rejected with a message. TIF pages can be deleted like any other page but cannot be rearranged, and closing a TIF drawing's original file has no effect because the converted PDF is embedded.

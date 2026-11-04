@@ -1,6 +1,6 @@
 # Operation cards and schematic sheets
 
-**Status:** agreed 2026-11-04. Phases 0–3 are complete; Phase 4 has not started.
+**Status:** agreed 2026-11-04. Phases 0–4 are complete; Phase 5 has not started.
 **Scope:** an authoring workflow for operation cards built from blank sheet templates,
 starting with the title-block frame and the data-summary table.
 **Naming:** code, paths and identifiers use English. User-facing Swedish labels come
@@ -598,6 +598,35 @@ Outcome:
 
 Acceptance: a ventilation schematic with four media types, a five-row rail and
 snapped control cables; one undo step per action; exported output matches the canvas.
+
+Outcome:
+
+- Project line types are seeded for supply, extract, exhaust, outdoor, heating flow
+  and return, district heating flow and return, domestic water, cooling, control
+  cable and bus. The context bar selects them for the Pipe / duct tool.
+- `polyline` uses orthogonal segments by default (Shift frees the angle), a 5 mm grid
+  and existing item/rail snapping. `Enter` or double-click finishes; `Esc` cancels.
+- `rail` is a draggable object with editable rows, labels and legends, two presets,
+  optional badges and an optional legend line. Rails contribute endpoints, midpoints
+  and segments to snapping.
+- Canvas and PDF export share the same rail layout and line styles. Connection dots
+  are ordinary filled ellipses placed explicitly.
+- Tests cover line-type defaults and persistence, rail geometry and hit testing,
+  rail snap candidates, polyline hit testing and style persistence, and polyline and
+  rail output in the exported PDF.
+- The app flow was checked with a Playwright run: polyline with a media class, a
+  dashed control cable, a rail, the rail dialog and a renamed row.
+
+Deferred within Phase 4:
+
+- A drawing-area overflow warning and a fit-to-area action are not implemented yet.
+  Objects can still be placed outside the frame.
+- The line-type list is seeded and selectable, but there is no editor for renaming,
+  recolouring or adding line types yet. Existing runs keep their stored style.
+- Rail rows can be added and removed but not reordered by dragging. The normalizer
+  keeps at most 16 rows.
+- Automatic cable routing, automatic junction dots and I/O extraction remain
+  deliberately out of scope.
 
 ### Phase 5 — symbols
 

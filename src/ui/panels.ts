@@ -55,6 +55,7 @@ export interface PanelActions {
   setScaleLock: (locked: boolean) => void;
   deleteSelection: () => void;
   editSelectedText: () => void;
+  editRail: (itemId: string) => void;
   copySelection: () => void;
   cutSelection: () => void;
   pasteSelection: () => void;

@@ -327,7 +327,7 @@ The floating strip beside the editor sets font size, colour, rotation, bold, und
 
 ### Text boxes
 
-Choose **Text box** (`X`) and drag a rectangle. The text wraps to the box width, so several boxes can form columns without manual line breaks.
+Choose **Text box** (`Shift+T`) and drag a rectangle. The text wraps to the box width, so several boxes can form columns without manual line breaks.
 
 - `Enter` inserts a line break. `Ctrl/Cmd+Enter`, the done button, or clicking outside commits the text.
 - `Esc` cancels the edit.
@@ -337,6 +337,23 @@ Choose **Text box** (`X`) and drag a rectangle. The text wraps to the box width,
 - Double-click an existing text box with the Select tool to reopen it.
 
 Text boxes are useful for function descriptions, notes over drawings and multi-column text on a sheet.
+
+### Pipes, ducts and line types
+
+Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle. The tool snaps to a 5 mm grid and to existing item endpoints, midpoints, rail rows and intersections. `Enter` or a double-click finishes the run; `Esc` cancels it.
+
+The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Changing a class later in Project settings does not restyle existing runs, so the drawing stays stable.
+
+### I/O rails
+
+Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Select it and choose **Edit rail…** in Properties to:
+
+- Load the `PLC/DI/AI/DU/AU` or `M-Bus/DUC/DI/AI/DU/AU` preset.
+- Rename rows and edit their legends.
+- Add or remove rows.
+- Show or hide the left badges and the legend line.
+
+Rail rows are snap targets for pipes and control cables. Connection dots are ordinary small filled ellipses; a cable can cross a row without connecting, so the dots are placed explicitly.
 
 ### Resize and rotate
 

@@ -34,7 +34,9 @@ export type DrawingKind =
   | "stamp"
   | "delta"
   | "symbol"
-  | "textbox";
+  | "textbox"
+  | "polyline"
+  | "rail";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -179,6 +181,16 @@ export interface MarkupItem {
   textBackground?: "none" | "white";
   /** Text boxes only: inner padding in PDF points. Missing means 4 pt. */
   padding?: number;
+  /** Polyline only: the project line type used at creation. */
+  lineTypeId?: string;
+  /** Rails only: editable row labels and legends. */
+  rows?: RailRow[];
+  /** Rails only: distance between rows in PDF points. Missing means 5 mm. */
+  rowSpacing?: number;
+  /** Rails only: draw rounded labels on the left. Missing means true. */
+  showBadges?: boolean;
+  /** Rails only: draw a legend line below the rail. Missing means true. */
+  showLegend?: boolean;
   /** Text, callout and cloud text: bold weight. Missing means regular. */
   textBold?: boolean;
   /** Text, callout and cloud text: underline. Missing means no underline. */
@@ -301,6 +313,21 @@ export interface MarkupsView {
 
 export type DocumentKind = "pdf" | "tiff" | "template";
 
+export interface RailRow {
+  id: string;
+  label: string;
+  legend?: string;
+}
+
+/** A project-level media class for schematic pipes, ducts and cables. */
+export interface LineType {
+  id: string;
+  name: string;
+  color: string;
+  widthPt: number;
+  style: "solid" | "dashed";
+}
+
 export type SheetPaperSize = "A3" | "A2";
 
 /** A page created from a built-in sheet template, with its user-entered values. */
@@ -411,6 +438,8 @@ export interface Project {
   countTypes: CountTypeDef[];
   /** Reusable Count tool presets stored in the project. */
   countPresets: CountPreset[];
+  /** Media classes for schematic polylines. Order is picker order. */
+  lineTypes: LineType[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   pages: Record<string, PageState>;

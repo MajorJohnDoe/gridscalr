@@ -15,6 +15,7 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { clampLabelSize } from "../model/label";
 import { isLabelFitPosition } from "../model/labelLayout";
+import { defaultLineTypes } from "../model/lineTypes";
 import { normalizeProjectMetadata } from "../model/metadata";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
@@ -38,7 +39,9 @@ import type {
   LayerKind,
   LayerPageState,
   LengthUnit,
+  LineType,
   MarkupItem,
+  RailRow,
   OcrPage,
   OcrWord,
   PageState,
@@ -74,6 +77,8 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "delta",
   "symbol",
   "textbox",
+  "polyline",
+  "rail",
 ]);
 
 const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
@@ -325,6 +330,15 @@ function normalizeItem(
     const height = Math.abs(points[1].y - points[0].y);
     if (width < 2 || height < 2) return null;
   }
+  if (raw.kind === "polyline") {
+    if (points.length < 2) return null;
+    if (points.length > 500) points.length = 500;
+  }
+  if (raw.kind === "rail") {
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+    if (Math.abs(points[1].x - points[0].x) < 1) return null;
+  }
   if (raw.kind === "arc" || raw.kind === "angle") {
     if (points.length < 3) return null;
     points.length = 3;
@@ -354,7 +368,8 @@ function normalizeItem(
     (raw.kind === "length" ||
       raw.kind === "radius" ||
       raw.kind === "diameter" ||
-      raw.kind === "arc") &&
+      raw.kind === "arc" ||
+      raw.kind === "polyline") &&
     raw.lineStyle === "dashed"
       ? "dashed"
       : undefined;
@@ -426,6 +441,15 @@ function normalizeItem(
           : raw.kind === "delta"
             ? "A"
             : undefined;
+  const lineTypeId =
+    raw.kind === "polyline" && typeof raw.lineTypeId === "string" ? raw.lineTypeId : undefined;
+  const rows = raw.kind === "rail" ? normalizeRailRows(raw.rows) : undefined;
+  const rowSpacing =
+    raw.kind === "rail" && typeof raw.rowSpacing === "number" && Number.isFinite(raw.rowSpacing)
+      ? Math.max(2, Math.min(60, raw.rowSpacing))
+      : undefined;
+  const showBadges = raw.kind === "rail" && raw.showBadges === false ? false : undefined;
+  const showLegend = raw.kind === "rail" && raw.showLegend === false ? false : undefined;
   const fontSize =
     typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize) && raw.fontSize > 0
       ? Math.max(0.5, Math.min(300, raw.fontSize))
@@ -514,6 +538,11 @@ function normalizeItem(
     textBold,
     textUnderline,
     textAlign,
+    lineTypeId,
+    rows,
+    rowSpacing,
+    showBadges,
+    showLegend,
     countType:
       raw.kind === "count"
         ? typeof raw.countType === "string" && countTypeIds.has(raw.countType)
@@ -643,6 +672,61 @@ function normalizeLayers(
       return layer;
     }),
   );
+}
+
+function normalizeLineTypes(rawValue: unknown): LineType[] {
+  const defaults = defaultLineTypes();
+  if (!Array.isArray(rawValue)) return defaults;
+  const result: LineType[] = [];
+  const seen = new Set<string>();
+  for (const entry of rawValue) {
+    if (!entry || typeof entry !== "object") continue;
+    const source = entry as Partial<LineType>;
+    const id =
+      typeof source.id === "string" && source.id.trim() ? source.id.trim().slice(0, 60) : "";
+    if (!id || seen.has(id)) continue;
+    seen.add(id);
+    result.push({
+      id,
+      name:
+        typeof source.name === "string" && source.name.trim()
+          ? source.name.trim().slice(0, 80)
+          : id,
+      color:
+        typeof source.color === "string" && /^#[0-9a-f]{6}$/i.test(source.color)
+          ? source.color
+          : "#4cc9f0",
+      widthPt:
+        typeof source.widthPt === "number" && Number.isFinite(source.widthPt)
+          ? Math.max(0.3, Math.min(20, source.widthPt))
+          : 2,
+      style: source.style === "dashed" ? "dashed" : "solid",
+    });
+  }
+  return result.length ? result : defaults;
+}
+
+function normalizeRailRows(rawValue: unknown): RailRow[] | undefined {
+  if (!Array.isArray(rawValue)) return undefined;
+  const rows: RailRow[] = [];
+  for (const entry of rawValue.slice(0, 16)) {
+    if (!entry || typeof entry !== "object") continue;
+    const source = entry as Partial<RailRow>;
+    const label = typeof source.label === "string" ? source.label.trim().slice(0, 20) : "";
+    if (!label) continue;
+    rows.push({
+      id:
+        typeof source.id === "string" && source.id
+          ? source.id.slice(0, 40)
+          : `row_${rows.length + 1}`,
+      label,
+      legend:
+        typeof source.legend === "string" && source.legend.trim()
+          ? source.legend.trim().slice(0, 80)
+          : undefined,
+    });
+  }
+  return rows.length ? rows : undefined;
 }
 
 function normalizeSheetFields(rawValue: unknown): Record<string, string> {
@@ -889,6 +973,7 @@ export function parseProject(text: string): Project {
     categories,
     countTypes,
     countPresets,
+    lineTypes: normalizeLineTypes(raw.lineTypes),
     assets,
     pages: {},
     metadata: normalizeProjectMetadata(raw.metadata),

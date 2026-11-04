@@ -120,6 +120,7 @@ import {
   measureSheetText,
   SHEET_FONT_STACK,
 } from "../features/schematics/render/sheetText";
+import { defaultRailRows, railGeometry, railLegendY, RAIL_ROW_SPACING } from "../model/rail";
 import {
   CLOUD_FILL_OPACITY,
   cloudCurves,
@@ -255,6 +256,13 @@ interface PanState {
 
 const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
+const SCHEMATIC_GRID_STEP = (5 * 72) / 25.4;
+
+function orthoPoint(last: Point, current: Point): Point {
+  return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
+    ? { x: current.x, y: last.y }
+    : { x: last.x, y: current.y };
+}
 
 const symbolPathCache = new Map<string, Path2D>();
 
@@ -1007,6 +1015,31 @@ export class CanvasView {
       return;
     }
 
+    if (tool === "polyline") {
+      if (event.detail > 1) {
+        this.finishDraft();
+        return;
+      }
+      let snapped = this.snapPolylinePoint(page);
+      const existing = this.draft?.kind === "polyline" ? this.draft : null;
+      if (existing && existing.points.length) {
+        snapped = this.constrainPolyline(
+          existing.points[existing.points.length - 1],
+          snapped,
+          event.shiftKey,
+        );
+      }
+      if (!existing) {
+        this.draft = { kind: "polyline", points: [snapped], cursor: snapped };
+      } else {
+        const last = existing.points[existing.points.length - 1];
+        if (distance(last, snapped) > 0.001) existing.points.push(snapped);
+        existing.cursor = snapped;
+      }
+      this.drawInteraction();
+      return;
+    }
+
     if (tool === "area" && store.ui.measureAreaShape !== "polygon") {
       if (event.detail > 1) return;
       const snapped = this.snapPoint(page);
@@ -1091,7 +1124,8 @@ export class CanvasView {
       tool === "arrow" ||
       tool === "rect" ||
       tool === "ellipse" ||
-      tool === "textbox"
+      tool === "textbox" ||
+      tool === "rail"
     ) {
       const snaps = tool === "line" || tool === "arrow";
       const snapped = snaps ? this.snapPoint(page) : page;
@@ -1333,6 +1367,7 @@ export class CanvasView {
         hit.item.kind === "angle" ||
         hit.item.kind === "slope" ||
         hit.item.kind === "volume" ||
+        hit.item.kind === "polyline" ||
         hit.item.kind === "cloud" ||
         hit.item.kind === "callout" ||
         (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
@@ -1511,11 +1546,16 @@ export class CanvasView {
       } else if (
         this.draft.kind === "rect" ||
         this.draft.kind === "textbox" ||
+        this.draft.kind === "rail" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
         this.snap = null;
         this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
+      } else if (this.draft.kind === "polyline") {
+        const last = this.draft.points[this.draft.points.length - 1];
+        const snapped = this.snapPolylinePoint(page);
+        this.draft.cursor = this.constrainPolyline(last, snapped, event.shiftKey);
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
         if (distance(last, page) > 1.4 / this.viewZoom) {
@@ -1731,6 +1771,12 @@ export class CanvasView {
         x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
         y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
+    } else if (item.kind === "rail") {
+      const startPoints = this.drag.startPoints ?? item.points;
+      item.points = [
+        { x: scaled.min.x + shiftX, y: startPoints[0].y },
+        { x: scaled.max.x + shiftX, y: startPoints[1].y },
+      ];
     } else if (
       item.kind === "rect" ||
       item.kind === "textbox" ||
@@ -1825,6 +1871,7 @@ export class CanvasView {
         this.draft.kind === "arrow" ||
         this.draft.kind === "rect" ||
         this.draft.kind === "textbox" ||
+        this.draft.kind === "rail" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
@@ -1899,7 +1946,7 @@ export class CanvasView {
     if (this.touchNavigation.active || this.touchNavigation.suppressed) return;
     if (!store.project || this.crop.active) return;
     const tool = store.ui.activeTool;
-    if (tool === "length" || tool === "area" || tool === "volume") {
+    if (tool === "length" || tool === "area" || tool === "volume" || tool === "polyline") {
       this.finishDraft();
       return;
     }
@@ -2065,6 +2112,22 @@ export class CanvasView {
     if (!result) return point;
     this.snap = result;
     return { ...result.point };
+  }
+
+  private snapPolylinePoint(point: Point): Point {
+    const snapped = this.snapPoint(point);
+    if (this.snap) return snapped;
+    return {
+      x: Math.round(point.x / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
+      y: Math.round(point.y / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
+    };
+  }
+
+  private constrainPolyline(last: Point, point: Point, free: boolean): Point {
+    if (free) return point;
+    const constrained = orthoPoint(last, point);
+    if (distance(constrained, point) > 1e-6) this.snap = null;
+    return constrained;
   }
 
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {
@@ -2444,6 +2507,10 @@ export class CanvasView {
         kind === "stamp" ||
         kind === "delta";
       const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
+      const lineType =
+        kind === "polyline"
+          ? project.lineTypes.find((entry) => entry.id === store.ui.lineTypeId)
+          : undefined;
       const item: MarkupItem = {
         id: makeId("item"),
         page: projectPage,
@@ -2453,12 +2520,22 @@ export class CanvasView {
           ? layer.color
           : kind === "textbox"
             ? "#1a2024"
-            : kind === "symbol"
-              ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
-              : kind === "stamp"
-                ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-                : (cloudPreset ?? style.color),
-        strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
+            : kind === "polyline"
+              ? (lineType?.color ?? style.color)
+              : kind === "rail"
+                ? "#4a4a4a"
+                : kind === "symbol"
+                  ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
+                  : kind === "stamp"
+                    ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+                    : (cloudPreset ?? style.color),
+        strokeWidth: isMeasure
+          ? DEFAULT_MEASUREMENT_STROKE_WIDTH
+          : kind === "polyline"
+            ? (lineType?.widthPt ?? style.strokeWidth)
+            : kind === "rail"
+              ? 0.6
+              : style.strokeWidth,
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
           !isMeasure &&
@@ -2480,6 +2557,10 @@ export class CanvasView {
         textColor: kind === "textbox" ? "#1a2024" : undefined,
         textBackground: kind === "textbox" ? "white" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
+        lineTypeId: kind === "polyline" ? lineType?.id : undefined,
+        lineStyle: kind === "polyline" && lineType?.style === "dashed" ? "dashed" : undefined,
+        rows: kind === "rail" ? defaultRailRows("plc") : undefined,
+        rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
         highlightShape,
         arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
@@ -2548,6 +2629,7 @@ export class CanvasView {
         this.draft.kind !== "arrow" &&
         this.draft.kind !== "rect" &&
         this.draft.kind !== "textbox" &&
+        this.draft.kind !== "rail" &&
         this.draft.kind !== "ellipse" &&
         this.draft.kind !== "highlight-rect")
     ) {
@@ -2567,6 +2649,8 @@ export class CanvasView {
       const project = store.project;
       const found = created && project ? findItem(project, created.itemId) : undefined;
       if (found) this.editors.startTextBoxEdit(found.item, found.layer);
+    } else if (kind === "rail") {
+      this.createItem("rail", [start, current]);
     } else {
       this.createItem(kind, [start, current]);
     }
@@ -2684,6 +2768,15 @@ export class CanvasView {
       return;
     }
 
+    if (this.draft.kind === "polyline") {
+      const points = dedupeLast(this.draft.points);
+      this.draft = null;
+      this.snap = null;
+      if (points.length >= 2) this.createItem("polyline", points);
+      this.drawInteraction();
+      return;
+    }
+
     if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
       this.finishQuickArea();
     } else if (
@@ -2747,6 +2840,7 @@ export class CanvasView {
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
       this.draft.kind === "textbox" ||
+      this.draft.kind === "rail" ||
       this.draft.kind === "ellipse" ||
       this.draft.kind === "highlight-rect" ||
       this.draft.kind === "area-rect" ||
@@ -3610,6 +3704,71 @@ export class CanvasView {
           ctx.fillText(item.label, center.x, center.y + size * 0.62);
         }
         ctx.restore();
+        break;
+      }
+      case "polyline": {
+        ctx.beginPath();
+        points.forEach((point, index) =>
+          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
+        );
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        break;
+      }
+      case "rail": {
+        const geometry = railGeometry(item);
+        if (!geometry) break;
+        const left = this.toScreen({ x: geometry.left, y: geometry.top });
+        const right = this.toScreen({ x: geometry.right, y: geometry.top });
+        const width = Math.max(0.5, item.strokeWidth * zoom);
+        ctx.strokeStyle = item.color;
+        ctx.lineWidth = width;
+
+        for (const row of geometry.rows) {
+          const y = this.toScreen({ x: geometry.left, y: row.y }).y;
+          ctx.beginPath();
+          ctx.moveTo(left.x, y);
+          ctx.lineTo(right.x, y);
+          ctx.stroke();
+
+          if (item.showBadges !== false) {
+            const fontSize = Math.max(5, 6.5 * zoom);
+            const badgeHeight = Math.max(8, geometry.rowSpacing * zoom * 0.82);
+            const padding = Math.max(2, 3 * zoom);
+            ctx.font = `600 ${fontSize}px ${FONT_STACK}`;
+            const textWidth = ctx.measureText(row.label).width;
+            const badgeWidth = textWidth + padding * 2;
+            ctx.save();
+            ctx.fillStyle = "#ffffff";
+            ctx.strokeStyle = item.color;
+            ctx.lineWidth = Math.max(0.6, 0.8 * zoom);
+            roundRect(ctx, left.x, y - badgeHeight / 2, badgeWidth, badgeHeight, badgeHeight / 2);
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+            ctx.fillStyle = "#1a2024";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "middle";
+            ctx.fillText(row.label, left.x + padding, y);
+          }
+        }
+
+        const legends = geometry.rows.filter((row) => row.legend?.trim());
+        if (item.showLegend !== false && legends.length) {
+          const y = this.toScreen({ x: geometry.left, y: railLegendY(geometry) }).y;
+          const step = (right.x - left.x) / Math.max(1, legends.length);
+          const fontSize = Math.max(5, 6 * zoom);
+          ctx.font = `400 ${fontSize}px ${FONT_STACK}`;
+          ctx.fillStyle = "#1a2024";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          legends.forEach((row, index) => {
+            ctx.fillText(`${row.label}= ${row.legend}`, left.x + index * step, y);
+          });
+        }
         break;
       }
       case "textbox": {

@@ -500,6 +500,17 @@ export function selectionSection(
     section.append(el("div", "empty-note small", t("inspector.symbolColourNote")));
   }
 
+  if (item.kind === "rail") {
+    const railField = el("label", "field");
+    railField.append(el("span", "field-label", t("kind.rail")));
+    const editRail = el("button", "btn btn-small", t("inspector.editRail"));
+    editRail.type = "button";
+    editRail.disabled = locked;
+    editRail.addEventListener("click", () => actions.editRail(item.id));
+    railField.append(editRail);
+    section.append(railField);
+  }
+
   if (
     item.kind === "text" ||
     item.kind === "textbox" ||

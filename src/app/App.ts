@@ -160,6 +160,7 @@ import {
   type SheetSourceChoice,
 } from "../features/schematics/ui/sheetSourceDialog";
 import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
+import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { LANGUAGE_CHANGED_EVENT, currentLocale, t } from "../i18n";
 
 function projectFilters() {
@@ -252,6 +253,7 @@ export class App {
       setScaleLock: (locked) => this.setScaleLock(locked),
       deleteSelection: () => this.canvas.deleteSelection(),
       editSelectedText: () => this.canvas.editSelectedText(),
+      editRail: (itemId) => void openRailDialog(itemId),
       copySelection: () => this.copySelection(),
       cutSelection: () => this.cutSelection(),
       pasteSelection: () => this.pasteSelection(),
@@ -626,8 +628,9 @@ export class App {
     }
 
     if (!store.project) return;
-    const tool = TOOL_KEYS[key];
-    if (tool && !event.shiftKey) {
+    const combo = `${event.shiftKey ? "shift+" : ""}${key}`;
+    const tool = TOOL_KEYS[combo] ?? (event.shiftKey ? undefined : TOOL_KEYS[key]);
+    if (tool) {
       event.preventDefault();
       store.setTool(tool);
       return;

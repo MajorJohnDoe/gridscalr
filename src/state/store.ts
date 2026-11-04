@@ -10,6 +10,7 @@ import {
 import type { CloudFillPreset } from "../model/cloud";
 import type { ArrowHeads, SheetPaperSize } from "../model/types";
 import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
+import { DEFAULT_LINE_TYPE_ID } from "../model/lineTypes";
 import { DEFAULT_SYMBOL_ID } from "../model/symbols";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
 import {
@@ -71,6 +72,8 @@ export type ToolId =
   | "highlight"
   | "text"
   | "textbox"
+  | "polyline"
+  | "rail"
   | "cloud"
   | "callout"
   | "stamp"
@@ -120,6 +123,8 @@ export interface UIState {
   symbolId: string;
   /** Sticky inspection status for new symbols. null means Not assessed. */
   symbolStatus: InspectionStatus | null;
+  /** Sticky line type for new schematic polylines. */
+  lineTypeId: string;
 }
 
 export type ChangeReason =
@@ -161,6 +166,8 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "highlight":
     case "text":
     case "textbox":
+    case "polyline":
+    case "rail":
     case "cloud":
     case "callout":
     case "stamp":
@@ -206,6 +213,7 @@ function defaultUI(): UIState {
     measureAreaShape: "polygon",
     symbolId: DEFAULT_SYMBOL_ID,
     symbolStatus: null,
+    lineTypeId: DEFAULT_LINE_TYPE_ID,
   };
 }
 
@@ -270,6 +278,9 @@ export class Store {
     this.ui.measureAreaMode = "add";
     this.ui.measureAreaShape = "polygon";
     this.ui.symbolId = DEFAULT_SYMBOL_ID;
+    this.ui.lineTypeId = project.lineTypes.some((entry) => entry.id === this.ui.lineTypeId)
+      ? this.ui.lineTypeId
+      : (project.lineTypes[0]?.id ?? DEFAULT_LINE_TYPE_ID);
     this.ui.symbolStatus = null;
     this.emit("project");
     this.scheduleAutosave();
@@ -353,6 +364,12 @@ export class Store {
     this.emit("project");
     this.scheduleAutosave();
     return result;
+  }
+
+  setLineType(id: string): void {
+    if (!this.project?.lineTypes.some((entry) => entry.id === id)) return;
+    this.ui.lineTypeId = id;
+    this.emit("tool");
   }
 
   setPage(page: number): void {

@@ -213,6 +213,20 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     controls.append(symbolButton, category, status, el("div", "divider-v"));
   }
 
+  if (store.ui.activeTool === "polyline" && store.project) {
+    const project = store.project;
+    const lineTypeWrap = el("label", "context-number");
+    lineTypeWrap.append(el("span", "", t("context.lineType")));
+    const select = el("select", "select");
+    select.title = t("context.lineType");
+    for (const lineType of project.lineTypes) {
+      select.append(option(lineType.id, lineType.name, lineType.id === store.ui.lineTypeId));
+    }
+    select.addEventListener("change", () => store.setLineType(select.value));
+    lineTypeWrap.append(select);
+    controls.append(lineTypeWrap, el("div", "divider-v"));
+  }
+
   if (
     store.ui.activeTool === "pen" ||
     store.ui.activeTool === "line" ||

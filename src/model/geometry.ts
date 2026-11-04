@@ -1,5 +1,6 @@
 import { textItemLayout } from "./text";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
+import { railGeometry, railLegendY } from "./rail";
 import { symbolSizeOf } from "./symbols";
 import type { MarkupItem, Point } from "./types";
 
@@ -448,6 +449,15 @@ export function measurementValue(item: MarkupItem): number | null {
 }
 
 export function itemLocalBounds(item: MarkupItem): Bounds {
+  if (item.kind === "rail") {
+    const geometry = railGeometry(item);
+    if (!geometry) return boundingBox(item.points);
+    const bottom = railLegendY(geometry) + (item.showLegend === false ? 0 : 10);
+    return {
+      min: { x: geometry.left, y: geometry.top - 8 },
+      max: { x: geometry.right, y: bottom },
+    };
+  }
   if (item.kind === "symbol") {
     const anchor = item.points[0] ?? { x: 0, y: 0 };
     const half = symbolSizeOf(item) / 2;

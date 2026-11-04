@@ -50,6 +50,7 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
     item.kind === "angle" ||
     item.kind === "slope" ||
     item.kind === "volume" ||
+    item.kind === "polyline" ||
     item.kind === "cloud" ||
     (item.kind === "highlight" && item.highlightShape !== "stroke")
   ) {
@@ -118,6 +119,14 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
 
   const bounds = itemLocalBounds(item);
   const center = midpoint(bounds.min, bounds.max);
+  if (item.kind === "rail") {
+    return (["w", "e"] as BoxHandleRole[]).map((role) => ({
+      role,
+      index: -1,
+      point: toScreen(handleLocalPoint(bounds, role)),
+      cursor: cursorForRole(role),
+    }));
+  }
   const rotation = itemRotation(item);
   const roles: BoxHandleRole[] =
     item.kind === "text" || item.kind === "symbol"
