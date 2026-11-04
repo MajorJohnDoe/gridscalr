@@ -1794,6 +1794,17 @@ export type MessageKey =
   | "settings.chooseLogo"
   | "settings.removeLogo"
   | "settings.logoNote"
+  | "sheet.label.handledBy"
+  | "sheet.label.card"
+  | "sheet.label.date"
+  | "sheet.label.system"
+  | "sheet.label.assignment"
+  | "sheet.label.page"
+  | "sheet.label.bet"
+  | "sheet.label.rev"
+  | "sheet.label.sign"
+  | "sheet.template.frame"
+  | "sheet.template.table"
   | "help.quickStart";
 
 export type MessageCatalog = Record<MessageKey, string>;

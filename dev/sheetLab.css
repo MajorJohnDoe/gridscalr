@@ -1,0 +1,154 @@
+:root {
+  color-scheme: dark;
+  font-family: Inter, "Segoe UI", system-ui, sans-serif;
+  background: #14181b;
+  color: #e8eef1;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.lab-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  border-bottom: 1px solid #2f383d;
+  background: #1b2125;
+}
+
+.lab-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.lab-title strong {
+  font-size: 15px;
+}
+
+.lab-title span {
+  color: #9aa8ae;
+  font-size: 12px;
+}
+
+.lab-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.lab-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #c6d0d4;
+}
+
+.lab-controls select,
+.lab-controls button {
+  font: inherit;
+  height: 30px;
+  padding: 0 10px;
+  border: 1px solid #3a454b;
+  border-radius: 5px;
+  background: #242c31;
+  color: #e8eef1;
+}
+
+.lab-controls button {
+  cursor: pointer;
+}
+
+.lab-controls button:hover {
+  background: #2e383e;
+}
+
+.lab-check {
+  gap: 5px !important;
+}
+
+#viewport {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+  background: #101416;
+}
+
+#stage {
+  position: relative;
+  margin: 0 auto;
+  background: #fff;
+  box-shadow: 0 18px 50px rgb(0 0 0 / 45%);
+}
+
+#sheet {
+  display: block;
+}
+
+#fields {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+#fields input {
+  position: absolute;
+  margin: 0;
+  border: 1px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  color: #000;
+  font-family: Helvetica, Arial, sans-serif;
+  outline: none;
+  pointer-events: auto;
+  box-sizing: border-box;
+}
+
+#fields input:hover {
+  border-color: rgb(43 127 255 / 45%);
+}
+
+#fields input:focus {
+  z-index: 2;
+  border-color: #2b7fff;
+  background: #fff;
+  box-shadow: 0 0 0 1px #2b7fff;
+}
+
+#fields.is-debug input {
+  border-color: rgb(210 30 30 / 55%);
+  background: rgb(210 30 30 / 4%);
+}
+
+.lab-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: space-between;
+  padding: 8px 20px;
+  border-top: 1px solid #2f383d;
+  color: #9aa8ae;
+  font-size: 11px;
+}
+
+#status[data-state="error"] {
+  color: #ff9b9b;
+}

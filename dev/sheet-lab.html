@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sheet template lab</title>
+    <link rel="stylesheet" href="./sheetLab.css" />
+  </head>
+  <body>
+    <header class="lab-bar">
+      <div class="lab-title">
+        <strong>Sheet template lab</strong>
+        <span>Phase 0 · A3/A2 frame, fields and PDF export</span>
+      </div>
+      <div class="lab-controls">
+        <label>
+          Papper
+          <select id="paper">
+            <option value="A3">A3</option>
+            <option value="A2">A2</option>
+          </select>
+        </label>
+        <label>
+          Språk
+          <select id="locale">
+            <option value="sv">Svenska</option>
+            <option value="en">English</option>
+          </select>
+        </label>
+        <label>
+          Zoom
+          <select id="zoom">
+            <option value="fit">Anpassa</option>
+            <option value="0.5">50 %</option>
+            <option value="0.75">75 %</option>
+            <option value="1">100 %</option>
+            <option value="1.5">150 %</option>
+          </select>
+        </label>
+        <label class="lab-check">
+          <input type="checkbox" id="debug" />
+          Fältgränser
+        </label>
+        <button id="download-pdf" type="button">Ladda ned PDF</button>
+        <button id="download-png" type="button">Ladda ned PNG</button>
+        <button id="reset" type="button">Återställ</button>
+      </div>
+    </header>
+
+    <main id="viewport">
+      <div id="stage">
+        <canvas id="sheet"></canvas>
+        <div id="fields" aria-label="Sheet fields"></div>
+      </div>
+    </main>
+
+    <footer class="lab-foot">
+      <span id="status" aria-live="polite"></span>
+      <span>Fas 0 – ingen projektfil eller schemaändring ännu.</span>
+    </footer>
+
+    <script type="module" src="./sheetLab.ts"></script>
+  </body>
+</html>

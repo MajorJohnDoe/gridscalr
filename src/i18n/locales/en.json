@@ -1792,5 +1792,16 @@
   "settings.chooseLogo": "Choose logo…",
   "settings.removeLogo": "Remove logo",
   "settings.logoNote": "The logo is stored inside the .gridscalr project file. PNG and JPEG are supported.",
+  "sheet.label.handledBy": "Handled by/Consultant",
+  "sheet.label.card": "Operation card",
+  "sheet.label.date": "Date",
+  "sheet.label.system": "System",
+  "sheet.label.assignment": "Assignment no.",
+  "sheet.label.page": "Page",
+  "sheet.label.bet": "Ref.",
+  "sheet.label.rev": "Rev. refers to",
+  "sheet.label.sign": "Sign",
+  "sheet.template.frame": "Drawing frame",
+  "sheet.template.table": "Data summary",
   "help.quickStart": "Quick start"
 }

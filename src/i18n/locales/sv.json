@@ -1792,5 +1792,16 @@
   "settings.chooseLogo": "Välj logotyp…",
   "settings.removeLogo": "Ta bort logotyp",
   "settings.logoNote": "Logotypen sparas inuti .gridscalr-projektfilen. PNG och JPEG stöds.",
+  "sheet.label.handledBy": "Handläggare/Konst.",
+  "sheet.label.card": "Driftkort",
+  "sheet.label.date": "Datum",
+  "sheet.label.system": "System",
+  "sheet.label.assignment": "Uppdragsnr",
+  "sheet.label.page": "Sida",
+  "sheet.label.bet": "Bet.",
+  "sheet.label.rev": "Rev. avser",
+  "sheet.label.sign": "Sign",
+  "sheet.template.frame": "Ritningsram",
+  "sheet.template.table": "Datasammanställning",
   "help.quickStart": "Snabbstart"
 }
