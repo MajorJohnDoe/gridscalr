@@ -8,6 +8,7 @@ import { formatNumber } from "../model/units";
 import { store } from "../state/store";
 import { clear, el, option } from "./dom";
 import { icon } from "./icons";
+import { t } from "../i18n";
 
 let pageFilter: "current" | "all" = "current";
 let categoryFilter = "";
@@ -41,17 +42,17 @@ function formatTotal(total: QuantityTypeTotal): string {
   return `${formatValue(total.net, total.type)} ${total.unit}`;
 }
 
-function plural(count: number, singular: string): string {
-  return `${count} ${singular}${count === 1 ? "" : "s"}`;
+function itemCount(count: number): string {
+  return t("quantity.itemsSummary", { count });
 }
 
 function typeLabel(type: QuantityType): string {
-  if (type === "length") return "Length";
-  if (type === "area") return "Area";
-  if (type === "angle") return "Angle";
-  if (type === "slope") return "Slope";
-  if (type === "volume") return "Volume";
-  return "Count";
+  if (type === "length") return t("quantity.type.length");
+  if (type === "area") return t("quantity.type.area");
+  if (type === "angle") return t("quantity.type.angle");
+  if (type === "slope") return t("quantity.type.slope");
+  if (type === "volume") return t("quantity.type.volume");
+  return t("quantity.type.count");
 }
 
 function filtersKey(projectId: string): string {
@@ -93,7 +94,7 @@ function totalsChips(totals: QuantityTypeTotal[], label: string): HTMLElement {
     chip.title = `${typeLabel(total.type)} · gross ${formatValue(total.gross, total.type)} ${total.unit} · deduction ${formatValue(total.deduction, total.type)} ${total.unit} · net ${formatValue(total.net, total.type)} ${total.unit} · waste ${formatValue(total.wasteQuantity, total.type)} ${total.unit} · order ${formatValue(total.orderQuantity, total.type)} ${total.unit}`;
     if (total.clamped) {
       chip.classList.add("is-clamped");
-      chip.title += " · deduction exceeds gross";
+      chip.title += t("quantity.clampedTitle");
     }
     wrap.append(chip);
   }
@@ -105,7 +106,7 @@ function renderRows(summary: QuantitySummary): HTMLElement {
   if (!summary.rows.length) {
     const empty = el("div", "empty-note quantity-empty");
     empty.setAttribute("role", "status");
-    empty.innerHTML = `${icon("quantities", 24)}<div>No measurements match the filters. Draw a length, area or count, or reset the filters.</div>`;
+    empty.innerHTML = `${icon("quantities", 24)}<div>${t("quantity.empty")}</div>`;
     list.append(empty);
     return list;
   }
@@ -120,17 +121,17 @@ function renderRows(summary: QuantitySummary): HTMLElement {
     );
     title.append(
       el("span", "quantity-section-name", category.categoryName),
-      el("span", "quantity-section-count", plural(items, "item")),
+      el("span", "quantity-section-count", itemCount(items)),
     );
-    head.append(title, totalsChips(category.totals, "Net"));
+    head.append(title, totalsChips(category.totals, t("quantity.net")));
     section.append(head);
 
     for (const room of category.rooms) {
       const roomEl = el("div", "quantity-room");
       const roomHead = el("div", "quantity-room-head");
       roomHead.append(
-        el("span", "quantity-room-name", room.room || "No room"),
-        totalsChips(room.totals, "Net"),
+        el("span", "quantity-room-name", room.room || t("quantity.noRoom")),
+        totalsChips(room.totals, t("quantity.net")),
       );
       roomEl.append(roomHead);
 
@@ -149,16 +150,16 @@ function renderRows(summary: QuantitySummary): HTMLElement {
           ),
           el("span", "quantity-unit", row.unit),
         );
-        rowHead.append(type, el("span", "quantity-items", plural(row.items, "item")));
+        rowHead.append(type, el("span", "quantity-items", itemCount(row.items)));
         rowEl.append(rowHead);
 
         const values = el("div", "quantity-values");
         for (const [label, value, className] of [
-          ["Gross", row.gross, ""],
-          ["Deduct", row.deduction, "is-deduction"],
-          ["Net", row.net, "is-net"],
+          [t("quantity.gross"), row.gross, ""],
+          [t("quantity.deduct"), row.deduction, "is-deduction"],
+          [t("quantity.net"), row.net, "is-net"],
           [`Waste ${formatNumber(row.wastePercent, 1)}%`, row.wasteQuantity, "is-waste"],
-          ["Order", row.orderQuantity, "is-order"],
+          [t("quantity.order"), row.orderQuantity, "is-order"],
         ] as const) {
           const stat = el("div", `quantity-stat ${className}`.trim());
           stat.append(
@@ -173,10 +174,10 @@ function renderRows(summary: QuantitySummary): HTMLElement {
             stat.title =
               row.roundingStep > 0
                 ? `Rounded up to steps of ${formatNumber(row.roundingStep, 2)} ${row.unit}`
-                : "No rounding step";
+                : t("quantity.noRounding");
           }
           if (className === "is-waste") {
-            stat.title = `Waste ${formatNumber(row.wastePercent, 2)}% of net`;
+            stat.title = t("quantity.wasteTitle", { percent: formatNumber(row.wastePercent, 2) });
           }
           values.append(stat);
         }
@@ -184,7 +185,7 @@ function renderRows(summary: QuantitySummary): HTMLElement {
 
         if (row.clamped) {
           const warning = el("div", "quantity-warning");
-          warning.innerHTML = `${icon("warning", 12)}<span>Deduction exceeds gross; net is clamped to zero.</span>`;
+          warning.innerHTML = `${icon("warning", 12)}<span>${t("quantity.clamped")}</span>`;
           rowEl.append(warning);
         }
         roomEl.append(rowEl);
@@ -195,7 +196,10 @@ function renderRows(summary: QuantitySummary): HTMLElement {
   }
 
   const grand = el("section", "quantity-grand");
-  grand.append(el("div", "quantity-section-title", "Total"), totalsChips(summary.totals, "Net"));
+  grand.append(
+    el("div", "quantity-section-title", t("quantity.total")),
+    totalsChips(summary.totals, t("quantity.net")),
+  );
   list.append(grand);
   return list;
 }
@@ -218,12 +222,12 @@ function renderFilters(): HTMLElement {
   const wrap = el("div", "quantity-filters");
 
   const pageField = el("label", "quantity-field");
-  pageField.append(el("span", "field-label", "Page"));
+  pageField.append(el("span", "field-label", t("quantity.page")));
   const pageSelect = el("select", "select");
-  pageSelect.setAttribute("aria-label", "Filter quantities by page");
+  pageSelect.setAttribute("aria-label", t("quantity.filterPage"));
   pageSelect.append(
-    option("current", `Current page (${store.ui.page})`, pageFilter === "current"),
-    option("all", "All pages", pageFilter === "all"),
+    option("current", t("quantity.currentPage", { page: store.ui.page }), pageFilter === "current"),
+    option("all", t("quantity.allPages"), pageFilter === "all"),
   );
   pageSelect.addEventListener("change", () => {
     pageFilter = pageSelect.value === "all" ? "all" : "current";
@@ -232,10 +236,10 @@ function renderFilters(): HTMLElement {
   pageField.append(pageSelect);
 
   const categoryField = el("label", "quantity-field");
-  categoryField.append(el("span", "field-label", "Category"));
+  categoryField.append(el("span", "field-label", t("quantity.category")));
   const categorySelect = el("select", "select");
-  categorySelect.setAttribute("aria-label", "Filter quantities by category");
-  categorySelect.append(option("", "All categories", !categoryFilter));
+  categorySelect.setAttribute("aria-label", t("quantity.filterCategory"));
+  categorySelect.append(option("", t("quantity.allCategories"), !categoryFilter));
   for (const category of project.categories) {
     categorySelect.append(option(category.id, category.name, category.id === categoryFilter));
   }
@@ -246,12 +250,12 @@ function renderFilters(): HTMLElement {
   categoryField.append(categorySelect);
 
   const roomField = el("label", "quantity-field quantity-field-wide");
-  roomField.append(el("span", "field-label", "Room"));
+  roomField.append(el("span", "field-label", t("quantity.room")));
   const roomInput = el("input", "input");
   roomInput.type = "search";
-  roomInput.placeholder = "Filter by room";
+  roomInput.placeholder = t("quantity.filterRoom");
   roomInput.value = roomFilter;
-  roomInput.setAttribute("aria-label", "Filter quantities by room");
+  roomInput.setAttribute("aria-label", t("quantity.filterRoomAria"));
   roomInput.addEventListener("change", () => {
     roomFilter = roomInput.value;
     rerender();
@@ -260,7 +264,7 @@ function renderFilters(): HTMLElement {
 
   const layers = project.layers.filter((layer) => layer.kind === "measure");
   const layerDetails = el("details", "quantity-layers quantity-field-wide");
-  layerDetails.setAttribute("aria-label", "Filter quantities by measurement layer");
+  layerDetails.setAttribute("aria-label", t("quantity.filterLayer"));
   layerDetails.open = layersOpen;
   layerDetails.addEventListener("toggle", () => {
     layersOpen = layerDetails.open;
@@ -270,10 +274,10 @@ function renderFilters(): HTMLElement {
     "summary",
     "quantity-layers-summary",
     layerFilter === null
-      ? "All layers"
+      ? t("quantity.allLayers")
       : selectedCount === 0
-        ? "No layers selected"
-        : plural(selectedCount, "layer"),
+        ? t("quantity.noLayers")
+        : t("quantity.layersSummary", { count: selectedCount }),
   );
   layerDetails.append(layerSummary);
 
@@ -286,7 +290,7 @@ function renderFilters(): HTMLElement {
     layerFilter = allInput.checked ? null : new Set();
     rerender();
   });
-  allRow.append(allInput, el("span", "", "All measurement layers"));
+  allRow.append(allInput, el("span", "", t("quantity.allMeasurementLayers")));
   layerList.append(allRow);
 
   for (const layer of layers) {
@@ -321,10 +325,10 @@ function renderFilters(): HTMLElement {
     includeHidden = hiddenInput.checked;
     rerender();
   });
-  hiddenRow.append(hiddenInput, el("span", "", "Include hidden items and layers"));
+  hiddenRow.append(hiddenInput, el("span", "", t("quantity.includeHidden")));
 
   const actions = el("div", "quantity-filter-actions quantity-field-wide");
-  const reset = el("button", "btn btn-small btn-ghost", "Reset filters");
+  const reset = el("button", "btn btn-small btn-ghost", t("quantity.resetFilters"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetFilters();
@@ -339,10 +343,10 @@ function renderFilters(): HTMLElement {
 function renderNotice(summary: QuantitySummary): HTMLElement | null {
   const notes: string[] = [];
   if (!includeHidden && summary.hiddenExcluded > 0) {
-    notes.push(`${plural(summary.hiddenExcluded, "hidden measurement")} excluded`);
+    notes.push(t("quantity.hiddenExcluded", { count: summary.hiddenExcluded }));
   }
   if (summary.uncalibratedExcluded > 0) {
-    notes.push(`${plural(summary.uncalibratedExcluded, "uncalibrated measurement")} excluded`);
+    notes.push(t("quantity.uncalibratedExcluded", { count: summary.uncalibratedExcluded }));
   }
   if (!notes.length) return null;
   const notice = el("div", "quantity-notice");

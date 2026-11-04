@@ -2,6 +2,7 @@ import { allRooms, measurementCategory } from "../model/categories";
 import {
   addCountPreset,
   countPresetLabel,
+  countTypeLabel,
   findCountPreset,
   removeCountPreset,
 } from "../features/countTypes/model";
@@ -9,6 +10,7 @@ import type { AreaMode, AreaShape, CountType } from "../model/types";
 import { store } from "../state/store";
 import { el, option } from "./dom";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 let optionsRoot: HTMLElement | null = null;
 let optionsAnchor: HTMLElement | null = null;
@@ -25,7 +27,7 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
   const root = el("div", "measure-options-root");
   const panel = el("div", "measure-options");
   panel.setAttribute("role", "dialog");
-  panel.setAttribute("aria-label", "New measurement options");
+  panel.setAttribute("aria-label", t("measureOptions.title"));
   root.append(panel);
   document.body.append(root);
   optionsRoot = root;
@@ -60,8 +62,8 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     panel.replaceChildren();
     const title = el("div", "measure-options-title");
     title.append(
-      el("span", "", "New measurement"),
-      el("span", "measure-options-subtitle", "Sticky for the next item"),
+      el("span", "", t("measureOptions.newMeasurement")),
+      el("span", "measure-options-subtitle", t("measureOptions.sticky")),
     );
     panel.append(title);
 
@@ -70,7 +72,7 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     const pendingCategory = measurementCategory(currentProject, store.ui.measureCategoryId);
 
     const category = select(
-      "Category",
+      t("measureOptions.category"),
       currentProject.categories.map((entry) => ({
         value: entry.id,
         label: entry.name,
@@ -78,13 +80,13 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
       })),
       (value) => store.setMeasureCategory(value),
     );
-    panel.append(field("Category", category));
+    panel.append(field(t("measureOptions.category"), category));
 
     const room = el("input", "input");
     room.type = "text";
     room.value = store.ui.measureRoom;
-    room.placeholder = "Room (optional)";
-    room.setAttribute("aria-label", "Room for new measurements");
+    room.placeholder = t("measureOptions.roomOptional");
+    room.setAttribute("aria-label", t("measureOptions.roomAria"));
     const roomList = el("datalist");
     roomList.id = "measure-option-rooms";
     for (const name of allRooms(currentProject)) roomList.append(option(name, name));
@@ -95,8 +97,8 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     });
     const clear = el("button", "icon-btn measure-option-clear", "×");
     clear.type = "button";
-    clear.title = "Clear room";
-    clear.setAttribute("aria-label", "Clear room");
+    clear.title = t("measureOptions.clearRoom");
+    clear.setAttribute("aria-label", t("measureOptions.clearRoom"));
     clear.addEventListener("click", () => {
       room.value = "";
       store.setMeasureRoom("");
@@ -105,36 +107,48 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
     });
     const roomWrap = el("div", "measure-option-room");
     roomWrap.append(room, clear, roomList);
-    panel.append(field("Room", roomWrap));
+    panel.append(field(t("measureOptions.room"), roomWrap));
 
     if (store.ui.activeTool === "area") {
       const shape = select(
-        "Area shape",
+        t("measureOptions.areaShape"),
         [
-          { value: "polygon", label: "Polygon", selected: store.ui.measureAreaShape === "polygon" },
+          {
+            value: "polygon",
+            label: t("measureOptions.polygon"),
+            selected: store.ui.measureAreaShape === "polygon",
+          },
           {
             value: "rectangle",
-            label: "Rectangle",
+            label: t("measureOptions.rectangle"),
             selected: store.ui.measureAreaShape === "rectangle",
           },
-          { value: "ellipse", label: "Ellipse", selected: store.ui.measureAreaShape === "ellipse" },
+          {
+            value: "ellipse",
+            label: t("measureOptions.ellipse"),
+            selected: store.ui.measureAreaShape === "ellipse",
+          },
         ],
         (value) => store.setMeasureAreaShape(value as AreaShape),
       );
-      panel.append(field("Shape", shape));
+      panel.append(field(t("measureOptions.shape"), shape));
       const mode = select(
-        "Area mode",
+        t("measureOptions.areaMode"),
         [
-          { value: "add", label: "Add to area", selected: store.ui.measureAreaMode === "add" },
+          {
+            value: "add",
+            label: t("measureOptions.addToArea"),
+            selected: store.ui.measureAreaMode === "add",
+          },
           {
             value: "subtract",
-            label: "Deduct from area",
+            label: t("measureOptions.deductFromArea"),
             selected: store.ui.measureAreaMode === "subtract",
           },
         ],
         (value) => store.setMeasureAreaMode(value as AreaMode),
       );
-      panel.append(field("Area", mode));
+      panel.append(field(t("measureOptions.area"), mode));
     }
 
     if (store.ui.activeTool === "count") {
@@ -150,9 +164,9 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
         store.ui.measureCountQuantity,
       );
       const preset = select(
-        "Count preset",
+        t("measureOptions.countPreset"),
         [
-          { value: "", label: "Current settings", selected: !matchingPreset },
+          { value: "", label: t("measureOptions.currentSettings"), selected: !matchingPreset },
           ...currentProject.countPresets.map((entry) => ({
             value: entry.id,
             label: countPresetLabel(currentProject, entry),
@@ -169,18 +183,18 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
           render();
         },
       );
-      panel.append(field("Preset", preset));
+      panel.append(field(t("measureOptions.preset"), preset));
 
       const type = select(
-        "Object type",
+        t("measureOptions.objectType"),
         project.countTypes.map((entry) => ({
           value: entry.id,
-          label: entry.label,
+          label: countTypeLabel(project, entry.id),
           selected: entry.id === store.ui.measureCountType,
         })),
         (value) => store.setMeasureCountType(value as CountType),
       );
-      panel.append(field("Type", type));
+      panel.append(field(t("measureOptions.type"), type));
 
       const quantity = el("input", "input");
       quantity.type = "number";
@@ -188,22 +202,22 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
       quantity.max = "100000";
       quantity.step = "1";
       quantity.value = String(store.ui.measureCountQuantity);
-      quantity.setAttribute("aria-label", "Pieces per new count");
-      quantity.title = "Pieces represented by each new count object";
+      quantity.setAttribute("aria-label", t("measureOptions.piecesPerCount"));
+      quantity.title = t("measureOptions.piecesAria");
       quantity.addEventListener("change", () => {
         const value = Number(quantity.value);
         if (!Number.isFinite(value) || value < 1) {
           quantity.value = String(store.ui.measureCountQuantity);
-          toast("Count quantity must be one piece or more.", "warning");
+          toast(t("measureOptions.piecesInvalid"), "warning");
           return;
         }
         store.setMeasureCountQuantity(value);
         changed();
       });
-      panel.append(field("Pieces", quantity));
+      panel.append(field(t("measureOptions.pieces"), quantity));
 
       const presetActions = el("div", "input-row");
-      const savePreset = el("button", "btn btn-small", "Save preset");
+      const savePreset = el("button", "btn btn-small", t("measureOptions.savePreset"));
       savePreset.type = "button";
       savePreset.addEventListener("click", () => {
         let saved: boolean = false;
@@ -218,20 +232,24 @@ export function openMeasureOptions(anchor: HTMLElement, onChange?: () => void): 
           saved = created !== null;
         }, "change");
         toast(
-          saved ? "Count preset saved." : "Could not save the count preset.",
+          saved ? t("measureOptions.presetSaved") : t("measureOptions.presetSaveFailed"),
           saved ? "success" : "warning",
         );
         if (saved) render();
       });
       presetActions.append(savePreset);
       if (matchingPreset) {
-        const deletePreset = el("button", "btn btn-small btn-ghost", "Delete preset");
+        const deletePreset = el(
+          "button",
+          "btn btn-small btn-ghost",
+          t("measureOptions.deletePreset"),
+        );
         deletePreset.type = "button";
         deletePreset.addEventListener("click", () => {
           store.mutate((next) => {
             removeCountPreset(next, matchingPreset.id);
           }, "change");
-          toast("Count preset deleted.");
+          toast(t("measureOptions.presetDeleted"));
           render();
         });
         presetActions.append(deletePreset);

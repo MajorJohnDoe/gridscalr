@@ -80,6 +80,7 @@ import {
 } from "../model/symbols";
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
 import type { PdfRenderer } from "./pdfRenderer";
+import { t } from "../i18n";
 
 interface ExportFonts {
   regular: PDFFont;
@@ -201,7 +202,7 @@ export async function exportProjectPdf(
 }
 
 function normalizeExportPages(pages: readonly number[] | undefined, pageCount: number): number[] {
-  if (pageCount < 1) throw new Error("The source PDF has no pages.");
+  if (pageCount < 1) throw new Error(t("pdfExport.noPages"));
   if (!pages) return Array.from({ length: pageCount }, (_, index) => index + 1);
   const selected = [
     ...new Set(
@@ -210,7 +211,7 @@ function normalizeExportPages(pages: readonly number[] | undefined, pageCount: n
         .map((page) => Math.round(page)),
     ),
   ].sort((a, b) => a - b);
-  if (!selected.length) throw new Error("Select at least one page to export.");
+  if (!selected.length) throw new Error(t("pdfExport.selectPages"));
   return selected;
 }
 
@@ -246,9 +247,7 @@ export function pdfCropBoxForViewport(
   const rotationValue = Number.isFinite(viewport.rotation) ? viewport.rotation : 0;
   const rotation = ((rotationValue % 360) + 360) % 360;
   if (rotation % 90 !== 0) {
-    throw new Error(
-      "The page rotation is not a multiple of 90°, so the export area cannot be applied safely.",
-    );
+    throw new Error(t("pdfExport.rotationUnsupported"));
   }
   const rect = pageRectFromCrop(crop, {
     width: viewport.width,
@@ -270,9 +269,7 @@ export function pdfCropBoxForViewport(
   };
   const clipped = intersectBoxes(box, existingCrop);
   if (clipped.width < 1 || clipped.height < 1) {
-    throw new Error(
-      "The selected export area is too small or lies outside the page's visible area.",
-    );
+    throw new Error(t("pdfExport.areaInvalid"));
   }
   return clipped;
 }
@@ -336,7 +333,7 @@ function drawLegendPage(
   const rule = rgb(0.78, 0.82, 0.84);
   let y = page.getHeight() - margin;
 
-  page.drawText("Drawing legend", {
+  page.drawText(t("pdfExport.legend"), {
     x: margin,
     y: y - 20,
     size: 22,
@@ -381,7 +378,7 @@ function drawLegendPage(
       pages.some((page) => layerVisibleOnPage(layer, page)),
   );
   if (!layers.length) {
-    page.drawText("No layers selected.", {
+    page.drawText(t("pdfExport.noLayers"), {
       x: margin,
       y,
       size: 10,
@@ -408,13 +405,16 @@ function drawLegendPage(
         font: fonts.bold,
         color: ink,
       });
-      page.drawText(layer.kind === "measure" ? "Measurement layer" : "Drawing layer", {
-        x: margin + width - 110,
-        y,
-        size: 9,
-        font: fonts.regular,
-        color: muted,
-      });
+      page.drawText(
+        layer.kind === "measure" ? t("pdfExport.measurementLayer") : t("pdfExport.drawingLayer"),
+        {
+          x: margin + width - 110,
+          y,
+          size: 9,
+          font: fonts.regular,
+          color: muted,
+        },
+      );
       y -= 23;
     }
   }
@@ -422,7 +422,7 @@ function drawLegendPage(
   const counts = exportedCounts(project, pages, selectedLayerIds);
   if (counts.size) {
     y -= 14;
-    page.drawText("Counted objects", {
+    page.drawText(t("pdfExport.countedObjects"), {
       x: margin,
       y,
       size: 12,
@@ -491,11 +491,11 @@ async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
   try {
     const [regular, bold] = await Promise.all([
       fetch(regularFontUrl).then((response) => {
-        if (!response.ok) throw new Error("Regular export font is unavailable.");
+        if (!response.ok) throw new Error(t("pdfExport.regularFontUnavailable"));
         return response.arrayBuffer();
       }),
       fetch(boldFontUrl).then((response) => {
-        if (!response.ok) throw new Error("Bold export font is unavailable.");
+        if (!response.ok) throw new Error(t("pdfExport.boldFontUnavailable"));
         return response.arrayBuffer();
       }),
     ]);

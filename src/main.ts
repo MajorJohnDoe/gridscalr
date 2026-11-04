@@ -3,13 +3,13 @@ import "./styles/help.css";
 import "./styles/popovers.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
-import { applyStoredLanguage, setLanguagePreference } from "./i18n";
+import { applyStoredLanguage, setLanguagePreference, t } from "./i18n";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
 
 if (!root) {
-  throw new Error("The application root element is missing.");
+  throw new Error(t("main.missingRoot"));
 }
 
 let appStarted = false;
@@ -28,7 +28,7 @@ function formatStartupError(error: unknown): string {
 
 function showStartupError(error: unknown): void {
   if (!root) return;
-  console.error("GridScalr failed to start", error);
+  console.error(t("main.startFailed"), error);
   logEvent("error", `startup failed: ${formatStartupError(error)}`);
 
   const fallback = document.createElement("div");
@@ -43,12 +43,11 @@ function showStartupError(error: unknown): void {
 
   const status = document.createElement("p");
   status.className = "boot-status";
-  status.textContent = "The interface failed to start.";
+  status.textContent = t("main.interfaceFailed");
 
   const hint = document.createElement("p");
   hint.className = "boot-hint";
-  hint.textContent =
-    "Restart the app and make sure Microsoft Edge WebView2 is up to date. The technical details below can be copied into a bug report.";
+  hint.textContent = t("main.restartHint");
 
   const detail = document.createElement("pre");
   detail.className = "boot-error";

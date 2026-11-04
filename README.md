@@ -64,7 +64,11 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   saved views, filters and grouping.
 - Review gross, deduction, net, waste and order quantities per category,
   room and page, then export a CSV, an Excel workbook or a print-friendly PDF
-  report.
+  report. Add optional facility, client, project number, revision, author and
+  notes plus a report logo in Project settings.
+- Switch between English and Swedish in Preferences. The interface, reports,
+  XLSX/CSV headings and number formatting follow the selected language, and the
+  Swedish help includes a Swedish quick start.
 - Open a synchronized reference pane showing the same page, a saved revision or
   a raw PDF drawing beside the primary canvas. Pan, zoom and page changes stay in
   step.
@@ -182,6 +186,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 
 | Document | Contents |
 | --- | --- |
+| [Quick start](docs/quick-start.md) | The short workflow for a new project. Swedish version: [Snabbstart](docs/quick-start.sv.md). |
 | [User guide](docs/user-guide.md) | The full workflow, panel by panel. Same content as **Help** in the app. |
 | [Workflows](docs/workflows.md) | Task-oriented guides for site work and technical property management. |
 | [Shortcuts](docs/shortcuts.md) | Every keyboard shortcut. |
@@ -240,13 +245,13 @@ Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 21 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 22 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
 deliberately deferred.
 
-The 1.0 target adds Windows, macOS and Linux artifacts, English and Swedish UI,
+The 1.0 target covers Windows, macOS and Linux artifacts, English and Swedish UI,
 portable `.gridscalr.zip` project packages and tested large-project performance.
 Architecture decisions are recorded in [docs/adr](docs/adr/README.md).
 

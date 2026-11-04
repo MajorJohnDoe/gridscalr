@@ -27,6 +27,10 @@ stable identifier in the project file; only the displayed text is translated.
 | revision cloud | revideringsmoln | A cloud markup around a changed area. |
 | drawing export | ritningsexport | The flattened PDF export of drawings and markups. |
 | quantity report | mängdrapport | The A4 PDF report and its CSV/XLSX equivalents. |
+| report metadata | rapportmetadata | Facility, client, project number, revision, author, date and notes. |
+| facility | fastighet | The property or facility named on a report. |
+| client | kund | The organisation receiving the report. |
+| report logo | rapportlogotyp | Optional image embedded in the project and shown on the report. |
 
 ## Rules
 

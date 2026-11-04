@@ -3,6 +3,7 @@ import { COUNT_LABEL_OFFSET } from "./countSymbols";
 import { angleGeometry, arcGeometry } from "./geometry";
 import { itemMetrics } from "./measure";
 import type { MarkupItem, Point, Project } from "./types";
+import { t } from "../i18n";
 
 export interface LabelParts {
   text: string;
@@ -238,7 +239,7 @@ export function measurementLabelParts(item: MarkupItem, project: Project): Label
   // keep the descriptive "Perimeter" wording.
   const secondary =
     item.kind === "area" && project.settings.compactAreaLabels && metrics.secondary
-      ? metrics.secondary.replace("Perimeter ", "P ")
+      ? metrics.secondary.replace(t("measure.perimeter"), t("measure.compactPrefix"))
       : metrics.secondary;
   return {
     text: item.label ? `${item.label} · ${metrics.primary}` : metrics.primary,

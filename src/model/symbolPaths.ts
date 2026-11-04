@@ -1,4 +1,5 @@
 import type { Point } from "./types";
+import { t } from "../i18n";
 
 /**
  * A small, dependency-free subset of the SVG path grammar used by the built-in
@@ -68,7 +69,7 @@ export function parseSymbolPath(data: string): SymbolCommand[] {
       command = next;
       index += 1;
     } else if (!command) {
-      throw new Error("Symbol path must start with a command");
+      throw new Error(t("symbolPaths.invalidStart"));
     }
 
     const upper = command.toUpperCase();

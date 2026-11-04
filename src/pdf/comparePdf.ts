@@ -11,6 +11,7 @@ import { totalPageCount } from "../model/documents";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
 import { renderPagePreview } from "./pdfRenderer";
+import { t } from "../i18n";
 
 const PAGE_WIDTH = 841.89;
 const PAGE_HEIGHT = 595.28;
@@ -83,10 +84,10 @@ function wrapText(text: string, font: PDFFont, size: number, maxWidth: number): 
 }
 
 function statusLabel(status: DiffItem["status"]): string {
-  if (status === "added") return "Added";
-  if (status === "removed") return "Removed";
-  if (status === "changed") return "Changed";
-  return "Unchanged";
+  if (status === "added") return t("compare.added");
+  if (status === "removed") return t("compare.removed");
+  if (status === "changed") return t("compare.changed");
+  return t("compare.unchanged");
 }
 
 function statusColor(status: DiffItem["status"]) {
@@ -178,7 +179,7 @@ function drawPageSlot(
     color: rgb(1, 1, 1),
   });
   if (!image) {
-    page.drawText("Page not present", {
+    page.drawText(t("pdf.compare.pageNotPresent"), {
       x: x + 10,
       y: y + height / 2,
       size: 10,
@@ -205,26 +206,32 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
   const page = newPage(
     pdf,
     fonts,
-    diff ? "Revision comparison" : "Drawing reference comparison",
-    `${options.current.name} versus ${options.referenceName}`,
+    diff ? t("compare.compareRevisions") : t("compare.compareDrawing"),
+    t("pdf.compare.versus", {
+      current: options.current.name,
+      reference: options.referenceName,
+    }),
   );
   let y = PAGE_HEIGHT - MARGIN - 62;
   const generated = options.generatedAt ?? new Date().toISOString();
   const rows: Array<[string, string]> = [
-    ["Current revision", options.current.name],
-    [diff ? "Reference revision" : "Reference drawing", options.referenceName],
-    ["Generated at", generated],
-    ["Pages", String(diff?.summary.pages ?? options.referencePageCount)],
+    [t("pdf.compare.currentRevision"), options.current.name],
+    [
+      diff ? t("pdf.compare.referenceRevision") : t("pdf.compare.referenceDrawing"),
+      options.referenceName,
+    ],
+    [t("pdf.compare.generatedAt"), generated],
+    [t("pdf.compare.pages"), String(diff?.summary.pages ?? options.referencePageCount)],
   ];
   if (diff) {
     rows.push(
-      ["Changed", String(diff.summary.changed)],
-      ["Added", String(diff.summary.added)],
-      ["Removed", String(diff.summary.removed)],
-      ["Unchanged", String(diff.summary.unchanged)],
+      [t("compare.changed"), String(diff.summary.changed)],
+      [t("compare.added"), String(diff.summary.added)],
+      [t("compare.removed"), String(diff.summary.removed)],
+      [t("compare.unchanged"), String(diff.summary.unchanged)],
     );
   } else {
-    rows.push(["Markup comparison", "Not available for a drawing reference"]);
+    rows.push([t("pdf.compare.markupComparison"), t("pdf.compare.notAvailableDrawing")]);
   }
   for (const [label, value] of rows) {
     page.drawText(label, { x: MARGIN, y, size: 9, font: fonts.regular, color: MUTED });
@@ -239,7 +246,13 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
   }
   y -= 6;
   if (diff?.warnings.length) {
-    page.drawText("Warnings", { x: MARGIN, y, size: 10, font: fonts.bold, color: WARNING });
+    page.drawText(t("pdf.compare.warnings"), {
+      x: MARGIN,
+      y,
+      size: 10,
+      font: fonts.bold,
+      color: WARNING,
+    });
     y -= 14;
     for (const warning of diff.warnings) {
       for (const line of wrapText(warning, fonts.regular, 8.5, PAGE_WIDTH - MARGIN * 2 - 8)) {
@@ -251,13 +264,20 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
     y -= 8;
   }
   if (!diff) {
-    drawFooter(page, fonts, "GridScalr drawing reference comparison");
+    drawFooter(page, fonts, t("pdf.compare.footerDrawing"));
     return page;
   }
-  page.drawText("Pages", { x: MARGIN, y, size: 10, font: fonts.bold, color: INK });
+  page.drawText(t("pdf.compare.pages"), { x: MARGIN, y, size: 10, font: fonts.bold, color: INK });
   y -= 14;
   const columns = [40, 250, 80, 80, 80, 80];
-  const headers = ["Page", "Name", "Changed", "Added", "Removed", "Unchanged"];
+  const headers = [
+    t("pdf.compare.page"),
+    t("pdf.compare.name"),
+    t("compare.changed"),
+    t("compare.added"),
+    t("compare.removed"),
+    t("compare.unchanged"),
+  ];
   let x = MARGIN;
   for (let index = 0; index < headers.length; index += 1) {
     page.drawText(headers[index], { x, y, size: 7.5, font: fonts.bold, color: INK });
@@ -287,7 +307,7 @@ function summaryPage(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOptio
     }
     y -= 11;
   }
-  drawFooter(page, fonts, "GridScalr revision comparison");
+  drawFooter(page, fonts, t("pdf.compare.footerRevision"));
   return page;
 }
 
@@ -311,9 +331,9 @@ async function visualPages(
     const page = newPage(
       pdf,
       fonts,
-      `Page ${pageNumber}`,
+      t("pdf.compare.pageNumber", { page: pageNumber }),
       diff?.pages[pageNumber - 1]?.pageName ??
-        (diff ? "Revision comparison" : options.referenceName),
+        (diff ? t("compare.compareRevisions") : options.referenceName),
     );
     const y = MARGIN + FOOTER;
     drawPageSlot(
@@ -323,7 +343,7 @@ async function visualPages(
       y,
       slotWidth,
       slotHeight,
-      `Current · ${options.current.name}`,
+      t("pdf.compare.currentSlot", { name: options.current.name }),
       fonts,
     );
     drawPageSlot(
@@ -333,15 +353,20 @@ async function visualPages(
       y,
       slotWidth,
       slotHeight,
-      `Reference · ${options.referenceName}`,
+      t("pdf.compare.referenceSlot", { name: options.referenceName }),
       fonts,
     );
     const counts = diff?.pages[pageNumber - 1];
     const footer = counts
-      ? `${counts.changed} changed · ${counts.added} added · ${counts.removed} removed · ${counts.unchanged} unchanged`
+      ? t("pdf.compare.counts", {
+          changed: counts.changed,
+          added: counts.added,
+          removed: counts.removed,
+          unchanged: counts.unchanged,
+        })
       : diff
-        ? "No comparison data"
-        : `${referenceCount} reference page${referenceCount === 1 ? "" : "s"} · no markup comparison`;
+        ? t("pdf.compare.noComparisonData")
+        : t("pdf.compare.referencePagesNoComparison", { count: referenceCount });
     drawFooter(page, fonts, footer);
   }
 }
@@ -351,7 +376,13 @@ function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOption
   if (!diff) return;
   const items = diff.items.filter((item) => item.status !== "unchanged");
   const columns = [52, 32, 48, 150, PAGE_WIDTH - MARGIN * 2 - 52 - 32 - 48 - 150];
-  const headers = ["Status", "Page", "Type", "Label", "Changes"];
+  const headers = [
+    t("pdf.compare.status"),
+    t("pdf.compare.page"),
+    t("pdf.compare.type"),
+    t("pdf.compare.label"),
+    t("pdf.compare.changes"),
+  ];
   let page = newPage(
     pdf,
     fonts,
@@ -378,14 +409,14 @@ function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOption
   drawTableHeader();
 
   if (!items.length) {
-    page.drawText("No changed, added or removed items.", {
+    page.drawText(t("compare.noDiff"), {
       x: MARGIN,
       y,
       size: 9,
       font: fonts.regular,
       color: MUTED,
     });
-    drawFooter(page, fonts, "GridScalr revision comparison");
+    drawFooter(page, fonts, t("pdf.compare.footerRevision"));
     return;
   }
 
@@ -395,15 +426,15 @@ function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOption
           .map((change) => `${change.label}: ${change.before} -> ${change.after}`)
           .join("; ")
       : item.status === "added"
-        ? "Only in the current revision"
-        : "Only in the reference revision";
+        ? t("compare.onlyCurrent")
+        : t("compare.onlyReference");
     const labelLines = wrapText(item.label, fonts.regular, 7.5, columns[3] - 5);
     const changeLines = wrapText(changeText, fonts.regular, 7.5, columns[4] - 5);
     const lineCount = Math.max(labelLines.length, changeLines.length, 1);
     const rowHeight = Math.max(TABLE_ROW_HEIGHT, lineCount * 9 + 4);
     if (y - rowHeight < MARGIN + 18) {
-      drawFooter(page, fonts, "GridScalr revision comparison");
-      page = newPage(pdf, fonts, "Differences (continued)", options.referenceName);
+      drawFooter(page, fonts, t("pdf.compare.footerRevision"));
+      page = newPage(pdf, fonts, t("pdf.compare.differencesContinued"), options.referenceName);
       y = PAGE_HEIGHT - MARGIN - HEADER - 10;
       drawTableHeader();
     }
@@ -459,7 +490,7 @@ function tablePages(pdf: PDFDocument, fonts: Fonts, options: ComparisonPdfOption
       color: LINE,
     });
   }
-  drawFooter(page, fonts, "GridScalr revision comparison");
+  drawFooter(page, fonts, t("pdf.compare.footerRevision"));
 }
 
 /**

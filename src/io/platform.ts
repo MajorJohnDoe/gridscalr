@@ -1,6 +1,7 @@
 import type { RecentEntry } from "../model/types";
 import { sha256Fallback } from "./sha256";
 import { assertWritablePath } from "./writeGuard";
+import { t } from "../i18n";
 
 export const isTauri =
   typeof window !== "undefined" && ("__TAURI_INTERNALS__" in window || "__TAURI__" in window);
@@ -61,7 +62,7 @@ export async function pickDrawing(): Promise<PickedPdf | null> {
       filters: [
         { name: "Drawing", extensions: ["pdf", "tif", "tiff"] },
         { name: "PDF", extensions: ["pdf"] },
-        { name: "TIFF image", extensions: ["tif", "tiff"] },
+        { name: t("platform.tiffFilter"), extensions: ["tif", "tiff"] },
       ],
     });
     if (!path || Array.isArray(path)) return null;
@@ -83,7 +84,7 @@ export async function pickPdf(): Promise<PickedPdf | null> {
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "PDF drawing", extensions: ["pdf"] }],
+      filters: [{ name: t("platform.pdfFilter"), extensions: ["pdf"] }],
     });
     if (!path || Array.isArray(path)) return null;
     const bytes = await readFileBytes(path);
@@ -127,7 +128,7 @@ export async function pickProject(): Promise<PickedProject | null> {
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "GridScalr project", extensions: ["gridscalr", "json"] }],
+      filters: [{ name: t("platform.projectFilter"), extensions: ["gridscalr", "json"] }],
     });
     if (!path || Array.isArray(path)) return null;
     const text = await readFileText(path);
@@ -139,18 +140,18 @@ export async function pickProject(): Promise<PickedProject | null> {
 }
 
 export async function readFileBytes(path: string): Promise<Uint8Array> {
-  if (!isTauri) throw new Error("Direct file access is not available in the browser.");
+  if (!isTauri) throw new Error(t("platform.noDirectAccess"));
   const result = await tauriInvoke<ArrayBuffer | number[]>("read_binary", { path });
   if (result instanceof ArrayBuffer) return new Uint8Array(result);
   if (ArrayBuffer.isView(result)) {
     return new Uint8Array(result.buffer, result.byteOffset, result.byteLength);
   }
   if (Array.isArray(result)) return new Uint8Array(result);
-  throw new Error("Unexpected file response.");
+  throw new Error(t("platform.unexpectedResponse"));
 }
 
 export async function readFileText(path: string): Promise<string> {
-  if (!isTauri) throw new Error("Direct file access is not available in the browser.");
+  if (!isTauri) throw new Error(t("platform.noDirectAccess"));
   return tauriInvoke<string>("read_text", { path });
 }
 
@@ -198,7 +199,7 @@ export async function pickProjectPackage(): Promise<string | null> {
   const path = await open({
     multiple: false,
     directory: false,
-    filters: [{ name: "GridScalr project package", extensions: ["zip"] }],
+    filters: [{ name: t("platform.packageFilter"), extensions: ["zip"] }],
   });
   return path && !Array.isArray(path) ? path : null;
 }

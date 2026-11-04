@@ -1,4 +1,4 @@
-import { HELP_CONTENT, type HelpTopic } from "../help/content";
+import { HELP_CONTENT, QUICK_START_SV, type HelpTopic } from "../help/content";
 import { SUPPORTED_LOCALES, currentLocale, type HelpBundleId, type Locale } from "./index";
 
 type HelpBundleTopic = Exclude<HelpTopic, "about">;
@@ -10,7 +10,7 @@ type HelpBundleTopic = Exclude<HelpTopic, "about">;
  */
 const HELP_BUNDLES: Record<HelpBundleId, Record<HelpBundleTopic, string>> = {
   en: HELP_CONTENT,
-  sv: HELP_CONTENT,
+  sv: { ...HELP_CONTENT, quickstart: QUICK_START_SV },
 };
 
 const helpBundles = Object.fromEntries(

@@ -1,8 +1,8 @@
-import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 import { isTauri } from "../io/platform";
 import { el } from "./dom";
 import { icon } from "./icons";
 import { toast } from "./toast";
+import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 
 /** Where the app is running; drives the CSS that offsets the window chrome. */
 export type Platform = "browser" | "windows" | "macos" | "linux";
@@ -139,13 +139,13 @@ export function mountWindowControls(
   };
 
   minimizeBtn.addEventListener("click", () => {
-    void act((win) => win.minimize(), "The window could not be minimized.");
+    void act((win) => win.minimize(), t("window.minimizeFailed"));
   });
   maximizeBtn.addEventListener("click", () => {
     void act(async (win) => {
       await win.toggleMaximize();
       applyMaximized(await win.isMaximized());
-    }, "The window could not be resized.");
+    }, t("window.resizeFailed"));
   });
   closeBtn.addEventListener("click", () => actions.quit());
 

@@ -8,13 +8,14 @@ import {
   layersForKind,
 } from "../model/layers";
 import { resolveSelection, selectionKind } from "../model/selection";
-import { INSPECTION_STATUSES, INSPECTION_STATUS_LABELS } from "../model/symbols";
+import { INSPECTION_STATUSES, inspectionStatusLabel } from "../model/symbols";
 import type { InspectionStatus } from "../model/types";
 import { store } from "../state/store";
 import { textDialog } from "./dialogs";
 import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
+import { t } from "../i18n";
 
 /** Context menu for the current selection, shared by the canvas and the panels. */
 export function showSelectionMenuAt(x: number, y: number, actions: PanelActions): void {
@@ -31,7 +32,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
 
   if (!resolved.length) {
     items.push({
-      label: "Paste",
+      label: t("menu.edit.paste"),
       icon: "copy",
       disabled: !hasClipboard(project),
       action: actions.pasteSelection,
@@ -50,23 +51,23 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     !resolved[0].locked;
 
   items.push(
-    { label: "Copy", icon: "copy", action: actions.copySelection },
-    { label: "Cut", icon: "trash", action: actions.cutSelection },
-    { label: "Duplicate", icon: "copy", action: actions.duplicateSelection },
+    { label: t("menu.edit.copy"), icon: "copy", action: actions.copySelection },
+    { label: t("menu.edit.cut"), icon: "trash", action: actions.cutSelection },
+    { label: t("menu.edit.duplicate"), icon: "copy", action: actions.duplicateSelection },
   );
   if (editableText) {
-    items.push({ label: "Edit text…", icon: "text", action: actions.editSelectedText });
+    items.push({ label: t("selection.editText"), icon: "text", action: actions.editSelectedText });
   }
   items.push(
     { separator: true },
     {
-      label: anyVisible ? "Hide" : "Show",
+      label: anyVisible ? t("markups.hideItem") : t("markups.showItem"),
       icon: anyVisible ? "eyeOff" : "eye",
       disabled: !anyVisible && !canShow,
       action: () => actions.setSelectionVisible(!anyVisible),
     },
     {
-      label: anyUnlocked ? "Lock" : "Unlock",
+      label: anyUnlocked ? t("markups.lockItem") : t("markups.unlockItem"),
       icon: anyUnlocked ? "lock" : "unlock",
       disabled: !anyUnlocked && !canUnlock,
       action: () => actions.setSelectionLocked(anyUnlocked),
@@ -81,7 +82,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     items.push(
       { separator: true },
       {
-        label: "Move to layer",
+        label: t("selection.moveToLayer"),
         icon: "layers",
         children: layerChoices.map((layer) => ({
           label: layer.name,
@@ -100,7 +101,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
 
   if (measurements.length) {
     items.push({
-      label: "Set category",
+      label: t("selection.setCategory"),
       icon: "folder",
       disabled: !measurementUnlocked,
       children: project.categories.map((category) => ({
@@ -109,7 +110,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
       })),
     });
     items.push({
-      label: "Set room…",
+      label: t("selection.setRoomEllipsis"),
       icon: "text",
       disabled: !measurementUnlocked,
       action: () => {
@@ -118,12 +119,12 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
           ? first
           : "";
         void textDialog(
-          "Set room",
+          t("selection.setRoom"),
           `Apply one room to ${measurements.length} selected measurement${
             measurements.length === 1 ? "" : "s"
           }.`,
           common,
-          "Room name",
+          t("selection.roomName"),
         ).then((room) => {
           if (room !== null) actions.setSelectionRoom(room);
         });
@@ -138,16 +139,16 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
       }, "change");
     };
     items.push({
-      label: "Set status",
+      label: t("selection.setStatus"),
       icon: "check",
       disabled: !symbolUnlocked,
       children: [
         ...INSPECTION_STATUSES.map((status) => ({
-          label: INSPECTION_STATUS_LABELS[status],
+          label: inspectionStatusLabel(status),
           action: () => setStatus(status),
         })),
         { separator: true },
-        { label: "Not assessed", action: () => setStatus(null) },
+        { label: t("selection.notAssessed"), action: () => setStatus(null) },
       ],
     });
   }
@@ -155,7 +156,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   items.push(
     { separator: true },
     {
-      label: "Delete",
+      label: t("common.delete"),
       icon: "trash",
       danger: true,
       disabled: !anyUnlocked,

@@ -3,6 +3,7 @@ import { calculateQuantitiesByPage, type QuantityRow, type QuantityType } from "
 import type { Project } from "../model/types";
 import type { QuantityReport } from "./reportModel";
 import { markupTable, type ReportCell } from "./rows";
+import { t } from "../i18n";
 
 interface Sheet {
   name: string;
@@ -187,24 +188,45 @@ function aggregateRow(label: string, group: Aggregate): ReportCell[] {
 }
 
 function summarySheet(report: QuantityReport): Sheet {
+  const metadataRows = [
+    [t("report.meta.property"), report.metadata.facility],
+    [t("report.meta.client"), report.metadata.client],
+    [t("report.meta.projectNumber"), report.metadata.projectNumber],
+    [t("report.meta.revision"), report.metadata.revision],
+    [t("report.meta.preparedBy"), report.metadata.preparedBy],
+    [t("report.meta.date"), report.metadata.reportDate],
+    [t("report.meta.notes"), report.metadata.notes],
+  ]
+    .filter(([, value]) => Boolean(value))
+    .map(([label, value]) => [text(label), text(value)]);
   const rows: ReportCell[][] = [
-    [text("Project"), text(report.projectName)],
-    [text("Documents"), text(report.documentName)],
-    [text("Drawing SHA-256"), text(report.documentSha256)],
-    [text("Generated at"), text(report.generatedAt)],
-    [text("Scale"), text(report.scaleSummary)],
-    [text("Hidden items excluded"), text(report.hiddenExcluded ? "Yes" : "No")],
-    [text("Uncalibrated items excluded"), integerNumber(report.summary.uncalibratedExcluded)],
+    ...(report.metadata.reportTitle
+      ? [[text(t("report.meta.reportTitle")), text(report.metadata.reportTitle)]]
+      : []),
+    [text(t("xlsx.field.project")), text(report.projectName)],
+    ...metadataRows,
+    [text(t("xlsx.field.documents")), text(report.documentName)],
+    [text(t("xlsx.field.sha256")), text(report.documentSha256)],
+    [text(t("xlsx.field.generatedAt")), text(report.generatedAt)],
+    [text(t("xlsx.field.scale")), text(report.scaleSummary)],
+    [
+      text(t("xlsx.field.hiddenExcluded")),
+      text(report.hiddenExcluded ? t("common.yes") : t("common.no")),
+    ],
+    [
+      text(t("xlsx.field.uncalibratedExcluded")),
+      integerNumber(report.summary.uncalibratedExcluded),
+    ],
     [],
     [
-      text("Quantity type"),
-      text("Unit"),
-      text("Gross"),
-      text("Deduction"),
-      text("Net"),
-      text("Waste quantity"),
-      text("Order quantity"),
-      text("Items"),
+      text(t("report.column.quantityType")),
+      text(t("report.column.unit")),
+      text(t("report.column.gross")),
+      text(t("report.column.deduction")),
+      text(t("report.column.net")),
+      text(t("report.column.wasteQuantity")),
+      text(t("report.column.orderQuantity")),
+      text(t("report.column.itemCount")),
     ],
     ...report.summary.totals.map((total) => [
       text(total.type),
@@ -217,21 +239,21 @@ function summarySheet(report: QuantityReport): Sheet {
       integerNumber(total.items),
     ]),
   ];
-  return { name: "Summary", rows, widths: [24, 18, 14, 14, 14, 16, 16, 10] };
+  return { name: t("xlsx.sheet.summary"), rows, widths: [24, 18, 14, 14, 14, 16, 16, 10] };
 }
 
 function byCategorySheet(report: QuantityReport): Sheet {
   const rows: ReportCell[][] = [
     [
-      text("Category"),
-      text("Quantity type"),
-      text("Unit"),
-      text("Gross"),
-      text("Deduction"),
-      text("Net"),
-      text("Waste quantity"),
-      text("Order quantity"),
-      text("Items"),
+      text(t("report.column.category")),
+      text(t("report.column.quantityType")),
+      text(t("report.column.unit")),
+      text(t("report.column.gross")),
+      text(t("report.column.deduction")),
+      text(t("report.column.net")),
+      text(t("report.column.wasteQuantity")),
+      text(t("report.column.orderQuantity")),
+      text(t("report.column.itemCount")),
     ],
   ];
   for (const category of report.summary.categories) {
@@ -239,7 +261,7 @@ function byCategorySheet(report: QuantityReport): Sheet {
       rows.push(aggregateRow(category.categoryName, total));
     }
   }
-  return { name: "By category", rows, widths: [26, 16, 10, 14, 14, 14, 16, 16, 10] };
+  return { name: t("xlsx.sheet.byCategory"), rows, widths: [26, 16, 10, 14, 14, 14, 16, 16, 10] };
 }
 
 function byRoomSheet(report: QuantityReport): Sheet {
@@ -249,42 +271,42 @@ function byRoomSheet(report: QuantityReport): Sheet {
   );
   const rows: ReportCell[][] = [
     [
-      text("Room"),
-      text("Quantity type"),
-      text("Unit"),
-      text("Gross"),
-      text("Deduction"),
-      text("Net"),
-      text("Waste quantity"),
-      text("Order quantity"),
-      text("Items"),
+      text(t("report.column.room")),
+      text(t("report.column.quantityType")),
+      text(t("report.column.unit")),
+      text(t("report.column.gross")),
+      text(t("report.column.deduction")),
+      text(t("report.column.net")),
+      text(t("report.column.wasteQuantity")),
+      text(t("report.column.orderQuantity")),
+      text(t("report.column.itemCount")),
     ],
   ];
   for (const [key, group] of groups) {
     const [room] = key.split("\u0000");
-    rows.push(aggregateRow(room || "(no room)", group));
+    rows.push(aggregateRow(room || t("xlsx.noRoom"), group));
   }
-  return { name: "By room", rows, widths: [26, 16, 10, 14, 14, 14, 16, 16, 10] };
+  return { name: t("xlsx.sheet.byRoom"), rows, widths: [26, 16, 10, 14, 14, 14, 16, 16, 10] };
 }
 
 function byPageSheet(project: Project): Sheet {
   const summary = calculateQuantitiesByPage(project);
   const rows: ReportCell[][] = [
     [
-      text("Page"),
-      text("Page name"),
-      text("Building"),
-      text("Floor"),
-      text("Category"),
-      text("Room"),
-      text("Quantity type"),
-      text("Unit"),
-      text("Gross"),
-      text("Deduction"),
-      text("Net"),
-      text("Waste quantity"),
-      text("Order quantity"),
-      text("Items"),
+      text(t("report.markup.page")),
+      text(t("xlsx.column.pageName")),
+      text(t("xlsx.column.building")),
+      text(t("xlsx.column.floor")),
+      text(t("report.column.category")),
+      text(t("report.column.room")),
+      text(t("report.column.quantityType")),
+      text(t("report.column.unit")),
+      text(t("report.column.gross")),
+      text(t("report.column.deduction")),
+      text(t("report.column.net")),
+      text(t("report.column.wasteQuantity")),
+      text(t("report.column.orderQuantity")),
+      text(t("report.column.itemCount")),
     ],
   ];
   for (const row of summary.rows) {
@@ -306,7 +328,7 @@ function byPageSheet(project: Project): Sheet {
     ]);
   }
   return {
-    name: "By page",
+    name: t("xlsx.sheet.byPage"),
     rows,
     widths: [8, 24, 18, 16, 24, 20, 16, 10, 14, 14, 14, 16, 16, 10],
   };
@@ -314,7 +336,7 @@ function byPageSheet(project: Project): Sheet {
 
 function markupsSheet(project: Project): Sheet {
   return {
-    name: "Markups",
+    name: t("xlsx.sheet.markups"),
     rows: markupTable(project),
     widths: [8, 16, 22, 30, 16, 10, 30, 34, 24, 22, 18, 24, 24],
   };
@@ -322,16 +344,31 @@ function markupsSheet(project: Project): Sheet {
 
 function sourceNotesSheet(project: Project, report: QuantityReport): Sheet {
   const rows: ReportCell[][] = [
-    [text("Field"), text("Value")],
-    [text("Project"), text(project.name)],
-    [text("Generated at"), text(report.generatedAt)],
-    [text("Scale"), text(report.scaleSummary)],
-    [text("Hidden items excluded"), text(report.hiddenExcluded ? "Yes" : "No")],
-    [text("Uncalibrated items excluded"), integerNumber(report.summary.uncalibratedExcluded)],
-    [text("App version"), text(typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : "")],
-    [text("Project schema"), integerNumber(project.schemaVersion)],
+    [text(t("xlsx.column.field")), text(t("report.markup.value"))],
+    [text(t("xlsx.field.project")), text(project.name)],
+    [text(t("xlsx.field.generatedAt")), text(report.generatedAt)],
+    [text(t("xlsx.field.scale")), text(report.scaleSummary)],
+    [
+      text(t("xlsx.field.hiddenExcluded")),
+      text(report.hiddenExcluded ? t("common.yes") : t("common.no")),
+    ],
+    [
+      text(t("xlsx.field.uncalibratedExcluded")),
+      integerNumber(report.summary.uncalibratedExcluded),
+    ],
+    [
+      text(t("xlsx.field.appVersion")),
+      text(typeof __APP_VERSION__ === "string" ? __APP_VERSION__ : ""),
+    ],
+    [text(t("xlsx.field.projectSchema")), integerNumber(project.schemaVersion)],
     [],
-    [text("Document"), text("Kind"), text("Pages"), text("SHA-256"), text("Path")],
+    [
+      text(t("xlsx.column.document")),
+      text(t("xlsx.column.kind")),
+      text(t("xlsx.column.pages")),
+      text(t("xlsx.column.sha256")),
+      text(t("xlsx.column.path")),
+    ],
     ...project.documents.map((document) => [
       text(document.name),
       text(document.kind),
@@ -340,7 +377,7 @@ function sourceNotesSheet(project: Project, report: QuantityReport): Sheet {
       text(document.path ?? document.relativePath ?? ""),
     ]),
   ];
-  return { name: "Source notes", rows, widths: [26, 18, 10, 68, 60] };
+  return { name: t("xlsx.sheet.sourceNotes"), rows, widths: [26, 18, 10, 68, 60] };
 }
 
 /**

@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 21 as const;
+export const SCHEMA_VERSION = 22 as const;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -366,6 +366,21 @@ export interface QuantitySettings {
   roundingStep: number;
 }
 
+export interface ProjectMetadata {
+  /** Property or facility name. */
+  facility: string;
+  /** Client or organisation receiving the report. */
+  client: string;
+  projectNumber: string;
+  revision: string;
+  preparedBy: string;
+  /** ISO date (YYYY-MM-DD) or an empty string. */
+  reportDate: string;
+  notes: string;
+  /** Optional title shown on the quantity report instead of the project name. */
+  reportTitle: string;
+}
+
 export interface Project {
   schemaVersion: typeof SCHEMA_VERSION;
   id: string;
@@ -384,6 +399,10 @@ export interface Project {
   pages: Record<string, PageState>;
   /** Saved Markups table configurations. Order is display order. */
   markupsViews: MarkupsView[];
+  /** Optional procurement metadata shown on reports. */
+  metadata: ProjectMetadata;
+  /** Optional report logo, referencing an embedded image asset. */
+  reportLogoAssetId: string | null;
   layers: Layer[];
   activeLayerId: string;
   createdAt: string;

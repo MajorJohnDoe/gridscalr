@@ -1,5 +1,6 @@
 import { el } from "./dom";
 import { icon } from "./icons";
+import { t } from "../i18n";
 
 export type ReferenceSource = "same" | "revision" | "drawing";
 
@@ -15,11 +16,11 @@ export interface ReferencePaneActions {
   close: () => void;
 }
 
-const SOURCE_LABELS: Record<ReferenceSource, string> = {
-  same: "Same page",
-  revision: "Revision",
-  drawing: "Drawing",
-};
+function sourceLabel(source: ReferenceSource): string {
+  if (source === "revision") return t("reference.revision");
+  if (source === "drawing") return t("reference.drawing");
+  return t("reference.samePage");
+}
 
 /**
  * Compact toolbar at the top of the reference pane. It owns the source
@@ -40,16 +41,16 @@ export class ReferencePaneHeader {
   ) {
     this.element = el("div", "reference-bar");
     this.element.setAttribute("role", "toolbar");
-    this.element.setAttribute("aria-label", "Reference pane");
+    this.element.setAttribute("aria-label", t("reference.paneAria"));
 
     const top = el("div", "reference-bar-row");
-    top.append(el("span", "reference-bar-label", "Reference"));
+    top.append(el("span", "reference-bar-label", t("reference.label")));
 
     const sources = el("div", "reference-sources");
     sources.setAttribute("role", "group");
-    sources.setAttribute("aria-label", "Reference source");
+    sources.setAttribute("aria-label", t("reference.source"));
     for (const source of ["same", "revision", "drawing"] as ReferenceSource[]) {
-      const button = el("button", "reference-source", SOURCE_LABELS[source]);
+      const button = el("button", "reference-source", sourceLabel(source));
       button.type = "button";
       button.dataset.source = source;
       button.addEventListener("click", () => this.actions.setSource(source));
@@ -57,28 +58,24 @@ export class ReferencePaneHeader {
       this.buttons.push({ source, button });
     }
 
-    this.name = el("span", "reference-name", "Same page");
-    this.name.title = "Same page";
+    this.name = el("span", "reference-name", t("reference.samePage"));
+    this.name.title = t("reference.samePage");
 
     this.openButton = el("button", "btn btn-small reference-open");
     this.openButton.type = "button";
-    this.openButton.title = "Open a reference revision or drawing";
-    this.openButton.innerHTML = `${icon("folder", 13)}<span>Open…</span>`;
+    this.openButton.title = t("reference.openTitle");
+    this.openButton.innerHTML = `${icon("folder", 13)}<span>${t("reference.open")}</span>`;
     this.openButton.addEventListener("click", () => this.actions.open());
 
     const closeButton = el("button", "icon-btn reference-close");
     closeButton.type = "button";
-    closeButton.title = "Close reference pane";
-    closeButton.setAttribute("aria-label", "Close reference pane");
+    closeButton.title = t("reference.closeTitle");
+    closeButton.setAttribute("aria-label", t("reference.closeTitle"));
     closeButton.innerHTML = icon("close", 14);
     closeButton.addEventListener("click", () => this.actions.close());
 
     top.append(sources, this.name, this.openButton, closeButton);
-    this.hint = el(
-      "div",
-      "reference-hint",
-      "Showing the same page. To compare another revision, choose Open…",
-    );
+    this.hint = el("div", "reference-hint", t("reference.hint"));
     this.element.append(top, this.hint);
     host.prepend(this.element);
     this.observer = new ResizeObserver(() => this.syncHeight());
@@ -98,17 +95,17 @@ export class ReferencePaneHeader {
         ? `${state.referenceName} · ${state.pageCount} page${state.pageCount === 1 ? "" : "s"}`
         : state.referenceName
       : state.source === "same"
-        ? "Same page"
-        : "No reference loaded";
+        ? t("reference.samePage")
+        : t("reference.noReference");
     this.name.textContent = description;
     this.name.title = description;
     this.hint.hidden = state.source !== "same";
     this.openButton.title =
       state.source === "drawing"
-        ? "Open a PDF drawing as the reference"
+        ? t("reference.openDrawingTitle")
         : state.source === "revision"
-          ? "Open a .gridscalr revision as the reference"
-          : "Open a revision project to compare";
+          ? t("reference.openRevisionTitle")
+          : t("reference.openRevisionProjectTitle");
     requestAnimationFrame(() => this.syncHeight());
   }
 

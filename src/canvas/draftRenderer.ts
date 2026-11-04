@@ -35,6 +35,7 @@ import {
   volumeUnitLabel,
 } from "../model/units";
 import { drawArrowHead, hexAlpha } from "./geometry";
+import { t } from "../i18n";
 
 export const CALIBRATION_COLOR = "#a78bfa";
 
@@ -324,7 +325,8 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
     }
     const value = measurementValue(fake);
     if (value !== null) {
-      const prefix = draft.kind === "radius" ? "R " : draft.kind === "diameter" ? "Ø " : "Arc ";
+      const prefix =
+        draft.kind === "radius" ? "R " : draft.kind === "diameter" ? "Ø " : t("measure.arcPrefix");
       drawMeasurePreviewLabel(
         scene,
         fake,

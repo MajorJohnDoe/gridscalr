@@ -1,7 +1,8 @@
 import { calculateQuantities, type QuantityFilters, type QuantitySummary } from "../model/quantity";
 import { formatScale } from "../model/units";
 import { totalPageCount } from "../model/documents";
-import type { Project } from "../model/types";
+import type { ImageAsset, Project, ProjectMetadata } from "../model/types";
+import { t } from "../i18n";
 
 export interface QuantityReport {
   projectName: string;
@@ -9,6 +10,10 @@ export interface QuantityReport {
   documentSha256: string;
   generatedAt: string;
   hiddenExcluded: boolean;
+  /** Optional procurement metadata shown on reports. */
+  metadata: ProjectMetadata;
+  /** Optional report logo embedded in the project file. */
+  reportLogo: ImageAsset | null;
   /** Human-readable description of where the report's scale comes from. */
   scaleSummary: string;
   summary: QuantitySummary;
@@ -43,6 +48,10 @@ export function buildQuantityReport(
       .join("+"),
     generatedAt: options.generatedAt ?? new Date().toISOString(),
     hiddenExcluded: summary.hiddenExcluded > 0,
+    metadata: project.metadata,
+    reportLogo: project.reportLogoAssetId
+      ? (project.assets[project.reportLogoAssetId] ?? null)
+      : null,
     scaleSummary: describeScale(project),
     summary,
   };
@@ -53,7 +62,7 @@ function describeScale(project: Project): string {
     .map(([page, state]) => ({ page: Number(page), calibration: state.calibration }))
     .filter((entry) => entry.calibration)
     .sort((a, b) => a.page - b.page);
-  if (!calibrated.length) return "No page calibration";
+  if (!calibrated.length) return t("report.noCalibration");
   const unique = new Set(
     calibrated.map((entry) => {
       const calibration = entry.calibration!;
@@ -63,16 +72,17 @@ function describeScale(project: Project): string {
     }),
   );
   if (unique.size > 1) {
-    return `Per-page calibration (${calibrated.length} page${calibrated.length === 1 ? "" : "s"})`;
+    return t("report.perPageCalibration", { count: calibrated.length });
   }
   const calibration = calibrated[0].calibration;
-  if (!calibration) return "No page calibration";
+  if (!calibration) return t("report.noCalibration");
   const pages =
     calibrated.length === totalPageCount(project.documents)
-      ? "All pages"
-      : `Page${calibrated.length === 1 ? "" : "s"} ${calibrated
-          .map((entry) => entry.page)
-          .join(", ")}`;
+      ? t("report.allPages")
+      : t("report.pagesCalibrated", {
+          count: calibrated.length,
+          pages: calibrated.map((entry) => entry.page).join(", "),
+        });
   return `${pages} · ${formatScale(
     {
       pointsPerMeter: calibration.pointsPerMeter,

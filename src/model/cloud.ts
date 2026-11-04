@@ -1,4 +1,5 @@
 import type { Point } from "./types";
+import { t, translate, type MessageKey } from "../i18n";
 
 /** Suggested scallop radius for a cloud, based on its shorter side. */
 export function cloudRadiusForPoints(points: readonly Point[]): number {
@@ -85,12 +86,16 @@ export const CLOUD_FILL_PRESETS: Array<{
   label: string;
   color: string | null;
 }> = [
-  { id: "none", label: "No fill", color: null },
-  { id: "blue", label: "Blue", color: "#4cc9f0" },
-  { id: "orange", label: "Orange", color: "#f2a93b" },
-  { id: "green", label: "Green", color: "#35c2a1" },
-  { id: "red", label: "Red", color: "#f26d6d" },
+  { id: "none", label: translate("en", "cloudFill.none"), color: null },
+  { id: "blue", label: translate("en", "cloudFill.blue"), color: "#4cc9f0" },
+  { id: "orange", label: translate("en", "cloudFill.orange"), color: "#f2a93b" },
+  { id: "green", label: translate("en", "cloudFill.green"), color: "#35c2a1" },
+  { id: "red", label: translate("en", "cloudFill.red"), color: "#f26d6d" },
 ];
+
+export function cloudFillLabel(preset: CloudFillPreset): string {
+  return t(`cloudFill.${preset}` as MessageKey);
+}
 
 export function cloudFillColor(preset: CloudFillPreset): string | null {
   return CLOUD_FILL_PRESETS.find((entry) => entry.id === preset)?.color ?? null;

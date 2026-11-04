@@ -5,6 +5,7 @@ import { parseProject, resolveRelativePath, sourceDocumentPaths } from "../io/pr
 import { documentPageMaps, totalPageCount } from "../model/documents";
 import type { PageSize, Project } from "../model/types";
 import { loadPdfDocument, PdfRenderer } from "../pdf/pdfRenderer";
+import { t } from "../i18n";
 
 export interface ProjectReferenceSession {
   kind: "project";
@@ -60,7 +61,7 @@ export async function openReferenceSession(
 ): Promise<ProjectReferenceSession> {
   const project = parseProject(text);
   if (totalPageCount(project.documents) < 1) {
-    throw new Error("The reference project has no pages.");
+    throw new Error(t("diff.referenceNoPages"));
   }
 
   const loaded: PDFDocumentProxy[] = [];
@@ -157,7 +158,7 @@ export async function openPdfReferenceSession(
   const document = await loadPdfDocument(bytes);
   if (document.numPages < 1) {
     await document.loadingTask.destroy().catch(() => undefined);
-    throw new Error("The reference drawing has no pages.");
+    throw new Error(t("diff.referenceDrawingNoPages"));
   }
   const renderer = new PdfRenderer([document]);
   return {

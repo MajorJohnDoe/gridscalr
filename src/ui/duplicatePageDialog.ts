@@ -1,6 +1,7 @@
 import { el } from "./dom";
 import { showModal } from "./dialogs";
 import type { DuplicatePageOptions } from "../model/documents";
+import { t } from "../i18n";
 
 interface DuplicatePageDialogInput {
   page: number;
@@ -26,33 +27,33 @@ export function duplicatePageDialog(
   const note = el(
     "p",
     "settings-note",
-    `Page ${input.page} will be copied to the end of the project as Page ${input.newPage}. The source drawing is not modified. Duplicating is structural and cannot be undone.`,
+    t("duplicate.copyNote", { page: input.page, newPage: input.newPage }),
   );
 
   const nameField = el("label", "field");
-  nameField.append(el("span", "field-label", "Page name"));
+  nameField.append(el("span", "field-label", t("duplicate.pageName")));
   const nameInput = el("input", "input");
   nameInput.type = "text";
   nameInput.maxLength = 80;
   nameInput.value = input.defaultName;
-  nameInput.setAttribute("aria-label", "Page name for the duplicate");
+  nameInput.setAttribute("aria-label", t("duplicate.nameAria"));
   nameField.append(nameInput);
 
   let copyName = true;
-  const nameToggle = checkRow("Copy page name", true, (checked) => {
+  const nameToggle = checkRow(t("duplicate.copyName"), true, (checked) => {
     copyName = checked;
     nameInput.disabled = !checked;
   });
 
   let copyScale = input.hasScale;
-  const scaleToggle = checkRow("Copy page scale", input.hasScale, (checked) => {
+  const scaleToggle = checkRow(t("duplicate.copyScale"), input.hasScale, (checked) => {
     copyScale = checked;
   });
   scaleToggle.input.disabled = !input.hasScale;
-  if (!input.hasScale) scaleToggle.input.title = "This page has no scale.";
+  if (!input.hasScale) scaleToggle.input.title = t("duplicate.noScale");
 
   let copyMarkups = false;
-  const markupToggle = checkRow("Copy markups and drawings", false, (checked) => {
+  const markupToggle = checkRow(t("duplicate.copyMarkups"), false, (checked) => {
     copyMarkups = checked;
   });
 
@@ -62,20 +63,16 @@ export function duplicatePageDialog(
     nameToggle.row,
     scaleToggle.row,
     markupToggle.row,
-    el(
-      "p",
-      "settings-note",
-      "The new page keeps the source calibration when Copy page scale is on. Page-specific layer visibility and lock settings are copied so the sheet looks the same.",
-    ),
+    el("p", "settings-note", t("duplicate.note")),
   );
 
   return showModal({
-    title: "Duplicate page",
-    subtitle: `Page ${input.page} → Page ${input.newPage}`,
+    title: t("duplicate.title"),
+    subtitle: t("duplicate.subtitle", { page: input.page, newPage: input.newPage }),
     body,
     actions: [
-      { label: "Cancel", value: "cancel" },
-      { label: "Duplicate page", value: "duplicate", primary: true },
+      { label: t("common.cancel"), value: "cancel" },
+      { label: t("duplicate.title"), value: "duplicate", primary: true },
     ],
     onMount: () => {
       nameInput.focus();

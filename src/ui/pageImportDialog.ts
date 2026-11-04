@@ -1,5 +1,6 @@
 import { el } from "./dom";
 import { showModal } from "./dialogs";
+import { t } from "../i18n";
 
 export interface PageImportDialogOptions {
   fileName: string;
@@ -31,16 +32,16 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
   const head = el("div", "page-import-head");
   const summary = el("p", "page-import-summary");
   const quick = el("div", "page-import-actions");
-  const selectAll = el("button", "btn btn-small btn-ghost", "Select all");
+  const selectAll = el("button", "btn btn-small btn-ghost", t("importDialog.selectAll"));
   selectAll.type = "button";
-  const selectNone = el("button", "btn btn-small btn-ghost", "Clear all");
+  const selectNone = el("button", "btn btn-small btn-ghost", t("importDialog.clearAll"));
   selectNone.type = "button";
   quick.append(selectAll, selectNone);
   head.append(summary, quick);
 
   const grid = el("div", "page-import-grid");
   grid.setAttribute("role", "group");
-  grid.setAttribute("aria-label", "Pages to import");
+  grid.setAttribute("aria-label", t("importDialog.pagesAria"));
 
   for (const page of allPages) {
     const tile = el("label", "page-import-tile is-selected");
@@ -48,7 +49,7 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
     const check = el("input", "page-import-check") as HTMLInputElement;
     check.type = "checkbox";
     check.checked = true;
-    check.setAttribute("aria-label", `Page ${page}`);
+    check.setAttribute("aria-label", t("importDialog.pageAria", { page }));
     const thumb = el("div", "page-import-thumb");
     const placeholder = el("span", "page-import-placeholder", String(page));
     const image = el("img", "page-import-image");
@@ -57,7 +58,7 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
     image.decoding = "async";
     image.hidden = true;
     thumb.append(placeholder, image);
-    const caption = el("span", "page-import-caption", `Page ${page}`);
+    const caption = el("span", "page-import-caption", t("importDialog.pageLabel", { page }));
     tile.append(check, thumb, caption);
     check.addEventListener("change", () => {
       if (check.checked) selected.add(page);
@@ -73,15 +74,15 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
     "p",
     "export-note",
     options.mode === "add"
-      ? `Selected pages are appended after page ${options.afterPage ?? 1}. Existing measurements keep their page numbers.`
-      : "The selected pages become the first pages of the new project.",
+      ? t("importDialog.noteAdd", { page: options.afterPage ?? 1 })
+      : t("importDialog.noteNew"),
   );
   body.append(head, grid, note);
 
   const sync = () => {
     summary.textContent =
       options.pageCount === 1
-        ? "1 page"
+        ? t("importDialog.summaryOne")
         : `${selected.size} of ${options.pageCount} pages selected`;
     selectNone.disabled = selected.size === 0;
     selectAll.disabled = selected.size === options.pageCount;
@@ -89,11 +90,11 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
       primary.disabled = selected.size === 0;
       primary.textContent =
         options.mode === "new"
-          ? "Create project"
+          ? t("importDialog.createProject")
           : selected.size === 0
-            ? "Add pages"
+            ? t("importDialog.addPages")
             : selected.size === 1
-              ? "Add 1 page"
+              ? t("importDialog.addOnePage")
               : `Add ${selected.size} pages`;
     }
   };
@@ -119,18 +120,21 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
   const observers: { active: IntersectionObserver | null } = { active: null };
   try {
     const result = await showModal({
-      title: options.mode === "new" ? "Choose pages" : "Add pages",
+      title: options.mode === "new" ? t("importDialog.choosePages") : t("importDialog.addPages"),
       subtitle:
         options.pageCount === 1
           ? options.fileName
-          : `${options.fileName} · ${options.pageCount} pages`,
+          : t("importDialog.subtitlePages", {
+              name: options.fileName,
+              count: options.pageCount,
+            }),
       body,
       wide: true,
       actions: [
-        { label: "Cancel", value: "__cancel__" },
-        { label: "Add pages", value: "import", primary: true },
+        { label: t("common.cancel"), value: "__cancel__" },
+        { label: t("importDialog.addPages"), value: "import", primary: true },
       ],
-      onValidate: () => (selected.size === 0 ? "Select at least one page." : null),
+      onValidate: () => (selected.size === 0 ? t("importDialog.validation") : null),
       onMount: (modal) => {
         primary = modal.querySelector<HTMLButtonElement>(".btn-primary");
         sync();

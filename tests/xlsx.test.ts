@@ -11,6 +11,7 @@ import {
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
 import { exportQuantityWorkbook } from "../src/report/xlsx";
+import { setLanguagePreference } from "../src/i18n";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 const GENERATED = "2026-10-22T12:00:00.000Z";
@@ -88,6 +89,27 @@ describe("XLSX quantity workbook", () => {
       "Source notes",
     ]) {
       expect(workbookXml).toContain(`name="${name}"`);
+    }
+  });
+
+  it("localizes sheet names and metadata for Swedish", async () => {
+    const project = makeProject();
+    project.metadata.facility = "Northgate";
+    project.metadata.client = "Example AB";
+    project.metadata.reportDate = "2026-11-04";
+    await setLanguagePreference("sv");
+    try {
+      const files = workbook(project);
+      const workbookXml = strFromU8(files["xl/workbook.xml"]);
+      expect(workbookXml).toContain('name="Sammanställning"');
+      expect(workbookXml).toContain('name="Per kategori"');
+      const summary = sheet(files, 1);
+      expect(summary).toContain("Fastighet");
+      expect(summary).toContain("Northgate");
+      expect(summary).toContain("Kund");
+      expect(summary).toContain("Example AB");
+    } finally {
+      await setLanguagePreference("en");
     }
   });
 

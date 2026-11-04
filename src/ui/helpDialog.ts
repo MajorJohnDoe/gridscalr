@@ -6,15 +6,19 @@ import { SCHEMA_VERSION } from "../model/types";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
+import { t, currentLocale, type MessageKey } from "../i18n";
 
-const TOPICS: Array<{ id: HelpTopic; label: string; icon: string }> = [
-  { id: "workflows", label: "Workflows", icon: "markups" },
-  { id: "guide", label: "User guide", icon: "file" },
-  { id: "shortcuts", label: "Keyboard shortcuts", icon: "keyboard" },
-  { id: "about", label: "About", icon: "info" },
+const TOPICS: Array<{ id: HelpTopic; labelKey: MessageKey; icon: string }> = [
+  { id: "quickstart", labelKey: "help.quickStart", icon: "info" },
+  { id: "workflows", labelKey: "help.workflows", icon: "markups" },
+  { id: "guide", labelKey: "help.guide", icon: "file" },
+  { id: "shortcuts", labelKey: "help.shortcuts", icon: "keyboard" },
+  { id: "about", labelKey: "help.about", icon: "info" },
 ];
 
 const DOC_TOPICS: Record<string, Exclude<HelpTopic, "about">> = {
+  "quick-start.md": "quickstart",
+  "quick-start.sv.md": "quickstart",
   "workflows.md": "workflows",
   "user-guide.md": "guide",
   "shortcuts.md": "shortcuts",
@@ -35,10 +39,10 @@ export function openHelp(topic: HelpTopic = "guide"): void {
   const sidebar = el("aside", "help-sidebar");
   const search = el("input", "input help-search");
   search.type = "search";
-  search.placeholder = "Search this topic…";
-  search.setAttribute("aria-label", "Search help");
+  search.placeholder = t("help.searchPlaceholder");
+  search.setAttribute("aria-label", t("help.searchAria"));
   const toc = el("nav", "help-toc");
-  toc.setAttribute("aria-label", "On this page");
+  toc.setAttribute("aria-label", t("help.tocAria"));
   const searchResults = el("div", "help-search-results");
   searchResults.hidden = true;
   sidebar.append(search, toc, searchResults);
@@ -150,7 +154,7 @@ export function openHelp(topic: HelpTopic = "guide"): void {
     searchResults.replaceChildren();
     const entries = [...results.values()].slice(0, 12);
     if (!entries.length) {
-      searchResults.append(el("div", "empty-note small", "No matches in this topic."));
+      searchResults.append(el("div", "empty-note small", t("help.noMatches")));
       return;
     }
     for (const result of entries) {
@@ -185,6 +189,9 @@ export function openHelp(topic: HelpTopic = "guide"): void {
       content.innerHTML = renderMarkdown(helpContentFor(next), {
         resolveImage: (src) => resolveHelpImage(src),
       });
+      if (currentLocale() !== "en" && next !== "quickstart") {
+        content.prepend(el("p", "help-fallback-note", t("help.englishOnly")));
+      }
       const markdown = content.querySelector<HTMLElement>(".markdown");
       if (markdown) buildToc(markdown);
       else {
@@ -200,7 +207,7 @@ export function openHelp(topic: HelpTopic = "guide"): void {
     const button = el("button", "help-tab");
     button.type = "button";
     button.setAttribute("role", "tab");
-    button.innerHTML = `${icon(entry.icon, 14)}<span>${entry.label}</span>`;
+    button.innerHTML = `${icon(entry.icon, 14)}<span>${t(entry.labelKey)}</span>`;
     button.addEventListener("click", () => render(entry.id));
     tabs.append(button);
     tabButtons.set(entry.id, button);
@@ -242,12 +249,12 @@ export function openHelp(topic: HelpTopic = "guide"): void {
   render(active);
 
   void showModal({
-    title: "Help",
-    subtitle: "GridScalr on this computer",
+    title: t("help.title"),
+    subtitle: t("help.subtitle"),
     body,
     wide: true,
     className: "modal-help",
-    actions: [{ label: "Close", value: "close", primary: true }],
+    actions: [{ label: t("common.close"), value: "close", primary: true }],
   });
 }
 
@@ -255,14 +262,14 @@ function openImageLightbox(src: string, alt: string): void {
   const backdrop = el("div", "help-lightbox");
   backdrop.setAttribute("role", "dialog");
   backdrop.setAttribute("aria-modal", "true");
-  backdrop.setAttribute("aria-label", alt || "Help image");
+  backdrop.setAttribute("aria-label", alt || t("help.helpImage"));
   const image = el("img");
   image.src = src;
   image.alt = alt;
   const close = el("button", "icon-btn help-lightbox-close");
   close.type = "button";
-  close.title = "Close image";
-  close.setAttribute("aria-label", "Close image");
+  close.title = t("help.closeImage");
+  close.setAttribute("aria-label", t("help.closeImage"));
   close.innerHTML = icon("close", 18);
   const onKeyDown = (event: KeyboardEvent) => {
     if (event.key !== "Escape") return;
@@ -294,28 +301,20 @@ function aboutPane(): HTMLElement {
   names.append(title, version);
   brand.append(names);
 
-  const intro = el(
-    "p",
-    "help-about-intro",
-    "A local-first desktop app for measuring PDF and TIF drawings and producing procurement quantities.",
-  );
+  const intro = el("p", "help-about-intro", t("help.aboutIntro"));
 
   const facts = el("dl", "help-facts");
   for (const [label, value] of [
-    ["Version", `v${__APP_VERSION__}`],
-    ["Project format", `Schema v${SCHEMA_VERSION}`],
-    ["Desktop shell", "Tauri 2 with Rust"],
-    ["Frontend", "TypeScript, HTML5 Canvas and PDF.js"],
-    ["Storage", "Local files only"],
+    [t("help.version"), `v${__APP_VERSION__}`],
+    [t("help.projectFormat"), t("help.schema", { version: SCHEMA_VERSION })],
+    [t("help.desktopShell"), t("help.tauriShell")],
+    [t("help.frontend"), t("help.frontendValue")],
+    [t("help.storage"), t("help.storageValue")],
   ]) {
     facts.append(el("dt", "", label), el("dd", "", value));
   }
 
-  const note = el(
-    "p",
-    "help-about-note",
-    "No account, cloud service, telemetry or network access is required. Drawings are read from your disk and are never uploaded.",
-  );
+  const note = el("p", "help-about-note", t("help.aboutNote"));
 
   wrap.append(brand, intro, facts, note);
   return wrap;

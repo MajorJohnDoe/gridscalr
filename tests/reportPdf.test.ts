@@ -12,6 +12,7 @@ import {
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
 import { exportQuantityReportPdf } from "../src/pdf/reportPdf";
+import { setLanguagePreference } from "../src/i18n";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 const GENERATED = "2026-10-22T12:00:00.000Z";
@@ -135,6 +136,38 @@ describe("quantity report PDF", () => {
       expect(text).toContain("Mängd ÅÄÖ");
       expect(text).toContain("Room");
       expect(text).toContain(`Page ${index + 1} of ${pages.length}`);
+    }
+  });
+
+  it("renders report metadata and localizes the report for Swedish", async () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    add(project, "area", { categoryId: floor, room: "Room A" });
+    project.metadata.facility = "Northgate";
+    project.metadata.client = "Example AB";
+    project.metadata.reportTitle = "Procurement quantities";
+
+    const english = (
+      await textByPage(
+        await exportQuantityReportPdf(buildQuantityReport(project, { generatedAt: GENERATED })),
+      )
+    ).join(" ");
+    expect(english).toContain("Procurement quantities");
+    expect(english).toContain("Property: Northgate");
+    expect(english).toContain("Client: Example AB");
+
+    await setLanguagePreference("sv");
+    try {
+      const swedish = (
+        await textByPage(
+          await exportQuantityReportPdf(buildQuantityReport(project, { generatedAt: GENERATED })),
+        )
+      ).join(" ");
+      expect(swedish).toContain("Mängdrapport");
+      expect(swedish).toContain("Fastighet: Northgate");
+      expect(swedish).toContain("Kund: Example AB");
+    } finally {
+      await setLanguagePreference("en");
     }
   });
 

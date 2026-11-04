@@ -17,6 +17,7 @@ import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 interface ActionItem {
   kind: "action";
@@ -80,119 +81,134 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
   return [
     {
       id: "file",
-      label: "File",
+      label: t("menu.file"),
       items: () => [
-        action("New project…", actions.newProject, { shortcut: APP_SHORTCUTS.newProject }),
-        action("Open project…", actions.openProject, { shortcut: APP_SHORTCUTS.openProject }),
-        action("Open drawing…", actions.openPdf, { shortcut: APP_SHORTCUTS.openDrawing }),
-        action("Compare with revision…", actions.openCompare, { disabled: !hasProject }),
-        action("Compare with drawing…", actions.openDrawingReference, { disabled: !hasProject }),
+        action(t("menu.file.newProject"), actions.newProject, {
+          shortcut: APP_SHORTCUTS.newProject,
+        }),
+        action(t("menu.file.openProject"), actions.openProject, {
+          shortcut: APP_SHORTCUTS.openProject,
+        }),
+        action(t("menu.file.openDrawing"), actions.openPdf, {
+          shortcut: APP_SHORTCUTS.openDrawing,
+        }),
+        action(t("menu.file.compareRevision"), actions.openCompare, { disabled: !hasProject }),
+        action(t("menu.file.compareDrawing"), actions.openDrawingReference, {
+          disabled: !hasProject,
+        }),
         {
           kind: "submenu",
-          label: "Open recent",
+          label: t("menu.file.openRecent"),
           disabled: recent.length === 0,
           items: recent.length
             ? [
-                ...recent
-                  .slice(0, 10)
-                  .map((entry) =>
-                    action(
-                      `${entry.name}  ·  ${entry.kind === "project" ? "Project" : "Drawing"}`,
-                      () => actions.openRecent(entry),
-                    ),
+                ...recent.slice(0, 10).map((entry) =>
+                  action(
+                    t("menu.file.recentEntry", {
+                      name: entry.name,
+                      kind:
+                        entry.kind === "project"
+                          ? t("menu.file.recentProject")
+                          : t("menu.file.recentDrawing"),
+                    }),
+                    () => actions.openRecent(entry),
                   ),
+                ),
                 separator(),
-                action("Clear recent list", () => {
+                action(t("menu.file.clearRecent"), () => {
                   clearRecent();
                   actions.refresh();
-                  toast("Recent list cleared.", "info");
+                  toast(t("menu.file.recentCleared"), "info");
                 }),
               ]
-            : [action("No recent files", () => undefined, { disabled: true })],
+            : [action(t("menu.file.noRecent"), () => undefined, { disabled: true })],
         },
         separator(),
-        action("Save", actions.saveProject, {
+        action(t("menu.file.save"), actions.saveProject, {
           shortcut: APP_SHORTCUTS.save,
           disabled: !hasProject,
         }),
-        action("Save as…", actions.saveProjectAs, {
+        action(t("menu.file.saveAs"), actions.saveProjectAs, {
           shortcut: APP_SHORTCUTS.saveAs,
           disabled: !hasProject,
         }),
-        action("Save a copy…", actions.saveProjectCopy, {
+        action(t("menu.file.saveCopy"), actions.saveProjectCopy, {
           disabled: !hasProject,
         }),
         separator(),
-        action("Package project…", actions.packageProject, {
+        action(t("menu.file.package"), actions.packageProject, {
           disabled: !hasProject || !isTauri,
         }),
-        action("Open package…", actions.openPackage, {
+        action(t("menu.file.openPackage"), actions.openPackage, {
           disabled: !isTauri,
         }),
         ...(isTauri
           ? []
           : [
-              action("Project packages require the desktop app", () => undefined, {
+              action(t("menu.file.packageDesktopOnly"), () => undefined, {
                 disabled: true,
               }),
             ]),
         separator(),
-        action("Import image…", actions.insertImage, { disabled: !hasProject }),
+        action(t("menu.file.importImage"), actions.insertImage, { disabled: !hasProject }),
         {
           kind: "submenu",
-          label: "Export",
+          label: t("menu.file.export"),
           key: "export",
           disabled: !hasProject,
           items: [
-            action("Drawing PDF…", () => actions.exportAs("drawing")),
-            action("View as PNG", () => actions.exportAs("png")),
+            action(t("menu.file.exportDrawing"), () => actions.exportAs("drawing")),
+            action(t("menu.file.exportPng"), () => actions.exportAs("png")),
             separator(),
-            action("Markups to CSV", () => actions.exportAs("csv")),
-            action("Quantities to CSV", () => actions.exportAs("quantity-csv")),
-            action("Quantities to Excel…", () => actions.exportAs("quantity-xlsx")),
-            action("Quantity report (PDF)", () => actions.exportAs("quantity-pdf")),
+            action(t("menu.file.exportMarkupsCsv"), () => actions.exportAs("csv")),
+            action(t("menu.file.exportQuantityCsv"), () => actions.exportAs("quantity-csv")),
+            action(t("menu.file.exportQuantityXlsx"), () => actions.exportAs("quantity-xlsx")),
+            action(t("menu.file.exportQuantityPdf"), () => actions.exportAs("quantity-pdf")),
             separator(),
-            action("Project to JSON", () => actions.exportAs("json")),
+            action(t("menu.file.exportJson"), () => actions.exportAs("json")),
           ],
         },
         separator(),
-        action("Close project", actions.closeProject, { disabled: !hasProject }),
-        action("Quit", actions.quit, { shortcut: APP_SHORTCUTS.quit }),
+        action(t("menu.file.closeProject"), actions.closeProject, { disabled: !hasProject }),
+        action(t("menu.file.quit"), actions.quit, { shortcut: APP_SHORTCUTS.quit }),
       ],
     },
     {
       id: "edit",
-      label: "Edit",
+      label: t("menu.edit"),
       items: () => [
-        action("Undo", actions.undo, { shortcut: APP_SHORTCUTS.undo, disabled: !store.canUndo }),
-        action("Redo", actions.redo, {
+        action(t("menu.edit.undo"), actions.undo, {
+          shortcut: APP_SHORTCUTS.undo,
+          disabled: !store.canUndo,
+        }),
+        action(t("menu.edit.redo"), actions.redo, {
           shortcut: APP_SHORTCUTS.redo,
           disabled: !store.canRedo,
         }),
         separator(),
-        action("Cut", actions.cutSelection, {
+        action(t("menu.edit.cut"), actions.cutSelection, {
           shortcut: APP_SHORTCUTS.cut,
           disabled: !hasSelection(),
         }),
-        action("Copy", actions.copySelection, {
+        action(t("menu.edit.copy"), actions.copySelection, {
           shortcut: APP_SHORTCUTS.copy,
           disabled: !hasSelection(),
         }),
-        action("Paste", actions.pasteSelection, {
+        action(t("menu.edit.paste"), actions.pasteSelection, {
           shortcut: APP_SHORTCUTS.paste,
           disabled: !hasProject || !hasClipboard(project!),
         }),
-        action("Duplicate", actions.duplicateSelection, {
+        action(t("menu.edit.duplicate"), actions.duplicateSelection, {
           shortcut: APP_SHORTCUTS.duplicate,
           disabled: !hasSelection(),
         }),
-        action(APP_SHORTCUTS.delete, actions.deleteSelection, {
+        action(t("menu.edit.delete"), actions.deleteSelection, {
           shortcut: APP_SHORTCUTS.delete,
           disabled: !hasSelection(),
           danger: true,
         }),
         separator(),
-        action("Rename", actions.renameSelection, {
+        action(t("menu.edit.rename"), actions.renameSelection, {
           shortcut: APP_SHORTCUTS.rename,
           disabled: store.ui.selection.length !== 1,
         }),
@@ -200,64 +216,64 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
     },
     {
       id: "view",
-      label: "View",
+      label: t("menu.view"),
       items: () => [
-        action("Sidebar", toggleSidebar, {
+        action(t("menu.view.sidebar"), toggleSidebar, {
           shortcut: APP_SHORTCUTS.sidebar,
           checked: !isSidebarCollapsed(),
         }),
-        action("Properties", toggleInspector, {
+        action(t("menu.view.properties"), toggleInspector, {
           shortcut: APP_SHORTCUTS.properties,
           checked: !isInspectorCollapsed(),
         }),
         separator(),
-        action("Reference view (same page)", actions.toggleSplitView, {
+        action(t("menu.view.reference"), actions.toggleSplitView, {
           shortcut: APP_SHORTCUTS.splitView,
           checked: actions.isSplitViewOpen(),
           disabled: !hasProject || actions.hasReferenceSession(),
         }),
         separator(),
-        action("Zoom in", actions.zoomIn, {
+        action(t("menu.view.zoomIn"), actions.zoomIn, {
           shortcut: APP_SHORTCUTS.zoomIn,
           disabled: !hasProject,
         }),
-        action("Zoom out", actions.zoomOut, {
+        action(t("menu.view.zoomOut"), actions.zoomOut, {
           shortcut: APP_SHORTCUTS.zoomOut,
           disabled: !hasProject,
         }),
-        action("Fit page", actions.zoomFit, {
+        action(t("menu.view.fitPage"), actions.zoomFit, {
           shortcut: APP_SHORTCUTS.fitPage,
           disabled: !hasProject,
         }),
-        action("Actual size", actions.zoomActual, {
+        action(t("menu.view.actualSize"), actions.zoomActual, {
           shortcut: APP_SHORTCUTS.actualSize,
           disabled: !hasProject,
         }),
         separator(),
-        action("Show grid", () => toggleSetting("showGrid"), {
+        action(t("menu.view.showGrid"), () => toggleSetting("showGrid"), {
           checked: project?.settings.showGrid ?? false,
           disabled: !hasProject,
         }),
-        action("Show scale line", () => toggleSetting("showCalibration"), {
+        action(t("menu.view.showScale"), () => toggleSetting("showCalibration"), {
           checked: project?.settings.showCalibration ?? false,
           disabled: !hasProject,
         }),
-        action("Snap to geometry", () => toggleSetting("snapToGeometry"), {
+        action(t("menu.view.snap"), () => toggleSetting("snapToGeometry"), {
           checked: project?.settings.snapToGeometry ?? false,
           disabled: !hasProject,
         }),
         separator(),
-        action("Search text…", actions.openSearch, {
+        action(t("menu.view.search"), actions.openSearch, {
           shortcut: APP_SHORTCUTS.searchText,
           disabled: !hasProject,
         }),
         separator(),
-        action("Markups list…", actions.toggleMarkups, {
+        action(t("menu.view.markups"), actions.toggleMarkups, {
           shortcut: APP_SHORTCUTS.markups,
           disabled: !hasProject,
           checked: isMarkupsOpen(),
         }),
-        action("Quantities…", actions.openQuantities, {
+        action(t("menu.view.quantities"), actions.openQuantities, {
           shortcut: APP_SHORTCUTS.quantities,
           disabled: !hasProject,
         }),
@@ -265,32 +281,34 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
     },
     {
       id: "settings",
-      label: "Settings",
+      label: t("menu.settings"),
       items: () => [
-        action("Preferences…", () => openPreferencesDialog()),
-        action("Project settings…", () => openSettingsDialog(), {
+        action(t("menu.settings.preferences"), () => openPreferencesDialog()),
+        action(t("menu.settings.project"), () => openSettingsDialog(), {
           shortcut: APP_SHORTCUTS.settings,
           disabled: !hasProject,
         }),
-        action("Manage categories…", () => void openCategoriesDialog(), {
+        action(t("menu.settings.categories"), () => void openCategoriesDialog(), {
           disabled: !hasProject,
         }),
       ],
     },
     {
       id: "help",
-      label: "Help",
+      label: t("menu.help"),
       items: () => [
-        action("Workflows", () => openHelp("workflows")),
-        action("User guide", () => openHelp("guide"), { shortcut: APP_SHORTCUTS.userGuide }),
-        action("Keyboard shortcuts", () => openHelp("shortcuts"), {
+        action(t("menu.help.workflows"), () => openHelp("workflows")),
+        action(t("menu.help.guide"), () => openHelp("guide"), {
+          shortcut: APP_SHORTCUTS.userGuide,
+        }),
+        action(t("menu.help.shortcuts"), () => openHelp("shortcuts"), {
           shortcut: APP_SHORTCUTS.shortcuts,
         }),
         separator(),
-        action("Copy diagnostics", actions.copyDiagnostics),
-        action("Report a problem…", actions.reportProblem),
+        action(t("menu.help.diagnostics"), actions.copyDiagnostics),
+        action(t("menu.help.report"), actions.reportProblem),
         separator(),
-        action("About GridScalr", () => openHelp("about")),
+        action(t("menu.help.about"), () => openHelp("about")),
       ],
     },
   ];
@@ -316,14 +334,14 @@ export function setMenuActions(actions: PanelActions): void {
 export function createMenuBar(): HTMLElement {
   const bar = el("nav", "menubar");
   bar.setAttribute("role", "menubar");
-  bar.setAttribute("aria-label", "Main menu");
+  bar.setAttribute("aria-label", t("menu.mainAria"));
 
   for (const [index, definition] of [
-    { id: "file", label: "File" },
-    { id: "edit", label: "Edit" },
-    { id: "view", label: "View" },
-    { id: "settings", label: "Settings" },
-    { id: "help", label: "Help" },
+    { id: "file", label: t("menu.file") },
+    { id: "edit", label: t("menu.edit") },
+    { id: "view", label: t("menu.view") },
+    { id: "settings", label: t("menu.settings") },
+    { id: "help", label: t("menu.help") },
   ].entries()) {
     const button = el("button", "menu-trigger", definition.label);
     button.type = "button";

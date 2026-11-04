@@ -1606,7 +1606,7 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(21);
+    expect(parsed.schemaVersion).toBe(22);
     expect(parsed.countPresets).toEqual([]);
     expect(parsed.countTypes.map((entry) => entry.id)).toEqual([
       "door",
@@ -1669,6 +1669,68 @@ describe("project files", () => {
     ]);
   });
 
+  it("migrates schema 21 projects to report metadata without data loss", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    raw.schemaVersion = 21;
+    raw.metadata = {
+      facility: "  Northgate  ",
+      client: "Example AB",
+      projectNumber: "P-100",
+      revision: "B",
+      preparedBy: "A. Person",
+      reportDate: "2026-11-04",
+      notes: "  Procurement copy  ",
+      reportTitle: "Quantity report",
+    };
+    raw.assets = {
+      logo_1: {
+        id: "logo_1",
+        name: "logo.png",
+        mime: "image/png",
+        width: 10,
+        height: 10,
+        byteSize: 4,
+        data: "data:image/png;base64,AAAA",
+      },
+    };
+    raw.reportLogoAssetId = "logo_1";
+
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
+    expect(parsed.schemaVersion).toBe(22);
+    expect(parsed.metadata).toEqual({
+      facility: "Northgate",
+      client: "Example AB",
+      projectNumber: "P-100",
+      revision: "B",
+      preparedBy: "A. Person",
+      reportDate: "2026-11-04",
+      notes: "Procurement copy",
+      reportTitle: "Quantity report",
+    });
+    expect(parsed.reportLogoAssetId).toBe("logo_1");
+  });
+
+  it("defaults missing report metadata cleanly", () => {
+    const project = makeProject();
+    const raw = JSON.parse(serializeProject(project));
+    delete raw.metadata;
+    delete raw.reportLogoAssetId;
+    const parsed = parseProject(JSON.stringify(raw));
+    expect(parsed.metadata).toEqual({
+      facility: "",
+      client: "",
+      projectNumber: "",
+      revision: "",
+      preparedBy: "",
+      reportDate: "",
+      notes: "",
+      reportTitle: "",
+    });
+    expect(parsed.reportLogoAssetId).toBeNull();
+  });
+
   it("migrates schema 20 count-type Markups views to schema 21", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
@@ -1692,7 +1754,7 @@ describe("project files", () => {
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.schemaVersion).toBe(21);
+    expect(parsed.schemaVersion).toBe(22);
     expect(parsed.countPresets).toEqual([]);
     expect(parsed.markupsViews[0]).toMatchObject({
       name: "Door schedule",

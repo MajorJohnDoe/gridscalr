@@ -3,7 +3,7 @@ import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import type { LabelWeight } from "./label";
 import { TEXT_FONT_STACK } from "./text";
 
-export const LABEL_FONT_FAMILY = "GridScalr Label";
+export const LABEL_FONT_FAMILY = "GridScalrLabel";
 export const LABEL_FONT_STACK = `"${LABEL_FONT_FAMILY}", ${TEXT_FONT_STACK}`;
 
 let measureCanvas: CanvasRenderingContext2D | null | undefined;

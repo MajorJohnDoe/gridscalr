@@ -1,11 +1,11 @@
 import { decimalSeparator } from "../i18n/format";
-import { currentLocale, type Locale } from "../i18n";
 import { loadAppPreferences, type CsvFormat } from "../io/appPreferences";
 import type { ReportCell } from "./rows";
 import type { QuantityReport } from "./reportModel";
-import { QUANTITY_COLUMNS, quantityTable } from "./rows";
+import { quantityTable } from "./rows";
+import { currentLocale, type Locale } from "../i18n";
 
-export const QUANTITY_CSV_COLUMNS = QUANTITY_COLUMNS;
+export { QUANTITY_CSV_COLUMNS } from "./rows";
 
 export interface CsvOptions {
   locale?: Locale;
@@ -62,8 +62,19 @@ export function serializeQuantityCsv(report: QuantityReport, options: CsvOptions
       .map((cell) => escapeCsvField(localizedCellText(cell, dialect), dialect.delimiter))
       .join(dialect.delimiter),
   );
+  const optionalMetadata = [
+    ["report_title", report.metadata.reportTitle],
+    ["facility", report.metadata.facility],
+    ["client", report.metadata.client],
+    ["project_number", report.metadata.projectNumber],
+    ["revision", report.metadata.revision],
+    ["prepared_by", report.metadata.preparedBy],
+    ["report_date", report.metadata.reportDate],
+    ["notes", report.metadata.notes],
+  ].filter(([, value]) => Boolean(value));
   const metadata = [
     ["project", report.projectName],
+    ...optionalMetadata,
     ["document", report.documentName],
     ["document_sha256", report.documentSha256],
     ["generated_at", report.generatedAt],

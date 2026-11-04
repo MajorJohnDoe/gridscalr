@@ -6,7 +6,15 @@ import {
 } from "../model/calibration";
 import type { AreaUnit, LengthUnit } from "../model/types";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
-import { AREA_UNITS, formatNumber, formatScale, LENGTH_UNITS } from "../model/units";
+import {
+  AREA_UNITS,
+  formatNumber,
+  formatScale,
+  LENGTH_UNITS,
+  lengthUnitLabel,
+} from "../model/units";
+import { ingestImageBlob } from "../io/imageIngest";
+import { pickImage } from "../io/platform";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { normalizeProjectName, PROJECT_NAME_MAX_LENGTH } from "../model/projectName";
 import { openCountTypesDialog } from "../features/countTypes/ui";
@@ -16,18 +24,16 @@ import { showModal } from "./dialogs";
 import { el, option } from "./dom";
 import { checkRow, field, presetEditor, section } from "./settingsControls";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 function projectSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section(
-    "Project",
-    "The name appears in the title row, reports and exports, and in suggested file names.",
-  );
+  const wrap = section(t("settings.projectTitle"), t("settings.projectNote"));
   const input = el("input", "input");
   input.type = "text";
   input.value = project.name;
   input.maxLength = PROJECT_NAME_MAX_LENGTH;
-  input.setAttribute("aria-label", "Project name");
+  input.setAttribute("aria-label", t("settings.projectName"));
   input.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
@@ -45,13 +51,104 @@ function projectSection(): HTMLElement {
     }, "change");
   });
   wrap.append(
-    field("Project name", input),
-    el(
-      "p",
-      "settings-note",
-      "The project file name is separate; use File → Save as… to change it.",
-    ),
+    field(t("settings.projectName"), input),
+    el("p", "settings-note", t("settings.fileNameNote")),
   );
+  return wrap;
+}
+
+function metadataSection(): HTMLElement {
+  const project = store.project!;
+  const wrap = section(t("settings.metadataTitle"), t("settings.metadataNote"));
+  const fields: Array<[keyof typeof project.metadata, string]> = [
+    ["reportTitle", t("report.meta.reportTitle")],
+    ["facility", t("report.meta.property")],
+    ["client", t("report.meta.client")],
+    ["projectNumber", t("report.meta.projectNumber")],
+    ["revision", t("report.meta.revision")],
+    ["preparedBy", t("report.meta.preparedBy")],
+    ["reportDate", t("report.meta.date")],
+  ];
+  for (const [key, label] of fields) {
+    const input = el("input", "input");
+    input.type = "text";
+    input.value = project.metadata[key];
+    input.maxLength = key === "notes" ? 2000 : 120;
+    input.setAttribute("aria-label", label);
+    input.addEventListener("change", () => {
+      store.mutate((next) => {
+        next.metadata[key] = input.value.trim();
+      }, "change");
+    });
+    wrap.append(field(label, input));
+  }
+  const notes = el("textarea", "input textarea");
+  notes.value = project.metadata.notes;
+  notes.setAttribute("aria-label", t("report.meta.notes"));
+  notes.addEventListener("change", () => {
+    store.mutate((next) => {
+      next.metadata.notes = notes.value.trim();
+    }, "change");
+  });
+  wrap.append(field(t("report.meta.notes"), notes));
+
+  const logoRow = el("div", "field-row");
+  const currentLogo = project.reportLogoAssetId
+    ? project.assets[project.reportLogoAssetId]
+    : undefined;
+  if (currentLogo) {
+    const preview = el("img", "settings-logo-preview") as HTMLImageElement;
+    preview.src = currentLogo.data;
+    preview.alt = t("settings.reportLogo");
+    logoRow.append(preview);
+  }
+  const logoActions = el("div", "settings-actions");
+  const chooseLogo = el("button", "btn btn-small", t("settings.chooseLogo"));
+  chooseLogo.type = "button";
+  chooseLogo.addEventListener("click", () => {
+    void (async () => {
+      const file = await pickImage();
+      if (!file) return;
+      try {
+        const asset = await ingestImageBlob(file, file.name);
+        store.mutate((next) => {
+          const previous = next.reportLogoAssetId;
+          next.assets[asset.id] = asset;
+          next.reportLogoAssetId = asset.id;
+          if (previous && previous !== asset.id) {
+            const used = next.layers.some((layer) =>
+              layer.items.some((item) => item.image?.assetId === previous),
+            );
+            if (!used) delete next.assets[previous];
+          }
+        }, "change");
+        openSettingsDialog();
+      } catch (error) {
+        toast(error instanceof Error ? error.message : String(error), "warning");
+      }
+    })();
+  });
+  logoActions.append(chooseLogo);
+  if (currentLogo) {
+    const removeLogo = el("button", "btn btn-small btn-ghost", t("settings.removeLogo"));
+    removeLogo.type = "button";
+    removeLogo.addEventListener("click", () => {
+      store.mutate((next) => {
+        const previous = next.reportLogoAssetId;
+        next.reportLogoAssetId = null;
+        if (previous) {
+          const used = next.layers.some((layer) =>
+            layer.items.some((item) => item.image?.assetId === previous),
+          );
+          if (!used) delete next.assets[previous];
+        }
+      }, "change");
+      openSettingsDialog();
+    });
+    logoActions.append(removeLogo);
+  }
+  logoRow.append(logoActions);
+  wrap.append(el("p", "settings-note", t("settings.logoNote")), logoRow);
   return wrap;
 }
 
@@ -60,34 +157,32 @@ function scaleSection(): HTMLElement {
   const page = store.ui.page;
   const calibration = pageCalibration(project, page);
   const locked = pageScaleLocked(project, page);
-  const wrap = section("Page scale", "Scale is stored per page and can be locked.");
+  const wrap = section(t("settings.scaleTitle"), t("settings.scaleNote"));
   const value = el("p", "settings-scale-value");
   if (!calibration) {
-    value.textContent = `Page ${page}: no scale. Length and area measurements use PDF points.`;
+    value.textContent = t("settings.scaleNone", { page });
   } else {
     const detail = isManualCalibration(calibration)
       ? `Manual 1:${formatNumber(calibration.ratio, 6)}`
       : `Reference ${formatNumber(calibration.knownLength, 2)} ${calibration.unit}`;
-    value.textContent = `Page ${page}: ${detail} · ${formatScale(pageScale(project, page), calibration)}${locked ? " · locked" : ""}`;
+    value.textContent = `Page ${page}: ${detail} · ${formatScale(pageScale(project, page), calibration)}${locked ? t("settings.scaleLockedSuffix") : ""}`;
   }
-  const hint = el(
-    "p",
-    "settings-note",
-    "Use the page scale chip in the status bar to calibrate the current page, enter a manual 1:N scale, apply it to all pages, or lock it.",
-  );
+  const hint = el("p", "settings-note", t("settings.scaleHint"));
   wrap.append(value, hint);
   return wrap;
 }
 
 function unitsSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section("Units", "Project-wide units for measurements and quantity reports.");
+  const wrap = section(t("settings.unitsTitle"), t("settings.unitsNote"));
   const row = el("div", "field-row");
 
   const length = el("select", "select");
-  length.setAttribute("aria-label", "Project length unit");
+  length.setAttribute("aria-label", t("settings.lengthUnitAria"));
   for (const unit of LENGTH_UNITS) {
-    length.append(option(unit.id, unit.id, unit.id === project.settings.lengthUnit));
+    length.append(
+      option(unit.id, lengthUnitLabel(unit.id), unit.id === project.settings.lengthUnit),
+    );
   }
   length.addEventListener("change", () => {
     store.mutate((project) => {
@@ -96,7 +191,7 @@ function unitsSection(): HTMLElement {
   });
 
   const area = el("select", "select");
-  area.setAttribute("aria-label", "Project area unit");
+  area.setAttribute("aria-label", t("settings.areaUnitAria"));
   for (const unit of AREA_UNITS) {
     area.append(option(unit.id, unit.label, unit.id === project.settings.areaUnit));
   }
@@ -106,33 +201,24 @@ function unitsSection(): HTMLElement {
     }, "change");
   });
 
-  row.append(field("Length", length), field("Area", area));
+  row.append(field(t("settings.length"), length), field(t("settings.area"), area));
   wrap.append(row);
   wrap.append(
-    checkRow("Smart length labels", project.settings.smartLengthUnits, (checked) => {
+    checkRow(t("settings.smartLength"), project.settings.smartLengthUnits, (checked) => {
       store.mutate((project) => {
         project.settings.smartLengthUnits = checked;
       }, "change");
     }),
   );
-  wrap.append(
-    el(
-      "p",
-      "settings-note",
-      "Metric lengths under 1 m use the selected unit and longer values switch to metres. Quantity reports keep the project unit.",
-    ),
-  );
+  wrap.append(el("p", "settings-note", t("settings.smartLengthNote")));
   return wrap;
 }
 
 function labelsSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section(
-    "Measurement labels",
-    "Labels use the same paper-space size on the canvas and in PDF exports.",
-  );
+  const wrap = section(t("settings.labelsTitle"), t("settings.labelsNote"));
 
-  const sizeField = field("Label size", el("div", "settings-range"));
+  const sizeField = field(t("settings.labelSize"), el("div", "settings-range"));
   const range = sizeField.querySelector<HTMLElement>(".settings-range")!;
   const input = el("input", "input");
   input.type = "range";
@@ -141,8 +227,8 @@ function labelsSection(): HTMLElement {
   input.step = "0.5";
   const current = clampLabelSize(project.settings.labelSize);
   input.value = String(current);
-  input.setAttribute("aria-label", "Project measurement label size in points");
-  input.title = "Primary label size in PDF points.";
+  input.setAttribute("aria-label", t("settings.labelSizeAria"));
+  input.title = t("settings.labelSizeTitle");
   const readout = el("span", "settings-range-value", `${formatNumber(current, 1)} pt`);
   input.addEventListener("input", () => {
     readout.textContent = `${formatNumber(Number(input.value), 1)} pt`;
@@ -156,44 +242,38 @@ function labelsSection(): HTMLElement {
   range.append(input, readout);
   wrap.append(
     sizeField,
-    checkRow("Compact area labels", project.settings.compactAreaLabels, (checked) => {
+    checkRow(t("settings.compactArea"), project.settings.compactAreaLabels, (checked) => {
       store.mutate((project) => {
         project.settings.compactAreaLabels = checked;
       }, "change");
     }),
   );
-  wrap.append(
-    el(
-      "p",
-      "settings-note",
-      "Compact area labels show “P 14.48 m” instead of “Perimeter 14.48 m”. The inspector and CSV keep the full wording.",
-    ),
-  );
+  wrap.append(el("p", "settings-note", t("settings.compactAreaNote")));
   return wrap;
 }
 
 function displaySection(): HTMLElement {
   const project = store.project!;
-  const wrap = section("Display and snapping");
+  const wrap = section(t("settings.displayTitle"));
   wrap.append(
-    checkRow("Show grid", project.settings.showGrid, (checked) => {
+    checkRow(t("settings.showGrid"), project.settings.showGrid, (checked) => {
       store.mutate((project) => {
         project.settings.showGrid = checked;
       }, "change");
     }),
-    checkRow("Show scale reference", project.settings.showCalibration, (checked) => {
+    checkRow(t("settings.showScale"), project.settings.showCalibration, (checked) => {
       store.mutate((project) => {
         project.settings.showCalibration = checked;
       }, "change");
     }),
-    checkRow("Snap to geometry", project.settings.snapToGeometry, (checked) => {
+    checkRow(t("settings.snap"), project.settings.snapToGeometry, (checked) => {
       store.mutate((project) => {
         project.settings.snapToGeometry = checked;
       }, "change");
     }),
   );
 
-  const snapField = field("Snap distance", el("div", "settings-range"));
+  const snapField = field(t("settings.snapDistance"), el("div", "settings-range"));
   const range = snapField.querySelector<HTMLElement>(".settings-range")!;
   const input = el("input", "input");
   input.type = "range";
@@ -201,7 +281,7 @@ function displaySection(): HTMLElement {
   input.max = "24";
   input.step = "1";
   input.value = String(project.settings.snapTolerancePx);
-  input.setAttribute("aria-label", "Snap distance in screen pixels");
+  input.setAttribute("aria-label", t("settings.snapAria"));
   const readout = el("span", "settings-range-value", `${project.settings.snapTolerancePx} px`);
   input.addEventListener("input", () => {
     readout.textContent = `${input.value} px`;
@@ -219,13 +299,10 @@ function displaySection(): HTMLElement {
 
 function quantitiesSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section(
-    "Quantities",
-    "Waste and rounding apply to order quantities. Categories can override both; 0 means no rounding, and counts always round to whole pcs.",
-  );
+  const wrap = section(t("settings.quantitiesTitle"), t("settings.quantitiesNote"));
 
   const defaultCategory = el("select", "select");
-  defaultCategory.setAttribute("aria-label", "Default category for new measurements");
+  defaultCategory.setAttribute("aria-label", t("settings.defaultCategory"));
   for (const category of project.categories) {
     defaultCategory.append(
       option(
@@ -246,12 +323,12 @@ function quantitiesSection(): HTMLElement {
   waste.max = "100";
   waste.step = "0.5";
   waste.value = String(project.settings.quantity.wastePercent);
-  waste.setAttribute("aria-label", "Project waste percentage");
+  waste.setAttribute("aria-label", t("settings.wasteAria"));
   waste.addEventListener("change", () => {
     const value = Number(waste.value);
     if (waste.value.trim() === "" || !Number.isFinite(value) || value < 0 || value > 100) {
       waste.value = String(project.settings.quantity.wastePercent);
-      toast("Waste must be between 0 and 100 percent.", "warning");
+      toast(t("settings.wasteInvalid"), "warning");
       return;
     }
     store.setQuantityDefaults({ wastePercent: value });
@@ -262,21 +339,25 @@ function quantitiesSection(): HTMLElement {
   rounding.min = "0";
   rounding.step = "0.01";
   rounding.value = String(project.settings.quantity.roundingStep);
-  rounding.setAttribute("aria-label", "Project rounding step");
+  rounding.setAttribute("aria-label", t("settings.roundingAria"));
   rounding.addEventListener("change", () => {
     const value = Number(rounding.value);
     if (rounding.value.trim() === "" || !Number.isFinite(value) || value < 0) {
       rounding.value = String(project.settings.quantity.roundingStep);
-      toast("Rounding step must be zero or greater.", "warning");
+      toast(t("settings.roundingInvalid"), "warning");
       return;
     }
     store.setQuantityDefaults({ roundingStep: value });
   });
 
-  row.append(field("Waste (%)", waste), field("Round up", rounding));
-  wrap.append(field("Default category", defaultCategory), row);
+  row.append(field(t("settings.wastePercent"), waste), field(t("settings.roundUp"), rounding));
+  wrap.append(field(t("settings.defaultCategoryLabel"), defaultCategory), row);
 
-  const manage = el("button", "btn btn-small", `Manage categories (${project.categories.length})`);
+  const manage = el(
+    "button",
+    "btn btn-small",
+    t("settings.manageCategories", { count: project.categories.length }),
+  );
   manage.type = "button";
   manage.addEventListener("click", () => {
     void openCategoriesDialog().then(() => {
@@ -289,11 +370,12 @@ function quantitiesSection(): HTMLElement {
 
 function countTypesSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section(
-    "Count types",
-    "Name the objects you count and choose the glyph used on the plan and in exports.",
+  const wrap = section(t("settings.countTypesTitle"), t("settings.countTypesNote"));
+  const manage = el(
+    "button",
+    "btn btn-small",
+    t("settings.manageCountTypes", { count: project.countTypes.length }),
   );
-  const manage = el("button", "btn btn-small", `Manage count types (${project.countTypes.length})`);
   manage.type = "button";
   manage.addEventListener("click", () => {
     void openCountTypesDialog().then(() => {
@@ -306,10 +388,7 @@ function countTypesSection(): HTMLElement {
 
 function stampsSection(): HTMLElement {
   const project = store.project!;
-  const wrap = section(
-    "Stamps",
-    "Presets are stored in the project. App defaults for new projects live in Preferences.",
-  );
+  const wrap = section(t("settings.stampsTitle"), t("settings.stampsNote"));
 
   const editor = presetEditor(
     project.settings.stampPresets,
@@ -318,23 +397,23 @@ function stampsSection(): HTMLElement {
         current.settings.stampPresets = next;
       }, "change");
     },
-    "New project preset",
+    t("settings.newPreset"),
   );
 
-  const loadDefaults = el("button", "btn btn-small btn-ghost", "Load app defaults into project");
+  const loadDefaults = el("button", "btn btn-small btn-ghost", t("settings.loadDefaults"));
   loadDefaults.type = "button";
   loadDefaults.addEventListener("click", () => {
     const next = loadGlobalStampPresets();
     store.mutate((current) => {
       current.settings.stampPresets = next;
     }, "change");
-    toast("Project stamp presets updated.", "success");
+    toast(t("settings.stampsUpdated"), "success");
     openSettingsDialog();
   });
 
   const actions = el("div", "settings-actions");
   actions.append(loadDefaults);
-  wrap.append(el("div", "settings-subhead", "Project presets"), editor, actions);
+  wrap.append(el("div", "settings-subhead", t("settings.projectPresets")), editor, actions);
   return wrap;
 }
 
@@ -348,6 +427,7 @@ export function openSettingsDialog(): void {
     if (!store.project) return;
     content.replaceChildren(
       projectSection(),
+      metadataSection(),
       scaleSection(),
       unitsSection(),
       labelsSection(),
@@ -360,11 +440,11 @@ export function openSettingsDialog(): void {
   render();
 
   void showModal({
-    title: "Project settings",
-    subtitle: "Project data saved in the .gridscalr file",
+    title: t("settings.dialogTitle"),
+    subtitle: t("settings.dialogSubtitle"),
     body,
     wide: true,
     className: "modal-settings",
-    actions: [{ label: "Close", value: "close", primary: true }],
+    actions: [{ label: t("settings.close"), value: "close", primary: true }],
   });
 }

@@ -166,11 +166,7 @@ function stampsSection(): HTMLElement {
   );
 
   const actions = el("div", "settings-actions");
-  const fromProject = el(
-    "button",
-    "btn btn-small btn-ghost",
-    "Use the project's presets as defaults",
-  );
+  const fromProject = el("button", "btn btn-small btn-ghost", t("preferences.stamps.fromProject"));
   fromProject.type = "button";
   fromProject.disabled = !store.project;
   fromProject.title = store.project

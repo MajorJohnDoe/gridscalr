@@ -9,6 +9,7 @@ import {
 import type { MarkupItem, Project } from "../model/types";
 import type { QuantityReport } from "./reportModel";
 import type { QuantityRow } from "../model/quantity";
+import { t, translate, type MessageKey } from "../i18n";
 
 export const QUANTITY_COLUMNS = [
   "category",
@@ -26,21 +27,44 @@ export const QUANTITY_COLUMNS = [
   "item_count",
 ] as const;
 
-export const MARKUP_COLUMNS = [
-  "Page",
-  "Type",
-  "Layer",
-  "Label",
-  "Value",
-  "Unit",
-  "Details",
-  "Points",
-  "Symbol",
-  "Symbol category",
-  "Status",
-  "Created",
-  "Modified",
-] as const;
+const QUANTITY_COLUMN_KEYS: Record<(typeof QUANTITY_COLUMNS)[number], MessageKey> = {
+  category: "report.column.category",
+  room: "report.column.room",
+  quantity_type: "report.column.quantityType",
+  count_type: "report.column.countType",
+  unit: "report.column.unit",
+  gross: "report.column.gross",
+  deduction: "report.column.deduction",
+  net: "report.column.net",
+  waste_percent: "report.column.wastePercent",
+  waste_quantity: "report.column.wasteQuantity",
+  rounding_step: "report.column.roundingStep",
+  order_quantity: "report.column.orderQuantity",
+  item_count: "report.column.itemCount",
+};
+
+export const QUANTITY_CSV_COLUMNS = QUANTITY_COLUMNS.map((id) =>
+  translate("en", QUANTITY_COLUMN_KEYS[id]),
+);
+
+export const MARKUP_COLUMN_KEYS: MessageKey[] = [
+  "report.markup.page",
+  "report.markup.type",
+  "report.markup.layer",
+  "report.markup.label",
+  "report.markup.value",
+  "report.markup.unit",
+  "report.markup.details",
+  "report.markup.points",
+  "report.markup.symbol",
+  "report.markup.symbolCategory",
+  "report.markup.status",
+  "report.markup.created",
+  "report.markup.modified",
+];
+
+export const MARKUP_COLUMNS = MARKUP_COLUMN_KEYS.map((key) => translate("en", key));
+export const MARKUP_CSV_COLUMNS = MARKUP_COLUMN_KEYS.map((key) => translate("en", key));
 
 /** A table cell keeps both the display string and the underlying numeric value. */
 export interface ReportCell {
@@ -81,8 +105,8 @@ function measuredNumber(value: number, row: QuantityRow): number {
   return round3(value);
 }
 
-function header(columns: readonly string[]): ReportCell[] {
-  return columns.map(textCell);
+function localizedHeader(keys: readonly MessageKey[]): ReportCell[] {
+  return keys.map((key) => textCell(t(key)));
 }
 
 function quantityRow(row: QuantityRow): ReportCell[] {
@@ -105,7 +129,10 @@ function quantityRow(row: QuantityRow): ReportCell[] {
 
 /** Quantity rows shared by the CSV, PDF and XLSX exports. */
 export function quantityTable(report: QuantityReport): ReportTable {
-  return [header(QUANTITY_COLUMNS), ...report.summary.rows.map(quantityRow)];
+  return [
+    localizedHeader(QUANTITY_COLUMNS.map((id) => QUANTITY_COLUMN_KEYS[id])),
+    ...report.summary.rows.map(quantityRow),
+  ];
 }
 
 function markupRow(project: Project, item: MarkupItem, layerName: string): ReportCell[] {
@@ -130,7 +157,7 @@ function markupRow(project: Project, item: MarkupItem, layerName: string): Repor
 
 /** Visible markups on visible layers, shared by the markup CSV and XLSX exports. */
 export function markupTable(project: Project): ReportTable {
-  const rows: ReportTable = [header(MARKUP_COLUMNS)];
+  const rows: ReportTable = [localizedHeader(MARKUP_COLUMN_KEYS)];
   for (const layer of project.layers) {
     for (const item of layer.items) {
       if (!itemIsVisible(item, layer)) continue;

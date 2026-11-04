@@ -7,19 +7,20 @@ import {
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
 import type { PageSize, Point } from "../model/types";
 import { contentBoundsFromPixels } from "./thumbnails";
+import { t } from "../i18n";
 
 GlobalWorkerOptions.workerSrc = workerUrl;
 
 export class PasswordRequiredError extends Error {
   constructor() {
-    super("This PDF is password protected.");
+    super(t("pdf.passwordProtected"));
     this.name = "PasswordRequiredError";
   }
 }
 
 export class PdfPasswordError extends Error {
   constructor() {
-    super("The password was not accepted.");
+    super(t("pdf.passwordRejected"));
     this.name = "PdfPasswordError";
   }
 }
@@ -86,7 +87,7 @@ export class PdfRenderer {
     public readonly documents: PDFDocumentProxy[],
     pageMaps?: number[][],
   ) {
-    if (!documents.length) throw new Error("A project needs at least one document.");
+    if (!documents.length) throw new Error(t("pdf.noDocument"));
     this.pageMaps = documents.map((document, index) => {
       const requested = pageMaps?.[index];
       if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);

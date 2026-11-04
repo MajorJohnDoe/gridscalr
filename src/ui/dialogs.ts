@@ -1,3 +1,4 @@
+import { formatDate } from "../i18n/format";
 import type { LayerKind, LengthUnit } from "../model/types";
 import { manualPointsPerMeter } from "../model/calibration";
 import {
@@ -7,9 +8,10 @@ import {
   type DrawingExportOptions,
   type NormalizedCrop,
 } from "../model/export";
-import { formatNumber, LENGTH_UNITS } from "../model/units";
+import { formatNumber, LENGTH_UNITS, lengthUnitLabel } from "../model/units";
 import { el, option } from "./dom";
 import { icon } from "./icons";
+import { t } from "../i18n";
 
 let activeModal: { close: () => void } | null = null;
 
@@ -59,7 +61,7 @@ export function showModal(options: {
     header.append(titles);
     const close = el("button", "icon-btn modal-close");
     close.type = "button";
-    close.title = "Close";
+    close.title = t("common.close");
     close.innerHTML = icon("close", 16);
     header.append(close);
 
@@ -173,12 +175,12 @@ export function unsavedChangesDialog(message: string): Promise<UnsavedChangesCho
   const body = el("div");
   body.append(el("p", "modal-message", message));
   return showModal({
-    title: "Unsaved changes",
+    title: t("dialogs.unsavedTitle"),
     body,
     actions: [
-      { label: "Cancel", value: "cancel" },
-      { label: "Discard changes", value: "discard", danger: true },
-      { label: "Save", value: "save", primary: true },
+      { label: t("common.cancel"), value: "cancel" },
+      { label: t("dialogs.discardChanges"), value: "discard", danger: true },
+      { label: t("common.save"), value: "save", primary: true },
     ],
   }).then((value) => (value === "save" || value === "discard" ? value : "cancel"));
 }
@@ -186,7 +188,7 @@ export function unsavedChangesDialog(message: string): Promise<UnsavedChangesCho
 export function confirmDialog(
   title: string,
   message: string,
-  confirmLabel = "Confirm",
+  confirmLabel = t("common.confirm"),
   options: { danger?: boolean } = {},
 ): Promise<boolean> {
   const body = el("div");
@@ -195,7 +197,7 @@ export function confirmDialog(
     title,
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
+      { label: t("common.cancel"), value: "__cancel__" },
       { label: confirmLabel, value: "confirm", primary: true, danger: options.danger },
     ],
   }).then((value) => value === "confirm");
@@ -213,7 +215,7 @@ export function messageDialog(
   return showModal({
     title,
     body,
-    actions: [{ label: "OK", value: "ok", primary: true }],
+    actions: [{ label: t("common.ok"), value: "ok", primary: true }],
   }).then(() => undefined);
 }
 
@@ -226,7 +228,7 @@ export function textDialog(
 ): Promise<string | null> {
   const body = el("div", "form-stack");
   const field = el("label", "field");
-  field.append(el("span", "field-label", "Text"));
+  field.append(el("span", "field-label", t("dialogs.textLabel")));
   const input = multiline ? el("textarea", "input textarea") : el("input", "input");
   if (!multiline) (input as HTMLInputElement).type = "text";
   input.value = initial;
@@ -238,68 +240,60 @@ export function textDialog(
     subtitle,
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Apply", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.apply"), value: "apply", primary: true },
     ],
-    onValidate: () => (input.value.trim() ? null : "Enter some text."),
+    onValidate: () => (input.value.trim() ? null : t("dialogs.textRequired")),
   }).then((value) => (value === "apply" ? input.value.trim() : null));
 }
 
 export function depthDialog(unit: LengthUnit, initial = 1): Promise<number | null> {
   const body = el("div", "form-stack");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      "Enter the height or depth used to turn the measured area into a volume.",
-    ),
-  );
+  body.append(el("p", "modal-message", t("dialogs.depth.message")));
   const field = el("label", "field");
-  field.append(el("span", "field-label", "Depth"));
+  field.append(el("span", "field-label", t("dialogs.depth.label")));
   const wrap = el("div", "input-row");
   const input = el("input", "input");
   input.type = "number";
   input.min = "0.001";
   input.step = "0.01";
   input.value = String(initial);
-  input.setAttribute("aria-label", "Volume depth");
+  input.setAttribute("aria-label", t("dialogs.depth.aria"));
   wrap.append(input, el("span", "context-unit", unit));
   field.append(wrap);
   body.append(field);
   return showModal({
-    title: "Volume depth",
+    title: t("dialogs.depth.title"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Apply", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.apply"), value: "apply", primary: true },
     ],
     onValidate: () => {
       const value = Number(input.value);
-      return Number.isFinite(value) && value > 0 ? null : "Enter a depth greater than zero.";
+      return Number.isFinite(value) && value > 0 ? null : t("dialogs.depth.invalid");
     },
   }).then((value) => (value === "apply" ? Number(input.value) : null));
 }
 
 export function passwordDialog(filename: string): Promise<string | null> {
   const body = el("div", "form-stack");
-  body.append(
-    el("p", "modal-message", `“${filename}” is password protected. Enter the password to open it.`),
-  );
+  body.append(el("p", "modal-message", t("dialogs.password.message", { filename })));
   const field = el("label", "field");
-  field.append(el("span", "field-label", "Password"));
+  field.append(el("span", "field-label", t("dialogs.password.label")));
   const input = el("input", "input");
   input.type = "password";
   input.autocomplete = "off";
   field.append(input);
   body.append(field);
   return showModal({
-    title: "Password required",
+    title: t("dialogs.password.title"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Unlock", value: "unlock", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.unlock"), value: "unlock", primary: true },
     ],
-    onValidate: () => (input.value ? null : "Enter the PDF password."),
+    onValidate: () => (input.value ? null : t("dialogs.password.invalid")),
   }).then((value) => (value === "unlock" ? input.value : null));
 }
 
@@ -325,27 +319,25 @@ export function calibrationDialog(options: {
     el(
       "p",
       "modal-message",
-      editing
-        ? "Update the reference length used for measurements on this page. The reference line itself stays in place."
-        : "Enter the real-world length of the line you just drew. GridScalr uses it to convert measurements on this drawing.",
+      editing ? t("dialogs.calibration.editMessage") : t("dialogs.calibration.newMessage"),
     ),
   );
 
   const lengthField = el("label", "field");
-  lengthField.append(el("span", "field-label", "Known length"));
+  lengthField.append(el("span", "field-label", t("dialogs.calibration.knownLength")));
   const inputWrap = el("div", "input-row");
   const lengthInput = el("input", "input");
   lengthInput.type = "number";
   lengthInput.min = "0.0001";
   lengthInput.step = "any";
-  lengthInput.placeholder = "e.g. 1000";
+  lengthInput.placeholder = t("dialogs.calibration.placeholder");
   if (options.initialKnownLength && options.initialKnownLength > 0) {
     lengthInput.value = String(options.initialKnownLength);
   }
   const unitSelect = el("select", "input input-unit");
   const selectedUnit = options.initialUnit ?? options.defaultUnit;
   for (const unit of LENGTH_UNITS) {
-    unitSelect.append(option(unit.id, unit.label, unit.id === selectedUnit));
+    unitSelect.append(option(unit.id, lengthUnitLabel(unit.id), unit.id === selectedUnit));
   }
   inputWrap.append(lengthInput, unitSelect);
   lengthField.append(inputWrap);
@@ -355,7 +347,10 @@ export function calibrationDialog(options: {
   allCheck.type = "checkbox";
   if (!editing) {
     const allLabel = el("label", "check-row");
-    allLabel.append(allCheck, el("span", "", `Apply this scale to all ${options.pageCount} pages`));
+    allLabel.append(
+      allCheck,
+      el("span", "", t("dialogs.calibration.applyAll", { count: options.pageCount })),
+    );
     body.append(allLabel);
   }
 
@@ -364,26 +359,27 @@ export function calibrationDialog(options: {
   updateCheck.checked = true;
   if (options.hasMeasurements) {
     const updateLabel = el("label", "check-row");
-    updateLabel.append(
-      updateCheck,
-      el("span", "", "Also update measurements already created on the affected pages"),
-    );
+    updateLabel.append(updateCheck, el("span", "", t("dialogs.calibration.updateMeasurements")));
     body.append(updateLabel);
   }
 
   return showModal({
     title: editing
-      ? `Edit calibration · page ${options.currentPage}`
-      : `Calibrate page ${options.currentPage}`,
-    subtitle: editing ? "Update reference length" : "Set drawing scale",
+      ? t("dialogs.calibration.editTitle", { page: options.currentPage })
+      : t("dialogs.calibration.newTitle", { page: options.currentPage }),
+    subtitle: editing ? t("dialogs.calibration.editSubtitle") : t("dialogs.calibration.subtitle"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: editing ? "Update scale" : "Set scale", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      {
+        label: editing ? t("dialogs.calibration.updateScale") : t("dialogs.calibration.setScale"),
+        value: "apply",
+        primary: true,
+      },
     ],
     onValidate: () => {
       const value = Number(lengthInput.value);
-      if (!Number.isFinite(value) || value <= 0) return "Enter a length greater than zero.";
+      if (!Number.isFinite(value) || value <= 0) return t("dialogs.calibration.invalid");
       return null;
     },
   }).then((value) =>
@@ -411,21 +407,15 @@ export function manualScaleDialog(options: {
   initialRatio?: number;
 }): Promise<ManualScaleDialogResult | null> {
   const body = el("div", "form-stack");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      "Set a manual 1:N drawing scale from the physical PDF page size. This replaces any reference calibration on the affected pages; no reference line is added.",
-    ),
-  );
+  body.append(el("p", "modal-message", t("dialogs.manual.message")));
 
   const field = el("label", "field");
-  field.append(el("span", "field-label", "Scale ratio (1:N)"));
+  field.append(el("span", "field-label", t("dialogs.manual.ratioLabel")));
   const ratioInput = el("input", "input");
   ratioInput.type = "number";
   ratioInput.min = "0.0001";
   ratioInput.step = "any";
-  ratioInput.placeholder = "e.g. 100";
+  ratioInput.placeholder = t("dialogs.manual.ratioPlaceholder");
   if (options.initialRatio && options.initialRatio > 0) {
     ratioInput.value = String(options.initialRatio);
   }
@@ -437,11 +427,14 @@ export function manualScaleDialog(options: {
   const updatePreview = () => {
     const ratio = Number(ratioInput.value);
     if (!Number.isFinite(ratio) || ratio <= 0) {
-      preview.textContent = "Enter a ratio greater than zero.";
+      preview.textContent = t("dialogs.manual.invalidRatio");
       return;
     }
     const points = manualPointsPerMeter(ratio);
-    preview.textContent = `1 m on paper = ${formatNumber(ratio, 6)} m in the real world · ${formatNumber(points, 3)} pt per metre`;
+    preview.textContent = t("dialogs.manual.preview", {
+      ratio: formatNumber(ratio, 6),
+      points: formatNumber(points, 3),
+    });
   };
   ratioInput.addEventListener("input", updatePreview);
   updatePreview();
@@ -464,7 +457,10 @@ export function manualScaleDialog(options: {
   allCheck.type = "checkbox";
   if (options.pageCount > 1) {
     const allLabel = el("label", "check-row");
-    allLabel.append(allCheck, el("span", "", `Apply this scale to all ${options.pageCount} pages`));
+    allLabel.append(
+      allCheck,
+      el("span", "", t("dialogs.calibration.applyAll", { count: options.pageCount })),
+    );
     body.append(allLabel);
   }
 
@@ -473,24 +469,21 @@ export function manualScaleDialog(options: {
   updateCheck.checked = true;
   if (options.hasMeasurements) {
     const updateLabel = el("label", "check-row");
-    updateLabel.append(
-      updateCheck,
-      el("span", "", "Also update measurements already created on the affected pages"),
-    );
+    updateLabel.append(updateCheck, el("span", "", t("dialogs.calibration.updateMeasurements")));
     body.append(updateLabel);
   }
 
   return showModal({
-    title: `Manual scale · page ${options.currentPage}`,
-    subtitle: "Use the printed drawing ratio",
+    title: t("dialogs.manual.title", { page: options.currentPage }),
+    subtitle: t("dialogs.manual.subtitle"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Set scale", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("dialogs.calibration.setScale"), value: "apply", primary: true },
     ],
     onValidate: () => {
       const ratio = Number(ratioInput.value);
-      if (!Number.isFinite(ratio) || ratio <= 0) return "Enter a scale ratio greater than zero.";
+      if (!Number.isFinite(ratio) || ratio <= 0) return t("dialogs.manual.invalid");
       return null;
     },
   }).then((value) =>
@@ -561,47 +554,51 @@ export function drawingExportDialog(
   const body = el("div", "form-stack export-form");
 
   const areaSection = el("section", "export-section");
-  areaSection.append(el("h3", "export-section-title", "Area"));
+  areaSection.append(el("h3", "export-section-title", t("dialogs.export.area")));
   const areaRadios = el("div", "export-radio-group");
   const radioName = `drawing-export-area-${Date.now()}`;
-  const wholeRadio = exportRadio(radioName, "Whole page(s)", areaMode === "whole");
-  const cropRadio = exportRadio(radioName, "Selected area (crop)", areaMode === "crop");
+  const wholeRadio = exportRadio(radioName, t("dialogs.export.whole"), areaMode === "whole");
+  const cropRadio = exportRadio(radioName, t("dialogs.export.crop"), areaMode === "crop");
   areaRadios.append(wholeRadio.row, cropRadio.row);
   areaSection.append(areaRadios);
 
   const cropDetail = el("p", "export-note");
   const cropButtons = el("div", "field-row export-actions-row");
-  const drawAreaButton = el("button", "btn btn-small", "Draw area…");
+  const drawAreaButton = el("button", "btn btn-small", t("dialogs.export.drawArea"));
   drawAreaButton.type = "button";
   drawAreaButton.dataset.exportCrop = "true";
-  const clearAreaButton = el("button", "btn btn-small btn-ghost", "Clear");
+  const clearAreaButton = el("button", "btn btn-small btn-ghost", t("common.clear"));
   clearAreaButton.type = "button";
   cropButtons.append(drawAreaButton, clearAreaButton);
   areaSection.append(cropDetail, cropButtons);
   body.append(areaSection);
 
   const pagesSection = el("section", "export-section");
-  pagesSection.append(el("h3", "export-section-title", "Pages"));
+  pagesSection.append(el("h3", "export-section-title", t("dialogs.export.pages")));
   const pageRadios = el("div", "export-radio-group");
   const currentRadio = exportRadio(
     radioName + "-pages",
-    `Current page (${currentPage})`,
+    t("dialogs.export.currentPage", { page: currentPage }),
     pageMode === "current",
   );
   const allRadio = exportRadio(
     radioName + "-pages",
-    `All pages (${pageCount})`,
+    t("dialogs.export.allPages", { count: pageCount }),
     pageMode === "all",
   );
-  const rangeRadio = exportRadio(radioName + "-pages", "Range", pageMode === "range");
+  const rangeRadio = exportRadio(
+    radioName + "-pages",
+    t("dialogs.export.range"),
+    pageMode === "range",
+  );
   pageRadios.append(currentRadio.row, allRadio.row, rangeRadio.row);
   pagesSection.append(pageRadios);
 
   const rangeField = el("label", "field export-range-field");
-  rangeField.append(el("span", "field-label", "Page range"));
+  rangeField.append(el("span", "field-label", t("dialogs.export.pageRange")));
   const rangeInput = el("input", "input");
   rangeInput.type = "text";
-  rangeInput.placeholder = "e.g. 1-3, 5";
+  rangeInput.placeholder = t("dialogs.export.rangePlaceholder");
   rangeInput.value = rangeText;
   rangeField.append(rangeInput);
   const rangeError = el("p", "form-error");
@@ -611,11 +608,11 @@ export function drawingExportDialog(
 
   const layerSection = el("section", "export-section");
   const layerHead = el("div", "export-section-head");
-  layerHead.append(el("h3", "export-section-title", "Layers"));
+  layerHead.append(el("h3", "export-section-title", t("dialogs.export.layers")));
   const layerActions = el("div", "field-row export-actions-row");
-  const selectAll = el("button", "btn btn-small btn-ghost", "Select all");
+  const selectAll = el("button", "btn btn-small btn-ghost", t("dialogs.export.selectAll"));
   selectAll.type = "button";
-  const clearAll = el("button", "btn btn-small btn-ghost", "Clear");
+  const clearAll = el("button", "btn btn-small btn-ghost", t("common.clear"));
   clearAll.type = "button";
   layerActions.append(selectAll, clearAll);
   layerHead.append(layerActions);
@@ -637,34 +634,28 @@ export function drawingExportDialog(
     const swatch = el("span", "export-layer-swatch");
     swatch.style.background = layer.color;
     row.append(input, swatch, el("span", "export-layer-name", layer.name));
-    if (!layer.visible) row.append(el("span", "export-hidden-tag", "Hidden"));
+    if (!layer.visible) row.append(el("span", "export-hidden-tag", t("common.hidden")));
     layerList.append(row);
   }
   layerSection.append(layerList);
-  layerSection.append(
-    el(
-      "p",
-      "export-note",
-      "Layers are resolved per page. A layer hidden on one page is skipped there and still exported on pages where it is visible.",
-    ),
-  );
+  layerSection.append(el("p", "export-note", t("dialogs.export.layersNote")));
   body.append(layerSection);
 
   const optionsSection = el("section", "export-section");
-  optionsSection.append(el("h3", "export-section-title", "Content"));
+  optionsSection.append(el("h3", "export-section-title", t("dialogs.export.content")));
   const labelsCheck = exportCheckbox(
-    "Labels",
-    "Generated measurement labels; text notes always follow the drawing.",
+    t("dialogs.export.labels"),
+    t("dialogs.export.labelsNote"),
     includeLabels,
   );
   const calibrationCheck = exportCheckbox(
-    "Calibration line",
-    "Reference line and label. Manual scales appear in the legend instead.",
+    t("dialogs.export.calibration"),
+    t("dialogs.export.calibrationNote"),
     includeCalibration,
   );
   const legendCheck = exportCheckbox(
-    "Legend",
-    "Adds a separate A4 page after the drawing pages.",
+    t("dialogs.export.legend"),
+    t("dialogs.export.legendNote"),
     includeLegend,
   );
   labelsCheck.input.addEventListener("change", () => {
@@ -686,10 +677,17 @@ export function drawingExportDialog(
     wholeRadio.input.checked = areaMode === "whole";
     cropRadio.input.checked = areaMode === "crop";
     cropDetail.textContent = crop
-      ? `${formatNumber(crop.width * 100, 1)}% × ${formatNumber(crop.height * 100, 1)}% of page ${options.cropReferencePage} · ${formatNumber(cropAreaPercent(crop), 1)}% of the page area. Same relative area on every selected page.`
-      : "No area selected. Draw a rectangular area on the page.";
+      ? t("dialogs.export.cropPercent", {
+          width: formatNumber(crop.width * 100, 1),
+          height: formatNumber(crop.height * 100, 1),
+          page: options.cropReferencePage,
+          area: formatNumber(cropAreaPercent(crop), 1),
+        })
+      : t("dialogs.export.noArea");
     clearAreaButton.disabled = !crop;
-    drawAreaButton.textContent = crop ? "Redraw area…" : "Draw area…";
+    drawAreaButton.textContent = crop
+      ? t("dialogs.export.redrawArea")
+      : t("dialogs.export.drawArea");
     cropDetail.hidden = areaMode !== "crop";
     cropButtons.hidden = areaMode !== "crop";
   };
@@ -727,9 +725,9 @@ export function drawingExportDialog(
     const range = rangeValidation();
     if (range) return range;
     const pages = selectedPageNumbers();
-    if (!pages.length) return "Choose at least one page to export.";
-    if (areaMode === "crop" && !crop) return "Draw an export area first.";
-    if (!collect().layerIds.length) return "Select at least one visible layer to export.";
+    if (!pages.length) return t("dialogs.export.validation.noPages");
+    if (areaMode === "crop" && !crop) return t("dialogs.export.validation.noArea");
+    if (!collect().layerIds.length) return t("dialogs.export.validation.noLayers");
     return null;
   };
 
@@ -743,14 +741,14 @@ export function drawingExportDialog(
     const error = validation();
     if (primary) {
       primary.disabled = Boolean(error);
-      primary.title = error ?? "Export the selected drawing pages";
+      primary.title = error ?? t("dialogs.export.primaryTitle");
     }
     legendCheck.row.title = "";
     const legendNote = legendCheck.row.querySelector<HTMLElement>(".export-check-note");
     if (legendNote) {
       legendNote.textContent = includeLegend
-        ? `A separate A4 legend page will be added after ${selectedPageNumbers().length} drawing page${selectedPageNumbers().length === 1 ? "" : "s"}.`
-        : "Adds a separate A4 page after the drawing pages.";
+        ? t("dialogs.export.legendWithPages", { count: selectedPageNumbers().length })
+        : t("dialogs.export.legendNote");
     }
   };
 
@@ -815,13 +813,13 @@ export function drawingExportDialog(
   });
 
   void showModal({
-    title: "Export drawing PDF",
-    subtitle: "Pages, area and visible content",
+    title: t("dialogs.export.title"),
+    subtitle: t("dialogs.export.subtitle"),
     body,
     wide: true,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Export", value: "export", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.export"), value: "export", primary: true },
     ],
     onMount: (modal) => {
       primary = modal.querySelector<HTMLButtonElement>(".modal-footer .btn-primary");
@@ -883,15 +881,18 @@ export function recoveryDialog(
     el(
       "p",
       "modal-message",
-      `GridScalr found an autosaved copy of “${projectName}” from ${new Date(savedAt).toLocaleString()}. Restore it?`,
+      t("dialogs.recovery.message", {
+        name: projectName,
+        time: formatDate(savedAt),
+      }),
     ),
   );
   return showModal({
-    title: "Recover unsaved work",
+    title: t("dialogs.recovery.title"),
     body,
     actions: [
-      { label: "Discard", value: "discard" },
-      { label: "Restore", value: "restore", primary: true },
+      { label: t("common.discard"), value: "discard" },
+      { label: t("common.restore"), value: "restore", primary: true },
     ],
   }).then((value) => (value === "restore" ? "restore" : "discard"));
 }

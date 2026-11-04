@@ -1,8 +1,21 @@
-import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
+import * as fontkit from "@pdf-lib/fontkit";
+import {
+  PDFDocument,
+  rgb,
+  StandardFonts,
+  type PDFFont,
+  type PDFImage,
+  type PDFPage,
+  type RGB,
+} from "pdf-lib";
+import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
+import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { formatDate } from "../i18n/format";
 import type { QuantityRow, QuantityType, QuantityTypeTotal } from "../model/quantity";
 import { formatNumber } from "../model/units";
 import type { QuantityReport } from "../report/reportModel";
+import type { ImageAsset, ProjectMetadata } from "../model/types";
+import { t, type MessageKey } from "../i18n";
 
 const PAGE_WIDTH = 595.28;
 const PAGE_HEIGHT = 841.89;
@@ -24,20 +37,20 @@ interface Fonts {
 }
 
 interface Column {
-  label: string;
+  labelKey: MessageKey;
   width: number;
   align: "left" | "right";
 }
 
 const COLUMNS: Column[] = [
-  { label: "Room", width: 140, align: "left" },
-  { label: "Type", width: 45, align: "left" },
-  { label: "Unit", width: 38, align: "left" },
-  { label: "Gross", width: 52, align: "right" },
-  { label: "Deduct", width: 52, align: "right" },
-  { label: "Net", width: 52, align: "right" },
-  { label: "Waste", width: 57, align: "right" },
-  { label: "Order", width: 62, align: "right" },
+  { labelKey: "pdf.report.room", width: 140, align: "left" },
+  { labelKey: "pdf.report.type", width: 45, align: "left" },
+  { labelKey: "pdf.report.unit", width: 38, align: "left" },
+  { labelKey: "pdf.report.gross", width: 52, align: "right" },
+  { labelKey: "pdf.report.deduct", width: 52, align: "right" },
+  { labelKey: "pdf.report.net", width: 52, align: "right" },
+  { labelKey: "pdf.report.waste", width: 57, align: "right" },
+  { labelKey: "pdf.report.order", width: 62, align: "right" },
 ];
 
 const COLUMN_X: number[] = [];
@@ -48,12 +61,7 @@ for (const column of COLUMNS) {
 }
 
 function typeLabel(type: QuantityType): string {
-  if (type === "length") return "Length";
-  if (type === "area") return "Area";
-  if (type === "angle") return "Angle";
-  if (type === "slope") return "Slope";
-  if (type === "volume") return "Volume";
-  return "Count";
+  return t(`quantity.type.${type}` as MessageKey);
 }
 
 function fitText(text: string, font: PDFFont, size: number, maxWidth: number): string {
@@ -95,32 +103,77 @@ function wasteValue(value: number): string {
   return formatNumber(value, 2);
 }
 
+function metadataRows(metadata: ProjectMetadata): Array<[string, string]> {
+  return (
+    [
+      [t("report.meta.property"), metadata.facility],
+      [t("report.meta.client"), metadata.client],
+      [t("report.meta.projectNumber"), metadata.projectNumber],
+      [t("report.meta.revision"), metadata.revision],
+      [t("report.meta.preparedBy"), metadata.preparedBy],
+      [t("report.meta.date"), metadata.reportDate],
+      [t("report.meta.notes"), metadata.notes],
+    ] as Array<[string, string]>
+  ).filter(([, value]) => Boolean(value));
+}
+
+async function embedReportLogo(
+  pdf: PDFDocument,
+  logo: ImageAsset | null,
+): Promise<PDFImage | null> {
+  if (!logo) return null;
+  try {
+    const response = await fetch(logo.data);
+    const bytes = new Uint8Array(await response.arrayBuffer());
+    return logo.mime === "image/png" ? await pdf.embedPng(bytes) : await pdf.embedJpg(bytes);
+  } catch {
+    return null;
+  }
+}
+
 class ReportLayout {
   private page: PDFPage;
   private cursor: number;
+  private showMetadata = true;
 
   constructor(
     private readonly pdf: PDFDocument,
     private readonly fonts: Fonts,
     private readonly report: QuantityReport,
+    private readonly logo: PDFImage | null = null,
   ) {
     this.page = pdf.addPage([PAGE_WIDTH, PAGE_HEIGHT]);
     this.cursor = PAGE_HEIGHT - MARGIN;
     this.drawHeader();
+    this.showMetadata = false;
   }
 
   private drawHeader(): void {
-    this.page.drawText(fitText(this.report.projectName, this.fonts.bold, 16, CONTENT_WIDTH), {
+    const title = this.report.metadata.reportTitle || this.report.projectName;
+    this.page.drawText(fitText(title, this.fonts.bold, 16, CONTENT_WIDTH), {
       x: MARGIN,
       y: this.cursor - 16,
       size: 16,
       font: this.fonts.bold,
       color: INK,
     });
+    if (this.logo) {
+      const maxWidth = 96;
+      const maxHeight = 46;
+      const scale = Math.min(maxWidth / this.logo.width, maxHeight / this.logo.height, 1);
+      const width = this.logo.width * scale;
+      const height = this.logo.height * scale;
+      this.page.drawImage(this.logo, {
+        x: PAGE_WIDTH - MARGIN - width,
+        y: PAGE_HEIGHT - MARGIN - height,
+        width,
+        height,
+      });
+    }
     this.cursor -= 23;
     this.page.drawText(
       fitText(
-        `Quantity report · ${this.report.documentName}`,
+        t("pdf.report.subtitle", { document: this.report.documentName }),
         this.fonts.regular,
         9,
         CONTENT_WIDTH,
@@ -131,7 +184,7 @@ class ReportLayout {
     const date = formatDate(this.report.generatedAt);
     this.page.drawText(
       fitText(
-        `Date ${date} · Scale: ${this.report.scaleSummary}`,
+        t("pdf.report.dateScale", { date, scale: this.report.scaleSummary }),
         this.fonts.regular,
         8.5,
         CONTENT_WIDTH,
@@ -139,6 +192,18 @@ class ReportLayout {
       { x: MARGIN, y: this.cursor - 8.5, size: 8.5, font: this.fonts.regular, color: MUTED },
     );
     this.cursor -= 14;
+    if (this.showMetadata) {
+      for (const [label, value] of metadataRows(this.report.metadata)) {
+        this.page.drawText(fitText(`${label}: ${value}`, this.fonts.regular, 8, CONTENT_WIDTH), {
+          x: MARGIN,
+          y: this.cursor - 8,
+          size: 8,
+          font: this.fonts.regular,
+          color: MUTED,
+        });
+        this.cursor -= 10;
+      }
+    }
     this.page.drawLine({
       start: { x: MARGIN, y: this.cursor },
       end: { x: PAGE_WIDTH - MARGIN, y: this.cursor },
@@ -182,7 +247,7 @@ class ReportLayout {
     });
     const baseline = this.cursor - 9;
     COLUMNS.forEach((column, index) => {
-      this.drawCell(column.label, index, baseline, this.fonts.bold, 8, MUTED);
+      this.drawCell(t(column.labelKey), index, baseline, this.fonts.bold, 8, MUTED);
     });
     this.cursor -= TABLE_HEADER_HEIGHT;
   }
@@ -245,7 +310,7 @@ class ReportLayout {
 
   row(row: QuantityRow): void {
     this.drawDataRow(
-      row.room || "No room",
+      row.room || t("quantity.noRoom"),
       row.type,
       row.unit,
       row.gross,
@@ -312,7 +377,7 @@ class ReportLayout {
   finish(): void {
     const pages = this.pdf.getPages();
     pages.forEach((page, index) => {
-      const text = `Page ${index + 1} of ${pages.length}`;
+      const text = t("pdf.report.pageOf", { page: index + 1, total: pages.length });
       const width = this.fonts.regular.widthOfTextAtSize(text, 8);
       page.drawText(text, {
         x: (PAGE_WIDTH - width) / 2,
@@ -325,20 +390,41 @@ class ReportLayout {
   }
 }
 
+async function embedReportFonts(pdf: PDFDocument): Promise<Fonts> {
+  try {
+    const [regular, bold] = await Promise.all([
+      fetch(regularFontUrl).then((response) => {
+        if (!response.ok) throw new Error("regular font unavailable");
+        return response.arrayBuffer();
+      }),
+      fetch(boldFontUrl).then((response) => {
+        if (!response.ok) throw new Error("bold font unavailable");
+        return response.arrayBuffer();
+      }),
+    ]);
+    return {
+      regular: await pdf.embedFont(new Uint8Array(regular), { subset: true }),
+      bold: await pdf.embedFont(new Uint8Array(bold), { subset: true }),
+    };
+  } catch {
+    return {
+      regular: await pdf.embedFont(StandardFonts.Helvetica),
+      bold: await pdf.embedFont(StandardFonts.HelveticaBold),
+    };
+  }
+}
+
 export async function exportQuantityReportPdf(report: QuantityReport): Promise<Uint8Array> {
   const pdf = await PDFDocument.create();
-  const fonts: Fonts = {
-    regular: await pdf.embedFont(StandardFonts.Helvetica),
-    bold: await pdf.embedFont(StandardFonts.HelveticaBold),
-  };
-  const layout = new ReportLayout(pdf, fonts, report);
+  pdf.registerFontkit(fontkit);
+  const fonts = await embedReportFonts(pdf);
+  const logo = await embedReportLogo(pdf, report.reportLogo);
+  const layout = new ReportLayout(pdf, fonts, report, logo);
   const summary = report.summary;
 
   if (!summary.rows.length) {
-    layout.heading("No quantities");
-    layout.notice(
-      "No visible, calibrated measurements matched the report. Draw a measurement or calibrate the page and try again.",
-    );
+    layout.heading(t("pdf.report.noQuantities"));
+    layout.notice(t("pdf.report.noQuantitiesNote"));
   }
 
   let anyClamped = false;
@@ -351,31 +437,25 @@ export async function exportQuantityReportPdf(report: QuantityReport): Promise<U
         anyClamped ||= row.clamped;
       }
     }
-    for (const total of category.totals) layout.subtotal("Subtotal", total);
+    for (const total of category.totals) layout.subtotal(t("pdf.report.subtotal"), total);
     layout.gap();
   }
 
   if (summary.totals.length) {
-    layout.heading("Total");
+    layout.heading(t("pdf.report.total"));
     layout.tableHeader();
-    for (const total of summary.totals) layout.subtotal("Total", total);
+    for (const total of summary.totals) layout.subtotal(t("pdf.report.total"), total);
     layout.gap();
   }
 
   if (report.summary.hiddenExcluded > 0) {
-    layout.notice(
-      `${summary.hiddenExcluded} hidden measurement${summary.hiddenExcluded === 1 ? "" : "s"} excluded from this report.`,
-    );
+    layout.notice(t("pdf.report.hiddenExcluded", { count: summary.hiddenExcluded }));
   }
   if (summary.uncalibratedExcluded > 0) {
-    layout.notice(
-      `${summary.uncalibratedExcluded} uncalibrated measurement${summary.uncalibratedExcluded === 1 ? "" : "s"} excluded from this report.`,
-    );
+    layout.notice(t("pdf.report.uncalibratedExcluded", { count: summary.uncalibratedExcluded }));
   }
   if (anyClamped) {
-    layout.warning(
-      "A deduction exceeds its gross quantity in at least one row. Net and order quantities are clamped to zero for that row.",
-    );
+    layout.warning(t("pdf.report.clampedWarning"));
   }
 
   layout.finish();

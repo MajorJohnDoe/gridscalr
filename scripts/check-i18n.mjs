@@ -16,7 +16,7 @@ import { TYPES_RELATIVE, renderTypes } from "./i18n-types.mjs";
  */
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const scanDirs = ["src/ui", "src/app", "src/features", "src/help", "src/model"];
+const scanDirs = ["src"];
 const baselinePath = resolve(root, "src/i18n/hardcoded-baseline.json");
 const localeDir = resolve(root, "src/i18n/locales");
 const typesPath = resolve(root, TYPES_RELATIVE);
@@ -41,16 +41,24 @@ function placeholders(value) {
   return [...names].sort();
 }
 
+function stripComments(source) {
+  return source
+    .replace(/\/\*[\s\S]*?\*\//g, (comment) => comment.replace(/[^\n]/g, " "))
+    .replace(/\/\/[^\n]*/g, "");
+}
+
 async function collect(directory) {
   const hits = [];
   for (const entry of await readdir(directory, { withFileTypes: true })) {
     const path = resolve(directory, entry.name);
     if (entry.isDirectory()) {
+      if (entry.name === "i18n") continue;
       hits.push(...(await collect(path)));
       continue;
     }
     if (!entry.name.endsWith(".ts")) continue;
-    const source = await readFile(path, "utf8");
+    const rawSource = await readFile(path, "utf8");
+    const source = stripComments(rawSource);
     const file = relative(root, path).split("\\").join("/");
     let match;
     STRING_LITERAL.lastIndex = 0;

@@ -1,5 +1,6 @@
 import { formatNumber } from "../i18n/format";
 import type { AreaUnit, Calibration, LengthUnit, ScaleSnapshot } from "./types";
+import { t, translate, type MessageKey } from "../i18n";
 
 export { formatNumber };
 
@@ -8,12 +9,12 @@ export const LENGTH_UNITS: ReadonlyArray<{
   label: string;
   meters: number;
 }> = [
-  { id: "mm", label: "Millimetres (mm)", meters: 0.001 },
-  { id: "cm", label: "Centimetres (cm)", meters: 0.01 },
-  { id: "m", label: "Metres (m)", meters: 1 },
-  { id: "in", label: "Inches (in)", meters: 0.0254 },
-  { id: "ft", label: "Feet (ft)", meters: 0.3048 },
-  { id: "yd", label: "Yards (yd)", meters: 0.9144 },
+  { id: "mm", label: translate("en", "unit.length.mm"), meters: 0.001 },
+  { id: "cm", label: translate("en", "unit.length.cm"), meters: 0.01 },
+  { id: "m", label: translate("en", "unit.length.m"), meters: 1 },
+  { id: "in", label: translate("en", "unit.length.in"), meters: 0.0254 },
+  { id: "ft", label: translate("en", "unit.length.ft"), meters: 0.3048 },
+  { id: "yd", label: translate("en", "unit.length.yd"), meters: 0.9144 },
 ];
 
 export const AREA_UNITS: ReadonlyArray<{
@@ -148,6 +149,10 @@ export function formatArea(
   return `${formatNumber(areaInUnit(pointArea, scale.pointsPerMeter, unit), 2)} ${unitLabel(unit)}`;
 }
 
+export function lengthUnitLabel(unit: LengthUnit): string {
+  return t(`unit.length.${unit}` as MessageKey);
+}
+
 export function unitLabel(unit: AreaUnit): string {
   return AREA_UNITS.find((u) => u.id === unit)?.label ?? unit;
 }
@@ -156,12 +161,12 @@ export function formatScale(
   scale: ScaleSnapshot | null | undefined,
   calibration?: Calibration | null,
 ): string {
-  if (!scale) return "Not calibrated";
+  if (!scale) return t("unit.notCalibrated");
   if (calibration?.source === "manual") {
     return `1:${formatNumber(calibration.ratio, 6)}`;
   }
   const mmPerPoint = (1 / scale.pointsPerMeter) * 1000;
-  return `1 pt = ${formatNumber(mmPerPoint, 3)} mm`;
+  return t("unit.scaleReference", { value: formatNumber(mmPerPoint, 3) });
 }
 
 /**
@@ -170,7 +175,7 @@ export function formatScale(
  */
 export function formatScaleRatio(ratio: number | null | undefined): string {
   if (ratio === null || ratio === undefined || !Number.isFinite(ratio) || ratio <= 0) {
-    return "Not calibrated";
+    return t("unit.notCalibrated");
   }
   return `1:${formatNumber(ratio, ratio >= 10 ? 0 : 1)}`;
 }

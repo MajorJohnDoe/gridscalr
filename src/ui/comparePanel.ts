@@ -2,6 +2,7 @@ import type { DiffItem, DiffStatus, RevisionDiff } from "../compare/revisionDiff
 import { el } from "./dom";
 import { icon } from "./icons";
 import type { ComparisonMode } from "./splitView";
+import { t } from "../i18n";
 
 export interface CompareReferenceInfo {
   pageCount?: number;
@@ -19,24 +20,30 @@ export interface ComparePanelActions {
 type CompareFilter = "changes" | "all" | DiffStatus;
 
 function statusLabel(status: DiffStatus): string {
-  if (status === "added") return "Added";
-  if (status === "removed") return "Removed";
-  if (status === "changed") return "Changed";
-  return "Unchanged";
+  if (status === "added") return t("compare.added");
+  if (status === "removed") return t("compare.removed");
+  if (status === "changed") return t("compare.changed");
+  return t("compare.unchanged");
 }
 
 function itemKey(item: DiffItem): string {
   return `${item.status}:${item.page}:${item.current?.item.id ?? item.reference?.item.id ?? ""}`;
 }
 
-const FILTERS: Array<{ value: CompareFilter; label: string }> = [
-  { value: "changes", label: "Changes only" },
-  { value: "all", label: "All items" },
-  { value: "changed", label: "Changed" },
-  { value: "added", label: "Added" },
-  { value: "removed", label: "Removed" },
-  { value: "unchanged", label: "Unchanged" },
+const FILTER_VALUES: CompareFilter[] = [
+  "changes",
+  "all",
+  "changed",
+  "added",
+  "removed",
+  "unchanged",
 ];
+
+function compareFilterLabel(filter: CompareFilter): string {
+  if (filter === "changes") return t("compare.changesOnly");
+  if (filter === "all") return t("compare.allItems");
+  return statusLabel(filter);
+}
 
 /**
  * Floating comparison list. The canvas stays visible and interactive behind
@@ -68,24 +75,24 @@ export class ComparePanel {
     private readonly actions: ComparePanelActions,
   ) {
     this.element = el("section", "compare-panel");
-    this.element.setAttribute("aria-label", "Revision comparison");
+    this.element.setAttribute("aria-label", t("compare.revisionComparison"));
 
     const header = el("header", "compare-header");
     const heading = el("div", "compare-heading");
-    const kicker = el("span", "compare-kicker", "Compare revisions");
+    const kicker = el("span", "compare-kicker", t("compare.compareRevisions"));
     this.kicker = kicker;
-    this.title = el("strong", "compare-title", "Loading comparison…");
+    this.title = el("strong", "compare-title", t("compare.loading"));
     heading.append(kicker, this.title);
     const collapseButton = el("button", "icon-btn compare-collapse");
     collapseButton.type = "button";
-    collapseButton.title = "Hide comparison panel";
-    collapseButton.setAttribute("aria-label", "Hide comparison panel");
+    collapseButton.title = t("compare.hidePanel");
+    collapseButton.setAttribute("aria-label", t("compare.hidePanel"));
     collapseButton.innerHTML = icon("chevronRight", 15);
     collapseButton.addEventListener("click", () => this.setCollapsed(true));
     const closeButton = el("button", "icon-btn compare-close");
     closeButton.type = "button";
-    closeButton.title = "Close comparison";
-    closeButton.setAttribute("aria-label", "Close comparison");
+    closeButton.title = t("compare.close");
+    closeButton.setAttribute("aria-label", t("compare.close"));
     closeButton.innerHTML = icon("close", 15);
     closeButton.addEventListener("click", () => this.actions.close());
     header.append(heading, collapseButton, closeButton);
@@ -97,9 +104,13 @@ export class ComparePanel {
     const controls = el("div", "compare-controls");
     const modeGroup = el("div", "compare-modes");
     modeGroup.setAttribute("role", "group");
-    modeGroup.setAttribute("aria-label", "Comparison layout");
+    modeGroup.setAttribute("aria-label", t("compare.layout"));
     this.modeButtons = (["side", "overlay"] as ComparisonMode[]).map((mode) => {
-      const button = el("button", "compare-mode", mode === "side" ? "Side by side" : "Overlay");
+      const button = el(
+        "button",
+        "compare-mode",
+        mode === "side" ? t("compare.sideBySide") : t("compare.overlay"),
+      );
       button.type = "button";
       button.dataset.mode = mode;
       button.addEventListener("click", () => {
@@ -112,7 +123,7 @@ export class ComparePanel {
     });
 
     this.opacityControl = el("label", "compare-opacity");
-    this.opacityControl.append(el("span", "", "Opacity"));
+    this.opacityControl.append(el("span", "", t("compare.opacity")));
     this.opacityInput = el("input", "compare-opacity-input") as HTMLInputElement;
     this.opacityInput.type = "range";
     this.opacityInput.min = "10";
@@ -126,13 +137,13 @@ export class ComparePanel {
     this.opacityControl.append(this.opacityInput);
 
     const filterLabel = el("label", "compare-filter");
-    filterLabel.append(el("span", "", "Show"));
+    filterLabel.append(el("span", "", t("compare.show")));
     this.filterSelect = el("select", "compare-filter-select") as HTMLSelectElement;
-    this.filterSelect.setAttribute("aria-label", "Filter revision differences");
-    for (const entry of FILTERS) {
+    this.filterSelect.setAttribute("aria-label", t("compare.filter"));
+    for (const value of FILTER_VALUES) {
       const option = document.createElement("option");
-      option.value = entry.value;
-      option.textContent = entry.label;
+      option.value = value;
+      option.textContent = compareFilterLabel(value);
       this.filterSelect.append(option);
     }
     this.filterSelect.value = this.filter;
@@ -147,12 +158,12 @@ export class ComparePanel {
     this.list = el("div", "compare-list");
 
     const footer = el("footer", "compare-footer");
-    const refresh = el("button", "btn btn-small", "Refresh");
+    const refresh = el("button", "btn btn-small", t("compare.refresh"));
     refresh.type = "button";
     refresh.addEventListener("click", () => this.actions.refresh());
-    const exportButton = el("button", "btn btn-small", "Export PDF");
+    const exportButton = el("button", "btn btn-small", t("compare.exportPdf"));
     exportButton.type = "button";
-    exportButton.innerHTML = `${icon("download", 13)}<span>Export PDF</span>`;
+    exportButton.innerHTML = `${icon("download", 13)}<span>${t("compare.exportPdf")}</span>`;
     exportButton.addEventListener("click", () => this.actions.exportPdf());
     footer.append(refresh, exportButton);
 
@@ -160,8 +171,8 @@ export class ComparePanel {
     host.append(this.element);
     this.restore = el("button", "compare-restore");
     this.restore.type = "button";
-    this.restore.title = "Show comparison panel";
-    this.restore.setAttribute("aria-label", "Show comparison panel");
+    this.restore.title = t("compare.showPanel");
+    this.restore.setAttribute("aria-label", t("compare.showPanel"));
     this.restore.innerHTML = icon("compare", 16);
     this.restore.hidden = true;
     this.restore.addEventListener("click", () => this.setCollapsed(false));
@@ -178,7 +189,7 @@ export class ComparePanel {
   ): void {
     this.diff = diff;
     this.info = info;
-    this.kicker.textContent = diff ? "Compare revisions" : "Compare drawing";
+    this.kicker.textContent = diff ? t("compare.compareRevisions") : t("compare.compareDrawing");
     this.title.textContent = `${currentName} → ${referenceName}`;
     this.title.title = this.title.textContent;
     this.filterField.hidden = !diff;
@@ -208,17 +219,17 @@ export class ComparePanel {
           "div",
           "compare-note",
           pages
-            ? `Drawing reference · ${pages} page${pages === 1 ? "" : "s"} · no markup comparison`
-            : "Drawing reference · no markup comparison",
+            ? t("compare.drawingReferencePages", { count: pages })
+            : t("compare.drawingReferenceNoComparison"),
         ),
       );
       return;
     }
     const entries: Array<{ key: DiffStatus; label: string }> = [
-      { key: "changed", label: "Changed" },
-      { key: "added", label: "Added" },
-      { key: "removed", label: "Removed" },
-      { key: "unchanged", label: "Unchanged" },
+      { key: "changed", label: t("compare.changed") },
+      { key: "added", label: t("compare.added") },
+      { key: "removed", label: t("compare.removed") },
+      { key: "unchanged", label: t("compare.unchanged") },
     ];
     for (const entry of entries) {
       const pill = el("span", `compare-pill status-${entry.key}`);
@@ -243,7 +254,7 @@ export class ComparePanel {
   private renderList(): void {
     this.list.textContent = "";
     if (!this.diff) {
-      this.list.append(el("div", "compare-empty", "No markup comparison for a drawing reference."));
+      this.list.append(el("div", "compare-empty", t("compare.noMarkupComparison")));
       return;
     }
     const items = (this.diff?.items ?? []).filter((item) => {
@@ -256,9 +267,7 @@ export class ComparePanel {
         el(
           "div",
           "compare-empty",
-          this.filter === "changes"
-            ? "No changed, added or removed items between these revisions."
-            : "No items match this filter.",
+          this.filter === "changes" ? t("compare.noDiff") : t("compare.noFilterMatches"),
         ),
       );
       return;
@@ -276,7 +285,11 @@ export class ComparePanel {
       const meta = el(
         "span",
         "compare-row-meta",
-        `Page ${item.page} · ${item.kindLabel} · ${item.layerName}`,
+        t("compare.rowMeta", {
+          page: item.page,
+          kind: item.kindLabel,
+          layer: item.layerName,
+        }),
       );
       const detail =
         item.status === "changed"
@@ -284,8 +297,8 @@ export class ComparePanel {
           : item.status === "unchanged"
             ? ""
             : item.status === "added"
-              ? "Only in the current revision"
-              : "Only in the reference revision";
+              ? t("compare.onlyCurrent")
+              : t("compare.onlyReference");
       row.append(top, meta);
       if (detail) row.append(el("span", "compare-row-detail", detail));
       row.addEventListener("click", () => {

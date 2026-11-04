@@ -15,6 +15,7 @@ import {
 import { createProject, DEFAULT_SETTINGS } from "../model/layers";
 import { clampLabelSize } from "../model/label";
 import { isLabelFitPosition } from "../model/labelLayout";
+import { normalizeProjectMetadata } from "../model/metadata";
 import { SCHEMA_VERSION } from "../model/types";
 import { totalPageCount } from "../model/documents";
 import { normalizeStampPresets, stampStatusColor } from "../model/stamps";
@@ -47,6 +48,7 @@ import type {
   QuantitySettings,
   TextAlign,
 } from "../model/types";
+import { t } from "../i18n";
 
 const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "length",
@@ -672,7 +674,7 @@ function normalizeDocument(rawValue: unknown): DocumentRef {
   }
   if (kind === "tiff") {
     if (typeof rawDoc.embeddedPdf !== "string" || !rawDoc.embeddedPdf) {
-      throw new Error("A TIF document in this project is missing its embedded PDF.");
+      throw new Error(t("projectFile.missingEmbeddedPdf"));
     }
     document.embeddedPdf = rawDoc.embeddedPdf;
     const dpi = Array.isArray(rawDoc.source?.dpi) ? rawDoc.source.dpi : [];
@@ -774,14 +776,13 @@ export function parseProject(text: string): Project {
   try {
     data = JSON.parse(text);
   } catch {
-    throw new Error("This file is not valid JSON.");
+    throw new Error(t("projectFile.invalidJson"));
   }
-  if (typeof data !== "object" || data === null)
-    throw new Error("Project file is empty or invalid.");
+  if (typeof data !== "object" || data === null) throw new Error(t("projectFile.emptyOrInvalid"));
   const raw = data as Partial<Project>;
-  if (typeof raw.schemaVersion !== "number") throw new Error("Project file has no schema version.");
+  if (typeof raw.schemaVersion !== "number") throw new Error(t("projectFile.noSchema"));
   if (raw.schemaVersion > SCHEMA_VERSION) {
-    throw new Error("This project was created by a newer version of GridScalr.");
+    throw new Error(t("projectFile.newerVersion"));
   }
   const legacy = (raw as { document?: unknown }).document;
   const rawDocuments: unknown[] = Array.isArray((raw as { documents?: unknown }).documents)
@@ -790,7 +791,7 @@ export function parseProject(text: string): Project {
       ? [legacy]
       : [];
   if (!rawDocuments.length) {
-    throw new Error("Project file has no document reference.");
+    throw new Error(t("projectFile.noDocument"));
   }
   // Schema 5 and earlier stored exactly one document. Migration wraps it in a list.
   const documents = rawDocuments.map((entry) => normalizeDocument(entry));
@@ -805,7 +806,7 @@ export function parseProject(text: string): Project {
     if (!source || document.copiedFrom.page > source.pageCount) document.copiedFrom = undefined;
   }
   const total = totalPageCount(documents);
-  if (total < 1) throw new Error("Project file has no remaining pages.");
+  if (total < 1) throw new Error(t("projectFile.noPages"));
   const base = createProject(documents[0], createDefaultLayers());
   const categories = normalizeCategories(raw.categories);
   const countTypes = normalizeCountTypes(raw.countTypes);
@@ -828,6 +829,14 @@ export function parseProject(text: string): Project {
     countPresets,
     assets,
     pages: {},
+    metadata: normalizeProjectMetadata(raw.metadata),
+    reportLogoAssetId:
+      typeof raw.reportLogoAssetId === "string" &&
+      assets[raw.reportLogoAssetId] &&
+      (assets[raw.reportLogoAssetId].mime === "image/png" ||
+        assets[raw.reportLogoAssetId].mime === "image/jpeg")
+        ? raw.reportLogoAssetId
+        : null,
     markupsViews: normalizeMarkupsViews(
       raw.markupsViews,
       new Set(categories.map((category) => category.id)),
