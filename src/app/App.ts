@@ -1248,7 +1248,7 @@ export class App {
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const count = copyItems(project, store.ui.selection);
-    if (count) toast(`${count} item${count === 1 ? "" : "s"} copied.`, "info");
+    if (count) toast(t("app.itemsCopied", { count }), "info");
   }
 
   private cutSelection(): void {

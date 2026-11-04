@@ -1,4 +1,5 @@
 import { PDFDocument, rgb, StandardFonts, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
+import { formatDate } from "../i18n/format";
 import type { QuantityRow, QuantityType, QuantityTypeTotal } from "../model/quantity";
 import { formatNumber } from "../model/units";
 import type { QuantityReport } from "../report/reportModel";
@@ -127,7 +128,7 @@ class ReportLayout {
       { x: MARGIN, y: this.cursor - 9, size: 9, font: this.fonts.regular, color: MUTED },
     );
     this.cursor -= 13;
-    const date = this.report.generatedAt.slice(0, 10);
+    const date = formatDate(this.report.generatedAt);
     this.page.drawText(
       fitText(
         `Date ${date} · Scale: ${this.report.scaleSummary}`,
