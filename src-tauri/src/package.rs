@@ -13,7 +13,9 @@ use tauri::ipc::Channel;
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-use crate::commands::{ensure_writable, replace_file, sync_directory, unique_sibling};
+use crate::commands::{
+    ensure_writable, replace_file, sync_directory, unique_sibling, CommandError,
+};
 
 pub const PACKAGE_FORMAT: &str = "gridscalr-package";
 pub const PACKAGE_FORMAT_VERSION: u32 = 1;
@@ -52,6 +54,7 @@ pub enum PackageError {
     MissingSource { files: Vec<MissingFile> },
     ChecksumMismatch { files: Vec<ChecksumMismatch> },
     DestinationExists { path: String },
+    SourceOverwrite,
     InvalidPackage { message: String },
     Io { message: String },
 }
@@ -93,6 +96,18 @@ impl From<serde_json::Error> for PackageError {
     fn from(error: serde_json::Error) -> Self {
         PackageError::InvalidPackage {
             message: format!("The package manifest is not valid JSON: {error}"),
+        }
+    }
+}
+
+impl From<CommandError> for PackageError {
+    fn from(error: CommandError) -> Self {
+        if error.code == "sourceOverwrite" {
+            PackageError::SourceOverwrite
+        } else {
+            PackageError::Io {
+                message: format!("{}: {}", error.code, error.detail),
+            }
         }
     }
 }
@@ -579,8 +594,7 @@ pub(crate) fn create_package(
     cancelled: &AtomicBool,
 ) -> Result<CreateResult, PackageError> {
     check_cancelled(cancelled)?;
-    ensure_writable(&request.output_path, &request.protected_paths)
-        .map_err(|message| PackageError::InvalidPackage { message })?;
+    ensure_writable(&request.output_path, &request.protected_paths)?;
     validate_archive_name(&request.project_file_name, None)?;
     if !request.project_file_name.ends_with(".gridscalr") {
         return Err(PackageError::InvalidPackage {
@@ -832,8 +846,7 @@ pub(crate) fn create_package(
             .file_name()
             .map(|name| name.to_string_lossy().to_string())
             .unwrap_or_else(|| "package".to_string()),
-    )
-    .map_err(|message| PackageError::InvalidPackage { message })?;
+    )?;
     progress.finish();
 
     Ok(CreateResult {

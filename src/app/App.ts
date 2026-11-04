@@ -97,6 +97,7 @@ import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
+import { describeError } from "../io/platformError";
 import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
@@ -2332,8 +2333,7 @@ export class App {
 }
 
 function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
+  return describeError(error);
 }
 
 function describePages(count: number, total: number): string {

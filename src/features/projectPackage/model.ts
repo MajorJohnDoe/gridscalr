@@ -1,4 +1,5 @@
 import { serializeProject } from "../../io/projectFile";
+import { describeError } from "../../io/platformError";
 import type { Project } from "../../model/types";
 import { t } from "../../i18n";
 
@@ -72,6 +73,7 @@ export type PackageFailure =
   | { kind: "missingSource"; files: MissingFile[] }
   | { kind: "checksumMismatch"; files: ChecksumMismatch[] }
   | { kind: "destinationExists"; path: string }
+  | { kind: "sourceOverwrite" }
   | { kind: "invalidPackage"; message: string }
   | { kind: "io"; message: string }
   | { kind: "unknown"; message: string };
@@ -411,6 +413,9 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
     if (kind === "destinationExists") {
       return { kind: "destinationExists", path: String(value.path ?? "") };
     }
+    if (kind === "sourceOverwrite") {
+      return { kind: "sourceOverwrite" };
+    }
     if (kind === "invalidPackage") {
       return {
         kind: "invalidPackage",
@@ -426,8 +431,13 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
   }
   return {
     kind: "unknown",
-    message: error instanceof Error ? error.message : String(error),
+    message: describeError(error),
   };
+}
+
+function messageWithDetail(headline: string, detail: string): string {
+  const trimmed = detail.trim();
+  return trimmed && trimmed !== headline ? `${headline}\n\n${trimmed}` : headline;
 }
 
 export function describePackageFailure(failure: PackageFailure): string {
@@ -442,9 +452,12 @@ export function describePackageFailure(failure: PackageFailure): string {
       });
     case "destinationExists":
       return t("package.describeDestinationExists", { path: failure.path });
+    case "sourceOverwrite":
+      return t("error.sourceOverwrite");
     case "invalidPackage":
+      return messageWithDetail(t("package.errorInvalid"), failure.message);
     case "io":
-      return failure.message;
+      return messageWithDetail(t("package.errorOperationFailed"), failure.message);
     case "cancelled":
       return t("package.describeCancelled");
     case "unknown":

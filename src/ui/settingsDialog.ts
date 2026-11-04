@@ -15,6 +15,7 @@ import {
 } from "../model/units";
 import { ingestImageBlob } from "../io/imageIngest";
 import { pickImage } from "../io/platform";
+import { describeError } from "../io/platformError";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { normalizeProjectName, PROJECT_NAME_MAX_LENGTH } from "../model/projectName";
 import { openCountTypesDialog } from "../features/countTypes/ui";
@@ -124,7 +125,7 @@ function metadataSection(): HTMLElement {
         }, "change");
         openSettingsDialog();
       } catch (error) {
-        toast(error instanceof Error ? error.message : String(error), "warning");
+        toast(describeError(error), "warning");
       }
     })();
   });

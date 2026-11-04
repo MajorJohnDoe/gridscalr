@@ -4,34 +4,51 @@ use std::path::{Component, Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use base64::Engine;
+use serde::Serialize;
 use tauri::ipc::Response;
 
-const SOURCE_OVERWRITE_MESSAGE: &str =
-    "Choose a different file name. GridScalr will not overwrite a source drawing.";
+/// A user-facing command failure. The frontend maps `code` to a catalog message
+/// and shows `detail` as a separate technical line.
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CommandError {
+    pub code: &'static str,
+    pub detail: String,
+}
+
+impl CommandError {
+    fn new(code: &'static str, detail: impl Into<String>) -> Self {
+        Self {
+            code,
+            detail: detail.into(),
+        }
+    }
+}
 
 static FILE_COUNTER: AtomicU64 = AtomicU64::new(0);
 
 /// Flushes a finished temporary file and then swaps it into place. The previous
 /// file is never deleted: the replacement is a single rename, so a failure or a
 /// crash leaves either the old file or the new one at the destination.
-fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
+fn atomic_write(path: &Path, data: &[u8]) -> Result<(), CommandError> {
     let file_name = path
         .file_name()
-        .ok_or_else(|| "The selected path is not a file.".to_string())?;
+        .ok_or_else(|| CommandError::new("notAFile", ""))?;
     let display_name = file_name.to_string_lossy().to_string();
     let parent = match path.parent() {
         Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
         _ => PathBuf::from("."),
     };
     fs::create_dir_all(&parent).map_err(|error| {
-        format!("Could not create the folder for {display_name}. Nothing was changed: {error}")
+        CommandError::new("createFolderFailed", format!("{display_name}: {error}"))
     })?;
 
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {
         let _ = fs::remove_file(&temp);
-        return Err(format!(
-            "Could not write {display_name}. The previous file was left unchanged: {error}"
+        return Err(CommandError::new(
+            "writeFailed",
+            format!("{display_name}: {error}"),
         ));
     }
 
@@ -40,7 +57,11 @@ fn atomic_write(path: &Path, data: &[u8]) -> Result<(), String> {
 
 /// Moves a finished, flushed temporary file over its destination. The previous
 /// file is only ever replaced by this single rename.
-pub(crate) fn replace_file(temp: &Path, path: &Path, display_name: &str) -> Result<(), String> {
+pub(crate) fn replace_file(
+    temp: &Path,
+    path: &Path,
+    display_name: &str,
+) -> Result<(), CommandError> {
     match fs::rename(temp, path) {
         Ok(()) => {
             sync_directory(path.parent().unwrap_or_else(|| Path::new(".")));
@@ -48,8 +69,9 @@ pub(crate) fn replace_file(temp: &Path, path: &Path, display_name: &str) -> Resu
         }
         Err(error) => {
             let _ = fs::remove_file(temp);
-            Err(format!(
-                "Could not replace {display_name}. The previous file was left unchanged: {error}"
+            Err(CommandError::new(
+                "replaceFailed",
+                format!("{display_name}: {error}"),
             ))
         }
     }
@@ -95,7 +117,7 @@ pub(crate) fn unique_sibling(path: &Path, suffix: &str) -> PathBuf {
 
 /// The guard compares resolved targets, so a symlink, junction or an alternate
 /// spelling such as `drawings/../drawings/plan.pdf` cannot reach a source file.
-pub(crate) fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), String> {
+pub(crate) fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), CommandError> {
     let target = Path::new(path);
     let target_key = comparison_key(&resolved_path(target));
     let protected: Vec<&String> = protected_paths
@@ -106,12 +128,12 @@ pub(crate) fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<
     for source in &protected {
         let source_path = Path::new(source.as_str());
         if comparison_key(&resolved_path(source_path)) == target_key {
-            return Err(SOURCE_OVERWRITE_MESSAGE.to_string());
+            return Err(CommandError::new("sourceOverwrite", ""));
         }
         // Canonical paths miss hard links, which are a second name for the same
         // file. Comparing file identities closes that gap when both exist.
         if target.exists() && same_file::is_same_file(target, source_path).unwrap_or(false) {
-            return Err(SOURCE_OVERWRITE_MESSAGE.to_string());
+            return Err(CommandError::new("sourceOverwrite", ""));
         }
     }
     Ok(())
@@ -193,14 +215,16 @@ fn comparison_key(path: &Path) -> String {
 }
 
 #[tauri::command]
-pub fn read_binary(path: String) -> Result<Response, String> {
-    let bytes = fs::read(&path).map_err(|error| format!("Could not read {path}: {error}"))?;
+pub fn read_binary(path: String) -> Result<Response, CommandError> {
+    let bytes = fs::read(&path)
+        .map_err(|error| CommandError::new("readFailed", format!("{path}: {error}")))?;
     Ok(Response::new(bytes))
 }
 
 #[tauri::command]
-pub fn read_text(path: String) -> Result<String, String> {
-    fs::read_to_string(&path).map_err(|error| format!("Could not read {path}: {error}"))
+pub fn read_text(path: String) -> Result<String, CommandError> {
+    fs::read_to_string(&path)
+        .map_err(|error| CommandError::new("readFailed", format!("{path}: {error}")))
 }
 
 #[tauri::command]
@@ -208,7 +232,7 @@ pub fn write_text(
     path: String,
     contents: String,
     protected_paths: Vec<String>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     ensure_writable(&path, &protected_paths)?;
     atomic_write(Path::new(&path), contents.as_bytes())
 }
@@ -218,11 +242,11 @@ pub fn write_binary_base64(
     path: String,
     data: String,
     protected_paths: Vec<String>,
-) -> Result<(), String> {
+) -> Result<(), CommandError> {
     ensure_writable(&path, &protected_paths)?;
     let bytes = base64::engine::general_purpose::STANDARD
         .decode(data.as_bytes())
-        .map_err(|error| format!("Invalid binary payload: {error}"))?;
+        .map_err(|error| CommandError::new("invalidPayload", error.to_string()))?;
     atomic_write(Path::new(&path), &bytes)
 }
 
@@ -235,24 +259,24 @@ pub fn path_exists(path: String) -> bool {
 /// demo can be edited and saved without writing into the installation. An
 /// existing copy is kept, so edits and a moved drawing survive later launches.
 #[tauri::command]
-pub fn prepare_demo_project(app: tauri::AppHandle) -> Result<String, String> {
+pub fn prepare_demo_project(app: tauri::AppHandle) -> Result<String, CommandError> {
     use tauri::Manager;
 
     let data_dir = app
         .path()
         .app_data_dir()
-        .map_err(|error| format!("Could not locate the app data folder: {error}"))?
+        .map_err(|error| CommandError::new("appDataFolderFailed", error.to_string()))?
         .join("demo");
     let resource_dir = app
         .path()
         .resource_dir()
-        .map_err(|error| format!("Could not locate the bundled demo: {error}"))?;
+        .map_err(|error| CommandError::new("demoResourceFailed", error.to_string()))?;
     copy_demo_assets(&resource_dir, &data_dir)
 }
 
-fn copy_demo_assets(resource_dir: &Path, data_dir: &Path) -> Result<String, String> {
+fn copy_demo_assets(resource_dir: &Path, data_dir: &Path) -> Result<String, CommandError> {
     fs::create_dir_all(data_dir)
-        .map_err(|error| format!("Could not create the demo folder: {error}"))?;
+        .map_err(|error| CommandError::new("demoFolderFailed", error.to_string()))?;
     for (name, resource) in [
         ("demo-project.gridscalr", "demo/demo-project.gridscalr"),
         ("industrial-plan.pdf", "demo/industrial-plan.pdf"),
@@ -263,7 +287,7 @@ fn copy_demo_assets(resource_dir: &Path, data_dir: &Path) -> Result<String, Stri
         }
         let source = resource_dir.join(resource);
         fs::copy(&source, &target)
-            .map_err(|error| format!("Could not copy the demo file {name}: {error}"))?;
+            .map_err(|error| CommandError::new("demoCopyFailed", format!("{name}: {error}")))?;
     }
     Ok(data_dir
         .join("demo-project.gridscalr")
@@ -323,15 +347,25 @@ mod tests {
     }
 
     #[test]
+    fn serializes_command_errors_for_the_frontend() {
+        let error = CommandError::new("writeFailed", "plan.gridscalr: denied");
+        let json = serde_json::to_value(&error).expect("serialize command error");
+        assert_eq!(json["code"], "writeFailed");
+        assert_eq!(json["detail"], "plan.gridscalr: denied");
+    }
+
+    #[test]
     fn blocks_a_protected_source_path() {
         let protected = vec!["C:\\Drawings\\Plan.pdf".to_string()];
-        assert!(ensure_writable("C:/Drawings/Plan.pdf", &protected).is_err());
+        let error = ensure_writable("C:/Drawings/Plan.pdf", &protected).expect_err("protected");
+        assert_eq!(error.code, "sourceOverwrite");
     }
 
     #[test]
     fn blocks_a_protected_source_path_regardless_of_case() {
         let protected = vec!["/home/ana/Plan.pdf".to_string()];
-        assert!(ensure_writable("/home/ana/plan.pdf", &protected).is_err());
+        let error = ensure_writable("/home/ana/plan.pdf", &protected).expect_err("protected");
+        assert_eq!(error.code, "sourceOverwrite");
     }
 
     #[test]
@@ -417,10 +451,8 @@ mod tests {
 
         let error = atomic_write(&target, b"new project").expect_err("replacement must fail");
 
-        assert!(
-            error.contains("previous file was left unchanged"),
-            "{error}"
-        );
+        assert_eq!(error.code, "replaceFailed", "{error:?}");
+        assert!(!error.detail.is_empty(), "{error:?}");
         assert!(target.is_dir());
         assert_eq!(
             fs::read(target.join("keep.txt")).expect("keep inner file"),
@@ -447,7 +479,7 @@ mod tests {
     #[test]
     fn rejects_a_path_without_a_file_name() {
         let error = atomic_write(Path::new("/"), b"data").expect_err("directory target");
-        assert!(error.contains("not a file"), "{error}");
+        assert_eq!(error.code, "notAFile");
     }
 
     #[test]

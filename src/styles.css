@@ -2851,7 +2851,15 @@ html[data-platform="macos"] .topbar {
   color: #cbd5da;
   font-size: 12.5px;
   line-height: 1.55;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
   user-select: text;
+}
+
+.modal-message-text {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
 }
 
 .modal-message-row {

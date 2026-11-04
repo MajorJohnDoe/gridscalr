@@ -10,6 +10,7 @@ import {
 } from "../../io/platform";
 import { resolveRelativePath, sourceDocumentPaths } from "../../io/projectFile";
 import { assertWritablePath } from "../../io/writeGuard";
+import { describeError } from "../../io/platformError";
 import type { DocumentRef, Project } from "../../model/types";
 import { SCHEMA_VERSION } from "../../model/types";
 import { buildQuantityReport } from "../../report/reportModel";
@@ -223,11 +224,7 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
   try {
     assertWritablePath(outputPath, protectedPathsFor(project));
   } catch (error) {
-    await messageDialog(
-      t("package.couldNotCreate"),
-      error instanceof Error ? error.message : String(error),
-      "warning",
-    );
+    await messageDialog(t("package.couldNotCreate"), describeError(error), "warning");
     return;
   }
 
@@ -390,11 +387,7 @@ export async function openPackageFlow(host: PackageHost): Promise<void> {
     await host.openProject(outcome.value.projectPath, mode !== "reuse");
     toast(t("package.opened", { name: inspection.projectName }), "success");
   } catch (error) {
-    await messageDialog(
-      t("package.extractedNotOpened"),
-      error instanceof Error ? error.message : String(error),
-      "warning",
-    );
+    await messageDialog(t("package.extractedNotOpened"), describeError(error), "warning");
   }
 }
 
