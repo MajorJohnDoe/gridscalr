@@ -641,10 +641,13 @@ can be drawn using only the library; tags move with their symbols.
 
 Outcome:
 
-- The first ten ventilation symbols were reviewed in the generated catalogue and
-  kept unchanged. The full set now contains 60 stroke-only schematic symbols across
-  instruments, valves, pumps, heat exchangers, ventilation, heating, district
-  heating, cooling, domestic water, control/electrical and general categories.
+- The first ten ventilation symbols were reviewed in the generated catalogue. The
+  full set now contains 111 stroke-only schematic symbols across instruments,
+  valves, pumps, heat exchangers, ventilation, heating, district heating, cooling,
+  domestic water, control/electrical and general categories. A later review aligned
+  the existing artwork with the reference convention pages and added the missing
+  sensor, actuator, valve, ventilation, heating, electrical, relay, transformer and
+  general symbols.
 - Every schematic symbol has a stable id, Swedish and English names, category,
   keywords, tag prefix, ports inside the 64-unit view box and a default size. The
   stroke stays at 1.4 pt at every symbol size on the canvas, in the PDF and in the

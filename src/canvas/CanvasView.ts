@@ -3434,7 +3434,11 @@ export class CanvasView {
         if (!anchor) break;
         const definition = symbolFor(item.symbolId);
         const accent =
-          definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
+          definition.style === "schematic"
+            ? "#111111"
+            : definition.id === "unknown"
+              ? item.color
+              : symbolCategoryColor(definition.category);
         const plan = symbolRenderPlan(definition, accent);
         const scale = (symbolSizeOf(item) * zoom) / plan.viewBox;
         const half = plan.viewBox / 2;

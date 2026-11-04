@@ -1205,11 +1205,7 @@ export function symbolRenderPlan(
       scale: 1,
     });
   }
-  const glyphColor = isSchematic
-    ? "#111111"
-    : isSign
-      ? (symbol.art.glyphColor ?? "#ffffff")
-      : accent;
+  const glyphColor = isSign ? (symbol.art.glyphColor ?? "#ffffff") : accent;
   for (const entry of symbol.art.shapes) {
     shapes.push({
       d: entry.d,

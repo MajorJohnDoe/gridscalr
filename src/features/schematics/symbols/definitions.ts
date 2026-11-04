@@ -112,12 +112,14 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["fläkt", "fan", "ventilation", "fläktaggregat", "ff"],
     tagPrefix: "FF",
-    ports: VENTILATION_PORTS(),
+    ports: [
+      { id: "in", x: 15, y: 32, direction: "in" },
+      { id: "out", x: 49, y: 32, direction: "out" },
+    ],
     shapes: [
-      stroke(ductCasing(22, 20)),
-      stroke(smallCircle(32, 32, 12)),
-      stroke(joinPaths(linePath(32, 20, 32, 32), linePath(32, 32, 44, 32))),
-      stroke(joinPaths(linePath(32, 32, 26, 22), linePath(32, 32, 24, 43))),
+      stroke(smallCircle(32, 32, 17)),
+      stroke(polyPath([24, 19, 42, 32, 24, 45], true)),
+      stroke(linePath(24, 19, 24, 45)),
     ],
   }),
   schematicSymbol({
@@ -127,12 +129,8 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "F",
     ports: VENTILATION_PORTS(),
     shapes: [
-      stroke(ductCasing(22, 20)),
-      stroke(
-        joinPaths(
-          "M 6 22 L 14 42 M 14 22 L 22 42 M 22 22 L 30 42 M 30 22 L 38 42 M 38 22 L 46 42 M 46 22 L 54 42 M 54 22 L 60 38",
-        ),
-      ),
+      stroke(rectPath(10, 14, 44, 36)),
+      stroke(joinPaths("M 10 14 L 54 50 M 54 14 L 10 50")),
     ],
   }),
   schematicSymbol({
@@ -141,7 +139,11 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     keywords: ["värmebatteri", "heating coil", "värme", "batteri", "eftervärmare", "vb"],
     tagPrefix: "VB",
     ports: VENTILATION_PORTS(),
-    shapes: [stroke(ductCasing(18, 28)), stroke(coilPath(23, 41, 9, 55))],
+    shapes: [
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(smallCircle(32, 32, 9)),
+      stroke(joinPaths(linePath(23, 32, 41, 32), linePath(32, 23, 32, 41))),
+    ],
   }),
   schematicSymbol({
     id: "schematic.cooling-coil",
@@ -150,13 +152,9 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "KB",
     ports: VENTILATION_PORTS(),
     shapes: [
-      stroke(ductCasing(18, 28)),
-      stroke(
-        joinPaths(
-          "M 10 23 V 41 M 17 23 V 41 M 24 23 V 41 M 31 23 V 41 M 38 23 V 41 M 45 23 V 41 M 52 23 V 41",
-          linePath(8, 41, 56, 23),
-        ),
-      ),
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(smallCircle(32, 32, 9)),
+      stroke(linePath(23, 32, 41, 32)),
     ],
   }),
   schematicSymbol({
@@ -164,11 +162,16 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "exchanger",
     keywords: ["värmeväxlare", "heat exchanger", "växlare", "återvinning", "vvx"],
     tagPrefix: "VVX",
-    ports: VENTILATION_PORTS(),
+    ports: [
+      { id: "primaryIn", x: 2, y: 26, direction: "in" },
+      { id: "primaryOut", x: 2, y: 38, direction: "out" },
+      { id: "secondaryIn", x: 62, y: 38, direction: "in" },
+      { id: "secondaryOut", x: 62, y: 26, direction: "out" },
+    ],
     shapes: [
-      stroke(rectPath(4, 16, 56, 32)),
-      stroke("M 4 16 L 60 48"),
-      stroke(joinPaths("M 10 22 H 24 V 34 H 38 V 26", "M 54 42 H 40 V 30 H 26 V 38")),
+      stroke(polyPath([22, 10, 42, 10, 50, 18, 50, 46, 42, 54, 22, 54, 14, 46, 14, 18], true)),
+      stroke(joinPaths("M 20 20 H 44 L 20 30 H 44 L 20 40 H 44 L 20 48")),
+      stroke(joinPaths(linePath(2, 26, 14, 26), linePath(50, 38, 62, 38))),
     ],
   }),
   schematicSymbol({
@@ -178,9 +181,9 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "SP",
     ports: VENTILATION_PORTS(),
     shapes: [
-      stroke(ductCasing(22, 20)),
-      stroke(linePath(8, 42, 56, 22)),
-      stroke(joinPaths(linePath(32, 22, 32, 12), smallCircle(32, 9, 3.4))),
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(linePath(32, 20, 32, 44)),
+      fill(smallCircle(32, 32, 2.6)),
     ],
   }),
   schematicSymbol({
@@ -190,8 +193,10 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "LD",
     ports: VENTILATION_PORTS(),
     shapes: [
-      stroke(ductCasing(18, 28)),
-      stroke(joinPaths(rectPath(11, 24, 6, 16), rectPath(29, 24, 6, 16), rectPath(47, 24, 6, 16))),
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(
+        joinPaths(linePath(24, 20, 24, 44), linePath(32, 20, 32, 44), linePath(40, 20, 40, 44)),
+      ),
     ],
   }),
   schematicSymbol({
@@ -245,11 +250,14 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["kanalgivare", "duct sensor", "givare", "temperatur", "kanal", "gt"],
     tagPrefix: "GT",
-    ports: VENTILATION_PORTS(),
+    ports: [
+      { id: "in", x: 4, y: 50, direction: "in" },
+      { id: "out", x: 60, y: 50, direction: "out" },
+    ],
     shapes: [
-      stroke(ductCasing(22, 20)),
-      stroke(joinPaths(linePath(32, 42, 32, 52), smallCircle(32, 55, 4.2))),
-      stroke(joinPaths(linePath(26, 55, 38, 55))),
+      stroke(linePath(4, 50, 60, 50)),
+      stroke("M 18 16 Q 32 8 46 16 L 34 36 L 34 50"),
+      stroke(linePath(30, 36, 34, 36)),
     ],
   }),
 ];

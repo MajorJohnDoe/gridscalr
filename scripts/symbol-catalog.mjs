@@ -77,7 +77,8 @@ function portsMarkup(symbol) {
 
 function previewMarkup(symbol, size) {
   const style = symbol.style ?? "sign";
-  const color = SYMBOL_CATEGORY_COLORS[symbol.category] ?? "#334155";
+  const color =
+    style === "schematic" ? "#111111" : (SYMBOL_CATEGORY_COLORS[symbol.category] ?? "#334155");
   const svg = symbolSvgMarkup(symbol, size, color, style);
   return svg.replace(
     "</svg>",

@@ -195,7 +195,10 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     symbolButton.type = "button";
     symbolButton.title = t("context.openSymbols");
     symbolButton.setAttribute("aria-label", t("context.openSymbols"));
-    const color = symbolCategoryColor(symbolCategoryOf(definition.id));
+    const color =
+      definition.style === "schematic"
+        ? "#e8eef1"
+        : symbolCategoryColor(symbolCategoryOf(definition.id));
     symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${symbolName(definition.id)}</span>`;
     symbolButton.addEventListener("click", () => store.setLeftTab("symbols"));
 

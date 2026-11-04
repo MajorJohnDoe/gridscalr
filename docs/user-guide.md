@@ -397,7 +397,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
 
-**Schematic** contains 60 stroke-only equipment symbols for operation cards:
+**Schematic** contains 111 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
 - Symbols are flat black line art with a fixed 1.4 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.

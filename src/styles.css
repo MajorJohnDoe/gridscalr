@@ -722,6 +722,12 @@ html[data-platform="macos"] .topbar {
   gap: 5px;
 }
 
+.symbol-category[hidden],
+.symbol-tile[hidden],
+.symbol-empty[hidden] {
+  display: none !important;
+}
+
 .symbol-category-head {
   display: flex;
   align-items: center;

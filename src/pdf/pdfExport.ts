@@ -1453,7 +1453,11 @@ function drawSymbolItem(
   if (!anchor) return;
   const definition = symbolFor(item.symbolId);
   const accentHex =
-    definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
+    definition.style === "schematic"
+      ? "#111111"
+      : definition.id === "unknown"
+        ? item.color
+        : symbolCategoryColor(definition.category);
   const rotation = item.rotation ?? 0;
   const plan = symbolRenderPlan(definition, accentHex);
   const scale = symbolSizeOf(item) / plan.viewBox;

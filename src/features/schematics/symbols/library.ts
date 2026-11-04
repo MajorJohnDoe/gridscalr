@@ -1,5 +1,6 @@
 import type { SymbolDefinition } from "../../../model/symbols";
 import { roundedRectPathData } from "../../../model/symbolPaths";
+import { REFERENCE_SYMBOLS } from "./referenceSymbols";
 import {
   FIRST_VENTILATION_SYMBOLS,
   coilPath,
@@ -26,6 +27,13 @@ const INLINE_PORTS = (y = 32) => [
   { id: "out", x: 62, y, direction: "out" as const },
 ];
 
+const PUMP_PORTS = () => [
+  { id: "in", x: 16, y: 32, direction: "in" as const },
+  { id: "out", x: 48, y: 32, direction: "out" as const },
+];
+
+const sensorFunnel = (): string => "M 18 16 Q 32 8 46 16 L 34 36 L 34 54 M 30 36 L 34 36";
+
 const SENSOR_PORTS = (x = 32) => [{ id: "process", x, y: 58, direction: "both" as const }];
 
 function valveBody(): string {
@@ -38,12 +46,7 @@ function valveBody(): string {
 }
 
 function pumpBody(): string {
-  return joinPaths(
-    linePath(2, 32, 18, 32),
-    smallCircle(32, 32, 14),
-    polyPath([25, 24, 39, 32, 25, 40], true),
-    linePath(46, 32, 62, 32),
-  );
+  return joinPaths(smallCircle(32, 32, 16), polyPath([32, 20, 44, 40, 20, 40], true));
 }
 
 function meterBody(): string {
@@ -59,9 +62,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "GP",
     ports: SENSOR_PORTS(),
     shapes: [
-      stroke(smallCircle(32, 28, 11)),
-      stroke(joinPaths(linePath(32, 39, 32, 58), linePath(32, 22, 39, 15))),
-      stroke(linePath(25, 24, 29, 30)),
+      stroke(sensorFunnel()),
+      stroke(joinPaths(linePath(24, 18, 24, 24), linePath(40, 18, 40, 24))),
     ],
   }),
   schematicSymbol({
@@ -71,8 +73,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "GQ",
     ports: INLINE_PORTS(),
     shapes: [
-      stroke(joinPaths(smallCircle(32, 32, 13), linePath(2, 32, 19, 32), linePath(45, 32, 62, 32))),
-      stroke(joinPaths(linePath(25, 32, 39, 32), polyPath([34, 27, 40, 32, 34, 37], true))),
+      stroke(sensorFunnel()),
+      stroke(joinPaths(linePath(24, 20, 40, 20), polyPath([36, 15, 42, 20, 36, 25], true))),
     ],
   }),
   schematicSymbol({
@@ -82,9 +84,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "GL",
     ports: [{ id: "process", x: 32, y: 58, direction: "both" }],
     shapes: [
-      stroke(joinPaths(rectPath(18, 10, 28, 46), linePath(18, 30, 46, 30))),
-      stroke(joinPaths(smallCircle(50, 24, 5), linePath(49, 29, 45, 38))),
-      stroke(joinPaths(linePath(32, 56, 32, 62))),
+      stroke(sensorFunnel()),
+      stroke(joinPaths(linePath(24, 20, 40, 20), linePath(24, 26, 40, 26))),
     ],
   }),
   schematicSymbol({
@@ -131,14 +132,12 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     shapes: [
       stroke(
         joinPaths(
-          linePath(32, 8, 32, 46),
-          smallCircle(32, 50, 6),
-          linePath(36, 16, 40, 16),
-          linePath(36, 24, 40, 24),
-          linePath(36, 32, 40, 32),
+          linePath(14, 50, 50, 34),
+          linePath(26, 36, 24, 44),
+          linePath(32, 33, 30, 41),
+          linePath(38, 30, 36, 38),
         ),
       ),
-      stroke(joinPaths(linePath(32, 46, 32, 58))),
     ],
   }),
   schematicSymbol({
@@ -197,7 +196,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["backventil", "check valve", "back", "ventil", "bv"],
     tagPrefix: "BV",
     ports: INLINE_PORTS(),
-    shapes: [stroke(valveBody()), stroke(polyPath([28, 25, 28, 39, 38, 32], true))],
+    shapes: [stroke(valveBody()), stroke(linePath(46, 22, 46, 42))],
   }),
   schematicSymbol({
     id: "schematic.safety-valve",
@@ -207,13 +206,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ports: [{ id: "in", x: 2, y: 32, direction: "in" }],
     shapes: [
       stroke(valveBody()),
-      stroke(
-        joinPaths(
-          linePath(32, 22, 32, 12),
-          polyPath([26, 12, 38, 8, 26, 4, 38, 1], false),
-          linePath(26, 12, 26, 18),
-        ),
-      ),
+      stroke(joinPaths(linePath(32, 22, 32, 10), polyPath([26, 14, 32, 5, 38, 14]))),
     ],
   }),
   schematicSymbol({
@@ -241,13 +234,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       stroke(
-        joinPaths(
-          polyPath([32, 14, 48, 24, 48, 40, 32, 50, 16, 40, 16, 24], true),
-          linePath(2, 32, 16, 32),
-          linePath(48, 32, 62, 32),
-          linePath(32, 2, 32, 14),
-          polyPath([14, 39, 32, 32, 50, 39]),
-        ),
+        joinPaths(valveBody(), polyPath([26, 32, 38, 32, 32, 46], true), linePath(32, 46, 32, 58)),
       ),
     ],
   }),
@@ -259,9 +246,9 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ports: INLINE_PORTS(),
     shapes: [
       stroke(valveBody()),
-      stroke(
-        joinPaths(linePath(20, 42, 44, 22), linePath(20, 36, 26, 42), linePath(38, 22, 44, 28)),
-      ),
+      stroke(joinPaths(linePath(26, 22, 26, 12), linePath(38, 22, 38, 12))),
+      fill(smallCircle(26, 10, 2.2)),
+      fill(smallCircle(38, 10, 2.2)),
     ],
   }),
   schematicSymbol({
@@ -286,7 +273,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "pump",
     keywords: ["cirkulationspump", "circulation pump", "pump", "cp"],
     tagPrefix: "CP",
-    ports: INLINE_PORTS(),
+    ports: PUMP_PORTS(),
     shapes: [stroke(pumpBody())],
   }),
   schematicSymbol({
@@ -294,7 +281,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "pump",
     keywords: ["värmepump", "heating pump", "pump", "värme", "vp"],
     tagPrefix: "VP",
-    ports: INLINE_PORTS(),
+    ports: PUMP_PORTS(),
     shapes: [
       stroke(pumpBody()),
       stroke(
@@ -307,7 +294,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "pump",
     keywords: ["kylpump", "cooling pump", "pump", "kyla", "kp"],
     tagPrefix: "KP",
-    ports: INLINE_PORTS(),
+    ports: PUMP_PORTS(),
     shapes: [
       stroke(pumpBody()),
       stroke(
@@ -320,7 +307,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "pump",
     keywords: ["brinepump", "brine pump", "pump", "brine", "bp"],
     tagPrefix: "BP",
-    ports: INLINE_PORTS(),
+    ports: PUMP_PORTS(),
     shapes: [
       stroke(pumpBody()),
       stroke(
@@ -352,18 +339,11 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "exchanger",
     keywords: ["roterande återvinning", "rotary recovery", "återvinning", "roterande", "rx"],
     tagPrefix: "RX",
-    ports: INLINE_PORTS(),
-    shapes: [
-      stroke(joinPaths(rectPath(12, 12, 40, 40), smallCircle(32, 32, 13))),
-      stroke(
-        joinPaths(
-          "M 24 22 C 28 16 40 18 42 26",
-          polyPath([40, 20, 44, 27, 36, 26], true),
-          "M 40 42 C 36 48 24 46 22 38",
-          polyPath([24, 44, 20, 37, 28, 38], true),
-        ),
-      ),
+    ports: [
+      { id: "in", x: 22, y: 2, direction: "in" },
+      { id: "out", x: 42, y: 62, direction: "out" },
     ],
+    shapes: [stroke(rectPath(22, 10, 20, 44))],
   }),
   schematicSymbol({
     id: "schematic.battery-recovery",
@@ -489,22 +469,10 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["radiator", "element", "värme", "rad"],
     tagPrefix: "RAD",
     ports: [
-      { id: "in", x: 2, y: 42, direction: "in" },
-      { id: "out", x: 62, y: 42, direction: "out" },
+      { id: "in", x: 32, y: 10, direction: "in" },
+      { id: "out", x: 32, y: 54, direction: "out" },
     ],
-    shapes: [
-      stroke(rectPath(12, 22, 40, 20)),
-      stroke(
-        joinPaths(
-          linePath(20, 22, 20, 42),
-          linePath(28, 22, 28, 42),
-          linePath(36, 22, 36, 42),
-          linePath(44, 22, 44, 42),
-          linePath(2, 42, 12, 42),
-          linePath(52, 42, 62, 42),
-        ),
-      ),
-    ],
+    shapes: [stroke(rectPath(24, 10, 16, 44))],
   }),
   schematicSymbol({
     id: "schematic.convector",
@@ -539,12 +507,13 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       { id: "out", x: 62, y: 32, direction: "out" },
     ],
     shapes: [
-      stroke(rectPath(10, 14, 44, 36)),
       stroke(
         joinPaths(
-          linePath(2, 32, 14, 32),
-          polyPath([14, 32, 14, 20, 32, 20, 32, 30, 14, 30, 14, 40, 32, 40, 32, 46, 50, 46]),
-          polyPath([50, 46, 50, 32, 62, 32]),
+          linePath(2, 14, 18, 14),
+          polyPath([
+            18, 14, 46, 14, 46, 22, 18, 22, 18, 30, 46, 30, 46, 38, 18, 38, 18, 46, 46, 46,
+          ]),
+          linePath(46, 46, 62, 46),
         ),
       ),
     ],
@@ -556,8 +525,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "EK",
     ports: [{ id: "connection", x: 32, y: 62, direction: "both" }],
     shapes: [
-      stroke(joinPaths(roundedRectPathData(18, 8, 28, 40, 12), linePath(32, 48, 32, 62))),
-      stroke(linePath(20, 28, 44, 28)),
+      stroke(joinPaths(rectPath(22, 14, 20, 28), linePath(32, 42, 32, 54), smallCircle(32, 58, 3))),
     ],
   }),
   schematicSymbol({
@@ -748,19 +716,12 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["relä", "relay", "styr", "kontaktor", "re"],
     tagPrefix: "RE",
     ports: [
-      { id: "coil", x: 2, y: 32, direction: "in" },
-      { id: "contact", x: 62, y: 32, direction: "out" },
+      { id: "top", x: 32, y: 2, direction: "in" },
+      { id: "bottom", x: 32, y: 62, direction: "out" },
     ],
     shapes: [
-      stroke(rectPath(10, 16, 44, 32)),
       stroke(
-        joinPaths(
-          "M 14 32 L 18 24 L 22 40 L 26 24 L 30 32",
-          linePath(38, 32, 46, 32),
-          linePath(46, 26, 52, 38),
-          linePath(2, 32, 10, 32),
-          linePath(54, 32, 62, 32),
-        ),
+        joinPaths(rectPath(22, 24, 20, 16), linePath(32, 2, 32, 24), linePath(32, 40, 32, 62)),
       ),
     ],
   }),
@@ -769,13 +730,18 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["säkring", "fuse", "el", "skydd", "sä"],
     tagPrefix: "SÄ",
-    ports: INLINE_PORTS(),
+    ports: [
+      { id: "top", x: 32, y: 2, direction: "in" },
+      { id: "bottom", x: 32, y: 62, direction: "out" },
+    ],
     shapes: [
       stroke(
-        joinPaths(rectPath(10, 24, 44, 16), linePath(2, 32, 10, 32), linePath(54, 32, 62, 32)),
-      ),
-      stroke(
-        joinPaths(linePath(14, 32, 22, 32), rectPath(22, 28, 20, 8), linePath(42, 32, 50, 32)),
+        joinPaths(
+          rectPath(28, 14, 8, 36),
+          linePath(32, 2, 32, 14),
+          linePath(32, 50, 32, 62),
+          linePath(32, 14, 32, 50),
+        ),
       ),
     ],
   }),
@@ -802,17 +768,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["ställdon", "actuator", "motor", "ventil", "st"],
     tagPrefix: "ST",
     ports: [{ id: "stem", x: 32, y: 62, direction: "both" }],
-    shapes: [
-      stroke(
-        joinPaths(
-          rectPath(20, 8, 24, 20),
-          linePath(32, 28, 32, 52),
-          linePath(32, 52, 26, 60),
-          linePath(32, 52, 38, 60),
-        ),
-      ),
-      stroke(joinPaths(smallCircle(32, 18, 4), linePath(32, 22, 32, 28))),
-    ],
+    shapes: [stroke(joinPaths(smallCircle(32, 22, 12), linePath(32, 34, 32, 62)))],
   }),
 
   // --- General -----------------------------------------------------------
@@ -869,4 +825,5 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
 export const SCHEMATIC_SYMBOLS: SymbolDefinition[] = [
   ...FIRST_VENTILATION_SYMBOLS,
   ...SCHEMATIC_LIBRARY_SYMBOLS,
+  ...REFERENCE_SYMBOLS,
 ];

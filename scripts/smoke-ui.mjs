@@ -508,6 +508,11 @@ try {
     (await page.locator(".symbol-tile:visible").count()) >= 1,
     "symbol search should find the Swedish fire-extinguisher term",
   );
+  assert.equal(
+    await page.locator('[data-symbol-id="fire.hose"]:visible').count(),
+    0,
+    "symbol search should hide non-matching signs",
+  );
   await symbolSearch.fill("");
   await page.locator('[data-symbol-id="fire.extinguisher"]').click();
   await page.getByLabel("Status for the next symbol").selectOption("approved");
@@ -1258,6 +1263,11 @@ try {
   assert.ok(
     (await page.locator('[data-symbol-id="schematic.fan"]:visible').count()) === 1,
     "schematic search should find the Swedish fan term",
+  );
+  assert.equal(
+    await page.locator('[data-symbol-id="schematic.pump"]:visible').count(),
+    0,
+    "schematic search should hide non-matching symbols",
   );
   await symbolSearch.fill("");
   await page.locator('[data-symbol-id="schematic.fan"]').click();

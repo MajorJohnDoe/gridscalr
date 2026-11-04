@@ -231,10 +231,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(60);
-    expect(ALL_SYMBOLS).toHaveLength(112);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(111);
+    expect(ALL_SYMBOLS).toHaveLength(163);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(60);
+    expect(symbolsForSet("schematic")).toHaveLength(111);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -259,13 +259,19 @@ describe("schematic symbol set", () => {
       expect(
         symbol.art.shapes.every((shape) => shape.stroke === true || shape.fillRule === undefined),
       ).toBe(true);
-      const plan = symbolRenderPlan(symbol, "#000000");
+      const plan = symbolRenderPlan(symbol, "#111111");
       expect(plan.fixedStrokeWidth).toBe(SCHEMATIC_STROKE_WIDTH);
       expect(plan.shapes.every((shape) => shape.fill === null || shape.fill === "#111111")).toBe(
         true,
       );
+      const preview = symbolRenderPlan(symbol, "#e8eef1");
+      expect(
+        preview.shapes.every(
+          (shape) => shape.fill === null || shape.fill === "#111111" || shape.fill === "#e8eef1",
+        ),
+      ).toBe(true);
       if (symbol.art.shapes.some((shape) => shape.stroke)) {
-        expect(symbolSvgMarkup(symbol)).toContain("stroke-linecap");
+        expect(symbolSvgMarkup(symbol, 27, "#e8eef1")).toContain('stroke="#e8eef1"');
       }
     }
   });
