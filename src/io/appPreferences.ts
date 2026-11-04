@@ -1,20 +1,32 @@
 /** App-level preferences stored on this computer, never in the project file. */
 
-export type LanguagePreference = "system" | "en" | "sv";
+import { isLanguagePreference, type LanguagePreference } from "../i18n/registry";
+
+export type { LanguagePreference };
+
+/** Locale-aware CSV for Excel, or RFC 4180 interchange for scripts. */
+export type CsvFormat = "locale" | "interchange";
 
 export interface AppPreferences {
   /** UI language. `system` follows the operating system locale. */
   language: LanguagePreference;
+  /** CSV separator and decimal style. */
+  csvFormat: CsvFormat;
 }
 
 const PREFERENCES_KEY = "gridscalr.preferences.v1";
 
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   language: "system",
+  csvFormat: "locale",
 };
 
 function isLanguage(value: unknown): value is LanguagePreference {
-  return value === "system" || value === "en" || value === "sv";
+  return isLanguagePreference(value);
+}
+
+function isCsvFormat(value: unknown): value is CsvFormat {
+  return value === "locale" || value === "interchange";
 }
 
 export function loadAppPreferences(): AppPreferences {
@@ -24,6 +36,9 @@ export function loadAppPreferences(): AppPreferences {
     const parsed = JSON.parse(raw) as Partial<AppPreferences>;
     return {
       language: isLanguage(parsed.language) ? parsed.language : DEFAULT_APP_PREFERENCES.language,
+      csvFormat: isCsvFormat(parsed.csvFormat)
+        ? parsed.csvFormat
+        : DEFAULT_APP_PREFERENCES.csvFormat,
     };
   } catch {
     return { ...DEFAULT_APP_PREFERENCES };
