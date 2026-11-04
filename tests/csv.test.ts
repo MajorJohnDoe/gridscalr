@@ -125,4 +125,45 @@ describe("quantity CSV", () => {
     serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }));
     expect(JSON.stringify(project)).toBe(before);
   });
+
+  it("uses semicolons and decimal commas for the Swedish locale", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    add(project, "area", { categoryId: floor, room: 'Room; "A"' });
+
+    const csv = serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }), {
+      locale: "sv",
+      format: "locale",
+    });
+    expect(csv.startsWith("\uFEFF")).toBe(true);
+    expect(csv).not.toMatch(/(?<!\r)\n/);
+    const lines = csv.slice(1).split("\r\n");
+    expect(lines[0]).toBe(QUANTITY_CSV_COLUMNS.join(";"));
+    expect(lines[1]).toBe(
+      'Floor;"Room; ""A""";area;;m²;1,000;0,000;1,000;10,000;0,100;0,500;1,500;1',
+    );
+    expect(lines.slice(-6, -1)).toEqual([
+      "project;Example, project",
+      "document;plan, final.pdf",
+      "document_sha256;abc123",
+      `generated_at;${GENERATED}`,
+      "hidden_excluded;false",
+    ]);
+  });
+
+  it("keeps RFC 4180 commas and points in interchange mode", () => {
+    const project = makeProject();
+    const floor = categoryId(project, "Floor");
+    add(project, "area", { categoryId: floor, room: "Room; A" });
+
+    const csv = serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }), {
+      locale: "sv",
+      format: "interchange",
+    });
+    expect(csv.startsWith("\uFEFF")).toBe(true);
+    const lines = csv.slice(1).split("\r\n");
+    expect(lines[0]).toBe(QUANTITY_CSV_COLUMNS.join(","));
+    expect(lines[1]).toBe("Floor,Room; A,area,,m²,1.000,0.000,1.000,10.000,0.100,0.500,1.500,1");
+    expect(lines).toContain("generated_at," + GENERATED);
+  });
 });

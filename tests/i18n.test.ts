@@ -3,24 +3,26 @@ import { beforeEach, describe, expect, it } from "vitest";
 import {
   applyStoredLanguage,
   currentLocale,
+  languageOptions,
   languagePreference,
+  loadLocale,
   resolveLocale,
   setLanguagePreference,
   t,
   translate,
   type MessageKey,
 } from "../src/i18n";
-import { en } from "../src/i18n/messages/en";
-import { sv } from "../src/i18n/messages/sv";
+import en from "../src/i18n/locales/en.json";
+import sv from "../src/i18n/locales/sv.json";
 import { loadAppPreferences, resetAppPreferences } from "../src/io/appPreferences";
 
 function placeholders(value: string): string[] {
-  return [...value.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+  return [...value.matchAll(/\{\s*([A-Za-z_][\w]*)\s*(?:[,}])/g)].map((match) => match[1]).sort();
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   resetAppPreferences();
-  applyStoredLanguage();
+  await applyStoredLanguage();
 });
 
 describe("resolveLocale", () => {
@@ -29,16 +31,20 @@ describe("resolveLocale", () => {
     expect(resolveLocale("en", "sv-SE")).toBe("en");
   });
 
-  it("follows the system language for the system preference", () => {
+  it("follows the system language chain for the system preference", () => {
     expect(resolveLocale("system", "sv-SE")).toBe("sv");
     expect(resolveLocale("system", "SV")).toBe("sv");
+    expect(resolveLocale("system", ["sv-FI", "en-US"])).toBe("sv");
+    expect(resolveLocale("system", ["de-DE", "sv-SE"])).toBe("sv");
     expect(resolveLocale("system", "de-DE")).toBe("en");
+    expect(resolveLocale("system", ["de-DE"])).toBe("en");
     expect(resolveLocale("system", "en-GB")).toBe("en");
   });
 });
 
 describe("translate", () => {
-  it("returns locale text and interpolates parameters", () => {
+  it("returns locale text and interpolates parameters", async () => {
+    await loadLocale("sv");
     expect(translate("en", "window.minimize")).toBe("Minimize");
     expect(translate("sv", "window.minimize")).toBe("Minimera");
     expect(
@@ -53,6 +59,25 @@ describe("translate", () => {
 
   it("does not throw on an unknown key", () => {
     expect(translate("sv", "missing.key" as MessageKey)).toBe("missing.key");
+  });
+});
+
+describe("ICU plural messages", () => {
+  it("uses the English one/other forms", () => {
+    expect(translate("en", "app.itemsCopied", { count: 1 })).toBe("1 item copied.");
+    expect(translate("en", "app.itemsCopied", { count: 2 })).toBe("2 items copied.");
+    expect(translate("en", "app.itemsCopied", { count: 0 })).toBe("0 items copied.");
+  });
+
+  it("uses the Swedish one/other forms and number formatting", async () => {
+    await loadLocale("sv");
+    expect(translate("sv", "app.itemsCopied", { count: 1 })).toBe("1 objekt kopierat.");
+    expect(translate("sv", "app.itemsCopied", { count: 2 })).toBe("2 objekt kopierade.");
+    expect(
+      translate("sv", "app.itemsCopied", { count: 1234 })
+        .replace(/[\u00a0\u202f]/g, " ")
+        .replace(",", "."),
+    ).toBe("1 234 objekt kopierade.");
   });
 });
 
@@ -77,23 +102,34 @@ describe("message catalog", () => {
 });
 
 describe("language preference", () => {
-  it("persists the choice and applies it immediately", () => {
-    setLanguagePreference("sv");
+  it("persists the choice and applies it immediately", async () => {
+    await setLanguagePreference("sv");
     expect(languagePreference()).toBe("sv");
     expect(currentLocale()).toBe("sv");
     expect(loadAppPreferences().language).toBe("sv");
     expect(t("window.maximize")).toBe("Maximera");
 
-    setLanguagePreference("en");
+    await setLanguagePreference("en");
     expect(currentLocale()).toBe("en");
     expect(t("window.maximize")).toBe("Maximize");
   });
 
-  it("falls back to the system language after a reset", () => {
-    setLanguagePreference("en");
+  it("falls back to the system language after a reset", async () => {
+    await setLanguagePreference("en");
     resetAppPreferences();
-    expect(applyStoredLanguage()).toBe(
-      navigator.language.toLowerCase().startsWith("sv") ? "sv" : "en",
+    const expected = resolveLocale(
+      "system",
+      navigator.languages?.length ? [...navigator.languages] : navigator.language,
     );
+    expect(await applyStoredLanguage()).toBe(expected);
+  });
+
+  it("offers registry native names and hides the pseudo-locale", () => {
+    const options = languageOptions();
+    expect(options[0]?.value).toBe("system");
+    expect(options.map((option) => option.label)).toEqual(
+      expect.arrayContaining(["English", "Svenska"]),
+    );
+    expect(options.some((option) => String(option.value) === "en-XA")).toBe(false);
   });
 });

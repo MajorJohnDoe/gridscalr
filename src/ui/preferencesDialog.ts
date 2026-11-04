@@ -1,3 +1,4 @@
+import { loadAppPreferences, saveAppPreferences, type CsvFormat } from "../io/appPreferences";
 import {
   currentLayerColorDefaults,
   resetLayerColorDefaults,
@@ -8,7 +9,13 @@ import {
   resetGlobalStampPresets,
   saveGlobalStampPresets,
 } from "../io/stampDefaults";
-import { languagePreference, setLanguagePreference, t, type LanguagePreference } from "../i18n";
+import {
+  languageOptions,
+  languagePreference,
+  setLanguagePreference,
+  t,
+  type LanguagePreference,
+} from "../i18n";
 import { store } from "../state/store";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
@@ -23,23 +30,40 @@ function generalSection(): HTMLElement {
   const wrap = section(t("preferences.general"), t("language.note"));
   const select = el("select", "select");
   select.setAttribute("aria-label", t("language.label"));
-  const options: Array<[LanguagePreference, string]> = [
-    ["system", t("language.system", { language: navigator.language })],
-    ["en", t("language.english")],
-    ["sv", t("language.swedish")],
-  ];
-  for (const [value, label] of options) {
-    const option = el("option", "", label);
-    option.value = value;
-    select.append(option);
+  for (const option of languageOptions()) {
+    const element = el("option", "", option.label);
+    element.value = option.value;
+    select.append(element);
   }
   select.value = languagePreference();
   select.addEventListener("change", () => {
-    setLanguagePreference(select.value as LanguagePreference);
-    openPreferencesDialog();
-    toast(t("language.changed"), "success");
+    void setLanguagePreference(select.value as LanguagePreference).then(() => {
+      openPreferencesDialog();
+      toast(t("language.changed"), "success");
+    });
   });
-  wrap.append(field(t("language.label"), select));
+
+  const csvSelect = el("select", "select");
+  csvSelect.setAttribute("aria-label", t("preferences.csv.format"));
+  const csvOptions: Array<[CsvFormat, string]> = [
+    ["locale", t("preferences.csv.locale")],
+    ["interchange", t("preferences.csv.interchange")],
+  ];
+  for (const [value, label] of csvOptions) {
+    const option = el("option", "", label);
+    option.value = value;
+    csvSelect.append(option);
+  }
+  csvSelect.value = loadAppPreferences().csvFormat;
+  csvSelect.addEventListener("change", () => {
+    saveAppPreferences({ csvFormat: csvSelect.value as CsvFormat });
+  });
+
+  wrap.append(
+    field(t("language.label"), select),
+    field(t("preferences.csv.format"), csvSelect),
+    el("p", "settings-note", t("preferences.csv.note")),
+  );
   return wrap;
 }
 

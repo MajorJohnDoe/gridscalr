@@ -3,7 +3,7 @@ import "./styles/help.css";
 import "./styles/popovers.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
-import { applyStoredLanguage } from "./i18n";
+import { applyStoredLanguage, setLanguagePreference } from "./i18n";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
@@ -84,9 +84,9 @@ document.addEventListener(
 );
 
 installDiagnosticsLogging();
-applyStoredLanguage();
 
 try {
+  await applyStoredLanguage();
   const app = new App(root);
   appStarted = true;
   if (import.meta.env.DEV) {
@@ -96,12 +96,14 @@ try {
           store: typeof store;
           app: App;
           canvas: ReturnType<App["getCanvasTestApi"]>;
+          setLanguage: typeof setLanguagePreference;
         };
       }
     ).__gridscalr = {
       store,
       app,
       canvas: app.getCanvasTestApi(),
+      setLanguage: setLanguagePreference,
     };
   }
 

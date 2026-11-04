@@ -1,4 +1,7 @@
+import { formatNumber } from "../i18n/format";
 import type { AreaUnit, Calibration, LengthUnit, ScaleSnapshot } from "./types";
+
+export { formatNumber };
 
 export const LENGTH_UNITS: ReadonlyArray<{
   id: LengthUnit;
@@ -39,18 +42,6 @@ export function calibrationToScale(cal: Calibration): ScaleSnapshot {
     pointsPerMeter: cal.pointsPerMeter,
     sourceUnit: cal.source === "manual" ? "m" : cal.unit,
   };
-}
-
-export function formatNumber(value: number, maxDecimals = 2): string {
-  if (!Number.isFinite(value)) return "–";
-  const abs = Math.abs(value);
-  if (abs !== 0 && (abs >= 1e9 || abs < 1e-4)) {
-    return value.toExponential(2);
-  }
-  return new Intl.NumberFormat("en-US", {
-    maximumFractionDigits: maxDecimals,
-    minimumFractionDigits: 0,
-  }).format(value);
 }
 
 export function lengthInUnit(points: number, ppm: number, unit: LengthUnit): number {

@@ -124,6 +124,11 @@ Deliverables:
 - Honest “count schedule” wording for doors, windows and fixtures —
   [#51](https://github.com/MajorJohnDoe/gridscalr/issues/51)
 
+Phase 0 is complete: JSON catalogs, the locale registry, lazy loading, ICU
+plurals, locale-aware number/date formatting and the CSV mode preference are in
+place. The remaining work is string migration, report headings and the Swedish
+quick start. See [`adr/0007-localization-at-scale.md`](adr/0007-localization-at-scale.md).
+
 Exit criteria:
 
 - Swedish and English UI are complete and selectable.

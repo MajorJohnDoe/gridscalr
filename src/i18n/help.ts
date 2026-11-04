@@ -1,17 +1,21 @@
 import { HELP_CONTENT, type HelpTopic } from "../help/content";
-import { currentLocale, type Locale } from "./index";
+import { SUPPORTED_LOCALES, currentLocale, type HelpBundleId, type Locale } from "./index";
 
 type HelpBundleTopic = Exclude<HelpTopic, "about">;
 
 /**
- * Per-language help bundles. The Swedish guides arrive with the 0.18.0
- * translation pass; until then both locales resolve to the English content so
- * the help dialog always has something complete to show.
+ * Per-language help bundles. The Swedish guides arrive with the translation
+ * pass; until then both bundles resolve to the English content so the help
+ * dialog always has something complete to show.
  */
-const helpBundles: Record<Locale, Record<HelpBundleTopic, string>> = {
+const HELP_BUNDLES: Record<HelpBundleId, Record<HelpBundleTopic, string>> = {
   en: HELP_CONTENT,
   sv: HELP_CONTENT,
 };
+
+const helpBundles = Object.fromEntries(
+  Object.entries(SUPPORTED_LOCALES).map(([id, descriptor]) => [id, HELP_BUNDLES[descriptor.help]]),
+) as Record<Locale, Record<HelpBundleTopic, string>>;
 
 export function helpContentFor(topic: HelpBundleTopic): string {
   return helpBundles[currentLocale()][topic] ?? HELP_CONTENT[topic];

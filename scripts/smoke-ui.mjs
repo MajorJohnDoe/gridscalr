@@ -696,6 +696,11 @@ try {
   await page.getByRole("menuitem", { name: "Preferences…" }).click();
   const preferencesDialog = page.getByRole("dialog", { name: "Preferences" });
   await preferencesDialog.waitFor();
+  assert.equal(
+    await preferencesDialog.getByLabel("CSV format").inputValue(),
+    "locale",
+    "CSV should default to the locale-aware Excel format",
+  );
   await preferencesDialog
     .getByRole("navigation", { name: "Preference categories" })
     .getByRole("button", { name: "Layers" })
@@ -712,6 +717,38 @@ try {
   );
   await page.keyboard.press("Escape");
   await preferencesDialog.waitFor({ state: "detached" });
+
+  // Pseudo-locale: longer labellings must not be clipped in catalogued chrome.
+  await page.evaluate(() => window.__gridscalr.setLanguage("en-XA"));
+  await page.getByRole("menuitem", { name: "Settings" }).click();
+  await page.getByRole("menuitem", { name: "Preferences…" }).click();
+  const pseudoDialog = page.getByRole("dialog");
+  await pseudoDialog.waitFor();
+  assert.match(await pseudoDialog.innerText(), /⟦⟦/, "the pseudo-locale should be active");
+  const clippedLabels = await page.evaluate(() => {
+    const found = [];
+    for (const element of document.querySelectorAll(".modal *")) {
+      if (element.children.length > 0) continue;
+      if (!(element.textContent ?? "").includes("⟦")) continue;
+      const style = getComputedStyle(element);
+      const clips =
+        style.textOverflow === "ellipsis" ||
+        style.overflowX === "hidden" ||
+        style.overflow === "hidden";
+      if (clips && element.scrollWidth > element.clientWidth + 1) {
+        found.push(`${element.className || element.tagName}: ${element.textContent}`);
+      }
+    }
+    return found;
+  });
+  assert.deepEqual(
+    clippedLabels,
+    [],
+    `pseudo-locale labels should not be clipped: ${clippedLabels.join("; ")}`,
+  );
+  await page.keyboard.press("Escape");
+  await pseudoDialog.waitFor({ state: "detached" });
+  await page.evaluate(() => window.__gridscalr.setLanguage("en"));
 
   await page.evaluate(() => {
     window.__gridscalrContextPrevented = null;

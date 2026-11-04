@@ -15,6 +15,7 @@ the upstream notices with it.
 | PDF.js (`pdfjs-dist`) | `package.json` | Apache-2.0 | https://github.com/mozilla/pdf.js |
 | pdf-lib | `package.json` | MIT | https://github.com/Hopding/pdf-lib |
 | fflate | `package.json` | MIT | https://github.com/101arrowz/fflate |
+| intl-messageformat | `package.json` | BSD-3-Clause | https://github.com/formatjs/formatjs |
 | Tesseract.js and tesseract.js-core | `package.json` | Apache-2.0 | https://github.com/naptha/tesseract.js |
 | English and Swedish Tesseract traineddata | `package.json` | MIT | https://github.com/naptha/tessdata |
 | @pdf-lib/fontkit | `package.json` | MIT | https://github.com/Hopding/fontkit |

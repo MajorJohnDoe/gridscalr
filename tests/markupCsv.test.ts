@@ -96,6 +96,19 @@ describe("markup CSV", () => {
     expect(csv).not.toContain("Hidden");
   });
 
+  it("uses the locale delimiter without changing the stable English columns", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push(item("length", "length", "Wall; A"));
+
+    const csv = serializeMarkupCsv(project, { locale: "sv", format: "locale" });
+    const lines = csv.split("\r\n");
+    expect(lines[0]).toBe(
+      "Page;Type;Layer;Label;Value;Unit;Details;Points;Symbol;Symbol category;Status;Created;Modified",
+    );
+    expect(lines[1]).toContain('"Wall; A"');
+  });
+
   it("exports symbol names, categories, and inspection status", () => {
     const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
     const draw = project.layers.find((layer) => layer.kind === "draw")!;

@@ -477,7 +477,7 @@ Use the **CSV**, **Excel** or **PDF** buttons in the Quantities dialog, or **Fil
 
 Reports cover every page and every category, exclude hidden items and hidden layers, and include locked items. Dialog filters do not affect the exported report. Reports are generated on demand and never stored in the project file.
 
-- CSV is UTF-8 with BOM, comma delimiters, CRLF line endings, point decimals, three decimals for length and area, and whole numbers for counts. Count rows include a `count_type` column.
+- CSV is UTF-8 with BOM and CRLF line endings. By default the delimiter and decimal mark follow the app language: English uses commas and points, Swedish uses semicolons and decimal commas for Excel. Choose **Interchange (RFC 4180)** in Preferences for commas and points in scripts and other tools. Length and area keep three decimals and counts stay whole numbers. Count rows include a `count_type` column.
 - The Excel workbook contains **Summary**, **By category**, **By room**, **By page**, **Markups** and **Source notes** sheets. It is generated from the same item data as the CSV and PDF exports, applies the same visibility rules and never becomes a second source of truth.
 - The PDF report is A4 portrait with category sections, subtotals, totals, repeated table headers, page numbers, a hidden-item notice, and a warning for clamped deductions.
 
@@ -544,7 +544,7 @@ Settings is split in two. **Preferences** are stored on this computer and never 
 
 Open **Settings → Preferences…**. The dialog groups app-level choices by category:
 
-- **General** – the interface language: **System**, **English** or **Svenska**. The choice is stored on this computer. Swedish currently covers the strings added in 0.17; the rest of the interface stays in English until the full translation lands in 0.18.
+- **General** – the interface language: **System**, **English** or **Svenska**. The choice is stored on this computer. Swedish currently covers the strings added in 0.17; the rest of the interface stays in English until the full translation lands in 0.18. **CSV format** chooses **Locale (Excel)** for the language's delimiter and decimal mark, or **Interchange (RFC 4180)** for commas and points in scripts and other tools.
 - **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
