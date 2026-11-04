@@ -62,7 +62,7 @@ milestone:
 | 0.16.0 | Count schedule: quantity rows per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable presets | Complete | v21 |
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | 0.17.0 | Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation | Complete | v21 |
-| **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Planned** | v22 |
+| **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Implemented, release pending** | v22 |
 | **0.19.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v22 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v22 |
 
@@ -124,10 +124,11 @@ Deliverables:
 - Honest “count schedule” wording for doors, windows and fixtures —
   [#51](https://github.com/MajorJohnDoe/gridscalr/issues/51)
 
-Phase 0 is complete: JSON catalogs, the locale registry, lazy loading, ICU
-plurals, locale-aware number/date formatting and the CSV mode preference are in
-place. The remaining work is string migration, report headings and the Swedish
-quick start. See [`adr/0007-localization-at-scale.md`](adr/0007-localization-at-scale.md).
+Implementation is complete: JSON catalogs, the locale registry, lazy loading,
+ICU plurals, locale-aware numbers/dates and CSV modes, a fully translated
+English/Swedish UI and report output, schema 22 project metadata and branding,
+a Swedish quick start with explicit English fallback, and aligned count-schedule
+wording. See [`adr/0007-localization-at-scale.md`](adr/0007-localization-at-scale.md).
 
 Exit criteria:
 
@@ -246,7 +247,7 @@ full list.
 - The symbol library is built in; custom symbol uploads and symbol quantities in
   the procurement report are not supported.
 - Count types are limited to door, window, radiator, fixture and other.
-- Door and window schedules remain Count schedules without width, height or fire
+- Count schedules for doors, windows and fixtures have no width, height or fire
   rating fields.
 - Rectangle and ellipse quick areas cannot be rotated.
 - Text notes do not wrap in a fixed box; `Shift+Enter` inserts a line break.
@@ -267,7 +268,7 @@ full list.
 | Revision comparison scope | Shipped with visual overlay, side-by-side and a markup diff. Semantic PDF vector diff is a separate spike. |
 | OCR engine | Bundled Tesseract.js with English and Swedish models. Additional languages require new traineddata assets and license review. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
-| Door and window schedule attributes | Count schedule only for 1.0; no width, height or fire rating. |
+| Count schedule attributes | Count schedules only for 1.0; no width, height or fire rating. |
 | Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
 | Theme | Dark theme only for 1.0; a light or high-contrast theme is a post-1.0 candidate. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |

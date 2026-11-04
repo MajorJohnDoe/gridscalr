@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.17.0`.
 - Latest public release: `v0.17.0` (2026-11-03).
-- Current project-file schema: `21`.
+- Current project-file schema: `22`.
 - 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -284,6 +284,7 @@ src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
 src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
 src/model/documents.ts     page mapping, included-page lists, and page deletion remapping
+src/model/metadata.ts      optional report metadata and logo reference normalization
 src/model/annotations.ts   callout, stamp, delta, and cloud-label layout
 src/model/cloud.ts         revision-cloud bezier geometry
 src/model/stamps.ts        stamp preset normalization and defaults
@@ -335,7 +336,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
-- `npm run check:i18n` validates catalog keys, placeholders and ICU syntax, compared generated message types, and scans `src/ui`, `src/app`, `src/features`, `src/help` and `src/model` for new hard-coded strings. Use `npm run check:i18n -- --update` to regenerate the deliberate baseline.
+- `npm run check:i18n` validates catalog keys, placeholders and ICU syntax, compared generated message types, and scans every `src` directory except `src/i18n` for new hard-coded strings. Use `npm run check:i18n -- --update` to regenerate the deliberate baseline.
 - `npm run i18n:types` regenerates `src/i18n/types.generated.ts`; `npm run i18n:report` prints per-locale key coverage.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
@@ -378,6 +379,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.16.0:** complete — count schedule with a quantity row per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable count presets. Schema is v21.
 - **0.16.1:** complete — two-finger touch pan and pinch zoom on both canvases, pen/palm priority and a long-press context menu, with one-finger drawing preserved. No schema change; the schema remains v21.
 - **0.17.0:** complete — portable `.gridscalr.zip` packages, Windows/macOS/Linux release artifacts with one merged checksum file, safer atomic saving, app preferences separated from Project settings, local diagnostics with a rolling log and a persistent autosave warning, `.gridscalr` file association with single instance and window state, the app-drawn title row, project rename from settings and `F2`, bundled demo with quick start, the i18n foundation with System/English/Svenska, and packaged smoke tests on all three platforms. No schema change; the schema remains v21.
+- **0.18.0:** implemented, pending the approved version bump and release — JSON catalogs and a locale registry, complete Swedish UI and reports, locale-aware numbers/dates and CSV modes, project metadata and report branding in schema 22, a Swedish quick start with explicit English fallback, and count-schedule wording aligned across the app, docs and site.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

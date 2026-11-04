@@ -226,7 +226,7 @@ Choose **Count** (`C`), pick a project count type, and click the plan. Each coun
 
 The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
 
-Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a door schedule and a window schedule no longer collapse into one Count row.
+Manage types in **Settings → Project settings… → Count types**. Built-in types can be renamed but not deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
 
 In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
@@ -554,6 +554,7 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project settings** button in the Properties header.
 
 - **Project** – the project name shown in the title row, reports, exports and suggested file names. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that.
+- **Report metadata** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
 - **Units** – length and area units for the project. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
 - **Measurement labels** – the project label size from 4 to 16 pt and compact area labels (`P 14.48 m` instead of `Perimeter 14.48 m`). Individual measurements can override the size in Properties.
@@ -566,6 +567,7 @@ Project settings are stored in the `.gridscalr` file and are undoable while the 
 
 ## Help
 
+- The **Quick start** tab in **Help** opens a short workflow. Swedish users get the Swedish quick start; the full guide and workflows remain English with an explicit fallback note.
 - **Help → Workflows** opens task-oriented guides for operations technicians and technical property managers.
 - **Help → User guide** (`F1`) opens this guide inside the app.
 - **Help → Keyboard shortcuts** (`?`) opens the shortcut reference.
@@ -581,7 +583,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
 
-Schema version 21 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, and adds reusable count presets and count-type columns, filters and grouping in saved Markups views. Older projects load normally and are migrated when opened.
+Schema version 22 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and adds optional report metadata and an embedded report-logo reference. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 
