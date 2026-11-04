@@ -321,6 +321,14 @@ site/release.json          displayed release version, date, notes URL and downlo
 
 When adding a language, add `src/i18n/locales/<id>.json` and one entry in `src/i18n/registry.ts`, then run `npm run i18n:types` and `npm run i18n:report`. English must stay complete. New user-facing strings go in `en.json` and the matching catalogs, never as hard-coded UI text.
 
+### UI text and the i18n gate
+
+- Every user-facing string goes through `t()` with a key in `en.json` and the matching catalogs. Use `translate(locale, key, params)` only for intentionally locale-specific lookups.
+- `npm run check:i18n` scans every `src` directory except `src/i18n`. It fails on quoted multi-word prose, single-word literals assigned to `textContent`, `innerText`, `title`, `placeholder`, or `aria-label`/`title`/`placeholder`, text passed directly to `el(tag, class, text)` or `option(value, text)`, template literals with prose outside `${…}`, duplicate catalog keys, missing or extra keys, empty values, placeholder drift and invalid ICU.
+- `src/i18n/hardcoded-baseline.json` must stay `{}`. Do not add exceptions there. Deliberately technical English (diagnostics, package-manifest validation, Markdown/XLSX internals, developer geometry errors) is excluded by file in `TEMPLATE_EXCLUDE_FILES` in `scripts/check-i18n.mjs` with a reason.
+- The gate does not scan Rust (`src-tauri`), the `index.html` boot fallback, or literal branches inside ternaries such as `cond ? "A" : "B"`; review those manually.
+- A language change must relabel the open interface without a restart. Add new static chrome to `relabelShell()`/`relabelMenuBar()` or render it from `t()` on every update, and keep `document.documentElement.lang` in sync.
+
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
 
 When adding a layer or item operation, put lock and visibility semantics in `src/model/commands.ts` and keep the App, canvas, layer list, inspector and export call sites aligned.
@@ -336,7 +344,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
-- `npm run check:i18n` validates catalog keys, placeholders and ICU syntax, compared generated message types, and scans every `src` directory except `src/i18n` for new hard-coded strings. Use `npm run check:i18n -- --update` to regenerate the deliberate baseline.
+- `npm run check:i18n` validates catalog keys, duplicate keys, placeholders and ICU syntax, compares generated message types, and scans every `src` directory except `src/i18n` for hard-coded UI text, including single-word properties, `el()`/`option()` text and template literals. The baseline is empty; keep it that way. Use `npm run check:i18n -- --update` only when retiring a deliberate migration entry.
 - `npm run i18n:types` regenerates `src/i18n/types.generated.ts`; `npm run i18n:report` prints per-locale key coverage.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
