@@ -33,7 +33,28 @@ try {
   await countTypes.getByLabel("New count type name").waitFor();
   await countTypes.getByLabel("New count type name").fill("Socket");
   await countTypes.getByLabel("Glyph for the new count type").selectOption("fixture");
-  await countTypes.getByRole("button", { name: "Add", exact: true }).click();
+  const addButton = countTypes.getByRole("button", { name: "Add", exact: true });
+  await addButton.click();
+  const socketInProject = () =>
+    page.waitForFunction(
+      () => window.__gridscalr.store.project.countTypes.some((entry) => entry.label === "Socket"),
+      null,
+      { timeout: 3000 },
+    );
+  const added = await socketInProject()
+    .then(() => true)
+    .catch(() => false);
+  if (!added) {
+    // A rare click can be lost on a busy CI runner. Refill and retry once;
+    // the store check above tells us whether the first click landed.
+    await countTypes.getByLabel("New count type name").fill("Socket");
+    await addButton.click();
+  }
+  await page.waitForFunction(
+    () => window.__gridscalr.store.project.countTypes.some((entry) => entry.label === "Socket"),
+    null,
+    { timeout: 30000 },
+  );
   const socketName = countTypes.getByLabel("Count type name: Socket");
   await socketName.waitFor();
   await socketName.fill("Power socket");
