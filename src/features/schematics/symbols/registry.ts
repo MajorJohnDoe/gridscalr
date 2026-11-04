@@ -13,13 +13,13 @@ import {
 } from "../../../model/symbols";
 import type { SymbolCategory, SymbolSet } from "../../../model/types";
 import { t, type MessageKey } from "../../../i18n";
-import { FIRST_VENTILATION_SYMBOLS } from "./definitions";
+import { SCHEMATIC_SYMBOLS } from "./library";
 
 export * from "../../../model/symbols";
 export { SIGN_SYMBOLS };
 
 /** Every built-in sign and schematic symbol, in library order. */
-export const SCHEMATIC_SYMBOLS: SymbolDefinition[] = [...FIRST_VENTILATION_SYMBOLS];
+export { SCHEMATIC_SYMBOLS };
 
 export const SYMBOLS: SymbolDefinition[] = [...SIGN_SYMBOLS, ...SCHEMATIC_SYMBOLS];
 export const ALL_SYMBOLS = SYMBOLS;

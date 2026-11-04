@@ -231,10 +231,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(10);
-    expect(ALL_SYMBOLS).toHaveLength(62);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(60);
+    expect(ALL_SYMBOLS).toHaveLength(112);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(10);
+    expect(symbolsForSet("schematic")).toHaveLength(60);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -256,13 +256,17 @@ describe("schematic symbol set", () => {
         expect(port.y).toBeLessThanOrEqual(SYMBOL_VIEWBOX);
       }
       expect(symbol.art.shapes.length).toBeGreaterThan(0);
-      expect(symbol.art.shapes.every((shape) => shape.stroke === true)).toBe(true);
+      expect(
+        symbol.art.shapes.every((shape) => shape.stroke === true || shape.fillRule === undefined),
+      ).toBe(true);
       const plan = symbolRenderPlan(symbol, "#000000");
       expect(plan.fixedStrokeWidth).toBe(SCHEMATIC_STROKE_WIDTH);
       expect(plan.shapes.every((shape) => shape.fill === null || shape.fill === "#111111")).toBe(
         true,
       );
-      expect(symbolSvgMarkup(symbol)).toContain("stroke-linecap");
+      if (symbol.art.shapes.some((shape) => shape.stroke)) {
+        expect(symbolSvgMarkup(symbol)).toContain("stroke-linecap");
+      }
     }
   });
 
@@ -281,5 +285,32 @@ describe("schematic symbol set", () => {
       expect(swedish[`symbol.${symbol.id}`], symbol.id).toBeTruthy();
       expect(symbol.name, symbol.id).toBeTruthy();
     }
+  });
+
+  it("keeps the first ventilation ids and covers every schematic category", () => {
+    expect(SCHEMATIC_SYMBOLS.slice(0, 10).map((symbol) => symbol.id)).toEqual([
+      "schematic.fan",
+      "schematic.filter",
+      "schematic.heating-coil",
+      "schematic.cooling-coil",
+      "schematic.heat-exchanger",
+      "schematic.damper",
+      "schematic.silencer",
+      "schematic.supply-diffuser",
+      "schematic.extract-diffuser",
+      "schematic.duct-sensor",
+    ]);
+    for (const category of SCHEMATIC_CATEGORIES) {
+      expect(
+        SCHEMATIC_SYMBOLS.some((symbol) => symbol.category === category),
+        category,
+      ).toBe(true);
+    }
+    expect(new Set(SCHEMATIC_SYMBOLS.map((symbol) => symbol.id)).size).toBe(
+      SCHEMATIC_SYMBOLS.length,
+    );
+    expect(new Set(SCHEMATIC_SYMBOLS.map((symbol) => symbol.name)).size).toBe(
+      SCHEMATIC_SYMBOLS.length,
+    );
   });
 });

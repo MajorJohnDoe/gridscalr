@@ -1140,6 +1140,35 @@ try {
   await searchPanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
 
+  // Schematic set filter, header placement and the optional free-text tag.
+  await page.keyboard.press("b");
+  const schematicTab = page.getByRole("tab", { name: "Schematic" });
+  await schematicTab.waitFor();
+  await schematicTab.click();
+  await symbolSearch.fill("fläkt");
+  assert.ok(
+    (await page.locator('[data-symbol-id="schematic.fan"]:visible').count()) === 1,
+    "schematic search should find the Swedish fan term",
+  );
+  await symbolSearch.fill("");
+  await page.locator('[data-symbol-id="schematic.fan"]').click();
+  await interaction.click({
+    position: { x: canvasBox.width * 0.45, y: canvasBox.height * 0.45 },
+  });
+  await page.waitForTimeout(150);
+  await page.getByLabel("Tag", { exact: true }).fill("FF-01");
+  await page.getByLabel("Tag", { exact: true }).press("Tab");
+  await page.waitForTimeout(120);
+  const schematicItem = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === selection?.itemId);
+  });
+  assert.equal(schematicItem?.symbolId, "schematic.fan");
+  assert.equal(schematicItem?.tag, "FF-01", "the free-text tag should persist on the symbol");
+  assert.equal(schematicItem?.symbolSize, 40, "schematic symbols use their default size");
+
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);
 } finally {
