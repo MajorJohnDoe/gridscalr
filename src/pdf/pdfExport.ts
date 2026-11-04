@@ -28,6 +28,8 @@ import {
 import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
+import italicFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Italic.ttf?url";
+import boldItalicFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-BoldItalic.ttf?url";
 import { countSymbol } from "../model/countSymbols";
 import { countQuantityOf, countTypeGlyph, countTypeLabel } from "../features/countTypes/model";
 import { areaShapeOf, rectangleCorners } from "../model/area";
@@ -85,6 +87,7 @@ import {
 } from "../features/schematics/symbols/registry";
 import { parseSymbolPath, transformSymbolCommands } from "../model/symbolPaths";
 import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
+import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import type { PdfRenderer } from "./pdfRenderer";
 import { t } from "../i18n";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
@@ -94,6 +97,8 @@ import { drawSheetFields } from "../features/schematics/render/sheetPdf";
 interface ExportFonts {
   regular: PDFFont;
   bold: PDFFont;
+  italic: PDFFont;
+  boldItalic: PDFFont;
 }
 
 interface PdfRect {
@@ -510,7 +515,7 @@ function truncateText(font: PDFFont, text: string, size: number, maxWidth: numbe
 
 async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
   try {
-    const [regular, bold] = await Promise.all([
+    const [regular, bold, italic, boldItalic] = await Promise.all([
       fetch(regularFontUrl).then((response) => {
         if (!response.ok) throw new Error(t("pdfExport.regularFontUnavailable"));
         return response.arrayBuffer();
@@ -519,17 +524,34 @@ async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
         if (!response.ok) throw new Error(t("pdfExport.boldFontUnavailable"));
         return response.arrayBuffer();
       }),
+      fetch(italicFontUrl).then((response) => {
+        if (!response.ok) throw new Error(t("pdfExport.regularFontUnavailable"));
+        return response.arrayBuffer();
+      }),
+      fetch(boldItalicFontUrl).then((response) => {
+        if (!response.ok) throw new Error(t("pdfExport.boldFontUnavailable"));
+        return response.arrayBuffer();
+      }),
     ]);
     return {
       regular: await pdf.embedFont(new Uint8Array(regular), { subset: true }),
       bold: await pdf.embedFont(new Uint8Array(bold), { subset: true }),
+      italic: await pdf.embedFont(new Uint8Array(italic), { subset: true }),
+      boldItalic: await pdf.embedFont(new Uint8Array(boldItalic), { subset: true }),
     };
   } catch {
     return {
       regular: await pdf.embedFont(StandardFonts.Helvetica),
       bold: await pdf.embedFont(StandardFonts.HelveticaBold),
+      italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
+      boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
     };
   }
+}
+
+function runFont(fonts: ExportFonts, run: { bold: boolean; italic: boolean }): PDFFont {
+  if (run.bold) return run.italic ? fonts.boldItalic : fonts.bold;
+  return run.italic ? fonts.italic : fonts.regular;
 }
 
 async function embedImages(
@@ -897,7 +919,7 @@ function drawTextItem(
   const rotation = item.rotation ?? 0;
   const center = itemCenter(item);
   const angle = pdfAngle(viewport, rotation);
-  const font = item.textBold ? fonts.bold : fonts.regular;
+  const font = runFont(fonts, { bold: item.textBold === true, italic: item.textItalic === true });
   const align = item.textAlign ?? "left";
   const baseline = font.heightAtSize(layout.fontSize, { descender: false });
   const color = pdfColor(item.color);
@@ -960,17 +982,11 @@ function drawTextBoxItem(
   const fontSize = clampTextSize(item.fontSize ?? 12);
   const padding = Math.max(0, item.padding ?? 4);
   const maxWidth = Math.max(1, rect.width - padding * 2);
-  const font = item.textBold ? fonts.bold : fonts.regular;
-  const lines = wrapText(item.text ?? "", maxWidth, (line) =>
-    font.widthOfTextAtSize(line, fontSize),
-  );
-  const lineHeight = fontSize * TEXT_LINE_HEIGHT;
-  const color = pdfColor(item.textColor ?? item.color);
   const opacity = clamp(layerOpacity, 0, 1);
   const center = itemCenter(item);
   const rotation = item.rotation ?? 0;
   const angle = pdfAngle(viewport, rotation);
-  const baseline = font.heightAtSize(fontSize, { descender: false });
+  const align = item.textAlign ?? "left";
 
   if (item.textBackground === "white") {
     const background = pdfRectFromCorners(viewport, itemRectCorners(item));
@@ -985,7 +1001,57 @@ function drawTextBoxItem(
     });
   }
 
-  const align = item.textAlign ?? "left";
+  const richRuns =
+    item.runs?.length && runsText(item.runs) === (item.text ?? "") ? item.runs : null;
+  if (richRuns) {
+    const layout = layoutRichText(
+      richRuns,
+      maxWidth,
+      (text, run) => runFont(fonts, run).widthOfTextAtSize(text, run.size),
+      textRunDefaults(item),
+    );
+    layout.lines.forEach((line, index) => {
+      const top = rect.y + padding + index * layout.lineHeight;
+      let x = rect.x + padding + textLineX(align, 0, maxWidth, line.width);
+      for (const segment of line.segments) {
+        const font = runFont(fonts, segment.run);
+        const baselineY = top + font.heightAtSize(segment.run.size, { descender: false });
+        const start = rotatePoint({ x, y: baselineY }, center, rotation);
+        const point = toPdfPoint(viewport, start);
+        page.drawText(segment.text, {
+          x: point.x,
+          y: point.y,
+          size: segment.run.size,
+          font,
+          color: pdfColor(segment.run.color),
+          opacity,
+          rotate: degrees(angle),
+        });
+        if (segment.run.underline) {
+          const underlineY = baselineY + segment.run.size * TEXT_UNDERLINE_OFFSET;
+          const from = rotatePoint({ x, y: underlineY }, center, rotation);
+          const to = rotatePoint({ x: x + segment.width, y: underlineY }, center, rotation);
+          page.drawLine({
+            start: toPdfPoint(viewport, from),
+            end: toPdfPoint(viewport, to),
+            thickness: Math.max(0.35, segment.run.size * TEXT_UNDERLINE_WIDTH),
+            color: pdfColor(segment.run.color),
+            opacity,
+          });
+        }
+        x += segment.width;
+      }
+    });
+    return;
+  }
+
+  const font = runFont(fonts, { bold: item.textBold === true, italic: item.textItalic === true });
+  const lines = wrapText(item.text ?? "", maxWidth, (line) =>
+    font.widthOfTextAtSize(line, fontSize),
+  );
+  const lineHeight = fontSize * TEXT_LINE_HEIGHT;
+  const color = pdfColor(item.textColor ?? item.color);
+  const baseline = font.heightAtSize(fontSize, { descender: false });
   lines.forEach((line, index) => {
     if (!line) return;
     const lineWidth = font.widthOfTextAtSize(line, fontSize);

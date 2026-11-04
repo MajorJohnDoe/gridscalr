@@ -19,7 +19,15 @@ import {
   measureTextWidth,
   textItemLayout,
 } from "../model/text";
-import type { Layer, MarkupItem, Point, TextAlign } from "../model/types";
+import type { Layer, MarkupItem, Point, TextAlign, TextRun } from "../model/types";
+import {
+  applyRunStyle,
+  reconcileRuns,
+  runsEqual,
+  runsFromItem,
+  runsHaveFormatting,
+  type RunStylePatch,
+} from "../model/richText";
 import { store } from "../state/store";
 import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
@@ -34,10 +42,12 @@ interface TextStyleSnapshot {
   fontSize: number;
   rotation: number;
   bold: boolean;
+  italic: boolean;
   underline: boolean;
   align: TextAlign;
   boxWidth?: number;
   boxHeight?: number;
+  runs?: TextRun[];
 }
 
 export interface TextEditSession {
@@ -51,11 +61,13 @@ export interface TextEditSession {
   fontSize: number;
   rotation: number;
   bold: boolean;
+  italic: boolean;
   underline: boolean;
   align: TextAlign;
   boxWidth?: number;
   boxHeight?: number;
   padding?: number;
+  runs?: TextRun[];
   original?: TextStyleSnapshot;
   closing: boolean;
   container: HTMLDivElement;
@@ -152,6 +164,7 @@ export class CanvasEditorController {
       fontSize: style.fontSize,
       rotation: 0,
       bold: false,
+      italic: false,
       underline: false,
       align: "left",
     });
@@ -176,6 +189,7 @@ export class CanvasEditorController {
       fontSize,
       rotation,
       bold: item.textBold === true,
+      italic: item.textItalic === true,
       underline: item.textUnderline === true,
       align: item.textAlign ?? "left",
       original: {
@@ -184,6 +198,7 @@ export class CanvasEditorController {
         fontSize,
         rotation,
         bold: item.textBold === true,
+        italic: item.textItalic === true,
         underline: item.textUnderline === true,
         align: item.textAlign ?? "left",
       },
@@ -201,6 +216,7 @@ export class CanvasEditorController {
     const fontSize = clampTextSize(item.fontSize ?? 12);
     const color = item.textColor ?? item.color;
     const align = item.textAlign ?? "left";
+    const runs = runsFromItem(item);
     this.beginTextEditSession({
       mode: "textbox",
       itemId: item.id,
@@ -212,21 +228,25 @@ export class CanvasEditorController {
       fontSize,
       rotation: 0,
       bold: item.textBold === true,
+      italic: item.textItalic === true,
       underline: item.textUnderline === true,
       align,
       boxWidth: rect.width,
       boxHeight: rect.height,
       padding: item.padding ?? 4,
+      runs,
       original: {
         text: item.text ?? "",
         color,
         fontSize,
         rotation: 0,
         bold: item.textBold === true,
+        italic: item.textItalic === true,
         underline: item.textUnderline === true,
         align,
         boxWidth: rect.width,
         boxHeight: rect.height,
+        runs,
       },
     });
   }
@@ -252,6 +272,7 @@ export class CanvasEditorController {
       fontSize,
       rotation: 0,
       bold: item.textBold === true,
+      italic: item.textItalic === true,
       underline: item.textUnderline === true,
       align,
       boxWidth: item.textBoxWidth,
@@ -262,6 +283,7 @@ export class CanvasEditorController {
         fontSize,
         rotation: 0,
         bold: item.textBold === true,
+        italic: item.textItalic === true,
         underline: item.textUnderline === true,
         align,
         boxWidth: item.textBoxWidth,
@@ -291,6 +313,7 @@ export class CanvasEditorController {
       fontSize,
       rotation: 0,
       bold: item.textBold === true,
+      italic: item.textItalic === true,
       underline: item.textUnderline === true,
       align,
       boxWidth: item.textBoxWidth,
@@ -301,6 +324,7 @@ export class CanvasEditorController {
         fontSize,
         rotation: 0,
         bold: item.textBold === true,
+        italic: item.textItalic === true,
         underline: item.textUnderline === true,
         align,
         boxWidth: item.textBoxWidth,
@@ -538,6 +562,12 @@ export class CanvasEditorController {
     boldButton.title = t("editors.bold");
     boldButton.setAttribute("aria-label", t("editors.bold"));
     boldButton.textContent = "B";
+    const italicButton = document.createElement("button");
+    italicButton.type = "button";
+    italicButton.className = "inline-strip-button is-toggle is-italic";
+    italicButton.title = t("editors.italic");
+    italicButton.setAttribute("aria-label", t("editors.italic"));
+    italicButton.textContent = "I";
     const underlineButton = document.createElement("button");
     underlineButton.type = "button";
     underlineButton.className = "inline-strip-button is-toggle is-underline";
@@ -571,15 +601,11 @@ export class CanvasEditorController {
       alignButtons.push({ align, button });
     }
     boldButton.addEventListener("mousedown", (event) => event.preventDefault());
+    italicButton.addEventListener("mousedown", (event) => event.preventDefault());
     underlineButton.addEventListener("mousedown", (event) => event.preventDefault());
-    boldButton.addEventListener("click", () => {
-      edit.bold = !edit.bold;
-      refresh();
-    });
-    underlineButton.addEventListener("click", () => {
-      edit.underline = !edit.underline;
-      refresh();
-    });
+    boldButton.addEventListener("click", () => toggleRunStyle("bold"));
+    italicButton.addEventListener("click", () => toggleRunStyle("italic"));
+    underlineButton.addEventListener("click", () => toggleRunStyle("underline"));
 
     const rotationField = document.createElement("label");
     rotationField.className = "inline-style-field";
@@ -607,7 +633,7 @@ export class CanvasEditorController {
     doneButton.type = "button";
     doneButton.className = "inline-strip-button is-primary";
     doneButton.textContent = t("common.done");
-    strip.append(sizeField, colorField, boldButton, underlineButton, alignGroup);
+    strip.append(sizeField, colorField, boldButton, italicButton, underlineButton, alignGroup);
     if (session.mode !== "textbox") strip.append(rotationField);
     strip.append(cancelButton, doneButton);
     const resizeHandle = document.createElement("div");
@@ -630,12 +656,42 @@ export class CanvasEditorController {
     this.editingItem = edit.itemId;
     this.editorLayer.append(container);
 
+    let selection = { start: textarea.selectionStart, end: textarea.selectionEnd };
+    const captureSelection = () => {
+      selection = { start: textarea.selectionStart, end: textarea.selectionEnd };
+    };
+    const hasRunSelection = () =>
+      edit.mode === "textbox" && selection.start !== selection.end && !edit.closing;
+
+    const applyToSelection = (patch: RunStylePatch): boolean => {
+      if (!hasRunSelection()) return false;
+      edit.runs = applyRunStyle(
+        reconcileRuns(edit.runs ?? [{ text: textarea.value }], textarea.value),
+        selection.start,
+        selection.end,
+        patch,
+      );
+      textarea.value = (edit.runs ?? []).map((run) => run.text).join("");
+      edit.text = textarea.value;
+      const start = selection.start;
+      const end = selection.end;
+      window.requestAnimationFrame(() => {
+        if (this.text !== edit) return;
+        textarea.focus({ preventScroll: true });
+        textarea.setSelectionRange(start, end);
+      });
+      this.positionTextEditor();
+      return true;
+    };
+
     const syncStyle = () => {
       textarea.style.color = edit.color;
       textarea.style.fontWeight = edit.bold ? "700" : "400";
+      textarea.style.fontStyle = edit.italic ? "italic" : "normal";
       textarea.style.textDecoration = edit.underline ? "underline" : "none";
       textarea.style.textAlign = edit.align;
       boldButton.setAttribute("aria-pressed", edit.bold ? "true" : "false");
+      italicButton.setAttribute("aria-pressed", edit.italic ? "true" : "false");
       underlineButton.setAttribute("aria-pressed", edit.underline ? "true" : "false");
       for (const entry of alignButtons) {
         entry.button.setAttribute("aria-pressed", edit.align === entry.align ? "true" : "false");
@@ -649,13 +705,39 @@ export class CanvasEditorController {
       syncStyle();
       this.positionTextEditor();
     };
-    sizeInput.addEventListener("input", refresh);
-    colorInput.addEventListener("input", refresh);
+    const toggleRunStyle = (key: "bold" | "italic" | "underline") => {
+      const patch: RunStylePatch =
+        key === "bold"
+          ? { bold: !edit.bold }
+          : key === "italic"
+            ? { italic: !edit.italic }
+            : { underline: !edit.underline };
+      if (applyToSelection(patch)) return;
+      edit[key] = !edit[key];
+      refresh();
+    };
+    sizeInput.addEventListener("input", () => {
+      const size = clampTextSize(Number(sizeInput.value));
+      if (applyToSelection({ size })) return;
+      edit.fontSize = size;
+      syncStyle();
+      this.positionTextEditor();
+    });
+    colorInput.addEventListener("input", () => {
+      if (applyToSelection({ color: colorInput.value })) return;
+      edit.color = colorInput.value;
+      syncStyle();
+      this.positionTextEditor();
+    });
     rotationInput.addEventListener("input", refresh);
     textarea.addEventListener("input", () => {
       edit.text = textarea.value;
+      captureSelection();
       this.positionTextEditor();
     });
+    for (const eventName of ["select", "keyup", "mouseup", "blur"] as const) {
+      textarea.addEventListener(eventName, captureSelection);
+    }
     textarea.addEventListener("keydown", (event) => {
       if (event.isComposing) return;
       if (event.key === "Escape") {
@@ -761,13 +843,16 @@ export class CanvasEditorController {
       }
       if (edit.mode === "textbox") {
         const original = edit.original!;
+        const runs = reconcileRuns(edit.runs ?? [{ text: value }], value);
         const changed =
           value !== original.text ||
           edit.color !== original.color ||
           Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
           edit.bold !== original.bold ||
+          edit.italic !== original.italic ||
           edit.underline !== original.underline ||
-          edit.align !== original.align;
+          edit.align !== original.align ||
+          !runsEqual(runs, original.runs);
         this.closeTextEditor();
         if (!changed) return;
         store.mutate((project) => {
@@ -778,10 +863,14 @@ export class CanvasEditorController {
           item.fontSize = clampTextSize(edit.fontSize);
           if (edit.bold) item.textBold = true;
           else delete item.textBold;
+          if (edit.italic) item.textItalic = true;
+          else delete item.textItalic;
           if (edit.underline) item.textUnderline = true;
           else delete item.textUnderline;
           if (edit.align === "left") delete item.textAlign;
           else item.textAlign = edit.align;
+          if (runsHaveFormatting(runs, item)) item.runs = runs;
+          else delete item.runs;
           item.updatedAt = new Date().toISOString();
         }, "change");
         return;
@@ -793,6 +882,7 @@ export class CanvasEditorController {
           edit.color !== original.color ||
           Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
           edit.bold !== original.bold ||
+          edit.italic !== original.italic ||
           edit.underline !== original.underline ||
           edit.align !== original.align ||
           edit.boxWidth !== original.boxWidth ||
@@ -807,6 +897,8 @@ export class CanvasEditorController {
           item.fontSize = clampTextSize(edit.fontSize);
           if (edit.bold) item.textBold = true;
           else delete item.textBold;
+          if (edit.italic) item.textItalic = true;
+          else delete item.textItalic;
           if (edit.underline) item.textUnderline = true;
           else delete item.textUnderline;
           if (edit.align === "center") delete item.textAlign;
@@ -827,6 +919,7 @@ export class CanvasEditorController {
         Math.abs(edit.fontSize - original.fontSize) > 0.001 ||
         Math.abs(rotation - normalizeDegrees(original.rotation)) > 0.001 ||
         edit.bold !== original.bold ||
+        edit.italic !== original.italic ||
         edit.underline !== original.underline ||
         edit.align !== original.align;
       this.closeTextEditor();
@@ -839,6 +932,8 @@ export class CanvasEditorController {
         item.fontSize = clampTextSize(edit.fontSize);
         if (edit.bold) item.textBold = true;
         else delete item.textBold;
+        if (edit.italic) item.textItalic = true;
+        else delete item.textItalic;
         if (edit.underline) item.textUnderline = true;
         else delete item.textUnderline;
         if (edit.align === "left") delete item.textAlign;
@@ -890,6 +985,7 @@ export class CanvasEditorController {
         text: value,
         fontSize: clampTextSize(edit.fontSize),
         textBold: edit.bold ? true : undefined,
+        textItalic: edit.italic ? true : undefined,
         textUnderline: edit.underline ? true : undefined,
         textAlign: edit.align === "left" ? undefined : edit.align,
         rotation: rotation === 0 ? undefined : rotation,

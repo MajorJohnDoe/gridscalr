@@ -161,6 +161,8 @@ import {
 } from "../features/schematics/ui/sheetSourceDialog";
 import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
+import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
+import { canFitDrawingToArea, fitDrawingToArea } from "../features/schematics/model/fitDrawing";
 import { LANGUAGE_CHANGED_EVENT, currentLocale, t } from "../i18n";
 
 function projectFilters() {
@@ -254,6 +256,8 @@ export class App {
       deleteSelection: () => this.canvas.deleteSelection(),
       editSelectedText: () => this.canvas.editSelectedText(),
       editRail: (itemId) => void openRailDialog(itemId),
+      editLineTypes: () => void openLineTypeDialog(),
+      fitDrawingToArea: () => this.fitDrawingToArea(),
       copySelection: () => this.copySelection(),
       cutSelection: () => this.cutSelection(),
       pasteSelection: () => this.pasteSelection(),
@@ -707,6 +711,25 @@ export class App {
       locked ? t("app.scaleLockedOn", { page }) : t("app.scaleUnlockedOn", { page }),
       locked ? "success" : "info",
     );
+  }
+
+  private fitDrawingToArea(): void {
+    const project = store.project;
+    const page = store.ui.page;
+    if (!project || !canFitDrawingToArea(project, page)) {
+      toast(t("context.fitDrawingNothing"), "info");
+      return;
+    }
+    let moved = false;
+    store.mutate((current) => {
+      moved = fitDrawingToArea(current, page);
+    }, "change");
+    if (moved) {
+      toast(t("context.fitDrawingDone"), "success");
+      this.canvas.invalidate();
+    } else {
+      toast(t("context.fitDrawingNothing"), "info");
+    }
   }
 
   private async clearCalibrationFlow(): Promise<void> {

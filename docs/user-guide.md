@@ -331,10 +331,12 @@ Choose **Text box** (`Shift+T`) and drag a rectangle. The text wraps to the box 
 
 - `Enter` inserts a line break. `Ctrl/Cmd+Enter`, the done button, or clicking outside commits the text.
 - `Esc` cancels the edit.
-- The strip sets font size, colour, bold, underline and left/center/right alignment for the whole box.
+- The strip sets font size, colour, bold, italic, underline and left/center/right alignment for the whole box.
+- Select a range inside the editor and use the same strip controls to format only that range. Bold, italic, underline, size and colour are stored per run, so one word can stand out without changing the rest of the box.
 - A white background is on by default; turn it off in Properties. Text colour and font size are also editable there.
 - Drag the box handles to resize it; the text reflows. If the text becomes taller than the box, a red dashed outline warns you and the text is never silently clipped.
 - Double-click an existing text box with the Select tool to reopen it.
+- Older text boxes without formatted ranges open exactly as before and are upgraded when you edit them.
 
 Text boxes are useful for function descriptions, notes over drawings and multi-column text on a sheet.
 
@@ -342,7 +344,9 @@ Text boxes are useful for function descriptions, notes over drawings and multi-c
 
 Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle. The tool snaps to a 5 mm grid and to existing item endpoints, midpoints, rail rows and intersections. `Enter` or a double-click finishes the run; `Esc` cancels it.
 
-The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Changing a class later in Project settings does not restyle existing runs, so the drawing stays stable.
+The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Use the **Edit line types…** button beside the selector to rename, recolour, reweight, add or remove media classes. Existing runs keep their stored style, so editing or deleting a class never restyles an old drawing.
+
+When visible objects extend past the sheet’s drawing area, the context bar shows **Outside drawing area**. Click it to scale and centre every unlocked, visible item inside the area. The fit is one undoable change; locked items are left where they are.
 
 ### I/O rails
 
@@ -350,7 +354,7 @@ Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with 
 
 - Load the `PLC/DI/AI/DU/AU` or `M-Bus/DUC/DI/AI/DU/AU` preset.
 - Rename rows and edit their legends.
-- Add or remove rows.
+- Add, remove and reorder rows with the arrow buttons.
 - Show or hide the left badges and the legend line.
 
 Rail rows are snap targets for pipes and control cables. Connection dots are ordinary small filled ellipses; a cable can cross a row without connecting, so the dots are placed explicitly.
@@ -382,20 +386,31 @@ Use **File → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts
 
 ## Symbols
 
-Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library contains 52 built-in signs and is searchable in English and Swedish, for example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, or **hjärtstartare**.
+Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library has two sets, switched with the **Signs** and **Schematic** tabs, and searches English and Swedish names, ids and keywords. For example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, **värmebatteri** or **undercentral**.
+
+**Signs** contains the 52 facility signs:
 
 - Categories: **Fire protection**, **Evacuation & safety**, **HVAC & plumbing**, **Electrical & controls**, **Building elements**, and **Waste & environment**.
 - Select a tile, choose the status for the next placement in the context bar, then click the drawing.
-- Symbols are drawing objects. They do not appear in quantity totals.
 - Plate colour is fixed by category: red for fire equipment, green for evacuation and safety, blue for HVAC, yellow with a black pictogram for electrical, violet for building elements, and olive for waste.
 - A small corner marker shows the inspection status: Approved, Not approved, Action required, Missing, or no marker for Not assessed.
-- Select a symbol and use its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
+- Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
+
+**Schematic** contains 60 stroke-only equipment symbols for operation cards:
+
+- Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
+- Symbols are flat black line art with a fixed 1.4 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.
+- Each symbol has a suggested tag prefix such as `FF`, `VVX` or `GT`. Enter any free text in **Tag** in Properties; the tag follows the symbol and its offset can be adjusted. Nothing is numbered automatically.
+- Ports mark pipe, duct and cable connection points for snapping and review.
+- Connection dots, arrows, references and tag holders live in **General**.
+
+- Symbols are drawing objects. They do not appear in quantity totals.
+- Select a symbol and use its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.
 - The symbol name appears as the Markups label. You can still give an item a custom label.
-- Symbols are classic sign plates with filled vector pictograms, placed at 24 pt by default. They are exported as vectors in the drawing PDF, so they stay sharp and match the screen.
 - The status marker is a small white-ringed badge in the corner; it is visible on both the dark canvas and white paper.
 
-Built-in symbols are original filled-vector interpretations inspired by common Swedish and European facility-safety practice. They are not certified SS-EN ISO 7010 material and were not traced from an external sign or icon set.
+Built-in symbols are original vector interpretations inspired by common Swedish and European facility and schematic practice. They are not certified SS-EN ISO 7010 material, are not reproductions of a named schematic standard, and were not traced from an external sign or icon set. The generated design-review catalogue can be opened from `artifacts/symbol-catalog.html` after running `npm run symbols:catalog`.
 
 ![Searchable symbol library with a selected fire extinguisher, Markups grouped by category and inspection status](screenshots/symbols.png)
 

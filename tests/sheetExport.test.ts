@@ -97,6 +97,28 @@ describe("template sheet export", () => {
         updatedAt: now,
       },
       {
+        id: "item_rich_textbox",
+        page: 1,
+        kind: "textbox",
+        points: [
+          { x: 60, y: 300 },
+          { x: 320, y: 360 },
+        ],
+        color: "#1a2024",
+        strokeWidth: 1,
+        text: "Rich text",
+        textColor: "#1a2024",
+        textBackground: "white",
+        padding: 4,
+        fontSize: 12,
+        runs: [
+          { text: "Rich", bold: true, size: 16, color: "#e30613" },
+          { text: " text", italic: true, underline: true },
+        ],
+        createdAt: now,
+        updatedAt: now,
+      },
+      {
         id: "item_symbol",
         page: 1,
         kind: "symbol",
@@ -133,6 +155,8 @@ describe("template sheet export", () => {
     expect(text).toContain("Värmesystem");
     expect(text).toContain("Export sheet");
     expect(text).toContain("Box text");
+    expect(text).toContain("Rich");
+    expect(text).toContain("text");
     expect(text).toContain("PLC");
     expect(text).toContain("FF-01");
   });

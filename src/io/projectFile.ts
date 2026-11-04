@@ -50,6 +50,7 @@ import type {
   ProjectSettings,
   QuantitySettings,
   TextAlign,
+  TextRun,
 } from "../model/types";
 import { t } from "../i18n";
 
@@ -275,6 +276,35 @@ function normalizeImageMode(value: unknown): ImageMode {
   return value === "annotation" ? "annotation" : "background";
 }
 
+const RUN_COLOR = /^#[0-9a-f]{3,8}$/i;
+
+function normalizeTextRuns(value: unknown): TextRun[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const runs: TextRun[] = [];
+  let total = 0;
+  for (const candidate of value.slice(0, 500)) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const raw = candidate as Record<string, unknown>;
+    if (typeof raw.text !== "string" || !raw.text) continue;
+    const text = raw.text.replace(/\r\n?/g, "\n").slice(0, 5000);
+    if (total + text.length > 20000) break;
+    total += text.length;
+    const size =
+      typeof raw.size === "number" && Number.isFinite(raw.size)
+        ? Math.max(0.5, Math.min(300, raw.size))
+        : undefined;
+    runs.push({
+      text,
+      bold: raw.bold === true ? true : raw.bold === false ? false : undefined,
+      italic: raw.italic === true ? true : raw.italic === false ? false : undefined,
+      underline: raw.underline === true ? true : raw.underline === false ? false : undefined,
+      size,
+      color: typeof raw.color === "string" && RUN_COLOR.test(raw.color) ? raw.color : undefined,
+    });
+  }
+  return runs.length ? runs : undefined;
+}
+
 function normalizeItem(
   value: unknown,
   layerKind: LayerKind,
@@ -425,22 +455,26 @@ function normalizeItem(
   const supportsTextStyle =
     raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout" || raw.kind === "textbox";
   const textBold = supportsTextStyle && raw.textBold === true ? true : undefined;
+  const textItalic = supportsTextStyle && raw.textItalic === true ? true : undefined;
   const textUnderline = supportsTextStyle && raw.textUnderline === true ? true : undefined;
   const textAlign: TextAlign | undefined =
     supportsTextStyle &&
     (raw.textAlign === "left" || raw.textAlign === "center" || raw.textAlign === "right")
       ? raw.textAlign
       : undefined;
+  const runs = raw.kind === "textbox" ? normalizeTextRuns(raw.runs) : undefined;
   const text =
-    typeof raw.text === "string"
-      ? raw.text
-      : raw.kind === "stamp"
-        ? "APPROVED"
-        : raw.kind === "callout"
-          ? "Callout"
-          : raw.kind === "delta"
-            ? "A"
-            : undefined;
+    runs && runs.length
+      ? runs.map((run) => run.text).join("")
+      : typeof raw.text === "string"
+        ? raw.text
+        : raw.kind === "stamp"
+          ? "APPROVED"
+          : raw.kind === "callout"
+            ? "Callout"
+            : raw.kind === "delta"
+              ? "A"
+              : undefined;
   const lineTypeId =
     raw.kind === "polyline" && typeof raw.lineTypeId === "string" ? raw.lineTypeId : undefined;
   const rows = raw.kind === "rail" ? normalizeRailRows(raw.rows) : undefined;
@@ -536,8 +570,10 @@ function normalizeItem(
     textBackground,
     padding,
     textBold,
+    textItalic,
     textUnderline,
     textAlign,
+    runs,
     lineTypeId,
     rows,
     rowSpacing,

@@ -1140,6 +1140,115 @@ try {
   await searchPanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
 
+  // Line-type editor: rename/add without touching existing item styles.
+  await page.keyboard.press("f");
+  const editLineTypes = page.getByRole("button", { name: "Edit line types…" });
+  await editLineTypes.waitFor();
+  await editLineTypes.click();
+  const lineTypeDialog = page.getByRole("dialog", { name: "Line types" });
+  await lineTypeDialog.waitFor();
+  const lineTypeCount = await page.evaluate(
+    () => window.__gridscalr.store.project.lineTypes.length,
+  );
+  await lineTypeDialog.getByRole("button", { name: "Add line type" }).click();
+  await lineTypeDialog.getByRole("button", { name: "Apply" }).click();
+  await lineTypeDialog.waitFor({ state: "detached" });
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.project.lineTypes.length),
+    lineTypeCount + 1,
+    "the line-type editor should add a project line type",
+  );
+
+  // Rail rows can be reordered with the dialog controls.
+  await page.keyboard.press("v");
+  await interaction.click({ position: { x: 12, y: 12 } });
+  await page.keyboard.press("Shift+R");
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
+    "rail",
+    "the rail shortcut should activate the rail tool",
+  );
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.25, canvasBox.y + canvasBox.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width * 0.6,
+    canvasBox.y + canvasBox.height * 0.62,
+    {
+      steps: 6,
+    },
+  );
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.evaluate(() =>
+      window.__gridscalr.store.project.layers.some((layer) =>
+        layer.items.some((item) => item.kind === "rail"),
+      ),
+    ),
+    true,
+    "the rail tool should create a rail item",
+  );
+  const selectionKind = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    if (!selection) return "none";
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === selection.itemId);
+    return item?.kind ?? "missing";
+  });
+  assert.equal(selectionKind, "rail", "the new rail should stay selected");
+  const closeMarkups = page.getByRole("button", { name: "Close Markups list" });
+  if ((await closeMarkups.count()) > 0 && (await closeMarkups.first().isVisible())) {
+    await closeMarkups.first().click();
+  }
+  await page.locator(".inspector button", { hasText: /Edit rail/ }).click();
+  const railDialog = page.getByRole("dialog", { name: "I/O rail" });
+  await railDialog.waitFor();
+  await railDialog.getByRole("button", { name: "Move up" }).nth(1).click();
+  await railDialog.getByRole("button", { name: "Apply" }).click();
+  await railDialog.waitFor({ state: "detached" });
+  const railRows = await page.evaluate(() => {
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.kind === "rail");
+    return item?.rows?.map((row) => row.label) ?? [];
+  });
+  assert.equal(railRows[0], "DI", "moving the second rail row up should reorder it");
+
+  // Rich text: a selected word keeps its own run style.
+  await page.keyboard.press("Shift+T");
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width * 0.45,
+    canvasBox.y + canvasBox.height * 0.3,
+    {
+      steps: 5,
+    },
+  );
+  await page.mouse.up();
+  const textEditor = page.locator(".canvas-text-editor-input");
+  await textEditor.waitFor();
+  await textEditor.fill("Alpha Beta");
+  await textEditor.evaluate((element) => {
+    const textarea = element;
+    textarea.focus();
+    textarea.setSelectionRange(0, 5);
+    textarea.dispatchEvent(new Event("select", { bubbles: true }));
+  });
+  await page.locator('.inline-style-strip button[title="Bold"]').click();
+  await page.locator(".inline-style-strip .is-primary").click();
+  await textEditor.waitFor({ state: "detached" });
+  const richBox = await page.evaluate(() => {
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.kind === "textbox" && entry.text === "Alpha Beta");
+    return item?.runs ?? null;
+  });
+  assert.equal(richBox?.[0]?.text, "Alpha");
+  assert.equal(richBox?.[0]?.bold, true, "the selected word should become bold");
+  assert.equal(richBox?.map((run) => run.text).join(""), "Alpha Beta");
+
   // Schematic set filter, header placement and the optional free-text tag.
   await page.keyboard.press("b");
   const schematicTab = page.getByRole("tab", { name: "Schematic" });

@@ -130,6 +130,18 @@ export interface ManualCalibration {
 
 export type Calibration = ReferenceCalibration | ManualCalibration;
 
+/** One formatted range inside a text box. Missing fields fall back to the box style. */
+export interface TextRun {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  /** Absolute size in PDF points. Missing uses the box size. */
+  size?: number;
+  /** Text colour. Missing uses the box text colour. */
+  color?: string;
+}
+
 export interface MarkupItem {
   id: string;
   page: number;
@@ -202,6 +214,8 @@ export interface MarkupItem {
   textBackground?: "none" | "white";
   /** Text boxes only: inner padding in PDF points. Missing means 4 pt. */
   padding?: number;
+  /** Text boxes only: optional formatted ranges. `text` remains the plain fallback. */
+  runs?: TextRun[];
   /** Polyline only: the project line type used at creation. */
   lineTypeId?: string;
   /** Rails only: editable row labels and legends. */
@@ -214,6 +228,8 @@ export interface MarkupItem {
   showLegend?: boolean;
   /** Text, callout and cloud text: bold weight. Missing means regular. */
   textBold?: boolean;
+  /** Text, callout and cloud text: italic style. Missing means upright. */
+  textItalic?: boolean;
   /** Text, callout and cloud text: underline. Missing means no underline. */
   textUnderline?: boolean;
   /** Text, callout and cloud text alignment. Missing means left for notes and centred for callouts and clouds. */
