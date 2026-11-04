@@ -115,9 +115,13 @@ import {
 import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
 import {
-  layoutFieldText,
+  resolveSheetLabels,
+  SHEET_FIELD,
+  sheetTemplateFor,
+} from "../features/schematics/model/sheetTemplate";
+import {
+  layoutFieldLines,
   measureSheetText,
   SHEET_FONT_STACK,
 } from "../features/schematics/render/sheetText";
@@ -322,7 +326,7 @@ export class CanvasView {
   private hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
   private sheetFieldEditor: {
-    input: HTMLInputElement;
+    input: HTMLInputElement | HTMLTextAreaElement;
     page: number;
     fieldId: string;
   } | null = null;
@@ -1024,7 +1028,7 @@ export class CanvasView {
         this.finishDraft();
         return;
       }
-      let snapped = this.snapPolylinePoint(page);
+      let snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
       const existing = this.draft?.kind === "polyline" ? this.draft : null;
       if (existing && existing.points.length) {
         snapped = this.constrainPolyline(
@@ -1540,7 +1544,10 @@ export class CanvasView {
         this.draft.kind === "arrow" ||
         this.draft.kind === "callout"
       ) {
-        let current = this.snapPoint(page);
+        // Shift constrains the angle from the raw pointer, not from a segment
+        // snap on an existing pipe. Otherwise the snap would force the old line
+        // direction and the constrained endpoint could not move away from it.
+        let current = event.shiftKey ? page : this.snapPoint(page);
         if (event.shiftKey) {
           const constrained = constrainAngle(this.draft.start, current);
           if (distance(constrained, current) > 1e-6) this.snap = null;
@@ -1558,7 +1565,7 @@ export class CanvasView {
         this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
       } else if (this.draft.kind === "polyline") {
         const last = this.draft.points[this.draft.points.length - 1];
-        const snapped = this.snapPolylinePoint(page);
+        const snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
         this.draft.cursor = this.constrainPolyline(last, snapped, event.shiftKey);
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
@@ -2515,7 +2522,8 @@ export class CanvasView {
         kind === "stamp" ||
         kind === "delta";
       const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-      const lineStyle = kind === "polyline" ? store.ui.lineStyle : undefined;
+      const lineLike = kind === "polyline" || kind === "line";
+      const lineStyle = lineLike ? store.ui.lineStyle : undefined;
       const item: MarkupItem = {
         id: makeId("item"),
         page: projectPage,
@@ -2525,7 +2533,7 @@ export class CanvasView {
           ? layer.color
           : kind === "textbox"
             ? "#1a2024"
-            : kind === "polyline"
+            : lineLike
               ? (lineStyle?.color ?? style.color)
               : kind === "rail"
                 ? "#4a4a4a"
@@ -2536,7 +2544,7 @@ export class CanvasView {
                     : (cloudPreset ?? style.color),
         strokeWidth: isMeasure
           ? DEFAULT_MEASUREMENT_STROKE_WIDTH
-          : kind === "polyline"
+          : lineLike
             ? (lineStyle?.widthPt ?? style.strokeWidth)
             : kind === "rail"
               ? 0.6
@@ -2562,7 +2570,7 @@ export class CanvasView {
         textColor: kind === "textbox" ? "#1a2024" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
         lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
-        lineStyle: kind === "polyline" && lineStyle?.dashed ? "dashed" : undefined,
+        lineStyle: lineLike && lineStyle?.dashed ? "dashed" : undefined,
         rows: kind === "rail" ? defaultRailRows("plc") : undefined,
         rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
@@ -3129,11 +3137,13 @@ export class CanvasView {
     for (const field of spec.fields) {
       const value = sheetDocument.template.fields[field.id] ?? "";
       if (!value) continue;
-      const placement = layoutFieldText(field, value, measureSheetText);
-      if (!placement) continue;
-      const point = this.toScreen({ x: placement.x, y: placement.baseline });
-      ctx.font = `${placement.size * zoom}px ${SHEET_FONT_STACK}`;
-      ctx.fillText(placement.text, point.x, point.y);
+      const lines = layoutFieldLines(field, value, measureSheetText);
+      for (const line of lines) {
+        if (!line.text) continue;
+        const point = this.toScreen({ x: line.x, y: line.baseline });
+        ctx.font = `${line.size * zoom}px ${SHEET_FONT_STACK}`;
+        ctx.fillText(line.text, point.x, point.y);
+      }
     }
     ctx.restore();
   }
@@ -3167,10 +3177,16 @@ export class CanvasView {
       y: field.rect.y + field.rect.height,
     });
     const zoom = this.viewZoom;
-    const input = document.createElement("input");
-    input.type = "text";
+    const multiline = (field.maxLines ?? 1) > 1;
+    const input: HTMLInputElement | HTMLTextAreaElement = multiline
+      ? document.createElement("textarea")
+      : document.createElement("input");
+    if (input instanceof HTMLInputElement) input.type = "text";
     input.className = "sheet-field-input";
     input.value = sheetDocument.template.fields[field.id] ?? "";
+    if (field.id === SHEET_FIELD.details) {
+      input.placeholder = t("sheet.field.detailsPlaceholder");
+    }
     input.maxLength = 500;
     input.style.position = "absolute";
     input.style.left = `${start.x}px`;
@@ -3183,7 +3199,10 @@ export class CanvasView {
     input.style.fontWeight = field.bold ? "700" : "400";
     input.style.textAlign = field.align;
     input.style.padding = `0 ${field.padding * zoom}px`;
-    input.style.lineHeight = `${Math.max(1, end.y - start.y)}px`;
+    input.style.lineHeight = `${Math.max(1, field.fontSize * 1.18 * zoom)}px`;
+    input.style.whiteSpace = "pre-wrap";
+    input.style.resize = "none";
+    input.style.overflow = "auto";
     input.style.background = "#ffffff";
     input.style.color = "#111111";
     input.style.caretColor = "#111111";
@@ -3200,12 +3219,13 @@ export class CanvasView {
 
     input.addEventListener("pointerdown", (event) => event.stopPropagation());
     input.addEventListener("keydown", (event) => {
-      event.stopPropagation();
-      if (event.key === "Enter") {
-        event.preventDefault();
+      const keyEvent = event as KeyboardEvent;
+      keyEvent.stopPropagation();
+      if (keyEvent.key === "Enter" && (keyEvent.ctrlKey || keyEvent.metaKey || !multiline)) {
+        keyEvent.preventDefault();
         this.commitSheetField(true);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
+      } else if (keyEvent.key === "Escape") {
+        keyEvent.preventDefault();
         this.commitSheetField(false);
       }
     });
@@ -3536,10 +3556,14 @@ export class CanvasView {
       }
       case "line": {
         if (points.length < 2) break;
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(3, lineWidth * 3), Math.max(2, lineWidth * 2)]);
+        }
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         ctx.lineTo(points[1].x, points[1].y);
         ctx.stroke();
+        ctx.setLineDash([]);
         this.drawEndpoints(ctx, points, item.color);
         break;
       }

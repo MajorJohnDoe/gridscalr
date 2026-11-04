@@ -43,7 +43,11 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       variants.type = "button";
       variants.title = t("context.chooseVariants");
       variants.setAttribute("aria-label", t("tool.chooseVariants", { name: t(tool.label) }));
-      variants.innerHTML = `${icon("chevronDown", 12)}<span>${t("context.variants")}</span>`;
+      const label =
+        tool.id === "line" || tool.id === "polyline"
+          ? t("context.lineOptions")
+          : t("context.variants");
+      variants.innerHTML = `${icon("chevronDown", 12)}<span>${label}</span>`;
       variants.addEventListener("click", () => {
         if (family) openToolFamilyVariants(variants, family);
         else openToolVariants(variants, tool.id);
@@ -242,43 +246,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     editLineTypes.setAttribute("aria-label", t("context.editLineTypes"));
     editLineTypes.addEventListener("click", () => actions.editLineTypes());
     lineTypeWrap.append(select, editLineTypes);
-
-    const colorWrap = el("label", "context-number");
-    colorWrap.append(el("span", "", t("context.lineColor")));
-    const color = el("input", "color-swatch context-line-color");
-    color.type = "color";
-    color.value = store.ui.lineStyle.color;
-    color.title = t("context.lineColor");
-    color.setAttribute("aria-label", t("context.lineColor"));
-    color.addEventListener("input", () => store.setLineStyle({ color: color.value }));
-    colorWrap.append(color);
-
-    const widthWrap = el("label", "context-number");
-    widthWrap.append(el("span", "", t("context.strokeWidth")));
-    const width = el("select", "select");
-    width.title = t("context.strokeWidth");
-    width.setAttribute("aria-label", t("context.strokeWidth"));
-    for (const value of STROKE_WIDTH_OPTIONS) {
-      width.append(
-        option(String(value), `${value} pt`, Math.abs(value - store.ui.lineStyle.widthPt) < 0.01),
-      );
-    }
-    width.addEventListener("change", () => store.setLineStyle({ widthPt: Number(width.value) }));
-    widthWrap.append(width);
-
-    const dashWrap = el("label", "context-number");
-    dashWrap.append(el("span", "", t("context.lineStyle")));
-    const dash = el("select", "select");
-    dash.title = t("context.lineStyle");
-    dash.setAttribute("aria-label", t("context.lineStyle"));
-    dash.append(
-      option("solid", t("context.lineSolid"), !store.ui.lineStyle.dashed),
-      option("dashed", t("context.lineDashed"), store.ui.lineStyle.dashed),
-    );
-    dash.addEventListener("change", () => store.setLineStyle({ dashed: dash.value === "dashed" }));
-    dashWrap.append(dash);
-
-    controls.append(lineTypeWrap, colorWrap, widthWrap, dashWrap, el("div", "divider-v"));
+    controls.append(lineTypeWrap, el("div", "divider-v"));
   }
 
   if (

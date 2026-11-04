@@ -761,7 +761,17 @@ function drawItem(
     }
     case "line":
       if (item.points.length < 2) break;
-      drawPolyline(page, viewport, item.points.slice(0, 2), color, width, opacity, false);
+      drawPolyline(
+        page,
+        viewport,
+        item.points.slice(0, 2),
+        color,
+        width,
+        opacity,
+        false,
+        LineCapStyle.Butt,
+        item.lineStyle === "dashed" ? [5, 3] : undefined,
+      );
       break;
     case "arrow": {
       if (item.points.length < 2) break;

@@ -1,17 +1,26 @@
 import { CLOUD_FILL_PRESETS, cloudFillLabel, type CloudFillPreset } from "../model/cloud";
 import { stampStatusColor } from "../model/stamps";
-import { DRAW_COLOR_PRESETS, drawColorLabel } from "../model/style";
+import { DRAW_COLOR_PRESETS, STROKE_WIDTH_OPTIONS, drawColorLabel } from "../model/style";
 import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
 import { store, type ToolId } from "../state/store";
 import { textDialog } from "./dialogs";
-import { el } from "./dom";
+import { el, option } from "./dom";
 import { icon } from "./icons";
 import { familyToolForDisplay, rememberFamilyTool, TOOL_BY_ID, type ToolFamily } from "./toolDefs";
 import { t } from "../i18n";
 
 const LONG_PRESS_MS = 320;
 
-const VARIANT_TOOLS = new Set(["area", "cloud", "highlight", "callout", "stamp", "arrow"]);
+const VARIANT_TOOLS = new Set([
+  "area",
+  "cloud",
+  "highlight",
+  "callout",
+  "stamp",
+  "arrow",
+  "line",
+  "polyline",
+]);
 
 let flyoutRoot: HTMLElement | null = null;
 let flyoutCleanup: (() => void) | null = null;
@@ -88,6 +97,7 @@ function openToolFlyout(button: HTMLElement, toolId: string): void {
     else if (toolId === "highlight") renderHighlight(panel, rerender);
     else if (toolId === "callout") renderCallout(panel, rerender);
     else if (toolId === "stamp") renderStamp(panel, rerender);
+    else if (toolId === "line" || toolId === "polyline") renderLineOptions(panel, rerender, toolId);
     else renderArrow(panel, rerender);
   });
 }
@@ -98,7 +108,100 @@ function toolFlyoutLabel(toolId: string): string {
   if (toolId === "highlight") return t("tool.flyout.highlightVariants");
   if (toolId === "callout") return t("tool.flyout.calloutColours");
   if (toolId === "stamp") return t("tool.flyout.stampPresets");
+  if (toolId === "line") return t("tool.flyout.lineOptions");
+  if (toolId === "polyline") return t("tool.flyout.pipeOptions");
   return t("tool.flyout.arrowVariants");
+}
+
+function renderLineOptions(panel: HTMLElement, render: () => void, toolId: string): void {
+  const isPipe = toolId === "polyline";
+  panel.append(el("div", "tool-flyout-title", t(isPipe ? "toolFlyout.pipe" : "toolFlyout.line")));
+
+  if (isPipe && store.project) {
+    panel.append(el("div", "tool-flyout-section", t("toolFlyout.lineType")));
+    const lineTypeSelect = el("select", "select tool-flyout-select");
+    lineTypeSelect.setAttribute("aria-label", t("toolFlyout.lineType"));
+    for (const lineType of store.project.lineTypes) {
+      lineTypeSelect.append(
+        option(
+          lineType.id,
+          `${lineType.name} · ${lineType.widthPt} pt`,
+          lineType.id === store.ui.lineTypeId,
+        ),
+      );
+    }
+    lineTypeSelect.addEventListener("change", () => {
+      store.setLineType(lineTypeSelect.value);
+      render();
+    });
+    panel.append(lineTypeSelect);
+    const edit = el("button", "btn btn-small btn-ghost", t("toolFlyout.editLineTypes"));
+    edit.type = "button";
+    edit.addEventListener("click", () => {
+      closeToolFlyout();
+      void import("../features/schematics/ui/lineTypeDialog").then((module) =>
+        module.openLineTypeDialog(),
+      );
+    });
+    panel.append(edit);
+  }
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.colour")));
+  renderLineColourSwatches(panel, render);
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.strokeWidth")));
+  const widths = el("div", "tool-width-options");
+  for (const value of STROKE_WIDTH_OPTIONS) {
+    const button = el("button", "tool-width-option", `${value} pt`);
+    button.type = "button";
+    button.classList.toggle("is-selected", Math.abs(store.ui.lineStyle.widthPt - value) < 0.01);
+    button.addEventListener("click", () => {
+      store.setLineStyle({ widthPt: value });
+      render();
+    });
+    widths.append(button);
+  }
+  panel.append(widths);
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.lineStyle")));
+  for (const [dashed, label] of [
+    [false, t("toolFlyout.solid")],
+    [true, t("toolFlyout.dashed")],
+  ] as const) {
+    variantRow(panel, {
+      label,
+      description: dashed ? t("toolFlyout.dashedHint") : t("toolFlyout.solidHint"),
+      iconName: "line",
+      selected: store.ui.lineStyle.dashed === dashed,
+      onSelect: () => {
+        store.setLineStyle({ dashed });
+        render();
+      },
+    });
+  }
+}
+
+function renderLineColourSwatches(panel: HTMLElement, render: () => void): void {
+  const swatches = el("div", "tool-fill-swatches");
+  for (const preset of DRAW_COLOR_PRESETS) {
+    const button = el("button", "tool-fill-swatch has-color");
+    button.type = "button";
+    button.title = drawColorLabel(preset);
+    button.setAttribute("aria-label", drawColorLabel(preset));
+    button.style.setProperty("--swatch", preset.color);
+    button.classList.toggle(
+      "is-selected",
+      store.ui.lineStyle.color.toLowerCase() === preset.color.toLowerCase(),
+    );
+    button.addEventListener("click", () => {
+      store.setLineStyle({ color: preset.color });
+      render();
+    });
+    const option = el("span", "tool-fill-option");
+    option.append(button, el("span", "tool-fill-label", drawColorLabel(preset)));
+    swatches.append(option);
+  }
+  panel.append(swatches);
 }
 
 function outsideHandler(event: MouseEvent): void {

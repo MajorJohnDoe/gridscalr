@@ -282,7 +282,8 @@ high and contains:
 
 - a revision table on the left: `Bet.`, `Rev. avser`, `Datum`, `Sign`, four data rows
   plus a header row;
-- a project-name cell and a logo/text cell in the middle;
+- a project-name cell, a logo/text cell and a wide system/equipment details
+  cell in the middle;
 - a title block on the right with three label/value rows:
   `title.handledBy | value | title.card | value`,
   `title.date | value | title.system | value`,
@@ -294,10 +295,14 @@ sheets use the same geometry.
 Field ids:
 
 ```text
-project.name, project.logo
+project.name, project.logo, sheet.details
 title.handledBy, title.card, title.date, title.system, title.assignment, title.page
 rev.1.bet, rev.1.rev, rev.1.date, rev.1.sign  …  rev.4.*
 ```
+
+Project name, logo and the system/equipment details cell accept up to three
+lines; title-block values accept two lines. Explicit line breaks are kept and
+long lines wrap inside the cell.
 
 All fields are optional. Empty fields render as empty cells, never as placeholder
 text in the export. Prefill uses real values:

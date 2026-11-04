@@ -51,6 +51,14 @@ try {
   const dragPage = async (start, end) => {
     await dragScreen(await mousePoint(start), await mousePoint(end));
   };
+  const dragPageWithShift = async (start, end) => {
+    await page.keyboard.down("Shift");
+    try {
+      await dragScreen(await mousePoint(start), await mousePoint(end));
+    } finally {
+      await page.keyboard.up("Shift");
+    }
+  };
   const itemIds = async () =>
     page.evaluate(() =>
       window.__gridscalr.store.project.layers.flatMap((layer) =>
@@ -460,6 +468,41 @@ try {
     (await itemById("item_wall_partition")).lineStyle,
     "dashed",
     "the Properties line style should mark the length as dashed",
+  );
+
+  // 7c. Shift constrains a line even when the pointer starts on an existing line.
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 60, y: 80 }, { x: 180, y: 100 });
+  const shiftedLine = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === selection?.itemId);
+  });
+  assert.equal(shiftedLine?.kind, "line");
+  assert.ok(
+    Math.abs(shiftedLine.points[1].y - shiftedLine.points[0].y) < 0.5,
+    "Shift should make a new line horizontal",
+  );
+
+  await page.evaluate(() => {
+    window.__gridscalr.store.project.settings.snapToGeometry = true;
+    window.__gridscalr.store.emit("change");
+  });
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 120, y: 220 }, { x: 240, y: 220 });
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 180, y: 220 }, { x: 190, y: 140 });
+  const snappedShiftLine = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === selection?.itemId);
+  });
+  assert.equal(snappedShiftLine?.kind, "line");
+  assert.ok(
+    Math.abs(snappedShiftLine.points[1].x - snappedShiftLine.points[0].x) < 0.5,
+    "Shift should ignore the segment snap and keep the line vertical",
   );
 
   // 8. Hidden and locked items stay out of hit testing.

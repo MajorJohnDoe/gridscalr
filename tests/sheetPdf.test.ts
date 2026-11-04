@@ -85,6 +85,7 @@ describe("sheet PDF with values", () => {
       "project.name": "Test project",
       "title.card": "56-01-01",
       "title.system": "Värmesystem",
+      "sheet.details": "System: VärmeSystem\nApparatskåp: Obj.nr-50",
       "rev.1.bet": "A",
     });
 
@@ -92,6 +93,8 @@ describe("sheet PDF with values", () => {
     expect(text).toContain("Test project");
     expect(text).toContain("56-01-01");
     expect(text).toContain("Värmesystem");
+    expect(text).toContain("System: VärmeSystem");
+    expect(text).toContain("Apparatskåp: Obj.nr-50");
     expect(text).toContain("A");
   });
 

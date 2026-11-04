@@ -895,7 +895,7 @@ export function selectionSection(
       section.append(depthField);
     }
 
-    if (isMeasurementKind(item.kind) || item.kind === "polyline") {
+    if (isMeasurementKind(item.kind) || item.kind === "polyline" || item.kind === "line") {
       const lineField = el("label", "field");
       lineField.append(el("span", "field-label", t("inspector.lineStyle")));
       const lineStyle = el("select", "select");

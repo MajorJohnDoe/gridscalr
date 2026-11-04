@@ -82,6 +82,7 @@ An operation card sheet is a page created from a built-in template instead of a 
 
 - **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
 - **Fill in fields:** double-click a cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet. Table cells can also be filled directly on the canvas.
+- **Multi-line fields:** project name, logo and the wide system/equipment cell accept up to three lines; title-block values accept two. Press `Enter` for a new line inside a multi-line cell, or `Ctrl/Cmd+Enter` to commit. Long lines wrap inside the cell.
 - **Data summary:** choose the **Data summary** template for a sheet with a table. The table has fixed column headers and 9 mm rows; the number of rows depends on the paper (about 23 on A3, more on A2). Fill the cells in the form or double-click them. Need more rows? Create another data-summary sheet and continue there.
 - **Page number:** the **Page** field is free text. It is prefilled with the sheet ordinal and never updated automatically.
 - **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block or table.

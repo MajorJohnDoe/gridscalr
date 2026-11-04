@@ -37,6 +37,7 @@ const resetButton = element<HTMLButtonElement>("reset");
 const SAMPLE_VALUES: Record<string, string> = {
   [SHEET_FIELD.projectName]: "Projektnamn",
   [SHEET_FIELD.projectLogo]: "Logotyp",
+  [SHEET_FIELD.details]: "System: VärmeSystem 56-01-01\nApparatskåp: Obj.nr-50-01-01-AS01",
   [SHEET_FIELD.handledBy]: "Företag AB",
   [SHEET_FIELD.card]: "56-01-01",
   [SHEET_FIELD.date]: "2026-11-04",
@@ -79,12 +80,17 @@ function renderFields(template: SheetTemplateSpec, scale: number): void {
   fieldsLayer.classList.toggle("is-debug", debug);
 
   for (const spec of template.fields) {
-    const input = document.createElement("input");
-    input.type = "text";
+    const multiline = (spec.maxLines ?? 1) > 1;
+    const input: HTMLInputElement | HTMLTextAreaElement = multiline
+      ? document.createElement("textarea")
+      : document.createElement("input");
+    if (input instanceof HTMLInputElement) input.type = "text";
     input.value = values[spec.id] ?? "";
     input.dataset.fieldId = spec.id;
     input.autocomplete = "off";
     input.spellcheck = false;
+    input.style.resize = "none";
+    input.style.whiteSpace = "pre-wrap";
 
     const width = spec.rect.width * scale;
     const height = spec.rect.height * scale;
@@ -103,8 +109,9 @@ function renderFields(template: SheetTemplateSpec, scale: number): void {
     });
     input.addEventListener("focus", () => input.select());
     input.addEventListener("keydown", (event) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
+      const keyEvent = event as KeyboardEvent;
+      if (keyEvent.key === "Enter" && !multiline) {
+        keyEvent.preventDefault();
         input.blur();
       }
     });

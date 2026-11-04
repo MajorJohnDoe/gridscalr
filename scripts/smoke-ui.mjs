@@ -1166,6 +1166,31 @@ try {
     "the line-type editor should add a project line type",
   );
 
+  // The line and pipe tools expose compact dropdown menus for colour and format.
+  await page.keyboard.press("i");
+  await page.getByRole("button", { name: "Choose variants for Line" }).click();
+  const lineOptions = page.getByRole("menu", { name: "Line options" });
+  await lineOptions.waitFor();
+  await lineOptions.getByRole("menuitemradio", { name: /Dashed/ }).click();
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.lineStyle.dashed),
+    true,
+    "the line options menu should set the dashed format",
+  );
+  await lineOptions.getByRole("menuitemradio", { name: /Solid/ }).click();
+  await page.keyboard.press("Escape");
+  await lineOptions.waitFor({ state: "detached" });
+
+  await page.keyboard.press("f");
+  await page.getByRole("button", { name: "Choose variants for Pipe / duct" }).click();
+  const pipeOptions = page.getByRole("menu", { name: "Pipe & duct options" });
+  await pipeOptions.waitFor();
+  await pipeOptions.getByLabel("Line type").waitFor();
+  await pipeOptions.getByRole("button", { name: "Signal red" }).waitFor();
+  await pipeOptions.getByRole("button", { name: "2 pt" }).waitFor();
+  await page.keyboard.press("Escape");
+  await pipeOptions.waitFor({ state: "detached" });
+
   // Rail rows can be reordered with the dialog controls.
   await page.keyboard.press("v");
   await interaction.click({ position: { x: 12, y: 12 } });
@@ -1250,14 +1275,15 @@ try {
       selection?.addRange(range);
       element.dispatchEvent(new Event("keyup", { bubbles: true }));
     });
-  const selectionWeight = () =>
-    page.evaluate(() => {
+  const selectionStyle = (property) =>
+    page.evaluate((name) => {
       const selection = window.getSelection();
       if (!selection?.rangeCount) return null;
       const node = selection.getRangeAt(0).startContainer;
       const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
-      return element ? getComputedStyle(element).fontWeight : null;
-    });
+      return element ? getComputedStyle(element)[name] : null;
+    }, property);
+  const selectionWeight = () => selectionStyle("fontWeight");
   await selectFirstWord();
   const boldButton = page.locator('.inline-style-strip button[title="Bold"]');
   await boldButton.click();
@@ -1273,6 +1299,17 @@ try {
     "clicking bold again should remove the run formatting",
   );
   await boldButton.click();
+  const underlineButton = page.locator('.inline-style-strip button[title="Underline"]');
+  await underlineButton.click();
+  assert.ok(
+    (await selectionStyle("textDecorationLine"))?.includes("underline"),
+    "underline should be visible inside the editor before committing",
+  );
+  await underlineButton.click();
+  assert.ok(
+    !(await selectionStyle("textDecorationLine"))?.includes("underline"),
+    "clicking underline again should remove it immediately",
+  );
   await page.locator(".inline-style-strip .is-primary").click();
   await textEditor.waitFor({ state: "detached" });
   const richBox = await page.evaluate(() => {

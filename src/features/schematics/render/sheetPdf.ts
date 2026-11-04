@@ -1,6 +1,6 @@
 import { PDFDocument, StandardFonts, rgb, type PDFFont, type PDFPage } from "pdf-lib";
 import type { Rect, SheetTemplateSpec, TextAlign, VerticalAlign } from "../model/sheetTemplate";
-import { fitText } from "./sheetText";
+import { fitText, layoutFieldLines } from "./sheetText";
 
 const INK = rgb(0, 0, 0);
 
@@ -121,9 +121,14 @@ function drawPrimitives(page: PDFPage, template: SheetTemplateSpec, fonts: Sheet
   }
 }
 
-/** Field values are single-line in the first implementation. */
+/** Field values may contain explicit line breaks; spaces inside a line collapse. */
 function normalizeFieldValue(value: string): string {
-  return value.replace(/\s+/g, " ").trim();
+  return value
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .join("\n")
+    .trim();
 }
 
 /** Draws the field values onto an existing (static) sheet page. */
@@ -136,14 +141,20 @@ export function drawSheetFields(
   for (const spec of template.fields) {
     const value = values[spec.id];
     if (!value) continue;
-    drawTextInRect(page, fonts, normalizeFieldValue(value), spec.rect, {
-      size: spec.fontSize,
-      bold: spec.bold,
-      align: spec.align,
-      verticalAlign: spec.verticalAlign,
-      padding: spec.padding,
-      shrink: spec.shrink,
-    });
+    const text = normalizeFieldValue(value);
+    if (!text) continue;
+    const font = spec.bold ? fonts.bold : fonts.regular;
+    const lines = layoutFieldLines(spec, text, (line, size) => font.widthOfTextAtSize(line, size));
+    for (const line of lines) {
+      if (!line.text) continue;
+      page.drawText(line.text, {
+        x: line.x,
+        y: page.getHeight() - line.baseline,
+        size: line.size,
+        font,
+        color: INK,
+      });
+    }
   }
 }
 

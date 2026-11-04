@@ -1,5 +1,10 @@
 import type { TextRun } from "../model/types";
-import { resolveTextRun, type RichTextDefaults, type RunStylePatch } from "../model/richText";
+import {
+  applyRunStyle,
+  resolveTextRun,
+  type RichTextDefaults,
+  type RunStylePatch,
+} from "../model/richText";
 import { TEXT_FONT_STACK, TEXT_LINE_HEIGHT } from "../model/text";
 
 interface ResolvedSelectionStyle {
@@ -80,37 +85,18 @@ export class RichEditorController {
   }
 
   applyStyle(patch: RunStylePatch): boolean {
-    const selection = window.getSelection();
     const range = this.activeRange();
-    if (!selection || !range) return false;
-    const nodes = this.selectedTextNodes(range);
-    const wrappers: HTMLSpanElement[] = [];
-    for (const node of nodes) {
-      const length = node.textContent?.length ?? 0;
-      const start = node === range.startContainer ? range.startOffset : 0;
-      const end = node === range.endContainer ? range.endOffset : length;
-      if (end <= start) continue;
-      let target = node;
-      if (start > 0) target = target.splitText(start);
-      if (end - start < (target.textContent?.length ?? 0)) target.splitText(end - start);
-      const merged = { ...this.styleAtNode(target), ...patch };
-      const span = document.createElement("span");
-      this.styleSpan(span, merged);
-      target.parentNode?.insertBefore(span, target);
-      span.appendChild(target);
-      wrappers.push(span);
-    }
-    if (!wrappers.length) return false;
-    const first = wrappers[0].firstChild;
-    const last = wrappers[wrappers.length - 1].firstChild;
-    if (first && last) {
-      const next = document.createRange();
-      next.setStart(first, 0);
-      next.setEnd(last, last.textContent?.length ?? 0);
-      selection.removeAllRanges();
-      selection.addRange(next);
-      this.savedRange = next.cloneRange();
-    }
+    if (!range) return false;
+    const offsets = this.selectionOffsets(range);
+    if (!offsets || offsets.start === offsets.end) return false;
+    const next = applyRunStyle(this.getRuns(), offsets.start, offsets.end, patch);
+    this.savedRange = null;
+    this.render(next);
+    this.element.focus({ preventScroll: true });
+    this.setSelectionByOffsets(
+      offsets.start,
+      Math.min(offsets.end, next.map((run) => run.text).join("").length),
+    );
     this.onChange();
     return true;
   }
@@ -297,6 +283,74 @@ export class RichEditorController {
       element = element.parentElement;
     }
     return style;
+  }
+
+  private selectionOffsets(range: Range): { start: number; end: number } | null {
+    let start: number | null = null;
+    let end: number | null = null;
+    let total = 0;
+    const walk = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const length = node.textContent?.length ?? 0;
+        if (node === range.startContainer) start = total + range.startOffset;
+        if (node === range.endContainer) end = total + range.endOffset;
+        total += length;
+        return;
+      }
+      if (node instanceof HTMLBRElement) {
+        if (node === range.startContainer) start = total;
+        if (node === range.endContainer) end = total;
+        total += 1;
+        return;
+      }
+      node.childNodes.forEach(walk);
+    };
+    this.element.childNodes.forEach(walk);
+    if (range.startContainer === this.element) start = 0;
+    if (range.endContainer === this.element) end = total;
+    if (start === null || end === null) return null;
+    return { start: Math.min(start, end), end: Math.max(start, end) };
+  }
+
+  private setSelectionByOffsets(start: number, end: number): void {
+    const selection = window.getSelection();
+    if (!selection) return;
+    let total = 0;
+    let startNode: Node | null = null;
+    let startOffset = 0;
+    let endNode: Node | null = null;
+    let endOffset = 0;
+    const walk = (node: Node) => {
+      if (node.nodeType === Node.TEXT_NODE) {
+        const length = node.textContent?.length ?? 0;
+        if (!startNode && start <= total + length) {
+          startNode = node;
+          startOffset = Math.max(0, Math.min(length, start - total));
+        }
+        if (!endNode && end <= total + length) {
+          endNode = node;
+          endOffset = Math.max(0, Math.min(length, end - total));
+        }
+        total += length;
+        return;
+      }
+      if (node instanceof HTMLBRElement) {
+        total += 1;
+        return;
+      }
+      node.childNodes.forEach(walk);
+    };
+    this.element.childNodes.forEach(walk);
+    if (!startNode || !endNode) {
+      this.focusEnd();
+      return;
+    }
+    const range = document.createRange();
+    range.setStart(startNode, startOffset);
+    range.setEnd(endNode, endOffset);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    this.savedRange = range.cloneRange();
   }
 
   private selectedTextNodes(range: Range): Text[] {
