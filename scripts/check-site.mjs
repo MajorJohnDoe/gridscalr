@@ -44,7 +44,7 @@ const pages = [
       "tif/tiff drawings",
       "facilities operations",
       "property management",
-      "door schedule",
+      "count schedule",
       "procurement quantities",
     ],
   },

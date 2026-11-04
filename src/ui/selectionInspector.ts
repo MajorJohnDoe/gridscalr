@@ -3,7 +3,6 @@ import { countQuantityOf } from "../features/countTypes/model";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
   INSPECTION_STATUSES,
-  INSPECTION_STATUS_LABELS,
   inspectionStatusColor,
   inspectionStatusLabel,
   symbolCategoryLabel,
@@ -30,7 +29,7 @@ import {
 } from "../model/layers";
 import { itemKindLabel, itemMetrics, itemNeedsPageScale, itemScaleWarning } from "../model/measure";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
-import { LABEL_FIT_LABELS } from "../model/labelLayout";
+import { labelFitLabel } from "../model/labelLayout";
 import { formatNumber } from "../model/units";
 import { resolveSelection, selectionKind } from "../model/selection";
 import type {
@@ -46,6 +45,7 @@ import { el, option } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 export function selectionSection(
   project: NonNullable<typeof store.project>,
@@ -91,7 +91,7 @@ export function selectionSection(
       ),
     );
   } else if (item.kind === "text") {
-    card.append(el("div", "selection-secondary", "Text annotation"));
+    card.append(el("div", "selection-secondary", t("inspector.textAnnotation")));
   } else if (item.kind === "image") {
     const asset = imageAssetForItem(project, item);
     card.append(
@@ -129,39 +129,27 @@ export function selectionSection(
         "empty-note small",
         layerLockedOnPage(layer, item.page)
           ? `“${layer.name}” is locked on Page ${item.page}. Unlock it to edit this markup.`
-          : "This markup is locked. Unlock it below to edit it.",
+          : t("inspector.lockedEdit"),
       ),
     );
   }
   if (hidden) {
-    section.append(el("div", "empty-note small", "This markup is hidden."));
+    section.append(el("div", "empty-note small", t("inspector.hidden")));
   }
 
   if (metrics && !metrics.scale && itemNeedsPageScale(item)) {
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "This measurement has no scale. Calibrate its page to show real-world values.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.noScale")));
   }
 
   if (isMeasurementKind(item.kind)) {
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "Drag the value label to position it freely, or drag the corner handle to resize it. Reset label position and Reset label size return it to automatic placement and the project size.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.labelHelp")));
     if (item.labelOffset || item.labelAnchor || item.labelFit) {
-      const resetLabel = el("button", "btn btn-small btn-ghost", "Reset label position");
+      const resetLabel = el("button", "btn btn-small btn-ghost", t("inspector.resetLabelPosition"));
       resetLabel.type = "button";
       resetLabel.disabled = locked;
       resetLabel.title = locked
-        ? "Unlock the layer to move or reset this label."
-        : "Return the value label to automatic placement";
+        ? t("inspector.unlockLayerMove")
+        : t("inspector.resetLabelPositionTitle");
       resetLabel.addEventListener("click", () => {
         store.mutate((project) => {
           const target = findItem(project, item.id)?.item;
@@ -180,10 +168,10 @@ export function selectionSection(
         el(
           "div",
           "empty-note small",
-          `Locked inside area: ${LABEL_FIT_LABELS[item.labelFit]}. The size adapts to the available space. Drag the label to release it.`,
+          `Locked inside area: ${labelFitLabel(item.labelFit)}. The size adapts to the available space. Drag the label to release it.`,
         ),
       );
-      const release = el("button", "btn btn-small btn-ghost", "Release inside area");
+      const release = el("button", "btn btn-small btn-ghost", t("inspector.releaseInsideArea"));
       release.type = "button";
       release.disabled = locked;
       release.addEventListener("click", () => {
@@ -202,7 +190,7 @@ export function selectionSection(
     const sizeField = el("label", "field");
     const sizeHead = el("div", "section-head");
     sizeHead.style.marginBottom = "4px";
-    sizeHead.append(el("span", "field-label", "Label size"));
+    sizeHead.append(el("span", "field-label", t("inspector.labelSize")));
     const sizeValue = el("span", "range-value", `${formatNumber(currentLabelSize, 1)} pt`);
     sizeHead.append(sizeValue);
     const sizeRange = el("input");
@@ -212,8 +200,8 @@ export function selectionSection(
     sizeRange.step = "0.5";
     sizeRange.value = String(currentLabelSize);
     sizeRange.disabled = locked;
-    sizeRange.setAttribute("aria-label", "Measurement label size in points");
-    sizeRange.title = "Paper-space label size. The canvas and the PDF export use the same value.";
+    sizeRange.setAttribute("aria-label", t("inspector.labelSizePoints"));
+    sizeRange.title = t("inspector.labelSizeNote");
     sizeRange.addEventListener("input", () => {
       sizeValue.textContent = `${formatNumber(Number(sizeRange.value), 1)} pt`;
     });
@@ -230,11 +218,11 @@ export function selectionSection(
     section.append(sizeField);
 
     if (item.labelSize !== undefined) {
-      const resetSize = el("button", "btn btn-small btn-ghost", "Reset label size");
+      const resetSize = el("button", "btn btn-small btn-ghost", t("inspector.resetLabelSize"));
       resetSize.type = "button";
       resetSize.disabled = locked;
       resetSize.title = locked
-        ? "Unlock the layer to reset this label."
+        ? t("inspector.unlockLayerResetLabel")
         : `Follow the project default (${formatNumber(projectLabelSize, 1)} pt)`;
       resetSize.addEventListener("click", () => {
         store.mutate((project) => {
@@ -249,15 +237,13 @@ export function selectionSection(
 
     if (item.kind === "count") {
       const typeField = el("label", "field");
-      typeField.append(el("span", "field-label", "Object type"));
+      typeField.append(el("span", "field-label", t("inspector.objectType")));
       const typeSelect = el("select", "select");
       for (const type of project.countTypes) {
         typeSelect.append(option(type.id, type.label, type.id === (item.countType ?? "other")));
       }
       typeSelect.disabled = locked;
-      typeSelect.title = locked
-        ? "Unlock the layer to edit this markup."
-        : "Count symbol and label type";
+      typeSelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.countType");
       typeSelect.addEventListener("change", () => {
         store.mutate((project) => {
           const target = findItem(project, item.id)?.item;
@@ -268,7 +254,7 @@ export function selectionSection(
       section.append(typeField);
 
       const quantityField = el("label", "field");
-      quantityField.append(el("span", "field-label", "Pieces per object"));
+      quantityField.append(el("span", "field-label", t("inspector.piecesPerObject")));
       const quantityInput = el("input", "input");
       quantityInput.type = "number";
       quantityInput.min = "1";
@@ -277,14 +263,14 @@ export function selectionSection(
       quantityInput.value = String(countQuantityOf(item));
       quantityInput.disabled = locked;
       quantityInput.title = locked
-        ? "Unlock the layer to edit this count."
-        : "How many pieces this one count symbol represents";
-      quantityInput.setAttribute("aria-label", "Pieces represented by this count");
+        ? t("inspector.unlockLayerEditCount")
+        : t("inspector.piecesHelp");
+      quantityInput.setAttribute("aria-label", t("inspector.piecesAria"));
       quantityInput.addEventListener("change", () => {
         const value = Number(quantityInput.value);
         if (!Number.isFinite(value) || value < 1) {
           quantityInput.value = String(countQuantityOf(item));
-          toast("Count quantity must be one piece or more.", "warning");
+          toast(t("inspector.piecesInvalid"), "warning");
           return;
         }
         store.mutate((project) => {
@@ -310,9 +296,7 @@ export function selectionSection(
       );
     }
     categorySelect.disabled = locked;
-    categorySelect.title = locked
-      ? "Unlock the layer to edit this markup."
-      : "Grouping used by the quantity report";
+    categorySelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.groupingHelp");
     categorySelect.addEventListener("change", () => {
       store.mutate((project) => {
         const target = findItem(project, item.id)?.item;
@@ -324,16 +308,14 @@ export function selectionSection(
 
     if (item.kind === "area") {
       const modeField = el("label", "field");
-      modeField.append(el("span", "field-label", "Area mode"));
+      modeField.append(el("span", "field-label", t("inspector.areaMode")));
       const modeSelect = el("select", "select");
       modeSelect.append(
-        option("add", "Add to area", (item.areaMode ?? "add") === "add"),
-        option("subtract", "Deduct from area", item.areaMode === "subtract"),
+        option("add", t("inspector.addToArea"), (item.areaMode ?? "add") === "add"),
+        option("subtract", t("inspector.deductFromArea"), item.areaMode === "subtract"),
       );
       modeSelect.disabled = locked;
-      modeSelect.title = locked
-        ? "Unlock the layer to edit this markup."
-        : "Deducted areas are subtracted from their category and room";
+      modeSelect.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.deductNote");
       modeSelect.addEventListener("change", () => {
         store.mutate((project) => {
           const target = findItem(project, item.id)?.item;
@@ -351,9 +333,7 @@ export function selectionSection(
     roomInput.value = item.room ?? "";
     roomInput.placeholder = "Optional";
     roomInput.disabled = locked;
-    roomInput.title = locked
-      ? "Unlock the layer to edit this markup."
-      : "Free text; suggestions come from rooms already used in the project";
+    roomInput.title = locked ? t("inspector.unlockLayerEdit") : t("inspector.roomHelp");
     const roomList = el("datalist");
     roomList.id = "selection-room-options";
     for (const room of allRooms(project)) roomList.append(option(room, room));
@@ -376,16 +356,14 @@ export function selectionSection(
     const image = item.image;
     const asset = image ? imageAssetForItem(project, item) : undefined;
     const modeField = el("label", "field");
-    modeField.append(el("span", "field-label", "Image mode"));
+    modeField.append(el("span", "field-label", t("inspector.imageMode")));
     const modeSelect = el("select", "select");
     modeSelect.append(
-      option("background", "Background (below markups)", imageModeOf(item) === "background"),
-      option("annotation", "Annotation (in layer order)", imageModeOf(item) === "annotation"),
+      option("background", t("inspector.backgroundMode"), imageModeOf(item) === "background"),
+      option("annotation", t("inspector.annotationMode"), imageModeOf(item) === "annotation"),
     );
     modeSelect.disabled = locked;
-    modeSelect.title = locked
-      ? "Unlock the image to change its mode."
-      : "Background images sit above the PDF and below every markup.";
+    modeSelect.title = locked ? t("inspector.unlockImageMode") : t("inspector.backgroundNote");
     modeSelect.addEventListener("change", () =>
       actions.setSelectionImageMode(modeSelect.value as ImageMode),
     );
@@ -405,7 +383,7 @@ export function selectionSection(
     opacityRange.step = "1";
     opacityRange.value = String(Math.round(imageOpacity(item) * 100));
     opacityRange.disabled = locked;
-    opacityRange.setAttribute("aria-label", "Image opacity");
+    opacityRange.setAttribute("aria-label", t("inspector.imageOpacity"));
     opacityRange.addEventListener("input", () => {
       opacityValue.textContent = `${opacityRange.value}%`;
     });
@@ -424,7 +402,7 @@ export function selectionSection(
         ),
       );
     } else if (image) {
-      section.append(el("div", "empty-note small", "The embedded image data is missing."));
+      section.append(el("div", "empty-note small", t("inspector.imageMissing")));
     }
   }
 
@@ -434,10 +412,10 @@ export function selectionSection(
       "span",
       "field-label",
       item.kind === "delta"
-        ? "Date (optional)"
+        ? t("inspector.dateOptional")
         : metrics
-          ? "Label (optional)"
-          : "List label (optional)",
+          ? t("inspector.labelOptional")
+          : t("inspector.listLabelOptional"),
     ),
   );
   const labelInput = el("input", "input");
@@ -449,13 +427,13 @@ export function selectionSection(
       ? "YYYY-MM-DD"
       : item.kind === "symbol"
         ? symbolName(item.symbolId)
-        : (metrics?.primary ?? (item.kind === "text" ? "Text note" : "Label"));
+        : (metrics?.primary ?? (item.kind === "text" ? t("inspector.textNote") : "Label"));
   labelInput.disabled = locked;
   labelInput.title = locked
-    ? "Unlock the layer to edit this markup."
+    ? t("inspector.unlockLayerEdit")
     : metrics
-      ? "Shown with the measurement on the page."
-      : "Used in the Markups list and exports. Press F2 to focus it.";
+      ? t("inspector.shownWithMeasurement")
+      : t("inspector.markupsMetadata");
   labelInput.addEventListener("change", () => {
     store.mutate((project) => {
       const target = findItem(project, item.id)?.item;
@@ -470,10 +448,10 @@ export function selectionSection(
         "div",
         "empty-note small",
         item.kind === "delta"
-          ? "The date is drawn below the revision triangle."
+          ? t("inspector.dateBelowTriangle")
           : item.kind === "symbol"
-            ? "The symbol name is used in the Markups list and exports; it is not drawn on the page."
-            : "List labels are export and Markups metadata; they are not drawn on the page.",
+            ? t("inspector.symbolNameNote")
+            : t("inspector.listLabelNote"),
       ),
     );
   }
@@ -482,15 +460,13 @@ export function selectionSection(
     const statusField = el("label", "field");
     statusField.append(el("span", "field-label", "Status"));
     const statusSelect = el("select", "select");
-    statusSelect.append(option("", "Not assessed", !item.status));
+    statusSelect.append(option("", t("inspector.notAssessed"), !item.status));
     for (const status of INSPECTION_STATUSES) {
-      statusSelect.append(option(status, INSPECTION_STATUS_LABELS[status], item.status === status));
+      statusSelect.append(option(status, inspectionStatusLabel(status), item.status === status));
     }
     statusSelect.value = item.status ?? "";
     statusSelect.disabled = locked;
-    statusSelect.title = locked
-      ? "Unlock the layer to edit this status."
-      : "Inspection status shown in the Markups list";
+    statusSelect.title = locked ? t("inspector.unlockStatus") : t("inspector.statusHelp");
     statusSelect.style.color = inspectionStatusColor(item.status ?? undefined);
     statusSelect.addEventListener("change", () => {
       store.mutate((project) => {
@@ -503,13 +479,7 @@ export function selectionSection(
     });
     statusField.append(statusSelect);
     section.append(statusField);
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "Symbol colour follows its category. Rotate with the handle or the field below.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.symbolColourNote")));
   }
 
   if (
@@ -524,10 +494,14 @@ export function selectionSection(
       el(
         "span",
         "field-label",
-        item.kind === "stamp" ? "Stamp text" : item.kind === "delta" ? "Revision" : "Text",
+        item.kind === "stamp"
+          ? t("inspector.stampText")
+          : item.kind === "delta"
+            ? "Revision"
+            : "Text",
       ),
     );
-    const edit = el("button", "btn btn-small", "Edit text…");
+    const edit = el("button", "btn btn-small", t("inspector.editText"));
     edit.type = "button";
     edit.disabled = locked;
     edit.addEventListener("click", actions.editSelectedText);
@@ -538,7 +512,7 @@ export function selectionSection(
   if (item.kind === "callout" || item.kind === "cloud") {
     const boxRow = el("div", "field-row");
     const widthField = el("label", "field");
-    widthField.append(el("span", "field-label", "Text box width"));
+    widthField.append(el("span", "field-label", t("inspector.textBoxWidth")));
     const widthInput = el("input", "input");
     widthInput.type = "number";
     widthInput.min = "20";
@@ -559,7 +533,7 @@ export function selectionSection(
     });
 
     const heightField = el("label", "field");
-    heightField.append(el("span", "field-label", "Text box height"));
+    heightField.append(el("span", "field-label", t("inspector.textBoxHeight")));
     const heightInput = el("input", "input");
     heightInput.type = "number";
     heightInput.min = "15";
@@ -582,18 +556,12 @@ export function selectionSection(
     heightField.append(heightInput);
     boxRow.append(widthField, heightField);
     section.append(boxRow);
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "Leave a size empty for automatic sizing based on the text. Font size is set below.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.sizeHelp")));
   }
 
   if (item.kind === "cloud") {
     const radiusField = el("label", "field");
-    radiusField.append(el("span", "field-label", "Scallop size"));
+    radiusField.append(el("span", "field-label", t("inspector.scallopSize")));
     const radius = el("input", "input");
     radius.type = "number";
     radius.min = "2";
@@ -614,7 +582,7 @@ export function selectionSection(
     });
     radiusField.append(radius);
     section.append(radiusField);
-    section.append(el("div", "empty-note small", "Auto scales the scallops with the cloud size."));
+    section.append(el("div", "empty-note small", t("inspector.scallopNote")));
   }
 
   if (item.kind === "cloud") {
@@ -639,7 +607,7 @@ export function selectionSection(
     section.append(fillRow);
 
     const fillColorField = el("label", "field");
-    fillColorField.append(el("span", "field-label", "Fill colour"));
+    fillColorField.append(el("span", "field-label", t("inspector.fillColour")));
     const fillColor = el("input", "color-swatch");
     fillColor.type = "color";
     fillColor.value = item.fillColor ?? item.color;
@@ -658,7 +626,7 @@ export function selectionSection(
     const opacityField = el("label", "field");
     const opacityHead = el("div", "section-head");
     opacityHead.style.marginBottom = "4px";
-    opacityHead.append(el("span", "field-label", "Fill opacity"));
+    opacityHead.append(el("span", "field-label", t("inspector.fillOpacity")));
     const opacityValue = el("span", "range-value", `${Math.round((item.opacity ?? 0.22) * 100)}%`);
     opacityHead.append(opacityValue);
     const opacityRange = el("input");
@@ -668,7 +636,7 @@ export function selectionSection(
     opacityRange.step = "1";
     opacityRange.value = String(Math.round((item.opacity ?? 0.22) * 100));
     opacityRange.disabled = !item.fillColor || locked;
-    opacityRange.setAttribute("aria-label", "Cloud fill opacity");
+    opacityRange.setAttribute("aria-label", t("inspector.cloudFillOpacity"));
     opacityRange.addEventListener("input", () => {
       opacityValue.textContent = `${opacityRange.value}%`;
     });
@@ -680,18 +648,12 @@ export function selectionSection(
     });
     opacityField.append(opacityHead, opacityRange);
     section.append(opacityField);
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "A 20–30% fill keeps the drawing and text underneath readable. Hatch patterns are not available yet.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.fillNote")));
   }
 
   if (item.kind === "highlight") {
     const modeField = el("label", "field");
-    modeField.append(el("span", "field-label", "Highlight mode"));
+    modeField.append(el("span", "field-label", t("inspector.highlightMode")));
     const mode = el("select", "select");
     mode.append(
       option("stroke", "Pen", (item.highlightShape ?? "stroke") === "stroke"),
@@ -726,7 +688,9 @@ export function selectionSection(
   if (item.kind !== "image" && item.kind !== "symbol") {
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
-    colorField.append(el("span", "field-label", item.kind === "text" ? "Text colour" : "Colour"));
+    colorField.append(
+      el("span", "field-label", item.kind === "text" ? t("inspector.textColour") : "Colour"),
+    );
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
     colorInput.value = item.color;
@@ -748,7 +712,7 @@ export function selectionSection(
       item.kind === "stamp" ||
       item.kind === "delta"
     ) {
-      sizeField.append(el("span", "field-label", "Text size"));
+      sizeField.append(el("span", "field-label", t("inspector.textSize")));
       const sizeWrap = el("div", "input-row");
       const size = el("input", "input");
       size.type = "number";
@@ -757,7 +721,7 @@ export function selectionSection(
       size.step = "0.5";
       size.value = String(item.fontSize ?? 12);
       size.disabled = locked;
-      size.setAttribute("aria-label", "Text size in points");
+      size.setAttribute("aria-label", t("inspector.textSizePoints"));
       size.addEventListener("change", () => {
         const value = Number(size.value);
         if (!Number.isFinite(value) || value <= 0) {
@@ -772,7 +736,7 @@ export function selectionSection(
       sizeWrap.append(size, el("span", "context-unit", "pt"));
       sizeField.append(sizeWrap);
     } else {
-      sizeField.append(el("span", "field-label", "Stroke width"));
+      sizeField.append(el("span", "field-label", t("inspector.strokeWidth")));
       const width = el("select", "select");
       for (const value of STROKE_WIDTH_OPTIONS) {
         width.append(
@@ -801,7 +765,7 @@ export function selectionSection(
       depth.step = "0.1";
       depth.value = String(item.depth ?? 1);
       depth.disabled = locked;
-      depth.setAttribute("aria-label", "Volume depth");
+      depth.setAttribute("aria-label", t("inspector.volumeDepth"));
       depth.addEventListener("change", () => {
         const value = Number(depth.value);
         if (!Number.isFinite(value) || value <= 0) {
@@ -822,17 +786,15 @@ export function selectionSection(
 
     if (isMeasurementKind(item.kind)) {
       const lineField = el("label", "field");
-      lineField.append(el("span", "field-label", "Line style"));
+      lineField.append(el("span", "field-label", t("inspector.lineStyle")));
       const lineStyle = el("select", "select");
       lineStyle.append(
         option("solid", "Solid", item.lineStyle !== "dashed"),
         option("dashed", "Dashed", item.lineStyle === "dashed"),
       );
       lineStyle.disabled = locked;
-      lineStyle.setAttribute("aria-label", "Measurement line style");
-      lineStyle.title = locked
-        ? "Unlock the layer to change the line style."
-        : "Solid or dashed measurement line";
+      lineStyle.setAttribute("aria-label", t("inspector.measurementLineStyle"));
+      lineStyle.title = locked ? t("inspector.unlockLineStyle") : t("inspector.solidOrDashed");
       lineStyle.addEventListener("change", () => {
         store.mutate((project) => {
           const target = findItem(project, item.id)?.item;
@@ -864,7 +826,7 @@ export function selectionSection(
     rotation.step = "1";
     rotation.value = String(Math.round(item.rotation ?? 0));
     rotation.disabled = locked;
-    rotation.setAttribute("aria-label", "Rotation in degrees");
+    rotation.setAttribute("aria-label", t("inspector.rotationDegrees"));
     rotation.addEventListener("change", () => {
       const value = Number(rotation.value);
       if (!Number.isFinite(value)) {
@@ -886,7 +848,7 @@ export function selectionSection(
   }
 
   const layerField = el("label", "field");
-  layerField.append(el("span", "field-label", "Move to layer"));
+  layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
   const layerSelect = el("select", "select");
   for (const candidate of layersForKind(project, layer.kind)) {
     layerSelect.append(option(candidate.id, candidate.name, candidate.id === layer.id));
@@ -906,15 +868,15 @@ export function selectionSection(
   visibleToggle.type = "button";
   const layerShown = layerVisibleOnPage(layer, item.page);
   visibleToggle.disabled = !layerShown;
-  visibleToggle.title = layerShown ? "Show or hide this markup" : "Show the layer first";
+  visibleToggle.title = layerShown ? t("inspector.showHideMarkup") : t("inspector.showLayerFirst");
   visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? "Hidden" : "Visible"}</span>`;
   visibleToggle.addEventListener("click", () => actions.setSelectionVisible(hidden));
   const lockToggle = el("button", `toggle${locked ? " is-on" : ""}`);
   lockToggle.type = "button";
   lockToggle.disabled = layerLockedOnPage(layer, item.page);
   lockToggle.title = layerLockedOnPage(layer, item.page)
-    ? "Unlock the layer first"
-    : "Lock or unlock this markup";
+    ? t("inspector.unlockLayerFirst")
+    : t("inspector.lockUnlockMarkup");
   lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? "Locked" : "Unlocked"}</span>`;
   lockToggle.addEventListener("click", () => actions.setSelectionLocked(!item.locked));
   visibilityRow.append(visibleToggle, lockToggle);
@@ -967,7 +929,7 @@ function multiSelectionSection(
       "selection-secondary",
       kind
         ? `${kind === "measure" ? "Measurement" : "Drawing"} marks`
-        : "Mixed measurements and drawings",
+        : t("inspector.mixedSelection"),
     ),
   );
   if (lockedCount || hiddenCount) {
@@ -984,20 +946,14 @@ function multiSelectionSection(
   section.append(card);
 
   if (!kind) {
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "Mixed selections can be styled or hidden together, but moving to a layer requires either only measurements or only drawings.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.mixedSelectionNote")));
   }
 
   if (kind) {
     const layerField = el("label", "field");
-    layerField.append(el("span", "field-label", "Move to layer"));
+    layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
     const layerSelect = el("select", "select");
-    layerSelect.append(option("", "Choose layer…", true));
+    layerSelect.append(option("", t("inspector.chooseLayer"), true));
     for (const candidate of layersForKind(project, kind)) {
       if (candidate.locked) continue;
       if (resolved.every((entry) => entry.layer.id === candidate.id)) continue;
@@ -1024,15 +980,15 @@ function multiSelectionSection(
       const categoryField = el("label", "field");
       categoryField.append(el("span", "field-label", "Category"));
       const categorySelect = el("select", "select");
-      categorySelect.append(option("", "Multiple values", !commonCategory));
+      categorySelect.append(option("", t("inspector.multipleValues"), !commonCategory));
       for (const category of project.categories) {
         categorySelect.append(option(category.id, category.name, category.id === commonCategory));
       }
       categorySelect.disabled = allLocked;
-      categorySelect.setAttribute("aria-label", "Category for selected measurements");
+      categorySelect.setAttribute("aria-label", t("inspector.categorySelected"));
       categorySelect.title = allLocked
-        ? "Unlock the selected measurements to edit them."
-        : "Apply one category to the selected measurements";
+        ? t("inspector.unlockSelectedMeasurements")
+        : t("inspector.applyCategory");
       categorySelect.addEventListener("change", () => {
         if (categorySelect.value) actions.setSelectionCategory(categorySelect.value);
       });
@@ -1050,12 +1006,12 @@ function multiSelectionSection(
       const roomInput = el("input", "input");
       roomInput.type = "text";
       roomInput.value = commonRoom;
-      roomInput.placeholder = roomsMatch ? "Set room…" : "Multiple values";
+      roomInput.placeholder = roomsMatch ? t("inspector.setRoom") : t("inspector.multipleValues");
       roomInput.disabled = allLocked;
       roomInput.title = allLocked
-        ? "Unlock the selected measurements to edit them."
-        : "Set one room for the selected measurements. Leave empty to clear their rooms.";
-      roomInput.setAttribute("aria-label", "Room for selected measurements");
+        ? t("inspector.unlockSelectedMeasurements")
+        : t("inspector.setRoomNote");
+      roomInput.setAttribute("aria-label", t("inspector.roomSelected"));
       const roomList = el("datalist");
       roomList.id = "multi-selection-room-options";
       for (const room of allRooms(project)) roomList.append(option(room, room));
@@ -1076,7 +1032,7 @@ function multiSelectionSection(
       section.append(roomField);
 
       const sizeField = el("div", "field");
-      sizeField.append(el("span", "field-label", "Label size"));
+      sizeField.append(el("span", "field-label", t("inspector.labelSize")));
       const sizeRow = el("div", "input-row");
       const sizeInput = el("input", "input");
       sizeInput.type = "number";
@@ -1089,9 +1045,9 @@ function multiSelectionSection(
       )} pt)`;
       sizeInput.disabled = allLocked;
       sizeInput.title = allLocked
-        ? "Unlock the selected measurements to edit them."
-        : "Set one paper-space label size for the selected measurements";
-      sizeInput.setAttribute("aria-label", "Label size for selected measurements");
+        ? t("inspector.unlockSelectedMeasurements")
+        : t("inspector.applyLabelSize");
+      sizeInput.setAttribute("aria-label", t("inspector.labelSizeSelected"));
       const applySize = () => {
         const value = Number(sizeInput.value);
         if (sizeInput.value.trim() === "" || !Number.isFinite(value)) {
@@ -1122,18 +1078,18 @@ function multiSelectionSection(
           ? firstMode
           : "";
         const modeField = el("label", "field");
-        modeField.append(el("span", "field-label", "Area mode"));
+        modeField.append(el("span", "field-label", t("inspector.areaMode")));
         const modeSelect = el("select", "select");
-        modeSelect.append(option("", "Multiple values", !commonMode));
+        modeSelect.append(option("", t("inspector.multipleValues"), !commonMode));
         modeSelect.append(
-          option("add", "Add to area", commonMode === "add"),
-          option("subtract", "Deduct from area", commonMode === "subtract"),
+          option("add", t("inspector.addToArea"), commonMode === "add"),
+          option("subtract", t("inspector.deductFromArea"), commonMode === "subtract"),
         );
         modeSelect.disabled = allLocked;
-        modeSelect.setAttribute("aria-label", "Area mode for selected measurements");
+        modeSelect.setAttribute("aria-label", t("inspector.areaModeSelected"));
         modeSelect.title = allLocked
-          ? "Unlock the selected measurements to edit them."
-          : "Apply one area mode to the selected areas";
+          ? t("inspector.unlockSelectedMeasurements")
+          : t("inspector.applyAreaMode");
         modeSelect.addEventListener("change", () => {
           if (modeSelect.value) {
             actions.setSelectionAreaMode(modeSelect.value as AreaMode);
@@ -1151,17 +1107,17 @@ function multiSelectionSection(
           ? firstType
           : "";
         const countField = el("label", "field");
-        countField.append(el("span", "field-label", "Object type"));
+        countField.append(el("span", "field-label", t("inspector.objectType")));
         const countSelect = el("select", "select");
-        countSelect.append(option("", "Multiple values", !commonType));
+        countSelect.append(option("", t("inspector.multipleValues"), !commonType));
         for (const type of project.countTypes) {
           countSelect.append(option(type.id, type.label, type.id === commonType));
         }
         countSelect.disabled = allLocked;
-        countSelect.setAttribute("aria-label", "Object type for selected counts");
+        countSelect.setAttribute("aria-label", t("inspector.objectTypeSelected"));
         countSelect.title = allLocked
-          ? "Unlock the selected measurements to edit them."
-          : "Apply one object type to the selected counts";
+          ? t("inspector.unlockSelectedMeasurements")
+          : t("inspector.applyObjectType");
         countSelect.addEventListener("change", () => {
           if (countSelect.value) {
             actions.setSelectionCountType(countSelect.value as CountType);
@@ -1176,7 +1132,7 @@ function multiSelectionSection(
           ? firstQuantity
           : null;
         const quantityField = el("label", "field");
-        quantityField.append(el("span", "field-label", "Pieces per object"));
+        quantityField.append(el("span", "field-label", t("inspector.piecesPerObject")));
         const quantityInput = el("input", "input");
         quantityInput.type = "number";
         quantityInput.min = "1";
@@ -1184,17 +1140,17 @@ function multiSelectionSection(
         quantityInput.step = "1";
         quantityInput.value = commonQuantity === null ? "" : String(commonQuantity);
         quantityInput.placeholder =
-          commonQuantity === null ? "Multiple values" : String(commonQuantity);
+          commonQuantity === null ? t("inspector.multipleValues") : String(commonQuantity);
         quantityInput.disabled = allLocked;
-        quantityInput.setAttribute("aria-label", "Pieces per object for selected counts");
+        quantityInput.setAttribute("aria-label", t("inspector.piecesSelected"));
         quantityInput.title = allLocked
-          ? "Unlock the selected measurements to edit them."
-          : "Apply one pieces-per-object value to the selected counts";
+          ? t("inspector.unlockSelectedMeasurements")
+          : t("inspector.applyPieces");
         quantityInput.addEventListener("change", () => {
           const value = Number(quantityInput.value);
           if (!Number.isFinite(value) || value < 1) {
             quantityInput.value = commonQuantity === null ? "" : String(commonQuantity);
-            toast("Count quantity must be one piece or more.", "warning");
+            toast(t("inspector.piecesInvalid"), "warning");
             return;
           }
           actions.setSelectionCountQuantity(value);
@@ -1204,17 +1160,9 @@ function multiSelectionSection(
       }
 
       if (allLocked) {
-        section.append(
-          el(
-            "div",
-            "empty-note small",
-            "All selected measurements are locked. Unlock them to use bulk edits.",
-          ),
-        );
+        section.append(el("div", "empty-note small", t("inspector.allLocked")));
       } else if (lockedCount > 0) {
-        section.append(
-          el("div", "empty-note small", "Locked measurements are skipped by bulk edits."),
-        );
+        section.append(el("div", "empty-note small", t("inspector.lockedSkipped")));
       }
     }
   }
@@ -1227,18 +1175,18 @@ function multiSelectionSection(
     const statusField = el("label", "field");
     statusField.append(el("span", "field-label", "Status"));
     const statusSelect = el("select", "select");
-    statusSelect.append(option("", statusesMatch ? "Set status…" : "Multiple values", true));
+    statusSelect.append(
+      option("", statusesMatch ? t("inspector.setStatus") : t("inspector.multipleValues"), true),
+    );
     for (const status of INSPECTION_STATUSES) {
-      statusSelect.append(
-        option(status, INSPECTION_STATUS_LABELS[status], status === commonStatus),
-      );
+      statusSelect.append(option(status, inspectionStatusLabel(status), status === commonStatus));
     }
     statusSelect.disabled = lockedCount === resolved.length;
-    statusSelect.setAttribute("aria-label", "Status for selected symbols");
+    statusSelect.setAttribute("aria-label", t("inspector.statusSelected"));
     statusSelect.title =
       lockedCount === resolved.length
-        ? "Unlock the selected symbols to edit them."
-        : "Apply one inspection status to the selected symbols";
+        ? t("inspector.unlockSelectedSymbols")
+        : t("inspector.applyStatus");
     statusSelect.addEventListener("change", () => {
       if (!statusSelect.value) return;
       store.mutate((project) => {
@@ -1251,13 +1199,7 @@ function multiSelectionSection(
     });
     statusField.append(statusSelect);
     section.append(statusField);
-    section.append(
-      el(
-        "div",
-        "empty-note small",
-        "Symbol colour follows its category. Use a single symbol selection to change rotation.",
-      ),
-    );
+    section.append(el("div", "empty-note small", t("inspector.symbolColourBulk")));
   }
 
   if (!containsSymbols) {
@@ -1277,20 +1219,24 @@ function multiSelectionSection(
       ? firstWeight
       : null;
     const weightField = el("label", "field");
-    weightField.append(el("span", "field-label", "Line weight"));
+    weightField.append(el("span", "field-label", t("inspector.lineWeight")));
     const weightSelect = el("select", "select");
     weightSelect.append(
-      option("", commonWeight === null ? "Set line weight…" : `${commonWeight} pt (current)`, true),
+      option(
+        "",
+        commonWeight === null ? t("inspector.setLineWeight") : `${commonWeight} pt (current)`,
+        true,
+      ),
     );
     for (const value of STROKE_WIDTH_OPTIONS) {
       weightSelect.append(option(String(value), `${value} pt`, false));
     }
     weightSelect.disabled = lockedCount === resolved.length;
-    weightSelect.setAttribute("aria-label", "Line weight for selected items");
+    weightSelect.setAttribute("aria-label", t("inspector.lineWeightSelected"));
     weightSelect.title =
       lockedCount === resolved.length
-        ? "Unlock the selected items to change their line weight."
-        : "Apply one line weight to the selected items";
+        ? t("inspector.unlockSelectedItems")
+        : t("inspector.applyLineWeight");
     weightSelect.addEventListener("change", () => {
       if (weightSelect.value) actions.setSelectionStrokeWidth(Number(weightSelect.value));
     });
@@ -1304,7 +1250,7 @@ function multiSelectionSection(
   const visible = el("button", `toggle${anyVisible ? " is-on" : ""}`);
   visible.type = "button";
   visible.disabled = !anyVisible && !canShow;
-  visible.title = visible.disabled ? "The layers are hidden" : "";
+  visible.title = visible.disabled ? t("inspector.layersHidden") : "";
   visible.innerHTML = `${icon(anyVisible ? "eye" : "eyeOff", 13)}<span>${anyVisible ? "Hide" : "Show"}</span>`;
   visible.addEventListener("click", () => actions.setSelectionVisible(!anyVisible));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
@@ -1312,7 +1258,7 @@ function multiSelectionSection(
   const lock = el("button", `toggle${!anyUnlocked ? " is-on" : ""}`);
   lock.type = "button";
   lock.disabled = !anyUnlocked && !canUnlock;
-  lock.title = lock.disabled ? "The layers are locked" : "";
+  lock.title = lock.disabled ? t("inspector.layersLocked") : "";
   lock.innerHTML = `${icon(anyUnlocked ? "unlock" : "lock", 13)}<span>${anyUnlocked ? "Lock" : "Unlock"}</span>`;
   lock.addEventListener("click", () => actions.setSelectionLocked(anyUnlocked));
   toggles.append(visible, lock);

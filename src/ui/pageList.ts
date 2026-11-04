@@ -12,6 +12,7 @@ import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
+import { t } from "../i18n";
 
 interface PendingThumbnail {
   page: number;
@@ -53,7 +54,7 @@ function beginPageRename(title: HTMLElement, page: number): void {
   const input = el("input", "page-name-input");
   input.value = title.textContent ?? "";
   input.maxLength = 80;
-  input.setAttribute("aria-label", `Name for Page ${page}`);
+  input.setAttribute("aria-label", t("page.nameAria", { page }));
   title.replaceWith(input);
   input.focus();
   input.select();
@@ -90,21 +91,15 @@ function locationValues(project: Project, field: "building" | "floor"): string[]
 
 function pageLocationDialog(project: Project, page: number): void {
   const body = el("div", "form-stack");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      "Building and floor are used for grouping the Markups list. They are optional and belong to this sheet.",
-    ),
-  );
+  body.append(el("p", "modal-message", t("page.locationNote")));
 
   const buildingField = el("label", "field");
-  buildingField.append(el("span", "field-label", "Building"));
+  buildingField.append(el("span", "field-label", t("page.building")));
   const building = el("input", "input");
   building.type = "text";
   building.maxLength = 80;
   building.value = pageBuilding(project, page) ?? "";
-  building.placeholder = "For example Building A";
+  building.placeholder = t("page.buildingPlaceholder");
   const buildingList = el("datalist");
   buildingList.id = `page-building-options-${page}`;
   for (const value of locationValues(project, "building")) {
@@ -116,12 +111,12 @@ function pageLocationDialog(project: Project, page: number): void {
   buildingField.append(building, buildingList);
 
   const floorField = el("label", "field");
-  floorField.append(el("span", "field-label", "Floor"));
+  floorField.append(el("span", "field-label", t("page.floor")));
   const floor = el("input", "input");
   floor.type = "text";
   floor.maxLength = 80;
   floor.value = pageFloor(project, page) ?? "";
-  floor.placeholder = "For example Floor 2";
+  floor.placeholder = t("page.floorPlaceholder");
   const floorList = el("datalist");
   floorList.id = `page-floor-options-${page}`;
   for (const value of locationValues(project, "floor")) {
@@ -133,13 +128,16 @@ function pageLocationDialog(project: Project, page: number): void {
   floorField.append(floor, floorList);
 
   body.append(buildingField, floorField);
+  const locationName = pageDisplayName(project, page);
   void showModal({
-    title: "Page location",
-    subtitle: `Page ${page}${pageDisplayName(project, page) ? ` · ${pageDisplayName(project, page)}` : ""}`,
+    title: t("page.location"),
+    subtitle: locationName
+      ? t("page.locationSubtitle", { page, name: locationName })
+      : t("page.titleFallback", { page }),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Apply", value: "apply", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("common.apply"), value: "apply", primary: true },
     ],
   }).then((value) => {
     if (value !== "apply") return;
@@ -162,7 +160,11 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
   const card = refs.dockBody.querySelector<HTMLElement>(`.page-card[data-page="${page}"]`);
   if (!card) return;
   const label = card.querySelector<HTMLElement>(".page-size");
-  if (label) label.textContent = `${Math.round(size.width)} × ${Math.round(size.height)} pt`;
+  if (label)
+    label.textContent = t("page.sizePoints", {
+      width: Math.round(size.width),
+      height: Math.round(size.height),
+    });
   const thumb = card.querySelector<HTMLElement>(".page-thumb");
   if (thumb) applyThumbShape(thumb, size);
 }
@@ -194,8 +196,8 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
     const pageName = pageDisplayName(project, page);
-    const title = el("div", "page-title", pageName ?? `Page ${page}`);
-    title.title = pageName ? `${pageName} — double-click to rename` : "Double-click to rename";
+    const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
+    title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
     title.addEventListener("dblclick", (event) => {
       event.preventDefault();
       event.stopPropagation();
@@ -209,28 +211,37 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       info.append(locationNode);
     }
     const sizeText = size
-      ? `${Math.round(size.width)} × ${Math.round(size.height)} pt`
-      : "Loading size…";
+      ? t("page.sizePoints", { width: Math.round(size.width), height: Math.round(size.height) })
+      : t("page.loadingSize");
     const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
     info.append(sizeNode);
     const badges = el("div", "page-badges");
     if (project.pages[String(page)]?.calibration) {
-      badges.append(el("span", "page-badge is-calibrated", "Calibrated"));
+      badges.append(el("span", "page-badge is-calibrated", t("page.calibrated")));
     }
     if (project.pages[String(page)]?.scaleLocked) {
-      badges.append(el("span", "page-badge", "Scale locked"));
+      badges.append(el("span", "page-badge", t("page.scaleLocked")));
     }
     const itemCount = project.layers.reduce(
       (count, layer) => count + layer.items.filter((item) => item.page === page).length,
       0,
     );
-    if (itemCount) badges.append(el("span", "page-badge", `${itemCount} items`));
+    if (itemCount)
+      badges.append(el("span", "page-badge", t("page.itemCount", { count: itemCount })));
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
     pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
     card.setAttribute(
       "aria-label",
-      `${pageName ?? `Page ${page}`}${pageName ? `, Page ${page}` : ""}${location ? `, ${location}` : ""}${size ? `, ${Math.round(size.width)} by ${Math.round(size.height)} points` : ""}`,
+      t("page.cardAria", {
+        name: pageName
+          ? t("page.namedPageAria", { name: pageName, page })
+          : t("page.titleFallback", { page }),
+        location: location ? t("page.locationAria", { location }) : "",
+        size: size
+          ? t("page.sizeAria", { width: Math.round(size.width), height: Math.round(size.height) })
+          : "",
+      }),
     );
     card.addEventListener("click", () => actions.goToPage(page, true));
     card.addEventListener("contextmenu", (event) => {
@@ -238,37 +249,37 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       const locked = total <= 1;
       showPopoverAt(event.clientX, event.clientY, [
         {
-          label: `Go to page ${page}`,
+          label: t("page.goTo", { page }),
           icon: "pages",
           action: () => actions.goToPage(page, true),
         },
         {
-          label: "Rename page…",
+          label: t("page.renameEllipsis"),
           icon: "text",
           action: () => {
             void textDialog(
-              "Rename page",
-              `Page ${page}`,
+              t("page.rename"),
+              t("page.titleFallback", { page }),
               pageDisplayName(project, page) ?? "",
-              "Page name",
+              t("page.name"),
             ).then((value) => {
               if (value !== null) store.renamePage(page, value);
             });
           },
         },
         {
-          label: "Set location…",
+          label: t("page.setLocation"),
           icon: "target",
           action: () => pageLocationDialog(project, page),
         },
         {
-          label: "Duplicate page…",
+          label: t("page.duplicate"),
           icon: "copy",
           action: () => actions.duplicatePage(page),
         },
         { separator: true },
         {
-          label: "Delete page…",
+          label: t("page.delete"),
           icon: "trash",
           danger: true,
           disabled: locked,
@@ -284,7 +295,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     event.preventDefault();
     showPopoverAt(event.clientX, event.clientY, [
       {
-        label: "Add pages…",
+        label: t("page.addPages"),
         icon: "plus",
         action: () => actions.addPages(),
       },
@@ -292,7 +303,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   });
   refs.dockBody.append(list);
   if (total > max) {
-    const note = el("div", "empty-note small", `Showing the first ${max} of ${total} pages.`);
+    const note = el("div", "empty-note small", t("page.showingFirst", { shown: max, total }));
     refs.dockBody.append(note);
   }
   observeThumbnails(refs, actions, pendingThumbnails);

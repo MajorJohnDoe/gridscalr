@@ -750,6 +750,17 @@ try {
   await pseudoDialog.waitFor({ state: "detached" });
   await page.evaluate(() => window.__gridscalr.setLanguage("en"));
 
+  // Swedish quick start and help chrome.
+  await page.evaluate(() => window.__gridscalr.setLanguage("sv"));
+  await page.keyboard.press("F1");
+  const swedishHelp = page.getByRole("dialog");
+  await swedishHelp.waitFor();
+  await swedishHelp.getByRole("tab", { name: "Snabbstart" }).click();
+  await swedishHelp.getByText("Kalibrera sidan", { exact: false }).first().waitFor();
+  await page.keyboard.press("Escape");
+  await swedishHelp.waitFor({ state: "detached" });
+  await page.evaluate(() => window.__gridscalr.setLanguage("en"));
+
   await page.evaluate(() => {
     window.__gridscalrContextPrevented = null;
     document.addEventListener(
@@ -800,7 +811,7 @@ try {
   await page.keyboard.press("F1");
   const help = page.getByRole("dialog");
   await help.waitFor();
-  assert.equal(await help.getByRole("tab").count(), 4, "expected four help topics");
+  assert.equal(await help.getByRole("tab").count(), 5, "expected five help topics");
   await help.getByRole("tab", { name: "Workflows" }).click();
   await help.getByText("Operations technician", { exact: true }).first().waitFor();
   const helpBox = await help.boundingBox();

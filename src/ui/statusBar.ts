@@ -20,6 +20,7 @@ import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
 import { showPopover } from "./popover";
 import type { ShellRefs } from "./shell";
+import { t } from "../i18n";
 
 /** Signature of the page scale chip, so pointer moves do not rebuild the DOM. */
 let scaleChipKey = "";
@@ -42,8 +43,8 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
       const chip = el("button", "status-chip is-warning status-chip-action");
       chip.type = "button";
       chip.innerHTML = `<span class="status-dot"></span>`;
-      chip.append(document.createTextNode("Autosave failing"));
-      chip.title = "Autosave is failing. Open the diagnostics for details.";
+      chip.append(document.createTextNode(t("status.autosaveFailing")));
+      chip.title = t("status.autosaveTitle");
       chip.addEventListener("click", () => actions.reportProblem());
       refs.statusWarning.append(chip);
     }
@@ -52,7 +53,7 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   if (!project) {
     scaleChipKey = "";
     clear(refs.statusCalibration);
-    refs.statusCalibration.append(warningChip("No drawing open"));
+    refs.statusCalibration.append(warningChip(t("status.noDrawing")));
     return;
   }
 
@@ -85,13 +86,13 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
       );
       coords = `X ${formatCoordinate(cursor.x, scale, unit)} ${unit}&nbsp;&nbsp;Y ${formatCoordinate(cursor.y, scale, unit)} ${unit}`;
     }
-    refs.statusCoords.innerHTML = `<span class="status-label">Position</span> <span class="status-value">${coords}</span>`;
+    refs.statusCoords.innerHTML = `<span class="status-label">${t("status.position")}</span> <span class="status-value">${coords}</span>`;
   } else {
-    refs.statusCoords.innerHTML = `<span class="status-label">Position</span> <span class="status-value">X —  Y —</span>`;
+    refs.statusCoords.innerHTML = `<span class="status-label">${t("status.position")}</span> <span class="status-value">X —  Y —</span>`;
   }
   const active = project.layers.find((layer) => layer.id === project.activeLayerId);
   refs.statusLayer.innerHTML = active
-    ? `<span class="status-label">Layer</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
+    ? `<span class="status-label">${t("status.layer")}</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
     : "";
 }
 
@@ -112,8 +113,10 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   button.append(
     document.createTextNode(
       calibration
-        ? `${locked ? "Scale locked" : "Calibrated"} · ${formatScaleRatio(scaleRatio(pageScale(project, page)))}`
-        : "No scale on this page",
+        ? `${locked ? t("status.scaleLocked") : t("status.calibrated")} · ${formatScaleRatio(
+            scaleRatio(pageScale(project, page)),
+          )}`
+        : t("status.noScale"),
     ),
   );
   const caret = el("span", "status-chip-caret");
@@ -122,7 +125,9 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   button.title = scaleTooltip(project, page);
   button.setAttribute(
     "aria-label",
-    `${calibration ? "Page scale" : "No page scale"}. Open scale options.`,
+    `${calibration ? t("status.pageScale") : t("status.noPageScale")} ${t(
+      "status.openScaleOptions",
+    )}`,
   );
   button.setAttribute("aria-haspopup", "menu");
   button.addEventListener("click", () => showPopover(button, scaleItems(project, actions)));
@@ -132,15 +137,18 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
 function scaleTooltip(project: Project, page: number): string {
   const calibration = pageCalibration(project, page);
   if (!calibration) {
-    return "Set the page scale: draw a reference line or enter the printed 1:N ratio.";
+    return t("status.setScaleTooltip");
   }
   const lines = [
     isManualCalibration(calibration)
-      ? `Manual scale 1:${formatNumber(calibration.ratio, 6)}`
-      : `Reference: ${formatNumber(calibration.knownLength, 2)} ${calibration.unit}`,
+      ? t("status.manualScale", { ratio: formatNumber(calibration.ratio, 6) })
+      : t("status.reference", {
+          length: formatNumber(calibration.knownLength, 2),
+          unit: calibration.unit,
+        }),
     formatScale(pageScale(project, page), calibration),
   ];
-  lines.push(pageScaleLocked(project, page) ? "The scale is locked." : "Click for scale options.");
+  lines.push(pageScaleLocked(project, page) ? t("status.scaleIsLocked") : t("status.clickOptions"));
   return lines.join("\n");
 }
 
@@ -150,13 +158,13 @@ function scaleItems(project: Project, actions: PanelActions): PopoverItem[] {
   const locked = pageScaleLocked(project, page);
   const items: PopoverItem[] = [
     {
-      label: calibration ? "Recalibrate…" : "Calibrate…",
+      label: calibration ? t("status.recalibrate") : t("status.calibrate"),
       icon: "ruler",
       action: actions.startCalibration,
       disabled: locked,
     },
     {
-      label: "Manual scale…",
+      label: t("status.manualScaleAction"),
       icon: "grid",
       action: actions.openManualScale,
       disabled: locked,
@@ -166,12 +174,12 @@ function scaleItems(project: Project, actions: PanelActions): PopoverItem[] {
     items.push(
       { separator: true },
       {
-        label: locked ? "Unlock scale" : "Lock scale",
+        label: locked ? t("status.unlockScale") : t("status.lockScale"),
         icon: locked ? "unlock" : "lock",
         action: () => actions.setScaleLock(!locked),
       },
       {
-        label: "Clear scale",
+        label: t("status.clearScale"),
         icon: "trash",
         danger: true,
         disabled: locked,

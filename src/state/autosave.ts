@@ -1,4 +1,5 @@
 import type { Project } from "../model/types";
+import { t } from "../i18n";
 
 export interface AutosavePayload {
   project: Project;
@@ -18,8 +19,7 @@ const RECORD_KEY = "current";
 const META_KEY = "gridscalr.autosave.meta.v1";
 const LEGACY_KEY = "gridscalr.autosave.v1";
 
-const QUOTA_MESSAGE =
-  "Recovery autosave is off because local storage is full. Save the project to a file now, then free up space in GridScalr or in your browser storage. Autosave resumes after the next change.";
+const QUOTA_MESSAGE = t("autosave.quota");
 
 /** A recovery-snapshot failure the user has to act on. */
 export class AutosaveError extends Error {
@@ -59,7 +59,7 @@ export function describeAutosaveFailure(primary: unknown, fallback?: unknown): A
   return new AutosaveError(
     detail
       ? `Recovery autosave failed: ${detail}. Save the project to a file to protect your work.`
-      : "Recovery autosave failed. Save the project to a file to protect your work.",
+      : t("autosave.failed"),
   );
 }
 
@@ -72,7 +72,7 @@ function hasProject(value: unknown): value is AutosavePayload {
 function openDatabase(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (typeof indexedDB === "undefined") {
-      reject(new Error("IndexedDB is not available."));
+      reject(new Error(t("autosave.noIndexedDb")));
       return;
     }
     const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -83,10 +83,8 @@ function openDatabase(): Promise<IDBDatabase> {
       }
     };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () =>
-      reject(request.error ?? new Error("Could not open the recovery database."));
-    request.onblocked = () =>
-      reject(new Error("The recovery database is blocked by another window."));
+    request.onerror = () => reject(request.error ?? new Error(t("autosave.openFailed")));
+    request.onblocked = () => reject(new Error(t("autosave.blocked")));
   });
 }
 
@@ -99,11 +97,11 @@ async function withStore<T>(
     const transaction = database.transaction(STORE_NAME, mode);
     const request = operation(transaction.objectStore(STORE_NAME));
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error ?? new Error("Recovery storage failed."));
+    request.onerror = () => reject(request.error ?? new Error(t("autosave.storageFailed")));
     transaction.oncomplete = () => database.close();
     transaction.onerror = () => {
       database.close();
-      reject(transaction.error ?? new Error("Recovery storage failed."));
+      reject(transaction.error ?? new Error(t("autosave.storageFailed")));
     };
   });
 }

@@ -1,3 +1,4 @@
+import { t, translate, type MessageKey } from "../i18n";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
 import { layerVisibleOnPage } from "./layers";
 import { areaOutline, areaShapeOf } from "./area";
@@ -68,12 +69,17 @@ export const LABEL_FIT_POSITIONS: readonly LabelFitPosition[] = [
 ];
 
 export const LABEL_FIT_LABELS: Record<LabelFitPosition, string> = {
-  center: "Center",
-  "top-left": "Top left",
-  "top-right": "Top right",
-  "bottom-right": "Bottom right",
-  "bottom-left": "Bottom left",
+  center: translate("en", "labelFit.center"),
+  "top-left": translate("en", "labelFit.topLeft"),
+  "top-right": translate("en", "labelFit.topRight"),
+  "bottom-right": translate("en", "labelFit.bottomRight"),
+  "bottom-left": translate("en", "labelFit.bottomLeft"),
 };
+
+export function labelFitLabel(position: LabelFitPosition): string {
+  const key = position.replace(/-([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+  return t(`labelFit.${key}` as MessageKey);
+}
 
 export function isLabelFitPosition(value: unknown): value is LabelFitPosition {
   return typeof value === "string" && (LABEL_FIT_POSITIONS as readonly string[]).includes(value);

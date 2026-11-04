@@ -1,6 +1,7 @@
 import type { SearchHit } from "../search/textIndex";
 import { el } from "./dom";
 import { icon } from "./icons";
+import { t } from "../i18n";
 
 export interface SearchPanelActions {
   onQuery: (query: string) => void;
@@ -29,16 +30,16 @@ export class SearchPanel {
     private readonly actions: SearchPanelActions,
   ) {
     this.element = el("section", "search-panel");
-    this.element.setAttribute("aria-label", "Search text");
+    this.element.setAttribute("aria-label", t("search.title"));
 
     const header = el("header", "search-header");
     const heading = el("div", "search-heading");
-    heading.append(el("span", "search-kicker", "Search text"));
-    heading.append(el("strong", "search-title", "All pages"));
+    heading.append(el("span", "search-kicker", t("search.title")));
+    heading.append(el("strong", "search-title", t("search.allPages")));
     const close = el("button", "icon-btn search-close");
     close.type = "button";
-    close.title = "Close search";
-    close.setAttribute("aria-label", "Close search");
+    close.title = t("search.close");
+    close.setAttribute("aria-label", t("search.close"));
     close.innerHTML = icon("close", 15);
     close.addEventListener("click", () => this.actions.onClose());
     header.append(heading, close);
@@ -49,8 +50,8 @@ export class SearchPanel {
     field.append(fieldIcon);
     this.input = el("input", "search-input") as HTMLInputElement;
     this.input.type = "search";
-    this.input.placeholder = "Room, equipment tag or sheet number";
-    this.input.setAttribute("aria-label", "Search drawing text");
+    this.input.placeholder = t("search.placeholder");
+    this.input.setAttribute("aria-label", t("search.aria"));
     this.input.addEventListener("input", () => {
       this.query = this.input.value;
       this.actions.onQuery(this.query);
@@ -82,17 +83,13 @@ export class SearchPanel {
     this.status = el("div", "search-status");
     this.status.setAttribute("aria-live", "polite");
     this.list = el("div", "search-results");
-    this.note = el(
-      "p",
-      "search-note",
-      "Scanned pages without a text layer are not searchable until OCR runs. The OCR index is stored in the project.",
-    );
+    this.note = el("p", "search-note", t("search.note"));
 
     const footer = el("footer", "search-footer");
-    this.ocrButton = el("button", "btn btn-small", "OCR scans");
+    this.ocrButton = el("button", "btn btn-small", t("search.ocrScans"));
     this.ocrButton.type = "button";
-    this.ocrButton.innerHTML = `${icon("target", 13)}<span>OCR scans</span>`;
-    this.ocrButton.title = "Run local OCR on pages without a PDF text layer";
+    this.ocrButton.innerHTML = `${icon("target", 13)}<span>${t("search.ocrScans")}</span>`;
+    this.ocrButton.title = t("search.ocrTitle");
     this.ocrButton.addEventListener("click", () => this.actions.onOcr());
     footer.append(this.ocrButton);
 
@@ -111,7 +108,7 @@ export class SearchPanel {
   }
 
   setProgress(done: number, total: number): void {
-    this.status.textContent = `Indexing ${done} / ${total} page${total === 1 ? "" : "s"}…`;
+    this.status.textContent = t("search.indexing", { done, total });
   }
 
   setStatus(message: string): void {
@@ -122,13 +119,13 @@ export class SearchPanel {
     this.ocrButton.disabled = busy;
     this.ocrButton.classList.toggle("is-busy", busy);
     this.ocrButton.innerHTML = busy
-      ? `${icon("target", 13)}<span>OCR running…</span>`
-      : `${icon("target", 13)}<span>OCR scans</span>`;
+      ? `${icon("target", 13)}<span>${t("search.ocrRunning")}</span>`
+      : `${icon("target", 13)}<span>${t("search.ocrScans")}</span>`;
   }
 
   setIndexComplete(total: number): void {
     if (!this.query.trim()) {
-      this.status.textContent = `${total} page${total === 1 ? "" : "s"} indexed. Type to search.`;
+      this.status.textContent = t("search.indexed", { count: total });
     }
   }
 
@@ -137,12 +134,12 @@ export class SearchPanel {
     this.query = query;
     this.active = hits.length ? 0 : -1;
     if (!query.trim()) {
-      this.status.textContent = `${indexed} of ${total} page${total === 1 ? "" : "s"} indexed. Type to search.`;
+      this.status.textContent = t("search.indexProgress", { indexed, total });
     } else if (!hits.length) {
-      this.status.textContent = `No matches on ${indexed} indexed page${indexed === 1 ? "" : "s"}.`;
+      this.status.textContent = t("search.noMatches", { count: indexed });
     } else {
       const pages = new Set(hits.map((hit) => hit.page)).size;
-      this.status.textContent = `${hits.length} match${hits.length === 1 ? "" : "es"} on ${pages} page${pages === 1 ? "" : "s"}.`;
+      this.status.textContent = t("search.matches", { count: hits.length, pages });
     }
     this.renderResults();
   }
@@ -155,7 +152,7 @@ export class SearchPanel {
     this.list.textContent = "";
     if (!this.results.length) {
       if (this.query.trim()) {
-        this.list.append(el("div", "search-empty", "No text matches on the indexed pages."));
+        this.list.append(el("div", "search-empty", t("search.noText")));
       }
       return;
     }
@@ -164,7 +161,7 @@ export class SearchPanel {
       const row = el("button", "search-result");
       row.type = "button";
       if (index === this.active) row.classList.add("is-active");
-      const meta = el("span", "search-result-meta", `Page ${hit.page}`);
+      const meta = el("span", "search-result-meta", t("search.pageLabel", { page: hit.page }));
       const text = el("span", "search-result-text");
       appendHighlighted(text, hit.snippet, this.query);
       row.append(meta, text);

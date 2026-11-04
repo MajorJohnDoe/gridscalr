@@ -3,6 +3,7 @@ import { localPageNumber, projectDocumentForPage } from "../model/documents";
 import type { OcrPage, OcrWord, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageText } from "./textIndex";
+import { t } from "../i18n";
 
 const OCR_LANGUAGES = ["eng", "swe"];
 const OCR_LANGUAGE_LABEL = OCR_LANGUAGES.join("+");
@@ -81,7 +82,7 @@ export async function runOcrPage(
   onProgress?: (message: string, progress: number) => void,
 ): Promise<OcrPage> {
   const document = projectDocumentForPage(project, page);
-  if (!document) throw new Error("This page has no source document.");
+  if (!document) throw new Error(t("ocr.noSource"));
   const size = await renderer.getPageSize(page);
   const rendered = await renderer.renderCrop(
     page,

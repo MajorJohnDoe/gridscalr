@@ -19,6 +19,7 @@ import {
   setPanelWidth,
   setSidebarCollapsed,
 } from "./sidebar";
+import { t } from "../i18n";
 
 export interface ShellRefs {
   root: HTMLElement;
@@ -85,8 +86,8 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const menuBar = createMenuBar();
   const history = el("div", "topbar-history");
-  const undoBtn = makeIconButton("undo", "Undo", formatShortcut(APP_SHORTCUTS.undo));
-  const redoBtn = makeIconButton("redo", "Redo", formatShortcut(APP_SHORTCUTS.redo));
+  const undoBtn = makeIconButton("undo", t("menu.edit.undo"), formatShortcut(APP_SHORTCUTS.undo));
+  const redoBtn = makeIconButton("redo", t("menu.edit.redo"), formatShortcut(APP_SHORTCUTS.redo));
   undoBtn.classList.add("topbar-history-btn");
   redoBtn.classList.add("topbar-history-btn");
   undoBtn.disabled = true;
@@ -94,13 +95,13 @@ export function createShell(root: HTMLElement): ShellRefs {
   history.append(undoBtn, redoBtn);
 
   const identity = el("div", "doc-identity");
-  const projectName = el("span", "project-name", "No project open");
+  const projectName = el("span", "project-name", t("shell.noProject"));
   // Opt out of the title-row drag region: double-clicking the name renames it.
   projectName.setAttribute("data-tauri-drag-region", "false");
-  projectName.title = "Double-click or press F2 to rename the project";
-  projectName.setAttribute("aria-label", "Project name; double-click or press F2 to rename");
+  projectName.title = t("shell.renameHint");
+  projectName.setAttribute("aria-label", t("shell.renameAria"));
   const docLine = el("span", "doc-line");
-  const docName = el("span", "doc-name", "No drawing open");
+  const docName = el("span", "doc-name", t("shell.noDrawing"));
   const docMeta = el("span", "doc-meta", "");
   const dirtyDot = el("span", "dirty-dot hidden");
   docLine.append(docName, docMeta, dirtyDot);
@@ -112,7 +113,7 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
-  toolRail.setAttribute("aria-label", "Tools");
+  toolRail.setAttribute("aria-label", t("shell.toolsAria"));
   toolRail.setAttribute("role", "toolbar");
   toolRail.setAttribute("aria-orientation", "vertical");
   let lastGroup = "";
@@ -135,8 +136,8 @@ export function createShell(root: HTMLElement): ShellRefs {
       btn.dataset.toolGroup = family.id;
       btn.dataset.displayTool = member;
       btn.innerHTML = icon(memberTool?.icon ?? "cursor", 19);
-      btn.title = `${family.label} (${shortcuts})`;
-      btn.setAttribute("aria-label", `${family.label} tools`);
+      btn.title = `${t(family.label)} (${shortcuts})`;
+      btn.setAttribute("aria-label", t("tool.familyTools", { name: t(family.label) }));
       btn.setAttribute("aria-haspopup", "menu");
       btn.addEventListener("click", () => {
         const next = familyToolForDisplay(family, store.ui.activeTool);
@@ -147,8 +148,8 @@ export function createShell(root: HTMLElement): ShellRefs {
     } else {
       btn.dataset.tool = tool.id;
       btn.innerHTML = icon(tool.icon, 19);
-      btn.title = `${tool.label} (${tool.shortcut})`;
-      btn.setAttribute("aria-label", tool.label);
+      btn.title = `${t(tool.label)} (${tool.shortcut})`;
+      btn.setAttribute("aria-label", t(tool.label));
       btn.addEventListener("click", () => store.setTool(tool.id));
       attachToolFlyout(btn, tool.id);
     }
@@ -157,9 +158,11 @@ export function createShell(root: HTMLElement): ShellRefs {
   toolRail.append(el("div", "tool-spacer"));
   const markupsBtn = el("button", "tool-markups");
   markupsBtn.type = "button";
-  markupsBtn.innerHTML = `${icon("markups", 18)}<span>Markups</span>`;
-  markupsBtn.title = `Markups list (${formatShortcut(APP_SHORTCUTS.markups)})`;
-  markupsBtn.setAttribute("aria-label", "Markups list");
+  markupsBtn.innerHTML = `${icon("markups", 18)}<span>${t("shell.markups")}</span>`;
+  markupsBtn.title = t("shell.markupsListTitle", {
+    shortcut: formatShortcut(APP_SHORTCUTS.markups),
+  });
+  markupsBtn.setAttribute("aria-label", t("shell.markupsList"));
   markupsBtn.setAttribute("aria-pressed", "false");
   toolRail.append(markupsBtn);
 
@@ -167,8 +170,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const dockHeader = el("div", "dock-header");
   const dockTabs = el("div", "dock-tabs");
   const tabDefs: Array<{ id: LeftTab; icon: string; label: string }> = [
-    { id: "pages", icon: "pages", label: "Pages" },
-    { id: "layers", icon: "layers", label: "Layers" },
+    { id: "pages", icon: "pages", label: t("shell.pages") },
+    { id: "layers", icon: "layers", label: t("shell.layers") },
   ];
   const dockTabButtons: HTMLElement[] = [];
   for (const tab of tabDefs) {
@@ -183,8 +186,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   }
   const collapse = el("button", "dock-collapse");
   collapse.type = "button";
-  collapse.title = "Hide sidebar (Ctrl+\\)";
-  collapse.setAttribute("aria-label", "Hide sidebar");
+  collapse.title = t("shell.hideSidebarTitle", { shortcut: "Ctrl+\\" });
+  collapse.setAttribute("aria-label", t("shell.hideSidebar"));
   collapse.innerHTML = icon("chevronLeft", 14);
   collapse.addEventListener("click", () => setSidebarCollapsed(true));
   dockHeader.append(dockTabs, collapse);
@@ -195,42 +198,42 @@ export function createShell(root: HTMLElement): ShellRefs {
   const dockRestore = el("button", "dock-restore");
   dockRestore.type = "button";
   dockRestore.hidden = true;
-  dockRestore.title = "Show sidebar (Ctrl+\\)";
-  dockRestore.setAttribute("aria-label", "Show sidebar");
+  dockRestore.title = t("shell.showSidebarTitle", { shortcut: "Ctrl+\\" });
+  dockRestore.setAttribute("aria-label", t("shell.showSidebar"));
   dockRestore.innerHTML = icon("chevronRight", 14);
   dockRestore.addEventListener("click", () => setSidebarCollapsed(false));
 
   const dockResizer = el("div", "resizer");
-  dockResizer.title = "Resize sidebar";
+  dockResizer.title = t("shell.resizeSidebar");
 
   const main = el("main", "main-area");
   const contextBar = el("div", "context-bar");
   const canvasArea = el("div", "canvas-area");
   const canvasHost = el("div", "canvas-host");
   const referencePane = el("div", "canvas-reference hidden");
-  referencePane.setAttribute("aria-label", "Reference view");
+  referencePane.setAttribute("aria-label", t("shell.referenceView"));
   const referenceHost = el("div", "canvas-host reference-canvas");
-  referenceHost.setAttribute("aria-label", "Reference drawing");
+  referenceHost.setAttribute("aria-label", t("shell.referenceDrawing"));
   referencePane.append(referenceHost);
   const splitResizer = el("div", "canvas-split-resizer hidden");
-  splitResizer.title = "Resize reference view";
+  splitResizer.title = t("shell.resizeReference");
   splitResizer.setAttribute("role", "separator");
-  splitResizer.setAttribute("aria-label", "Resize reference view");
+  splitResizer.setAttribute("aria-label", t("shell.resizeReference"));
   splitResizer.setAttribute("aria-orientation", "vertical");
   splitResizer.tabIndex = 0;
   canvasArea.append(canvasHost, splitResizer, referencePane);
   const markupsResizer = el("div", "markups-resizer");
   markupsResizer.hidden = true;
-  markupsResizer.title = "Resize Markups list";
+  markupsResizer.title = t("shell.resizeMarkups");
   const markupsPanel = el("section", "markups-panel");
   markupsPanel.hidden = true;
-  markupsPanel.setAttribute("aria-label", "Markups list");
+  markupsPanel.setAttribute("aria-label", t("shell.markupsList"));
   main.append(contextBar, canvasArea, markupsResizer, markupsPanel);
 
   const inspector = el("aside", "inspector");
-  inspector.setAttribute("aria-label", "Properties");
+  inspector.setAttribute("aria-label", t("shell.properties"));
   const inspectorHeader = el("div", "inspector-header");
-  inspectorHeader.append(el("span", "", "Properties"));
+  inspectorHeader.append(el("span", "", t("shell.properties")));
   inspector.append(inspectorHeader);
 
   const inspectorResizer = el("div", "resizer");
@@ -238,8 +241,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   const inspectorRestore = el("button", "inspector-restore");
   inspectorRestore.type = "button";
   inspectorRestore.hidden = true;
-  inspectorRestore.title = "Show properties (Ctrl/Cmd+Shift+\\)";
-  inspectorRestore.setAttribute("aria-label", "Show properties");
+  inspectorRestore.title = t("shell.showPropertiesTitle", { shortcut: "Ctrl/Cmd+Shift+\\" });
+  inspectorRestore.setAttribute("aria-label", t("shell.showProperties"));
   inspectorRestore.innerHTML = icon("chevronLeft", 14);
   inspectorRestore.addEventListener("click", () => setInspectorCollapsed(false));
 
@@ -266,15 +269,15 @@ export function createShell(root: HTMLElement): ShellRefs {
   const statusSpacer = el("div", "status-spacer");
   const statusLayer = el("div", "status-section");
 
-  const zoomOutBtn = makeIconButton("zoomOut", "Zoom out", "Ctrl+-");
+  const zoomOutBtn = makeIconButton("zoomOut", t("shell.zoomOut"), "Ctrl+-");
   const zoomReadout = el("button", "zoom-readout", "100%");
   zoomReadout.type = "button";
-  zoomReadout.title = "Reset to 100%";
-  const zoomInBtn = makeIconButton("zoomIn", "Zoom in", "Ctrl++");
-  const zoomFitBtn = makeIconButton("fit", "Fit page", "Ctrl+0");
-  const zoomActualBtn = makeIconButton("target", "Actual size (100%)");
+  zoomReadout.title = t("shell.resetZoom");
+  const zoomInBtn = makeIconButton("zoomIn", t("shell.zoomIn"), "Ctrl++");
+  const zoomFitBtn = makeIconButton("fit", t("shell.fitPage"), "Ctrl+0");
+  const zoomActualBtn = makeIconButton("target", t("shell.actualSize"));
   statusZoom.append(
-    el("span", "status-label", "Zoom"),
+    el("span", "status-label", t("shell.zoom")),
     zoomOutBtn,
     zoomReadout,
     zoomInBtn,
@@ -282,16 +285,16 @@ export function createShell(root: HTMLElement): ShellRefs {
     zoomActualBtn,
   );
 
-  const pagePrevBtn = makeIconButton("chevronLeft", "Previous page", "Page Up");
+  const pagePrevBtn = makeIconButton("chevronLeft", t("shell.previousPage"), t("shortcut.pageUp"));
   const pageInput = el("input", "page-input");
   pageInput.type = "number";
   pageInput.min = "1";
   pageInput.value = "1";
-  pageInput.setAttribute("aria-label", "Page number");
+  pageInput.setAttribute("aria-label", t("shell.pageNumber"));
   const pageTotal = el("span", "page-total", "/ 0");
-  const pageNextBtn = makeIconButton("chevronRight", "Next page", "Page Down");
+  const pageNextBtn = makeIconButton("chevronRight", t("shell.nextPage"), t("shortcut.pageDown"));
   statusPage.append(
-    el("span", "status-label", "Page"),
+    el("span", "status-label", t("shell.page")),
     pagePrevBtn,
     pageInput,
     pageTotal,

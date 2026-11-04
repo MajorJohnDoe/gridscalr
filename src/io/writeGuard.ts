@@ -5,6 +5,7 @@
  * positive only asks the user to pick another name; a false negative would
  * destroy source material.
  */
+import { t } from "../i18n";
 export function pathComparisonKey(path: string): string {
   return path.trim().replace(/\\/g, "/").replace(/\/+/g, "/").replace(/\/+$/g, "").toLowerCase();
 }
@@ -27,5 +28,5 @@ export function findProtectedPath(
 export function assertWritablePath(candidate: string, protectedPaths: readonly string[]): void {
   const match = findProtectedPath(candidate, protectedPaths);
   if (!match) return;
-  throw new Error("Choose a different file name. GridScalr will not overwrite a source drawing.");
+  throw new Error(t("guard.sourceProtected"));
 }

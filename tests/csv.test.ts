@@ -151,6 +151,29 @@ describe("quantity CSV", () => {
     ]);
   });
 
+  it("includes non-empty report metadata with stable English keys", () => {
+    const project = makeProject();
+    project.metadata = {
+      facility: "Northgate",
+      client: "Example AB",
+      projectNumber: "P-100",
+      revision: "B",
+      preparedBy: "A. Person",
+      reportDate: "2026-11-04",
+      notes: "Procurement copy",
+      reportTitle: "Quantity report",
+    };
+    const csv = serializeQuantityCsv(buildQuantityReport(project, { generatedAt: GENERATED }));
+    expect(csv).toContain("report_title,Quantity report");
+    expect(csv).toContain("facility,Northgate");
+    expect(csv).toContain("client,Example AB");
+    expect(csv).toContain("project_number,P-100");
+    expect(csv).toContain("revision,B");
+    expect(csv).toContain("prepared_by,A. Person");
+    expect(csv).toContain("report_date,2026-11-04");
+    expect(csv).toContain("notes,Procurement copy");
+  });
+
   it("keeps RFC 4180 commas and points in interchange mode", () => {
     const project = makeProject();
     const floor = categoryId(project, "Floor");

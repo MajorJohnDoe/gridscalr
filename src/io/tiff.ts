@@ -3,6 +3,7 @@
  * only; pixel data is never decoded, so a 126 megapixel sheet costs a few
  * hundred kilobytes of memory.
  */
+import { t } from "../i18n";
 
 export class TiffImportError extends Error {
   constructor(message: string) {
@@ -162,19 +163,19 @@ function readTagValues(
 }
 
 export function readTiff(bytes: Uint8Array): TiffFile {
-  if (!isTiff(bytes)) throw new TiffImportError("This file is not a TIFF image.");
+  if (!isTiff(bytes)) throw new TiffImportError(t("tiff.notTiff"));
   const reader = makeReader(bytes);
   const pages: TiffPage[] = [];
   let offset = reader.u32(4);
   let guard = 0;
 
   while (offset !== 0) {
-    if (guard++ > 512) throw new TiffImportError("This TIFF has too many image directories.");
-    if (offset + 2 > bytes.length) throw new TiffImportError("This TIFF is truncated.");
+    if (guard++ > 512) throw new TiffImportError(t("tiff.tooManyDirectories"));
+    if (offset + 2 > bytes.length) throw new TiffImportError(t("tiff.truncated"));
 
     const count = reader.u16(offset);
     if (offset + 2 + count * 12 > bytes.length) {
-      throw new TiffImportError("This TIFF has a damaged image directory.");
+      throw new TiffImportError(t("tiff.damagedDirectory"));
     }
     const tags = new Map<number, number[]>();
     for (let index = 0; index < count; index++) {
@@ -203,7 +204,7 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       const stripOffsets = tags.get(TAG.stripOffsets) ?? [];
       const stripByteCounts = tags.get(TAG.stripByteCounts) ?? [];
       if (stripOffsets.length !== stripByteCounts.length) {
-        throw new TiffImportError("This TIFF has mismatched strip offsets and byte counts.");
+        throw new TiffImportError(t("tiff.mismatchedStrips"));
       }
       const strips: TiffStrip[] = stripOffsets.map((stripOffset, index) => {
         const top = index * rowsPerStrip;
@@ -216,7 +217,7 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       });
       for (const strip of strips) {
         if (strip.offset + strip.byteCount > bytes.length) {
-          throw new TiffImportError("This TIFF strip points outside the file.");
+          throw new TiffImportError(t("tiff.stripOutside"));
         }
       }
 
@@ -242,7 +243,7 @@ export function readTiff(bytes: Uint8Array): TiffFile {
     offset = reader.u32(offset + 2 + count * 12);
   }
 
-  if (!pages.length) throw new TiffImportError("This TIFF contains no image pages.");
+  if (!pages.length) throw new TiffImportError(t("tiff.noPages"));
   return { pages, littleEndian: reader.little };
 }
 
@@ -281,9 +282,9 @@ export interface FaxParameters {
 export function faxParameters(page: TiffPage): FaxParameters {
   const compression =
     page.compression === 3
-      ? { k: 0, compressionName: "CCITT G3" }
+      ? { k: 0, compressionName: t("tiff.ccittG3") }
       : page.compression === 4
-        ? { k: -1, compressionName: "CCITT G4" }
+        ? { k: -1, compressionName: t("tiff.ccittG4") }
         : null;
   if (!compression) {
     throw new TiffImportError(
@@ -291,20 +292,16 @@ export function faxParameters(page: TiffPage): FaxParameters {
     );
   }
   if (page.bitsPerSample !== 1 || page.samplesPerPixel !== 1 || page.planarConfig !== 1) {
-    throw new TiffImportError(
-      "Only 1-bit single-channel TIFFs are supported. Convert this file to a 1-bit scan first.",
-    );
+    throw new TiffImportError(t("tiff.only1Bit"));
   }
   if (page.tiled) {
-    throw new TiffImportError(
-      "Tiled TIFFs are not supported yet. Save this file as a stripped TIFF.",
-    );
+    throw new TiffImportError(t("tiff.tiledUnsupported"));
   }
   if (page.fillOrder !== 1) {
-    throw new TiffImportError("TIFF fill order 2 is not supported.");
+    throw new TiffImportError(t("tiff.fillOrder2"));
   }
   if (page.predictor !== 1) {
-    throw new TiffImportError("TIFF predictors are not supported for fax data.");
+    throw new TiffImportError(t("tiff.predictors"));
   }
   return { ...compression, blackIs1: page.photometric !== 0 };
 }

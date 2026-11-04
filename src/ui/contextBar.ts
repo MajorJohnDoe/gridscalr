@@ -1,17 +1,18 @@
 import { measurementCategory } from "../model/categories";
-import { CLOUD_FILL_PRESETS, cloudFillColor } from "../model/cloud";
+import { CLOUD_FILL_PRESETS, cloudFillColor, cloudFillLabel } from "../model/cloud";
 import { countTypeLabel } from "../features/countTypes/model";
 import { layersForKind, layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
   INSPECTION_STATUSES,
-  INSPECTION_STATUS_LABELS,
   inspectionStatusColor,
+  inspectionStatusLabel,
   symbolCategoryColor,
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolFor,
+  symbolName,
   symbolSvgMarkup,
 } from "../model/symbols";
 import type { LayerKind, Project } from "../model/types";
@@ -25,6 +26,7 @@ import type { ShellRefs } from "./shell";
 import { TOOL_BY_ID, familyForTool } from "./toolDefs";
 import { hasToolVariants, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
   clear(refs.contextBar);
@@ -34,13 +36,13 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
   const toolWrap = el("div", "context-tool");
   if (tool) {
     toolWrap.innerHTML = icon(tool.icon, 17);
-    toolWrap.append(el("span", "", tool.label));
+    toolWrap.append(el("span", "", t(tool.label)));
     if (hasToolVariants(tool.id) || family) {
       const variants = el("button", "context-variant-btn");
       variants.type = "button";
-      variants.title = "Choose variants and presets";
-      variants.setAttribute("aria-label", `Choose variants for ${tool.label}`);
-      variants.innerHTML = `${icon("chevronDown", 12)}<span>Variants</span>`;
+      variants.title = t("context.chooseVariants");
+      variants.setAttribute("aria-label", t("tool.chooseVariants", { name: t(tool.label) }));
+      variants.innerHTML = `${icon("chevronDown", 12)}<span>${t("context.variants")}</span>`;
       variants.addEventListener("click", () => {
         if (family) openToolFamilyVariants(variants, family);
         else openToolVariants(variants, tool.id);
@@ -49,7 +51,7 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     }
   }
   refs.contextBar.append(toolWrap);
-  refs.contextBar.append(el("div", "context-hint", tool?.hint ?? ""));
+  refs.contextBar.append(el("div", "context-hint", tool ? t(tool.hint) : ""));
   if (!project) return;
 
   const controls = el("div", "context-controls");
@@ -68,12 +70,12 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     const dot = el("span", "layer-target-dot");
     dot.style.background = activeLayer.color;
     const select = el("select", "select layer-target-select");
-    select.title = "Layer that receives new items";
-    select.setAttribute("aria-label", "Target layer");
+    select.title = t("context.layerReceives");
+    select.setAttribute("aria-label", t("context.targetLayer"));
     for (const kind of ["draw", "measure"] as LayerKind[]) {
       if (targetKind && kind !== targetKind) continue;
       const group = document.createElement("optgroup");
-      group.label = kind === "measure" ? "Measurements" : "Drawings";
+      group.label = kind === "measure" ? t("context.measurements") : t("context.drawings");
       for (const candidate of [...layersForKind(project, kind)].reverse()) {
         group.append(option(candidate.id, candidate.name, candidate.id === activeLayer.id));
       }
@@ -88,15 +90,20 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
         (!layerVisibleOnPage(next, page) || layerLockedOnPage(next, page))
       ) {
         toast(
-          `“${next.name}” is ${layerLockedOnPage(next, page) ? "locked" : "hidden"}. Unlock or show it before drawing.`,
+          t("context.targetUnavailable", {
+            name: next.name,
+            state: layerLockedOnPage(next, page)
+              ? t("context.stateLocked")
+              : t("context.stateHidden"),
+          }),
           "warning",
         );
       }
     });
-    layerTarget.append(el("span", "layer-target-label", "Layer"), dot, select);
+    layerTarget.append(el("span", "layer-target-label", t("context.layer")), dot, select);
     if (targetKind && (!activeVisible || activeLocked)) {
       const warning = el("span", "layer-target-warning");
-      warning.title = activeLocked ? "The target layer is locked" : "The target layer is hidden";
+      warning.title = activeLocked ? t("context.targetLocked") : t("context.targetHidden");
       warning.innerHTML = icon(activeLocked ? "lock" : "eyeOff", 13);
       layerTarget.append(warning);
     }
@@ -116,8 +123,8 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
   if (measureTool) {
     const measureOptions = el("button", "btn btn-small btn-ghost context-measure-options");
     measureOptions.type = "button";
-    measureOptions.title = "Category, room and measurement options";
-    measureOptions.setAttribute("aria-label", "New measurement options: category, room and type");
+    measureOptions.title = t("context.measureOptionsTitle");
+    measureOptions.setAttribute("aria-label", t("context.measureOptionsAria"));
     measureOptions.setAttribute("aria-expanded", "false");
     measureOptions.setAttribute("aria-haspopup", "dialog");
     measureOptions.innerHTML = `${icon("markups", 14)}<span class="context-measure-summary"></span>${icon("chevronDown", 12)}`;
@@ -137,22 +144,25 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
 
     let areaMode: HTMLElement | null = null;
     if (store.ui.activeTool === "area") {
-      const addButton = toggleButton("plus", "Add", store.ui.measureAreaMode === "add", () =>
-        selectAreaMode("add"),
+      const addButton = toggleButton(
+        "plus",
+        t("context.add"),
+        store.ui.measureAreaMode === "add",
+        () => selectAreaMode("add"),
       );
       const deductButton = toggleButton(
         "minus",
-        "Deduct",
+        t("context.deduct"),
         store.ui.measureAreaMode === "subtract",
         () => selectAreaMode("subtract"),
       );
       addButton.classList.add("area-mode-btn");
       deductButton.classList.add("area-mode-btn");
-      addButton.title = "Add areas to their category and room";
-      deductButton.title = "Deduct areas from their category and room";
+      addButton.title = t("context.addAreasTitle");
+      deductButton.title = t("context.deductAreasTitle");
       areaMode = el("div", "area-mode-toggle");
       areaMode.setAttribute("role", "group");
-      areaMode.setAttribute("aria-label", "Area mode");
+      areaMode.setAttribute("aria-label", t("context.areaMode"));
       areaMode.append(addButton, deductButton);
       syncAreaMode = () => {
         addButton.classList.toggle("is-on", store.ui.measureAreaMode === "add");
@@ -173,10 +183,10 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     const definition = symbolFor(store.ui.symbolId);
     const symbolButton = el("button", "btn btn-small btn-ghost context-symbol-button");
     symbolButton.type = "button";
-    symbolButton.title = "Open the Symbols library";
-    symbolButton.setAttribute("aria-label", "Open the Symbols library");
+    symbolButton.title = t("context.openSymbols");
+    symbolButton.setAttribute("aria-label", t("context.openSymbols"));
     const color = symbolCategoryColor(symbolCategoryOf(definition.id));
-    symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${definition.name}</span>`;
+    symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${symbolName(definition.id)}</span>`;
     symbolButton.addEventListener("click", () => store.setLeftTab("symbols"));
 
     const category = el(
@@ -187,13 +197,11 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     category.style.color = color;
 
     const status = el("select", "select context-symbol-status");
-    status.setAttribute("aria-label", "Status for the next symbol");
-    status.title = "Inspection status for the next placed symbol";
-    status.append(option("", "Not assessed", !store.ui.symbolStatus));
+    status.setAttribute("aria-label", t("context.statusNext"));
+    status.title = t("context.statusNextTitle");
+    status.append(option("", t("context.notAssessed"), !store.ui.symbolStatus));
     for (const value of INSPECTION_STATUSES) {
-      status.append(
-        option(value, INSPECTION_STATUS_LABELS[value], store.ui.symbolStatus === value),
-      );
+      status.append(option(value, inspectionStatusLabel(value), store.ui.symbolStatus === value));
     }
     status.value = store.ui.symbolStatus ?? "";
     status.style.color = inspectionStatusColor(store.ui.symbolStatus ?? undefined);
@@ -227,17 +235,17 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
         : (cloudPreset ?? store.ui.style.color);
     color.title =
       store.ui.activeTool === "stamp"
-        ? "Stamp colour follows its status preset"
+        ? t("context.stampColour")
         : cloudPreset
-          ? "Cloud colour follows its fill preset"
-          : "Markup colour";
+          ? t("context.cloudColour")
+          : t("context.markupColour");
     color.disabled = store.ui.activeTool === "stamp" || Boolean(cloudPreset);
     color.addEventListener("change", () => store.setStyle({ color: color.value }));
     const width = el("select", "select");
     for (const value of STROKE_WIDTH_OPTIONS) {
       width.append(option(String(value), `${value} pt`, value === store.ui.style.strokeWidth));
     }
-    width.title = "Stroke width";
+    width.title = t("context.strokeWidth");
     width.addEventListener("change", () => store.setStyle({ strokeWidth: Number(width.value) }));
     controls.append(color, width);
     if (
@@ -248,15 +256,15 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
       store.ui.activeTool === "delta"
     ) {
       const sizeWrap = el("label", "context-number");
-      sizeWrap.title = "Text size in points";
-      sizeWrap.append(el("span", "", "Size"));
+      sizeWrap.title = t("context.textSizePoints");
+      sizeWrap.append(el("span", "", t("context.size")));
       const fontSize = el("input", "input context-number-input");
       fontSize.type = "number";
       fontSize.min = "0.5";
       fontSize.max = "300";
       fontSize.step = "0.5";
       fontSize.value = String(store.ui.style.fontSize);
-      fontSize.setAttribute("aria-label", "Text size in points");
+      fontSize.setAttribute("aria-label", t("context.textSizePoints"));
       fontSize.addEventListener("change", () => {
         const value = Number(fontSize.value);
         if (Number.isFinite(value) && value > 0) {
@@ -273,14 +281,14 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
 
   if (store.ui.activeTool === "highlight") {
     const shapeField = el("label", "context-field");
-    shapeField.title = "Highlight mode";
-    shapeField.append(el("span", "context-field-label", "Mode"));
+    shapeField.title = t("context.highlightMode");
+    shapeField.append(el("span", "context-field-label", t("context.mode")));
     const shapeSelect = el("select", "select context-select");
-    shapeSelect.setAttribute("aria-label", "Highlight mode");
+    shapeSelect.setAttribute("aria-label", t("context.highlightMode"));
     shapeSelect.append(
-      option("stroke", "Pen", store.ui.highlightShape === "stroke"),
-      option("rectangle", "Rectangle", store.ui.highlightShape === "rectangle"),
-      option("polygon", "Polygon", store.ui.highlightShape === "polygon"),
+      option("stroke", t("tool.pen"), store.ui.highlightShape === "stroke"),
+      option("rectangle", t("tool.rect"), store.ui.highlightShape === "rectangle"),
+      option("polygon", t("context.polygon"), store.ui.highlightShape === "polygon"),
     );
     shapeSelect.addEventListener("change", () =>
       store.setHighlightShape(shapeSelect.value as "stroke" | "rectangle" | "polygon"),
@@ -291,10 +299,10 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
 
   if (store.ui.activeTool === "stamp") {
     const presetField = el("label", "context-field");
-    presetField.title = "Stamp preset for the next stamp";
-    presetField.append(el("span", "context-field-label", "Stamp"));
+    presetField.title = t("context.stampPresetNext");
+    presetField.append(el("span", "context-field-label", t("context.stamp")));
     const presetSelect = el("select", "select context-select");
-    presetSelect.setAttribute("aria-label", "Stamp preset");
+    presetSelect.setAttribute("aria-label", t("context.stampPreset"));
     const presets = project.settings.stampPresets.length
       ? project.settings.stampPresets
       : ["APPROVED"];
@@ -305,14 +313,17 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
       presetSelect.append(option(preset, preset, preset === store.ui.stampText));
     }
     presetSelect.addEventListener("change", () => store.setStampText(presetSelect.value));
-    const custom = el("button", "btn btn-small btn-ghost", "Custom…");
+    const custom = el("button", "btn btn-small btn-ghost", t("context.custom"));
     custom.type = "button";
     custom.addEventListener("click", () => {
-      void textDialog("Custom stamp", "Only for the next stamp", store.ui.stampText, "Status").then(
-        (value) => {
-          if (value !== null && value.trim()) store.setStampText(value.trim());
-        },
-      );
+      void textDialog(
+        t("context.customStampTitle"),
+        t("context.customStampSubtitle"),
+        store.ui.stampText,
+        t("context.statusPlaceholder"),
+      ).then((value) => {
+        if (value !== null && value.trim()) store.setStampText(value.trim());
+      });
     });
     presetField.append(presetSelect);
     controls.prepend(presetField, custom, el("div", "divider-v"));
@@ -320,12 +331,12 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
 
   if (store.ui.activeTool === "delta") {
     const revisionField = el("label", "context-field");
-    revisionField.title = "Revision number or letter";
-    revisionField.append(el("span", "context-field-label", "Revision"));
+    revisionField.title = t("context.revisionNumber");
+    revisionField.append(el("span", "context-field-label", t("context.revision")));
     const revision = el("input", "input context-room-input");
     revision.type = "text";
     revision.value = store.ui.deltaText;
-    revision.setAttribute("aria-label", "Revision number or letter");
+    revision.setAttribute("aria-label", t("context.revisionNumber"));
     revision.addEventListener("input", () => store.setDeltaText(revision.value));
     revisionField.append(revision);
     controls.prepend(revisionField, el("div", "divider-v"));
@@ -333,13 +344,13 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
 
   if (store.ui.activeTool === "arrow") {
     const headsField = el("label", "context-field");
-    headsField.title = "Arrowheads";
-    headsField.append(el("span", "context-field-label", "Heads"));
+    headsField.title = t("context.arrowheads");
+    headsField.append(el("span", "context-field-label", t("context.heads")));
     const heads = el("select", "select context-select");
-    heads.setAttribute("aria-label", "Arrowheads");
+    heads.setAttribute("aria-label", t("context.arrowheads"));
     heads.append(
-      option("end", "Single", store.ui.arrowHeads === "end"),
-      option("both", "Double", store.ui.arrowHeads === "both"),
+      option("end", t("context.single"), store.ui.arrowHeads === "end"),
+      option("both", t("context.double"), store.ui.arrowHeads === "both"),
     );
     heads.addEventListener("change", () =>
       store.setArrowHeads(heads.value === "both" ? "both" : "end"),
@@ -349,16 +360,18 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
   }
 
   if (store.ui.activeTool === "cloud") {
-    const textToggle = toggleButton("callout", "Text box", store.ui.cloudText, () => {
+    const textToggle = toggleButton("callout", t("context.textBox"), store.ui.cloudText, () => {
       store.setCloudText(!store.ui.cloudText);
     });
     const fillField = el("label", "context-field");
-    fillField.title = "Fill preset for the next cloud";
-    fillField.append(el("span", "context-field-label", "Fill"));
+    fillField.title = t("context.fillPresetNext");
+    fillField.append(el("span", "context-field-label", t("context.fill")));
     const fillSelect = el("select", "select context-select");
-    fillSelect.setAttribute("aria-label", "Cloud fill preset");
+    fillSelect.setAttribute("aria-label", t("context.cloudFillPreset"));
     for (const preset of CLOUD_FILL_PRESETS) {
-      fillSelect.append(option(preset.id, preset.label, preset.id === store.ui.cloudFill));
+      fillSelect.append(
+        option(preset.id, cloudFillLabel(preset.id), preset.id === store.ui.cloudFill),
+      );
     }
     fillSelect.addEventListener("change", () =>
       store.setCloudFill(fillSelect.value as typeof store.ui.cloudFill),
@@ -375,17 +388,17 @@ function measurementSummary(project: Project): string {
   if (store.ui.activeTool === "area") {
     parts.push(
       store.ui.measureAreaShape === "rectangle"
-        ? "Rectangle"
+        ? t("tool.rect")
         : store.ui.measureAreaShape === "ellipse"
-          ? "Ellipse"
-          : "Polygon",
+          ? t("tool.ellipse")
+          : t("context.polygon"),
     );
-    parts.push(store.ui.measureAreaMode === "subtract" ? "Deduct" : "Add");
+    parts.push(store.ui.measureAreaMode === "subtract" ? t("context.deduct") : t("context.add"));
   } else if (store.ui.activeTool === "count") {
     parts.push(countTypeLabel(project, store.ui.measureCountType));
   }
   const category = measurementCategory(project, store.ui.measureCategoryId);
-  parts.push(category?.name ?? "Category");
+  parts.push(category?.name ?? t("context.categoryFallback"));
   const room = store.ui.measureRoom.trim();
   if (room) parts.push(room);
   return parts.join(" · ");

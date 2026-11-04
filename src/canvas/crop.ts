@@ -18,6 +18,7 @@ import {
   roundRect,
   type BoxHandleRole,
 } from "./geometry";
+import { t } from "../i18n";
 
 const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
@@ -76,10 +77,7 @@ export class CropController {
       this.showUi();
       this.host.updateCursor();
       this.host.drawInteraction();
-      toast(
-        "Draw the export area. Drag the handles to adjust. Enter uses it, Esc cancels.",
-        "info",
-      );
+      toast(t("crop.instructions"), "info");
     });
   }
 
@@ -88,12 +86,12 @@ export class CropController {
     if (!mode) return false;
     const size = this.host.pageSize();
     if (!size || !mode.rect || mode.rect.width < 1 || mode.rect.height < 1) {
-      toast("Draw an export area first.", "warning");
+      toast(t("crop.noArea"), "warning");
       return false;
     }
     const crop = normalizeCropRect(mode.rect, size);
     if (!crop) {
-      toast("The export area is too small.", "warning");
+      toast(t("crop.tooSmall"), "warning");
       return false;
     }
     this.finish(crop);
@@ -325,7 +323,7 @@ export class CropController {
 
     const hint = document.createElement("span");
     hint.className = "canvas-crop-hint";
-    hint.textContent = "Drag to select the export area";
+    hint.textContent = t("crop.dragAria");
 
     const cancel = document.createElement("button");
     cancel.type = "button";
@@ -336,7 +334,7 @@ export class CropController {
     const use = document.createElement("button");
     use.type = "button";
     use.className = "btn btn-small btn-primary";
-    use.textContent = "Use area";
+    use.textContent = t("crop.useArea");
     use.addEventListener("click", () => this.confirm());
 
     bar.append(hint, cancel, use);

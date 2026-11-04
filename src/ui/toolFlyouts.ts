@@ -1,12 +1,13 @@
-import { CLOUD_FILL_PRESETS, type CloudFillPreset } from "../model/cloud";
+import { CLOUD_FILL_PRESETS, cloudFillLabel, type CloudFillPreset } from "../model/cloud";
 import { stampStatusColor } from "../model/stamps";
-import { DRAW_COLOR_PRESETS } from "../model/style";
+import { DRAW_COLOR_PRESETS, drawColorLabel } from "../model/style";
 import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
 import { store, type ToolId } from "../state/store";
 import { textDialog } from "./dialogs";
 import { el } from "./dom";
 import { icon } from "./icons";
 import { familyToolForDisplay, rememberFamilyTool, TOOL_BY_ID, type ToolFamily } from "./toolDefs";
+import { t } from "../i18n";
 
 const LONG_PRESS_MS = 320;
 
@@ -92,12 +93,12 @@ function openToolFlyout(button: HTMLElement, toolId: string): void {
 }
 
 function toolFlyoutLabel(toolId: string): string {
-  if (toolId === "area") return "Area options";
-  if (toolId === "cloud") return "Revision cloud variants";
-  if (toolId === "highlight") return "Highlight variants";
-  if (toolId === "callout") return "Callout colours";
-  if (toolId === "stamp") return "Stamp presets";
-  return "Arrow variants";
+  if (toolId === "area") return t("tool.flyout.areaOptions");
+  if (toolId === "cloud") return t("tool.flyout.cloudVariants");
+  if (toolId === "highlight") return t("tool.flyout.highlightVariants");
+  if (toolId === "callout") return t("tool.flyout.calloutColours");
+  if (toolId === "stamp") return t("tool.flyout.stampPresets");
+  return t("tool.flyout.arrowVariants");
 }
 
 function outsideHandler(event: MouseEvent): void {
@@ -108,16 +109,16 @@ function outsideHandler(event: MouseEvent): void {
 }
 
 function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
-  mountFlyout(button, `${family.label} tools`, (panel) => {
-    panel.append(el("div", "tool-flyout-title", family.label));
-    panel.append(el("div", "tool-flyout-section", "Tools"));
+  mountFlyout(button, t("tool.familyTools", { name: t(family.label) }), (panel) => {
+    panel.append(el("div", "tool-flyout-title", t(family.label)));
+    panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
     const displayed = familyToolForDisplay(family, store.ui.activeTool);
     for (const toolId of family.tools) {
       const tool = TOOL_BY_ID.get(toolId);
       if (!tool) continue;
       variantRow(panel, {
-        label: `${tool.label} · ${tool.shortcut}`,
-        description: tool.hint,
+        label: `${t(tool.label)} · ${tool.shortcut}`,
+        description: t(tool.hint),
         iconName: tool.icon,
         selected: displayed === toolId,
         onSelect: () => {
@@ -200,25 +201,25 @@ function closeToolFlyout(): void {
 }
 
 function renderArea(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Area"));
-  panel.append(el("div", "tool-flyout-section", "Shape"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.area")));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.shape")));
   const shapes: Array<{ id: AreaShape; label: string; description: string; iconName: string }> = [
     {
       id: "polygon",
-      label: "Polygon",
-      description: "Click each corner",
+      label: t("toolFlyout.polygon"),
+      description: t("toolFlyout.clickCorner"),
       iconName: "area",
     },
     {
       id: "rectangle",
-      label: "Rectangle",
-      description: "Drag a quick area",
+      label: t("toolFlyout.rectangle"),
+      description: t("toolFlyout.dragQuick"),
       iconName: "rect",
     },
     {
       id: "ellipse",
-      label: "Ellipse",
-      description: "Drag an oval area",
+      label: t("toolFlyout.ellipse"),
+      description: t("toolFlyout.dragOval"),
       iconName: "ellipse",
     },
   ];
@@ -235,18 +236,18 @@ function renderArea(panel: HTMLElement, render: () => void): void {
     });
   }
 
-  panel.append(el("div", "tool-flyout-section", "Mode"));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.mode")));
   const modes: Array<{ id: AreaMode; label: string; description: string; iconName: string }> = [
     {
       id: "add",
-      label: "Add area",
-      description: "Adds to the category and room total",
+      label: t("toolFlyout.addArea"),
+      description: t("toolFlyout.addsTotal"),
       iconName: "plus",
     },
     {
       id: "subtract",
-      label: "Deduct area",
-      description: "Subtracts from the same category and room",
+      label: t("toolFlyout.deductArea"),
+      description: t("toolFlyout.subtractsTotal"),
       iconName: "minus",
     },
   ];
@@ -262,22 +263,16 @@ function renderArea(panel: HTMLElement, render: () => void): void {
       },
     });
   }
-  panel.append(
-    el(
-      "div",
-      "tool-flyout-note",
-      "The mode stays active for the next area. You can also change a placed area in Properties.",
-    ),
-  );
+  panel.append(el("div", "tool-flyout-note", t("toolFlyout.modeNote")));
 }
 
 function renderCloud(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Revision cloud"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.revisionCloud")));
 
-  panel.append(el("div", "tool-flyout-section", "Form"));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.form")));
   variantRow(panel, {
-    label: "Cloud",
-    description: "Shape only",
+    label: t("toolFlyout.cloud"),
+    description: t("toolFlyout.shapeOnly"),
     iconName: "cloud",
     selected: !store.ui.cloudText,
     onSelect: () => {
@@ -286,8 +281,8 @@ function renderCloud(panel: HTMLElement, render: () => void): void {
     },
   });
   variantRow(panel, {
-    label: "Cloud + text",
-    description: "Text box and leader",
+    label: t("toolFlyout.cloudText"),
+    description: t("toolFlyout.textBoxLeader"),
     iconName: "callout",
     selected: store.ui.cloudText,
     onSelect: () => {
@@ -296,13 +291,16 @@ function renderCloud(panel: HTMLElement, render: () => void): void {
     },
   });
 
-  panel.append(el("div", "tool-flyout-section", "Fill"));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.fill")));
   const swatches = el("div", "tool-fill-swatches");
   for (const preset of CLOUD_FILL_PRESETS) {
     const button = el("button", "tool-fill-swatch");
     button.type = "button";
-    button.title = preset.label;
-    button.setAttribute("aria-label", `Cloud fill: ${preset.label}`);
+    button.title = cloudFillLabel(preset.id);
+    button.setAttribute(
+      "aria-label",
+      t("toolFlyout.cloudFillAria", { name: cloudFillLabel(preset.id) }),
+    );
     button.classList.toggle("is-selected", store.ui.cloudFill === preset.id);
     if (preset.color) {
       button.style.setProperty("--swatch", preset.color);
@@ -315,24 +313,15 @@ function renderCloud(panel: HTMLElement, render: () => void): void {
       render();
     });
     const option = el("span", "tool-fill-option");
-    option.append(
-      button,
-      el("span", "tool-fill-label", preset.label === "No fill" ? "None" : preset.label),
-    );
+    option.append(button, el("span", "tool-fill-label", cloudFillLabel(preset.id)));
     swatches.append(option);
   }
   panel.append(swatches);
-  panel.append(
-    el(
-      "div",
-      "tool-flyout-note",
-      "Fill uses a 22% tint. Choose the cloud form and fill independently.",
-    ),
-  );
+  panel.append(el("div", "tool-flyout-note", t("toolFlyout.fillNote")));
 }
 
 function renderHighlight(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Highlight"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.highlight")));
   const entries: Array<{
     id: HighlightShape;
     label: string;
@@ -341,20 +330,20 @@ function renderHighlight(panel: HTMLElement, render: () => void): void {
   }> = [
     {
       id: "stroke",
-      label: "Pen",
-      description: "Freehand highlighter",
+      label: t("toolFlyout.pen"),
+      description: t("toolFlyout.freehand"),
       iconName: "highlight",
     },
     {
       id: "rectangle",
-      label: "Rectangle",
-      description: "Translucent box",
+      label: t("toolFlyout.rectangle"),
+      description: t("toolFlyout.translucentBox"),
       iconName: "rect",
     },
     {
       id: "polygon",
-      label: "Polygon",
-      description: "Translucent area",
+      label: t("toolFlyout.polygon"),
+      description: t("toolFlyout.translucentArea"),
       iconName: "area",
     },
   ];
@@ -370,29 +359,23 @@ function renderHighlight(panel: HTMLElement, render: () => void): void {
       },
     });
   }
-  panel.append(el("div", "tool-flyout-section", "Colour"));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.colour")));
   renderColorSwatches(panel, render);
 }
 
 function renderCallout(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Callout"));
-  panel.append(el("div", "tool-flyout-section", "Leader colour"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.callout")));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.leaderColour")));
   renderColorSwatches(panel, render);
-  panel.append(
-    el(
-      "div",
-      "tool-flyout-note",
-      "The text box stays dark and the text colour is changed in the inline editor.",
-    ),
-  );
+  panel.append(el("div", "tool-flyout-note", t("toolFlyout.calloutNote")));
 }
 
 function renderArrow(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Arrow"));
-  panel.append(el("div", "tool-flyout-section", "Heads"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.arrow")));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.heads")));
   variantRow(panel, {
-    label: "Single",
-    description: "Arrowhead at the end",
+    label: t("toolFlyout.single"),
+    description: t("toolFlyout.arrowEnd"),
     iconName: "arrow",
     selected: store.ui.arrowHeads === "end",
     onSelect: () => {
@@ -401,8 +384,8 @@ function renderArrow(panel: HTMLElement, render: () => void): void {
     },
   });
   variantRow(panel, {
-    label: "Double",
-    description: "Arrowheads at both ends",
+    label: t("toolFlyout.double"),
+    description: t("toolFlyout.bothEnds"),
     iconName: "line",
     selected: store.ui.arrowHeads === "both",
     onSelect: () => {
@@ -410,16 +393,16 @@ function renderArrow(panel: HTMLElement, render: () => void): void {
       render();
     },
   });
-  panel.append(el("div", "tool-flyout-section", "Colour"));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.colour")));
   renderColorSwatches(panel, render);
 }
 
 function renderStamp(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", "Stamp"));
-  panel.append(el("div", "tool-flyout-section", "Status"));
+  panel.append(el("div", "tool-flyout-title", t("toolFlyout.stamp")));
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.status")));
   const presets = store.project?.settings.stampPresets ?? [];
   if (!presets.length) {
-    panel.append(el("div", "tool-flyout-note", "No stamp presets. Add them in Settings."));
+    panel.append(el("div", "tool-flyout-note", t("toolFlyout.noPresets")));
   }
   for (const preset of presets) {
     const selected = store.ui.stampText === preset;
@@ -447,26 +430,23 @@ function renderStamp(panel: HTMLElement, render: () => void): void {
   customIcon.innerHTML = icon("text", 14);
   const customText = el("span", "tool-variant-text");
   customText.append(
-    el("span", "tool-variant-label", "Custom…"),
-    el("span", "tool-variant-description", "One-off stamp for the next placement"),
+    el("span", "tool-variant-label", t("toolFlyout.custom")),
+    el("span", "tool-variant-description", t("toolFlyout.oneOff")),
   );
   custom.append(customMark, customIcon, customText);
   custom.addEventListener("click", () => {
     closeToolFlyout();
-    void textDialog("Custom stamp", "Only for the next stamp", store.ui.stampText, "Status").then(
-      (value) => {
-        if (value !== null && value.trim()) store.setStampText(value.trim());
-      },
-    );
+    void textDialog(
+      t("context.customStampTitle"),
+      t("context.customStampSubtitle"),
+      store.ui.stampText,
+      t("context.statusPlaceholder"),
+    ).then((value) => {
+      if (value !== null && value.trim()) store.setStampText(value.trim());
+    });
   });
   panel.append(custom);
-  panel.append(
-    el(
-      "div",
-      "tool-flyout-note",
-      "Stamp colours follow the status. Use Properties to override a placed stamp.",
-    ),
-  );
+  panel.append(el("div", "tool-flyout-note", t("toolFlyout.stampNote")));
 }
 
 function renderColorSwatches(panel: HTMLElement, render: () => void): void {
@@ -474,8 +454,8 @@ function renderColorSwatches(panel: HTMLElement, render: () => void): void {
   for (const preset of DRAW_COLOR_PRESETS) {
     const button = el("button", "tool-fill-swatch has-color");
     button.type = "button";
-    button.title = preset.label;
-    button.setAttribute("aria-label", preset.label);
+    button.title = drawColorLabel(preset);
+    button.setAttribute("aria-label", drawColorLabel(preset));
     button.style.setProperty("--swatch", preset.color);
     button.classList.toggle(
       "is-selected",
@@ -486,7 +466,7 @@ function renderColorSwatches(panel: HTMLElement, render: () => void): void {
       render();
     });
     const option = el("span", "tool-fill-option");
-    option.append(button, el("span", "tool-fill-label", preset.label));
+    option.append(button, el("span", "tool-fill-label", drawColorLabel(preset)));
     swatches.append(option);
   }
   panel.append(swatches);

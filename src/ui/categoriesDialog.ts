@@ -6,6 +6,7 @@ import { showModal } from "./dialogs";
 import { clear, el, option } from "./dom";
 import { icon } from "./icons";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 function iconButton(markup: string, label: string, onClick: () => void): HTMLButtonElement {
   const node = el("button", "icon-btn category-action");
@@ -26,20 +27,14 @@ export function openCategoriesDialog(): Promise<void> {
   if (!store.project) return Promise.resolve();
 
   const body = el("div", "form-stack category-manager");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      "Categories group measurements in the quantity report. Names must be unique. Use the arrows to set report order. Waste and rounding overrides are optional; leave a field empty to inherit the project defaults in Properties.",
-    ),
-  );
+  body.append(el("p", "modal-message", t("category.intro")));
 
   const list = el("div", "category-list");
   const confirm = el("div", "inline-confirm");
   confirm.hidden = true;
 
   const defaultField = el("label", "field");
-  const defaultLabel = el("span", "field-label", "Default category for new measurements");
+  const defaultLabel = el("span", "field-label", t("category.defaultNew"));
   const defaultSelect = el("select", "select");
   defaultField.append(defaultLabel, defaultSelect);
   defaultSelect.addEventListener("change", () => {
@@ -50,9 +45,9 @@ export function openCategoriesDialog(): Promise<void> {
   const addRow = el("div", "input-row");
   const addInput = el("input", "input");
   addInput.type = "text";
-  addInput.placeholder = "New category";
-  addInput.setAttribute("aria-label", "New category name");
-  const addButton = el("button", "btn btn-small", "Add");
+  addInput.placeholder = t("category.newCategory");
+  addInput.setAttribute("aria-label", t("category.newCategoryAria"));
+  const addButton = el("button", "btn btn-small", t("common.add"));
   addButton.type = "button";
   addRow.append(addInput, addButton);
 
@@ -64,7 +59,7 @@ export function openCategoriesDialog(): Promise<void> {
       return;
     }
     if (!store.addCategory(value)) {
-      toast("Could not add the category.", "warning");
+      toast(t("category.addFailed"), "warning");
       return;
     }
     addInput.value = "";
@@ -91,7 +86,7 @@ export function openCategoriesDialog(): Promise<void> {
     const project = store.project;
     if (!project) return;
     if (project.categories.length <= 1) {
-      toast("A project needs at least one category.", "warning");
+      toast(t("category.needsOne"), "warning");
       return;
     }
 
@@ -100,7 +95,7 @@ export function openCategoriesDialog(): Promise<void> {
     if (usage === 0 && !isDefault) {
       const result = store.removeCategory(category.id);
       if (result.removed) {
-        toast(`Deleted “${category.name}”.`);
+        toast(t("category.deleteEmpty", { name: category.name }));
         render();
       }
       return;
@@ -117,13 +112,13 @@ export function openCategoriesDialog(): Promise<void> {
         "p",
         "inline-confirm-text",
         usage > 0
-          ? `“${category.name}” contains ${usage} measurement${usage === 1 ? "" : "s"}. Move them to another category before deleting it.`
-          : `“${category.name}” is the default category. Choose the new default before deleting it.`,
+          ? t("category.contains", { name: category.name, count: usage })
+          : t("category.isDefault", { name: category.name }),
       ),
     );
 
     const targetRow = el("label", "field");
-    targetRow.append(el("span", "field-label", "Move to"));
+    targetRow.append(el("span", "field-label", t("category.moveTo")));
     const targetSelect = el("select", "select");
     for (const entry of others) {
       targetSelect.append(option(entry.id, entry.name, entry.id === preferred.id));
@@ -131,22 +126,22 @@ export function openCategoriesDialog(): Promise<void> {
     targetRow.append(targetSelect);
 
     const actions = el("div", "inline-confirm-actions");
-    const cancel = el("button", "btn btn-small btn-ghost", "Cancel");
+    const cancel = el("button", "btn btn-small btn-ghost", t("common.cancel"));
     cancel.type = "button";
     cancel.addEventListener("click", hideConfirm);
-    const remove = el("button", "btn btn-small btn-danger", "Delete category");
+    const remove = el("button", "btn btn-small btn-danger", t("category.deleteCategory"));
     remove.type = "button";
     remove.addEventListener("click", () => {
       const result = store.removeCategory(category.id, targetSelect.value);
       if (!result.removed) {
-        toast("Could not delete the category.", "warning");
+        toast(t("category.deleteFailed"), "warning");
         return;
       }
       hideConfirm();
       toast(
         result.moved > 0
-          ? `Deleted “${category.name}” and moved ${result.moved} measurement${result.moved === 1 ? "" : "s"}.`
-          : `Deleted “${category.name}”.`,
+          ? t("category.deleteWithMoved", { name: category.name, count: result.moved })
+          : t("category.deleteEmpty", { name: category.name }),
       );
       render();
     });
@@ -168,7 +163,7 @@ export function openCategoriesDialog(): Promise<void> {
       return;
     }
     if (!store.renameCategory(category.id, name)) {
-      toast("Could not rename the category.", "warning");
+      toast(t("category.renameFailed"), "warning");
       input.value = category.name;
       return;
     }
@@ -186,7 +181,7 @@ export function openCategoriesDialog(): Promise<void> {
       const name = el("input", "input category-name");
       name.type = "text";
       name.value = category.name;
-      name.setAttribute("aria-label", `Category name: ${category.name}`);
+      name.setAttribute("aria-label", t("category.nameAria", { name: category.name }));
       name.addEventListener("change", () => commitRename(category, name));
       name.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
@@ -199,24 +194,35 @@ export function openCategoriesDialog(): Promise<void> {
       const meta = el(
         "span",
         "category-meta",
-        usage > 0 ? `${usage} measurement${usage === 1 ? "" : "s"}` : "Unused",
+        usage > 0 ? t("category.usage", { count: usage }) : t("category.unused"),
       );
       if (project.settings.quantity.defaultCategoryId === category.id) {
         meta.classList.add("is-default");
-        meta.textContent = usage > 0 ? `Default · ${usage}` : "Default";
+        meta.textContent =
+          usage > 0 ? t("category.defaultWithCount", { count: usage }) : t("category.defaultLabel");
       }
 
       const actions = el("div", "category-row-actions");
-      const up = iconButton(icon("up", 14), `Move ${category.name} up`, () => {
-        if (store.moveCategory(category.id, -1)) render();
-      });
+      const up = iconButton(
+        icon("up", 14),
+        t("category.moveUpAria", { name: category.name }),
+        () => {
+          if (store.moveCategory(category.id, -1)) render();
+        },
+      );
       up.disabled = index === 0;
-      const down = iconButton(icon("down", 14), `Move ${category.name} down`, () => {
-        if (store.moveCategory(category.id, 1)) render();
-      });
+      const down = iconButton(
+        icon("down", 14),
+        t("category.moveDownAria", { name: category.name }),
+        () => {
+          if (store.moveCategory(category.id, 1)) render();
+        },
+      );
       down.disabled = index === project.categories.length - 1;
-      const remove = iconButton(icon("trash", 14), `Delete ${category.name}`, () =>
-        requestDelete(category),
+      const remove = iconButton(
+        icon("trash", 14),
+        t("category.deleteAria", { name: category.name }),
+        () => requestDelete(category),
       );
       remove.disabled = project.categories.length <= 1;
       actions.append(up, down, remove);
@@ -225,23 +231,25 @@ export function openCategoriesDialog(): Promise<void> {
 
       const overrides = el("div", "category-overrides");
       const wasteWrap = el("label", "category-override");
-      wasteWrap.append(el("span", "", "Waste"));
+      wasteWrap.append(el("span", "", t("category.waste")));
       const wasteInput = el("input", "input category-override-input");
       wasteInput.type = "number";
       wasteInput.min = "0";
       wasteInput.max = "100";
       wasteInput.step = "0.5";
       wasteInput.value = category.wastePercent === undefined ? "" : String(category.wastePercent);
-      wasteInput.placeholder = `Default ${formatNumber(project.settings.quantity.wastePercent, 1)}`;
-      wasteInput.title = "Leave empty to inherit the project waste percentage.";
-      wasteInput.setAttribute("aria-label", `Waste percentage override for ${category.name}`);
+      wasteInput.placeholder = t("category.wastePlaceholder", {
+        value: formatNumber(project.settings.quantity.wastePercent, 1),
+      });
+      wasteInput.title = t("category.wasteInheritTitle");
+      wasteInput.setAttribute("aria-label", t("category.wasteAria", { name: category.name }));
       wasteInput.addEventListener("change", () => {
         const raw = wasteInput.value.trim();
         const value = raw === "" ? null : Number(raw);
         if (value !== null && (!Number.isFinite(value) || value < 0 || value > 100)) {
           wasteInput.value =
             category.wastePercent === undefined ? "" : String(category.wastePercent);
-          toast("Waste must be between 0 and 100 percent.", "warning");
+          toast(t("category.wasteInvalid"), "warning");
           return;
         }
         store.setCategoryQuantityOverride(category.id, "wastePercent", value);
@@ -250,24 +258,25 @@ export function openCategoriesDialog(): Promise<void> {
       wasteWrap.append(wasteInput, el("span", "category-override-unit", "%"));
 
       const roundingWrap = el("label", "category-override");
-      roundingWrap.append(el("span", "", "Round up"));
+      roundingWrap.append(el("span", "", t("category.roundUp")));
       const roundingInput = el("input", "input category-override-input");
       roundingInput.type = "number";
       roundingInput.min = "0";
       roundingInput.step = "0.01";
       roundingInput.value =
         category.roundingStep === undefined ? "" : String(category.roundingStep);
-      roundingInput.placeholder = `Default ${formatNumber(project.settings.quantity.roundingStep, 2)}`;
-      roundingInput.title =
-        "Leave empty to inherit the project rounding step. The step uses each row's unit; counts always round to whole pcs.";
-      roundingInput.setAttribute("aria-label", `Rounding step override for ${category.name}`);
+      roundingInput.placeholder = t("category.roundPlaceholder", {
+        value: formatNumber(project.settings.quantity.roundingStep, 2),
+      });
+      roundingInput.title = t("category.roundInheritTitle");
+      roundingInput.setAttribute("aria-label", t("category.roundAria", { name: category.name }));
       roundingInput.addEventListener("change", () => {
         const raw = roundingInput.value.trim();
         const value = raw === "" ? null : Number(raw);
         if (value !== null && (!Number.isFinite(value) || value < 0)) {
           roundingInput.value =
             category.roundingStep === undefined ? "" : String(category.roundingStep);
-          toast("Rounding step must be zero or greater.", "warning");
+          toast(t("category.roundInvalid"), "warning");
           return;
         }
         store.setCategoryQuantityOverride(category.id, "roundingStep", value);
@@ -296,11 +305,11 @@ export function openCategoriesDialog(): Promise<void> {
   render();
 
   return showModal({
-    title: "Categories",
-    subtitle: "Project-wide grouping for measurements and quantity reports.",
+    title: t("category.title"),
+    subtitle: t("category.subtitle"),
     body,
     wide: true,
-    actions: [{ label: "Done", value: "done", primary: true }],
+    actions: [{ label: t("category.done"), value: "done", primary: true }],
   }).then(() => {
     hideConfirm();
   });

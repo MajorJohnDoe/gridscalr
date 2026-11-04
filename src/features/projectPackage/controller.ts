@@ -28,7 +28,7 @@ import {
   type PackageSourceRequest,
 } from "./ipc";
 import {
-  DESKTOP_ONLY_MESSAGE,
+  desktopOnlyMessage,
   describePackageFailure,
   documentArchivePaths,
   normalizePackageFailure,
@@ -42,8 +42,9 @@ import {
   type PackageOptions,
 } from "./model";
 import { packageDestinationDialog, packageOptionsDialog, runPackageJob } from "./ui";
+import { t } from "../../i18n";
 
-const PACKAGE_FILTERS = [{ name: "GridScalr project package", extensions: ["zip"] }];
+const packageFilters = () => [{ name: t("package.filter"), extensions: ["zip"] }];
 
 export interface PackageHost {
   /** Confirms that an open project may be replaced, saving first when asked. */
@@ -183,11 +184,9 @@ function prepareScans(
 }
 
 function checksumMessage(failures: { name: string }[]): string {
-  return `These drawings no longer match the checksums stored in the project:\n${failures
-    .map((file) => `• ${file.name}`)
-    .join(
-      "\n",
-    )}\n\nUse the current files only for the packaged copy, or cancel and relink them first. The open project is not changed.`;
+  return t("package.checksumMessage", {
+    files: failures.map((file) => `• ${file.name}`).join("\n"),
+  });
 }
 
 function mapMismatchesToOverrides(
@@ -210,7 +209,7 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
   const project = store.project;
   if (!project) return;
   if (!isTauri) {
-    await messageDialog("Project packages", DESKTOP_ONLY_MESSAGE, "info");
+    await messageDialog(t("package.title"), desktopOnlyMessage(), "info");
     return;
   }
 
@@ -218,14 +217,14 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
   if (!options) return;
 
   const suggested = suggestedPackageFileName(project);
-  const chosenPath = await chooseSavePath(suggested, PACKAGE_FILTERS);
+  const chosenPath = await chooseSavePath(suggested, packageFilters());
   if (!chosenPath) return;
   const outputPath = chosenPath.toLowerCase().endsWith(".zip") ? chosenPath : `${chosenPath}.zip`;
   try {
     assertWritablePath(outputPath, protectedPathsFor(project));
   } catch (error) {
     await messageDialog(
-      "Could not create package",
+      t("package.couldNotCreate"),
       error instanceof Error ? error.message : String(error),
       "warning",
     );
@@ -235,10 +234,10 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
   const missing = await missingSources(project, store.projectPath, options.includeSourceScans);
   if (missing.length) {
     await messageDialog(
-      "Source drawings are missing",
-      `These files are not available:\n${missing
-        .map((file) => `• ${file.name} — ${file.path}`)
-        .join("\n")}\n\nRestore or relink them, then package the project again.`,
+      t("package.missingSourcesTitle"),
+      t("package.missingSourcesMessage", {
+        files: missing.map((file) => `• ${file.name} — ${file.path}`).join("\n"),
+      }),
       "warning",
     );
     return;
@@ -268,63 +267,59 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
     };
 
     const outcome = await runPackageJob<PackageCreateResult>(
-      "Creating package",
+      t("package.phaseCreating"),
       async (report, isCancelled) => {
         if (!preparedExports) {
-          report.phase("Preparing optional exports");
+          report.phase(t("package.phasePreparing"));
           preparedExports = await buildOptionalExports(project, options, host);
         }
         if (isCancelled()) {
-          const cancelled = new Error("The package was cancelled.");
+          const cancelled = new Error(t("package.cancelledError"));
           (cancelled as Error & { kind?: string }).kind = "cancelled";
           throw cancelled;
         }
         request.exports = preparedExports ?? [];
-        report.phase("Writing package");
+        report.phase(t("package.phaseWriting"));
         return createProjectPackage(request, (progress) => report.update(progress));
       },
       () => void cancelProjectPackage(request.jobId),
     );
 
     if (outcome.status === "ok") {
-      toast(`Package created: ${basename(outputPath)}.`, "success");
+      toast(t("package.created", { path: basename(outputPath) }), "success");
       return;
     }
     if (outcome.status === "cancelled") {
-      toast("Package cancelled. No file was written.", "info");
+      toast(t("package.cancelled"), "info");
       return;
     }
     if (outcome.error.kind === "checksumMismatch") {
       const useCurrent = await confirmDialog(
-        "Drawing checksums changed",
+        t("package.checksumTitle"),
         checksumMessage(outcome.error.files),
-        "Use current drawings",
+        t("package.useCurrent"),
       );
       if (!useCurrent) {
-        toast("Packaging cancelled. Relink the changed drawings and try again.", "info");
+        toast(t("package.cancelledRelink"), "info");
         return;
       }
       mapMismatchesToOverrides(documentPaths, scanPaths, outcome.error.files, overrides);
       continue;
     }
     await messageDialog(
-      "Could not create package",
+      t("package.couldNotCreate"),
       describePackageFailure(outcome.error),
       "warning",
     );
     return;
   }
-  await messageDialog(
-    "Could not create package",
-    "The drawings kept changing while the package was written. Close other programs that edit them and try again.",
-    "warning",
-  );
+  await messageDialog(t("package.couldNotCreate"), t("package.checksumChanged"), "warning");
 }
 
 /** Opens a package from disk, verifies it, extracts it and opens the project. */
 export async function openPackageFlow(host: PackageHost): Promise<void> {
   if (!isTauri) {
-    await messageDialog("Project packages", DESKTOP_ONLY_MESSAGE, "info");
+    await messageDialog(t("package.title"), desktopOnlyMessage(), "info");
     return;
   }
   const packagePath = await pickProjectPackage();
@@ -336,7 +331,7 @@ export async function openPackageFlow(host: PackageHost): Promise<void> {
     parsePackageManifest(inspection.manifestJson);
   } catch (error) {
     const failure = normalizePackageFailure(error);
-    await messageDialog("Could not open package", describePackageFailure(failure), "warning");
+    await messageDialog(t("package.couldNotOpen"), describePackageFailure(failure), "warning");
     return;
   }
 
@@ -365,40 +360,38 @@ export async function openPackageFlow(host: PackageHost): Promise<void> {
     mode,
   };
   const outcome = await runPackageJob(
-    "Opening package",
+    t("package.phaseOpening"),
     (report) => extractProjectPackage(job, (progress) => report.update(progress)),
     () => void cancelProjectPackage(job.jobId),
   );
 
   if (outcome.status === "cancelled") {
-    toast("Opening cancelled. Temporary files were removed.", "info");
+    toast(t("package.openCancelled"), "info");
     return;
   }
   if (outcome.status === "error") {
     const failure = outcome.error;
     if (failure.kind === "checksumMismatch") {
       await messageDialog(
-        "Package checksum mismatch",
-        `The package is damaged or was modified:\n${failure.files
-          .map((file) => `• ${file.file}`)
-          .join(
-            "\n",
-          )}\n\nChoose Replace folder to extract it again, or download the package again.`,
+        t("package.checksumMismatchTitle"),
+        t("package.damaged", {
+          files: failure.files.map((file) => `• ${file.file}`).join("\n"),
+        }),
         "warning",
       );
       return;
     }
-    await messageDialog("Could not open package", describePackageFailure(failure), "warning");
+    await messageDialog(t("package.couldNotOpen"), describePackageFailure(failure), "warning");
     return;
   }
 
   try {
     parsePackageManifest(outcome.value.manifestJson);
     await host.openProject(outcome.value.projectPath, mode !== "reuse");
-    toast(`Opened ${inspection.projectName}.`, "success");
+    toast(t("package.opened", { name: inspection.projectName }), "success");
   } catch (error) {
     await messageDialog(
-      "Package extracted, but the project could not be opened",
+      t("package.extractedNotOpened"),
       error instanceof Error ? error.message : String(error),
       "warning",
     );

@@ -1,5 +1,6 @@
 import { IMAGE_MAX_BYTES, IMAGE_MAX_DIMENSION, createImageAsset } from "../model/images";
 import type { ImageAsset } from "../model/types";
+import { t } from "../i18n";
 
 export interface PickedImage {
   name: string;
@@ -40,7 +41,7 @@ function readBlobAsDataUrl(blob: Blob): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result ?? ""));
-    reader.onerror = () => reject(new Error("Could not read the image."));
+    reader.onerror = () => reject(new Error(t("image.readFailed")));
     reader.readAsDataURL(blob);
   });
 }
@@ -52,7 +53,7 @@ async function canvasToBlob(
 ): Promise<Blob> {
   return new Promise((resolve, reject) => {
     canvas.toBlob(
-      (blob) => (blob ? resolve(blob) : reject(new Error("Could not encode the image."))),
+      (blob) => (blob ? resolve(blob) : reject(new Error(t("image.encodeFailed")))),
       mime,
       quality,
     );
@@ -71,7 +72,7 @@ async function encodeBitmap(
   canvas.width = Math.max(1, Math.round(width));
   canvas.height = Math.max(1, Math.round(height));
   const context = canvas.getContext("2d");
-  if (!context) throw new Error("This environment cannot process images.");
+  if (!context) throw new Error(t("image.unsupportedEnvironment"));
   context.imageSmoothingEnabled = true;
   context.imageSmoothingQuality = "high";
   context.drawImage(source, 0, 0, canvas.width, canvas.height);
@@ -93,7 +94,7 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
         : null;
   const mime = sniffImageMime(bytes) ?? supportedImageMime(blob.type) ?? byExtension;
   if (!mime) {
-    throw new Error("Choose a PNG or JPEG image.");
+    throw new Error(t("image.choose"));
   }
 
   let source: CanvasImageSource;
@@ -111,7 +112,7 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
     const image = await new Promise<HTMLImageElement>((resolve, reject) => {
       const element = new Image();
       element.onload = () => resolve(element);
-      element.onerror = () => reject(new Error("Could not decode the image."));
+      element.onerror = () => reject(new Error(t("image.decodeFailed")));
       element.src = url;
     });
     source = image;
@@ -121,7 +122,7 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
   }
 
   try {
-    if (!width || !height) throw new Error("The image has no pixels.");
+    if (!width || !height) throw new Error(t("image.noPixels"));
     const longest = Math.max(width, height);
     const scale = Math.min(1, IMAGE_MAX_DIMENSION / longest);
     const targetWidth = Math.max(1, Math.round(width * scale));

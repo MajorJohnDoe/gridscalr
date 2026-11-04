@@ -18,6 +18,7 @@ import { messageDialog } from "../ui/dialogs";
 import { ReferencePaneHeader, type ReferenceSource } from "../ui/referencePane";
 import { SplitView } from "../ui/splitView";
 import { toast } from "../ui/toast";
+import { t } from "../i18n";
 
 export interface ReferenceControllerOptions {
   canvasArea: HTMLElement;
@@ -165,7 +166,7 @@ export class ReferenceController {
   toggleSplitView(): void {
     if (!store.project) return;
     if (this.session) {
-      toast("Close the revision comparison first.", "info");
+      toast(t("reference.closeComparisonFirst"), "info");
       return;
     }
     this.splitView.toggle();
@@ -189,7 +190,7 @@ export class ReferenceController {
       if (!picked) return;
       await this.loadRevisionReference(picked.text, picked.path);
     } catch (error) {
-      await messageDialog("Could not compare revisions", errorMessage(error), "warning");
+      await messageDialog(t("reference.compareFailed"), errorMessage(error), "warning");
     }
   }
 
@@ -200,7 +201,7 @@ export class ReferenceController {
       if (!picked) return;
       await this.loadDrawingReference(picked.bytes, picked.name, picked.path);
     } catch (error) {
-      await messageDialog("Could not open the reference drawing", errorMessage(error), "warning");
+      await messageDialog(t("reference.openDrawingFailed"), errorMessage(error), "warning");
     }
   }
 
@@ -211,7 +212,7 @@ export class ReferenceController {
     try {
       session = await openReferenceSession(text, projectPath);
     } catch (error) {
-      await messageDialog("Could not open the reference revision", errorMessage(error), "warning");
+      await messageDialog(t("reference.openRevisionFailed"), errorMessage(error), "warning");
       return;
     }
     await this.enterSession(session, "revision");
@@ -228,7 +229,7 @@ export class ReferenceController {
     try {
       session = await openPdfReferenceSession(bytes, name, path);
     } catch (error) {
-      await messageDialog("Could not open the reference drawing", errorMessage(error), "warning");
+      await messageDialog(t("reference.openDrawingFailed"), errorMessage(error), "warning");
       return;
     }
     await this.enterSession(session, "drawing");
@@ -432,7 +433,7 @@ export class ReferenceController {
       const path = await saveBinaryFile(
         bytes,
         `${safe}-comparison.pdf`,
-        [{ name: "PDF document", extensions: ["pdf"] }],
+        [{ name: t("export.pdfFilter"), extensions: ["pdf"] }],
         "application/pdf",
         {
           forbiddenPaths: [
@@ -441,9 +442,9 @@ export class ReferenceController {
           ],
         },
       );
-      if (path) toast("Comparison PDF exported.", "success");
+      if (path) toast(t("reference.comparisonExported"), "success");
     } catch (error) {
-      await messageDialog("Comparison export failed", errorMessage(error), "warning");
+      await messageDialog(t("reference.comparisonExportFailed"), errorMessage(error), "warning");
     }
   }
 

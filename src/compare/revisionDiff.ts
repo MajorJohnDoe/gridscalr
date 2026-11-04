@@ -6,6 +6,7 @@ import { countTypeLabel } from "../features/countTypes/model";
 import { inspectionStatusLabel } from "../model/symbols";
 import { formatScale } from "../model/units";
 import type { Layer, MarkupItem, Point, Project } from "../model/types";
+import { t, type MessageKey } from "../i18n";
 
 export type DiffStatus = "added" | "removed" | "changed" | "unchanged";
 
@@ -65,46 +66,9 @@ interface Entry {
 
 const DEFAULT_MOVE_TOLERANCE = 12;
 
-const FIELD_LABELS: Record<string, string> = {
-  kind: "Type",
-  page: "Page",
-  points: "Geometry",
-  color: "Colour",
-  fillColor: "Fill colour",
-  strokeWidth: "Stroke width",
-  opacity: "Opacity",
-  text: "Text",
-  label: "Label",
-  fontSize: "Font size",
-  rotation: "Rotation",
-  visible: "Visible",
-  locked: "Locked",
-  scale: "Scale",
-  categoryId: "Category",
-  room: "Room",
-  areaMode: "Area mode",
-  areaShape: "Area shape",
-  countType: "Count type",
-  symbolId: "Symbol",
-  symbolSize: "Symbol size",
-  status: "Status",
-  lineStyle: "Line style",
-  arrowHeads: "Arrow heads",
-  textOffset: "Text offset",
-  labelOffset: "Label offset",
-  labelAnchor: "Label anchor",
-  labelSize: "Label size",
-  labelFit: "Label fit",
-  cloudRadius: "Cloud radius",
-  textBoxWidth: "Text box width",
-  textBoxHeight: "Text box height",
-  textColor: "Text colour",
-  textBold: "Bold",
-  textUnderline: "Underline",
-  textAlign: "Text alignment",
-  image: "Image",
-  layer: "Layer",
-};
+function fieldLabel(field: string): string {
+  return t(`diff.field.${field}` as MessageKey);
+}
 
 function round(value: number, step = 0.01): number {
   return Math.round(value / step) * step;
@@ -133,11 +97,11 @@ function samePoints(a: Point[], b: Point[]): boolean {
 }
 
 function geometrySummary(item: MarkupItem): string {
-  if (!item.points.length) return "No points";
+  if (!item.points.length) return t("diff.value.noPoints");
   if (item.kind === "count" || item.kind === "stamp" || item.kind === "symbol") {
-    return `${item.points.length} point${item.points.length === 1 ? "" : "s"}`;
+    return t("diff.points", { count: item.points.length });
   }
-  return `${item.points.length} point${item.points.length === 1 ? "" : "s"}`;
+  return t("diff.points", { count: item.points.length });
 }
 
 function categoryName(project: Project, item: MarkupItem): string {
@@ -149,7 +113,7 @@ function assetName(project: Project, item: MarkupItem): string {
 }
 
 function displayPointOffset(value: Point | undefined): string {
-  return value ? `${round(value.x, 0.1)}, ${round(value.y, 0.1)}` : "None";
+  return value ? `${round(value.x, 0.1)}, ${round(value.y, 0.1)}` : t("diff.value.none");
 }
 
 function displayValue(project: Project, item: MarkupItem, field: string): string {
@@ -158,36 +122,38 @@ function displayValue(project: Project, item: MarkupItem, field: string): string
     case "kind":
       return itemKindLabel(item.kind);
     case "page":
-      return `Page ${item.page}`;
+      return t("diff.page", { page: item.page });
     case "points":
       return geometrySummary(item);
     case "categoryId":
-      return categoryName(project, item) || "No category";
+      return categoryName(project, item) || t("diff.value.noCategory");
     case "countType":
       return countTypeLabel(project, item.countType);
     case "status":
       return inspectionStatusLabel(item.status);
     case "scale":
-      if (!item.scale) return "Unscaled";
+      if (!item.scale) return t("diff.value.unscaled");
       return item.scale.sourceUnit
         ? `${round(item.scale.pointsPerMeter, 0.01)} pt/m`
         : `${round(item.scale.pointsPerMeter, 0.01)} pt/m`;
     case "image":
-      return assetName(project, item) || "Image";
+      return assetName(project, item) || t("diff.value.image");
     case "textOffset":
     case "labelOffset":
     case "labelAnchor":
       return displayPointOffset(item[field]);
     case "visible":
-      return item.visible === false ? "Hidden" : "Visible";
+      return item.visible === false ? t("diff.value.hidden") : t("diff.value.visible");
     case "locked":
-      return item.locked ? "Locked" : "Unlocked";
+      return item.locked ? t("diff.value.locked") : t("diff.value.unlocked");
     case "textBold":
-      return item.textBold ? "Bold" : "Regular";
+      return item.textBold ? t("diff.value.bold") : t("diff.value.regular");
     case "textUnderline":
-      return item.textUnderline ? "Underlined" : "Not underlined";
+      return item.textUnderline ? t("diff.value.underlined") : t("diff.value.notUnderlined");
     case "opacity":
-      return item.opacity === undefined ? "Default" : `${Math.round(item.opacity * 100)}%`;
+      return item.opacity === undefined
+        ? t("diff.value.default")
+        : `${Math.round(item.opacity * 100)}%`;
     case "rotation":
       return `${round(item.rotation ?? 0, 0.1)}°`;
     case "strokeWidth":
@@ -197,9 +163,11 @@ function displayValue(project: Project, item: MarkupItem, field: string): string
     case "cloudRadius":
     case "textBoxWidth":
     case "textBoxHeight":
-      return record[field] === undefined ? "Default" : String(round(record[field] as number, 0.1));
+      return record[field] === undefined
+        ? t("diff.value.default")
+        : String(round(record[field] as number, 0.1));
     default:
-      return record[field] === undefined ? "Default" : String(record[field]);
+      return record[field] === undefined ? t("diff.value.default") : String(record[field]);
   }
 }
 
@@ -267,7 +235,7 @@ function changesFor(
     if (!fieldChanged(current.item, reference.item, field)) continue;
     changes.push({
       field,
-      label: FIELD_LABELS[field] ?? field,
+      label: fieldLabel(field),
       before: displayValue(referenceProject, reference.item, field),
       after: displayValue(currentProject, current.item, field),
     });
@@ -275,7 +243,7 @@ function changesFor(
   if (current.layer.id !== reference.layer.id && current.layer.name !== reference.layer.name) {
     changes.push({
       field: "layer",
-      label: FIELD_LABELS.layer,
+      label: fieldLabel("layer"),
       before: reference.layer.name,
       after: current.layer.name,
     });
@@ -446,7 +414,7 @@ export function compareRevisions(
     currentNames.size !== referenceNames.size ||
     [...currentNames].some((name) => !referenceNames.has(name))
   ) {
-    warnings.push("The projects reference different drawing files.");
+    warnings.push(t("diff.differentFiles"));
   }
   for (let page = 1; page <= Math.min(currentPages, referencePages); page += 1) {
     const left = pageCalibration(current, page);

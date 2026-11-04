@@ -9,6 +9,7 @@ import type {
   MarkupsView,
   SymbolCategory,
 } from "./types";
+import { t, translate, type MessageKey } from "../i18n";
 
 export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
   "name",
@@ -28,21 +29,18 @@ export const MARKUPS_COLUMN_IDS: MarkupsColumnId[] = [
 
 export const DEFAULT_MARKUPS_COLUMNS: MarkupsColumnId[] = [...MARKUPS_COLUMN_IDS];
 
-export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = {
-  name: "Name",
-  type: "Type",
-  page: "Page",
-  layer: "Layer",
-  value: "Value",
-  countType: "Count type",
-  category: "Category",
-  room: "Room",
-  status: "Status",
-  created: "Created",
-  modified: "Modified",
-  visible: "Vis.",
-  locked: "Lock",
-};
+export const MARKUPS_COLUMN_LABELS: Record<MarkupsColumnId, string> = Object.fromEntries(
+  MARKUPS_COLUMN_IDS.map((id) => [id, translate("en", `markups.column.${id}` as MessageKey)]),
+) as Record<MarkupsColumnId, string>;
+
+export function markupsColumnLabel(id: MarkupsColumnId): string {
+  return t(`markups.column.${id}` as MessageKey);
+}
+
+export function markupsGroupPresetLabel(preset: MarkupsGroupPreset): string {
+  const key = preset.id.replace(/-([a-z])/g, (_match, letter: string) => letter.toUpperCase());
+  return t(`markups.groupPreset.${key}` as MessageKey);
+}
 
 export const MARKUPS_GROUP_FIELDS: MarkupsGroupField[] = [
   "category",
@@ -61,21 +59,29 @@ export interface MarkupsGroupPreset {
 }
 
 export const MARKUPS_GROUP_PRESETS: MarkupsGroupPreset[] = [
-  { id: "none", label: "No grouping", fields: [] },
-  { id: "category", label: "Category", fields: ["category"] },
-  { id: "room", label: "Room", fields: ["room"] },
-  { id: "count-type", label: "Count schedule", fields: ["countType", "room"] },
-  { id: "page", label: "Page", fields: ["page"] },
-  { id: "layer", label: "Layer", fields: ["layer"] },
-  { id: "category-room", label: "Category → Room", fields: ["category", "room"] },
+  { id: "none", label: translate("en", "markups.groupPreset.none"), fields: [] },
+  { id: "category", label: translate("en", "markups.groupPreset.category"), fields: ["category"] },
+  { id: "room", label: translate("en", "markups.groupPreset.room"), fields: ["room"] },
+  {
+    id: "count-type",
+    label: translate("en", "markups.groupPreset.countType"),
+    fields: ["countType", "room"],
+  },
+  { id: "page", label: translate("en", "markups.groupPreset.page"), fields: ["page"] },
+  { id: "layer", label: translate("en", "markups.groupPreset.layer"), fields: ["layer"] },
+  {
+    id: "category-room",
+    label: translate("en", "markups.groupPreset.categoryRoom"),
+    fields: ["category", "room"],
+  },
   {
     id: "building-floor-room",
-    label: "Building → Floor → Room",
+    label: translate("en", "markups.groupPreset.buildingFloorRoom"),
     fields: ["building", "floor", "room"],
   },
   {
     id: "building-floor-category",
-    label: "Building → Floor → Category",
+    label: translate("en", "markups.groupPreset.buildingFloorCategory"),
     fields: ["building", "floor", "category"],
   },
 ];
@@ -264,7 +270,7 @@ export function uniqueMarkupsViewName(
   requested: string,
   ignoreId?: string,
 ): string {
-  const base = requested.replace(/\s+/g, " ").trim().slice(0, 60) || "Markups view";
+  const base = requested.replace(/\s+/g, " ").trim().slice(0, 60) || t("markups.untitledView");
   const used = new Set(
     views.filter((view) => view.id !== ignoreId).map((view) => view.name.toLocaleLowerCase()),
   );

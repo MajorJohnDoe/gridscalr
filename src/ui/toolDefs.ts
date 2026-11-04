@@ -1,206 +1,207 @@
+import type { MessageKey } from "../i18n";
 import type { ToolId } from "../state/store";
 import { TOOL_SHORTCUTS } from "./shortcuts";
 
 export interface ToolDef {
   id: ToolId;
-  label: string;
+  label: MessageKey;
   icon: string;
   shortcut: string;
-  hint: string;
+  hint: MessageKey;
   group: "nav" | "measure" | "draw";
 }
 
 export const TOOLS: ToolDef[] = [
   {
     id: "select",
-    label: "Select",
+    label: "tool.select",
     icon: "cursor",
     shortcut: TOOL_SHORTCUTS.select,
-    hint: "Click to select · drag to move · double-click a segment to add a vertex",
+    hint: "tool.select.hint",
     group: "nav",
   },
   {
     id: "pan",
-    label: "Pan",
+    label: "tool.pan",
     icon: "hand",
     shortcut: TOOL_SHORTCUTS.pan,
-    hint: "Drag to pan · hold Space with any tool · Ctrl+wheel zooms",
+    hint: "tool.pan.hint",
     group: "nav",
   },
   {
     id: "calibrate",
-    label: "Calibrate",
+    label: "tool.calibrate",
     icon: "ruler",
     shortcut: TOOL_SHORTCUTS.calibrate,
-    hint: "Click two points on a known dimension, then enter its real length",
+    hint: "tool.calibrate.hint",
     group: "measure",
   },
   {
     id: "length",
-    label: "Length",
+    label: "tool.length",
     icon: "length",
     shortcut: TOOL_SHORTCUTS.length,
-    hint: "Click each point · Enter or double-click to finish · Shift constrains the angle",
+    hint: "tool.length.hint",
     group: "measure",
   },
   {
     id: "area",
-    label: "Area",
+    label: "tool.area",
     icon: "area",
     shortcut: TOOL_SHORTCUTS.area,
-    hint: "Polygon: click each point · Rectangle/Ellipse: drag · Add or Deduct in the context bar",
+    hint: "tool.area.hint",
     group: "measure",
   },
   {
     id: "count",
-    label: "Count",
+    label: "tool.count",
     icon: "count",
     shortcut: TOOL_SHORTCUTS.count,
-    hint: "Choose a type, category and room · click to place one count",
+    hint: "tool.count.hint",
     group: "measure",
   },
   {
     id: "radius",
-    label: "Radius",
+    label: "tool.radius",
     icon: "radius",
     shortcut: TOOL_SHORTCUTS.radius,
-    hint: "Click the centre, then a point on the circle",
+    hint: "tool.radius.hint",
     group: "measure",
   },
   {
     id: "diameter",
-    label: "Diameter",
+    label: "tool.diameter",
     icon: "diameter",
     shortcut: TOOL_SHORTCUTS.diameter,
-    hint: "Click the centre, then a point on the circle",
+    hint: "tool.radius.hint",
     group: "measure",
   },
   {
     id: "arc",
-    label: "Arc",
+    label: "tool.arc",
     icon: "arc",
     shortcut: TOOL_SHORTCUTS.arc,
-    hint: "Click the start, a point on the curve, then the end",
+    hint: "tool.arc.hint",
     group: "measure",
   },
   {
     id: "angle",
-    label: "Angle",
+    label: "tool.angle",
     icon: "angle",
     shortcut: TOOL_SHORTCUTS.angle,
-    hint: "Click the first ray, the vertex, then the second ray",
+    hint: "tool.angle.hint",
     group: "measure",
   },
   {
     id: "slope",
-    label: "Slope",
+    label: "tool.slope",
     icon: "slope",
     shortcut: TOOL_SHORTCUTS.slope,
-    hint: "Click the run start and end · value is rise over run",
+    hint: "tool.slope.hint",
     group: "measure",
   },
   {
     id: "volume",
-    label: "Volume",
+    label: "tool.volume",
     icon: "volume",
     shortcut: TOOL_SHORTCUTS.volume,
-    hint: "Draw a polygon · set Depth in Properties · value is area × depth",
+    hint: "tool.volume.hint",
     group: "measure",
   },
   {
     id: "pen",
-    label: "Pen",
+    label: "tool.pen",
     icon: "pen",
     shortcut: TOOL_SHORTCUTS.pen,
-    hint: "Drag to draw freehand",
+    hint: "tool.pen.hint",
     group: "draw",
   },
   {
     id: "line",
-    label: "Line",
+    label: "tool.line",
     icon: "line",
     shortcut: TOOL_SHORTCUTS.line,
-    hint: "Drag to draw a line · hold Shift to constrain the angle",
+    hint: "tool.line.hint",
     group: "draw",
   },
   {
     id: "arrow",
-    label: "Arrow",
+    label: "tool.arrow",
     icon: "arrow",
     shortcut: TOOL_SHORTCUTS.arrow,
-    hint: "Drag to draw an arrow · Shift constrains the angle · Variants for heads and colour",
+    hint: "tool.arrow.hint",
     group: "draw",
   },
   {
     id: "rect",
-    label: "Rectangle",
+    label: "tool.rect",
     icon: "rect",
     shortcut: TOOL_SHORTCUTS.rect,
-    hint: "Drag to draw a rectangle · hold Shift for a square",
+    hint: "tool.rect.hint",
     group: "draw",
   },
   {
     id: "ellipse",
-    label: "Ellipse",
+    label: "tool.ellipse",
     icon: "ellipse",
     shortcut: TOOL_SHORTCUTS.ellipse,
-    hint: "Drag to draw an ellipse · hold Shift for a circle",
+    hint: "tool.ellipse.hint",
     group: "draw",
   },
   {
     id: "highlight",
-    label: "Highlight",
+    label: "tool.highlight",
     icon: "highlight",
     shortcut: TOOL_SHORTCUTS.highlight,
-    hint: "Drag to highlight · choose Pen, Rectangle or Polygon in the tool flyout",
+    hint: "tool.highlight.hint",
     group: "draw",
   },
   {
     id: "text",
-    label: "Text note",
+    label: "tool.text",
     icon: "text",
     shortcut: TOOL_SHORTCUTS.text,
-    hint: "Click a location to place a text note",
+    hint: "tool.text.hint",
     group: "draw",
   },
   {
     id: "cloud",
-    label: "Revision cloud",
+    label: "tool.cloud",
     icon: "cloud",
     shortcut: TOOL_SHORTCUTS.cloud,
-    hint: "Click each corner · close on the first point or press Enter · Variants for text box and fill",
+    hint: "tool.cloud.hint",
     group: "draw",
   },
   {
     id: "callout",
-    label: "Callout",
+    label: "tool.callout",
     icon: "callout",
     shortcut: TOOL_SHORTCUTS.callout,
-    hint: "Click the object to point at, then place the text box · Variants for leader colour",
+    hint: "tool.callout.hint",
     group: "draw",
   },
   {
     id: "stamp",
-    label: "Stamp",
+    label: "tool.stamp",
     icon: "stamp",
     shortcut: TOOL_SHORTCUTS.stamp,
-    hint: "Choose a preset and click to place it · Variants for presets · double-click to edit this stamp",
+    hint: "tool.stamp.hint",
     group: "draw",
   },
   {
     id: "delta",
-    label: "Revision delta",
+    label: "tool.delta",
     icon: "delta",
     shortcut: TOOL_SHORTCUTS.delta,
-    hint: "Set the revision in the context bar and click to place the triangle",
+    hint: "tool.delta.hint",
     group: "draw",
   },
   {
     id: "symbol",
-    label: "Symbol",
+    label: "tool.symbol",
     icon: "symbol",
     shortcut: TOOL_SHORTCUTS.symbol,
-    hint: "Pick a symbol · set status · click to place",
+    hint: "tool.symbol.hint",
     group: "draw",
   },
 ];
@@ -211,13 +212,13 @@ export type ToolFamilyId = "circle-arc" | "angle-slope";
 
 export interface ToolFamily {
   id: ToolFamilyId;
-  label: string;
+  label: MessageKey;
   tools: ToolId[];
 }
 
 export const TOOL_FAMILIES: ToolFamily[] = [
-  { id: "circle-arc", label: "Circle & arc", tools: ["radius", "diameter", "arc"] },
-  { id: "angle-slope", label: "Angle & slope", tools: ["angle", "slope"] },
+  { id: "circle-arc", label: "tool.family.circleArc", tools: ["radius", "diameter", "arc"] },
+  { id: "angle-slope", label: "tool.family.angleSlope", tools: ["angle", "slope"] },
 ];
 
 export const TOOL_FAMILY_BY_ID = new Map(TOOL_FAMILIES.map((family) => [family.id, family]));

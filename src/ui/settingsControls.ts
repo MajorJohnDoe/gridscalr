@@ -1,5 +1,6 @@
 import { normalizeStampPresets } from "../model/stamps";
 import { el } from "./dom";
+import { t } from "../i18n";
 
 /** Shared building blocks for the Preferences and Project settings dialogs. */
 
@@ -46,7 +47,7 @@ export function presetEditor(
       input.type = "text";
       input.value = value;
       input.maxLength = 40;
-      input.setAttribute("aria-label", `Stamp preset ${index + 1}`);
+      input.setAttribute("aria-label", t("settings.stampPresetAria", { index: index + 1 }));
       input.addEventListener("change", () => {
         const next = [...currentValues];
         next[index] = input.value;
@@ -55,8 +56,8 @@ export function presetEditor(
       });
       const remove = el("button", "icon-btn", "×");
       remove.type = "button";
-      remove.title = "Remove preset";
-      remove.setAttribute("aria-label", `Remove ${value}`);
+      remove.title = t("settings.removePreset");
+      remove.setAttribute("aria-label", t("settings.removePresetAria", { name: value }));
       remove.addEventListener("click", () => {
         currentValues = currentValues.filter((_entry, entryIndex) => entryIndex !== index);
         onChange(currentValues);
@@ -71,7 +72,7 @@ export function presetEditor(
     addInput.placeholder = addLabel;
     addInput.maxLength = 40;
     addInput.setAttribute("aria-label", addLabel);
-    const add = el("button", "btn btn-small", "Add");
+    const add = el("button", "btn btn-small", t("common.add"));
     add.type = "button";
     add.addEventListener("click", () => {
       const text = addInput.value.trim();

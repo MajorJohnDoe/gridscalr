@@ -1,6 +1,7 @@
 import { totalPageCount } from "./documents";
 import { layerVisibleOnPage } from "./layers";
 import type { PageSize, Project } from "./types";
+import { t } from "../i18n";
 
 /** Crop rectangle stored relative to the visible page area, 0–1. */
 export interface NormalizedCrop {
@@ -57,10 +58,10 @@ export function defaultDrawingExportOptions(
 export function parsePageRange(input: string, pageCount: number): PageRangeResult {
   const text = input.trim();
   if (!text) {
-    return { pages: [], error: "Enter at least one page, for example 1-3, 5." };
+    return { pages: [], error: t("export.pageRequired") };
   }
   if (!Number.isFinite(pageCount) || pageCount < 1) {
-    return { pages: [], error: "This document has no pages to export." };
+    return { pages: [], error: t("export.noPages") };
   }
 
   const pages = new Set<number>();
@@ -70,22 +71,22 @@ export function parsePageRange(input: string, pageCount: number): PageRangeResul
     if (!match) {
       return {
         pages: [],
-        error: "Use page numbers and ranges such as 1-3, 5.",
+        error: t("export.pageFormat"),
       };
     }
     const start = Number(match[1]);
     const end = match[2] === undefined ? start : Number(match[2]);
     if (start < 1 || end < 1) {
-      return { pages: [], error: "Page numbers start at 1." };
+      return { pages: [], error: t("export.pageStartAt1") };
     }
     if (start > pageCount || end > pageCount) {
       return {
         pages: [],
-        error: `Pages must be between 1 and ${pageCount}.`,
+        error: t("export.pagesWithin", { count: pageCount }),
       };
     }
     if (start > end) {
-      return { pages: [], error: `The range ${start}-${end} is reversed.` };
+      return { pages: [], error: t("export.rangeReversed", { start, end }) };
     }
     for (let page = start; page <= end; page++) pages.add(page);
   }

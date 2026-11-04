@@ -28,6 +28,7 @@ import { showPopover, showPopoverAt } from "./popover";
 import { showSelectionMenuAt } from "./selectionMenu";
 import type { ShellRefs } from "./shell";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 /**
  * Layers keep their expanded state while the panel re-renders. It is view-only
@@ -92,12 +93,12 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   return [
     {
       label: scopeItems.length
-        ? `${expanded ? "Collapse" : "Show"} ${scopeItems.length} item${scopeItems.length === 1 ? "" : "s"}${
-            layerScope === "page" ? ` on Page ${page}` : ""
-          }`
+        ? expanded
+          ? t("layer.collapseLayer", { name: layer.name, count: scopeItems.length })
+          : t("layer.expandLayer", { name: layer.name, count: scopeItems.length })
         : layerScope === "page"
-          ? `No items on Page ${page}`
-          : "No items in this layer",
+          ? t("layer.noItemsOnPage", { page })
+          : t("layer.noItems"),
       icon: expanded ? "chevronDown" : "chevronRight",
       disabled: scopeItems.length === 0,
       action: () => {
@@ -108,10 +109,15 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
     },
     { separator: true },
     {
-      label: "Rename…",
+      label: t("layer.renameAction"),
       icon: "text",
       action: () => {
-        void textDialog("Rename layer", "Layer", layer.name, "Layer name").then((value) => {
+        void textDialog(
+          t("layer.rename"),
+          t("layer.layerFallback"),
+          layer.name,
+          t("layer.name"),
+        ).then((value) => {
           if (!value) return;
           store.mutate((project) => {
             const target = project.layers.find((l) => l.id === layerId);
@@ -121,12 +127,12 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
       },
     },
     {
-      label: "Duplicate",
+      label: t("layer.duplicate"),
       icon: "copy",
       action: () => store.mutate((project) => duplicateLayer(project, layerId), "layers"),
     },
     {
-      label: `Move selection here (${store.ui.selection.length})`,
+      label: t("layer.moveSelection", { count: store.ui.selection.length }),
       icon: "layers",
       disabled:
         store.ui.selection.length === 0 ||
@@ -135,13 +141,13 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
       action: () => actions.moveSelectionToLayer(layerId),
     },
     {
-      label: "Move up",
+      label: t("layer.moveUp"),
       icon: "up",
       disabled: index <= 0,
       action: () => store.mutate((project) => moveLayer(project, layerId, 1), "layers"),
     },
     {
-      label: "Move down",
+      label: t("layer.moveDown"),
       icon: "down",
       disabled: index < 0 || index >= group.length - 1,
       action: () => store.mutate((project) => moveLayer(project, layerId, -1), "layers"),
@@ -150,18 +156,22 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
     {
       label:
         layerScope === "page"
-          ? `Clear ${scopeItems.length} item${scopeItems.length === 1 ? "" : "s"} on Page ${page}`
-          : `Clear layer (${layer.items.length} items)`,
+          ? t("layer.clearItemsOnPage", { count: scopeItems.length, page })
+          : t("layer.clearLayerCount", { count: layer.items.length }),
       icon: "trash",
       danger: true,
       disabled: scopeItems.length === 0 || lockedHere,
       action: () => {
         void confirmDialog(
-          "Clear layer",
+          t("layer.clear"),
           layerScope === "page"
-            ? `Remove all ${scopeItems.length} items on Page ${page} from “${layer.name}”? This can be undone.`
-            : `Remove all ${layer.items.length} items from “${layer.name}”? This can be undone.`,
-          "Clear",
+            ? t("layer.removeItemsOnPage", {
+                count: scopeItems.length,
+                page,
+                name: layer.name,
+              })
+            : t("layer.removeItems", { count: layer.items.length, name: layer.name }),
+          t("layer.clearAction"),
           { danger: true },
         ).then((confirmed) => {
           if (!confirmed) return;
@@ -178,14 +188,16 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
       },
     },
     {
-      label: "Delete layer",
+      label: t("layer.delete"),
       icon: "trash",
       danger: true,
       action: () => {
         void confirmDialog(
-          "Delete layer",
-          `Delete “${layer.name}”${layer.items.length ? ` and its ${layer.items.length} items` : ""}? This can be undone.`,
-          "Delete",
+          t("layer.delete"),
+          layer.items.length
+            ? t("layer.deleteWithItems", { name: layer.name, count: layer.items.length })
+            : t("layer.deleteEmpty", { name: layer.name }),
+          t("layer.deleteAction"),
           { danger: true },
         ).then((confirmed) => {
           if (!confirmed) return;
@@ -234,16 +246,21 @@ function buildLayerItems(
     row.title = [
       label,
       itemKindLabel(item.kind),
-      deduction ? "Deduction" : "",
-      `Page ${item.page}`,
-      itemHidden ? "Hidden" : "",
-      itemLocked ? "Locked" : "",
+      deduction ? t("layer.deduction") : "",
+      t("layer.itemPageLabel", { page: item.page }),
+      itemHidden ? t("layer.hidden") : "",
+      itemLocked ? t("layer.locked") : "",
     ]
       .filter(Boolean)
       .join(" · ");
     row.setAttribute(
       "aria-label",
-      `${itemKindLabel(item.kind)}: ${label}, page ${item.page}${deduction ? ", deduction" : ""}`,
+      t("layer.itemAria", {
+        kind: itemKindLabel(item.kind),
+        label,
+        page: item.page,
+        deduction: deduction ? t("layer.deductionSuffix") : "",
+      }),
     );
 
     const iconWrap = el("span", "layer-item-icon");
@@ -289,19 +306,19 @@ function buildLayerItems(
 function addLayerRow(refs: ShellRefs): void {
   const page = store.ui.page;
   const addRow = el("div", "layer-add-row");
-  const addMeasure = el("button", "btn btn-small", "+ Measure layer");
+  const addMeasure = el("button", "btn btn-small", t("layer.addMeasure"));
   addMeasure.type = "button";
-  addMeasure.title = `Create on Page ${page}`;
+  addMeasure.title = t("layer.createOnPage", { page });
   addMeasure.addEventListener("click", () => {
     store.createLayer("measure");
-    toast(`Measurement layer created on Page ${page}.`, "success");
+    toast(t("layer.measurementCreated", { page }), "success");
   });
-  const addDraw = el("button", "btn btn-small", "+ Drawing layer");
+  const addDraw = el("button", "btn btn-small", t("layer.addDrawing"));
   addDraw.type = "button";
-  addDraw.title = `Create on Page ${page}`;
+  addDraw.title = t("layer.createOnPage", { page });
   addDraw.addEventListener("click", () => {
     store.createLayer("draw");
-    toast(`Drawing layer created on Page ${page}.`, "success");
+    toast(t("layer.drawingCreated", { page }), "success");
   });
   addRow.append(addMeasure, addDraw);
   refs.dockBody.append(addRow);
@@ -311,27 +328,27 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project!;
   const page = store.ui.page;
   const groups: Array<{ kind: LayerKind; title: string; note: string }> = [
-    { kind: "draw", title: "Drawing layers", note: "Below measurements" },
-    { kind: "measure", title: "Measurement layers", note: "Top of stack" },
+    { kind: "draw", title: t("layer.drawingLayers"), note: t("layer.belowMeasurements") },
+    { kind: "measure", title: t("layer.measurementLayers"), note: t("layer.topOfStack") },
   ];
 
   const scope = el("div", "layer-scope");
   scope.setAttribute("role", "group");
-  scope.setAttribute("aria-label", "Layer scope");
-  const pageButton = el("button", "layer-scope-btn", "This page");
+  scope.setAttribute("aria-label", t("layer.scope"));
+  const pageButton = el("button", "layer-scope-btn", t("layer.thisPage"));
   pageButton.type = "button";
   pageButton.setAttribute("aria-pressed", String(layerScope === "page"));
   pageButton.classList.toggle("is-active", layerScope === "page");
-  pageButton.title = `Show layers used on Page ${page}`;
+  pageButton.title = t("layer.showOnPageTitle", { page });
   pageButton.addEventListener("click", () => {
     layerScope = "page";
     actions.refresh();
   });
-  const allButton = el("button", "layer-scope-btn", "All pages");
+  const allButton = el("button", "layer-scope-btn", t("layer.allPages"));
   allButton.type = "button";
   allButton.setAttribute("aria-pressed", String(layerScope === "all"));
   allButton.classList.toggle("is-active", layerScope === "all");
-  allButton.title = "Show every layer and edit global visibility and lock defaults";
+  allButton.title = t("layer.allPagesHelp");
   allButton.addEventListener("click", () => {
     layerScope = "all";
     actions.refresh();
@@ -386,7 +403,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           }`
         : layerScope === "page"
           ? `No items on Page ${page}`
-          : "No items in this layer";
+          : t("layer.noItems");
       disclosure.innerHTML = icon(expanded ? "chevronDown" : "chevronRight", 12);
       const setExpanded = (open: boolean) => {
         if (open) expandedLayers.add(layer.id);
@@ -414,12 +431,12 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
       const grip = el("span", "layer-grip");
       grip.innerHTML = icon("up", 11);
-      grip.title = "Drag to reorder within this group";
+      grip.title = t("layer.dragReorder");
 
       const color = el("input", "layer-color");
       color.type = "color";
       color.value = layer.color;
-      color.title = "Layer colour";
+      color.title = t("layer.colour");
       color.addEventListener("click", (event) => event.stopPropagation());
       color.addEventListener("change", () => {
         store.mutate((project) => {
@@ -442,7 +459,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       const actionsWrap = el("div", "layer-actions");
       const eye = layerAction(
         effectiveVisible ? "eye" : "eyeOff",
-        effectiveVisible ? "Hide layer" : "Show layer",
+        effectiveVisible ? t("layer.hide") : t("layer.show"),
       );
       eye.title =
         layerScope === "page"
@@ -463,7 +480,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       });
       const lock = layerAction(
         effectiveLocked ? "lock" : "unlock",
-        effectiveLocked ? "Unlock layer" : "Lock layer",
+        effectiveLocked ? t("layer.unlock") : t("layer.lock"),
       );
       lock.title =
         layerScope === "page"
@@ -482,7 +499,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           }
         }, "layers");
       });
-      const menu = layerAction("markups", "Layer actions", "layer-menu-btn");
+      const menu = layerAction("markups", t("layer.actions"), "layer-menu-btn");
       menu.addEventListener("click", (event) => {
         event.stopPropagation();
         showLayerMenu(menu, layer.id, actions);
@@ -508,7 +525,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           toast(
             layerScope === "page"
               ? `This layer is hidden on Page ${page}. Show it to edit its contents.`
-              : "This layer is hidden. Show it to edit its contents.",
+              : t("layer.hiddenEdit"),
             "warning",
           );
         }

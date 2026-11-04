@@ -3,12 +3,13 @@ import { showModal } from "../../ui/dialogs";
 import { el } from "../../ui/dom";
 import {
   DEFAULT_PACKAGE_OPTIONS,
-  DESKTOP_ONLY_MESSAGE,
+  desktopOnlyMessage,
   normalizePackageFailure,
   type PackageFailure,
   type PackageOptions,
   type PackageProgress,
 } from "./model";
+import { t } from "../../i18n";
 
 function checkboxRow(
   label: string,
@@ -34,48 +35,40 @@ export function packageOptionsDialog(
   desktop: boolean,
 ): Promise<PackageOptions | null> {
   const body = el("div", "form-stack");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      `Create a portable ZIP with the project file, ${documentCount} referenced drawing${documentCount === 1 ? "" : "s"} and a manifest. Absolute paths from this computer are removed.`,
-    ),
-  );
+  body.append(el("p", "modal-message", t("package.optionsIntro", { count: documentCount })));
 
   const quantity = checkboxRow(
-    "Include quantity exports",
-    "Adds quantity CSV, Excel and PDF reports under exports/. They are generated when the package is created.",
+    t("package.includeQuantity"),
+    t("package.includeQuantityNote"),
     DEFAULT_PACKAGE_OPTIONS.includeQuantityExports,
   );
   const drawing = checkboxRow(
-    "Include drawing PDF",
-    "Adds a flattened PDF with every page, visible layers, labels and the calibration line. This can take a while.",
+    t("package.includeDrawing"),
+    t("package.includeDrawingNote"),
     DEFAULT_PACKAGE_OPTIONS.includeDrawingPdf,
   );
   const scans = checkboxRow(
-    "Include original TIF scans",
-    tifCount
-      ? "Adds the original TIF files under source-scans/. Not needed to open or edit the project; the embedded PDF is enough."
-      : "No TIF documents in this project.",
+    t("package.includeScans"),
+    tifCount ? t("package.includeScansNote") : t("package.noScans"),
     DEFAULT_PACKAGE_OPTIONS.includeSourceScans,
     tifCount === 0,
   );
   body.append(quantity.row, drawing.row, scans.row);
 
   if (!desktop) {
-    body.append(el("p", "form-error", DESKTOP_ONLY_MESSAGE));
+    body.append(el("p", "form-error", desktopOnlyMessage()));
   }
 
   return showModal({
-    title: "Package project",
-    subtitle: "Share the project and its drawings as one standard ZIP file.",
+    title: t("package.optionsTitle"),
+    subtitle: t("package.optionsSubtitle"),
     body,
     actions: [
-      { label: "Cancel", value: "__cancel__" },
-      { label: "Create package", value: "create", primary: true },
+      { label: t("common.cancel"), value: "__cancel__" },
+      { label: t("package.createAction"), value: "create", primary: true },
     ],
     wide: true,
-    onValidate: () => (desktop ? null : DESKTOP_ONLY_MESSAGE),
+    onValidate: () => (desktop ? null : desktopOnlyMessage()),
     onMount: (modal) => {
       if (desktop) return;
       for (const button of modal.querySelectorAll<HTMLButtonElement>("button.btn-primary")) {
@@ -106,30 +99,24 @@ export function packageDestinationDialog(
     el("p", "package-destination", destination),
   );
   if (exists) {
-    body.append(
-      el(
-        "p",
-        "modal-message",
-        "The folder already exists. Open the extracted copy or replace the folder with a fresh extraction.",
-      ),
-    );
+    body.append(el("p", "modal-message", t("package.destinationExists")));
   }
 
   const actions: { label: string; value: string; primary?: boolean; danger?: boolean }[] = [
-    { label: "Cancel", value: "__cancel__" },
-    { label: "Choose another folder…", value: "choose" },
+    { label: t("common.cancel"), value: "__cancel__" },
+    { label: t("package.chooseAnother"), value: "choose" },
   ];
   if (exists) {
     actions.push(
-      { label: "Replace folder", value: "replace", danger: true },
-      { label: "Open existing", value: "reuse", primary: true },
+      { label: t("package.replaceFolder"), value: "replace", danger: true },
+      { label: t("package.openExisting"), value: "reuse", primary: true },
     );
   } else {
-    actions.push({ label: "Extract here", value: "extract", primary: true });
+    actions.push({ label: t("package.extractHere"), value: "extract", primary: true });
   }
 
   return showModal({
-    title: "Open project package",
+    title: t("package.openTitle"),
     body,
     actions,
     wide: true,
@@ -170,12 +157,12 @@ export function runPackageJob<T>(
     };
 
     const body = el("div", "form-stack package-progress");
-    const status = el("p", "modal-message", "Starting…");
+    const status = el("p", "modal-message", t("package.starting"));
     const bar = el("progress", "package-progress-bar");
     bar.max = 100;
     bar.value = 0;
     const file = el("p", "package-progress-file", "");
-    const cancelButton = el("button", "btn", "Cancel");
+    const cancelButton = el("button", "btn", t("common.cancel"));
     cancelButton.type = "button";
     const actions = el("div", "input-row");
     actions.append(cancelButton);
@@ -194,7 +181,11 @@ export function runPackageJob<T>(
           bar.removeAttribute("value");
         }
         if (progress.totalBytes > 0) {
-          file.textContent = `${progress.currentFile || "Package"} · ${formatBytes(progress.processedBytes)} of ${formatBytes(progress.totalBytes)}`;
+          file.textContent = t("package.progressBytes", {
+            file: progress.currentFile || t("package.progressFallback"),
+            processed: formatBytes(progress.processedBytes),
+            total: formatBytes(progress.totalBytes),
+          });
         }
       },
       phase(text) {
@@ -208,7 +199,7 @@ export function runPackageJob<T>(
       if (cancelRequested) return;
       cancelRequested = true;
       cancelButton.disabled = true;
-      status.textContent = "Cancelling…";
+      status.textContent = t("package.cancelling");
       cancel();
     };
     cancelButton.addEventListener("click", requestCancel);

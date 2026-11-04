@@ -10,6 +10,7 @@ import type {
   ScaleSnapshot,
 } from "./types";
 import { unitToMeters } from "./units";
+import { t } from "../i18n";
 
 /** One metre in PDF points at physical paper size (72 pt/in / 0.0254 m/in). */
 export const MANUAL_SCALE_POINTS_PER_METER = 2834.645669;
@@ -47,7 +48,7 @@ export function isValidManualRatio(value: number): boolean {
 }
 
 export function manualPointsPerMeter(ratio: number): number {
-  if (!isValidManualRatio(ratio)) throw new Error("Manual scale ratio must be greater than zero.");
+  if (!isValidManualRatio(ratio)) throw new Error(t("calibration.manualRatioInvalid"));
   return MANUAL_SCALE_POINTS_PER_METER / ratio;
 }
 

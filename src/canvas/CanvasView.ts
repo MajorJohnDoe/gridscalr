@@ -38,8 +38,8 @@ import {
 import {
   CALIBRATION_LABEL_ID,
   closestPointOnPolyline,
-  LABEL_FIT_LABELS,
   LABEL_FIT_POSITIONS,
+  labelFitLabel,
   layoutPageLabels,
   pageLabelSources,
   type LabelLayout,
@@ -164,6 +164,7 @@ import {
 import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
 import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
+import { t } from "../i18n";
 
 export interface CanvasHooks {
   getRenderer: () => PdfRenderer | null;
@@ -319,11 +320,11 @@ export class CanvasView {
     this.content.className = "canvas-content";
     this.interaction.className = "canvas-interaction";
     if (options.readOnly) {
-      this.interaction.setAttribute("aria-label", "Reference drawing");
+      this.interaction.setAttribute("aria-label", t("canvas.referenceDrawing"));
       this.interaction.setAttribute("aria-hidden", "true");
     } else {
       this.interaction.tabIndex = 0;
-      this.interaction.setAttribute("aria-label", "Drawing canvas");
+      this.interaction.setAttribute("aria-label", t("canvas.drawingCanvas"));
     }
     host.append(this.base, this.content, this.interaction);
 
@@ -333,7 +334,7 @@ export class CanvasView {
 
     this.loading = document.createElement("div");
     this.loading.className = "canvas-loading";
-    this.loading.textContent = "Rendering page…";
+    this.loading.textContent = t("canvas.renderingPage");
     host.append(this.loading);
 
     this.editors = new CanvasEditorController({
@@ -982,7 +983,7 @@ export class CanvasView {
           this.snap = null;
           const preview = { kind: "arc", points } as MarkupItem;
           if (arcGeometry(preview)) this.createItem("arc", points);
-          else toast("Choose a third point that is not on the same line.", "warning");
+          else toast(t("canvas.thirdPoint"), "warning");
         }
         this.drawInteraction();
       }
@@ -2033,7 +2034,7 @@ export class CanvasView {
     const page = this.viewPage;
     if (pageScaleLocked(project, page)) {
       this.draft = null;
-      toast("This page scale is locked. Unlock it before calibrating.", "warning");
+      toast(t("canvas.scaleLockedCalibrate"), "warning");
       this.drawInteraction();
       return;
     }
@@ -2060,7 +2061,7 @@ export class CanvasView {
       });
     }, "change");
     if (!changed.length) {
-      toast("No unlocked pages were available for this calibration.", "warning");
+      toast(t("canvas.noUnlockedCalibration"), "warning");
       this.drawInteraction();
       return;
     }
@@ -2070,10 +2071,16 @@ export class CanvasView {
       : 0;
     toast(
       result.applyToAll
-        ? `Scale set from a ${formatNumber(result.knownLength, 2)} ${result.unit} reference on ${
-            changed.length === 1 ? "1 page" : `${changed.length} pages`
-          }${lockedSkipped > 0 ? ` · ${lockedSkipped} locked skipped` : ""}.`
-        : `Scale set at ${formatNumber(result.knownLength, 2)} ${result.unit}.`,
+        ? t("canvas.scaleSetMany", {
+            length: formatNumber(result.knownLength, 2),
+            unit: result.unit,
+            count: changed.length,
+            locked: lockedSkipped > 0 ? t("canvas.lockedSkipped", { count: lockedSkipped }) : "",
+          })
+        : t("canvas.scaleSetSingle", {
+            length: formatNumber(result.knownLength, 2),
+            unit: result.unit,
+          }),
       "success",
     );
     this.drawAll();
@@ -2087,11 +2094,11 @@ export class CanvasView {
     const calibration = pageCalibration(project, page);
     if (!calibration) return;
     if (pageScaleLocked(project, page)) {
-      toast("This page scale is locked. Unlock it before editing.", "warning");
+      toast(t("canvas.scaleLockedEdit"), "warning");
       return;
     }
     if (!isReferenceCalibration(calibration)) {
-      toast("This page uses a manual scale. Use Manual scale to change it.", "info");
+      toast(t("canvas.manualScaleUse"), "info");
       return;
     }
     const pagesAffected = project.layers.some(
@@ -2116,7 +2123,10 @@ export class CanvasView {
       });
     }, "change");
     toast(
-      `Reference length updated to ${formatNumber(result.knownLength, 2)} ${result.unit}.`,
+      t("canvas.referenceUpdated", {
+        length: formatNumber(result.knownLength, 2),
+        unit: result.unit,
+      }),
       "success",
     );
   };
@@ -2126,7 +2136,7 @@ export class CanvasView {
     if (!selection || !store.project) return;
     const found = findItem(store.project, selection.itemId);
     if (!found || itemIsLocked(found.item, found.layer)) {
-      toast("Select an unlocked text item to edit it.", "info");
+      toast(t("canvas.selectUnlockedText"), "info");
       return;
     }
     store.setTool("select");
@@ -2146,14 +2156,14 @@ export class CanvasView {
       void this.editItemText(found.item);
       return;
     }
-    toast("Select a text note to edit it.", "info");
+    toast(t("canvas.selectText"), "info");
   }
 
   private showMeasurementLabelMenu(x: number, y: number, item: MarkupItem, layerId: string): void {
     const custom = Boolean(item.labelOffset || item.labelAnchor || item.labelFit);
     showPopoverAt(x, y, [
       {
-        label: "Reset label position",
+        label: t("canvas.resetLabelPosition"),
         icon: "undo",
         disabled: !custom,
         action: () => {
@@ -2168,7 +2178,7 @@ export class CanvasView {
         },
       },
       {
-        label: "Reset label size",
+        label: t("canvas.resetLabelSize"),
         icon: "undo",
         disabled: item.labelSize === undefined,
         action: () => {
@@ -2184,7 +2194,7 @@ export class CanvasView {
         ? [
             { separator: true as const },
             {
-              label: "Set volume depth…",
+              label: t("canvas.setVolumeDepth"),
               icon: "volume",
               action: () => this.promptVolumeDepth({ layerId, itemId: item.id }),
             },
@@ -2193,18 +2203,18 @@ export class CanvasView {
       { separator: true },
       {
         label: item.labelFit
-          ? `Lock inside area: ${LABEL_FIT_LABELS[item.labelFit]}`
-          : "Lock inside area",
+          ? t("canvas.lockInsidePosition", { position: labelFitLabel(item.labelFit) })
+          : t("canvas.lockInsideArea"),
         icon: "target",
         disabled: item.kind !== "area" && item.kind !== "volume",
         children: [
           ...LABEL_FIT_POSITIONS.map((position) => ({
-            label: `${item.labelFit === position ? "✓ " : ""}${LABEL_FIT_LABELS[position]}`,
+            label: `${item.labelFit === position ? "✓ " : ""}${labelFitLabel(position)}`,
             action: () => this.setMeasurementLabelFit(item.id, position),
           })),
           { separator: true },
           {
-            label: "Release",
+            label: t("canvas.release"),
             disabled: item.labelFit === undefined,
             action: () => this.releaseMeasurementLabelFit(item.id),
           },
@@ -2212,12 +2222,12 @@ export class CanvasView {
       },
       { separator: true },
       {
-        label: "Choose connection point…",
+        label: t("canvas.chooseConnection"),
         icon: "target",
         disabled: item.kind === "count" || Boolean(item.labelFit),
         action: () => {
           this.labelConnect = { itemId: item.id, layerId };
-          toast("Click the line or outline to set where the label connects.", "info");
+          toast(t("canvas.connectionHint"), "info");
           this.interaction.focus({ preventScroll: true });
           this.updateCursor();
         },
@@ -2283,7 +2293,7 @@ export class CanvasView {
       target.labelAnchor = { ...point };
       target.updatedAt = new Date().toISOString();
     }, "change");
-    toast("Label connection point updated.", "success");
+    toast(t("canvas.connectionUpdated"), "success");
     this.updateCursor();
     this.drawInteraction();
   }
@@ -2352,7 +2362,12 @@ export class CanvasView {
       (!layerVisibleOnPage(active, this.viewPage) || layerLockedOnPage(active, this.viewPage))
     ) {
       toast(
-        `“${active.name}” is ${layerLockedOnPage(active, this.viewPage) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
+        t("canvas.layerUnavailable", {
+          name: active.name,
+          state: layerLockedOnPage(active, this.viewPage)
+            ? t("canvas.stateLocked")
+            : t("canvas.stateHidden"),
+        }),
         "warning",
       );
       return null;
@@ -2542,13 +2557,13 @@ export class CanvasView {
   private async editItemText(item: MarkupItem): Promise<void> {
     const title =
       item.kind === "stamp"
-        ? "Edit stamp text"
+        ? t("canvas.editStampText")
         : item.kind === "delta"
-          ? "Edit revision delta"
+          ? t("canvas.editDelta")
           : item.kind === "cloud"
-            ? "Revision cloud text"
-            : "Edit callout";
-    const text = await textDialog(title, "Only this item is changed", item.text ?? "", "", true);
+            ? t("canvas.cloudText")
+            : t("canvas.editCallout");
+    const text = await textDialog(title, t("canvas.onlyThisItem"), item.text ?? "", "", true);
     if (text === null) return;
     store.mutate((project) => {
       const target = findItem(project, item.id)?.item;
@@ -2602,9 +2617,9 @@ export class CanvasView {
         const selected = points.slice(0, minimum);
         const preview = { kind, points: selected } as MarkupItem;
         if (kind !== "arc" || arcGeometry(preview)) this.createItem(kind, selected);
-        else toast("Choose a third point that is not on the same line.", "warning");
+        else toast(t("canvas.thirdPoint"), "warning");
       } else {
-        toast("Click the remaining measurement points.", "warning");
+        toast(t("canvas.remainingPoints"), "warning");
       }
       this.drawInteraction();
       return;
@@ -2628,7 +2643,7 @@ export class CanvasView {
         return;
       }
       if (kind !== "length" && points.length < 3) {
-        toast("This shape needs at least three points.", "warning");
+        toast(t("canvas.minThreePoints"), "warning");
         return;
       }
       this.draft = null;
@@ -2712,7 +2727,7 @@ export class CanvasView {
     const resolved = resolveSelection(project, store.ui.selection);
     const removable = resolved.filter((entry) => !entry.locked);
     if (!removable.length) {
-      toast("The selected item is locked.", "warning");
+      toast(t("canvas.selectedLocked"), "warning");
       return;
     }
     let deleted = 0;
@@ -2720,7 +2735,7 @@ export class CanvasView {
       deleted = deleteItems(project, store.ui.selection).changed;
     }, "change");
     if (deleted < resolved.length) {
-      toast(`${deleted} item${deleted === 1 ? "" : "s"} deleted. Locked items were kept.`, "info");
+      toast(t("canvas.itemsDeleted", { count: deleted }), "info");
     }
     store.clearSelection();
   }
@@ -2775,7 +2790,9 @@ export class CanvasView {
       if (isCancellation(error)) return;
       if (generation === this.renderGeneration) {
         this.hooks.onError?.(
-          `Could not render this page: ${error instanceof Error ? error.message : String(error)}`,
+          t("canvas.renderPageFailed", {
+            error: error instanceof Error ? error.message : String(error),
+          }),
         );
       }
     } finally {

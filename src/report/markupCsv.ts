@@ -1,8 +1,8 @@
 import type { Project } from "../model/types";
 import { csvDialect, escapeCsvField, type CsvOptions } from "./csv";
-import { MARKUP_COLUMNS, markupTable } from "./rows";
+import { markupTable } from "./rows";
 
-export const MARKUP_CSV_COLUMNS = MARKUP_COLUMNS;
+export { MARKUP_CSV_COLUMNS } from "./rows";
 
 /** Serializes every visible markup on every visible layer. */
 export function serializeMarkupCsv(project: Project, options: CsvOptions = {}): string {

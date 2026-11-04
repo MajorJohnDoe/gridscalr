@@ -1,16 +1,27 @@
+import { t, translate } from "../i18n";
 export const DEFAULT_STAMP_PRESETS = [
-  "APPROVED",
-  "NOT APPROVED",
-  "FOR INFORMATION",
-  "INSPECTED",
-  "REVISED",
+  translate("en", "stamp.approved"),
+  translate("en", "stamp.notApproved"),
+  translate("en", "stamp.forInformation"),
+  translate("en", "stamp.inspected"),
+  translate("en", "stamp.revised"),
 ] as const;
+
+export function defaultStampPresets(): string[] {
+  return [
+    t("stamp.approved"),
+    t("stamp.notApproved"),
+    t("stamp.forInformation"),
+    t("stamp.inspected"),
+    t("stamp.revised"),
+  ];
+}
 
 const STAMP_PRESET_MAX = 32;
 const STAMP_PRESET_LENGTH = 40;
 
 export function normalizeStampPresets(value: unknown): string[] {
-  if (!Array.isArray(value)) return [...DEFAULT_STAMP_PRESETS];
+  if (!Array.isArray(value)) return defaultStampPresets();
   const seen = new Set<string>();
   const presets: string[] = [];
   for (const entry of value) {

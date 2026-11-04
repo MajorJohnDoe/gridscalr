@@ -1,8 +1,8 @@
-import { t } from "../i18n";
 import { copyPlainText } from "../io/clipboardText";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
 import { toast } from "./toast";
+import { t } from "../i18n";
 
 export const ISSUE_URL =
   "https://github.com/MajorJohnDoe/gridscalr/issues/new?template=bug_report.yml";

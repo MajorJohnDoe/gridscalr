@@ -3,7 +3,9 @@ import {
   SYMBOL_CATEGORY_COLORS,
   SYMBOL_CATEGORY_LABELS,
   SYMBOL_CATEGORIES,
+  symbolCategoryLabel,
   symbolCategoryOf,
+  symbolName,
   symbolSvgMarkup,
   type SymbolDefinition,
 } from "../model/symbols";
@@ -11,6 +13,7 @@ import { store } from "../state/store";
 import { el } from "./dom";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
+import { t } from "../i18n";
 
 const RECENT_KEY = "gridscalr.ui.symbols.recent.v1";
 const RECENT_LIMIT = 8;
@@ -40,7 +43,13 @@ function rememberRecent(id: string): void {
 }
 
 function searchText(symbol: SymbolDefinition): string {
-  return [symbol.name, SYMBOL_CATEGORY_LABELS[symbol.category], ...symbol.keywords]
+  return [
+    symbol.name,
+    symbolName(symbol.id),
+    symbolCategoryLabel(symbol.category),
+    SYMBOL_CATEGORY_LABELS[symbol.category],
+    ...symbol.keywords,
+  ]
     .join(" ")
     .toLocaleLowerCase();
 }
@@ -54,8 +63,8 @@ function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   const active = store.ui.activeTool === "symbol" && store.ui.symbolId === symbol.id;
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));
-  button.title = `${symbol.name} · ${SYMBOL_CATEGORY_LABELS[category]}`;
-  button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 27, SYMBOL_CATEGORY_COLORS[category])}</span><span class="symbol-tile-label">${symbol.name}</span>`;
+  button.title = `${symbolName(symbol.id)} · ${symbolCategoryLabel(category)}`;
+  button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 27, SYMBOL_CATEGORY_COLORS[category])}</span><span class="symbol-tile-label">${symbolName(symbol.id)}</span>`;
   button.addEventListener("click", () => {
     rememberRecent(symbol.id);
     store.selectSymbol(symbol.id);
@@ -69,7 +78,7 @@ function categorySection(category: SymbolDefinition["category"]): HTMLElement {
   const head = el("div", "symbol-category-head");
   const dot = el("span", "symbol-category-dot");
   dot.style.background = SYMBOL_CATEGORY_COLORS[category];
-  head.append(dot, el("span", "", SYMBOL_CATEGORY_LABELS[category]));
+  head.append(dot, el("span", "", symbolCategoryLabel(category)));
   const grid = el("div", "symbol-grid");
   for (const symbol of SYMBOLS.filter((entry) => entry.category === category)) {
     grid.append(symbolTile(symbol));
@@ -81,13 +90,13 @@ function categorySection(category: SymbolDefinition["category"]): HTMLElement {
 export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): void {
   const library = el("div", "symbol-library");
   const head = el("div", "symbol-library-head");
-  head.append(el("span", "", "Symbols"));
-  head.append(el("span", "symbol-library-count", `${SYMBOLS.length} built-in signs`));
+  head.append(el("span", "", t("symbols.title")));
+  head.append(el("span", "symbol-library-count", t("symbols.count", { count: SYMBOLS.length })));
   const searchWrap = el("label", "symbol-search");
   const search = el("input", "input");
   search.type = "search";
-  search.placeholder = "Search symbols or Swedish terms…";
-  search.setAttribute("aria-label", "Search symbols");
+  search.placeholder = t("symbols.searchPlaceholder");
+  search.setAttribute("aria-label", t("symbols.searchAria"));
   search.value = searchQuery;
   searchWrap.append(search);
   library.append(head, searchWrap);
@@ -97,7 +106,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   if (recent.length && !searchQuery) {
     const section = el("section", "symbol-category symbol-recent");
     const head = el("div", "symbol-category-head");
-    head.append(el("span", "", "Recently used"));
+    head.append(el("span", "", t("symbols.recent")));
     const grid = el("div", "symbol-grid");
     for (const id of recent) {
       const symbol = SYMBOLS.find((entry) => entry.id === id);
@@ -108,7 +117,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   }
 
   for (const category of SYMBOL_CATEGORIES) content.append(categorySection(category));
-  const empty = el("div", "empty-note small symbol-empty", "No symbols match this search.");
+  const empty = el("div", "empty-note small symbol-empty", t("symbols.empty"));
   empty.hidden = true;
   content.append(empty);
   library.append(content);
@@ -135,7 +144,5 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   if (searchQuery) filter();
 
   refs.dockBody.append(library);
-  refs.dockFooter.append(
-    el("span", "symbol-library-hint", "Choose a symbol, then click the drawing to place it."),
-  );
+  refs.dockFooter.append(el("span", "symbol-library-hint", t("symbols.hint")));
 }

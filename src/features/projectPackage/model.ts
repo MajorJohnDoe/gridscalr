@@ -1,9 +1,12 @@
 import { serializeProject } from "../../io/projectFile";
 import type { Project } from "../../model/types";
+import { t } from "../../i18n";
 
 export const PACKAGE_FORMAT = "gridscalr-package";
 export const PACKAGE_FORMAT_VERSION = 1;
-export const DESKTOP_ONLY_MESSAGE = "Project packages require the desktop app.";
+export function desktopOnlyMessage(): string {
+  return t("package.desktopOnly");
+}
 
 export interface PackageManifestFile {
   file: string;
@@ -249,7 +252,7 @@ function readSize(value: unknown, field: string): number {
 
 function readManifestFile(value: unknown, prefix: string): PackageManifestFile {
   if (typeof value !== "object" || value === null)
-    manifestFailure("The header has an invalid file entry.");
+    manifestFailure(t("package.errorInvalidFileEntry"));
   const entry = value as Partial<PackageManifestFile>;
   const file = readString(entry.file, "a file name");
   if (
@@ -278,10 +281,9 @@ function readManifestFiles(value: unknown, prefix: string): PackageManifestFile[
 /** Validates the package header before the extracted project is opened. */
 export function validatePackageManifest(value: unknown): PackageManifest {
   if (typeof value !== "object" || value === null)
-    manifestFailure("The package header is not an object.");
+    manifestFailure(t("package.errorHeaderNotObject"));
   const raw = value as Partial<PackageManifest>;
-  if (raw.format !== PACKAGE_FORMAT)
-    manifestFailure("This ZIP is not a GridScalr project package.");
+  if (raw.format !== PACKAGE_FORMAT) manifestFailure(t("package.errorNotPackage"));
   if (raw.formatVersion !== PACKAGE_FORMAT_VERSION) {
     manifestFailure(`This package uses an unsupported format version: ${raw.formatVersion}.`);
   }
@@ -292,17 +294,17 @@ export function validatePackageManifest(value: unknown): PackageManifest {
     projectFile.includes("\\") ||
     projectFile.includes("..")
   ) {
-    manifestFailure("The header names an invalid project file.");
+    manifestFailure(t("package.errorInvalidProjectFile"));
   }
   const projectSha256 = readString(raw.projectSha256, "the project checksum");
   if (!SHA256_PATTERN.test(projectSha256))
-    manifestFailure("The header has an invalid project checksum.");
+    manifestFailure(t("package.errorInvalidProjectChecksum"));
   if (
     typeof raw.projectSchema !== "number" ||
     !Number.isInteger(raw.projectSchema) ||
     raw.projectSchema < 1
   ) {
-    manifestFailure("The header has an invalid project schema version.");
+    manifestFailure(t("package.errorInvalidProjectSchema"));
   }
 
   const documents = readManifestFiles(raw.documents, "documents/");
@@ -329,7 +331,7 @@ export function validatePackageManifest(value: unknown): PackageManifest {
     names.has("manifest.json") ||
     names.has("readme.txt")
   ) {
-    manifestFailure("The header reuses a reserved file name.");
+    manifestFailure(t("package.errorReservedFileName"));
   }
 
   return {
@@ -355,20 +357,20 @@ export function validatePackagedProjectJson(json: string): void {
   try {
     value = JSON.parse(json);
   } catch {
-    throw new Error("The packaged project file is not valid JSON.");
+    throw new Error(t("package.errorProjectNotJson"));
   }
   if (typeof value !== "object" || value === null) {
-    throw new Error("The packaged project file is not an object.");
+    throw new Error(t("package.errorProjectNotObject"));
   }
   const documents = (value as { documents?: unknown }).documents;
   if (!Array.isArray(documents)) {
-    throw new Error("The packaged project file has no documents list.");
+    throw new Error(t("package.errorNoDocuments"));
   }
   for (const document of documents) {
     if (typeof document !== "object" || document === null) continue;
     const entry = document as { path?: unknown; relativePath?: unknown; kind?: unknown };
     if (entry.path !== null && entry.path !== undefined) {
-      throw new Error("The package contains an absolute document path.");
+      throw new Error(t("package.errorAbsolutePath"));
     }
     if (entry.relativePath !== null && entry.relativePath !== undefined) {
       if (
@@ -378,7 +380,7 @@ export function validatePackagedProjectJson(json: string): void {
         entry.relativePath.split("/").some((part) => !part || part === "." || part === "..") ||
         entry.relativePath.slice("documents/".length).includes("/")
       ) {
-        throw new Error("The package contains a document link outside documents/.");
+        throw new Error(t("package.errorOutsideDocuments"));
       }
     }
   }
@@ -389,7 +391,7 @@ export function parsePackageManifest(json: string): PackageManifest {
   try {
     value = JSON.parse(json);
   } catch {
-    throw new Error("The package header is not valid JSON.");
+    throw new Error(t("package.errorHeaderNotJson"));
   }
   return validatePackageManifest(value);
 }
@@ -412,11 +414,11 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
     if (kind === "invalidPackage") {
       return {
         kind: "invalidPackage",
-        message: String(value.message ?? "The package is invalid."),
+        message: String(value.message ?? t("package.errorInvalid")),
       };
     }
     if (kind === "io") {
-      return { kind: "io", message: String(value.message ?? "The package operation failed.") };
+      return { kind: "io", message: String(value.message ?? t("package.errorOperationFailed")) };
     }
     if (typeof value.message === "string" && value.message) {
       return { kind: "unknown", message: value.message };
@@ -431,20 +433,20 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
 export function describePackageFailure(failure: PackageFailure): string {
   switch (failure.kind) {
     case "missingSource":
-      return `These source drawings are missing:\n${failure.files
-        .map((file) => `• ${file.name} — ${file.path}`)
-        .join("\n")}\n\nRelink or restore them, then package the project again.`;
+      return t("package.describeMissingSources", {
+        files: failure.files.map((file) => `• ${file.name} — ${file.path}`).join("\n"),
+      });
     case "checksumMismatch":
-      return `These drawings no longer match the checksums stored in the project:\n${failure.files
-        .map((file) => `• ${file.name}`)
-        .join("\n")}`;
+      return t("package.describeChecksumMismatch", {
+        files: failure.files.map((file) => `• ${file.name}`).join("\n"),
+      });
     case "destinationExists":
-      return `The folder “${failure.path}” already exists.`;
+      return t("package.describeDestinationExists", { path: failure.path });
     case "invalidPackage":
     case "io":
       return failure.message;
     case "cancelled":
-      return "The operation was cancelled.";
+      return t("package.describeCancelled");
     case "unknown":
       return failure.message;
   }

@@ -1,6 +1,6 @@
 import type { MarkupItem, TextAlign } from "./types";
 
-export const TEXT_FONT_STACK = 'Inter, "Segoe UI", system-ui, sans-serif';
+export const TEXT_FONT_STACK = ["Inter", '"Segoe UI"', "system-ui", "sans-serif"].join(", ");
 export const TEXT_LINE_HEIGHT = 1.28;
 export const MIN_TEXT_SIZE = 0.5;
 export const MAX_TEXT_SIZE = 300;

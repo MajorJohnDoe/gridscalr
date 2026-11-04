@@ -1,4 +1,6 @@
 import { makeId } from "./calibration";
+import { defaultProjectMetadata } from "./metadata";
+import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
 import { defaultCountTypes } from "../features/countTypes/model";
 import { SCHEMA_VERSION } from "./types";
@@ -13,6 +15,7 @@ import type {
   ProjectSettings,
   SelectionRef,
 } from "./types";
+import { t } from "../i18n";
 
 export const DEFAULT_MEASURE_COLOR = "#f70808";
 export const DEFAULT_DRAW_COLOR = "#f2a93b";
@@ -65,7 +68,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   showCalibration: true,
   snapToGeometry: true,
   snapTolerancePx: 8,
-  stampPresets: ["APPROVED", "NOT APPROVED", "FOR INFORMATION", "INSPECTED", "REVISED"],
+  stampPresets: [...DEFAULT_STAMP_PRESETS],
   // Replaced by createProject and the project normalizer, which know the
   // project's category ids.
   quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },
@@ -144,7 +147,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     settings: {
       ...DEFAULT_SETTINGS,
       compactAreaLabels: true,
-      stampPresets: [...DEFAULT_SETTINGS.stampPresets],
+      stampPresets: defaultStampPresets(),
       quantity: createDefaultQuantitySettings(categories),
     },
     categories,
@@ -153,6 +156,8 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
     assets: {},
     pages: {},
     markupsViews: [],
+    metadata: defaultProjectMetadata(),
+    reportLogoAssetId: null,
     layers: normalizeLayerOrder(actualLayers),
     activeLayerId: measureLayer?.id ?? actualLayers[0].id,
     createdAt: now,
@@ -398,7 +403,7 @@ export function reorderLayer(project: Project, layerId: string, beforeLayerId: s
 
 export function addItem(project: Project, layerId: string, item: MarkupItem): void {
   const layer = project.layers.find((l) => l.id === layerId);
-  if (!layer) throw new Error("Target layer does not exist");
+  if (!layer) throw new Error(t("layers.targetMissing"));
   layer.items.push(item);
 }
 

@@ -1,19 +1,28 @@
 import { makeId } from "./calibration";
 import type { Category, ItemKind, MarkupItem, Project, QuantitySettings } from "./types";
+import { t, translate, type MessageKey } from "../i18n";
 
 /**
  * Category ids are generated per project. The default set is only a starting
  * point: every name can be edited, reordered, added to, or removed.
  */
-export const DEFAULT_CATEGORY_NAMES = [
-  "Floor",
-  "Wall",
-  "Ceiling",
-  "Facade",
-  "Roof",
-  "Ground",
-  "Other",
+const DEFAULT_CATEGORY_KEYS = [
+  "floor",
+  "wall",
+  "ceiling",
+  "facade",
+  "roof",
+  "ground",
+  "other",
 ] as const;
+
+export const DEFAULT_CATEGORY_NAMES = DEFAULT_CATEGORY_KEYS.map((key) =>
+  translate("en", `category.default.${key}` as MessageKey),
+);
+
+export function defaultCategoryNames(): string[] {
+  return DEFAULT_CATEGORY_KEYS.map((key) => t(`category.default.${key}` as MessageKey));
+}
 
 export const CATEGORY_NAME_MAX_LENGTH = 40;
 
@@ -35,7 +44,7 @@ export function isMeasurementItem(item: MarkupItem): boolean {
 }
 
 export function createDefaultCategories(): Category[] {
-  return DEFAULT_CATEGORY_NAMES.map((name) => ({ id: makeId("cat"), name }));
+  return defaultCategoryNames().map((name) => ({ id: makeId("cat"), name }));
 }
 
 export function createDefaultQuantitySettings(categories: Category[]): QuantitySettings {
@@ -59,15 +68,15 @@ export function categoryNameError(
   exceptId?: string,
 ): string | null {
   const name = normalizeCategoryName(value);
-  if (!name) return "Enter a category name.";
+  if (!name) return t("category.nameRequired");
   if (name.length > CATEGORY_NAME_MAX_LENGTH) {
-    return `Keep the name under ${CATEGORY_NAME_MAX_LENGTH} characters.`;
+    return t("category.nameTooLong", { max: CATEGORY_NAME_MAX_LENGTH });
   }
   const key = name.toLowerCase();
   const duplicate = categories.some(
     (category) => category.id !== exceptId && category.name.toLowerCase() === key,
   );
-  if (duplicate) return "A category with this name already exists.";
+  if (duplicate) return t("category.nameExists");
   return null;
 }
 

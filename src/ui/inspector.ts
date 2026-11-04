@@ -14,27 +14,28 @@ import type { ShellRefs } from "./shell";
 import { selectionSection } from "./selectionInspector";
 import { openSettingsDialog } from "./settingsDialog";
 import { setInspectorCollapsed } from "./sidebar";
+import { t } from "../i18n";
 
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.inspector);
   const header = el("div", "inspector-header");
   const tabs = el("div", "inspector-tabs");
-  const propertiesTab = el("button", "inspector-tab is-active", "Properties");
+  const propertiesTab = el("button", "inspector-tab is-active", t("shell.properties"));
   propertiesTab.type = "button";
   propertiesTab.setAttribute("aria-pressed", "true");
-  propertiesTab.title = "Layer and selection properties";
-  const settingsTab = el("button", "inspector-tab", "Project settings");
+  propertiesTab.title = t("inspector.layerSelectionProps");
+  const settingsTab = el("button", "inspector-tab", t("inspector.projectSettings"));
   settingsTab.type = "button";
   settingsTab.setAttribute("aria-pressed", "false");
-  settingsTab.title = "Units, snapping, quantities and stamps (Ctrl/Cmd+,)";
+  settingsTab.title = t("inspector.settingsTitle");
   settingsTab.disabled = !store.project;
   settingsTab.addEventListener("click", () => openSettingsDialog());
   tabs.append(propertiesTab, settingsTab);
   const headerActions = el("span", "inspector-header-actions");
   const collapse = el("button", "icon-btn inspector-settings");
   collapse.type = "button";
-  collapse.title = "Hide properties (Ctrl/Cmd+Shift+\\)";
-  collapse.setAttribute("aria-label", "Hide properties");
+  collapse.title = t("inspector.hidePropertiesTitle");
+  collapse.setAttribute("aria-label", t("inspector.hideProperties"));
   collapse.innerHTML = icon("chevronRight", 14);
   collapse.addEventListener("click", () => setInspectorCollapsed(true));
   headerActions.append(collapse);
@@ -43,7 +44,7 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   if (!project) {
     const note = el("div", "empty-note");
-    note.innerHTML = `${icon("info", 26)}<div>Open a drawing to see layer and selection properties.</div>`;
+    note.innerHTML = `${icon("info", 26)}<div>${t("inspector.openDrawingNote")}</div>`;
     refs.inspector.append(note);
     return;
   }
@@ -67,17 +68,23 @@ function activeLayerSection(
 ): HTMLElement {
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", "Active layer"));
+  head.append(el("h3", "", t("inspector.activeLayer")));
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   section.append(head);
   if (!active) {
-    section.append(el("div", "empty-note small", "No active layer."));
+    section.append(el("div", "empty-note small", t("inspector.noActiveLayer")));
     return section;
   }
-  head.append(el("span", "status-chip", active.kind === "measure" ? "Measurement" : "Drawing"));
+  head.append(
+    el(
+      "span",
+      "status-chip",
+      active.kind === "measure" ? t("inspector.measurement") : t("inspector.drawing"),
+    ),
+  );
 
   const nameField = el("label", "field");
-  nameField.append(el("span", "field-label", "Name"));
+  nameField.append(el("span", "field-label", t("inspector.name")));
   const nameInput = el("input", "input");
   nameInput.value = active.name;
   nameInput.addEventListener("change", () => {
@@ -91,7 +98,7 @@ function activeLayerSection(
   section.append(nameField);
 
   const colorField = el("label", "field");
-  colorField.append(el("span", "field-label", "Layer colour (all items)"));
+  colorField.append(el("span", "field-label", t("inspector.layerColour")));
   const color = el("input", "color-swatch");
   color.type = "color";
   color.value = active.color;
@@ -109,7 +116,7 @@ function activeLayerSection(
   const opacityField = el("label", "field");
   const opacityHead = el("div", "section-head");
   opacityHead.style.marginBottom = "4px";
-  opacityHead.append(el("span", "field-label", "Opacity"));
+  opacityHead.append(el("span", "field-label", t("inspector.opacity")));
   const opacityValue = el("span", "range-value", `${Math.round(active.opacity * 100)}%`);
   opacityHead.append(opacityValue);
   const range = el("input");
@@ -136,8 +143,8 @@ function activeLayerSection(
   const activeLocked = layerLockedOnPage(active, page);
   const visible = el("button", `toggle${activeVisible ? " is-on" : ""}`);
   visible.type = "button";
-  visible.title = `Visibility on Page ${page}`;
-  visible.innerHTML = `${icon(activeVisible ? "eye" : "eyeOff", 13)}<span>${activeVisible ? "Visible" : "Hidden"} on p.${page}</span>`;
+  visible.title = t("inspector.visibilityOnPage", { page });
+  visible.innerHTML = `${icon(activeVisible ? "eye" : "eyeOff", 13)}<span>${activeVisible ? t("inspector.visibleOnPage", { page }) : t("inspector.hiddenOnPage", { page })}</span>`;
   visible.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
@@ -146,8 +153,8 @@ function activeLayerSection(
   });
   const locked = el("button", `toggle${activeLocked ? " is-on" : ""}`);
   locked.type = "button";
-  locked.title = `Lock state on Page ${page}`;
-  locked.innerHTML = `${icon(activeLocked ? "lock" : "unlock", 13)}<span>${activeLocked ? "Locked" : "Unlocked"} on p.${page}</span>`;
+  locked.title = t("inspector.lockStateOnPage", { page });
+  locked.innerHTML = `${icon(activeLocked ? "lock" : "unlock", 13)}<span>${activeLocked ? t("inspector.lockedOnPage", { page }) : t("inspector.unlockedOnPage", { page })}</span>`;
   locked.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
@@ -160,15 +167,15 @@ function activeLayerSection(
   const deleteLayerBtn = el(
     "button",
     "btn btn-small btn-ghost",
-    `Delete layer (${active.items.length})`,
+    t("inspector.deleteLayerCount", { count: active.items.length }),
   );
   deleteLayerBtn.type = "button";
   deleteLayerBtn.style.marginTop = "8px";
   deleteLayerBtn.addEventListener("click", () => {
     void confirmDialog(
-      "Delete layer",
+      t("inspector.deleteLayerTitle"),
       `Delete “${active.name}”${active.items.length ? ` and its ${active.items.length} items` : ""}?`,
-      "Delete",
+      t("common.delete"),
       { danger: true },
     ).then((confirmed) => {
       if (confirmed) store.mutate((project) => removeLayer(project, active.id), "layers");

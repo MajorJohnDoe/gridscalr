@@ -1,4 +1,4 @@
-import { COUNT_GLYPHS, COUNT_GLYPH_LABELS } from "../../model/countSymbols";
+import { COUNT_GLYPHS } from "../../model/countSymbols";
 import type { CountGlyph } from "../../model/types";
 import { store } from "../../state/store";
 import { showModal } from "../../ui/dialogs";
@@ -7,12 +7,14 @@ import { icon } from "../../ui/icons";
 import { toast } from "../../ui/toast";
 import {
   addCountType,
+  countGlyphLabel,
   countTypeItemCount,
   countTypeNameError,
   isBuiltInCountType,
   removeCountType,
   renameCountType,
 } from "./model";
+import { t } from "../../i18n";
 
 function iconButton(markup: string, label: string, onClick: () => void): HTMLButtonElement {
   const node = el("button", "icon-btn category-action");
@@ -28,7 +30,7 @@ function glyphSelect(value: CountGlyph, label: string, onChange: (glyph: CountGl
   const select = el("select", "select count-type-glyph");
   select.setAttribute("aria-label", label);
   for (const glyph of COUNT_GLYPHS) {
-    select.append(option(glyph, COUNT_GLYPH_LABELS[glyph], glyph === value));
+    select.append(option(glyph, countGlyphLabel(glyph), glyph === value));
   }
   select.addEventListener("change", () => onChange(select.value as CountGlyph));
   return select;
@@ -42,13 +44,7 @@ export function openCountTypesDialog(): Promise<void> {
   if (!store.project) return Promise.resolve();
 
   const body = el("div", "form-stack category-manager");
-  body.append(
-    el(
-      "p",
-      "modal-message",
-      "Count types name the objects you count. Each type uses one of the built-in vector glyphs. Built-in types can be renamed but not deleted; deleting a custom type moves its counts to Other.",
-    ),
-  );
+  body.append(el("p", "modal-message", t("countTypeUi.intro")));
 
   const list = el("div", "category-list");
   const confirm = el("div", "inline-confirm");
@@ -57,13 +53,13 @@ export function openCountTypesDialog(): Promise<void> {
   const addRow = el("div", "input-row");
   const addInput = el("input", "input");
   addInput.type = "text";
-  addInput.placeholder = "New count type";
-  addInput.setAttribute("aria-label", "New count type name");
+  addInput.placeholder = t("countTypeUi.newCountType");
+  addInput.setAttribute("aria-label", t("countTypeUi.newName"));
   let addGlyph: CountGlyph = "other";
-  const addGlyphSelect = glyphSelect("other", "Glyph for the new count type", (glyph) => {
+  const addGlyphSelect = glyphSelect("other", t("countTypeUi.newGlyph"), (glyph) => {
     addGlyph = glyph;
   });
-  const addButton = el("button", "btn btn-small", "Add");
+  const addButton = el("button", "btn btn-small", t("common.add"));
   addButton.type = "button";
   addRow.append(addInput, addGlyphSelect, addButton);
 
@@ -80,7 +76,7 @@ export function openCountTypesDialog(): Promise<void> {
       created = addCountType(current, addInput.value, addGlyph) !== null;
     }, "change");
     if (!created) {
-      toast("Could not add the count type.", "warning");
+      toast(t("countTypeUi.addFailed"), "warning");
       return;
     }
     addInput.value = "";
@@ -136,7 +132,7 @@ export function openCountTypesDialog(): Promise<void> {
         if (result.removed) reassigned = result.reassigned;
       }, "change");
       if (!removed) {
-        toast("Built-in count types cannot be deleted.", "warning");
+        toast(t("countTypeUi.builtInCannotDelete"), "warning");
         return;
       }
       toast(
@@ -155,17 +151,13 @@ export function openCountTypesDialog(): Promise<void> {
     clear(confirm);
     confirm.hidden = false;
     confirm.append(
-      el(
-        "p",
-        "inline-confirm-text",
-        `“${label}” is used by ${usage} count${usage === 1 ? "" : "s"}. They will move to Other.`,
-      ),
+      el("p", "inline-confirm-text", t("countTypeUi.used", { name: label, count: usage })),
     );
     const actions = el("div", "inline-confirm-actions");
-    const cancel = el("button", "btn btn-small btn-ghost", "Cancel");
+    const cancel = el("button", "btn btn-small btn-ghost", t("common.cancel"));
     cancel.type = "button";
     cancel.addEventListener("click", hideConfirm);
-    const deleteButton = el("button", "btn btn-small btn-danger", "Delete count type");
+    const deleteButton = el("button", "btn btn-small btn-danger", t("countTypeUi.deleteTitle"));
     deleteButton.type = "button";
     deleteButton.addEventListener("click", () => {
       hideConfirm();
@@ -187,7 +179,7 @@ export function openCountTypesDialog(): Promise<void> {
       const name = el("input", "input category-name");
       name.type = "text";
       name.value = type.label;
-      name.setAttribute("aria-label", `Count type name: ${type.label}`);
+      name.setAttribute("aria-label", t("countTypeUi.nameAria", { name: type.label }));
       name.addEventListener("change", () => commitRename(type.id, type.label, name));
       name.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
@@ -202,23 +194,29 @@ export function openCountTypesDialog(): Promise<void> {
         "category-meta",
         isBuiltInCountType(type.id)
           ? usage > 0
-            ? `Built-in · ${usage} count${usage === 1 ? "" : "s"}`
-            : "Built-in"
+            ? t("countTypeUi.builtInUsage", { count: usage })
+            : t("countTypeUi.builtIn")
           : usage > 0
-            ? `${usage} count${usage === 1 ? "" : "s"}`
-            : "Unused",
+            ? t("countTypeUi.usage", { count: usage })
+            : t("countTypeUi.unused"),
       );
 
-      const glyph = glyphSelect(type.glyph, `Glyph for ${type.label}`, (value) => {
-        store.mutate((next) => {
-          const target = next.countTypes.find((entry) => entry.id === type.id);
-          if (target) target.glyph = value;
-        }, "change");
-      });
+      const glyph = glyphSelect(
+        type.glyph,
+        t("countTypeUi.glyphAria", { name: type.label }),
+        (value) => {
+          store.mutate((next) => {
+            const target = next.countTypes.find((entry) => entry.id === type.id);
+            if (target) target.glyph = value;
+          }, "change");
+        },
+      );
 
       const actions = el("div", "category-row-actions");
-      const remove = iconButton(icon("trash", 14), `Delete ${type.label}`, () =>
-        requestDelete(type.id, type.label),
+      const remove = iconButton(
+        icon("trash", 14),
+        t("countTypeUi.deleteAria", { name: type.label }),
+        () => requestDelete(type.id, type.label),
       );
       remove.disabled = isBuiltInCountType(type.id);
       actions.append(remove);
@@ -231,10 +229,10 @@ export function openCountTypesDialog(): Promise<void> {
   render();
 
   return showModal({
-    title: "Count types",
-    subtitle: "Names and glyphs used by the Count tool and quantity reports.",
+    title: t("countTypeUi.title"),
+    subtitle: t("countTypeUi.subtitle"),
     body,
     wide: true,
-    actions: [{ label: "Done", value: "done", primary: true }],
+    actions: [{ label: t("countTypeUi.done"), value: "done", primary: true }],
   }).then(() => undefined);
 }

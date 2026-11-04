@@ -137,12 +137,14 @@ import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
-import { t } from "../i18n";
 import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
 import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
 import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
+import { t } from "../i18n";
 
-const PROJECT_FILTERS = [{ name: "GridScalr project", extensions: ["gridscalr"] }];
+function projectFilters() {
+  return [{ name: t("app.projectFilter"), extensions: ["gridscalr"] }];
+}
 
 interface SizeTask {
   page: number;
@@ -601,11 +603,11 @@ export class App {
     if (!store.project) return;
     const page = store.ui.page;
     if (pageScaleLocked(store.project, page)) {
-      toast("This page scale is locked. Unlock it before calibrating.", "warning");
+      toast(t("app.scaleLockedCalibrate"), "warning");
       return;
     }
     store.setTool("calibrate");
-    toast("Calibration: click the two ends of a known dimension.", "info");
+    toast(t("app.calibrationHint"), "info");
   }
 
   private async openManualScaleFlow(): Promise<void> {
@@ -613,7 +615,7 @@ export class App {
     if (!project) return;
     const page = store.ui.page;
     if (pageScaleLocked(project, page)) {
-      toast("This page scale is locked. Unlock it before setting a manual scale.", "warning");
+      toast(t("app.scaleLockedManual"), "warning");
       return;
     }
     const current = pageCalibration(project, page);
@@ -637,18 +639,19 @@ export class App {
       });
     }, "change");
     if (!changed.length) {
-      toast("No unlocked pages were available for this scale.", "warning");
+      toast(t("app.noUnlockedPages"), "warning");
       return;
     }
     const lockedSkipped = result.applyToAll
       ? totalPageCount(project.documents) - changed.length
       : 0;
-    toast(
-      `Manual scale 1:${calibration.ratio} set on ${
-        changed.length === 1 ? `page ${changed[0]}` : `${changed.length} pages`
-      }${lockedSkipped > 0 ? ` · ${lockedSkipped} locked page${lockedSkipped === 1 ? "" : "s"} skipped` : ""}.`,
-      "success",
-    );
+    const manualScale =
+      changed.length === 1
+        ? t("app.manualScaleSetOne", { ratio: calibration.ratio, page: changed[0] })
+        : t("app.manualScaleSetMany", { ratio: calibration.ratio, count: changed.length });
+    const lockedSuffix =
+      lockedSkipped > 0 ? t("app.manualScaleLockedSuffix", { count: lockedSkipped }) : "";
+    toast(`${manualScale}${lockedSuffix}`, "success");
   }
 
   private setScaleLock(locked: boolean): void {
@@ -656,14 +659,14 @@ export class App {
     if (!project) return;
     const page = store.ui.page;
     if (!pageCalibration(project, page)) {
-      toast("Set a scale before locking the page.", "warning");
+      toast(t("app.setScaleBeforeLock"), "warning");
       return;
     }
     store.mutate((project) => {
       setPageScaleLocked(project, page, locked);
     }, "change");
     toast(
-      locked ? `Scale locked on page ${page}.` : `Scale unlocked on page ${page}.`,
+      locked ? t("app.scaleLockedOn", { page }) : t("app.scaleUnlockedOn", { page }),
       locked ? "success" : "info",
     );
   }
@@ -674,13 +677,13 @@ export class App {
     const page = store.ui.page;
     if (!pageCalibration(project, page)) return;
     if (pageScaleLocked(project, page)) {
-      toast("This page scale is locked. Unlock it before clearing.", "warning");
+      toast(t("app.scaleLockedClear"), "warning");
       return;
     }
     const confirmed = await confirmDialog(
-      "Clear scale",
-      `Remove the scale from page ${page}? Existing measurements keep the scale they were created with, but new measurements will be uncalibrated.`,
-      "Clear scale",
+      t("app.clearScaleTitle"),
+      t("app.clearScaleMessage", { page }),
+      t("app.clearScaleTitle"),
       { danger: true },
     );
     if (!confirmed) return;
@@ -689,7 +692,7 @@ export class App {
       cleared = clearPageCalibration(project, page);
     }, "change");
     toast(
-      cleared ? "Page scale cleared." : "The page scale could not be cleared.",
+      cleared ? t("app.scaleCleared") : t("app.scaleClearFailed"),
       cleared ? "info" : "warning",
     );
   }
@@ -698,40 +701,36 @@ export class App {
     try {
       const picked = await pickDrawing();
       if (!picked) return;
-      if (
-        !(await this.confirmUnsavedChanges(
-          "Starting a new project will replace the current project.",
-        ))
-      ) {
+      if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
         return;
       }
       await this.resetProject();
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
       logEvent("error", `open drawing failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open drawing", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenDrawing"), errorMessage(error), "warning");
     }
   }
 
   private async closeProjectFlow(): Promise<void> {
-    if (!(await this.confirmUnsavedChanges("Closing the project will discard unsaved changes."))) {
+    if (!(await this.confirmUnsavedChanges(t("app.closeProjectDiscard")))) {
       return;
     }
     await this.resetProject();
-    toast("Project closed.", "info");
+    toast(t("app.projectClosed"), "info");
   }
 
   private async quitFlow(): Promise<void> {
-    if (!(await this.confirmUnsavedChanges("Quitting GridScalr will discard unsaved changes."))) {
+    if (!(await this.confirmUnsavedChanges(t("app.quitDiscard")))) {
       return;
     }
     await store.clearAutosave();
     if (!isTauri) {
       window.close();
-      toast("Close the browser tab to quit.", "info");
+      toast(t("app.closeBrowserTab"), "info");
       return;
     }
-    await this.destroyWindow("The window could not be closed. Close it from the title bar.");
+    await this.destroyWindow(t("app.windowCloseFailed"));
   }
 
   private async bindWindowClose(): Promise<void> {
@@ -747,13 +746,11 @@ export class App {
         if (this.closeInProgress) return;
         this.closeInProgress = true;
         try {
-          if (
-            !(await this.confirmUnsavedChanges("Closing GridScalr will discard unsaved changes."))
-          ) {
+          if (!(await this.confirmUnsavedChanges(t("app.closeAppDiscard")))) {
             return;
           }
           await store.clearAutosave();
-          await this.destroyWindow("The window could not be closed. Close it from the title bar.");
+          await this.destroyWindow(t("app.windowCloseFailed"));
         } finally {
           this.closeInProgress = false;
         }
@@ -816,7 +813,7 @@ export class App {
       await this.loadNewPdf(picked.bytes, picked.name, picked.path);
     } catch (error) {
       logEvent("error", `open drawing failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open drawing", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenDrawing"), errorMessage(error), "warning");
     }
   }
 
@@ -827,7 +824,7 @@ export class App {
       await this.loadProjectText(picked.text, picked.path);
     } catch (error) {
       logEvent("error", `open project failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open project", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
     }
   }
 
@@ -843,7 +840,7 @@ export class App {
       try {
         conversion = await tiffModule.tiffToPdf(bytes);
       } catch (error) {
-        await messageDialog("Could not import TIF", errorMessage(error), "warning");
+        await messageDialog(t("app.couldNotImportTif"), errorMessage(error), "warning");
         return;
       }
       const hash = await this.hashBytes(bytes);
@@ -889,15 +886,15 @@ export class App {
         addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });
       }
       if (dpiWarning) {
-        toast(
-          "This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.",
-          "warning",
-        );
+        toast(t("app.dpiAssumed"), "warning");
       }
       toast(
         pages.length === pdf.numPages
-          ? `Opened ${name}`
-          : `Opened ${describePages(pages.length, pdf.numPages)} from ${name}.`,
+          ? t("app.openedFile", { name })
+          : t("app.openedPages", {
+              pages: describePages(pages.length, pdf.numPages),
+              name,
+            }),
         "success",
       );
       return;
@@ -923,12 +920,15 @@ export class App {
     this.canvas.fitPage();
     this.canvas.invalidate();
     if (dpiWarning) {
-      toast(
-        "This scan has no DPI tags, so 300 DPI was assumed. Calibrate the page before measuring.",
-        "warning",
-      );
+      toast(t("app.dpiAssumed"), "warning");
     }
-    toast(`Added ${describePages(pages.length, pdf.numPages)} from ${name}.`, "success");
+    toast(
+      t("app.addedPages", {
+        pages: describePages(pages.length, pdf.numPages),
+        name,
+      }),
+      "success",
+    );
   }
 
   /**
@@ -964,9 +964,7 @@ export class App {
   }
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
-    if (
-      !(await this.confirmUnsavedChanges("Opening another project will replace the current one."))
-    ) {
+    if (!(await this.confirmUnsavedChanges(t("app.replaceProject")))) {
       return;
     }
     let project: Project;
@@ -974,7 +972,7 @@ export class App {
       project = parseProject(text);
     } catch (error) {
       logEvent("error", `open project failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open project", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
       return;
     }
     await this.loadProjectData(project, projectPath, false);
@@ -1054,9 +1052,9 @@ export class App {
       const hash = documentRef.kind === "pdf" ? await this.hashBytes(bytes) : "";
       if (documentRef.kind === "pdf" && documentRef.sha256 && hash && documentRef.sha256 !== hash) {
         const proceed = await confirmDialog(
-          "PDF checksum changed",
-          `The PDF file “${documentRef.name}” no longer matches the checksum stored in this project. It may have been replaced or edited. Continue and update the checksum?`,
-          "Open anyway",
+          t("app.checksumTitle"),
+          t("app.checksumMessage", { name: documentRef.name }),
+          t("app.openAnyway"),
           { danger: true },
         );
         if (!proceed) return;
@@ -1067,7 +1065,11 @@ export class App {
 
       if (documentRef.pageCount !== document.numPages) {
         toast(
-          `“${documentRef.name}” now has ${document.numPages} page${document.numPages === 1 ? "" : "s"} instead of ${documentRef.pageCount}.`,
+          t("app.pageCountChanged", {
+            name: documentRef.name,
+            count: document.numPages,
+            expected: documentRef.pageCount,
+          }),
           "warning",
         );
         documentRef.pageCount = document.numPages;
@@ -1093,7 +1095,10 @@ export class App {
         at: new Date().toISOString(),
       });
     }
-    toast(dirty ? "Autosaved session restored." : `Loaded ${project.name}`, "success");
+    toast(
+      dirty ? t("app.autosavedRestored") : t("app.loadedProject", { name: project.name }),
+      "success",
+    );
   }
 
   private async installDocuments(
@@ -1151,17 +1156,17 @@ export class App {
           continue;
         }
         if (error instanceof PdfPasswordError) {
-          toast("That password was not accepted. Try again.", "error");
+          toast(t("app.passwordRejected"), "error");
           const entered = await passwordDialog(name);
           if (entered === null) return null;
           password = entered;
           continue;
         }
-        await messageDialog("Could not open PDF", errorMessage(error), "warning");
+        await messageDialog(t("app.couldNotOpenPdf"), errorMessage(error), "warning");
         return null;
       }
     }
-    toast("Too many incorrect password attempts.", "error");
+    toast(t("app.tooManyPasswords"), "error");
     return null;
   }
 
@@ -1169,7 +1174,7 @@ export class App {
     try {
       return await sha256Hex(bytes);
     } catch (error) {
-      toast(`Could not compute the PDF checksum: ${errorMessage(error)}`, "warning");
+      toast(t("app.checksumFailed", { error: errorMessage(error) }), "warning");
       return "";
     }
   }
@@ -1257,7 +1262,7 @@ export class App {
     const resolved = resolveSelection(project, store.ui.selection);
     const removable = resolved.filter((entry) => !entry.locked);
     if (!removable.length) {
-      toast("The selected item is locked.", "warning");
+      toast(t("app.selectedItemLocked"), "warning");
       return;
     }
     const refs = removable.map((entry) => entry.ref);
@@ -1268,17 +1273,14 @@ export class App {
       deleted = deleteItems(project, refs).changed;
     }, "change");
     store.clearSelection();
-    toast(
-      `${deleted} item${deleted === 1 ? "" : "s"} cut. Paste on any page with Ctrl+V.`,
-      "success",
-    );
+    toast(t("app.itemsCut", { count: deleted }), "success");
   }
 
   private pasteSelection(): void {
     const project = store.project;
     if (!project) return;
     if (!hasClipboard(project)) {
-      toast("The clipboard is empty.", "info");
+      toast(t("app.clipboardEmpty"), "info");
       return;
     }
     let refs: SelectionRef[] = [];
@@ -1286,11 +1288,11 @@ export class App {
       refs = pasteItems(project, store.ui.page);
     }, "change");
     if (!refs.length) {
-      toast("Could not paste these items on this page.", "warning");
+      toast(t("app.pasteFailed"), "warning");
       return;
     }
     store.setSelectionMany(refs);
-    toast(`${refs.length} item${refs.length === 1 ? "" : "s"} pasted.`, "success");
+    toast(t("app.itemsPasted", { count: refs.length }), "success");
   }
 
   private async insertImageFlow(): Promise<void> {
@@ -1310,7 +1312,7 @@ export class App {
     const project = store.project;
     if (!project) return;
     if (!isSupportedImageFile(file)) {
-      toast("Choose a PNG or JPEG image.", "warning");
+      toast(t("app.chooseImage"), "warning");
       return;
     }
     let asset: ImageAsset;
@@ -1323,13 +1325,13 @@ export class App {
     const page = store.ui.page;
     const pageSize = await this.enqueuePageSize(page);
     if (!pageSize) {
-      toast("Wait until the page has finished rendering, then try again.", "warning");
+      toast(t("app.waitForRender"), "warning");
       return;
     }
     if (store.project !== project) return;
     const layer = this.imageTargetLayer();
     if (!layer) {
-      toast("Show and unlock a drawing layer before inserting an image.", "warning");
+      toast(t("app.showDrawingLayer"), "warning");
       return;
     }
     const item = createImageItem(asset, page, pageSize, "background");
@@ -1339,7 +1341,7 @@ export class App {
       addItem(project, layer.id, item);
     }, "change");
     store.setSelection({ layerId: layer.id, itemId: item.id });
-    toast(`Image added to “${layer.name}”.`, "success");
+    toast(t("app.imageAdded", { layer: layer.name }), "success");
   }
 
   private imageTargetLayer(): Layer | null {
@@ -1375,7 +1377,7 @@ export class App {
     if (!images.length) return;
     const editable = images.filter((entry) => !entry.locked);
     if (!editable.length) {
-      toast("The selected image is locked.", "warning");
+      toast(t("app.selectedImageLocked"), "warning");
       return;
     }
     store.mutate((project) => {
@@ -1392,7 +1394,7 @@ export class App {
     if (!images.length) return;
     const editable = images.filter((entry) => !entry.locked);
     if (!editable.length) {
-      toast("The selected image is locked.", "warning");
+      toast(t("app.selectedImageLocked"), "warning");
       return;
     }
     store.mutate((project) => {
@@ -1405,7 +1407,7 @@ export class App {
     if (!project || !store.ui.selection.length) return;
     const locked = resolveSelection(project, store.ui.selection).every((entry) => entry.locked);
     if (locked) {
-      toast("The selected item is locked.", "warning");
+      toast(t("app.selectedItemLocked"), "warning");
       return;
     }
     let refs: SelectionRef[] = [];
@@ -1423,7 +1425,7 @@ export class App {
       result = moveItemsToLayer(project, store.ui.selection, layerId);
     }, "change");
     if (result.mixedKinds) {
-      toast("Select only measurements or only drawings before moving to a layer.", "warning");
+      toast(t("app.selectSameKind"), "warning");
       return;
     }
     const refs: SelectionRef[] = [];
@@ -1434,12 +1436,14 @@ export class App {
     store.setSelectionMany(refs);
     if (result.moved) {
       const layer = store.project?.layers.find((candidate) => candidate.id === layerId);
-      toast(
-        `${result.moved} item${result.moved === 1 ? "" : "s"} moved to “${layer?.name ?? "layer"}”.${result.skipped ? ` ${result.skipped} locked item${result.skipped === 1 ? "" : "s"} skipped.` : ""}`,
-        result.skipped ? "warning" : "success",
-      );
+      const moved = t("app.itemsMoved", {
+        count: result.moved,
+        layer: layer?.name ?? t("app.layerFallback"),
+      });
+      const skipped = result.skipped ? t("app.lockedSkippedSuffix", { count: result.skipped }) : "";
+      toast(`${moved}${skipped}`, result.skipped ? "warning" : "success");
     } else if (result.skipped) {
-      toast("No items were moved. Locked items stay in place.", "warning");
+      toast(t("app.noItemsMoved"), "warning");
     }
   }
 
@@ -1451,7 +1455,7 @@ export class App {
       ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.page))
       : resolved;
     if (!targetable.length) {
-      toast("The layer is hidden. Show the layer first.", "warning");
+      toast(t("app.layerHiddenShow"), "warning");
       return;
     }
     const result = emptyItemCommandResult();
@@ -1460,19 +1464,13 @@ export class App {
     }, "change");
     if (!visible) {
       store.clearSelection();
-      toast(
-        `${result.changed} item${result.changed === 1 ? "" : "s"} hidden. Hidden items are excluded from PDF, PNG and CSV export.`,
-        "info",
-      );
+      toast(t("app.itemsHidden", { count: result.changed }), "info");
     } else {
-      toast(
-        `${result.changed} item${result.changed === 1 ? "" : "s"} shown.${
-          result.skippedLayerHidden
-            ? ` ${result.skippedLayerHidden} remain hidden because their layer is hidden.`
-            : ""
-        }`,
-        result.skippedLayerHidden ? "warning" : "success",
-      );
+      const shown = t("app.itemsShown", { count: result.changed });
+      const hidden = result.skippedLayerHidden
+        ? t("app.layerHiddenSuffix", { count: result.skippedLayerHidden })
+        : "";
+      toast(`${shown}${hidden}`, result.skippedLayerHidden ? "warning" : "success");
     }
   }
 
@@ -1484,7 +1482,7 @@ export class App {
       ? resolved
       : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
     if (!targetable.length) {
-      toast("The layer is locked. Unlock the layer first.", "warning");
+      toast(t("app.layerLockedUnlock"), "warning");
       return;
     }
     const result = emptyItemCommandResult();
@@ -1492,16 +1490,13 @@ export class App {
       Object.assign(result, setItemsLocked(project, store.ui.selection, locked));
     }, "change");
     if (locked) {
-      toast(`${result.changed} item${result.changed === 1 ? "" : "s"} locked.`, "success");
+      toast(t("app.itemsLocked", { count: result.changed }), "success");
     } else {
-      toast(
-        `${result.changed} item${result.changed === 1 ? "" : "s"} unlocked.${
-          result.skippedLayerLocked
-            ? ` ${result.skippedLayerLocked} still locked by their layer.`
-            : ""
-        }`,
-        result.skippedLayerLocked ? "warning" : "success",
-      );
+      const unlocked = t("app.itemsUnlocked", { count: result.changed });
+      const stillLocked = result.skippedLayerLocked
+        ? t("app.layerLockedSuffix", { count: result.skippedLayerLocked })
+        : "";
+      toast(`${unlocked}${stillLocked}`, result.skippedLayerLocked ? "warning" : "success");
     }
   }
 
@@ -1511,7 +1506,9 @@ export class App {
     const total = totalPageCount(project.documents);
     const target = Math.max(1, Math.min(total, Math.round(page)));
     const sourceName = pageDisplayName(project, target);
-    const defaultName = sourceName ? `${sourceName} copy` : `Page ${target} copy`;
+    const defaultName = sourceName
+      ? t("app.pageCopyName", { name: sourceName })
+      : t("app.pageCopyDefault", { page: target });
     const hasScale = Boolean(project.pages[String(target)]?.calibration);
     const options = await duplicatePageDialog({
       page: target,
@@ -1525,7 +1522,7 @@ export class App {
     const sourceProxy = this.renderer?.documents[sourceDocumentIndex];
     const result = store.duplicatePage(target, options);
     if (!result) {
-      toast("The page could not be duplicated.", "warning");
+      toast(t("app.pageDuplicateFailed"), "warning");
       return;
     }
     if (sourceProxy && this.renderer) {
@@ -1541,7 +1538,7 @@ export class App {
     this.canvas.fitPage();
     this.canvas.invalidate();
     this.renderAll();
-    toast(`Page ${target} duplicated as Page ${result.page}.`, "success");
+    toast(t("app.pageDuplicated", { from: target, to: result.page }), "success");
   }
 
   private async deletePageFlow(page: number): Promise<void> {
@@ -1550,21 +1547,25 @@ export class App {
     const source = projectDocumentForPage(project, page);
     const total = totalPageCount(project.documents);
     if (total <= 1) {
-      toast("A project must keep at least one page.", "warning");
+      toast(t("app.lastPage"), "warning");
       return;
     }
     const target = Math.max(1, Math.min(total, Math.round(page)));
     const pageName = pageDisplayName(project, target);
+    const targetLabel = pageName
+      ? t("app.deletePageNamed", { name: pageName, page: target })
+      : t("app.deletePageNumbered", { page: target });
+    const sourceLabel = source ? t("app.deletePageFromSource", { name: source.name }) : "";
     const confirmed = await confirmDialog(
-      "Delete page",
-      `Delete ${pageName ? `“${pageName}” (Page ${target})` : `page ${target}`}${source ? ` from “${source.name}”` : ""}? Measurements and page scale on this page will be removed. Measurements and page state on later pages move down one page number. This cannot be undone.`,
-      "Delete page",
+      t("app.deletePageTitle"),
+      t("app.deletePageMessage", { target: targetLabel, source: sourceLabel }),
+      t("app.deletePageConfirm"),
       { danger: true },
     );
     if (!confirmed) return;
     const result = store.deletePage(target);
     if (!result) {
-      toast("The page could not be deleted.", "warning");
+      toast(t("app.pageDeleteFailed"), "warning");
       return;
     }
     if (result.removedDocumentIndex !== null) {
@@ -1582,7 +1583,7 @@ export class App {
     this.canvas.fitPage();
     this.canvas.invalidate();
     this.renderAll();
-    toast(`Page ${target} deleted.`, "info");
+    toast(t("app.pageDeleted", { page: target }), "info");
   }
 
   private setSelectionStrokeWidth(width: number): void {
@@ -1592,7 +1593,7 @@ export class App {
     const resolved = resolveSelection(project, store.ui.selection);
     const editable = resolved.filter((entry) => !entry.locked);
     if (!editable.length) {
-      toast("The selected items are locked.", "warning");
+      toast(t("app.selectedItemsLocked"), "warning");
       return;
     }
     store.mutate((project) => {
@@ -1606,7 +1607,7 @@ export class App {
     const resolved = resolveSelection(project, store.ui.selection);
     const editable = resolved.filter((entry) => !entry.locked);
     if (!editable.length) {
-      toast("The selected item is locked.", "warning");
+      toast(t("app.selectedItemLocked"), "warning");
       return;
     }
     store.mutate((project) => {
@@ -1621,7 +1622,7 @@ export class App {
       (entry) => isMeasurementKind(entry.item.kind) && !itemIsLocked(entry.item, entry.layer),
     );
     if (!editable.length) {
-      toast("The selected measurements are locked.", "warning");
+      toast(t("app.selectedMeasurementsLocked"), "warning");
       return;
     }
     let result: MeasurementBulkResult = {
@@ -1634,7 +1635,10 @@ export class App {
     }, "change");
     if (result.updated && result.skippedLocked) {
       toast(
-        `${result.updated} measurement${result.updated === 1 ? "" : "s"} updated. ${result.skippedLocked} locked skipped.`,
+        t("app.measurementsUpdated", {
+          count: result.updated,
+          locked: result.skippedLocked,
+        }),
         "warning",
       );
     }
@@ -1677,18 +1681,18 @@ export class App {
       if (!isTauri) {
         updateRelativeDocumentPaths(project, null);
         const json = serializeProject(project);
-        const result = await saveTextFile(json, suggested, PROJECT_FILTERS, {
+        const result = await saveTextFile(json, suggested, projectFilters(), {
           forbiddenPaths: protectedPaths,
         });
         if (!result) return false;
         store.markSaved(null);
-        toast("Project downloaded.", "success");
+        toast(t("app.projectDownloaded"), "success");
         return true;
       }
 
       let path = store.projectPath;
       if (saveAs || !path) {
-        const chosen = await chooseSavePath(suggested, PROJECT_FILTERS);
+        const chosen = await chooseSavePath(suggested, projectFilters());
         if (!chosen) return false;
         path = chosen;
       }
@@ -1703,11 +1707,11 @@ export class App {
         name: basename(path),
         at: new Date().toISOString(),
       });
-      toast("Project saved.", "success");
+      toast(t("app.projectSaved"), "success");
       return true;
     } catch (error) {
       logEvent("error", `save failed: ${errorMessage(error)}`);
-      await messageDialog("Could not save project", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotSaveProject"), errorMessage(error), "warning");
       return false;
     }
   }
@@ -1724,15 +1728,15 @@ export class App {
       const protectedPaths = sourceDocumentPaths(project, store.projectPath);
       const suggested = suggestedProjectName(project).replace(/\.gridscalr$/i, "-copy.gridscalr");
       if (!isTauri) {
-        const result = await saveTextFile(serializeProject(project), suggested, PROJECT_FILTERS, {
+        const result = await saveTextFile(serializeProject(project), suggested, projectFilters(), {
           forbiddenPaths: protectedPaths,
         });
         if (!result) return false;
-        toast("Copy downloaded.", "success");
+        toast(t("app.copyDownloaded"), "success");
         return true;
       }
 
-      const path = await chooseSavePath(suggested, PROJECT_FILTERS);
+      const path = await chooseSavePath(suggested, projectFilters());
       if (!path) return false;
       assertWritablePath(path, protectedPaths);
       const json = serializeProjectCopy(project, path);
@@ -1743,19 +1747,18 @@ export class App {
         name: basename(path),
         at: new Date().toISOString(),
       });
-      toast(`Copy saved to ${basename(path)}.`, "success");
+      toast(t("app.copySavedTo", { path: basename(path) }), "success");
       return true;
     } catch (error) {
       logEvent("error", `save copy failed: ${errorMessage(error)}`);
-      await messageDialog("Could not save a copy", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotSaveCopy"), errorMessage(error), "warning");
       return false;
     }
   }
 
   private packageHost(): PackageHost {
     return {
-      confirmDiscard: () =>
-        this.confirmUnsavedChanges("Opening a package will replace the current project."),
+      confirmDiscard: () => this.confirmUnsavedChanges(t("app.packageReplace")),
       openProject: (path, validatePackage) => this.openPackagedProject(path, validatePackage),
       createDrawingPdf: (project) => this.createPackageDrawingPdf(project),
     };
@@ -1767,12 +1770,12 @@ export class App {
     const project = parseProject(text);
     await this.loadProjectData(project, path, false);
     if (store.projectPath !== path) {
-      throw new Error("The extracted project was not opened. Relink its drawings and try again.");
+      throw new Error(t("app.packageNotOpened"));
     }
   }
 
   private async createPackageDrawingPdf(project: Project): Promise<Uint8Array | null> {
-    if (!this.renderer) throw new Error("The source PDF is not available.");
+    if (!this.renderer) throw new Error(t("app.sourcePdfMissing"));
     const pages = Array.from(
       { length: totalPageCount(project.documents) },
       (_, index) => index + 1,
@@ -1966,11 +1969,16 @@ export class App {
           index.setPageText(page, ocrPageToText(stored, page));
           continue;
         }
-        panel.setStatus(`OCR page ${page} of ${index.pageCount}…`);
+        panel.setStatus(t("app.ocrPageProgress", { page, total: index.pageCount }));
         const ocr = await runOcrPage(project, page, renderer, (message, progress) => {
           if (token !== this.ocrToken) return;
           panel.setStatus(
-            `OCR page ${page} of ${index.pageCount}: ${message} ${Math.round(progress * 100)}%`,
+            t("app.ocrPageProgressDetail", {
+              page,
+              total: index.pageCount,
+              message,
+              percent: Math.round(progress * 100),
+            }),
           );
         });
         if (token !== this.ocrToken || this.textIndex !== index) return;
@@ -1981,15 +1989,15 @@ export class App {
       }
       if (token !== this.ocrToken) return;
       if (scanned === 0) {
-        panel.setStatus("Every page already has searchable text.");
+        panel.setStatus(t("app.everyPageSearchable"));
       } else {
         this.runSearch(this.searchQuery);
-        panel.setStatus(`OCR indexed ${scanned} page${scanned === 1 ? "" : "s"}.`);
-        toast(`OCR indexed ${scanned} page${scanned === 1 ? "" : "s"}.`, "success");
+        panel.setStatus(t("app.ocrIndexed", { count: scanned }));
+        toast(t("app.ocrIndexed", { count: scanned }), "success");
       }
     } catch (error) {
       if (!this.disposed && token === this.ocrToken) {
-        await messageDialog("OCR failed", errorMessage(error), "warning");
+        await messageDialog(t("app.ocrFailed"), errorMessage(error), "warning");
       }
     } finally {
       this.ocrBusy = false;
@@ -2027,7 +2035,7 @@ export class App {
   private async restoreAutosave(): Promise<void> {
     const payload = await store.readAutosave();
     if (!payload) {
-      toast("No recovery snapshot was found.", "info");
+      toast(t("app.noRecovery"), "info");
       return;
     }
     let project: Project;
@@ -2035,7 +2043,7 @@ export class App {
       project = parseProject(JSON.stringify(payload.project));
     } catch (error) {
       logEvent("error", `restore session failed: ${errorMessage(error)}`);
-      await messageDialog("Could not restore session", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotRestoreSession"), errorMessage(error), "warning");
       return;
     }
     await this.loadProjectData(project, payload.projectPath, true);
@@ -2043,7 +2051,7 @@ export class App {
 
   private async openRecent(entry: RecentEntry): Promise<void> {
     if (!isTauri) {
-      toast("Recent files are available in the desktop app.", "info");
+      toast(t("app.recentDesktopOnly"), "info");
       return;
     }
     try {
@@ -2056,14 +2064,11 @@ export class App {
       }
     } catch (error) {
       logEvent("error", `open recent failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open recent file", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenRecent"), errorMessage(error), "warning");
     }
   }
 
-  private async openPath(
-    path: string,
-    failureTitle = "Could not open dropped file",
-  ): Promise<void> {
+  private async openPath(path: string, failureTitle = t("app.couldNotOpenDropped")): Promise<void> {
     const lower = path.toLowerCase();
     try {
       if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
@@ -2073,7 +2078,7 @@ export class App {
         const text = await readFileText(path);
         await this.loadProjectText(text, path);
       } else {
-        toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
+        toast(t("app.dropHint"), "warning");
       }
     } catch (error) {
       logEvent("error", `open file failed: ${errorMessage(error)}`);
@@ -2231,7 +2236,7 @@ export class App {
           if (supported.length > 1) {
             toast(t("launch.oneFile"), "info");
           }
-          await this.openPath(path, "Could not open the file from the operating system");
+          await this.openPath(path, t("app.couldNotOpenOsFile"));
         } catch {
           // A failed launch read must not break the running session.
         }
@@ -2254,11 +2259,11 @@ export class App {
       ) {
         await this.loadProjectText(await file.text(), null);
       } else {
-        toast("Drop a PDF or TIF drawing, or a .gridscalr project.", "warning");
+        toast(t("app.dropHint"), "warning");
       }
     } catch (error) {
       logEvent("error", `dropped file failed: ${errorMessage(error)}`);
-      await messageDialog("Could not open dropped file", errorMessage(error), "warning");
+      await messageDialog(t("app.couldNotOpenDropped"), errorMessage(error), "warning");
     }
   }
 
@@ -2273,7 +2278,7 @@ export class App {
           }
         });
       } catch (error) {
-        console.warn("Native drag and drop is unavailable", error);
+        console.warn(t("app.nativeDragUnavailable"), error);
       }
       return;
     }
@@ -2321,6 +2326,8 @@ function errorMessage(error: unknown): string {
 }
 
 function describePages(count: number, total: number): string {
-  if (count === total) return total === 1 ? "1 page" : `${total} pages`;
-  return `${count} of ${total} pages`;
+  if (count === total) {
+    return total === 1 ? t("app.pageCountOne") : t("app.pageCountMany", { count: total });
+  }
+  return t("app.pagesOfTotal", { count, total });
 }

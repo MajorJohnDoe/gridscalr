@@ -305,6 +305,17 @@ const project = {
   },
   categories,
   assets: {},
+  metadata: {
+    facility: "Northgate Logistics Hub",
+    client: "Example Property AB",
+    projectNumber: "2026-014",
+    revision: "A",
+    preparedBy: "GridScalr demo",
+    reportDate: "2026-11-04",
+    reportTitle: "Procurement quantities",
+    notes: "Demo project for the GridScalr documentation.",
+  },
+  reportLogoAssetId: null,
   pages: {
     1: {
       name: "Ground floor",

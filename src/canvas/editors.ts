@@ -18,6 +18,7 @@ import { store } from "../state/store";
 import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { rotatedAabb, roundTo } from "./geometry";
+import { t } from "../i18n";
 
 const FONT_STACK = TEXT_FONT_STACK;
 
@@ -151,7 +152,7 @@ export class CanvasEditorController {
 
   startTextEdit(item: MarkupItem, layer: Layer): void {
     if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
+      toast(t("editors.itemLocked"), "warning");
       return;
     }
     if (this.text) void this.commitTextEdit();
@@ -184,7 +185,7 @@ export class CanvasEditorController {
 
   startCloudTextEdit(item: MarkupItem, layer: Layer): void {
     if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
+      toast(t("editors.itemLocked"), "warning");
       return;
     }
     if (this.text) void this.commitTextEdit();
@@ -223,7 +224,7 @@ export class CanvasEditorController {
 
   startCalloutTextEdit(item: MarkupItem, layer: Layer): void {
     if (itemIsLocked(item, layer)) {
-      toast("This item is locked.", "warning");
+      toast(t("editors.itemLocked"), "warning");
       return;
     }
     if (this.text) void this.commitTextEdit();
@@ -262,7 +263,7 @@ export class CanvasEditorController {
 
   startLabelEdit(hit: LabelHit): void {
     if (itemIsLocked(hit.item, hit.layer)) {
-      toast("This item is locked.", "warning");
+      toast(t("editors.itemLocked"), "warning");
       return;
     }
     if (this.text) void this.commitTextEdit();
@@ -272,8 +273,8 @@ export class CanvasEditorController {
     input.type = "text";
     input.className = "canvas-label-editor-input";
     input.value = hit.item.label ?? "";
-    input.placeholder = "Add label";
-    input.setAttribute("aria-label", "Measurement label");
+    input.placeholder = t("editors.addLabel");
+    input.setAttribute("aria-label", t("editors.measurementLabel"));
     const hint = document.createElement("span");
     hint.className = "canvas-label-editor-hint";
     const project = store.project;
@@ -439,19 +440,19 @@ export class CanvasEditorController {
     textarea.value = session.text;
     textarea.placeholder =
       session.mode === "cloud"
-        ? "Cloud text…"
+        ? t("editors.cloudText")
         : session.mode === "callout"
-          ? "Callout text…"
-          : "Type a note…";
+          ? t("editors.calloutText")
+          : t("editors.typeNote");
     textarea.wrap = session.mode === "text" ? "off" : "soft";
     textarea.spellcheck = false;
-    textarea.setAttribute("aria-label", "Text annotation");
+    textarea.setAttribute("aria-label", t("editors.textAnnotation"));
     const strip = document.createElement("div");
     strip.className = "inline-style-strip";
 
     const sizeField = document.createElement("label");
     sizeField.className = "inline-style-field";
-    sizeField.title = "Font size in points";
+    sizeField.title = t("editors.fontSizePoints");
     const sizeLabel = document.createElement("span");
     sizeLabel.textContent = "Size";
     const sizeInput = document.createElement("input");
@@ -465,36 +466,42 @@ export class CanvasEditorController {
 
     const colorField = document.createElement("label");
     colorField.className = "inline-style-field inline-color-field";
-    colorField.title = "Text colour";
+    colorField.title = t("editors.textColour");
     const colorInput = document.createElement("input");
     colorInput.type = "color";
     colorInput.value = session.color;
-    colorInput.setAttribute("aria-label", "Text colour");
+    colorInput.setAttribute("aria-label", t("editors.textColour"));
     colorField.append(colorInput);
 
     const boldButton = document.createElement("button");
     boldButton.type = "button";
     boldButton.className = "inline-strip-button is-toggle is-bold";
-    boldButton.title = "Bold";
-    boldButton.setAttribute("aria-label", "Bold");
+    boldButton.title = t("editors.bold");
+    boldButton.setAttribute("aria-label", t("editors.bold"));
     boldButton.textContent = "B";
     const underlineButton = document.createElement("button");
     underlineButton.type = "button";
     underlineButton.className = "inline-strip-button is-toggle is-underline";
-    underlineButton.title = "Underline";
-    underlineButton.setAttribute("aria-label", "Underline");
+    underlineButton.title = t("editors.underline");
+    underlineButton.setAttribute("aria-label", t("editors.underline"));
     underlineButton.textContent = "U";
     const alignGroup = document.createElement("div");
     alignGroup.className = "inline-toggle-group";
     alignGroup.setAttribute("role", "group");
-    alignGroup.setAttribute("aria-label", "Text alignment");
+    alignGroup.setAttribute("aria-label", t("editors.textAlignment"));
     const alignButtons: Array<{ align: TextAlign; button: HTMLButtonElement }> = [];
     for (const align of ["left", "center", "right"] as const) {
       const button = document.createElement("button");
       button.type = "button";
       button.className = "inline-strip-button is-toggle is-align";
-      button.title = `Align ${align}`;
-      button.setAttribute("aria-label", `Align text ${align}`);
+      const alignLabel =
+        align === "left"
+          ? t("canvas.alignLeft")
+          : align === "right"
+            ? t("canvas.alignRight")
+            : t("canvas.alignCenter");
+      button.title = t("canvas.align", { align: alignLabel });
+      button.setAttribute("aria-label", t("canvas.alignText", { align: alignLabel }));
       button.innerHTML = icon(`align${align[0].toUpperCase()}${align.slice(1)}`, 14);
       button.addEventListener("mousedown", (event) => event.preventDefault());
       button.addEventListener("click", () => {
@@ -517,7 +524,7 @@ export class CanvasEditorController {
 
     const rotationField = document.createElement("label");
     rotationField.className = "inline-style-field";
-    rotationField.title = "Rotation in degrees";
+    rotationField.title = t("editors.rotationDegrees");
     const rotationLabel = document.createElement("span");
     rotationLabel.textContent = "Angle";
     const rotationInput = document.createElement("input");
@@ -553,7 +560,7 @@ export class CanvasEditorController {
     );
     const resizeHandle = document.createElement("div");
     resizeHandle.className = "canvas-text-editor-resize";
-    resizeHandle.title = "Drag to resize the text box";
+    resizeHandle.title = t("editors.resizeTextBox");
     resizeHandle.setAttribute("aria-hidden", "true");
     const resizable = session.mode === "cloud" || session.mode === "callout";
     if (resizable) container.append(resizeHandle);
@@ -775,7 +782,12 @@ export class CanvasEditorController {
       (!layerVisibleOnPage(active, edit.page) || layerLockedOnPage(active, edit.page))
     ) {
       toast(
-        `“${active.name}” is ${layerLockedOnPage(active, edit.page) ? "locked" : "hidden"}. Unlock or show it, or choose another layer.`,
+        t("canvas.layerUnavailable", {
+          name: active.name,
+          state: layerLockedOnPage(active, edit.page)
+            ? t("canvas.stateLocked")
+            : t("canvas.stateHidden"),
+        }),
         "warning",
       );
       this.closeTextEditor();

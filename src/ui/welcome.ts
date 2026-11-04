@@ -1,10 +1,10 @@
-import { t } from "../i18n";
 import { getRecent, isTauri } from "../io/platform";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
 import { brandMark, icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
+import { t } from "../i18n";
 
 const QUICK_START_STEPS = [
   "welcome.step.open",

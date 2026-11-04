@@ -1,7 +1,8 @@
 import { makeId } from "../../model/calibration";
 import { normalizeRoom } from "../../model/categories";
-import { countQuantityOf, COUNT_GLYPH_LABELS, COUNT_GLYPHS } from "../../model/countSymbols";
+import { countQuantityOf, COUNT_GLYPHS } from "../../model/countSymbols";
 import type { CountGlyph, CountPreset, CountType, CountTypeDef, Project } from "../../model/types";
+import { t } from "../../i18n";
 
 export const COUNT_TYPE_NAME_MAX_LENGTH = 60;
 export const COUNT_TYPE_ID_MAX_LENGTH = 80;
@@ -26,7 +27,7 @@ export function isBuiltInCountType(id: string): boolean {
 }
 
 export function countGlyphLabel(glyph: CountGlyph): string {
-  return COUNT_GLYPH_LABELS[glyph];
+  return t(`countType.${glyph}` as `countType.${CountGlyph}`);
 }
 
 export function isCountGlyph(value: unknown): value is CountGlyph {
@@ -193,7 +194,11 @@ export function countTypeFor(project: Project, id: CountType | undefined): Count
 }
 
 export function countTypeLabel(project: Project, id: CountType | undefined): string {
-  return countTypeFor(project, id).label;
+  const type = countTypeFor(project, id);
+  if (isBuiltInCountType(type.id)) {
+    return t(`countType.${type.id}` as `countType.${CountGlyph}`);
+  }
+  return type.label;
 }
 
 export function countTypeGlyph(project: Project, id: CountType | undefined): CountGlyph {
@@ -216,14 +221,14 @@ export function countTypeNameError(
   exceptId?: string,
 ): string | null {
   const name = normalizeCountTypeName(value);
-  if (!name) return "Enter a count-type name.";
+  if (!name) return t("countType.nameRequired");
   if (name.length > COUNT_TYPE_NAME_MAX_LENGTH) {
-    return `Use at most ${COUNT_TYPE_NAME_MAX_LENGTH} characters.`;
+    return t("countType.nameTooLong", { max: COUNT_TYPE_NAME_MAX_LENGTH });
   }
   if (
     types.some((entry) => entry.id !== exceptId && entry.label.toLowerCase() === name.toLowerCase())
   ) {
-    return "A count type with that name already exists.";
+    return t("countType.nameExists");
   }
   return null;
 }

@@ -17,19 +17,18 @@ import { formatTimestamp, timestampValue } from "../model/dates";
 import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import {
   INSPECTION_STATUSES,
-  INSPECTION_STATUS_LABELS,
   inspectionStatusColor,
   inspectionStatusLabel,
   SYMBOL_CATEGORIES,
-  SYMBOL_CATEGORY_LABELS,
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
 } from "../model/symbols";
 import {
   MARKUPS_COLUMN_IDS,
-  MARKUPS_COLUMN_LABELS,
   MARKUPS_GROUP_PRESETS,
+  markupsColumnLabel,
+  markupsGroupPresetLabel,
   defaultMarkupsViewSettings,
   groupMarkupRows,
   markupsGroupPresetFor,
@@ -63,6 +62,7 @@ import { showPopover } from "./popover";
 import { showSelectionMenuAt } from "./selectionMenu";
 import type { ShellRefs } from "./shell";
 import { selectionKey } from "../model/selection";
+import { t } from "../i18n";
 
 const PREFS_KEY = "gridscalr.ui.markups.v1";
 const ACTIVE_VIEW_KEY = "gridscalr.ui.markups.active-view.v1";
@@ -224,9 +224,7 @@ function updateViewControls(): void {
   if (viewDirtyEl) viewDirtyEl.hidden = !(viewDirty && activeViewId);
   if (saveViewBtn) {
     saveViewBtn.disabled = Boolean(activeViewId) && !viewDirty;
-    saveViewBtn.title = activeViewId
-      ? "Save changes to the current Markups view"
-      : "Save the current columns and filters as a view";
+    saveViewBtn.title = activeViewId ? t("markups.saveCurrent") : t("markups.saveAsView");
   }
 }
 
@@ -246,13 +244,13 @@ async function saveViewAs(actions: PanelActions): Promise<void> {
   if (!project) return;
   const suggested = uniqueMarkupsViewName(
     project.markupsViews,
-    `View ${project.markupsViews.length + 1}`,
+    t("markups.defaultViewName", { number: project.markupsViews.length + 1 }),
   );
   const requested = await textDialog(
-    "Save Markups view",
-    "Views store the visible columns, filters, grouping and sorting in the project file.",
+    t("markups.saveViewTitle"),
+    t("markups.saveViewNote"),
     suggested,
-    "View name",
+    t("markups.viewName"),
   );
   if (!requested) return;
   const latest = store.project;
@@ -303,19 +301,13 @@ function openColumnsDialog(actions: PanelActions): void {
     check.disabled = id === "name";
     if (id === "name") check.checked = true;
     checks.set(id, check);
-    label.append(check, el("span", "", MARKUPS_COLUMN_LABELS[id]));
+    label.append(check, el("span", "", markupsColumnLabel(id)));
     body.append(label);
   }
-  body.append(
-    el(
-      "p",
-      "modal-hint",
-      "Name is always shown. Column choices are saved with the view in the project file.",
-    ),
-  );
+  body.append(el("p", "modal-hint", t("markups.columnsNote")));
   void showModal({
-    title: "Markups columns",
-    subtitle: "Choose the columns that are useful for the current task.",
+    title: t("markups.columnsTitle"),
+    subtitle: t("markups.columnsIntro"),
     body,
     actions: [
       { label: "Cancel", value: "__cancel__" },
@@ -335,7 +327,7 @@ function openColumnsDialog(actions: PanelActions): void {
 function openManageViews(project: Project, actions: PanelActions): void {
   const body = el("div", "markups-view-manager");
   if (!project.markupsViews.length) {
-    body.append(el("p", "modal-message", "No saved views yet. Save one from the view menu."));
+    body.append(el("p", "modal-message", t("markups.noViews")));
   }
   const rows: Array<{
     view: MarkupsView;
@@ -349,7 +341,7 @@ function openManageViews(project: Project, actions: PanelActions): void {
     name.type = "text";
     name.maxLength = 60;
     name.value = view.name;
-    name.setAttribute("aria-label", `Name for ${view.name}`);
+    name.setAttribute("aria-label", t("markups.viewNameAria", { name: view.name }));
     const removeLabel = el("label", "markups-view-remove");
     const remove = el("input");
     remove.type = "checkbox";
@@ -362,16 +354,10 @@ function openManageViews(project: Project, actions: PanelActions): void {
     body.append(row);
     rows.push({ view, name, remove, row });
   }
-  body.append(
-    el(
-      "p",
-      "modal-hint",
-      "Renaming or removing a view changes the project file and can be undone.",
-    ),
-  );
+  body.append(el("p", "modal-hint", t("markups.viewsNote")));
   void showModal({
-    title: "Markups views",
-    subtitle: "Rename or remove saved views. The active view is stored for this project.",
+    title: t("markups.viewsTitle"),
+    subtitle: t("markups.viewsIntro"),
     body,
     wide: true,
     actions: [
@@ -381,9 +367,9 @@ function openManageViews(project: Project, actions: PanelActions): void {
     onValidate: () => {
       const kept = rows.filter((entry) => !entry.remove.checked);
       const names = kept.map((entry) => entry.name.value.replace(/\s+/g, " ").trim().slice(0, 60));
-      if (names.some((name) => !name)) return "Every remaining view needs a name.";
+      if (names.some((name) => !name)) return t("markups.viewNameRequired");
       const keys = names.map((name) => name.toLocaleLowerCase());
-      if (new Set(keys).size !== keys.length) return "View names must be unique.";
+      if (new Set(keys).size !== keys.length) return t("markups.viewNameUnique");
       return null;
     },
   }).then((value) => {
@@ -528,10 +514,12 @@ function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Project):
     case "countType":
       return row.item.kind === "count"
         ? countTypeLabel(project, row.item.countType)
-        : "Other markups";
+        : t("markups.other");
     case "page": {
       const name = pageDisplayName(project, row.item.page);
-      return name ? `Page ${row.item.page} · ${name}` : `Page ${row.item.page}`;
+      return name
+        ? t("markups.pageWithName", { page: row.item.page, name })
+        : t("markups.pageOnly", { page: row.item.page });
     }
     case "layer":
       return row.layer.name;
@@ -623,11 +611,11 @@ function markupRowElement(
   const itemIcon = el("span", "markups-item-icon");
   itemIcon.innerHTML = icon(markupIcon(item.kind), 14);
   itemIcon.style.color = item.color;
-  label.title = `${labelText} — double-click or use the rename button`;
+  label.title = t("markups.itemTitle", { label: labelText });
   const rename = el("button", "markups-rename");
   rename.type = "button";
-  rename.title = "Rename markup";
-  rename.setAttribute("aria-label", `Rename ${labelText}`);
+  rename.title = t("markups.rename");
+  rename.setAttribute("aria-label", t("markups.renameAria", { name: labelText }));
   rename.innerHTML = icon("text", 11);
   rename.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -642,13 +630,13 @@ function markupRowElement(
 
   const pageCell = el("td", "markups-page", `p.${item.page}`);
   const pageName = pageDisplayName(project, item.page);
-  if (pageName) pageCell.title = `Page ${item.page} · ${pageName}`;
+  if (pageName) pageCell.title = t("markups.pageWithName", { page: item.page, name: pageName });
   cells.set("page", pageCell);
 
   const layerCell = el("td", "markups-layer-cell");
   const layerSelect = el("select", "markups-layer-select");
-  layerSelect.setAttribute("aria-label", `Layer for ${labelText}`);
-  layerSelect.title = "Move to another layer";
+  layerSelect.setAttribute("aria-label", t("markups.layerFor", { name: labelText }));
+  layerSelect.title = t("markups.moveLayer");
   for (const candidate of layersForKind(project, layer.kind)) {
     const candidateOption = option(candidate.id, candidate.name, candidate.id === layer.id);
     if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.page)) {
@@ -713,12 +701,12 @@ function markupRowElement(
   const statusCell = el("td", "markups-status-cell");
   if (item.kind === "symbol") {
     const status = el("select", "markups-status-select");
-    status.setAttribute("aria-label", `Status for ${labelText}`);
-    status.title = locked ? "Unlock the item to change its status" : "Inspection status";
-    status.append(option("", "Not assessed", !item.status));
+    status.setAttribute("aria-label", t("markups.statusFor", { name: labelText }));
+    status.title = locked ? t("markups.statusLocked") : t("markups.inspectionStatus");
+    status.append(option("", t("markups.notAssessed"), !item.status));
     for (const inspection of INSPECTION_STATUSES) {
       status.append(
-        option(inspection, INSPECTION_STATUS_LABELS[inspection], item.status === inspection),
+        option(inspection, inspectionStatusLabel(inspection), item.status === inspection),
       );
     }
     status.disabled = locked;
@@ -749,7 +737,11 @@ function markupRowElement(
   const visibleCell = el("td", "markups-flag-cell");
   const eye = layerAction(
     hidden ? "eyeOff" : "eye",
-    layerShown ? (hidden ? "Show item" : "Hide item") : `Layer is hidden on Page ${item.page}`,
+    layerShown
+      ? hidden
+        ? t("markups.showItem")
+        : t("markups.hideItem")
+      : `Layer is hidden on Page ${item.page}`,
   );
   eye.classList.toggle("is-on", !hidden);
   eye.disabled = !layerShown;
@@ -766,7 +758,11 @@ function markupRowElement(
   const lockedCell = el("td", "markups-flag-cell");
   const lock = layerAction(
     locked ? "lock" : "unlock",
-    layerLocked ? `Layer is locked on Page ${item.page}` : locked ? "Unlock item" : "Lock item",
+    layerLocked
+      ? `Layer is locked on Page ${item.page}`
+      : locked
+        ? t("markups.unlockItem")
+        : t("markups.lockItem"),
   );
   lock.classList.toggle("is-locked", locked);
   lock.disabled = layerLocked;
@@ -899,9 +895,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   const headActions = el("div", "markups-head-actions");
 
   const viewSelect = el("select", "select markups-view-select");
-  viewSelect.setAttribute("aria-label", "Markups view");
-  viewSelect.title = "Apply a saved Markups view";
-  viewSelect.append(option("", "All markups", !activeViewId));
+  viewSelect.setAttribute("aria-label", t("markups.view"));
+  viewSelect.title = t("markups.applyView");
+  viewSelect.append(option("", t("markups.allMarkups"), !activeViewId));
   for (const view of project.markupsViews) {
     viewSelect.append(option(view.id, view.name, view.id === activeViewId));
   }
@@ -911,9 +907,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     const proceed = async () => {
       if (viewDirty && activeViewId && nextId !== activeViewId) {
         const discard = await confirmDialog(
-          "Discard view changes?",
-          "The current columns and filters have not been saved to this view.",
-          "Discard changes",
+          t("markups.discardViewTitle"),
+          t("markups.discardViewNote"),
+          t("markups.discardChanges"),
           { danger: true },
         );
         if (!discard) {
@@ -927,29 +923,29 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   });
 
   viewDirtyEl = el("span", "markups-view-dirty", "•");
-  viewDirtyEl.title = "Unsaved view changes";
+  viewDirtyEl.title = t("markups.unsavedView");
   viewDirtyEl.hidden = true;
 
   saveViewBtn = el("button", "icon-btn markups-save-view");
   saveViewBtn.type = "button";
   saveViewBtn.innerHTML = icon("check", 14);
-  saveViewBtn.setAttribute("aria-label", "Save view");
+  saveViewBtn.setAttribute("aria-label", t("markups.saveView"));
   saveViewBtn.addEventListener("click", () => saveCurrentView(actions));
 
   const more = el("button", "icon-btn");
   more.type = "button";
-  more.title = "More view options";
-  more.setAttribute("aria-label", "More view options");
+  more.title = t("markups.moreOptions");
+  more.setAttribute("aria-label", t("markups.moreOptions"));
   more.innerHTML = icon("settings", 14);
   more.addEventListener("click", () =>
     showPopover(more, [
       {
-        label: "Save as new view…",
+        label: t("markups.saveAsNew"),
         icon: "plus",
         action: () => void saveViewAs(actions),
       },
       {
-        label: "Manage views…",
+        label: t("markups.manageViews"),
         icon: "settings",
         action: () => openManageViews(project, actions),
       },
@@ -958,20 +954,20 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const columns = el("button", "btn btn-small btn-ghost", "Columns");
   columns.type = "button";
-  columns.title = "Show or hide Markups columns";
-  columns.innerHTML = `${icon("grid", 13)}<span>Columns</span>`;
+  columns.title = t("markups.columnsToggle");
+  columns.innerHTML = `${icon("grid", 13)}<span>${t("markups.columns")}</span>`;
   columns.addEventListener("click", () => openColumnsDialog(actions));
 
-  const exportCsv = el("button", "btn btn-small btn-ghost", "Export CSV");
+  const exportCsv = el("button", "btn btn-small btn-ghost", t("markups.exportCsv"));
   exportCsv.type = "button";
   exportCsv.innerHTML = `${icon("csv", 13)}<span>Export CSV</span>`;
-  exportCsv.title = "Export the markups list as CSV";
+  exportCsv.title = t("markups.exportCsvTitle");
   exportCsv.addEventListener("click", () => actions.exportAs("csv"));
 
   const close = el("button", "icon-btn");
   close.type = "button";
-  close.title = "Close Markups list";
-  close.setAttribute("aria-label", "Close Markups list");
+  close.title = t("markups.closeList");
+  close.setAttribute("aria-label", t("markups.closeList"));
   close.innerHTML = icon("close", 15);
   close.addEventListener("click", () => {
     setMarkupsOpen(false);
@@ -983,10 +979,14 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const toolbar = el("div", "markups-toolbar");
   const pageSelect = el("select", "select markups-page-filter");
-  pageSelect.setAttribute("aria-label", "Filter markups by page");
+  pageSelect.setAttribute("aria-label", t("markups.filterPage"));
   pageSelect.append(
-    option("all", "All pages", settings.pageFilter === "all"),
-    option("current", `Current page (${store.ui.page})`, settings.pageFilter === "current"),
+    option("all", t("markups.allPages"), settings.pageFilter === "all"),
+    option(
+      "current",
+      t("markups.currentPage", { page: store.ui.page }),
+      settings.pageFilter === "current",
+    ),
   );
   pageSelect.value = settings.pageFilter;
   pageSelect.addEventListener("change", () => {
@@ -997,9 +997,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   });
 
   const typeSelect = el("select", "select markups-type-filter");
-  typeSelect.setAttribute("aria-label", "Filter markups by type");
+  typeSelect.setAttribute("aria-label", t("markups.filterType"));
   typeSelect.append(
-    option("all", "All types", settings.typeFilter === "all"),
+    option("all", t("markups.allTypes"), settings.typeFilter === "all"),
     option("measure", "Measurements", settings.typeFilter === "measure"),
     option("draw", "Drawings", settings.typeFilter === "draw"),
     option("symbol", "Symbols", settings.typeFilter === "symbol"),
@@ -1020,13 +1020,13 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   });
 
   const categorySelect = el("select", "select markups-category-filter");
-  categorySelect.setAttribute("aria-label", "Filter markups by category");
+  categorySelect.setAttribute("aria-label", t("markups.filterCategory"));
   const categoryValue = settings.symbolCategory
     ? `symbol:${settings.symbolCategory}`
     : (settings.categoryId ?? "");
-  categorySelect.append(option("", "All categories", !categoryValue));
+  categorySelect.append(option("", t("markups.allCategories"), !categoryValue));
   const measurementGroup = document.createElement("optgroup");
-  measurementGroup.label = "Measurement categories";
+  measurementGroup.label = t("markups.measurementCategories");
   for (const category of project.categories) {
     measurementGroup.append(
       option(category.id, category.name, category.id === settings.categoryId),
@@ -1034,12 +1034,12 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   }
   if (measurementGroup.childElementCount) categorySelect.append(measurementGroup);
   const symbolGroup = document.createElement("optgroup");
-  symbolGroup.label = "Symbol categories";
+  symbolGroup.label = t("markups.symbolCategories");
   for (const category of SYMBOL_CATEGORIES) {
     symbolGroup.append(
       option(
         `symbol:${category}`,
-        SYMBOL_CATEGORY_LABELS[category],
+        symbolCategoryLabel(category),
         category === settings.symbolCategory,
       ),
     );
@@ -1063,8 +1063,8 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   });
 
   const countTypeSelect = el("select", "select markups-count-type-filter");
-  countTypeSelect.setAttribute("aria-label", "Filter markups by count type");
-  countTypeSelect.append(option("", "All count types", !settings.countType));
+  countTypeSelect.setAttribute("aria-label", t("markups.filterCountType"));
+  countTypeSelect.append(option("", t("markups.allCountTypes"), !settings.countType));
   for (const type of project.countTypes) {
     countTypeSelect.append(option(type.id, type.label, type.id === settings.countType));
   }
@@ -1081,13 +1081,15 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   });
 
   const groupSelect = el("select", "select markups-group-select");
-  groupSelect.setAttribute("aria-label", "Group markups");
+  groupSelect.setAttribute("aria-label", t("markups.group"));
   const groupPreset = markupsGroupPresetFor(settings.groupBy);
   for (const preset of MARKUPS_GROUP_PRESETS) {
-    groupSelect.append(option(preset.id, preset.label, preset.id === groupPreset?.id));
+    groupSelect.append(
+      option(preset.id, markupsGroupPresetLabel(preset), preset.id === groupPreset?.id),
+    );
   }
   if (!groupPreset && settings.groupBy.length) {
-    groupSelect.append(option("custom", "Custom grouping", true));
+    groupSelect.append(option("custom", t("markups.customGrouping"), true));
   }
   groupSelect.value = groupPreset?.id ?? (settings.groupBy.length ? "custom" : "none");
   groupSelect.addEventListener("change", () => {
@@ -1105,18 +1107,18 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const search = el("input", "input markups-search");
   search.type = "search";
-  search.placeholder = "Filter by name, type, layer, category or room…";
+  search.placeholder = t("markups.searchPlaceholder");
   search.value = settings.search;
-  search.setAttribute("aria-label", "Filter markups");
+  search.setAttribute("aria-label", t("markups.search"));
   search.addEventListener("input", () => {
     settings.search = search.value;
     markViewDirty();
     refreshTable();
   });
 
-  const selectAll = el("button", "btn btn-small btn-ghost", "Select all");
+  const selectAll = el("button", "btn btn-small btn-ghost", t("markups.selectAll"));
   selectAll.type = "button";
-  selectAll.title = "Select all markups matching the current filter";
+  selectAll.title = t("markups.selectAllTitle");
   selectAll.addEventListener("click", () => {
     store.setSelectionMany(rows.map((row) => ({ layerId: row.layer.id, itemId: row.item.id })));
   });
@@ -1139,11 +1141,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   const foot = el("div", "markups-foot");
   const footLeft = el("span", "markups-foot-count", "");
-  const footRight = el(
-    "span",
-    "markups-foot-hint",
-    "Click to navigate · Shift-click for a range · F2 rename",
-  );
+  const footRight = el("span", "markups-foot-hint", t("markups.hint"));
   foot.append(footLeft, footRight);
   panel.append(foot);
 
@@ -1171,8 +1169,8 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
       );
       const button = el("button", "markups-sort-button");
       button.type = "button";
-      button.title = `Sort by ${MARKUPS_COLUMN_LABELS[column]}`;
-      button.append(el("span", "", MARKUPS_COLUMN_LABELS[column]));
+      button.title = t("markups.sortBy", { name: markupsColumnLabel(column) });
+      button.append(el("span", "", markupsColumnLabel(column)));
       if (sorted) {
         button.append(el("span", "markups-sort-arrow", sorted === "asc" ? "↑" : "↓"));
       }
@@ -1199,7 +1197,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
       const emptyRow = el("tr", "markups-empty");
       const cell = el("td");
       cell.colSpan = columns.length;
-      cell.innerHTML = `${icon("markups", 22)}<div>No items match this filter.</div>`;
+      cell.innerHTML = `${icon("markups", 22)}<div>${t("markups.noMatches")}</div>`;
       emptyRow.append(cell);
       tbody.append(emptyRow);
     } else if (settings.groupBy.length) {
@@ -1214,7 +1212,10 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     }
     table.append(colgroup, thead, tbody);
     count.textContent = String(rows.length);
-    footLeft.textContent = `${rows.length} item${rows.length === 1 ? "" : "s"} · ${store.ui.selection.length} selected`;
+    footLeft.textContent = t("markups.footer", {
+      count: rows.length,
+      selected: store.ui.selection.length,
+    });
     updateViewControls();
   }
 
@@ -1237,7 +1238,7 @@ function appendGroup(
   cell.style.paddingLeft = `${8 + level * 16}px`;
   const toggle = el("button", "markups-group-toggle");
   toggle.type = "button";
-  toggle.title = collapsed ? "Expand group" : "Collapse group";
+  toggle.title = collapsed ? t("markups.expandGroup") : t("markups.collapseGroup");
   toggle.setAttribute("aria-expanded", String(!collapsed));
   toggle.innerHTML = icon(collapsed ? "chevronRight" : "chevronDown", 12);
   toggle.addEventListener("click", () => {

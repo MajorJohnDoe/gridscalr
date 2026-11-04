@@ -9,16 +9,17 @@ import { serializeMarkupCsv } from "../report/markupCsv";
 import { buildQuantityReport } from "../report/reportModel";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
+import { t } from "../i18n";
 
 export type ExportKind =
   "csv" | "json" | "png" | "drawing" | "quantity-csv" | "quantity-pdf" | "quantity-xlsx";
 
-const JSON_FILTERS = [{ name: "JSON project", extensions: ["json"] }];
-const CSV_FILTERS = [{ name: "CSV markups", extensions: ["csv"] }];
-const QUANTITY_CSV_FILTERS = [{ name: "Quantity CSV", extensions: ["csv"] }];
-const XLSX_FILTERS = [{ name: "Excel workbook", extensions: ["xlsx"] }];
-const PNG_FILTERS = [{ name: "PNG image", extensions: ["png"] }];
-const PDF_FILTERS = [{ name: "PDF document", extensions: ["pdf"] }];
+const jsonFilters = () => [{ name: t("export.jsonFilter"), extensions: ["json"] }];
+const csvFilters = () => [{ name: t("export.markupCsvFilter"), extensions: ["csv"] }];
+const quantityCsvFilters = () => [{ name: t("export.quantityCsvFilter"), extensions: ["csv"] }];
+const xlsxFilters = () => [{ name: t("export.xlsxFilter"), extensions: ["xlsx"] }];
+const pngFilters = () => [{ name: t("export.pngFilter"), extensions: ["png"] }];
+const pdfFilters = () => [{ name: t("export.pdfFilter"), extensions: ["pdf"] }];
 
 export interface ExportContext {
   project: Project;
@@ -39,19 +40,19 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
   try {
     if (kind === "csv") {
       const csv = serializeMarkupCsv(project);
-      const path = await saveTextFile(csv, `${safe}-markups.csv`, CSV_FILTERS, {
+      const path = await saveTextFile(csv, `${safe}-markups.csv`, csvFilters(), {
         forbiddenPaths: protectedPaths,
       });
-      if (path) toast("Markups exported to CSV.", "success");
+      if (path) toast(t("export.markupsExported"), "success");
       return;
     }
 
     if (kind === "quantity-csv") {
       const csv = serializeQuantityCsv(buildQuantityReport(project));
-      const path = await saveTextFile(csv, `${safe}-quantities.csv`, QUANTITY_CSV_FILTERS, {
+      const path = await saveTextFile(csv, `${safe}-quantities.csv`, quantityCsvFilters(), {
         forbiddenPaths: protectedPaths,
       });
-      if (path) toast("Quantity report exported to CSV.", "success");
+      if (path) toast(t("export.quantityCsvExported"), "success");
       return;
     }
 
@@ -62,11 +63,11 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
       const path = await saveBinaryFile(
         bytes,
         `${safe}-quantities.xlsx`,
-        XLSX_FILTERS,
+        xlsxFilters(),
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         { forbiddenPaths: protectedPaths },
       );
-      if (path) toast("Quantity workbook exported to Excel.", "success");
+      if (path) toast(t("export.quantityXlsxExported"), "success");
       return;
     }
 
@@ -76,25 +77,25 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
       const path = await saveBinaryFile(
         bytes,
         `${safe}-quantities.pdf`,
-        PDF_FILTERS,
+        pdfFilters(),
         "application/pdf",
         { forbiddenPaths: protectedPaths },
       );
-      if (path) toast("Quantity report exported to PDF.", "success");
+      if (path) toast(t("export.quantityPdfExported"), "success");
       return;
     }
 
     if (kind === "json") {
       const json = serializeProject(project);
-      const path = await saveTextFile(json, `${safe}.json`, JSON_FILTERS, {
+      const path = await saveTextFile(json, `${safe}.json`, jsonFilters(), {
         forbiddenPaths: protectedPaths,
       });
-      if (path) toast("Project exported to JSON.", "success");
+      if (path) toast(t("export.projectJsonExported"), "success");
       return;
     }
 
     if (kind === "drawing") {
-      if (!renderer) throw new Error("The source PDF is not available.");
+      if (!renderer) throw new Error(t("app.sourcePdfMissing"));
       try {
         const options = await context.chooseDrawingExport(project);
         if (!options) return;
@@ -103,21 +104,21 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
         const path = await saveBinaryFile(
           bytes,
           `${safe}-markups.pdf`,
-          PDF_FILTERS,
+          pdfFilters(),
           "application/pdf",
           { forbiddenPaths: protectedPaths },
         );
         if (path) {
           toast(
-            options.crop ? "Cropped drawing PDF exported." : "Drawing PDF exported.",
+            options.crop ? t("export.croppedDrawingExported") : t("export.drawingExported"),
             "success",
           );
         }
       } catch (error) {
         if (error instanceof Error && /encrypt/i.test(error.message)) {
           await messageDialog(
-            "Cannot export this PDF",
-            "The source PDF is encrypted, so it cannot be flattened without its owner password. Open an unencrypted copy and try again.",
+            t("export.cannotExportTitle"),
+            t("export.cannotExportEncrypted"),
             "warning",
           );
           return;
@@ -131,18 +132,18 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
     const blob = await new Promise<Blob | null>((resolve) =>
       composite.toBlob(resolve, "image/png"),
     );
-    if (!blob) throw new Error("The canvas could not be exported.");
+    if (!blob) throw new Error(t("export.canvasExportFailed"));
     const path = await saveBinaryFile(
       new Uint8Array(await blob.arrayBuffer()),
       `${safe}.png`,
-      PNG_FILTERS,
+      pngFilters(),
       "image/png",
       { forbiddenPaths: protectedPaths },
     );
-    if (path) toast("View exported as PNG.", "success");
+    if (path) toast(t("export.pngExported"), "success");
   } catch (error) {
     await messageDialog(
-      "Export failed",
+      t("export.failedTitle"),
       error instanceof Error ? error.message : String(error),
       "warning",
     );

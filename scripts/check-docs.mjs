@@ -127,8 +127,11 @@ const guide = await readFile(resolve(root, "docs", "user-guide.md"), "utf8");
 const readme = await readFile(resolve(root, "README.md"), "utf8");
 
 const toolDefs = await readFile(resolve(root, "src", "ui", "toolDefs.ts"), "utf8");
+const englishMessages = JSON.parse(
+  await readFile(resolve(root, "src", "i18n", "locales", "en.json"), "utf8"),
+);
 for (const match of toolDefs.matchAll(/label:\s*"([^"]+)"/g)) {
-  const label = match[1];
+  const label = englishMessages[match[1]] ?? match[1];
   if (!guide.toLowerCase().includes(label.toLowerCase())) {
     errors.push(`docs/user-guide.md: tool "${label}" is not described`);
   }

@@ -18,6 +18,7 @@ import {
   TOOL_FAMILY_BY_ID,
   type ToolFamilyId,
 } from "./toolDefs";
+import { t } from "../i18n";
 
 export interface PanelActions {
   openPdf: () => void;
@@ -94,7 +95,7 @@ export interface PanelActions {
 export function requestMarkupRename(refs: ShellRefs): void {
   const selection = store.ui.selection.length === 1 ? store.primarySelection : null;
   if (!selection) {
-    toast("Select one item to rename it.", "info");
+    toast(t("panels.renameOne"), "info");
     return;
   }
   setInspectorCollapsed(false);
@@ -107,7 +108,7 @@ export function requestMarkupRename(refs: ShellRefs): void {
       fallback.select();
       return;
     }
-    toast("Select the item and edit its label in Properties.", "info");
+    toast(t("panels.renameHint"), "info");
   });
 }
 
@@ -129,16 +130,20 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   if (!refs.projectName.isContentEditable) {
     refs.projectName.textContent = project?.name ?? "";
   }
-  refs.projectName.title = "Double-click or press F2 to rename the project";
+  refs.projectName.title = t("shell.renameHint");
   refs.docName.textContent = project
-    ? (primaryDocument(project.documents)?.name ?? "No drawing open")
-    : "No drawing open";
+    ? (primaryDocument(project.documents)?.name ?? t("shell.noDrawing"))
+    : t("shell.noDrawing");
   const pageName = project ? pageDisplayName(project, store.ui.page) : undefined;
   refs.docMeta.textContent = project
-    ? `Page ${store.ui.page} of ${totalPageCount(project.documents)}${pageName ? ` · ${pageName}` : ""}`
+    ? t("panels.pageOf", {
+        page: store.ui.page,
+        total: totalPageCount(project.documents),
+        name: pageName ? t("panels.pageNameSuffix", { name: pageName }) : "",
+      })
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
-  refs.dirtyDot.title = "Unsaved changes";
+  refs.dirtyDot.title = t("dialogs.unsavedTitle");
   refs.undoBtn.disabled = !store.canUndo;
   refs.redoBtn.disabled = !store.canRedo;
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
@@ -170,7 +175,7 @@ function renderToolRail(refs: ShellRefs): void {
     if (member) {
       btn.dataset.displayTool = memberId;
       btn.innerHTML = icon(member.icon, 19);
-      btn.title = `${member.label} (${member.shortcut}) · ${family.label}`;
+      btn.title = `${t(member.label)} (${member.shortcut}) · ${t(family.label)}`;
     }
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
