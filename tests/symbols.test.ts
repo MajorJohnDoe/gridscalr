@@ -21,12 +21,14 @@ import {
   symbolCategoryOf,
   symbolFor,
   symbolName,
+  symbolSearchText,
   symbolSizeOf,
   symbolArtBounds,
   symbolRenderPlan,
   symbolSvgMarkup,
 } from "../src/model/symbols";
 import { parseSymbolPath } from "../src/model/symbolPaths";
+import sv from "../src/i18n/locales/sv.json";
 
 const STABLE_SYMBOL_IDS = [
   "fire.extinguisher",
@@ -105,6 +107,17 @@ describe("symbol library", () => {
     expect(SYMBOLS.some((symbol) => symbol.keywords.includes("brandsläckare"))).toBe(true);
     expect(SYMBOLS.some((symbol) => symbol.keywords.includes("tilluftsdon"))).toBe(true);
     expect(SYMBOLS.some((symbol) => symbol.keywords.includes("hjärtstartare"))).toBe(true);
+  });
+
+  it("indexes both English and Swedish names regardless of the active language", () => {
+    const swedish = sv as Record<string, string>;
+    for (const symbol of SYMBOLS) {
+      const search = symbolSearchText(symbol);
+      const swedishName = swedish[`symbol.${symbol.id}`];
+      expect(swedishName, symbol.id).toBeTruthy();
+      expect(search, symbol.id).toContain(symbol.name.toLowerCase());
+      expect(search, symbol.id).toContain(swedishName.toLowerCase());
+    }
   });
 
   it("resolves known symbols and provides a safe unknown fallback", () => {
