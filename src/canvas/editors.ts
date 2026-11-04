@@ -454,7 +454,7 @@ export class CanvasEditorController {
     sizeField.className = "inline-style-field";
     sizeField.title = t("editors.fontSizePoints");
     const sizeLabel = document.createElement("span");
-    sizeLabel.textContent = "Size";
+    sizeLabel.textContent = t("editors.size");
     const sizeInput = document.createElement("input");
     sizeInput.type = "number";
     sizeInput.min = "0.5";
@@ -526,7 +526,7 @@ export class CanvasEditorController {
     rotationField.className = "inline-style-field";
     rotationField.title = t("editors.rotationDegrees");
     const rotationLabel = document.createElement("span");
-    rotationLabel.textContent = "Angle";
+    rotationLabel.textContent = t("editors.angle");
     const rotationInput = document.createElement("input");
     rotationInput.type = "number";
     rotationInput.min = "-360";
@@ -543,11 +543,11 @@ export class CanvasEditorController {
     const cancelButton = document.createElement("button");
     cancelButton.type = "button";
     cancelButton.className = "inline-strip-button is-quiet";
-    cancelButton.textContent = "Cancel";
+    cancelButton.textContent = t("common.cancel");
     const doneButton = document.createElement("button");
     doneButton.type = "button";
     doneButton.className = "inline-strip-button is-primary";
-    doneButton.textContent = "Done";
+    doneButton.textContent = t("common.done");
     strip.append(
       sizeField,
       colorField,
@@ -722,7 +722,7 @@ export class CanvasEditorController {
         store.mutate((project) => {
           const item = findItem(project, edit.itemId!)?.item;
           if (!item) return;
-          item.text = value.trim() || "Revision";
+          item.text = value.trim() || t("reference.revision");
           item.textColor = edit.color;
           item.fontSize = clampTextSize(edit.fontSize);
           if (edit.bold) item.textBold = true;

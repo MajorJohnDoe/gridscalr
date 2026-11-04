@@ -56,11 +56,7 @@ export function describeAutosaveFailure(primary: unknown, fallback?: unknown): A
       : fallback instanceof Error && fallback.message
         ? fallback.message
         : "";
-  return new AutosaveError(
-    detail
-      ? `Recovery autosave failed: ${detail}. Save the project to a file to protect your work.`
-      : t("autosave.failed"),
-  );
+  return new AutosaveError(detail ? t("autosave.failedDetail", { detail }) : t("autosave.failed"));
 }
 
 function hasProject(value: unknown): value is AutosavePayload {

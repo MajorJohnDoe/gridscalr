@@ -392,7 +392,9 @@ export function compareRevisions(
     pages.push({
       page,
       pageName:
-        pageDisplayName(current, page) ?? pageDisplayName(reference, page) ?? `Page ${page}`,
+        pageDisplayName(current, page) ??
+        pageDisplayName(reference, page) ??
+        t("compare.pageLabel", { page }),
       building: pageBuilding(current, page) ?? pageBuilding(reference, page) ?? "",
       floor: pageFloor(current, page) ?? pageFloor(reference, page) ?? "",
       added: pageItems.filter((item) => item.status === "added").length,
@@ -406,7 +408,9 @@ export function compareRevisions(
   const currentPages = totalPageCount(current.documents);
   const referencePages = totalPageCount(reference.documents);
   if (currentPages !== referencePages) {
-    warnings.push(`Page counts differ: current ${currentPages}, reference ${referencePages}.`);
+    warnings.push(
+      t("compare.pageCountsDiffer", { current: currentPages, reference: referencePages }),
+    );
   }
   const currentNames = new Set(current.documents.map((document) => document.name));
   const referenceNames = new Set(reference.documents.map((document) => document.name));
@@ -424,7 +428,11 @@ export function compareRevisions(
       Math.abs(left.pointsPerMeter - right.pointsPerMeter) / Math.max(left.pointsPerMeter, 1);
     if (delta < 0.001) continue;
     warnings.push(
-      `Page ${page} scales differ: ${calibrationLabel(left)} versus ${calibrationLabel(right)}.`,
+      t("compare.pageScalesDiffer", {
+        page,
+        left: calibrationLabel(left),
+        right: calibrationLabel(right),
+      }),
     );
   }
 

@@ -752,6 +752,28 @@ try {
 
   // Swedish quick start and help chrome.
   await page.evaluate(() => window.__gridscalr.setLanguage("sv"));
+  await page.waitForFunction(() => document.documentElement.lang === "sv");
+  assert.equal(
+    await page.locator(".menubar").innerText(),
+    ["Arkiv", "Redigera", "Visa", "Inställningar", "Hjälp"].join("\n"),
+    "the menu bar should relabel without a restart",
+  );
+  assert.match(
+    (await page.locator('[data-tool="length"]').getAttribute("title")) ?? "",
+    /^Längd/,
+    "the tool rail should relabel without a restart",
+  );
+  assert.deepEqual(
+    await page.locator(".dock-tab").allInnerTexts(),
+    ["Sidor", "Lager"],
+    "the left panel tabs should relabel without a restart",
+  );
+  assert.match(
+    await page.locator(".statusbar").innerText(),
+    /Sida/,
+    "the status bar should relabel without a restart",
+  );
+
   await page.keyboard.press("F1");
   const swedishHelp = page.getByRole("dialog");
   await swedishHelp.waitFor();
@@ -760,6 +782,12 @@ try {
   await page.keyboard.press("Escape");
   await swedishHelp.waitFor({ state: "detached" });
   await page.evaluate(() => window.__gridscalr.setLanguage("en"));
+  await page.waitForFunction(() => document.documentElement.lang === "en");
+  assert.equal(
+    await page.locator(".menubar").innerText(),
+    ["File", "Edit", "View", "Settings", "Help"].join("\n"),
+    "switching back should restore the English menu bar",
+  );
 
   await page.evaluate(() => {
     window.__gridscalrContextPrevented = null;

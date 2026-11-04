@@ -274,12 +274,12 @@ function buildLayerItems(
     if (itemLocked) {
       const flag = el("span", "layer-item-flag");
       flag.innerHTML = icon("lock", 10);
-      flag.title = "Locked";
+      flag.title = t("layer.locked");
       row.append(flag);
     } else if (itemHidden) {
       const flag = el("span", "layer-item-flag");
       flag.innerHTML = icon("eyeOff", 10);
-      flag.title = "Hidden";
+      flag.title = t("layer.hidden");
       row.append(flag);
     }
 
@@ -393,16 +393,21 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       disclosure.setAttribute("aria-controls", panelId);
       disclosure.setAttribute(
         "aria-label",
-        `${expanded ? "Collapse" : "Expand"} ${layer.name}${
-          scopeItems.length ? ` (${scopeItems.length} items)` : ""
-        }`,
+        scopeItems.length
+          ? t(expanded ? "layer.collapseLayer" : "layer.expandLayer", {
+              name: layer.name,
+              count: scopeItems.length,
+            })
+          : layerScope === "page"
+            ? t("layer.noItemsOnPage", { page })
+            : t("layer.noItems"),
       );
       disclosure.title = scopeItems.length
-        ? `${expanded ? "Hide" : "Show"} ${scopeItems.length} item${scopeItems.length === 1 ? "" : "s"}${
-            layerScope === "page" ? ` on Page ${page}` : ""
-          }`
+        ? layerScope === "page"
+          ? t("layer.itemsOnPage", { count: scopeItems.length, page })
+          : t("layer.itemsTotal", { count: scopeItems.length })
         : layerScope === "page"
-          ? `No items on Page ${page}`
+          ? t("layer.noItemsOnPage", { page })
           : t("layer.noItems");
       disclosure.innerHTML = icon(expanded ? "chevronDown" : "chevronRight", 12);
       const setExpanded = (open: boolean) => {
@@ -411,11 +416,15 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
         disclosure.setAttribute("aria-expanded", String(open));
         disclosure.setAttribute(
           "aria-label",
-          `${open ? "Collapse" : "Expand"} ${layer.name} (${scopeItems.length} items)`,
+          t(open ? "layer.collapseLayer" : "layer.expandLayer", {
+            name: layer.name,
+            count: scopeItems.length,
+          }),
         );
-        disclosure.title = `${open ? "Hide" : "Show"} ${scopeItems.length} item${
-          scopeItems.length === 1 ? "" : "s"
-        }`;
+        disclosure.title = t(open ? "layer.collapseLayer" : "layer.expandLayer", {
+          name: layer.name,
+          count: scopeItems.length,
+        });
         disclosure.innerHTML = icon(open ? "chevronDown" : "chevronRight", 12);
         if (open) {
           if (!itemList) itemList = buildLayerItems(project, layer, actions, scopeItems);
@@ -448,13 +457,13 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       });
 
       const name = el("span", "layer-name", layer.name);
-      name.title = `${layer.name} — double-click to rename`;
+      name.title = t("layer.renameTitle", { name: layer.name });
 
       const count = el("span", "layer-count", String(scopeItems.length));
       count.title =
         layerScope === "page"
-          ? `${scopeItems.length} items on Page ${page}`
-          : `${scopeItems.length} items in total`;
+          ? t("layer.itemsOnPage", { count: scopeItems.length, page })
+          : t("layer.itemsTotal", { count: scopeItems.length });
 
       const actionsWrap = el("div", "layer-actions");
       const eye = layerAction(
@@ -463,8 +472,8 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       );
       eye.title =
         layerScope === "page"
-          ? `${effectiveVisible ? "Hide" : "Show"} on Page ${page}`
-          : `${effectiveVisible ? "Hide" : "Show"} on all pages`;
+          ? t(effectiveVisible ? "layer.hideOnPage" : "layer.showOnPage", { page })
+          : t(effectiveVisible ? "layer.hideAll" : "layer.showAll");
       eye.classList.toggle("is-on", effectiveVisible);
       eye.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -484,8 +493,8 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       );
       lock.title =
         layerScope === "page"
-          ? `${effectiveLocked ? "Unlock" : "Lock"} on Page ${page}`
-          : `${effectiveLocked ? "Unlock" : "Lock"} on all pages`;
+          ? t(effectiveLocked ? "layer.unlockOnPage" : "layer.lockOnPage", { page })
+          : t(effectiveLocked ? "layer.unlockAll" : "layer.lockAll");
       lock.classList.toggle("is-locked", effectiveLocked);
       lock.addEventListener("click", (event) => {
         event.stopPropagation();
@@ -523,9 +532,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
         store.setActiveLayer(layer.id);
         if (!effectiveVisible) {
           toast(
-            layerScope === "page"
-              ? `This layer is hidden on Page ${page}. Show it to edit its contents.`
-              : t("layer.hiddenEdit"),
+            layerScope === "page" ? t("layer.hiddenOnPage", { page }) : t("layer.hiddenEdit"),
             "warning",
           );
         }
@@ -570,7 +577,8 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
   if (layerScope === "page" && visibleLayerCount === 0) {
     const empty = el("div", "empty-note small layer-empty");
-    empty.innerHTML = `${icon("layers", 22)}<div>No layers on Page ${page} yet. Create a measurement or drawing layer below.</div>`;
+    empty.innerHTML = icon("layers", 22);
+    empty.append(el("div", "", t("layer.noLayersOnPage", { page })));
     refs.dockBody.append(empty);
   }
 
@@ -581,9 +589,10 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     const note = el("div", "empty-note small");
     note.style.paddingTop = "4px";
     const applies = layerScope === "all" || layerAppliesToPage(active, page);
-    note.innerHTML = `${icon("info", 14)} Items are created in <strong>${escapeHtml(active.name)}</strong> (${active.kind === "measure" ? "measurement" : "drawing"} layer).${
-      applies ? "" : ` It has no items on Page ${page} yet.`
-    }`;
+    note.innerHTML = `${icon("info", 14)} ${t("layer.itemsCreatedIn", {
+      name: "<strong>" + escapeHtml(active.name) + "</strong>",
+      kind: t(active.kind === "measure" ? "layer.measurementLayer" : "layer.drawingLayer"),
+    })}${applies ? "" : t("layer.noItemsOnPageSuffix", { page })}`;
     refs.dockBody.append(note);
   }
 }

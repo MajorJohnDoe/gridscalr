@@ -24,8 +24,26 @@ release must support many languages without making each one a code change.
 - `src/i18n/types.generated.ts` is generated from `en.json` by
   `scripts/i18n-types.mjs`. `check:i18n` regenerates it in memory and fails on
   drift, so keys stay typed across the codebase.
-- Catalogs are validated for missing and extra keys, empty values, placeholder
-  parity and ICU syntax on every `npm run check:i18n`.
+- Catalogs are validated for missing and extra keys, duplicate keys, empty
+  values, placeholder parity and ICU syntax on every `npm run check:i18n`.
+
+### UI text gate
+
+- `scripts/check-i18n.mjs` scans every `src` directory except `src/i18n`. It
+  fails on quoted multi-word prose, single-word literals assigned to
+  `textContent`, `innerText`, `title`, `placeholder` or the matching
+  `setAttribute` properties, text passed directly to `el(tag, class, text)` or
+  `option(value, text)`, and template literals with prose outside `${…}`.
+- `src/i18n/hardcoded-baseline.json` is empty and stays empty. Deliberately
+  technical English (diagnostics, package-manifest validation, Markdown/XLSX
+  internals and developer geometry errors) is excluded by file in
+  `TEMPLATE_EXCLUDE_FILES` in the checker, with a comment explaining why.
+- The gate does not scan Rust (`src-tauri`), the `index.html` boot fallback or
+  literal branches inside ternaries such as `cond ? "A" : "B"`; those stay a
+  review responsibility.
+- A language change must relabel the open interface without a restart. Static
+  chrome is re-applied through `relabelShell()`/`relabelMenuBar()` and
+  `document.documentElement.lang` follows the active locale.
 
 ### Locale registry
 
@@ -94,8 +112,10 @@ release must support many languages without making each one a code change.
 
 - Translators work in JSON; adding a language does not touch TypeScript.
 - A missing or invalid catalog key fails CI before it reaches the UI.
-- The hard-coded baseline now also scans `src/model` display helpers. Its size
-  grows once when the scan widens, then shrinks per migration phase.
+- The hard-coded baseline is empty. `check:i18n` also scans `src/model`
+  display helpers, `el()`/`option()` text and template literals, so any new
+  literal fails until it is catalogued or explicitly excluded as technical
+  English.
 - RTL and CJK remain explicitly deferred and need their own ADR.
 
 ## Related issues

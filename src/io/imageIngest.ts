@@ -152,7 +152,9 @@ export async function ingestImageBlob(blob: Blob, name: string): Promise<ImageAs
 
     if (!result || result.size > IMAGE_MAX_BYTES) {
       throw new Error(
-        `The image is still larger than ${Math.round(IMAGE_MAX_BYTES / (1024 * 1024))} MB after resizing.`,
+        t("image.tooLargeAfterResize", {
+          megabytes: Math.round(IMAGE_MAX_BYTES / (1024 * 1024)),
+        }),
       );
     }
 

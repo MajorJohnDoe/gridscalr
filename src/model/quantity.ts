@@ -6,6 +6,7 @@ import { itemScaleForDisplay } from "./measure";
 import { countQuantityOf, countTypeFor } from "../features/countTypes/model";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
 import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
+import { t } from "../i18n";
 import type { MarkupItem, Project } from "./types";
 
 export type QuantityType = "length" | "area" | "count" | "angle" | "slope" | "volume";
@@ -350,7 +351,7 @@ function rowFromGroup(
               ? "°"
               : group.type === "slope"
                 ? "%"
-                : "pcs",
+                : t("unit.pcs"),
     gross: group.gross,
     deduction: group.deduction,
     net,
@@ -517,7 +518,8 @@ export function calculateQuantitiesByPage(
 
   const pages: QuantityPageSection[] = [];
   for (const row of rows) {
-    row.pageName = pageDisplayName(project, row.page) ?? `Page ${row.page}`;
+    row.pageName =
+      pageDisplayName(project, row.page) ?? t("quantity.pageLabel", { page: row.page });
     row.building = pageBuilding(project, row.page) ?? "";
     row.floor = pageFloor(project, row.page) ?? "";
     let page = pages[pages.length - 1];

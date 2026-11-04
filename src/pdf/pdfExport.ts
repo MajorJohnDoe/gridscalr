@@ -29,7 +29,7 @@ import type { PageViewport } from "pdfjs-dist";
 import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
 import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
 import { countSymbol } from "../model/countSymbols";
-import { countQuantityOf, countTypeGlyph } from "../features/countTypes/model";
+import { countQuantityOf, countTypeGlyph, countTypeLabel } from "../features/countTypes/model";
 import { areaShapeOf, rectangleCorners } from "../model/area";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
 import {
@@ -441,7 +441,7 @@ function drawLegendPage(
       const total = counts.get(type.id) ?? 0;
       if (!total) continue;
       drawLegendCountGlyph(page, type.glyph, { x: margin + 6, y: y + 4 }, ink, 0.8);
-      page.drawText(type.label, {
+      page.drawText(countTypeLabel(project, type.id), {
         x: margin + 20,
         y,
         size: 10.5,

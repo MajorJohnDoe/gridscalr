@@ -281,7 +281,7 @@ export class CropController {
 
     const widthPercent = Math.round((mode.rect.width / size.width) * 100);
     const heightPercent = Math.round((mode.rect.height / size.height) * 100);
-    const label = `Export area · ${widthPercent}% × ${heightPercent}%`;
+    const label = t("crop.areaLabel", { width: widthPercent, height: heightPercent });
     ctx.font = `600 10px ${FONT_STACK}`;
     const labelWidth = ctx.measureText(label).width + 12;
     const labelX = Math.max(8, Math.min(this.host.width() - labelWidth - 8, crop.x));
@@ -328,7 +328,7 @@ export class CropController {
     const cancel = document.createElement("button");
     cancel.type = "button";
     cancel.className = "btn btn-small btn-ghost";
-    cancel.textContent = "Cancel";
+    cancel.textContent = t("common.cancel");
     cancel.addEventListener("click", () => this.cancel());
 
     const use = document.createElement("button");

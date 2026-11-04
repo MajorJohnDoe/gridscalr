@@ -93,11 +93,18 @@ export async function loadLocale(target: Locale): Promise<void> {
   await ensureCatalog(target);
 }
 
+/** Mirrors the active locale onto the document so screen readers and spellcheck follow it. */
+function applyDocumentLanguage(target: Locale): void {
+  if (typeof document === "undefined") return;
+  document.documentElement.lang = target;
+}
+
 /** Resolves the stored preference, lazy-loads it, then applies it. */
 export async function applyStoredLanguage(): Promise<Locale> {
   const next = resolveLocale(loadAppPreferences().language);
   await ensureCatalog(next);
   locale = next;
+  applyDocumentLanguage(locale);
   return locale;
 }
 
@@ -106,6 +113,7 @@ export async function setLanguagePreference(preference: LanguagePreference): Pro
   const next = resolveLocale(preference);
   await ensureCatalog(next);
   locale = next;
+  applyDocumentLanguage(locale);
   if (typeof window !== "undefined") {
     window.dispatchEvent(new CustomEvent(LANGUAGE_CHANGED_EVENT));
   }

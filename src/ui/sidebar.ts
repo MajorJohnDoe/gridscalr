@@ -1,4 +1,5 @@
 import { store } from "../state/store";
+import { t } from "../i18n";
 import { clear, el } from "./dom";
 import { icon } from "./icons";
 import { renderLayers } from "./layerList";
@@ -109,7 +110,8 @@ export function renderSidebar(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.dockFooter);
   if (!store.project) {
     const note = el("div", "empty-note");
-    note.innerHTML = `${icon("folder", 26)}<div>Open a PDF or TIF drawing to start measuring.</div>`;
+    note.innerHTML = icon("folder", 26);
+    note.append(el("div", "", t("sidebar.openDrawing")));
     refs.dockBody.append(note);
     return;
   }

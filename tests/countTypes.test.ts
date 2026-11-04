@@ -1,4 +1,6 @@
+// @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
+import { setLanguagePreference } from "../src/i18n";
 import {
   addItem,
   createDefaultLayers,
@@ -85,6 +87,21 @@ describe("count type model", () => {
     const project = makeProject();
     expect(removeCountType(project, "door")).toEqual({ removed: false, reason: "builtin" });
     expect(removeCountType(project, "other")).toEqual({ removed: false, reason: "builtin" });
+  });
+
+  it("rejects renaming built-in types", () => {
+    const project = makeProject();
+    expect(renameCountType(project, "door", "Entrance")).toBe(false);
+    expect(countTypeLabel(project, "door")).toBe("Door");
+  });
+
+  it("uses the interface language for built-in names", async () => {
+    const project = makeProject();
+    await setLanguagePreference("sv");
+    expect(countTypeLabel(project, "door")).toBe("Dörr");
+    expect(countTypeLabel(project, "window")).toBe("Fönster");
+    await setLanguagePreference("en");
+    expect(countTypeLabel(project, "door")).toBe("Door");
   });
 
   it("repairs duplicate ids, duplicate labels and invalid glyphs", () => {

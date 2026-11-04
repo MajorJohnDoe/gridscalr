@@ -108,10 +108,12 @@ describe("language preference", () => {
     expect(currentLocale()).toBe("sv");
     expect(loadAppPreferences().language).toBe("sv");
     expect(t("window.maximize")).toBe("Maximera");
+    expect(document.documentElement.lang).toBe("sv");
 
     await setLanguagePreference("en");
     expect(currentLocale()).toBe("en");
     expect(t("window.maximize")).toBe("Maximize");
+    expect(document.documentElement.lang).toBe("en");
   });
 
   it("falls back to the system language after a reset", async () => {

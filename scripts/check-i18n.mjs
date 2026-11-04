@@ -23,7 +23,51 @@ const typesPath = resolve(root, TYPES_RELATIVE);
 const update = process.argv.includes("--update");
 
 const STRING_LITERAL = /(["'])((?:\\.|(?!\1)[^\\])*)\1/g;
+const TEMPLATE_LITERAL = /`((?:\\.|[^`\\])*)`/g;
+const UI_PROPERTY =
+  /\.(?:textContent|innerText|placeholder|title)\s*=\s*(["'])((?:\\.|(?!\1)[^\\])*)\1/g;
+const UI_ATTRIBUTE =
+  /setAttribute\(\s*(["'])(?:aria-label|title|placeholder)\1\s*,\s*(["'])((?:\\.|(?!\2)[^\\])*)\2/g;
+const EL_TEXT = /el\(\s*"[a-z0-9]+"\s*,\s*"[^"]*"\s*,\s*"((?:\\.|[^"\\])*)"/g;
+const OPTION_TEXT = /option\(\s*"[^"]*"\s*,\s*"((?:\\.|[^"\\])*)"/g;
 const PLACEHOLDER = /\{\s*([A-Za-z_][\w]*)\s*(?:[,}])/g;
+/** Brand and symbol names that are intentionally not translated. */
+const UI_ALLOWLIST = new Set(["GridScalr", "pt"]);
+/**
+ * Technical detail that is deliberately English: diagnostics reports, package
+ * manifest validation, the Markdown renderer, XLSX XML and developer-only
+ * geometry errors.
+ */
+const TEMPLATE_EXCLUDE_FILES = new Set([
+  "src/features/diagnostics/model.ts",
+  "src/features/projectPackage/model.ts",
+  "src/help/markdown.ts",
+  "src/model/symbolPaths.ts",
+  "src/model/symbols.ts",
+  "src/report/xlsx.ts",
+]);
+const TEMPLATE_ALLOW = [/^GridScalr\b/, /^[XYZ]\s/, /^[A-Z]{1,3}$/];
+
+/** Removes ${…} expressions, including nested braces, before prose detection. */
+function stripTemplateExpressions(text) {
+  let result = "";
+  let depth = 0;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (depth === 0 && char === "$" && text[index + 1] === "{") {
+      depth = 1;
+      index += 1;
+      continue;
+    }
+    if (depth > 0) {
+      if (char === "{") depth += 1;
+      else if (char === "}") depth -= 1;
+      continue;
+    }
+    result += char;
+  }
+  return result;
+}
 
 function isCandidate(text) {
   if (text.length < 4 || !text.includes(" ")) return false;
@@ -35,10 +79,56 @@ function isCandidate(text) {
   return true;
 }
 
+/** Template literals carry interpolated UI prose that the quote scan cannot see. */
+function isTemplateCandidate(text, file) {
+  if (TEMPLATE_EXCLUDE_FILES.has(file)) return false;
+  // Only prose outside ${…} and HTML tags is interface text.
+  const prose = stripTemplateExpressions(text)
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  if (!prose.includes(" ") || !/[A-Za-zÅÄÖåäö]/.test(prose)) return false;
+  if (!/[A-ZÅÄÖ][a-zåäö]/.test(prose)) return false;
+  if (/^[MLHVCSQTAZmlhvcsqtaz]/.test(prose)) return false;
+  if (TEMPLATE_ALLOW.some((pattern) => pattern.test(prose))) return false;
+  return true;
+}
+
+/**
+ * Single-word labels ("Cancel", "Locked", "Auto") are easy to miss because the
+ * prose scan requires a space. Only scan the properties where UI text lands.
+ */
+function isUiAssignmentCandidate(text) {
+  if (isCandidate(text)) return false;
+  if (!text || UI_ALLOWLIST.has(text)) return false;
+  const letters = [...text].filter((char) => /[A-Za-zÅÄÖåäö]/.test(char)).length;
+  return letters >= 2;
+}
+
+/** Text passed directly to `el()` and `option()` misses the property scan. */
+function isElementTextCandidate(text) {
+  if (!text || UI_ALLOWLIST.has(text)) return false;
+  const letters = [...text].filter((char) => /[A-Za-zÅÄÖåäö]/.test(char)).length;
+  return letters >= 2;
+}
+
 function placeholders(value) {
   const names = new Set();
   for (const match of value.matchAll(PLACEHOLDER)) names.add(match[1]);
   return [...names].sort();
+}
+
+/** JSON.parse keeps the last duplicate silently, which hides copy/paste mistakes. */
+function duplicateKeys(raw) {
+  const seen = new Set();
+  const duplicates = [];
+  for (const line of raw.split("\n")) {
+    const match = /^\s{2}"([^"]+)"\s*:/.exec(line);
+    if (!match) continue;
+    if (seen.has(match[1])) duplicates.push(match[1]);
+    seen.add(match[1]);
+  }
+  return duplicates;
 }
 
 function stripComments(source) {
@@ -68,6 +158,40 @@ async function collect(directory) {
       const line = source.slice(0, match.index).split("\n").length;
       hits.push({ file, value, line });
     }
+
+    for (const [pattern, valueGroup] of [
+      [UI_PROPERTY, 2],
+      [UI_ATTRIBUTE, 3],
+    ]) {
+      pattern.lastIndex = 0;
+      let uiMatch;
+      while ((uiMatch = pattern.exec(source))) {
+        const value = uiMatch[valueGroup];
+        if (!isUiAssignmentCandidate(value)) continue;
+        const line = source.slice(0, uiMatch.index).split("\n").length;
+        hits.push({ file, value, line });
+      }
+    }
+
+    for (const pattern of [EL_TEXT, OPTION_TEXT]) {
+      pattern.lastIndex = 0;
+      let textMatch;
+      while ((textMatch = pattern.exec(source))) {
+        const value = textMatch[1];
+        if (!isElementTextCandidate(value)) continue;
+        const line = source.slice(0, textMatch.index).split("\n").length;
+        hits.push({ file, value, line });
+      }
+    }
+
+    TEMPLATE_LITERAL.lastIndex = 0;
+    let templateMatch;
+    while ((templateMatch = TEMPLATE_LITERAL.exec(source))) {
+      const value = templateMatch[1];
+      if (!isTemplateCandidate(value, file)) continue;
+      const line = source.slice(0, templateMatch.index).split("\n").length;
+      hits.push({ file, value, line });
+    }
   }
   return hits;
 }
@@ -80,7 +204,11 @@ for (const file of catalogFiles) {
   const id = file.slice(0, -".json".length);
   const path = resolve(localeDir, file);
   try {
-    catalogs.set(id, JSON.parse(await readFile(path, "utf8")));
+    const raw = await readFile(path, "utf8");
+    for (const key of duplicateKeys(raw)) {
+      catalogProblems.push(`${relative(root, path)}: duplicate key ${JSON.stringify(key)}`);
+    }
+    catalogs.set(id, JSON.parse(raw));
   } catch (error) {
     catalogProblems.push(`${relative(root, path)}: invalid JSON (${error.message})`);
   }

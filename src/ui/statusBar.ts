@@ -27,6 +27,12 @@ let scaleChipKey = "";
 /** Same idea for the persistent autosave warning. */
 let warningKey: string | null = null;
 
+/** Forces the next update to rebuild the cached chips after a language change. */
+export function resetStatusBar(): void {
+  scaleChipKey = "";
+  warningKey = null;
+}
+
 export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   clear(refs.statusCoords);

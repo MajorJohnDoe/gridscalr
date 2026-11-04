@@ -210,7 +210,10 @@ export function pageLabelSources(
         id: CALIBRATION_LABEL_ID,
         kind: "calibration",
         parts: {
-          text: `${formatNumber(calibration.knownLength, 2)} ${calibration.unit} reference`,
+          text: t("canvas.calibrationReferenceLabel", {
+            length: formatNumber(calibration.knownLength, 2),
+            unit: calibration.unit,
+          }),
         },
         anchor: calibrationAnchor(calibration.p1, calibration.p2),
         obstacle: boundingBox([calibration.p1, calibration.p2]),

@@ -7,6 +7,7 @@ import {
   pushGraphicsState,
 } from "pdf-lib";
 import { bytesToBase64 } from "./base64";
+import { t } from "../i18n";
 import {
   TiffImportError,
   faxParameters,
@@ -39,15 +40,19 @@ export interface TiffConversion {
 function assertWithinLimits(bytes: Uint8Array, pages: TiffPage[]): void {
   if (bytes.length > MAX_TIFF_FILE_BYTES) {
     throw new TiffImportError(
-      `This TIFF is larger than ${Math.round(MAX_TIFF_FILE_BYTES / (1024 * 1024))} MB.`,
+      t("tiff.tooLarge", {
+        megabytes: Math.round(MAX_TIFF_FILE_BYTES / (1024 * 1024)),
+      }),
     );
   }
   for (const page of pages) {
     if (page.width * page.height > MAX_TIFF_PIXELS) {
       throw new TiffImportError(
-        `Page ${page.width} × ${page.height} exceeds the ${Math.round(
-          MAX_TIFF_PIXELS / 1_000_000,
-        )} megapixel limit.`,
+        t("tiff.pageTooLarge", {
+          width: page.width,
+          height: page.height,
+          megapixels: Math.round(MAX_TIFF_PIXELS / 1_000_000),
+        }),
       );
     }
   }

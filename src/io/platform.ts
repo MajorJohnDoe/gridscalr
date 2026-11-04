@@ -60,7 +60,7 @@ export async function pickDrawing(): Promise<PickedPdf | null> {
       multiple: false,
       directory: false,
       filters: [
-        { name: "Drawing", extensions: ["pdf", "tif", "tiff"] },
+        { name: t("platform.drawingFilter"), extensions: ["pdf", "tif", "tiff"] },
         { name: "PDF", extensions: ["pdf"] },
         { name: t("platform.tiffFilter"), extensions: ["tif", "tiff"] },
       ],
@@ -111,7 +111,7 @@ export async function pickImage(): Promise<File | null> {
     const path = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: "Image", extensions: ["png", "jpg", "jpeg"] }],
+      filters: [{ name: t("platform.imageFilter"), extensions: ["png", "jpg", "jpeg"] }],
     });
     if (!path || Array.isArray(path)) return null;
     const name = path.split(/[\\/]/).pop() ?? "Image.png";

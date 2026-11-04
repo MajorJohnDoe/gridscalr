@@ -95,7 +95,7 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
             ? t("importDialog.addPages")
             : selected.size === 1
               ? t("importDialog.addOnePage")
-              : `Add ${selected.size} pages`;
+              : t("importDialog.addPagesCount", { count: selected.size });
     }
   };
   selectAll.addEventListener("click", () => {

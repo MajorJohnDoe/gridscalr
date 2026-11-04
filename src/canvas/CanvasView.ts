@@ -2531,7 +2531,7 @@ export class CanvasView {
   }
 
   private createCallout(start: Point, current: Point): void {
-    const content = "Callout";
+    const content = t("kind.callout");
     const page = this.pageSize();
     let center = current;
     if (page) {
@@ -2570,7 +2570,11 @@ export class CanvasView {
       if (target) {
         target.text =
           text.trim() ||
-          (target.kind === "stamp" ? "STAMP" : target.kind === "callout" ? "Callout" : "");
+          (target.kind === "stamp"
+            ? t("tool.stamp")
+            : target.kind === "callout"
+              ? t("kind.callout")
+              : "");
         if (target.kind === "stamp") {
           target.color = stampStatusColor(target.text, target.color);
         }
@@ -2650,7 +2654,7 @@ export class CanvasView {
       this.snap = null;
       if (kind === "cloud") {
         const created = this.createItem("cloud", points, {
-          text: store.ui.cloudText ? "Revision" : undefined,
+          text: store.ui.cloudText ? t("reference.revision") : undefined,
         });
         if (created && store.ui.cloudText && store.project) {
           const found = findItem(store.project, created.itemId);

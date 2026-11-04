@@ -63,7 +63,7 @@ export class ReferenceController {
           if (this.session) void this.enqueuePageSize(page);
           else void options.ensurePageSize(page);
         },
-        onError: (message) => toast(`Reference: ${message}`, "error"),
+        onError: (message) => toast(t("reference.error", { message }), "error"),
       },
       {
         readOnly: true,
@@ -275,8 +275,8 @@ export class ReferenceController {
     this.options.requestRender();
     toast(
       mode === "revision"
-        ? `Comparing with ${session.name}.`
-        : `Showing ${session.name} as the reference drawing.`,
+        ? t("reference.comparingWith", { name: session.name })
+        : t("reference.showingAs", { name: session.name }),
       "info",
     );
   }
@@ -351,7 +351,7 @@ export class ReferenceController {
       })
       .catch((error) => {
         if (this.session === session) {
-          toast(`Could not read reference page ${page}: ${errorMessage(error)}`, "warning");
+          toast(t("reference.readPageFailed", { page, detail: errorMessage(error) }), "warning");
         }
         return undefined;
       })
@@ -386,7 +386,7 @@ export class ReferenceController {
     const project = store.project;
     if (!project) return;
     if (item.page > totalPageCount(project.documents)) {
-      toast(`Page ${item.page} exists only in the reference revision.`, "info");
+      toast(t("reference.pageOnlyInRevision", { page: item.page }), "info");
       return;
     }
     if (store.ui.page !== item.page) store.setPage(item.page);

@@ -158,7 +158,11 @@ function renderRows(summary: QuantitySummary): HTMLElement {
           [t("quantity.gross"), row.gross, ""],
           [t("quantity.deduct"), row.deduction, "is-deduction"],
           [t("quantity.net"), row.net, "is-net"],
-          [`Waste ${formatNumber(row.wastePercent, 1)}%`, row.wasteQuantity, "is-waste"],
+          [
+            t("quantity.wastePercent", { percent: formatNumber(row.wastePercent, 1) }),
+            row.wasteQuantity,
+            "is-waste",
+          ],
           [t("quantity.order"), row.orderQuantity, "is-order"],
         ] as const) {
           const stat = el("div", `quantity-stat ${className}`.trim());
@@ -173,7 +177,10 @@ function renderRows(summary: QuantitySummary): HTMLElement {
           if (className === "is-order") {
             stat.title =
               row.roundingStep > 0
-                ? `Rounded up to steps of ${formatNumber(row.roundingStep, 2)} ${row.unit}`
+                ? t("quantity.roundedUp", {
+                    step: formatNumber(row.roundingStep, 2),
+                    unit: row.unit,
+                  })
                 : t("quantity.noRounding");
           }
           if (className === "is-waste") {

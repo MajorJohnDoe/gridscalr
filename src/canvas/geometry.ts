@@ -1,4 +1,5 @@
 import { distance, rotatePoint, type Bounds } from "../model/geometry";
+import { t } from "../i18n";
 import type { PageRect } from "../model/export";
 import type { SnapKind } from "../model/snap";
 import type { PageSize, Point } from "../model/types";
@@ -168,9 +169,9 @@ export function constrainSquare(start: Point, point: Point): Point {
 }
 
 export function snapLabel(kind: SnapKind): string {
-  if (kind === "endpoint") return "Endpoint";
-  if (kind === "midpoint") return "Midpoint";
-  return "Intersection";
+  if (kind === "endpoint") return t("snap.endpoint");
+  if (kind === "midpoint") return t("snap.midpoint");
+  return t("snap.intersection");
 }
 
 export function cursorForRole(role: BoxHandleRole): string {

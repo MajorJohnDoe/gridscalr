@@ -103,7 +103,11 @@ export function createLayer(
   const index = Math.floor(Math.random() * 900 + 100);
   return {
     id: makeId("layer"),
-    name: name ?? (kind === "measure" ? `Measurements ${index}` : `Markup ${index}`),
+    name:
+      name ??
+      (kind === "measure"
+        ? t("layer.defaultMeasurements", { index })
+        : t("layer.defaultMarkup", { index })),
     kind,
     visible: true,
     locked: false,
@@ -303,7 +307,9 @@ export function addLayer(project: Project, kind: LayerKind, page?: number): Laye
   const existing = layersForKind(project, kind).length;
   const layer = createLayer(
     kind,
-    kind === "measure" ? `Measurements ${existing + 1}` : `Markup ${existing + 1}`,
+    kind === "measure"
+      ? t("layer.defaultMeasurements", { index: existing + 1 })
+      : t("layer.defaultMarkup", { index: existing + 1 }),
     undefined,
     page,
   );

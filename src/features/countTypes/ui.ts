@@ -9,6 +9,7 @@ import {
   addCountType,
   countGlyphLabel,
   countTypeItemCount,
+  countTypeLabel,
   countTypeNameError,
   isBuiltInCountType,
   removeCountType,
@@ -137,8 +138,8 @@ export function openCountTypesDialog(): Promise<void> {
       }
       toast(
         reassigned > 0
-          ? `Deleted “${label}” and moved ${reassigned} count${reassigned === 1 ? "" : "s"} to Other.`
-          : `Deleted “${label}”.`,
+          ? t("countTypeUi.deletedMoved", { name: label, count: reassigned })
+          : t("countTypeUi.deleted", { name: label }),
       );
       render();
     };
@@ -176,10 +177,13 @@ export function openCountTypesDialog(): Promise<void> {
 
     for (const type of project.countTypes) {
       const row = el("div", "category-row");
+      const label = countTypeLabel(project, type.id);
+      const builtIn = isBuiltInCountType(type.id);
       const name = el("input", "input category-name");
       name.type = "text";
-      name.value = type.label;
-      name.setAttribute("aria-label", t("countTypeUi.nameAria", { name: type.label }));
+      name.value = label;
+      name.readOnly = builtIn;
+      name.setAttribute("aria-label", t("countTypeUi.nameAria", { name: label }));
       name.addEventListener("change", () => commitRename(type.id, type.label, name));
       name.addEventListener("keydown", (event) => {
         if (event.key === "Enter") {
@@ -192,7 +196,7 @@ export function openCountTypesDialog(): Promise<void> {
       const meta = el(
         "span",
         "category-meta",
-        isBuiltInCountType(type.id)
+        builtIn
           ? usage > 0
             ? t("countTypeUi.builtInUsage", { count: usage })
             : t("countTypeUi.builtIn")
@@ -203,7 +207,7 @@ export function openCountTypesDialog(): Promise<void> {
 
       const glyph = glyphSelect(
         type.glyph,
-        t("countTypeUi.glyphAria", { name: type.label }),
+        t("countTypeUi.glyphAria", { name: label }),
         (value) => {
           store.mutate((next) => {
             const target = next.countTypes.find((entry) => entry.id === type.id);
@@ -215,10 +219,10 @@ export function openCountTypesDialog(): Promise<void> {
       const actions = el("div", "category-row-actions");
       const remove = iconButton(
         icon("trash", 14),
-        t("countTypeUi.deleteAria", { name: type.label }),
-        () => requestDelete(type.id, type.label),
+        t("countTypeUi.deleteAria", { name: label }),
+        () => requestDelete(type.id, label),
       );
-      remove.disabled = isBuiltInCountType(type.id);
+      remove.disabled = builtIn;
       actions.append(remove);
 
       row.append(name, glyph, meta, actions);

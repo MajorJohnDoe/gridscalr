@@ -77,7 +77,9 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
       row.type = "button";
       row.innerHTML = icon(entry.kind === "pdf" ? "file" : "layers", 15);
       row.append(el("span", "recent-name", entry.name));
-      row.append(el("span", "recent-meta", entry.kind === "pdf" ? "PDF" : "Project"));
+      row.append(
+        el("span", "recent-meta", entry.kind === "pdf" ? "PDF" : t("menu.file.recentProject")),
+      );
       row.addEventListener("click", () => actions.openRecent(entry));
       list.append(row);
     }

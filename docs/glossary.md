@@ -12,6 +12,7 @@ stable identifier in the project file; only the displayed text is translated.
 | quantity | mängd | A calculated length, area, volume, count, angle or slope. |
 | count | antal / räkna | **Antal** is the noun and quantity type; **räkna** is the tool/action. |
 | count type | antalstyp | A door, window, fixture or custom counted object. |
+| built-in count type | inbyggd antalstyp | Named by the interface language; cannot be renamed or deleted. |
 | count schedule | antalstabell | The quantity row per count type, not a door/window schedule. |
 | pieces per object | delar per objekt | Multi-piece count objects such as a double door. |
 | waste | spill | The percentage added for cutting and breakage. |
