@@ -70,7 +70,9 @@
           "Count doors, windows, fixtures and custom object types, then review a count schedule",
           "Compare revisions in side-by-side or overlay mode and export a comparison PDF",
           "Search PDF text layers and run local English and Swedish OCR on scanned drawings",
-          "Export quantities as CSV, XLSX and a print-friendly PDF report"
+          "Export quantities as CSV, XLSX and a print-friendly PDF report",
+          "Switch between English and Swedish with locale-aware numbers, dates and CSV",
+          "Add report metadata and an embedded logo to the quantity PDF and Excel summary"
         ]
       }
     </script>
@@ -93,6 +95,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Yes. Measuring, counting, project files and exports all work without a network connection. The desktop app does not use an account, cloud storage, telemetry or an automatic update service."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does GridScalr work in Swedish?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes. The interface, quantity reports and export headings are available in English and Swedish. Choose System, English or Svenska in Preferences; the change applies immediately, and numbers, dates and CSV follow the selected language."
             }
           },
           {
@@ -375,7 +385,7 @@
             </p>
           </div>
 
-          <div class="card-grid four">
+          <div class="card-grid three">
             <article class="card">
               <h3>Measure with confidence</h3>
               <p>
@@ -402,6 +412,20 @@
               <p>
                 Produce CSV, a six-sheet XLSX workbook, a print-friendly quantity report and a
                 labelled drawing PDF.
+              </p>
+            </article>
+            <article class="card">
+              <h3>English and Swedish</h3>
+              <p>
+                Work in English or Svenska. The interface, reports and export headings switch
+                immediately, and numbers, dates and CSV follow the selected language.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Report-ready branding</h3>
+              <p>
+                Add facility, client, project number, revision, author and notes, plus a logo, to
+                the quantity PDF and Excel summary.
               </p>
             </article>
           </div>
@@ -688,6 +712,14 @@ npm run tauri build</code></pre>
                 Yes. Measuring, counting, project files and exports all work without a network
                 connection. The desktop app does not use an account, cloud storage, telemetry or an
                 automatic update service.
+              </p>
+            </details>
+            <details>
+              <summary>Does GridScalr work in Swedish?</summary>
+              <p>
+                Yes. The interface, quantity reports and export headings are available in English
+                and Swedish. Choose System, English or Svenska in Preferences; the change applies
+                immediately, and numbers, dates and CSV follow the selected language.
               </p>
             </details>
             <details>

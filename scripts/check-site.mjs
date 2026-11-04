@@ -99,13 +99,13 @@ const pages = [
     canonical: pairUrls.features.sv,
     title: "Funktioner i GridScalr — mängdning av PDF och TIF",
     description:
-      "Utforska GridScalr: kalibrering, längd- och areamätning, egna count-typer, Count schedule, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF.",
+      "Utforska GridScalr: kalibrering, längd- och areamätning, egna antalstyper, antalstabell, revisionsjämförelse, lokal OCR samt export till CSV, Excel och PDF.",
     titleTerms: ["funktioner", "mängdning", "pdf", "tif"],
     h1Terms: ["funktioner", "mängdning", "pdf", "tif"],
-    metaTerms: ["kalibrering", "count schedule", "revisionsjämförelse", "ocr", "pdf"],
+    metaTerms: ["kalibrering", "antalstabell", "revisionsjämförelse", "ocr", "pdf"],
     bodyTerms: [
       "mängdning",
-      "count schedule",
+      "antalstabell",
       "revisionsjämförelse",
       "lokal ocr",
       "inköpsunderlag",

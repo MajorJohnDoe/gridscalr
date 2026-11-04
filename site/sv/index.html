@@ -67,10 +67,12 @@
         },
         "featureList": [
           "Kalibrera PDF- och TIF-ritningar och mät längder, areor, vinklar, lutningar och volymer",
-          "Räkna dörrar, fönster, inventarier och egna objekttyper och granska ett Count schedule",
+          "Räkna dörrar, fönster, inventarier och egna objekttyper och granska en antalstabell",
           "Jämför revisioner sida vid sida eller i överlägg och exportera en jämförelse-PDF",
           "Sök i PDF-textlager och kör lokal OCR på engelska och svenska på skannade ritningar",
-          "Exportera mängder som CSV, XLSX och en utskriftsvänlig PDF-rapport"
+          "Exportera mängder som CSV, XLSX och en utskriftsvänlig PDF-rapport",
+          "Växla mellan svenska och engelska med lokalanpassade tal, datum och CSV",
+          "Lägg till rapportmetadata och en inbäddad logga i mängdrapporten och Excel-sammanfattningen"
         ]
       }
     </script>
@@ -93,6 +95,14 @@
             "acceptedAnswer": {
               "@type": "Answer",
               "text": "Ja. Mätning, räkning, projektfiler och exporter fungerar utan nätanslutning. Skrivbordsappen använder inget konto, ingen molnlagring, ingen telemetri och ingen automatisk uppdateringstjänst."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Finns GridScalr på svenska?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Ja. Gränssnittet, mängdrapporterna och exporthuvudena finns på engelska och svenska. Välj System, English eller Svenska i Inställningar; ändringen slår igenom direkt och tal, datum och CSV följer det valda språket."
             }
           },
           {
@@ -203,7 +213,7 @@
                 width="1920"
                 height="1080"
                 fetchpriority="high"
-                alt="GridScalr visar en kalibrerad industriplan med mätningar för lager, kontor och verkstad samt panelen Properties."
+                alt="GridScalr visar en kalibrerad industriplan med mätningar för lager, kontor och verkstad samt panelen Egenskaper."
               />
               <span class="zoom-hint">Klicka för att förstora</span>
             </a>
@@ -237,7 +247,7 @@
             <div class="flow-step">
               <span class="flow-kicker">Projekt</span>
               <strong>Mängdning på din dator</strong>
-              <span>Layers, mätningar, antal, mängder och autosparning.</span>
+              <span>Lager, mätningar, antal, mängder och autosparning.</span>
             </div>
             <span class="flow-arrow" aria-hidden="true">→</span>
             <div class="flow-step">
@@ -371,19 +381,19 @@
             </p>
           </div>
 
-          <div class="card-grid four">
+          <div class="card-grid three">
             <article class="card">
               <h3>Mät med kontroll</h3>
               <p>
                 Kalibrera en gång, lås skalan och mät längder, areor, radie, diameter, bågar,
-                vinklar, lutningar och volymer med snap.
+                vinklar, lutningar och volymer med fästpunkter.
               </p>
             </article>
             <article class="card">
-              <h3>Räkna en gång, schemalägg överallt</h3>
+              <h3>Räkna en gång, sammanställ överallt</h3>
               <p>
-                Skapa egna count-typer, räkna stycken per objekt och granska ett Count schedule per
-                typ i Markups-tabellen.
+                Skapa egna antalstyper, räkna stycken per objekt och granska en antalstabell per typ
+                i Markeringar-tabellen.
               </p>
             </article>
             <article class="card">
@@ -398,6 +408,20 @@
               <p>
                 Ta fram CSV, en XLSX-arbetsbok med sex blad, en utskriftsvänlig mängdrapport och en
                 ritnings-PDF med etiketter.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Engelska och svenska</h3>
+              <p>
+                Arbeta på engelska eller svenska. Gränssnitt, rapporter och exporthuvuden byter
+                direkt, och tal, datum och CSV följer det valda språket.
+              </p>
+            </article>
+            <article class="card">
+              <h3>Rapportklar profil</h3>
+              <p>
+                Lägg till fastighet, kund, projektnummer, revision, författare och anteckningar,
+                samt en logga, i mängdrapporten och Excel-sammanfattningen.
               </p>
             </article>
           </div>
@@ -430,7 +454,7 @@
                   width="1920"
                   height="1080"
                   loading="lazy"
-                  alt="GridScalr med Length-verktyget aktivt, Layers-panelen öppen och kontextraden som visar mållager och alternativ för ny mätning, med Properties till höger."
+                  alt="GridScalr med Längd-verktyget aktivt, Lagerpanelen öppen och kontextraden som visar mållager och alternativ för ny mätning, med Egenskaper till höger."
                 />
                 <span class="zoom-hint">Klicka för att förstora</span>
               </a>
@@ -444,19 +468,19 @@
                 class="shot-link"
                 href="../screenshots/count-schedule.png"
                 data-lightbox
-                aria-label="Förstora skärmbild: Count schedule grupperat efter count-typ"
+                aria-label="Förstora skärmbild: antalstabell grupperat efter antalstyp"
               >
                 <img
                   src="../screenshots/count-schedule.png"
                   width="1920"
                   height="1080"
                   loading="lazy"
-                  alt="GridScalrs Markups-tabell grupperad efter count-typ med kolumnen Count type synlig och rader för dörrar, fönster och inventarier."
+                  alt="GridScalrs Markeringar-tabell grupperad efter antalstyp med kolumnen Antalstyp synlig och rader för dörrar, fönster och inventarier."
                 />
                 <span class="zoom-hint">Klicka för att förstora</span>
               </a>
               <figcaption>
-                <strong>Count schedule.</strong> Gruppera Markups-tabellen efter count-typ för att
+                <strong>Antalstabell.</strong> Gruppera Markeringar-tabellen efter antalstyp för att
                 granska en dörr-, fönster- eller inventarielista.
               </figcaption>
             </figure>
@@ -685,6 +709,14 @@ npm run tauri build</code></pre>
                 Ja. Mätning, räkning, projektfiler och exporter fungerar utan nätanslutning.
                 Skrivbordsappen använder inget konto, ingen molnlagring, ingen telemetri och ingen
                 automatisk uppdateringstjänst.
+              </p>
+            </details>
+            <details>
+              <summary>Finns GridScalr på svenska?</summary>
+              <p>
+                Ja. Gränssnittet, mängdrapporterna och exporthuvudena finns på engelska och svenska.
+                Välj System, English eller Svenska i Inställningar; ändringen slår igenom direkt och
+                tal, datum och CSV följer det valda språket.
               </p>
             </details>
             <details>

@@ -61,7 +61,7 @@ Push the tag (the **Release build** workflow starts on `v*`), or run the same
 workflow manually when rehearsing:
 
 ```bash
-VERSION=0.17.0
+VERSION=0.18.0
 git tag "v$VERSION"
 git push origin "v$VERSION"
 gh run list --repo MajorJohnDoe/gridscalr --workflow "Release build"
@@ -120,7 +120,7 @@ Set `VERSION` to the version in `package.json`, then publish from the downloaded
 artifacts:
 
 ```bash
-VERSION=0.17.0
+VERSION=0.18.0
 gh release create "v$VERSION" \
   --repo MajorJohnDoe/gridscalr \
   --title "GridScalr $VERSION" \
