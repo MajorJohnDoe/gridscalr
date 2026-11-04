@@ -6,7 +6,7 @@ Detailed planning documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.17.0** · Project-file schema: **21**
+Current version: **0.17.0** · Project-file schema: **22**
 
 1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
 packages, and tested large-project performance. The 1.0 architecture decisions are
@@ -260,7 +260,6 @@ full list.
 | --- | --- |
 | Windows code signing | Deferred for 1.0. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred for 1.0. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
-| macOS and Linux release pipelines | Planned for 0.17.0: universal macOS DMG and Linux x86_64 AppImage/deb/tar.gz. |
 | Windows and Linux ARM64 | Deferred until there is demand. |
 | Full Swedish help | Quick start and UI chrome in 1.0; full guide/workflows after 1.0. |
 | External image assets | Deferred until embedded project files become too large in practice. |
@@ -288,8 +287,6 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 - Replace full-snapshot history for large projects.
 - Split `App.ts`, `CanvasView.ts`, the stylesheet and large UI sections — [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60).
 - Add coverage, fuzzing and visual regression gates — [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61).
-- Extract UI strings into the localization catalog — [#47](https://github.com/MajorJohnDoe/gridscalr/issues/47).
-- Harden atomic saving and canonicalise protected paths — [#44](https://github.com/MajorJohnDoe/gridscalr/issues/44).
 - Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
@@ -297,8 +294,7 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 
 - The repository is public and MIT licensed. Releases are cut manually from tested
   artifacts; see [`releasing.md`](releasing.md).
-- The release workflow will expand from Windows-only to a Windows/macOS/Linux matrix
-  in 0.17.0. Until then, Linux and macOS remain source builds.
+- The release workflow builds Windows, macOS and Linux from one tag; see [`releasing.md`](releasing.md).
 - CI runs lint, frontend tests, build, UI smoke tests and canvas regressions on
   Ubuntu, plus `cargo fmt`, `cargo check` and the Rust unit tests.
 - The bilingual landing page and feature tour are generated from `site/` and

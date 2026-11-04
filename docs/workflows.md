@@ -110,11 +110,14 @@ Measurements without a page scale are excluded and reported in the dialog. Hidde
 
 ### 5. Export the procurement report
 
+Before exporting, open **Settings → Project settings… → Report metadata** and fill in the facility, client, project number, revision, author, date, report title and notes. **Choose logo…** embeds a PNG or JPEG inside the project file; the logo appears on the quantity PDF and in the Excel summary. These fields travel with the `.gridscalr` file and survive project packaging.
+
 Use **Quantities CSV**, **Quantities to Excel…** or **Quantity PDF** in the Quantities dialog, or **File → Export**.
 
-- CSV is intended for spreadsheet imports and simple procurement tools. It uses UTF-8 with BOM, comma separators and point decimals.
+- CSV is intended for spreadsheet imports and simple procurement tools. It is UTF-8 with BOM and CRLF line endings. By default the delimiter and decimal mark follow the app language (Swedish uses semicolon and decimal comma; English uses comma and point). Choose **Interchange (RFC 4180)** in Preferences for commas and points in scripts and other tools.
 - The Excel workbook is the usual handoff when the buyer wants to sort, filter or annotate the takeoff. It includes summary, category, room, page, markup and source-notes sheets, all derived from the same item data.
 - The PDF report is A4 portrait with category sections, subtotals, totals, repeated headers and page numbers.
+- Report headings and number formatting follow the selected interface language.
 
 Reports always cover every page and every category. Dialog filters only affect the live summary, not the exported report.
 
@@ -150,6 +153,7 @@ Save the `.gridscalr` project next to the drawing set. If the project or drawing
 - Rooms and categories match the procurement structure.
 - Deductions are inside the correct room and category.
 - Waste and rounding are deliberate.
+- Report metadata, revision and logo match the recipient.
 - Hidden content is intentional.
 - The exported CSV, Excel workbook or PDF matches the reviewed quantities.
 - When comparing revisions, the diff list and comparison PDF were checked before the new quantities were ordered.
