@@ -82,10 +82,18 @@ document.addEventListener(
   { capture: true },
 );
 
+function localizeBootFallback(): void {
+  const status = document.querySelector<HTMLElement>("[data-boot-status]");
+  const hint = document.querySelector<HTMLElement>(".boot-hint");
+  if (status) status.textContent = t("boot.starting");
+  if (hint) hint.textContent = t("boot.hint");
+}
+
 installDiagnosticsLogging();
 
 try {
   await applyStoredLanguage();
+  localizeBootFallback();
   const app = new App(root);
   appStarted = true;
   if (import.meta.env.DEV) {

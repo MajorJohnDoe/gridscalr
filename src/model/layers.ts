@@ -120,12 +120,12 @@ export function createLayer(
 
 export function createDefaultLayers(page = 1): Layer[] {
   return [
-    createLayer("draw", "Markups", undefined, page),
-    createLayer("measure", "Measurements", undefined, page),
+    createLayer("draw", t("layer.defaultMarkupsName"), undefined, page),
+    createLayer("measure", t("layer.defaultMeasurementsName"), undefined, page),
   ];
 }
 
-export function defaultDocument(name = "Untitled", pageCount = 1): DocumentRef {
+export function defaultDocument(name = t("app.untitledProject"), pageCount = 1): DocumentRef {
   return {
     id: makeId("doc"),
     kind: "pdf",
@@ -146,7 +146,7 @@ export function createProject(document: DocumentRef, layers?: Layer[]): Project 
   return {
     schemaVersion: SCHEMA_VERSION,
     id: makeId("project"),
-    name: document.name.replace(/\.(pdf|tiff?)$/i, "") || "Untitled",
+    name: document.name.replace(/\.(pdf|tiff?)$/i, "") || t("app.untitledProject"),
     documents: [document],
     settings: {
       ...DEFAULT_SETTINGS,
@@ -256,7 +256,8 @@ export function itemIsLocked(item: MarkupItem, layer?: Layer): boolean {
 }
 
 function availableLayerName(project: Project, kind: LayerKind): string {
-  const base = kind === "measure" ? "Measurements" : "Markups";
+  const base =
+    kind === "measure" ? t("layer.defaultMeasurementsName") : t("layer.defaultMarkupsName");
   const names = new Set(project.layers.map((layer) => layer.name));
   if (!names.has(base)) return base;
   let index = 2;

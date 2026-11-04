@@ -1,11 +1,11 @@
 import {
   SYMBOLS,
   SYMBOL_CATEGORY_COLORS,
-  SYMBOL_CATEGORY_LABELS,
   SYMBOL_CATEGORIES,
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
+  symbolSearchText,
   symbolSvgMarkup,
   type SymbolDefinition,
 } from "../model/symbols";
@@ -42,24 +42,12 @@ function rememberRecent(id: string): void {
   }
 }
 
-function searchText(symbol: SymbolDefinition): string {
-  return [
-    symbol.name,
-    symbolName(symbol.id),
-    symbolCategoryLabel(symbol.category),
-    SYMBOL_CATEGORY_LABELS[symbol.category],
-    ...symbol.keywords,
-  ]
-    .join(" ")
-    .toLocaleLowerCase();
-}
-
 function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   const category = symbolCategoryOf(symbol.id);
   const button = el("button", "symbol-tile");
   button.type = "button";
   button.dataset.symbolId = symbol.id;
-  button.dataset.search = searchText(symbol);
+  button.dataset.search = symbolSearchText(symbol);
   const active = store.ui.activeTool === "symbol" && store.ui.symbolId === symbol.id;
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));

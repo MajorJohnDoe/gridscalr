@@ -875,7 +875,13 @@ function meta(id: string, category: SymbolCategory, keywords: string[]): SymbolD
 
 export const SYMBOLS: SymbolDefinition[] = [
   meta("fire.extinguisher", "fire", ["brandsläckare", "släckare", "pulver", "skum", "co2"]),
-  meta("fire.hose", "fire", ["brandpost", "brandslang", "slangvinda", "inomhusbrandpost"]),
+  meta("fire.hose", "fire", [
+    "brandslangsvinda",
+    "brandpost",
+    "brandslang",
+    "slangvinda",
+    "inomhusbrandpost",
+  ]),
   meta("fire.blanket", "fire", ["brandfilt", "filt", "släckfilt"]),
   meta("fire.call-point", "fire", ["brandlarm", "larmknapp", "manuell larmknapp", "tryckknapp"]),
   meta("fire.smoke-detector", "fire", ["rökdetektor", "brandvarnare", "detektor", "rök"]),
@@ -889,17 +895,31 @@ export const SYMBOLS: SymbolDefinition[] = [
   ]),
   meta("egress.exit", "egress", ["utrymningsväg", "nödutgång", "utrymning", "grön gubbe", "exit"]),
   meta("egress.assembly", "egress", [
+    "återsamlingsplats",
     "uppsamlingsplats",
     "samlingsplats",
     "mötesplats",
     "utrymning",
   ]),
-  meta("egress.aed", "egress", ["hjärtstartare", "defibrillator", "aed", "första hjälpen"]),
+  meta("egress.aed", "egress", [
+    "hjärtstartare (aed)",
+    "hjärtstartare",
+    "defibrillator",
+    "aed",
+    "första hjälpen",
+  ]),
   meta("egress.first-aid", "egress", ["första hjälpen", "förband", "sjukvård", "kors"]),
   meta("hvac.supply", "hvac", ["tilluftsdon", "tilluft", "don", "diffuser", "ftx"]),
   meta("hvac.extract", "hvac", ["frånluftsdon", "frånluft", "don", "diffuser", "ftx"]),
   meta("hvac.transfer", "hvac", ["överluftsdon", "överluft", "transfer", "don"]),
-  meta("hvac.ahu", "hvac", ["ventilationsaggregat", "ftx", "aggregat", "ahu", "fläkt"]),
+  meta("hvac.ahu", "hvac", [
+    "luftbehandlingsaggregat",
+    "ventilationsaggregat",
+    "ftx",
+    "aggregat",
+    "ahu",
+    "fläkt",
+  ]),
   meta("hvac.valve", "hvac", [
     "stängningsventil",
     "avstängningsventil",
@@ -910,7 +930,7 @@ export const SYMBOLS: SymbolDefinition[] = [
   ]),
   meta("hvac.radiator", "hvac", ["radiator", "element", "värme"]),
   meta("hvac.convector", "hvac", ["konvektor", "konvektionsbatteri", "värme"]),
-  meta("hvac.cooling", "hvac", ["luftkylare", "kylbatteri", "kyla", "kylaggregat"]),
+  meta("hvac.cooling", "hvac", ["kylenhet", "luftkylare", "kylbatteri", "kyla", "kylaggregat"]),
   meta("hvac.pump", "hvac", ["cirkulationspump", "pump", "vatten", "värme"]),
   meta("hvac.heat-exchanger", "hvac", ["värmeväxlare", "värme", "växlare"]),
   meta("hvac.water-meter", "hvac", ["vattenmätare", "mätare", "vatten"]),
@@ -918,10 +938,24 @@ export const SYMBOLS: SymbolDefinition[] = [
   meta("hvac.expansion-vessel", "hvac", ["expansionskärl", "kärl", "värme", "vatten"]),
   meta("hvac.floor-drain", "hvac", ["golvbrunn", "brunn", "avlopp", "dränering"]),
   meta("hvac.oil-separator", "hvac", ["oljeavskiljare", "olja", "avskiljare", "avlopp"]),
-  meta("electrical.main-panel", "electrical", ["elcentral", "huvudcentral", "plc", "duc", "el"]),
+  meta("electrical.main-panel", "electrical", [
+    "huvudelcentral",
+    "elcentral",
+    "huvudcentral",
+    "plc",
+    "duc",
+    "el",
+  ]),
   meta("electrical.fuse-cabinet", "electrical", ["säkringsskåp", "gruppcentral", "säkring", "el"]),
-  meta("electrical.outlet-230", "electrical", ["vägguttag", "uttag", "230v", "eluttag"]),
+  meta("electrical.outlet-230", "electrical", [
+    "vägguttag 230 v",
+    "vägguttag",
+    "uttag",
+    "230v",
+    "eluttag",
+  ]),
   meta("electrical.outlet-400", "electrical", [
+    "vägguttag 400 v",
     "vägguttag",
     "uttag",
     "400v",
@@ -937,24 +971,46 @@ export const SYMBOLS: SymbolDefinition[] = [
     "säkerhet",
   ]),
   meta("electrical.access", "electrical", [
+    "passersystem",
     "passagekontroll",
     "kortläsare",
     "porttelefon",
     "passage",
   ]),
-  meta("electrical.cctv", "electrical", ["kamera", "cctv", "övervakning", "kameraövervakning"]),
+  meta("electrical.cctv", "electrical", [
+    "övervakningskamera",
+    "kamera",
+    "cctv",
+    "övervakning",
+    "kameraövervakning",
+  ]),
   meta("electrical.temperature", "electrical", [
     "temperaturgivare",
     "temperatur",
     "givare",
     "termometer",
   ]),
-  meta("electrical.co2", "electrical", ["co2-givare", "koldioxid", "co2", "givare", "ventilation"]),
+  meta("electrical.co2", "electrical", [
+    "co₂-givare",
+    "co2-givare",
+    "koldioxid",
+    "co2",
+    "givare",
+    "ventilation",
+  ]),
   meta("electrical.humidity", "electrical", ["fuktgivare", "fukt", "luftfuktighet", "givare"]),
-  meta("electrical.wifi", "electrical", ["wifi", "accesspunkt", "ap", "nätverk", "trådlös"]),
+  meta("electrical.wifi", "electrical", [
+    "wi-fi-accesspunkt",
+    "wifi",
+    "accesspunkt",
+    "ap",
+    "nätverk",
+    "trådlös",
+  ]),
   meta("building.window", "building", ["fönster", "fönsterbåge", "glas", "skadad"]),
   meta("building.door", "building", ["dörr", "dörrblad", "kräver justering", "tröskel"]),
   meta("building.damage", "building", [
+    "skademarkering",
     "skada",
     "anmärkning",
     "fukt",
@@ -968,7 +1024,13 @@ export const SYMBOLS: SymbolDefinition[] = [
   meta("waste.recycling", "waste", ["återvinning", "miljörum", "källsortering", "sortering"]),
   meta("waste.bins", "waste", ["källsorteringskärl", "sortering", "kärl", "avfall", "miljörum"]),
   meta("waste.hazardous", "waste", ["farligt avfall", "miljöfarligt", "avfall", "varning"]),
-  meta("waste.battery", "waste", ["batteri", "batteriholk", "farligt avfall", "återvinning"]),
+  meta("waste.battery", "waste", [
+    "batteriinsamling",
+    "batteri",
+    "batteriholk",
+    "farligt avfall",
+    "återvinning",
+  ]),
   meta("waste.chemical", "waste", ["kemikalieskåp", "kemikalier", "förvaring", "farligt avfall"]),
   meta("waste.grease", "waste", ["fettavskiljare", "fett", "avskiljare", "avlopp", "miljö"]),
 ];
@@ -1012,6 +1074,23 @@ export function symbolCategoryOf(id: string | undefined): SymbolCategory {
 
 export function symbolCategoryLabel(category: SymbolCategory | undefined): string {
   return category ? t(`symbolCategory.${category}` as MessageKey) : t("symbolCategory.none");
+}
+
+/**
+ * Search text for the library. English names stay in the index, and the
+ * keyword list carries the Swedish display names, so both languages match
+ * regardless of the active UI language.
+ */
+export function symbolSearchText(symbol: SymbolDefinition): string {
+  return [
+    symbol.name,
+    symbolName(symbol.id),
+    SYMBOL_CATEGORY_LABELS[symbol.category],
+    symbolCategoryLabel(symbol.category),
+    ...symbol.keywords,
+  ]
+    .join(" ")
+    .toLocaleLowerCase();
 }
 
 export function symbolCategoryColor(category: SymbolCategory | undefined): string {

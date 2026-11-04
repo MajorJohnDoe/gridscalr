@@ -166,14 +166,28 @@ export interface LanguageOption {
   label: string;
 }
 
+/** The system language as a friendly native name, or its raw tag when unsupported. */
+function systemLanguageName(): string {
+  const tags = systemLanguages();
+  for (const tag of tags) {
+    const normalized = tag.trim().toLowerCase().replace(/_/g, "-");
+    if (!normalized) continue;
+    const base = normalized.split("-")[0];
+    const match = selectableLocales().find(
+      (descriptor) =>
+        descriptor.id.toLowerCase() === normalized || descriptor.id.toLowerCase() === base,
+    );
+    if (match) return match.nativeName;
+  }
+  return tags[0] ?? DEFAULT_LOCALE;
+}
+
 /** Options for the Preferences language selector, including System. */
 export function languageOptions(): LanguageOption[] {
-  const systemLanguage =
-    typeof navigator === "undefined" ? DEFAULT_LOCALE : (navigator.language ?? DEFAULT_LOCALE);
   return [
     {
       value: "system",
-      label: translate(locale, "language.system", { language: systemLanguage }),
+      label: translate(locale, "language.system", { language: systemLanguageName() }),
     },
     ...selectableLocales().map((descriptor) => ({
       value: descriptor.id as Locale,
