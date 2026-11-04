@@ -8,6 +8,7 @@ import {
   type ReferenceSession,
 } from "../compare/referenceSession";
 import { pickPdf, pickProject, saveBinaryFile } from "../io/platform";
+import { describeError } from "../io/platformError";
 import { sourceDocumentPaths } from "../io/projectFile";
 import { totalPageCount } from "../model/documents";
 import type { PageSize } from "../model/types";
@@ -190,7 +191,7 @@ export class ReferenceController {
       if (!picked) return;
       await this.loadRevisionReference(picked.text, picked.path);
     } catch (error) {
-      await messageDialog(t("reference.compareFailed"), errorMessage(error), "warning");
+      await messageDialog(t("reference.compareFailed"), describeError(error), "warning");
     }
   }
 
@@ -201,7 +202,7 @@ export class ReferenceController {
       if (!picked) return;
       await this.loadDrawingReference(picked.bytes, picked.name, picked.path);
     } catch (error) {
-      await messageDialog(t("reference.openDrawingFailed"), errorMessage(error), "warning");
+      await messageDialog(t("reference.openDrawingFailed"), describeError(error), "warning");
     }
   }
 
@@ -212,7 +213,7 @@ export class ReferenceController {
     try {
       session = await openReferenceSession(text, projectPath);
     } catch (error) {
-      await messageDialog(t("reference.openRevisionFailed"), errorMessage(error), "warning");
+      await messageDialog(t("reference.openRevisionFailed"), describeError(error), "warning");
       return;
     }
     await this.enterSession(session, "revision");
@@ -229,7 +230,7 @@ export class ReferenceController {
     try {
       session = await openPdfReferenceSession(bytes, name, path);
     } catch (error) {
-      await messageDialog(t("reference.openDrawingFailed"), errorMessage(error), "warning");
+      await messageDialog(t("reference.openDrawingFailed"), describeError(error), "warning");
       return;
     }
     await this.enterSession(session, "drawing");
@@ -351,7 +352,7 @@ export class ReferenceController {
       })
       .catch((error) => {
         if (this.session === session) {
-          toast(t("reference.readPageFailed", { page, detail: errorMessage(error) }), "warning");
+          toast(t("reference.readPageFailed", { page, detail: describeError(error) }), "warning");
         }
         return undefined;
       })
@@ -444,7 +445,7 @@ export class ReferenceController {
       );
       if (path) toast(t("reference.comparisonExported"), "success");
     } catch (error) {
-      await messageDialog(t("reference.comparisonExportFailed"), errorMessage(error), "warning");
+      await messageDialog(t("reference.comparisonExportFailed"), describeError(error), "warning");
     }
   }
 
@@ -461,9 +462,4 @@ export class ReferenceController {
     this.splitView.destroy();
     this.view.destroy();
   }
-}
-
-function errorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message;
-  return String(error);
 }

@@ -3,6 +3,7 @@ import type { DrawingExportOptions } from "../model/export";
 import type { Project } from "../model/types";
 import { serializeProject, sourceDocumentPaths } from "../io/projectFile";
 import { saveBinaryFile, saveTextFile } from "../io/platform";
+import { describeError } from "../io/platformError";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { serializeQuantityCsv } from "../report/csv";
 import { serializeMarkupCsv } from "../report/markupCsv";
@@ -142,10 +143,6 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
     );
     if (path) toast(t("export.pngExported"), "success");
   } catch (error) {
-    await messageDialog(
-      t("export.failedTitle"),
-      error instanceof Error ? error.message : String(error),
-      "warning",
-    );
+    await messageDialog(t("export.failedTitle"), describeError(error), "warning");
   }
 }

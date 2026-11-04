@@ -211,7 +211,11 @@ export function messageDialog(
   const body = el("div", "modal-message-row");
   const iconWrap = el("div", `modal-callout ${kind}`);
   iconWrap.innerHTML = icon(kind === "warning" ? "warning" : "info", 20);
-  body.append(iconWrap, el("p", "modal-message", message));
+  const text = el("div", "modal-message-text");
+  for (const paragraph of message.split(/\n{2,}/)) {
+    text.append(el("p", "modal-message", paragraph));
+  }
+  body.append(iconWrap, text);
   return showModal({
     title,
     body,

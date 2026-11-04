@@ -291,7 +291,8 @@ src/model/stamps.ts        stamp preset normalization and defaults
 src/io/stampDefaults.ts    global stamp presets for new projects
 src/io/layerDefaults.ts    local default colours for new measurement and drawing layers
 src/io/platform.ts         Tauri/browser file I/O, dialogs, recents, hashing entry point
-src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks and Tauri file commands
+src/io/platformError.ts    structured Rust command error codes to localized messages
+src-tauri/src/commands.rs  atomic file replacement, canonical source-path checks, structured command errors and Tauri file commands
 src-tauri/src/package.rs   streaming ZIP package create/inspect/extract with manifest checks
 docs/user-guide.md         in-app user guide
 docs/workflows.md          role-based workflows for site work and procurement

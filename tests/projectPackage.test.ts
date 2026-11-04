@@ -3,6 +3,7 @@ import { createDefaultLayers, createProject, defaultDocument } from "../src/mode
 import type { DocumentRef, Project } from "../src/model/types";
 import {
   DEFAULT_PACKAGE_OPTIONS,
+  describePackageFailure,
   documentArchivePaths,
   normalizePackageFailure,
   parsePackageManifest,
@@ -204,6 +205,9 @@ describe("project package model", () => {
 
   it("normalises structured Rust failures", () => {
     expect(normalizePackageFailure({ kind: "cancelled" })).toEqual({ kind: "cancelled" });
+    expect(normalizePackageFailure({ kind: "sourceOverwrite" })).toEqual({
+      kind: "sourceOverwrite",
+    });
     expect(
       normalizePackageFailure({
         kind: "missingSource",
@@ -217,6 +221,24 @@ describe("project package model", () => {
       kind: "unknown",
       message: "boom",
     });
+  });
+
+  it("localizes the package failure headline and keeps the technical detail", () => {
+    expect(describePackageFailure({ kind: "sourceOverwrite" })).toBe(
+      "GridScalr will not overwrite a source drawing. Choose a different file name.",
+    );
+    expect(
+      describePackageFailure({
+        kind: "invalidPackage",
+        message: "The package manifest is not valid JSON: unexpected end",
+      }),
+    ).toBe("The package is invalid.\n\nThe package manifest is not valid JSON: unexpected end");
+    expect(describePackageFailure({ kind: "io", message: "permission denied" })).toBe(
+      "The package operation failed.\n\npermission denied",
+    );
+    expect(describePackageFailure({ kind: "invalidPackage", message: "" })).toBe(
+      "The package is invalid.",
+    );
   });
 
   it("assigns a fresh suffix when a name is already used", () => {

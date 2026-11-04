@@ -165,6 +165,7 @@ import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
 import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
+import { describeError } from "../io/platformError";
 
 export interface CanvasHooks {
   getRenderer: () => PdfRenderer | null;
@@ -2793,11 +2794,7 @@ export class CanvasView {
     } catch (error) {
       if (isCancellation(error)) return;
       if (generation === this.renderGeneration) {
-        this.hooks.onError?.(
-          t("canvas.renderPageFailed", {
-            error: error instanceof Error ? error.message : String(error),
-          }),
-        );
+        this.hooks.onError?.(t("canvas.renderPageFailed", { error: describeError(error) }));
       }
     } finally {
       if (generation === this.renderGeneration) {
