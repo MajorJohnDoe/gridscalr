@@ -25,6 +25,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Ellipse | `O` |
 | Highlight | `G` |
 | Text note | `T` |
+| Text box | `X` |
 | Revision cloud | `D` |
 | Callout | `N` |
 | Stamp | `S` |

@@ -221,6 +221,7 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     store.ui.activeTool === "ellipse" ||
     store.ui.activeTool === "highlight" ||
     store.ui.activeTool === "text" ||
+    store.ui.activeTool === "textbox" ||
     store.ui.activeTool === "cloud" ||
     store.ui.activeTool === "callout" ||
     store.ui.activeTool === "stamp" ||
@@ -247,9 +248,11 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     }
     width.title = t("context.strokeWidth");
     width.addEventListener("change", () => store.setStyle({ strokeWidth: Number(width.value) }));
-    controls.append(color, width);
+    controls.append(color);
+    if (store.ui.activeTool !== "textbox") controls.append(width);
     if (
       store.ui.activeTool === "text" ||
+      store.ui.activeTool === "textbox" ||
       store.ui.activeTool === "cloud" ||
       store.ui.activeTool === "callout" ||
       store.ui.activeTool === "stamp" ||

@@ -91,7 +91,7 @@ export function selectionSection(
         `${symbolCategoryLabel(symbolCategoryOf(item.symbolId))} · ${inspectionStatusLabel(item.status)}`,
       ),
     );
-  } else if (item.kind === "text") {
+  } else if (item.kind === "text" || item.kind === "textbox") {
     card.append(el("div", "selection-secondary", t("inspector.textAnnotation")));
   } else if (item.kind === "image") {
     const asset = imageAssetForItem(project, item);
@@ -502,6 +502,7 @@ export function selectionSection(
 
   if (
     item.kind === "text" ||
+    item.kind === "textbox" ||
     item.kind === "cloud" ||
     item.kind === "callout" ||
     item.kind === "stamp" ||
@@ -525,6 +526,24 @@ export function selectionSection(
     edit.addEventListener("click", actions.editSelectedText);
     textField.append(edit);
     section.append(textField);
+  }
+
+  if (item.kind === "textbox") {
+    const backgroundRow = el("label", "check-row");
+    const background = el("input");
+    background.type = "checkbox";
+    background.checked = item.textBackground === "white";
+    background.disabled = locked;
+    background.addEventListener("change", () => {
+      store.mutate((project) => {
+        const target = findItem(project, item.id)?.item;
+        if (!target) return;
+        if (background.checked) target.textBackground = "white";
+        else delete target.textBackground;
+      }, "change");
+    });
+    backgroundRow.append(background, el("span", "", t("inspector.whiteBackground")));
+    section.append(backgroundRow);
   }
 
   if (item.kind === "callout" || item.kind === "cloud") {
@@ -710,7 +729,9 @@ export function selectionSection(
       el(
         "span",
         "field-label",
-        item.kind === "text" ? t("inspector.textColour") : t("toolFlyout.colour"),
+        item.kind === "text" || item.kind === "textbox"
+          ? t("inspector.textColour")
+          : t("toolFlyout.colour"),
       ),
     );
     const colorInput = el("input", "color-swatch");
@@ -729,6 +750,7 @@ export function selectionSection(
     const sizeField = el("label", "field");
     if (
       item.kind === "text" ||
+      item.kind === "textbox" ||
       item.kind === "cloud" ||
       item.kind === "callout" ||
       item.kind === "stamp" ||
@@ -833,6 +855,7 @@ export function selectionSection(
 
   if (
     item.kind === "text" ||
+    item.kind === "textbox" ||
     item.kind === "rect" ||
     item.kind === "ellipse" ||
     item.kind === "image" ||

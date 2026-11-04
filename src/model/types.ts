@@ -33,7 +33,8 @@ export type DrawingKind =
   | "callout"
   | "stamp"
   | "delta"
-  | "symbol";
+  | "symbol"
+  | "textbox";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -174,6 +175,10 @@ export interface MarkupItem {
   textBoxHeight?: number;
   /** Text colour for annotation text boxes. Missing uses the default light text. */
   textColor?: string;
+  /** Text boxes only. Missing means transparent. */
+  textBackground?: "none" | "white";
+  /** Text boxes only: inner padding in PDF points. Missing means 4 pt. */
+  padding?: number;
   /** Text, callout and cloud text: bold weight. Missing means regular. */
   textBold?: boolean;
   /** Text, callout and cloud text: underline. Missing means no underline. */

@@ -159,6 +159,14 @@ function hitItem(
     return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
   }
 
+  if (item.kind === "textbox") {
+    if (item.points.length < 2) return null;
+    const rect = expandRect(item.points[0], item.points[1]);
+    return pointInRect(localPoint, rect)
+      ? { distance: 0, vertexIndex: -1, segmentIndex: -1 }
+      : null;
+  }
+
   if (item.kind === "text") {
     const bounds = itemLocalBounds(item);
     if (

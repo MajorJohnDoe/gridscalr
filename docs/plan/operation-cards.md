@@ -1,6 +1,6 @@
 # Operation cards and schematic sheets
 
-**Status:** agreed 2026-11-04. Phases 0 and 1 are complete; Phase 2 has not started.
+**Status:** agreed 2026-11-04. Phases 0–2 are complete; Phase 3 has not started.
 **Scope:** an authoring workflow for operation cards built from blank sheet templates,
 starting with the title-block frame and the data-summary table.
 **Naming:** code, paths and identifiers use English. User-facing Swedish labels come
@@ -549,6 +549,19 @@ Outcome:
 - Canvas and PDF export parity.
 
 Acceptance: a description page with three columns of wrapped text exports identically.
+
+Outcome:
+
+- `kind: "textbox"` stores two opposite corners, wrapped text, font size, bold,
+  underline, alignment, text colour, an optional white background and padding.
+- Dragging with the Text box tool (`X`) creates the box and opens the inline editor;
+  `Enter` inserts a line break, `Ctrl/Cmd+Enter` or clicking outside commits.
+- The inline strip edits size, colour, bold, underline and alignment for the box.
+  Properties adds a white-background toggle, rotation and a **Edit text…** action.
+- Canvas and PDF export use the same word wrapping. Overflow is visible on the canvas
+  with a red dashed outline and is never silently clipped in the export.
+- Tests cover wrapping, explicit line breaks, long words, project round trips and
+  text-box text in the exported PDF.
 
 ### Phase 3 — data-summary sheet
 

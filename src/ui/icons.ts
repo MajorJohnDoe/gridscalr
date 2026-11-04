@@ -22,6 +22,7 @@ const paths: Record<string, string> = {
   ellipse: '<ellipse cx="12" cy="12" rx="8.5" ry="6.5"/>',
   highlight: '<path d="m6 16 8.5-8.5 3 3L9 19l-4 1 1-4Z"/><path d="M4 21h9" opacity=".6"/>',
   text: '<path d="M5 6V4h14v2M12 4v16M8 20h8"/>',
+  textbox: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 9h10M7 13h7"/>',
   eye: '<path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/>',
   eyeOff:
     '<path d="M3 3l18 18"/><path d="M10.6 6.2A10 10 0 0 1 12 6c6 0 9.5 6 9.5 6a15 15 0 0 1-3.1 3.6M6.2 7.4A16 16 0 0 0 2.5 12s3.5 6 9.5 6a10 10 0 0 0 4-.8"/>',

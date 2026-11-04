@@ -34,6 +34,7 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
     case "highlight":
       return "highlight";
     case "text":
+    case "textbox":
       return "text";
     case "image":
       return "image";

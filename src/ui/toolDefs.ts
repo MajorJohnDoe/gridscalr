@@ -165,6 +165,14 @@ export const TOOLS: ToolDef[] = [
     group: "draw",
   },
   {
+    id: "textbox",
+    label: "tool.textbox",
+    icon: "textbox",
+    shortcut: TOOL_SHORTCUTS.textbox,
+    hint: "tool.textbox.hint",
+    group: "draw",
+  },
+  {
     id: "cloud",
     label: "tool.cloud",
     icon: "cloud",

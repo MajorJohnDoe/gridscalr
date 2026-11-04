@@ -54,6 +54,7 @@ export type Draft =
   | { kind: "line"; start: Point; current: Point }
   | { kind: "arrow"; start: Point; current: Point }
   | { kind: "rect"; start: Point; current: Point }
+  | { kind: "textbox"; start: Point; current: Point }
   | { kind: "ellipse"; start: Point; current: Point }
   | { kind: "highlight-rect"; start: Point; current: Point }
   | { kind: "area-rect"; start: Point; current: Point }
@@ -484,9 +485,20 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
     ctx.stroke();
     if (startHead) drawArrowHead(ctx, start, startHead, scene.style.color);
     if (head) drawArrowHead(ctx, current, head, scene.style.color);
-  } else if (draft.kind === "rect" || draft.kind === "highlight-rect") {
+  } else if (draft.kind === "rect" || draft.kind === "textbox" || draft.kind === "highlight-rect") {
     const rect = expandRect(start, current);
-    if (draft.kind === "highlight-rect") {
+    if (draft.kind === "textbox") {
+      ctx.save();
+      ctx.globalAlpha *= 0.7;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.restore();
+      ctx.save();
+      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = scene.style.color;
+      ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.restore();
+    } else if (draft.kind === "highlight-rect") {
       ctx.save();
       ctx.globalAlpha = 0.3;
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);

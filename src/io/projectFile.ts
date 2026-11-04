@@ -73,6 +73,7 @@ const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "stamp",
   "delta",
   "symbol",
+  "textbox",
 ]);
 
 const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
@@ -317,6 +318,13 @@ function normalizeItem(
     if (points.length < 2) return null;
     points.length = 2;
   }
+  if (raw.kind === "textbox") {
+    if (points.length < 2) return null;
+    if (points.length > 2) points.length = 2;
+    const width = Math.abs(points[1].x - points[0].x);
+    const height = Math.abs(points[1].y - points[0].y);
+    if (width < 2 || height < 2) return null;
+  }
   if (raw.kind === "arc" || raw.kind === "angle") {
     if (points.length < 3) return null;
     points.length = 3;
@@ -384,12 +392,23 @@ function normalizeItem(
     (raw.kind === "cloud" ||
       raw.kind === "callout" ||
       raw.kind === "stamp" ||
-      raw.kind === "delta") &&
+      raw.kind === "delta" ||
+      raw.kind === "textbox") &&
     typeof raw.textColor === "string" &&
     raw.textColor
       ? raw.textColor
       : undefined;
-  const supportsTextStyle = raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout";
+  const textBackground =
+    raw.kind === "textbox" && raw.textBackground === "white" ? ("white" as const) : undefined;
+  const padding =
+    raw.kind === "textbox" &&
+    typeof raw.padding === "number" &&
+    Number.isFinite(raw.padding) &&
+    raw.padding >= 0
+      ? Math.min(40, raw.padding)
+      : undefined;
+  const supportsTextStyle =
+    raw.kind === "text" || raw.kind === "cloud" || raw.kind === "callout" || raw.kind === "textbox";
   const textBold = supportsTextStyle && raw.textBold === true ? true : undefined;
   const textUnderline = supportsTextStyle && raw.textUnderline === true ? true : undefined;
   const textAlign: TextAlign | undefined =
@@ -410,7 +429,10 @@ function normalizeItem(
   const fontSize =
     typeof raw.fontSize === "number" && Number.isFinite(raw.fontSize) && raw.fontSize > 0
       ? Math.max(0.5, Math.min(300, raw.fontSize))
-      : raw.kind === "callout" || raw.kind === "cloud" || raw.kind === "stamp"
+      : raw.kind === "callout" ||
+          raw.kind === "cloud" ||
+          raw.kind === "stamp" ||
+          raw.kind === "textbox"
         ? 12
         : raw.kind === "delta"
           ? 14
@@ -430,7 +452,9 @@ function normalizeItem(
           ? raw.color
           : raw.kind === "image"
             ? "#7aa2f7"
-            : "#4cc9f0",
+            : raw.kind === "textbox"
+              ? "#1a2024"
+              : "#4cc9f0",
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
     fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
@@ -485,6 +509,8 @@ function normalizeItem(
     textBoxWidth,
     textBoxHeight,
     textColor,
+    textBackground,
+    padding,
     textBold,
     textUnderline,
     textAlign,

@@ -324,6 +324,19 @@ Choose **Text** (`T`) and click the plan. The inline editor accepts multiple lin
 
 The floating strip beside the editor sets font size, colour, rotation, bold, underline, and left/center/right alignment. Text notes and annotation boxes are drawn at the same weight on the canvas and in exports; bold text uses the bold export font. Double-click an existing text note with the Select or Text tool to reopen it.
 
+### Text boxes
+
+Choose **Text box** (`X`) and drag a rectangle. The text wraps to the box width, so several boxes can form columns without manual line breaks.
+
+- `Enter` inserts a line break. `Ctrl/Cmd+Enter`, the done button, or clicking outside commits the text.
+- `Esc` cancels the edit.
+- The strip sets font size, colour, bold, underline and left/center/right alignment for the whole box.
+- A white background is on by default; turn it off in Properties. Text colour and font size are also editable there.
+- Drag the box handles to resize it; the text reflows. If the text becomes taller than the box, a red dashed outline warns you and the text is never silently clipped.
+- Double-click an existing text box with the Select tool to reopen it.
+
+Text boxes are useful for function descriptions, notes over drawings and multi-column text on a sheet.
+
 ### Resize and rotate
 
 Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal handles.

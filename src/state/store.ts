@@ -69,6 +69,7 @@ export type ToolId =
   | "ellipse"
   | "highlight"
   | "text"
+  | "textbox"
   | "cloud"
   | "callout"
   | "stamp"
@@ -158,6 +159,7 @@ export function toolLayerKind(tool: ToolId): LayerKind | null {
     case "ellipse":
     case "highlight":
     case "text":
+    case "textbox":
     case "cloud":
     case "callout":
     case "stamp":

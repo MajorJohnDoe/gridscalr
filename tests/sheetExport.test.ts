@@ -43,6 +43,27 @@ describe("template sheet export", () => {
     documentRef.template!.fields["title.card"] = "56-01-01";
     documentRef.template!.fields["title.system"] = "Värmesystem";
 
+    const now = "2026-11-04T00:00:00.000Z";
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.push({
+      id: "item_textbox",
+      page: 1,
+      kind: "textbox",
+      points: [
+        { x: 60, y: 60 },
+        { x: 320, y: 160 },
+      ],
+      color: "#1a2024",
+      strokeWidth: 1,
+      text: "Box text",
+      textColor: "#1a2024",
+      textBackground: "white",
+      padding: 4,
+      fontSize: 12,
+      createdAt: now,
+      updatedAt: now,
+    });
+
     const renderer = {
       getDocumentData: async () => staticBytes,
       getPage: async () => ({
@@ -64,5 +85,6 @@ describe("template sheet export", () => {
     expect(text).toContain("56-01-01");
     expect(text).toContain("Värmesystem");
     expect(text).toContain("Export sheet");
+    expect(text).toContain("Box text");
   });
 });

@@ -110,6 +110,7 @@ import {
   TEXT_UNDERLINE_WIDTH,
   textItemLayout,
   textLineX,
+  wrapText,
 } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
@@ -1085,7 +1086,13 @@ export class CanvasView {
       return;
     }
 
-    if (tool === "line" || tool === "arrow" || tool === "rect" || tool === "ellipse") {
+    if (
+      tool === "line" ||
+      tool === "arrow" ||
+      tool === "rect" ||
+      tool === "ellipse" ||
+      tool === "textbox"
+    ) {
       const snaps = tool === "line" || tool === "arrow";
       const snapped = snaps ? this.snapPoint(page) : page;
       if (!snaps) this.snap = null;
@@ -1503,6 +1510,7 @@ export class CanvasView {
         this.draft.current = current;
       } else if (
         this.draft.kind === "rect" ||
+        this.draft.kind === "textbox" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
@@ -1723,7 +1731,12 @@ export class CanvasView {
         x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
         y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
-    } else if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
+    } else if (
+      item.kind === "rect" ||
+      item.kind === "textbox" ||
+      item.kind === "ellipse" ||
+      item.kind === "image"
+    ) {
       item.points = [
         { x: scaled.min.x + shiftX, y: scaled.min.y + shiftY },
         { x: scaled.max.x + shiftX, y: scaled.max.y + shiftY },
@@ -1749,6 +1762,7 @@ export class CanvasView {
     if (delta === 0) return;
     if (
       item.kind === "text" ||
+      item.kind === "textbox" ||
       item.kind === "rect" ||
       item.kind === "ellipse" ||
       item.kind === "image" ||
@@ -1810,6 +1824,7 @@ export class CanvasView {
         this.draft.kind === "line" ||
         this.draft.kind === "arrow" ||
         this.draft.kind === "rect" ||
+        this.draft.kind === "textbox" ||
         this.draft.kind === "ellipse" ||
         this.draft.kind === "highlight-rect"
       ) {
@@ -1923,6 +1938,10 @@ export class CanvasView {
 
     if (hit.item.kind === "text") {
       this.editors.startTextEdit(hit.item, hit.layer);
+      return;
+    }
+    if (hit.item.kind === "textbox") {
+      this.editors.startTextBoxEdit(hit.item, hit.layer);
       return;
     }
     if (hit.item.kind === "cloud") {
@@ -2162,6 +2181,10 @@ export class CanvasView {
     store.setTool("select");
     if (found.item.kind === "text") {
       this.editors.startTextEdit(found.item, found.layer);
+      return;
+    }
+    if (found.item.kind === "textbox") {
+      this.editors.startTextBoxEdit(found.item, found.layer);
       return;
     }
     if (found.item.kind === "cloud") {
@@ -2415,6 +2438,7 @@ export class CanvasView {
           (kind === "highlight" && highlightShape !== "stroke"));
       const textLike =
         kind === "text" ||
+        kind === "textbox" ||
         kind === "cloud" ||
         kind === "callout" ||
         kind === "stamp" ||
@@ -2427,11 +2451,13 @@ export class CanvasView {
         points: points.map((p) => ({ ...p })),
         color: isMeasure
           ? layer.color
-          : kind === "symbol"
-            ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
-            : kind === "stamp"
-              ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-              : (cloudPreset ?? style.color),
+          : kind === "textbox"
+            ? "#1a2024"
+            : kind === "symbol"
+              ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
+              : kind === "stamp"
+                ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
+                : (cloudPreset ?? style.color),
         strokeWidth: isMeasure ? DEFAULT_MEASUREMENT_STROKE_WIDTH : style.strokeWidth,
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
@@ -2451,6 +2477,9 @@ export class CanvasView {
               ? 0.35
               : undefined,
         text: options.text,
+        textColor: kind === "textbox" ? "#1a2024" : undefined,
+        textBackground: kind === "textbox" ? "white" : undefined,
+        padding: kind === "textbox" ? 4 : undefined,
         fontSize: textLike ? style.fontSize : undefined,
         highlightShape,
         arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
@@ -2518,6 +2547,7 @@ export class CanvasView {
       (this.draft.kind !== "line" &&
         this.draft.kind !== "arrow" &&
         this.draft.kind !== "rect" &&
+        this.draft.kind !== "textbox" &&
         this.draft.kind !== "ellipse" &&
         this.draft.kind !== "highlight-rect")
     ) {
@@ -2532,6 +2562,11 @@ export class CanvasView {
     }
     if (kind === "highlight-rect") {
       this.createItem("highlight", [start, current], { highlightShape: "rectangle" });
+    } else if (kind === "textbox") {
+      const created = this.createItem("textbox", [start, current], { text: "" });
+      const project = store.project;
+      const found = created && project ? findItem(project, created.itemId) : undefined;
+      if (found) this.editors.startTextBoxEdit(found.item, found.layer);
     } else {
       this.createItem(kind, [start, current]);
     }
@@ -2695,6 +2730,7 @@ export class CanvasView {
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
+      this.draft.kind === "textbox" ||
       this.draft.kind === "ellipse" ||
       this.draft.kind === "highlight-rect"
     ) {
@@ -2710,6 +2746,7 @@ export class CanvasView {
       this.draft.kind === "line" ||
       this.draft.kind === "arrow" ||
       this.draft.kind === "rect" ||
+      this.draft.kind === "textbox" ||
       this.draft.kind === "ellipse" ||
       this.draft.kind === "highlight-rect" ||
       this.draft.kind === "area-rect" ||
@@ -3134,6 +3171,7 @@ export class CanvasView {
     const rotatesInPlace =
       rotation !== 0 &&
       (item.kind === "text" ||
+        item.kind === "textbox" ||
         item.kind === "rect" ||
         item.kind === "ellipse" ||
         item.kind === "image" ||
@@ -3572,6 +3610,52 @@ export class CanvasView {
           ctx.fillText(item.label, center.x, center.y + size * 0.62);
         }
         ctx.restore();
+        break;
+      }
+      case "textbox": {
+        if (points.length < 2) break;
+        const rect = expandRect(points[0], points[1]);
+        const fontSize = Math.max(0.3, clampTextSize(item.fontSize ?? 12) * zoom);
+        const padding = Math.max(0, (item.padding ?? 4) * zoom);
+        const lineHeight = fontSize * 1.28;
+        const color = item.textColor ?? item.color;
+        ctx.font = `${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+
+        if (item.textBackground === "white") {
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+        }
+
+        const innerWidth = Math.max(1, rect.width - padding * 2);
+        const lines = wrapText(item.text ?? "", innerWidth, (line) => ctx.measureText(line).width);
+        ctx.fillStyle = color;
+        lines.forEach((line, index) => {
+          if (!line) return;
+          const lineWidth = ctx.measureText(line).width;
+          const x =
+            rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, lineWidth);
+          const y = rect.y + padding + index * lineHeight;
+          ctx.fillText(line, x, y);
+          if (item.textUnderline) {
+            ctx.strokeStyle = color;
+            ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
+            const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
+            ctx.beginPath();
+            ctx.moveTo(x, underlineY);
+            ctx.lineTo(x + lineWidth, underlineY);
+            ctx.stroke();
+          }
+        });
+
+        if (lines.length * lineHeight + padding * 2 > rect.height) {
+          ctx.save();
+          ctx.strokeStyle = "#d3202a";
+          ctx.setLineDash([5, 3]);
+          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+          ctx.restore();
+        }
         break;
       }
       case "text": {
