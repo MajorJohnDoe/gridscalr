@@ -332,8 +332,9 @@ Choose **Text box** (`Shift+T`) and drag a rectangle. The text wraps to the box 
 - `Enter` inserts a line break. `Ctrl/Cmd+Enter`, the done button, or clicking outside commits the text.
 - `Esc` cancels the edit.
 - The strip sets font size, colour, bold, italic, underline and left/center/right alignment for the whole box.
-- Select a range inside the editor and use the same strip controls to format only that range. Bold, italic, underline, size and colour are stored per run, so one word can stand out without changing the rest of the box.
-- A white background is on by default; turn it off in Properties. Text colour and font size are also editable there.
+- Select a range inside the editor and use the same strip controls to format only that range. The editor shows the formatting live while you type. Bold, italic, underline, size and colour are stored per run, so one word can stand out without changing the rest of the box.
+- Click the same control again on the selection to remove the formatting.
+- Text boxes are transparent by default. Turn on **White background** in Properties when the text needs to sit on a solid fill; text colour and font size are also editable there.
 - Drag the box handles to resize it; the text reflows. If the text becomes taller than the box, a red dashed outline warns you and the text is never silently clipped.
 - Double-click an existing text box with the Select tool to reopen it.
 - Older text boxes without formatted ranges open exactly as before and are upgraded when you edit them.
@@ -344,13 +345,13 @@ Text boxes are useful for function descriptions, notes over drawings and multi-c
 
 Choose **Pipe / duct** (`F`) and click the vertices of the run. Segments stay horizontal or vertical unless you hold `Shift` for a free angle. The tool snaps to a 5 mm grid and to existing item endpoints, midpoints, rail rows and intersections. `Enter` or a double-click finishes the run; `Esc` cancels it.
 
-The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. Use the **Edit line types…** button beside the selector to rename, recolour, reweight, add or remove media classes. Existing runs keep their stored style, so editing or deleting a class never restyles an old drawing.
+The context bar selects the media class: supply air, extract air, exhaust air, outdoor air, heating flow/return, district heating flow/return, domestic water, cooling, control cable and bus. The class sets the colour, width and dash at creation. The same context bar also has direct **Line colour**, **Stroke width** and **Line style** controls for the next run, so a one-off colour, weight or dashed pipe does not need a new media class. Use **Edit line types…** beside the selector to rename, recolour, reweight, add or remove media classes. Existing runs keep their stored style, so editing or deleting a class never restyles an old drawing.
 
 When visible objects extend past the sheet’s drawing area, the context bar shows **Outside drawing area**. Click it to scale and centre every unlocked, visible item inside the area. The fit is one undoable change; locked items are left where they are.
 
 ### I/O rails
 
-Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Select it and choose **Edit rail…** in Properties to:
+Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Double-click the rail, use **Edit rail…** in Properties, or right-click it to open the rail dialog.
 
 - Load the `PLC/DI/AI/DU/AU` or `M-Bus/DUC/DI/AI/DU/AU` preset.
 - Rename rows and edit their legends.

@@ -196,6 +196,8 @@ try {
     ["o", "Ellipse"],
     ["g", "Highlight"],
     ["t", "Text"],
+    ["f", "Pipe / duct"],
+    ["b", "Symbol"],
     ["d", "Revision cloud"],
     ["n", "Callout"],
     ["s", "Stamp"],
@@ -1235,24 +1237,54 @@ try {
   const textEditor = page.locator(".canvas-text-editor-input");
   await textEditor.waitFor();
   await textEditor.fill("Alpha Beta");
-  await textEditor.evaluate((element) => {
-    const textarea = element;
-    textarea.focus();
-    textarea.setSelectionRange(0, 5);
-    textarea.dispatchEvent(new Event("select", { bubbles: true }));
-  });
-  await page.locator('.inline-style-strip button[title="Bold"]').click();
+  const selectFirstWord = () =>
+    textEditor.evaluate((element) => {
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const node = walker.nextNode();
+      if (!node) return;
+      const range = document.createRange();
+      range.setStart(node, 0);
+      range.setEnd(node, 5);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      element.dispatchEvent(new Event("keyup", { bubbles: true }));
+    });
+  const selectionWeight = () =>
+    page.evaluate(() => {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return null;
+      const node = selection.getRangeAt(0).startContainer;
+      const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      return element ? getComputedStyle(element).fontWeight : null;
+    });
+  await selectFirstWord();
+  const boldButton = page.locator('.inline-style-strip button[title="Bold"]');
+  await boldButton.click();
+  assert.equal(
+    await selectionWeight(),
+    "700",
+    "bold should be visible inside the editor before committing",
+  );
+  await boldButton.click();
+  assert.equal(
+    await selectionWeight(),
+    "400",
+    "clicking bold again should remove the run formatting",
+  );
+  await boldButton.click();
   await page.locator(".inline-style-strip .is-primary").click();
   await textEditor.waitFor({ state: "detached" });
   const richBox = await page.evaluate(() => {
     const item = window.__gridscalr.store.project.layers
       .flatMap((layer) => layer.items)
       .find((entry) => entry.kind === "textbox" && entry.text === "Alpha Beta");
-    return item?.runs ?? null;
+    return item ? { runs: item.runs ?? null, background: item.textBackground ?? null } : null;
   });
-  assert.equal(richBox?.[0]?.text, "Alpha");
-  assert.equal(richBox?.[0]?.bold, true, "the selected word should become bold");
-  assert.equal(richBox?.map((run) => run.text).join(""), "Alpha Beta");
+  assert.equal(richBox?.runs?.[0]?.text, "Alpha");
+  assert.equal(richBox?.runs?.[0]?.bold, true, "the selected word should become bold");
+  assert.equal(richBox?.runs?.map((run) => run.text).join(""), "Alpha Beta");
+  assert.equal(richBox?.background, null, "new text boxes should start transparent");
 
   // Schematic set filter, header placement and the optional free-text tag.
   await page.keyboard.press("b");

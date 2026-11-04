@@ -150,6 +150,7 @@ import type {
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
 import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
+import { openRailDialog } from "../features/schematics/ui/railDialog";
 import {
   clampSymbolSize,
   inspectionStatusColor,
@@ -1994,6 +1995,10 @@ export class CanvasView {
       this.editors.startTextBoxEdit(hit.item, hit.layer);
       return;
     }
+    if (hit.item.kind === "rail") {
+      void openRailDialog(hit.item.id);
+      return;
+    }
     if (hit.item.kind === "cloud") {
       this.editors.startCloudTextEdit(hit.item, hit.layer);
       return;
@@ -2510,10 +2515,7 @@ export class CanvasView {
         kind === "stamp" ||
         kind === "delta";
       const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-      const lineType =
-        kind === "polyline"
-          ? project.lineTypes.find((entry) => entry.id === store.ui.lineTypeId)
-          : undefined;
+      const lineStyle = kind === "polyline" ? store.ui.lineStyle : undefined;
       const item: MarkupItem = {
         id: makeId("item"),
         page: projectPage,
@@ -2524,7 +2526,7 @@ export class CanvasView {
           : kind === "textbox"
             ? "#1a2024"
             : kind === "polyline"
-              ? (lineType?.color ?? style.color)
+              ? (lineStyle?.color ?? style.color)
               : kind === "rail"
                 ? "#4a4a4a"
                 : kind === "symbol"
@@ -2535,7 +2537,7 @@ export class CanvasView {
         strokeWidth: isMeasure
           ? DEFAULT_MEASUREMENT_STROKE_WIDTH
           : kind === "polyline"
-            ? (lineType?.widthPt ?? style.strokeWidth)
+            ? (lineStyle?.widthPt ?? style.strokeWidth)
             : kind === "rail"
               ? 0.6
               : style.strokeWidth,
@@ -2558,10 +2560,9 @@ export class CanvasView {
               : undefined,
         text: options.text,
         textColor: kind === "textbox" ? "#1a2024" : undefined,
-        textBackground: kind === "textbox" ? "white" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
-        lineTypeId: kind === "polyline" ? lineType?.id : undefined,
-        lineStyle: kind === "polyline" && lineType?.style === "dashed" ? "dashed" : undefined,
+        lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
+        lineStyle: kind === "polyline" && lineStyle?.dashed ? "dashed" : undefined,
         rows: kind === "rail" ? defaultRailRows("plc") : undefined,
         rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
@@ -3184,6 +3185,8 @@ export class CanvasView {
     input.style.padding = `0 ${field.padding * zoom}px`;
     input.style.lineHeight = `${Math.max(1, end.y - start.y)}px`;
     input.style.background = "#ffffff";
+    input.style.color = "#111111";
+    input.style.caretColor = "#111111";
     input.style.border = "1px solid #2b7fff";
     input.style.outline = "none";
     input.style.boxShadow = "0 0 0 2px rgba(43, 127, 255, 0.25)";

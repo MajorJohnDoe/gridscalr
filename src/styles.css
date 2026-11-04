@@ -1478,6 +1478,22 @@ html[data-platform="macos"] .topbar {
   color: rgba(210, 222, 227, 0.42);
 }
 
+.canvas-text-editor-rich {
+  overflow: auto;
+  white-space: pre-wrap;
+  user-select: text;
+  cursor: text;
+}
+
+.canvas-text-editor-rich span {
+  white-space: pre-wrap;
+}
+
+.sheet-field-input::selection {
+  background: rgba(43, 127, 255, 0.22);
+  color: #111111;
+}
+
 .inline-style-strip {
   position: absolute;
   display: flex;

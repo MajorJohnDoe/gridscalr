@@ -116,7 +116,7 @@ export async function openLineTypeDialog(): Promise<void> {
   store.mutate((current) => {
     current.lineTypes = next;
   }, "change");
-  if (!next.some((type) => type.id === store.ui.lineTypeId)) {
-    store.setLineType(next[0].id);
-  }
+  store.setLineType(
+    next.some((type) => type.id === store.ui.lineTypeId) ? store.ui.lineTypeId : next[0].id,
+  );
 }

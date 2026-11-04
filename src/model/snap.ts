@@ -6,19 +6,24 @@ import {
   distance,
   itemCorners,
   itemLocalToPage,
+  itemRotation,
   radiusCircle,
+  rotatePoint,
 } from "./geometry";
 import type { MarkupItem, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
 import { railGeometry } from "./rail";
+import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
 
-export type SnapKind = "endpoint" | "midpoint" | "intersection";
+export type SnapKind = "endpoint" | "midpoint" | "intersection" | "segment";
 
 export interface SnapCandidate {
   point: Point;
   kind: SnapKind;
   /** Items that produced the candidate. Used to ignore an item while dragging its own vertex. */
   itemIds?: string[];
+  /** For kind "segment": the line the pointer is projected onto. */
+  segment?: { a: Point; b: Point };
 }
 
 export interface SnapResult extends SnapCandidate {
@@ -27,9 +32,20 @@ export interface SnapResult extends SnapCandidate {
 
 const KIND_PRIORITY: Record<SnapKind, number> = {
   endpoint: 0,
-  midpoint: 1,
-  intersection: 2,
+  intersection: 1,
+  midpoint: 2,
+  segment: 3,
 };
+
+/** Closest point on a finite segment to the given point. */
+function closestOnSegment(point: Point, a: Point, b: Point): Point {
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const lengthSquared = dx * dx + dy * dy;
+  if (lengthSquared < 1e-12) return { ...a };
+  const t = Math.max(0, Math.min(1, ((point.x - a.x) * dx + (point.y - a.y) * dy) / lengthSquared));
+  return { x: a.x + dx * t, y: a.y + dy * t };
+}
 
 interface Segment {
   a: Point;
@@ -67,6 +83,26 @@ function endpointCandidates(item: MarkupItem): Point[] {
       { x: (geometry.left + geometry.right) / 2, y: row.y },
       { x: geometry.right, y: row.y },
     ]);
+  }
+  if (item.kind === "symbol") {
+    const definition = symbolFor(item.symbolId);
+    const anchor = points[0];
+    if (!anchor || !definition.ports?.length) return points;
+    const scale = symbolSizeOf(item) / 64;
+    const rotation = itemRotation(item);
+    return [
+      ...points,
+      ...definition.ports.map((port) =>
+        rotatePoint(
+          {
+            x: anchor.x + (port.x - 32) * scale,
+            y: anchor.y + (port.y - 32) * scale,
+          },
+          anchor,
+          rotation,
+        ),
+      ),
+    ];
   }
   return points;
 }
@@ -219,13 +255,22 @@ export function collectSnapCandidates(project: Project, page: number): SnapCandi
 
       const itemSegments = straightsForItem(item);
       for (const segment of itemSegments) {
+        const midpoint = {
+          x: (segment.a.x + segment.b.x) / 2,
+          y: (segment.a.y + segment.b.y) / 2,
+        };
         addUnique(candidates, seen, {
-          point: {
-            x: (segment.a.x + segment.b.x) / 2,
-            y: (segment.a.y + segment.b.y) / 2,
-          },
+          point: midpoint,
           kind: "midpoint",
           itemIds: [item.id],
+        });
+        // A projected segment target lets a pipe end anywhere along a rail row
+        // or an existing pipe, not only at its endpoints and midpoint.
+        candidates.push({
+          point: midpoint,
+          kind: "segment",
+          itemIds: [item.id],
+          segment: { a: { ...segment.a }, b: { ...segment.b } },
         });
       }
       segments.push(...itemSegments);
@@ -280,15 +325,19 @@ export function findSnap(
   let best: SnapResult | null = null;
 
   for (const candidate of candidates) {
-    const candidateDistance = distance(point, candidate.point);
+    const candidatePoint = candidate.segment
+      ? closestOnSegment(point, candidate.segment.a, candidate.segment.b)
+      : candidate.point;
+    const candidateDistance = distance(point, candidatePoint);
     if (candidateDistance > radius) continue;
+    const priority = KIND_PRIORITY[candidate.kind];
+    const bestPriority = best ? KIND_PRIORITY[best.kind] : Number.POSITIVE_INFINITY;
     if (
       !best ||
-      candidateDistance < best.distance - 1e-9 ||
-      (Math.abs(candidateDistance - best.distance) < 1e-9 &&
-        KIND_PRIORITY[candidate.kind] < KIND_PRIORITY[best.kind])
+      priority < bestPriority ||
+      (priority === bestPriority && candidateDistance < best.distance - 1e-9)
     ) {
-      best = { ...candidate, point: { ...candidate.point }, distance: candidateDistance };
+      best = { ...candidate, point: candidatePoint, distance: candidateDistance };
     }
   }
 

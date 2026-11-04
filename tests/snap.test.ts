@@ -110,6 +110,34 @@ describe("markup snapping", () => {
     expect(has(candidates, "endpoint", 200, 250)).toBe(true);
   });
 
+  it("includes schematic symbol ports as endpoint targets", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const draw = layersForKind(project, "draw")[0];
+    addItem(
+      project,
+      draw.id,
+      makeItem({
+        id: "fan",
+        kind: "symbol",
+        symbolId: "schematic.fan",
+        symbolSize: 64,
+        points: [{ x: 100, y: 100 }],
+      }),
+    );
+    const candidates = collectSnapCandidates(project, 1);
+    expect(has(candidates, "endpoint", 83, 100)).toBe(true);
+    expect(has(candidates, "endpoint", 117, 100)).toBe(true);
+  });
+
+  it("projects a pointer onto a rail or pipe segment between its snap points", () => {
+    const project = makeProject();
+    const candidates = collectSnapCandidates(project, 1);
+    const result = findSnap({ x: 70, y: 3 }, candidates, 8, 1);
+    expect(result?.kind).toBe("segment");
+    expect(result?.point.x).toBeCloseTo(70, 5);
+    expect(result?.point.y).toBeCloseTo(0, 5);
+  });
+
   it("does not add midpoints or intersections for ellipses", () => {
     const candidates = collectSnapCandidates(makeProject(), 1);
     const fromEllipse = candidates.filter((candidate) => candidate.itemIds?.includes("ellipse"));
@@ -132,7 +160,11 @@ describe("markup snapping", () => {
       point: { x: 30, y: 0 },
     });
     // The threshold is screen pixels, so zooming in halves the page-space radius.
-    expect(findSnap({ x: 95, y: 0 }, candidates, 8, 2)).toBeNull();
+    expect(findSnap({ x: 95, y: 0 }, candidates, 8, 2)).toMatchObject({
+      kind: "segment",
+      point: { x: 95, y: 0 },
+    });
+    expect(findSnap({ x: 95, y: 5 }, candidates, 8, 2)).toBeNull();
   });
 
   it("ignores hidden items and hidden layers but keeps locked items", () => {

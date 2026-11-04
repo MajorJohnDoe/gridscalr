@@ -58,6 +58,13 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   if (editableText) {
     items.push({ label: t("selection.editText"), icon: "text", action: actions.editSelectedText });
   }
+  if (resolved.length === 1 && resolved[0].item.kind === "rail" && !resolved[0].locked) {
+    items.push({
+      label: t("inspector.editRail"),
+      icon: "settings",
+      action: () => actions.editRail(resolved[0].item.id),
+    });
+  }
   items.push(
     { separator: true },
     {

@@ -28,6 +28,7 @@ import {
   runsHaveFormatting,
   type RunStylePatch,
 } from "../model/richText";
+import { RichEditorController } from "./richEditor";
 import { store } from "../state/store";
 import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
@@ -35,6 +36,25 @@ import { rotatedAabb, roundTo } from "./geometry";
 import { t } from "../i18n";
 
 const FONT_STACK = TEXT_FONT_STACK;
+
+/** Keeps the inline editor readable on both light and dark text colours. */
+function editorSurface(color: string): string {
+  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(color);
+  if (!match) return "rgba(255, 255, 255, 0.94)";
+  const hex =
+    match[1].length === 3
+      ? match[1]
+          .split("")
+          .map((part) => part + part)
+          .join("")
+      : match[1];
+  const value = Number.parseInt(hex, 16);
+  const red = (value >> 16) & 255;
+  const green = (value >> 8) & 255;
+  const blue = value & 255;
+  const luminance = (0.299 * red + 0.587 * green + 0.114 * blue) / 255;
+  return luminance > 0.55 ? "rgba(12, 16, 18, 0.9)" : "rgba(255, 255, 255, 0.94)";
+}
 
 interface TextStyleSnapshot {
   text: string;
@@ -72,6 +92,7 @@ export interface TextEditSession {
   closing: boolean;
   container: HTMLDivElement;
   textarea: HTMLTextAreaElement;
+  richEditor: RichEditorController | null;
   strip: HTMLDivElement;
   resizeHandle: HTMLDivElement | null;
 }
@@ -407,7 +428,7 @@ export class CanvasEditorController {
     if (!edit || edit.closing) return;
     const zoom = store.ui.zoom;
     const anchor = this.host.toScreen(edit.anchor);
-    const textarea = edit.textarea;
+    const input = edit.richEditor?.element ?? edit.textarea;
     let left: number;
     let top: number;
     let width: number;
@@ -424,8 +445,8 @@ export class CanvasEditorController {
       fontSize = Math.max(1, edit.fontSize * zoom);
       rotation = 0;
       const pad = Math.max(1, (edit.padding ?? 4) * zoom);
-      textarea.style.padding = `${pad}px`;
-      textarea.style.whiteSpace = "pre-wrap";
+      input.style.padding = `${pad}px`;
+      input.style.whiteSpace = "pre-wrap";
     } else if (edit.mode === "cloud" || edit.mode === "callout") {
       const layout = textBoxLayout(edit.text, edit.fontSize, edit.boxWidth, edit.boxHeight);
       width = Math.max(40, layout.width * zoom);
@@ -437,8 +458,8 @@ export class CanvasEditorController {
       rotation = 0;
       const horizontalPadding = Math.max(2, layout.padding * zoom);
       const verticalPadding = Math.max(2, (height - layout.lines.length * lineHeight) / 2);
-      textarea.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
-      textarea.style.whiteSpace = "pre-wrap";
+      input.style.padding = `${verticalPadding}px ${horizontalPadding}px`;
+      input.style.whiteSpace = "pre-wrap";
     } else {
       const layout = textItemLayout({ text: edit.text, fontSize: edit.fontSize }, measureTextWidth);
       width = Math.max(52, layout.width * zoom + 4);
@@ -447,19 +468,20 @@ export class CanvasEditorController {
       top = anchor.y - 2;
       lineHeight = layout.lineHeight * zoom;
       fontSize = Math.max(1, layout.fontSize * zoom);
-      textarea.style.padding = "2px";
-      textarea.style.whiteSpace = "pre";
+      input.style.padding = "2px";
+      input.style.whiteSpace = "pre";
     }
-    textarea.style.left = `${left}px`;
-    textarea.style.top = `${top}px`;
-    textarea.style.width = `${width}px`;
-    textarea.style.height = `${height}px`;
-    textarea.style.fontSize = `${fontSize}px`;
-    textarea.style.lineHeight = `${lineHeight}px`;
-    textarea.style.fontFamily = FONT_STACK;
-    textarea.style.color = edit.color;
-    textarea.style.transform = `rotate(${rotation}deg)`;
-    textarea.style.transformOrigin = "center";
+    input.style.left = `${left}px`;
+    input.style.top = `${top}px`;
+    input.style.width = `${width}px`;
+    input.style.height = `${height}px`;
+    input.style.fontSize = `${fontSize}px`;
+    input.style.lineHeight = `${lineHeight}px`;
+    input.style.fontFamily = FONT_STACK;
+    input.style.color = edit.color;
+    input.style.background = editorSurface(edit.color);
+    input.style.transform = `rotate(${rotation}deg)`;
+    input.style.transformOrigin = "center";
     if (edit.resizeHandle) {
       edit.resizeHandle.style.left = `${left + width - 7}px`;
       edit.resizeHandle.style.top = `${top + height - 7}px`;
@@ -513,7 +535,10 @@ export class CanvasEditorController {
   };
 
   private beginTextEditSession(
-    session: Omit<TextEditSession, "closing" | "container" | "textarea" | "strip" | "resizeHandle">,
+    session: Omit<
+      TextEditSession,
+      "closing" | "container" | "textarea" | "richEditor" | "strip" | "resizeHandle"
+    >,
   ): void {
     this.cancelLabelEdit();
     const container = document.createElement("div");
@@ -530,6 +555,31 @@ export class CanvasEditorController {
     textarea.wrap = session.mode === "text" ? "off" : "soft";
     textarea.spellcheck = false;
     textarea.setAttribute("aria-label", t("editors.textAnnotation"));
+    const textDefaults = {
+      fontSize: session.fontSize,
+      color: session.color,
+      bold: session.bold,
+      italic: session.italic,
+      underline: session.underline,
+    };
+    let richEditor: RichEditorController | null = null;
+    if (session.mode === "textbox") {
+      const initialRuns = session.runs ?? [
+        {
+          text: session.text,
+          bold: session.bold,
+          italic: session.italic,
+          underline: session.underline,
+          size: session.fontSize,
+          color: session.color,
+        },
+      ];
+      richEditor = new RichEditorController(initialRuns, textDefaults, store.ui.zoom, () => {
+        if (!richEditor || !this.text || this.text.richEditor !== richEditor) return;
+        this.text.text = richEditor.getText();
+        this.positionTextEditor();
+      });
+    }
     const strip = document.createElement("div");
     strip.className = "inline-style-strip";
 
@@ -642,13 +692,14 @@ export class CanvasEditorController {
     resizeHandle.setAttribute("aria-hidden", "true");
     const resizable = session.mode === "cloud" || session.mode === "callout";
     if (resizable) container.append(resizeHandle);
-    container.append(textarea, strip);
+    container.append(richEditor?.element ?? textarea, strip);
 
     const edit: TextEditSession = {
       ...session,
       closing: false,
       container,
       textarea,
+      richEditor,
       strip,
       resizeHandle: resizable ? resizeHandle : null,
     };
@@ -661,10 +712,18 @@ export class CanvasEditorController {
       selection = { start: textarea.selectionStart, end: textarea.selectionEnd };
     };
     const hasRunSelection = () =>
-      edit.mode === "textbox" && selection.start !== selection.end && !edit.closing;
+      edit.mode === "textbox" &&
+      (edit.richEditor ? edit.richEditor.hasSelection() : selection.start !== selection.end) &&
+      !edit.closing;
 
     const applyToSelection = (patch: RunStylePatch): boolean => {
       if (!hasRunSelection()) return false;
+      if (edit.richEditor) {
+        if (!edit.richEditor.applyStyle(patch)) return false;
+        edit.text = edit.richEditor.getText();
+        this.positionTextEditor();
+        return true;
+      }
       edit.runs = applyRunStyle(
         reconcileRuns(edit.runs ?? [{ text: textarea.value }], textarea.value),
         selection.start,
@@ -685,11 +744,22 @@ export class CanvasEditorController {
     };
 
     const syncStyle = () => {
-      textarea.style.color = edit.color;
-      textarea.style.fontWeight = edit.bold ? "700" : "400";
-      textarea.style.fontStyle = edit.italic ? "italic" : "normal";
-      textarea.style.textDecoration = edit.underline ? "underline" : "none";
-      textarea.style.textAlign = edit.align;
+      const target = edit.richEditor?.element ?? textarea;
+      target.style.color = edit.color;
+      target.style.fontWeight = edit.bold ? "700" : "400";
+      target.style.fontStyle = edit.italic ? "italic" : "normal";
+      target.style.textDecoration = edit.underline ? "underline" : "none";
+      target.style.textAlign = edit.align;
+      edit.richEditor?.setMetrics(
+        {
+          fontSize: edit.fontSize,
+          color: edit.color,
+          bold: edit.bold,
+          italic: edit.italic,
+          underline: edit.underline,
+        },
+        store.ui.zoom,
+      );
       boldButton.setAttribute("aria-pressed", edit.bold ? "true" : "false");
       italicButton.setAttribute("aria-pressed", edit.italic ? "true" : "false");
       underlineButton.setAttribute("aria-pressed", edit.underline ? "true" : "false");
@@ -698,7 +768,7 @@ export class CanvasEditorController {
       }
     };
     const refresh = () => {
-      edit.text = textarea.value;
+      edit.text = edit.richEditor ? edit.richEditor.getText() : textarea.value;
       edit.fontSize = clampTextSize(Number(sizeInput.value));
       edit.color = colorInput.value;
       edit.rotation = normalizeDegrees(Number(rotationInput.value));
@@ -706,13 +776,13 @@ export class CanvasEditorController {
       this.positionTextEditor();
     };
     const toggleRunStyle = (key: "bold" | "italic" | "underline") => {
-      const patch: RunStylePatch =
-        key === "bold"
-          ? { bold: !edit.bold }
-          : key === "italic"
-            ? { italic: !edit.italic }
-            : { underline: !edit.underline };
-      if (applyToSelection(patch)) return;
+      if (edit.richEditor && edit.richEditor.hasSelection()) {
+        if (edit.richEditor.toggle(key)) {
+          edit.text = edit.richEditor.getText();
+          this.positionTextEditor();
+        }
+        return;
+      }
       edit[key] = !edit[key];
       refresh();
     };
@@ -730,13 +800,47 @@ export class CanvasEditorController {
       this.positionTextEditor();
     });
     rotationInput.addEventListener("input", refresh);
-    textarea.addEventListener("input", () => {
-      edit.text = textarea.value;
-      captureSelection();
-      this.positionTextEditor();
-    });
-    for (const eventName of ["select", "keyup", "mouseup", "blur"] as const) {
-      textarea.addEventListener(eventName, captureSelection);
+    if (edit.richEditor) {
+      const rich = edit.richEditor;
+      rich.element.addEventListener("input", () => {
+        edit.text = rich.getText();
+        this.positionTextEditor();
+      });
+      rich.element.addEventListener("keydown", (event) => {
+        if (event.isComposing) return;
+        if (event.key === "Escape") {
+          event.preventDefault();
+          event.stopPropagation();
+          this.cancelTextEdit();
+        } else if (event.key === "Enter" && (event.ctrlKey || event.metaKey)) {
+          event.preventDefault();
+          event.stopPropagation();
+          void this.commitTextEdit();
+        } else if (event.key === "Enter") {
+          event.preventDefault();
+          event.stopPropagation();
+          rich.insertLineBreak();
+          edit.text = rich.getText();
+          this.positionTextEditor();
+        }
+      });
+      rich.element.addEventListener("blur", () => {
+        window.setTimeout(() => {
+          if (!this.text || this.text !== edit || edit.closing) return;
+          const active = document.activeElement;
+          if (active && this.editorLayer.contains(active)) return;
+          void this.commitTextEdit();
+        }, 0);
+      });
+    } else {
+      textarea.addEventListener("input", () => {
+        edit.text = textarea.value;
+        captureSelection();
+        this.positionTextEditor();
+      });
+      for (const eventName of ["select", "keyup", "mouseup", "blur"] as const) {
+        textarea.addEventListener(eventName, captureSelection);
+      }
     }
     textarea.addEventListener("keydown", (event) => {
       if (event.isComposing) return;
@@ -771,6 +875,10 @@ export class CanvasEditorController {
     this.host.drawInteraction();
     window.requestAnimationFrame(() => {
       if (this.text !== edit) return;
+      if (edit.richEditor) {
+        edit.richEditor.focusEnd();
+        return;
+      }
       textarea.focus({ preventScroll: true });
       const end = textarea.value.length;
       textarea.setSelectionRange(end, end);
@@ -834,7 +942,7 @@ export class CanvasEditorController {
       this.closeTextEditor();
       return;
     }
-    const value = edit.text;
+    const value = edit.richEditor ? edit.richEditor.getText() : edit.text;
     if (edit.itemId) {
       const found = findItem(project, edit.itemId);
       if (!found || itemIsLocked(found.item, found.layer)) {
@@ -843,7 +951,9 @@ export class CanvasEditorController {
       }
       if (edit.mode === "textbox") {
         const original = edit.original!;
-        const runs = reconcileRuns(edit.runs ?? [{ text: value }], value);
+        const runs = edit.richEditor
+          ? edit.richEditor.getRuns()
+          : reconcileRuns(edit.runs ?? [{ text: value }], value);
         const changed =
           value !== original.text ||
           edit.color !== original.color ||

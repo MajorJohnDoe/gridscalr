@@ -125,6 +125,8 @@ export interface UIState {
   symbolStatus: InspectionStatus | null;
   /** Sticky line type for new schematic polylines. */
   lineTypeId: string;
+  /** Editable line style for the next pipe/duct run. */
+  lineStyle: { color: string; widthPt: number; dashed: boolean };
 }
 
 export type ChangeReason =
@@ -214,6 +216,7 @@ function defaultUI(): UIState {
     symbolId: DEFAULT_SYMBOL_ID,
     symbolStatus: null,
     lineTypeId: DEFAULT_LINE_TYPE_ID,
+    lineStyle: { color: "#e30613", widthPt: 2, dashed: false },
   };
 }
 
@@ -281,6 +284,14 @@ export class Store {
     this.ui.lineTypeId = project.lineTypes.some((entry) => entry.id === this.ui.lineTypeId)
       ? this.ui.lineTypeId
       : (project.lineTypes[0]?.id ?? DEFAULT_LINE_TYPE_ID);
+    const activeLineType = project.lineTypes.find((entry) => entry.id === this.ui.lineTypeId);
+    if (activeLineType) {
+      this.ui.lineStyle = {
+        color: activeLineType.color,
+        widthPt: activeLineType.widthPt,
+        dashed: activeLineType.style === "dashed",
+      };
+    }
     this.ui.symbolStatus = null;
     this.emit("project");
     this.scheduleAutosave();
@@ -367,8 +378,23 @@ export class Store {
   }
 
   setLineType(id: string): void {
-    if (!this.project?.lineTypes.some((entry) => entry.id === id)) return;
+    const lineType = this.project?.lineTypes.find((entry) => entry.id === id);
+    if (!lineType) return;
     this.ui.lineTypeId = id;
+    this.ui.lineStyle = {
+      color: lineType.color,
+      widthPt: lineType.widthPt,
+      dashed: lineType.style === "dashed",
+    };
+    this.emit("tool");
+  }
+
+  setLineStyle(patch: Partial<UIState["lineStyle"]>): void {
+    this.ui.lineStyle = {
+      ...this.ui.lineStyle,
+      ...patch,
+      widthPt: Math.max(0.3, Math.min(20, patch.widthPt ?? this.ui.lineStyle.widthPt)),
+    };
     this.emit("tool");
   }
 
