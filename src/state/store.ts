@@ -810,6 +810,7 @@ export class Store {
       if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
       this.redoStack = [];
       this.dirty = true;
+      this.revision += 1;
       this.emit(reason);
       this.scheduleAutosave();
     }
@@ -819,6 +820,7 @@ export class Store {
   cancelGesture(): void {
     if (this.gestureSnapshot && this.project) {
       this.project = this.restoreSnapshot(this.gestureSnapshot);
+      this.revision += 1;
     }
     this.gestureSnapshot = null;
   }
