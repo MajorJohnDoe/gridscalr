@@ -147,9 +147,12 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["flödesvakt", "flow switch", "vakt", "flöde", "fs"],
     tagPrefix: "FS",
-    ports: INLINE_PORTS(),
+    ports: [
+      { id: "in", x: 19, y: 32, direction: "in" },
+      { id: "out", x: 45, y: 32, direction: "out" },
+    ],
     shapes: [
-      stroke(joinPaths(smallCircle(32, 32, 13), linePath(2, 32, 19, 32), linePath(45, 32, 62, 32))),
+      stroke(smallCircle(32, 32, 13)),
       stroke(
         joinPaths(
           polyPath([25, 27, 31, 32, 25, 37], true),
@@ -363,16 +366,13 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "exchanger",
     keywords: ["plattvärmeväxlare", "plate heat exchanger", "värmeväxlare", "platt", "pvx"],
     tagPrefix: "PVX",
-    ports: INLINE_PORTS(),
+    ports: [
+      { id: "in", x: 14, y: 22, direction: "in" },
+      { id: "out", x: 50, y: 42, direction: "out" },
+    ],
     shapes: [
       stroke(rectPath(14, 14, 36, 36)),
-      stroke(
-        joinPaths(
-          "M 20 14 L 20 50 M 26 14 L 26 50 M 32 14 L 32 50 M 38 14 L 38 50 M 44 14 L 44 50",
-          linePath(2, 22, 14, 22),
-          linePath(50, 42, 62, 42),
-        ),
-      ),
+      stroke("M 20 14 L 20 50 M 26 14 L 26 50 M 32 14 L 32 50 M 38 14 L 38 50 M 44 14 L 44 50"),
     ],
   }),
   schematicSymbol({
@@ -431,11 +431,11 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["radialfläkt", "radial fan", "fläkt", "radial", "rf"],
     tagPrefix: "RF",
     ports: [
-      { id: "in", x: 2, y: 40, direction: "in" },
-      { id: "out", x: 62, y: 14, direction: "out" },
+      { id: "in", x: 12, y: 38, direction: "in" },
+      { id: "out", x: 50, y: 20, direction: "out" },
     ],
     shapes: [
-      stroke(joinPaths(smallCircle(28, 38, 16), linePath(2, 38, 12, 38))),
+      stroke(smallCircle(28, 38, 16)),
       stroke(joinPaths(rectPath(40, 20, 20, 12), linePath(40, 26, 28, 30))),
       stroke(joinPaths(linePath(31, 38, 46, 38), linePath(46, 38, 46, 26))),
     ],
@@ -469,7 +469,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["uteluftsintag", "outdoor air intake", "uteluft", "intag", "ui"],
     tagPrefix: "UI",
-    ports: [{ id: "out", x: 62, y: 32, direction: "out" }],
+    ports: [{ id: "out", x: 50, y: 32, direction: "out" }],
     shapes: [
       stroke(rectPath(10, 18, 40, 28)),
       stroke(
@@ -478,7 +478,6 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
           linePath(26, 20, 26, 44),
           linePath(34, 20, 34, 44),
           linePath(42, 20, 42, 44),
-          linePath(50, 32, 62, 32),
         ),
       ),
     ],
