@@ -1313,6 +1313,7 @@
   "symbol.schematic.duct-sensor": "Duct sensor",
   "symbol.schematic.pressure-sensor": "Pressure sensor",
   "symbol.schematic.flow-sensor": "Flow sensor",
+  "symbol.schematic.flow-arrow": "Flow arrow",
   "symbol.schematic.level-sensor": "Level sensor",
   "symbol.schematic.pressure-switch": "Pressure switch",
   "symbol.schematic.flow-switch": "Flow switch",

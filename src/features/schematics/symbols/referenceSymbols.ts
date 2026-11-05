@@ -722,4 +722,15 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     ports: PORTS_INLINE(),
     shapes: [stroke(joinPaths(rectPath(20, 20, 24, 24), linePath(20, 44, 44, 20)))],
   }),
+
+  // --- Flow direction ----------------------------------------------------
+  schematicSymbol({
+    id: "schematic.flow-arrow",
+    category: "general",
+    keywords: ["flödespil", "flöde", "riktning", "flow arrow", "flow", "direction", "pil"],
+    tagPrefix: "FL",
+    defaultSize: 24,
+    ports: [{ id: "flow", x: 32, y: 32, direction: "out" }],
+    shapes: [stroke("M 22 18 L 42 32 L 22 46")],
+  }),
 ];

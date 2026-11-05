@@ -1315,6 +1315,7 @@ export type MessageKey =
   | "symbol.schematic.duct-sensor"
   | "symbol.schematic.pressure-sensor"
   | "symbol.schematic.flow-sensor"
+  | "symbol.schematic.flow-arrow"
   | "symbol.schematic.level-sensor"
   | "symbol.schematic.pressure-switch"
   | "symbol.schematic.flow-switch"

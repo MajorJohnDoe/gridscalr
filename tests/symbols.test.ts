@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(111);
-    expect(ALL_SYMBOLS).toHaveLength(163);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(112);
+    expect(ALL_SYMBOLS).toHaveLength(164);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(111);
+    expect(symbolsForSet("schematic")).toHaveLength(112);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
