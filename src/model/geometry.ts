@@ -1,7 +1,7 @@
 import { textItemLayout } from "./text";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import { railGeometry, railLegendY } from "./rail";
-import { symbolSizeOf } from "./symbols";
+import { symbolArtBounds, symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
 import type { MarkupItem, Point } from "./types";
 
 export function distance(a: Point, b: Point): number {
@@ -548,6 +548,56 @@ export function itemCorners(item: MarkupItem): [Point, Point, Point, Point] {
 
 export function itemBounds(item: MarkupItem): Bounds {
   return boundingBox(itemCorners(item));
+}
+
+/**
+ * Unrotated bounds used for selection and hit testing. Schematic symbols use
+ * their visible artwork instead of the 64-unit plate square, so the selection
+ * box hugs the drawing; signs keep the plate because the plate is the object.
+ */
+export function symbolSelectionBounds(item: MarkupItem): Bounds {
+  const anchor = item.points[0] ?? { x: 0, y: 0 };
+  const size = symbolSizeOf(item);
+  const definition = symbolFor(item.symbolId);
+  if (definition.style !== "schematic") {
+    const half = size / 2;
+    return {
+      min: { x: anchor.x - half, y: anchor.y - half },
+      max: { x: anchor.x + half, y: anchor.y + half },
+    };
+  }
+  const art = symbolArtBounds(definition.art);
+  const scale = size / 64;
+  return {
+    min: {
+      x: anchor.x + (art.minX - 32) * scale,
+      y: anchor.y + (art.minY - 32) * scale,
+    },
+    max: {
+      x: anchor.x + (art.maxX - 32) * scale,
+      y: anchor.y + (art.maxY - 32) * scale,
+    },
+  };
+}
+
+/** Rotated, axis-aligned selection bounds for any item. */
+export function itemSelectionBounds(item: MarkupItem): Bounds {
+  if (item.kind !== "symbol") return itemBounds(item);
+  return boundingBox(itemSelectionCorners(item));
+}
+
+/** Selection corners; symbols rotate their sleeve bounds around the anchor. */
+export function itemSelectionCorners(item: MarkupItem): [Point, Point, Point, Point] {
+  if (item.kind !== "symbol") return itemCorners(item);
+  const bounds = symbolSelectionBounds(item);
+  const anchor = item.points[0] ?? midpoint(bounds.min, bounds.max);
+  const rotation = itemRotation(item);
+  return [
+    rotatePoint(bounds.min, anchor, rotation),
+    rotatePoint({ x: bounds.max.x, y: bounds.min.y }, anchor, rotation),
+    rotatePoint(bounds.max, anchor, rotation),
+    rotatePoint({ x: bounds.min.x, y: bounds.max.y }, anchor, rotation),
+  ];
 }
 
 export function pointToItemLocal(item: MarkupItem, point: Point): Point {

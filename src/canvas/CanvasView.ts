@@ -11,6 +11,8 @@ import {
   itemCenter,
   itemCorners,
   itemLocalBounds,
+  itemSelectionCorners,
+  symbolSelectionBounds,
   itemLocalToPage,
   itemRotation,
   midpoint,
@@ -170,6 +172,7 @@ import {
   symbolSizeOf,
 } from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
+import { scaleItemAround, selectionBounds } from "../model/transform";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store, type ToolId } from "../state/store";
 import {
@@ -228,6 +231,7 @@ interface DragState {
     | "move"
     | "vertex"
     | "resize"
+    | "scale-selection"
     | "rotate"
     | "label"
     | "measurement-label"
@@ -245,6 +249,10 @@ interface DragState {
   startSymbolSize?: number;
   startRotation?: number;
   startBounds?: Bounds;
+  startAnchor?: Point;
+  scaleAnchor?: Point;
+  scaleCorner?: Point;
+  scaleStartItems?: Array<{ ref: SelectionRef; item: MarkupItem }>;
   center?: Point;
   startAngle?: number;
   startTextOffset?: Point;
@@ -257,6 +265,41 @@ interface MarqueeState {
   start: Point;
   current: Point;
   additive: boolean;
+}
+
+const GROUP_HANDLE_ROLES: BoxHandleRole[] = ["nw", "ne", "se", "sw"];
+
+function groupHandles(
+  bounds: Bounds,
+  toScreen: (point: Point) => Point,
+): Array<Handle & { role: BoxHandleRole }> {
+  return GROUP_HANDLE_ROLES.map((role) => {
+    const point = handleLocalPoint(bounds, role);
+    return {
+      role,
+      index: -1,
+      point: toScreen(point),
+      cursor: cursorForRole(role),
+    };
+  });
+}
+
+function groupHandleAt(
+  bounds: Bounds,
+  screen: Point,
+  toScreen: (point: Point) => Point,
+  tolerance: number,
+): (Handle & { role: BoxHandleRole }) | null {
+  let best: (Handle & { role: BoxHandleRole }) | null = null;
+  let bestDistance = tolerance;
+  for (const handle of groupHandles(bounds, toScreen)) {
+    const d = distance(screen, handle.point);
+    if (d <= bestDistance) {
+      best = handle;
+      bestDistance = d;
+    }
+  }
+  return best;
 }
 
 interface PanState {
@@ -886,7 +929,10 @@ export class CanvasView {
     } else if (this.pan) cursor = "grabbing";
     else if (this.drag) {
       if (this.drag.mode === "rotate") cursor = "grabbing";
-      else if (this.drag.mode === "resize" && this.drag.handle) {
+      else if (
+        (this.drag.mode === "resize" || this.drag.mode === "scale-selection") &&
+        this.drag.handle
+      ) {
         cursor = cursorForRole(this.drag.handle);
       } else if (this.drag.mode === "vertex") cursor = "crosshair";
       else if (this.drag.mode === "measurement-label-size") cursor = "nwse-resize";
@@ -1238,6 +1284,16 @@ export class CanvasView {
     const selection = store.ui.selection;
     const primary = store.primarySelection;
 
+    if (!modifier && selection.length > 1) {
+      const bounds = selectionBounds(project, selection);
+      const groupHandle =
+        bounds && groupHandleAt(bounds, screen, (point) => this.toScreen(point), 10);
+      if (bounds && groupHandle) {
+        this.beginGroupScale(project, bounds, groupHandle, page, event);
+        return;
+      }
+    }
+
     if (!modifier) {
       if (selection.length === 1 && primary) {
         const found = findItem(project, primary.itemId);
@@ -1495,7 +1551,7 @@ export class CanvasView {
         startAngle: Math.atan2(page.y - center.y, page.x - center.x),
       };
     } else {
-      const bounds = itemLocalBounds(item);
+      const bounds = item.kind === "symbol" ? symbolSelectionBounds(item) : itemLocalBounds(item);
       store.beginGesture();
       this.drag = {
         mode: "resize",
@@ -1514,12 +1570,76 @@ export class CanvasView {
           min: { ...bounds.min },
           max: { ...bounds.max },
         },
-        center: midpoint(bounds.min, bounds.max),
+        startAnchor: item.points[0] ? { ...item.points[0] } : undefined,
+        center:
+          item.kind === "symbol" && item.points[0]
+            ? { ...item.points[0] }
+            : midpoint(bounds.min, bounds.max),
       };
     }
     this.capturePointer(event.pointerId);
     this.updateCursor();
     this.drawInteraction();
+  }
+
+  private beginGroupScale(
+    project: NonNullable<typeof store.project>,
+    bounds: Bounds,
+    handle: Handle & { role: BoxHandleRole },
+    page: Point,
+    event: PointerEvent,
+  ): void {
+    const items: Array<{ ref: SelectionRef; item: MarkupItem }> = [];
+    for (const entry of resolveSelection(project, store.ui.selection)) {
+      if (
+        entry.locked ||
+        !itemIsVisible(entry.item, entry.layer) ||
+        layerLockedOnPage(entry.layer, entry.item.page)
+      ) {
+        continue;
+      }
+      items.push({ ref: entry.ref, item: structuredClone(entry.item) });
+    }
+    if (!items.length) return;
+    store.beginGesture();
+    this.drag = {
+      mode: "scale-selection",
+      itemId: "",
+      layerId: "",
+      vertexIndex: -1,
+      last: page,
+      moved: false,
+      handle: handle.role,
+      startPage: page,
+      scaleAnchor: oppositeHandlePoint(bounds, handle.role),
+      scaleCorner: handleLocalPoint(bounds, handle.role),
+      scaleStartItems: items,
+    };
+    this.capturePointer(event.pointerId);
+    this.updateCursor();
+    this.drawInteraction();
+  }
+
+  private applyGroupScale(page: Point): void {
+    if (!store.project) return;
+    if (!this.drag?.scaleAnchor || !this.drag.scaleCorner || !this.drag.scaleStartItems) return;
+    const anchor = this.drag.scaleAnchor;
+    const corner = this.drag.scaleCorner;
+    const dx = corner.x - anchor.x;
+    const dy = corner.y - anchor.y;
+    const denominator = dx * dx + dy * dy;
+    if (denominator < 1e-9) return;
+    const factor = Math.max(
+      0.05,
+      Math.min(20, ((page.x - anchor.x) * dx + (page.y - anchor.y) * dy) / denominator),
+    );
+    for (const entry of this.drag.scaleStartItems) {
+      const target = findItem(store.project, entry.ref.itemId);
+      if (!target || itemIsLocked(target.item, target.layer)) continue;
+      Object.assign(target.item, structuredClone(entry.item));
+      scaleItemAround(target.item, factor, anchor);
+    }
+    this.drag.moved = true;
   }
 
   private onPointerMove = (event: PointerEvent): void => {
@@ -1645,6 +1765,12 @@ export class CanvasView {
           }
         }
       }
+      if (!this.hoverHandle && !this.hoverLabelResize && store.ui.selection.length > 1) {
+        const bounds = selectionBounds(store.project, store.ui.selection);
+        if (bounds) {
+          this.hoverHandle = groupHandleAt(bounds, screen, (point) => this.toScreen(point), 10);
+        }
+      }
       if (!this.hoverHandle && !this.hoverLabelResize) {
         const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
         store.setHover(
@@ -1667,6 +1793,13 @@ export class CanvasView {
 
   private applyDrag(page: Point, shiftKey: boolean): void {
     if (!this.drag || !store.project) return;
+    if (this.drag.mode === "scale-selection") {
+      this.applyGroupScale(page);
+      this.drawContent();
+      this.drawInteraction();
+      this.updateCursor();
+      return;
+    }
     const found = findItem(store.project, this.drag.itemId);
     if (!found || itemIsLocked(found.item, found.layer)) {
       this.endDrag();
@@ -1813,12 +1946,26 @@ export class CanvasView {
         y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
       };
     } else if (item.kind === "symbol") {
-      // Symbols are square plates centred on their anchor point.
-      item.symbolSize = clampSymbolSize((this.drag.startSymbolSize ?? SYMBOL_SIZE) * factorX);
-      item.points[0] = {
-        x: (scaled.min.x + scaled.max.x) / 2 + shiftX,
-        y: (scaled.min.y + scaled.max.y) / 2 + shiftY,
-      };
+      // Scale the artwork around the opposite selection corner and move the
+      // anchor so the visible symbol stays anchored where the user dragged.
+      const start = this.drag.startSymbolSize ?? SYMBOL_SIZE;
+      const next = clampSymbolSize(start * factorX);
+      const sizeFactor = next / start;
+      item.symbolSize = next;
+      const startAnchor = this.drag.startAnchor ?? item.points[0];
+      if (startAnchor) {
+        const nextAnchor = {
+          x: opposite.x + (startAnchor.x - opposite.x) * sizeFactor,
+          y: opposite.y + (startAnchor.y - opposite.y) * sizeFactor,
+        };
+        if (rotation !== 0) {
+          const oldOpposite = rotatePoint(opposite, startAnchor, rotation);
+          const newOpposite = rotatePoint(opposite, nextAnchor, rotation);
+          nextAnchor.x += oldOpposite.x - newOpposite.x;
+          nextAnchor.y += oldOpposite.y - newOpposite.y;
+        }
+        item.points[0] = nextAnchor;
+      }
     } else if (item.kind === "rail") {
       const startPoints = this.drag.startPoints ?? item.points;
       item.points = [
@@ -4156,6 +4303,34 @@ export class CanvasView {
         }
         ctx.restore();
       }
+      if (selected.length > 1) {
+        const bounds = selectionBounds(store.project, store.ui.selection);
+        if (bounds) {
+          const topLeft = this.toScreen({ x: bounds.min.x, y: bounds.min.y });
+          const bottomRight = this.toScreen({ x: bounds.max.x, y: bounds.max.y });
+          ctx.save();
+          ctx.strokeStyle = ACCENT;
+          ctx.lineWidth = 1.2;
+          ctx.setLineDash([6, 4]);
+          ctx.strokeRect(
+            topLeft.x,
+            topLeft.y,
+            Math.max(1, bottomRight.x - topLeft.x),
+            Math.max(1, bottomRight.y - topLeft.y),
+          );
+          ctx.setLineDash([]);
+          for (const handle of groupHandles(bounds, (point) => this.toScreen(point))) {
+            ctx.fillStyle = "#f7fbfc";
+            ctx.strokeStyle = ACCENT;
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
+            ctx.fill();
+            ctx.stroke();
+          }
+          ctx.restore();
+        }
+      }
     } else if (store.ui.hover) {
       const found = findItem(store.project, store.ui.hover.itemId);
       if (found && found.item.visible !== false) {
@@ -4311,7 +4486,7 @@ export class CanvasView {
       ctx.closePath();
       return;
     }
-    const corners = itemCorners(item).map((point) => this.toScreen(point));
+    const corners = itemSelectionCorners(item).map((point) => this.toScreen(point));
     corners.forEach((corner, index) => {
       if (index === 0) ctx.moveTo(corner.x, corner.y);
       else ctx.lineTo(corner.x, corner.y);

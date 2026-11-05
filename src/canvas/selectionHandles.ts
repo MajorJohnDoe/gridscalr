@@ -6,6 +6,7 @@ import {
   itemRotation,
   midpoint,
   rotatePoint,
+  symbolSelectionBounds,
 } from "../model/geometry";
 import type { MarkupItem, Point } from "../model/types";
 import { cursorForRole, handleLocalPoint, type BoxHandleRole } from "./geometry";
@@ -117,6 +118,25 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
     return handles;
   }
 
+  if (item.kind === "symbol") {
+    const bounds = symbolSelectionBounds(item);
+    const anchor = item.points[0] ?? midpoint(bounds.min, bounds.max);
+    const rotation = itemRotation(item);
+    const handles: Handle[] = (["nw", "ne", "se", "sw"] as BoxHandleRole[]).map((role) => ({
+      role,
+      index: -1,
+      point: toScreen(rotatePoint(handleLocalPoint(bounds, role), anchor, rotation)),
+      cursor: cursorForRole(role),
+    }));
+    handles.push({
+      role: "rotate",
+      index: -1,
+      point: rotationHandleForBounds(bounds, anchor, rotation, toScreen),
+      cursor: "grab",
+    });
+    return handles;
+  }
+
   const bounds = itemLocalBounds(item);
   const center = midpoint(bounds.min, bounds.max);
   if (item.kind === "rail") {
@@ -129,9 +149,7 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
   }
   const rotation = itemRotation(item);
   const roles: BoxHandleRole[] =
-    item.kind === "text" || item.kind === "symbol"
-      ? ["nw", "ne", "se", "sw"]
-      : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    item.kind === "text" ? ["nw", "ne", "se", "sw"] : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
   const handles: Handle[] = roles.map((role) => {
     const local = handleLocalPoint(bounds, role);
     const point = toScreen(rotatePoint(local, center, rotation));
@@ -152,12 +170,24 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
 }
 
 export function rotationHandlePoint(item: MarkupItem, toScreen: ToScreen): Point {
-  const bounds = itemLocalBounds(item);
-  const center = midpoint(bounds.min, bounds.max);
-  const rotation = itemRotation(item);
-  const top = rotatePoint({ x: center.x, y: bounds.min.y }, center, rotation);
+  const bounds = item.kind === "symbol" ? symbolSelectionBounds(item) : itemLocalBounds(item);
+  const center =
+    item.kind === "symbol"
+      ? (item.points[0] ?? midpoint(bounds.min, bounds.max))
+      : midpoint(bounds.min, bounds.max);
+  return rotationHandleForBounds(bounds, center, itemRotation(item), toScreen);
+}
+
+function rotationHandleForBounds(
+  bounds: { min: Point; max: Point },
+  center: Point,
+  rotation: number,
+  toScreen: ToScreen,
+): Point {
+  const topX = (bounds.min.x + bounds.max.x) / 2;
+  const top = rotatePoint({ x: topX, y: bounds.min.y }, center, rotation);
   const topScreen = toScreen(top);
-  const upPage = rotatePoint({ x: center.x, y: center.y - 1 }, center, rotation);
+  const upPage = rotatePoint({ x: topX, y: bounds.min.y - 1 }, center, rotation);
   const centerScreen = toScreen(center);
   const upScreen = toScreen(upPage);
   const length = Math.max(

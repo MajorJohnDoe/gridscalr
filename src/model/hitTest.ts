@@ -7,6 +7,7 @@ import {
   itemBounds,
   itemLocalBounds,
   itemLocalToPage,
+  itemSelectionBounds,
   pointInPolygon,
   pointToItemLocal,
   pointToSegmentDistance,
@@ -14,7 +15,100 @@ import {
 } from "./geometry";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import { railGeometry } from "./rail";
+import { parseSymbolPath, type SymbolCommand } from "./symbolPaths";
+import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
 import type { Layer, MarkupItem, Point, Project } from "./types";
+
+const symbolPolylineCache = new Map<string, Point[][]>();
+
+function sampleCubic(
+  from: Point,
+  control1: Point,
+  control2: Point,
+  to: Point,
+  steps = 12,
+): Point[] {
+  const points: Point[] = [];
+  for (let step = 0; step <= steps; step += 1) {
+    const t = step / steps;
+    const inverse = 1 - t;
+    points.push({
+      x:
+        inverse ** 3 * from.x +
+        3 * inverse ** 2 * t * control1.x +
+        3 * inverse * t ** 2 * control2.x +
+        t ** 3 * to.x,
+      y:
+        inverse ** 3 * from.y +
+        3 * inverse ** 2 * t * control1.y +
+        3 * inverse * t ** 2 * control2.y +
+        t ** 3 * to.y,
+    });
+  }
+  return points;
+}
+
+function symbolPolylines(data: string): Point[][] {
+  const cached = symbolPolylineCache.get(data);
+  if (cached) return cached;
+  const commands: SymbolCommand[] = parseSymbolPath(data);
+  const polylines: Point[][] = [];
+  let current: Point[] = [];
+  let cursor: Point = { x: 0, y: 0 };
+  let start: Point = { x: 0, y: 0 };
+  const flush = () => {
+    if (current.length > 1) polylines.push(current);
+    current = [];
+  };
+  for (const command of commands) {
+    if (command.type === "M") {
+      flush();
+      start = { x: command.x, y: command.y };
+      cursor = { ...start };
+      current = [{ ...start }];
+    } else if (command.type === "L") {
+      cursor = { x: command.x, y: command.y };
+      current.push({ ...cursor });
+    } else if (command.type === "C") {
+      const points = sampleCubic(
+        cursor,
+        { x: command.x1, y: command.y1 },
+        { x: command.x2, y: command.y2 },
+        { x: command.x, y: command.y },
+      );
+      current.push(...points.slice(1));
+      cursor = { x: command.x, y: command.y };
+    } else {
+      if (current.length > 1) current.push({ ...start });
+      flush();
+      cursor = { ...start };
+    }
+  }
+  flush();
+  symbolPolylineCache.set(data, polylines);
+  return polylines;
+}
+
+function symbolStrokeHit(
+  symbolId: string | undefined,
+  vx: number,
+  vy: number,
+  tolerance: number,
+  size: number,
+): boolean {
+  const definition = symbolFor(symbolId);
+  const point = { x: vx, y: vy };
+  for (const shape of definition.art.shapes) {
+    const polylines = symbolPolylines(shape.d);
+    const strokeHalf = shape.stroke ? ((shape.strokeWidth ?? 0.7) * (64 / size)) / 2 : 0;
+    const reach = tolerance + strokeHalf;
+    for (const line of polylines) {
+      if (shape.stroke && distanceToPolyline(point, line, false) <= reach) return true;
+      if (!shape.stroke && pointInPolygon(point, line)) return true;
+    }
+  }
+  return false;
+}
 
 export interface HitResult {
   layer: Layer;
@@ -44,13 +138,26 @@ function hitItem(
   if (item.kind === "symbol") {
     const anchor = item.points[0];
     if (!anchor) return null;
-    const bounds = itemLocalBounds(item);
-    const inside =
-      localPoint.x >= bounds.min.x - tolerance &&
-      localPoint.y >= bounds.min.y - tolerance &&
-      localPoint.x <= bounds.max.x + tolerance &&
-      localPoint.y <= bounds.max.y + tolerance;
-    return inside ? { distance: 0, vertexIndex: -1, segmentIndex: -1 } : null;
+    const definition = symbolFor(item.symbolId);
+    const selection = itemSelectionBounds(item);
+    const insideSelection =
+      point.x >= selection.min.x - tolerance &&
+      point.y >= selection.min.y - tolerance &&
+      point.x <= selection.max.x + tolerance &&
+      point.y <= selection.max.y + tolerance;
+    if (!insideSelection) return null;
+    if (definition.style !== "schematic") {
+      return { distance: 0, vertexIndex: -1, segmentIndex: -1 };
+    }
+    const size = symbolSizeOf(item);
+    const scale = size / 64;
+    const viewPoint = {
+      x: 32 + (localPoint.x - anchor.x) / scale,
+      y: 32 + (localPoint.y - anchor.y) / scale,
+    };
+    return symbolStrokeHit(item.symbolId, viewPoint.x, viewPoint.y, tolerance / scale, size)
+      ? { distance: 0, vertexIndex: -1, segmentIndex: -1 }
+      : null;
   }
 
   if (item.kind === "count") {
