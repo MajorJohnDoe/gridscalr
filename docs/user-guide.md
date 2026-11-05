@@ -402,9 +402,9 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 **Schematic** contains 111 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
-- Symbols are flat black line art with a fixed 1.4 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.
+- Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.
 - Each symbol has a suggested tag prefix such as `FF`, `VVX` or `GT`. Enter any free text in **Tag** in Properties; the tag follows the symbol and its offset can be adjusted. Nothing is numbered automatically.
-- Ports mark pipe, duct and cable connection points for snapping and review.
+- Ports mark pipe, duct and cable connection points for snapping and review. Some symbols, such as the heat exchanger, deliberately have no connection lines in the artwork; draw the pipe or duct line yourself and snap it to a port.
 - Connection dots, arrows, references and tag holders live in **General**.
 
 - Symbols are drawing objects. They do not appear in quantity totals.
@@ -412,7 +412,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - The symbol name appears as the Markups label. You can still give an item a custom label.
 - The status marker is a small white-ringed badge in the corner; it is visible on both the dark canvas and white paper.
 
-Built-in symbols are original vector interpretations inspired by common Swedish and European facility and schematic practice. They are not certified SS-EN ISO 7010 material, are not reproductions of a named schematic standard, and were not traced from an external sign or icon set. The generated design-review catalogue can be opened from `artifacts/symbol-catalog.html` after running `npm run symbols:catalog`.
+Built-in symbols are original vector interpretations inspired by common Swedish and European facility and schematic practice. They are not certified SS-EN ISO 7010 material, are not reproductions of SS-EN ISO 14617, IEC 60617 or another named schematic standard, and were not traced from an external sign or icon set. No standard document or commercial symbol library is bundled with the app. The generated design-review catalogue can be opened from `artifacts/symbol-catalog.html` after running `npm run symbols:catalog`.
 
 ![Searchable symbol library with a selected fire extinguisher, Markups grouped by category and inspection status](screenshots/symbols.png)
 

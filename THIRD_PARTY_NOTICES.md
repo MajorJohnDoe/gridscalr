@@ -43,10 +43,11 @@ The font files are not modified. Their license texts are included in the
 
 - The GridScalr mark (`src-tauri/icons/app-icon.svg`) is original artwork for
   this project and is covered by the MIT License.
-- The built-in facility symbols are original filled-vector illustrations drawn
-  for GridScalr. They are not certified reproductions of SS-EN ISO 7010 or any
-  other standard, and they must not be used as a substitute for legally required
-  safety signage.
+- The built-in facility signs and schematic symbols are original vector
+  illustrations drawn for GridScalr. They are not certified reproductions of
+  SS-EN ISO 7010, SS-EN ISO 14617, IEC 60617 or any other standard, and they must
+  not be used as a substitute for legally required safety signage. No standard
+  document, figure or commercial symbol library is bundled with this project.
 
 ## Development-only dependencies
 

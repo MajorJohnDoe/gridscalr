@@ -25,6 +25,7 @@ import {
   symbolSizeOf,
   symbolArtBounds,
   symbolRenderPlan,
+  symbolShapeStrokeWidth,
   symbolSvgMarkup,
 } from "../src/model/symbols";
 import { parseSymbolPath } from "../src/model/symbolPaths";
@@ -274,6 +275,50 @@ describe("schematic symbol set", () => {
         expect(symbolSvgMarkup(symbol, 27, "#e8eef1")).toContain('stroke="#e8eef1"');
       }
     }
+  });
+
+  it("keeps schematic strokes at one page-space weight at every symbol size", () => {
+    const plan = symbolRenderPlan(symbolForAll("schematic.sensor"), "#111111");
+    const shape = plan.shapes.find((entry) => entry.stroke);
+    expect(shape).toBeTruthy();
+    for (const size of [20, 40, 80]) {
+      expect(symbolShapeStrokeWidth(plan, shape!, size)).toBeCloseTo(SCHEMATIC_STROKE_WIDTH, 6);
+    }
+  });
+
+  it("scales sign strokes with the symbol size", () => {
+    const plan = symbolRenderPlan(symbolFor("fire.extinguisher"), "#d3202a", "sign");
+    const shape = plan.shapes.find((entry) => entry.stroke);
+    expect(shape).toBeTruthy();
+    const small = symbolShapeStrokeWidth(plan, shape!, 24);
+    const large = symbolShapeStrokeWidth(plan, shape!, 48);
+    expect(large).toBeCloseTo(small * 2, 6);
+  });
+
+  it("draws every sensor family with the same closed funnel", () => {
+    const ids = [
+      "schematic.sensor",
+      "schematic.sensor-internal",
+      "schematic.sensor-external",
+      "schematic.sensor-differential",
+      "schematic.duct-sensor",
+      "schematic.pressure-sensor",
+      "schematic.flow-sensor",
+      "schematic.level-sensor",
+    ];
+    for (const id of ids) {
+      const shapes = symbolForAll(id).art?.shapes ?? [];
+      expect(
+        shapes.some((shape) => shape.d.includes("M 18 16 Q 32 8 46 16 L 32 34 Z")),
+        id,
+      ).toBe(true);
+    }
+  });
+
+  it("draws the thermometer as a vertical scale with a bulb", () => {
+    const shapes = symbolForAll("schematic.thermometer").art?.shapes ?? [];
+    expect(shapes.some((shape) => shape.d.includes("M 32 8 L 32 46"))).toBe(true);
+    expect(shapes.some((shape) => shape.d.includes("M 32 46 L 32 58"))).toBe(true);
   });
 
   it("resolves set membership, prefixes and defaults through the registry", () => {

@@ -91,6 +91,15 @@ export function smallCircle(cx: number, cy: number, radius: number): string {
   return circlePathData(cx, cy, radius);
 }
 
+/**
+ * The closed funnel shared by the sensor symbols: an arc mouth, two sides that
+ * meet at the stem and a stem down to `stemEnd`. Process connection lines are
+ * deliberately not part of the artwork; they are drawn by the user.
+ */
+export function sensorFunnel(stemEnd = 54): string {
+  return `M 18 16 Q 32 8 46 16 L 32 34 Z M 32 34 L 32 ${n(stemEnd)}`;
+}
+
 /** A coil or battery drawn inside a duct casing. */
 export function coilPath(yTop: number, yBottom: number, left = 10, right = 54): string {
   const step = (right - left) / 4;
@@ -162,16 +171,18 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "exchanger",
     keywords: ["värmeväxlare", "heat exchanger", "växlare", "återvinning", "vvx"],
     tagPrefix: "VVX",
+    // No connection lines in the artwork: the user draws the pipe or duct
+    // lines in whatever direction the plant needs. The ports are snap anchors
+    // on the shell edge.
     ports: [
-      { id: "primaryIn", x: 2, y: 26, direction: "in" },
-      { id: "primaryOut", x: 2, y: 38, direction: "out" },
-      { id: "secondaryIn", x: 62, y: 38, direction: "in" },
-      { id: "secondaryOut", x: 62, y: 26, direction: "out" },
+      { id: "primaryIn", x: 14, y: 22, direction: "in" },
+      { id: "primaryOut", x: 50, y: 22, direction: "out" },
+      { id: "secondaryIn", x: 50, y: 42, direction: "in" },
+      { id: "secondaryOut", x: 14, y: 42, direction: "out" },
     ],
     shapes: [
       stroke(polyPath([22, 10, 42, 10, 50, 18, 50, 46, 42, 54, 22, 54, 14, 46, 14, 18], true)),
       stroke(joinPaths("M 20 20 H 44 L 20 30 H 44 L 20 40 H 44 L 20 48")),
-      stroke(joinPaths(linePath(2, 26, 14, 26), linePath(50, 38, 62, 38))),
     ],
   }),
   schematicSymbol({
@@ -254,10 +265,6 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
       { id: "in", x: 4, y: 50, direction: "in" },
       { id: "out", x: 60, y: 50, direction: "out" },
     ],
-    shapes: [
-      stroke(linePath(4, 50, 60, 50)),
-      stroke("M 18 16 Q 32 8 46 16 L 34 36 L 34 50"),
-      stroke(linePath(30, 36, 34, 36)),
-    ],
+    shapes: [stroke(linePath(4, 50, 60, 50)), stroke(sensorFunnel(50))],
   }),
 ];

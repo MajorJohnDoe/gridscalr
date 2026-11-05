@@ -289,4 +289,5 @@ Never attach real customer drawings to an issue or a pull request.
 Built with [Tauri](https://tauri.app), [PDF.js](https://mozilla.github.io/pdf.js/),
 [pdf-lib](https://pdf-lib.js.org) and TypeScript. The facility symbols are
 original vector illustrations drawn for this project; they are not certified
-SS-EN ISO 7010 reproductions.
+SS-EN ISO 7010 reproductions and not reproductions of SS-EN ISO 14617 or
+IEC 60617.

@@ -10,7 +10,13 @@ TIF drawings. Contributions are accepted under the MIT License.
   issue first.
 - Never commit customer drawings, personal data, credentials or `.env` files.
   Use `fixtures/industrial-plan.pdf` or a drawing you are allowed to share.
-  `exports/` and `temp_test_plans/` are ignored on purpose.
+  `exports/`, `temp_test_plans/` and `artifacts/` are ignored on purpose.
+- Symbol artwork must be original. Do not trace, copy or scan figures from
+  SS-EN ISO 7010, SS-EN ISO 14617, IEC 60617, a commercial symbol library or any
+  other published standard. Contributions are accepted under the MIT License,
+  and the built-in symbols must keep the disclaimer in `docs/limitations.md`.
+  They are inspired by common Swedish and European practice, not certified
+  reproductions and not a substitute for legally required signage.
 - Keep one logical change per pull request. Do not mix refactors with features.
 - Read `AGENTS.md` before changing behaviour; it lists the product invariants
   (hidden items never render or export, locked items stay visible, one bulk

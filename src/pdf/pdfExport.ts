@@ -82,6 +82,7 @@ import {
   symbolCategoryColor,
   symbolFor,
   symbolRenderPlan,
+  symbolShapeStrokeWidth,
   symbolSizeOf,
   type SymbolRenderShape,
 } from "../features/schematics/symbols/registry";
@@ -1470,7 +1471,8 @@ function drawSymbolItem(
         : symbolCategoryColor(definition.category);
   const rotation = item.rotation ?? 0;
   const plan = symbolRenderPlan(definition, accentHex);
-  const scale = symbolSizeOf(item) / plan.viewBox;
+  const size = symbolSizeOf(item);
+  const scale = size / plan.viewBox;
   const half = plan.viewBox / 2;
   const toPage = (point: Point): Point =>
     rotatePoint(
@@ -1508,9 +1510,7 @@ function drawSymbolItem(
     if (shape.stroke) {
       operators.push(
         setStrokingColor(pdfColor(shape.stroke)),
-        setLineWidth(
-          Math.max(0.2, plan.fixedStrokeWidth ?? shape.strokeWidth * shape.scale * scale),
-        ),
+        setLineWidth(Math.max(0.2, symbolShapeStrokeWidth(plan, shape, size))),
         setLineCap(LineCapStyle.Round),
         setLineJoin(LineJoinStyle.Round),
       );

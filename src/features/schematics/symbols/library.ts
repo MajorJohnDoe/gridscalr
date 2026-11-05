@@ -12,6 +12,7 @@ import {
   polyPath,
   rectPath,
   schematicSymbol,
+  sensorFunnel,
   smallCircle,
   stroke,
 } from "./definitions";
@@ -31,8 +32,6 @@ const PUMP_PORTS = () => [
   { id: "in", x: 16, y: 32, direction: "in" as const },
   { id: "out", x: 48, y: 32, direction: "out" as const },
 ];
-
-const sensorFunnel = (): string => "M 18 16 Q 32 8 46 16 L 34 36 L 34 54 M 30 36 L 34 36";
 
 const SENSOR_PORTS = (x = 32) => [{ id: "process", x, y: 58, direction: "both" as const }];
 
@@ -132,12 +131,14 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     shapes: [
       stroke(
         joinPaths(
-          linePath(14, 50, 50, 34),
-          linePath(26, 36, 24, 44),
-          linePath(32, 33, 30, 41),
-          linePath(38, 30, 36, 38),
+          linePath(32, 8, 32, 46),
+          smallCircle(32, 50, 6),
+          linePath(36, 16, 40, 16),
+          linePath(36, 24, 40, 24),
+          linePath(36, 32, 40, 32),
         ),
       ),
+      stroke(linePath(32, 46, 32, 58)),
     ],
   }),
   schematicSymbol({

@@ -166,6 +166,7 @@ import {
   symbolDefaultSize,
   symbolFor,
   symbolRenderPlan,
+  symbolShapeStrokeWidth,
   symbolSizeOf,
 } from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
@@ -3361,7 +3362,7 @@ export class CanvasView {
         }
         ctx.stroke();
         ctx.setLineDash([]);
-        this.drawEndpoints(ctx, points, item.color);
+        this.drawEndpoints(ctx, points, item.color, lineWidth);
         break;
       }
       case "angle": {
@@ -3384,7 +3385,7 @@ export class CanvasView {
           );
           ctx.stroke();
         }
-        this.drawEndpoints(ctx, [start, vertex, end], item.color);
+        this.drawEndpoints(ctx, [start, vertex, end], item.color, lineWidth);
         break;
       }
       case "slope": {
@@ -3396,7 +3397,7 @@ export class CanvasView {
         ctx.moveTo(start.x, start.y);
         ctx.lineTo(end.x, end.y);
         ctx.stroke();
-        this.drawEndpoints(ctx, [start, end], item.color);
+        this.drawEndpoints(ctx, [start, end], item.color, lineWidth);
         break;
       }
       case "radius":
@@ -3429,6 +3430,7 @@ export class CanvasView {
           ctx,
           item.kind === "diameter" ? [opposite, edge] : [center, edge],
           item.color,
+          lineWidth,
         );
         break;
       }
@@ -3443,7 +3445,12 @@ export class CanvasView {
         }
         ctx.stroke();
         ctx.setLineDash([]);
-        this.drawEndpoints(ctx, [curve[0], curve[curve.length - 1]].filter(Boolean), item.color);
+        this.drawEndpoints(
+          ctx,
+          [curve[0], curve[curve.length - 1]].filter(Boolean),
+          item.color,
+          lineWidth,
+        );
         break;
       }
       case "area":
@@ -3463,7 +3470,7 @@ export class CanvasView {
         outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         ctx.closePath();
         ctx.stroke();
-        if (shape !== "ellipse") this.drawEndpoints(ctx, outline, item.color);
+        if (shape !== "ellipse") this.drawEndpoints(ctx, outline, item.color, lineWidth);
         break;
       }
       case "count": {
@@ -3504,7 +3511,8 @@ export class CanvasView {
               ? item.color
               : symbolCategoryColor(definition.category);
         const plan = symbolRenderPlan(definition, accent);
-        const scale = (symbolSizeOf(item) * zoom) / plan.viewBox;
+        const size = symbolSizeOf(item);
+        const scale = (size * zoom) / plan.viewBox;
         const half = plan.viewBox / 2;
         ctx.save();
         ctx.translate(anchor.x, anchor.y);
@@ -3524,9 +3532,9 @@ export class CanvasView {
           }
           if (shape.stroke) {
             ctx.strokeStyle = shape.stroke;
-            ctx.lineWidth = plan.fixedStrokeWidth
-              ? plan.fixedStrokeWidth / scale
-              : shape.strokeWidth;
+            // Page-space width converted to local units: the stroke scales with
+            // zoom exactly like the PDF export and the rest of the canvas.
+            ctx.lineWidth = (symbolShapeStrokeWidth(plan, shape, size) * plan.viewBox) / size;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
             ctx.stroke(path);
@@ -3605,7 +3613,7 @@ export class CanvasView {
         ctx.lineTo(points[1].x, points[1].y);
         ctx.stroke();
         ctx.setLineDash([]);
-        this.drawEndpoints(ctx, points, item.color);
+        this.drawEndpoints(ctx, points, item.color, lineWidth);
         break;
       }
       case "arrow": {
@@ -4032,8 +4040,13 @@ export class CanvasView {
     );
   }
 
-  private drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
-    paintEndpoints(ctx, points, color);
+  private drawEndpoints(
+    ctx: CanvasRenderingContext2D,
+    points: Point[],
+    color: string,
+    lineWidth: number,
+  ): void {
+    paintEndpoints(ctx, points, color, lineWidth);
   }
 
   private drawLabelLayout(ctx: CanvasRenderingContext2D, layout: LabelLayout): void {

@@ -123,15 +123,24 @@ export function drawAnnotationPanel(
   ctx.restore();
 }
 
-export function drawEndpoints(ctx: CanvasRenderingContext2D, points: Point[], color: string): void {
+export function drawEndpoints(
+  ctx: CanvasRenderingContext2D,
+  points: Point[],
+  color: string,
+  lineWidth = 3,
+): void {
   if (points.length > 26) return;
+  // Keep the marker proportional to the line on screen: it shrinks when the
+  // drawing is zoomed out instead of dominating the line, and is capped when
+  // zoomed in.
+  const radius = Math.max(1.2, Math.min(3, lineWidth * 1.2));
   ctx.save();
   ctx.fillStyle = "#101518";
   ctx.strokeStyle = color;
   ctx.lineWidth = 1.4;
   for (const p of points) {
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, Math.PI * 2);
+    ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
   }
