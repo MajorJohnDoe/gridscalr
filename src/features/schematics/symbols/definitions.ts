@@ -100,6 +100,26 @@ export function sensorFunnel(stemEnd = 54): string {
   return `M 18 16 Q 32 8 46 16 L 32 34 Z M 32 34 L 32 ${n(stemEnd)}`;
 }
 
+/** Number of zigzag folds per media path in the heat-exchanger symbol. */
+const HEAT_EXCHANGER_FOLDS = 7;
+
+/**
+ * One counter-flow media path for the heat exchanger. The path enters at
+ * `startX`, zigzags between `outerX` and `innerX` and leaves on the same side.
+ */
+function heatExchangerMedia(startX: number, outerX: number, innerX: number): string {
+  const top = 16;
+  const bottom = 48;
+  const step = (bottom - top) / HEAT_EXCHANGER_FOLDS;
+  const parts = [`M ${n(startX)} ${n(top)} H ${n(innerX)}`];
+  for (let fold = 1; fold <= HEAT_EXCHANGER_FOLDS; fold += 1) {
+    const x = fold % 2 === 1 ? outerX : innerX;
+    parts.push(`L ${n(x)} ${n(top + step * fold)}`);
+  }
+  parts.push(`H ${n(startX)}`);
+  return parts.join(" ");
+}
+
 /** A coil or battery drawn inside a duct casing. */
 export function coilPath(yTop: number, yBottom: number, left = 10, right = 54): string {
   const step = (right - left) / 4;
@@ -190,8 +210,8 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       stroke(rectPath(18, 8, 28, 48)),
-      stroke("M 18 16 H 30 L 20 28 L 30 40 L 20 48 H 18"),
-      stroke("M 46 16 H 34 L 44 28 L 34 40 L 44 48 H 46"),
+      stroke(heatExchangerMedia(18, 20, 31)),
+      stroke(heatExchangerMedia(46, 44, 33)),
     ],
   }),
   schematicSymbol({
