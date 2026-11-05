@@ -99,6 +99,7 @@ import {
 import { makeId } from "../model/calibration";
 import {
   collectSnapCandidates,
+  excludeOwnSnapTargets,
   findSnap,
   type SnapCandidate,
   type SnapResult,
@@ -1867,9 +1868,8 @@ export class CanvasView {
       return;
     }
     if (this.drag) {
-      const moved = this.drag.moved;
+      this.snap = null;
       this.endDrag();
-      if (moved) this.snap = null;
       return;
     }
     if (this.draft) {
@@ -2116,7 +2116,7 @@ export class CanvasView {
     this.snap = null;
     if (!project || !project.settings.snapToGeometry) return point;
     const candidates = excludeItemId
-      ? this.snapCandidates().filter((candidate) => !candidate.itemIds?.includes(excludeItemId))
+      ? excludeOwnSnapTargets(this.snapCandidates(), excludeItemId)
       : this.snapCandidates();
     const result = findSnap(
       point,

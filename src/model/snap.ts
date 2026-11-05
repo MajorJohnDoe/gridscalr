@@ -129,7 +129,7 @@ function closedSegments(item: MarkupItem, points: Point[]): Segment[] {
  * Freehand pen, highlight, ellipse, count and text are deliberately excluded.
  */
 function straightsForItem(item: MarkupItem): Segment[] {
-  if (item.kind === "length") {
+  if (item.kind === "length" || item.kind === "polyline") {
     return openSegments(
       item,
       item.points.map((point) => itemLocalToPage(item, point)),
@@ -311,6 +311,24 @@ export function collectSnapCandidates(project: Project, page: number): SnapCandi
   }
 
   return candidates;
+}
+
+/**
+ * Drops targets produced only by the item being edited. A shared endpoint or
+ * midpoint stays available because a neighbouring item still owns it. An
+ * intersection or segment that involves the edited item moves with it, so it
+ * is never a stable target while the drag is in progress.
+ */
+export function excludeOwnSnapTargets(
+  candidates: readonly SnapCandidate[],
+  itemId: string,
+): SnapCandidate[] {
+  return candidates.filter((candidate) => {
+    const ids = candidate.itemIds;
+    if (!ids?.includes(itemId)) return true;
+    if (candidate.kind !== "endpoint" && candidate.kind !== "midpoint") return false;
+    return ids.some((id) => id !== itemId);
+  });
 }
 
 /** Finds the nearest candidate within a screen-pixel threshold. */

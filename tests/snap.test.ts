@@ -7,7 +7,12 @@ import {
   defaultDocument,
   layersForKind,
 } from "../src/model/layers";
-import { collectSnapCandidates, findSnap, type SnapCandidate } from "../src/model/snap";
+import {
+  collectSnapCandidates,
+  excludeOwnSnapTargets,
+  findSnap,
+  type SnapCandidate,
+} from "../src/model/snap";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -136,6 +141,74 @@ describe("markup snapping", () => {
     expect(result?.kind).toBe("segment");
     expect(result?.point.x).toBeCloseTo(70, 5);
     expect(result?.point.y).toBeCloseTo(0, 5);
+  });
+
+  it("treats pipe and duct runs as segments for midpoints, intersections and projection", () => {
+    const project = makeProject();
+    const draw = layersForKind(project, "draw")[0];
+    addItem(
+      project,
+      draw.id,
+      makeItem({
+        id: "duct",
+        kind: "polyline",
+        points: [
+          { x: 0, y: 100 },
+          { x: 100, y: 100 },
+          { x: 100, y: 200 },
+        ],
+      }),
+    );
+    addItem(
+      project,
+      draw.id,
+      makeItem({
+        id: "riser",
+        kind: "polyline",
+        points: [
+          { x: 50, y: 50 },
+          { x: 50, y: 150 },
+        ],
+      }),
+    );
+    const candidates = collectSnapCandidates(project, 1);
+    expect(has(candidates, "endpoint", 0, 100)).toBe(true);
+    expect(has(candidates, "endpoint", 100, 100)).toBe(true);
+    expect(has(candidates, "endpoint", 100, 200)).toBe(true);
+    expect(has(candidates, "midpoint", 50, 100)).toBe(true);
+    expect(has(candidates, "midpoint", 100, 150)).toBe(true);
+    expect(has(candidates, "intersection", 50, 100)).toBe(true);
+
+    const result = findSnap({ x: 60, y: 104 }, candidates, 8, 1);
+    expect(result?.kind).toBe("segment");
+    expect(result?.point.x).toBeCloseTo(60, 5);
+    expect(result?.point.y).toBeCloseTo(100, 5);
+  });
+
+  it("keeps a shared endpoint available while its owner is being edited", () => {
+    const project = makeProject();
+    const measure = layersForKind(project, "measure")[0];
+    addItem(
+      project,
+      measure.id,
+      makeItem({
+        id: "neighbour",
+        points: [
+          { x: 100, y: 0 },
+          { x: 200, y: 0 },
+        ],
+      }),
+    );
+    const candidates = collectSnapCandidates(project, 1);
+
+    const available = excludeOwnSnapTargets(candidates, "horizontal");
+    // The neighbour still owns the shared endpoint.
+    expect(has(available, "endpoint", 100, 0)).toBe(true);
+    expect(has(available, "midpoint", 150, 0)).toBe(true);
+    // Targets that only the edited item owns must disappear.
+    expect(has(available, "endpoint", 0, 0)).toBe(false);
+    expect(has(available, "midpoint", 50, 0)).toBe(false);
+    expect(has(available, "intersection", 30, 0)).toBe(false);
   });
 
   it("does not add midpoints or intersections for ellipses", () => {
