@@ -196,6 +196,8 @@ try {
     ["o", "Ellipse"],
     ["g", "Highlight"],
     ["t", "Text"],
+    ["f", "Pipe / duct"],
+    ["b", "Symbol"],
     ["d", "Revision cloud"],
     ["n", "Callout"],
     ["s", "Stamp"],
@@ -507,6 +509,11 @@ try {
   assert.ok(
     (await page.locator(".symbol-tile:visible").count()) >= 1,
     "symbol search should find the Swedish fire-extinguisher term",
+  );
+  assert.equal(
+    await page.locator('[data-symbol-id="fire.hose"]:visible').count(),
+    0,
+    "symbol search should hide non-matching signs",
   );
   await symbolSearch.fill("");
   await page.locator('[data-symbol-id="fire.extinguisher"]').click();
@@ -1139,6 +1146,216 @@ try {
   await searchPanel.getByRole("button", { name: "Close search" }).click();
   await searchPanel.waitFor({ state: "detached" });
   await waitForToastsGone(page);
+
+  // Line-type editor: rename/add without touching existing item styles.
+  await page.keyboard.press("f");
+  const editLineTypes = page.getByRole("button", { name: "Edit line types…" });
+  await editLineTypes.waitFor();
+  await editLineTypes.click();
+  const lineTypeDialog = page.getByRole("dialog", { name: "Line types" });
+  await lineTypeDialog.waitFor();
+  const lineTypeCount = await page.evaluate(
+    () => window.__gridscalr.store.project.lineTypes.length,
+  );
+  await lineTypeDialog.getByRole("button", { name: "Add line type" }).click();
+  await lineTypeDialog.getByRole("button", { name: "Apply" }).click();
+  await lineTypeDialog.waitFor({ state: "detached" });
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.project.lineTypes.length),
+    lineTypeCount + 1,
+    "the line-type editor should add a project line type",
+  );
+
+  // The line and pipe tools expose compact dropdown menus for colour and format.
+  await page.keyboard.press("i");
+  await page.getByRole("button", { name: "Choose variants for Line" }).click();
+  const lineOptions = page.getByRole("menu", { name: "Line options" });
+  await lineOptions.waitFor();
+  await lineOptions.getByRole("menuitemradio", { name: /Dashed/ }).click();
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.lineStyle.dashed),
+    true,
+    "the line options menu should set the dashed format",
+  );
+  await lineOptions.getByRole("menuitemradio", { name: /Solid/ }).click();
+  await page.keyboard.press("Escape");
+  await lineOptions.waitFor({ state: "detached" });
+
+  await page.keyboard.press("f");
+  await page.getByRole("button", { name: "Choose variants for Pipe / duct" }).click();
+  const pipeOptions = page.getByRole("menu", { name: "Pipe & duct options" });
+  await pipeOptions.waitFor();
+  await pipeOptions.getByLabel("Line type").waitFor();
+  await pipeOptions.getByRole("button", { name: "Signal red" }).waitFor();
+  await pipeOptions.getByRole("button", { name: "2 pt" }).waitFor();
+  await page.keyboard.press("Escape");
+  await pipeOptions.waitFor({ state: "detached" });
+
+  // Rail rows can be reordered with the dialog controls.
+  await page.keyboard.press("v");
+  await interaction.click({ position: { x: 12, y: 12 } });
+  await page.keyboard.press("Shift+R");
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
+    "rail",
+    "the rail shortcut should activate the rail tool",
+  );
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.25, canvasBox.y + canvasBox.height * 0.6);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width * 0.6,
+    canvasBox.y + canvasBox.height * 0.62,
+    {
+      steps: 6,
+    },
+  );
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+  assert.equal(
+    await page.evaluate(() =>
+      window.__gridscalr.store.project.layers.some((layer) =>
+        layer.items.some((item) => item.kind === "rail"),
+      ),
+    ),
+    true,
+    "the rail tool should create a rail item",
+  );
+  const selectionKind = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    if (!selection) return "none";
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === selection.itemId);
+    return item?.kind ?? "missing";
+  });
+  assert.equal(selectionKind, "rail", "the new rail should stay selected");
+  const closeMarkups = page.getByRole("button", { name: "Close Markups list" });
+  if ((await closeMarkups.count()) > 0 && (await closeMarkups.first().isVisible())) {
+    await closeMarkups.first().click();
+  }
+  await page.locator(".inspector button", { hasText: /Edit rail/ }).click();
+  const railDialog = page.getByRole("dialog", { name: "I/O rail" });
+  await railDialog.waitFor();
+  await railDialog.getByRole("button", { name: "Move up" }).nth(1).click();
+  await railDialog.getByRole("button", { name: "Apply" }).click();
+  await railDialog.waitFor({ state: "detached" });
+  const railRows = await page.evaluate(() => {
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.kind === "rail");
+    return item?.rows?.map((row) => row.label) ?? [];
+  });
+  assert.equal(railRows[0], "DI", "moving the second rail row up should reorder it");
+
+  // Rich text: a selected word keeps its own run style.
+  await page.keyboard.press("Shift+T");
+  await page.mouse.move(canvasBox.x + canvasBox.width * 0.2, canvasBox.y + canvasBox.height * 0.2);
+  await page.mouse.down();
+  await page.mouse.move(
+    canvasBox.x + canvasBox.width * 0.45,
+    canvasBox.y + canvasBox.height * 0.3,
+    {
+      steps: 5,
+    },
+  );
+  await page.mouse.up();
+  const textEditor = page.locator(".canvas-text-editor-input");
+  await textEditor.waitFor();
+  await textEditor.fill("Alpha Beta");
+  const selectFirstWord = () =>
+    textEditor.evaluate((element) => {
+      const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+      const node = walker.nextNode();
+      if (!node) return;
+      const range = document.createRange();
+      range.setStart(node, 0);
+      range.setEnd(node, 5);
+      const selection = window.getSelection();
+      selection?.removeAllRanges();
+      selection?.addRange(range);
+      element.dispatchEvent(new Event("keyup", { bubbles: true }));
+    });
+  const selectionStyle = (property) =>
+    page.evaluate((name) => {
+      const selection = window.getSelection();
+      if (!selection?.rangeCount) return null;
+      const node = selection.getRangeAt(0).startContainer;
+      const element = node.nodeType === Node.TEXT_NODE ? node.parentElement : node;
+      return element ? getComputedStyle(element)[name] : null;
+    }, property);
+  const selectionWeight = () => selectionStyle("fontWeight");
+  await selectFirstWord();
+  const boldButton = page.locator('.inline-style-strip button[title="Bold"]');
+  await boldButton.click();
+  assert.equal(
+    await selectionWeight(),
+    "700",
+    "bold should be visible inside the editor before committing",
+  );
+  await boldButton.click();
+  assert.equal(
+    await selectionWeight(),
+    "400",
+    "clicking bold again should remove the run formatting",
+  );
+  await boldButton.click();
+  const underlineButton = page.locator('.inline-style-strip button[title="Underline"]');
+  await underlineButton.click();
+  assert.ok(
+    (await selectionStyle("textDecorationLine"))?.includes("underline"),
+    "underline should be visible inside the editor before committing",
+  );
+  await underlineButton.click();
+  assert.ok(
+    !(await selectionStyle("textDecorationLine"))?.includes("underline"),
+    "clicking underline again should remove it immediately",
+  );
+  await page.locator(".inline-style-strip .is-primary").click();
+  await textEditor.waitFor({ state: "detached" });
+  const richBox = await page.evaluate(() => {
+    const item = window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.kind === "textbox" && entry.text === "Alpha Beta");
+    return item ? { runs: item.runs ?? null, background: item.textBackground ?? null } : null;
+  });
+  assert.equal(richBox?.runs?.[0]?.text, "Alpha");
+  assert.equal(richBox?.runs?.[0]?.bold, true, "the selected word should become bold");
+  assert.equal(richBox?.runs?.map((run) => run.text).join(""), "Alpha Beta");
+  assert.equal(richBox?.background, null, "new text boxes should start transparent");
+
+  // Schematic set filter, header placement and the optional free-text tag.
+  await page.keyboard.press("b");
+  const schematicTab = page.getByRole("tab", { name: "Schematic" });
+  await schematicTab.waitFor();
+  await schematicTab.click();
+  await symbolSearch.fill("fläkt");
+  assert.ok(
+    (await page.locator('[data-symbol-id="schematic.fan"]:visible').count()) === 1,
+    "schematic search should find the Swedish fan term",
+  );
+  assert.equal(
+    await page.locator('[data-symbol-id="schematic.pump"]:visible').count(),
+    0,
+    "schematic search should hide non-matching symbols",
+  );
+  await symbolSearch.fill("");
+  await page.locator('[data-symbol-id="schematic.fan"]').click();
+  await interaction.click({
+    position: { x: canvasBox.width * 0.45, y: canvasBox.height * 0.45 },
+  });
+  await page.waitForTimeout(150);
+  await page.getByLabel("Tag", { exact: true }).fill("FF-01");
+  await page.getByLabel("Tag", { exact: true }).press("Tab");
+  await page.waitForTimeout(120);
+  const schematicItem = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((entry) => entry.id === selection?.itemId);
+  });
+  assert.equal(schematicItem?.symbolId, "schematic.fan");
+  assert.equal(schematicItem?.tag, "FF-01", "the free-text tag should persist on the symbol");
+  assert.equal(schematicItem?.symbolSize, 40, "schematic symbols use their default size");
 
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);

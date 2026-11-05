@@ -8,7 +8,24 @@ export type MeasurementKind =
   "length" | "area" | "count" | "radius" | "diameter" | "arc" | "angle" | "slope" | "volume";
 export type CountType = string;
 export type CountGlyph = "door" | "window" | "radiator" | "fixture" | "other";
-export type SymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
+export type SignSymbolCategory = "fire" | "egress" | "hvac" | "electrical" | "building" | "waste";
+
+/** Categories shared by the facility signs and the schematic equipment sets. */
+export type SchematicSymbolCategory =
+  | "instrument"
+  | "valve"
+  | "pump"
+  | "exchanger"
+  | "ventilation"
+  | "heating"
+  | "district-heating"
+  | "cooling"
+  | "domestic-water"
+  | "control"
+  | "general";
+
+export type SymbolCategory = SignSymbolCategory | SchematicSymbolCategory;
+export type SymbolSet = "sign" | "schematic";
 export type InspectionStatus = "approved" | "not-approved" | "action-required" | "missing";
 export type AreaMode = "add" | "subtract";
 /** Polygon is the original click-by-click area. Rectangle and ellipse use two opposite points. */
@@ -113,6 +130,18 @@ export interface ManualCalibration {
 
 export type Calibration = ReferenceCalibration | ManualCalibration;
 
+/** One formatted range inside a text box. Missing fields fall back to the box style. */
+export interface TextRun {
+  text: string;
+  bold?: boolean;
+  italic?: boolean;
+  underline?: boolean;
+  /** Absolute size in PDF points. Missing uses the box size. */
+  size?: number;
+  /** Text colour. Missing uses the box text colour. */
+  color?: string;
+}
+
 export interface MarkupItem {
   id: string;
   page: number;
@@ -155,6 +184,10 @@ export interface MarkupItem {
   symbolSize?: number;
   /** Symbols only: inspection state shown in the Markups list and on the plan. */
   status?: InspectionStatus;
+  /** Symbols only: free-text designation. Never numbered automatically. */
+  tag?: string;
+  /** Symbols only: tag position relative to the symbol anchor, in PDF points. */
+  tagOffset?: Point;
   /** Highlights only. Missing means the original freehand stroke. */
   highlightShape?: HighlightShape;
   /** Arrows only. Missing means a single head at the end point. */
@@ -181,6 +214,8 @@ export interface MarkupItem {
   textBackground?: "none" | "white";
   /** Text boxes only: inner padding in PDF points. Missing means 4 pt. */
   padding?: number;
+  /** Text boxes only: optional formatted ranges. `text` remains the plain fallback. */
+  runs?: TextRun[];
   /** Polyline only: the project line type used at creation. */
   lineTypeId?: string;
   /** Rails only: editable row labels and legends. */
@@ -193,6 +228,8 @@ export interface MarkupItem {
   showLegend?: boolean;
   /** Text, callout and cloud text: bold weight. Missing means regular. */
   textBold?: boolean;
+  /** Text, callout and cloud text: italic style. Missing means upright. */
+  textItalic?: boolean;
   /** Text, callout and cloud text: underline. Missing means no underline. */
   textUnderline?: boolean;
   /** Text, callout and cloud text alignment. Missing means left for notes and centred for callouts and clouds. */

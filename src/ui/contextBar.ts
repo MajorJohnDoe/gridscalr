@@ -14,7 +14,7 @@ import {
   symbolFor,
   symbolName,
   symbolSvgMarkup,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { clear, el, option } from "./dom";
@@ -27,8 +27,9 @@ import { TOOL_BY_ID, familyForTool } from "./toolDefs";
 import { hasToolVariants, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 import { t } from "../i18n";
+import { drawingOverflowsArea } from "../features/schematics/model/fitDrawing";
 
-export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void {
+export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.contextBar);
   const project = store.project;
   const tool = TOOL_BY_ID.get(store.ui.activeTool);
@@ -42,7 +43,11 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
       variants.type = "button";
       variants.title = t("context.chooseVariants");
       variants.setAttribute("aria-label", t("tool.chooseVariants", { name: t(tool.label) }));
-      variants.innerHTML = `${icon("chevronDown", 12)}<span>${t("context.variants")}</span>`;
+      const label =
+        tool.id === "line" || tool.id === "polyline"
+          ? t("context.lineOptions")
+          : t("context.variants");
+      variants.innerHTML = `${icon("chevronDown", 12)}<span>${label}</span>`;
       variants.addEventListener("click", () => {
         if (family) openToolFamilyVariants(variants, family);
         else openToolVariants(variants, tool.id);
@@ -53,6 +58,15 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
   refs.contextBar.append(toolWrap);
   refs.contextBar.append(el("div", "context-hint", tool ? t(tool.hint) : ""));
   if (!project) return;
+
+  if (drawingOverflowsArea(project, store.ui.page)) {
+    const warning = el("button", "context-area-warning");
+    warning.type = "button";
+    warning.title = t("context.outsideAreaHint");
+    warning.append(document.createTextNode(t("context.outsideArea")));
+    warning.addEventListener("click", () => actions.fitDrawingToArea());
+    refs.contextBar.append(warning);
+  }
 
   const controls = el("div", "context-controls");
 
@@ -185,7 +199,10 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
     symbolButton.type = "button";
     symbolButton.title = t("context.openSymbols");
     symbolButton.setAttribute("aria-label", t("context.openSymbols"));
-    const color = symbolCategoryColor(symbolCategoryOf(definition.id));
+    const color =
+      definition.style === "schematic"
+        ? "#e8eef1"
+        : symbolCategoryColor(symbolCategoryOf(definition.id));
     symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${symbolName(definition.id)}</span>`;
     symbolButton.addEventListener("click", () => store.setLeftTab("symbols"));
 
@@ -223,7 +240,12 @@ export function renderContextBar(refs: ShellRefs, _actions: PanelActions): void 
       select.append(option(lineType.id, lineType.name, lineType.id === store.ui.lineTypeId));
     }
     select.addEventListener("change", () => store.setLineType(select.value));
-    lineTypeWrap.append(select);
+    const editLineTypes = el("button", "icon-btn", "⋯");
+    editLineTypes.type = "button";
+    editLineTypes.title = t("context.editLineTypes");
+    editLineTypes.setAttribute("aria-label", t("context.editLineTypes"));
+    editLineTypes.addEventListener("click", () => actions.editLineTypes());
+    lineTypeWrap.append(select, editLineTypes);
     controls.append(lineTypeWrap, el("div", "divider-v"));
   }
 

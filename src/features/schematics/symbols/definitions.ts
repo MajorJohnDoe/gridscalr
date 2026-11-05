@@ -1,0 +1,263 @@
+import { translate, type MessageKey } from "../../../i18n";
+import type { SymbolArtShape, SymbolDefinition, SymbolPort } from "../../../model/symbols";
+import { SCHEMATIC_SYMBOL_SIZE } from "../../../model/symbols";
+import { circlePathData } from "../../../model/symbolPaths";
+import type { SchematicSymbolCategory } from "../../../model/types";
+
+/**
+ * Original stroke-only artwork for the schematic equipment set. Every path is
+ * authored in the shared 64-unit view box. The catalogue, canvas and PDF export
+ * all read these definitions, so the artwork can never drift between them.
+ *
+ * These are generic interpretations, not reproductions of a published standard.
+ */
+
+const n = (value: number): string => String(Number(value.toFixed(4)));
+
+/** A straight line segment. */
+export function linePath(x1: number, y1: number, x2: number, y2: number): string {
+  return `M ${n(x1)} ${n(y1)} L ${n(x2)} ${n(y2)}`;
+}
+
+/** A rectangle outlined as a closed path. */
+export function rectPath(x: number, y: number, width: number, height: number): string {
+  return `M ${n(x)} ${n(y)} H ${n(x + width)} V ${n(y + height)} H ${n(x)} Z`;
+}
+
+/** A polygon from alternating x/y values, optionally closed. */
+export function polyPath(values: number[], closed = false): string {
+  if (values.length < 4 || values.length % 2 !== 0) return "";
+  const parts = [`M ${n(values[0])} ${n(values[1])}`];
+  for (let index = 2; index < values.length; index += 2) {
+    parts.push(`L ${n(values[index])} ${n(values[index + 1])}`);
+  }
+  if (closed) parts.push("Z");
+  return parts.join(" ");
+}
+
+/** Several path fragments joined into one shape. */
+export function joinPaths(...paths: string[]): string {
+  return paths.filter(Boolean).join(" ");
+}
+
+export const stroke = (d: string): SymbolArtShape => ({ d, stroke: true });
+export const fill = (d: string): SymbolArtShape => ({ d });
+
+/** A duct casing with open ends at the left and right page edges. */
+export function ductCasing(y = 22, height = 20): string {
+  return rectPath(2, y, 60, height);
+}
+
+/** Ports on the left and right duct edges. */
+export function ductPorts(y = 32): SymbolPort[] {
+  return [
+    { id: "in", x: 2, y, direction: "in" },
+    { id: "out", x: 62, y, direction: "out" },
+  ];
+}
+
+interface SchematicDefinitionInput {
+  id: string;
+  category: SchematicSymbolCategory;
+  keywords: string[];
+  tagPrefix: string;
+  ports: SymbolPort[];
+  shapes: SymbolArtShape[];
+  defaultSize?: number;
+}
+
+/**
+ * Registers one schematic symbol. The localized name is read from the message
+ * catalog under `symbol.<id>`, with an explicit English fallback while the
+ * catalogue is generated outside the app.
+ */
+export function schematicSymbol(input: SchematicDefinitionInput): SymbolDefinition {
+  return {
+    id: input.id,
+    name: translate("en", `symbol.${input.id}` as MessageKey),
+    category: input.category,
+    keywords: input.keywords,
+    art: { shapes: input.shapes },
+    set: "schematic",
+    style: "schematic",
+    ports: input.ports,
+    tagPrefix: input.tagPrefix,
+    defaultSize: input.defaultSize ?? SCHEMATIC_SYMBOL_SIZE,
+  };
+}
+
+/** A small open circle used by sensors and actuators. */
+export function smallCircle(cx: number, cy: number, radius: number): string {
+  return circlePathData(cx, cy, radius);
+}
+
+/** A coil or battery drawn inside a duct casing. */
+export function coilPath(yTop: number, yBottom: number, left = 10, right = 54): string {
+  const step = (right - left) / 4;
+  return joinPaths(
+    `M ${n(left)} ${n(yTop)} H ${n(right)}`,
+    `M ${n(left)} ${n((yTop + yBottom) / 2)} H ${n(right)}`,
+    `M ${n(left)} ${n(yBottom)} H ${n(right)}`,
+    `M ${n(left + step)} ${n(yTop)} V ${n(yBottom)}`,
+    `M ${n(left + step * 2)} ${n(yTop)} V ${n(yBottom)}`,
+    `M ${n(left + step * 3)} ${n(yTop)} V ${n(yBottom)}`,
+  );
+}
+
+const VENTILATION_PORTS = (): SymbolPort[] => ductPorts(32);
+
+export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
+  schematicSymbol({
+    id: "schematic.fan",
+    category: "ventilation",
+    keywords: ["fläkt", "fan", "ventilation", "fläktaggregat", "ff"],
+    tagPrefix: "FF",
+    ports: [
+      { id: "in", x: 15, y: 32, direction: "in" },
+      { id: "out", x: 49, y: 32, direction: "out" },
+    ],
+    shapes: [
+      stroke(smallCircle(32, 32, 17)),
+      stroke(polyPath([24, 19, 42, 32, 24, 45], true)),
+      stroke(linePath(24, 19, 24, 45)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.filter",
+    category: "ventilation",
+    keywords: ["filter", "luftfilter", "filtrering", "ventilation", "f"],
+    tagPrefix: "F",
+    ports: VENTILATION_PORTS(),
+    shapes: [
+      stroke(rectPath(10, 14, 44, 36)),
+      stroke(joinPaths("M 10 14 L 54 50 M 54 14 L 10 50")),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.heating-coil",
+    category: "heating",
+    keywords: ["värmebatteri", "heating coil", "värme", "batteri", "eftervärmare", "vb"],
+    tagPrefix: "VB",
+    ports: VENTILATION_PORTS(),
+    shapes: [
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(smallCircle(32, 32, 9)),
+      stroke(joinPaths(linePath(23, 32, 41, 32), linePath(32, 23, 32, 41))),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.cooling-coil",
+    category: "cooling",
+    keywords: ["kylbatteri", "cooling coil", "kyla", "batteri", "kylare", "kb"],
+    tagPrefix: "KB",
+    ports: VENTILATION_PORTS(),
+    shapes: [
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(smallCircle(32, 32, 9)),
+      stroke(linePath(23, 32, 41, 32)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.heat-exchanger",
+    category: "exchanger",
+    keywords: ["värmeväxlare", "heat exchanger", "växlare", "återvinning", "vvx"],
+    tagPrefix: "VVX",
+    ports: [
+      { id: "primaryIn", x: 2, y: 26, direction: "in" },
+      { id: "primaryOut", x: 2, y: 38, direction: "out" },
+      { id: "secondaryIn", x: 62, y: 38, direction: "in" },
+      { id: "secondaryOut", x: 62, y: 26, direction: "out" },
+    ],
+    shapes: [
+      stroke(polyPath([22, 10, 42, 10, 50, 18, 50, 46, 42, 54, 22, 54, 14, 46, 14, 18], true)),
+      stroke(joinPaths("M 20 20 H 44 L 20 30 H 44 L 20 40 H 44 L 20 48")),
+      stroke(joinPaths(linePath(2, 26, 14, 26), linePath(50, 38, 62, 38))),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.damper",
+    category: "ventilation",
+    keywords: ["spjäll", "damper", "reglerspjäll", "avstängning", "sp"],
+    tagPrefix: "SP",
+    ports: VENTILATION_PORTS(),
+    shapes: [
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(linePath(32, 20, 32, 44)),
+      fill(smallCircle(32, 32, 2.6)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.silencer",
+    category: "ventilation",
+    keywords: ["ljuddämpare", "silencer", "ljud", "dämpare", "ventilation", "ld"],
+    tagPrefix: "LD",
+    ports: VENTILATION_PORTS(),
+    shapes: [
+      stroke(rectPath(14, 14, 36, 36)),
+      stroke(
+        joinPaths(linePath(24, 20, 24, 44), linePath(32, 20, 32, 44), linePath(40, 20, 40, 44)),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.supply-diffuser",
+    category: "ventilation",
+    keywords: ["tilluftsdon", "supply air diffuser", "tilluft", "don", "diffuser", "td"],
+    tagPrefix: "TD",
+    ports: [
+      { id: "duct", x: 32, y: 4, direction: "in" },
+      { id: "room", x: 32, y: 60, direction: "out" },
+    ],
+    defaultSize: 36,
+    shapes: [
+      stroke(rectPath(12, 12, 40, 40)),
+      stroke(rectPath(19, 19, 26, 26)),
+      stroke(
+        joinPaths(
+          "M 24 28 L 32 36 L 40 28",
+          "M 24 36 L 32 44 L 40 36",
+          linePath(32, 4, 32, 12),
+          linePath(32, 52, 32, 60),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.extract-diffuser",
+    category: "ventilation",
+    keywords: ["frånluftsdon", "extract air diffuser", "frånluft", "don", "diffuser", "fd"],
+    tagPrefix: "FD",
+    ports: [
+      { id: "room", x: 32, y: 60, direction: "in" },
+      { id: "duct", x: 32, y: 4, direction: "out" },
+    ],
+    defaultSize: 36,
+    shapes: [
+      stroke(rectPath(12, 12, 40, 40)),
+      stroke(rectPath(19, 19, 26, 26)),
+      stroke(
+        joinPaths(
+          "M 24 36 L 32 28 L 40 36",
+          "M 24 44 L 32 36 L 40 44",
+          linePath(32, 4, 32, 12),
+          linePath(32, 52, 32, 60),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.duct-sensor",
+    category: "instrument",
+    keywords: ["kanalgivare", "duct sensor", "givare", "temperatur", "kanal", "gt"],
+    tagPrefix: "GT",
+    ports: [
+      { id: "in", x: 4, y: 50, direction: "in" },
+      { id: "out", x: 60, y: 50, direction: "out" },
+    ],
+    shapes: [
+      stroke(linePath(4, 50, 60, 50)),
+      stroke("M 18 16 Q 32 8 46 16 L 34 36 L 34 50"),
+      stroke(linePath(30, 36, 34, 36)),
+    ],
+  }),
+];

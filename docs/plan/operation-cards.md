@@ -1,6 +1,6 @@
 # Operation cards and schematic sheets
 
-**Status:** agreed 2026-11-04. Phases 0–4 are complete; Phase 5 has not started.
+**Status:** agreed 2026-11-04. Phases 0–6 are complete; custom templates, A1 paper and refresh-fields-from-project remain future work.
 **Scope:** an authoring workflow for operation cards built from blank sheet templates,
 starting with the title-block frame and the data-summary table.
 **Naming:** code, paths and identifiers use English. User-facing Swedish labels come
@@ -69,7 +69,7 @@ keep working with one set of rules.
 | Connection dots | Explicit small filled ellipses; never automatic. |
 | Line types | Project-stored media classes with colour, width, dash and arrow. |
 | Data summary | Manual cell entry. No derived rows, no CSV requirement. |
-| Rich text | Box-level formatting first; formatting per selection is a later phase. |
+| Rich text | Box-level formatting plus optional per-range runs; plain text remains the fallback. |
 | Symbols | Phase 5. A generated HTML catalogue is a phase 5 review tool. |
 
 ## 5. Architecture
@@ -282,7 +282,8 @@ high and contains:
 
 - a revision table on the left: `Bet.`, `Rev. avser`, `Datum`, `Sign`, four data rows
   plus a header row;
-- a project-name cell and a logo/text cell in the middle;
+- a project-name cell, a logo/text cell and a wide system/equipment details
+  cell in the middle;
 - a title block on the right with three label/value rows:
   `title.handledBy | value | title.card | value`,
   `title.date | value | title.system | value`,
@@ -294,10 +295,14 @@ sheets use the same geometry.
 Field ids:
 
 ```text
-project.name, project.logo
+project.name, project.logo, sheet.details
 title.handledBy, title.card, title.date, title.system, title.assignment, title.page
 rev.1.bet, rev.1.rev, rev.1.date, rev.1.sign  …  rev.4.*
 ```
+
+Project name, logo and the system/equipment details cell accept up to three
+lines; title-block values accept two lines. Explicit line breaks are kept and
+long lines wrap inside the cell.
 
 All fields are optional. Empty fields render as empty cells, never as placeholder
 text in the export. Prefill uses real values:
@@ -351,9 +356,9 @@ A new `textbox` item:
 A plain `text` item also gains the optional background and padding. Multiple columns
 are created as multiple text boxes.
 
-Rich text (bold or size on a selected range) is a later phase. The data model may
-carry an optional `runs` array, but the first implementation stores one style per
-box. HTML is never stored in the project file.
+Rich text is stored as an optional `runs` array with bold, italic, underline, size
+and colour per range. `text` remains the plain-text fallback, so older boxes open
+unchanged. HTML is never stored in the project file.
 
 ### 8.2 I/O rail
 
@@ -617,14 +622,14 @@ Outcome:
 - The app flow was checked with a Playwright run: polyline with a media class, a
   dashed control cable, a rail, the rail dialog and a renamed row.
 
-Deferred within Phase 4:
+Deferred within Phase 4, cleared in Phase 6:
 
-- A drawing-area overflow warning and a fit-to-area action are not implemented yet.
-  Objects can still be placed outside the frame.
-- The line-type list is seeded and selectable, but there is no editor for renaming,
-  recolouring or adding line types yet. Existing runs keep their stored style.
-- Rail rows can be added and removed but not reordered by dragging. The normalizer
-  keeps at most 16 rows.
+- The drawing-area overflow warning and the **Fit drawing to area** action are now
+  available on template sheets.
+- Line types can be renamed, recoloured, reweighted, added and removed. Existing
+  runs keep their stored style.
+- Rail rows can be reordered with the arrow buttons. The normalizer keeps at most
+  16 rows.
 - Automatic cable routing, automatic junction dots and I/O extraction remain
   deliberately out of scope.
 
@@ -639,11 +644,50 @@ Deferred within Phase 4:
 Acceptance: a district-heating substation and a ventilation unit with heat recovery
 can be drawn using only the library; tags move with their symbols.
 
+Outcome:
+
+- The first ten ventilation symbols were reviewed in the generated catalogue. The
+  full set now contains 111 stroke-only schematic symbols across instruments,
+  valves, pumps, heat exchangers, ventilation, heating, district heating, cooling,
+  domestic water, control/electrical and general categories. A later review aligned
+  the existing artwork with the reference convention pages and added the missing
+  sensor, actuator, valve, ventilation, heating, electrical, relay, transformer and
+  general symbols.
+- Every schematic symbol has a stable id, Swedish and English names, category,
+  keywords, tag prefix, ports inside the 64-unit view box and a default size. The
+  stroke stays at 1.4 pt at every symbol size on the canvas, in the PDF and in the
+  catalogue.
+- The symbol library has **Signs** and **Schematic** set filters and still contains
+  the unchanged 52 facility signs.
+- Symbols carry an optional free-text tag with an offset that follows the symbol.
+  No numbering or equipment schedule is derived.
+- `npm run symbols:catalog` generates `artifacts/symbol-catalog.html` from the same
+  registry as the app, with search, sv/en switching, actual-size previews, a port
+  toggle, A3 print styles and review feedback.
+- Deferred: custom or imported symbols, automatic tag numbering, equipment
+  schedules and I/O extraction.
+
 ### Phase 6 — rich text and refinements
 
 - Formatting per selected range (bold, size, colour).
 - More symbols and custom templates.
 - A1 paper, fit-to-area, refresh fields from project data.
+
+Outcome:
+
+- Text boxes accept an optional `runs` array with bold, italic, underline, size and
+  colour. The inline editor applies those styles to the selected range; older boxes
+  without runs still open and edit as one plain run.
+- Canvas and PDF export share the same per-run wrapping, alignment, underline and
+  colour layout. The PDF embeds regular, bold, italic and bold-italic fonts.
+- The line-type editor renames, recolours, reweights, adds and removes project media
+  classes. Existing polylines keep their stored colour, width and dash.
+- Rail rows can be moved up and down in the rail dialog.
+- Template sheets warn when visible objects extend past the drawing area. The
+  **Fit drawing to area** action scales and centres unlocked, visible items in one
+  undoable change.
+- Deferred: custom sheet templates, A1 paper and refreshing sheet fields from
+  project data after the sheet is created.
 
 ## 13. Symbol catalogue
 

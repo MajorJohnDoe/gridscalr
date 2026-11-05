@@ -1,3 +1,4 @@
+import { wrapText } from "../../../model/text";
 import type { Rect, SheetFieldSpec, VerticalAlign } from "../model/sheetTemplate";
 
 export const SHEET_FONT_STACK = "Helvetica,Arial,sans-serif";
@@ -54,6 +55,74 @@ export function fitText(
     else high = middle - 1;
   }
   return { text: `${value.slice(0, low).trimEnd()}${suffix}`, size: currentSize };
+}
+
+/** One rendered line of a field value, in top-left page coordinates. */
+export interface FieldLinePlacement {
+  text: string;
+  x: number;
+  baseline: number;
+  size: number;
+}
+
+/**
+ * Lays out a field value over one or more lines. Explicit newlines are kept and
+ * long paragraphs wrap to the available width. The font shrinks until the
+ * requested number of lines fits both the width and the cell height; the full
+ * value stays in the project.
+ */
+export function layoutFieldLines(
+  field: SheetFieldSpec,
+  value: string,
+  measure: TextMeasure,
+): FieldLinePlacement[] {
+  const normalized = value
+    .replace(/\r\n?/g, "\n")
+    .split("\n")
+    .map((line) => line.replace(/\s+/g, " ").trim())
+    .join("\n")
+    .trim();
+  if (!normalized) return [];
+  const maxWidth = Math.max(1, field.rect.width - field.padding * 2);
+  const maxHeight = Math.max(1, field.rect.height - field.padding * 2);
+  const maxLines = Math.max(1, field.maxLines ?? 1);
+  const floor = field.shrink ? 4 : field.fontSize;
+  let size = field.fontSize;
+  let lines: string[] = [];
+  let lineHeight = size * 1.18;
+
+  while (size >= floor - 1e-9) {
+    lineHeight = size * 1.18;
+    lines = wrapText(normalized, maxWidth, (line) => measure(line, size));
+    if (lines.length <= maxLines && lines.length * lineHeight <= maxHeight + 0.01) break;
+    if (!field.shrink) break;
+    size = Math.max(floor, size - 0.25);
+  }
+  if (!lines.length) lines = [normalized];
+  if (lines.length > maxLines) lines = lines.slice(0, maxLines);
+  lineHeight = size * 1.18;
+
+  const blockHeight = lines.length * lineHeight;
+  let top = field.rect.y + field.padding;
+  if (field.verticalAlign === "middle") {
+    top = field.rect.y + (field.rect.height - blockHeight) / 2;
+  } else if (field.verticalAlign === "bottom") {
+    top = field.rect.y + field.rect.height - field.padding - blockHeight;
+  }
+
+  return lines.map((line, index) => {
+    const fitted = fitText(line, measure, size, maxWidth, size);
+    const width = measure(fitted.text, fitted.size);
+    let x = field.rect.x + field.padding;
+    if (field.align === "center") x = field.rect.x + (field.rect.width - width) / 2;
+    else if (field.align === "right") x = field.rect.x + field.rect.width - field.padding - width;
+    return {
+      text: fitted.text,
+      x,
+      baseline: top + index * lineHeight + fitted.size * 0.8,
+      size: fitted.size,
+    };
+  });
 }
 
 /** Baseline position inside a top-left rectangle, in top-left coordinates. */

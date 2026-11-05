@@ -199,6 +199,7 @@ export const SHEET_FIELD = {
   system: "title.system",
   assignment: "title.assignment",
   page: "title.page",
+  details: "sheet.details",
 } as const;
 
 export type RevisionColumn = "bet" | "rev" | "date" | "sign";
@@ -263,7 +264,7 @@ const TITLE_ROWS: { left: SheetLabelKey; right: SheetLabelKey }[] = [
   { left: "assignment", right: "page" },
 ];
 
-const TITLE_COLUMNS = [26, 34, 22, 38];
+const TITLE_COLUMNS = [22, 30, 22, 30];
 
 const TITLE_VALUE_FIELDS: { row: number; column: 1 | 3; field: string }[] = [
   { row: 0, column: 1, field: SHEET_FIELD.handledBy },
@@ -321,12 +322,15 @@ export function buildDrawingFrameTemplate(
   const projectX = inner + revisionWidth;
   const titleWidth = mm(TITLE_COLUMNS.reduce((total, column) => total + column, 0));
   const titleX = innerRight - titleWidth;
-  const logoWidth = mm(50);
-  const logoX = titleX - logoWidth;
+  const detailsWidth = mm(79);
+  const detailsX = titleX - detailsWidth;
+  const logoWidth = mm(30);
+  const logoX = detailsX - logoWidth;
 
   const stroke = 0.8;
   const thin = 0.5;
   const labelSize = 6.5;
+  const titleLabelSize = 6;
   const primitives: FramePrimitive[] = [];
   const fields: SheetFieldSpec[] = [];
 
@@ -406,20 +410,25 @@ export function buildDrawingFrameTemplate(
     }
   });
 
-  // Project name and logo/text cells.
-  for (const x of [projectX, logoX, titleX]) {
+  // Project name, logo, system/equipment details and title block cells.
+  for (const x of [projectX, logoX, detailsX, titleX]) {
     primitives.push({ kind: "line", x1: x, y1: bandTop, x2: x, y2: bottom, strokeWidth: thin });
   }
   fields.push(
     field(
       SHEET_FIELD.projectName,
       { x: projectX, y: bandTop, width: logoX - projectX, height: bandHeight },
-      { fontSize: 12, bold: true, align: "center", padding: mm(2) },
+      { fontSize: 14, bold: true, align: "center", padding: mm(2), maxLines: 3 },
     ),
     field(
       SHEET_FIELD.projectLogo,
-      { x: logoX, y: bandTop, width: titleX - logoX, height: bandHeight },
-      { fontSize: 9, align: "center", padding: mm(2) },
+      { x: logoX, y: bandTop, width: detailsX - logoX, height: bandHeight },
+      { fontSize: 9, align: "center", padding: mm(2), maxLines: 3 },
+    ),
+    field(
+      SHEET_FIELD.details,
+      { x: detailsX, y: bandTop, width: detailsWidth, height: bandHeight },
+      { fontSize: 8.5, align: "left", verticalAlign: "middle", padding: mm(2), maxLines: 3 },
     ),
   );
 
@@ -462,20 +471,24 @@ export function buildDrawingFrameTemplate(
           height: titleRowHeight,
         },
         text: labels[key],
-        size: labelSize,
+        size: titleLabelSize,
         bold: true,
-        padding: mm(1.5),
+        padding: mm(1.2),
       });
     }
   });
   for (const entry of TITLE_VALUE_FIELDS) {
     fields.push(
-      field(entry.field, {
-        x: titleXPositions[entry.column],
-        y: bandTop + titleRowHeight * entry.row,
-        width: mm(TITLE_COLUMNS[entry.column]),
-        height: titleRowHeight,
-      }),
+      field(
+        entry.field,
+        {
+          x: titleXPositions[entry.column],
+          y: bandTop + titleRowHeight * entry.row,
+          width: mm(TITLE_COLUMNS[entry.column]),
+          height: titleRowHeight,
+        },
+        { maxLines: 2, padding: mm(1.2), fontSize: 7.5 },
+      ),
     );
   }
 

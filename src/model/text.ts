@@ -7,13 +7,18 @@ export const MAX_TEXT_SIZE = 300;
 
 let measureCanvas: CanvasRenderingContext2D | null | undefined;
 
-function canvasMeasure(text: string, fontSize: number): number | null {
+function canvasMeasure(
+  text: string,
+  fontSize: number,
+  bold = false,
+  italic = false,
+): number | null {
   if (typeof document === "undefined") return null;
   if (measureCanvas === undefined) {
     measureCanvas = document.createElement("canvas").getContext("2d");
   }
   if (!measureCanvas) return null;
-  measureCanvas.font = `400 ${fontSize}px ${TEXT_FONT_STACK}`;
+  measureCanvas.font = `${italic ? "italic " : ""}${bold ? 700 : 400} ${fontSize}px ${TEXT_FONT_STACK}`;
   return measureCanvas.measureText(text).width;
 }
 
@@ -59,8 +64,13 @@ export function wrapText(
   return lines.length ? lines : [""];
 }
 
-export function measureTextWidth(text: string, fontSize: number): number {
-  const measured = canvasMeasure(text, fontSize);
+export function measureTextWidth(
+  text: string,
+  fontSize: number,
+  bold = false,
+  italic = false,
+): number {
+  const measured = canvasMeasure(text, fontSize, bold, italic);
   if (measured !== null) return measured;
   // Deterministic fallback for tests and non-DOM environments. This only
   // affects selection bounds, not the text rendering itself.
@@ -68,7 +78,7 @@ export function measureTextWidth(text: string, fontSize: number): number {
   for (const character of Array.from(text)) {
     units += character === " " ? 0.28 : character.charCodeAt(0) > 0x2e7f ? 0.95 : 0.56;
   }
-  return Math.max(0.1, units * fontSize);
+  return Math.max(0.1, units * fontSize * (bold ? 1.05 : 1) * (italic ? 1.02 : 1));
 }
 
 /**

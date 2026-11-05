@@ -225,6 +225,13 @@ src/features/projectPackage/model.ts package manifest, safe names and portable p
 src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
+src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
+src/features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
+src/features/schematics/symbols/library.ts full 111-symbol schematic set
+src/features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
+src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
+src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
+src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
@@ -239,7 +246,9 @@ src/canvas/editors.ts      inline text and measurement-label editors
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
-src/model/symbols.ts       classic sign artwork, categories and inspection statuses
+src/model/symbols.ts       facility-sign artwork, categories, render plan and SVG markup
+src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
+src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
 src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
@@ -258,7 +267,7 @@ src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts single and multi-selection Properties
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
 src/ui/markupsPanel.ts     Markups table, columns, saved views, grouping and filters
-src/ui/symbolLibrary.ts    searchable facility symbol library and recent symbols
+src/ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
 src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
@@ -308,6 +317,7 @@ scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
+scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks

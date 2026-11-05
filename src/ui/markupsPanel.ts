@@ -16,14 +16,14 @@ import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/comman
 import { formatTimestamp, timestampValue } from "../model/dates";
 import { itemKindLabel, itemLabel, itemMetrics, itemScaleWarning } from "../model/measure";
 import {
+  ALL_SYMBOL_CATEGORIES,
   INSPECTION_STATUSES,
   inspectionStatusColor,
   inspectionStatusLabel,
-  SYMBOL_CATEGORIES,
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import {
   MARKUPS_COLUMN_IDS,
   MARKUPS_GROUP_PRESETS,
@@ -1035,7 +1035,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   if (measurementGroup.childElementCount) categorySelect.append(measurementGroup);
   const symbolGroup = document.createElement("optgroup");
   symbolGroup.label = t("markups.symbolCategories");
-  for (const category of SYMBOL_CATEGORIES) {
+  for (const category of ALL_SYMBOL_CATEGORIES) {
     symbolGroup.append(
       option(
         `symbol:${category}`,

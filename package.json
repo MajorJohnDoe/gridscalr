@@ -53,6 +53,7 @@
     "site:check": "node scripts/check-site.mjs",
     "docs:demo": "node scripts/make-demo-project.mjs",
     "docs:capture": "node scripts/capture-docs.mjs",
+    "symbols:catalog": "node scripts/symbol-catalog.mjs",
     "fixture": "node scripts/make-industrial-fixture.mjs",
     "fixture:legacy": "node scripts/make-fixture.mjs"
   },

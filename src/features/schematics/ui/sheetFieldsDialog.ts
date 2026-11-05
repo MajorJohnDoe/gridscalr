@@ -27,18 +27,27 @@ function labels(): SheetLabels {
 
 function fieldRow(
   body: HTMLElement,
-  inputs: Map<string, HTMLInputElement>,
+  inputs: Map<string, HTMLInputElement | HTMLTextAreaElement>,
   label: string,
   id: string,
   value: string,
+  multiline = false,
 ): void {
   const wrapper = el("label", "field");
   wrapper.append(el("span", "field-label", label));
-  const input = el("input", "input");
-  input.type = "text";
+  const input: HTMLInputElement | HTMLTextAreaElement = multiline
+    ? el("textarea", "input sheet-field-textarea")
+    : el("input", "input");
+  if (input instanceof HTMLInputElement) input.type = "text";
   input.maxLength = 500;
   input.value = value;
   input.dataset.fieldId = id;
+  if (multiline) {
+    (input as HTMLTextAreaElement).rows = 2;
+    input.style.resize = "vertical";
+    input.style.minHeight = "52px";
+    input.style.whiteSpace = "pre-wrap";
+  }
   wrapper.append(input);
   inputs.set(id, input);
   body.append(wrapper);
@@ -46,7 +55,7 @@ function fieldRow(
 
 function revisionGrid(
   body: HTMLElement,
-  inputs: Map<string, HTMLInputElement>,
+  inputs: Map<string, HTMLInputElement | HTMLTextAreaElement>,
   values: Record<string, string>,
   sheetLabels: SheetLabels,
 ): void {
@@ -81,7 +90,7 @@ function revisionGrid(
 
 function tableGrid(
   body: HTMLElement,
-  inputs: Map<string, HTMLInputElement>,
+  inputs: Map<string, HTMLInputElement | HTMLTextAreaElement>,
   spec: SheetTemplateSpec,
   values: Record<string, string>,
   sheetLabels: SheetLabels,
@@ -148,7 +157,7 @@ export async function openSheetFieldsDialog(
 
   const values = { ...document.template.fields };
   const originalPaper = document.template.paper;
-  const inputs = new Map<string, HTMLInputElement>();
+  const inputs = new Map<string, HTMLInputElement | HTMLTextAreaElement>();
   const body = el("div", "form-stack");
   body.append(el("p", "modal-message", t("sheet.dialog.note")));
 
@@ -171,6 +180,7 @@ export async function openSheetFieldsDialog(
     t("sheet.field.projectName"),
     SHEET_FIELD.projectName,
     values[SHEET_FIELD.projectName] ?? "",
+    true,
   );
   fieldRow(
     body,
@@ -178,6 +188,14 @@ export async function openSheetFieldsDialog(
     t("sheet.field.projectLogo"),
     SHEET_FIELD.projectLogo,
     values[SHEET_FIELD.projectLogo] ?? "",
+  );
+  fieldRow(
+    body,
+    inputs,
+    t("sheet.field.details"),
+    SHEET_FIELD.details,
+    values[SHEET_FIELD.details] ?? "",
+    true,
   );
 
   body.append(el("h3", "", t("sheet.dialog.titleBlock")));

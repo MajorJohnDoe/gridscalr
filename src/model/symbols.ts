@@ -6,7 +6,13 @@ import {
   symbolCommandBounds,
   transformSymbolCommands,
 } from "./symbolPaths";
-import type { InspectionStatus, SymbolCategory } from "./types";
+import type {
+  InspectionStatus,
+  SchematicSymbolCategory,
+  SignSymbolCategory,
+  SymbolCategory,
+  SymbolSet,
+} from "./types";
 import { t, translate, type MessageKey } from "../i18n";
 
 /**
@@ -21,6 +27,10 @@ export const SYMBOL_MIN_SIZE = 6;
 export const SYMBOL_MAX_SIZE = 300;
 export const SYMBOL_VIEWBOX = 64;
 export const DEFAULT_SYMBOL_ID = "fire.extinguisher";
+/** Default plate size in points for the stroke-only schematic symbols. */
+export const SCHEMATIC_SYMBOL_SIZE = 40;
+/** Fixed stroke width in PDF points for schematic artwork at every symbol size. */
+export const SCHEMATIC_STROKE_WIDTH = 1.4;
 
 export function clampSymbolSize(value: number): number {
   if (!Number.isFinite(value)) return SYMBOL_SIZE;
@@ -34,10 +44,19 @@ export function symbolSizeOf(item: { symbolSize?: number }): number {
   return clampSymbolSize(value);
 }
 
-export type SymbolStyle = "sign" | "glyph";
+export type SymbolStyle = "sign" | "glyph" | "schematic";
 
 /** Classic facility sign plates with a white or black pictogram. */
 export const SYMBOL_STYLE: SymbolStyle = "sign";
+
+/** A connection anchor on a schematic symbol, in the 64-unit view box. */
+export interface SymbolPort {
+  id: string;
+  x: number;
+  y: number;
+  /** Optional hint for snapping and the catalogue arrows. */
+  direction?: "in" | "out" | "both";
+}
 
 export interface SymbolArtShape {
   /** SVG path data in the 64-unit symbol view box. */
@@ -66,6 +85,16 @@ export interface SymbolDefinition {
   keywords: string[];
   /** Filled vector artwork rendered by the canvas, library and PDF. */
   art: SymbolArt;
+  /** Missing means the facility-sign set, kept for older definitions. */
+  set?: SymbolSet;
+  /** Missing means the classic sign plate. */
+  style?: SymbolStyle;
+  /** Connection anchors for schematic symbols. */
+  ports?: SymbolPort[];
+  /** Suggested free-text tag prefix, for example "FF". Never numbered automatically. */
+  tagPrefix?: string;
+  /** Default item size in PDF points. Missing means SYMBOL_SIZE. */
+  defaultSize?: number;
 }
 
 export interface SymbolRenderShape {
@@ -82,15 +111,41 @@ export interface SymbolRenderPlan {
   shapes: SymbolRenderShape[];
   badge: { x: number; y: number; r: number };
   viewBox: number;
+  /** When set, renderers keep the stroke at this many PDF points regardless of size. */
+  fixedStrokeWidth?: number;
 }
 
-export const SYMBOL_CATEGORIES: SymbolCategory[] = [
+/** Facility-sign categories, in library order. */
+export const SIGN_CATEGORIES: SignSymbolCategory[] = [
   "fire",
   "egress",
   "hvac",
   "electrical",
   "building",
   "waste",
+];
+
+/** Schematic-equipment categories, in library and catalogue order. */
+export const SCHEMATIC_CATEGORIES: SchematicSymbolCategory[] = [
+  "instrument",
+  "valve",
+  "pump",
+  "exchanger",
+  "ventilation",
+  "heating",
+  "district-heating",
+  "cooling",
+  "domestic-water",
+  "control",
+  "general",
+];
+
+/** Kept as the sign list for callers that only group facility signs. */
+export const SYMBOL_CATEGORIES: SymbolCategory[] = [...SIGN_CATEGORIES];
+
+export const ALL_SYMBOL_CATEGORIES: SymbolCategory[] = [
+  ...SIGN_CATEGORIES,
+  ...SCHEMATIC_CATEGORIES,
 ];
 
 export const SYMBOL_CATEGORY_LABELS: Record<SymbolCategory, string> = {
@@ -100,6 +155,17 @@ export const SYMBOL_CATEGORY_LABELS: Record<SymbolCategory, string> = {
   electrical: translate("en", "symbolCategory.electrical"),
   building: translate("en", "symbolCategory.building"),
   waste: translate("en", "symbolCategory.waste"),
+  instrument: translate("en", "symbolCategory.instrument"),
+  valve: translate("en", "symbolCategory.valve"),
+  pump: translate("en", "symbolCategory.pump"),
+  exchanger: translate("en", "symbolCategory.exchanger"),
+  ventilation: translate("en", "symbolCategory.ventilation"),
+  heating: translate("en", "symbolCategory.heating"),
+  "district-heating": translate("en", "symbolCategory.district-heating"),
+  cooling: translate("en", "symbolCategory.cooling"),
+  "domestic-water": translate("en", "symbolCategory.domestic-water"),
+  control: translate("en", "symbolCategory.control"),
+  general: translate("en", "symbolCategory.general"),
 };
 
 export const SYMBOL_CATEGORY_COLORS: Record<SymbolCategory, string> = {
@@ -109,6 +175,17 @@ export const SYMBOL_CATEGORY_COLORS: Record<SymbolCategory, string> = {
   electrical: "#f2a900",
   building: "#6b4fa0",
   waste: "#6e7b3a",
+  instrument: "#8a4fbf",
+  valve: "#c0392b",
+  pump: "#1f6fb2",
+  exchanger: "#2a8c82",
+  ventilation: "#2d7dd2",
+  heating: "#d97706",
+  "district-heating": "#b0248c",
+  cooling: "#0891b2",
+  "domestic-water": "#15803d",
+  control: "#475569",
+  general: "#334155",
 };
 
 export const INSPECTION_STATUSES: InspectionStatus[] = [
@@ -1113,10 +1190,11 @@ export function isInspectionStatus(value: unknown): value is InspectionStatus {
 export function symbolRenderPlan(
   symbol: SymbolDefinition,
   accent: string,
-  style: SymbolStyle = SYMBOL_STYLE,
+  style: SymbolStyle = symbol.style ?? SYMBOL_STYLE,
 ): SymbolRenderPlan {
   const shapes: SymbolRenderShape[] = [];
   const isSign = style === "sign";
+  const isSchematic = style === "schematic";
   if (isSign) {
     shapes.push({
       d: roundedRectPathData(2, 2, 60, 60, 3),
@@ -1133,7 +1211,11 @@ export function symbolRenderPlan(
       d: entry.d,
       fill: entry.stroke ? null : glyphColor,
       stroke: entry.stroke ? glyphColor : null,
-      strokeWidth: entry.stroke ? (entry.strokeWidth ?? 4) : 0,
+      strokeWidth: entry.stroke
+        ? isSchematic
+          ? SCHEMATIC_STROKE_WIDTH
+          : (entry.strokeWidth ?? 4)
+        : 0,
       fillRule: entry.fillRule ?? "nonzero",
       scale: 1,
     });
@@ -1142,6 +1224,7 @@ export function symbolRenderPlan(
     shapes,
     badge: symbol.art.badge ?? (isSign ? SIGN_BADGE : GLYPH_BADGE),
     viewBox: SYMBOL_VIEWBOX,
+    fixedStrokeWidth: isSchematic ? SCHEMATIC_STROKE_WIDTH : undefined,
   };
 }
 
@@ -1150,9 +1233,13 @@ export function symbolSvgMarkup(
   symbol: SymbolDefinition,
   size = 24,
   color = "#e8eef1",
-  style: SymbolStyle = SYMBOL_STYLE,
+  style: SymbolStyle = symbol.style ?? SYMBOL_STYLE,
 ): string {
   const plan = symbolRenderPlan(symbol, color, style);
+  const fixedWidth =
+    plan.fixedStrokeWidth && symbol.defaultSize
+      ? (plan.fixedStrokeWidth * plan.viewBox) / symbol.defaultSize
+      : undefined;
   const pathMarkup = plan.shapes
     .map((shape) => {
       const transform =
@@ -1163,7 +1250,7 @@ export function symbolSvgMarkup(
       const stroke = shape.stroke ?? "none";
       const fillRule = shape.fill ? ` fill-rule="${shape.fillRule}"` : "";
       const strokeAttrs = shape.stroke
-        ? ` stroke-width="${shape.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"`
+        ? ` stroke-width="${fixedWidth ?? shape.strokeWidth}" stroke-linecap="round" stroke-linejoin="round"`
         : "";
       return `<path d="${shape.d}" fill="${fill}"${fillRule} stroke="${stroke}"${strokeAttrs}${transform}/>`;
     })

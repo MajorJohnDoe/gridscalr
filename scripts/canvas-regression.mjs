@@ -51,6 +51,14 @@ try {
   const dragPage = async (start, end) => {
     await dragScreen(await mousePoint(start), await mousePoint(end));
   };
+  const dragPageWithShift = async (start, end) => {
+    await page.keyboard.down("Shift");
+    try {
+      await dragScreen(await mousePoint(start), await mousePoint(end));
+    } finally {
+      await page.keyboard.up("Shift");
+    }
+  };
   const itemIds = async () =>
     page.evaluate(() =>
       window.__gridscalr.store.project.layers.flatMap((layer) =>
@@ -461,6 +469,149 @@ try {
     "dashed",
     "the Properties line style should mark the length as dashed",
   );
+
+  // 7c. Shift constrains a line even when the pointer starts on an existing line.
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 60, y: 80 }, { x: 180, y: 100 });
+  const shiftedLine = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === selection?.itemId);
+  });
+  assert.equal(shiftedLine?.kind, "line");
+  assert.ok(
+    Math.abs(shiftedLine.points[1].y - shiftedLine.points[0].y) < 0.5,
+    "Shift should make a new line horizontal",
+  );
+
+  await page.evaluate(() => {
+    window.__gridscalr.store.project.settings.snapToGeometry = true;
+    window.__gridscalr.store.emit("change");
+  });
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 120, y: 220 }, { x: 240, y: 220 });
+  await page.keyboard.press("i");
+  await dragPageWithShift({ x: 180, y: 220 }, { x: 190, y: 140 });
+  const snappedShiftLine = await page.evaluate(() => {
+    const selection = window.__gridscalr.store.ui.selection[0];
+    return window.__gridscalr.store.project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.id === selection?.itemId);
+  });
+  assert.equal(snappedShiftLine?.kind, "line");
+  assert.ok(
+    Math.abs(snappedShiftLine.points[1].x - snappedShiftLine.points[0].x) < 0.5,
+    "Shift should ignore the segment snap and keep the line vertical",
+  );
+
+  // 7d. Hover snap markers and diagonal pipe connections.
+  const placedSymbols = await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    const now = new Date().toISOString();
+    store.mutate((project) => {
+      const layer = project.layers.find((entry) => entry.kind === "draw");
+      layer.items.push(
+        {
+          id: "item_snap_fan",
+          page: 1,
+          kind: "symbol",
+          points: [{ x: 950, y: 220 }],
+          color: "#111111",
+          strokeWidth: 1.4,
+          symbolId: "schematic.fan",
+          symbolSize: 40,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: "item_snap_sensor",
+          page: 1,
+          kind: "symbol",
+          points: [{ x: 1000, y: 320 }],
+          color: "#111111",
+          strokeWidth: 1.4,
+          symbolId: "schematic.sensor",
+          symbolSize: 40,
+          createdAt: now,
+          updatedAt: now,
+        },
+      );
+    }, "change");
+    return { fan: "item_snap_fan", sensor: "item_snap_sensor" };
+  });
+  const symbolScale = 40 / 64;
+  const fanPort = { x: 950 + (49 - 32) * symbolScale, y: 220 };
+  const sensorPort = { x: 1000, y: 320 + (58 - 32) * symbolScale };
+
+  await page.evaluate(() => window.__gridscalr.store.setTool("line"));
+  const fanPortScreen = await mousePoint(fanPort);
+  await page.mouse.move(fanPortScreen.x, fanPortScreen.y);
+  await page.waitForTimeout(60);
+  const hoveredPort = await page.evaluate(() => window.__gridscalr.canvas.snapTarget());
+  assert.equal(
+    hoveredPort?.kind,
+    "endpoint",
+    "hovering a symbol port should show an endpoint marker",
+  );
+  assert.ok(
+    Math.abs(hoveredPort.point.x - fanPort.x) < 0.01 &&
+      Math.abs(hoveredPort.point.y - fanPort.y) < 0.01,
+    "the hover marker should sit on the symbol port",
+  );
+
+  const emptyScreen = await mousePoint({ x: 850, y: 420 });
+  await page.mouse.move(emptyScreen.x, emptyScreen.y);
+  await page.waitForTimeout(60);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.canvas.snapTarget()),
+    null,
+    "empty space should not show a snap marker",
+  );
+
+  await page.evaluate(() => window.__gridscalr.store.setTool("polyline"));
+  const beforePipe = await itemIds();
+  const fanPortClick = await mousePoint(fanPort);
+  await page.mouse.click(fanPortClick.x, fanPortClick.y);
+  await page.waitForTimeout(80);
+  const sensorPortScreen = await mousePoint(sensorPort);
+  await page.mouse.move(sensorPortScreen.x, sensorPortScreen.y);
+  await page.waitForTimeout(60);
+  const hoveredPipePort = await page.evaluate(() => window.__gridscalr.canvas.snapTarget());
+  assert.equal(hoveredPipePort?.kind, "endpoint", "a pipe should target the diagonal symbol port");
+  await page.mouse.click(sensorPortScreen.x, sensorPortScreen.y);
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(120);
+  const afterPipe = await itemIds();
+  const pipeId = afterPipe.find((id) => !beforePipe.includes(id));
+  assert.ok(pipeId, "clicking two symbol ports should create a pipe");
+  const pipe = await itemById(pipeId);
+  assert.equal(pipe.kind, "polyline");
+  assert.ok(
+    Math.abs(pipe.points[0].x - fanPort.x) < 0.01 && Math.abs(pipe.points[0].y - fanPort.y) < 0.01,
+    "the pipe should start exactly on the fan port",
+  );
+  assert.ok(
+    Math.abs(pipe.points[1].x - sensorPort.x) < 0.01 &&
+      Math.abs(pipe.points[1].y - sensorPort.y) < 0.01,
+    "the pipe should end on the diagonal sensor port instead of the orthogonal projection",
+  );
+
+  await page.evaluate(
+    ({ ids }) => {
+      const store = window.__gridscalr.store;
+      store.mutate((project) => {
+        for (const layer of project.layers) {
+          layer.items = layer.items.filter((item) => !ids.includes(item.id));
+        }
+      }, "change");
+      store.clearSelection();
+    },
+    { ids: [placedSymbols.fan, placedSymbols.sensor, pipeId] },
+  );
+  await page.waitForTimeout(80);
+  await page.keyboard.press("v");
 
   // 8. Hidden and locked items stay out of hit testing.
   await page.keyboard.press("v");

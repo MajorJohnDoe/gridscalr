@@ -1,5 +1,5 @@
 import { makeId } from "./calibration";
-import { SYMBOL_CATEGORIES } from "./symbols";
+import { ALL_SYMBOL_CATEGORIES } from "./symbols";
 import type {
   MarkupsColumnId,
   MarkupsGroupField,
@@ -206,7 +206,7 @@ function normalizeSearch(value: unknown): string {
 }
 
 function normalizeSymbolCategory(value: unknown): SymbolCategory | null {
-  return typeof value === "string" && SYMBOL_CATEGORIES.includes(value as SymbolCategory)
+  return typeof value === "string" && ALL_SYMBOL_CATEGORIES.includes(value as SymbolCategory)
     ? (value as SymbolCategory)
     : null;
 }

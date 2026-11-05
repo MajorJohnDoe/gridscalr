@@ -99,8 +99,10 @@ import {
 import { makeId } from "../model/calibration";
 import {
   collectSnapCandidates,
+  excludeOwnSnapTargets,
   findSnap,
   type SnapCandidate,
+  type SnapKind,
   type SnapResult,
 } from "../model/snap";
 import {
@@ -112,11 +114,16 @@ import {
   textLineX,
   wrapText,
 } from "../model/text";
+import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
 import {
-  layoutFieldText,
+  resolveSheetLabels,
+  SHEET_FIELD,
+  sheetTemplateFor,
+} from "../features/schematics/model/sheetTemplate";
+import {
+  layoutFieldLines,
   measureSheetText,
   SHEET_FONT_STACK,
 } from "../features/schematics/render/sheetText";
@@ -148,19 +155,22 @@ import type {
 } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
+import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
+import { openRailDialog } from "../features/schematics/ui/railDialog";
 import {
   clampSymbolSize,
   inspectionStatusColor,
   SYMBOL_SIZE,
   symbolCategoryColor,
   symbolCategoryOf,
+  symbolDefaultSize,
   symbolFor,
   symbolRenderPlan,
   symbolSizeOf,
-} from "../model/symbols";
+} from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
-import { store } from "../state/store";
+import { store, type ToolId } from "../state/store";
 import {
   clampZoom,
   fitPageViewport,
@@ -204,6 +214,7 @@ export interface CanvasTestApi {
   labelScreenPoint(itemId: string): Point | null;
   labelResizeScreenPoint(itemId: string): Point | null;
   annotationScreenPoint(itemId: string): Point | null;
+  snapTarget(): { kind: SnapKind; point: Point } | null;
   draftKind(): string | null;
   searchHighlights(): {
     page: number;
@@ -264,6 +275,30 @@ function orthoPoint(last: Point, current: Point): Point {
     : { x: last.x, y: current.y };
 }
 
+/** Tools whose next click can land on an existing snap target. */
+const SNAP_TOOLS: ReadonlySet<ToolId> = new Set([
+  "calibrate",
+  "length",
+  "radius",
+  "diameter",
+  "slope",
+  "angle",
+  "arc",
+  "polyline",
+  "area",
+  "volume",
+  "cloud",
+  "line",
+  "arrow",
+  "count",
+  "symbol",
+]);
+
+function toolUsesSnapping(tool: ToolId): boolean {
+  if (tool === "highlight") return store.ui.highlightShape !== "stroke";
+  return SNAP_TOOLS.has(tool);
+}
+
 const symbolPathCache = new Map<string, Path2D>();
 
 function symbolPath(data: string): Path2D {
@@ -318,7 +353,7 @@ export class CanvasView {
   private hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
   private sheetFieldEditor: {
-    input: HTMLInputElement;
+    input: HTMLInputElement | HTMLTextAreaElement;
     page: number;
     fieldId: string;
   } | null = null;
@@ -516,6 +551,7 @@ export class CanvasView {
       this.drag = null;
       this.marquee = null;
       this.labelConnect = null;
+      this.snap = null;
       this.renderedPage = page;
     }
     if (reason === "project") {
@@ -526,12 +562,15 @@ export class CanvasView {
     if (reason === "tool") {
       this.draft = null;
       this.labelConnect = null;
+      this.snap = null;
+      if (store.ui.hover) store.setHover(null);
       this.updateCursor();
     }
     if (page !== this.renderedPage) {
       this.lastRender = null;
       this.draft = null;
       this.labelConnect = null;
+      this.snap = null;
       this.renderedPage = page;
     }
     this.drawAll();
@@ -1020,7 +1059,8 @@ export class CanvasView {
         this.finishDraft();
         return;
       }
-      let snapped = this.snapPolylinePoint(page);
+      let snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
+      if (event.shiftKey) this.snap = null;
       const existing = this.draft?.kind === "polyline" ? this.draft : null;
       if (existing && existing.points.length) {
         snapped = this.constrainPolyline(
@@ -1536,8 +1576,12 @@ export class CanvasView {
         this.draft.kind === "arrow" ||
         this.draft.kind === "callout"
       ) {
-        let current = this.snapPoint(page);
+        // Shift constrains the angle from the raw pointer, not from a segment
+        // snap on an existing pipe. Otherwise the snap would force the old line
+        // direction and the constrained endpoint could not move away from it.
+        let current = event.shiftKey ? page : this.snapPoint(page);
         if (event.shiftKey) {
+          this.snap = null;
           const constrained = constrainAngle(this.draft.start, current);
           if (distance(constrained, current) > 1e-6) this.snap = null;
           current = constrained;
@@ -1554,7 +1598,7 @@ export class CanvasView {
         this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
       } else if (this.draft.kind === "polyline") {
         const last = this.draft.points[this.draft.points.length - 1];
-        const snapped = this.snapPolylinePoint(page);
+        const snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
         this.draft.cursor = this.constrainPolyline(last, snapped, event.shiftKey);
       } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
         const last = this.draft.points[this.draft.points.length - 1];
@@ -1613,7 +1657,10 @@ export class CanvasView {
     } else {
       this.hoverHandle = null;
       this.hoverLabelResize = false;
+      if (toolUsesSnapping(tool)) this.snapPoint(page);
+      else this.snap = null;
       this.updateCursor();
+      this.drawInteraction();
     }
   };
 
@@ -1856,9 +1903,8 @@ export class CanvasView {
       return;
     }
     if (this.drag) {
-      const moved = this.drag.moved;
+      this.snap = null;
       this.endDrag();
-      if (moved) this.snap = null;
       return;
     }
     if (this.draft) {
@@ -1991,6 +2037,10 @@ export class CanvasView {
       this.editors.startTextBoxEdit(hit.item, hit.layer);
       return;
     }
+    if (hit.item.kind === "rail") {
+      void openRailDialog(hit.item.id);
+      return;
+    }
     if (hit.item.kind === "cloud") {
       this.editors.startCloudTextEdit(hit.item, hit.layer);
       return;
@@ -2101,7 +2151,7 @@ export class CanvasView {
     this.snap = null;
     if (!project || !project.settings.snapToGeometry) return point;
     const candidates = excludeItemId
-      ? this.snapCandidates().filter((candidate) => !candidate.itemIds?.includes(excludeItemId))
+      ? excludeOwnSnapTargets(this.snapCandidates(), excludeItemId)
       : this.snapCandidates();
     const result = findSnap(
       point,
@@ -2124,7 +2174,13 @@ export class CanvasView {
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
-    if (free) return point;
+    if (free) {
+      this.snap = null;
+      return point;
+    }
+    // An explicit snap target wins over the orthogonal default, so a cable can
+    // start or end on a port, midpoint, intersection or segment at any angle.
+    if (this.snap) return point;
     const constrained = orthoPoint(last, point);
     if (distance(constrained, point) > 1e-6) this.snap = null;
     return constrained;
@@ -2507,10 +2563,8 @@ export class CanvasView {
         kind === "stamp" ||
         kind === "delta";
       const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-      const lineType =
-        kind === "polyline"
-          ? project.lineTypes.find((entry) => entry.id === store.ui.lineTypeId)
-          : undefined;
+      const lineLike = kind === "polyline" || kind === "line";
+      const lineStyle = lineLike ? store.ui.lineStyle : undefined;
       const item: MarkupItem = {
         id: makeId("item"),
         page: projectPage,
@@ -2520,8 +2574,8 @@ export class CanvasView {
           ? layer.color
           : kind === "textbox"
             ? "#1a2024"
-            : kind === "polyline"
-              ? (lineType?.color ?? style.color)
+            : lineLike
+              ? (lineStyle?.color ?? style.color)
               : kind === "rail"
                 ? "#4a4a4a"
                 : kind === "symbol"
@@ -2531,8 +2585,8 @@ export class CanvasView {
                     : (cloudPreset ?? style.color),
         strokeWidth: isMeasure
           ? DEFAULT_MEASUREMENT_STROKE_WIDTH
-          : kind === "polyline"
-            ? (lineType?.widthPt ?? style.strokeWidth)
+          : lineLike
+            ? (lineStyle?.widthPt ?? style.strokeWidth)
             : kind === "rail"
               ? 0.6
               : style.strokeWidth,
@@ -2555,10 +2609,9 @@ export class CanvasView {
               : undefined,
         text: options.text,
         textColor: kind === "textbox" ? "#1a2024" : undefined,
-        textBackground: kind === "textbox" ? "white" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
-        lineTypeId: kind === "polyline" ? lineType?.id : undefined,
-        lineStyle: kind === "polyline" && lineType?.style === "dashed" ? "dashed" : undefined,
+        lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
+        lineStyle: lineLike && lineStyle?.dashed ? "dashed" : undefined,
         rows: kind === "rail" ? defaultRailRows("plc") : undefined,
         rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
@@ -2577,6 +2630,8 @@ export class CanvasView {
             ? store.ui.measureCountQuantity
             : undefined,
         symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
+        symbolSize:
+          kind === "symbol" ? symbolDefaultSize(options.symbolId ?? store.ui.symbolId) : undefined,
         status: kind === "symbol" ? options.status : undefined,
         createdAt: now,
         updatedAt: now,
@@ -3123,11 +3178,13 @@ export class CanvasView {
     for (const field of spec.fields) {
       const value = sheetDocument.template.fields[field.id] ?? "";
       if (!value) continue;
-      const placement = layoutFieldText(field, value, measureSheetText);
-      if (!placement) continue;
-      const point = this.toScreen({ x: placement.x, y: placement.baseline });
-      ctx.font = `${placement.size * zoom}px ${SHEET_FONT_STACK}`;
-      ctx.fillText(placement.text, point.x, point.y);
+      const lines = layoutFieldLines(field, value, measureSheetText);
+      for (const line of lines) {
+        if (!line.text) continue;
+        const point = this.toScreen({ x: line.x, y: line.baseline });
+        ctx.font = `${line.size * zoom}px ${SHEET_FONT_STACK}`;
+        ctx.fillText(line.text, point.x, point.y);
+      }
     }
     ctx.restore();
   }
@@ -3161,10 +3218,16 @@ export class CanvasView {
       y: field.rect.y + field.rect.height,
     });
     const zoom = this.viewZoom;
-    const input = document.createElement("input");
-    input.type = "text";
+    const multiline = (field.maxLines ?? 1) > 1;
+    const input: HTMLInputElement | HTMLTextAreaElement = multiline
+      ? document.createElement("textarea")
+      : document.createElement("input");
+    if (input instanceof HTMLInputElement) input.type = "text";
     input.className = "sheet-field-input";
     input.value = sheetDocument.template.fields[field.id] ?? "";
+    if (field.id === SHEET_FIELD.details) {
+      input.placeholder = t("sheet.field.detailsPlaceholder");
+    }
     input.maxLength = 500;
     input.style.position = "absolute";
     input.style.left = `${start.x}px`;
@@ -3177,8 +3240,13 @@ export class CanvasView {
     input.style.fontWeight = field.bold ? "700" : "400";
     input.style.textAlign = field.align;
     input.style.padding = `0 ${field.padding * zoom}px`;
-    input.style.lineHeight = `${Math.max(1, end.y - start.y)}px`;
+    input.style.lineHeight = `${Math.max(1, field.fontSize * 1.18 * zoom)}px`;
+    input.style.whiteSpace = "pre-wrap";
+    input.style.resize = "none";
+    input.style.overflow = "auto";
     input.style.background = "#ffffff";
+    input.style.color = "#111111";
+    input.style.caretColor = "#111111";
     input.style.border = "1px solid #2b7fff";
     input.style.outline = "none";
     input.style.boxShadow = "0 0 0 2px rgba(43, 127, 255, 0.25)";
@@ -3192,12 +3260,13 @@ export class CanvasView {
 
     input.addEventListener("pointerdown", (event) => event.stopPropagation());
     input.addEventListener("keydown", (event) => {
-      event.stopPropagation();
-      if (event.key === "Enter") {
-        event.preventDefault();
+      const keyEvent = event as KeyboardEvent;
+      keyEvent.stopPropagation();
+      if (keyEvent.key === "Enter" && (keyEvent.ctrlKey || keyEvent.metaKey || !multiline)) {
+        keyEvent.preventDefault();
         this.commitSheetField(true);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
+      } else if (keyEvent.key === "Escape") {
+        keyEvent.preventDefault();
         this.commitSheetField(false);
       }
     });
@@ -3429,7 +3498,11 @@ export class CanvasView {
         if (!anchor) break;
         const definition = symbolFor(item.symbolId);
         const accent =
-          definition.id === "unknown" ? item.color : symbolCategoryColor(definition.category);
+          definition.style === "schematic"
+            ? "#111111"
+            : definition.id === "unknown"
+              ? item.color
+              : symbolCategoryColor(definition.category);
         const plan = symbolRenderPlan(definition, accent);
         const scale = (symbolSizeOf(item) * zoom) / plan.viewBox;
         const half = plan.viewBox / 2;
@@ -3451,7 +3524,9 @@ export class CanvasView {
           }
           if (shape.stroke) {
             ctx.strokeStyle = shape.stroke;
-            ctx.lineWidth = shape.strokeWidth;
+            ctx.lineWidth = plan.fixedStrokeWidth
+              ? plan.fixedStrokeWidth / scale
+              : shape.strokeWidth;
             ctx.lineCap = "round";
             ctx.lineJoin = "round";
             ctx.stroke(path);
@@ -3473,6 +3548,19 @@ export class CanvasView {
           ctx.fill();
         }
         ctx.restore();
+        if (item.tag) {
+          const tagPosition = symbolTagPosition(item);
+          if (tagPosition) {
+            const screen = this.toScreen(tagPosition);
+            ctx.save();
+            ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
+            ctx.fillStyle = "#111111";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            ctx.fillText(item.tag, screen.x, screen.y);
+            ctx.restore();
+          }
+        }
         break;
       }
       case "pen": {
@@ -3509,10 +3597,14 @@ export class CanvasView {
       }
       case "line": {
         if (points.length < 2) break;
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(3, lineWidth * 3), Math.max(2, lineWidth * 2)]);
+        }
         ctx.beginPath();
         ctx.moveTo(points[0].x, points[0].y);
         ctx.lineTo(points[1].x, points[1].y);
         ctx.stroke();
+        ctx.setLineDash([]);
         this.drawEndpoints(ctx, points, item.color);
         break;
       }
@@ -3778,7 +3870,7 @@ export class CanvasView {
         const padding = Math.max(0, (item.padding ?? 4) * zoom);
         const lineHeight = fontSize * 1.28;
         const color = item.textColor ?? item.color;
-        ctx.font = `${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
+        ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
 
@@ -3788,27 +3880,67 @@ export class CanvasView {
         }
 
         const innerWidth = Math.max(1, rect.width - padding * 2);
-        const lines = wrapText(item.text ?? "", innerWidth, (line) => ctx.measureText(line).width);
-        ctx.fillStyle = color;
-        lines.forEach((line, index) => {
-          if (!line) return;
-          const lineWidth = ctx.measureText(line).width;
-          const x =
-            rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, lineWidth);
-          const y = rect.y + padding + index * lineHeight;
-          ctx.fillText(line, x, y);
-          if (item.textUnderline) {
-            ctx.strokeStyle = color;
-            ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
-            const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
-            ctx.beginPath();
-            ctx.moveTo(x, underlineY);
-            ctx.lineTo(x + lineWidth, underlineY);
-            ctx.stroke();
-          }
-        });
+        const richRuns =
+          item.runs?.length && runsText(item.runs) === (item.text ?? "") ? item.runs : null;
+        let usedHeight: number;
+        if (richRuns) {
+          const measure = (text: string, run: { size: number; bold: boolean; italic: boolean }) => {
+            ctx.font = `${run.italic ? "italic " : ""}${run.bold ? 700 : 400} ${Math.max(0.3, run.size * zoom)}px ${FONT_STACK}`;
+            return ctx.measureText(text).width;
+          };
+          const layout = layoutRichText(richRuns, innerWidth, measure, textRunDefaults(item));
+          const richLineHeight = layout.lineHeight * zoom;
+          layout.lines.forEach((line, index) => {
+            let x =
+              rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, line.width);
+            const y = rect.y + padding + index * richLineHeight;
+            for (const segment of line.segments) {
+              if (!segment.text) continue;
+              const size = Math.max(0.3, segment.run.size * zoom);
+              ctx.font = `${segment.run.italic ? "italic " : ""}${segment.run.bold ? 700 : 400} ${size}px ${FONT_STACK}`;
+              ctx.fillStyle = segment.run.color;
+              ctx.fillText(segment.text, x, y);
+              if (segment.run.underline) {
+                ctx.strokeStyle = segment.run.color;
+                ctx.lineWidth = Math.max(0.5, size * TEXT_UNDERLINE_WIDTH);
+                const underlineY = y + size * (0.86 + TEXT_UNDERLINE_OFFSET);
+                ctx.beginPath();
+                ctx.moveTo(x, underlineY);
+                ctx.lineTo(x + segment.width, underlineY);
+                ctx.stroke();
+              }
+              x += segment.width;
+            }
+          });
+          usedHeight = layout.lines.length * richLineHeight;
+        } else {
+          const lines = wrapText(
+            item.text ?? "",
+            innerWidth,
+            (line) => ctx.measureText(line).width,
+          );
+          ctx.fillStyle = color;
+          lines.forEach((line, index) => {
+            if (!line) return;
+            const lineWidth = ctx.measureText(line).width;
+            const x =
+              rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, lineWidth);
+            const y = rect.y + padding + index * lineHeight;
+            ctx.fillText(line, x, y);
+            if (item.textUnderline) {
+              ctx.strokeStyle = color;
+              ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
+              const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
+              ctx.beginPath();
+              ctx.moveTo(x, underlineY);
+              ctx.lineTo(x + lineWidth, underlineY);
+              ctx.stroke();
+            }
+          });
+          usedHeight = lines.length * lineHeight;
+        }
 
-        if (lines.length * lineHeight + padding * 2 > rect.height) {
+        if (usedHeight + padding * 2 > rect.height) {
           ctx.save();
           ctx.strokeStyle = "#d3202a";
           ctx.setLineDash([5, 3]);
@@ -3822,7 +3954,7 @@ export class CanvasView {
         const fontSize = Math.max(0.3, layout.fontSize * zoom);
         const lineHeight = layout.lineHeight * zoom;
         const align = item.textAlign ?? "left";
-        ctx.font = `${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
+        ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
         ctx.fillStyle = item.color;
         ctx.textAlign = "left";
         ctx.textBaseline = "top";
@@ -4214,6 +4346,8 @@ export class CanvasView {
           ? this.labelResizePoint(found.item)
           : null;
       },
+      snapTarget: () =>
+        this.snap ? { kind: this.snap.kind, point: { ...this.snap.point } } : null,
       draftKind: () => this.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
       annotationScreenPoint: (itemId) => {

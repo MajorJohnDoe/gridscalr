@@ -15,6 +15,7 @@ import {
   type SheetTableLabels,
 } from "../src/features/schematics/model/sheetTemplate";
 import { baselineY, fitText, toPdfRect } from "../src/features/schematics/render/sheetPdf";
+import { layoutFieldLines } from "../src/features/schematics/render/sheetText";
 
 const labels: SheetLabels = {
   handledBy: "Handled",
@@ -48,9 +49,24 @@ describe("drawing frame template", () => {
     expect(new Set(ids).size).toBe(ids.length);
     expect(idsFor("A2")).toEqual(ids);
     expect(ids).toContain(SHEET_FIELD.projectName);
+    expect(ids).toContain(SHEET_FIELD.details);
     expect(ids).toContain(SHEET_FIELD.page);
     expect(ids).toContain(revisionFieldId(1, "bet"));
     expect(ids).toContain(revisionFieldId(4, "sign"));
+  });
+
+  it("wraps multi-line field values and keeps explicit line breaks", () => {
+    const template = buildDrawingFrameTemplate("A3", labels);
+    const details = template.fields.find((field) => field.id === SHEET_FIELD.details)!;
+    const measure = (text: string, size: number) => text.length * size * 0.52;
+    const lines = layoutFieldLines(
+      details,
+      "System: VärmeSystem 56-01-01\nApparatskåp: Obj.nr-50-01-01-AS01",
+      measure,
+    );
+    expect(lines.length).toBeGreaterThanOrEqual(2);
+    expect(lines.map((line) => line.text).join(" ")).toContain("VärmeSystem");
+    expect(lines.map((line) => line.text).join(" ")).toContain("Apparatskåp");
   });
 
   it("keeps every field inside the page", () => {

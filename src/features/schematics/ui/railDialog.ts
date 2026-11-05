@@ -45,7 +45,7 @@ export async function openRailDialog(itemId: string): Promise<void> {
     rows.forEach((row, index) => {
       const line = el("div", "field-row");
       line.style.display = "grid";
-      line.style.gridTemplateColumns = "auto minmax(70px, 1fr) minmax(120px, 2fr) auto";
+      line.style.gridTemplateColumns = "auto minmax(70px, 1fr) minmax(120px, 2fr) auto auto auto";
       line.style.gap = "6px";
       line.style.alignItems = "center";
       line.append(el("span", "field-label", String(index + 1)));
@@ -70,6 +70,28 @@ export async function openRailDialog(itemId: string): Promise<void> {
         row.legend = legend.value;
       });
 
+      const up = el("button", "icon-btn", "↑");
+      up.type = "button";
+      up.title = t("rail.dialog.moveUp");
+      up.setAttribute("aria-label", t("rail.dialog.moveUp"));
+      up.disabled = index === 0;
+      up.addEventListener("click", () => {
+        if (index === 0) return;
+        [rows[index - 1], rows[index]] = [rows[index], rows[index - 1]];
+        renderRows();
+      });
+
+      const down = el("button", "icon-btn", "↓");
+      down.type = "button";
+      down.title = t("rail.dialog.moveDown");
+      down.setAttribute("aria-label", t("rail.dialog.moveDown"));
+      down.disabled = index === rows.length - 1;
+      down.addEventListener("click", () => {
+        if (index >= rows.length - 1) return;
+        [rows[index + 1], rows[index]] = [rows[index], rows[index + 1]];
+        renderRows();
+      });
+
       const remove = el("button", "icon-btn", "×");
       remove.type = "button";
       remove.title = t("rail.dialog.remove");
@@ -80,7 +102,7 @@ export async function openRailDialog(itemId: string): Promise<void> {
         renderRows();
       });
 
-      line.append(label, legend, remove);
+      line.append(label, legend, up, down, remove);
       rowsWrap.append(line);
     });
 

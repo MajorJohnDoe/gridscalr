@@ -56,6 +56,8 @@ export interface PanelActions {
   deleteSelection: () => void;
   editSelectedText: () => void;
   editRail: (itemId: string) => void;
+  editLineTypes: () => void;
+  fitDrawingToArea: () => void;
   copySelection: () => void;
   cutSelection: () => void;
   pasteSelection: () => void;

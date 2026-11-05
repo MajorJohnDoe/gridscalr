@@ -59,6 +59,14 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Place searchable facility symbols from a built-in library of 52 original
   classic sign plates, rotate them, resize them by dragging a corner and give
   them an inspection status.
+- Draw operation cards with 111 original stroke-only schematic symbols for
+  instruments, valves, pumps, heat exchangers, ventilation, heating, district
+  heating, cooling, domestic water, control and general notation. Add a free-text
+  tag that follows the symbol, and filter the library between **Signs** and
+  **Schematic**.
+- Format a selected word inside a text box with bold, italic, underline, size and
+  colour while the rest of the box keeps its own style. Manage project line types
+  and fit an overflowing schematic drawing back inside the sheet area.
 - Organise everything in separate measurement and drawing layers with per-item
   visibility and locks, multi-select, bulk edits and a docked Markups table with
   saved views, filters and grouping.
