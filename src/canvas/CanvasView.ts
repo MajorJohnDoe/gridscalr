@@ -102,6 +102,7 @@ import {
   excludeOwnSnapTargets,
   findSnap,
   type SnapCandidate,
+  type SnapKind,
   type SnapResult,
 } from "../model/snap";
 import {
@@ -169,7 +170,7 @@ import {
 } from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
-import { store } from "../state/store";
+import { store, type ToolId } from "../state/store";
 import {
   clampZoom,
   fitPageViewport,
@@ -213,6 +214,7 @@ export interface CanvasTestApi {
   labelScreenPoint(itemId: string): Point | null;
   labelResizeScreenPoint(itemId: string): Point | null;
   annotationScreenPoint(itemId: string): Point | null;
+  snapTarget(): { kind: SnapKind; point: Point } | null;
   draftKind(): string | null;
   searchHighlights(): {
     page: number;
@@ -271,6 +273,30 @@ function orthoPoint(last: Point, current: Point): Point {
   return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
     ? { x: current.x, y: last.y }
     : { x: last.x, y: current.y };
+}
+
+/** Tools whose next click can land on an existing snap target. */
+const SNAP_TOOLS: ReadonlySet<ToolId> = new Set([
+  "calibrate",
+  "length",
+  "radius",
+  "diameter",
+  "slope",
+  "angle",
+  "arc",
+  "polyline",
+  "area",
+  "volume",
+  "cloud",
+  "line",
+  "arrow",
+  "count",
+  "symbol",
+]);
+
+function toolUsesSnapping(tool: ToolId): boolean {
+  if (tool === "highlight") return store.ui.highlightShape !== "stroke";
+  return SNAP_TOOLS.has(tool);
 }
 
 const symbolPathCache = new Map<string, Path2D>();
@@ -525,6 +551,7 @@ export class CanvasView {
       this.drag = null;
       this.marquee = null;
       this.labelConnect = null;
+      this.snap = null;
       this.renderedPage = page;
     }
     if (reason === "project") {
@@ -535,12 +562,15 @@ export class CanvasView {
     if (reason === "tool") {
       this.draft = null;
       this.labelConnect = null;
+      this.snap = null;
+      if (store.ui.hover) store.setHover(null);
       this.updateCursor();
     }
     if (page !== this.renderedPage) {
       this.lastRender = null;
       this.draft = null;
       this.labelConnect = null;
+      this.snap = null;
       this.renderedPage = page;
     }
     this.drawAll();
@@ -1030,6 +1060,7 @@ export class CanvasView {
         return;
       }
       let snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
+      if (event.shiftKey) this.snap = null;
       const existing = this.draft?.kind === "polyline" ? this.draft : null;
       if (existing && existing.points.length) {
         snapped = this.constrainPolyline(
@@ -1550,6 +1581,7 @@ export class CanvasView {
         // direction and the constrained endpoint could not move away from it.
         let current = event.shiftKey ? page : this.snapPoint(page);
         if (event.shiftKey) {
+          this.snap = null;
           const constrained = constrainAngle(this.draft.start, current);
           if (distance(constrained, current) > 1e-6) this.snap = null;
           current = constrained;
@@ -1625,7 +1657,10 @@ export class CanvasView {
     } else {
       this.hoverHandle = null;
       this.hoverLabelResize = false;
+      if (toolUsesSnapping(tool)) this.snapPoint(page);
+      else this.snap = null;
       this.updateCursor();
+      this.drawInteraction();
     }
   };
 
@@ -2139,7 +2174,13 @@ export class CanvasView {
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
-    if (free) return point;
+    if (free) {
+      this.snap = null;
+      return point;
+    }
+    // An explicit snap target wins over the orthogonal default, so a cable can
+    // start or end on a port, midpoint, intersection or segment at any angle.
+    if (this.snap) return point;
     const constrained = orthoPoint(last, point);
     if (distance(constrained, point) > 1e-6) this.snap = null;
     return constrained;
@@ -4305,6 +4346,8 @@ export class CanvasView {
           ? this.labelResizePoint(found.item)
           : null;
       },
+      snapTarget: () =>
+        this.snap ? { kind: this.snap.kind, point: { ...this.snap.point } } : null,
       draftKind: () => this.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
       annotationScreenPoint: (itemId) => {

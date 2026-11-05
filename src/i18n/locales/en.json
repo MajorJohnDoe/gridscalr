@@ -1077,6 +1077,7 @@
   "snap.endpoint": "Endpoint",
   "snap.midpoint": "Midpoint",
   "snap.intersection": "Intersection",
+  "snap.segment": "Line",
   "duplicate.pageName": "Page name",
   "duplicate.nameAria": "Page name for the duplicate",
   "duplicate.copyName": "Copy page name",

@@ -505,6 +505,114 @@ try {
     "Shift should ignore the segment snap and keep the line vertical",
   );
 
+  // 7d. Hover snap markers and diagonal pipe connections.
+  const placedSymbols = await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    const now = new Date().toISOString();
+    store.mutate((project) => {
+      const layer = project.layers.find((entry) => entry.kind === "draw");
+      layer.items.push(
+        {
+          id: "item_snap_fan",
+          page: 1,
+          kind: "symbol",
+          points: [{ x: 950, y: 220 }],
+          color: "#111111",
+          strokeWidth: 1.4,
+          symbolId: "schematic.fan",
+          symbolSize: 40,
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: "item_snap_sensor",
+          page: 1,
+          kind: "symbol",
+          points: [{ x: 1000, y: 320 }],
+          color: "#111111",
+          strokeWidth: 1.4,
+          symbolId: "schematic.sensor",
+          symbolSize: 40,
+          createdAt: now,
+          updatedAt: now,
+        },
+      );
+    }, "change");
+    return { fan: "item_snap_fan", sensor: "item_snap_sensor" };
+  });
+  const symbolScale = 40 / 64;
+  const fanPort = { x: 950 + (49 - 32) * symbolScale, y: 220 };
+  const sensorPort = { x: 1000, y: 320 + (58 - 32) * symbolScale };
+
+  await page.evaluate(() => window.__gridscalr.store.setTool("line"));
+  const fanPortScreen = await mousePoint(fanPort);
+  await page.mouse.move(fanPortScreen.x, fanPortScreen.y);
+  await page.waitForTimeout(60);
+  const hoveredPort = await page.evaluate(() => window.__gridscalr.canvas.snapTarget());
+  assert.equal(
+    hoveredPort?.kind,
+    "endpoint",
+    "hovering a symbol port should show an endpoint marker",
+  );
+  assert.ok(
+    Math.abs(hoveredPort.point.x - fanPort.x) < 0.01 &&
+      Math.abs(hoveredPort.point.y - fanPort.y) < 0.01,
+    "the hover marker should sit on the symbol port",
+  );
+
+  const emptyScreen = await mousePoint({ x: 850, y: 420 });
+  await page.mouse.move(emptyScreen.x, emptyScreen.y);
+  await page.waitForTimeout(60);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.canvas.snapTarget()),
+    null,
+    "empty space should not show a snap marker",
+  );
+
+  await page.evaluate(() => window.__gridscalr.store.setTool("polyline"));
+  const beforePipe = await itemIds();
+  const fanPortClick = await mousePoint(fanPort);
+  await page.mouse.click(fanPortClick.x, fanPortClick.y);
+  await page.waitForTimeout(80);
+  const sensorPortScreen = await mousePoint(sensorPort);
+  await page.mouse.move(sensorPortScreen.x, sensorPortScreen.y);
+  await page.waitForTimeout(60);
+  const hoveredPipePort = await page.evaluate(() => window.__gridscalr.canvas.snapTarget());
+  assert.equal(hoveredPipePort?.kind, "endpoint", "a pipe should target the diagonal symbol port");
+  await page.mouse.click(sensorPortScreen.x, sensorPortScreen.y);
+  await page.waitForTimeout(80);
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(120);
+  const afterPipe = await itemIds();
+  const pipeId = afterPipe.find((id) => !beforePipe.includes(id));
+  assert.ok(pipeId, "clicking two symbol ports should create a pipe");
+  const pipe = await itemById(pipeId);
+  assert.equal(pipe.kind, "polyline");
+  assert.ok(
+    Math.abs(pipe.points[0].x - fanPort.x) < 0.01 && Math.abs(pipe.points[0].y - fanPort.y) < 0.01,
+    "the pipe should start exactly on the fan port",
+  );
+  assert.ok(
+    Math.abs(pipe.points[1].x - sensorPort.x) < 0.01 &&
+      Math.abs(pipe.points[1].y - sensorPort.y) < 0.01,
+    "the pipe should end on the diagonal sensor port instead of the orthogonal projection",
+  );
+
+  await page.evaluate(
+    ({ ids }) => {
+      const store = window.__gridscalr.store;
+      store.mutate((project) => {
+        for (const layer of project.layers) {
+          layer.items = layer.items.filter((item) => !ids.includes(item.id));
+        }
+      }, "change");
+      store.clearSelection();
+    },
+    { ids: [placedSymbols.fan, placedSymbols.sensor, pipeId] },
+  );
+  await page.waitForTimeout(80);
+  await page.keyboard.press("v");
+
   // 8. Hidden and locked items stay out of hit testing.
   await page.keyboard.press("v");
   await page.evaluate(() => {

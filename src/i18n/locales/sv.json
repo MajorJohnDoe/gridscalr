@@ -1077,6 +1077,7 @@
   "snap.endpoint": "Ändpunkt",
   "snap.midpoint": "Mittpunkt",
   "snap.intersection": "Skärningspunkt",
+  "snap.segment": "Linje",
   "duplicate.pageName": "Sidnamn",
   "duplicate.nameAria": "Sidnamn för kopian",
   "duplicate.copyName": "Kopiera sidnamn",

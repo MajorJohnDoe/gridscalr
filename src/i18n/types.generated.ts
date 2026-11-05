@@ -1079,6 +1079,7 @@ export type MessageKey =
   | "snap.endpoint"
   | "snap.midpoint"
   | "snap.intersection"
+  | "snap.segment"
   | "duplicate.pageName"
   | "duplicate.nameAria"
   | "duplicate.copyName"

@@ -171,6 +171,7 @@ export function constrainSquare(start: Point, point: Point): Point {
 export function snapLabel(kind: SnapKind): string {
   if (kind === "endpoint") return t("snap.endpoint");
   if (kind === "midpoint") return t("snap.midpoint");
+  if (kind === "segment") return t("snap.segment");
   return t("snap.intersection");
 }
 
