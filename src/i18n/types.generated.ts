@@ -1355,6 +1355,7 @@ export type MessageKey =
   | "symbol.schematic.chiller"
   | "symbol.schematic.water-heater"
   | "symbol.schematic.mixing-valve"
+  | "symbol.schematic.single-lever-mixer"
   | "symbol.schematic.domestic-water-pump"
   | "symbol.schematic.control-cabinet"
   | "symbol.schematic.plc"
