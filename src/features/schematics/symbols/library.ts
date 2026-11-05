@@ -52,16 +52,41 @@ function meterBody(): string {
   return joinPaths(rectPath(12, 16, 40, 32), smallCircle(32, 30, 9), linePath(26, 38, 38, 38));
 }
 
+interface VesselGeometry {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+/** Standard, large and small expansion vessels with different proportions. */
+const EXPANSION_VESSEL: VesselGeometry = { x: 20, y: 8, width: 24, height: 38 };
+const EXPANSION_VESSEL_LARGE: VesselGeometry = { x: 21, y: 4, width: 22, height: 46 };
+const EXPANSION_VESSEL_SMALL: VesselGeometry = { x: 21, y: 16, width: 22, height: 26 };
+
 /** A vertical expansion vessel with a domed shell, top cap and bottom neck. */
-function expansionVesselShapes() {
+function expansionVesselShapes(vessel: VesselGeometry) {
+  const centerX = vessel.x + vessel.width / 2;
+  const neckTop = vessel.y + vessel.height;
   return [
     stroke(
       joinPaths(
-        roundedRectPathData(20, 8, 24, 38, 9),
-        linePath(26, 11, 38, 11),
-        linePath(32, 46, 32, 56),
+        roundedRectPathData(vessel.x, vessel.y, vessel.width, vessel.height, 9),
+        linePath(centerX - 6, vessel.y + 3, centerX + 6, vessel.y + 3),
+        linePath(centerX, neckTop, centerX, neckTop + 8),
       ),
     ),
+  ];
+}
+
+function expansionVesselPorts(vessel: VesselGeometry) {
+  return [
+    {
+      id: "connection",
+      x: vessel.x + vessel.width / 2,
+      y: vessel.y + vessel.height + 10,
+      direction: "both" as const,
+    },
   ];
 }
 
@@ -537,8 +562,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "heating",
     keywords: ["expansionskärl", "expansion vessel", "kärl", "expansion", "ek"],
     tagPrefix: "EK",
-    ports: [{ id: "connection", x: 32, y: 58, direction: "both" }],
-    shapes: expansionVesselShapes(),
+    ports: expansionVesselPorts(EXPANSION_VESSEL),
+    shapes: expansionVesselShapes(EXPANSION_VESSEL),
   }),
   schematicSymbol({
     id: "schematic.expansion-vessel-large",
@@ -546,8 +571,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["expansionskärl stort", "large expansion vessel", "kärl", "expansion", "ek"],
     tagPrefix: "EK",
     defaultSize: 56,
-    ports: [{ id: "connection", x: 32, y: 58, direction: "both" }],
-    shapes: expansionVesselShapes(),
+    ports: expansionVesselPorts(EXPANSION_VESSEL_LARGE),
+    shapes: expansionVesselShapes(EXPANSION_VESSEL_LARGE),
   }),
   schematicSymbol({
     id: "schematic.expansion-vessel-small",
@@ -555,8 +580,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["expansionskärl litet", "small expansion vessel", "kärl", "expansion", "ek"],
     tagPrefix: "EK",
     defaultSize: 26,
-    ports: [{ id: "connection", x: 32, y: 58, direction: "both" }],
-    shapes: expansionVesselShapes(),
+    ports: expansionVesselPorts(EXPANSION_VESSEL_SMALL),
+    shapes: expansionVesselShapes(EXPANSION_VESSEL_SMALL),
   }),
   schematicSymbol({
     id: "schematic.pressure-holding",
