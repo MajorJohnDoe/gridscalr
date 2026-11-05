@@ -1345,6 +1345,8 @@
   "symbol.schematic.convector": "Convector",
   "symbol.schematic.floor-heating": "Floor heating",
   "symbol.schematic.expansion-vessel": "Expansion vessel",
+  "symbol.schematic.expansion-vessel-large": "Expansion vessel, large",
+  "symbol.schematic.expansion-vessel-small": "Expansion vessel, small",
   "symbol.schematic.pressure-holding": "Pressure holding unit",
   "symbol.schematic.substation": "District heating substation",
   "symbol.schematic.district-energy-meter": "District heating energy meter",

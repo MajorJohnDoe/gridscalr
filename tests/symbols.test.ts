@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(112);
-    expect(ALL_SYMBOLS).toHaveLength(164);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(114);
+    expect(ALL_SYMBOLS).toHaveLength(166);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(112);
+    expect(symbolsForSet("schematic")).toHaveLength(114);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -313,6 +313,16 @@ describe("schematic symbol set", () => {
         id,
       ).toBe(true);
     }
+  });
+
+  it("offers standard, large and small expansion vessels", () => {
+    expect(
+      [
+        "schematic.expansion-vessel",
+        "schematic.expansion-vessel-large",
+        "schematic.expansion-vessel-small",
+      ].map((id) => symbolDefaultSize(id)),
+    ).toEqual([40, 56, 26]);
   });
 
   it("draws the thermometer as a vertical scale with a bulb", () => {

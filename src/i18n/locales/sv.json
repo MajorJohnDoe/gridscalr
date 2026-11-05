@@ -1345,6 +1345,8 @@
   "symbol.schematic.convector": "Konvektor",
   "symbol.schematic.floor-heating": "Golvvärme",
   "symbol.schematic.expansion-vessel": "Expansionskärl",
+  "symbol.schematic.expansion-vessel-large": "Expansionskärl, stort",
+  "symbol.schematic.expansion-vessel-small": "Expansionskärl, litet",
   "symbol.schematic.pressure-holding": "Tryckhållning",
   "symbol.schematic.substation": "Undercentral",
   "symbol.schematic.district-energy-meter": "Fjärrvärmemätare",

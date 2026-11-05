@@ -1347,6 +1347,8 @@ export type MessageKey =
   | "symbol.schematic.convector"
   | "symbol.schematic.floor-heating"
   | "symbol.schematic.expansion-vessel"
+  | "symbol.schematic.expansion-vessel-large"
+  | "symbol.schematic.expansion-vessel-small"
   | "symbol.schematic.pressure-holding"
   | "symbol.schematic.substation"
   | "symbol.schematic.district-energy-meter"
