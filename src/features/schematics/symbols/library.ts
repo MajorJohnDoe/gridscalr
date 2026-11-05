@@ -15,6 +15,7 @@ import {
   sensorFunnel,
   smallCircle,
   stroke,
+  valvePorts,
 } from "./definitions";
 
 /**
@@ -37,10 +38,8 @@ const SENSOR_PORTS = (x = 32) => [{ id: "process", x, y: 58, direction: "both" a
 
 function valveBody(): string {
   return joinPaths(
-    linePath(2, 32, 18, 32),
     polyPath([18, 22, 32, 32, 18, 42], true),
     polyPath([46, 22, 32, 32, 46, 42], true),
-    linePath(46, 32, 62, 32),
   );
 }
 
@@ -212,7 +211,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["avstängningsventil", "shut-off valve", "ventil", "avstängning", "av"],
     tagPrefix: "AV",
-    ports: INLINE_PORTS(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 12), linePath(25, 12, 39, 12))),
@@ -223,7 +222,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["reglerventil", "control valve", "ventil", "ställdon", "regler", "rv"],
     tagPrefix: "RV",
-    ports: INLINE_PORTS(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 14), smallCircle(32, 10, 4))),
@@ -234,7 +233,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["backventil", "check valve", "back", "ventil", "bv"],
     tagPrefix: "BV",
-    ports: INLINE_PORTS(),
+    ports: valvePorts(),
     shapes: [stroke(valveBody()), stroke(linePath(46, 22, 46, 42))],
   }),
   schematicSymbol({
@@ -242,7 +241,10 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["säkerhetsventil", "safety valve", "säkerhet", "ventil", "sv"],
     tagPrefix: "SV",
-    ports: [{ id: "in", x: 2, y: 32, direction: "in" }],
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+    ],
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 10), polyPath([26, 14, 32, 5, 38, 14]))),
@@ -253,7 +255,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["motorventil", "motorized valve", "motor", "ventil", "mv"],
     tagPrefix: "MV",
-    ports: INLINE_PORTS(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(
@@ -267,9 +269,9 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["trevägsventil", "three-way valve", "3-väg", "ventil", "3v"],
     tagPrefix: "3V",
     ports: [
-      { id: "in", x: 2, y: 32, direction: "in" },
-      { id: "out", x: 62, y: 32, direction: "out" },
-      { id: "branch", x: 32, y: 2, direction: "both" },
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+      { id: "branch", x: 32, y: 58, direction: "both" },
     ],
     shapes: [
       stroke(
@@ -282,7 +284,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["injusteringsventil", "balancing valve", "injustering", "ventil", "iv"],
     tagPrefix: "IV",
-    ports: INLINE_PORTS(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(26, 22, 26, 12), linePath(38, 22, 38, 12))),
@@ -296,8 +298,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["avtappningsventil", "drain valve", "avtappning", "ventil", "at"],
     tagPrefix: "AT",
     ports: [
-      { id: "in", x: 2, y: 32, direction: "in" },
-      { id: "out", x: 2, y: 32, direction: "out" },
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
       { id: "drain", x: 32, y: 62, direction: "out" },
     ],
     shapes: [
@@ -688,21 +690,11 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["blandningsventil", "mixing valve", "blandning", "tappvatten", "mbv"],
     tagPrefix: "MBV",
     ports: [
-      { id: "hot", x: 2, y: 20, direction: "in" },
-      { id: "cold", x: 2, y: 44, direction: "in" },
-      { id: "mixed", x: 62, y: 32, direction: "out" },
+      { id: "hot", x: 20, y: 20, direction: "in" },
+      { id: "cold", x: 20, y: 44, direction: "in" },
+      { id: "mixed", x: 46, y: 32, direction: "out" },
     ],
-    shapes: [
-      stroke(
-        joinPaths(
-          polyPath([20, 18, 46, 32, 20, 46], true),
-          linePath(2, 20, 20, 20),
-          linePath(2, 44, 20, 44),
-          linePath(46, 32, 62, 32),
-          linePath(28, 20, 28, 44),
-        ),
-      ),
-    ],
+    shapes: [stroke(joinPaths(polyPath([20, 18, 46, 32, 20, 46], true), linePath(28, 20, 28, 44)))],
   }),
   schematicSymbol({
     id: "schematic.domestic-water-pump",
