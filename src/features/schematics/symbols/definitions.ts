@@ -169,20 +169,29 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
   schematicSymbol({
     id: "schematic.heat-exchanger",
     category: "exchanger",
-    keywords: ["värmeväxlare", "heat exchanger", "växlare", "återvinning", "vvx"],
+    keywords: [
+      "värmeväxlare",
+      "heat exchanger",
+      "växlare",
+      "vatten",
+      "vattenväxlare",
+      "återvinning",
+      "vvx",
+    ],
     tagPrefix: "VVX",
-    // No connection lines in the artwork: the user draws the pipe or duct
-    // lines in whatever direction the plant needs. The ports are snap anchors
-    // on the shell edge.
+    // A water-to-water exchanger: two counter-flow media drawn as mirrored
+    // zigzags inside a rectangular shell. The pipe connections are left to the
+    // user; the ports are snap anchors on the shell edges.
     ports: [
-      { id: "primaryIn", x: 14, y: 22, direction: "in" },
-      { id: "primaryOut", x: 50, y: 22, direction: "out" },
-      { id: "secondaryIn", x: 50, y: 42, direction: "in" },
-      { id: "secondaryOut", x: 14, y: 42, direction: "out" },
+      { id: "primaryIn", x: 18, y: 16, direction: "in" },
+      { id: "primaryOut", x: 18, y: 48, direction: "out" },
+      { id: "secondaryIn", x: 46, y: 16, direction: "in" },
+      { id: "secondaryOut", x: 46, y: 48, direction: "out" },
     ],
     shapes: [
-      stroke(polyPath([22, 10, 42, 10, 50, 18, 50, 46, 42, 54, 22, 54, 14, 46, 14, 18], true)),
-      stroke(joinPaths("M 20 20 H 44 L 20 30 H 44 L 20 40 H 44 L 20 48")),
+      stroke(rectPath(18, 8, 28, 48)),
+      stroke("M 18 16 H 30 L 20 28 L 30 40 L 20 48 H 18"),
+      stroke("M 46 16 H 34 L 44 28 L 34 40 L 44 48 H 46"),
     ],
   }),
   schematicSymbol({
