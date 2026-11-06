@@ -952,6 +952,8 @@
   "symbols.countSchematic": "{count} schematic symbols",
   "symbols.setSigns": "Signs",
   "symbols.setSchematic": "Schematic",
+  "symbols.setSpecial": "Special",
+  "symbols.countSpecial": "Operation-card tools",
   "symbols.searchPlaceholder": "Search symbols or Swedish terms…",
   "symbols.searchAria": "Search symbols",
   "symbols.recent": "Recently used",

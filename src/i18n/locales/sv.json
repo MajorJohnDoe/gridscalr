@@ -952,6 +952,8 @@
   "symbols.countSchematic": "{count} schematiska symboler",
   "symbols.setSigns": "Skyltar",
   "symbols.setSchematic": "Driftkort",
+  "symbols.setSpecial": "Special",
+  "symbols.countSpecial": "Driftkortsverktyg",
   "symbols.searchPlaceholder": "Sök symboler eller svenska begrepp…",
   "symbols.searchAria": "Sök symboler",
   "symbols.recent": "Senast använda",

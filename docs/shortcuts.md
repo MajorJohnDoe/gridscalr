@@ -27,7 +27,6 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Text note | `T` |
 | Text box | `Shift+T` |
 | Pipe / duct | `F` |
-| I/O rail | `Shift+R` |
 | Revision cloud | `D` |
 | Callout | `N` |
 | Stamp | `S` |

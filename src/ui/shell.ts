@@ -132,6 +132,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   toolRail.setAttribute("aria-orientation", "vertical");
   let lastGroup = "";
   for (const tool of TOOLS) {
+    if (tool.hidden) continue;
     if (lastGroup && tool.group !== lastGroup) {
       toolRail.append(el("div", "tool-separator"));
     }
@@ -162,7 +163,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     } else {
       btn.dataset.tool = tool.id;
       btn.innerHTML = icon(tool.icon, 19);
-      btn.title = `${t(tool.label)} (${tool.shortcut})`;
+      btn.title = tool.shortcut ? `${t(tool.label)} (${tool.shortcut})` : t(tool.label);
       btn.setAttribute("aria-label", t(tool.label));
       btn.addEventListener("click", () => store.setTool(tool.id));
       attachToolFlyout(btn, tool.id);

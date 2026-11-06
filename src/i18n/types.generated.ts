@@ -954,6 +954,8 @@ export type MessageKey =
   | "symbols.countSchematic"
   | "symbols.setSigns"
   | "symbols.setSchematic"
+  | "symbols.setSpecial"
+  | "symbols.countSpecial"
   | "symbols.searchPlaceholder"
   | "symbols.searchAria"
   | "symbols.recent"

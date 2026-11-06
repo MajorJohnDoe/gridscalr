@@ -352,7 +352,7 @@ When visible objects extend past the sheet’s drawing area, the context bar sho
 
 ### I/O rails
 
-Choose **I/O rail** (`Shift+R`) and drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Double-click the rail, use **Edit rail…** in Properties, or right-click it to open the rail dialog.
+Choose **Symbol** (`B`), open the **Special** tab and pick **I/O rail**, then drag horizontally. The rail is created with five rows, `PLC/DI/AI/DU/AU`, and editable legends. Double-click the rail, use **Edit rail…** in Properties, or right-click it to open the rail dialog.
 
 - Load the `PLC/DI/AI/DU/AU` or `M-Bus/DUC/DI/AI/DU/AU` preset.
 - Rename rows and edit their legends.
