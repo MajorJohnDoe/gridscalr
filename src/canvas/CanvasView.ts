@@ -25,6 +25,7 @@ import {
   simplifyPolyline,
   translatePoints,
   type Bounds,
+  vertexAngleAnchor,
 } from "../model/geometry";
 import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
@@ -1820,9 +1821,13 @@ export class CanvasView {
       this.drag.last = page;
       this.drag.moved = true;
     } else if (this.drag.mode === "vertex") {
-      const target = this.snapPoint(page, this.drag.itemId);
       const index = this.drag.vertexIndex;
       if (index >= 0 && index < item.points.length) {
+        const angleAnchor = shiftKey ? vertexAngleAnchor(item, index) : null;
+        const target = angleAnchor
+          ? constrainAngle(angleAnchor, page)
+          : this.snapPoint(page, this.drag.itemId);
+        if (angleAnchor) this.snap = null;
         const localTarget = itemRotation(item) === 0 ? target : pointToItemLocal(item, target);
         item.points[index] = localTarget;
         item.updatedAt = new Date().toISOString();

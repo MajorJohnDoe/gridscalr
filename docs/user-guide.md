@@ -275,7 +275,7 @@ With a drawing tool active, the marker appears as soon as the pointer is over a 
 
 Use the pen, line, arrow, rectangle, ellipse, highlight, cloud, callout, stamp, delta, and text tools. Drawing items are added to the active **drawing layer**. Drawing layers render below measurement layers, so measurement labels stay readable.
 
-Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions.
+Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions. The same angle constraint applies when you drag an endpoint of a line or arrow, or a vertex of a pipe/duct, to reshape it.
 
 ### Revision cloud
 
