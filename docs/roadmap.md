@@ -6,7 +6,7 @@ Detailed planning documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.18.0** · Project-file schema: **23**
+Current version: **0.19.0** · Project-file schema: **23**
 
 1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
 packages, and tested large-project performance. The 1.0 architecture decisions are
@@ -63,8 +63,9 @@ milestone:
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | 0.17.0 | Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation | Complete | v21 |
 | **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Complete** | v22 |
-| **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 115 schematic symbols and a fit-to-area action** | **Complete** | v23 |
-| **0.19.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v23 |
+| **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 119 schematic symbols and a fit-to-area action** | **Complete** | v23 |
+| **0.19.0** | **Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer** | **Complete** | v23 |
+| **0.20.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v23 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
 
 Schema history and migration rules are documented in
@@ -139,11 +140,13 @@ Exit criteria:
 - Missing translations fail CI.
 - English remains complete.
 
-### Schematic sheets (in progress)
+### Schematic sheets
 
 **Goal:** a technician can create an operation card from a blank sheet template,
 fill in the title block and table cells, draw the schematic and export the result
 without preparing a PDF first.
+
+Delivered in 0.19.0.
 
 Deliverables:
 
@@ -153,7 +156,7 @@ Deliverables:
 - Wrapped text boxes with an optional white background and per-range rich text
 - Configurable I/O rails with reorderable rows, polyline drawing with an ortho
   constraint and editable media line types
-- 115 schematic symbols with tags, ports and a generated review catalogue
+- 119 schematic symbols with tags, ports and a generated review catalogue
 - Drawing-area overflow warning and an undoable fit-to-area action
 
 The locked decisions, phases and acceptance criteria live in
@@ -166,7 +169,7 @@ Exit criteria:
 - Template-only packages reopen without external files.
 - The same document model, undo, layer visibility and locking rules apply.
 
-### 0.19.0 — Scale and workflow
+### 0.20.0 — Scale and workflow
 
 **Goal:** large drawing sets and many objects are a tested, supported use case, and the code and shell are ready for a 1.0 maintenance cycle.
 
