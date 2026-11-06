@@ -657,8 +657,8 @@ Outcome:
   keywords, tag prefix, ports inside the 64-unit view box and a default size. The
   stroke stays at one fixed page-space weight at every symbol size on the canvas,
   in the PDF and in the catalogue (currently 0.7 pt).
-- The symbol library has **Signs** and **Schematic** set filters and still contains
-  the unchanged 52 facility signs.
+- The symbol library has **Signs**, **Schematic** and **Special** tabs and still
+  contains the unchanged 52 facility signs.
 - Symbols carry an optional free-text tag with an offset that follows the symbol.
   No numbering or equipment schedule is derived.
 - `npm run symbols:catalog` generates `artifacts/symbol-catalog.html` from the same

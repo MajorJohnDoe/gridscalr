@@ -389,7 +389,7 @@ Use **File → Import image…** to add a PNG or JPEG. `Ctrl/Cmd+V` also inserts
 
 ## Symbols
 
-Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library has two sets, switched with the **Signs** and **Schematic** tabs, and searches English and Swedish names, ids and keywords. For example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, **värmebatteri** or **undercentral**.
+Press `B` or choose the **Symbol** tool in the tool rail; the left panel switches to the symbol library. The library has three tabs — **Signs**, **Schematic** and **Special** — and searches English and Swedish names, ids and keywords. **Special** holds operation-card tools such as the I/O rail. For example **Fire extinguisher**, **brandsläckare**, **tilluftsdon**, **värmebatteri** or **undercentral**.
 
 **Signs** contains the 52 facility signs:
 
