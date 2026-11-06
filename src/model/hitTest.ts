@@ -467,7 +467,22 @@ function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean }
       return item.highlightShape === "stroke"
         ? { points: item.points.map(toPage), closed: false }
         : null;
-    default:
+    case "arrow":
+    case "callout":
+    case "count":
+    case "delta":
+    case "diameter":
+    case "ellipse":
+    case "image":
+    case "line":
+    case "pen":
+    case "radius":
+    case "rail":
+    case "rect":
+    case "stamp":
+    case "symbol":
+    case "text":
+    case "textbox":
       return null;
   }
 }
