@@ -35,6 +35,11 @@ export function polyPath(values: number[], closed = false): string {
   return parts.join(" ");
 }
 
+/** A circular arc from the current point, used by rounded U-turns. */
+export function arcPath(radius: number, x: number, y: number, sweep: 0 | 1): string {
+  return `A ${n(radius)} ${n(radius)} 0 0 ${sweep} ${n(x)} ${n(y)}`;
+}
+
 /** Several path fragments joined into one shape. */
 export function joinPaths(...paths: string[]): string {
   return paths.filter(Boolean).join(" ");

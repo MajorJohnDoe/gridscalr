@@ -3,6 +3,7 @@ import { roundedRectPathData } from "../../../model/symbolPaths";
 import { REFERENCE_SYMBOLS } from "./referenceSymbols";
 import {
   FIRST_VENTILATION_SYMBOLS,
+  arcPath,
   coilPath,
   ductCasing,
   ductPorts,
@@ -35,6 +36,11 @@ const PUMP_PORTS = () => [
 ];
 
 const SENSOR_PORTS = (x = 32) => [{ id: "process", x, y: 58, direction: "both" as const }];
+
+/** Eleven evenly spaced fins between the radiator headers. */
+const RADIATOR_FINS = Array.from({ length: 11 }, (_, index) =>
+  linePath(12 + index * 4, 20, 12 + index * 4, 44),
+);
 
 function valveBody(): string {
   return joinPaths(
@@ -518,11 +524,23 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "heating",
     keywords: ["radiator", "element", "värme", "rad"],
     tagPrefix: "RAD",
+    // Supply enters at the top-left and returns at the bottom-left. Both ports
+    // sit on the header edge so the symbol has no protruding connection stubs.
     ports: [
-      { id: "in", x: 32, y: 10, direction: "in" },
-      { id: "out", x: 32, y: 54, direction: "out" },
+      { id: "in", x: 4, y: 17, direction: "in" },
+      { id: "out", x: 4, y: 47, direction: "out" },
     ],
-    shapes: [stroke(rectPath(24, 10, 16, 44))],
+    shapes: [
+      stroke(
+        joinPaths(
+          // Stepped headers that overhang the fin block, as on a panel radiator.
+          rectPath(4, 14, 56, 6),
+          rectPath(4, 44, 56, 6),
+          rectPath(8, 20, 48, 24),
+          ...RADIATOR_FINS,
+        ),
+      ),
+    ],
   }),
   schematicSymbol({
     id: "schematic.convector",
@@ -552,18 +570,27 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "heating",
     keywords: ["golvvärme", "floor heating", "golv", "värme", "gv"],
     tagPrefix: "GV",
+    // One continuous loop: supply enters at the top-left, the coil snakes down
+    // and up, and the return leaves at the bottom-left. Ports sit on the edge.
     ports: [
-      { id: "in", x: 2, y: 32, direction: "in" },
-      { id: "out", x: 62, y: 32, direction: "out" },
+      { id: "in", x: 2, y: 14, direction: "in" },
+      { id: "out", x: 2, y: 50, direction: "out" },
     ],
     shapes: [
       stroke(
         joinPaths(
-          linePath(2, 14, 18, 14),
-          polyPath([
-            18, 14, 46, 14, 46, 22, 18, 22, 18, 30, 46, 30, 46, 38, 18, 38, 18, 46, 46, 46,
-          ]),
-          linePath(46, 46, 62, 46),
+          linePath(2, 14, 14, 14),
+          linePath(14, 14, 14, 40),
+          arcPath(5, 24, 40, 0),
+          linePath(24, 40, 24, 20),
+          arcPath(5, 34, 20, 1),
+          linePath(34, 20, 34, 40),
+          arcPath(5, 44, 40, 0),
+          linePath(44, 40, 44, 20),
+          arcPath(5, 54, 20, 1),
+          linePath(54, 20, 54, 45),
+          arcPath(5, 49, 50, 1),
+          linePath(49, 50, 2, 50),
         ),
       ),
     ],
