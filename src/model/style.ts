@@ -13,6 +13,9 @@ export const DRAW_COLOR_PRESETS = [
   { id: "red", label: translate("en", "color.red"), color: "#f26d6d" },
   { id: "signalRed", label: translate("en", "color.signalRed"), color: "#f70808" },
   { id: "violet", label: translate("en", "color.violet"), color: "#a78bfa" },
+  { id: "pink", label: translate("en", "color.pink"), color: "#e879b9" },
+  { id: "yellow", label: translate("en", "color.yellow"), color: "#f2d024" },
+  { id: "slate", label: translate("en", "color.slate"), color: "#535353" },
   { id: "graphite", label: translate("en", "color.graphite"), color: "#14181b" },
 ] as const;
 
