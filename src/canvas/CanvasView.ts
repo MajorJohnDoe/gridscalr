@@ -29,7 +29,7 @@ import {
 import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
 import { countTypeGlyph } from "../features/countTypes/model";
-import { findSegment, findVertex, hitTest } from "../model/hitTest";
+import { findSegment, findVertex, hitTest, itemIntersectsBounds } from "../model/hitTest";
 import {
   clampLabelSize,
   labelAnchorForPoints,
@@ -2101,17 +2101,15 @@ export class CanvasView {
       return;
     }
     const refs = marquee.additive ? [...store.ui.selection] : [];
+    const min = { x: rect.x, y: rect.y };
+    const max = { x: rect.x + rect.width, y: rect.y + rect.height };
     for (const layer of store.project.layers) {
       if (!layerVisibleOnPage(layer, this.viewPage)) continue;
       for (const item of layer.items) {
         if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
-        const bounds = itemBounds(item);
-        const intersects =
-          bounds.max.x >= rect.x &&
-          bounds.min.x <= rect.x + rect.width &&
-          bounds.max.y >= rect.y &&
-          bounds.min.y <= rect.y + rect.height;
-        if (intersects) refs.push({ layerId: layer.id, itemId: item.id });
+        if (itemIntersectsBounds(item, min, max)) {
+          refs.push({ layerId: layer.id, itemId: item.id });
+        }
       }
     }
     store.setSelectionMany(refs);
