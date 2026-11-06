@@ -217,6 +217,34 @@ describe("flattened PDF export", () => {
     expect(content).not.toMatch(/0\.368627/); // hidden blue valve symbol
   });
 
+  it("exports schematic symbols whose artwork uses curved corners", async () => {
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    draw.items.length = 0;
+    draw.items.push(
+      makeItem({
+        id: "item_symbol_floor",
+        kind: "symbol",
+        points: [{ x: 60, y: 60 }],
+        color: "#111111",
+        symbolId: "schematic.floor-heating",
+        symbolSize: 40,
+      }),
+    );
+    const content = await decodePageContent(
+      await exportProjectPdf(project, await makeRenderer(), {
+        pages: [1],
+        layerIds: project.layers.map((layer) => layer.id),
+        includeLabels: false,
+        includeCalibration: false,
+        includeLegend: false,
+      }),
+    );
+    // Rounded turns are parsed into cubic curves; the export must not fall back
+    // to line segments or throw on an unsupported path command.
+    expect(content).toContain(" c");
+  });
+
   it("does not export editing endpoint markers", async () => {
     const bytes = await exportProjectPdf(makeProject(), await makeRenderer());
     const content = await decodePageContent(bytes);

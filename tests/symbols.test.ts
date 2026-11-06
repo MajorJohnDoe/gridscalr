@@ -257,6 +257,11 @@ describe("schematic symbol set", () => {
         expect(port.y).toBeLessThanOrEqual(SYMBOL_VIEWBOX);
       }
       expect(symbol.art.shapes.length).toBeGreaterThan(0);
+      for (const shape of symbol.art.shapes) {
+        // Every symbol path must stay inside the parser subset, because bounds,
+        // hit testing and PDF export all read it. Arcs are not supported.
+        expect(() => parseSymbolPath(shape.d), symbol.id).not.toThrow();
+      }
       expect(
         symbol.art.shapes.every((shape) => shape.stroke === true || shape.fillRule === undefined),
       ).toBe(true);

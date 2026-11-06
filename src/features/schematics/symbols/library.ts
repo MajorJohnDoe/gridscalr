@@ -3,7 +3,6 @@ import { roundedRectPathData } from "../../../model/symbolPaths";
 import { REFERENCE_SYMBOLS } from "./referenceSymbols";
 import {
   FIRST_VENTILATION_SYMBOLS,
-  arcPath,
   coilPath,
   ductCasing,
   ductPorts,
@@ -612,6 +611,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "GV",
     // One continuous loop: supply enters at the top-left, the coil snakes down
     // and up, and the return leaves at the bottom-left. Ports sit on the edge.
+    // Rounded turns use quadratic corners, the same curve family as the rest of
+    // the schematic set, so canvas, hit testing and PDF export share one geometry.
     ports: [
       { id: "in", x: 2, y: 14, direction: "in" },
       { id: "out", x: 2, y: 50, direction: "out" },
@@ -621,15 +622,19 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
         joinPaths(
           linePath(2, 14, 14, 14),
           linePath(14, 14, 14, 40),
-          arcPath(5, 24, 40, 0),
+          "Q 14 45 19 45",
+          "Q 24 45 24 40",
           linePath(24, 40, 24, 20),
-          arcPath(5, 34, 20, 1),
+          "Q 24 15 29 15",
+          "Q 34 15 34 20",
           linePath(34, 20, 34, 40),
-          arcPath(5, 44, 40, 0),
+          "Q 34 45 39 45",
+          "Q 44 45 44 40",
           linePath(44, 40, 44, 20),
-          arcPath(5, 54, 20, 1),
+          "Q 44 15 49 15",
+          "Q 54 15 54 20",
           linePath(54, 20, 54, 45),
-          arcPath(5, 49, 50, 1),
+          "Q 54 50 49 50",
           linePath(49, 50, 2, 50),
         ),
       ),
