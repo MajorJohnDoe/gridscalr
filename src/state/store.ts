@@ -82,6 +82,13 @@ export type ToolId =
 
 export type LeftTab = "pages" | "layers" | "symbols";
 
+/**
+ * Tools armed from the symbol library keep that tab open so the tile stays
+ * visibly selected, including for library-only operation-card tools such as
+ * the I/O rail.
+ */
+const LIBRARY_TOOLS: ReadonlySet<ToolId> = new Set<ToolId>(["symbol", "rail"]);
+
 export interface DrawStyle {
   color: string;
   strokeWidth: number;
@@ -415,8 +422,8 @@ export class Store {
       if (kind) {
         ensureActiveLayer(this.project, kind, this.ui.page);
         // Every markup tool targets a layer, so surface the Layers tab while
-        // the user draws. The symbol tool keeps the library in view.
-        this.ui.leftTab = tool === "symbol" ? "symbols" : "layers";
+        // the user draws. Library tools keep the symbol library in view.
+        this.ui.leftTab = LIBRARY_TOOLS.has(tool) ? "symbols" : "layers";
       }
     }
     this.emit("tool");
