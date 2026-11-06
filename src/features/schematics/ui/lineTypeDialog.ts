@@ -2,6 +2,7 @@ import { makeId } from "../../../model/calibration";
 import type { LineType } from "../../../model/types";
 import { store } from "../../../state/store";
 import { showModal } from "../../../ui/dialogs";
+import { colorWithEyedropper } from "../../../ui/colorPicker";
 import { el, option } from "../../../ui/dom";
 import { t } from "../../../i18n";
 
@@ -71,7 +72,13 @@ export async function openLineTypeDialog(): Promise<void> {
         render();
       });
 
-      row.append(name, color, width, style, remove);
+      row.append(
+        name,
+        colorWithEyedropper(color, t("lineType.dialog.color")),
+        width,
+        style,
+        remove,
+      );
       list.append(row);
     });
 

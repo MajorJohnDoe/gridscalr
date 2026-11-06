@@ -235,7 +235,7 @@ export const TOOLS: ToolDef[] = [
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));
 
-export type ToolFamilyId = "circle-arc" | "angle-slope";
+export type ToolFamilyId = "circle-arc" | "angle-slope" | "rect-ellipse";
 
 export interface ToolFamily {
   id: ToolFamilyId;
@@ -246,6 +246,7 @@ export interface ToolFamily {
 export const TOOL_FAMILIES: ToolFamily[] = [
   { id: "circle-arc", label: "tool.family.circleArc", tools: ["radius", "diameter", "arc"] },
   { id: "angle-slope", label: "tool.family.angleSlope", tools: ["angle", "slope"] },
+  { id: "rect-ellipse", label: "tool.family.shapes", tools: ["rect", "ellipse"] },
 ];
 
 export const TOOL_FAMILY_BY_ID = new Map(TOOL_FAMILIES.map((family) => [family.id, family]));

@@ -26,23 +26,30 @@ describe("tool families", () => {
     expect(isFamilyLeader("arc")).toBe(false);
     expect(isFamilyLeader("angle")).toBe(true);
     expect(isFamilyLeader("slope")).toBe(false);
+    expect(isFamilyLeader("rect")).toBe(true);
+    expect(isFamilyLeader("ellipse")).toBe(false);
     expect(isFamilyLeader("length")).toBe(false);
   });
 
   it("defaults to the leader until a member is used", () => {
     const circle = familyForTool("radius")!;
     const angles = familyForTool("angle")!;
+    const shapes = familyForTool("rect")!;
     expect(familyToolForDisplay(circle, "select")).toBe("radius");
     expect(familyToolForDisplay(angles, "select")).toBe("angle");
+    expect(familyToolForDisplay(shapes, "select")).toBe("rect");
   });
 
   it("remembers the last used member per family", () => {
     rememberFamilyTool("arc");
     rememberFamilyTool("slope");
+    rememberFamilyTool("ellipse");
     const circle = familyForTool("radius")!;
     const angles = familyForTool("angle")!;
+    const shapes = familyForTool("rect")!;
     expect(familyToolForDisplay(circle, "select")).toBe("arc");
     expect(familyToolForDisplay(angles, "select")).toBe("slope");
+    expect(familyToolForDisplay(shapes, "select")).toBe("ellipse");
   });
 
   it("shows the active member even when another member was used before", () => {

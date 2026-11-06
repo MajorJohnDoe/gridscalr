@@ -30,6 +30,7 @@ import {
 } from "../model/richText";
 import { RichEditorController } from "./richEditor";
 import { store } from "../state/store";
+import { colorWithEyedropper } from "../ui/colorPicker";
 import { icon } from "../ui/icons";
 import { toast } from "../ui/toast";
 import { rotatedAabb, roundTo } from "./geometry";
@@ -604,7 +605,7 @@ export class CanvasEditorController {
     colorInput.type = "color";
     colorInput.value = session.color;
     colorInput.setAttribute("aria-label", t("editors.textColour"));
-    colorField.append(colorInput);
+    colorField.append(colorWithEyedropper(colorInput, t("editors.textColour")));
 
     const boldButton = document.createElement("button");
     boldButton.type = "button";

@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.19.1`.
+- Current app version: `0.19.2`.
 - Latest public release: `v0.19.1` (2026-11-06).
 - Current project-file schema: `23`.
 - 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
@@ -401,6 +401,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.18.0:** complete (released 2026-11-04) — JSON catalogs and a locale registry, complete Swedish UI and reports, locale-aware numbers/dates and CSV modes, project metadata and report branding in schema 22, a Swedish quick start with explicit English fallback, and count-schedule wording aligned across the app, docs and site.
 - **0.19.0:** complete (released 2026-11-06) — reviewed operation-card symbols with 119 schematic symbols, distinguishable check valves and a plain valve, single- and three-pole switches, downward safety-valve arrow, filled circulation-pump arrowhead, redrawn coils and page-scoped move-to-layer pickers. No schema change; the schema remains v23.
 - **0.19.1:** complete (released 2026-11-06) — fixes the floor-heating symbol's arc paths that broke saving and PDF export in 0.19.0, keeps symbol tags upright when rotated, selects marquee items by geometry, scopes the target-layer picker to the page, points the circulation pump left, redraws the heat exchanger, adds the Special symbol-library tab for the I/O rail, enlarges symbol previews and lays drawing colours out in two rows. No schema change; the schema remains v23.
+- **0.19.2:** complete (released 2026-11-06) — the I/O rail keeps the symbol library open, pipes and ducts draw freely on drawing pages while the 5 mm grid stays on operation-card sheets, Shift constrains line and pipe vertices while editing, colour swatches gain a working canvas eyedropper, and Rectangle and Ellipse share a menu with filled/outline and solid/dashed variants. Outline shapes are click-through inside. No schema change; the schema remains v23.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 

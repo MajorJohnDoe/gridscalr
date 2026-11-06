@@ -3,6 +3,7 @@ import { stampStatusColor } from "../model/stamps";
 import { DRAW_COLOR_PRESETS, STROKE_WIDTH_OPTIONS, drawColorLabel } from "../model/style";
 import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
 import { store, type ToolId } from "../state/store";
+import { colorWithEyedropper } from "./colorPicker";
 import { textDialog } from "./dialogs";
 import { el, option } from "./dom";
 import { icon } from "./icons";
@@ -212,6 +213,12 @@ function outsideHandler(event: MouseEvent): void {
 }
 
 function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
+  if (family.id === "rect-ellipse") {
+    mountFlyout(button, t("tool.family.shapes"), (panel, rerender) =>
+      renderShapeOptions(panel, rerender),
+    );
+    return;
+  }
   mountFlyout(button, t("tool.familyTools", { name: t(family.label) }), (panel) => {
     panel.append(el("div", "tool-flyout-title", t(family.label)));
     panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
@@ -232,6 +239,104 @@ function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
       });
     }
   });
+}
+
+function renderShapeOptions(panel: HTMLElement, render: () => void): void {
+  panel.append(el("div", "tool-flyout-title", t("tool.family.shapes")));
+  panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
+  const variants = [
+    ["rect", "filled"],
+    ["rect", "outline"],
+    ["ellipse", "filled"],
+    ["ellipse", "outline"],
+  ] as const;
+  for (const [toolId, fill] of variants) {
+    const tool = TOOL_BY_ID.get(toolId);
+    if (!tool) continue;
+    const filled = fill === "filled";
+    const label =
+      toolId === "rect"
+        ? t(filled ? "toolFlyout.rectFilled" : "toolFlyout.rectOutline")
+        : t(filled ? "toolFlyout.ellipseFilled" : "toolFlyout.ellipseOutline");
+    const description =
+      toolId === "rect"
+        ? t(filled ? "toolFlyout.rectFilledHint" : "toolFlyout.rectOutlineHint")
+        : t(filled ? "toolFlyout.ellipseFilledHint" : "toolFlyout.ellipseOutlineHint");
+    variantRow(panel, {
+      label,
+      description,
+      iconName: tool.icon,
+      selected: store.ui.activeTool === toolId && store.ui.style.shapeFill === fill,
+      onSelect: () => {
+        rememberFamilyTool(toolId);
+        store.setStyle({ shapeFill: fill });
+        store.setTool(toolId);
+        render();
+      },
+    });
+  }
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.colour")));
+  const swatches = el("div", "tool-fill-swatches");
+  for (const preset of DRAW_COLOR_PRESETS) {
+    const button = el("button", "tool-fill-swatch has-color");
+    button.type = "button";
+    button.title = drawColorLabel(preset);
+    button.setAttribute("aria-label", drawColorLabel(preset));
+    button.style.setProperty("--swatch", preset.color);
+    button.classList.toggle(
+      "is-selected",
+      store.ui.style.color.toLowerCase() === preset.color.toLowerCase(),
+    );
+    button.addEventListener("click", () => {
+      store.setStyle({ color: preset.color });
+      render();
+    });
+    const option = el("span", "tool-fill-option");
+    option.append(button, el("span", "tool-fill-label", drawColorLabel(preset)));
+    swatches.append(option);
+  }
+  panel.append(swatches);
+  const custom = el("input", "color-swatch");
+  custom.type = "color";
+  custom.value = store.ui.style.color;
+  custom.setAttribute("aria-label", t("toolFlyout.colour"));
+  custom.addEventListener("change", () => {
+    store.setStyle({ color: custom.value });
+    render();
+  });
+  panel.append(colorWithEyedropper(custom, t("toolFlyout.colour")));
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.strokeWidth")));
+  const widths = el("div", "tool-width-options");
+  for (const value of STROKE_WIDTH_OPTIONS) {
+    const button = el("button", "tool-width-option", `${value} pt`);
+    button.type = "button";
+    button.classList.toggle("is-selected", Math.abs(store.ui.style.strokeWidth - value) < 0.01);
+    button.addEventListener("click", () => {
+      store.setStyle({ strokeWidth: value });
+      render();
+    });
+    widths.append(button);
+  }
+  panel.append(widths);
+
+  panel.append(el("div", "tool-flyout-section", t("toolFlyout.lineStyle")));
+  const lineStyles = el("div", "tool-width-options");
+  for (const [dashed, label] of [
+    [false, t("toolFlyout.solid")],
+    [true, t("toolFlyout.dashed")],
+  ] as const) {
+    const button = el("button", "tool-width-option", label);
+    button.type = "button";
+    button.classList.toggle("is-selected", store.ui.style.dashed === dashed);
+    button.addEventListener("click", () => {
+      store.setStyle({ dashed });
+      render();
+    });
+    lineStyles.append(button);
+  }
+  panel.append(lineStyles);
 }
 
 function mountFlyout(

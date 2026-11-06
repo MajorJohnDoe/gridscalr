@@ -68,6 +68,9 @@ export interface DraftStyle {
   strokeWidth: number;
   fillOpacity: number;
   fontSize: number;
+  /** Shape fill and dash choices for rectangle and ellipse previews. */
+  shapeFill?: "outline" | "filled";
+  dashed?: boolean;
 }
 
 export interface DraftColorInput {
@@ -528,8 +531,12 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
       ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
       ctx.restore();
     } else {
-      if (scene.style.fillOpacity > 0) ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      if (scene.style.shapeFill === "filled" && scene.style.fillOpacity > 0) {
+        ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
+      }
+      if (scene.style.dashed) ctx.setLineDash([6, 4]);
       ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+      ctx.setLineDash([]);
     }
   } else if (draft.kind === "ellipse") {
     const rect = expandRect(start, current);
@@ -543,8 +550,10 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
       0,
       Math.PI * 2,
     );
-    if (scene.style.fillOpacity > 0) ctx.fill();
+    if (scene.style.shapeFill === "filled" && scene.style.fillOpacity > 0) ctx.fill();
+    if (scene.style.dashed) ctx.setLineDash([6, 4]);
     ctx.stroke();
+    ctx.setLineDash([]);
   } else if (draft.kind === "callout") {
     ctx.setLineDash([5, 4]);
     ctx.beginPath();

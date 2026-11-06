@@ -608,6 +608,18 @@ export function itemLocalToPage(item: MarkupItem, point: Point): Point {
   return rotatePoint(point, itemCenter(item), itemRotation(item));
 }
 
+/**
+ * The neighbouring vertex a Shift-dragged line or pipe vertex is constrained
+ * against, in page coordinates. Lines use their other endpoint; a pipe uses the
+ * previous vertex so the segment being pulled stays straight.
+ */
+export function vertexAngleAnchor(item: MarkupItem, index: number): Point | null {
+  if (item.kind !== "line" && item.kind !== "arrow" && item.kind !== "polyline") return null;
+  if (item.points.length < 2) return null;
+  const anchor = item.points[index === 0 ? 1 : index - 1];
+  return anchor ? itemLocalToPage(item, anchor) : null;
+}
+
 export function rotatePointsAround(points: Point[], center: Point, degrees: number): Point[] {
   return points.map((point) => rotatePoint(point, center, degrees));
 }

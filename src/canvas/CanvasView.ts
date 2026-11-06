@@ -25,6 +25,7 @@ import {
   simplifyPolyline,
   translatePoints,
   type Bounds,
+  vertexAngleAnchor,
 } from "../model/geometry";
 import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
 import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
@@ -119,6 +120,7 @@ import {
 import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { snapToSchematicGrid } from "../features/schematics/model/schematicGrid";
 import {
   resolveSheetLabels,
   SHEET_FIELD,
@@ -311,7 +313,6 @@ interface PanState {
 
 const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
-const SCHEMATIC_GRID_STEP = (5 * 72) / 25.4;
 
 function orthoPoint(last: Point, current: Point): Point {
   return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
@@ -1820,9 +1821,13 @@ export class CanvasView {
       this.drag.last = page;
       this.drag.moved = true;
     } else if (this.drag.mode === "vertex") {
-      const target = this.snapPoint(page, this.drag.itemId);
       const index = this.drag.vertexIndex;
       if (index >= 0 && index < item.points.length) {
+        const angleAnchor = shiftKey ? vertexAngleAnchor(item, index) : null;
+        const target = angleAnchor
+          ? constrainAngle(angleAnchor, page)
+          : this.snapPoint(page, this.drag.itemId);
+        if (angleAnchor) this.snap = null;
         const localTarget = itemRotation(item) === 0 ? target : pointToItemLocal(item, target);
         item.points[index] = localTarget;
         item.updatedAt = new Date().toISOString();
@@ -2313,10 +2318,9 @@ export class CanvasView {
   private snapPolylinePoint(point: Point): Point {
     const snapped = this.snapPoint(point);
     if (this.snap) return snapped;
-    return {
-      x: Math.round(point.x / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
-      y: Math.round(point.y / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
-    };
+    const project = store.project;
+    if (!project) return point;
+    return snapToSchematicGrid(project, this.viewPage, point);
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
@@ -2694,10 +2698,11 @@ export class CanvasView {
         : undefined;
       const highlightShape =
         kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
+      const shapeLike = kind === "rect" || kind === "ellipse";
+      const filledShape = !isMeasure && shapeLike && style.shapeFill === "filled";
       const filled =
         !isMeasure &&
-        (kind === "rect" ||
-          kind === "ellipse" ||
+        (filledShape ||
           kind === "stamp" ||
           kind === "delta" ||
           (kind === "highlight" && highlightShape !== "stroke"));
@@ -2739,8 +2744,7 @@ export class CanvasView {
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
           !isMeasure &&
-          (kind === "rect" ||
-            kind === "ellipse" ||
+          (filledShape ||
             kind === "stamp" ||
             kind === "delta" ||
             cloudPreset !== null ||
@@ -2757,7 +2761,8 @@ export class CanvasView {
         textColor: kind === "textbox" ? "#1a2024" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
         lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
-        lineStyle: lineLike && lineStyle?.dashed ? "dashed" : undefined,
+        lineStyle:
+          (lineLike && lineStyle?.dashed) || (shapeLike && style.dashed) ? "dashed" : undefined,
         rows: kind === "rail" ? defaultRailRows("plc") : undefined,
         rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
@@ -3775,7 +3780,11 @@ export class CanvasView {
           ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
           ctx.restore();
         }
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
         ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.setLineDash([]);
         break;
       }
       case "ellipse": {
@@ -3798,7 +3807,11 @@ export class CanvasView {
           ctx.fill();
           ctx.restore();
         }
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
         ctx.stroke();
+        ctx.setLineDash([]);
         break;
       }
       case "cloud": {

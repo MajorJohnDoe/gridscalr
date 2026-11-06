@@ -32,6 +32,7 @@ function menuItem(menu: HTMLElement, label: string): HTMLButtonElement {
 beforeEach(() => {
   resetFamilyToolMemory();
   store.setTool("select");
+  store.setStyle({ shapeFill: "outline", dashed: false });
 });
 
 afterEach(() => {
@@ -44,6 +45,36 @@ describe("family tool flyout", () => {
     expect(menu.getAttribute("aria-label")).toBe("Circle & arc tools");
     expect(menu.querySelectorAll('[role="menuitemradio"]')).toHaveLength(3);
     expect(menuItem(menu, "Radius").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("opens the shape menu with fill, colour and line controls", () => {
+    const button = document.createElement("button");
+    button.type = "button";
+    document.body.append(button);
+    const family = familyForTool("rect");
+    if (!family) throw new Error("Expected the shape family.");
+    attachToolFamilyFlyout(button, family);
+
+    const menu = open(button);
+    expect(menu.getAttribute("aria-label")).toBe("Shapes");
+    expect(menu.querySelectorAll('[role="menuitemradio"]')).toHaveLength(4);
+    for (const label of [
+      "Rectangle, filled",
+      "Rectangle, outline only",
+      "Ellipse, filled",
+      "Ellipse, outline only",
+      "Colour",
+      "Stroke width",
+      "Line style",
+    ]) {
+      expect(menu.textContent).toContain(label);
+    }
+
+    menuItem(menu, "Rectangle, filled").click();
+    expect(store.ui.activeTool).toBe("rect");
+    expect(store.ui.style.shapeFill).toBe("filled");
+    menuItem(menu, "Rectangle, outline only").click();
+    expect(store.ui.style.shapeFill).toBe("outline");
   });
 
   it("activates the chosen tool and closes the menu", () => {

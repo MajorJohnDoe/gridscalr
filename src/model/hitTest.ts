@@ -1,4 +1,4 @@
-import { distanceToAreaShape, areaShapeOf, pointInAreaShape } from "./area";
+import { distanceToAreaShape, areaShapeOf, ellipseOutline, pointInAreaShape } from "./area";
 import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import {
   arcPolyline,
@@ -310,8 +310,17 @@ function hitItem(
   }
 
   if (item.kind === "rect" || item.kind === "ellipse" || item.kind === "image") {
-    const nearEdge = distanceToPolyline(localPoint, item.points, true);
+    const outline =
+      item.kind === "ellipse"
+        ? ellipseOutline(item.points)
+        : item.kind === "rect" && item.points[0]
+          ? rectangleCorners(item.points[0], item.points[1] ?? item.points[0])
+          : item.points;
+    const nearEdge = distanceToPolyline(localPoint, outline, true);
     if (nearEdge <= tolerance) return { distance: nearEdge, vertexIndex: -1, segmentIndex: -1 };
+    // An unfilled shape is only its outline; the inside stays click-through so
+    // items enclosed by a box remain selectable.
+    if (item.kind !== "image" && !item.fillColor) return null;
     return { distance: 0, vertexIndex: -1, segmentIndex: -1 };
   }
 
@@ -467,18 +476,30 @@ function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean }
       return item.highlightShape === "stroke"
         ? { points: item.points.map(toPage), closed: false }
         : null;
+    case "rect": {
+      if (item.fillColor) return null;
+      const first = item.points[0];
+      if (!first) return null;
+      const corners = rectangleCorners(first, item.points[1] ?? first).map(toPage);
+      if (corners.length) corners.push({ ...corners[0] });
+      return { points: corners, closed: false };
+    }
+    case "ellipse": {
+      if (item.fillColor) return null;
+      const outline = ellipseOutline(item.points).map(toPage);
+      if (outline.length) outline.push({ ...outline[0] });
+      return { points: outline, closed: false };
+    }
     case "arrow":
     case "callout":
     case "count":
     case "delta":
     case "diameter":
-    case "ellipse":
     case "image":
     case "line":
     case "pen":
     case "radius":
     case "rail":
-    case "rect":
     case "stamp":
     case "symbol":
     case "text":

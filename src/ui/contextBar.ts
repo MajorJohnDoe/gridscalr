@@ -22,6 +22,7 @@ import {
 } from "../features/schematics/symbols/registry";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
+import { colorWithEyedropper } from "./colorPicker";
 import { clear, el, option } from "./dom";
 import { openMeasureOptions } from "./measureOptions";
 import { textDialog } from "./dialogs";
@@ -51,7 +52,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       const label =
         tool.id === "line" || tool.id === "polyline"
           ? t("context.lineOptions")
-          : t("context.variants");
+          : family?.id === "rect-ellipse"
+            ? t("context.shapeOptions")
+            : t("context.variants");
       variants.innerHTML = `${icon("chevronDown", 12)}<span>${label}</span>`;
       variants.addEventListener("click", () => {
         if (family) openToolFamilyVariants(variants, family);
@@ -301,7 +304,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     }
     width.title = t("context.strokeWidth");
     width.addEventListener("change", () => store.setStyle({ strokeWidth: Number(width.value) }));
-    controls.append(color);
+    controls.append(colorWithEyedropper(color, color.title));
     if (store.ui.activeTool !== "textbox") controls.append(width);
     if (
       store.ui.activeTool === "text" ||

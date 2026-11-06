@@ -43,6 +43,7 @@ import type {
 import { formatBytes } from "../io/platform";
 import { store } from "../state/store";
 import { el, option } from "./dom";
+import { colorWithEyedropper } from "./colorPicker";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import { toast } from "./toast";
@@ -724,7 +725,7 @@ export function selectionSection(
         target.opacity = target.opacity ?? 0.22;
       }, "change");
     });
-    fillColorField.append(fillColor);
+    fillColorField.append(colorWithEyedropper(fillColor, t("inspector.fillColour")));
     section.append(fillColorField);
 
     const opacityField = el("label", "field");
@@ -792,15 +793,11 @@ export function selectionSection(
   if (item.kind !== "image" && item.kind !== "symbol") {
     const styleRow = el("div", "field-row");
     const colorField = el("label", "field");
-    colorField.append(
-      el(
-        "span",
-        "field-label",
-        item.kind === "text" || item.kind === "textbox"
-          ? t("inspector.textColour")
-          : t("toolFlyout.colour"),
-      ),
-    );
+    const colorLabel =
+      item.kind === "text" || item.kind === "textbox"
+        ? t("inspector.textColour")
+        : t("toolFlyout.colour");
+    colorField.append(el("span", "field-label", colorLabel));
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
     colorInput.value = item.color;
@@ -811,7 +808,7 @@ export function selectionSection(
         if (target) target.color = colorInput.value;
       }, "change");
     });
-    colorField.append(colorInput);
+    colorField.append(colorWithEyedropper(colorInput, colorLabel));
     styleRow.append(colorField);
 
     const sizeField = el("label", "field");
@@ -866,6 +863,29 @@ export function selectionSection(
     styleRow.append(sizeField);
     section.append(styleRow);
 
+    if (item.kind === "rect" || item.kind === "ellipse") {
+      const fillRow = el("label", "check-row");
+      const fillToggle = el("input");
+      fillToggle.type = "checkbox";
+      fillToggle.checked = Boolean(item.fillColor);
+      fillToggle.disabled = locked;
+      fillToggle.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          if (fillToggle.checked) {
+            target.fillColor = target.fillColor ?? target.color;
+            target.opacity = target.opacity ?? store.ui.style.fillOpacity;
+          } else {
+            delete target.fillColor;
+          }
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      fillRow.append(fillToggle, el("span", "", t("context.fill")));
+      section.append(fillRow);
+    }
+
     if (item.kind === "volume") {
       const depthField = el("label", "field");
       depthField.append(el("span", "field-label", t("dialogs.depth.label")));
@@ -895,7 +915,13 @@ export function selectionSection(
       section.append(depthField);
     }
 
-    if (isMeasurementKind(item.kind) || item.kind === "polyline" || item.kind === "line") {
+    if (
+      isMeasurementKind(item.kind) ||
+      item.kind === "polyline" ||
+      item.kind === "line" ||
+      item.kind === "rect" ||
+      item.kind === "ellipse"
+    ) {
       const lineField = el("label", "field");
       lineField.append(el("span", "field-label", t("inspector.lineStyle")));
       const lineStyle = el("select", "select");
@@ -1328,7 +1354,7 @@ function multiSelectionSection(
     colorInput.value = commonColor || "#f2a93b";
     colorInput.disabled = lockedCount === resolved.length;
     colorInput.addEventListener("change", () => actions.setSelectionColor(colorInput.value));
-    colorField.append(colorInput);
+    colorField.append(colorWithEyedropper(colorInput, t("toolFlyout.colour")));
     section.append(colorField);
 
     const weights = resolved.map((entry) => entry.item.strokeWidth);

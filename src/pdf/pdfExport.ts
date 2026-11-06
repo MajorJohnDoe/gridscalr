@@ -1176,6 +1176,7 @@ function drawRectItem(
   const color = pdfColor(item.color);
   const fill = item.fillColor ? pdfColor(item.fillColor) : undefined;
   const opacity = clamp(layerOpacity, 0, 1);
+  const width = Math.max(0.35, item.strokeWidth);
   page.drawRectangle({
     x: rect.x,
     y: rect.y,
@@ -1185,8 +1186,10 @@ function drawRectItem(
     color: fill,
     opacity: fill ? opacity * (item.opacity ?? 0.15) : undefined,
     borderColor: color,
-    borderWidth: Math.max(0.35, item.strokeWidth),
+    borderWidth: width,
     borderOpacity: opacity,
+    borderDashArray:
+      item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
   });
 }
 
@@ -1203,6 +1206,7 @@ function drawEllipseItem(
   const color = pdfColor(item.color);
   const fill = item.fillColor ? pdfColor(item.fillColor) : undefined;
   const opacity = clamp(layerOpacity, 0, 1);
+  const width = Math.max(0.35, item.strokeWidth);
   page.drawEllipse({
     x: centerPdf.x,
     y: centerPdf.y,
@@ -1212,8 +1216,10 @@ function drawEllipseItem(
     color: fill,
     opacity: fill ? opacity * (item.opacity ?? 0.15) : undefined,
     borderColor: color,
-    borderWidth: Math.max(0.35, item.strokeWidth),
+    borderWidth: width,
     borderOpacity: opacity,
+    borderDashArray:
+      item.lineStyle === "dashed" ? [Math.max(3, width * 3), Math.max(2, width * 2)] : undefined,
   });
 }
 

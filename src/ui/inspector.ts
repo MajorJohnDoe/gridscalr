@@ -6,6 +6,7 @@ import {
   setLayerVisibleOnPage,
 } from "../model/layers";
 import { store } from "../state/store";
+import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
 import { clear, el } from "./dom";
 import { icon } from "./icons";
@@ -110,7 +111,7 @@ function activeLayerSection(
       for (const item of layer.items) item.color = color.value;
     }, "layers");
   });
-  colorField.append(color);
+  colorField.append(colorWithEyedropper(color, t("inspector.layerColour")));
   section.append(colorField);
 
   const opacityField = el("label", "field");

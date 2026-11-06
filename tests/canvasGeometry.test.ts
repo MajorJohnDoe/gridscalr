@@ -16,6 +16,7 @@ import {
   rotatedAabb,
   snapLabel,
 } from "../src/canvas/geometry";
+import { vertexAngleAnchor } from "../src/model/geometry";
 
 describe("canvas geometry", () => {
   it("clamps points to the page and tests crop rectangles", () => {
@@ -56,6 +57,38 @@ describe("canvas geometry", () => {
   it("constrains quick areas to a square", () => {
     expect(constrainSquare({ x: 10, y: 10 }, { x: 40, y: 20 })).toEqual({ x: 40, y: 40 });
     expect(constrainSquare({ x: 10, y: 10 }, { x: -20, y: 10 })).toEqual({ x: -20, y: 40 });
+  });
+
+  it("anchors Shift-dragged line and pipe vertices on their neighbour", () => {
+    const line = {
+      id: "line",
+      page: 1,
+      kind: "line" as const,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      color: "#000",
+      strokeWidth: 1,
+      createdAt: "",
+      updatedAt: "",
+    };
+    expect(vertexAngleAnchor(line, 0)).toEqual({ x: 100, y: 0 });
+    expect(vertexAngleAnchor(line, 1)).toEqual({ x: 0, y: 0 });
+
+    const pipe = {
+      ...line,
+      id: "pipe",
+      kind: "polyline" as const,
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 50 },
+      ],
+    };
+    expect(vertexAngleAnchor(pipe, 0)).toEqual({ x: 100, y: 0 });
+    expect(vertexAngleAnchor(pipe, 2)).toEqual({ x: 100, y: 0 });
+    expect(vertexAngleAnchor({ ...line, kind: "rect" }, 0)).toBeNull();
   });
 
   it("maps selection handles to cursors and local points", () => {

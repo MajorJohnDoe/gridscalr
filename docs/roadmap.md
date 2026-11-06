@@ -6,7 +6,7 @@ Detailed planning documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.19.1** · Project-file schema: **23**
+Current version: **0.19.2** · Project-file schema: **23**
 
 1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
 packages, and tested large-project performance. The 1.0 architecture decisions are
