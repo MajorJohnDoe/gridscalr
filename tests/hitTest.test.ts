@@ -6,7 +6,7 @@ import {
   defaultDocument,
   layersForKind,
 } from "../src/model/layers";
-import { hitTest } from "../src/model/hitTest";
+import { hitTest, itemIntersectsBounds } from "../src/model/hitTest";
 import type { MarkupItem } from "../src/model/types";
 
 function makeProject() {
@@ -32,6 +32,32 @@ function makeItem(overrides: Partial<MarkupItem> = {}): MarkupItem {
 }
 
 describe("hit testing", () => {
+  it("selects marquee items by geometry, not their bounding box", () => {
+    const diagonal = makeItem({
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 100 },
+      ],
+    });
+    // A tiny box inside the diagonal's bounds but far from the line.
+    expect(itemIntersectsBounds(diagonal, { x: 5, y: 95 }, { x: 8, y: 98 })).toBe(false);
+    // A box that crosses the line.
+    expect(itemIntersectsBounds(diagonal, { x: 45, y: 45 }, { x: 55, y: 55 })).toBe(true);
+
+    const area = makeItem({
+      kind: "area",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+        { x: 100, y: 100 },
+        { x: 0, y: 100 },
+      ],
+    });
+    // A marquee fully inside a filled area still selects it.
+    expect(itemIntersectsBounds(area, { x: 40, y: 40 }, { x: 60, y: 60 })).toBe(true);
+    expect(itemIntersectsBounds(area, { x: 200, y: 200 }, { x: 210, y: 210 })).toBe(false);
+  });
+
   it("ignores hidden items", () => {
     const project = makeProject();
     const layer = layersForKind(project, "measure")[0];
