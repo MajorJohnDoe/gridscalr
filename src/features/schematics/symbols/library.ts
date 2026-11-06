@@ -216,6 +216,14 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
 
   // --- Valves ------------------------------------------------------------
   schematicSymbol({
+    id: "schematic.valve",
+    category: "valve",
+    keywords: ["ventil", "valve", "v"],
+    tagPrefix: "V",
+    ports: valvePorts(),
+    shapes: [stroke(valveBody())],
+  }),
+  schematicSymbol({
     id: "schematic.shutoff-valve",
     category: "valve",
     keywords: ["avstängningsventil", "shut-off valve", "ventil", "avstängning", "av"],
@@ -242,8 +250,11 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["backventil", "check valve", "back", "ventil", "bv"],
     tagPrefix: "BV",
+    // ISO-style body: the usual two triangles plus a solid seat band along the
+    // outlet edge. The filled band is what separates a check valve from an
+    // ordinary valve body at small sizes.
     ports: valvePorts(),
-    shapes: [stroke(valveBody()), stroke(linePath(46, 22, 46, 42))],
+    shapes: [stroke(valveBody()), fill(polyPath([46, 22, 42, 24.8571, 42, 39.1429, 46, 42], true))],
   }),
   schematicSymbol({
     id: "schematic.safety-valve",

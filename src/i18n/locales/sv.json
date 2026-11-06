@@ -1328,6 +1328,7 @@
   "symbol.schematic.three-way-valve": "Trevägsventil",
   "symbol.schematic.balancing-valve": "Injusteringsventil",
   "symbol.schematic.drain-valve": "Avtappningsventil",
+  "symbol.schematic.valve": "Ventil",
   "symbol.schematic.circulation-pump": "Cirkulationspump",
   "symbol.schematic.heating-pump": "Värmepump",
   "symbol.schematic.cooling-pump": "Kylpump",

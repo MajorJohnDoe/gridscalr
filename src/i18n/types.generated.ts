@@ -1330,6 +1330,7 @@ export type MessageKey =
   | "symbol.schematic.three-way-valve"
   | "symbol.schematic.balancing-valve"
   | "symbol.schematic.drain-valve"
+  | "symbol.schematic.valve"
   | "symbol.schematic.circulation-pump"
   | "symbol.schematic.heating-pump"
   | "symbol.schematic.cooling-pump"
