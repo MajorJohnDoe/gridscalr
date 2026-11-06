@@ -273,7 +273,9 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       stroke(valveBody()),
-      stroke(joinPaths(linePath(32, 22, 32, 10), polyPath([26, 14, 32, 5, 38, 14]))),
+      // Discharge arrow pointing down to the body: long shaft, wide open head
+      // whose tip sits level with the body's top corners.
+      stroke(joinPaths(linePath(32, 2, 32, 17), polyPath([25, 12, 32, 22, 39, 12]))),
     ],
   }),
   schematicSymbol({
