@@ -62,8 +62,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Draw operation cards with 119 original stroke-only schematic symbols for
   instruments, valves, pumps, heat exchangers, ventilation, heating, district
   heating, cooling, domestic water, control and general notation. Add a free-text
-  tag that follows the symbol, and filter the library between **Signs** and
-  **Schematic**.
+  tag that follows the symbol, and filter the library between **Signs**,
+  **Schematic** and **Special**.
 - Format a selected word inside a text box with bold, italic, underline, size and
   colour while the rest of the box keeps its own style. Manage project line types
   and fit an overflowing schematic drawing back inside the sheet area.

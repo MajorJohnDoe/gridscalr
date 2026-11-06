@@ -6,9 +6,11 @@ export interface ToolDef {
   id: ToolId;
   label: MessageKey;
   icon: string;
-  shortcut: string;
+  shortcut?: string;
   hint: MessageKey;
   group: "nav" | "measure" | "draw";
+  /** Available from the symbol library instead of the tool rail. */
+  libraryOnly?: boolean;
 }
 
 export const TOOLS: ToolDef[] = [
@@ -187,6 +189,7 @@ export const TOOLS: ToolDef[] = [
     shortcut: TOOL_SHORTCUTS.rail,
     hint: "tool.rail.hint",
     group: "draw",
+    libraryOnly: true,
   },
   {
     id: "cloud",

@@ -420,6 +420,114 @@ function pointInRect(
   );
 }
 
+/** True when the segment from a to b touches the axis-aligned box. */
+function segmentTouchesBox(a: Point, b: Point, min: Point, max: Point): boolean {
+  const inside = (point: Point) =>
+    point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y;
+  if (inside(a) || inside(b)) return true;
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  let t0 = 0;
+  let t1 = 1;
+  const p = [-dx, dx, -dy, dy];
+  const q = [a.x - min.x, max.x - a.x, a.y - min.y, max.y - a.y];
+  for (let index = 0; index < 4; index += 1) {
+    if (p[index] === 0) {
+      if (q[index] < 0) return false;
+      continue;
+    }
+    const ratio = q[index] / p[index];
+    if (p[index] < 0) {
+      if (ratio > t1) return false;
+      if (ratio > t0) t0 = ratio;
+    } else {
+      if (ratio < t0) return false;
+      if (ratio < t1) t1 = ratio;
+    }
+  }
+  return true;
+}
+
+/** Page-space polyline used by marquee selection for line-like items. */
+function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean } | null {
+  const toPage = (point: Point) => itemLocalToPage(item, point);
+  switch (item.kind) {
+    case "length":
+    case "polyline":
+    case "angle":
+    case "slope":
+      return { points: item.points.map(toPage), closed: false };
+    case "area":
+    case "volume":
+    case "cloud":
+      return { points: item.points.map(toPage), closed: true };
+    case "arc":
+      return { points: arcPolyline(item).map(toPage), closed: false };
+    case "highlight":
+      return item.highlightShape === "stroke"
+        ? { points: item.points.map(toPage), closed: false }
+        : null;
+    case "arrow":
+    case "callout":
+    case "count":
+    case "delta":
+    case "diameter":
+    case "ellipse":
+    case "image":
+    case "line":
+    case "pen":
+    case "radius":
+    case "rail":
+    case "rect":
+    case "stamp":
+    case "symbol":
+    case "text":
+    case "textbox":
+      return null;
+  }
+}
+
+/**
+ * True when an item's visible geometry touches the marquee box. Line-like items
+ * are tested segment by segment, so a long diagonal with a huge bounding box is
+ * not selected by a marquee that never crosses the line. Text, symbols, stamps
+ * and other box-shaped items keep their exact bounds.
+ */
+export function itemIntersectsBounds(item: MarkupItem, min: Point, max: Point): boolean {
+  const bounds = itemBounds(item);
+  if (
+    bounds.max.x < min.x ||
+    bounds.min.x > max.x ||
+    bounds.max.y < min.y ||
+    bounds.min.y > max.y
+  ) {
+    return false;
+  }
+  const line = marqueePolyline(item);
+  if (!line) return true;
+  const points = line.points;
+  if (points.length === 1) {
+    const point = points[0];
+    if (point.x >= min.x && point.x <= max.x && point.y >= min.y && point.y <= max.y) {
+      return true;
+    }
+  }
+  for (let index = 1; index < points.length; index += 1) {
+    if (segmentTouchesBox(points[index - 1], points[index], min, max)) return true;
+  }
+  if (line.closed) {
+    // A marquee that sits entirely inside a filled area still selects it.
+    const corners = [
+      { x: min.x, y: min.y },
+      { x: max.x, y: min.y },
+      { x: max.x, y: max.y },
+      { x: min.x, y: max.y },
+    ];
+    if (corners.some((corner) => pointInPolygon(corner, points))) return true;
+  }
+  return false;
+}
+
 function rectangleCorners(a: Point, b: Point | undefined): Point[] {
   const c = b ?? a;
   return [

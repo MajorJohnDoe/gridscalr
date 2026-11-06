@@ -3,7 +3,6 @@ import { roundedRectPathData } from "../../../model/symbolPaths";
 import { REFERENCE_SYMBOLS } from "./referenceSymbols";
 import {
   FIRST_VENTILATION_SYMBOLS,
-  arcPath,
   coilPath,
   ductCasing,
   ductPorts,
@@ -57,6 +56,11 @@ function valveBody(): string {
 
 function pumpBody(): string {
   return joinPaths(smallCircle(32, 32, 16), polyPath([32, 20, 44, 40, 20, 40], true));
+}
+
+/** The same pump circle with a smaller flow triangle pointing left, nudged left. */
+function pumpBodyLeft(): string {
+  return joinPaths(smallCircle(32, 32, 16), polyPath([17, 32, 35.5, 23.5, 35.5, 40.5], true));
 }
 
 function meterBody(): string {
@@ -360,10 +364,10 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "CP",
     ports: PUMP_PORTS(),
     shapes: [
-      stroke(pumpBody()),
-      // Filled arrowhead in the upper part of the triangle, so the flow
-      // direction is readable even at small sizes.
-      fill(polyPath([32, 20, 26.6, 28, 37.4, 28], true)),
+      stroke(pumpBodyLeft()),
+      // Filled arrowhead at the left tip, so the flow direction reads at any
+      // size and matches the orientation of the drawing.
+      fill(polyPath([17, 32, 24.5, 28.55, 24.5, 35.45], true)),
     ],
   }),
   schematicSymbol({
@@ -612,6 +616,8 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "GV",
     // One continuous loop: supply enters at the top-left, the coil snakes down
     // and up, and the return leaves at the bottom-left. Ports sit on the edge.
+    // Rounded turns use quadratic corners, the same curve family as the rest of
+    // the schematic set, so canvas, hit testing and PDF export share one geometry.
     ports: [
       { id: "in", x: 2, y: 14, direction: "in" },
       { id: "out", x: 2, y: 50, direction: "out" },
@@ -621,15 +627,19 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
         joinPaths(
           linePath(2, 14, 14, 14),
           linePath(14, 14, 14, 40),
-          arcPath(5, 24, 40, 0),
+          "Q 14 45 19 45",
+          "Q 24 45 24 40",
           linePath(24, 40, 24, 20),
-          arcPath(5, 34, 20, 1),
+          "Q 24 15 29 15",
+          "Q 34 15 34 20",
           linePath(34, 20, 34, 40),
-          arcPath(5, 44, 40, 0),
+          "Q 34 45 39 45",
+          "Q 44 45 44 40",
           linePath(44, 40, 44, 20),
-          arcPath(5, 54, 20, 1),
+          "Q 44 15 49 15",
+          "Q 54 15 54 20",
           linePath(54, 20, 54, 45),
-          arcPath(5, 49, 50, 1),
+          "Q 54 50 49 50",
           linePath(49, 50, 2, 50),
         ),
       ),

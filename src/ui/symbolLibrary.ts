@@ -13,18 +13,46 @@ import {
   symbolsForSet,
   type SymbolDefinition,
 } from "../features/schematics/symbols/registry";
-import { store } from "../state/store";
+import { store, type ToolId } from "../state/store";
 import { el } from "./dom";
+import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
-import { t } from "../i18n";
+import { t, type MessageKey } from "../i18n";
 import type { SymbolSet } from "../model/types";
 
 const RECENT_KEY = "gridscalr.ui.symbols.recent.v1";
 const RECENT_LIMIT = 8;
 
+type LibrarySet = SymbolSet | "special";
+
+interface SpecialEntry {
+  id: string;
+  tool: ToolId;
+  labelKey: MessageKey;
+  hintKey: MessageKey;
+  icon: string;
+  search: string;
+}
+
+/**
+ * Operation-card tools that are not symbols but belong in the library's
+ * Special tab. Each entry arms an existing tool; the item itself keeps its own
+ * kind, data and editor.
+ */
+const SPECIAL_ENTRIES: SpecialEntry[] = [
+  {
+    id: "rail",
+    tool: "rail",
+    labelKey: "tool.rail",
+    hintKey: "tool.rail.hint",
+    icon: "rail",
+    search: "i/o rail skena driftkort",
+  },
+];
+
 let searchQuery = "";
-let activeSet: SymbolSet = "sign";
+let activeSet: LibrarySet = "sign";
 
 function loadRecent(): string[] {
   try {
@@ -58,8 +86,8 @@ function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));
   button.title = `${symbolName(symbol.id)} · ${symbolCategoryLabel(category)}`;
-  const previewColor = symbol.set === "schematic" ? "#e8eef1" : SYMBOL_CATEGORY_COLORS[category];
-  button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 27, previewColor)}</span><span class="symbol-tile-label">${symbolName(symbol.id)}</span>`;
+  const previewColor = symbol.set === "schematic" ? "#f2f6f8" : SYMBOL_CATEGORY_COLORS[category];
+  button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 33, previewColor)}</span><span class="symbol-tile-label">${symbolName(symbol.id)}</span>`;
   button.addEventListener("click", () => {
     rememberRecent(symbol.id);
     store.selectSymbol(symbol.id);
@@ -67,7 +95,7 @@ function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   return button;
 }
 
-function categorySection(category: SymbolDefinition["category"]): HTMLElement {
+function categorySection(category: SymbolDefinition["category"], set: SymbolSet): HTMLElement {
   const section = el("section", "symbol-category");
   section.dataset.category = category;
   const head = el("div", "symbol-category-head");
@@ -75,11 +103,25 @@ function categorySection(category: SymbolDefinition["category"]): HTMLElement {
   dot.style.background = SYMBOL_CATEGORY_COLORS[category];
   head.append(dot, el("span", "", symbolCategoryLabel(category)));
   const grid = el("div", "symbol-grid");
-  for (const symbol of symbolsForSet(activeSet).filter((entry) => entry.category === category)) {
+  for (const symbol of symbolsForSet(set).filter((entry) => entry.category === category)) {
     grid.append(symbolTile(symbol));
   }
   section.append(head, grid);
   return section;
+}
+
+function specialTile(entry: SpecialEntry): HTMLButtonElement {
+  const button = el("button", "symbol-tile");
+  button.type = "button";
+  button.dataset.symbolId = `special.${entry.id}`;
+  button.dataset.search = entry.search;
+  const active = store.ui.activeTool === entry.tool;
+  button.classList.toggle("is-active", active);
+  button.setAttribute("aria-pressed", String(active));
+  button.title = `${t(entry.labelKey)} · ${t(entry.hintKey)}`;
+  button.innerHTML = `<span class="symbol-tile-icon">${icon(entry.icon, 33)}</span><span class="symbol-tile-label">${t(entry.labelKey)}</span>`;
+  button.addEventListener("click", () => store.setTool(entry.tool));
+  return button;
 }
 
 export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): void {
@@ -91,13 +133,16 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
 
   const tabs = el("div", "symbol-set-tabs");
   tabs.setAttribute("role", "tablist");
-  const tabButtons: Array<{ set: SymbolSet; button: HTMLButtonElement }> = [];
-  for (const set of ["sign", "schematic"] as const) {
-    const button = el(
-      "button",
-      "symbol-set-tab",
-      set === "sign" ? t("symbols.setSigns") : t("symbols.setSchematic"),
-    );
+  const hint = el("span", "symbol-library-hint", t("symbols.hint"));
+  const tabButtons: Array<{ set: LibrarySet; button: HTMLButtonElement }> = [];
+  const setLabel = (set: LibrarySet) =>
+    set === "sign"
+      ? t("symbols.setSigns")
+      : set === "schematic"
+        ? t("symbols.setSchematic")
+        : t("symbols.setSpecial");
+  for (const set of ["sign", "schematic", "special"] as const) {
+    const button = el("button", "symbol-set-tab", setLabel(set));
     button.type = "button";
     button.dataset.set = set;
     button.setAttribute("role", "tab");
@@ -115,9 +160,13 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
       entry.button.classList.toggle("is-active", active);
       entry.button.setAttribute("aria-selected", String(active));
     }
-    count.textContent = t(activeSet === "sign" ? "symbols.countSigns" : "symbols.countSchematic", {
-      count: activeSet === "sign" ? SIGN_SYMBOL_COUNT : SCHEMATIC_SYMBOL_COUNT,
-    });
+    count.textContent =
+      activeSet === "sign"
+        ? t("symbols.countSigns", { count: SIGN_SYMBOL_COUNT })
+        : activeSet === "schematic"
+          ? t("symbols.countSchematic", { count: SCHEMATIC_SYMBOL_COUNT })
+          : t("symbols.countSpecial");
+    hint.textContent = t(activeSet === "special" ? "symbols.hintSpecial" : "symbols.hint");
   };
 
   const searchWrap = el("label", "symbol-search");
@@ -154,6 +203,20 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
 
   const renderContent = () => {
     content.replaceChildren();
+    if (activeSet === "special") {
+      const section = el("section", "symbol-category");
+      const specialHead = el("div", "symbol-category-head");
+      specialHead.append(el("span", "", t("symbols.setSpecial")));
+      const grid = el("div", "symbol-grid");
+      for (const entry of SPECIAL_ENTRIES) grid.append(specialTile(entry));
+      section.append(specialHead, grid);
+      content.append(section);
+      const empty = el("div", "empty-note small symbol-empty", t("symbols.emptySpecial"));
+      empty.hidden = true;
+      content.append(empty);
+      filter();
+      return;
+    }
     const recent = loadRecent().filter((id) => {
       const symbol = SYMBOLS.find((entry) => entry.id === id);
       return symbol && (symbol.set === "schematic") === (activeSet === "schematic");
@@ -172,7 +235,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
     }
 
     const categories = activeSet === "schematic" ? SCHEMATIC_CATEGORIES : SIGN_CATEGORIES;
-    for (const category of categories) content.append(categorySection(category));
+    for (const category of categories) content.append(categorySection(category, activeSet));
     const empty = el("div", "empty-note small symbol-empty", t("symbols.empty"));
     empty.hidden = true;
     content.append(empty);
@@ -184,5 +247,5 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   renderContent();
 
   refs.dockBody.append(library);
-  refs.dockFooter.append(el("span", "symbol-library-hint", t("symbols.hint")));
+  refs.dockFooter.append(hint);
 }

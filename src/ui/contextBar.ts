@@ -1,7 +1,12 @@
 import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor, cloudFillLabel } from "../model/cloud";
 import { countTypeLabel } from "../features/countTypes/model";
-import { layersForKind, layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
+import {
+  layerAppliesToPage,
+  layersForKind,
+  layerLockedOnPage,
+  layerVisibleOnPage,
+} from "../model/layers";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
@@ -90,8 +95,20 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       if (targetKind && kind !== targetKind) continue;
       const group = document.createElement("optgroup");
       group.label = kind === "measure" ? t("context.measurements") : t("context.drawings");
-      for (const candidate of [...layersForKind(project, kind)].reverse()) {
-        group.append(option(candidate.id, candidate.name, candidate.id === activeLayer.id));
+      // Match the Layers panel's page scope, but always keep the active layer
+      // visible so the picker never silently shows a different layer than the
+      // one new items would use.
+      for (const candidate of [...layersForKind(project, kind)]
+        .filter((layer) => layer.id === activeLayer.id || layerAppliesToPage(layer, page))
+        .reverse()) {
+        const otherPage = !layerAppliesToPage(candidate, page);
+        group.append(
+          option(
+            candidate.id,
+            otherPage ? `${candidate.name}${t("context.otherPage")}` : candidate.name,
+            candidate.id === activeLayer.id,
+          ),
+        );
       }
       if (group.childElementCount) select.append(group);
     }

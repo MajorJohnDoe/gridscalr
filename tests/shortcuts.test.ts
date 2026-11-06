@@ -3,17 +3,20 @@ import { APP_SHORTCUTS, TOOL_KEYS, TOOL_SHORTCUTS, formatShortcut } from "../src
 import { TOOLS } from "../src/ui/toolDefs";
 
 describe("shortcut definitions", () => {
-  it("covers every tool with a unique shortcut", () => {
-    expect(Object.keys(TOOL_SHORTCUTS).sort()).toEqual(TOOLS.map((tool) => tool.id).sort());
-    const keys = Object.values(TOOL_SHORTCUTS);
+  it("covers every visible tool with a unique shortcut", () => {
+    const visible = TOOLS.filter((tool) => !tool.libraryOnly);
+    expect(Object.keys(TOOL_SHORTCUTS).sort()).toEqual(visible.map((tool) => tool.id).sort());
+    const keys = Object.values(TOOL_SHORTCUTS) as string[];
     expect(new Set(keys.map((key) => key.toLowerCase())).size).toBe(keys.length);
     for (const key of keys) expect(key).toMatch(/^(?:Shift\+)?[A-Z]$/);
   });
 
   it("builds the keyboard map from the same data as the tool rail", () => {
     for (const tool of TOOLS) {
-      expect(TOOL_KEYS[TOOL_SHORTCUTS[tool.id].toLowerCase()]).toBe(tool.id);
-      expect(tool.shortcut).toBe(TOOL_SHORTCUTS[tool.id]);
+      const key = TOOL_SHORTCUTS[tool.id];
+      if (key) expect(TOOL_KEYS[key.toLowerCase()]).toBe(tool.id);
+      else expect(tool.libraryOnly).toBe(true);
+      expect(tool.shortcut).toBe(key);
     }
   });
 

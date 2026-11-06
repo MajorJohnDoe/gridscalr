@@ -677,7 +677,7 @@ html[data-platform="macos"] .topbar {
 
 .symbol-set-tabs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, 1fr);
   gap: 3px;
   padding: 2px;
   border: 1px solid var(--border-soft);
@@ -753,7 +753,7 @@ html[data-platform="macos"] .topbar {
 }
 
 .symbol-tile {
-  min-height: 62px;
+  min-height: 70px;
   padding: 5px 3px 4px;
   border: 1px solid var(--border-soft);
   border-radius: 7px;
@@ -782,7 +782,13 @@ html[data-platform="macos"] .topbar {
   display: flex;
   align-items: center;
   justify-content: center;
-  min-height: 30px;
+  min-height: 36px;
+}
+
+/* The library preview is denser than a placed symbol, so give its schematic
+   strokes a little more weight than the 0.7 pt page weight. */
+.symbol-tile-icon .symbol-glyph path {
+  stroke-width: 2;
 }
 
 .symbol-tile-label {
