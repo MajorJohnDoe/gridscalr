@@ -42,6 +42,12 @@ const RADIATOR_FINS = Array.from({ length: 11 }, (_, index) =>
   linePath(12 + index * 4, 20, 12 + index * 4, 44),
 );
 
+/** Filled seat band along the right-hand outlet of a valve triangle. */
+const RIGHT_SEAT_BAND = polyPath([46, 22, 42, 24.8571, 42, 39.1429, 46, 42], true);
+
+/** The same band along the base of the downward-facing third branch. */
+const BOTTOM_SEAT_BAND = polyPath([24.8571, 42, 39.1429, 42, 42, 46, 22, 46], true);
+
 function valveBody(): string {
   return joinPaths(
     polyPath([18, 22, 32, 32, 18, 42], true),
@@ -254,7 +260,7 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     // outlet edge. The filled band is what separates a check valve from an
     // ordinary valve body at small sizes.
     ports: valvePorts(),
-    shapes: [stroke(valveBody()), fill(polyPath([46, 22, 42, 24.8571, 42, 39.1429, 46, 42], true))],
+    shapes: [stroke(valveBody()), fill(RIGHT_SEAT_BAND)],
   }),
   schematicSymbol({
     id: "schematic.safety-valve",
@@ -296,6 +302,24 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       { id: "branch", x: 32, y: 46, direction: "both" },
     ],
     shapes: [stroke(joinPaths(valveBody(), polyPath([32, 32, 22, 46, 42, 46], true)))],
+  }),
+  schematicSymbol({
+    id: "schematic.three-way-check-valve",
+    category: "valve",
+    keywords: ["trevägs backventil", "three-way check valve", "backventil", "3vägs", "3bv"],
+    tagPrefix: "3BV",
+    // Three-way body where the right and bottom outlets each carry the same
+    // filled seat band as the check valve; the left inlet is free.
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+      { id: "branch", x: 32, y: 46, direction: "both" },
+    ],
+    shapes: [
+      stroke(joinPaths(valveBody(), polyPath([32, 32, 22, 46, 42, 46], true))),
+      fill(RIGHT_SEAT_BAND),
+      fill(BOTTOM_SEAT_BAND),
+    ],
   }),
   schematicSymbol({
     id: "schematic.balancing-valve",

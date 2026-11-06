@@ -1328,6 +1328,7 @@ export type MessageKey =
   | "symbol.schematic.safety-valve"
   | "symbol.schematic.motor-valve"
   | "symbol.schematic.three-way-valve"
+  | "symbol.schematic.three-way-check-valve"
   | "symbol.schematic.balancing-valve"
   | "symbol.schematic.drain-valve"
   | "symbol.schematic.valve"
