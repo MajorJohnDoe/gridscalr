@@ -13,7 +13,7 @@ import {
   defaultDocument,
   layerKindForItem,
 } from "../src/model/layers";
-import type { ImageAsset } from "../src/model/types";
+import type { ImageAsset, MarkupItem } from "../src/model/types";
 
 const asset: ImageAsset = {
   id: "img_a",
@@ -86,13 +86,13 @@ describe("images", () => {
     expect(hitTest(projectValue, 1, { x: 200, y: 150 }, 4)).toBeNull();
   });
 
-  it("lets markups above a background image win the hit test", () => {
+  it("lets an unfilled rectangle pass clicks through to a background image", () => {
     const projectValue = project();
     const draw = projectValue.layers.find((layer) => layer.kind === "draw")!;
-    const rect = {
+    const rect: MarkupItem = {
       id: "item_over_image",
       page: 1,
-      kind: "rect" as const,
+      kind: "rect",
       points: [
         { x: 0, y: 50 },
         { x: 400, y: 250 },
@@ -102,8 +102,13 @@ describe("images", () => {
       createdAt: "2026-01-01T00:00:00.000Z",
       updatedAt: "2026-01-01T00:00:00.000Z",
     };
-    draw.items.push(rect, createImageItem(asset, 1, { width: 400, height: 300 }));
+    const image = createImageItem(asset, 1, { width: 400, height: 300 });
+    draw.items.push(rect, image);
 
+    expect(hitTest(projectValue, 1, { x: 200, y: 150 }, 4)?.item.id).toBe(image.id);
+
+    rect.fillColor = "#4cc9f0";
+    rect.opacity = 0.2;
     expect(hitTest(projectValue, 1, { x: 200, y: 150 }, 4)?.item.id).toBe(rect.id);
   });
 });
