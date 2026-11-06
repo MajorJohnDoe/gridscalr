@@ -288,16 +288,14 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["trevägsventil", "three-way valve", "3-väg", "ventil", "3v"],
     tagPrefix: "3V",
+    // The third branch is the same triangle rotated 90°: apex at the junction
+    // and a 20-unit base at y = 46, so all three branches read as equals.
     ports: [
       { id: "in", x: 18, y: 32, direction: "in" },
       { id: "out", x: 46, y: 32, direction: "out" },
-      { id: "branch", x: 32, y: 58, direction: "both" },
+      { id: "branch", x: 32, y: 46, direction: "both" },
     ],
-    shapes: [
-      stroke(
-        joinPaths(valveBody(), polyPath([26, 32, 38, 32, 32, 46], true), linePath(32, 46, 32, 58)),
-      ),
-    ],
+    shapes: [stroke(joinPaths(valveBody(), polyPath([32, 32, 22, 46, 42, 46], true)))],
   }),
   schematicSymbol({
     id: "schematic.balancing-valve",
