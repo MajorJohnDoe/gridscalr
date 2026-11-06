@@ -359,7 +359,12 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["cirkulationspump", "circulation pump", "pump", "cp"],
     tagPrefix: "CP",
     ports: PUMP_PORTS(),
-    shapes: [stroke(pumpBody())],
+    shapes: [
+      stroke(pumpBody()),
+      // Filled arrowhead in the upper part of the triangle, so the flow
+      // direction is readable even at small sizes.
+      fill(polyPath([32, 20, 26.6, 28, 37.4, 28], true)),
+    ],
   }),
   schematicSymbol({
     id: "schematic.heating-pump",
