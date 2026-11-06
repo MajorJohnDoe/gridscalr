@@ -6,6 +6,7 @@ import {
   polyPath,
   rectPath,
   schematicSymbol,
+  sensorFunnel,
   smallCircle,
   stroke,
 } from "./definitions";
@@ -20,8 +21,6 @@ const PORTS_INLINE = () => [
   { id: "in", x: 2, y: 32, direction: "in" as const },
   { id: "out", x: 62, y: 32, direction: "out" as const },
 ];
-
-const FUNNEL = "M 18 16 Q 32 8 46 16 L 34 36 L 34 54 M 30 36 L 34 36";
 
 function valveBody(): string {
   return joinPaths(
@@ -59,17 +58,17 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     keywords: ["givare", "sensor", "termostat", "g", "allmän givare"],
     tagPrefix: "G",
     ports: [{ id: "process", x: 32, y: 58, direction: "both" }],
-    shapes: [stroke(FUNNEL)],
+    shapes: [stroke(sensorFunnel())],
   }),
   schematicSymbol({
     id: "schematic.sensor-external",
     category: "instrument",
     keywords: ["givare yttre mätställe", "sensor external", "givare", "g"],
     tagPrefix: "G",
-    ports: [{ id: "process", x: 34, y: 40, direction: "both" }],
+    ports: [{ id: "process", x: 32, y: 40, direction: "both" }],
     shapes: [
-      stroke("M 18 16 Q 32 8 46 16 L 34 34 L 34 40"),
-      stroke(joinPaths(linePath(34, 38, 14, 38), linePath(14, 38, 14, 48))),
+      stroke(sensorFunnel(40)),
+      stroke(joinPaths(linePath(32, 38, 14, 38), linePath(14, 38, 14, 48))),
       stroke(smallCircle(14, 52, 3)),
     ],
   }),
@@ -79,7 +78,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     keywords: ["givare inre mätställe", "sensor internal", "givare", "g"],
     tagPrefix: "G",
     ports: [{ id: "process", x: 32, y: 58, direction: "both" }],
-    shapes: [stroke(FUNNEL), stroke(linePath(32, 16, 32, 34))],
+    shapes: [stroke(sensorFunnel()), stroke(linePath(32, 16, 32, 34))],
   }),
   schematicSymbol({
     id: "schematic.sensor-differential",
@@ -87,13 +86,13 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     keywords: ["differensgivare", "differential sensor", "givare", "g"],
     tagPrefix: "G",
     ports: [
-      { id: "high", x: 10, y: 48, direction: "both" },
-      { id: "low", x: 54, y: 48, direction: "both" },
+      { id: "high", x: 12, y: 48, direction: "both" },
+      { id: "low", x: 52, y: 48, direction: "both" },
     ],
     shapes: [
-      stroke("M 18 16 Q 32 8 46 16 L 34 34 L 34 40"),
-      stroke(joinPaths(linePath(34, 38, 12, 38), linePath(12, 38, 12, 46))),
-      stroke(joinPaths(linePath(34, 38, 52, 38), linePath(52, 38, 52, 46))),
+      stroke(sensorFunnel(40)),
+      stroke(joinPaths(linePath(32, 38, 12, 38), linePath(12, 38, 12, 46))),
+      stroke(joinPaths(linePath(32, 38, 52, 38), linePath(52, 38, 52, 46))),
       stroke(smallCircle(12, 50, 2.4)),
       stroke(smallCircle(52, 50, 2.4)),
     ],
@@ -722,5 +721,16 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "SO",
     ports: PORTS_INLINE(),
     shapes: [stroke(joinPaths(rectPath(20, 20, 24, 24), linePath(20, 44, 44, 20)))],
+  }),
+
+  // --- Flow direction ----------------------------------------------------
+  schematicSymbol({
+    id: "schematic.flow-arrow",
+    category: "general",
+    keywords: ["flödespil", "flöde", "riktning", "flow arrow", "flow", "direction", "pil"],
+    tagPrefix: "FL",
+    defaultSize: 24,
+    ports: [{ id: "flow", x: 32, y: 32, direction: "out" }],
+    shapes: [stroke("M 22 18 L 42 32 L 22 46")],
   }),
 ];

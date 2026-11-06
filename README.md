@@ -59,7 +59,7 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Place searchable facility symbols from a built-in library of 52 original
   classic sign plates, rotate them, resize them by dragging a corner and give
   them an inspection status.
-- Draw operation cards with 111 original stroke-only schematic symbols for
+- Draw operation cards with 114 original stroke-only schematic symbols for
   instruments, valves, pumps, heat exchangers, ventilation, heating, district
   heating, cooling, domestic water, control and general notation. Add a free-text
   tag that follows the symbol, and filter the library between **Signs** and
@@ -289,4 +289,5 @@ Never attach real customer drawings to an issue or a pull request.
 Built with [Tauri](https://tauri.app), [PDF.js](https://mozilla.github.io/pdf.js/),
 [pdf-lib](https://pdf-lib.js.org) and TypeScript. The facility symbols are
 original vector illustrations drawn for this project; they are not certified
-SS-EN ISO 7010 reproductions.
+SS-EN ISO 7010 reproductions and not reproductions of SS-EN ISO 14617 or
+IEC 60617.

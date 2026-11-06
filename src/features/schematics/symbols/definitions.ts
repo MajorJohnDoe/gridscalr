@@ -91,6 +91,35 @@ export function smallCircle(cx: number, cy: number, radius: number): string {
   return circlePathData(cx, cy, radius);
 }
 
+/**
+ * The closed funnel shared by the sensor symbols: an arc mouth, two sides that
+ * meet at the stem and a stem down to `stemEnd`. Process connection lines are
+ * deliberately not part of the artwork; they are drawn by the user.
+ */
+export function sensorFunnel(stemEnd = 54): string {
+  return `M 18 16 Q 32 8 46 16 L 32 34 Z M 32 34 L 32 ${n(stemEnd)}`;
+}
+
+/** Number of zigzag folds per media path in the heat-exchanger symbol. */
+const HEAT_EXCHANGER_FOLDS = 7;
+
+/**
+ * One counter-flow media path for the heat exchanger. The path enters at
+ * `startX`, zigzags between `outerX` and `innerX` and leaves on the same side.
+ */
+function heatExchangerMedia(startX: number, outerX: number, innerX: number): string {
+  const top = 16;
+  const bottom = 48;
+  const step = (bottom - top) / HEAT_EXCHANGER_FOLDS;
+  const parts = [`M ${n(startX)} ${n(top)} H ${n(innerX)}`];
+  for (let fold = 1; fold <= HEAT_EXCHANGER_FOLDS; fold += 1) {
+    const x = fold % 2 === 1 ? outerX : innerX;
+    parts.push(`L ${n(x)} ${n(top + step * fold)}`);
+  }
+  parts.push(`H ${n(startX)}`);
+  return parts.join(" ");
+}
+
 /** A coil or battery drawn inside a duct casing. */
 export function coilPath(yTop: number, yBottom: number, left = 10, right = 54): string {
   const step = (right - left) / 4;
@@ -160,18 +189,29 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
   schematicSymbol({
     id: "schematic.heat-exchanger",
     category: "exchanger",
-    keywords: ["värmeväxlare", "heat exchanger", "växlare", "återvinning", "vvx"],
+    keywords: [
+      "värmeväxlare",
+      "heat exchanger",
+      "växlare",
+      "vatten",
+      "vattenväxlare",
+      "återvinning",
+      "vvx",
+    ],
     tagPrefix: "VVX",
+    // A water-to-water exchanger: two counter-flow media drawn as mirrored
+    // zigzags inside a rectangular shell. The pipe connections are left to the
+    // user; the ports are snap anchors on the shell edges.
     ports: [
-      { id: "primaryIn", x: 2, y: 26, direction: "in" },
-      { id: "primaryOut", x: 2, y: 38, direction: "out" },
-      { id: "secondaryIn", x: 62, y: 38, direction: "in" },
-      { id: "secondaryOut", x: 62, y: 26, direction: "out" },
+      { id: "primaryIn", x: 18, y: 16, direction: "in" },
+      { id: "primaryOut", x: 18, y: 48, direction: "out" },
+      { id: "secondaryIn", x: 46, y: 16, direction: "in" },
+      { id: "secondaryOut", x: 46, y: 48, direction: "out" },
     ],
     shapes: [
-      stroke(polyPath([22, 10, 42, 10, 50, 18, 50, 46, 42, 54, 22, 54, 14, 46, 14, 18], true)),
-      stroke(joinPaths("M 20 20 H 44 L 20 30 H 44 L 20 40 H 44 L 20 48")),
-      stroke(joinPaths(linePath(2, 26, 14, 26), linePath(50, 38, 62, 38))),
+      stroke(rectPath(18, 8, 28, 48)),
+      stroke(heatExchangerMedia(18, 20, 31)),
+      stroke(heatExchangerMedia(46, 44, 33)),
     ],
   }),
   schematicSymbol({
@@ -254,10 +294,6 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
       { id: "in", x: 4, y: 50, direction: "in" },
       { id: "out", x: 60, y: 50, direction: "out" },
     ],
-    shapes: [
-      stroke(linePath(4, 50, 60, 50)),
-      stroke("M 18 16 Q 32 8 46 16 L 34 36 L 34 50"),
-      stroke(linePath(30, 36, 34, 36)),
-    ],
+    shapes: [stroke(linePath(4, 50, 60, 50)), stroke(sensorFunnel(50))],
   }),
 ];

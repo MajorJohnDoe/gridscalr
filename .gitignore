@@ -25,6 +25,9 @@ Thumbs.db
 coverage/
 exports/
 
+# Generated symbol catalogue, screenshots and local release artifacts
+artifacts/
+
 # Generated landing site
 site-dist/
 

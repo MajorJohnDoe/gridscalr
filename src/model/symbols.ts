@@ -29,8 +29,8 @@ export const SYMBOL_VIEWBOX = 64;
 export const DEFAULT_SYMBOL_ID = "fire.extinguisher";
 /** Default plate size in points for the stroke-only schematic symbols. */
 export const SCHEMATIC_SYMBOL_SIZE = 40;
-/** Fixed stroke width in PDF points for schematic artwork at every symbol size. */
-export const SCHEMATIC_STROKE_WIDTH = 1.4;
+/** Fixed stroke width in page points for schematic artwork at every symbol size. */
+export const SCHEMATIC_STROKE_WIDTH = 0.7;
 
 export function clampSymbolSize(value: number): number {
   if (!Number.isFinite(value)) return SYMBOL_SIZE;
@@ -1226,6 +1226,20 @@ export function symbolRenderPlan(
     viewBox: SYMBOL_VIEWBOX,
     fixedStrokeWidth: isSchematic ? SCHEMATIC_STROKE_WIDTH : undefined,
   };
+}
+
+/**
+ * Stroke width in page points for one rendered shape at a given symbol size.
+ * The canvas converts this to local units, so a schematic symbol keeps its
+ * printed weight at every zoom and matches the PDF export exactly.
+ */
+export function symbolShapeStrokeWidth(
+  plan: SymbolRenderPlan,
+  shape: SymbolRenderShape,
+  size: number,
+): number {
+  const resolved = Number.isFinite(size) && size > 0 ? size : SYMBOL_SIZE;
+  return plan.fixedStrokeWidth ?? shape.strokeWidth * shape.scale * (resolved / plan.viewBox);
 }
 
 /** SVG markup for the symbol library and help screenshots. */
