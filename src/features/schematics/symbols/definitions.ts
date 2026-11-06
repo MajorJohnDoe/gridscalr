@@ -158,14 +158,10 @@ const BATTERY_PORTS = (): SymbolPort[] => [
 
 function batteryShapes(plus: boolean): string {
   return joinPaths(
-    roundedRectPathData(23, 8, 18, 48, 1),
-    roundedRectPathData(19, 14, 4, 5, 1),
-    roundedRectPathData(41, 14, 4, 5, 1),
-    roundedRectPathData(19, 45, 4, 5, 1),
-    roundedRectPathData(41, 45, 4, 5, 1),
-    smallCircle(32, 32, 8),
-    linePath(23, 32, 41, 32),
-    ...(plus ? [linePath(32, 24, 32, 40)] : []),
+    roundedRectPathData(20, 6, 24, 52, 2),
+    smallCircle(32, 32, 12),
+    linePath(20, 32, 44, 32),
+    ...(plus ? [linePath(32, 20, 32, 44)] : []),
   );
 }
 
