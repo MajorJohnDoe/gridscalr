@@ -190,11 +190,23 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["filter", "luftfilter", "filtrering", "ventilation", "f"],
     tagPrefix: "F",
+    // Portrait body with a vertical zigzag element. The medium enters on the
+    // left wall and leaves on the right wall, so the flow crosses the filter.
     ports: [
-      { id: "in", x: 12, y: 32, direction: "in" },
-      { id: "out", x: 52, y: 32, direction: "out" },
+      { id: "in", x: 14, y: 32, direction: "in" },
+      { id: "out", x: 50, y: 32, direction: "out" },
     ],
-    shapes: [stroke(rectPath(12, 14, 40, 36)), stroke("M 12 44 L 22 22 L 32 44 L 42 22 L 52 44")],
+    shapes: [
+      stroke(rectPath(14, 10, 36, 44)),
+      stroke(
+        joinPaths(
+          linePath(18, 10, 50, 21),
+          linePath(50, 21, 14, 32),
+          linePath(14, 32, 50, 43),
+          linePath(50, 43, 18, 54),
+        ),
+      ),
+    ],
   }),
   schematicSymbol({
     id: "schematic.heating-coil",
