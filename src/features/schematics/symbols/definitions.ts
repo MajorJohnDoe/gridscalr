@@ -35,6 +35,11 @@ export function polyPath(values: number[], closed = false): string {
   return parts.join(" ");
 }
 
+/** A circular arc from the current point, used by rounded U-turns. */
+export function arcPath(radius: number, x: number, y: number, sweep: 0 | 1): string {
+  return `A ${n(radius)} ${n(radius)} 0 0 ${sweep} ${n(x)} ${n(y)}`;
+}
+
 /** Several path fragments joined into one shape. */
 export function joinPaths(...paths: string[]): string {
   return paths.filter(Boolean).join(" ");
@@ -153,14 +158,10 @@ const BATTERY_PORTS = (): SymbolPort[] => [
 
 function batteryShapes(plus: boolean): string {
   return joinPaths(
-    roundedRectPathData(23, 8, 18, 48, 1),
-    roundedRectPathData(19, 14, 4, 5, 1),
-    roundedRectPathData(41, 14, 4, 5, 1),
-    roundedRectPathData(19, 45, 4, 5, 1),
-    roundedRectPathData(41, 45, 4, 5, 1),
-    smallCircle(32, 32, 8),
-    linePath(23, 32, 41, 32),
-    ...(plus ? [linePath(32, 24, 32, 40)] : []),
+    roundedRectPathData(20, 6, 24, 52, 2),
+    smallCircle(32, 32, 12),
+    linePath(20, 32, 44, 32),
+    ...(plus ? [linePath(32, 20, 32, 44)] : []),
   );
 }
 
@@ -185,11 +186,23 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["filter", "luftfilter", "filtrering", "ventilation", "f"],
     tagPrefix: "F",
+    // Portrait body with a vertical zigzag element. The medium enters on the
+    // left wall and leaves on the right wall, so the flow crosses the filter.
     ports: [
-      { id: "in", x: 12, y: 32, direction: "in" },
-      { id: "out", x: 52, y: 32, direction: "out" },
+      { id: "in", x: 14, y: 32, direction: "in" },
+      { id: "out", x: 50, y: 32, direction: "out" },
     ],
-    shapes: [stroke(rectPath(12, 14, 40, 36)), stroke("M 12 44 L 22 22 L 32 44 L 42 22 L 52 44")],
+    shapes: [
+      stroke(rectPath(14, 10, 36, 44)),
+      stroke(
+        joinPaths(
+          linePath(18, 10, 50, 21),
+          linePath(50, 21, 14, 32),
+          linePath(14, 32, 50, 43),
+          linePath(50, 43, 18, 54),
+        ),
+      ),
+    ],
   }),
   schematicSymbol({
     id: "schematic.heating-coil",

@@ -3,6 +3,7 @@ import { roundedRectPathData } from "../../../model/symbolPaths";
 import { REFERENCE_SYMBOLS } from "./referenceSymbols";
 import {
   FIRST_VENTILATION_SYMBOLS,
+  arcPath,
   coilPath,
   ductCasing,
   ductPorts,
@@ -35,6 +36,17 @@ const PUMP_PORTS = () => [
 ];
 
 const SENSOR_PORTS = (x = 32) => [{ id: "process", x, y: 58, direction: "both" as const }];
+
+/** Eleven evenly spaced fins between the radiator headers. */
+const RADIATOR_FINS = Array.from({ length: 11 }, (_, index) =>
+  linePath(12 + index * 4, 20, 12 + index * 4, 44),
+);
+
+/** Filled seat band along the right-hand outlet of a valve triangle. */
+const RIGHT_SEAT_BAND = polyPath([46, 22, 42, 24.8571, 42, 39.1429, 46, 42], true);
+
+/** The same band along the base of the downward-facing third branch. */
+const BOTTOM_SEAT_BAND = polyPath([24.8571, 42, 39.1429, 42, 42, 46, 22, 46], true);
 
 function valveBody(): string {
   return joinPaths(
@@ -210,6 +222,14 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
 
   // --- Valves ------------------------------------------------------------
   schematicSymbol({
+    id: "schematic.valve",
+    category: "valve",
+    keywords: ["ventil", "valve", "v"],
+    tagPrefix: "V",
+    ports: valvePorts(),
+    shapes: [stroke(valveBody())],
+  }),
+  schematicSymbol({
     id: "schematic.shutoff-valve",
     category: "valve",
     keywords: ["avstängningsventil", "shut-off valve", "ventil", "avstängning", "av"],
@@ -236,8 +256,11 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["backventil", "check valve", "back", "ventil", "bv"],
     tagPrefix: "BV",
+    // ISO-style body: the usual two triangles plus a solid seat band along the
+    // outlet edge. The filled band is what separates a check valve from an
+    // ordinary valve body at small sizes.
     ports: valvePorts(),
-    shapes: [stroke(valveBody()), stroke(linePath(46, 22, 46, 42))],
+    shapes: [stroke(valveBody()), fill(RIGHT_SEAT_BAND)],
   }),
   schematicSymbol({
     id: "schematic.safety-valve",
@@ -250,7 +273,9 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       stroke(valveBody()),
-      stroke(joinPaths(linePath(32, 22, 32, 10), polyPath([26, 14, 32, 5, 38, 14]))),
+      // Discharge arrow pointing down to the body: long shaft, wide open head
+      // whose tip sits level with the body's top corners.
+      stroke(joinPaths(linePath(32, 2, 32, 17), polyPath([25, 12, 32, 22, 39, 12]))),
     ],
   }),
   schematicSymbol({
@@ -271,15 +296,31 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["trevägsventil", "three-way valve", "3-väg", "ventil", "3v"],
     tagPrefix: "3V",
+    // The third branch is the same triangle rotated 90°: apex at the junction
+    // and a 20-unit base at y = 46, so all three branches read as equals.
     ports: [
       { id: "in", x: 18, y: 32, direction: "in" },
       { id: "out", x: 46, y: 32, direction: "out" },
-      { id: "branch", x: 32, y: 58, direction: "both" },
+      { id: "branch", x: 32, y: 46, direction: "both" },
+    ],
+    shapes: [stroke(joinPaths(valveBody(), polyPath([32, 32, 22, 46, 42, 46], true)))],
+  }),
+  schematicSymbol({
+    id: "schematic.three-way-check-valve",
+    category: "valve",
+    keywords: ["trevägs backventil", "three-way check valve", "backventil", "3vägs", "3bv"],
+    tagPrefix: "3BV",
+    // Three-way body where the right and bottom outlets each carry the same
+    // filled seat band as the check valve; the left inlet is free.
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+      { id: "branch", x: 32, y: 46, direction: "both" },
     ],
     shapes: [
-      stroke(
-        joinPaths(valveBody(), polyPath([26, 32, 38, 32, 32, 46], true), linePath(32, 46, 32, 58)),
-      ),
+      stroke(joinPaths(valveBody(), polyPath([32, 32, 22, 46, 42, 46], true))),
+      fill(RIGHT_SEAT_BAND),
+      fill(BOTTOM_SEAT_BAND),
     ],
   }),
   schematicSymbol({
@@ -318,7 +359,12 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["cirkulationspump", "circulation pump", "pump", "cp"],
     tagPrefix: "CP",
     ports: PUMP_PORTS(),
-    shapes: [stroke(pumpBody())],
+    shapes: [
+      stroke(pumpBody()),
+      // Filled arrowhead in the upper part of the triangle, so the flow
+      // direction is readable even at small sizes.
+      fill(polyPath([32, 20, 26.6, 28, 37.4, 28], true)),
+    ],
   }),
   schematicSymbol({
     id: "schematic.heating-pump",
@@ -518,11 +564,23 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "heating",
     keywords: ["radiator", "element", "värme", "rad"],
     tagPrefix: "RAD",
+    // Supply enters at the top-left and returns at the bottom-left. Both ports
+    // sit on the header edge so the symbol has no protruding connection stubs.
     ports: [
-      { id: "in", x: 32, y: 10, direction: "in" },
-      { id: "out", x: 32, y: 54, direction: "out" },
+      { id: "in", x: 4, y: 17, direction: "in" },
+      { id: "out", x: 4, y: 47, direction: "out" },
     ],
-    shapes: [stroke(rectPath(24, 10, 16, 44))],
+    shapes: [
+      stroke(
+        joinPaths(
+          // Stepped headers that overhang the fin block, as on a panel radiator.
+          rectPath(4, 14, 56, 6),
+          rectPath(4, 44, 56, 6),
+          rectPath(8, 20, 48, 24),
+          ...RADIATOR_FINS,
+        ),
+      ),
+    ],
   }),
   schematicSymbol({
     id: "schematic.convector",
@@ -552,18 +610,27 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     category: "heating",
     keywords: ["golvvärme", "floor heating", "golv", "värme", "gv"],
     tagPrefix: "GV",
+    // One continuous loop: supply enters at the top-left, the coil snakes down
+    // and up, and the return leaves at the bottom-left. Ports sit on the edge.
     ports: [
-      { id: "in", x: 2, y: 32, direction: "in" },
-      { id: "out", x: 62, y: 32, direction: "out" },
+      { id: "in", x: 2, y: 14, direction: "in" },
+      { id: "out", x: 2, y: 50, direction: "out" },
     ],
     shapes: [
       stroke(
         joinPaths(
-          linePath(2, 14, 18, 14),
-          polyPath([
-            18, 14, 46, 14, 46, 22, 18, 22, 18, 30, 46, 30, 46, 38, 18, 38, 18, 46, 46, 46,
-          ]),
-          linePath(46, 46, 62, 46),
+          linePath(2, 14, 14, 14),
+          linePath(14, 14, 14, 40),
+          arcPath(5, 24, 40, 0),
+          linePath(24, 40, 24, 20),
+          arcPath(5, 34, 20, 1),
+          linePath(34, 20, 34, 40),
+          arcPath(5, 44, 40, 0),
+          linePath(44, 40, 44, 20),
+          arcPath(5, 54, 20, 1),
+          linePath(54, 20, 54, 45),
+          arcPath(5, 49, 50, 1),
+          linePath(49, 50, 2, 50),
         ),
       ),
     ],
