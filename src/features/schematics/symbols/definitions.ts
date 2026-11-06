@@ -1,7 +1,7 @@
 import { translate, type MessageKey } from "../../../i18n";
 import type { SymbolArtShape, SymbolDefinition, SymbolPort } from "../../../model/symbols";
 import { SCHEMATIC_SYMBOL_SIZE } from "../../../model/symbols";
-import { circlePathData } from "../../../model/symbolPaths";
+import { circlePathData, roundedRectPathData } from "../../../model/symbolPaths";
 import type { SchematicSymbolCategory } from "../../../model/types";
 
 /**
@@ -143,6 +143,27 @@ export function coilPath(yTop: number, yBottom: number, left = 10, right = 54): 
 
 const VENTILATION_PORTS = (): SymbolPort[] => ductPorts(32);
 
+/** Four water-side connection blocks on a tall heating/cooling coil. */
+const BATTERY_PORTS = (): SymbolPort[] => [
+  { id: "in", x: 19, y: 16.5, direction: "in" },
+  { id: "out", x: 45, y: 16.5, direction: "out" },
+  { id: "in2", x: 19, y: 47.5, direction: "in" },
+  { id: "out2", x: 45, y: 47.5, direction: "out" },
+];
+
+function batteryShapes(plus: boolean): string {
+  return joinPaths(
+    roundedRectPathData(23, 8, 18, 48, 1),
+    roundedRectPathData(19, 14, 4, 5, 1),
+    roundedRectPathData(41, 14, 4, 5, 1),
+    roundedRectPathData(19, 45, 4, 5, 1),
+    roundedRectPathData(41, 45, 4, 5, 1),
+    smallCircle(32, 32, 8),
+    linePath(23, 32, 41, 32),
+    ...(plus ? [linePath(32, 24, 32, 40)] : []),
+  );
+}
+
 export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
   schematicSymbol({
     id: "schematic.fan",
@@ -164,35 +185,27 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["filter", "luftfilter", "filtrering", "ventilation", "f"],
     tagPrefix: "F",
-    ports: VENTILATION_PORTS(),
-    shapes: [
-      stroke(rectPath(10, 14, 44, 36)),
-      stroke(joinPaths("M 10 14 L 54 50 M 54 14 L 10 50")),
+    ports: [
+      { id: "in", x: 12, y: 32, direction: "in" },
+      { id: "out", x: 52, y: 32, direction: "out" },
     ],
+    shapes: [stroke(rectPath(12, 14, 40, 36)), stroke("M 12 44 L 22 22 L 32 44 L 42 22 L 52 44")],
   }),
   schematicSymbol({
     id: "schematic.heating-coil",
     category: "heating",
     keywords: ["värmebatteri", "heating coil", "värme", "batteri", "eftervärmare", "vb"],
     tagPrefix: "VB",
-    ports: VENTILATION_PORTS(),
-    shapes: [
-      stroke(rectPath(14, 14, 36, 36)),
-      stroke(smallCircle(32, 32, 9)),
-      stroke(joinPaths(linePath(23, 32, 41, 32), linePath(32, 23, 32, 41))),
-    ],
+    ports: BATTERY_PORTS(),
+    shapes: [stroke(batteryShapes(true))],
   }),
   schematicSymbol({
     id: "schematic.cooling-coil",
     category: "cooling",
     keywords: ["kylbatteri", "cooling coil", "kyla", "batteri", "kylare", "kb"],
     tagPrefix: "KB",
-    ports: VENTILATION_PORTS(),
-    shapes: [
-      stroke(rectPath(14, 14, 36, 36)),
-      stroke(smallCircle(32, 32, 9)),
-      stroke(linePath(23, 32, 41, 32)),
-    ],
+    ports: BATTERY_PORTS(),
+    shapes: [stroke(batteryShapes(false))],
   }),
   schematicSymbol({
     id: "schematic.heat-exchanger",

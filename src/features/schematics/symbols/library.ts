@@ -367,12 +367,14 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["plattvärmeväxlare", "plate heat exchanger", "värmeväxlare", "platt", "pvx"],
     tagPrefix: "PVX",
     ports: [
-      { id: "in", x: 14, y: 22, direction: "in" },
-      { id: "out", x: 50, y: 42, direction: "out" },
+      { id: "primaryIn", x: 24, y: 8, direction: "in" },
+      { id: "primaryOut", x: 40, y: 56, direction: "out" },
+      { id: "secondaryIn", x: 40, y: 8, direction: "in" },
+      { id: "secondaryOut", x: 24, y: 56, direction: "out" },
     ],
     shapes: [
-      stroke(rectPath(14, 14, 36, 36)),
-      stroke("M 20 14 L 20 50 M 26 14 L 26 50 M 32 14 L 32 50 M 38 14 L 38 50 M 44 14 L 44 50"),
+      stroke(rectPath(24, 8, 16, 48)),
+      stroke(joinPaths("M 24 8 L 40 56", "M 40 8 L 24 56")),
     ],
   }),
   schematicSymbol({
@@ -381,10 +383,18 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     keywords: ["roterande återvinning", "rotary recovery", "återvinning", "roterande", "rx"],
     tagPrefix: "RX",
     ports: [
-      { id: "in", x: 22, y: 2, direction: "in" },
-      { id: "out", x: 42, y: 62, direction: "out" },
+      { id: "primaryIn", x: 24, y: 8, direction: "in" },
+      { id: "primaryOut", x: 40, y: 56, direction: "out" },
+      { id: "secondaryIn", x: 40, y: 8, direction: "in" },
+      { id: "secondaryOut", x: 24, y: 56, direction: "out" },
     ],
-    shapes: [stroke(rectPath(22, 10, 20, 44))],
+    shapes: [
+      stroke(rectPath(24, 8, 16, 48)),
+      stroke(
+        "M 32 18 C 36.418 18 40 24.268 40 32 C 40 39.732 36.418 46 32 46 C 27.582 46 24 39.732 24 32 C 24 24.268 27.582 18 32 18 Z",
+      ),
+      stroke(joinPaths("M 25 25 C 25 12 39 12 39 25", "M 39 25 L 34 22 M 39 25 L 36 30")),
+    ],
   }),
   schematicSymbol({
     id: "schematic.battery-recovery",
