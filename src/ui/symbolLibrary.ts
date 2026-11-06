@@ -133,6 +133,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
 
   const tabs = el("div", "symbol-set-tabs");
   tabs.setAttribute("role", "tablist");
+  const hint = el("span", "symbol-library-hint", t("symbols.hint"));
   const tabButtons: Array<{ set: LibrarySet; button: HTMLButtonElement }> = [];
   const setLabel = (set: LibrarySet) =>
     set === "sign"
@@ -165,6 +166,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
         : activeSet === "schematic"
           ? t("symbols.countSchematic", { count: SCHEMATIC_SYMBOL_COUNT })
           : t("symbols.countSpecial");
+    hint.textContent = t(activeSet === "special" ? "symbols.hintSpecial" : "symbols.hint");
   };
 
   const searchWrap = el("label", "symbol-search");
@@ -209,7 +211,7 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
       for (const entry of SPECIAL_ENTRIES) grid.append(specialTile(entry));
       section.append(specialHead, grid);
       content.append(section);
-      const empty = el("div", "empty-note small symbol-empty", t("symbols.empty"));
+      const empty = el("div", "empty-note small symbol-empty", t("symbols.emptySpecial"));
       empty.hidden = true;
       content.append(empty);
       filter();
@@ -245,5 +247,5 @@ export function renderSymbolLibrary(refs: ShellRefs, _actions: PanelActions): vo
   renderContent();
 
   refs.dockBody.append(library);
-  refs.dockFooter.append(el("span", "symbol-library-hint", t("symbols.hint")));
+  refs.dockFooter.append(hint);
 }
