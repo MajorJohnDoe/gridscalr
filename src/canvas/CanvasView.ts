@@ -119,6 +119,7 @@ import {
 import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { snapToSchematicGrid } from "../features/schematics/model/schematicGrid";
 import {
   resolveSheetLabels,
   SHEET_FIELD,
@@ -311,7 +312,6 @@ interface PanState {
 
 const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
-const SCHEMATIC_GRID_STEP = (5 * 72) / 25.4;
 
 function orthoPoint(last: Point, current: Point): Point {
   return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
@@ -2313,10 +2313,9 @@ export class CanvasView {
   private snapPolylinePoint(point: Point): Point {
     const snapped = this.snapPoint(point);
     if (this.snap) return snapped;
-    return {
-      x: Math.round(point.x / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
-      y: Math.round(point.y / SCHEMATIC_GRID_STEP) * SCHEMATIC_GRID_STEP,
-    };
+    const project = store.project;
+    if (!project) return point;
+    return snapToSchematicGrid(project, this.viewPage, point);
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
