@@ -1398,6 +1398,8 @@
   "symbol.schematic.contact-no-delayed": "Slutande kontakt, fördröjd vid återslutning",
   "symbol.schematic.contact-nc-delayed": "Brytande kontakt, fördröjd vid slutning",
   "symbol.schematic.switch-manual": "Elkopplare, handmanövrerad",
+  "symbol.schematic.switch-1p": "Strömbrytare 1-pol",
+  "symbol.schematic.switch-3p": "Strömbrytare 3-pol",
   "symbol.schematic.pushbutton": "Elkopplare manövrerad genom tryckning med automatisk återgång",
   "symbol.schematic.main-contact": "Huvudkontakt i kontaktor",
   "symbol.schematic.fuse-feed": "Säkring med matningssidan markerad",

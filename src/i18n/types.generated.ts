@@ -1400,6 +1400,8 @@ export type MessageKey =
   | "symbol.schematic.contact-no-delayed"
   | "symbol.schematic.contact-nc-delayed"
   | "symbol.schematic.switch-manual"
+  | "symbol.schematic.switch-1p"
+  | "symbol.schematic.switch-3p"
   | "symbol.schematic.pushbutton"
   | "symbol.schematic.main-contact"
   | "symbol.schematic.fuse-feed"

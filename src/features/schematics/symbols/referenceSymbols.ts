@@ -450,6 +450,44 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     ],
   }),
   schematicSymbol({
+    id: "schematic.switch-1p",
+    category: "control",
+    keywords: ["strömbrytare", "switch", "1-pol", "single-pole", "brytare", "s1"],
+    tagPrefix: "S1",
+    // Terminal circle with a lever and one contact bar at the top.
+    ports: [
+      { id: "in", x: 11, y: 46, direction: "in" },
+      { id: "out", x: 47, y: 26, direction: "out" },
+    ],
+    shapes: [
+      stroke(smallCircle(18, 46, 7)),
+      stroke(linePath(22.95, 41.05, 40, 20)),
+      stroke(linePath(40, 20, 47, 25.7)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.switch-3p",
+    category: "control",
+    keywords: ["strömbrytare", "switch", "3-pol", "three-pole", "brytare", "s3"],
+    tagPrefix: "S3",
+    // Terminal circle with a lever and three contact bars along its upper part.
+    ports: [
+      { id: "in", x: 11, y: 46, direction: "in" },
+      { id: "out", x: 47, y: 26, direction: "out" },
+    ],
+    shapes: [
+      stroke(smallCircle(18, 46, 7)),
+      stroke(linePath(22.95, 41.05, 40, 20)),
+      stroke(
+        joinPaths(
+          linePath(40, 20, 47, 25.7),
+          linePath(36.85, 23.9, 43.85, 29.6),
+          linePath(33.7, 27.8, 40.7, 33.5),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.pushbutton",
     category: "control",
     keywords: ["tryckknapp", "pushbutton", "knapp", "sb"],
