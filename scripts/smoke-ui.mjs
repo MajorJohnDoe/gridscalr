@@ -1194,11 +1194,13 @@ try {
   // Rail rows can be reordered with the dialog controls.
   await page.keyboard.press("v");
   await interaction.click({ position: { x: 12, y: 12 } });
-  await page.keyboard.press("Shift+R");
+  await page.keyboard.press("b");
+  await page.locator('[data-set="special"]').click();
+  await page.locator('[data-symbol-id="special.rail"]').click();
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
     "rail",
-    "the rail shortcut should activate the rail tool",
+    "the Special library entry should activate the rail tool",
   );
   await page.mouse.move(canvasBox.x + canvasBox.width * 0.25, canvasBox.y + canvasBox.height * 0.6);
   await page.mouse.down();
