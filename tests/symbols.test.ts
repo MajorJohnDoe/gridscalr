@@ -277,6 +277,50 @@ describe("schematic symbol set", () => {
     }
   });
 
+  it("keeps the connection points of the redrawn operation-card symbols", () => {
+    const ports = (id: string) => symbolForAll(id).ports?.map((port) => [port.id, port.x, port.y]);
+    expect(ports("schematic.radiator")).toEqual([
+      ["in", 4, 17],
+      ["out", 4, 47],
+    ]);
+    expect(ports("schematic.floor-heating")).toEqual([
+      ["in", 2, 14],
+      ["out", 2, 50],
+    ]);
+    expect(ports("schematic.filter")).toEqual([
+      ["in", 14, 32],
+      ["out", 50, 32],
+    ]);
+    expect(ports("schematic.three-way-valve")).toEqual([
+      ["in", 18, 32],
+      ["out", 46, 32],
+      ["branch", 32, 46],
+    ]);
+    expect(ports("schematic.circulation-pump")).toEqual([
+      ["in", 16, 32],
+      ["out", 48, 32],
+    ]);
+  });
+
+  it("registers the added valve and switch symbols", () => {
+    expect(symbolForAll("schematic.valve").category).toBe("valve");
+    expect(symbolForAll("schematic.valve").tagPrefix).toBe("V");
+    expect(symbolForAll("schematic.three-way-check-valve").tagPrefix).toBe("3BV");
+    expect(symbolForAll("schematic.three-way-check-valve").ports).toHaveLength(3);
+    expect(symbolForAll("schematic.switch-1p").category).toBe("control");
+    expect(symbolForAll("schematic.switch-1p").tagPrefix).toBe("S1");
+    expect(symbolForAll("schematic.switch-3p").tagPrefix).toBe("S3");
+  });
+
+  it("draws the check valve seat band as a filled shape", () => {
+    const filled = (id: string) =>
+      symbolForAll(id).art.shapes.some((shape) => shape.stroke !== true);
+    expect(filled("schematic.check-valve")).toBe(true);
+    expect(filled("schematic.three-way-check-valve")).toBe(true);
+    expect(filled("schematic.valve")).toBe(false);
+    expect(filled("schematic.three-way-valve")).toBe(false);
+  });
+
   it("keeps schematic strokes at one page-space weight at every symbol size", () => {
     const plan = symbolRenderPlan(symbolForAll("schematic.sensor"), "#111111");
     const shape = plan.shapes.find((entry) => entry.stroke);
