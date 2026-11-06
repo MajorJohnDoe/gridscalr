@@ -277,6 +277,8 @@ Use the pen, line, arrow, rectangle, ellipse, highlight, cloud, callout, stamp, 
 
 Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions. The same angle constraint applies when you drag an endpoint of a line or arrow, or a vertex of a pipe/duct, to reshape it.
 
+Every colour swatch has a pipette button. Click it, then click a colour on the drawing to reuse that colour for the selected item, layer, line type or tool. `Esc` cancels the pick.
+
 ### Revision cloud
 
 Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`.

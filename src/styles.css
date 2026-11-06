@@ -1157,6 +1157,41 @@ html[data-platform="macos"] .topbar {
   border-radius: 3px;
 }
 
+.color-control {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.color-pick {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--bg-deep);
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.color-pick:hover:not(:disabled) {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.color-pick:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.is-color-picking,
+.is-color-picking * {
+  cursor: crosshair !important;
+}
+
 .toggle {
   display: inline-flex;
   align-items: center;

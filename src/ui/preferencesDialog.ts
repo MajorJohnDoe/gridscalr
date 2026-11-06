@@ -17,6 +17,7 @@ import {
   type LanguagePreference,
 } from "../i18n";
 import { store } from "../state/store";
+import { colorWithEyedropper } from "./colorPicker";
 import { showModal } from "./dialogs";
 import { el } from "./dom";
 import { loadPanelPreferences } from "./preferences";
@@ -115,7 +116,7 @@ function layersSection(): HTMLElement {
     input.type = "color";
     input.value = value;
     input.setAttribute("aria-label", label);
-    fieldWrap.append(el("span", "field-label", label), input);
+    fieldWrap.append(el("span", "field-label", label), colorWithEyedropper(input, label));
     return { fieldWrap, input };
   };
 
