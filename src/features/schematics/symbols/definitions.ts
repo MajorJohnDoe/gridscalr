@@ -109,7 +109,7 @@ export function sensorFunnel(stemEnd = 54): string {
 }
 
 /** Number of zigzag folds per media path in the heat-exchanger symbol. */
-const HEAT_EXCHANGER_FOLDS = 7;
+const HEAT_EXCHANGER_FOLDS = 5;
 
 /**
  * One counter-flow media path for the heat exchanger. The path enters at
@@ -228,9 +228,10 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
       "vvx",
     ],
     tagPrefix: "VVX",
-    // A water-to-water exchanger: two counter-flow media drawn as mirrored
-    // zigzags inside a rectangular shell. The pipe connections are left to the
-    // user; the ports are snap anchors on the shell edges.
+    // A water-to-water exchanger: two counter-flow media drawn as a close
+    // parallel zigzag through the shell, so the plates read as one double line.
+    // The pipe connections are left to the user; the ports are snap anchors on
+    // the shell edges.
     ports: [
       { id: "primaryIn", x: 18, y: 16, direction: "in" },
       { id: "primaryOut", x: 18, y: 48, direction: "out" },
@@ -239,8 +240,8 @@ export const FIRST_VENTILATION_SYMBOLS: SymbolDefinition[] = [
     ],
     shapes: [
       stroke(rectPath(18, 8, 28, 48)),
-      stroke(heatExchangerMedia(18, 20, 31)),
-      stroke(heatExchangerMedia(46, 44, 33)),
+      stroke(heatExchangerMedia(18, 35, 23)),
+      stroke(heatExchangerMedia(46, 40, 28)),
     ],
   }),
   schematicSymbol({
