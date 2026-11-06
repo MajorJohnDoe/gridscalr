@@ -767,6 +767,7 @@
   "markups.footer": "{count, plural, one {# item} other {# items}} · {selected} selected",
   "context.layerReceives": "Layer that receives new items",
   "context.targetLayer": "Target layer",
+  "context.otherPage": " (other page)",
   "context.targetLocked": "The target layer is locked",
   "context.targetHidden": "The target layer is hidden",
   "context.measureOptionsTitle": "Category, room and measurement options",

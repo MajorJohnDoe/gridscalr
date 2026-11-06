@@ -769,6 +769,7 @@ export type MessageKey =
   | "markups.footer"
   | "context.layerReceives"
   | "context.targetLayer"
+  | "context.otherPage"
   | "context.targetLocked"
   | "context.targetHidden"
   | "context.measureOptionsTitle"

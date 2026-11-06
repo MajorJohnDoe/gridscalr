@@ -767,6 +767,7 @@
   "markups.footer": "{count, plural, one {# objekt} other {# objekt}} · {selected} markerade",
   "context.layerReceives": "Lager som tar emot nya objekt",
   "context.targetLayer": "Mållager",
+  "context.otherPage": " (annan sida)",
   "context.targetLocked": "Mållagret är låst",
   "context.targetHidden": "Mållagret är dolt",
   "context.measureOptionsTitle": "Kategori, rum och mätalternativ",
