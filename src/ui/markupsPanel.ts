@@ -9,8 +9,8 @@ import {
   itemIsVisible,
   layerLockedOnPage,
   layerVisibleOnPage,
-  layersForKind,
   moveItemsToLayer,
+  moveTargetLayers,
 } from "../model/layers";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../model/commands";
 import { formatTimestamp, timestampValue } from "../model/dates";
@@ -637,7 +637,7 @@ function markupRowElement(
   const layerSelect = el("select", "markups-layer-select");
   layerSelect.setAttribute("aria-label", t("markups.layerFor", { name: labelText }));
   layerSelect.title = t("markups.moveLayer");
-  for (const candidate of layersForKind(project, layer.kind)) {
+  for (const candidate of moveTargetLayers(project, layer.kind, [item.page])) {
     const candidateOption = option(candidate.id, candidate.name, candidate.id === layer.id);
     if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.page)) {
       candidateOption.disabled = true;

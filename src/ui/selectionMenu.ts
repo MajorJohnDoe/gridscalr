@@ -5,7 +5,7 @@ import {
   itemIsVisible,
   layerLockedOnPage,
   layerVisibleOnPage,
-  layersForKind,
+  moveTargetLayers,
 } from "../model/layers";
 import { resolveSelection, selectionKind } from "../model/selection";
 import { INSPECTION_STATUSES, inspectionStatusLabel } from "../model/symbols";
@@ -81,11 +81,12 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     },
   );
 
-  const targets = kind ? layersForKind(project, kind) : [];
+  const pages = resolved.map((entry) => entry.item.page);
+  const targets = kind ? moveTargetLayers(project, kind, pages) : [];
   const layerChoices = targets.filter(
     (layer) => !resolved.every((entry) => entry.layer.id === layer.id),
   );
-  if (layerChoices.length > 1) {
+  if (layerChoices.length > 0) {
     items.push(
       { separator: true },
       {

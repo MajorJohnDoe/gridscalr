@@ -18,6 +18,7 @@ import {
   layersForKind,
   moveItemToLayer,
   moveLayer,
+  moveTargetLayers,
   normalizeLayerOrder,
   removeItem,
   removeLayer,
@@ -212,6 +213,27 @@ describe("page-scoped layer state", () => {
     expect(layerAppliesToPage(layer, 2)).toBe(false);
     addItem(project, layer.id, makeItem("item_page_2", 2));
     expect(layerAppliesToPage(layer, 2)).toBe(true);
+  });
+
+  it("offers only layers that apply to the given pages as move targets", () => {
+    const project = makeProject();
+    const [pageOne] = layersForKind(project, "draw");
+    pageOne.homePage = 1;
+    addItem(project, pageOne.id, makeItem("item_page_1", 1));
+
+    const emptyOnPageTwo = addLayer(project, "draw", 2);
+
+    const usedOnPageTwo = addLayer(project, "draw", 1);
+    addItem(project, usedOnPageTwo.id, makeItem("item_page_2", 2));
+
+    const ids = (pages: number[]) =>
+      moveTargetLayers(project, "draw", pages).map((layer) => layer.id);
+
+    expect(ids([1])).toEqual([pageOne.id, usedOnPageTwo.id]);
+    expect(ids([2])).toEqual([emptyOnPageTwo.id, usedOnPageTwo.id]);
+    expect(ids([3])).toEqual([]);
+    expect(ids([1, 2])).toEqual([pageOne.id, emptyOnPageTwo.id, usedOnPageTwo.id]);
+    expect(moveTargetLayers(project, "measure", [2])).toEqual([]);
   });
 
   it("creates a new page-scoped layer when every applicable layer is hidden", () => {
