@@ -202,6 +202,21 @@ export function layerAppliesToPage(layer: Layer, page: number): boolean {
   return layer.homePage === page || layer.items.some((item) => item.page === page);
 }
 
+/**
+ * Layers of a kind that can receive items living on the given pages.
+ * Keeps move-to-layer pickers consistent with the page-scoped Layers list.
+ */
+export function moveTargetLayers(
+  project: Project,
+  kind: LayerKind,
+  pages: Iterable<number>,
+): Layer[] {
+  const pageList = [...pages];
+  return layersForKind(project, kind).filter((layer) =>
+    pageList.some((page) => layerAppliesToPage(layer, page)),
+  );
+}
+
 function pruneLayerPageState(layer: Layer, key: string): void {
   if (!layer.pageState) return;
   const state = layer.pageState[key];

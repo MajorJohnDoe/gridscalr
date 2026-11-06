@@ -25,8 +25,8 @@ import {
   itemIsVisible,
   layerLockedOnPage,
   layerVisibleOnPage,
-  layersForKind,
   moveItemToLayer,
+  moveTargetLayers,
 } from "../model/layers";
 import { itemKindLabel, itemMetrics, itemNeedsPageScale, itemScaleWarning } from "../model/measure";
 import { clampLabelSize, LABEL_MAX_SIZE, LABEL_MIN_SIZE } from "../model/label";
@@ -962,10 +962,11 @@ export function selectionSection(
   const layerField = el("label", "field");
   layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
   const layerSelect = el("select", "select");
-  for (const candidate of layersForKind(project, layer.kind)) {
+  const layerCandidates = moveTargetLayers(project, layer.kind, [item.page]);
+  for (const candidate of layerCandidates) {
     layerSelect.append(option(candidate.id, candidate.name, candidate.id === layer.id));
   }
-  layerSelect.disabled = locked || layersForKind(project, layer.kind).length < 2;
+  layerSelect.disabled = locked || layerCandidates.length < 2;
   layerSelect.addEventListener("change", () => {
     store.mutate((project) => {
       moveItemToLayer(project, layer.id, item.id, layerSelect.value);
@@ -1066,7 +1067,11 @@ function multiSelectionSection(
     layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
     const layerSelect = el("select", "select");
     layerSelect.append(option("", t("inspector.chooseLayer"), true));
-    for (const candidate of layersForKind(project, kind)) {
+    for (const candidate of moveTargetLayers(
+      project,
+      kind,
+      resolved.map((entry) => entry.item.page),
+    )) {
       if (candidate.locked) continue;
       if (resolved.every((entry) => entry.layer.id === candidate.id)) continue;
       layerSelect.append(option(candidate.id, candidate.name, false));
