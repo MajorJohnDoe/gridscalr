@@ -863,6 +863,29 @@ export function selectionSection(
     styleRow.append(sizeField);
     section.append(styleRow);
 
+    if (item.kind === "rect" || item.kind === "ellipse") {
+      const fillRow = el("label", "check-row");
+      const fillToggle = el("input");
+      fillToggle.type = "checkbox";
+      fillToggle.checked = Boolean(item.fillColor);
+      fillToggle.disabled = locked;
+      fillToggle.addEventListener("change", () => {
+        store.mutate((project) => {
+          const target = findItem(project, item.id)?.item;
+          if (!target) return;
+          if (fillToggle.checked) {
+            target.fillColor = target.fillColor ?? target.color;
+            target.opacity = target.opacity ?? store.ui.style.fillOpacity;
+          } else {
+            delete target.fillColor;
+          }
+          target.updatedAt = new Date().toISOString();
+        }, "change");
+      });
+      fillRow.append(fillToggle, el("span", "", t("context.fill")));
+      section.append(fillRow);
+    }
+
     if (item.kind === "volume") {
       const depthField = el("label", "field");
       depthField.append(el("span", "field-label", t("dialogs.depth.label")));
@@ -892,7 +915,13 @@ export function selectionSection(
       section.append(depthField);
     }
 
-    if (isMeasurementKind(item.kind) || item.kind === "polyline" || item.kind === "line") {
+    if (
+      isMeasurementKind(item.kind) ||
+      item.kind === "polyline" ||
+      item.kind === "line" ||
+      item.kind === "rect" ||
+      item.kind === "ellipse"
+    ) {
       const lineField = el("label", "field");
       lineField.append(el("span", "field-label", t("inspector.lineStyle")));
       const lineStyle = el("select", "select");

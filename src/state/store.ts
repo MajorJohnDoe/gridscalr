@@ -94,6 +94,10 @@ export interface DrawStyle {
   strokeWidth: number;
   fillOpacity: number;
   fontSize: number;
+  /** Fill mode for new rectangles and ellipses. */
+  shapeFill: "outline" | "filled";
+  /** Whether new shape outlines are dashed. */
+  dashed: boolean;
 }
 
 export interface UIState {
@@ -207,6 +211,8 @@ function defaultUI(): UIState {
       strokeWidth: DEFAULT_DRAWING_STROKE_WIDTH,
       fillOpacity: 0.15,
       fontSize: 12,
+      shapeFill: "outline",
+      dashed: false,
     },
     stampText: "APPROVED",
     deltaText: "A",

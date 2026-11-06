@@ -2698,10 +2698,11 @@ export class CanvasView {
         : undefined;
       const highlightShape =
         kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
+      const shapeLike = kind === "rect" || kind === "ellipse";
+      const filledShape = !isMeasure && shapeLike && style.shapeFill === "filled";
       const filled =
         !isMeasure &&
-        (kind === "rect" ||
-          kind === "ellipse" ||
+        (filledShape ||
           kind === "stamp" ||
           kind === "delta" ||
           (kind === "highlight" && highlightShape !== "stroke"));
@@ -2743,8 +2744,7 @@ export class CanvasView {
         fillColor: cloudPreset ?? (filled ? style.color : undefined),
         opacity:
           !isMeasure &&
-          (kind === "rect" ||
-            kind === "ellipse" ||
+          (filledShape ||
             kind === "stamp" ||
             kind === "delta" ||
             cloudPreset !== null ||
@@ -2761,7 +2761,8 @@ export class CanvasView {
         textColor: kind === "textbox" ? "#1a2024" : undefined,
         padding: kind === "textbox" ? 4 : undefined,
         lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
-        lineStyle: lineLike && lineStyle?.dashed ? "dashed" : undefined,
+        lineStyle:
+          (lineLike && lineStyle?.dashed) || (shapeLike && style.dashed) ? "dashed" : undefined,
         rows: kind === "rail" ? defaultRailRows("plc") : undefined,
         rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
         fontSize: textLike ? style.fontSize : undefined,
@@ -3779,7 +3780,11 @@ export class CanvasView {
           ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
           ctx.restore();
         }
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
         ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
+        ctx.setLineDash([]);
         break;
       }
       case "ellipse": {
@@ -3802,7 +3807,11 @@ export class CanvasView {
           ctx.fill();
           ctx.restore();
         }
+        if (item.lineStyle === "dashed") {
+          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
+        }
         ctx.stroke();
+        ctx.setLineDash([]);
         break;
       }
       case "cloud": {

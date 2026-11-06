@@ -52,7 +52,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       const label =
         tool.id === "line" || tool.id === "polyline"
           ? t("context.lineOptions")
-          : t("context.variants");
+          : family?.id === "rect-ellipse"
+            ? t("context.shapeOptions")
+            : t("context.variants");
       variants.innerHTML = `${icon("chevronDown", 12)}<span>${label}</span>`;
       variants.addEventListener("click", () => {
         if (family) openToolFamilyVariants(variants, family);
