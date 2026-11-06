@@ -9,6 +9,7 @@ import {
   sensorFunnel,
   smallCircle,
   stroke,
+  valvePorts,
 } from "./definitions";
 
 /**
@@ -24,10 +25,8 @@ const PORTS_INLINE = () => [
 
 function valveBody(): string {
   return joinPaths(
-    linePath(2, 32, 18, 32),
     polyPath([18, 22, 32, 32, 18, 42], true),
     polyPath([46, 22, 32, 32, 46, 42], true),
-    linePath(46, 32, 62, 32),
   );
 }
 
@@ -183,14 +182,12 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     keywords: ["fyravägsventil", "four-way valve", "4-väg", "ventil", "4v"],
     tagPrefix: "4V",
     ports: [
-      { id: "top", x: 32, y: 2, direction: "both" },
-      { id: "bottom", x: 32, y: 62, direction: "both" },
-      { id: "left", x: 2, y: 32, direction: "both" },
-      { id: "right", x: 62, y: 32, direction: "both" },
+      { id: "top", x: 32, y: 20, direction: "both" },
+      { id: "bottom", x: 32, y: 44, direction: "both" },
+      { id: "left", x: 20, y: 32, direction: "both" },
+      { id: "right", x: 44, y: 32, direction: "both" },
     ],
     shapes: [
-      stroke(joinPaths(linePath(2, 32, 20, 32), linePath(44, 32, 62, 32))),
-      stroke(joinPaths(linePath(32, 2, 32, 20), linePath(32, 44, 32, 62))),
       stroke(
         joinPaths(
           polyPath([20, 24, 32, 32, 20, 40], true),
@@ -214,7 +211,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["handmanövrerad ventil", "hand valve", "ventil", "hand"],
     tagPrefix: "HV",
-    ports: PORTS_INLINE(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 12), linePath(24, 12, 40, 12))),
@@ -225,7 +222,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["magnetventil", "solenoid valve", "ventil", "magnet", "mv"],
     tagPrefix: "MV",
-    ports: PORTS_INLINE(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 16), smallCircle(32, 10, 5))),
@@ -237,7 +234,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     category: "valve",
     keywords: ["självverkande ventil", "self-acting valve", "ventil", "självverkande"],
     tagPrefix: "SV",
-    ports: PORTS_INLINE(),
+    ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
       stroke(joinPaths(linePath(32, 22, 32, 16), smallCircle(32, 10, 5))),

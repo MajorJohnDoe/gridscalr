@@ -367,6 +367,7 @@ Select a text note, arrow, rectangle, ellipse, or other drawing item to reveal h
 
 - Drag a corner or edge handle to resize. Text and stamp corner handles scale the font size; symbol corner handles scale the sign plate.
 - Drag the round handle above the selection to rotate. Hold `Shift` to snap to 15° increments.
+- With two or more items selected, a group box with corner handles appears. Drag a corner to scale the whole selection uniformly. Text and labels scale with it; line weights, opacity and rotation stay unchanged.
 - Line, arrow, pen, and highlight rotation is baked into their points; text, rectangles, and ellipses store a rotation angle.
 - Measurement geometry stays vertex-editable from its points. Rectangle and ellipse quick areas expose their two opposite defining points and have no rotation handle.
 
@@ -404,7 +405,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
 - Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.
 - Each symbol has a suggested tag prefix such as `FF`, `VVX` or `GT`. Enter any free text in **Tag** in Properties; the tag follows the symbol and its offset can be adjusted. Nothing is numbered automatically.
-- Ports mark pipe, duct and cable connection points for snapping and review. Some symbols, such as the heat exchanger, deliberately have no connection lines in the artwork; draw the pipe or duct line yourself and snap it to a port.
+- Ports mark pipe, duct and cable connection points for snapping and review. Schematic symbols do not draw their own pipe or duct connection stubs; draw the pipe or duct line yourself and snap it to a port on the symbol body.
 - Connection dots, arrows, references and tag holders live in **General**. **Flow arrow** is a small chevron you can place and rotate on a pipe to show flow direction; it is a symbol, so it follows the drawing layer and the same visibility and export rules as other symbols.
 - The expansion vessel is a domed cylinder with a bottom connection. It is available as the standard **Expansion vessel**, **Expansion vessel, large** and **Expansion vessel, small**, placing at 40, 56 and 26 pt by default. All three can still be resized.
 

@@ -56,6 +56,14 @@ export function ductPorts(y = 32): SymbolPort[] {
   ];
 }
 
+/** Inline ports on the visible valve body edges, without connection stubs. */
+export function valvePorts(): SymbolPort[] {
+  return [
+    { id: "in", x: 18, y: 32, direction: "in" },
+    { id: "out", x: 46, y: 32, direction: "out" },
+  ];
+}
+
 interface SchematicDefinitionInput {
   id: string;
   category: SchematicSymbolCategory;
