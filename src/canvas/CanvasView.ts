@@ -3703,19 +3703,6 @@ export class CanvasView {
           ctx.fill();
         }
         ctx.restore();
-        if (item.tag) {
-          const tagPosition = symbolTagPosition(item);
-          if (tagPosition) {
-            const screen = this.toScreen(tagPosition);
-            ctx.save();
-            ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
-            ctx.fillStyle = "#111111";
-            ctx.textAlign = "left";
-            ctx.textBaseline = "top";
-            ctx.fillText(item.tag, screen.x, screen.y);
-            ctx.restore();
-          }
-        }
         break;
       }
       case "pen": {
@@ -4148,6 +4135,25 @@ export class CanvasView {
       }
     }
     ctx.restore();
+
+    if (item.kind === "symbol" && item.tag) {
+      // The tag stays horizontal while the glyph turns: rotate its anchor
+      // position around the symbol centre, then draw plain screen text.
+      const tagPosition = symbolTagPosition(item);
+      if (tagPosition) {
+        const rotation = itemRotation(item);
+        const point =
+          rotation === 0 ? tagPosition : rotatePoint(tagPosition, itemCenter(item), rotation);
+        const screen = this.toScreen(point);
+        ctx.save();
+        ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
+        ctx.fillStyle = "#111111";
+        ctx.textAlign = "left";
+        ctx.textBaseline = "top";
+        ctx.fillText(item.tag, screen.x, screen.y);
+        ctx.restore();
+      }
+    }
 
     if (isMeasurementKind(item.kind)) {
       const layout = labels.get(item.id);

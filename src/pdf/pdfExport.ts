@@ -1547,7 +1547,8 @@ function drawSymbolItem(
   if (item.tag) {
     const tagPosition = symbolTagPosition(item);
     if (tagPosition) {
-      const point = toPdfPoint(viewport, tagPosition);
+      const rotated = rotation === 0 ? tagPosition : rotatePoint(tagPosition, anchor, rotation);
+      const point = toPdfPoint(viewport, rotated);
       page.drawText(item.tag, {
         x: point.x,
         y: point.y - SYMBOL_TAG_FONT_SIZE,
