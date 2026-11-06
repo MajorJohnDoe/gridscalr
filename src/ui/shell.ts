@@ -132,7 +132,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   toolRail.setAttribute("aria-orientation", "vertical");
   let lastGroup = "";
   for (const tool of TOOLS) {
-    if (tool.hidden) continue;
+    if (tool.libraryOnly) continue;
     if (lastGroup && tool.group !== lastGroup) {
       toolRail.append(el("div", "tool-separator"));
     }

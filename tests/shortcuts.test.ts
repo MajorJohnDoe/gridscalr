@@ -4,7 +4,7 @@ import { TOOLS } from "../src/ui/toolDefs";
 
 describe("shortcut definitions", () => {
   it("covers every visible tool with a unique shortcut", () => {
-    const visible = TOOLS.filter((tool) => !tool.hidden);
+    const visible = TOOLS.filter((tool) => !tool.libraryOnly);
     expect(Object.keys(TOOL_SHORTCUTS).sort()).toEqual(visible.map((tool) => tool.id).sort());
     const keys = Object.values(TOOL_SHORTCUTS) as string[];
     expect(new Set(keys.map((key) => key.toLowerCase())).size).toBe(keys.length);
@@ -15,7 +15,7 @@ describe("shortcut definitions", () => {
     for (const tool of TOOLS) {
       const key = TOOL_SHORTCUTS[tool.id];
       if (key) expect(TOOL_KEYS[key.toLowerCase()]).toBe(tool.id);
-      else expect(tool.hidden).toBe(true);
+      else expect(tool.libraryOnly).toBe(true);
       expect(tool.shortcut).toBe(key);
     }
   });

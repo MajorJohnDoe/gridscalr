@@ -9,8 +9,8 @@ export interface ToolDef {
   shortcut?: string;
   hint: MessageKey;
   group: "nav" | "measure" | "draw";
-  /** Kept for shortcuts and internal use, but not listed in the tool rail. */
-  hidden?: boolean;
+  /** Available from the symbol library instead of the tool rail. */
+  libraryOnly?: boolean;
 }
 
 export const TOOLS: ToolDef[] = [
@@ -189,7 +189,7 @@ export const TOOLS: ToolDef[] = [
     shortcut: TOOL_SHORTCUTS.rail,
     hint: "tool.rail.hint",
     group: "draw",
-    hidden: true,
+    libraryOnly: true,
   },
   {
     id: "cloud",
