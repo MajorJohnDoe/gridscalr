@@ -99,8 +99,9 @@ export function colorWithEyedropper(input: HTMLInputElement, label?: string): HT
   const wrap = el("span", "color-control");
   const button = el("button", "color-pick");
   button.type = "button";
-  button.title = label ?? t("colour.pickFromCanvas");
-  button.setAttribute("aria-label", button.title);
+  const pickLabel = t("colour.pickFromCanvas");
+  button.title = label ? `${pickLabel} · ${label}` : pickLabel;
+  button.setAttribute("aria-label", pickLabel);
   button.innerHTML = icon("eyedropper", 13);
   const syncDisabled = () => {
     button.disabled = input.disabled;
