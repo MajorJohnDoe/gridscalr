@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(114);
-    expect(ALL_SYMBOLS).toHaveLength(166);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(115);
+    expect(ALL_SYMBOLS).toHaveLength(167);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(114);
+    expect(symbolsForSet("schematic")).toHaveLength(115);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -313,6 +313,13 @@ describe("schematic symbol set", () => {
         id,
       ).toBe(true);
     }
+  });
+
+  it("offers a two-port single-lever mixer", () => {
+    const mixer = symbolForAll("schematic.single-lever-mixer");
+    expect(mixer.category).toBe("domestic-water");
+    expect(mixer.ports).toHaveLength(2);
+    expect(symbolDefaultSize("schematic.single-lever-mixer")).toBe(40);
   });
 
   it("offers standard, large and small expansion vessels", () => {

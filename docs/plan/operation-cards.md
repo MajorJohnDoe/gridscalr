@@ -647,7 +647,7 @@ can be drawn using only the library; tags move with their symbols.
 Outcome:
 
 - The first ten ventilation symbols were reviewed in the generated catalogue. The
-  full set now contains 114 stroke-only schematic symbols across instruments,
+  full set now contains 115 stroke-only schematic symbols across instruments,
   valves, pumps, heat exchangers, ventilation, heating, district heating, cooling,
   domestic water, control/electrical and general categories. A later review aligned
   the existing artwork with the reference convention pages and added the missing

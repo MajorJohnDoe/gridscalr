@@ -227,7 +227,7 @@ src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
-src/features/schematics/symbols/library.ts full 114-symbol schematic set
+src/features/schematics/symbols/library.ts full 115-symbol schematic set
 src/features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
 src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action

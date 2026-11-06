@@ -1353,6 +1353,7 @@
   "symbol.schematic.chiller": "Kylmaskin",
   "symbol.schematic.water-heater": "Varmvattenberedare",
   "symbol.schematic.mixing-valve": "Blandningsventil",
+  "symbol.schematic.single-lever-mixer": "Enspaksblandare",
   "symbol.schematic.domestic-water-pump": "Tappvattenpump",
   "symbol.schematic.control-cabinet": "Styrskåp",
   "symbol.schematic.plc": "PLC / DUC",

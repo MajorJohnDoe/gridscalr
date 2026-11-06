@@ -696,6 +696,38 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     shapes: [stroke(joinPaths(polyPath([20, 18, 46, 32, 20, 46], true), linePath(28, 20, 28, 44)))],
   }),
   schematicSymbol({
+    id: "schematic.single-lever-mixer",
+    category: "domestic-water",
+    keywords: [
+      "enspaksblandare",
+      "blandare",
+      "kran",
+      "mixer",
+      "single lever mixer",
+      "tap",
+      "faucet",
+      "tappvatten",
+    ],
+    tagPrefix: "K",
+    ports: [
+      { id: "hot", x: 24.5, y: 52, direction: "in" },
+      { id: "cold", x: 39.5, y: 52, direction: "in" },
+    ],
+    shapes: [
+      stroke(
+        joinPaths(
+          roundedRectPathData(16, 40, 32, 7, 2),
+          roundedRectPathData(21, 47, 7, 5, 1),
+          roundedRectPathData(36, 47, 7, 5, 1),
+          "M 32 40 V 20 C 32 12 46 12 48 18 L 48 27",
+          "M 45 27 H 52",
+          linePath(32, 38, 38, 33),
+        ),
+      ),
+      fill(smallCircle(32, 38, 2.2)),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.domestic-water-pump",
     category: "domestic-water",
     keywords: ["tappvattenpump", "domestic water pump", "pump", "tappvatten", "tp"],
