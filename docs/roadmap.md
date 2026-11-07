@@ -63,7 +63,7 @@ milestone:
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | 0.17.0 | Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation | Complete | v21 |
 | **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Complete** | v22 |
-| **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 119 schematic symbols and a fit-to-area action** | **Complete** | v23 |
+| **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 156 schematic symbols and a fit-to-area action** | **Complete** | v23 |
 | **0.19.0** | **Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer** | **Complete** | v23 |
 | **0.20.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v23 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
@@ -156,7 +156,7 @@ Deliverables:
 - Wrapped text boxes with an optional white background and per-range rich text
 - Configurable I/O rails with reorderable rows, polyline drawing with an ortho
   constraint and editable media line types
-- 119 schematic symbols with tags, ports and a generated review catalogue
+- 156 schematic symbols with tags, ports and a generated review catalogue
 - Drawing-area overflow warning and an undoable fit-to-area action
 
 The locked decisions, phases and acceptance criteria live in
