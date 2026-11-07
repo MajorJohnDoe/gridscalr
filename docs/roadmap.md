@@ -6,7 +6,7 @@ Detailed planning documents from the implementation period live in
 [`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
 Swedish.
 
-Current version: **0.20.0** · Project-file schema: **23**
+Current version: **0.21.0** · Project-file schema: **23**
 
 1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
 packages, and tested large-project performance. The 1.0 architecture decisions are
@@ -67,6 +67,7 @@ milestone:
 | **0.19.0** | **Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer** | **Complete** | v23 |
 | **0.19.3** | **Blank A3/A2 pages and 37 additional schematic symbols; valve-stem and circulation-pump fixes; symbol libraries split by category** | **Complete** | v23 |
 | **0.20.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Complete** | v23 |
+| **0.21.0** | **PDF export, editor and App-flow splits; light, grey and navy themes with System mode** | **Complete** | v23 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
 
 Schema history and migration rules are documented in
