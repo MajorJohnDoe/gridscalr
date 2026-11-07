@@ -97,7 +97,21 @@ src/
   state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
-  pdf/pdfExport.ts       flattened vector PDF export with embedded text fonts
+  pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
+  pdf/export/options.ts  export page range and crop normalization
+  pdf/export/page.ts     crop application and calibration line drawing
+  pdf/export/fonts.ts    embedded font set and run selection
+  pdf/export/images.ts   image asset embedding
+  pdf/export/geometry.ts PDF point, angle, colour and path helpers
+  pdf/export/labels.ts   measurement labels, leaders and panels
+  pdf/export/legend.ts   legend page and count glyphs
+  pdf/export/items/dispatch.ts item-family switch
+  pdf/export/items/measurement.ts length, angle, slope, radius, diameter, arc, area and volume
+  pdf/export/items/shapes.ts pen, line, arrow, rectangle, ellipse, highlight, polyline, rail
+  pdf/export/items/text.ts text, textbox and rich text
+  pdf/export/items/symbols.ts symbol artwork, tags and inspection badges
+  pdf/export/items/counts.ts count symbols and glyphs
+  pdf/export/items/annotations.ts callout, stamp, delta, cloud labels and panels
   pdf/reportPdf.ts       print-friendly A4 quantity report built with pdf-lib
   pdf/comparePdf.ts      side-by-side reference PDF with visuals and an optional diff table
   report/reportModel.ts  pure quantity report model shared by CSV, XLSX and PDF
