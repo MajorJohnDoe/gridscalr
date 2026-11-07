@@ -1,10 +1,13 @@
 import { store, type ToolId } from "../../state/store";
+import { t } from "../../i18n";
+import { toast } from "../../ui/toast";
 import { TouchNavigation } from "../touchNavigation";
 import type { Point } from "../../model/types";
 import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
+import { commitLabelConnection, openContextMenu } from "./contextMenu";
 import { handleCreationDown } from "./creation";
 import { handleDoubleClick } from "./doubleClick";
 import { applyDragState } from "./drag";
@@ -26,6 +29,7 @@ export class PointerController {
   private pan: PanState | null = null;
   private marquee: MarqueeState | null = null;
   private drag: DragState | null = null;
+  private labelConnect: { itemId: string; layerId: string } | null = null;
   private penActive = false;
   private lastPenAt = 0;
   private readonly touchNavigation: TouchNavigation;
@@ -49,6 +53,58 @@ export class PointerController {
       capturePointer: (pointerId) => this.capturePointer(pointerId),
       releasePointer: (pointerId) => this.releasePointer(pointerId),
     });
+  }
+
+  get labelConnectActive(): boolean {
+    return this.labelConnect !== null;
+  }
+
+  contextMenu(event: MouseEvent): void {
+    event.preventDefault();
+    if (this.longPressFired) return;
+    this.cancelTouchLongPress();
+    openContextMenu(event.clientX, event.clientY, this.contextMenuContext());
+  }
+
+  beginLabelConnection(itemId: string, layerId: string): void {
+    this.labelConnect = { itemId, layerId };
+    toast(t("canvas.connectionHint"), "info");
+    this.element.focus({ preventScroll: true });
+    this.updateCursor();
+  }
+
+  commitLabelConnection(page: Point): void {
+    const connect = this.labelConnect;
+    this.labelConnect = null;
+    commitLabelConnection(page, connect, this.contextMenuContext());
+  }
+
+  cancelLabelConnection(): void {
+    this.labelConnect = null;
+  }
+
+  private contextMenuContext() {
+    return {
+      cropActive: () => this.host.cropActive(),
+      localFromClient: (clientX: number, clientY: number) => this.localFromClient(clientX, clientY),
+      toPage: (screen: Point) => this.host.toPage(screen),
+      viewPage: () => this.host.viewPage(),
+      viewZoom: () => this.host.viewZoom(),
+      measurementLabelHit: (screen: Point) => this.host.measurementLabelHit(screen),
+      isLocked: (
+        item: Parameters<typeof this.host.isLocked>[0],
+        layer: Parameters<typeof this.host.isLocked>[1],
+      ) => this.host.isLocked(item, layer),
+      selectItem: (layerId: string, itemId: string) => this.host.selectItem(layerId, itemId),
+      openHostContextMenu: (position: { page: Point; clientX: number; clientY: number }) =>
+        this.host.openContextMenu(position.clientX, position.clientY),
+      beginLabelConnection: (itemId: string, layerId: string) =>
+        this.beginLabelConnection(itemId, layerId),
+      promptVolumeDepth: (ref: { layerId: string; itemId: string } | null) =>
+        this.host.promptVolumeDepth(ref),
+      updateCursor: () => this.updateCursor(),
+      drawInteraction: () => this.host.drawInteraction(),
+    };
   }
 
   get touchBlocked(): boolean {
@@ -155,7 +211,7 @@ export class PointerController {
       } else if (drag.mode === "vertex") cursor = "crosshair";
       else if (drag.mode === "measurement-label-size") cursor = "nwse-resize";
       else cursor = "move";
-    } else if (this.host.labelConnectActive()) cursor = "crosshair";
+    } else if (this.labelConnect) cursor = "crosshair";
     else if (this.spaceDown || tool === "pan") cursor = "grab";
     else if (this.marquee) cursor = "crosshair";
     else if (this.host.hoverLabelResize()) cursor = "nwse-resize";
