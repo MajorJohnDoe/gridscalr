@@ -10,7 +10,7 @@
 - There is no cloud sync, collaboration, or automatic update service.
 - Form fields and embedded PDF annotations are not editable.
 - Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
-- Snapping targets markup endpoints, midpoints, intersections, I/O rail rows and, on operation-card sheets, a 5 mm grid for the Pipe / duct tool. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
+- Snapping targets markup endpoints, midpoints, intersections and I/O rail rows. Snapping directly to the PDF drawing's vector geometry is a separate future feature.
 - Schematic pipes do not build a connectivity graph. There is no automatic cable routing, junction detection or I/O extraction; control cables snap to rail rows and connection dots are placed explicitly.
 - The line-type editor renames, recolours, reweights, adds and removes project media classes. A line type sets the colour, width and dash when a run is created; editing or deleting a class later does not restyle existing runs, so old drawings remain stable. Line type names and colours are project data, not a shared company standard.
 - **Outside drawing area** and its fit action apply to template sheets. The action scales down and centres unlocked, visible objects; locked objects are left in place. Drawings on imported PDF pages have no sheet drawing area to fit into.
