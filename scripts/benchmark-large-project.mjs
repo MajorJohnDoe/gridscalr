@@ -141,6 +141,17 @@ try {
     },
     { targetItems: itemCount, targetPages: pageCount, targetImages: imageCount },
   );
+  const markupsStarted = performance.now();
+  await page.keyboard.press("Control+l");
+  await page.locator(".markups-panel").waitFor({ state: "visible" });
+  await page.locator(".markups-table tbody tr.markups-row").first().waitFor();
+  const markupsOpenMs = performance.now() - markupsStarted;
+  const renderedRows = await page.locator(".markups-table tbody tr.markups-row").count();
+  result.markups = {
+    openMs: Number(markupsOpenMs.toFixed(1)),
+    renderedRows,
+    totalRows: result.items + result.images,
+  };
   console.log(JSON.stringify(result, null, 2));
 } finally {
   await browser.close();

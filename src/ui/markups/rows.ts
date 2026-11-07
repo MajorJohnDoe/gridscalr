@@ -238,6 +238,8 @@ export function markupRowElement(
   columns: MarkupsColumnId[],
   actions: PanelActions,
   refreshRows: () => void,
+  /** Every rendered row in display order; the table itself is virtualised. */
+  rowOrder: MarkupRow[] = [],
 ): HTMLTableRowElement {
   const project = store.project!;
   const { item, layer } = row;
@@ -444,9 +446,15 @@ export function markupRowElement(
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, select, input, textarea")) return;
     if (event.shiftKey) {
-      const rows = Array.from(
-        (tr.closest("tbody") ?? document).querySelectorAll<HTMLElement>("tr.markups-row"),
-      ).map((row) => ({ layerId: row.dataset.layerId ?? "", itemId: row.dataset.itemId ?? "" }));
+      const source = rowOrder.length
+        ? rowOrder.map((entry) => ({ layerId: entry.layer.id, itemId: entry.item.id }))
+        : Array.from(
+            (tr.closest("tbody") ?? document).querySelectorAll<HTMLElement>("tr.markups-row"),
+          ).map((row) => ({
+            layerId: row.dataset.layerId ?? "",
+            itemId: row.dataset.itemId ?? "",
+          }));
+      const rows = source;
       const anchor = markupsState.rangeAnchor ?? ref;
       const start = rows.findIndex((entry) => selectionKey(entry) === selectionKey(anchor));
       const end = rows.findIndex((entry) => selectionKey(entry) === selectionKey(ref));

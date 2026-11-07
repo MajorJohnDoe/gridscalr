@@ -13,7 +13,7 @@ import {
   markupsGroupPresetLabel,
 } from "../../model/markups";
 import type { MarkupGroup } from "../../model/markups";
-import type { MarkupsColumnId, SymbolCategory } from "../../model/types";
+import type { SymbolCategory } from "../../model/types";
 import { store } from "../../state/store";
 import { confirmDialog } from "../dialogs";
 import { clear, el, option } from "../dom";
@@ -40,6 +40,9 @@ import {
   syncProject,
   updateViewControls,
 } from "./views";
+
+const MARKUPS_ROW_HEIGHT = 28;
+const MARKUPS_OVERSCAN = 8;
 
 export function bindResizer(refs: ShellRefs): void {
   if (markupsState.resizerBound) return;
@@ -372,6 +375,90 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   panel.append(foot);
 
   let rows: MarkupRow[] = [];
+  let displayEntries: MarkupDisplayEntry[] = [];
+  let flatRows: MarkupRow[] = [];
+  let tbody: HTMLElement | null = null;
+  let windowFrame = 0;
+  let renderedStart = -1;
+  let renderedEnd = -1;
+
+  function flattenGroups(groups: MarkupGroup<MarkupRow>[], level: number): void {
+    for (const group of groups) {
+      displayEntries.push({ type: "group", group, level });
+      if (markupsState.collapsedGroups.has(group.key)) continue;
+      if (group.children.length) {
+        flattenGroups(group.children, level + 1);
+      } else {
+        for (const row of group.rows) {
+          displayEntries.push({ type: "row", row });
+          flatRows.push(row);
+        }
+      }
+    }
+  }
+
+  function appendSpacer(target: HTMLElement, height: number): void {
+    if (height <= 0) return;
+    const row = el("tr", "markups-spacer");
+    const cell = el("td");
+    cell.colSpan = markupsState.settings.columns.length;
+    cell.style.height = `${height}px`;
+    cell.style.padding = "0";
+    cell.style.border = "0";
+    row.append(cell);
+    target.append(row);
+  }
+
+  function renderWindow(): void {
+    if (!tbody) return;
+    const scrollTop = wrap.scrollTop;
+    const scrollLeft = wrap.scrollLeft;
+    clear(tbody);
+    const columns = markupsState.settings.columns;
+    if (!displayEntries.length) {
+      const emptyRow = el("tr", "markups-empty");
+      const cell = el("td");
+      cell.colSpan = columns.length;
+      cell.innerHTML = `${icon("markups", 22)}<div>${t("markups.noMatches")}</div>`;
+      emptyRow.append(cell);
+      tbody.append(emptyRow);
+      wrap.scrollTop = scrollTop;
+      wrap.scrollLeft = scrollLeft;
+      return;
+    }
+    const viewportHeight = wrap.clientHeight || MARKUPS_ROW_HEIGHT * 10;
+    const start = Math.max(0, Math.floor(scrollTop / MARKUPS_ROW_HEIGHT) - MARKUPS_OVERSCAN);
+    const end = Math.min(
+      displayEntries.length,
+      Math.ceil((scrollTop + viewportHeight) / MARKUPS_ROW_HEIGHT) + MARKUPS_OVERSCAN,
+    );
+    // Rebuilding an unchanged window detaches rows under the pointer. Keep the
+    // existing rows when scrolling only moves inside the overscan area.
+    if (start === renderedStart && end === renderedEnd && tbody.childElementCount > 0) return;
+    renderedStart = start;
+    renderedEnd = end;
+    appendSpacer(tbody, start * MARKUPS_ROW_HEIGHT);
+    for (const entry of displayEntries.slice(start, end)) {
+      if (entry.type === "group") {
+        tbody.append(groupRowElement(entry.group, entry.level, columns.length, refreshTable));
+      } else {
+        tbody.append(markupRowElement(entry.row, columns, actions, refreshTable, flatRows));
+      }
+    }
+    appendSpacer(tbody, (displayEntries.length - end) * MARKUPS_ROW_HEIGHT);
+    wrap.scrollTop = scrollTop;
+    wrap.scrollLeft = scrollLeft;
+  }
+
+  function scheduleWindowRender(): void {
+    if (windowFrame) return;
+    windowFrame = requestAnimationFrame(() => {
+      windowFrame = 0;
+      renderWindow();
+    });
+  }
+
+  wrap.addEventListener("scroll", scheduleWindowRender, { passive: true });
 
   function refreshTable(): void {
     clear(table);
@@ -417,27 +504,28 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     }
     thead.append(headerRow);
 
-    const tbody = el("tbody");
+    tbody = el("tbody");
     const currentProject = project!;
     rows = filteredRows(currentProject);
-    if (!rows.length) {
-      const emptyRow = el("tr", "markups-empty");
-      const cell = el("td");
-      cell.colSpan = columns.length;
-      cell.innerHTML = `${icon("markups", 22)}<div>${t("markups.noMatches")}</div>`;
-      emptyRow.append(cell);
-      tbody.append(emptyRow);
-    } else if (markupsState.settings.groupBy.length) {
-      const groups = groupMarkupRows(rows, markupsState.settings.groupBy, (row, field) =>
-        groupValue(row, field, currentProject),
+    displayEntries = [];
+    flatRows = [];
+    if (rows.length && markupsState.settings.groupBy.length) {
+      flattenGroups(
+        groupMarkupRows(rows, markupsState.settings.groupBy, (row, field) =>
+          groupValue(row, field, currentProject),
+        ),
+        0,
       );
-      for (const group of groups) {
-        appendGroup(group, 0, tbody, columns, actions, refreshTable);
-      }
     } else {
-      for (const row of rows) tbody.append(markupRowElement(row, columns, actions, refreshTable));
+      for (const row of rows) {
+        displayEntries.push({ type: "row", row });
+        flatRows.push(row);
+      }
     }
+    renderedStart = -1;
+    renderedEnd = -1;
     table.append(colgroup, thead, tbody);
+    renderWindow();
     count.textContent = String(rows.length);
     footLeft.textContent = t("markups.footer", {
       count: rows.length,
@@ -448,20 +536,22 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   refreshTable();
   wrap.scrollTop = previousScroll;
+  renderWindow();
 }
 
-export function appendGroup(
+type MarkupDisplayEntry =
+  { type: "group"; group: MarkupGroup<MarkupRow>; level: number } | { type: "row"; row: MarkupRow };
+
+function groupRowElement(
   group: MarkupGroup<MarkupRow>,
   level: number,
-  tbody: HTMLElement,
-  columns: MarkupsColumnId[],
-  actions: PanelActions,
+  columnCount: number,
   refreshRows: () => void,
-): void {
+): HTMLTableRowElement {
   const collapsed = markupsState.collapsedGroups.has(group.key);
   const row = el("tr", "markups-group-row");
   const cell = el("td");
-  cell.colSpan = columns.length;
+  cell.colSpan = columnCount;
   cell.style.paddingLeft = `${8 + level * 16}px`;
   const toggle = el("button", "markups-group-toggle");
   toggle.type = "button";
@@ -479,15 +569,5 @@ export function appendGroup(
     el("span", "markups-group-count", String(group.count)),
   );
   row.append(cell);
-  tbody.append(row);
-  if (collapsed) return;
-  if (group.children.length) {
-    for (const child of group.children) {
-      appendGroup(child, level + 1, tbody, columns, actions, refreshRows);
-    }
-    return;
-  }
-  for (const entry of group.rows) {
-    tbody.append(markupRowElement(entry, columns, actions, refreshRows));
-  }
+  return row;
 }
