@@ -16,14 +16,42 @@ const tolerance = {
   maxDiffPixels: Number(process.env.GRIDSCALR_VISUAL_MAX_PIXELS ?? 300),
   maxChannelDelta: Number(process.env.GRIDSCALR_VISUAL_MAX_DELTA ?? 12),
 };
-const baselineDir = resolve(repoRoot, "docs", "screenshots");
+const baselineDir = resolve(repoRoot, "tests", "visual");
+const fontDir = resolve(repoRoot, "node_modules", "pdfjs-dist", "standard_fonts");
+const update = process.argv.includes("--update");
 const failureDir = resolve(repoRoot, "visual-regression-failures");
 
 let browser;
 let vite;
 let failed = false;
 
+async function installVisualFonts(page) {
+  const [regular, bold, italic, boldItalic] = await Promise.all([
+    readFile(resolve(fontDir, "LiberationSans-Regular.ttf")),
+    readFile(resolve(fontDir, "LiberationSans-Bold.ttf")),
+    readFile(resolve(fontDir, "LiberationSans-Italic.ttf")),
+    readFile(resolve(fontDir, "LiberationSans-BoldItalic.ttf")),
+  ]);
+  const face = (data, weight, style) =>
+    `@font-face { font-family: "Inter"; src: url(data:font/ttf;base64,${data.toString("base64")}) format("truetype"); font-weight: ${weight}; font-style: ${style}; }`;
+  await page.addStyleTag({
+    content: [
+      face(regular, 400, "normal"),
+      face(bold, 700, "normal"),
+      face(italic, 400, "italic"),
+      face(boldItalic, 700, "italic"),
+    ].join("\n"),
+  });
+  await page.evaluate(() => document.fonts.ready);
+}
+
 async function compareScreenshot(page, file, actual) {
+  if (update) {
+    await mkdir(baselineDir, { recursive: true });
+    await writeFile(resolve(baselineDir, file), actual);
+    console.log(`${file}: baseline updated`);
+    return;
+  }
   const baseline = await readFile(resolve(baselineDir, file));
   const result = await page.evaluate(
     async ({ actualBase64, baselineBase64 }) => {
@@ -156,6 +184,7 @@ try {
 
   await openDemoProject(page, { base: vite.base });
   await waitForToastsGone(page);
+  await installVisualFonts(page);
 
   await openMarkupsItem(page, "item_floor_living");
   await capture("hero.png");
@@ -196,7 +225,9 @@ try {
 
   assert.equal(failed, false, "Visual regression differences were found.");
   console.log(
-    `Visual regression passed: 4 screens, tolerance ${tolerance.maxDiffPixels} px / ${tolerance.maxChannelDelta} channel.`,
+    update
+      ? "Visual baselines updated: 4 screens."
+      : `Visual regression passed: 4 screens, tolerance ${tolerance.maxDiffPixels} px / ${tolerance.maxChannelDelta} channel.`,
   );
 } catch (error) {
   console.error(error instanceof Error ? error.message : error);

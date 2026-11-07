@@ -42,11 +42,13 @@ checksum mismatch and cancellation.
 - the Quantities dialog (`quantities.png`);
 - the Count types dialog (`count-types.png`).
 
-The committed baselines are the same files in `docs/screenshots/`. The script
-waits for fonts and finite animations before capture, then compares via a canvas
-in Chromium. Default tolerance is 300 differing pixels and a maximum channel
-delta of 12, which absorbs sub-pixel antialiasing but fails on layout, colour and
-label changes. Override only for diagnosis:
+The baselines live in `tests/visual/`. The script loads the bundled Liberation
+Sans regular, bold and italic faces as the UI `Inter` family, so font
+rasterisation is stable between CI and a developer machine. It waits for fonts
+and finite animations before capture, then compares via a canvas in Chromium.
+Default tolerance is 300 differing pixels and a maximum channel delta of 12,
+which absorbs sub-pixel antialiasing but fails on layout, colour and label
+changes. Override only for diagnosis:
 
 ```bash
 GRIDSCALR_VISUAL_MAX_PIXELS=500 GRIDSCALR_VISUAL_MAX_DELTA=16 npm run test:visual
@@ -58,16 +60,16 @@ change pass.
 
 ### Updating baselines
 
-There is no separate visual baseline set. An intentional UI change updates the
-same files through the documentation capture:
+An intentional UI change updates the visual baselines explicitly:
 
 ```bash
-npm run docs:capture
+npm run test:visual -- --update
 ```
 
-Review every changed screenshot before committing it. A capture that differs from
-the previous commit should be explained in the pull request. The final release
-pass uses `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
+Review every changed baseline before committing it. A change that differs from the
+previous commit should be explained in the pull request. Documentation
+screenshots are separate and are refreshed with `npm run docs:capture`; the final
+release pass uses `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
 
 ## What still needs manual visual review
 
