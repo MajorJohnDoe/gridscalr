@@ -77,25 +77,16 @@ export function dispatchItem(
     case "count":
       drawCountItem(ctx, item, state);
       break;
+    case "symbol":
+      drawSymbolItem(ctx, item, state);
+      break;
     case "pen":
     case "highlight":
     case "line":
     case "arrow":
     case "rect":
     case "ellipse":
-    case "polyline":
-    case "rail":
       drawShapeItem(ctx, item, state);
-      break;
-    case "symbol":
-      drawSymbolItem(ctx, item, state);
-      break;
-    case "textbox":
-    case "text":
-      drawTextItem(ctx, item, state);
-      break;
-    case "image":
-      drawImageItem(ctx, item, state);
       break;
     case "cloud":
       drawCloudShape(ctx, item, state);
@@ -105,6 +96,17 @@ export function dispatchItem(
     case "stamp":
     case "delta":
       drawAnnotationItem(ctx, item, state);
+      break;
+    case "polyline":
+    case "rail":
+      drawShapeItem(ctx, item, state);
+      break;
+    case "textbox":
+    case "text":
+      drawTextItem(ctx, item, state);
+      break;
+    case "image":
+      drawImageItem(ctx, item, state);
       break;
   }
   ctx.restore();

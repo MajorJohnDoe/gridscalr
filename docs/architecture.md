@@ -44,7 +44,16 @@ src/
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
   canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG compositing
-  canvas/itemRenderer.ts item and symbol drawing shared by canvas and overlays
+  canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
+  canvas/items/context.ts shared item render context, panel drawer and label helper
+  canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch
+  canvas/items/measurement.ts length, angle, slope, radius, diameter, arc, area and volume drawing
+  canvas/items/shapes.ts pen, line, arrow, rectangle, ellipse, highlight, polyline, rail and cloud shape drawing
+  canvas/items/text.ts text, textbox and rich text drawing
+  canvas/items/symbols.ts symbol artwork, free-text tags and inspection badges
+  canvas/items/images.ts embedded image drawing and opacity
+  canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
+  canvas/items/counts.ts count symbols and count-type glyphs
   canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
   canvas/pointerState.ts drag, marquee and pan gesture state
   canvas/groupHandles.ts group selection handles shared by pointer and renderer

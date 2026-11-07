@@ -239,7 +239,16 @@ src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and 
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
-src/canvas/itemRenderer.ts item and symbol drawing shared by canvas and overlays
+src/canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
+src/canvas/items/context.ts shared item render context, panel drawer and label helper
+src/canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch
+src/canvas/items/measurement.ts length, angle, slope, radius, diameter, arc, area and volume drawing
+src/canvas/items/shapes.ts pen, line, arrow, rectangle, ellipse, highlight, polyline, rail and cloud shape drawing
+src/canvas/items/text.ts text, textbox and rich text drawing
+src/canvas/items/symbols.ts symbol artwork, free-text tags and inspection badges
+src/canvas/items/images.ts embedded image drawing and opacity
+src/canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
+src/canvas/items/counts.ts count symbols and count-type glyphs
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
 src/canvas/pointerState.ts drag, marquee and pan gesture state
 src/canvas/groupHandles.ts group selection handles shared by pointer and renderer
