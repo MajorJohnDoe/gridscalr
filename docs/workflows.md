@@ -128,7 +128,8 @@ Reports always cover every page and every category. Dialog filters only affect t
 When the consultant sends a revised drawing, keep the current takeoff open and choose **File → Compare with revision…**. Select the previous `.gridscalr` file. The reference opens as a read-only session next to the current project. You can also press `Ctrl/Cmd+Shift+2` to open **View → Reference view (same page)**, choose **Revision** in the pane toolbar and use **Open…**.
 
 - Use **Side by side** to check the geometry, or **Overlay** and the opacity slider to line up the revisions.
-- Review **Changed**, **Added** and **Removed** in the panel. Click a row to jump to the item.
+- Keep a detail sheet in the reference pane with its page controls while measuring on another sheet. **Follow primary** returns the reference pane to the current page; zoom and pan stay linked either way.
+- Review **Changed**, **Added** and **Removed** in the panel. Click a row to jump to the item; added and removed items open their page in the reference pane.
 - Read the warnings for page-count, drawing-name and scale differences before trusting the comparison.
 - Choose **Export PDF** for a review file with page visuals, warnings and the difference table.
 

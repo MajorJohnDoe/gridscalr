@@ -51,6 +51,8 @@ export class ReferenceController {
   private pageSizes = new Map<number, PageSize>();
   private sizePromises = new Map<number, Promise<PageSize | undefined>>();
   private sizeEpoch = 0;
+  private referencePage = 1;
+  private followPrimary = true;
 
   constructor(private readonly options: ReferenceControllerOptions) {
     const referenceViewport = { page: 1, zoom: 1, panX: 0, panY: 0 };
@@ -90,7 +92,7 @@ export class ReferenceController {
           };
           const synced = syncViewport(
             {
-              page: store.ui.page,
+              page: this.currentPage(),
               zoom: store.ui.zoom,
               panX: store.ui.panX,
               panY: store.ui.panY,
@@ -113,6 +115,7 @@ export class ReferenceController {
       resizer: options.splitResizer,
       primary: options.primaryCanvas,
       reference: this.view,
+      pagesSynced: () => this.currentPage() === store.ui.page,
     });
     let primaryStart = { zoom: store.ui.zoom, panX: store.ui.panX, panY: store.ui.panY };
     const touch = new TouchNavigation({
@@ -149,6 +152,8 @@ export class ReferenceController {
     this.touchCleanup = touch.attach(options.referenceHost);
     this.pane = new ReferencePaneHeader(options.referencePaneHost, {
       setSource: (source) => this.setSource(source),
+      setPage: (page) => this.setReferencePage(page),
+      toggleFollow: () => this.toggleFollowPrimary(),
       open: () => this.openFromBar(),
       close: () => void this.close(false),
     });
@@ -176,12 +181,40 @@ export class ReferenceController {
   }
 
   onStoreChange(reason: string): void {
+    if (reason === "page" || reason === "project") this.updatePane();
     if (
       this.session &&
       (reason === "change" || reason === "project" || reason === "undo" || reason === "layers")
     ) {
       this.scheduleRefresh();
     }
+  }
+
+  private pageCount(): number {
+    if (this.session) return Math.max(1, this.session.pageCount);
+    return store.project ? Math.max(1, totalPageCount(store.project.documents)) : 1;
+  }
+
+  private currentPage(): number {
+    const requested = this.followPrimary ? store.ui.page : this.referencePage;
+    return Math.max(1, Math.min(this.pageCount(), Math.round(requested)));
+  }
+
+  private setReferencePage(page: number): void {
+    if (!Number.isFinite(page)) return;
+    this.followPrimary = false;
+    this.referencePage = Math.max(1, Math.min(this.pageCount(), Math.round(page)));
+    if (this.session) void this.enqueuePageSize(this.referencePage);
+    else void this.options.ensurePageSize(this.referencePage);
+    this.view.invalidate();
+    this.updatePane();
+  }
+
+  private toggleFollowPrimary(): void {
+    this.followPrimary = !this.followPrimary;
+    if (this.followPrimary) this.referencePage = store.ui.page;
+    this.view.invalidate();
+    this.updatePane();
   }
 
   async openCompare(): Promise<void> {
@@ -249,6 +282,8 @@ export class ReferenceController {
     await this.clearSession();
     this.session = session;
     this.mode = mode;
+    this.referencePage = store.ui.page;
+    this.followPrimary = true;
     this.sizeEpoch += 1;
     this.pageSizes.clear();
     this.sizePromises.clear();
@@ -285,6 +320,8 @@ export class ReferenceController {
   private async enterSamePage(): Promise<void> {
     await this.clearSession();
     this.mode = "same";
+    this.referencePage = store.ui.page;
+    this.followPrimary = true;
     this.pageSizes.clear();
     this.sizePromises.clear();
     this.sizeEpoch += 1;
@@ -315,7 +352,9 @@ export class ReferenceController {
     this.pane.update({
       source: this.mode,
       referenceName: this.session?.name ?? null,
-      pageCount: this.session?.pageCount,
+      page: this.currentPage(),
+      pageCount: this.pageCount(),
+      followPrimary: this.followPrimary,
     });
   }
 
@@ -386,27 +425,36 @@ export class ReferenceController {
   private async selectDiffItem(item: DiffItem): Promise<void> {
     const project = store.project;
     if (!project) return;
-    if (item.page > totalPageCount(project.documents)) {
-      toast(t("reference.pageOnlyInRevision", { page: item.page }), "info");
-      return;
-    }
-    if (store.ui.page !== item.page) store.setPage(item.page);
-    await this.options.ensurePageSize(item.page);
-    if (item.current) {
+    const primaryPages = totalPageCount(project.documents);
+    if (item.current && item.page <= primaryPages) {
+      if (store.ui.page !== item.page) store.setPage(item.page);
+      await this.options.ensurePageSize(item.page);
       store.setSelection({
         layerId: item.current.layer.id,
         itemId: item.current.item.id,
       });
-    } else {
-      store.clearSelection();
+      this.options.primaryCanvas.focusBounds(item.bounds);
+      this.options.primaryCanvas.invalidate();
+      return;
     }
-    this.options.primaryCanvas.focusBounds(item.bounds);
-    this.options.primaryCanvas.invalidate();
+    // Added or removed markups exist only in the reference. Show their page in
+    // the reference pane instead of moving the editable project there.
+    store.clearSelection();
+    this.followPrimary = false;
+    this.referencePage = Math.max(1, Math.min(this.pageCount(), item.page));
+    if (this.session) void this.enqueuePageSize(this.referencePage);
+    this.view.invalidate();
+    this.updatePane();
+    if (item.page > primaryPages) {
+      toast(t("reference.pageOnlyInRevision", { page: item.page }), "info");
+    }
   }
 
   async close(restoreSplit = true): Promise<void> {
     await this.clearSession();
     this.mode = "same";
+    this.referencePage = store.ui.page;
+    this.followPrimary = true;
     this.view.resetScene();
     this.splitView.setMode("side");
     this.splitView.setOpen(restoreSplit ? this.previousOpen : false);

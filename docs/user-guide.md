@@ -40,11 +40,13 @@ On a touch screen, one finger draws or selects with the active tool. Use **two f
 
 **View → Reference view (same page)** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Its toolbar selects the source:
 
-- **Same page** mirrors the current page. Both panes stay synchronized when you pan, zoom or change pages. The bar shows a short hint explaining that this is not a second drawing.
+- **Same page** mirrors the current page by default. Both panes stay synchronized when you pan, zoom or change pages. The bar shows a short hint explaining that this is not a second drawing.
 - **Revision** compares a saved `.gridscalr` project. Choose **File → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
 - **Drawing** compares a raw PDF drawing. Choose **File → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
 
 The bar also names the loaded reference and shows its page count. **Open…** replaces the reference for the current source, and the close button restores the primary canvas. Drag the divider to change how much room each pane gets, and use the mouse wheel over either pane to zoom.
+
+The reference bar has its own page controls: **‹** and **›**, a page number, and **Follow primary**. Changing the reference page never moves the primary canvas, so you can keep a detail sheet beside the sheet you are measuring. Choosing a page turns off **Follow primary**; press it again to return the reference pane to the primary page. Zoom and pan stay linked in both modes, and switching source resets the reference pane to the primary page.
 
 The reference pane is for comparison only: selection, editing, layers and undo belong to the primary canvas. Closing the pane does not change the drawing, the project or the undo history, and the reference state is not stored in the project file.
 
@@ -52,10 +54,10 @@ The reference pane is for comparison only: selection, editing, layers and undo b
 
 A revision reference opens a comparison panel beside the canvas:
 
-- **Side by side** shows the current and reference page next to each other with the same pan, zoom and page.
+- **Side by side** shows the current and reference page next to each other with the same pan and zoom. The pages follow the primary page until you choose a reference page with the page controls.
 - **Overlay** stacks the reference over the current drawing. Use **Opacity** to make the reference lighter or heavier; white page areas are transparent in this mode.
 - **Changed**, **Added** and **Removed** count the differences. The list can be filtered to changes only, one status, or every item, including unchanged items.
-- Click a row to jump to that page and item. A reference-only item keeps its position on the reference page even when it no longer exists in the current project.
+- Click a row to jump to that page and item. A changed item moves the primary canvas; an added or removed item moves the reference pane to its page without changing the editable project page.
 - Warnings call out different page counts, drawing names and page scales.
 
 The comparison compares measurements, drawings, symbols and their properties. The visual pages show the source drawings; the **Differences** table lists the markup changes. It is not a semantic diff of the PDF's raw vector operators. Edits made while comparing refresh the list after a short pause, and **Refresh** forces it immediately.

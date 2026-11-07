@@ -12,6 +12,8 @@ export interface SplitViewOptions {
   primary: CanvasView;
   reference: CanvasView;
   minPaneWidth?: number;
+  /** False when the reference pane shows a different page from the primary. */
+  pagesSynced?: () => boolean;
 }
 
 /**
@@ -129,6 +131,10 @@ export class SplitView {
   private onReferenceWheel = (event: WheelEvent): void => {
     if (!this.open) return;
     event.preventDefault();
+    if (this.options.pagesSynced?.() === false) {
+      this.options.primary.zoomBy(event.deltaY < 0 ? 1.15 : 1 / 1.15);
+      return;
+    }
     const bounds = this.options.referenceHost.getBoundingClientRect();
     const page = this.options.reference.screenToPage({
       x: event.clientX - bounds.left,
