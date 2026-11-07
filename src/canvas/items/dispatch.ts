@@ -2,17 +2,17 @@ import { itemCenter, itemRotation } from "../../model/geometry";
 import type { LabelLayout } from "../../model/labelLayout";
 import { isMeasurementKind } from "../../model/layers";
 import type { MarkupItem } from "../../model/types";
-import { drawRemainingItem } from "../itemRendererLegacy";
 import {
   createDrawPanel,
   drawLabel,
   type ItemRenderContext,
   type ItemRenderState,
 } from "./context";
+import { drawAnnotationItem, drawCloudLabel } from "./annotations";
 import { drawCountItem } from "./counts";
 import { drawImageItem } from "./images";
 import { drawMeasurementItem } from "./measurement";
-import { drawShapeItem } from "./shapes";
+import { drawCloudShape, drawShapeItem } from "./shapes";
 import { drawSymbolItem, drawSymbolTag } from "./symbols";
 import { drawTextItem } from "./text";
 
@@ -63,8 +63,6 @@ export function dispatchItem(
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
 
-  // Families are dispatched incrementally while the renderer is split.
-  // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
   switch (item.kind) {
     case "length":
     case "angle":
@@ -99,8 +97,14 @@ export function dispatchItem(
     case "image":
       drawImageItem(ctx, item, state);
       break;
-    default:
-      drawRemainingItem(ctx, item, state);
+    case "cloud":
+      drawCloudShape(ctx, item, state);
+      drawCloudLabel(ctx, item, state);
+      break;
+    case "callout":
+    case "stamp":
+    case "delta":
+      drawAnnotationItem(ctx, item, state);
       break;
   }
   ctx.restore();

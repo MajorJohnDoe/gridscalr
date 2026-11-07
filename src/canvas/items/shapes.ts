@@ -1,4 +1,5 @@
 import { rectangleCorners } from "../../model/area";
+import { cloudCurves, cloudRadiusForPoints } from "../../model/cloud";
 import { arrowHeadGeometry, expandRect } from "../../model/geometry";
 import { railGeometry, railLegendY } from "../../model/rail";
 import type { MarkupItem } from "../../model/types";
@@ -188,4 +189,44 @@ export function drawShapeItem(
     default:
       break;
   }
+}
+
+export function drawCloudShape(
+  ctx: CanvasRenderingContext2D,
+  item: MarkupItem,
+  state: ItemRenderState,
+): void {
+  if (item.kind !== "cloud") return;
+  const { context } = state;
+  const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
+  if (!curves.length) return;
+  const pathStart = context.toScreen(curves[0].start);
+  ctx.save();
+  if (item.fillColor) {
+    ctx.save();
+    ctx.globalAlpha *= item.opacity ?? 0.12;
+    ctx.fillStyle = item.fillColor;
+    ctx.beginPath();
+    ctx.moveTo(pathStart.x, pathStart.y);
+    for (const curve of curves) {
+      const cp1 = context.toScreen(curve.cp1);
+      const cp2 = context.toScreen(curve.cp2);
+      const end = context.toScreen(curve.end);
+      ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.beginPath();
+  ctx.moveTo(pathStart.x, pathStart.y);
+  for (const curve of curves) {
+    const cp1 = context.toScreen(curve.cp1);
+    const cp2 = context.toScreen(curve.cp2);
+    const end = context.toScreen(curve.end);
+    ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
+  }
+  ctx.closePath();
+  ctx.stroke();
+  ctx.restore();
 }

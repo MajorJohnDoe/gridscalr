@@ -1,66 +1,20 @@
-import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "../model/annotations";
-import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
-import { arrowHeadGeometry } from "../model/geometry";
-import { TEXT_FONT_STACK } from "../model/text";
-import type { MarkupItem } from "../model/types";
-import { drawArrowHead, hexAlpha } from "./geometry";
-import type { ItemRenderState } from "./items/context";
+import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "../../model/annotations";
+import { arrowHeadGeometry } from "../../model/geometry";
+import { TEXT_FONT_STACK } from "../../model/text";
+import type { MarkupItem } from "../../model/types";
+import { drawArrowHead, hexAlpha } from "../geometry";
+import type { ItemRenderState } from "./context";
 
-/**
- * Temporary holder for the item families that have not been moved into
- * `src/canvas/items/` yet. Removed by item-renderer step I6.
- */
-export function drawRemainingItem(
+export function drawAnnotationItem(
   ctx: CanvasRenderingContext2D,
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
   const { context, zoom, lineWidth, drawPanel } = state;
 
-  // Temporary partial switch while the remaining families are extracted.
+  // Annotation cases only; the cloud label is drawn separately after the shape.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
   switch (item.kind) {
-    case "cloud": {
-      const curves = cloudCurves(
-        item.points,
-        item.cloudRadius ?? cloudRadiusForPoints(item.points),
-      );
-      if (!curves.length) break;
-      const pathStart = context.toScreen(curves[0].start);
-      ctx.save();
-      if (item.fillColor) {
-        ctx.save();
-        ctx.globalAlpha *= item.opacity ?? 0.12;
-        ctx.fillStyle = item.fillColor;
-        ctx.beginPath();
-        ctx.moveTo(pathStart.x, pathStart.y);
-        for (const curve of curves) {
-          const cp1 = context.toScreen(curve.cp1);
-          const cp2 = context.toScreen(curve.cp2);
-          const end = context.toScreen(curve.end);
-          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-        }
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-      }
-      ctx.beginPath();
-      ctx.moveTo(pathStart.x, pathStart.y);
-      for (const curve of curves) {
-        const cp1 = context.toScreen(curve.cp1);
-        const cp2 = context.toScreen(curve.cp2);
-        const end = context.toScreen(curve.end);
-        ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-      }
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-      const label = cloudLabelLayout(item);
-      if (label && context.editors.editingItemId !== item.id) {
-        drawPanel(ctx, label, item, "rgba(12, 16, 18, 0.9)", item.textColor ?? "#f7fbfc", true);
-      }
-      break;
-    }
     case "callout": {
       const liveCallout =
         context.editors.textSession &&
@@ -150,5 +104,20 @@ export function drawRemainingItem(
       ctx.restore();
       break;
     }
+    default:
+      break;
+  }
+}
+
+export function drawCloudLabel(
+  ctx: CanvasRenderingContext2D,
+  item: MarkupItem,
+  state: ItemRenderState,
+): void {
+  if (item.kind !== "cloud") return;
+  const { context, drawPanel } = state;
+  const label = cloudLabelLayout(item);
+  if (label && context.editors.editingItemId !== item.id) {
+    drawPanel(ctx, label, item, "rgba(12, 16, 18, 0.9)", item.textColor ?? "#f7fbfc", true);
   }
 }
