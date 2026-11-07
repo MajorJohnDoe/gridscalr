@@ -35,6 +35,7 @@ import {
   type AutosavePayload,
   type AutosavePreview,
 } from "./autosave";
+import { pushHistory } from "./history";
 import type {
   AreaMode,
   AreaShape,
@@ -153,8 +154,6 @@ export type ChangeReason =
   | "undo";
 
 type Listener = (reason: ChangeReason) => void;
-
-const HISTORY_LIMIT = 80;
 
 export type { AutosavePayload, AutosavePreview };
 
@@ -794,10 +793,7 @@ export class Store {
     const history = options.history !== false;
     if (history) {
       const before = this.snapshot();
-      if (before) {
-        this.undoStack.push(before);
-        if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
-      }
+      if (before) pushHistory(this.undoStack, before);
       this.redoStack = [];
     }
     mutator(this.project);
@@ -819,8 +815,7 @@ export class Store {
     }
     const after = this.snapshot();
     if (after && after !== this.gestureSnapshot) {
-      this.undoStack.push(this.gestureSnapshot);
-      if (this.undoStack.length > HISTORY_LIMIT) this.undoStack.shift();
+      pushHistory(this.undoStack, this.gestureSnapshot);
       this.redoStack = [];
       this.dirty = true;
       this.revision += 1;
@@ -841,7 +836,7 @@ export class Store {
   undo(): void {
     const previous = this.undoStack.pop();
     if (!previous || !this.project) return;
-    this.redoStack.push(this.snapshot() ?? JSON.stringify(this.project));
+    pushHistory(this.redoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(previous);
     this.afterHistoryRestore();
     this.emit("undo");
@@ -851,7 +846,7 @@ export class Store {
   redo(): void {
     const next = this.redoStack.pop();
     if (!next || !this.project) return;
-    this.undoStack.push(this.snapshot() ?? JSON.stringify(this.project));
+    pushHistory(this.undoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(next);
     this.afterHistoryRestore();
     this.emit("undo");

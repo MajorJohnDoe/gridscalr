@@ -1,3 +1,4 @@
+import type { Bounds } from "../model/geometry";
 import type { PageSize, Point } from "../model/types";
 
 /** Page, zoom and pan in screen pixels. Shared by the primary and reference views. */
@@ -77,6 +78,24 @@ export function fitPageViewport(
     zoom,
     panX: (width - size.width * zoom) / 2,
     panY: (height - size.height * zoom) / 2,
+  };
+}
+
+/**
+ * Page-space rectangle currently covered by a viewport, expanded by a screen
+ * margin. Rendering uses it to skip items that cannot touch the canvas.
+ */
+export function visiblePageBounds(
+  viewport: Viewport,
+  width: number,
+  height: number,
+  margin = 0,
+): Bounds {
+  const topLeft = screenToPage(viewport, { x: -margin, y: -margin });
+  const bottomRight = screenToPage(viewport, { x: width + margin, y: height + margin });
+  return {
+    min: { x: Math.min(topLeft.x, bottomRight.x), y: Math.min(topLeft.y, bottomRight.y) },
+    max: { x: Math.max(topLeft.x, bottomRight.x), y: Math.max(topLeft.y, bottomRight.y) },
   };
 }
 

@@ -249,6 +249,7 @@ src/canvas/items/symbols.ts symbol artwork, free-text tags and inspection badges
 src/canvas/items/images.ts embedded image drawing and opacity
 src/canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
 src/canvas/items/counts.ts count symbols and count-type glyphs
+src/canvas/items/visible.ts viewport culling and layered item iteration
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
 src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers
 src/canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
@@ -288,6 +289,7 @@ src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
 src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
 src/state/store.ts         immutable snapshots, undo/redo, multi-selection, autosave
+src/state/history.ts       adaptive undo-history limits from the serialized snapshot size
 src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
@@ -405,6 +407,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
+- `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
 - `npm run check:i18n` validates catalog keys, duplicate keys, placeholders and ICU syntax, compares generated message types, and scans every `src` directory except `src/i18n` for hard-coded UI text, including single-word properties, `el()`/`option()` text and template literals. The baseline is empty; keep it that way. Use `npm run check:i18n -- --update` only when retiring a deliberate migration entry.
 - `npm run i18n:types` regenerates `src/i18n/types.generated.ts`; `npm run i18n:report` prints per-locale key coverage.
