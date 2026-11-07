@@ -5,6 +5,7 @@ import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
 import { applyDragState } from "./drag";
+import { applyTransformState } from "./transform";
 import type { DragState, MarqueeState, PanState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
 
@@ -114,22 +115,28 @@ export class PointerController {
     this.host.drawInteraction();
   }
 
-  applyDrag(page: Point, shiftKey: boolean): boolean {
-    if (!this.drag) return false;
+  applyDrag(page: Point, shiftKey: boolean): void {
+    if (!this.drag) return;
     const result = applyDragState(this.drag, page, shiftKey, {
       snapPoint: (point, excludeItemId) => this.host.snapPoint(point, excludeItemId),
       clearSnap: () => this.host.clearSnap(),
     });
-    if (result === "transform") return false;
-    if (result === "noop") return true;
+    if (result === "noop") return;
     if (result === "end") {
       this.endDrag();
-      return true;
+      return;
+    }
+    if (result === "transform") {
+      const transformResult = applyTransformState(this.drag, page, shiftKey);
+      if (transformResult === "noop") return;
+      if (transformResult === "end") {
+        this.endDrag();
+        return;
+      }
     }
     this.host.drawContent();
     this.host.drawInteraction();
     this.updateCursor();
-    return true;
   }
 
   endDrag(): void {
