@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(127);
-    expect(ALL_SYMBOLS).toHaveLength(179);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(130);
+    expect(ALL_SYMBOLS).toHaveLength(182);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(127);
+    expect(symbolsForSet("schematic")).toHaveLength(130);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -321,6 +321,19 @@ describe("schematic symbol set", () => {
       const tank = symbolForAll(id);
       expect(tank.category).toBe("heating");
       expect(tank.ports, id).toHaveLength(1);
+    }
+  });
+
+  it("adds the strainer and diverter valve family", () => {
+    expect(symbolForAll("schematic.y-strainer").ports).toHaveLength(3);
+    expect(symbolForAll("schematic.diverter-valve").ports).toHaveLength(3);
+    expect(symbolForAll("schematic.y-type-strainer").ports).toHaveLength(2);
+    for (const id of [
+      "schematic.y-strainer",
+      "schematic.diverter-valve",
+      "schematic.y-type-strainer",
+    ]) {
+      expect(symbolForAll(id).category).toBe("valve");
     }
   });
 

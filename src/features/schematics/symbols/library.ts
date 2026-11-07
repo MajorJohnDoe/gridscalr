@@ -74,6 +74,36 @@ function hydraulicLetter(): string {
   return joinPaths(linePath(27, 6, 27, 13), linePath(37, 6, 37, 13), linePath(27, 9.5, 37, 9.5));
 }
 
+const STRAINER_FLANGES = joinPaths(
+  linePath(8, 24, 8, 40),
+  linePath(56, 24, 56, 40),
+  linePath(8, 32, 56, 32),
+);
+
+const Y_STRAINER_BODY = joinPaths(
+  STRAINER_FLANGES,
+  linePath(32, 32, 50, 54),
+  linePath(45, 42, 39, 47),
+  linePath(47.5, 45, 41.5, 50),
+  polyPath([45.2, 52.8, 49.8, 49, 50, 54], true),
+  polyPath([50.2, 59, 54.8, 55.2, 50, 54], true),
+);
+
+const Y_TYPE_STRAINER_BODY = joinPaths(
+  STRAINER_FLANGES,
+  linePath(32, 32, 50, 54),
+  linePath(42, 54, 58, 54),
+);
+
+const DIVERTER_VALVE_BODY = joinPaths(
+  linePath(8, 24, 8, 40),
+  linePath(56, 24, 56, 40),
+  linePath(8, 32, 56, 32),
+  smallCircle(32, 32, 10),
+  linePath(39, 39, 50, 54),
+  linePath(42, 54, 58, 54),
+);
+
 function pumpBody(): string {
   return joinPaths(smallCircle(32, 32, 16), polyPath([32, 20, 44, 40, 20, 40], true));
 }
@@ -390,6 +420,41 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "HV",
     ports: valvePorts(),
     shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), hydraulicLetter()))],
+  }),
+  schematicSymbol({
+    id: "schematic.y-strainer",
+    category: "valve",
+    keywords: ["y-sil", "y-strainer", "sil", "filter", "strainer", "ys"],
+    tagPrefix: "YS",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+      { id: "blowdown", x: 50, y: 54, direction: "out" },
+    ],
+    shapes: [stroke(Y_STRAINER_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.diverter-valve",
+    category: "valve",
+    keywords: ["fördelarventil", "diverter valve", "diverter", "ventil", "dv"],
+    tagPrefix: "DV",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+      { id: "branch", x: 50, y: 54, direction: "out" },
+    ],
+    shapes: [stroke(DIVERTER_VALVE_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.y-type-strainer",
+    category: "valve",
+    keywords: ["y-sil typ y", "y-type strainer", "sil", "filter", "strainer", "yts"],
+    tagPrefix: "YTS",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+    ],
+    shapes: [stroke(Y_TYPE_STRAINER_BODY)],
   }),
   schematicSymbol({
     id: "schematic.three-way-valve",
