@@ -191,7 +191,9 @@ try {
     await page.waitForTimeout(60);
     // Canvas and thumbnail rasterisation differs by platform and is covered by
     // the pointer-level canvas regressions and the manual visual checklist.
-    const actual = await page.screenshot({ mask: [page.locator("canvas")] });
+    const actual = await page.screenshot({
+      mask: [page.locator("canvas"), page.locator(".page-thumb")],
+    });
     await compareScreenshot(page, file, actual);
   };
 
