@@ -253,6 +253,15 @@ src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay dra
 src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers
 src/canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
 src/canvas/pointer/contextMenu.ts context menus, measurement-label actions and label connections
+src/canvas/pointer/contexts.ts host context builders for creation, context-menu and double-click actions
+src/canvas/pointer/cursor.ts cursor selection for the current pointer state
+src/canvas/pointer/draft.ts draft state and every drawing/measurement finish path
+src/canvas/pointer/itemFactory.ts item creation from the current tool and style state
+src/canvas/pointer/listeners.ts pointer, wheel, double-click and context-menu listener binding
+src/canvas/pointer/navigation.ts pan, marquee and wheel navigation
+src/canvas/pointer/primitives.ts coordinate, pointer-capture and release helpers
+src/canvas/pointer/targets.ts selection and hover target resolution
+src/canvas/pointer/touchInput.ts pen priority, palm rejection, touch navigation and long-press
 src/canvas/pointer/creation.ts creation-tool pointer-down branches and draft start/finish
 src/canvas/pointer/doubleClick.ts double-click target resolution and edit dispatch
 src/canvas/pointer/drag.ts item move, vertex, label and measurement-label drag

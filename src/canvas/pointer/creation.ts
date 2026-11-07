@@ -1,4 +1,5 @@
 import { arcGeometry, constrainAngle, distance } from "../../model/geometry";
+import { constrainSquare } from "../geometry";
 import type { AreaShape, InspectionStatus, ItemKind, MarkupItem, Point } from "../../model/types";
 import { store, type ToolId } from "../../state/store";
 import { t } from "../../i18n";
@@ -303,5 +304,123 @@ export function handleCreationDown(
       status: store.ui.symbolStatus ?? undefined,
     });
     context.drawInteraction();
+  }
+}
+
+const SNAP_TOOLS: ReadonlySet<ToolId> = new Set([
+  "calibrate",
+  "length",
+  "radius",
+  "diameter",
+  "slope",
+  "angle",
+  "arc",
+  "polyline",
+  "area",
+  "volume",
+  "cloud",
+  "line",
+  "arrow",
+  "count",
+  "symbol",
+]);
+
+export function toolUsesSnapping(tool: ToolId): boolean {
+  if (tool === "highlight") return store.ui.highlightShape !== "stroke";
+  return SNAP_TOOLS.has(tool);
+}
+
+/** Updates an in-progress draft from pointer movement. */
+export function updateDraftFromPointer(
+  page: Point,
+  event: PointerEvent,
+  context: CreationContext,
+): boolean {
+  const draft = context.getDraft();
+  if (!draft) return false;
+  if (draft.kind === "area-rect" || draft.kind === "area-ellipse") {
+    let current = context.snapPoint(page);
+    if (event.shiftKey) {
+      const constrained = constrainSquare(draft.start, current);
+      if (distance(constrained, current) > 1e-6) context.clearSnap();
+      current = constrained;
+    }
+    draft.current = current;
+  } else if (draft.kind === "line" || draft.kind === "arrow" || draft.kind === "callout") {
+    // Shift constrains the angle from the raw pointer, not from a segment
+    // snap on an existing pipe. Otherwise the snap would force the old line
+    // direction and the constrained endpoint could not move away from it.
+    let current = event.shiftKey ? page : context.snapPoint(page);
+    if (event.shiftKey) {
+      context.clearSnap();
+      const constrained = constrainAngle(draft.start, current);
+      if (distance(constrained, current) > 1e-6) context.clearSnap();
+      current = constrained;
+    }
+    draft.current = current;
+  } else if (
+    draft.kind === "rect" ||
+    draft.kind === "textbox" ||
+    draft.kind === "rail" ||
+    draft.kind === "ellipse" ||
+    draft.kind === "highlight-rect"
+  ) {
+    context.clearSnap();
+    draft.current = event.shiftKey ? constrainSquare(draft.start, page) : page;
+  } else if (draft.kind === "polyline") {
+    const last = draft.points[draft.points.length - 1];
+    const snapped = event.shiftKey ? page : context.snapPolylinePoint(page);
+    draft.cursor = context.constrainPolyline(last, snapped, event.shiftKey);
+  } else if (draft.kind === "pen" || draft.kind === "highlight") {
+    const last = draft.points[draft.points.length - 1];
+    if (distance(last, page) > 1.4 / context.viewZoom()) {
+      draft.points.push({ ...page });
+    }
+    draft.cursor = page;
+  } else {
+    let snapped = context.snapPoint(page);
+    if (
+      event.shiftKey &&
+      (draft.kind === "length" ||
+        draft.kind === "area" ||
+        draft.kind === "cloud" ||
+        draft.kind === "highlight-polygon") &&
+      draft.points.length
+    ) {
+      const constrained = constrainAngle(draft.points[draft.points.length - 1], snapped);
+      if (distance(constrained, snapped) > 1e-6) context.clearSnap();
+      snapped = constrained;
+    }
+    draft.cursor = snapped;
+  }
+  context.drawInteraction();
+  return true;
+}
+
+export interface DraftFinishContext {
+  getDraft(): Draft | null;
+  finishPen(): void;
+  finishQuickArea(): void;
+  finishShape(): void;
+}
+
+/** Starts the matching finish path when a draft is released. */
+export function finishDraftOnPointerUp(context: DraftFinishContext): void {
+  const draft = context.getDraft();
+  if (!draft) return;
+  if (draft.kind === "pen" || draft.kind === "highlight") {
+    context.finishPen();
+  } else if (draft.kind === "area-rect" || draft.kind === "area-ellipse") {
+    context.finishQuickArea();
+  } else if (
+    draft.kind === "line" ||
+    draft.kind === "arrow" ||
+    draft.kind === "rect" ||
+    draft.kind === "textbox" ||
+    draft.kind === "rail" ||
+    draft.kind === "ellipse" ||
+    draft.kind === "highlight-rect"
+  ) {
+    context.finishShape();
   }
 }

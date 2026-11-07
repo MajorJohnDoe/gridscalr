@@ -9,7 +9,7 @@ import type {
 import type { LabelHit } from "../editors";
 import type { ToolId } from "../../state/store";
 import type { Draft } from "../draftRenderer";
-import type { Handle } from "../selectionHandles";
+import type { LabelLayout } from "../../model/labelLayout";
 import type { Viewport } from "../viewport";
 
 /**
@@ -25,9 +25,6 @@ export interface PointerHost {
   draft(): Draft | null;
   setDraft(draft: Draft | null): void;
   cropCursor(): string | null;
-
-  hoverHandle(): Handle | null;
-  hoverLabelResize(): boolean;
 
   setHostCursor(cursor: string): void;
   drawContent(): void;
@@ -53,6 +50,18 @@ export interface PointerHost {
   ): { layerId: string; itemId: string } | null;
   runCalibration(p1: Point, p2: Point): Promise<void>;
   startTextTool(page: Point): void;
+  commitEditors(): void;
+  focusCanvas(): void;
+  cropPointerDown(page: Point, event: PointerEvent): void;
+  cropPointerMove(page: Point): void;
+  cropPointerUp(): void;
+  cropPointerLeave(): void;
+  finishPen(): void;
+  finishQuickArea(): void;
+  finishShape(): void;
+  labelResizeAt(item: MarkupItem, screen: Point): boolean;
+  pageLabelLayouts(): Map<string, LabelLayout>;
+  toScreen(point: Point): Point;
   cancelDraft(): void;
   touchNavigationBlocked(): boolean;
   activeTool(): ToolId;

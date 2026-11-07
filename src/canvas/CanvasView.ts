@@ -1,24 +1,8 @@
-import {
-  arcGeometry,
-  constrainAngle,
-  distance,
-  itemBounds,
-  itemCenter,
-  itemLocalBounds,
-  symbolSelectionBounds,
-  itemRotation,
-  midpoint,
-  simplifyPolyline,
-  type Bounds,
-} from "../model/geometry";
+import { distance, itemBounds, type Bounds } from "../model/geometry";
 import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
-import { findVertex, hitTest } from "../model/hitTest";
-import {
-  clampLabelSize,
-  labelAnchorForPoints,
-  type LabelBox,
-  type LabelMetrics,
-} from "../model/label";
+import { hitTest } from "../model/hitTest";
+import type { LabelBox, LabelMetrics } from "../model/label";
+
 import {
   CALIBRATION_LABEL_ID,
   layoutPageLabels,
@@ -27,55 +11,42 @@ import {
 } from "../model/labelLayout";
 import { ensureLabelFonts, measureLabelText } from "../model/labelFont";
 import {
-  addItem,
-  ensureActiveLayer,
   findItem,
   isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
   layerLockedOnPage,
   layerVisibleOnPage,
-  layerKindForItem,
 } from "../model/layers";
 import { deleteItems, translateItems } from "../model/commands";
-import {
-  averagePoints,
-  constrainSquare,
-  dedupeLast,
-  focusViewTransform,
-  handleLocalPoint,
-  isCancellation,
-  oppositeHandlePoint,
-  pointInBox,
-  type BoxHandleRole,
-} from "./geometry";
+
+import { focusViewTransform, isCancellation, pointInBox } from "./geometry";
 import { CropController } from "./crop";
 import { PointerController } from "./pointer/PointerController";
+import { createItemInStore, type ItemOptions } from "./pointer/itemFactory";
+import { DraftLifecycle } from "./pointer/draft";
+import { capturePointer, localFromClient } from "./pointer/primitives";
 import type { PointerHost } from "./pointer/PointerHost";
-import { CALIBRATION_COLOR, drawDraft as paintDraft, type Draft } from "./draftRenderer";
+import { CALIBRATION_COLOR, drawDraft as paintDraft } from "./draftRenderer";
 import { drawLabelLayout as paintLabelLayout } from "./annotationDraw";
 import { CanvasEditorController, type LabelHit } from "./editors";
 import { drawItem, type ItemRenderContext } from "./itemRenderer";
-import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
-import { groupHandleAt } from "./pointer/groupHandles";
-import type { DragState } from "./pointer/pointerState";
+import { selectionHandles, type Handle } from "./selectionHandles";
+
 import {
   drawInteraction as paintInteraction,
   type InteractionRenderContext,
 } from "./interactionRenderer";
 import type { NormalizedCrop } from "../model/export";
 import { imageModeOf } from "../model/images";
-import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
 import {
   createCalibration,
   isReferenceCalibration,
   pageCalibration,
-  pageScale,
   pageScaleLocked,
   setPageCalibration,
 } from "../model/calibration";
-import { makeId } from "../model/calibration";
 import {
   collectSnapCandidates,
   excludeOwnSnapTargets,
@@ -97,40 +68,19 @@ import {
   measureSheetText,
   SHEET_FONT_STACK,
 } from "../features/schematics/render/sheetText";
-import { defaultRailRows, RAIL_ROW_SPACING } from "../model/rail";
-import { CLOUD_FILL_OPACITY, cloudFillColor } from "../model/cloud";
-import { calloutLayout, cloudLabelLayout, textBoxLayout } from "../model/annotations";
-import type {
-  AreaShape,
-  ImageAsset,
-  InspectionStatus,
-  ItemKind,
-  MarkupItem,
-  PageSize,
-  Point,
-  Project,
-  SelectionRef,
-} from "../model/types";
-import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
-import { stampStatusColor } from "../model/stamps";
+import { calloutLayout, cloudLabelLayout } from "../model/annotations";
+import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
-import {
-  symbolCategoryColor,
-  symbolCategoryOf,
-  symbolDefaultSize,
-  symbolSizeOf,
-} from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
-import { selectionBounds } from "../model/transform";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
-import { store, type ToolId } from "../state/store";
+import { store } from "../state/store";
 import { clampZoom, fitPageViewport, viewportCenter, type Viewport } from "./viewport";
 import {
   pageToScreen as toScreenPoint,
   screenToPage as toPagePoint,
   zoomAt as zoomViewport,
 } from "./viewport";
-import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
+import { calibrationDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
 import { describeError } from "../io/platformError";
@@ -180,29 +130,6 @@ function orthoPoint(last: Point, current: Point): Point {
 }
 
 /** Tools whose next click can land on an existing snap target. */
-const SNAP_TOOLS: ReadonlySet<ToolId> = new Set([
-  "calibrate",
-  "length",
-  "radius",
-  "diameter",
-  "slope",
-  "angle",
-  "arc",
-  "polyline",
-  "area",
-  "volume",
-  "cloud",
-  "line",
-  "arrow",
-  "count",
-  "symbol",
-]);
-
-function toolUsesSnapping(tool: ToolId): boolean {
-  if (tool === "highlight") return store.ui.highlightShape !== "stroke";
-  return SNAP_TOOLS.has(tool);
-}
-
 export class CanvasView {
   readonly host: HTMLElement;
   private base: HTMLCanvasElement;
@@ -223,8 +150,7 @@ export class CanvasView {
   private renderGeneration = 0;
   private renderTimer: number | null = null;
   private rendering = false;
-  private draft: Draft | null = null;
-  private pointerScreen: Point | null = null;
+  private drafts: DraftLifecycle;
   private pointers: PointerController;
   private snap: SnapResult | null = null;
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
@@ -234,8 +160,6 @@ export class CanvasView {
   } | null = null;
   private renderedPage = 0;
   private editors: CanvasEditorController;
-  private hoverHandle: Handle | null = null;
-  private hoverLabelResize = false;
   private sheetFieldEditor: {
     input: HTMLInputElement | HTMLTextAreaElement;
     page: number;
@@ -296,11 +220,10 @@ export class CanvasView {
       width: () => this.width,
       height: () => this.height,
       prepare: () => {
-        this.draft = null;
+        this.drafts.setDraft(null);
         this.pointers.cancelDrag();
         this.pointers.cancelPanAndMarquee();
-        this.hoverHandle = null;
-        this.hoverLabelResize = false;
+        this.pointers.clearHover();
         this.snap = null;
         this.snapCache = null;
         store.clearSelection();
@@ -312,27 +235,40 @@ export class CanvasView {
       capturePointer: (pointerId) => this.capturePointer(pointerId),
     });
 
+    this.drafts = new DraftLifecycle({
+      viewPage: () => this.viewPage,
+      viewZoom: () => this.viewZoom,
+      pageSize: () => this.pageSize(),
+      drawInteraction: () => this.drawInteraction(),
+      clearSnap: () => {
+        this.snap = null;
+      },
+      createItem: (kind, points, options) => this.createItem(kind, points, options),
+      startTextBoxEdit: (item, layer) => this.editors.startTextBoxEdit(item, layer),
+      startCalloutTextEdit: (item, layer) => this.editors.startCalloutTextEdit(item, layer),
+      startCloudTextEdit: (item, layer) => this.editors.startCloudTextEdit(item, layer),
+      cropActive: () => this.crop.active,
+      cropCancel: () => this.crop.cancel(),
+      cropConfirm: () => this.crop.confirm(),
+      labelConnectActive: () => this.pointers.labelConnectActive,
+      cancelLabelConnection: () => this.pointers.cancelLabelConnection(),
+      updateCursor: () => this.updateCursor(),
+    });
+
     const pointerHost: PointerHost = {
       isReadOnly: () => this.readOnly,
       viewport: () => this.view,
       cropActive: () => this.crop.active,
       cropCursor: () => this.crop.cursor(),
-      draft: () => this.draft,
-      setDraft: (draft) => {
-        this.draft = draft;
-      },
-      hoverHandle: () => this.hoverHandle,
-      hoverLabelResize: () => this.hoverLabelResize,
+      draft: () => this.drafts.draft,
+      setDraft: (draft) => this.drafts.setDraft(draft),
       setHostCursor: (cursor) => {
         if (cursor) this.host.dataset.cursor = cursor;
         else delete this.host.dataset.cursor;
       },
       drawContent: () => this.drawContent(),
       drawInteraction: () => this.drawInteraction(),
-      clearHover: () => {
-        this.hoverHandle = null;
-        this.hoverLabelResize = false;
-      },
+      clearHover: () => this.pointers.clearHover(),
       snapPoint: (point, excludeItemId) => this.snapPoint(point, excludeItemId),
       snapPolylinePoint: (point) => this.snapPolylinePoint(point),
       constrainPolyline: (last, point, free) => this.constrainPolyline(last, point, free),
@@ -340,12 +276,24 @@ export class CanvasView {
         this.snap = null;
       },
       viewZoom: () => this.viewZoom,
-      finishDraft: () => this.finishDraft(),
-      finishCallout: (page) => this.finishCallout(page),
+      finishDraft: () => this.drafts.finishDraft(),
+      finishCallout: (page) => this.drafts.finishCallout(page),
       createItem: (kind, points, options) => this.createItem(kind, points, options),
       runCalibration: (p1, p2) => this.runCalibration(p1, p2),
       startTextTool: (page) => this.startTextTool(page),
       cancelDraft: () => this.cancelDraft(),
+      commitEditors: () => this.editors.commitActiveEditors(),
+      focusCanvas: () => this.interaction.focus({ preventScroll: true }),
+      cropPointerDown: (page, event) => this.crop.pointerDown(page, event),
+      cropPointerMove: (page) => this.crop.pointerMove(page),
+      cropPointerUp: () => this.crop.pointerUp(),
+      cropPointerLeave: () => this.crop.pointerLeave(),
+      finishPen: () => this.drafts.finishPen(),
+      finishQuickArea: () => this.drafts.finishQuickArea(),
+      finishShape: () => this.drafts.finishShape(),
+      labelResizeAt: (item, screen) => this.labelResizeAt(item, screen),
+      pageLabelLayouts: () => this.pageLabelLayouts(),
+      toScreen: (point) => this.toScreen(point),
       touchNavigationBlocked: () => this.pointers.touchBlocked,
       activeTool: () => store.ui.activeTool,
       viewPage: () => this.viewPage,
@@ -355,7 +303,7 @@ export class CanvasView {
       measurementLabelHit: (screen) => this.measurementLabelHit(screen),
       isLocked: (item, layer) => itemIsLocked(item, layer),
       selectItem: (layerId, itemId) => store.setSelection({ layerId, itemId }),
-      promptVolumeDepth: (ref) => this.promptVolumeDepth(ref),
+      promptVolumeDepth: (ref) => this.drafts.promptVolumeDepth(ref),
       startLabelEdit: (hit) => this.editors.startLabelEdit(hit),
       editSheetFieldAt: (page, screen) => {
         this.editSheetFieldAt(page, screen);
@@ -367,7 +315,7 @@ export class CanvasView {
       },
       startCloudTextEdit: (item, layer) => this.editors.startCloudTextEdit(item, layer),
       startCalloutTextEdit: (item, layer) => this.editors.startCalloutTextEdit(item, layer),
-      editItemText: (item) => this.editItemText(item),
+      editItemText: (item) => this.drafts.editItemText(item),
       zoomAt: (screen, factor) => this.zoomAt(screen, factor),
       cancelGesture: () => {
         this.pointers.cancelDrag();
@@ -384,16 +332,7 @@ export class CanvasView {
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
 
-    if (!options.readOnly) {
-      this.interaction.addEventListener("pointerdown", this.onPointerDown);
-      this.interaction.addEventListener("pointermove", this.onPointerMove);
-      this.interaction.addEventListener("pointerup", this.onPointerUp);
-      this.interaction.addEventListener("pointercancel", this.onPointerUp);
-      this.interaction.addEventListener("pointerleave", this.onPointerLeave);
-      this.interaction.addEventListener("dblclick", this.onDoubleClick);
-      this.interaction.addEventListener("wheel", this.onWheel, { passive: false });
-      this.interaction.addEventListener("contextmenu", this.onContextMenu);
-    }
+    this.pointers.attach();
 
     this.unsubscribe = store.subscribe((reason) => this.onStoreChange(reason));
     this.resize();
@@ -402,10 +341,6 @@ export class CanvasView {
       this.drawContent();
       this.drawInteraction();
     });
-  }
-
-  private get drag(): DragState | null {
-    return this.pointers.dragState;
   }
 
   /** The viewport this canvas renders. The primary canvas follows the store. */
@@ -484,7 +419,7 @@ export class CanvasView {
     const page = this.viewPage;
     if (reason === "project" || reason === "undo") {
       this.lastRender = null;
-      this.draft = null;
+      this.drafts.setDraft(null);
       this.pointers.cancelDrag();
       this.pointers.cancelMarquee();
       this.pointers.cancelLabelConnection();
@@ -497,7 +432,7 @@ export class CanvasView {
       this.imageFailed.clear();
     }
     if (reason === "tool") {
-      this.draft = null;
+      this.drafts.setDraft(null);
       this.pointers.cancelLabelConnection();
       this.snap = null;
       if (store.ui.hover) store.setHover(null);
@@ -505,7 +440,7 @@ export class CanvasView {
     }
     if (page !== this.renderedPage) {
       this.lastRender = null;
-      this.draft = null;
+      this.drafts.setDraft(null);
       this.pointers.cancelLabelConnection();
       this.snap = null;
       this.renderedPage = page;
@@ -584,7 +519,7 @@ export class CanvasView {
       this.pointers.dragActive ||
       this.pointers.marqueeActive ||
       this.pointers.panActive ||
-      this.draft !== null ||
+      this.drafts.draft !== null ||
       this.pointers.labelConnectActive ||
       this.editors.hasEditors ||
       this.crop.active
@@ -716,12 +651,8 @@ export class CanvasView {
     store.setView(next.zoom, next.panX, next.panY);
   }
 
-  private localPoint(event: PointerEvent | WheelEvent | MouseEvent): Point {
-    return this.pointers.localPoint(event);
-  }
-
   private localFromClient(clientX: number, clientY: number): Point {
-    return this.pointers.localFromClient(clientX, clientY);
+    return localFromClient(this.interaction, clientX, clientY);
   }
 
   private toPage(screen: Point): Point {
@@ -783,594 +714,8 @@ export class CanvasView {
   }
 
   private capturePointer(pointerId: number): void {
-    this.pointers.capturePointer(pointerId);
+    capturePointer(this.interaction, pointerId);
   }
-
-  private releasePointer(pointerId: number): void {
-    this.pointers.releasePointer(pointerId);
-  }
-
-  private onPointerDown = (event: PointerEvent): void => {
-    if (!store.project) return;
-    this.editors.commitActiveEditors();
-    this.interaction.focus({ preventScroll: true });
-    const screen = this.localPoint(event);
-
-    this.pointers.markPenDown(event);
-    if (this.pointers.touchDown(event)) return;
-
-    if (this.crop.active) {
-      if (event.button !== 0) return;
-      event.preventDefault();
-      this.crop.pointerDown(this.toPage(screen), event);
-      return;
-    }
-
-    if (this.pointers.labelConnectActive) {
-      event.preventDefault();
-      this.pointers.commitLabelConnection(this.toPage(screen));
-      return;
-    }
-
-    if (event.button === 1 || this.pointers.isSpaceDown || store.ui.activeTool === "pan") {
-      event.preventDefault();
-      this.pointers.beginPan(event.clientX, event.clientY, event.pointerId);
-      return;
-    }
-    if (event.button !== 0) return;
-
-    const page = this.toPage(screen);
-    const tool = store.ui.activeTool;
-
-    if (tool === "select") {
-      this.handleSelectDown(page, event);
-      return;
-    }
-
-    this.pointers.creationDown(page, event, tool);
-  };
-
-  private handleSelectDown(page: Point, event: PointerEvent): void {
-    const project = store.project!;
-    const screen = this.localPoint(event);
-    const modifier = event.shiftKey || event.ctrlKey || event.metaKey;
-    const selection = store.ui.selection;
-    const primary = store.primarySelection;
-
-    if (!modifier && selection.length > 1) {
-      const bounds = selectionBounds(project, selection);
-      const groupHandle =
-        bounds && groupHandleAt(bounds, screen, (point) => this.toScreen(point), 10);
-      if (bounds && groupHandle) {
-        this.beginGroupScale(project, bounds, groupHandle, page, event);
-        return;
-      }
-    }
-
-    if (!modifier) {
-      if (selection.length === 1 && primary) {
-        const found = findItem(project, primary.itemId);
-        if (
-          found &&
-          isMeasurementKind(found.item.kind) &&
-          !itemIsLocked(found.item, found.layer) &&
-          this.labelResizeAt(found.item, screen)
-        ) {
-          const layout = this.pageLabelLayouts().get(found.item.id);
-          if (layout) {
-            const center = {
-              x: layout.box.x + layout.box.width / 2,
-              y: layout.box.y + layout.box.height / 2,
-            };
-            const startLabelSize = clampLabelSize(Math.round(layout.metrics.primarySize * 10) / 10);
-            store.beginGesture();
-            if (found.item.labelFit) {
-              found.item.labelSize = startLabelSize;
-              delete found.item.labelFit;
-            }
-            this.pointers.beginDrag(
-              {
-                mode: "measurement-label-size",
-                itemId: found.item.id,
-                layerId: found.layer.id,
-                vertexIndex: -1,
-                last: page,
-                moved: false,
-                startPage: page,
-                startLabelSize,
-                startLabelDistance: Math.max(
-                  0.001,
-                  Math.hypot(page.x - center.x, page.y - center.y),
-                ),
-                center,
-              },
-              event.pointerId,
-            );
-            return;
-          }
-        }
-      }
-
-      const labelHit = this.measurementLabelHit(screen);
-      if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
-        const layout = this.pageLabelLayouts().get(labelHit.item.id);
-        if (layout) {
-          const ref = { layerId: labelHit.layer.id, itemId: labelHit.item.id };
-          if (!store.isSelected(ref)) store.setSelection(ref);
-          const center = {
-            x: layout.box.x + layout.box.width / 2,
-            y: layout.box.y + layout.box.height / 2,
-          };
-          const anchor = labelAnchorForPoints(labelHit.item, labelHit.item.points);
-          store.beginGesture();
-          // Dragging is the explicit escape hatch: keep the size the user is
-          // looking at (which may be auto-fitted inside a narrow area) instead
-          // of jumping back to the project size.
-          const configuredSize = clampLabelSize(
-            labelHit.item.labelSize ?? project.settings.labelSize,
-          );
-          const currentSize = clampLabelSize(Math.round(layout.metrics.primarySize * 10) / 10);
-          if (Math.abs(currentSize - configuredSize) > 0.05) {
-            labelHit.item.labelSize = currentSize;
-          }
-          delete labelHit.item.labelFit;
-          this.pointers.beginDrag(
-            {
-              mode: "measurement-label",
-              itemId: labelHit.item.id,
-              layerId: labelHit.layer.id,
-              vertexIndex: -1,
-              last: page,
-              moved: false,
-              startPage: page,
-              startLabelOffset: labelHit.item.labelOffset
-                ? { ...labelHit.item.labelOffset }
-                : { x: center.x - anchor.x, y: center.y - anchor.y },
-            },
-            event.pointerId,
-          );
-          return;
-        }
-      }
-    }
-
-    if (!modifier && selection.length === 1 && primary) {
-      const found = findItem(project, primary.itemId);
-      if (found && !itemIsLocked(found.item, found.layer)) {
-        if (found.item.kind === "cloud") {
-          const label = cloudLabelLayout(found.item);
-          const inLabel =
-            label &&
-            page.x >= label.center.x - label.width / 2 &&
-            page.y >= label.center.y - label.height / 2 &&
-            page.x <= label.center.x + label.width / 2 &&
-            page.y <= label.center.y + label.height / 2;
-          if (label && inLabel) {
-            this.beginHandleDrag(
-              found.layer.id,
-              found.item,
-              { role: "label", index: -1, point: screen, cursor: "move" },
-              page,
-              event,
-            );
-            return;
-          }
-        }
-        if (found.item.kind === "callout") {
-          const layout = calloutLayout(found.item);
-          const inBox =
-            page.x >= layout.box.x &&
-            page.y >= layout.box.y &&
-            page.x <= layout.box.x + layout.box.width &&
-            page.y <= layout.box.y + layout.box.height;
-          if (inBox) {
-            this.beginHandleDrag(
-              found.layer.id,
-              found.item,
-              { role: "vertex", index: 1, point: screen, cursor: "crosshair" },
-              page,
-              event,
-            );
-            return;
-          }
-        }
-        const handle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
-        if (handle) {
-          this.beginHandleDrag(found.layer.id, found.item, handle, page, event);
-          return;
-        }
-      }
-    }
-
-    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom, {
-      includeLocked: true,
-    });
-    if (!hit) {
-      if (!modifier) store.clearSelection();
-      this.pointers.beginMarquee(page, modifier, event.pointerId);
-      return;
-    }
-
-    const ref: SelectionRef = { layerId: hit.layer.id, itemId: hit.item.id };
-    if (modifier) {
-      store.toggleSelection(ref);
-      this.drawInteraction();
-      return;
-    }
-
-    const alreadySelected = store.isSelected(ref);
-    if (!alreadySelected) store.setSelection(ref);
-
-    if (itemIsLocked(hit.item, hit.layer)) {
-      this.drawInteraction();
-      return;
-    }
-
-    const single = store.ui.selection.length === 1;
-    const vertexEditable =
-      single &&
-      (hit.item.kind === "length" ||
-        hit.item.kind === "area" ||
-        hit.item.kind === "radius" ||
-        hit.item.kind === "diameter" ||
-        hit.item.kind === "arc" ||
-        hit.item.kind === "angle" ||
-        hit.item.kind === "slope" ||
-        hit.item.kind === "volume" ||
-        hit.item.kind === "polyline" ||
-        hit.item.kind === "cloud" ||
-        hit.item.kind === "callout" ||
-        (hit.item.kind === "highlight" && hit.item.highlightShape !== "stroke") ||
-        hit.item.kind === "line" ||
-        hit.item.kind === "arrow" ||
-        hit.item.kind === "pen");
-    const vertexIndex = vertexEditable ? findVertex(hit.item, page, 7 / this.viewZoom) : -1;
-    const startSelection = resolveSelection(project, store.ui.selection)
-      .filter((entry) => !entry.locked)
-      .map((entry) => ({
-        ref: entry.ref,
-        points: entry.item.points.map((point) => ({ ...point })),
-      }));
-    if (!startSelection.length) {
-      this.drawInteraction();
-      return;
-    }
-    store.beginGesture();
-    this.pointers.beginDrag(
-      {
-        mode: vertexIndex >= 0 ? "vertex" : "move",
-        itemId: hit.item.id,
-        layerId: hit.layer.id,
-        vertexIndex,
-        last: page,
-        moved: false,
-        startPage: page,
-        startSelection,
-      },
-      event.pointerId,
-    );
-  }
-
-  private beginHandleDrag(
-    layerId: string,
-    item: MarkupItem,
-    handle: Handle,
-    page: Point,
-    event: PointerEvent,
-  ): void {
-    let drag: DragState;
-    if (handle.role === "label") {
-      const label = cloudLabelLayout(item);
-      const centroid = averagePoints(item.points);
-      store.beginGesture();
-      drag = {
-        mode: "label",
-        itemId: item.id,
-        layerId,
-        vertexIndex: -1,
-        last: page,
-        moved: false,
-        startPage: page,
-        startTextOffset: label
-          ? { x: label.center.x - centroid.x, y: label.center.y - centroid.y }
-          : item.textOffset
-            ? { ...item.textOffset }
-            : { x: 0, y: 0 },
-      };
-    } else if (handle.role === "vertex") {
-      store.beginGesture();
-      drag = {
-        mode: "vertex",
-        itemId: item.id,
-        layerId,
-        vertexIndex: handle.index,
-        last: page,
-        moved: false,
-        startPage: page,
-      };
-    } else if (handle.role === "rotate") {
-      const center = itemCenter(item);
-      store.beginGesture();
-      drag = {
-        mode: "rotate",
-        itemId: item.id,
-        layerId,
-        vertexIndex: -1,
-        last: page,
-        moved: false,
-        startPage: page,
-        startPoints: item.points.map((point) => ({ ...point })),
-        startRotation: itemRotation(item),
-        center,
-        startAngle: Math.atan2(page.y - center.y, page.x - center.x),
-      };
-    } else {
-      const bounds = item.kind === "symbol" ? symbolSelectionBounds(item) : itemLocalBounds(item);
-      store.beginGesture();
-      drag = {
-        mode: "resize",
-        itemId: item.id,
-        layerId,
-        vertexIndex: -1,
-        last: page,
-        moved: false,
-        handle: handle.role,
-        startPage: page,
-        startPoints: item.points.map((point) => ({ ...point })),
-        startFontSize: item.fontSize ?? 12,
-        startSymbolSize: symbolSizeOf(item),
-        startRotation: itemRotation(item),
-        startBounds: {
-          min: { ...bounds.min },
-          max: { ...bounds.max },
-        },
-        startAnchor: item.points[0] ? { ...item.points[0] } : undefined,
-        center:
-          item.kind === "symbol" && item.points[0]
-            ? { ...item.points[0] }
-            : midpoint(bounds.min, bounds.max),
-      };
-    }
-    this.pointers.beginDrag(drag, event.pointerId);
-  }
-
-  private beginGroupScale(
-    project: NonNullable<typeof store.project>,
-    bounds: Bounds,
-    handle: Handle & { role: BoxHandleRole },
-    page: Point,
-    event: PointerEvent,
-  ): void {
-    const items: Array<{ ref: SelectionRef; item: MarkupItem }> = [];
-    for (const entry of resolveSelection(project, store.ui.selection)) {
-      if (
-        entry.locked ||
-        !itemIsVisible(entry.item, entry.layer) ||
-        layerLockedOnPage(entry.layer, entry.item.page)
-      ) {
-        continue;
-      }
-      items.push({ ref: entry.ref, item: structuredClone(entry.item) });
-    }
-    if (!items.length) return;
-    store.beginGesture();
-    this.pointers.beginDrag(
-      {
-        mode: "scale-selection",
-        itemId: "",
-        layerId: "",
-        vertexIndex: -1,
-        last: page,
-        moved: false,
-        handle: handle.role,
-        startPage: page,
-        scaleAnchor: oppositeHandlePoint(bounds, handle.role),
-        scaleCorner: handleLocalPoint(bounds, handle.role),
-        scaleStartItems: items,
-      },
-      event.pointerId,
-    );
-  }
-
-  private onPointerMove = (event: PointerEvent): void => {
-    if (!store.project) return;
-    const screen = this.localPoint(event);
-
-    if (this.pointers.touchMove(event)) return;
-
-    this.pointerScreen = screen;
-    const page = this.toPage(screen);
-    store.setCursor(page);
-
-    if (this.crop.active) {
-      this.crop.pointerMove(page);
-      return;
-    }
-
-    if (this.pointers.updatePan(event)) return;
-
-    if (this.pointers.dragActive) {
-      this.pointers.applyDrag(page, event.shiftKey);
-      return;
-    }
-
-    if (this.pointers.updateMarquee(page)) return;
-
-    const tool = store.ui.activeTool;
-    if (this.draft) {
-      if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
-        let current = this.snapPoint(page);
-        if (event.shiftKey) {
-          const constrained = constrainSquare(this.draft.start, current);
-          if (distance(constrained, current) > 1e-6) this.snap = null;
-          current = constrained;
-        }
-        this.draft.current = current;
-      } else if (
-        this.draft.kind === "line" ||
-        this.draft.kind === "arrow" ||
-        this.draft.kind === "callout"
-      ) {
-        // Shift constrains the angle from the raw pointer, not from a segment
-        // snap on an existing pipe. Otherwise the snap would force the old line
-        // direction and the constrained endpoint could not move away from it.
-        let current = event.shiftKey ? page : this.snapPoint(page);
-        if (event.shiftKey) {
-          this.snap = null;
-          const constrained = constrainAngle(this.draft.start, current);
-          if (distance(constrained, current) > 1e-6) this.snap = null;
-          current = constrained;
-        }
-        this.draft.current = current;
-      } else if (
-        this.draft.kind === "rect" ||
-        this.draft.kind === "textbox" ||
-        this.draft.kind === "rail" ||
-        this.draft.kind === "ellipse" ||
-        this.draft.kind === "highlight-rect"
-      ) {
-        this.snap = null;
-        this.draft.current = event.shiftKey ? constrainSquare(this.draft.start, page) : page;
-      } else if (this.draft.kind === "polyline") {
-        const last = this.draft.points[this.draft.points.length - 1];
-        const snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
-        this.draft.cursor = this.constrainPolyline(last, snapped, event.shiftKey);
-      } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
-        const last = this.draft.points[this.draft.points.length - 1];
-        if (distance(last, page) > 1.4 / this.viewZoom) {
-          this.draft.points.push({ ...page });
-        }
-        this.draft.cursor = page;
-      } else {
-        let snapped = this.snapPoint(page);
-        if (
-          event.shiftKey &&
-          (this.draft.kind === "length" ||
-            this.draft.kind === "area" ||
-            this.draft.kind === "cloud" ||
-            this.draft.kind === "highlight-polygon") &&
-          this.draft.points.length
-        ) {
-          const constrained = constrainAngle(
-            this.draft.points[this.draft.points.length - 1],
-            snapped,
-          );
-          if (distance(constrained, snapped) > 1e-6) this.snap = null;
-          snapped = constrained;
-        }
-        this.draft.cursor = snapped;
-      }
-      this.drawInteraction();
-      return;
-    }
-
-    if (tool === "select") {
-      this.hoverHandle = null;
-      this.hoverLabelResize = false;
-      const selection = store.primarySelection;
-      if (selection && store.ui.selection.length === 1) {
-        const found = findItem(store.project, selection.itemId);
-        if (found && !itemIsLocked(found.item, found.layer)) {
-          if (isMeasurementKind(found.item.kind)) {
-            this.hoverLabelResize = this.labelResizeAt(found.item, screen);
-          }
-          if (!this.hoverLabelResize) {
-            this.hoverHandle = handleAt(found.item, screen, (page) => this.toScreen(page), 10);
-          }
-        }
-      }
-      if (!this.hoverHandle && !this.hoverLabelResize && store.ui.selection.length > 1) {
-        const bounds = selectionBounds(store.project, store.ui.selection);
-        if (bounds) {
-          this.hoverHandle = groupHandleAt(bounds, screen, (point) => this.toScreen(point), 10);
-        }
-      }
-      if (!this.hoverHandle && !this.hoverLabelResize) {
-        const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
-        store.setHover(
-          hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null,
-        );
-      } else {
-        store.setHover(null);
-      }
-      this.updateCursor();
-      this.drawInteraction();
-    } else {
-      this.hoverHandle = null;
-      this.hoverLabelResize = false;
-      if (toolUsesSnapping(tool)) this.snapPoint(page);
-      else this.snap = null;
-      this.updateCursor();
-      this.drawInteraction();
-    }
-  };
-
-  private onPointerUp = (event: PointerEvent): void => {
-    if (this.pointers.touchUp(event)) return;
-    if (this.interaction.hasPointerCapture(event.pointerId)) {
-      this.releasePointer(event.pointerId);
-    }
-    if (this.crop.active) {
-      this.crop.pointerUp();
-      return;
-    }
-    if (this.pointers.endPan()) return;
-    if (this.pointers.marqueeActive) {
-      this.pointers.finishMarquee();
-      return;
-    }
-    if (this.pointers.dragActive) {
-      this.snap = null;
-      this.pointers.endDrag();
-      return;
-    }
-    if (this.draft) {
-      if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
-        this.finishPen();
-      } else if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
-        this.finishQuickArea();
-      } else if (
-        this.draft.kind === "line" ||
-        this.draft.kind === "arrow" ||
-        this.draft.kind === "rect" ||
-        this.draft.kind === "textbox" ||
-        this.draft.kind === "rail" ||
-        this.draft.kind === "ellipse" ||
-        this.draft.kind === "highlight-rect"
-      ) {
-        this.finishShape();
-      }
-    }
-  };
-
-  private onPointerLeave = (): void => {
-    this.pointers.cancelTouchLongPress();
-    if (this.crop.active) {
-      this.crop.pointerLeave();
-      return;
-    }
-    if (this.drag || this.pointers.panActive) return;
-    this.pointerScreen = null;
-    this.hoverHandle = null;
-    this.hoverLabelResize = false;
-    store.setCursor(null);
-    store.setHover(null);
-    this.snap = null;
-    this.updateCursor();
-    this.drawInteraction();
-  };
-
-  private onDoubleClick = (event: MouseEvent): void => {
-    this.pointers.doubleClick(event);
-  };
-
-  private onContextMenu = (event: MouseEvent): void => {
-    this.pointers.contextMenu(event);
-  };
-
-  private onWheel = (event: WheelEvent): void => {
-    this.pointers.onWheel(event);
-  };
 
   private snapCandidates(): readonly SnapCandidate[] {
     const project = store.project;
@@ -1429,7 +774,7 @@ export class CanvasView {
     if (!project) return;
     const page = this.viewPage;
     if (pageScaleLocked(project, page)) {
-      this.draft = null;
+      this.drafts.setDraft(null);
       toast(t("canvas.scaleLockedCalibrate"), "warning");
       this.drawInteraction();
       return;
@@ -1553,7 +898,7 @@ export class CanvasView {
       return;
     }
     if (found.item.kind === "stamp" || found.item.kind === "delta") {
-      void this.editItemText(found.item);
+      void this.drafts.editItemText(found.item);
       return;
     }
     toast(t("canvas.selectText"), "info");
@@ -1616,431 +961,21 @@ export class CanvasView {
   private createItem(
     kind: ItemKind,
     points: Point[],
-    options: {
-      text?: string;
-      areaShape?: AreaShape;
-      highlightShape?: "stroke" | "rectangle" | "polygon";
-      symbolId?: string;
-      status?: InspectionStatus;
-    } = {},
+    options: ItemOptions = {},
   ): { layerId: string; itemId: string } | null {
-    const project = store.project;
-    if (!project) return null;
-    const layerKind = layerKindForItem(kind);
-    const active = project.layers.find(
-      (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
-    );
-    if (
-      active &&
-      (!layerVisibleOnPage(active, this.viewPage) || layerLockedOnPage(active, this.viewPage))
-    ) {
-      toast(
-        t("canvas.layerUnavailable", {
-          name: active.name,
-          state: layerLockedOnPage(active, this.viewPage)
-            ? t("canvas.stateLocked")
-            : t("canvas.stateHidden"),
-        }),
-        "warning",
-      );
-      return null;
-    }
-    const projectPage = this.viewPage;
-    let layerId = "";
-    let itemId = "";
-    const scale = pageScale(project, projectPage);
-    store.mutate((project) => {
-      const layer = ensureActiveLayer(project, layerKind, this.viewPage);
-      const now = new Date().toISOString();
-      const style = store.ui.style;
-      const isMeasure = layerKind === "measure";
-      const category = isMeasure
-        ? measurementCategory(project, store.ui.measureCategoryId)
-        : undefined;
-      const highlightShape =
-        kind === "highlight" ? (options.highlightShape ?? "stroke") : undefined;
-      const shapeLike = kind === "rect" || kind === "ellipse";
-      const filledShape = !isMeasure && shapeLike && style.shapeFill === "filled";
-      const filled =
-        !isMeasure &&
-        (filledShape ||
-          kind === "stamp" ||
-          kind === "delta" ||
-          (kind === "highlight" && highlightShape !== "stroke"));
-      const textLike =
-        kind === "text" ||
-        kind === "textbox" ||
-        kind === "cloud" ||
-        kind === "callout" ||
-        kind === "stamp" ||
-        kind === "delta";
-      const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-      const lineLike = kind === "polyline" || kind === "line";
-      const lineStyle = lineLike ? store.ui.lineStyle : undefined;
-      const item: MarkupItem = {
-        id: makeId("item"),
-        page: projectPage,
-        kind,
-        points: points.map((p) => ({ ...p })),
-        color: isMeasure
-          ? layer.color
-          : kind === "textbox"
-            ? "#1a2024"
-            : lineLike
-              ? (lineStyle?.color ?? style.color)
-              : kind === "rail"
-                ? "#4a4a4a"
-                : kind === "symbol"
-                  ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
-                  : kind === "stamp"
-                    ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-                    : (cloudPreset ?? style.color),
-        strokeWidth: isMeasure
-          ? DEFAULT_MEASUREMENT_STROKE_WIDTH
-          : lineLike
-            ? (lineStyle?.widthPt ?? style.strokeWidth)
-            : kind === "rail"
-              ? 0.6
-              : style.strokeWidth,
-        fillColor: cloudPreset ?? (filled ? style.color : undefined),
-        opacity:
-          !isMeasure &&
-          (filledShape ||
-            kind === "stamp" ||
-            kind === "delta" ||
-            cloudPreset !== null ||
-            (kind === "highlight" && highlightShape !== "stroke"))
-            ? kind === "highlight"
-              ? Math.max(0.18, style.fillOpacity)
-              : kind === "cloud"
-                ? CLOUD_FILL_OPACITY
-                : style.fillOpacity
-            : kind === "highlight"
-              ? 0.35
-              : undefined,
-        text: options.text,
-        textColor: kind === "textbox" ? "#1a2024" : undefined,
-        padding: kind === "textbox" ? 4 : undefined,
-        lineTypeId: kind === "polyline" ? store.ui.lineTypeId : undefined,
-        lineStyle:
-          (lineLike && lineStyle?.dashed) || (shapeLike && style.dashed) ? "dashed" : undefined,
-        rows: kind === "rail" ? defaultRailRows("plc") : undefined,
-        rowSpacing: kind === "rail" ? RAIL_ROW_SPACING : undefined,
-        fontSize: textLike ? style.fontSize : undefined,
-        highlightShape,
-        arrowHeads: kind === "arrow" ? store.ui.arrowHeads : undefined,
-        scale: isMeasure && scale ? { ...scale } : null,
-        categoryId: category?.id,
-        room: isMeasure ? normalizeRoom(store.ui.measureRoom) : undefined,
-        depth: kind === "volume" ? 1 : undefined,
-        areaMode: kind === "area" ? store.ui.measureAreaMode : undefined,
-        areaShape:
-          kind === "area" || kind === "volume" ? (options.areaShape ?? "polygon") : undefined,
-        countType: kind === "count" ? store.ui.measureCountType : undefined,
-        countQuantity:
-          kind === "count" && store.ui.measureCountQuantity > 1
-            ? store.ui.measureCountQuantity
-            : undefined,
-        symbolId: kind === "symbol" ? (options.symbolId ?? store.ui.symbolId) : undefined,
-        symbolSize:
-          kind === "symbol" ? symbolDefaultSize(options.symbolId ?? store.ui.symbolId) : undefined,
-        status: kind === "symbol" ? options.status : undefined,
-        createdAt: now,
-        updatedAt: now,
-      };
-      addItem(project, layer.id, item);
-      layerId = layer.id;
-      itemId = item.id;
-    }, "change");
-    if (!layerId || !itemId) return null;
-    store.setSelection({ layerId, itemId });
-    return { layerId, itemId };
-  }
-
-  /** Asks for the depth that turns a newly drawn or double-clicked volume into m³. */
-  private promptVolumeDepth(itemRef: { layerId: string; itemId: string } | null): void {
-    const project = store.project;
-    if (!itemRef || !project) return;
-    const found = findItem(project, itemRef.itemId);
-    if (!found || found.item.kind !== "volume") return;
-    void depthDialog(project.settings.lengthUnit, found.item.depth ?? 1).then((depth) => {
-      if (depth === null) return;
-      const value = Math.max(0.001, Math.min(1_000_000, depth));
-      store.mutate((current) => {
-        const target = findItem(current, itemRef.itemId)?.item;
-        if (!target || target.kind !== "volume") return;
-        target.depth = value;
-        target.updatedAt = new Date().toISOString();
-      }, "change");
-    });
-  }
-
-  private finishPen(): void {
-    if (!this.draft || (this.draft.kind !== "pen" && this.draft.kind !== "highlight")) return;
-    const points = this.draft.points;
-    const kind = this.draft.kind;
-    this.draft = null;
-    if (points.length < 2) {
-      this.drawInteraction();
-      return;
-    }
-    const simplified = simplifyPolyline(points, 0.8 / this.viewZoom);
-    this.createItem(kind, simplified);
-    this.drawInteraction();
-  }
-
-  private finishShape(): void {
-    if (
-      !this.draft ||
-      (this.draft.kind !== "line" &&
-        this.draft.kind !== "arrow" &&
-        this.draft.kind !== "rect" &&
-        this.draft.kind !== "textbox" &&
-        this.draft.kind !== "rail" &&
-        this.draft.kind !== "ellipse" &&
-        this.draft.kind !== "highlight-rect")
-    ) {
-      return;
-    }
-    const { kind, start, current } = this.draft;
-    this.draft = null;
-    this.snap = null;
-    if (distance(start, current) < 3 / this.viewZoom) {
-      this.drawInteraction();
-      return;
-    }
-    if (kind === "highlight-rect") {
-      this.createItem("highlight", [start, current], { highlightShape: "rectangle" });
-    } else if (kind === "textbox") {
-      const created = this.createItem("textbox", [start, current], { text: "" });
-      const project = store.project;
-      const found = created && project ? findItem(project, created.itemId) : undefined;
-      if (found) this.editors.startTextBoxEdit(found.item, found.layer);
-    } else if (kind === "rail") {
-      this.createItem("rail", [start, current]);
-    } else {
-      this.createItem(kind, [start, current]);
-    }
-    this.drawInteraction();
-  }
-
-  private finishCallout(current: Point): void {
-    if (!this.draft || this.draft.kind !== "callout") return;
-    const start = this.draft.start;
-    this.draft = null;
-    this.snap = null;
-    if (distance(start, current) < 3 / this.viewZoom) {
-      this.drawInteraction();
-      return;
-    }
-    this.createCallout(start, current);
-  }
-
-  private createCallout(start: Point, current: Point): void {
-    const content = t("kind.callout");
-    const page = this.pageSize();
-    let center = current;
-    if (page) {
-      const box = textBoxLayout(content, store.ui.style.fontSize);
-      const margin = 8;
-      const minX = Math.min(page.width / 2, box.width / 2 + margin);
-      const maxX = Math.max(page.width / 2, page.width - box.width / 2 - margin);
-      const minY = Math.min(page.height / 2, box.height / 2 + margin);
-      const maxY = Math.max(page.height / 2, page.height - box.height / 2 - margin);
-      center = {
-        x: Math.max(minX, Math.min(maxX, current.x)),
-        y: Math.max(minY, Math.min(maxY, current.y)),
-      };
-    }
-    const created = this.createItem("callout", [start, center], { text: content });
-    if (created && store.project) {
-      const found = findItem(store.project, created.itemId);
-      if (found) this.editors.startCalloutTextEdit(found.item, found.layer);
-    }
-    this.drawInteraction();
-  }
-
-  private async editItemText(item: MarkupItem): Promise<void> {
-    const title =
-      item.kind === "stamp"
-        ? t("canvas.editStampText")
-        : item.kind === "delta"
-          ? t("canvas.editDelta")
-          : item.kind === "cloud"
-            ? t("canvas.cloudText")
-            : t("canvas.editCallout");
-    const text = await textDialog(title, t("canvas.onlyThisItem"), item.text ?? "", "", true);
-    if (text === null) return;
-    store.mutate((project) => {
-      const target = findItem(project, item.id)?.item;
-      if (target) {
-        target.text =
-          text.trim() ||
-          (target.kind === "stamp"
-            ? t("tool.stamp")
-            : target.kind === "callout"
-              ? t("kind.callout")
-              : "");
-        if (target.kind === "stamp") {
-          target.color = stampStatusColor(target.text, target.color);
-        }
-        target.updatedAt = new Date().toISOString();
-      }
-    }, "change");
-  }
-
-  private finishQuickArea(): void {
-    if (!this.draft || (this.draft.kind !== "area-rect" && this.draft.kind !== "area-ellipse")) {
-      return;
-    }
-    const shape: AreaShape = this.draft.kind === "area-rect" ? "rectangle" : "ellipse";
-    const { start, current } = this.draft;
-    this.draft = null;
-    this.snap = null;
-    if (distance(start, current) < 3 / this.viewZoom) {
-      this.drawInteraction();
-      return;
-    }
-    this.createItem("area", [start, current], { areaShape: shape });
-    this.drawInteraction();
+    return createItemInStore(kind, points, options, this.viewPage);
   }
 
   public finishDraft(): void {
-    if (this.crop.active) {
-      this.crop.confirm();
-      return;
-    }
-    if (!this.draft) return;
-    if (
-      this.draft.kind === "radius" ||
-      this.draft.kind === "diameter" ||
-      this.draft.kind === "arc" ||
-      this.draft.kind === "angle" ||
-      this.draft.kind === "slope"
-    ) {
-      const kind = this.draft.kind;
-      const points = dedupeLast(this.draft.points);
-      const minimum = kind === "arc" || kind === "angle" ? 3 : 2;
-      this.draft = null;
-      this.snap = null;
-      if (points.length >= minimum) {
-        const selected = points.slice(0, minimum);
-        const preview = { kind, points: selected } as MarkupItem;
-        if (kind !== "arc" || arcGeometry(preview)) this.createItem(kind, selected);
-        else toast(t("canvas.thirdPoint"), "warning");
-      } else {
-        toast(t("canvas.remainingPoints"), "warning");
-      }
-      this.drawInteraction();
-      return;
-    }
-
-    if (this.draft.kind === "polyline") {
-      const points = dedupeLast(this.draft.points);
-      this.draft = null;
-      this.snap = null;
-      if (points.length >= 2) this.createItem("polyline", points);
-      this.drawInteraction();
-      return;
-    }
-
-    if (this.draft.kind === "area-rect" || this.draft.kind === "area-ellipse") {
-      this.finishQuickArea();
-    } else if (
-      this.draft.kind === "length" ||
-      this.draft.kind === "area" ||
-      this.draft.kind === "volume" ||
-      this.draft.kind === "cloud" ||
-      this.draft.kind === "highlight-polygon"
-    ) {
-      this.draft.points = dedupeLast(this.draft.points);
-      const points = this.draft.points;
-      const kind = this.draft.kind;
-      if (kind === "length" && points.length < 2) {
-        this.draft = null;
-        this.drawInteraction();
-        return;
-      }
-      if (kind !== "length" && points.length < 3) {
-        toast(t("canvas.minThreePoints"), "warning");
-        return;
-      }
-      this.draft = null;
-      this.snap = null;
-      if (kind === "cloud") {
-        const created = this.createItem("cloud", points, {
-          text: store.ui.cloudText ? t("reference.revision") : undefined,
-        });
-        if (created && store.ui.cloudText && store.project) {
-          const found = findItem(store.project, created.itemId);
-          if (found) this.editors.startCloudTextEdit(found.item, found.layer);
-        }
-      } else if (kind === "highlight-polygon") {
-        this.createItem("highlight", points, { highlightShape: "polygon" });
-      } else {
-        const created = this.createItem(kind, points);
-        if (kind === "volume") this.promptVolumeDepth(created);
-      }
-      this.drawInteraction();
-    } else if (this.draft.kind === "callout") {
-      this.finishCallout(this.draft.current);
-    } else if (this.draft.kind === "pen" || this.draft.kind === "highlight") {
-      this.finishPen();
-    } else if (
-      this.draft.kind === "line" ||
-      this.draft.kind === "arrow" ||
-      this.draft.kind === "rect" ||
-      this.draft.kind === "textbox" ||
-      this.draft.kind === "ellipse" ||
-      this.draft.kind === "highlight-rect"
-    ) {
-      this.finishShape();
-    } else {
-      this.cancelDraft();
-    }
+    this.drafts.finishDraft();
   }
 
   public removeLastPoint(): boolean {
-    if (
-      !this.draft ||
-      this.draft.kind === "line" ||
-      this.draft.kind === "arrow" ||
-      this.draft.kind === "rect" ||
-      this.draft.kind === "textbox" ||
-      this.draft.kind === "rail" ||
-      this.draft.kind === "ellipse" ||
-      this.draft.kind === "highlight-rect" ||
-      this.draft.kind === "area-rect" ||
-      this.draft.kind === "area-ellipse" ||
-      this.draft.kind === "callout"
-    ) {
-      return false;
-    }
-    if (this.draft.points.length <= 1) {
-      this.cancelDraft();
-      return true;
-    }
-    this.draft.points.pop();
-    this.draft.cursor = this.draft.points[this.draft.points.length - 1];
-    this.drawInteraction();
-    return true;
+    return this.drafts.removeLastPoint();
   }
 
   public cancelDraft(): void {
-    if (this.crop.active) {
-      this.crop.cancel();
-      return;
-    }
-    if (this.pointers.labelConnectActive) {
-      this.pointers.cancelLabelConnection();
-      this.updateCursor();
-      this.drawInteraction();
-      return;
-    }
-    if (!this.draft) return;
-    this.draft = null;
-    this.snap = null;
-    this.drawInteraction();
+    this.drafts.cancelDraft();
   }
 
   public deleteSelection(): void {
@@ -2446,13 +1381,13 @@ export class CanvasView {
       cropDraw: (ctx) => this.crop.draw(ctx),
       drawDraft: (ctx) => this.drawDraft(ctx),
       labelResizePoint: (item) => this.labelResizePoint(item),
-      hoverLabelResize: this.hoverLabelResize,
+      hoverLabelResize: this.pointers.hoverLabelResize,
       searchHits: this.searchHits,
       marquee: this.pointers.marqueeState,
-      draft: this.draft,
+      draft: this.drafts.draft,
       snap: this.snap,
-      pointerScreen: this.pointerScreen,
-      dragActive: Boolean(this.drag),
+      pointerScreen: this.pointers.pointerScreen,
+      dragActive: this.pointers.dragActive,
       panActive: this.pointers.panActive,
     };
   }
@@ -2477,9 +1412,9 @@ export class CanvasView {
   }
 
   private drawDraft(ctx: CanvasRenderingContext2D): void {
-    if (!this.draft || !store.project) return;
+    if (!this.drafts.draft || !store.project) return;
     paintDraft(ctx, {
-      draft: this.draft,
+      draft: this.drafts.draft,
       project: store.project,
       viewPage: this.viewPage,
       zoom: this.viewZoom,
@@ -2518,7 +1453,7 @@ export class CanvasView {
       },
       snapTarget: () =>
         this.snap ? { kind: this.snap.kind, point: { ...this.snap.point } } : null,
-      draftKind: () => this.draft?.kind ?? null,
+      draftKind: () => this.drafts.draft?.kind ?? null,
       searchHighlights: () => this.searchHits,
       annotationScreenPoint: (itemId) => {
         const project = store.project;
@@ -2553,13 +1488,6 @@ export class CanvasView {
     if (this.renderTimer !== null) window.clearTimeout(this.renderTimer);
     this.commitSheetField(false);
     this.editors.destroy();
-    this.interaction.removeEventListener("pointerdown", this.onPointerDown);
-    this.interaction.removeEventListener("pointermove", this.onPointerMove);
-    this.interaction.removeEventListener("pointerup", this.onPointerUp);
-    this.interaction.removeEventListener("pointercancel", this.onPointerUp);
-    this.interaction.removeEventListener("pointerleave", this.onPointerLeave);
-    this.interaction.removeEventListener("dblclick", this.onDoubleClick);
-    this.interaction.removeEventListener("wheel", this.onWheel);
-    this.interaction.removeEventListener("contextmenu", this.onContextMenu);
+    this.pointers.detach();
   }
 }
