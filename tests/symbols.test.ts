@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(141);
-    expect(ALL_SYMBOLS).toHaveLength(193);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(145);
+    expect(ALL_SYMBOLS).toHaveLength(197);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(141);
+    expect(symbolsForSet("schematic")).toHaveLength(145);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -363,6 +363,18 @@ describe("schematic symbol set", () => {
       expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
     expect(symbolForAll("schematic.closed-gate-valve").art.shapes[0].stroke).not.toBe(true);
+  });
+
+  it("adds plug, flanged and angle valve variants", () => {
+    for (const id of [
+      "schematic.plug-cock-valve",
+      "schematic.flanged-valve",
+      "schematic.flanged-valve-2",
+      "schematic.angle-valve-hand",
+    ]) {
+      expect(symbolForAll(id).category, id).toBe("valve");
+      expect(symbolForAll(id).ports, id).toHaveLength(2);
+    }
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

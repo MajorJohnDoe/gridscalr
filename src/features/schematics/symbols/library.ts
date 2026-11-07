@@ -636,6 +636,86 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ],
   }),
   schematicSymbol({
+    id: "schematic.plug-cock-valve",
+    category: "valve",
+    keywords: ["kikventil", "plug valve", "cock valve", "kran", "ventil", "kv"],
+    tagPrefix: "KV",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), linePath(32, 32, 32, 10), linePath(32, 10, 40, 10)))],
+  }),
+  schematicSymbol({
+    id: "schematic.flanged-valve",
+    category: "valve",
+    keywords: ["flänsad ventil", "flanged valve", "fläns", "ventil", "fv"],
+    tagPrefix: "FV",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+    ],
+    shapes: [
+      stroke(
+        joinPaths(
+          polyPath([12, 22, 32, 32, 12, 42], true),
+          polyPath([52, 22, 32, 32, 52, 42], true),
+          linePath(8, 24, 8, 40),
+          linePath(12, 24, 12, 40),
+          linePath(52, 24, 52, 40),
+          linePath(56, 24, 56, 40),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.flanged-valve-2",
+    category: "valve",
+    keywords: ["flänsad ventil 2", "flanged valve 2", "fläns", "ventil", "fv2"],
+    tagPrefix: "FV2",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+    ],
+    shapes: [
+      stroke(
+        joinPaths(
+          polyPath([12, 22, 32, 32, 12, 42], true),
+          polyPath([52, 22, 32, 32, 52, 42], true),
+          linePath(8, 24, 8, 40),
+          linePath(12, 24, 12, 40),
+          linePath(52, 24, 52, 40),
+          linePath(56, 24, 56, 40),
+        ),
+      ),
+      fill(smallCircle(32, 32, 3)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.angle-valve-hand",
+    category: "valve",
+    keywords: [
+      "vinkelventil handmanövrerad",
+      "angle valve hand-operated",
+      "vinkelventil",
+      "ventil",
+      "vh",
+    ],
+    tagPrefix: "VH",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 32, y: 46, direction: "out" },
+    ],
+    shapes: [
+      stroke(
+        joinPaths(
+          polyPath([18, 22, 32, 32, 18, 42], true),
+          polyPath([22, 46, 42, 46, 32, 32], true),
+          linePath(32, 32, 32, 12),
+          linePath(24, 12, 40, 12),
+        ),
+      ),
+      fill(smallCircle(32, 32, 3)),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.three-way-valve",
     category: "valve",
     keywords: ["trevägsventil", "three-way valve", "3-väg", "ventil", "3v"],
