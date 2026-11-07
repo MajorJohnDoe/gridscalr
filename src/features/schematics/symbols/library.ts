@@ -107,6 +107,21 @@ function weightLetter(): string {
 
 const SELF_DRAINING_HEAD = polyPath([27, 48, 32, 56, 37, 48], true);
 
+const ANGLE_VALVE_BODY = joinPaths(
+  polyPath([18, 22, 32, 32, 18, 42], true),
+  polyPath([22, 46, 42, 46, 32, 32], true),
+);
+
+const RELIEF_SPRING = joinPaths(
+  linePath(32, 32, 32, 14),
+  linePath(24, 13, 40, 13),
+  linePath(26, 10, 38, 10),
+  linePath(24, 7, 40, 7),
+  linePath(26, 4, 38, 4),
+);
+
+const ANGLE_BLOWDOWN_BRANCH = joinPaths(linePath(32, 32, 48, 16), linePath(42, 10, 54, 22));
+
 const STRAINER_FLANGES = joinPaths(
   linePath(8, 24, 8, 40),
   linePath(56, 24, 56, 40),
@@ -714,6 +729,58 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       ),
       fill(smallCircle(32, 32, 3)),
     ],
+  }),
+  schematicSymbol({
+    id: "schematic.angle-globe-valve",
+    category: "valve",
+    keywords: ["vinkelsätesventil", "angle globe valve", "vinkelventil", "sätesventil", "agv"],
+    tagPrefix: "AGV",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 32, y: 46, direction: "out" },
+    ],
+    shapes: [stroke(ANGLE_VALVE_BODY), fill(smallCircle(32, 32, 3))],
+  }),
+  schematicSymbol({
+    id: "schematic.relief-valve",
+    category: "valve",
+    keywords: ["avlastningsventil", "relief valve", "avlastning", "fjäder", "ventil", "rl"],
+    tagPrefix: "RL",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 32, y: 46, direction: "out" },
+    ],
+    shapes: [stroke(joinPaths(ANGLE_VALVE_BODY, RELIEF_SPRING)), fill(smallCircle(32, 32, 3))],
+  }),
+  schematicSymbol({
+    id: "schematic.angle-valve",
+    category: "valve",
+    keywords: ["vinkelventil", "angle valve", "vinkel", "ventil", "vv"],
+    tagPrefix: "VV",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 32, y: 46, direction: "out" },
+    ],
+    shapes: [stroke(ANGLE_VALVE_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.angle-blowdown-valve",
+    category: "valve",
+    keywords: [
+      "avblåsningsventil",
+      "angle blowdown valve",
+      "avblåsning",
+      "blowdown",
+      "ventil",
+      "ab",
+    ],
+    tagPrefix: "AB",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+      { id: "blowdown", x: 48, y: 16, direction: "out" },
+    ],
+    shapes: [stroke(joinPaths(valveBody(), ANGLE_BLOWDOWN_BRANCH))],
   }),
   schematicSymbol({
     id: "schematic.three-way-valve",

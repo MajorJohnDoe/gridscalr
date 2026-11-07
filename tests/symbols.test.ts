@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(145);
-    expect(ALL_SYMBOLS).toHaveLength(197);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(149);
+    expect(ALL_SYMBOLS).toHaveLength(201);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(145);
+    expect(symbolsForSet("schematic")).toHaveLength(149);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -375,6 +375,18 @@ describe("schematic symbol set", () => {
       expect(symbolForAll(id).category, id).toBe("valve");
       expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
+  });
+
+  it("adds angle globe, relief, angle and blowdown valves", () => {
+    for (const id of [
+      "schematic.angle-globe-valve",
+      "schematic.relief-valve",
+      "schematic.angle-valve",
+    ]) {
+      expect(symbolForAll(id).category, id).toBe("valve");
+      expect(symbolForAll(id).ports, id).toHaveLength(2);
+    }
+    expect(symbolForAll("schematic.angle-blowdown-valve").ports).toHaveLength(3);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {
