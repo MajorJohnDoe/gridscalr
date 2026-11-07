@@ -214,7 +214,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
-      stroke(joinPaths(linePath(32, 22, 32, 12), linePath(24, 12, 40, 12))),
+      stroke(joinPaths(linePath(32, 32, 32, 12), linePath(24, 12, 40, 12))),
     ],
   }),
   schematicSymbol({
@@ -225,7 +225,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
-      stroke(joinPaths(linePath(32, 22, 32, 16), smallCircle(32, 10, 5))),
+      stroke(joinPaths(linePath(32, 32, 32, 16), smallCircle(32, 10, 5))),
       stroke(polyPath([27, 13, 37, 8, 31, 7, 37, 4])),
     ],
   }),
@@ -237,7 +237,7 @@ export const REFERENCE_SYMBOLS: SymbolDefinition[] = [
     ports: valvePorts(),
     shapes: [
       stroke(valveBody()),
-      stroke(joinPaths(linePath(32, 22, 32, 16), smallCircle(32, 10, 5))),
+      stroke(joinPaths(linePath(32, 32, 32, 16), smallCircle(32, 10, 5))),
       stroke(linePath(26, 15, 38, 5)),
     ],
   }),
