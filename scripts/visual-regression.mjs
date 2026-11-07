@@ -42,6 +42,10 @@ async function installVisualFonts(page) {
       face(boldItalic, 700, "italic"),
     ].join("\n"),
   });
+  await page.addStyleTag({
+    content:
+      "* { scrollbar-width: none !important; } *::-webkit-scrollbar { display: none !important; }",
+  });
   await page.evaluate(() => document.fonts.ready);
 }
 
@@ -185,7 +189,9 @@ try {
     await page.mouse.move(2, 2);
     await settlePage(page);
     await page.waitForTimeout(60);
-    const actual = await page.screenshot();
+    // Canvas and thumbnail rasterisation differs by platform and is covered by
+    // the pointer-level canvas regressions and the manual visual checklist.
+    const actual = await page.screenshot({ mask: [page.locator("canvas")] });
     await compareScreenshot(page, file, actual);
   };
 
