@@ -115,7 +115,7 @@ src/
   help/markdown.ts       safe Markdown renderer for bundled help
   help/content.ts        Vite raw imports of the user guide, workflows and shortcuts
   help/images.ts         Vite asset URLs for bundled help screenshots
-  io/projectFile.ts      project schema normalization, serialization, relative paths, source-path protection
+  io/projectFile/        project schema normalization, serialization, relative paths, source-path protection
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export

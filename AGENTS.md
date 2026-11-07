@@ -295,7 +295,7 @@ src/ui/settingsDialog.ts   project units, snapping, quantity defaults
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
-src/io/projectFile.ts      schema normalization, migration, serialization, relative paths
+src/io/projectFile/       schema normalization, migration, serialization, relative paths
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
@@ -348,7 +348,7 @@ When adding a language, add `src/i18n/locales/<id>.json` and one entry in `src/i
 - The gate does not scan Rust (`src-tauri`), the `index.html` boot fallback, or literal branches inside ternaries such as `cond ? "A" : "B"`; review those manually.
 - A language change must relabel the open interface without a restart. Add new static chrome to `relabelShell()`/`relabelMenuBar()` or render it from `t()` on every update, and keep `document.documentElement.lang` in sync.
 
-When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile.ts`, serialization/migration tests, and `README.md`.
+When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile/`, serialization/migration tests, and `README.md`.
 
 When adding a layer or item operation, put lock and visibility semantics in `src/model/commands.ts` and keep the App, canvas, layer list, inspector and export call sites aligned.
 
