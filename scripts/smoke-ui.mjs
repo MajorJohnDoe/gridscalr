@@ -717,6 +717,20 @@ try {
     "locale",
     "CSV should default to the locale-aware Excel format",
   );
+  const themeSelect = preferencesDialog.getByLabel("Theme");
+  await themeSelect.selectOption("light-green");
+  assert.equal(
+    await page.evaluate(() => document.documentElement.dataset.theme),
+    "light-green",
+    "the light theme should apply without a restart",
+  );
+  await themeSelect.selectOption("system");
+  assert.equal(
+    await page.evaluate(() => document.documentElement.dataset.theme),
+    "default",
+    "System should follow the dark Chromium preference",
+  );
+  await themeSelect.selectOption("default");
   await preferencesDialog
     .getByRole("navigation", { name: "Preference categories" })
     .getByRole("button", { name: "Layers" })

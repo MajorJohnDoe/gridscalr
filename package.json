@@ -46,6 +46,7 @@
     "format:check": "prettier --check \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"dev/**/*.{ts,css,html}\" vite.config.ts eslint.config.mjs",
     "lint": "eslint src tests dev vite.config.ts",
     "check:i18n": "node scripts/check-i18n.mjs",
+    "check:themes": "node scripts/check-theme-tokens.mjs",
     "i18n:types": "node scripts/i18n-types.mjs",
     "i18n:report": "node scripts/i18n-report.mjs",
     "bench:history": "node scripts/benchmark-history.mjs",
@@ -57,6 +58,7 @@
     "site:check": "node scripts/check-site.mjs",
     "docs:demo": "node scripts/make-demo-project.mjs",
     "docs:capture": "node scripts/capture-docs.mjs",
+    "theme:preview": "node scripts/theme-preview.mjs",
     "symbols:catalog": "node scripts/symbol-catalog.mjs",
     "fixture": "node scripts/make-industrial-fixture.mjs",
     "fixture:legacy": "node scripts/make-fixture.mjs"

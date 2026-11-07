@@ -1,38 +1,8 @@
 /*
- * Theme token contract. The default theme is the current dark jade palette.
- * A future theme file overrides these base values or the semantic roles below;
- * no component file should depend on a palette literal.
+ * Theme token contract. Palette values live in src/styles/themes/; component
+ * rules use the semantic roles below and must not depend on a palette literal.
  */
-:root,
-:root[data-theme="default"] {
-  color-scheme: dark;
-  --bg: #14181b;
-  --bg-deep: #0f1315;
-  --panel: #1e2428;
-  --panel-raised: #232a2f;
-  --panel-hover: #293136;
-  --border: #30383d;
-  --border-soft: #262e33;
-  --text: #e8eef1;
-  --text-strong: #f7fbfc;
-  --muted: #9aa8ae;
-  --muted-2: #849398;
-  --jade: #35c2a1;
-  --jade-bright: #4fd7b6;
-  --jade-dim: rgba(53, 194, 161, 0.13);
-  --cyan: #4cc9f0;
-  --amber: #f2a93b;
-  --violet: #a78bfa;
-  --danger: #f26d6d;
-  --warning: #f0b35d;
-  --markups-bg: #1a202a;
-  --markups-head: #202736;
-  --markups-toolbar: #171c25;
-  --markups-header: #222a39;
-  --markups-hover: #252d3b;
-  --markups-border: #2b3442;
-  --markups-row-border: #252c38;
-  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+:root {
   --radius: 7px;
   --topbar-h: 40px;
   --status-h: 28px;
@@ -48,7 +18,7 @@
   font-size: 13px;
   line-height: 1.4;
 
-  /* Semantic theme contract. Theme files override these roles or the base values above. */
+  /* Semantic theme contract. Theme files override these roles or the base values. */
   --surface-app: var(--bg);
   --surface-panel: var(--panel);
   --surface-raised: var(--panel-raised);

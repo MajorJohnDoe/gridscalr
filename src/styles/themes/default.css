@@ -1,0 +1,77 @@
+/* Default dark jade theme. This is the reference palette. */
+
+:root,
+:root[data-theme="default"] {
+  color-scheme: dark;
+
+  --bg: #14181b;
+  --bg-deep: #0f1315;
+  --panel: #1e2428;
+  --panel-raised: #232a2f;
+  --panel-hover: #293136;
+  --border: #30383d;
+  --border-soft: #262e33;
+  --text: #e8eef1;
+  --text-strong: #f7fbfc;
+  --muted: #9aa8ae;
+  --muted-2: #849398;
+  --jade: #35c2a1;
+  --jade-bright: #4fd7b6;
+  --jade-dim: rgba(53, 194, 161, 0.13);
+  --cyan: #4cc9f0;
+  --amber: #f2a93b;
+  --violet: #a78bfa;
+  --danger: #f26d6d;
+  --warning: #f0b35d;
+  --markups-bg: #1a202a;
+  --markups-head: #202736;
+  --markups-toolbar: #171c25;
+  --markups-header: #222a39;
+  --markups-hover: #252d3b;
+  --markups-border: #2b3442;
+  --markups-row-border: #252c38;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
+  --scrollbar: #384148;
+  --scrollbar-hover: #4c585f;
+
+  --chrome-topbar: linear-gradient(180deg, #1d2428 0%, #181e22 100%);
+  --chrome-rail: linear-gradient(180deg, #1b2125 0%, #171c20 100%);
+  --surface-tab: #1b2125;
+  --surface-sunken: #1a2024;
+  --statusbar-bg: #111619;
+  --glass-panel: rgba(24, 30, 34, 0.96);
+  --glass-cropbar: rgba(20, 26, 29, 0.94);
+  --glass-strip: rgba(22, 28, 32, 0.97);
+  --glass-editor: rgba(12, 16, 18, 0.97);
+  --glass-editor-strong: rgba(12, 16, 18, 0.95);
+  --glass-editor-input: rgba(12, 16, 18, 0.55);
+  --glass-loading: rgba(16, 21, 24, 0.84);
+  --glass-controls: rgba(30, 36, 40, 0.94);
+  --modal-grad: linear-gradient(180deg, #252d32, #1b2125);
+  --modal-border: #3a444a;
+  --toast-bg: #242c31;
+  --input-sunken: #14191c;
+  --overlay-modal: rgba(4, 7, 8, 0.68);
+  --overlay-lightbox: rgba(4, 7, 8, 0.9);
+  --hover-soft: rgba(255, 255, 255, 0.08);
+  --hover-softer: rgba(255, 255, 255, 0.05);
+  --hover-strong: rgba(255, 255, 255, 0.22);
+  --canvas-grid: rgba(255, 255, 255, 0.018);
+  --canvas-glow: rgba(53, 194, 161, 0.045);
+  --border-hover: #3b454b;
+  --shadow-pop: 0 18px 48px rgba(0, 0, 0, 0.55);
+  --shadow-pop-sm: 0 12px 36px rgba(0, 0, 0, 0.5);
+  --shadow-toast: 0 8px 28px rgba(0, 0, 0, 0.42);
+  --shadow-soft: 0 2px 10px rgba(0, 0, 0, 0.3);
+  --shadow-strip: 0 8px 26px rgba(0, 0, 0, 0.42);
+  --shadow-label: 0 6px 22px rgba(0, 0, 0, 0.45);
+  --markups-inset: inset 0 1px 0 rgba(95, 143, 179, 0.2);
+  --hover-row: rgba(255, 255, 255, 0.012);
+  --placeholder: rgba(210, 222, 227, 0.42);
+  --hint: rgba(210, 222, 227, 0.58);
+  --mark: rgba(242, 169, 59, 0.35);
+  --tool-dot-ring: rgba(255, 255, 255, 0.25);
+  --help-row: rgba(0, 0, 0, 0.12);
+  --help-figure-shadow: rgba(0, 0, 0, 0.22);
+  --export-list: rgba(0, 0, 0, 0.14);
+}
