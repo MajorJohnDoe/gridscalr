@@ -98,6 +98,7 @@ import {
 import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
+import { classifyOpenTarget } from "./openTarget";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { describeError } from "../io/platformError";
 import { store } from "../state/store";
@@ -2282,12 +2283,12 @@ export class App {
   }
 
   private async openPath(path: string, failureTitle = t("app.couldNotOpenDropped")): Promise<void> {
-    const lower = path.toLowerCase();
+    const target = classifyOpenTarget(path);
     try {
-      if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
+      if (target === "drawing") {
         const bytes = await readFileBytes(path);
         await this.loadNewPdf(bytes, basename(path), path);
-      } else if (lower.endsWith(".gridscalr") || lower.endsWith(".json")) {
+      } else if (target === "project") {
         const text = await readFileText(path);
         await this.loadProjectText(text, path);
       } else {
@@ -2463,13 +2464,10 @@ export class App {
 
   private async openDroppedFile(file: File): Promise<void> {
     try {
-      const lower = file.name.toLowerCase();
-      if (lower.endsWith(".pdf") || lower.endsWith(".tif") || lower.endsWith(".tiff")) {
+      const target = classifyOpenTarget(file.name);
+      if (target === "drawing") {
         await this.loadNewPdf(new Uint8Array(await file.arrayBuffer()), file.name, null);
-      } else if (
-        file.name.toLowerCase().endsWith(".gridscalr") ||
-        file.name.toLowerCase().endsWith(".json")
-      ) {
+      } else if (target === "project") {
         await this.loadProjectText(await file.text(), null);
       } else {
         toast(t("app.dropHint"), "warning");

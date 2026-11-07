@@ -1408,6 +1408,21 @@ try {
     "the new page should be marked as blank",
   );
 
+  // Discarding at the end returns to the welcome screen.
+  assert.equal(await page.evaluate(() => window.__gridscalr.store.dirty), true);
+  await page.getByRole("menuitem", { name: "File" }).click();
+  await page.getByRole("menuitem", { name: "Close project" }).click();
+  const discardDialog = page.getByRole("dialog");
+  await discardDialog.waitFor();
+  await discardDialog.getByRole("button", { name: "Discard changes" }).click();
+  await discardDialog.waitFor({ state: "detached" });
+  await page.waitForFunction(() => !window.__gridscalr.store.project, null, { timeout: 15_000 });
+  assert.equal(
+    await page.locator(".welcome-card").isVisible(),
+    true,
+    "discarding should return to the welcome screen",
+  );
+
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);
 } finally {
