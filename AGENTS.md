@@ -115,6 +115,7 @@ Run the relevant checks from the repository root:
 
 ```bash
 npm run check:versions
+npm run check:file-budgets
 npm run check:docs
 npm run format:check
 npm run lint
@@ -281,9 +282,11 @@ src/styles/popovers.css    tool flyouts and measurement options
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
 src/ui/inspector.ts        Properties header, active-layer and selection sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
-src/ui/selectionInspector.ts single and multi-selection Properties
+src/ui/selectionInspector.ts selection Properties dispatcher
+src/ui/inspector/         selection summary, measurement, image, symbol, drawing, style and item actions
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
-src/ui/markupsPanel.ts     Markups table, columns, saved views, grouping and filters
+src/ui/markupsPanel.ts     Markups public surface
+src/ui/markups/            Markups state, views, rows and panel
 src/ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
 src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
 src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
@@ -300,7 +303,8 @@ src/ui/welcome.ts          empty-project welcome screen and recent files
 src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
-src/ui/settingsDialog.ts   project units, snapping, quantity defaults
+src/ui/settingsDialog.ts   settings dialog orchestrator
+src/ui/settings/           project, metadata, scale, units, labels, display, quantities, count types and stamps sections
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
@@ -337,6 +341,7 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
 scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
+scripts/check-file-budgets.mjs blocking line budget for source files
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 scripts/build-site.mjs     builds site-dist from site/, icons, screenshots and release metadata
 scripts/check-site.mjs     link, asset, language parity, release and SEO checks for the built site
@@ -356,6 +361,8 @@ When adding a language, add `src/i18n/locales/<id>.json` and one entry in `src/i
 - `src/i18n/hardcoded-baseline.json` must stay `{}`. Do not add exceptions there. Deliberately technical English (diagnostics, package-manifest validation, Markdown/XLSX internals, developer geometry errors) is excluded by file in `TEMPLATE_EXCLUDE_FILES` in `scripts/check-i18n.mjs` with a reason.
 - The gate does not scan Rust (`src-tauri`), the `index.html` boot fallback, or literal branches inside ternaries such as `cond ? "A" : "B"`; review those manually.
 - A language change must relabel the open interface without a restart. Add new static chrome to `relabelShell()`/`relabelMenuBar()` or render it from `t()` on every update, and keep `document.documentElement.lang` in sync.
+
+New logic goes in a module. `App.ts`, `CanvasView.ts` and `itemRenderer.ts` are wiring and dispatch points; `npm run check:file-budgets` blocks growth and is ratcheted down with every extraction. See ADR 0008 and `docs/plan/0.20-refactor.md`.
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile/`, serialization/migration tests, and `README.md`.
 

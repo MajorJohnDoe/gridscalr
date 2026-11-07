@@ -10,6 +10,9 @@
 - [ ] Desktop shell or file I/O change
 - [ ] Documentation only
 - [ ] New feature logic lives in a feature module; `App.ts`/`CanvasView.ts` only wire it
+- [ ] File budgets are respected; `npm run check:file-budgets` passes
+
+Budget impact: <!-- none, or the files and line deltas this PR changes -->
 
 ## Documentation impact
 

@@ -90,11 +90,13 @@ src/
   styles/popovers.css    tool flyouts, Canvas options and measurement options
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties header, active-layer and selection sections
-  ui/markupsPanel.ts     docked Markups table, columns, views, grouping and filters
+  ui/markupsPanel.ts     Markups public surface
+  ui/markups/            Markups state, views, rows and panel
   ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
   ui/measureOptions.ts   category, room, count type and area options popover
-  ui/selectionInspector.ts single and multi-selection Properties
+  ui/selectionInspector.ts selection Properties dispatcher
+  ui/inspector/          selection summary, measurement, image, symbol, drawing, style and item actions
   ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
   ui/itemIcon.ts         icon lookup shared by Layers and Markups
   ui/shortcuts.json      single source for tool and application shortcuts
@@ -111,7 +113,8 @@ src/
   ui/topMenu.ts          File/Edit/View/Settings/Help menu model and keyboard navigation
   ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
-  ui/settingsDialog.ts   project name, scale, units, snapping, quantities, count types and project stamps
+  ui/settingsDialog.ts   settings dialog orchestrator
+  ui/settings/           project, metadata, scale, units, labels, display, quantities, count types and stamps sections
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
@@ -152,6 +155,7 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark with 2,000+ items
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
 scripts/capture-docs.mjs Playwright screenshot capture for the documentation
 scripts/check-docs.mjs link, image, anchor and schema checks
+scripts/check-file-budgets.mjs blocking source line budgets
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 scripts/build-site.mjs build site-dist from site/, icons, screenshots and release metadata
 scripts/check-site.mjs link, asset, language parity, release and SEO checks for the built site
@@ -195,6 +199,7 @@ Key design choices:
 
 - `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry, autosave and project-package manifest/path rules.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes, canonical source-path protection and package create/extract security, checksums, cancellation and limits. CI runs the same tests.
+- `npm run check:file-budgets` compares every TypeScript and CSS file under `src` with `file-budgets.json`. New files default to 700 lines, `src/canvas/items` and `src/canvas/pointer` have stricter limits, and listed files may only shrink. CI fails when a budget is exceeded.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches, plus the integration-module import boundary and the line budget. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:coverage` runs the same Vitest suite with the v8 coverage provider and writes text, HTML and `json-summary` reports to `coverage/`. CI uploads the report as an artifact; no threshold is enforced yet.
 - `npm run test:ui` and `npm run test:canvas` drive the browser fallback with Playwright.

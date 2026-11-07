@@ -1,0 +1,23 @@
+{
+  "defaultMax": 700,
+  "directoryMax": {
+    "src/canvas/items": 400,
+    "src/canvas/pointer": 500
+  },
+  "files": {
+    "src/app/App.ts": 1684,
+    "src/canvas/CanvasView.ts": 3470,
+    "src/canvas/editors.ts": 1153,
+    "src/canvas/itemRenderer.ts": 805,
+    "src/features/schematics/model/sheetTemplate.ts": 714,
+    "src/model/labelLayout.ts": 810,
+    "src/pdf/pdfExport.ts": 1885,
+    "src/state/store.ts": 933,
+    "src/styles/dialogs.css": 1694,
+    "src/styles/markups.css": 1027,
+    "src/styles/panels.css": 1016,
+    "src/styles/shell.css": 1792,
+    "src/ui/dialogs.ts": 902,
+    "src/ui/toolFlyouts.ts": 707
+  }
+}
