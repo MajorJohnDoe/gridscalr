@@ -83,7 +83,15 @@ src/
   canvas/selectionHandles.ts selection and rotation handles
   canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
   canvas/crop.ts         export crop mode, overlay and toolbar
-  canvas/editors.ts      inline text and measurement-label editors
+  canvas/editors.ts      public CanvasEditorController surface
+  canvas/editors/controller.ts editor facade and document pointer-down handling
+  canvas/editors/shared.ts editor session types, surface colours and close helpers
+  canvas/editors/text.ts text, textbox and annotation session starters
+  canvas/editors/textSession.ts text editor DOM, style strip and resize binding
+  canvas/editors/textPosition.ts inline editor positioning
+  canvas/editors/textCommit.ts text editor commit semantics
+  canvas/editors/textResize.ts cloud and callout resize handle
+  canvas/editors/labels.ts measurement-label editing
   model/                 project types, geometry, radius/diameter/arc/angle/slope/volume measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
