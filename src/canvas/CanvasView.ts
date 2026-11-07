@@ -1,19 +1,14 @@
 import {
-  angleArcPolyline,
   arcGeometry,
   arcPolyline,
-  arrowHeadGeometry,
   circlePolyline,
   constrainAngle,
   distance,
   expandRect,
   itemBounds,
   itemCenter,
-  itemCorners,
   itemLocalBounds,
-  itemSelectionCorners,
   symbolSelectionBounds,
-  itemLocalToPage,
   itemRotation,
   midpoint,
   nearestPointOnSegment,
@@ -27,9 +22,8 @@ import {
   type Bounds,
   vertexAngleAnchor,
 } from "../model/geometry";
-import { areaOutline, areaShapeOf, rectangleCorners } from "../model/area";
-import { COUNT_SYMBOL_RADIUS, countSymbol } from "../model/countSymbols";
-import { countTypeGlyph } from "../features/countTypes/model";
+import { areaOutline, areaShapeOf } from "../model/area";
+import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
 import { findSegment, findVertex, hitTest, itemIntersectsBounds } from "../model/hitTest";
 import {
   clampLabelSize,
@@ -65,30 +59,29 @@ import {
   constrainSquare,
   cursorForRole,
   dedupeLast,
-  drawArrowHead,
   focusViewTransform,
   handleLocalPoint,
-  hexAlpha,
   isCancellation,
   oppositeHandlePoint,
   pointInBox,
-  roundRect,
   scaleBounds,
-  snapLabel,
   type BoxHandleRole,
 } from "./geometry";
 import { CropController } from "./crop";
 import { TouchNavigation } from "./touchNavigation";
 import { CALIBRATION_COLOR, drawDraft as paintDraft, type Draft } from "./draftRenderer";
+import { drawLabelLayout as paintLabelLayout } from "./annotationDraw";
 import { CanvasEditorController, type LabelHit } from "./editors";
+import { drawItem, type ItemRenderContext } from "./itemRenderer";
 import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
+import { groupHandleAt } from "./groupHandles";
+import type { DragState, MarqueeState, PanState } from "./pointerState";
 import {
-  drawAnnotationPanel as paintAnnotationPanel,
-  drawEndpoints as paintEndpoints,
-  drawLabelLayout as paintLabelLayout,
-} from "./annotationDraw";
+  drawInteraction as paintInteraction,
+  type InteractionRenderContext,
+} from "./interactionRenderer";
 import type { NormalizedCrop } from "../model/export";
-import { imageAssetForItem, imageModeOf, imageOpacity } from "../model/images";
+import { imageModeOf } from "../model/images";
 import { measurementCategory, normalizeRoom } from "../model/categories";
 import { resolveSelection } from "../model/selection";
 import {
@@ -108,16 +101,7 @@ import {
   type SnapKind,
   type SnapResult,
 } from "../model/snap";
-import {
-  clampTextSize,
-  TEXT_FONT_STACK,
-  TEXT_UNDERLINE_OFFSET,
-  TEXT_UNDERLINE_WIDTH,
-  textItemLayout,
-  textLineX,
-  wrapText,
-} from "../model/text";
-import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
+import { clampTextSize, TEXT_FONT_STACK } from "../model/text";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import {
@@ -130,20 +114,9 @@ import {
   measureSheetText,
   SHEET_FONT_STACK,
 } from "../features/schematics/render/sheetText";
-import { defaultRailRows, railGeometry, railLegendY, RAIL_ROW_SPACING } from "../model/rail";
-import {
-  CLOUD_FILL_OPACITY,
-  cloudCurves,
-  cloudFillColor,
-  cloudRadiusForPoints,
-} from "../model/cloud";
-import {
-  calloutLayout,
-  cloudLabelLayout,
-  deltaLayout,
-  stampLayout,
-  textBoxLayout,
-} from "../model/annotations";
+import { defaultRailRows, RAIL_ROW_SPACING } from "../model/rail";
+import { CLOUD_FILL_OPACITY, cloudFillColor } from "../model/cloud";
+import { calloutLayout, cloudLabelLayout, textBoxLayout } from "../model/annotations";
 import type {
   AreaShape,
   ImageAsset,
@@ -158,32 +131,24 @@ import type {
 } from "../model/types";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../model/style";
 import { stampStatusColor } from "../model/stamps";
-import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../model/symbolTag";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
 import {
   clampSymbolSize,
-  inspectionStatusColor,
   SYMBOL_SIZE,
   symbolCategoryColor,
   symbolCategoryOf,
   symbolDefaultSize,
-  symbolFor,
-  symbolRenderPlan,
-  symbolShapeStrokeWidth,
   symbolSizeOf,
 } from "../features/schematics/symbols/registry";
 import { formatNumber } from "../model/units";
 import { scaleItemAround, selectionBounds } from "../model/transform";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store, type ToolId } from "../state/store";
+import { clampZoom, fitPageViewport, viewportCenter, type Viewport } from "./viewport";
 import {
-  clampZoom,
-  fitPageViewport,
   pageToScreen as toScreenPoint,
   screenToPage as toPagePoint,
-  viewportCenter,
   zoomAt as zoomViewport,
-  type Viewport,
 } from "./viewport";
 import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
 import { showPopoverAt } from "../ui/popover";
@@ -227,90 +192,6 @@ export interface CanvasTestApi {
   } | null;
 }
 
-interface DragState {
-  mode:
-    | "move"
-    | "vertex"
-    | "resize"
-    | "scale-selection"
-    | "rotate"
-    | "label"
-    | "measurement-label"
-    | "measurement-label-size";
-  itemId: string;
-  layerId: string;
-  vertexIndex: number;
-  last: Point;
-  moved: boolean;
-  handle?: BoxHandleRole;
-  startPage?: Point;
-  startPoints?: Point[];
-  startSelection?: Array<{ ref: SelectionRef; points: Point[] }>;
-  startFontSize?: number;
-  startSymbolSize?: number;
-  startRotation?: number;
-  startBounds?: Bounds;
-  startAnchor?: Point;
-  scaleAnchor?: Point;
-  scaleCorner?: Point;
-  scaleStartItems?: Array<{ ref: SelectionRef; item: MarkupItem }>;
-  center?: Point;
-  startAngle?: number;
-  startTextOffset?: Point;
-  startLabelOffset?: Point;
-  startLabelSize?: number;
-  startLabelDistance?: number;
-}
-
-interface MarqueeState {
-  start: Point;
-  current: Point;
-  additive: boolean;
-}
-
-const GROUP_HANDLE_ROLES: BoxHandleRole[] = ["nw", "ne", "se", "sw"];
-
-function groupHandles(
-  bounds: Bounds,
-  toScreen: (point: Point) => Point,
-): Array<Handle & { role: BoxHandleRole }> {
-  return GROUP_HANDLE_ROLES.map((role) => {
-    const point = handleLocalPoint(bounds, role);
-    return {
-      role,
-      index: -1,
-      point: toScreen(point),
-      cursor: cursorForRole(role),
-    };
-  });
-}
-
-function groupHandleAt(
-  bounds: Bounds,
-  screen: Point,
-  toScreen: (point: Point) => Point,
-  tolerance: number,
-): (Handle & { role: BoxHandleRole }) | null {
-  let best: (Handle & { role: BoxHandleRole }) | null = null;
-  let bestDistance = tolerance;
-  for (const handle of groupHandles(bounds, toScreen)) {
-    const d = distance(screen, handle.point);
-    if (d <= bestDistance) {
-      best = handle;
-      bestDistance = d;
-    }
-  }
-  return best;
-}
-
-interface PanState {
-  startX: number;
-  startY: number;
-  panX: number;
-  panY: number;
-}
-
-const ACCENT = "#35c2a1";
 const FONT_STACK = TEXT_FONT_STACK;
 
 function orthoPoint(last: Point, current: Point): Point {
@@ -343,16 +224,6 @@ function toolUsesSnapping(tool: ToolId): boolean {
   return SNAP_TOOLS.has(tool);
 }
 
-const symbolPathCache = new Map<string, Path2D>();
-
-function symbolPath(data: string): Path2D {
-  let path = symbolPathCache.get(data);
-  if (!path) {
-    path = new Path2D(data);
-    symbolPathCache.set(data, path);
-  }
-  return path;
-}
 export class CanvasView {
   readonly host: HTMLElement;
   private base: HTMLCanvasElement;
@@ -3256,7 +3127,7 @@ export class CanvasView {
       for (const item of layer.items) {
         if (item.page !== page || !itemIsVisible(item, layer) || item.kind !== "image") continue;
         if (imageModeOf(item) !== "background") continue;
-        this.drawItem(ctx, item, labels);
+        drawItem(ctx, item, labels, this.itemRenderContext());
       }
       ctx.restore();
     }
@@ -3270,7 +3141,7 @@ export class CanvasView {
       for (const item of layer.items) {
         if (item.page !== page || !itemIsVisible(item, layer)) continue;
         if (item.kind === "image" && imageModeOf(item) === "background") continue;
-        this.drawItem(ctx, item, labels);
+        drawItem(ctx, item, labels, this.itemRenderContext());
       }
       ctx.restore();
     }
@@ -3460,754 +3331,6 @@ export class CanvasView {
     return null;
   }
 
-  private drawItem(
-    ctx: CanvasRenderingContext2D,
-    item: MarkupItem,
-    labels: Map<string, LabelLayout>,
-  ): void {
-    if (
-      this.editors.editingItemId === item.id &&
-      item.kind !== "cloud" &&
-      item.kind !== "callout"
-    ) {
-      return;
-    }
-    const zoom = this.viewZoom;
-    const points = item.points.map((p) => this.toScreen(p));
-    if (points.length === 0) return;
-    const lineWidth = Math.max(1, item.strokeWidth * zoom);
-    const rotation = itemRotation(item);
-    const rotatesInPlace =
-      rotation !== 0 &&
-      (item.kind === "text" ||
-        item.kind === "textbox" ||
-        item.kind === "rect" ||
-        item.kind === "ellipse" ||
-        item.kind === "image" ||
-        item.kind === "symbol");
-    const center = rotatesInPlace ? this.toScreen(itemCenter(item)) : null;
-    ctx.save();
-    if (center) {
-      ctx.translate(center.x, center.y);
-      ctx.rotate((rotation * Math.PI) / 180);
-      ctx.translate(-center.x, -center.y);
-    }
-    ctx.strokeStyle = item.color;
-    ctx.fillStyle = item.color;
-    ctx.lineWidth = lineWidth;
-    ctx.lineCap = "round";
-    ctx.lineJoin = "round";
-
-    switch (item.kind) {
-      case "length": {
-        ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        this.drawEndpoints(ctx, points, item.color, lineWidth);
-        break;
-      }
-      case "angle": {
-        const [startPage, vertexPage, endPage] = item.points;
-        if (!startPage || !vertexPage || !endPage) break;
-        const start = this.toScreen(startPage);
-        const vertex = this.toScreen(vertexPage);
-        const end = this.toScreen(endPage);
-        ctx.beginPath();
-        ctx.moveTo(vertex.x, vertex.y);
-        ctx.lineTo(start.x, start.y);
-        ctx.moveTo(vertex.x, vertex.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
-        const curve = angleArcPolyline(item).map((point) => this.toScreen(point));
-        if (curve.length > 1) {
-          ctx.beginPath();
-          curve.forEach((point, index) =>
-            index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-          );
-          ctx.stroke();
-        }
-        this.drawEndpoints(ctx, [start, vertex, end], item.color, lineWidth);
-        break;
-      }
-      case "slope": {
-        const [startPage, endPage] = item.points;
-        if (!startPage || !endPage) break;
-        const start = this.toScreen(startPage);
-        const end = this.toScreen(endPage);
-        ctx.beginPath();
-        ctx.moveTo(start.x, start.y);
-        ctx.lineTo(end.x, end.y);
-        ctx.stroke();
-        this.drawEndpoints(ctx, [start, end], item.color, lineWidth);
-        break;
-      }
-      case "radius":
-      case "diameter": {
-        const circle = radiusCircle(item);
-        if (!circle) break;
-        const center = this.toScreen(circle.center);
-        const edge = this.toScreen(circle.edge);
-        const opposite = this.toScreen({
-          x: circle.center.x - (circle.edge.x - circle.center.x),
-          y: circle.center.y - (circle.edge.y - circle.center.y),
-        });
-        ctx.beginPath();
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.arc(center.x, center.y, circle.radius * zoom, 0, Math.PI * 2);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        ctx.beginPath();
-        if (item.kind === "diameter") {
-          ctx.moveTo(opposite.x, opposite.y);
-          ctx.lineTo(edge.x, edge.y);
-        } else {
-          ctx.moveTo(center.x, center.y);
-          ctx.lineTo(edge.x, edge.y);
-        }
-        ctx.stroke();
-        this.drawEndpoints(
-          ctx,
-          item.kind === "diameter" ? [opposite, edge] : [center, edge],
-          item.color,
-          lineWidth,
-        );
-        break;
-      }
-      case "arc": {
-        const curve = arcPolyline(item).map((point) => this.toScreen(point));
-        ctx.beginPath();
-        curve.forEach((point, index) =>
-          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-        );
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        this.drawEndpoints(
-          ctx,
-          [curve[0], curve[curve.length - 1]].filter(Boolean),
-          item.color,
-          lineWidth,
-        );
-        break;
-      }
-      case "area":
-      case "volume": {
-        const shape = areaShapeOf(item);
-        const outline = areaOutline(item.points, shape).map((point) =>
-          this.toScreen(itemLocalToPage(item, point)),
-        );
-        ctx.save();
-        ctx.globalAlpha *= 0.14;
-        ctx.beginPath();
-        outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-        ctx.beginPath();
-        outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.closePath();
-        ctx.stroke();
-        if (shape !== "ellipse") this.drawEndpoints(ctx, outline, item.color, lineWidth);
-        break;
-      }
-      case "count": {
-        const anchorPage = item.points[0];
-        if (!anchorPage) break;
-        const project = this.sceneProject;
-        if (!project) break;
-        const symbol = countSymbol(countTypeGlyph(project, item.countType));
-        for (const path of symbol.paths) {
-          ctx.beginPath();
-          path.points.forEach((point, index) => {
-            const screen = this.toScreen({ x: anchorPage.x + point.x, y: anchorPage.y + point.y });
-            if (index === 0) ctx.moveTo(screen.x, screen.y);
-            else ctx.lineTo(screen.x, screen.y);
-          });
-          if (path.closed) ctx.closePath();
-          ctx.stroke();
-        }
-        for (const dot of symbol.dots) {
-          const center = this.toScreen({
-            x: anchorPage.x + dot.center.x,
-            y: anchorPage.y + dot.center.y,
-          });
-          ctx.beginPath();
-          ctx.arc(center.x, center.y, Math.max(0.6, dot.radius * zoom), 0, Math.PI * 2);
-          ctx.fill();
-        }
-        break;
-      }
-      case "symbol": {
-        const anchor = points[0];
-        if (!anchor) break;
-        const definition = symbolFor(item.symbolId);
-        const accent =
-          definition.style === "schematic"
-            ? "#111111"
-            : definition.id === "unknown"
-              ? item.color
-              : symbolCategoryColor(definition.category);
-        const plan = symbolRenderPlan(definition, accent);
-        const size = symbolSizeOf(item);
-        const scale = (size * zoom) / plan.viewBox;
-        const half = plan.viewBox / 2;
-        ctx.save();
-        ctx.translate(anchor.x, anchor.y);
-        ctx.scale(scale, scale);
-        ctx.translate(-half, -half);
-        for (const shape of plan.shapes) {
-          ctx.save();
-          if (shape.scale !== 1) {
-            ctx.translate(half, half);
-            ctx.scale(shape.scale, shape.scale);
-            ctx.translate(-half, -half);
-          }
-          const path = symbolPath(shape.d);
-          if (shape.fill) {
-            ctx.fillStyle = shape.fill;
-            ctx.fill(path, shape.fillRule);
-          }
-          if (shape.stroke) {
-            ctx.strokeStyle = shape.stroke;
-            // Page-space width converted to local units: the stroke scales with
-            // zoom exactly like the PDF export and the rest of the canvas.
-            ctx.lineWidth = (symbolShapeStrokeWidth(plan, shape, size) * plan.viewBox) / size;
-            ctx.lineCap = "round";
-            ctx.lineJoin = "round";
-            ctx.stroke(path);
-          }
-          ctx.restore();
-        }
-        if (item.status) {
-          ctx.beginPath();
-          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 1.4, 0, Math.PI * 2);
-          ctx.fillStyle = "rgba(15, 19, 21, 0.85)";
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 0.7, 0, Math.PI * 2);
-          ctx.fillStyle = "#ffffff";
-          ctx.fill();
-          ctx.beginPath();
-          ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r, 0, Math.PI * 2);
-          ctx.fillStyle = inspectionStatusColor(item.status);
-          ctx.fill();
-        }
-        ctx.restore();
-        break;
-      }
-      case "pen": {
-        ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.stroke();
-        break;
-      }
-      case "highlight": {
-        if (item.highlightShape && item.highlightShape !== "stroke") {
-          const outline =
-            item.highlightShape === "rectangle" ? rectangleCorners([points[0], points[1]]) : points;
-          ctx.save();
-          ctx.globalAlpha *= item.opacity ?? 0.3;
-          ctx.fillStyle = item.color;
-          ctx.beginPath();
-          outline.forEach((p, index) =>
-            index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y),
-          );
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-          break;
-        }
-        ctx.save();
-        ctx.globalAlpha *= 0.38;
-        ctx.lineWidth = lineWidth * 4.2;
-        ctx.lineCap = "butt";
-        ctx.beginPath();
-        points.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
-        ctx.stroke();
-        ctx.restore();
-        break;
-      }
-      case "line": {
-        if (points.length < 2) break;
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(3, lineWidth * 3), Math.max(2, lineWidth * 2)]);
-        }
-        ctx.beginPath();
-        ctx.moveTo(points[0].x, points[0].y);
-        ctx.lineTo(points[1].x, points[1].y);
-        ctx.stroke();
-        ctx.setLineDash([]);
-        this.drawEndpoints(ctx, points, item.color, lineWidth);
-        break;
-      }
-      case "arrow": {
-        if (points.length < 2) break;
-        const size = Math.max(8, lineWidth * 3.6);
-        const head = arrowHeadGeometry(points[0], points[1], size);
-        const startHead =
-          item.arrowHeads === "both" ? arrowHeadGeometry(points[1], points[0], size) : null;
-        ctx.save();
-        ctx.lineCap = "butt";
-        ctx.beginPath();
-        ctx.moveTo((startHead?.shaftEnd ?? points[0]).x, (startHead?.shaftEnd ?? points[0]).y);
-        ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
-        ctx.stroke();
-        ctx.restore();
-        if (startHead) drawArrowHead(ctx, points[0], startHead, item.color);
-        drawArrowHead(ctx, points[1], head, item.color);
-        break;
-      }
-      case "rect": {
-        if (points.length < 2) break;
-        const rect = expandRect(points[0], points[1]);
-        if (item.fillColor) {
-          ctx.save();
-          ctx.globalAlpha *= item.opacity ?? 0.15;
-          ctx.fillStyle = item.fillColor;
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-          ctx.restore();
-        }
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-        ctx.setLineDash([]);
-        break;
-      }
-      case "ellipse": {
-        if (points.length < 2) break;
-        const rect = expandRect(points[0], points[1]);
-        ctx.beginPath();
-        ctx.ellipse(
-          rect.x + rect.width / 2,
-          rect.y + rect.height / 2,
-          Math.max(0.5, rect.width / 2),
-          Math.max(0.5, rect.height / 2),
-          0,
-          0,
-          Math.PI * 2,
-        );
-        if (item.fillColor) {
-          ctx.save();
-          ctx.globalAlpha *= item.opacity ?? 0.15;
-          ctx.fillStyle = item.fillColor;
-          ctx.fill();
-          ctx.restore();
-        }
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        break;
-      }
-      case "cloud": {
-        const curves = cloudCurves(
-          item.points,
-          item.cloudRadius ?? cloudRadiusForPoints(item.points),
-        );
-        if (!curves.length) break;
-        const pathStart = this.toScreen(curves[0].start);
-        ctx.save();
-        if (item.fillColor) {
-          ctx.save();
-          ctx.globalAlpha *= item.opacity ?? 0.12;
-          ctx.fillStyle = item.fillColor;
-          ctx.beginPath();
-          ctx.moveTo(pathStart.x, pathStart.y);
-          for (const curve of curves) {
-            const cp1 = this.toScreen(curve.cp1);
-            const cp2 = this.toScreen(curve.cp2);
-            const end = this.toScreen(curve.end);
-            ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-          }
-          ctx.closePath();
-          ctx.fill();
-          ctx.restore();
-        }
-        ctx.beginPath();
-        ctx.moveTo(pathStart.x, pathStart.y);
-        for (const curve of curves) {
-          const cp1 = this.toScreen(curve.cp1);
-          const cp2 = this.toScreen(curve.cp2);
-          const end = this.toScreen(curve.end);
-          ctx.bezierCurveTo(cp1.x, cp1.y, cp2.x, cp2.y, end.x, end.y);
-        }
-        ctx.closePath();
-        ctx.stroke();
-        ctx.restore();
-        const label = cloudLabelLayout(item);
-        if (label && this.editors.editingItemId !== item.id) {
-          this.drawAnnotationPanel(
-            ctx,
-            label,
-            item,
-            "rgba(12, 16, 18, 0.9)",
-            item.textColor ?? "#f7fbfc",
-            true,
-          );
-        }
-        break;
-      }
-      case "callout": {
-        const liveCallout =
-          this.editors.textSession &&
-          this.editors.textSession.itemId === item.id &&
-          this.editors.textSession.mode === "callout"
-            ? {
-                ...item,
-                text: this.editors.textSession.text,
-                fontSize: this.editors.textSession.fontSize,
-                textBoxWidth: this.editors.textSession.boxWidth,
-                textBoxHeight: this.editors.textSession.boxHeight,
-              }
-            : item;
-        const layout = calloutLayout(liveCallout);
-        const anchor = this.toScreen(layout.anchor);
-        const leaderStart = this.toScreen(layout.leaderStart);
-        const size = Math.max(8, lineWidth * 3.6);
-        const head = arrowHeadGeometry(leaderStart, anchor, size);
-        ctx.save();
-        ctx.beginPath();
-        ctx.moveTo(leaderStart.x, leaderStart.y);
-        ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
-        ctx.stroke();
-        drawArrowHead(ctx, anchor, head, item.color);
-        ctx.restore();
-        if (this.editors.editingItemId !== item.id) {
-          this.drawAnnotationPanel(
-            ctx,
-            {
-              ...layout,
-              center: {
-                x: layout.box.x + layout.box.width / 2,
-                y: layout.box.y + layout.box.height / 2,
-              },
-            },
-            item,
-            "rgba(12, 16, 18, 0.92)",
-            item.textColor ?? "#f7fbfc",
-            false,
-          );
-        }
-        break;
-      }
-      case "stamp": {
-        const layout = stampLayout(item);
-        this.drawAnnotationPanel(
-          ctx,
-          layout,
-          item,
-          hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
-          item.textColor ?? item.color,
-          true,
-          "stamp",
-        );
-        break;
-      }
-      case "delta": {
-        const layout = deltaLayout(item);
-        const size = layout.size * zoom;
-        const center = this.toScreen(layout.center);
-        ctx.save();
-        ctx.save();
-        ctx.globalAlpha *= item.opacity ?? 0.16;
-        ctx.fillStyle = item.color;
-        ctx.beginPath();
-        ctx.moveTo(center.x, center.y - size / 2);
-        ctx.lineTo(center.x + size / 2, center.y + size / 2);
-        ctx.lineTo(center.x - size / 2, center.y + size / 2);
-        ctx.closePath();
-        ctx.fill();
-        ctx.restore();
-        ctx.beginPath();
-        ctx.moveTo(center.x, center.y - size / 2);
-        ctx.lineTo(center.x + size / 2, center.y + size / 2);
-        ctx.lineTo(center.x - size / 2, center.y + size / 2);
-        ctx.closePath();
-        ctx.stroke();
-        ctx.fillStyle = item.textColor ?? item.color;
-        ctx.font = `700 ${Math.max(7, (item.fontSize ?? 14) * zoom * 0.7)}px ${TEXT_FONT_STACK}`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(item.text || "", center.x, center.y + size * 0.12);
-        if (item.label) {
-          ctx.font = `500 ${Math.max(6, (item.fontSize ?? 14) * zoom * 0.38)}px ${TEXT_FONT_STACK}`;
-          ctx.fillText(item.label, center.x, center.y + size * 0.62);
-        }
-        ctx.restore();
-        break;
-      }
-      case "polyline": {
-        ctx.beginPath();
-        points.forEach((point, index) =>
-          index === 0 ? ctx.moveTo(point.x, point.y) : ctx.lineTo(point.x, point.y),
-        );
-        if (item.lineStyle === "dashed") {
-          ctx.setLineDash([Math.max(4, lineWidth * 3), Math.max(3, lineWidth * 2)]);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-        break;
-      }
-      case "rail": {
-        const geometry = railGeometry(item);
-        if (!geometry) break;
-        const left = this.toScreen({ x: geometry.left, y: geometry.top });
-        const right = this.toScreen({ x: geometry.right, y: geometry.top });
-        const width = Math.max(0.5, item.strokeWidth * zoom);
-        ctx.strokeStyle = item.color;
-        ctx.lineWidth = width;
-
-        for (const row of geometry.rows) {
-          const y = this.toScreen({ x: geometry.left, y: row.y }).y;
-          ctx.beginPath();
-          ctx.moveTo(left.x, y);
-          ctx.lineTo(right.x, y);
-          ctx.stroke();
-
-          if (item.showBadges !== false) {
-            const fontSize = Math.max(5, 6.5 * zoom);
-            const badgeHeight = Math.max(8, geometry.rowSpacing * zoom * 0.82);
-            const padding = Math.max(2, 3 * zoom);
-            ctx.font = `600 ${fontSize}px ${FONT_STACK}`;
-            const textWidth = ctx.measureText(row.label).width;
-            const badgeWidth = textWidth + padding * 2;
-            ctx.save();
-            ctx.fillStyle = "#ffffff";
-            ctx.strokeStyle = item.color;
-            ctx.lineWidth = Math.max(0.6, 0.8 * zoom);
-            roundRect(ctx, left.x, y - badgeHeight / 2, badgeWidth, badgeHeight, badgeHeight / 2);
-            ctx.fill();
-            ctx.stroke();
-            ctx.restore();
-            ctx.fillStyle = "#1a2024";
-            ctx.textAlign = "left";
-            ctx.textBaseline = "middle";
-            ctx.fillText(row.label, left.x + padding, y);
-          }
-        }
-
-        const legends = geometry.rows.filter((row) => row.legend?.trim());
-        if (item.showLegend !== false && legends.length) {
-          const y = this.toScreen({ x: geometry.left, y: railLegendY(geometry) }).y;
-          const step = (right.x - left.x) / Math.max(1, legends.length);
-          const fontSize = Math.max(5, 6 * zoom);
-          ctx.font = `400 ${fontSize}px ${FONT_STACK}`;
-          ctx.fillStyle = "#1a2024";
-          ctx.textAlign = "left";
-          ctx.textBaseline = "middle";
-          legends.forEach((row, index) => {
-            ctx.fillText(`${row.label}= ${row.legend}`, left.x + index * step, y);
-          });
-        }
-        break;
-      }
-      case "textbox": {
-        if (points.length < 2) break;
-        const rect = expandRect(points[0], points[1]);
-        const fontSize = Math.max(0.3, clampTextSize(item.fontSize ?? 12) * zoom);
-        const padding = Math.max(0, (item.padding ?? 4) * zoom);
-        const lineHeight = fontSize * 1.28;
-        const color = item.textColor ?? item.color;
-        ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-
-        if (item.textBackground === "white") {
-          ctx.fillStyle = "#ffffff";
-          ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-        }
-
-        const innerWidth = Math.max(1, rect.width - padding * 2);
-        const richRuns =
-          item.runs?.length && runsText(item.runs) === (item.text ?? "") ? item.runs : null;
-        let usedHeight: number;
-        if (richRuns) {
-          const measure = (text: string, run: { size: number; bold: boolean; italic: boolean }) => {
-            ctx.font = `${run.italic ? "italic " : ""}${run.bold ? 700 : 400} ${Math.max(0.3, run.size * zoom)}px ${FONT_STACK}`;
-            return ctx.measureText(text).width;
-          };
-          const layout = layoutRichText(richRuns, innerWidth, measure, textRunDefaults(item));
-          const richLineHeight = layout.lineHeight * zoom;
-          layout.lines.forEach((line, index) => {
-            let x =
-              rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, line.width);
-            const y = rect.y + padding + index * richLineHeight;
-            for (const segment of line.segments) {
-              if (!segment.text) continue;
-              const size = Math.max(0.3, segment.run.size * zoom);
-              ctx.font = `${segment.run.italic ? "italic " : ""}${segment.run.bold ? 700 : 400} ${size}px ${FONT_STACK}`;
-              ctx.fillStyle = segment.run.color;
-              ctx.fillText(segment.text, x, y);
-              if (segment.run.underline) {
-                ctx.strokeStyle = segment.run.color;
-                ctx.lineWidth = Math.max(0.5, size * TEXT_UNDERLINE_WIDTH);
-                const underlineY = y + size * (0.86 + TEXT_UNDERLINE_OFFSET);
-                ctx.beginPath();
-                ctx.moveTo(x, underlineY);
-                ctx.lineTo(x + segment.width, underlineY);
-                ctx.stroke();
-              }
-              x += segment.width;
-            }
-          });
-          usedHeight = layout.lines.length * richLineHeight;
-        } else {
-          const lines = wrapText(
-            item.text ?? "",
-            innerWidth,
-            (line) => ctx.measureText(line).width,
-          );
-          ctx.fillStyle = color;
-          lines.forEach((line, index) => {
-            if (!line) return;
-            const lineWidth = ctx.measureText(line).width;
-            const x =
-              rect.x + padding + textLineX(item.textAlign ?? "left", 0, innerWidth, lineWidth);
-            const y = rect.y + padding + index * lineHeight;
-            ctx.fillText(line, x, y);
-            if (item.textUnderline) {
-              ctx.strokeStyle = color;
-              ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
-              const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
-              ctx.beginPath();
-              ctx.moveTo(x, underlineY);
-              ctx.lineTo(x + lineWidth, underlineY);
-              ctx.stroke();
-            }
-          });
-          usedHeight = lines.length * lineHeight;
-        }
-
-        if (usedHeight + padding * 2 > rect.height) {
-          ctx.save();
-          ctx.strokeStyle = "#d3202a";
-          ctx.setLineDash([5, 3]);
-          ctx.strokeRect(rect.x, rect.y, rect.width, rect.height);
-          ctx.restore();
-        }
-        break;
-      }
-      case "text": {
-        const layout = textItemLayout(item);
-        const fontSize = Math.max(0.3, layout.fontSize * zoom);
-        const lineHeight = layout.lineHeight * zoom;
-        const align = item.textAlign ?? "left";
-        ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
-        ctx.fillStyle = item.color;
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        const lineWidths = layout.lines.map((line) => ctx.measureText(line).width);
-        const blockWidth = Math.max(0, ...lineWidths);
-        layout.lines.forEach((line, index) => {
-          const lineWidth = lineWidths[index];
-          const x = points[0].x + textLineX(align, 0, blockWidth, lineWidth);
-          const y = points[0].y + index * lineHeight;
-          ctx.fillText(line, x, y);
-          if (item.textUnderline) {
-            ctx.strokeStyle = item.color;
-            ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
-            const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
-            ctx.beginPath();
-            ctx.moveTo(x, underlineY);
-            ctx.lineTo(x + lineWidth, underlineY);
-            ctx.stroke();
-          }
-        });
-        break;
-      }
-      case "image": {
-        if (points.length < 2) break;
-        const project = this.sceneProject;
-        const asset = project ? imageAssetForItem(project, item) : undefined;
-        if (!asset) break;
-        const image = this.imageElement(asset);
-        if (!image) break;
-        const rect = expandRect(points[0], points[1]);
-        ctx.save();
-        ctx.globalAlpha *= imageOpacity(item);
-        ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
-        ctx.restore();
-        break;
-      }
-    }
-    ctx.restore();
-
-    if (item.kind === "symbol" && item.tag) {
-      // The tag stays horizontal while the glyph turns: rotate its anchor
-      // position around the symbol centre, then draw plain screen text.
-      const tagPosition = symbolTagPosition(item);
-      if (tagPosition) {
-        const rotation = itemRotation(item);
-        const point =
-          rotation === 0 ? tagPosition : rotatePoint(tagPosition, itemCenter(item), rotation);
-        const screen = this.toScreen(point);
-        ctx.save();
-        ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
-        ctx.fillStyle = "#111111";
-        ctx.textAlign = "left";
-        ctx.textBaseline = "top";
-        ctx.fillText(item.tag, screen.x, screen.y);
-        ctx.restore();
-      }
-    }
-
-    if (isMeasurementKind(item.kind)) {
-      const layout = labels.get(item.id);
-      if (layout && this.editors.editingLabelId !== item.id) {
-        this.drawLabelLayout(ctx, layout);
-      }
-    }
-  }
-
-  private drawAnnotationPanel(
-    ctx: CanvasRenderingContext2D,
-    layout: {
-      center: Point;
-      width: number;
-      height: number;
-      lines: string[];
-      fontSize: number;
-      lineHeight: number;
-      padding: number;
-    },
-    item: MarkupItem,
-    fill: string,
-    textColor: string,
-    leader: boolean,
-    style: "text" | "stamp" = "text",
-  ): void {
-    paintAnnotationPanel(
-      ctx,
-      layout,
-      item,
-      fill,
-      textColor,
-      leader,
-      style,
-      (point) => this.toScreen(point),
-      this.viewZoom,
-    );
-  }
-
-  private drawEndpoints(
-    ctx: CanvasRenderingContext2D,
-    points: Point[],
-    color: string,
-    lineWidth: number,
-  ): void {
-    paintEndpoints(ctx, points, color, lineWidth);
-  }
-
   private drawLabelLayout(ctx: CanvasRenderingContext2D, layout: LabelLayout): void {
     paintLabelLayout(
       ctx,
@@ -4218,292 +3341,44 @@ export class CanvasView {
     );
   }
 
-  private drawInteraction(): void {
-    const ctx = this.interactionCtx;
-    this.prepare(ctx);
-    if (this.readOnly || !store.project) return;
-    if (this.crop.draw(ctx)) return;
-    if (this.searchHits && this.searchHits.page === this.viewPage) {
-      ctx.save();
-      ctx.fillStyle = "rgba(242, 169, 59, 0.22)";
-      ctx.strokeStyle = "rgba(242, 169, 59, 0.9)";
-      ctx.lineWidth = 1.2;
-      for (const rect of this.searchHits.rects) {
-        const topLeft = this.toScreen({ x: rect.x, y: rect.y });
-        const width = rect.width * this.viewZoom;
-        const height = rect.height * this.viewZoom;
-        ctx.fillRect(topLeft.x, topLeft.y, width, height);
-        ctx.strokeRect(topLeft.x + 0.5, topLeft.y + 0.5, width - 1, height - 1);
-      }
-      ctx.restore();
-    }
-    const selected = resolveSelection(store.project, store.ui.selection).filter(
-      (entry) =>
-        layerVisibleOnPage(entry.layer, entry.item.page) && itemIsVisible(entry.item, entry.layer),
-    );
-
-    if (selected.length) {
-      for (const entry of selected) {
-        ctx.save();
-        ctx.strokeStyle = ACCENT;
-        ctx.lineWidth = 1;
-        ctx.setLineDash([4, 4]);
-        this.traceItemOutline(ctx, entry.item);
-        ctx.stroke();
-        ctx.restore();
-      }
-
-      if (selected.length === 1 && !selected[0].locked) {
-        const item = selected[0].item;
-        const measured = isMeasurementKind(item.kind);
-        const handles = selectionHandles(item, (page) => this.toScreen(page));
-        const rotation = handles.find((handle) => handle.role === "rotate");
-        ctx.save();
-        if (rotation && !measured) {
-          const corners = itemCorners(item).map((p) => this.toScreen(p));
-          const top = midpoint(corners[0], corners[1]);
-          ctx.strokeStyle = hexAlpha(ACCENT, 0.55);
-          ctx.beginPath();
-          ctx.moveTo(top.x, top.y);
-          ctx.lineTo(rotation.point.x, rotation.point.y);
-          ctx.stroke();
-        }
-        for (const handle of handles) {
-          ctx.fillStyle = handle.role === "rotate" ? "#101619" : "#f7fbfc";
-          ctx.strokeStyle = ACCENT;
-          ctx.lineWidth = 1.5;
-          if (handle.role === "rotate") {
-            ctx.beginPath();
-            ctx.arc(handle.point.x, handle.point.y, 5.5, 0, Math.PI * 2);
-            ctx.fill();
-            ctx.stroke();
-            ctx.beginPath();
-            ctx.arc(handle.point.x, handle.point.y, 2, 0, Math.PI * 2);
-            ctx.fillStyle = ACCENT;
-            ctx.fill();
-          } else if (handle.role === "label") {
-            ctx.beginPath();
-            ctx.arc(handle.point.x, handle.point.y, 5, 0, Math.PI * 2);
-            ctx.fillStyle = ACCENT;
-            ctx.fill();
-            ctx.strokeStyle = "#101619";
-            ctx.stroke();
-          } else {
-            ctx.beginPath();
-            ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
-            ctx.fill();
-            ctx.stroke();
-          }
-        }
-        if (measured) {
-          const resizePoint = this.labelResizePoint(item);
-          if (resizePoint) {
-            ctx.fillStyle = this.hoverLabelResize ? ACCENT : "#101619";
-            ctx.strokeStyle = ACCENT;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.rect(resizePoint.x - 4, resizePoint.y - 4, 8, 8);
-            ctx.fill();
-            ctx.stroke();
-            ctx.strokeStyle = this.hoverLabelResize ? "#101619" : ACCENT;
-            ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(resizePoint.x - 1.5, resizePoint.y + 1.5);
-            ctx.lineTo(resizePoint.x + 1.5, resizePoint.y - 1.5);
-            ctx.stroke();
-          }
-        }
-        ctx.restore();
-      }
-      if (selected.length > 1) {
-        const bounds = selectionBounds(store.project, store.ui.selection);
-        if (bounds) {
-          const topLeft = this.toScreen({ x: bounds.min.x, y: bounds.min.y });
-          const bottomRight = this.toScreen({ x: bounds.max.x, y: bounds.max.y });
-          ctx.save();
-          ctx.strokeStyle = ACCENT;
-          ctx.lineWidth = 1.2;
-          ctx.setLineDash([6, 4]);
-          ctx.strokeRect(
-            topLeft.x,
-            topLeft.y,
-            Math.max(1, bottomRight.x - topLeft.x),
-            Math.max(1, bottomRight.y - topLeft.y),
-          );
-          ctx.setLineDash([]);
-          for (const handle of groupHandles(bounds, (point) => this.toScreen(point))) {
-            ctx.fillStyle = "#f7fbfc";
-            ctx.strokeStyle = ACCENT;
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.rect(handle.point.x - 4, handle.point.y - 4, 8, 8);
-            ctx.fill();
-            ctx.stroke();
-          }
-          ctx.restore();
-        }
-      }
-    } else if (store.ui.hover) {
-      const found = findItem(store.project, store.ui.hover.itemId);
-      if (found && found.item.visible !== false) {
-        ctx.save();
-        ctx.strokeStyle = hexAlpha(ACCENT, 0.55);
-        ctx.lineWidth = 1;
-        ctx.setLineDash([3, 4]);
-        this.traceItemOutline(ctx, found.item);
-        ctx.stroke();
-        ctx.restore();
-      }
-    }
-
-    if (this.marquee) {
-      const start = this.toScreen(this.marquee.start);
-      const end = this.toScreen(this.marquee.current);
-      const rect = expandRect(start, end);
-      ctx.save();
-      ctx.fillStyle = "rgba(53, 194, 161, 0.10)";
-      ctx.strokeStyle = ACCENT;
-      ctx.lineWidth = 1;
-      ctx.setLineDash([5, 4]);
-      ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
-      ctx.strokeRect(rect.x + 0.5, rect.y + 0.5, rect.width, rect.height);
-      ctx.restore();
-    }
-
-    if (this.draft) this.drawDraft(ctx);
-
-    if (this.snap) {
-      const p = this.toScreen(this.snap.point);
-      ctx.save();
-      ctx.strokeStyle = ACCENT;
-      ctx.fillStyle = "rgba(53,194,161,0.18)";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.arc(p.x, p.y, 7, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.moveTo(p.x - 10, p.y);
-      ctx.lineTo(p.x + 10, p.y);
-      ctx.moveTo(p.x, p.y - 10);
-      ctx.lineTo(p.x, p.y + 10);
-      ctx.stroke();
-
-      const label = snapLabel(this.snap.kind);
-      ctx.font = `600 10px ${FONT_STACK}`;
-      const width = ctx.measureText(label).width + 10;
-      const x = p.x + 12;
-      const y = p.y - 26;
-      ctx.fillStyle = "rgba(12,16,18,0.9)";
-      ctx.strokeStyle = hexAlpha(ACCENT, 0.65);
-      ctx.lineWidth = 1;
-      roundRect(ctx, x, y, width, 17, 4);
-      ctx.fill();
-      ctx.stroke();
-      ctx.fillStyle = "#edf3f5";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "middle";
-      ctx.fillText(label, x + 5, y + 8.5);
-      ctx.restore();
-    }
-
-    if (
-      this.pointerScreen &&
-      !this.drag &&
-      !this.pan &&
-      store.ui.activeTool !== "select" &&
-      store.ui.activeTool !== "pan" &&
-      store.ui.activeTool !== "text"
-    ) {
-      const p = this.pointerScreen;
-      const color = this.draft && this.draft.kind === "calibrate" ? CALIBRATION_COLOR : ACCENT;
-      ctx.save();
-      ctx.strokeStyle = hexAlpha(color, 0.55);
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(p.x - 5, p.y);
-      ctx.lineTo(p.x + 5, p.y);
-      ctx.moveTo(p.x, p.y - 5);
-      ctx.lineTo(p.x, p.y + 5);
-      ctx.stroke();
-      ctx.restore();
-    }
+  private interactionRenderContext(): InteractionRenderContext {
+    return {
+      readOnly: this.readOnly,
+      page: this.viewPage,
+      zoom: this.viewZoom,
+      toScreen: (point) => this.toScreen(point),
+      prepare: (ctx) => this.prepare(ctx),
+      cropDraw: (ctx) => this.crop.draw(ctx),
+      drawDraft: (ctx) => this.drawDraft(ctx),
+      labelResizePoint: (item) => this.labelResizePoint(item),
+      hoverLabelResize: this.hoverLabelResize,
+      searchHits: this.searchHits,
+      marquee: this.marquee,
+      draft: this.draft,
+      snap: this.snap,
+      pointerScreen: this.pointerScreen,
+      dragActive: Boolean(this.drag),
+      panActive: Boolean(this.pan),
+    };
   }
 
-  private traceItemOutline(ctx: CanvasRenderingContext2D, item: MarkupItem): void {
-    ctx.beginPath();
-    if (item.kind === "count") {
-      const anchor = item.points[0];
-      if (!anchor) return;
-      const screen = this.toScreen(anchor);
-      ctx.arc(
-        screen.x,
-        screen.y,
-        Math.max(6, (COUNT_SYMBOL_RADIUS + 2) * this.viewZoom),
-        0,
-        Math.PI * 2,
-      );
-      return;
-    }
-    if (item.kind === "radius" || item.kind === "diameter") {
-      const circle = radiusCircle(item);
-      if (!circle) return;
-      const center = this.toScreen(circle.center);
-      ctx.arc(center.x, center.y, circle.radius * this.viewZoom, 0, Math.PI * 2);
-      return;
-    }
-    if (item.kind === "arc") {
-      arcPolyline(item).forEach((point, index) => {
-        const screen = this.toScreen(point);
-        if (index === 0) ctx.moveTo(screen.x, screen.y);
-        else ctx.lineTo(screen.x, screen.y);
-      });
-      return;
-    }
-    if (item.kind === "length") {
-      item.points.forEach((point, index) => {
-        const screen = this.toScreen(itemLocalToPage(item, point));
-        if (index === 0) ctx.moveTo(screen.x, screen.y);
-        else ctx.lineTo(screen.x, screen.y);
-      });
-      return;
-    }
-    if (item.kind === "angle") {
-      const [startPage, vertexPage, endPage] = item.points;
-      if (!startPage || !vertexPage || !endPage) return;
-      const start = this.toScreen(startPage);
-      const vertex = this.toScreen(vertexPage);
-      const end = this.toScreen(endPage);
-      ctx.moveTo(vertex.x, vertex.y);
-      ctx.lineTo(start.x, start.y);
-      ctx.moveTo(vertex.x, vertex.y);
-      ctx.lineTo(end.x, end.y);
-      return;
-    }
-    if (item.kind === "slope") {
-      const [startPage, endPage] = item.points;
-      if (!startPage || !endPage) return;
-      const start = this.toScreen(startPage);
-      const end = this.toScreen(endPage);
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      return;
-    }
-    if (item.kind === "area" || item.kind === "volume") {
-      areaOutline(item.points, areaShapeOf(item)).forEach((point, index) => {
-        const screen = this.toScreen(itemLocalToPage(item, point));
-        if (index === 0) ctx.moveTo(screen.x, screen.y);
-        else ctx.lineTo(screen.x, screen.y);
-      });
-      ctx.closePath();
-      return;
-    }
-    const corners = itemSelectionCorners(item).map((point) => this.toScreen(point));
-    corners.forEach((corner, index) => {
-      if (index === 0) ctx.moveTo(corner.x, corner.y);
-      else ctx.lineTo(corner.x, corner.y);
-    });
-    ctx.closePath();
+  private itemRenderContext(): ItemRenderContext {
+    return {
+      zoom: this.viewZoom,
+      project: this.sceneProject,
+      toScreen: (point) => this.toScreen(point),
+      imageElement: (asset) => this.imageElement(asset),
+      screenLabelBox: (box, metrics) => this.screenLabelBox(box, metrics),
+      editors: {
+        editingItemId: this.editors.editingItemId,
+        editingLabelId: this.editors.editingLabelId,
+        textSession: this.editors.textSession,
+      },
+    };
+  }
+
+  private drawInteraction(): void {
+    paintInteraction(this.interactionCtx, this.interactionRenderContext());
   }
 
   private drawDraft(ctx: CanvasRenderingContext2D): void {

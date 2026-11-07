@@ -237,7 +237,12 @@ src/features/schematics/symbols/reference/ reference-aligned sensors, electrical
 src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
-src/canvas/CanvasView.ts   rendering, hit testing, inline editing, resize/rotate, PNG composition
+src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
+src/canvas/itemRenderer.ts item and symbol drawing shared by canvas and overlays
+src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
+src/canvas/pointerState.ts drag, marquee and pan gesture state
+src/canvas/groupHandles.ts group selection handles shared by pointer and renderer
+src/canvas/symbolPath.ts   cached Path2D objects for symbol artwork
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
 src/canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization

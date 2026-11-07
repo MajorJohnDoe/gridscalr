@@ -43,7 +43,12 @@ src/
   i18n/hardcoded-baseline.json frozen pre-migration UI strings for the i18n gate
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
-  canvas/CanvasView.ts   canvas rendering, hit testing, inline editing, resize/rotate, PNG compositing
+  canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG compositing
+  canvas/itemRenderer.ts item and symbol drawing shared by canvas and overlays
+  canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
+  canvas/pointerState.ts drag, marquee and pan gesture state
+  canvas/groupHandles.ts group selection handles shared by pointer and renderer
+  canvas/symbolPath.ts   cached Path2D objects for symbol artwork
   canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
   canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression
   canvas/viewport.ts     pure page/screen transforms, fit, zoom and split-view synchronization
