@@ -65,6 +65,7 @@ milestone:
 | **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Complete** | v22 |
 | **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 156 schematic symbols and a fit-to-area action** | **Complete** | v23 |
 | **0.19.0** | **Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer** | **Complete** | v23 |
+| **0.19.3** | **Blank A3/A2 pages and 37 additional schematic symbols; valve-stem and circulation-pump fixes; symbol libraries split by category** | **Complete** | v23 |
 | **0.20.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Planned** | v23 |
 | **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
 
