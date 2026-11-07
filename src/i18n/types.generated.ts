@@ -1389,6 +1389,8 @@ export type MessageKey =
   | "symbol.schematic.tank-3"
   | "symbol.schematic.tank-4"
   | "symbol.schematic.open-tank"
+  | "symbol.schematic.vertical-vessel"
+  | "symbol.schematic.dished-ends-vessel"
   | "symbol.schematic.pressure-holding"
   | "symbol.schematic.substation"
   | "symbol.schematic.district-energy-meter"

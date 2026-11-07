@@ -1387,6 +1387,8 @@
   "symbol.schematic.tank-3": "Tank 3",
   "symbol.schematic.tank-4": "Tank 4",
   "symbol.schematic.open-tank": "Open tank",
+  "symbol.schematic.vertical-vessel": "Vertical vessel",
+  "symbol.schematic.dished-ends-vessel": "Dished ends vessel",
   "symbol.schematic.pressure-holding": "Pressure holding unit",
   "symbol.schematic.substation": "District heating substation",
   "symbol.schematic.district-energy-meter": "District heating energy meter",

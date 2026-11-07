@@ -404,7 +404,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
 
-**Schematic** contains 151 stroke-only equipment symbols for operation cards:
+**Schematic** contains 153 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
 - Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. The thick flow arrow uses a 1.2 pt stroke. They are exported as vectors in the drawing PDF.
@@ -421,6 +421,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - **Spring gate valve** has a spring above the standard body. **Self-operating release valve** is a diagonally half-filled circle.
 - The expansion vessel is a domed cylinder with a bottom connection. It is available as the standard **Expansion vessel**, **Expansion vessel, large** and **Expansion vessel, small**, placing at 40, 56 and 26 pt by default. All three can still be resized.
 - Heating also includes **Tank 2** (closed pitched top), **Tank 3** (open top with a bottom step), **Tank 4** (closed with a top neck and bottom step) and **Open tank** (open with a flat bottom). Each has a bottom connection port.
+- **Vertical vessel** is a tall cylinder with domed ends. **Dished ends vessel** has a domed top, a dished bottom and two legs. Both have a bottom connection port.
 
 - Symbols are drawing objects. They do not appear in quantity totals.
 - Select a symbol and use its rotation handle; hold `Shift` to snap to 15°. Rotation is also available in Properties.

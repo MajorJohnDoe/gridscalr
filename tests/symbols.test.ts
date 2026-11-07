@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(151);
-    expect(ALL_SYMBOLS).toHaveLength(203);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(153);
+    expect(ALL_SYMBOLS).toHaveLength(205);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(151);
+    expect(symbolsForSet("schematic")).toHaveLength(153);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -394,6 +394,13 @@ describe("schematic symbol set", () => {
     expect(symbolForAll("schematic.self-operating-release-valve").ports).toHaveLength(1);
     expect(symbolForAll("schematic.spring-gate-valve").category).toBe("valve");
     expect(symbolForAll("schematic.self-operating-release-valve").category).toBe("valve");
+  });
+
+  it("adds vertical and dished-end vessels", () => {
+    for (const id of ["schematic.vertical-vessel", "schematic.dished-ends-vessel"]) {
+      expect(symbolForAll(id).category, id).toBe("heating");
+      expect(symbolForAll(id).ports, id).toHaveLength(1);
+    }
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

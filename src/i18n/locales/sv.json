@@ -1387,6 +1387,8 @@
   "symbol.schematic.tank-3": "Tank 3",
   "symbol.schematic.tank-4": "Tank 4",
   "symbol.schematic.open-tank": "Öppen tank",
+  "symbol.schematic.vertical-vessel": "Stående kärl",
+  "symbol.schematic.dished-ends-vessel": "Kärl med kupade gavlar",
   "symbol.schematic.pressure-holding": "Tryckhållning",
   "symbol.schematic.substation": "Undercentral",
   "symbol.schematic.district-energy-meter": "Fjärrvärmemätare",

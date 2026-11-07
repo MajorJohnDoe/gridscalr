@@ -234,6 +234,13 @@ const OPEN_TANK_BODY = joinPaths(
   linePath(50, 18, 54, 18),
 );
 
+const VERTICAL_VESSEL_BODY = "M 20 16 Q 32 8 44 16 L 44 48 Q 32 56 20 48 Z";
+const DISHED_ENDS_VESSEL_BODY = joinPaths(
+  "M 22 16 Q 32 8 42 16 L 42 50 Q 32 44 22 50 Z",
+  linePath(22, 50, 22, 58),
+  linePath(42, 50, 42, 58),
+);
+
 interface VesselGeometry {
   x: number;
   y: number;
@@ -1238,6 +1245,22 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "TÖ",
     ports: [{ id: "connect", x: 32, y: 54, direction: "both" }],
     shapes: [stroke(OPEN_TANK_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.vertical-vessel",
+    category: "heating",
+    keywords: ["stående kärl", "vertical vessel", "kärl", "behållare", "ves"],
+    tagPrefix: "VES",
+    ports: [{ id: "connect", x: 32, y: 52, direction: "both" }],
+    shapes: [stroke(VERTICAL_VESSEL_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.dished-ends-vessel",
+    category: "heating",
+    keywords: ["kärl med kupade gavlar", "dished ends vessel", "kärl", "gavel", "dev"],
+    tagPrefix: "DEV",
+    ports: [{ id: "connect", x: 32, y: 58, direction: "both" }],
+    shapes: [stroke(DISHED_ENDS_VESSEL_BODY)],
   }),
   schematicSymbol({
     id: "schematic.pressure-holding",
