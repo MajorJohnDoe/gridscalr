@@ -30,7 +30,8 @@ import type { PointerHost } from "./pointer/PointerHost";
 import { CALIBRATION_COLOR, drawDraft as paintDraft } from "./draftRenderer";
 import { drawLabelLayout as paintLabelLayout } from "./annotationDraw";
 import { CanvasEditorController, type LabelHit } from "./editors";
-import { drawItem, type ItemRenderContext } from "./itemRenderer";
+import { type ItemRenderContext } from "./itemRenderer";
+import { drawVisibleItems } from "./items/visible";
 import { selectionHandles, type Handle } from "./selectionHandles";
 
 import {
@@ -38,7 +39,6 @@ import {
   type InteractionRenderContext,
 } from "./interactionRenderer";
 import type { NormalizedCrop } from "../model/export";
-import { imageModeOf } from "../model/images";
 import { resolveSelection } from "../model/selection";
 import {
   createCalibration,
@@ -74,7 +74,13 @@ import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
-import { clampZoom, fitPageViewport, viewportCenter, type Viewport } from "./viewport";
+import {
+  clampZoom,
+  fitPageViewport,
+  viewportCenter,
+  visiblePageBounds,
+  type Viewport,
+} from "./viewport";
 import {
   pageToScreen as toScreenPoint,
   screenToPage as toPagePoint,
@@ -122,6 +128,11 @@ export interface CanvasTestApi {
 }
 
 const FONT_STACK = TEXT_FONT_STACK;
+/**
+ * Screen-space margin added to the culling rectangle so labels, leaders and
+ * symbol tags that start outside the viewport still draw while they cross it.
+ */
+const VIEW_CULL_MARGIN = 120;
 
 function orthoPoint(last: Point, current: Point): Point {
   return Math.abs(current.x - last.x) >= Math.abs(current.y - last.y)
@@ -1148,33 +1159,15 @@ export class CanvasView {
     if (!size) return;
     const page = this.viewPage;
     const labels = this.pageLabelLayouts();
+    const visible = visiblePageBounds(this.view, this.width, this.height, VIEW_CULL_MARGIN);
+    const renderContext = this.itemRenderContext();
 
     // Background images sit above the PDF but below every markup layer.
-    for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
-      ctx.save();
-      ctx.globalAlpha = layer.opacity;
-      for (const item of layer.items) {
-        if (item.page !== page || !itemIsVisible(item, layer) || item.kind !== "image") continue;
-        if (imageModeOf(item) !== "background") continue;
-        drawItem(ctx, item, labels, this.itemRenderContext());
-      }
-      ctx.restore();
-    }
+    drawVisibleItems(ctx, project, page, labels, renderContext, visible, true);
 
     this.drawSheetFields(ctx);
 
-    for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
-      ctx.save();
-      ctx.globalAlpha = layer.opacity;
-      for (const item of layer.items) {
-        if (item.page !== page || !itemIsVisible(item, layer)) continue;
-        if (item.kind === "image" && imageModeOf(item) === "background") continue;
-        drawItem(ctx, item, labels, this.itemRenderContext());
-      }
-      ctx.restore();
-    }
+    drawVisibleItems(ctx, project, page, labels, renderContext, visible, false);
 
     if (project.settings.showCalibration) {
       const calibration = pageCalibration(project, page);

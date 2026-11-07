@@ -50,3 +50,35 @@
 - The static boot fallback in `index.html` is English until the selected catalog loads; it is replaced before the app starts, and startup failures after that point use the active language.
 - Diagnostics and the local event log are stored on the computer only. There is no telemetry, crash reporting or upload, and the log keeps the last 80 entries with paths, drawing names and labels removed. Startup failures before the log is available are shown on the boot screen instead.
 - The Linux GTK stack currently resolves `glib 0.18.5`, which has a medium-severity soundness advisory fixed in `glib 0.20.0`. GridScalr cannot upgrade it independently because Tauri's GTK 0.18 dependencies pin that generation. The Windows artifacts do not use this code path; revisit with a future Tauri/GTK upgrade.
+
+## Large-project performance
+
+The **reference project** is generated deterministically by
+`npm run bench:large` from the demo takeoff: 150 pages, 15,000 markup items,
+60 embedded images and a serialized project around 8 MB. Source PDF bytes are
+not duplicated in the benchmark; the Rust package tests exercise the streaming
+1 GB path separately. Override the shape with `GRIDSCALR_BENCH_PAGES`,
+`GRIDSCALR_BENCH_ITEMS` and `GRIDSCALR_BENCH_IMAGES`.
+
+The budgets below are measured on the development machine with Chromium 1248,
+Node 24 and the browser fallback. Run the benchmark on each release platform
+before a release candidate; a regression beyond a budget blocks the release.
+
+| Measure | Budget | Notes |
+| --- | --- | --- |
+| p95 edit latency | under 100 ms | A single history-tracked mutation in the reference project. |
+| Project open | under 10 s | Parsing and store setup; PDF rendering is separate and progressive. |
+| Autosave | under 2 s | Debounce plus the IndexedDB recovery write. |
+| Page switch | under 100 ms | Store page change without waiting for a render. |
+| Memory | under 2 GB | Desktop app working set while the reference project is open. |
+| UI freeze | under 2 s | Longer operations need progress and cancel. |
+
+Undo history is adaptive: it keeps up to 80 snapshots for small projects and
+shrinks towards four snapshots when a single serialized snapshot exceeds the
+48-million-character budget. A very large project therefore keeps a shorter
+undo history rather than exhausting memory.
+
+The Markups table renders only the rows near its viewport, canvas rendering
+skips items outside the visible viewport, and autosave stores one serialized
+snapshot with a skip when nothing changed since the previous write. These are
+the tested 1.0 limits; there is no promise of unlimited project size.
