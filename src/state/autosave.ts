@@ -12,6 +12,19 @@ export interface AutosavePreview {
   projectName: string;
 }
 
+/**
+ * IndexedDB stores one serialized project string. Structured-cloning a deep
+ * object graph is slower than writing a single string, and old object-shaped
+ * records stay readable.
+ */
+interface StoredAutosaveV2 {
+  version: 2;
+  serialized: string;
+  projectPath: string | null;
+  savedAt: string;
+  projectName: string;
+}
+
 const DB_NAME = "gridscalr";
 const DB_VERSION = 1;
 const STORE_NAME = "autosave";
@@ -146,10 +159,37 @@ export async function writeAutosave(payload: AutosavePayload): Promise<void> {
   return run;
 }
 
+function storedPayload(
+  record: StoredAutosaveV2 | AutosavePayload | undefined,
+): AutosavePayload | null {
+  if (!record) return null;
+  if ("version" in record && record.version === 2 && typeof record.serialized === "string") {
+    try {
+      const project = JSON.parse(record.serialized) as Project;
+      const payload: AutosavePayload = {
+        project,
+        projectPath: record.projectPath,
+        savedAt: record.savedAt,
+      };
+      return hasProject(payload) ? payload : null;
+    } catch {
+      return null;
+    }
+  }
+  return hasProject(record) ? record : null;
+}
+
 async function writeAutosaveNow(payload: AutosavePayload): Promise<void> {
   const preview = { savedAt: payload.savedAt, projectName: payload.project.name };
+  const record: StoredAutosaveV2 = {
+    version: 2,
+    serialized: JSON.stringify(payload.project),
+    projectPath: payload.projectPath,
+    savedAt: payload.savedAt,
+    projectName: payload.project.name,
+  };
   try {
-    await withStore("readwrite", (store) => store.put(payload, RECORD_KEY));
+    await withStore("readwrite", (store) => store.put(record, RECORD_KEY));
     writeMeta(preview);
     try {
       localStorage.removeItem(LEGACY_KEY);
@@ -172,11 +212,13 @@ async function writeAutosaveNow(payload: AutosavePayload): Promise<void> {
 
 export async function readAutosave(): Promise<AutosavePayload | null> {
   try {
-    const stored = await withStore<AutosavePayload | undefined>(
+    const stored = await withStore<StoredAutosaveV2 | AutosavePayload | undefined>(
       "readonly",
-      (store) => store.get(RECORD_KEY) as IDBRequest<AutosavePayload | undefined>,
+      (store) =>
+        store.get(RECORD_KEY) as IDBRequest<StoredAutosaveV2 | AutosavePayload | undefined>,
     );
-    if (hasProject(stored)) return stored;
+    const payload = storedPayload(stored);
+    if (payload) return payload;
   } catch {
     // Fall back to the legacy snapshot below.
   }
