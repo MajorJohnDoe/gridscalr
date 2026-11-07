@@ -279,7 +279,8 @@ src/canvas/geometry.ts     crop, handle, rotation and colour helpers
 src/canvas/selectionHandles.ts selection and rotation handles
 src/canvas/annotationDraw.ts callout, stamp, cloud-label and endpoint drawing
 src/canvas/crop.ts         export crop mode, overlay and toolbar
-src/canvas/editors.ts      inline text and measurement-label editors
+src/canvas/editors.ts      public CanvasEditorController surface
+src/canvas/editors/        controller facade, text/textbox sessions, label editor and shared helpers
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers

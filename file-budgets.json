@@ -3,12 +3,13 @@
   "directoryMax": {
     "src/canvas/items": 400,
     "src/canvas/pointer": 500,
-    "src/pdf/export": 400
+    "src/pdf/export": 400,
+    "src/canvas/editors": 400
   },
   "files": {
     "src/app/App.ts": 1684,
     "src/canvas/CanvasView.ts": 1493,
-    "src/canvas/editors.ts": 1153,
+    "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 810,
