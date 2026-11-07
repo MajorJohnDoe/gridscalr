@@ -24,6 +24,7 @@ Thumbs.db
 # Local test output
 coverage/
 exports/
+visual-regression-failures/
 
 # Generated symbol catalogue, screenshots and local release artifacts
 artifacts/

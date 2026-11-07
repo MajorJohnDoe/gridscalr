@@ -235,6 +235,14 @@ export function portableProjectJson(
 
 const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
 
+function hasControlCharacter(value: string): boolean {
+  for (const character of value) {
+    const code = character.charCodeAt(0);
+    if (code < 32 || code === 127) return true;
+  }
+  return false;
+}
+
 function manifestFailure(message: string): never {
   throw new Error(message);
 }
@@ -258,6 +266,7 @@ function readManifestFile(value: unknown, prefix: string): PackageManifestFile {
   const entry = value as Partial<PackageManifestFile>;
   const file = readString(entry.file, "a file name");
   if (
+    hasControlCharacter(file) ||
     file.includes("\\") ||
     file.startsWith("/") ||
     file.split("/").some((part) => !part || part === "." || part === "..") ||
@@ -291,6 +300,7 @@ export function validatePackageManifest(value: unknown): PackageManifest {
   }
   const projectFile = readString(raw.projectFile, "the project file");
   if (
+    hasControlCharacter(projectFile) ||
     !projectFile.endsWith(".gridscalr") ||
     projectFile.includes("/") ||
     projectFile.includes("\\") ||

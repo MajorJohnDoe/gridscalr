@@ -43,6 +43,14 @@ jobs:
       - run: npm run test:canvas
       - run: npm run test:count
       - run: npm run test:touch
+      - run: npm run test:visual
+      - uses: actions/upload-artifact@v7
+        if: failure()
+        with:
+          name: visual-regression-failures
+          path: visual-regression-failures/
+          if-no-files-found: ignore
+          retention-days: 14
 
   rust:
     name: Rust format and check

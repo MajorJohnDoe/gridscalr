@@ -83,9 +83,9 @@ export async function startVite({ port: preferredPort = 1420 } = {}) {
   };
 }
 
-export async function launchBrowser() {
+export async function launchBrowser(options = {}) {
   try {
-    return await chromium.launch();
+    return await chromium.launch(options);
   } catch (error) {
     throw new Error(
       `Could not launch Chromium. Run "npx playwright install chromium" once and try again.\n${error}`,
@@ -99,6 +99,23 @@ export async function waitForApp(page) {
     () => !document.querySelector(".canvas-loading")?.classList.contains("is-visible"),
   );
   await page.waitForTimeout(350);
+}
+
+/** Lets fonts, animations and transitions reach their final state before a screenshot. */
+export async function settlePage(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const animations = document.getAnimations?.() ?? [];
+    await Promise.all(
+      animations
+        .filter((animation) => {
+          const timing = animation.effect?.getComputedTiming?.();
+          return timing?.endTime !== undefined && Number.isFinite(timing.endTime);
+        })
+        .map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
 }
 
 export async function waitForToastsGone(page) {

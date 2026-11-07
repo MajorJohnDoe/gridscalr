@@ -199,6 +199,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 | [Workflows](docs/workflows.md) | Task-oriented guides for site work and technical property management. |
 | [Shortcuts](docs/shortcuts.md) | Every keyboard shortcut. |
 | [Architecture](docs/architecture.md) | Source map, design choices, tests and fixtures. |
+| [Testing](docs/testing.md) | Test layers, fuzzing, visual regression and manual visual review. |
 | [Architecture decisions](docs/adr/README.md) | Accepted ADRs for modules, packaging, localization, release and performance. |
 | [Glossary](docs/glossary.md) | Canonical English and Swedish product terms. |
 | [Project files](docs/project-file.md) | The `.gridscalr` format, schema history and migration rules. |
