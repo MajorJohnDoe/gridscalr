@@ -11,6 +11,7 @@ export type PaperSize = SheetPaperSize;
 
 export const DRAWING_FRAME_TEMPLATE_ID = "gridscalr.operation-card.frame";
 export const DATA_SUMMARY_TEMPLATE_ID = "gridscalr.operation-card.data";
+export const BLANK_TEMPLATE_ID = "gridscalr.blank";
 
 export const MM_TO_PT = 72 / 25.4;
 
@@ -189,6 +190,23 @@ export interface SheetTemplateSpec {
 }
 
 export const SHEET_TEMPLATE_VERSION = 1;
+
+/** A wholly empty page in the selected paper size, with no frame or fields. */
+export function buildBlankTemplate(paper: PaperSize): SheetTemplateSpec {
+  const size = PAPER_SIZES[paper];
+  const width = mm(size.widthMm);
+  const height = mm(size.heightMm);
+  return {
+    id: BLANK_TEMPLATE_ID,
+    version: SHEET_TEMPLATE_VERSION,
+    paper,
+    width,
+    height,
+    drawingArea: { x: 0, y: 0, width, height },
+    staticPrimitives: [],
+    fields: [],
+  };
+}
 
 export const SHEET_FIELD = {
   projectName: "project.name",
@@ -691,5 +709,6 @@ export function sheetTemplateFor(
   paper: PaperSize,
   labels: SheetLabels,
 ): SheetTemplateSpec | null {
+  if (id === BLANK_TEMPLATE_ID) return buildBlankTemplate(paper);
   return SHEET_TEMPLATES.find((entry) => entry.id === id)?.build(paper, labels) ?? null;
 }

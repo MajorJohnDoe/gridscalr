@@ -7,7 +7,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 ## Quick start
 
 1. Choose **File → New project…** or **File → Open drawing…**.
-2. Pick a PDF or a scanned TIF drawing, or start from an operation card sheet template.
+2. Pick a PDF or a scanned TIF drawing, start from an operation card sheet template, or add a blank A3/A2 page.
 3. Calibrate the page against a known dimension, or enter the printed scale.
 4. Choose a measurement tool and draw on the plan.
 5. Review **View → Quantities…**.
@@ -74,13 +74,13 @@ OCR is a deliberate action because it takes time. The resulting words, bounding 
 
 ### New project
 
-**File → New project…** asks for the source: a PDF/TIF drawing or an operation card sheet. For a sheet, choose a template, paper (A3 or A2) and a project name. The first sheet is added immediately with its title block ready to fill in. If the current project has unsaved changes, GridScalr asks before discarding them.
+**File → New project…** asks what the project should start with: a PDF/TIF drawing, an operation card sheet, or a blank page. For a sheet, choose a template, paper (A3 or A2) and a project name. For a blank page, choose only the paper and a project name. The first page is added immediately; a sheet arrives with its title block ready to fill in. If the current project has unsaved changes, GridScalr asks before discarding them.
 
 ### Operation card sheets
 
 An operation card sheet is a page created from a built-in template instead of a PDF. It has a title block and revision table on every sheet.
 
-- **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
+- **Add a sheet:** open the Pages panel menu or the empty area context menu, choose **Add pages…**, then **Operation card sheet**, a template, paper and a sheet name. Sheets append at the end, like imported pages.
 - **Fill in fields:** double-click a cell, or choose **Edit sheet fields…** from the page card menu. The form edits every field on the sheet. Table cells can also be filled directly on the canvas.
 - **Multi-line fields:** project name, logo and the wide system/equipment cell accept up to three lines; title-block values accept two. Press `Enter` for a new line inside a multi-line cell, or `Ctrl/Cmd+Enter` to commit. Long lines wrap inside the cell.
 - **Data summary:** choose the **Data summary** template for a sheet with a table. The table has fixed column headers and 9 mm rows; the number of rows depends on the paper (about 23 on A3, more on A2). Fill the cells in the form or double-click them. Need more rows? Create another data-summary sheet and continue there.
@@ -88,6 +88,14 @@ An operation card sheet is a page created from a built-in template instead of a 
 - **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block or table.
 - **Not to scale:** template sheets show **Sheet · not to scale** in the status bar and do not need calibration.
 - **Paper:** choose A3 or A2 when the sheet is created, or change it under **Edit sheet fields → Paper**. The title block keeps its physical size; the drawing area grows on A2 and the data table gains rows. Field values are kept, including table cells in rows that are currently hidden on a smaller sheet.
+
+### Blank pages
+
+A blank page is an A3 or A2 page with no drawing frame, title block, revision table or sheet fields. Choose it when you need free space for notes, sketches, symbols or images rather than an operation card layout.
+
+- **Add a blank page:** open the Pages panel menu or the empty area context menu, choose **Add pages…**, then **Blank page**, paper and a page name. It appends at the end like every other page.
+- **No sheet fields:** the page card menu does not offer **Edit sheet fields…**, because there are no fields to fill in. Use text boxes and the drawing tools directly on the page.
+- **Paper:** A3 and A2 are chosen when the page is created. The blank page is a template page, so it shows **Sheet · not to scale** in the status bar.
 
 ### Open a drawing
 

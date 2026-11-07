@@ -76,6 +76,8 @@ Use this workflow when the drawing set will become a quantity takeoff, budget or
 
 Add every floor or building part to one project. Select several pages in the page picker, or add a second PDF or TIF later with **Pages → Add pages…**.
 
+If you need a page only for notes or sketches, add a blank A3 or A2 page with **Add pages… → Blank page** instead of importing a drawing.
+
 New pages are appended after the existing pages. Existing page numbers and measurements do not move unless you explicitly delete a page.
 
 ### 2. Calibrate and lock the scales

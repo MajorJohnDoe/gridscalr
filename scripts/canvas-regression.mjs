@@ -662,6 +662,7 @@ try {
   await page.getByRole("menuitem", { name: "Drawing PDF…" }).click();
   const exportDialog = page.getByRole("dialog");
   await exportDialog.waitFor();
+  await exportDialog.getByText("Selected area (crop)", { exact: true }).click();
   await exportDialog.getByRole("button", { name: "Draw area…" }).click();
   await exportDialog.waitFor({ state: "detached" });
   await dragPage({ x: 100, y: 100 }, { x: 500, y: 400 });

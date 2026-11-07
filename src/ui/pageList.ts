@@ -7,7 +7,7 @@ import {
 } from "../model/documents";
 import type { PageSize, Project } from "../model/types";
 import { store } from "../state/store";
-import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { isBlankSheet, templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { el } from "./dom";
 import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
@@ -219,7 +219,13 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     info.append(sizeNode);
     const badges = el("div", "page-badges");
     if (sheetDocument) {
-      badges.append(el("span", "page-badge", t("page.sheetBadge")));
+      badges.append(
+        el(
+          "span",
+          "page-badge",
+          t(isBlankSheet(sheetDocument) ? "page.blankBadge" : "page.sheetBadge"),
+        ),
+      );
     }
     if (project.pages[String(page)]?.calibration) {
       badges.append(el("span", "page-badge is-calibrated", t("page.calibrated")));
@@ -272,7 +278,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
             });
           },
         },
-        ...(sheetDocument
+        ...(sheetDocument && !isBlankSheet(sheetDocument)
           ? [
               {
                 label: t("page.editSheetFields"),

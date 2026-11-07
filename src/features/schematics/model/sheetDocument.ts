@@ -1,7 +1,12 @@
 import { makeId } from "../../../model/calibration";
 import { projectDocumentForPage } from "../../../model/documents";
 import type { DocumentRef, Project } from "../../../model/types";
-import { SHEET_FIELD, SHEET_TEMPLATE_VERSION, type PaperSize } from "./sheetTemplate";
+import {
+  SHEET_FIELD,
+  SHEET_TEMPLATE_VERSION,
+  BLANK_TEMPLATE_ID,
+  type PaperSize,
+} from "./sheetTemplate";
 
 /** One sheet template page is one document with exactly one page. */
 export function createTemplateDocument(
@@ -35,8 +40,15 @@ export function templateDocumentForPage(
   return document?.kind === "template" ? document : undefined;
 }
 
+/** A blank page shares the template document shape but has no sheet fields. */
+export function isBlankSheet(document: DocumentRef | undefined): boolean {
+  return document?.kind === "template" && document.template?.id === BLANK_TEMPLATE_ID;
+}
+
 export function templateSheetCount(project: Pick<Project, "documents">): number {
-  return project.documents.filter((document) => document.kind === "template").length;
+  return project.documents.filter(
+    (document) => document.kind === "template" && !isBlankSheet(document),
+  ).length;
 }
 
 function today(): string {
@@ -54,6 +66,10 @@ export function prefillSheetFields(
   sheetOrdinal: number,
 ): void {
   if (!document.template) return;
+  if (document.template.id === BLANK_TEMPLATE_ID) {
+    document.template.fields = {};
+    return;
+  }
   const fields: Record<string, string> = {};
 
   for (let index = project.documents.length - 1; index >= 0; index -= 1) {

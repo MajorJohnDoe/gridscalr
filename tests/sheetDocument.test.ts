@@ -3,11 +3,12 @@ import { createDefaultLayers, createProject, defaultDocument } from "../src/mode
 import { duplicatePageFromProject, totalPageCount } from "../src/model/documents";
 import {
   createTemplateDocument,
+  isBlankSheet,
   prefillSheetFields,
   templateDocumentForPage,
   templateSheetCount,
 } from "../src/features/schematics/model/sheetDocument";
-import { SHEET_FIELD } from "../src/features/schematics/model/sheetTemplate";
+import { BLANK_TEMPLATE_ID, SHEET_FIELD } from "../src/features/schematics/model/sheetTemplate";
 
 function project() {
   const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
@@ -112,5 +113,19 @@ describe("template sheet documents", () => {
     expect(templateDocumentForPage(projectValue, 2)).toBeUndefined();
     expect(templateDocumentForPage(projectValue, 3)?.id).toBe(first.id);
     expect(templateDocumentForPage(projectValue, 4)?.id).toBe(second.id);
+  });
+
+  it("keeps blank pages empty and out of the sheet numbering", () => {
+    const projectValue = project();
+    const blank = createTemplateDocument(BLANK_TEMPLATE_ID, "A2", "Blank A2");
+    prefillSheetFields(projectValue, blank, 1);
+    projectValue.documents.push(blank);
+    const sheet = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Sheet");
+    projectValue.documents.push(sheet);
+
+    expect(isBlankSheet(blank)).toBe(true);
+    expect(isBlankSheet(sheet)).toBe(false);
+    expect(blank.template!.fields).toEqual({});
+    expect(templateSheetCount(projectValue)).toBe(1);
   });
 });

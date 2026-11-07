@@ -47,6 +47,11 @@
   box-sizing: border-box;
 }
 
+/* Author display rules such as .form-stack must not override the hidden attribute. */
+[hidden] {
+  display: none !important;
+}
+
 html,
 body,
 #app {
@@ -2023,6 +2028,59 @@ html[data-platform="macos"] .topbar {
 .check-row input {
   accent-color: var(--jade);
   margin: 2px 0 0;
+}
+
+.source-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.source-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  line-height: 1.4;
+}
+
+.source-option:hover {
+  background: var(--panel-hover);
+}
+
+.source-option.is-selected {
+  border-color: rgba(53, 194, 161, 0.55);
+  background: var(--jade-dim);
+}
+
+.source-option input {
+  accent-color: var(--jade);
+  margin: 3px 0 0;
+}
+
+.source-option-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.source-option-title {
+  color: var(--text-strong);
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.source-option-note {
+  color: var(--muted-2);
+  font-size: 11.5px;
+}
+
+.source-fields {
+  padding-top: 2px;
 }
 
 .range-row {

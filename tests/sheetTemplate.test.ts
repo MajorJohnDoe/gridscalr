@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+  BLANK_TEMPLATE_ID,
+  buildBlankTemplate,
   buildDataSummaryTemplate,
   buildDrawingFrameTemplate,
   DATA_SUMMARY_TEMPLATE_ID,
@@ -9,6 +11,7 @@ import {
   revisionFieldId,
   SHEET_FIELD,
   SHEET_TEMPLATES,
+  sheetTemplateFor,
   TABLE_COLUMNS,
   tableFieldId,
   type SheetLabels,
@@ -193,6 +196,27 @@ describe("data summary template", () => {
       expect(field.rect.x + field.rect.width).toBeLessThanOrEqual(template.width + 1e-6);
       expect(field.rect.y + field.rect.height).toBeLessThanOrEqual(template.height + 1e-6);
     }
+  });
+});
+
+describe("blank template", () => {
+  it("creates an empty page in the requested paper size", () => {
+    const a3 = buildBlankTemplate("A3");
+    expect(a3.id).toBe(BLANK_TEMPLATE_ID);
+    expect(a3.width).toBeCloseTo(PAPER_SIZES.A3.widthMm * MM_TO_PT, 5);
+    expect(a3.height).toBeCloseTo(PAPER_SIZES.A3.heightMm * MM_TO_PT, 5);
+    expect(a3.staticPrimitives).toEqual([]);
+    expect(a3.fields).toEqual([]);
+    expect(a3.drawingArea).toEqual({ x: 0, y: 0, width: a3.width, height: a3.height });
+
+    const a2 = buildBlankTemplate("A2");
+    expect(a2.width).toBeCloseTo(PAPER_SIZES.A2.widthMm * MM_TO_PT, 5);
+    expect(a2.height).toBeCloseTo(PAPER_SIZES.A2.heightMm * MM_TO_PT, 5);
+  });
+
+  it("is not offered as a template in the picker", () => {
+    expect(SHEET_TEMPLATES.some((entry) => entry.id === BLANK_TEMPLATE_ID)).toBe(false);
+    expect(sheetTemplateFor(BLANK_TEMPLATE_ID, "A2", labels)?.id).toBe(BLANK_TEMPLATE_ID);
   });
 });
 

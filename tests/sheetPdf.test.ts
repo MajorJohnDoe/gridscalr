@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument } from "pdf-lib";
 import {
+  BLANK_TEMPLATE_ID,
+  buildBlankTemplate,
   buildDataSummaryTemplate,
   buildDrawingFrameTemplate,
   MM_TO_PT,
@@ -75,6 +77,18 @@ describe("static sheet PDF", () => {
 
     expect(document.getPage(0).getWidth()).toBeCloseTo(594 * MM_TO_PT, 2);
     expect(document.getPage(0).getHeight()).toBeCloseTo(420 * MM_TO_PT, 2);
+  });
+
+  it("creates a blank A3 page without text or frame", async () => {
+    const template = buildBlankTemplate("A3");
+    expect(template.id).toBe(BLANK_TEMPLATE_ID);
+    const bytes = await buildStaticSheetPdf(template);
+    const document = await PDFDocument.load(bytes);
+
+    expect(document.getPageCount()).toBe(1);
+    expect(document.getPage(0).getWidth()).toBeCloseTo(420 * MM_TO_PT, 2);
+    expect(document.getPage(0).getHeight()).toBeCloseTo(297 * MM_TO_PT, 2);
+    expect(await pageText(bytes)).toBe("");
   });
 });
 

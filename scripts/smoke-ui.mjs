@@ -1359,6 +1359,55 @@ try {
   assert.equal(schematicItem?.tag, "FF-01", "the free-text tag should persist on the symbol");
   assert.equal(schematicItem?.symbolSize, 40, "schematic symbols use their default size");
 
+  // The add-page source dialog hides sheet fields for imports and can append a blank A2 page.
+  await page.evaluate(() => {
+    void window.__gridscalr.app.addPageFlow();
+  });
+  const sourceDialog = page.getByRole("dialog", { name: "Add page" });
+  await sourceDialog.waitFor();
+  assert.equal(
+    await sourceDialog.locator(".source-fields").isHidden(),
+    true,
+    "PDF/TIF import should not show template, paper or name fields",
+  );
+  await sourceDialog.getByText("Operation card sheet", { exact: true }).click();
+  assert.equal(await sourceDialog.locator(".source-fields").isVisible(), true);
+  assert.equal(
+    await sourceDialog.locator(".field", { hasText: "Template" }).isVisible(),
+    true,
+    "sheet templates should be selectable for operation card sheets",
+  );
+  await sourceDialog.getByText("Blank page", { exact: true }).click();
+  assert.equal(
+    await sourceDialog.locator(".field", { hasText: "Template" }).isHidden(),
+    true,
+    "blank pages should not offer a template",
+  );
+  await sourceDialog.locator("select").last().selectOption("A2");
+  await sourceDialog.locator('input[type="text"]').fill("Blank A2");
+  const documentCount = await page.evaluate(
+    () => window.__gridscalr.store.project.documents.length,
+  );
+  await sourceDialog.locator(".modal-footer .btn-primary").click();
+  await page.waitForFunction(
+    (count) => window.__gridscalr.store.project.documents.length === count,
+    documentCount + 1,
+    { timeout: 15_000 },
+  );
+  const blankDocument = await page.evaluate(() =>
+    window.__gridscalr.store.project.documents.at(-1),
+  );
+  assert.equal(blankDocument.template.id, "gridscalr.blank");
+  assert.equal(blankDocument.template.paper, "A2");
+  assert.deepEqual(blankDocument.template.fields, {}, "blank pages should have no sheet fields");
+  await page.locator('.dock-tab[data-tab="pages"]').click();
+  await page.locator(".page-card").last().waitFor();
+  assert.equal(
+    await page.locator(".page-card").last().locator(".page-badge", { hasText: "Blank" }).count(),
+    1,
+    "the new page should be marked as blank",
+  );
+
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`UI smoke passed: ${repoRoot}`);
 } finally {
