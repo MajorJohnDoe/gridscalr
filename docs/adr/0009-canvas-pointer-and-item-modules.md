@@ -1,6 +1,6 @@
 # ADR 0009: Canvas pointer host and item renderer modules
 
-- Status: Proposed
+- Status: Accepted
 - Date: 2026-11-07
 - Deciders: GridScalr maintainer
 - Supersedes: none
