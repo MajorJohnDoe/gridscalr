@@ -351,6 +351,10 @@ export class CanvasView {
       viewport: () => this.view,
       cropActive: () => this.crop.active,
       cropCursor: () => this.crop.cursor(),
+      draft: () => this.draft,
+      setDraft: (draft) => {
+        this.draft = draft;
+      },
       labelConnectActive: () => this.labelConnect !== null,
       hoverHandle: () => this.hoverHandle,
       hoverLabelResize: () => this.hoverLabelResize,
@@ -365,9 +369,17 @@ export class CanvasView {
         this.hoverLabelResize = false;
       },
       snapPoint: (point, excludeItemId) => this.snapPoint(point, excludeItemId),
+      snapPolylinePoint: (point) => this.snapPolylinePoint(point),
+      constrainPolyline: (last, point, free) => this.constrainPolyline(last, point, free),
       clearSnap: () => {
         this.snap = null;
       },
+      viewZoom: () => this.viewZoom,
+      finishDraft: () => this.finishDraft(),
+      finishCallout: (page) => this.finishCallout(page),
+      createItem: (kind, points, options) => this.createItem(kind, points, options),
+      runCalibration: (p1, p2) => this.runCalibration(p1, p2),
+      startTextTool: (page) => this.startTextTool(page),
       zoomAt: (screen, factor) => this.zoomAt(screen, factor),
       cancelGesture: () => {
         this.pointers.cancelDrag();
@@ -832,264 +844,7 @@ export class CanvasView {
       return;
     }
 
-    if (tool === "calibrate") {
-      if (event.detail > 1) return;
-      const snapped = this.snapPoint(page);
-      if (!this.draft || this.draft.kind !== "calibrate") {
-        this.draft = { kind: "calibrate", points: [snapped], cursor: snapped };
-        this.drawInteraction();
-      } else {
-        const first = this.draft.points[0];
-        this.draft = null;
-        void this.runCalibration(first, snapped);
-      }
-      return;
-    }
-
-    if (tool === "radius" || tool === "diameter") {
-      const snapped = this.snapPoint(page);
-      if (!this.draft || (this.draft.kind !== "radius" && this.draft.kind !== "diameter")) {
-        this.draft = { kind: tool, points: [snapped], cursor: snapped };
-        this.drawInteraction();
-      } else {
-        const points = [this.draft.points[0], snapped];
-        this.draft = null;
-        this.snap = null;
-        this.createItem(tool, points);
-        this.drawInteraction();
-      }
-      return;
-    }
-
-    if (tool === "slope") {
-      const snapped = this.snapPoint(page);
-      if (!this.draft || this.draft.kind !== "slope") {
-        this.draft = { kind: "slope", points: [snapped], cursor: snapped };
-        this.drawInteraction();
-      } else {
-        const points = [this.draft.points[0], snapped];
-        this.draft = null;
-        this.snap = null;
-        this.createItem("slope", points);
-        this.drawInteraction();
-      }
-      return;
-    }
-
-    if (tool === "angle") {
-      const snapped = this.snapPoint(page);
-      if (!this.draft || this.draft.kind !== "angle") {
-        this.draft = { kind: "angle", points: [snapped], cursor: snapped };
-        this.drawInteraction();
-      } else {
-        this.draft.points.push(snapped);
-        this.draft.cursor = snapped;
-        if (this.draft.points.length >= 3) {
-          const points = this.draft.points.slice(0, 3);
-          this.draft = null;
-          this.snap = null;
-          this.createItem("angle", points);
-        }
-        this.drawInteraction();
-      }
-      return;
-    }
-
-    if (tool === "arc") {
-      const snapped = this.snapPoint(page);
-      if (!this.draft || this.draft.kind !== "arc") {
-        this.draft = { kind: "arc", points: [snapped], cursor: snapped };
-        this.drawInteraction();
-      } else {
-        this.draft.points.push(snapped);
-        this.draft.cursor = snapped;
-        if (this.draft.points.length >= 3) {
-          const points = this.draft.points.slice(0, 3);
-          this.draft = null;
-          this.snap = null;
-          const preview = { kind: "arc", points } as MarkupItem;
-          if (arcGeometry(preview)) this.createItem("arc", points);
-          else toast(t("canvas.thirdPoint"), "warning");
-        }
-        this.drawInteraction();
-      }
-      return;
-    }
-
-    if (tool === "polyline") {
-      if (event.detail > 1) {
-        this.finishDraft();
-        return;
-      }
-      let snapped = event.shiftKey ? page : this.snapPolylinePoint(page);
-      if (event.shiftKey) this.snap = null;
-      const existing = this.draft?.kind === "polyline" ? this.draft : null;
-      if (existing && existing.points.length) {
-        snapped = this.constrainPolyline(
-          existing.points[existing.points.length - 1],
-          snapped,
-          event.shiftKey,
-        );
-      }
-      if (!existing) {
-        this.draft = { kind: "polyline", points: [snapped], cursor: snapped };
-      } else {
-        const last = existing.points[existing.points.length - 1];
-        if (distance(last, snapped) > 0.001) existing.points.push(snapped);
-        existing.cursor = snapped;
-      }
-      this.drawInteraction();
-      return;
-    }
-
-    if (tool === "area" && store.ui.measureAreaShape !== "polygon") {
-      if (event.detail > 1) return;
-      const snapped = this.snapPoint(page);
-      this.draft = {
-        kind: store.ui.measureAreaShape === "rectangle" ? "area-rect" : "area-ellipse",
-        start: snapped,
-        current: snapped,
-      };
-      this.capturePointer(event.pointerId);
-      this.drawInteraction();
-      return;
-    }
-
-    const polygonKind =
-      tool === "length"
-        ? "length"
-        : tool === "area"
-          ? "area"
-          : tool === "volume"
-            ? "volume"
-            : tool === "cloud"
-              ? "cloud"
-              : tool === "highlight" && store.ui.highlightShape === "polygon"
-                ? "highlight-polygon"
-                : null;
-    if (polygonKind) {
-      if (event.detail > 1) {
-        this.finishDraft();
-        return;
-      }
-      let snapped = this.snapPoint(page);
-      if (this.draft && this.draft.kind === polygonKind && this.draft.points.length) {
-        if (event.shiftKey) {
-          const constrained = constrainAngle(
-            this.draft.points[this.draft.points.length - 1],
-            snapped,
-          );
-          if (distance(constrained, snapped) > 1e-6) this.snap = null;
-          snapped = constrained;
-        }
-      }
-      if (!this.draft || this.draft.kind !== polygonKind) {
-        this.draft = { kind: polygonKind, points: [snapped], cursor: snapped };
-      } else if (
-        polygonKind !== "length" &&
-        this.draft.points.length >= 3 &&
-        distance(snapped, this.draft.points[0]) < 10 / this.viewZoom
-      ) {
-        this.finishDraft();
-        return;
-      } else {
-        const last = this.draft.points[this.draft.points.length - 1];
-        if (distance(last, snapped) > 0.001) this.draft.points.push(snapped);
-        this.draft.cursor = snapped;
-      }
-      this.drawInteraction();
-      return;
-    }
-
-    if (
-      tool === "highlight" &&
-      (store.ui.highlightShape === "rectangle" || store.ui.highlightShape === "polygon")
-    ) {
-      if (store.ui.highlightShape === "rectangle") {
-        const snapped = this.snapPoint(page);
-        this.draft = { kind: "highlight-rect", start: snapped, current: snapped };
-        this.capturePointer(event.pointerId);
-        this.drawInteraction();
-      }
-      return;
-    }
-
-    if (tool === "pen" || tool === "highlight") {
-      this.draft = { kind: tool, points: [page], cursor: page };
-      this.capturePointer(event.pointerId);
-      this.drawInteraction();
-      return;
-    }
-
-    if (
-      tool === "line" ||
-      tool === "arrow" ||
-      tool === "rect" ||
-      tool === "ellipse" ||
-      tool === "textbox" ||
-      tool === "rail"
-    ) {
-      const snaps = tool === "line" || tool === "arrow";
-      const snapped = snaps ? this.snapPoint(page) : page;
-      if (!snaps) this.snap = null;
-      this.draft = { kind: tool, start: snapped, current: snapped };
-      this.capturePointer(event.pointerId);
-      this.drawInteraction();
-      return;
-    }
-
-    if (tool === "text") {
-      const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
-      if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPage)) {
-        store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
-        this.editors.startTextEdit(hit.item, hit.layer);
-      } else {
-        this.editors.startNewText(page);
-      }
-      return;
-    }
-
-    if (tool === "callout") {
-      if (event.detail > 1) return;
-      if (!this.draft || this.draft.kind !== "callout") {
-        this.draft = { kind: "callout", start: page, current: page };
-        this.drawInteraction();
-      } else {
-        this.finishCallout(page);
-      }
-      return;
-    }
-
-    if (tool === "stamp") {
-      if (event.detail > 1) return;
-      this.createItem("stamp", [page], { text: store.ui.stampText });
-      this.drawInteraction();
-      return;
-    }
-
-    if (tool === "delta") {
-      if (event.detail > 1) return;
-      this.createItem("delta", [page], { text: store.ui.deltaText });
-      this.drawInteraction();
-      return;
-    }
-
-    if (tool === "count") {
-      if (event.detail > 1) return;
-      const snapped = this.snapPoint(page);
-      this.createItem("count", [snapped]);
-      this.drawInteraction();
-    }
-
-    if (tool === "symbol") {
-      if (event.detail > 1) return;
-      const snapped = this.snapPoint(page);
-      this.createItem("symbol", [snapped], {
-        symbolId: store.ui.symbolId,
-        status: store.ui.symbolStatus ?? undefined,
-      });
-      this.drawInteraction();
-    }
+    this.pointers.creationDown(page, event, tool);
   };
 
   private handleSelectDown(page: Point, event: PointerEvent): void {
@@ -2141,6 +1896,18 @@ export class CanvasView {
       box.width + paddingX * 2,
       box.height + paddingY * 2,
     );
+  }
+
+  private startTextTool(page: Point): void {
+    const project = store.project;
+    if (!project) return;
+    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom);
+    if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPage)) {
+      store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
+      this.editors.startTextEdit(hit.item, hit.layer);
+    } else {
+      this.editors.startNewText(page);
+    }
   }
 
   private createItem(
