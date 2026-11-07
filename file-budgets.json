@@ -12,7 +12,7 @@
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 810,
-    "src/pdf/pdfExport.ts": 1411,
+    "src/pdf/pdfExport.ts": 1207,
     "src/state/store.ts": 933,
     "src/styles/dialogs.css": 1694,
     "src/styles/markups.css": 1027,
