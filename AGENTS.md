@@ -250,8 +250,10 @@ src/canvas/items/images.ts embedded image drawing and opacity
 src/canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
 src/canvas/items/counts.ts count symbols and count-type glyphs
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
-src/canvas/pointerState.ts drag, marquee and pan gesture state
-src/canvas/groupHandles.ts group selection handles shared by pointer and renderer
+src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, wheel, space-pan and long-press helpers
+src/canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
+src/canvas/pointer/pointerState.ts drag, marquee and pan gesture state
+src/canvas/pointer/groupHandles.ts group selection handles shared by pointer and renderer
 src/canvas/symbolPath.ts   cached Path2D objects for symbol artwork
 src/canvas/draftRenderer.ts draft geometry, colours and preview labels in screen space
 src/canvas/touchNavigation.ts shared two-finger pan, pinch zoom and palm suppression

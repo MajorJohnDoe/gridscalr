@@ -1,7 +1,7 @@
-import type { Point } from "../model/types";
-import { distance, type Bounds } from "../model/geometry";
-import { cursorForRole, handleLocalPoint, type BoxHandleRole } from "./geometry";
-import type { Handle } from "./selectionHandles";
+import type { Point } from "../../model/types";
+import { distance, type Bounds } from "../../model/geometry";
+import { cursorForRole, handleLocalPoint, type BoxHandleRole } from "../geometry";
+import type { Handle } from "../selectionHandles";
 
 const GROUP_HANDLE_ROLES: BoxHandleRole[] = ["nw", "ne", "se", "sw"];
 
