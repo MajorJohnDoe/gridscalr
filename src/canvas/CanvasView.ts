@@ -10,15 +10,13 @@ import {
   symbolSelectionBounds,
   itemRotation,
   midpoint,
-  nearestPointOnSegment,
-  pointToItemLocal,
   radiusCircle,
   simplifyPolyline,
   type Bounds,
 } from "../model/geometry";
 import { areaOutline, areaShapeOf } from "../model/area";
 import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
-import { findSegment, findVertex, hitTest } from "../model/hitTest";
+import { findVertex, hitTest } from "../model/hitTest";
 import {
   clampLabelSize,
   labelAnchorForPoints,
@@ -380,6 +378,28 @@ export class CanvasView {
       createItem: (kind, points, options) => this.createItem(kind, points, options),
       runCalibration: (p1, p2) => this.runCalibration(p1, p2),
       startTextTool: (page) => this.startTextTool(page),
+      touchNavigationBlocked: () => this.touchNavigation.active || this.touchNavigation.suppressed,
+      activeTool: () => store.ui.activeTool,
+      viewPage: () => this.viewPage,
+      toPage: (screen) => this.toPage(screen),
+      calibrationLabelHit: (screen) => this.calibrationLabelHit(screen),
+      editCalibration: () => this.editCalibration(),
+      measurementLabelHit: (screen) => this.measurementLabelHit(screen),
+      isLocked: (item, layer) => itemIsLocked(item, layer),
+      selectItem: (layerId, itemId) => store.setSelection({ layerId, itemId }),
+      promptVolumeDepth: (ref) => this.promptVolumeDepth(ref),
+      startLabelEdit: (hit) => this.editors.startLabelEdit(hit),
+      editSheetFieldAt: (page, screen) => {
+        this.editSheetFieldAt(page, screen);
+      },
+      startTextEdit: (item, layer) => this.editors.startTextEdit(item, layer),
+      startTextBoxEdit: (item, layer) => this.editors.startTextBoxEdit(item, layer),
+      editRail: (item) => {
+        void openRailDialog(item.id);
+      },
+      startCloudTextEdit: (item, layer) => this.editors.startCloudTextEdit(item, layer),
+      startCalloutTextEdit: (item, layer) => this.editors.startCalloutTextEdit(item, layer),
+      editItemText: (item) => this.editItemText(item),
       zoomAt: (screen, factor) => this.zoomAt(screen, factor),
       cancelGesture: () => {
         this.pointers.cancelDrag();
@@ -1399,98 +1419,7 @@ export class CanvasView {
   };
 
   private onDoubleClick = (event: MouseEvent): void => {
-    if (this.touchNavigation.active || this.touchNavigation.suppressed) return;
-    if (!store.project || this.crop.active) return;
-    const tool = store.ui.activeTool;
-    if (tool === "length" || tool === "area" || tool === "volume" || tool === "polyline") {
-      this.finishDraft();
-      return;
-    }
-    if (tool !== "select" && tool !== "text") return;
-    const screen = this.localPoint(event);
-    const page = this.toPage(screen);
-
-    if (tool === "select" && this.calibrationLabelHit(screen)) {
-      void this.editCalibration();
-      return;
-    }
-
-    const labelHit = this.measurementLabelHit(screen);
-    if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
-      store.setSelection({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
-      if (labelHit.item.kind === "volume") {
-        this.promptVolumeDepth({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
-        return;
-      }
-      this.editors.startLabelEdit(labelHit);
-      return;
-    }
-
-    const hit = hitTest(store.project, this.viewPage, page, 7 / this.viewZoom);
-    if (!hit) {
-      if (tool === "select") this.editSheetFieldAt(this.viewPage, screen);
-      return;
-    }
-    if (itemIsLocked(hit.item, hit.layer)) return;
-    store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
-
-    if (hit.item.kind === "volume") {
-      this.promptVolumeDepth({ layerId: hit.layer.id, itemId: hit.item.id });
-      return;
-    }
-
-    if (hit.item.kind === "text") {
-      this.editors.startTextEdit(hit.item, hit.layer);
-      return;
-    }
-    if (hit.item.kind === "textbox") {
-      this.editors.startTextBoxEdit(hit.item, hit.layer);
-      return;
-    }
-    if (hit.item.kind === "rail") {
-      void openRailDialog(hit.item.id);
-      return;
-    }
-    if (hit.item.kind === "cloud") {
-      this.editors.startCloudTextEdit(hit.item, hit.layer);
-      return;
-    }
-    if (hit.item.kind === "callout") {
-      this.editors.startCalloutTextEdit(hit.item, hit.layer);
-      return;
-    }
-    if (hit.item.kind === "stamp" || hit.item.kind === "delta") {
-      void this.editItemText(hit.item);
-      return;
-    }
-
-    const segment = findSegment(
-      hit.item,
-      page,
-      7 / this.viewZoom,
-      hit.item.kind === "area" ||
-        hit.item.kind === "rect" ||
-        hit.item.kind === "ellipse" ||
-        (hit.item.kind === "highlight" && hit.item.highlightShape === "polygon"),
-    );
-    if (
-      segment &&
-      ["length", "area", "pen"].includes(hit.item.kind) &&
-      (hit.item.kind !== "area" || areaShapeOf(hit.item) === "polygon")
-    ) {
-      const insert = nearestPointOnSegment(
-        pointToItemLocal(hit.item, page),
-        hit.item.points[segment.index],
-        hit.item.points[(segment.index + 1) % hit.item.points.length],
-      );
-      store.mutate((project) => {
-        const item = findItem(project, hit.item.id)?.item;
-        if (item) {
-          item.points.splice(segment.index + 1, 0, insert);
-          item.updatedAt = new Date().toISOString();
-        }
-      }, "change");
-    }
+    this.pointers.doubleClick(event);
   };
 
   private onContextMenu = (event: MouseEvent): void => {
