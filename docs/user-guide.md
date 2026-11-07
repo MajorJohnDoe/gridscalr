@@ -404,13 +404,14 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
 
-**Schematic** contains 155 stroke-only equipment symbols for operation cards:
+**Schematic** contains 156 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
 - Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. The thick flow arrow uses a 1.2 pt stroke. They are exported as vectors in the drawing PDF.
 - Each symbol has a suggested tag prefix such as `FF`, `VVX` or `GT`. Enter any free text in **Tag** in Properties; the tag follows the symbol and its offset can be adjusted. Nothing is numbered automatically.
 - Ports mark pipe, duct and cable connection points for snapping and review. Schematic symbols do not draw their own pipe or duct connection stubs; draw the pipe or duct line yourself and snap it to a port on the symbol body.
 - Ventilation includes **Silencer**, **Drain silencer** with two full dividers and **Exhaust silencer** with two broken dividers that meet the top and bottom walls.
+- **Compressor, vacuum pump** is the circle with two opposing chords.
 - Connection dots, arrows, references and tag holders live in **General**. **Flow arrow** is a small chevron you can place and rotate on a pipe to show flow direction; **Flow arrow, thick** is the same chevron with a heavier stroke. They are symbols, so they follow the drawing layer and the same visibility and export rules as other symbols.
 - District heating includes the inline **District heating energy meter** and the standalone **District heating meter, panel** with a bezelled display and two indicator dots. The panel has no pipe ports and is placed freely.
 - Valves include **Valve with motor actuator** (M) and **Valve with hydraulic actuator** (H), with the actuator type drawn in the box above the valve body. The simpler **Motorized valve** remains available.

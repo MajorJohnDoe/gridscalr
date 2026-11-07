@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(155);
-    expect(ALL_SYMBOLS).toHaveLength(207);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(156);
+    expect(ALL_SYMBOLS).toHaveLength(208);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(155);
+    expect(symbolsForSet("schematic")).toHaveLength(156);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -408,6 +408,12 @@ describe("schematic symbol set", () => {
       expect(symbolForAll(id).category, id).toBe("ventilation");
       expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
+  });
+
+  it("adds the combined compressor and vacuum pump", () => {
+    const symbol = symbolForAll("schematic.compressor-vacuum-pump");
+    expect(symbol.category).toBe("ventilation");
+    expect(symbol.ports).toHaveLength(2);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

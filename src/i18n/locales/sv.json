@@ -1317,6 +1317,7 @@
   "symbol.schematic.silencer": "Ljuddämpare",
   "symbol.schematic.drain-silencer": "Dränljuddämpare",
   "symbol.schematic.exhaust-silencer": "Frånluftsljuddämpare",
+  "symbol.schematic.compressor-vacuum-pump": "Kompressor, vakuumpump",
   "symbol.schematic.supply-diffuser": "Tilluftsdon",
   "symbol.schematic.extract-diffuser": "Frånluftsdon",
   "symbol.schematic.duct-sensor": "Kanalgivare",

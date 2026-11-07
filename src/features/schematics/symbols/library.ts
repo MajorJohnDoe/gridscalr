@@ -1040,6 +1040,18 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     ],
   }),
   schematicSymbol({
+    id: "schematic.compressor-vacuum-pump",
+    category: "ventilation",
+    keywords: ["kompressor", "vakuumpump", "compressor", "vacuum pump", "vakuum", "kvp"],
+    tagPrefix: "KVP",
+    ports: INLINE_PORTS(),
+    shapes: [
+      stroke(
+        joinPaths(smallCircle(32, 32, 16), linePath(20, 22, 48, 29), linePath(19, 41, 47, 36)),
+      ),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.axial-fan",
     category: "ventilation",
     keywords: ["axialfläkt", "axial fan", "fläkt", "axial", "af"],

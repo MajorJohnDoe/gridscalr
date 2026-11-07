@@ -1319,6 +1319,7 @@ export type MessageKey =
   | "symbol.schematic.silencer"
   | "symbol.schematic.drain-silencer"
   | "symbol.schematic.exhaust-silencer"
+  | "symbol.schematic.compressor-vacuum-pump"
   | "symbol.schematic.supply-diffuser"
   | "symbol.schematic.extract-diffuser"
   | "symbol.schematic.duct-sensor"
