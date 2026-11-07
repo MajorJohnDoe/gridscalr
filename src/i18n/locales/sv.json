@@ -1321,6 +1321,7 @@
   "symbol.schematic.pressure-sensor": "Tryckgivare",
   "symbol.schematic.flow-sensor": "Flödesgivare",
   "symbol.schematic.flow-arrow": "Flödespil",
+  "symbol.schematic.flow-arrow-thick": "Flödespil, tjock",
   "symbol.schematic.level-sensor": "Nivågivare",
   "symbol.schematic.pressure-switch": "Tryckvakt",
   "symbol.schematic.flow-switch": "Flödesvakt",

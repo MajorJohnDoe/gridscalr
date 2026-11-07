@@ -95,6 +95,8 @@ export interface SymbolDefinition {
   tagPrefix?: string;
   /** Default item size in PDF points. Missing means SYMBOL_SIZE. */
   defaultSize?: number;
+  /** Schematic symbols only: fixed stroke width in PDF points. Missing uses SCHEMATIC_STROKE_WIDTH. */
+  fixedStrokeWidth?: number;
 }
 
 export interface SymbolRenderShape {
@@ -1195,6 +1197,7 @@ export function symbolRenderPlan(
   const shapes: SymbolRenderShape[] = [];
   const isSign = style === "sign";
   const isSchematic = style === "schematic";
+  const schematicStrokeWidth = symbol.fixedStrokeWidth ?? SCHEMATIC_STROKE_WIDTH;
   if (isSign) {
     shapes.push({
       d: roundedRectPathData(2, 2, 60, 60, 3),
@@ -1213,7 +1216,7 @@ export function symbolRenderPlan(
       stroke: entry.stroke ? glyphColor : null,
       strokeWidth: entry.stroke
         ? isSchematic
-          ? SCHEMATIC_STROKE_WIDTH
+          ? schematicStrokeWidth
           : (entry.strokeWidth ?? 4)
         : 0,
       fillRule: entry.fillRule ?? "nonzero",
@@ -1224,7 +1227,7 @@ export function symbolRenderPlan(
     shapes,
     badge: symbol.art.badge ?? (isSign ? SIGN_BADGE : GLYPH_BADGE),
     viewBox: SYMBOL_VIEWBOX,
-    fixedStrokeWidth: isSchematic ? SCHEMATIC_STROKE_WIDTH : undefined,
+    fixedStrokeWidth: isSchematic ? schematicStrokeWidth : undefined,
   };
 }
 

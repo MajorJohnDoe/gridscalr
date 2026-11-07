@@ -72,6 +72,7 @@ interface SchematicDefinitionInput {
   ports: SymbolPort[];
   shapes: SymbolArtShape[];
   defaultSize?: number;
+  fixedStrokeWidth?: number;
 }
 
 /**
@@ -91,6 +92,7 @@ export function schematicSymbol(input: SchematicDefinitionInput): SymbolDefiniti
     ports: input.ports,
     tagPrefix: input.tagPrefix,
     defaultSize: input.defaultSize ?? SCHEMATIC_SYMBOL_SIZE,
+    fixedStrokeWidth: input.fixedStrokeWidth,
   };
 }
 
