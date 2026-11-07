@@ -404,7 +404,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
 
-**Schematic** contains 130 stroke-only equipment symbols for operation cards:
+**Schematic** contains 135 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
 - Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. The thick flow arrow uses a 1.2 pt stroke. They are exported as vectors in the drawing PDF.
@@ -414,6 +414,7 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - District heating includes the inline **District heating energy meter** and the standalone **District heating meter, panel** with a bezelled display and two indicator dots. The panel has no pipe ports and is placed freely.
 - Valves include **Valve with motor actuator** (M) and **Valve with hydraulic actuator** (H), with the actuator type drawn in the box above the valve body. The simpler **Motorized valve** remains available.
 - **Y-strainer** is a flanged Y fitting with a screen and a small blow-down valve. **Diverter valve** is a flanged circle with a branch outlet. **Y-type strainer** is a flanged Y fitting with a cleaning plug. All three sit in **Valves**.
+- Actuated valve variants use a box above the valve: **Solenoid valve, S box**, **Pilot gate valve** (P), **Weight gate valve** (W) and **Powered valve** (empty box). **Self-draining valve** has a downward drain arrow instead of an actuator box.
 - The expansion vessel is a domed cylinder with a bottom connection. It is available as the standard **Expansion vessel**, **Expansion vessel, large** and **Expansion vessel, small**, placing at 40, 56 and 26 pt by default. All three can still be resized.
 - Heating also includes **Tank 2** (closed pitched top), **Tank 3** (open top with a bottom step), **Tank 4** (closed with a top neck and bottom step) and **Open tank** (open with a flat bottom). Each has a bottom connection port.
 

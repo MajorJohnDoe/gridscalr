@@ -74,6 +74,39 @@ function hydraulicLetter(): string {
   return joinPaths(linePath(27, 6, 27, 13), linePath(37, 6, 37, 13), linePath(27, 9.5, 37, 9.5));
 }
 
+/** Block-letter S for a solenoid actuator box. */
+function solenoidLetter(): string {
+  return joinPaths(
+    linePath(36.5, 7.5, 28, 7.5),
+    linePath(28, 7.5, 28, 9.5),
+    linePath(28, 9.5, 36, 9.5),
+    linePath(36, 9.5, 36, 12),
+    linePath(36, 12, 27.5, 12),
+  );
+}
+
+/** Block-letter P for a pilot actuator box. */
+function pilotLetter(): string {
+  return joinPaths(
+    linePath(28, 6, 28, 13),
+    linePath(28, 6, 36, 6),
+    linePath(36, 6, 36, 9.5),
+    linePath(36, 9.5, 28, 9.5),
+  );
+}
+
+/** Block-letter W for a weight actuator box. */
+function weightLetter(): string {
+  return joinPaths(
+    linePath(27, 6, 29, 13),
+    linePath(29, 13, 32, 8),
+    linePath(32, 8, 35, 13),
+    linePath(35, 13, 37, 6),
+  );
+}
+
+const SELF_DRAINING_HEAD = polyPath([27, 48, 32, 56, 37, 48], true);
+
 const STRAINER_FLANGES = joinPaths(
   linePath(8, 24, 8, 40),
   linePath(56, 24, 56, 40),
@@ -455,6 +488,57 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       { id: "out", x: 56, y: 32, direction: "out" },
     ],
     shapes: [stroke(Y_TYPE_STRAINER_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.solenoid-valve-s",
+    category: "valve",
+    keywords: ["magnetventil s-ruta", "solenoid valve s box", "magnetventil", "ventil", "s"],
+    tagPrefix: "S",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), solenoidLetter()))],
+  }),
+  schematicSymbol({
+    id: "schematic.pilot-gate-valve",
+    category: "valve",
+    keywords: ["pilotstyrd ventil", "pilot gate valve", "pilot", "ventil", "p"],
+    tagPrefix: "P",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), pilotLetter()))],
+  }),
+  schematicSymbol({
+    id: "schematic.weight-gate-valve",
+    category: "valve",
+    keywords: ["viktstyrd ventil", "weight gate valve", "vikt", "ventil", "w"],
+    tagPrefix: "W",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), weightLetter()))],
+  }),
+  schematicSymbol({
+    id: "schematic.powered-valve",
+    category: "valve",
+    keywords: ["driven ventil", "powered valve", "ställdon", "ventil", "pv"],
+    tagPrefix: "PV",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody()))],
+  }),
+  schematicSymbol({
+    id: "schematic.self-draining-valve",
+    category: "valve",
+    keywords: [
+      "självavtappande ventil",
+      "self-draining valve",
+      "självdränning",
+      "avtappning",
+      "ventil",
+      "sd",
+    ],
+    tagPrefix: "SD",
+    ports: [
+      { id: "in", x: 18, y: 32, direction: "in" },
+      { id: "out", x: 46, y: 32, direction: "out" },
+      { id: "drain", x: 32, y: 58, direction: "out" },
+    ],
+    shapes: [stroke(joinPaths(valveBody(), linePath(32, 32, 32, 48))), fill(SELF_DRAINING_HEAD)],
   }),
   schematicSymbol({
     id: "schematic.three-way-valve",

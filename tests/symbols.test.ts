@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(130);
-    expect(ALL_SYMBOLS).toHaveLength(182);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(135);
+    expect(ALL_SYMBOLS).toHaveLength(187);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(130);
+    expect(symbolsForSet("schematic")).toHaveLength(135);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -335,6 +335,19 @@ describe("schematic symbol set", () => {
     ]) {
       expect(symbolForAll(id).category).toBe("valve");
     }
+  });
+
+  it("adds actuated and self-draining valve variants", () => {
+    for (const id of [
+      "schematic.solenoid-valve-s",
+      "schematic.pilot-gate-valve",
+      "schematic.weight-gate-valve",
+      "schematic.powered-valve",
+    ]) {
+      expect(symbolForAll(id).category).toBe("valve");
+      expect(symbolForAll(id).ports, id).toHaveLength(2);
+    }
+    expect(symbolForAll("schematic.self-draining-valve").ports).toHaveLength(3);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {
