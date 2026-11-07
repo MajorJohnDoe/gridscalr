@@ -541,6 +541,101 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     shapes: [stroke(joinPaths(valveBody(), linePath(32, 32, 32, 48))), fill(SELF_DRAINING_HEAD)],
   }),
   schematicSymbol({
+    id: "schematic.closed-gate-valve",
+    category: "valve",
+    keywords: ["stängd slussventil", "closed gate valve", "slussventil", "gate", "ventil", "sgv"],
+    tagPrefix: "SGV",
+    ports: valvePorts(),
+    shapes: [fill(valveBody())],
+  }),
+  schematicSymbol({
+    id: "schematic.hand-globe-valve",
+    category: "valve",
+    keywords: [
+      "handmanövrerad sätesventil",
+      "hand-operated globe valve",
+      "sätesventil",
+      "hand",
+      "ventil",
+      "hgv",
+    ],
+    tagPrefix: "HGV",
+    ports: valvePorts(),
+    shapes: [
+      stroke(joinPaths(valveBody(), linePath(32, 32, 32, 12), linePath(24, 12, 40, 12))),
+      fill(smallCircle(32, 32, 3)),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.globe-valve",
+    category: "valve",
+    keywords: ["sätesventil", "globe valve", "ventil", "säte", "gv"],
+    tagPrefix: "GV",
+    ports: valvePorts(),
+    shapes: [stroke(valveBody()), fill(smallCircle(32, 32, 3))],
+  }),
+  schematicSymbol({
+    id: "schematic.rotary-valve",
+    category: "valve",
+    keywords: ["vridventil", "rotary valve", "vrid", "rotary", "ventil", "vr"],
+    tagPrefix: "VR",
+    ports: [
+      { id: "in", x: 8, y: 32, direction: "in" },
+      { id: "out", x: 56, y: 32, direction: "out" },
+    ],
+    shapes: [
+      stroke(
+        joinPaths(
+          linePath(8, 24, 8, 40),
+          linePath(56, 24, 56, 40),
+          linePath(8, 32, 56, 32),
+          smallCircle(32, 32, 10),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.needle-valve",
+    category: "valve",
+    keywords: ["nålventil", "needle valve", "nål", "ventil", "nv"],
+    tagPrefix: "NV",
+    ports: valvePorts(),
+    shapes: [
+      stroke(
+        joinPaths(
+          valveBody(),
+          linePath(32, 16, 32, 48),
+          linePath(28, 16, 36, 16),
+          linePath(28, 48, 36, 48),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.control-valve-diaphragm",
+    category: "valve",
+    keywords: [
+      "reglerventil med membranställdon",
+      "control valve with diaphragm actuator",
+      "reglerventil",
+      "membran",
+      "ventil",
+      "rm",
+    ],
+    tagPrefix: "RM",
+    ports: valvePorts(),
+    shapes: [
+      stroke(
+        joinPaths(
+          valveBody(),
+          linePath(32, 32, 32, 14),
+          linePath(24, 14, 40, 14),
+          "M 24 14 Q 32 2 40 14",
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.three-way-valve",
     category: "valve",
     keywords: ["trevägsventil", "three-way valve", "3-väg", "ventil", "3v"],

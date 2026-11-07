@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(135);
-    expect(ALL_SYMBOLS).toHaveLength(187);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(141);
+    expect(ALL_SYMBOLS).toHaveLength(193);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(135);
+    expect(symbolsForSet("schematic")).toHaveLength(141);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -348,6 +348,21 @@ describe("schematic symbol set", () => {
       expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
     expect(symbolForAll("schematic.self-draining-valve").ports).toHaveLength(3);
+  });
+
+  it("adds gate, globe, rotary, needle and diaphragm valves", () => {
+    for (const id of [
+      "schematic.closed-gate-valve",
+      "schematic.hand-globe-valve",
+      "schematic.globe-valve",
+      "schematic.rotary-valve",
+      "schematic.needle-valve",
+      "schematic.control-valve-diaphragm",
+    ]) {
+      expect(symbolForAll(id).category, id).toBe("valve");
+      expect(symbolForAll(id).ports, id).toHaveLength(2);
+    }
+    expect(symbolForAll("schematic.closed-gate-valve").art.shapes[0].stroke).not.toBe(true);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {
