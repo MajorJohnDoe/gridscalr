@@ -12,6 +12,7 @@ import {
   type ItemRenderState,
 } from "./context";
 import { drawMeasurementItem } from "./measurement";
+import { drawShapeItem } from "./shapes";
 
 export function dispatchItem(
   ctx: CanvasRenderingContext2D,
@@ -72,6 +73,16 @@ export function dispatchItem(
     case "area":
     case "volume":
       drawMeasurementItem(ctx, item, state);
+      break;
+    case "pen":
+    case "highlight":
+    case "line":
+    case "arrow":
+    case "rect":
+    case "ellipse":
+    case "polyline":
+    case "rail":
+      drawShapeItem(ctx, item, state);
       break;
     default:
       drawRemainingItem(ctx, item, state);
