@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(121);
-    expect(ALL_SYMBOLS).toHaveLength(173);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(123);
+    expect(ALL_SYMBOLS).toHaveLength(175);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(121);
+    expect(symbolsForSet("schematic")).toHaveLength(123);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -298,6 +298,17 @@ describe("schematic symbol set", () => {
     expect(panel.ports ?? []).toHaveLength(0);
     expect(panel.art.shapes.some((shape) => shape.stroke === true)).toBe(true);
     expect(panel.art.shapes.some((shape) => shape.stroke !== true)).toBe(true);
+  });
+
+  it("adds motor and hydraulic actuator valves", () => {
+    const motor = symbolForAll("schematic.valve-motor-actuator");
+    const hydraulic = symbolForAll("schematic.valve-hydraulic-actuator");
+    expect(motor.category).toBe("valve");
+    expect(hydraulic.category).toBe("valve");
+    expect(motor.ports).toHaveLength(2);
+    expect(hydraulic.ports).toHaveLength(2);
+    expect(motor.art.shapes.some((shape) => shape.stroke)).toBe(true);
+    expect(hydraulic.art.shapes.some((shape) => shape.stroke)).toBe(true);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

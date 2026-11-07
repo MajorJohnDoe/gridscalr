@@ -1333,6 +1333,8 @@
   "symbol.schematic.check-valve": "Check valve",
   "symbol.schematic.safety-valve": "Safety valve",
   "symbol.schematic.motor-valve": "Motorized valve",
+  "symbol.schematic.valve-motor-actuator": "Valve with motor actuator",
+  "symbol.schematic.valve-hydraulic-actuator": "Valve with hydraulic actuator",
   "symbol.schematic.three-way-valve": "Three-way valve",
   "symbol.schematic.three-way-check-valve": "Three-way check valve",
   "symbol.schematic.balancing-valve": "Balancing valve",

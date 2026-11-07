@@ -54,6 +54,26 @@ function valveBody(): string {
   );
 }
 
+/** Stem and square actuator box above a valve body. */
+function valveActuatorBody(): string {
+  return joinPaths(linePath(32, 15, 32, 32), rectPath(23, 3, 18, 12));
+}
+
+/** The letter M drawn as stroke paths inside the actuator box. */
+function motorLetter(): string {
+  return joinPaths(
+    linePath(27, 13, 27, 6),
+    linePath(27, 6, 32, 10),
+    linePath(32, 10, 37, 6),
+    linePath(37, 6, 37, 13),
+  );
+}
+
+/** The letter H drawn as stroke paths inside the actuator box. */
+function hydraulicLetter(): string {
+  return joinPaths(linePath(27, 6, 27, 13), linePath(37, 6, 37, 13), linePath(27, 9.5, 37, 9.5));
+}
+
 function pumpBody(): string {
   return joinPaths(smallCircle(32, 32, 16), polyPath([32, 20, 44, 40, 20, 40], true));
 }
@@ -308,6 +328,29 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
         joinPaths(linePath(32, 22, 32, 16), rectPath(24, 6, 16, 10), smallCircle(32, 11, 2.4)),
       ),
     ],
+  }),
+  schematicSymbol({
+    id: "schematic.valve-motor-actuator",
+    category: "valve",
+    keywords: ["motorventil", "motorställdon", "motor actuator", "motor", "ventil", "mv"],
+    tagPrefix: "MV",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), motorLetter()))],
+  }),
+  schematicSymbol({
+    id: "schematic.valve-hydraulic-actuator",
+    category: "valve",
+    keywords: [
+      "hydraulventil",
+      "hydrauliskt ställdon",
+      "hydraulic actuator",
+      "hydraulik",
+      "ventil",
+      "hv",
+    ],
+    tagPrefix: "HV",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), valveActuatorBody(), hydraulicLetter()))],
   }),
   schematicSymbol({
     id: "schematic.three-way-valve",

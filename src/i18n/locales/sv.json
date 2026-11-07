@@ -1333,6 +1333,8 @@
   "symbol.schematic.check-valve": "Backventil",
   "symbol.schematic.safety-valve": "Säkerhetsventil",
   "symbol.schematic.motor-valve": "Motorventil",
+  "symbol.schematic.valve-motor-actuator": "Ventil med motorställdon",
+  "symbol.schematic.valve-hydraulic-actuator": "Ventil med hydrauliskt ställdon",
   "symbol.schematic.three-way-valve": "Trevägsventil",
   "symbol.schematic.three-way-check-valve": "Trevägs backventil",
   "symbol.schematic.balancing-valve": "Injusteringsventil",
