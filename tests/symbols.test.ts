@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(119);
-    expect(ALL_SYMBOLS).toHaveLength(171);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(120);
+    expect(ALL_SYMBOLS).toHaveLength(172);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(119);
+    expect(symbolsForSet("schematic")).toHaveLength(120);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -266,7 +266,7 @@ describe("schematic symbol set", () => {
         symbol.art.shapes.every((shape) => shape.stroke === true || shape.fillRule === undefined),
       ).toBe(true);
       const plan = symbolRenderPlan(symbol, "#111111");
-      expect(plan.fixedStrokeWidth).toBe(SCHEMATIC_STROKE_WIDTH);
+      expect(plan.fixedStrokeWidth).toBe(symbol.fixedStrokeWidth ?? SCHEMATIC_STROKE_WIDTH);
       expect(plan.shapes.every((shape) => shape.fill === null || shape.fill === "#111111")).toBe(
         true,
       );
@@ -280,6 +280,12 @@ describe("schematic symbol set", () => {
         expect(symbolSvgMarkup(symbol, 27, "#e8eef1")).toContain('stroke="#e8eef1"');
       }
     }
+  });
+
+  it("offers a thicker alternative flow arrow", () => {
+    const thick = symbolForAll("schematic.flow-arrow-thick");
+    expect(thick.fixedStrokeWidth).toBe(1.2);
+    expect(symbolRenderPlan(thick, "#111111").fixedStrokeWidth).toBe(1.2);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

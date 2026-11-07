@@ -404,13 +404,13 @@ Press `B` or choose the **Symbol** tool in the tool rail; the left panel switche
 - Change status in Properties or directly from the **Status** column in the Markups list. The status is included in the Markups CSV.
 - Signs are classic plates with filled vector pictograms, placed at 24 pt by default.
 
-**Schematic** contains 119 stroke-only equipment symbols for operation cards:
+**Schematic** contains 120 stroke-only equipment symbols for operation cards:
 
 - Categories: **Instruments**, **Valves**, **Pumps**, **Heat exchangers**, **Ventilation**, **Heating**, **District heating**, **Cooling**, **Domestic water**, **Control & electrical**, and **General**.
-- Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. They are exported as vectors in the drawing PDF.
+- Symbols are flat black line art with a fixed 0.7 pt stroke at every size, placed at 40 pt by default. The thick flow arrow uses a 1.2 pt stroke. They are exported as vectors in the drawing PDF.
 - Each symbol has a suggested tag prefix such as `FF`, `VVX` or `GT`. Enter any free text in **Tag** in Properties; the tag follows the symbol and its offset can be adjusted. Nothing is numbered automatically.
 - Ports mark pipe, duct and cable connection points for snapping and review. Schematic symbols do not draw their own pipe or duct connection stubs; draw the pipe or duct line yourself and snap it to a port on the symbol body.
-- Connection dots, arrows, references and tag holders live in **General**. **Flow arrow** is a small chevron you can place and rotate on a pipe to show flow direction; it is a symbol, so it follows the drawing layer and the same visibility and export rules as other symbols.
+- Connection dots, arrows, references and tag holders live in **General**. **Flow arrow** is a small chevron you can place and rotate on a pipe to show flow direction; **Flow arrow, thick** is the same chevron with a heavier stroke. They are symbols, so they follow the drawing layer and the same visibility and export rules as other symbols.
 - The expansion vessel is a domed cylinder with a bottom connection. It is available as the standard **Expansion vessel**, **Expansion vessel, large** and **Expansion vessel, small**, placing at 40, 56 and 26 pt by default. All three can still be resized.
 
 - Symbols are drawing objects. They do not appear in quantity totals.

@@ -1323,6 +1323,7 @@ export type MessageKey =
   | "symbol.schematic.pressure-sensor"
   | "symbol.schematic.flow-sensor"
   | "symbol.schematic.flow-arrow"
+  | "symbol.schematic.flow-arrow-thick"
   | "symbol.schematic.level-sensor"
   | "symbol.schematic.pressure-switch"
   | "symbol.schematic.flow-switch"
