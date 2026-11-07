@@ -293,7 +293,9 @@ src/state/history.ts       adaptive undo-history limits from the serialized snap
 src/state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
 src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
-src/pdf/pdfExport.ts       flattened vector PDF export
+src/pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
+src/pdf/export/            options, page crop, fonts, images, geometry, labels, legend
+src/pdf/export/items/      measurement, shapes, text, symbols, counts, annotations and dispatch
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tables
 src/report/                pure report model, shared table rows, CSV and XLSX serialization

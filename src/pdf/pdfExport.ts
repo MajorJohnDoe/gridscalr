@@ -1,29 +1,18 @@
 import * as fontkit from "@pdf-lib/fontkit";
-import { degrees, PDFDocument, type PDFPage } from "pdf-lib";
-import type { PageViewport } from "pdfjs-dist";
-import { clamp, itemRectCorners, pdfColor, pdfRectFromCorners } from "./export/geometry";
+import { PDFDocument } from "pdf-lib";
 import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
-import { drawAnnotationItem } from "./export/items/annotations";
-import { drawCountItem } from "./export/items/counts";
+import { drawItem } from "./export/items/dispatch";
 import { drawLabel } from "./export/labels";
 import { drawLegendPage } from "./export/legend";
-import { drawMeasurementItem } from "./export/items/measurement";
-import { drawSymbolItem } from "./export/items/symbols";
-import { drawShapeItem } from "./export/items/shapes";
-import { drawTextFamilyItem } from "./export/items/text";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
 import { applyCrop, drawCalibrationLine } from "./export/page";
-import type { ExportFonts, ExportImages } from "./export/types";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import type { DrawingExportOptions } from "../model/export";
-import { imageOpacity } from "../model/images";
 import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
-import type { LabelLayout } from "../model/labelLayout";
 import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
-import type { MarkupItem, Project } from "../model/types";
-import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
+import type { Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
 import { t } from "../i18n";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
@@ -146,83 +135,4 @@ export async function exportProjectPdf(
   }
 
   return pdf.save();
-}
-
-function drawItem(
-  page: PDFPage,
-  viewport: PageViewport,
-  project: Project,
-  item: MarkupItem,
-  layerOpacity: number,
-  fonts: ExportFonts,
-  labels: Map<string, LabelLayout>,
-  images: ExportImages,
-): void {
-  const color = pdfColor(item.color);
-  const width = Math.max(MIN_EXPORT_STROKE_WIDTH, item.strokeWidth);
-  const opacity = clamp(layerOpacity, 0, 1);
-
-  switch (item.kind) {
-    case "length":
-    case "angle":
-    case "slope":
-    case "radius":
-    case "diameter":
-    case "arc":
-    case "area":
-    case "volume":
-      drawMeasurementItem({ page, viewport, project, fonts, labels, images }, item, layerOpacity);
-      break;
-    case "count":
-      drawCountItem(
-        { page, viewport, project, fonts, labels, images },
-        item,
-        project,
-        color,
-        width,
-        opacity,
-      );
-      break;
-    case "symbol":
-      drawSymbolItem({ page, viewport, project, fonts, labels, images }, item, opacity);
-      break;
-    case "pen":
-    case "highlight":
-    case "line":
-    case "arrow":
-    case "rect":
-    case "ellipse":
-    case "polyline":
-    case "rail":
-      drawShapeItem({ page, viewport, project, fonts, labels, images }, item, layerOpacity);
-      break;
-    case "cloud":
-    case "callout":
-    case "stamp":
-    case "delta":
-      drawAnnotationItem({ page, viewport, project, fonts, labels, images }, item, layerOpacity);
-      break;
-    case "text":
-    case "textbox":
-      drawTextFamilyItem({ page, viewport, project, fonts, labels, images }, item, layerOpacity);
-      break;
-    case "image": {
-      if (item.points.length < 2 || !item.image) break;
-      const image = images.get(item.image.assetId);
-      if (!image) break;
-      const rect = pdfRectFromCorners(viewport, itemRectCorners(item));
-      page.drawImage(image, {
-        x: rect.x,
-        y: rect.y,
-        width: rect.width,
-        height: rect.height,
-        rotate: degrees(rect.angle),
-        opacity: clamp(layerOpacity * imageOpacity(item), 0, 1),
-      });
-      break;
-    }
-  }
-
-  const label = labels.get(item.id);
-  if (label) drawLabel(page, viewport, label, opacity, fonts);
 }
