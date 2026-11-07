@@ -1,7 +1,7 @@
 import type { Point } from "../../model/types";
 import type { Handle } from "../selectionHandles";
 import type { Viewport } from "../viewport";
-import type { DragState, PanState } from "./pointerState";
+import type { DragState } from "./pointerState";
 
 /**
  * The scene facts and commands the pointer controller needs. `CanvasView`
@@ -15,15 +15,14 @@ export interface PointerHost {
   cropActive(): boolean;
   cropCursor(): string | null;
 
-  panState(): PanState | null;
   dragState(): DragState | null;
-  hasMarquee(): boolean;
   labelConnectActive(): boolean;
 
   hoverHandle(): Handle | null;
   hoverLabelResize(): boolean;
 
   setHostCursor(cursor: string): void;
+  drawInteraction(): void;
   zoomAt(screen: Point, factor: number): void;
   cancelGesture(): void;
   openContextMenu(clientX: number, clientY: number): void;
