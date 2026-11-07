@@ -58,6 +58,7 @@ src/
   canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, wheel, space-pan and long-press helpers
   canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
   canvas/pointer/creation.ts creation-tool pointer-down branches and draft start/finish
+  canvas/pointer/doubleClick.ts double-click target resolution and edit dispatch
   canvas/pointer/drag.ts item move, vertex, label and measurement-label drag
   canvas/pointer/transform.ts resize, group scale and rotation application
   canvas/pointer/pointerState.ts drag, marquee and pan gesture state

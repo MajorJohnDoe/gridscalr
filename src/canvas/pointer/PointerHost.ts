@@ -1,4 +1,13 @@
-import type { AreaShape, InspectionStatus, ItemKind, Point } from "../../model/types";
+import type {
+  AreaShape,
+  InspectionStatus,
+  ItemKind,
+  Layer,
+  MarkupItem,
+  Point,
+} from "../../model/types";
+import type { LabelHit } from "../editors";
+import type { ToolId } from "../../state/store";
 import type { Draft } from "../draftRenderer";
 import type { Handle } from "../selectionHandles";
 import type { Viewport } from "../viewport";
@@ -46,6 +55,24 @@ export interface PointerHost {
   ): { layerId: string; itemId: string } | null;
   runCalibration(p1: Point, p2: Point): Promise<void>;
   startTextTool(page: Point): void;
+  touchNavigationBlocked(): boolean;
+  activeTool(): ToolId;
+  viewPage(): number;
+  toPage(screen: Point): Point;
+  calibrationLabelHit(screen: Point): boolean;
+  editCalibration(): Promise<void> | void;
+  measurementLabelHit(screen: Point): LabelHit | null;
+  isLocked(item: MarkupItem, layer: Layer): boolean;
+  selectItem(layerId: string, itemId: string): void;
+  promptVolumeDepth(ref: { layerId: string; itemId: string } | null): void;
+  startLabelEdit(hit: LabelHit): void;
+  editSheetFieldAt(page: number, screen: Point): void;
+  startTextEdit(item: MarkupItem, layer: Layer): void;
+  startTextBoxEdit(item: MarkupItem, layer: Layer): void;
+  editRail(item: MarkupItem): void;
+  startCloudTextEdit(item: MarkupItem, layer: Layer): void;
+  startCalloutTextEdit(item: MarkupItem, layer: Layer): void;
+  editItemText(item: MarkupItem): Promise<void> | void;
   zoomAt(screen: Point, factor: number): void;
   cancelGesture(): void;
   openContextMenu(clientX: number, clientY: number): void;

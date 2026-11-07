@@ -5,6 +5,7 @@ import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
 import { handleCreationDown } from "./creation";
+import { handleDoubleClick } from "./doubleClick";
 import { applyDragState } from "./drag";
 import { applyTransformState } from "./transform";
 import type { DragState, MarqueeState, PanState } from "./pointerState";
@@ -99,6 +100,32 @@ export class PointerController {
       else if (store.ui.hover) cursor = "move";
     }
     this.host.setHostCursor(cursor);
+  }
+
+  doubleClick(event: MouseEvent): void {
+    handleDoubleClick(this.localPoint(event), {
+      touchNavigationBlocked: () => this.host.touchNavigationBlocked(),
+      cropActive: () => this.host.cropActive(),
+      activeTool: () => this.host.activeTool(),
+      viewPage: () => this.host.viewPage(),
+      viewZoom: () => this.host.viewZoom(),
+      toPage: (screen) => this.host.toPage(screen),
+      finishDraft: () => this.host.finishDraft(),
+      calibrationLabelHit: (screen) => this.host.calibrationLabelHit(screen),
+      editCalibration: () => this.host.editCalibration(),
+      measurementLabelHit: (screen) => this.host.measurementLabelHit(screen),
+      isLocked: (item, layer) => this.host.isLocked(item, layer),
+      selectItem: (layerId, itemId) => this.host.selectItem(layerId, itemId),
+      promptVolumeDepth: (ref) => this.host.promptVolumeDepth(ref),
+      startLabelEdit: (hit) => this.host.startLabelEdit(hit),
+      editSheetFieldAt: (page, screen) => this.host.editSheetFieldAt(page, screen),
+      startTextEdit: (item, layer) => this.host.startTextEdit(item, layer),
+      startTextBoxEdit: (item, layer) => this.host.startTextBoxEdit(item, layer),
+      editRail: (item) => this.host.editRail(item),
+      startCloudTextEdit: (item, layer) => this.host.startCloudTextEdit(item, layer),
+      startCalloutTextEdit: (item, layer) => this.host.startCalloutTextEdit(item, layer),
+      editItemText: (item) => this.host.editItemText(item),
+    });
   }
 
   creationDown(page: Point, event: PointerEvent, tool: ToolId): void {
