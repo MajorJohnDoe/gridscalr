@@ -262,7 +262,7 @@ Candidates in expected-value order, not scheduled:
 11. **Statutory area classification** (BTA/BRA/NTA/LOA) only with an explicit
     decision and a separate validation model.
 12. **Read-only package review mode** for contractors without edit access.
-13. **Light theme or high-contrast theme** for daylight field use.
+13. **Light, grey and navy themes** for daylight field use — shipped in 0.21.
 14. **Automatic update check** only with an explicit local-first decision.
 
 ## Deferred by design
@@ -304,7 +304,7 @@ full list.
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
 | Count schedule attributes | Count schedules only for 1.0; no width, height or fire rating. |
 | Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
-| Theme | Dark theme only for 1.0; a light or high-contrast theme is a post-1.0 candidate. |
+| Theme | Four palettes ship in 0.21: dark jade (default), Light, Grey and Navy, with System following the OS preference. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |
 
 ## Technical debt and post-release refactors
@@ -319,7 +319,7 @@ The next planned splits and themes are sequenced in
 - Split the PDF exporter by item family — [#126](https://github.com/MajorJohnDoe/gridscalr/issues/126).
 - Split inline editors by editing family — [#127](https://github.com/MajorJohnDoe/gridscalr/issues/127).
 - Extract the remaining `App.ts` flows — [#128](https://github.com/MajorJohnDoe/gridscalr/issues/128).
-- Add light, grey and navy themes — [#129](https://github.com/MajorJohnDoe/gridscalr/issues/129).
+- Light, grey and navy themes shipped in 0.21 — [#129](https://github.com/MajorJohnDoe/gridscalr/issues/129).
 - Lazy-load the PDF.js renderer so the welcome screen and project shell do not parse the PDF runtime before a drawing is opened.
 - Virtualise the Markups table and adapt history/autosave for large projects — [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52).
 - Add viewport culling for canvas items.

@@ -137,7 +137,10 @@ src/
   search/ocr.ts          bundled Tesseract eng+swe OCR, page rendering and stored OCR conversion
   report/markupCsv.ts    visible markup CSV serialization
   ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, dialogs, status bar
-  styles/tokens.css      theme token contract and the default jade palette
+  styles/tokens.css      theme token contract and semantic aliases
+  styles/themes/         default jade, light-green, grey and navy palettes plus chrome overrides
+  theme/theme.ts         theme preference resolution, application and System-mode watching
+  public/boot-theme.js   CSP-safe pre-paint theme bootstrap
   styles/base.css        reset, typography and shared utilities
   styles/shell.css       top bar, docks, symbol library, canvas and welcome
   styles/panels.css      inspector, layers, pages, status bar and popover menu

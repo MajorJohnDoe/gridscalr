@@ -33,7 +33,11 @@ afterEach(() => {
 describe("app preferences", () => {
   it("returns the defaults without stored preferences", () => {
     expect(loadAppPreferences()).toEqual(DEFAULT_APP_PREFERENCES);
-    expect(DEFAULT_APP_PREFERENCES).toEqual({ language: "system", csvFormat: "locale" });
+    expect(DEFAULT_APP_PREFERENCES).toEqual({
+      language: "system",
+      csvFormat: "locale",
+      theme: "system",
+    });
   });
 
   it("ignores malformed JSON and invalid values", () => {
@@ -42,26 +46,30 @@ describe("app preferences", () => {
 
     localStorage.setItem(
       "gridscalr.preferences.v1",
-      JSON.stringify({ language: "klingon", csvFormat: "semicolon" }),
+      JSON.stringify({ language: "klingon", csvFormat: "semicolon", theme: "neon" }),
     );
     expect(loadAppPreferences()).toEqual(DEFAULT_APP_PREFERENCES);
   });
 
   it("loads valid partial preferences and keeps defaults for missing fields", () => {
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ language: "sv" }));
-    expect(loadAppPreferences()).toEqual({ language: "sv", csvFormat: "locale" });
+    expect(loadAppPreferences()).toEqual({ language: "sv", csvFormat: "locale", theme: "system" });
 
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ csvFormat: "interchange" }));
-    expect(loadAppPreferences()).toEqual({ language: "system", csvFormat: "interchange" });
+    expect(loadAppPreferences()).toEqual({
+      language: "system",
+      csvFormat: "interchange",
+      theme: "system",
+    });
   });
 
   it("merges patches and persists them", () => {
     const saved = saveAppPreferences({ language: "en" });
-    expect(saved).toEqual({ language: "en", csvFormat: "locale" });
+    expect(saved).toEqual({ language: "en", csvFormat: "locale", theme: "system" });
     expect(loadAppPreferences()).toEqual(saved);
 
     const next = saveAppPreferences({ csvFormat: "interchange" });
-    expect(next).toEqual({ language: "en", csvFormat: "interchange" });
+    expect(next).toEqual({ language: "en", csvFormat: "interchange", theme: "system" });
     expect(loadAppPreferences()).toEqual(next);
   });
 

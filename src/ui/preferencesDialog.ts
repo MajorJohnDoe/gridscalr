@@ -18,6 +18,8 @@ import {
   type LanguagePreference,
 } from "../i18n";
 import { store } from "../state/store";
+import { currentThemePreference, setThemePreference, THEME_OPTIONS } from "../theme/theme";
+import type { ThemePreference } from "../io/appPreferences";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog, showModal } from "./dialogs";
 import { el } from "./dom";
@@ -61,8 +63,22 @@ function generalSection(): HTMLElement {
     saveAppPreferences({ csvFormat: csvSelect.value as CsvFormat });
   });
 
+  const themeSelect = el("select", "select");
+  themeSelect.setAttribute("aria-label", t("preferences.theme"));
+  for (const option of THEME_OPTIONS) {
+    const element = el("option", "", t(option.labelKey));
+    element.value = option.value;
+    themeSelect.append(element);
+  }
+  themeSelect.value = currentThemePreference();
+  themeSelect.addEventListener("change", () => {
+    setThemePreference(themeSelect.value as ThemePreference);
+  });
+
   wrap.append(
     field(t("language.label"), select),
+    field(t("preferences.theme"), themeSelect),
+    el("p", "settings-note", t("preferences.theme.note")),
     field(t("preferences.csv.format"), csvSelect),
     el("p", "settings-note", t("preferences.csv.note")),
   );

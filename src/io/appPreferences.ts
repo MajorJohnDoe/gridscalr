@@ -7,11 +7,16 @@ export type { LanguagePreference };
 /** Locale-aware CSV for Excel, or RFC 4180 interchange for scripts. */
 export type CsvFormat = "locale" | "interchange";
 
+/** Stored theme choice. `system` maps dark to jade and light to light-green. */
+export type ThemePreference = "system" | "default" | "light-green" | "grey" | "navy";
+
 export interface AppPreferences {
   /** UI language. `system` follows the operating system locale. */
   language: LanguagePreference;
   /** CSV separator and decimal style. */
   csvFormat: CsvFormat;
+  /** UI theme choice. */
+  theme: ThemePreference;
 }
 
 const PREFERENCES_KEY = "gridscalr.preferences.v1";
@@ -19,6 +24,7 @@ const PREFERENCES_KEY = "gridscalr.preferences.v1";
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   language: "system",
   csvFormat: "locale",
+  theme: "system",
 };
 
 function isLanguage(value: unknown): value is LanguagePreference {
@@ -27,6 +33,16 @@ function isLanguage(value: unknown): value is LanguagePreference {
 
 function isCsvFormat(value: unknown): value is CsvFormat {
   return value === "locale" || value === "interchange";
+}
+
+function isTheme(value: unknown): value is ThemePreference {
+  return (
+    value === "system" ||
+    value === "default" ||
+    value === "light-green" ||
+    value === "grey" ||
+    value === "navy"
+  );
 }
 
 export function loadAppPreferences(): AppPreferences {
@@ -39,6 +55,7 @@ export function loadAppPreferences(): AppPreferences {
       csvFormat: isCsvFormat(parsed.csvFormat)
         ? parsed.csvFormat
         : DEFAULT_APP_PREFERENCES.csvFormat,
+      theme: isTheme(parsed.theme) ? parsed.theme : DEFAULT_APP_PREFERENCES.theme,
     };
   } catch {
     return { ...DEFAULT_APP_PREFERENCES };

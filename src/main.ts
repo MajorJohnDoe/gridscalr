@@ -1,4 +1,8 @@
 import "./styles/tokens.css";
+import "./styles/themes/default.css";
+import "./styles/themes/light-green.css";
+import "./styles/themes/grey.css";
+import "./styles/themes/navy.css";
 import "./styles/base.css";
 import "./styles/shell.css";
 import "./styles/panels.css";
@@ -7,12 +11,14 @@ import "./styles/dialogs.css";
 import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";
+import "./styles/themes/chrome.css";
 import "./styles/status.css";
 import "./styles/responsive.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
 import { applyStoredLanguage, setLanguagePreference, t } from "./i18n";
 import { sourceStatus } from "./source/sourceStatus";
+import { applyTheme, currentThemePreference, watchSystemTheme } from "./theme/theme";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
@@ -102,6 +108,8 @@ installDiagnosticsLogging();
 
 try {
   await applyStoredLanguage();
+  applyTheme(currentThemePreference());
+  watchSystemTheme();
   localizeBootFallback();
   const app = new App(root);
   sourceStatus.start();

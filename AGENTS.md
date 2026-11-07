@@ -120,6 +120,7 @@ npm run check:docs
 npm run format:check
 npm run lint
 npm run check:i18n
+npm run check:themes
 npx tsc --noEmit
 npm test -- --run
 npm run build
@@ -308,7 +309,10 @@ src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tables
 src/report/                pure report model, shared table rows, CSV and XLSX serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
-src/styles/tokens.css      theme token contract and the default jade palette
+src/styles/tokens.css      theme token contract and semantic aliases
+src/styles/themes/         default jade, light-green, grey and navy palettes plus chrome overrides
+src/theme/theme.ts         theme preference resolution, application and System-mode watching
+public/boot-theme.js       CSP-safe pre-paint theme bootstrap
 src/styles/base.css        reset, typography and shared utilities
 src/styles/shell.css       top bar, docks, symbol library, canvas and welcome
 src/styles/panels.css      inspector, layers, pages, status bar and popover menu
@@ -424,6 +428,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
 - `npm run check:i18n` validates catalog keys, duplicate keys, placeholders and ICU syntax, compares generated message types, and scans every `src` directory except `src/i18n` for hard-coded UI text, including single-word properties, `el()`/`option()` text and template literals. The baseline is empty; keep it that way. Use `npm run check:i18n -- --update` only when retiring a deliberate migration entry.
+- `npm run check:themes` checks that every palette defines the full token contract and meets the WCAG AA contrast targets for text and controls.
+- `npm run theme:preview` captures the light and navy design previews under `docs/theme-preview/`; `public/boot-theme.js` applies the stored theme before first paint without an inline script.
 - `npm run i18n:types` regenerates `src/i18n/types.generated.ts`; `npm run i18n:report` prints per-locale key coverage.
 - `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.

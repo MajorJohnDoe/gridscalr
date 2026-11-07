@@ -8,13 +8,14 @@
       content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1420 http://localhost:1420"
     />
     <title>GridScalr</title>
+    <script src="./boot-theme.js"></script>
     <style>
       html,
       body {
         margin: 0;
         min-height: 100%;
-        background: #14181b;
-        color: #e8eef1;
+        background: var(--boot-bg, #14181b);
+        color: var(--boot-text, #e8eef1);
         font-family: Inter, "Segoe UI", system-ui, sans-serif;
       }
 
@@ -34,20 +35,20 @@
         box-sizing: border-box;
         width: min(680px, 100%);
         padding: 28px 32px;
-        border: 1px solid #30383d;
+        border: 1px solid var(--boot-border, #30383d);
         border-radius: 10px;
-        background: #1e2428;
+        background: var(--boot-panel, #1e2428);
         box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
       }
 
       .boot-brand {
-        color: #f7fbfc;
+        color: var(--boot-text, #f7fbfc);
         font-size: 22px;
         font-weight: 650;
       }
 
       .boot-brand span {
-        color: #35c2a1;
+        color: var(--boot-brand, #35c2a1);
       }
 
       .boot-status {
@@ -58,7 +59,7 @@
 
       .boot-hint {
         margin: 0;
-        color: #9aa8ae;
+        color: var(--boot-muted, #9aa8ae);
         font-size: 13px;
         line-height: 1.55;
       }
@@ -68,10 +69,10 @@
         overflow: auto;
         margin: 18px 0 0;
         padding: 12px;
-        border: 1px solid #4a3030;
+        border: 1px solid var(--boot-error-border, #4a3030);
         border-radius: 6px;
-        background: #241b1b;
-        color: #ffb4b4;
+        background: var(--boot-error-bg, #241b1b);
+        color: var(--boot-error-text, #ffb4b4);
         font-size: 12px;
         line-height: 1.45;
         white-space: pre-wrap;
