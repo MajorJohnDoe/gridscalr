@@ -1,0 +1,45 @@
+/* Reference pane page navigation and follow-primary control. */
+
+.reference-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: 0 0 auto;
+}
+
+.reference-nav-btn {
+  width: 22px;
+  height: 22px;
+}
+
+.reference-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.reference-page-input {
+  width: 42px;
+  height: 22px;
+  padding: 0 4px;
+  text-align: center;
+  font-size: 11px;
+}
+
+.reference-page-total {
+  color: var(--muted);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.reference-follow {
+  height: 22px;
+  padding: 0 7px;
+  font-size: 10px;
+}
+
+.reference-follow.is-active {
+  border-color: var(--jade-dim);
+  color: var(--jade-bright);
+  background: var(--jade-dim);
+}

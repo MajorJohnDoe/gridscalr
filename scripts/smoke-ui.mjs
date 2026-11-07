@@ -1026,6 +1026,56 @@ try {
     "true",
     "the same-page source should be active by default",
   );
+
+  // The reference pane can show its own page without moving the primary pane.
+  const primaryPage = await page.evaluate(() => window.__gridscalr.store.ui.page);
+  const independentPage = primaryPage === 1 ? 2 : 1;
+  const referenceInput = page.locator(".reference-page-input");
+  await referenceInput.fill(String(independentPage));
+  await referenceInput.press("Enter");
+  await page.waitForTimeout(250);
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.page),
+    primaryPage,
+    "reference page navigation must not change the primary page",
+  );
+  assert.equal(
+    await referenceInput.inputValue(),
+    String(independentPage),
+    "the reference page control should show the independent page",
+  );
+  assert.equal(
+    await page.locator(".reference-follow").getAttribute("aria-pressed"),
+    "false",
+    "choosing a reference page should leave follow-primary mode",
+  );
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.app.reference.view.currentView.page),
+    independentPage,
+    "the reference canvas should render the independent page",
+  );
+  await page.locator(".reference-follow").click();
+  await page.waitForTimeout(250);
+  assert.equal(
+    await referenceInput.inputValue(),
+    String(primaryPage),
+    "Follow primary should return the reference pane to the primary page",
+  );
+  assert.equal(
+    await page.locator(".reference-follow").getAttribute("aria-pressed"),
+    "true",
+    "Follow primary should be active again",
+  );
+  await page.evaluate((target) => window.__gridscalr.store.setPage(target), independentPage);
+  await page.waitForTimeout(250);
+  assert.equal(
+    await referenceInput.inputValue(),
+    String(independentPage),
+    "the reference pane should follow a primary page change",
+  );
+  await page.evaluate((target) => window.__gridscalr.store.setPage(target), primaryPage);
+  await page.waitForTimeout(200);
+
   await page.getByRole("button", { name: "Close reference pane" }).click();
   await page.locator(".canvas-reference").waitFor({ state: "hidden" });
   await waitForToastsGone(page);

@@ -2,6 +2,7 @@ import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/shell.css";
 import "./styles/panels.css";
+import "./styles/reference.css";
 import "./styles/dialogs.css";
 import "./styles/markups.css";
 import "./styles/help.css";

@@ -7,11 +7,15 @@ export type ReferenceSource = "same" | "revision" | "drawing";
 export interface ReferencePaneState {
   source: ReferenceSource;
   referenceName: string | null;
+  page?: number;
   pageCount?: number;
+  followPrimary?: boolean;
 }
 
 export interface ReferencePaneActions {
   setSource: (source: ReferenceSource) => void;
+  setPage: (page: number) => void;
+  toggleFollow: () => void;
   open: () => void;
   close: () => void;
 }
@@ -33,6 +37,11 @@ export class ReferencePaneHeader {
   private readonly name: HTMLElement;
   private readonly hint: HTMLElement;
   private readonly openButton: HTMLButtonElement;
+  private readonly prevButton: HTMLButtonElement;
+  private readonly nextButton: HTMLButtonElement;
+  private readonly pageInput: HTMLInputElement;
+  private readonly pageTotal: HTMLElement;
+  private readonly followButton: HTMLButtonElement;
   private readonly observer: ResizeObserver;
 
   constructor(
@@ -58,6 +67,43 @@ export class ReferencePaneHeader {
       this.buttons.push({ source, button });
     }
 
+    const nav = el("div", "reference-nav");
+    nav.setAttribute("role", "group");
+    nav.setAttribute("aria-label", t("reference.pageNavigation"));
+    this.prevButton = el("button", "icon-btn reference-nav-btn");
+    this.prevButton.type = "button";
+    this.prevButton.title = t("reference.previousPage");
+    this.prevButton.setAttribute("aria-label", t("reference.previousPage"));
+    this.prevButton.innerHTML = icon("chevronLeft", 13);
+    this.prevButton.addEventListener("click", () => this.actions.setPage(this.pageValue() - 1));
+    this.pageInput = el("input", "input reference-page-input");
+    this.pageInput.type = "number";
+    this.pageInput.min = "1";
+    this.pageInput.step = "1";
+    this.pageInput.setAttribute("aria-label", t("reference.pageNumber"));
+    this.pageInput.addEventListener("change", () => this.actions.setPage(this.pageValue()));
+    this.pageInput.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      event.preventDefault();
+      this.actions.setPage(this.pageValue());
+      this.pageInput.blur();
+    });
+    this.pageTotal = el("span", "reference-page-total", "/ 1");
+    this.nextButton = el("button", "icon-btn reference-nav-btn");
+    this.nextButton.type = "button";
+    this.nextButton.title = t("reference.nextPage");
+    this.nextButton.setAttribute("aria-label", t("reference.nextPage"));
+    this.nextButton.innerHTML = icon("chevronRight", 13);
+    this.nextButton.addEventListener("click", () => this.actions.setPage(this.pageValue() + 1));
+    this.followButton = el(
+      "button",
+      "btn btn-small reference-follow",
+      t("reference.followPrimary"),
+    );
+    this.followButton.type = "button";
+    this.followButton.addEventListener("click", () => this.actions.toggleFollow());
+    nav.append(this.prevButton, this.pageInput, this.pageTotal, this.nextButton, this.followButton);
+
     this.name = el("span", "reference-name", t("reference.samePage"));
     this.name.title = t("reference.samePage");
 
@@ -74,7 +120,7 @@ export class ReferencePaneHeader {
     closeButton.innerHTML = icon("close", 14);
     closeButton.addEventListener("click", () => this.actions.close());
 
-    top.append(sources, this.name, this.openButton, closeButton);
+    top.append(sources, nav, this.name, this.openButton, closeButton);
     this.hint = el("div", "reference-hint", t("reference.hint"));
     this.element.append(top, this.hint);
     host.prepend(this.element);
@@ -99,7 +145,21 @@ export class ReferencePaneHeader {
         : t("reference.noReference");
     this.name.textContent = description;
     this.name.title = description;
-    this.hint.hidden = state.source !== "same";
+    const count = Math.max(1, state.pageCount ?? 1);
+    const page = Math.max(1, Math.min(count, state.page ?? 1));
+    this.pageInput.value = String(page);
+    this.pageInput.max = String(count);
+    this.pageTotal.textContent = `/ ${count}`;
+    this.pageInput.title = t("reference.pageOf", { page, count });
+    this.prevButton.disabled = page <= 1;
+    this.nextButton.disabled = page >= count;
+    const follow = state.followPrimary ?? true;
+    this.followButton.classList.toggle("is-active", follow);
+    this.followButton.setAttribute("aria-pressed", String(follow));
+    this.followButton.title = follow
+      ? t("reference.followingPrimary")
+      : t("reference.independentPage");
+    this.hint.hidden = state.source !== "same" || !follow;
     this.openButton.title =
       state.source === "drawing"
         ? t("reference.openDrawingTitle")
@@ -107,6 +167,11 @@ export class ReferencePaneHeader {
           ? t("reference.openRevisionTitle")
           : t("reference.openRevisionProjectTitle");
     requestAnimationFrame(() => this.syncHeight());
+  }
+
+  private pageValue(): number {
+    const value = Number(this.pageInput.value);
+    return Number.isFinite(value) ? Math.round(value) : 1;
   }
 
   private syncHeight(): void {
