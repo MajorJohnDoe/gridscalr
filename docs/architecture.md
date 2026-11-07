@@ -15,6 +15,13 @@ src/
   app/documentImport.ts  PDF/TIF import, password retries and checksum checks
   app/searchController.ts search panel, text index and OCR run loop
   app/openTarget.ts      dropped and opened file classification
+  app/sheetFlows.ts      operation-card sheet creation, add-page and paper changes
+  app/imageFlows.ts      image insertion and target-layer selection
+  app/documentFlows.ts   PDF/TIF/project loading and source-page selection
+  app/pageFlows.ts       page navigation, duplicate/delete and project reset
+  app/scaleFlows.ts      calibration, manual scale and fit-to-area actions
+  app/packageFlows.ts    package host adapter and packaged-project opening
+  app/diagnosticsFlows.ts diagnostics text, copy and report flow
   features/              feature modules; see docs/adr/0001-feature-modules.md
   features/countTypes/model.ts count definitions, normalization, management and quantity helpers
   features/countTypes/ui.ts count-type management dialog
