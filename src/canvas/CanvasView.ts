@@ -4,7 +4,6 @@ import {
   circlePolyline,
   constrainAngle,
   distance,
-  expandRect,
   itemBounds,
   itemCenter,
   itemLocalBounds,
@@ -24,7 +23,7 @@ import {
 } from "../model/geometry";
 import { areaOutline, areaShapeOf } from "../model/area";
 import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
-import { findSegment, findVertex, hitTest, itemIntersectsBounds } from "../model/hitTest";
+import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
   clampLabelSize,
   labelAnchorForPoints,
@@ -76,7 +75,7 @@ import { CanvasEditorController, type LabelHit } from "./editors";
 import { drawItem, type ItemRenderContext } from "./itemRenderer";
 import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
 import { groupHandleAt } from "./pointer/groupHandles";
-import type { DragState, MarqueeState, PanState } from "./pointer/pointerState";
+import type { DragState } from "./pointer/pointerState";
 import {
   drawInteraction as paintInteraction,
   type InteractionRenderContext,
@@ -247,8 +246,6 @@ export class CanvasView {
   private rendering = false;
   private draft: Draft | null = null;
   private drag: DragState | null = null;
-  private marquee: MarqueeState | null = null;
-  private pan: PanState | null = null;
   private pointerScreen: Point | null = null;
   private penActive = false;
   private lastPenAt = 0;
@@ -327,8 +324,7 @@ export class CanvasView {
       prepare: () => {
         this.draft = null;
         this.drag = null;
-        this.marquee = null;
-        this.pan = null;
+        this.pointers.cancelPanAndMarquee();
         this.hoverHandle = null;
         this.hoverLabelResize = false;
         this.snap = null;
@@ -350,8 +346,7 @@ export class CanvasView {
       },
       setView: (next) => store.setView(next.zoom, next.panX, next.panY),
       onGestureStart: () => {
-        this.pan = null;
-        this.marquee = null;
+        this.pointers.cancelPanAndMarquee();
         this.drag = null;
         store.cancelGesture();
         this.cancelDraft();
@@ -366,9 +361,7 @@ export class CanvasView {
       viewport: () => this.view,
       cropActive: () => this.crop.active,
       cropCursor: () => this.crop.cursor(),
-      panState: () => this.pan,
       dragState: () => this.drag,
-      hasMarquee: () => this.marquee !== null,
       labelConnectActive: () => this.labelConnect !== null,
       hoverHandle: () => this.hoverHandle,
       hoverLabelResize: () => this.hoverLabelResize,
@@ -376,10 +369,11 @@ export class CanvasView {
         if (cursor) this.host.dataset.cursor = cursor;
         else delete this.host.dataset.cursor;
       },
+      drawInteraction: () => this.drawInteraction(),
       zoomAt: (screen, factor) => this.zoomAt(screen, factor),
       cancelGesture: () => {
         this.drag = null;
-        this.marquee = null;
+        this.pointers.cancelMarquee();
         store.cancelGesture();
       },
       openContextMenu: (clientX, clientY) => this.openContextMenu(clientX, clientY),
@@ -487,7 +481,7 @@ export class CanvasView {
       this.lastRender = null;
       this.draft = null;
       this.drag = null;
-      this.marquee = null;
+      this.pointers.cancelMarquee();
       this.labelConnect = null;
       this.snap = null;
       this.renderedPage = page;
@@ -583,8 +577,8 @@ export class CanvasView {
   get isBusy(): boolean {
     return (
       this.drag !== null ||
-      this.marquee !== null ||
-      this.pan !== null ||
+      this.pointers.marqueeActive ||
+      this.pointers.panActive ||
       this.draft !== null ||
       this.labelConnect !== null ||
       this.editors.hasEditors ||
@@ -823,14 +817,7 @@ export class CanvasView {
 
     if (event.button === 1 || this.pointers.isSpaceDown || store.ui.activeTool === "pan") {
       event.preventDefault();
-      this.pan = {
-        startX: event.clientX,
-        startY: event.clientY,
-        panX: this.viewPanX,
-        panY: this.viewPanY,
-      };
-      this.capturePointer(event.pointerId);
-      this.updateCursor();
+      this.pointers.beginPan(event.clientX, event.clientY, event.pointerId);
       return;
     }
     if (event.button !== 0) return;
@@ -1257,10 +1244,7 @@ export class CanvasView {
     });
     if (!hit) {
       if (!modifier) store.clearSelection();
-      this.marquee = { start: page, current: page, additive: modifier };
-      this.capturePointer(event.pointerId);
-      this.updateCursor();
-      this.drawInteraction();
+      this.pointers.beginMarquee(page, modifier, event.pointerId);
       return;
     }
 
@@ -1490,23 +1474,14 @@ export class CanvasView {
       return;
     }
 
-    if (this.pan) {
-      const dx = event.clientX - this.pan.startX;
-      const dy = event.clientY - this.pan.startY;
-      store.setView(this.viewZoom, this.pan.panX + dx, this.pan.panY + dy);
-      return;
-    }
+    if (this.pointers.updatePan(event)) return;
 
     if (this.drag) {
       this.applyDrag(page, event.shiftKey);
       return;
     }
 
-    if (this.marquee) {
-      this.marquee.current = page;
-      this.drawInteraction();
-      return;
-    }
+    if (this.pointers.updateMarquee(page)) return;
 
     const tool = store.ui.activeTool;
     if (this.draft) {
@@ -1871,13 +1846,9 @@ export class CanvasView {
       this.crop.pointerUp();
       return;
     }
-    if (this.pan) {
-      this.pan = null;
-      this.updateCursor();
-      return;
-    }
-    if (this.marquee) {
-      this.finishMarquee();
+    if (this.pointers.endPan()) return;
+    if (this.pointers.marqueeActive) {
+      this.pointers.finishMarquee();
       return;
     }
     if (this.drag) {
@@ -1917,43 +1888,13 @@ export class CanvasView {
     this.drawInteraction();
   }
 
-  private finishMarquee(): void {
-    const marquee = this.marquee;
-    this.marquee = null;
-    if (!marquee || !store.project) {
-      this.drawInteraction();
-      return;
-    }
-    const rect = expandRect(marquee.start, marquee.current);
-    if (rect.width < 2 / this.viewZoom && rect.height < 2 / this.viewZoom) {
-      this.updateCursor();
-      this.drawInteraction();
-      return;
-    }
-    const refs = marquee.additive ? [...store.ui.selection] : [];
-    const min = { x: rect.x, y: rect.y };
-    const max = { x: rect.x + rect.width, y: rect.y + rect.height };
-    for (const layer of store.project.layers) {
-      if (!layerVisibleOnPage(layer, this.viewPage)) continue;
-      for (const item of layer.items) {
-        if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
-        if (itemIntersectsBounds(item, min, max)) {
-          refs.push({ layerId: layer.id, itemId: item.id });
-        }
-      }
-    }
-    store.setSelectionMany(refs);
-    this.updateCursor();
-    this.drawInteraction();
-  }
-
   private onPointerLeave = (): void => {
     this.pointers.cancelTouchLongPress();
     if (this.crop.active) {
       this.crop.pointerLeave();
       return;
     }
-    if (this.drag || this.pan) return;
+    if (this.drag || this.pointers.panActive) return;
     this.pointerScreen = null;
     this.hoverHandle = null;
     this.hoverLabelResize = false;
@@ -3299,12 +3240,12 @@ export class CanvasView {
       labelResizePoint: (item) => this.labelResizePoint(item),
       hoverLabelResize: this.hoverLabelResize,
       searchHits: this.searchHits,
-      marquee: this.marquee,
+      marquee: this.pointers.marqueeState,
       draft: this.draft,
       snap: this.snap,
       pointerScreen: this.pointerScreen,
       dragActive: Boolean(this.drag),
-      panActive: Boolean(this.pan),
+      panActive: this.pointers.panActive,
     };
   }
 

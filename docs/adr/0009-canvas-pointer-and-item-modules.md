@@ -40,9 +40,10 @@ src/canvas/pointer/
 
 - geometry: `isReadOnly`, `viewport`;
 - mode: `cropActive`, `cropCursor`;
-- gesture state: `panState`, `dragState`, `hasMarquee`, `labelConnectActive`;
+- gesture state: `dragState`, `labelConnectActive`;
 - hover: `hoverHandle`, `hoverLabelResize`;
-- commands: `setHostCursor`, `zoomAt`, `cancelGesture`, `openContextMenu`.
+- commands: `setHostCursor`, `drawInteraction`, `zoomAt`, `cancelGesture`,
+  `openContextMenu`.
 
 The list is deliberately explicit. If a later gesture needs a new fact, it is
 added to `PointerHost` and documented in the same change. The controller may

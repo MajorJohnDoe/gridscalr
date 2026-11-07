@@ -1,6 +1,10 @@
 import { store } from "../../state/store";
 import type { Point } from "../../model/types";
+import { expandRect } from "../../model/geometry";
+import { itemIntersectsBounds } from "../../model/hitTest";
+import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
+import type { MarqueeState, PanState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
 
 /**
@@ -14,6 +18,8 @@ export class PointerController {
   private touchLongPressTimer: number | null = null;
   private touchLongPressStart: Point | null = null;
   private touchLongPressFired = false;
+  private pan: PanState | null = null;
+  private marquee: MarqueeState | null = null;
 
   constructor(
     private readonly element: HTMLCanvasElement,
@@ -67,7 +73,7 @@ export class PointerController {
     let cursor = "";
     if (this.host.cropActive()) {
       cursor = this.host.cropCursor() ?? "crosshair";
-    } else if (this.host.panState()) {
+    } else if (this.pan) {
       cursor = "grabbing";
     } else if (this.host.dragState()) {
       const drag = this.host.dragState()!;
@@ -79,7 +85,7 @@ export class PointerController {
       else cursor = "move";
     } else if (this.host.labelConnectActive()) cursor = "crosshair";
     else if (this.spaceDown || tool === "pan") cursor = "grab";
-    else if (this.host.hasMarquee()) cursor = "crosshair";
+    else if (this.marquee) cursor = "crosshair";
     else if (this.host.hoverLabelResize()) cursor = "nwse-resize";
     else {
       const hoverHandle = this.host.hoverHandle();
@@ -89,6 +95,104 @@ export class PointerController {
       else if (store.ui.hover) cursor = "move";
     }
     this.host.setHostCursor(cursor);
+  }
+
+  get panActive(): boolean {
+    return this.pan !== null;
+  }
+
+  get marqueeActive(): boolean {
+    return this.marquee !== null;
+  }
+
+  get marqueeState(): MarqueeState | null {
+    return this.marquee;
+  }
+
+  beginPan(clientX: number, clientY: number, pointerId: number): void {
+    const view = this.host.viewport();
+    this.pan = {
+      startX: clientX,
+      startY: clientY,
+      panX: view.panX,
+      panY: view.panY,
+    };
+    this.capturePointer(pointerId);
+    this.updateCursor();
+  }
+
+  updatePan(event: PointerEvent): boolean {
+    if (!this.pan) return false;
+    const dx = event.clientX - this.pan.startX;
+    const dy = event.clientY - this.pan.startY;
+    const view = this.host.viewport();
+    store.setView(view.zoom, this.pan.panX + dx, this.pan.panY + dy);
+    return true;
+  }
+
+  endPan(): boolean {
+    if (!this.pan) return false;
+    this.pan = null;
+    this.updateCursor();
+    return true;
+  }
+
+  cancelPan(): void {
+    this.pan = null;
+  }
+
+  beginMarquee(page: Point, additive: boolean, pointerId: number): void {
+    this.marquee = { start: page, current: page, additive };
+    this.capturePointer(pointerId);
+    this.updateCursor();
+    this.host.drawInteraction();
+  }
+
+  updateMarquee(page: Point): boolean {
+    if (!this.marquee) return false;
+    this.marquee.current = page;
+    this.host.drawInteraction();
+    return true;
+  }
+
+  finishMarquee(): void {
+    const marquee = this.marquee;
+    this.marquee = null;
+    const view = this.host.viewport();
+    if (!marquee || !store.project) {
+      this.host.drawInteraction();
+      return;
+    }
+    const rect = expandRect(marquee.start, marquee.current);
+    if (rect.width < 2 / view.zoom && rect.height < 2 / view.zoom) {
+      this.updateCursor();
+      this.host.drawInteraction();
+      return;
+    }
+    const refs = marquee.additive ? [...store.ui.selection] : [];
+    const min = { x: rect.x, y: rect.y };
+    const max = { x: rect.x + rect.width, y: rect.y + rect.height };
+    for (const layer of store.project.layers) {
+      if (!layerVisibleOnPage(layer, view.page)) continue;
+      for (const item of layer.items) {
+        if (item.page !== view.page || !itemIsVisible(item, layer)) continue;
+        if (itemIntersectsBounds(item, min, max)) {
+          refs.push({ layerId: layer.id, itemId: item.id });
+        }
+      }
+    }
+    store.setSelectionMany(refs);
+    this.updateCursor();
+    this.host.drawInteraction();
+  }
+
+  cancelMarquee(): void {
+    this.marquee = null;
+  }
+
+  cancelPanAndMarquee(): void {
+    this.pan = null;
+    this.marquee = null;
   }
 
   onWheel(event: WheelEvent): void {
