@@ -213,6 +213,10 @@ do not change the released version must not change the version shown on the site
 src/app/App.ts             app wiring, file flows, shortcuts
 src/app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+src/app/selectionActions.ts selection, bulk edits and item commands
+src/app/documentImport.ts  PDF/TIF import, password retries and checksum checks
+src/app/searchController.ts search panel, text index and OCR run loop
+src/app/openTarget.ts      dropped and opened file classification
 src/i18n/locales/*.json    message catalogs; en.json is the source and fallback
 src/i18n/registry.ts       SUPPORTED_LOCALES descriptors, locale matching and pseudo-locale
 src/i18n/types.generated.ts generated MessageKey and MessageCatalog from en.json

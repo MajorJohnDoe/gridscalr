@@ -11,6 +11,10 @@ src/
   app/App.ts             application wiring, file flows, shortcuts
   app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
   app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
+  app/selectionActions.ts selection, bulk edits and item commands
+  app/documentImport.ts  PDF/TIF import, password retries and checksum checks
+  app/searchController.ts search panel, text index and OCR run loop
+  app/openTarget.ts      dropped and opened file classification
   features/              feature modules; see docs/adr/0001-feature-modules.md
   features/countTypes/model.ts count definitions, normalization, management and quantity helpers
   features/countTypes/ui.ts count-type management dialog
