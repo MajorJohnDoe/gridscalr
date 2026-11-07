@@ -389,7 +389,7 @@ without connecting, so dots are never inferred from intersections.
 - New `schematic` symbol set with stroke-only art, ports, optional tag prefix and a
   fixed stroke width in points.
 - Symbols live in `src/features/schematics/symbols/`; the existing facility signs
-  stay in `src/model/symbols.ts`.
+  stay in `src/model/symbols/`.
 - A symbol can carry a free-text `tag` with an offset. The tag moves with the symbol.
 - The symbol library gains a set filter (“Signs” / “Schematic”) and categories.
 - No automatic numbering, no derived equipment list.

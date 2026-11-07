@@ -43,7 +43,7 @@ const TEMPLATE_EXCLUDE_FILES = new Set([
   "src/features/projectPackage/model.ts",
   "src/help/markdown.ts",
   "src/model/symbolPaths.ts",
-  "src/model/symbols.ts",
+  "src/model/symbols/signCatalog.ts",
   "src/report/xlsx.ts",
 ]);
 const TEMPLATE_ALLOW = [/^GridScalr\b/, /^[XYZ]\s/, /^[A-Z]{1,3}$/];

@@ -226,9 +226,10 @@ src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
-src/features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
-src/features/schematics/symbols/library.ts full 115-symbol schematic set
-src/features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
+src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
+src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
+src/features/schematics/symbols/library/ full schematic set split by category, aggregated in index.ts
+src/features/schematics/symbols/reference/ reference-aligned sensors, electrical and general symbols
 src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
@@ -246,7 +247,8 @@ src/canvas/editors.ts      inline text and measurement-label editors
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
-src/model/symbols.ts       facility-sign artwork, categories, render plan and SVG markup
+src/model/symbols/        symbol types, categories, sign artwork, catalogue, lookup and render plan
+src/model/symbols/signs/  one facility-sign artwork module per category prefix
 src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
 src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork

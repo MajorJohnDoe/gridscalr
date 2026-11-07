@@ -19,9 +19,10 @@ src/
   features/projectPackage/ui.ts package options, destination and progress dialogs
   features/projectPackage/ipc.ts Tauri package command wrappers and progress channels
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
-  features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
-  features/schematics/symbols/library.ts full 156-symbol schematic set
-  features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
+  features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
+  features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
+  features/schematics/symbols/library/ full schematic set split by category, aggregated in index.ts
+  features/schematics/symbols/reference/ reference-aligned sensors, electrical and general symbols
   features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
   features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
   features/schematics/ui/lineTypeDialog.ts project media-class editor
@@ -50,7 +51,8 @@ src/
   model/                 project types, geometry, radius/diameter/arc/angle/slope/volume measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
-  model/symbols.ts       facility-sign artwork, categories, render plan and SVG markup
+  model/symbols/         symbol types, categories, sign artwork, catalogue, lookup and render plan
+  model/symbols/signs/   one facility-sign artwork module per category prefix
   model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
   model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
   model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
