@@ -151,8 +151,27 @@ try {
     console.warn(`Page error: ${error.message}`);
   });
 
+  // Let fonts, CSS animations and transitions reach their final state before
+  // capturing, so repeated documentation runs produce the same pixels.
+  const settlePage = async () => {
+    await page.evaluate(async () => {
+      await document.fonts.ready;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const animations = document.getAnimations?.() ?? [];
+      await Promise.all(
+        animations
+          .filter((animation) => {
+            const timing = animation.effect?.getComputedTiming?.();
+            return timing?.endTime !== undefined && Number.isFinite(timing.endTime);
+          })
+          .map((animation) => animation.finished.catch(() => undefined)),
+      );
+    });
+  };
+
   const capture = async (file) => {
     await page.mouse.move(2, 2);
+    await settlePage();
     await page.waitForTimeout(60);
     await page.screenshot({ path: resolve(screenshotDir, file) });
   };
