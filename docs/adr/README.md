@@ -9,6 +9,7 @@
 | [0005](0005-large-project-performance.md) | Large-project performance budgets | Accepted | 2026-11-01 |
 | [0006](0006-project-metadata.md) | Project metadata and report branding | Accepted | 2026-11-01 |
 | [0007](0007-localization-at-scale.md) | Localization at scale | Accepted | 2026-11-04 |
+| [0008](0008-integration-module-boundaries.md) | Integration module boundaries | Accepted | 2026-11-07 |
 
 An ADR records a decision that affects the project structure, format or release
 process. Add a new ADR rather than silently changing an accepted one. A superseded
