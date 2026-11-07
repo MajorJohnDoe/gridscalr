@@ -8,27 +8,14 @@ import {
   setPageCalibration,
   setPageScaleLocked,
 } from "../model/calibration";
-import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
-import {
-  deleteItems,
-  emptyItemCommandResult,
-  setItemsColor,
-  setItemsImageMode,
-  setItemsLocked,
-  setItemsOpacity,
-  setItemsStrokeWidth,
-  setItemsVisible,
-} from "../model/commands";
+import { hasClipboard } from "../model/clipboard";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import {
   addItem,
   createProject,
   findItem,
-  isMeasurementKind,
-  itemIsLocked,
   layerLockedOnPage,
   layerVisibleOnPage,
-  moveItemsToLayer,
 } from "../model/layers";
 import { makeId } from "../model/calibration";
 import { normalizeProjectName } from "../model/projectName";
@@ -43,21 +30,14 @@ import {
 } from "../model/documents";
 import { base64ToBytes } from "../io/base64";
 import { isTiff } from "../io/tiff";
-import { applyMeasurementBulkEdit } from "../model/bulkEdit";
-import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
-import { resolveSelection } from "../model/selection";
 import { SCHEMA_VERSION } from "../model/types";
 import type {
-  AreaMode,
-  CountType,
   DocumentRef,
   ImageAsset,
-  ImageMode,
   Layer,
   PageSize,
   Project,
   RecentEntry,
-  SelectionRef,
   SheetPaperSize,
   SheetTemplateRef,
 } from "../model/types";
@@ -99,6 +79,25 @@ import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
 import { classifyOpenTarget } from "./openTarget";
+import {
+  copySelection,
+  cutSelection,
+  pasteSelection,
+  setSelectionImageMode,
+  setSelectionOpacity,
+  duplicateSelection,
+  moveSelectionToLayer,
+  setSelectionVisible,
+  setSelectionLocked,
+  setSelectionStrokeWidth,
+  setSelectionColor,
+  setSelectionCategory,
+  setSelectionRoom,
+  setSelectionAreaMode,
+  setSelectionCountType,
+  setSelectionCountQuantity,
+  setSelectionLabelSize,
+} from "./selectionActions";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { describeError } from "../io/platformError";
 import { store } from "../state/store";
@@ -259,26 +258,26 @@ export class App {
       editRail: (itemId) => void openRailDialog(itemId),
       editLineTypes: () => void openLineTypeDialog(),
       fitDrawingToArea: () => this.fitDrawingToArea(),
-      copySelection: () => this.copySelection(),
-      cutSelection: () => this.cutSelection(),
-      pasteSelection: () => this.pasteSelection(),
-      duplicateSelection: () => this.duplicateSelection(),
-      moveSelectionToLayer: (layerId) => this.moveSelectionToLayer(layerId),
-      setSelectionVisible: (visible) => this.setSelectionVisible(visible),
-      setSelectionLocked: (locked) => this.setSelectionLocked(locked),
-      setSelectionColor: (color) => this.setSelectionColor(color),
-      setSelectionStrokeWidth: (width) => this.setSelectionStrokeWidth(width),
+      copySelection: () => copySelection(),
+      cutSelection: () => cutSelection(),
+      pasteSelection: () => pasteSelection(),
+      duplicateSelection: () => duplicateSelection(),
+      moveSelectionToLayer: (layerId) => moveSelectionToLayer(layerId),
+      setSelectionVisible: (visible) => setSelectionVisible(visible),
+      setSelectionLocked: (locked) => setSelectionLocked(locked),
+      setSelectionColor: (color) => setSelectionColor(color),
+      setSelectionStrokeWidth: (width) => setSelectionStrokeWidth(width),
       deletePage: (page) => void this.deletePageFlow(page),
       duplicatePage: (page) => void this.duplicatePageFlow(page),
-      setSelectionCategory: (categoryId) => this.setSelectionCategory(categoryId),
-      setSelectionRoom: (room) => this.setSelectionRoom(room),
-      setSelectionAreaMode: (mode) => this.setSelectionAreaMode(mode),
-      setSelectionLabelSize: (size) => this.setSelectionLabelSize(size),
-      setSelectionCountType: (type) => this.setSelectionCountType(type),
-      setSelectionCountQuantity: (quantity) => this.setSelectionCountQuantity(quantity),
+      setSelectionCategory: (categoryId) => setSelectionCategory(categoryId),
+      setSelectionRoom: (room) => setSelectionRoom(room),
+      setSelectionAreaMode: (mode) => setSelectionAreaMode(mode),
+      setSelectionLabelSize: (size) => setSelectionLabelSize(size),
+      setSelectionCountType: (type) => setSelectionCountType(type),
+      setSelectionCountQuantity: (quantity) => setSelectionCountQuantity(quantity),
       insertImage: () => void this.insertImageFlow(),
-      setSelectionImageMode: (mode) => this.setSelectionImageMode(mode),
-      setSelectionOpacity: (opacity) => this.setSelectionOpacity(opacity),
+      setSelectionImageMode: (mode) => setSelectionImageMode(mode),
+      setSelectionOpacity: (opacity) => setSelectionOpacity(opacity),
       goToPage: (page, fit = true) => void this.goToPage(page, fit),
       navigateToItem: (page, layerId, itemId) => void this.navigateToItem(page, layerId, itemId),
       ensurePageSize: (page) => void this.enqueuePageSize(page),
@@ -448,7 +447,7 @@ export class App {
     }
     if (hasClipboard(store.project)) {
       event.preventDefault();
-      this.pasteSelection();
+      pasteSelection();
     }
   };
 
@@ -501,7 +500,7 @@ export class App {
           return;
         case "d":
           event.preventDefault();
-          this.duplicateSelection();
+          duplicateSelection();
           return;
         case ",":
           event.preventDefault();
@@ -519,11 +518,11 @@ export class App {
           return;
         case "c":
           event.preventDefault();
-          this.copySelection();
+          copySelection();
           return;
         case "x":
           event.preventDefault();
-          this.cutSelection();
+          cutSelection();
           return;
         case "o":
           event.preventDefault();
@@ -1463,52 +1462,6 @@ export class App {
     this.canvas.invalidate();
   }
 
-  private copySelection(): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const count = copyItems(project, store.ui.selection);
-    if (count) toast(t("app.itemsCopied", { count }), "info");
-  }
-
-  private cutSelection(): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const resolved = resolveSelection(project, store.ui.selection);
-    const removable = resolved.filter((entry) => !entry.locked);
-    if (!removable.length) {
-      toast(t("app.selectedItemLocked"), "warning");
-      return;
-    }
-    const refs = removable.map((entry) => entry.ref);
-    const count = copyItems(project, refs);
-    if (!count) return;
-    let deleted = 0;
-    store.mutate((project) => {
-      deleted = deleteItems(project, refs).changed;
-    }, "change");
-    store.clearSelection();
-    toast(t("app.itemsCut", { count: deleted }), "success");
-  }
-
-  private pasteSelection(): void {
-    const project = store.project;
-    if (!project) return;
-    if (!hasClipboard(project)) {
-      toast(t("app.clipboardEmpty"), "info");
-      return;
-    }
-    let refs: SelectionRef[] = [];
-    store.mutate((project) => {
-      refs = pasteItems(project, store.ui.page);
-    }, "change");
-    if (!refs.length) {
-      toast(t("app.pasteFailed"), "warning");
-      return;
-    }
-    store.setSelectionMany(refs);
-    toast(t("app.itemsPasted", { count: refs.length }), "success");
-  }
-
   private async insertImageFlow(): Promise<void> {
     if (!store.project) return;
     let file: File | null;
@@ -1580,138 +1533,6 @@ export class App {
       return candidate;
     }
     return null;
-  }
-
-  private setSelectionImageMode(mode: ImageMode): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const images = resolveSelection(project, store.ui.selection).filter(
-      (entry) => entry.item.kind === "image" && entry.item.image,
-    );
-    if (!images.length) return;
-    const editable = images.filter((entry) => !entry.locked);
-    if (!editable.length) {
-      toast(t("app.selectedImageLocked"), "warning");
-      return;
-    }
-    store.mutate((project) => {
-      setItemsImageMode(project, store.ui.selection, mode);
-    }, "change");
-  }
-
-  private setSelectionOpacity(opacity: number): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const images = resolveSelection(project, store.ui.selection).filter(
-      (entry) => entry.item.kind === "image",
-    );
-    if (!images.length) return;
-    const editable = images.filter((entry) => !entry.locked);
-    if (!editable.length) {
-      toast(t("app.selectedImageLocked"), "warning");
-      return;
-    }
-    store.mutate((project) => {
-      setItemsOpacity(project, store.ui.selection, opacity);
-    }, "change");
-  }
-
-  private duplicateSelection(): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const locked = resolveSelection(project, store.ui.selection).every((entry) => entry.locked);
-    if (locked) {
-      toast(t("app.selectedItemLocked"), "warning");
-      return;
-    }
-    let refs: SelectionRef[] = [];
-    store.mutate((project) => {
-      refs = duplicateItems(project, store.ui.selection, 12);
-    }, "change");
-    if (refs.length) store.setSelectionMany(refs);
-  }
-
-  private moveSelectionToLayer(layerId: string): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    let result = { moved: 0, skipped: 0, mixedKinds: false };
-    store.mutate((project) => {
-      result = moveItemsToLayer(project, store.ui.selection, layerId);
-    }, "change");
-    if (result.mixedKinds) {
-      toast(t("app.selectSameKind"), "warning");
-      return;
-    }
-    const refs: SelectionRef[] = [];
-    for (const ref of store.ui.selection) {
-      const found = findItem(store.project!, ref.itemId);
-      if (found) refs.push({ layerId: found.layer.id, itemId: found.item.id });
-    }
-    store.setSelectionMany(refs);
-    if (result.moved) {
-      const layer = store.project?.layers.find((candidate) => candidate.id === layerId);
-      const moved = t("app.itemsMoved", {
-        count: result.moved,
-        layer: layer?.name ?? t("app.layerFallback"),
-      });
-      const skipped = result.skipped ? t("app.lockedSkippedSuffix", { count: result.skipped }) : "";
-      toast(`${moved}${skipped}`, result.skipped ? "warning" : "success");
-    } else if (result.skipped) {
-      toast(t("app.noItemsMoved"), "warning");
-    }
-  }
-
-  private setSelectionVisible(visible: boolean): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = visible
-      ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.page))
-      : resolved;
-    if (!targetable.length) {
-      toast(t("app.layerHiddenShow"), "warning");
-      return;
-    }
-    const result = emptyItemCommandResult();
-    store.mutate((project) => {
-      Object.assign(result, setItemsVisible(project, store.ui.selection, visible));
-    }, "change");
-    if (!visible) {
-      store.clearSelection();
-      toast(t("app.itemsHidden", { count: result.changed }), "info");
-    } else {
-      const shown = t("app.itemsShown", { count: result.changed });
-      const hidden = result.skippedLayerHidden
-        ? t("app.layerHiddenSuffix", { count: result.skippedLayerHidden })
-        : "";
-      toast(`${shown}${hidden}`, result.skippedLayerHidden ? "warning" : "success");
-    }
-  }
-
-  private setSelectionLocked(locked: boolean): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const resolved = resolveSelection(project, store.ui.selection);
-    const targetable = locked
-      ? resolved
-      : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
-    if (!targetable.length) {
-      toast(t("app.layerLockedUnlock"), "warning");
-      return;
-    }
-    const result = emptyItemCommandResult();
-    store.mutate((project) => {
-      Object.assign(result, setItemsLocked(project, store.ui.selection, locked));
-    }, "change");
-    if (locked) {
-      toast(t("app.itemsLocked", { count: result.changed }), "success");
-    } else {
-      const unlocked = t("app.itemsUnlocked", { count: result.changed });
-      const stillLocked = result.skippedLayerLocked
-        ? t("app.layerLockedSuffix", { count: result.skippedLayerLocked })
-        : "";
-      toast(`${unlocked}${stillLocked}`, result.skippedLayerLocked ? "warning" : "success");
-    }
   }
 
   private async duplicatePageFlow(page: number): Promise<void> {
@@ -1798,92 +1619,6 @@ export class App {
     this.canvas.invalidate();
     this.renderAll();
     toast(t("app.pageDeleted", { page: target }), "info");
-  }
-
-  private setSelectionStrokeWidth(width: number): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    if (!Number.isFinite(width) || width <= 0) return;
-    const resolved = resolveSelection(project, store.ui.selection);
-    const editable = resolved.filter((entry) => !entry.locked);
-    if (!editable.length) {
-      toast(t("app.selectedItemsLocked"), "warning");
-      return;
-    }
-    store.mutate((project) => {
-      setItemsStrokeWidth(project, store.ui.selection, width);
-    }, "change");
-  }
-
-  private setSelectionColor(color: string): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const resolved = resolveSelection(project, store.ui.selection);
-    const editable = resolved.filter((entry) => !entry.locked);
-    if (!editable.length) {
-      toast(t("app.selectedItemLocked"), "warning");
-      return;
-    }
-    store.mutate((project) => {
-      setItemsColor(project, store.ui.selection, color);
-    }, "change");
-  }
-
-  private bulkEditMeasurementSelection(patch: MeasurementBulkPatch): void {
-    const project = store.project;
-    if (!project || !store.ui.selection.length) return;
-    const editable = resolveSelection(project, store.ui.selection).filter(
-      (entry) => isMeasurementKind(entry.item.kind) && !itemIsLocked(entry.item, entry.layer),
-    );
-    if (!editable.length) {
-      toast(t("app.selectedMeasurementsLocked"), "warning");
-      return;
-    }
-    let result: MeasurementBulkResult = {
-      updated: 0,
-      skippedLocked: 0,
-      skippedNonMeasurement: 0,
-    };
-    store.mutate((project) => {
-      result = applyMeasurementBulkEdit(project, store.ui.selection, patch);
-    }, "change");
-    if (result.updated && result.skippedLocked) {
-      toast(
-        t("app.measurementsUpdated", {
-          count: result.updated,
-          locked: result.skippedLocked,
-        }),
-        "warning",
-      );
-    }
-  }
-
-  private setSelectionCategory(categoryId: string): void {
-    const project = store.project;
-    if (!project?.categories.some((category) => category.id === categoryId)) return;
-    this.bulkEditMeasurementSelection({ categoryId });
-  }
-
-  private setSelectionRoom(room: string): void {
-    this.bulkEditMeasurementSelection({ room });
-  }
-
-  private setSelectionAreaMode(mode: AreaMode): void {
-    this.bulkEditMeasurementSelection({ areaMode: mode });
-  }
-
-  private setSelectionCountType(type: CountType): void {
-    this.bulkEditMeasurementSelection({ countType: type });
-  }
-
-  private setSelectionCountQuantity(quantity: number): void {
-    if (!Number.isFinite(quantity) || quantity < 1) return;
-    this.bulkEditMeasurementSelection({ countQuantity: quantity });
-  }
-
-  private setSelectionLabelSize(size: number): void {
-    if (!Number.isFinite(size)) return;
-    this.bulkEditMeasurementSelection({ labelSize: size });
   }
 
   private async saveProjectFlow(saveAs: boolean): Promise<boolean> {
