@@ -1,0 +1,35 @@
+/* Status details, storage preferences and welcome-state refinements. */
+
+.is-warning-text {
+  color: var(--warning);
+}
+
+.preferences-recents {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 12px;
+}
+
+.preferences-recent-row {
+  align-items: center;
+  gap: 8px;
+}
+
+.preferences-recent-row .settings-note:first-child {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.recent-item:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.recent-item:disabled:hover {
+  background: transparent;
+  border-color: transparent;
+}

@@ -30,7 +30,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
-- **Status bar** – the clickable page scale, cursor position with its unit, zoom controls, page navigation, and the active layer.
+- **Status bar** – the clickable page scale, saved/unsaved state, cursor position with its unit, source-drawing warnings, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
 
@@ -121,7 +121,7 @@ The portable executable and the AppImage do not register file types. Use the ins
 
 ### Recent files
 
-**File → Open recent** lists the ten most recent projects and drawings. The welcome screen shows the same list. Use **Clear recent list** to remove the entries. Recent files require the desktop app; the browser preview cannot reopen local paths.
+**File → Open recent** lists the ten most recent projects and drawings. The welcome screen shows the same list and marks entries whose file is missing. Remove single entries or clear the whole list under **Settings → Preferences… → Data**. Recent files require the desktop app; the browser preview cannot reopen local paths.
 
 ### TIF drawings
 
@@ -580,6 +580,8 @@ Saving is atomic. GridScalr writes and flushes a temporary file next to the proj
 
 The source PDF or TIF is never overwritten. Every save and export resolves real paths, including symlinks and junctions, before comparing the destination with the source documents. A protected file is refused even when it is reached through another spelling or a link, including a second PDF or TIF in a multi-document project.
 
+The status bar shows whether the project is **Saved**, has **Unsaved changes**, or is **Not saved to a file** yet. It also warns when a source drawing is missing or has changed on disk.
+
 Autosave keeps a recovery snapshot in a local IndexedDB database; a localStorage fallback is used only when IndexedDB is unavailable. If recovery storage is full or unavailable, GridScalr shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
@@ -635,12 +637,14 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
+- **Data** – the recovery snapshot and the recent-file list. **Clear recovery data** and **Clear recent files** remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
 
 ### Project settings
 
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project settings** button in the Properties header.
 
 - **Project** – the project name shown in the title row, reports, exports and suggested file names. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that.
+- **Project size and sources** – the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. A drawing that is missing or whose file size changed on disk is marked here and in the status bar before an export fails.
 - **Report metadata** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
 - **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
 - **Units** – length and area units for the project. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.

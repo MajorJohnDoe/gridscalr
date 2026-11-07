@@ -305,11 +305,31 @@ export function addRecent(entry: RecentEntry): void {
   }
 }
 
+export function removeRecent(path: string, kind: RecentEntry["kind"]): void {
+  try {
+    const entries = getRecent().filter((entry) => entry.path !== path || entry.kind !== kind);
+    if (entries.length) localStorage.setItem(RECENT_KEY, JSON.stringify(entries));
+    else localStorage.removeItem(RECENT_KEY);
+  } catch {
+    // Recent files are a convenience only.
+  }
+}
+
 export function clearRecent(): void {
   try {
     localStorage.removeItem(RECENT_KEY);
   } catch {
     // Ignore.
+  }
+}
+
+/** Current byte length of a source file, or null when it cannot be read. */
+export async function fileSize(path: string): Promise<number | null> {
+  if (!isTauri) return null;
+  try {
+    return await tauriInvoke<number | null>("file_size", { path });
+  } catch {
+    return null;
   }
 }
 

@@ -7,9 +7,12 @@ import "./styles/dialogs.css";
 import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";
+import "./styles/status.css";
+import "./styles/responsive.css";
 import { App } from "./app/App";
 import { installDiagnosticsLogging, logEvent } from "./features/diagnostics/log";
 import { applyStoredLanguage, setLanguagePreference, t } from "./i18n";
+import { sourceStatus } from "./source/sourceStatus";
 import { store } from "./state/store";
 
 const root = document.getElementById("app");
@@ -101,6 +104,7 @@ try {
   await applyStoredLanguage();
   localizeBootFallback();
   const app = new App(root);
+  sourceStatus.start();
   appStarted = true;
   if (import.meta.env.DEV) {
     (

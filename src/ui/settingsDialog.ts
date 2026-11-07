@@ -3,6 +3,7 @@ import { showModal } from "./dialogs";
 import { el } from "./dom";
 import { t } from "../i18n";
 import { projectSection } from "./settings/project";
+import { storageSection } from "./settings/storage";
 import { metadataSection } from "./settings/metadata";
 import { scaleSection } from "./settings/scale";
 import { unitsSection } from "./settings/units";
@@ -22,6 +23,7 @@ export function openSettingsDialog(): void {
     if (!store.project) return;
     content.replaceChildren(
       projectSection(),
+      storageSection(),
       metadataSection(render),
       scaleSection(),
       unitsSection(),

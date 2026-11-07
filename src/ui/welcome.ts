@@ -1,4 +1,4 @@
-import { getRecent, isTauri } from "../io/platform";
+import { getRecent, isTauri, pathExists } from "../io/platform";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
 import { brandMark, icon } from "./icons";
@@ -77,14 +77,27 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
       row.type = "button";
       row.innerHTML = icon(entry.kind === "pdf" ? "file" : "layers", 15);
       row.append(el("span", "recent-name", entry.name));
-      row.append(
-        el("span", "recent-meta", entry.kind === "pdf" ? "PDF" : t("menu.file.recentProject")),
+      const meta = el(
+        "span",
+        "recent-meta",
+        entry.kind === "pdf" ? "PDF" : t("menu.file.recentProject"),
       );
+      row.append(meta);
       row.addEventListener("click", () => actions.openRecent(entry));
       list.append(row);
+      if (isTauri) {
+        void pathExists(entry.path).then((exists) => {
+          if (exists || !meta.isConnected) return;
+          row.disabled = true;
+          row.title = t("welcome.recentMissingTitle", { path: entry.path });
+          meta.textContent = t("welcome.recentMissing");
+        });
+      }
     }
     recents.append(list);
     card.append(recents);
+  } else {
+    card.append(el("p", "welcome-empty settings-note", t("welcome.recentEmpty")));
   }
 
   const note = el("p", "welcome-footnote");

@@ -64,8 +64,10 @@ export interface ShellRefs {
   markupsPanel: HTMLElement;
   welcome: HTMLElement;
   statusCalibration: HTMLElement;
+  statusProject: HTMLElement;
   statusCoords: HTMLElement;
   statusWarning: HTMLElement;
+  statusSources: HTMLElement;
   statusZoom: HTMLElement;
   statusZoomLabel: HTMLElement;
   statusPage: HTMLElement;
@@ -278,8 +280,10 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const statusbar = el("footer", "statusbar");
   const statusCalibration = el("div", "status-section");
-  const statusCoords = el("div", "status-section");
+  const statusProject = el("div", "status-section status-project");
+  const statusCoords = el("div", "status-section status-coords");
   const statusWarning = el("div", "status-section status-warning");
+  const statusSources = el("div", "status-section status-sources");
   const statusZoom = el("div", "status-section status-controls");
   const statusPage = el("div", "status-section status-controls");
   const statusSpacer = el("div", "status-spacer");
@@ -308,8 +312,10 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   statusbar.append(
     statusCalibration,
+    statusProject,
     statusCoords,
     statusWarning,
+    statusSources,
     statusZoom,
     statusPage,
     statusSpacer,
@@ -388,8 +394,10 @@ export function createShell(root: HTMLElement): ShellRefs {
     markupsPanel,
     welcome,
     statusCalibration,
+    statusProject,
     statusCoords,
     statusWarning,
+    statusSources,
     statusZoom,
     statusZoomLabel,
     statusPage,
