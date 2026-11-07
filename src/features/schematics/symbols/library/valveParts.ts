@@ -6,13 +6,6 @@ export const RIGHT_SEAT_BAND = polyPath([46, 22, 42, 24.8571, 42, 39.1429, 46, 4
 /** The same band along the base of the downward-facing third branch. */
 export const BOTTOM_SEAT_BAND = polyPath([24.8571, 42, 39.1429, 42, 42, 46, 22, 46], true);
 
-export function valveBody(): string {
-  return joinPaths(
-    polyPath([18, 22, 32, 32, 18, 42], true),
-    polyPath([46, 22, 32, 32, 46, 42], true),
-  );
-}
-
 /** Stem and square actuator box above a valve body. */
 export function valveActuatorBody(): string {
   return joinPaths(linePath(32, 15, 32, 32), rectPath(23, 3, 18, 12));

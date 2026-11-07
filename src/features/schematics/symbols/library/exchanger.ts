@@ -7,8 +7,8 @@ import {
   ductCasing,
   coilPath,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { INLINE_PORTS } from "./parts";
 
 /**
  * exchanger symbols, split out of the schematic library by category.
@@ -55,7 +55,7 @@ export const EXCHANGER_SYMBOLS: SymbolDefinition[] = [
     category: "exchanger",
     keywords: ["batteriåtervinning", "battery recovery", "återvinning", "batteri", "bx"],
     tagPrefix: "BX",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(ductCasing(16, 32)),
       stroke(

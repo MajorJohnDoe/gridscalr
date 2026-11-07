@@ -1,6 +1,13 @@
 import type { SymbolDefinition } from "../../../../model/symbols";
-import { stroke, joinPaths, linePath, rectPath, smallCircle, schematicSymbol } from "../primitives";
-import { INLINE_PORTS } from "./parts";
+import {
+  stroke,
+  joinPaths,
+  linePath,
+  rectPath,
+  smallCircle,
+  schematicSymbol,
+  inlinePorts,
+} from "../primitives";
 
 /**
  * control symbols, split out of the schematic library by category.
@@ -90,7 +97,7 @@ export const CONTROL_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["frekvensomriktare", "variable frequency drive", "vfd", "motorstyrning", "fi"],
     tagPrefix: "FI",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(10, 14, 44, 36)),
       stroke(

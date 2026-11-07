@@ -7,8 +7,9 @@ import {
   smallCircle,
   sensorFunnel,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { INLINE_PORTS, SENSOR_PORTS, meterBody } from "./parts";
+import { SENSOR_PORTS, meterBody } from "./parts";
 
 /**
  * instrument symbols, split out of the schematic library by category.
@@ -31,7 +32,7 @@ export const INSTRUMENT_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["flödesgivare", "flow sensor", "flöde", "givare", "gq"],
     tagPrefix: "GQ",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(sensorFunnel()),
       stroke(joinPaths(linePath(24, 20, 40, 20), polyPath([36, 15, 42, 20, 36, 25], true))),
@@ -128,7 +129,7 @@ export const INSTRUMENT_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["energimätare", "energy meter", "energi", "mätare", "em"],
     tagPrefix: "EM",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [stroke(meterBody()), stroke(polyPath([27, 30, 32, 22, 31, 29, 37, 25, 32, 38]))],
   }),
 

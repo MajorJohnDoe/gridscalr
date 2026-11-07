@@ -9,11 +9,11 @@ import {
   smallCircle,
   valvePorts,
   schematicSymbol,
+  valveBody,
 } from "../primitives";
 import {
   RIGHT_SEAT_BAND,
   BOTTOM_SEAT_BAND,
-  valveBody,
   valveActuatorBody,
   motorLetter,
   hydraulicLetter,

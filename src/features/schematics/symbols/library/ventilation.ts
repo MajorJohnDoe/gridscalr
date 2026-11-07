@@ -9,8 +9,8 @@ import {
   ductCasing,
   ductPorts,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { INLINE_PORTS } from "./parts";
 
 /**
  * ventilation symbols, split out of the schematic library by category.
@@ -52,7 +52,7 @@ export const VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["kompressor", "vakuumpump", "compressor", "vacuum pump", "vakuum", "kvp"],
     tagPrefix: "KVP",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(
         joinPaths(smallCircle(32, 32, 16), linePath(20, 22, 48, 29), linePath(19, 41, 47, 36)),

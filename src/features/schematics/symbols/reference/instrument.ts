@@ -7,8 +7,8 @@ import {
   smallCircle,
   sensorFunnel,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { PORTS_INLINE } from "./parts";
 
 /**
  * Reference-aligned instrument symbols, split out by category.
@@ -65,7 +65,7 @@ export const INSTRUMENT_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["mätinstrument", "meter", "mätare", "g"],
     tagPrefix: "G",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [stroke(smallCircle(32, 32, 15))],
   }),
   schematicSymbol({
@@ -73,7 +73,7 @@ export const INSTRUMENT_SYMBOLS: SymbolDefinition[] = [
     category: "instrument",
     keywords: ["mätinstrument indikering", "meter indicating", "mätare", "g"],
     tagPrefix: "G",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(joinPaths(smallCircle(32, 32, 15), linePath(32, 32, 40, 20))),
       stroke(

@@ -1,11 +1,5 @@
 import { joinPaths, linePath, polyPath, rectPath, smallCircle } from "../primitives";
 
-/** Inline ports on the left and right symbol edges, without connection stubs. */
-export const INLINE_PORTS = (y = 32) => [
-  { id: "in", x: 2, y, direction: "in" as const },
-  { id: "out", x: 62, y, direction: "out" as const },
-];
-
 /** Pump inlet and outlet anchors around the body. */
 export const PUMP_PORTS = () => [
   { id: "in", x: 16, y: 32, direction: "in" as const },

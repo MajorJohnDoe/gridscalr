@@ -1,6 +1,13 @@
 import type { SymbolDefinition } from "../../../../model/symbols";
-import { stroke, joinPaths, linePath, rectPath, smallCircle, schematicSymbol } from "../primitives";
-import { INLINE_PORTS } from "./parts";
+import {
+  stroke,
+  joinPaths,
+  linePath,
+  rectPath,
+  smallCircle,
+  schematicSymbol,
+  inlinePorts,
+} from "../primitives";
 
 /**
  * cooling symbols, split out of the schematic library by category.
@@ -12,7 +19,7 @@ export const COOLING_SYMBOLS: SymbolDefinition[] = [
     category: "cooling",
     keywords: ["kylmaskin", "chiller", "kyla", "kylaggregat", "km"],
     tagPrefix: "KM",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(10, 14, 44, 36)),
       stroke(joinPaths(smallCircle(30, 28, 8), linePath(30, 28, 36, 22))),

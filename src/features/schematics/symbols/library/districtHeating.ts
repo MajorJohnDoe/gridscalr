@@ -8,9 +8,10 @@ import {
   rectPath,
   smallCircle,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
 import { roundedRectPathData } from "../../../../model/symbolPaths";
-import { INLINE_PORTS, meterBody } from "./parts";
+import { meterBody } from "./parts";
 
 /**
  * district heating symbols, split out of the schematic library by category.
@@ -60,7 +61,7 @@ export const DISTRICT_HEATING_SYMBOLS: SymbolDefinition[] = [
     category: "district-heating",
     keywords: ["fjärrvärmemätare", "district heating meter", "energimätare", "fjärrvärme", "fem"],
     tagPrefix: "FEM",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(meterBody()),
       stroke(joinPaths(linePath(2, 32, 12, 32), linePath(52, 32, 62, 32))),

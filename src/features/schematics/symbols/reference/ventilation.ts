@@ -8,8 +8,8 @@ import {
   rectPath,
   smallCircle,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { PORTS_INLINE } from "./parts";
 
 /**
  * Reference-aligned ventilation symbols, split out by category.
@@ -21,7 +21,7 @@ export const VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["kompressor", "compressor", "kyla", "kom"],
     tagPrefix: "KOM",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(10, 20, 44, 24)),
       stroke(smallCircle(32, 32, 10)),
@@ -33,7 +33,7 @@ export const VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["fuktare", "humidifier", "fukt", "ventilation"],
     tagPrefix: "BEF",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(14, 14, 36, 36)),
       stroke(joinPaths(linePath(44, 20, 34, 34), polyPath([30, 30, 34, 40, 40, 32], true))),
@@ -44,7 +44,7 @@ export const VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["spjäll med ställdon", "damper with actuator", "spjäll", "ställdon"],
     tagPrefix: "SP",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(14, 14, 36, 24)),
       stroke(linePath(32, 20, 32, 32)),
@@ -57,7 +57,7 @@ export const VENTILATION_SYMBOLS: SymbolDefinition[] = [
     category: "ventilation",
     keywords: ["modulerande spjäll", "modulating damper", "spjäll", "ställdon"],
     tagPrefix: "SP",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(14, 14, 36, 24)),
       stroke(linePath(20, 38, 44, 16)),

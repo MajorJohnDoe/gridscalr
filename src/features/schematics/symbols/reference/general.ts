@@ -8,8 +8,8 @@ import {
   rectPath,
   smallCircle,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { PORTS_INLINE } from "./parts";
 
 /**
  * Reference-aligned general symbols, split out by category.
@@ -34,7 +34,7 @@ export const GENERAL_SYMBOLS: SymbolDefinition[] = [
     category: "general",
     keywords: ["potentiometer", "pot", "motstånd", "rp"],
     tagPrefix: "RP",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(joinPaths(rectPath(20, 30, 24, 8), linePath(2, 34, 20, 34), linePath(44, 34, 62, 34))),
       stroke(joinPaths(linePath(32, 12, 32, 30), polyPath([27, 24, 32, 31, 37, 24], true))),
@@ -47,7 +47,7 @@ export const GENERAL_SYMBOLS: SymbolDefinition[] = [
     category: "general",
     keywords: ["lampa", "lamp", "belysning", "l"],
     tagPrefix: "L",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(joinPaths(smallCircle(32, 32, 9), linePath(26, 26, 38, 38), linePath(38, 26, 26, 38))),
       stroke(joinPaths(linePath(2, 32, 23, 32), linePath(41, 32, 62, 32))),
@@ -74,7 +74,7 @@ export const GENERAL_SYMBOLS: SymbolDefinition[] = [
     category: "general",
     keywords: ["signalomvandlare", "signal converter", "signal", "omvandlare"],
     tagPrefix: "SO",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [stroke(joinPaths(rectPath(20, 20, 24, 24), linePath(20, 44, 44, 20)))],
   }),
 

@@ -7,18 +7,12 @@ import {
   smallCircle,
   valvePorts,
   schematicSymbol,
+  valveBody,
 } from "../primitives";
 
 /**
  * Reference-aligned valve symbols, split out by category.
  */
-
-function valveBody(): string {
-  return joinPaths(
-    polyPath([18, 22, 32, 32, 18, 42], true),
-    polyPath([46, 22, 32, 32, 46, 42], true),
-  );
-}
 
 export const VALVE_SYMBOLS: SymbolDefinition[] = [
   schematicSymbol({

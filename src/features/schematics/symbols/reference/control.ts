@@ -8,8 +8,8 @@ import {
   rectPath,
   smallCircle,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
-import { PORTS_INLINE } from "./parts";
 
 /**
  * Reference-aligned control symbols, split out by category.
@@ -258,7 +258,7 @@ export const CONTROL_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["automatsäkring", "automatic fuse", "säkring", "sä"],
     tagPrefix: "SÄ",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(contactBlade(false)),
       stroke(joinPaths(linePath(14, 46, 50, 46), polyPath([44, 42, 52, 46, 44, 50], true))),
@@ -294,7 +294,7 @@ export const CONTROL_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["motorskyddsbrytare", "motor protection", "motor", "skydd"],
     tagPrefix: "MS",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(joinPaths(linePath(2, 18, 62, 18), linePath(2, 46, 62, 46))),
       stroke(
@@ -308,7 +308,7 @@ export const CONTROL_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["säkerhetsbrytare trefas", "three phase safety breaker", "brytare", "motor"],
     tagPrefix: "SÄ",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(joinPaths(linePath(2, 18, 62, 18), linePath(2, 46, 62, 46))),
       stroke(
@@ -349,7 +349,7 @@ export const CONTROL_SYMBOLS: SymbolDefinition[] = [
     category: "control",
     keywords: ["transformator", "transformer", "trafo", "tr"],
     tagPrefix: "TR",
-    ports: PORTS_INLINE(),
+    ports: inlinePorts(),
     shapes: [
       stroke(rectPath(16, 24, 32, 16)),
       stroke(joinPaths(smallCircle(27, 32, 6), smallCircle(37, 32, 6))),

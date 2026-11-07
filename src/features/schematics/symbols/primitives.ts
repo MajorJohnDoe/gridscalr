@@ -57,6 +57,22 @@ export function ductPorts(y = 32): SymbolPort[] {
   ];
 }
 
+/** Inline ports on the left and right symbol edges, without connection stubs. */
+export function inlinePorts(y = 32): SymbolPort[] {
+  return [
+    { id: "in", x: 2, y, direction: "in" },
+    { id: "out", x: 62, y, direction: "out" },
+  ];
+}
+
+/** The twin-triangle body shared by the schematic valve symbols. */
+export function valveBody(): string {
+  return joinPaths(
+    polyPath([18, 22, 32, 32, 18, 42], true),
+    polyPath([46, 22, 32, 32, 46, 42], true),
+  );
+}
+
 /** Inline ports on the visible valve body edges, without connection stubs. */
 export function valvePorts(): SymbolPort[] {
   return [

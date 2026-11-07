@@ -8,9 +8,10 @@ import {
   smallCircle,
   coilPath,
   schematicSymbol,
+  inlinePorts,
 } from "../primitives";
 import { roundedRectPathData } from "../../../../model/symbolPaths";
-import { INLINE_PORTS, pumpBody } from "./parts";
+import { pumpBody } from "./parts";
 
 /**
  * domestic water symbols, split out of the schematic library by category.
@@ -81,7 +82,7 @@ export const DOMESTIC_WATER_SYMBOLS: SymbolDefinition[] = [
     category: "domestic-water",
     keywords: ["tappvattenpump", "domestic water pump", "pump", "tappvatten", "tp"],
     tagPrefix: "TP",
-    ports: INLINE_PORTS(),
+    ports: inlinePorts(),
     shapes: [
       stroke(pumpBody()),
       stroke(
