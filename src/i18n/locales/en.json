@@ -1360,6 +1360,7 @@
   "symbol.schematic.pressure-holding": "Pressure holding unit",
   "symbol.schematic.substation": "District heating substation",
   "symbol.schematic.district-energy-meter": "District heating energy meter",
+  "symbol.schematic.district-energy-meter-panel": "District heating meter, panel",
   "symbol.schematic.chiller": "Chiller",
   "symbol.schematic.water-heater": "Domestic hot water heater",
   "symbol.schematic.mixing-valve": "Mixing valve",

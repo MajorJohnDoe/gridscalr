@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(120);
-    expect(ALL_SYMBOLS).toHaveLength(172);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(121);
+    expect(ALL_SYMBOLS).toHaveLength(173);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(120);
+    expect(symbolsForSet("schematic")).toHaveLength(121);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -249,7 +249,11 @@ describe("schematic symbol set", () => {
       expect(symbol.tagPrefix, symbol.id).toBeTruthy();
       expect(symbol.defaultSize, symbol.id).toBeGreaterThan(0);
       expect(SCHEMATIC_CATEGORIES).toContain(symbol.category);
-      expect(symbol.ports?.length, symbol.id).toBeGreaterThan(0);
+      if (symbol.id === "schematic.district-energy-meter-panel") {
+        expect(symbol.ports ?? [], symbol.id).toHaveLength(0);
+      } else {
+        expect(symbol.ports?.length, symbol.id).toBeGreaterThan(0);
+      }
       for (const port of symbol.ports ?? []) {
         expect(port.x).toBeGreaterThanOrEqual(0);
         expect(port.x).toBeLessThanOrEqual(SYMBOL_VIEWBOX);
@@ -286,6 +290,14 @@ describe("schematic symbol set", () => {
     const thick = symbolForAll("schematic.flow-arrow-thick");
     expect(thick.fixedStrokeWidth).toBe(1.2);
     expect(symbolRenderPlan(thick, "#111111").fixedStrokeWidth).toBe(1.2);
+  });
+
+  it("adds a standalone district heating meter panel", () => {
+    const panel = symbolForAll("schematic.district-energy-meter-panel");
+    expect(panel.category).toBe("district-heating");
+    expect(panel.ports ?? []).toHaveLength(0);
+    expect(panel.art.shapes.some((shape) => shape.stroke === true)).toBe(true);
+    expect(panel.art.shapes.some((shape) => shape.stroke !== true)).toBe(true);
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

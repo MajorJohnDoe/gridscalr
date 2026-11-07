@@ -1362,6 +1362,7 @@ export type MessageKey =
   | "symbol.schematic.pressure-holding"
   | "symbol.schematic.substation"
   | "symbol.schematic.district-energy-meter"
+  | "symbol.schematic.district-energy-meter-panel"
   | "symbol.schematic.chiller"
   | "symbol.schematic.water-heater"
   | "symbol.schematic.mixing-valve"

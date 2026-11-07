@@ -70,6 +70,17 @@ function meterBody(): string {
   return joinPaths(rectPath(12, 16, 40, 32), smallCircle(32, 30, 9), linePath(26, 38, 38, 38));
 }
 
+/** A district-heating meter panel with a bezelled display and two indicator dots. */
+function meterPanelBody(): string {
+  return joinPaths(
+    roundedRectPathData(10, 8, 44, 48, 3),
+    roundedRectPathData(15, 13, 34, 17, 3),
+    roundedRectPathData(18, 16, 28, 11, 1.5),
+  );
+}
+
+const METER_PANEL_DOTS = joinPaths(smallCircle(41, 38, 1.5), smallCircle(47, 38, 1.5));
+
 interface VesselGeometry {
   x: number;
   y: number;
@@ -731,6 +742,22 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       stroke(joinPaths(linePath(2, 32, 12, 32), linePath(52, 32, 62, 32))),
       stroke(polyPath([26, 34, 31, 26, 30, 32, 36, 28, 31, 40])),
     ],
+  }),
+  schematicSymbol({
+    id: "schematic.district-energy-meter-panel",
+    category: "district-heating",
+    keywords: [
+      "fjärrvärmemätare",
+      "panel",
+      "display",
+      "fjärrvärme",
+      "mätare",
+      "district heating meter",
+      "meter panel",
+    ],
+    tagPrefix: "FEM",
+    ports: [],
+    shapes: [stroke(meterPanelBody()), fill(METER_PANEL_DOTS)],
   }),
 
   // --- Cooling -----------------------------------------------------------
