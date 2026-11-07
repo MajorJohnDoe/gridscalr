@@ -4,7 +4,8 @@ import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
-import type { MarqueeState, PanState } from "./pointerState";
+import { applyDragState } from "./drag";
+import type { DragState, MarqueeState, PanState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
 
 /**
@@ -20,6 +21,7 @@ export class PointerController {
   private touchLongPressFired = false;
   private pan: PanState | null = null;
   private marquee: MarqueeState | null = null;
+  private drag: DragState | null = null;
 
   constructor(
     private readonly element: HTMLCanvasElement,
@@ -75,8 +77,8 @@ export class PointerController {
       cursor = this.host.cropCursor() ?? "crosshair";
     } else if (this.pan) {
       cursor = "grabbing";
-    } else if (this.host.dragState()) {
-      const drag = this.host.dragState()!;
+    } else if (this.drag) {
+      const drag = this.drag;
       if (drag.mode === "rotate") cursor = "grabbing";
       else if ((drag.mode === "resize" || drag.mode === "scale-selection") && drag.handle) {
         cursor = cursorForRole(drag.handle);
@@ -95,6 +97,55 @@ export class PointerController {
       else if (store.ui.hover) cursor = "move";
     }
     this.host.setHostCursor(cursor);
+  }
+
+  get dragActive(): boolean {
+    return this.drag !== null;
+  }
+
+  get dragState(): DragState | null {
+    return this.drag;
+  }
+
+  beginDrag(drag: DragState, pointerId: number): void {
+    this.drag = drag;
+    this.capturePointer(pointerId);
+    this.updateCursor();
+    this.host.drawInteraction();
+  }
+
+  applyDrag(page: Point, shiftKey: boolean): boolean {
+    if (!this.drag) return false;
+    const result = applyDragState(this.drag, page, shiftKey, {
+      snapPoint: (point, excludeItemId) => this.host.snapPoint(point, excludeItemId),
+      clearSnap: () => this.host.clearSnap(),
+    });
+    if (result === "transform") return false;
+    if (result === "noop") return true;
+    if (result === "end") {
+      this.endDrag();
+      return true;
+    }
+    this.host.drawContent();
+    this.host.drawInteraction();
+    this.updateCursor();
+    return true;
+  }
+
+  endDrag(): void {
+    if (!this.drag) return;
+    const moved = this.drag.moved;
+    this.drag = null;
+    this.host.clearHover();
+    if (moved) store.endGesture("change");
+    else store.cancelGesture();
+    this.updateCursor();
+    this.host.drawContent();
+    this.host.drawInteraction();
+  }
+
+  cancelDrag(): void {
+    this.drag = null;
   }
 
   get panActive(): boolean {

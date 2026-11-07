@@ -57,6 +57,7 @@ src/
   canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
   canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, wheel, space-pan and long-press helpers
   canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
+  canvas/pointer/drag.ts item move, vertex, label and measurement-label drag
   canvas/pointer/pointerState.ts drag, marquee and pan gesture state
   canvas/pointer/groupHandles.ts group selection handles shared by pointer and renderer
   canvas/symbolPath.ts   cached Path2D objects for symbol artwork

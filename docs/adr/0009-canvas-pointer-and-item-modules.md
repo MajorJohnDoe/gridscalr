@@ -32,6 +32,7 @@ API.
 src/canvas/pointer/
   PointerController.ts  event state machine, cursor, wheel, long-press and gesture dispatch
   PointerHost.ts        the explicit host surface CanvasView implements
+  drag.ts               item move, vertex, label and measurement-label drag
   pointerState.ts       drag, marquee and pan state shapes
   groupHandles.ts       group selection handles shared by pointer and renderer
 ```
