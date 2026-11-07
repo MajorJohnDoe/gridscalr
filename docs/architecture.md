@@ -43,7 +43,7 @@ src/
   i18n/hardcoded-baseline.json frozen pre-migration UI strings for the i18n gate
   compare/referenceSession.ts session-only revision project or raw PDF reference, renderer and source paths
   compare/revisionDiff.ts pure item matching and added/removed/changed classification
-  canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG compositing
+  canvas/CanvasView.ts   rendering orchestration, hit testing, inline editing, resize/rotate, PNG compositing
   canvas/itemRenderer.ts thin public entry point; delegates item drawing to canvas/items/
   canvas/items/context.ts shared item render context, panel drawer and label helper
   canvas/items/dispatch.ts rotation, shared canvas setup and the item-family switch
@@ -58,6 +58,16 @@ src/
   canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers
   canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
   canvas/pointer/contextMenu.ts context menus, measurement-label actions and label connections
+  src/canvas/pointer/contexts.ts host context builders for creation, context-menu and double-click actions
+  src/canvas/pointer/cursor.ts cursor selection for the current pointer state
+  src/canvas/pointer/draft.ts draft state and every drawing/measurement finish path
+  src/canvas/pointer/itemFactory.ts item creation from the current tool and style state
+  src/canvas/pointer/listeners.ts pointer, wheel, double-click and context-menu listener binding
+  src/canvas/pointer/navigation.ts pan, marquee and wheel navigation
+  src/canvas/pointer/primitives.ts coordinate, pointer-capture and release helpers
+  src/canvas/pointer/targets.ts selection and hover target resolution
+  src/canvas/pointer/touchInput.ts pen priority, palm rejection, touch navigation and long-press
+
   canvas/pointer/creation.ts creation-tool pointer-down branches and draft start/finish
   canvas/pointer/doubleClick.ts double-click target resolution and edit dispatch
   canvas/pointer/drag.ts item move, vertex, label and measurement-label drag

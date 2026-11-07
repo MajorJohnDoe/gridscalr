@@ -1,18 +1,26 @@
 import { store, type ToolId } from "../../state/store";
 import { t } from "../../i18n";
 import { toast } from "../../ui/toast";
-import { TouchNavigation } from "../touchNavigation";
+import { NavigationGesture } from "./navigation";
+import { TouchInput } from "./touchInput";
 import type { Point } from "../../model/types";
-import { expandRect } from "../../model/geometry";
-import { itemIntersectsBounds } from "../../model/hitTest";
-import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
-import { cursorForRole } from "../geometry";
+import type { Handle } from "../selectionHandles";
+import { cursorForState } from "./cursor";
+import { attachPointerListeners, detachPointerListeners } from "./listeners";
+import { capturePointer, localFromClient, localPoint, releasePointer } from "./primitives";
+import { contextMenuContext, creationContext, doubleClickContext } from "./contexts";
 import { commitLabelConnection, openContextMenu } from "./contextMenu";
-import { handleCreationDown } from "./creation";
+import {
+  finishDraftOnPointerUp,
+  handleCreationDown,
+  toolUsesSnapping,
+  updateDraftFromPointer,
+} from "./creation";
 import { handleDoubleClick } from "./doubleClick";
 import { applyDragState } from "./drag";
 import { applyTransformState } from "./transform";
-import type { DragState, MarqueeState, PanState } from "./pointerState";
+import { beginSelection, updateHover } from "./targets";
+import type { DragState, MarqueeState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
 
 /**
@@ -23,36 +31,49 @@ import type { PointerHost } from "./PointerHost";
  */
 export class PointerController {
   private spaceDown = false;
-  private touchLongPressTimer: number | null = null;
-  private touchLongPressStart: Point | null = null;
-  private touchLongPressFired = false;
-  private pan: PanState | null = null;
-  private marquee: MarqueeState | null = null;
   private drag: DragState | null = null;
+  pointerScreen: Point | null = null;
+  hoverHandle: Handle | null = null;
+  hoverLabelResize = false;
   private labelConnect: { itemId: string; layerId: string } | null = null;
-  private penActive = false;
-  private lastPenAt = 0;
-  private readonly touchNavigation: TouchNavigation;
+  private readonly navigation: NavigationGesture;
+  private readonly touchInput: TouchInput;
 
   constructor(
     private readonly element: HTMLCanvasElement,
     private readonly host: PointerHost,
   ) {
-    this.touchNavigation = new TouchNavigation({
-      getView: () => this.host.viewport(),
-      toLocal: (clientX, clientY) => this.localFromClient(clientX, clientY),
-      setView: (next) => store.setView(next.zoom, next.panX, next.panY),
-      onGestureStart: () => {
-        this.cancelPan();
-        this.cancelMarquee();
-        this.cancelDrag();
-        store.cancelGesture();
-        this.host.cancelDraft();
-      },
-      suppressOneFinger: () => this.penActive || performance.now() - this.lastPenAt < 800,
-      capturePointer: (pointerId) => this.capturePointer(pointerId),
-      releasePointer: (pointerId) => this.releasePointer(pointerId),
+    this.navigation = new NavigationGesture({
+      viewport: () => this.host.viewport(),
+      capturePointer: (pointerId) => capturePointer(this.element, pointerId),
+      updateCursor: () => this.updateCursor(),
+      drawInteraction: () => this.host.drawInteraction(),
     });
+    this.touchInput = new TouchInput(element, {
+      viewport: () => this.host.viewport(),
+      localFromClient: (clientX, clientY) => localFromClient(this.element, clientX, clientY),
+      capturePointer: (pointerId) => capturePointer(this.element, pointerId),
+      releasePointer: (pointerId) => releasePointer(this.element, pointerId),
+      cancelGesture: () => this.cancelGesture(),
+      cancelDraft: () => this.host.cancelDraft(),
+      openContextMenu: (clientX, clientY) =>
+        openContextMenu(
+          clientX,
+          clientY,
+          contextMenuContext(
+            this.host,
+            (x, y) => localFromClient(this.element, x, y),
+            () => this.updateCursor(),
+            (itemId, layerId) => this.beginLabelConnection(itemId, layerId),
+          ),
+        ),
+    });
+  }
+
+  cancelGesture(): void {
+    this.cancelDrag();
+    this.cancelPanAndMarquee();
+    store.cancelGesture();
   }
 
   get labelConnectActive(): boolean {
@@ -61,9 +82,18 @@ export class PointerController {
 
   contextMenu(event: MouseEvent): void {
     event.preventDefault();
-    if (this.longPressFired) return;
-    this.cancelTouchLongPress();
-    openContextMenu(event.clientX, event.clientY, this.contextMenuContext());
+    if (this.touchInput.longPressFired) return;
+    this.touchInput.cancelLongPress();
+    openContextMenu(
+      event.clientX,
+      event.clientY,
+      contextMenuContext(
+        this.host,
+        (clientX, clientY) => localFromClient(this.element, clientX, clientY),
+        () => this.updateCursor(),
+        (itemId, layerId) => this.beginLabelConnection(itemId, layerId),
+      ),
+    );
   }
 
   beginLabelConnection(itemId: string, layerId: string): void {
@@ -76,82 +106,40 @@ export class PointerController {
   commitLabelConnection(page: Point): void {
     const connect = this.labelConnect;
     this.labelConnect = null;
-    commitLabelConnection(page, connect, this.contextMenuContext());
+    commitLabelConnection(
+      page,
+      connect,
+      contextMenuContext(
+        this.host,
+        (clientX, clientY) => localFromClient(this.element, clientX, clientY),
+        () => this.updateCursor(),
+        (itemId, layerId) => this.beginLabelConnection(itemId, layerId),
+      ),
+    );
   }
 
   cancelLabelConnection(): void {
     this.labelConnect = null;
   }
 
-  private contextMenuContext() {
-    return {
-      cropActive: () => this.host.cropActive(),
-      localFromClient: (clientX: number, clientY: number) => this.localFromClient(clientX, clientY),
-      toPage: (screen: Point) => this.host.toPage(screen),
-      viewPage: () => this.host.viewPage(),
-      viewZoom: () => this.host.viewZoom(),
-      measurementLabelHit: (screen: Point) => this.host.measurementLabelHit(screen),
-      isLocked: (
-        item: Parameters<typeof this.host.isLocked>[0],
-        layer: Parameters<typeof this.host.isLocked>[1],
-      ) => this.host.isLocked(item, layer),
-      selectItem: (layerId: string, itemId: string) => this.host.selectItem(layerId, itemId),
-      openHostContextMenu: (position: { page: Point; clientX: number; clientY: number }) =>
-        this.host.openContextMenu(position.clientX, position.clientY),
-      beginLabelConnection: (itemId: string, layerId: string) =>
-        this.beginLabelConnection(itemId, layerId),
-      promptVolumeDepth: (ref: { layerId: string; itemId: string } | null) =>
-        this.host.promptVolumeDepth(ref),
-      updateCursor: () => this.updateCursor(),
-      drawInteraction: () => this.host.drawInteraction(),
-    };
-  }
-
   get touchBlocked(): boolean {
-    return this.touchNavigation.active || this.touchNavigation.suppressed;
+    return this.touchInput.touchBlocked;
   }
 
   markPenDown(event: PointerEvent): void {
-    if (event.pointerType !== "pen") return;
-    this.penActive = true;
-    this.lastPenAt = performance.now();
+    this.touchInput.markPenDown(event);
   }
 
   touchDown(event: PointerEvent): boolean {
-    if (event.pointerType !== "touch") return false;
-    this.cancelTouchLongPress();
-    this.resetLongPressFired();
-    if (this.touchNavigation.pointerDown(event)) return true;
-    this.startTouchLongPress(event);
-    return false;
+    return this.touchInput.down(event);
   }
 
   touchMove(event: PointerEvent): boolean {
-    if (event.pointerType !== "touch") return false;
-    this.trackTouchLongPress(event);
-    if (this.touchNavigation.pointerMove(event)) {
-      event.preventDefault();
-      return true;
-    }
-    return this.longPressFired;
+    return this.touchInput.move(event);
   }
 
   touchUp(event: PointerEvent): boolean {
-    if (event.pointerType === "pen") {
-      this.penActive = false;
-      this.lastPenAt = performance.now();
-      return false;
-    }
-    if (event.pointerType !== "touch") return false;
-    this.cancelTouchLongPress();
-    if (this.longPressFired) {
-      this.resetLongPressFired();
-      if (this.element.hasPointerCapture(event.pointerId)) {
-        this.releasePointer(event.pointerId);
-      }
-      return true;
-    }
-    return this.touchNavigation.pointerUp(event);
+    return this.touchInput.up(event);
   }
 
   get isSpaceDown(): boolean {
@@ -163,111 +151,242 @@ export class PointerController {
   }
 
   get longPressFired(): boolean {
-    return this.touchLongPressFired;
+    return this.touchInput.longPressFired;
   }
 
   resetLongPressFired(): void {
-    this.touchLongPressFired = false;
+    this.touchInput.resetLongPressFired();
+  }
+
+  cancelTouchLongPress(): void {
+    this.touchInput.cancelLongPress();
   }
 
   localPoint(event: PointerEvent | WheelEvent | MouseEvent): Point {
-    return this.localFromClient(event.clientX, event.clientY);
-  }
-
-  localFromClient(clientX: number, clientY: number): Point {
-    const rect = this.element.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }
-
-  capturePointer(pointerId: number): void {
-    try {
-      this.element.setPointerCapture(pointerId);
-    } catch {
-      // Synthetic events and some platforms do not expose an active pointer.
-    }
-  }
-
-  releasePointer(pointerId: number): void {
-    try {
-      this.element.releasePointerCapture(pointerId);
-    } catch {
-      // The pointer may already have been released by the browser.
-    }
+    return localFromClient(this.element, event.clientX, event.clientY);
   }
 
   updateCursor(): void {
-    if (this.host.isReadOnly()) return;
-    const tool = store.ui.activeTool;
-    let cursor = "";
-    if (this.host.cropActive()) {
-      cursor = this.host.cropCursor() ?? "crosshair";
-    } else if (this.pan) {
-      cursor = "grabbing";
-    } else if (this.drag) {
-      const drag = this.drag;
-      if (drag.mode === "rotate") cursor = "grabbing";
-      else if ((drag.mode === "resize" || drag.mode === "scale-selection") && drag.handle) {
-        cursor = cursorForRole(drag.handle);
-      } else if (drag.mode === "vertex") cursor = "crosshair";
-      else if (drag.mode === "measurement-label-size") cursor = "nwse-resize";
-      else cursor = "move";
-    } else if (this.labelConnect) cursor = "crosshair";
-    else if (this.spaceDown || tool === "pan") cursor = "grab";
-    else if (this.marquee) cursor = "crosshair";
-    else if (this.host.hoverLabelResize()) cursor = "nwse-resize";
-    else {
-      const hoverHandle = this.host.hoverHandle();
-      if (hoverHandle) cursor = hoverHandle.cursor;
-      else if (tool === "text") cursor = "text";
-      else if (tool !== "select") cursor = "crosshair";
-      else if (store.ui.hover) cursor = "move";
-    }
-    this.host.setHostCursor(cursor);
+    this.host.setHostCursor(
+      cursorForState({
+        readOnly: this.host.isReadOnly(),
+        cropActive: this.host.cropActive(),
+        cropCursor: this.host.cropCursor(),
+        panActive: this.navigation.panActive,
+        drag: this.drag,
+        labelConnect: this.labelConnect !== null,
+        spaceDown: this.spaceDown,
+        activeTool: store.ui.activeTool,
+        marquee: this.navigation.marqueeActive,
+        hoverLabelResize: this.hoverLabelResize,
+        hoverHandle: this.hoverHandle,
+        hover: Boolean(store.ui.hover),
+      }),
+    );
   }
 
   doubleClick(event: MouseEvent): void {
-    handleDoubleClick(this.localPoint(event), {
-      touchNavigationBlocked: () => this.host.touchNavigationBlocked(),
-      cropActive: () => this.host.cropActive(),
-      activeTool: () => this.host.activeTool(),
-      viewPage: () => this.host.viewPage(),
-      viewZoom: () => this.host.viewZoom(),
-      toPage: (screen) => this.host.toPage(screen),
-      finishDraft: () => this.host.finishDraft(),
-      calibrationLabelHit: (screen) => this.host.calibrationLabelHit(screen),
-      editCalibration: () => this.host.editCalibration(),
-      measurementLabelHit: (screen) => this.host.measurementLabelHit(screen),
-      isLocked: (item, layer) => this.host.isLocked(item, layer),
-      selectItem: (layerId, itemId) => this.host.selectItem(layerId, itemId),
-      promptVolumeDepth: (ref) => this.host.promptVolumeDepth(ref),
-      startLabelEdit: (hit) => this.host.startLabelEdit(hit),
-      editSheetFieldAt: (page, screen) => this.host.editSheetFieldAt(page, screen),
-      startTextEdit: (item, layer) => this.host.startTextEdit(item, layer),
-      startTextBoxEdit: (item, layer) => this.host.startTextBoxEdit(item, layer),
-      editRail: (item) => this.host.editRail(item),
-      startCloudTextEdit: (item, layer) => this.host.startCloudTextEdit(item, layer),
-      startCalloutTextEdit: (item, layer) => this.host.startCalloutTextEdit(item, layer),
-      editItemText: (item) => this.host.editItemText(item),
-    });
+    handleDoubleClick(localPoint(this.element, event), doubleClickContext(this.host));
   }
 
   creationDown(page: Point, event: PointerEvent, tool: ToolId): void {
-    handleCreationDown(page, event, tool, {
-      getDraft: () => this.host.draft(),
-      setDraft: (draft) => this.host.setDraft(draft),
-      snapPoint: (point, excludeItemId) => this.host.snapPoint(point, excludeItemId),
-      snapPolylinePoint: (point) => this.host.snapPolylinePoint(point),
-      constrainPolyline: (last, point, free) => this.host.constrainPolyline(last, point, free),
-      clearSnap: () => this.host.clearSnap(),
-      viewZoom: () => this.host.viewZoom(),
-      drawInteraction: () => this.host.drawInteraction(),
-      capturePointer: (pointerId) => this.capturePointer(pointerId),
-      finishDraft: () => this.host.finishDraft(),
-      finishCallout: (point) => this.host.finishCallout(point),
-      createItem: (kind, points, options) => this.host.createItem(kind, points, options),
-      runCalibration: (p1, p2) => this.host.runCalibration(p1, p2),
-      startTextTool: (point) => this.host.startTextTool(point),
+    handleCreationDown(
+      page,
+      event,
+      tool,
+      creationContext(this.host, (pointerId) => capturePointer(this.element, pointerId)),
+    );
+  }
+
+  attach(): void {
+    if (this.host.isReadOnly()) return;
+    attachPointerListeners(this.element, {
+      down: this.onPointerDown,
+      move: this.onPointerMove,
+      up: this.onPointerUp,
+      leave: this.onPointerLeave,
+      doubleClick: this.onDoubleClick,
+      wheel: this.onWheelEvent,
+      contextMenu: this.onContextMenu,
     });
+  }
+
+  detach(): void {
+    detachPointerListeners(this.element, {
+      down: this.onPointerDown,
+      move: this.onPointerMove,
+      up: this.onPointerUp,
+      leave: this.onPointerLeave,
+      doubleClick: this.onDoubleClick,
+      wheel: this.onWheelEvent,
+      contextMenu: this.onContextMenu,
+    });
+  }
+
+  private readonly onPointerDown = (event: PointerEvent): void => {
+    if (!store.project) return;
+    this.host.commitEditors();
+    this.host.focusCanvas();
+    const screen = localPoint(this.element, event);
+
+    this.markPenDown(event);
+    if (this.touchDown(event)) return;
+
+    if (this.host.cropActive()) {
+      if (event.button !== 0) return;
+      event.preventDefault();
+      this.host.cropPointerDown(this.host.toPage(screen), event);
+      return;
+    }
+
+    if (this.labelConnect) {
+      event.preventDefault();
+      this.commitLabelConnection(this.host.toPage(screen));
+      return;
+    }
+
+    if (event.button === 1 || this.spaceDown || store.ui.activeTool === "pan") {
+      event.preventDefault();
+      this.beginPan(event.clientX, event.clientY, event.pointerId);
+      return;
+    }
+    if (event.button !== 0) return;
+
+    const page = this.host.toPage(screen);
+    const tool = store.ui.activeTool;
+    if (tool === "select") {
+      this.beginSelection(page, screen, event);
+      return;
+    }
+    this.creationDown(page, event, tool);
+  };
+
+  private beginSelection(page: Point, screen: Point, event: PointerEvent): void {
+    beginSelection(page, screen, event, {
+      toScreen: (point) => this.host.toScreen(point),
+      viewPage: () => this.host.viewPage(),
+      viewZoom: () => this.host.viewZoom(),
+      beginDrag: (drag, pointerId) => this.beginDrag(drag, pointerId),
+      beginMarquee: (marqueePage, additive, pointerId) =>
+        this.beginMarquee(marqueePage, additive, pointerId),
+      drawInteraction: () => this.host.drawInteraction(),
+      labelResizeAt: (item, point) => this.host.labelResizeAt(item, point),
+      pageLabelLayouts: () => this.host.pageLabelLayouts(),
+      measurementLabelHit: (point) => this.host.measurementLabelHit(point),
+    });
+  }
+
+  private readonly onPointerMove = (event: PointerEvent): void => {
+    if (!store.project) return;
+    const screen = localPoint(this.element, event);
+    if (this.touchMove(event)) return;
+
+    this.pointerScreen = screen;
+    const page = this.host.toPage(screen);
+    store.setCursor(page);
+
+    if (this.host.cropActive()) {
+      this.host.cropPointerMove(page);
+      return;
+    }
+    if (this.updatePan(event)) return;
+    if (this.dragActive) {
+      this.applyDrag(page, event.shiftKey);
+      return;
+    }
+    if (this.updateMarquee(page)) return;
+
+    if (
+      updateDraftFromPointer(
+        page,
+        event,
+        creationContext(this.host, (pointerId) => capturePointer(this.element, pointerId)),
+      )
+    )
+      return;
+
+    const tool = store.ui.activeTool;
+    if (tool === "select") {
+      const hover = updateHover(page, screen, {
+        toScreen: (point) => this.host.toScreen(point),
+        viewPage: () => this.host.viewPage(),
+        viewZoom: () => this.host.viewZoom(),
+        labelResizeAt: (item, point) => this.host.labelResizeAt(item, point),
+      });
+      this.hoverHandle = hover.handle;
+      this.hoverLabelResize = hover.labelResize;
+      store.setHover(hover.hover);
+      this.updateCursor();
+      this.host.drawInteraction();
+    } else {
+      this.hoverHandle = null;
+      this.hoverLabelResize = false;
+      if (toolUsesSnapping(tool)) this.host.snapPoint(page);
+      else this.host.clearSnap();
+      this.updateCursor();
+      this.host.drawInteraction();
+    }
+  };
+
+  private readonly onPointerUp = (event: PointerEvent): void => {
+    if (this.touchUp(event)) return;
+    if (this.element.hasPointerCapture(event.pointerId)) {
+      releasePointer(this.element, event.pointerId);
+    }
+    if (this.host.cropActive()) {
+      this.host.cropPointerUp();
+      return;
+    }
+    if (this.endPan()) return;
+    if (this.marqueeActive) {
+      this.finishMarquee();
+      return;
+    }
+    if (this.dragActive) {
+      this.host.clearSnap();
+      this.endDrag();
+      return;
+    }
+    finishDraftOnPointerUp({
+      getDraft: () => this.host.draft(),
+      finishPen: () => this.host.finishPen(),
+      finishQuickArea: () => this.host.finishQuickArea(),
+      finishShape: () => this.host.finishShape(),
+    });
+  };
+
+  private readonly onPointerLeave = (): void => {
+    this.cancelTouchLongPress();
+    if (this.host.cropActive()) {
+      this.host.cropPointerLeave();
+      return;
+    }
+    if (this.dragActive || this.panActive) return;
+    this.pointerScreen = null;
+    this.hoverHandle = null;
+    this.hoverLabelResize = false;
+    store.setCursor(null);
+    store.setHover(null);
+    this.host.clearSnap();
+    this.updateCursor();
+    this.host.drawInteraction();
+  };
+
+  private readonly onDoubleClick = (event: MouseEvent): void => {
+    this.doubleClick(event);
+  };
+
+  private readonly onContextMenu = (event: MouseEvent): void => {
+    this.contextMenu(event);
+  };
+
+  private readonly onWheelEvent = (event: WheelEvent): void => {
+    this.onWheel(event);
+  };
+
+  clearHover(): void {
+    this.hoverHandle = null;
+    this.hoverLabelResize = false;
   }
 
   get dragActive(): boolean {
@@ -280,7 +399,7 @@ export class PointerController {
 
   beginDrag(drag: DragState, pointerId: number): void {
     this.drag = drag;
-    this.capturePointer(pointerId);
+    capturePointer(this.element, pointerId);
     this.updateCursor();
     this.host.drawInteraction();
   }
@@ -326,146 +445,56 @@ export class PointerController {
   }
 
   get panActive(): boolean {
-    return this.pan !== null;
+    return this.navigation.panActive;
   }
 
   get marqueeActive(): boolean {
-    return this.marquee !== null;
+    return this.navigation.marqueeActive;
   }
 
   get marqueeState(): MarqueeState | null {
-    return this.marquee;
+    return this.navigation.marqueeState;
   }
 
   beginPan(clientX: number, clientY: number, pointerId: number): void {
-    const view = this.host.viewport();
-    this.pan = {
-      startX: clientX,
-      startY: clientY,
-      panX: view.panX,
-      panY: view.panY,
-    };
-    this.capturePointer(pointerId);
-    this.updateCursor();
+    this.navigation.beginPan(clientX, clientY, pointerId);
   }
 
   updatePan(event: PointerEvent): boolean {
-    if (!this.pan) return false;
-    const dx = event.clientX - this.pan.startX;
-    const dy = event.clientY - this.pan.startY;
-    const view = this.host.viewport();
-    store.setView(view.zoom, this.pan.panX + dx, this.pan.panY + dy);
-    return true;
+    return this.navigation.updatePan(event);
   }
 
   endPan(): boolean {
-    if (!this.pan) return false;
-    this.pan = null;
-    this.updateCursor();
-    return true;
+    return this.navigation.endPan();
   }
 
   cancelPan(): void {
-    this.pan = null;
+    this.navigation.cancelPan();
   }
 
   beginMarquee(page: Point, additive: boolean, pointerId: number): void {
-    this.marquee = { start: page, current: page, additive };
-    this.capturePointer(pointerId);
-    this.updateCursor();
-    this.host.drawInteraction();
+    this.navigation.beginMarquee(page, additive, pointerId);
   }
 
   updateMarquee(page: Point): boolean {
-    if (!this.marquee) return false;
-    this.marquee.current = page;
-    this.host.drawInteraction();
-    return true;
+    return this.navigation.updateMarquee(page);
   }
 
   finishMarquee(): void {
-    const marquee = this.marquee;
-    this.marquee = null;
-    const view = this.host.viewport();
-    if (!marquee || !store.project) {
-      this.host.drawInteraction();
-      return;
-    }
-    const rect = expandRect(marquee.start, marquee.current);
-    if (rect.width < 2 / view.zoom && rect.height < 2 / view.zoom) {
-      this.updateCursor();
-      this.host.drawInteraction();
-      return;
-    }
-    const refs = marquee.additive ? [...store.ui.selection] : [];
-    const min = { x: rect.x, y: rect.y };
-    const max = { x: rect.x + rect.width, y: rect.y + rect.height };
-    for (const layer of store.project.layers) {
-      if (!layerVisibleOnPage(layer, view.page)) continue;
-      for (const item of layer.items) {
-        if (item.page !== view.page || !itemIsVisible(item, layer)) continue;
-        if (itemIntersectsBounds(item, min, max)) {
-          refs.push({ layerId: layer.id, itemId: item.id });
-        }
-      }
-    }
-    store.setSelectionMany(refs);
-    this.updateCursor();
-    this.host.drawInteraction();
+    this.navigation.finishMarquee();
   }
 
   cancelMarquee(): void {
-    this.marquee = null;
+    this.navigation.cancelMarquee();
   }
 
   cancelPanAndMarquee(): void {
-    this.pan = null;
-    this.marquee = null;
+    this.navigation.cancelAll();
   }
 
   onWheel(event: WheelEvent): void {
-    if (!store.project) return;
-    event.preventDefault();
-    if (event.ctrlKey || event.metaKey) {
-      const factor = Math.exp(-event.deltaY * 0.0018);
-      this.host.zoomAt(this.localPoint(event), factor);
-      return;
-    }
-    const dx = event.shiftKey ? event.deltaY : event.deltaX;
-    const dy = event.shiftKey ? 0 : event.deltaY;
-    const view = this.host.viewport();
-    store.setView(view.zoom, view.panX - dx, view.panY - dy);
-  }
-
-  startTouchLongPress(event: PointerEvent): void {
-    this.cancelTouchLongPress();
-    if (event.pointerType !== "touch" || store.ui.activeTool !== "select") return;
-    this.touchLongPressStart = { x: event.clientX, y: event.clientY };
-    this.touchLongPressTimer = window.setTimeout(() => {
-      this.touchLongPressTimer = null;
-      this.touchLongPressFired = true;
-      this.host.cancelGesture();
-      this.host.openContextMenu(event.clientX, event.clientY);
-    }, 550);
-  }
-
-  trackTouchLongPress(event: PointerEvent): void {
-    if (!this.touchLongPressStart || event.pointerType !== "touch") return;
-    if (
-      Math.hypot(
-        event.clientX - this.touchLongPressStart.x,
-        event.clientY - this.touchLongPressStart.y,
-      ) > 8
-    ) {
-      this.cancelTouchLongPress();
-    }
-  }
-
-  cancelTouchLongPress(): void {
-    if (this.touchLongPressTimer !== null) {
-      window.clearTimeout(this.touchLongPressTimer);
-      this.touchLongPressTimer = null;
-    }
-    this.touchLongPressStart = null;
+    this.navigation.onWheel(event, localPoint(this.element, event), (point, factor) =>
+      this.host.zoomAt(point, factor),
+    );
   }
 }
