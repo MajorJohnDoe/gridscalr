@@ -19,17 +19,29 @@ import {
   setLineJoin,
   setLineWidth,
   setStrokingColor,
-  StandardFonts,
   type PDFFont,
-  type PDFImage,
   type PDFPage,
   type RGB,
 } from "pdf-lib";
 import type { PageViewport } from "pdfjs-dist";
-import regularFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Regular.ttf?url";
-import boldFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Bold.ttf?url";
-import italicFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-Italic.ttf?url";
-import boldItalicFontUrl from "pdfjs-dist/standard_fonts/LiberationSans-BoldItalic.ttf?url";
+import {
+  clamp,
+  cloudSvgPath,
+  drawArrowHead,
+  drawPolyline,
+  itemRectCorners,
+  pdfAngle,
+  pdfColor,
+  pdfRectFromCorners,
+  roundedRectSvgPath,
+  svgPolygon,
+  toPdfPoint,
+} from "./export/geometry";
+import { embedFonts, runFont } from "./export/fonts";
+import { embedImages } from "./export/images";
+import { normalizeCrop, normalizeExportPages } from "./export/options";
+import { applyCrop, drawCalibrationLine } from "./export/page";
+import type { ExportFonts, ExportImages } from "./export/types";
 import { countSymbol } from "../model/countSymbols";
 import { countQuantityOf, countTypeGlyph, countTypeLabel } from "../features/countTypes/model";
 import { areaShapeOf, rectangleCorners } from "../model/area";
@@ -45,12 +57,7 @@ import {
 } from "../model/annotations";
 import { documentPageMaps } from "../model/documents";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
-import {
-  formatPageList,
-  pageRectFromCrop,
-  type DrawingExportOptions,
-  type NormalizedCrop,
-} from "../model/export";
+import { formatPageList, type DrawingExportOptions } from "../model/export";
 import {
   angleArcPolyline,
   arcPolyline,
@@ -75,7 +82,7 @@ import {
   textLineX,
   wrapText,
 } from "../model/text";
-import type { CountGlyph, CountType, ImageAsset, MarkupItem, Point, Project } from "../model/types";
+import type { CountGlyph, CountType, MarkupItem, Point, Project } from "../model/types";
 import { MIN_EXPORT_STROKE_WIDTH } from "../model/style";
 import {
   inspectionStatusColor,
@@ -95,20 +102,8 @@ import { templateDocumentForPage } from "../features/schematics/model/sheetDocum
 import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
 import { drawSheetFields } from "../features/schematics/render/sheetPdf";
 
-interface ExportFonts {
-  regular: PDFFont;
-  bold: PDFFont;
-  italic: PDFFont;
-  boldItalic: PDFFont;
-}
-
-interface PdfRect {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  angle: number;
-}
+export { pdfCropBoxForViewport } from "./export/options";
+export type { PdfCropBox } from "./export/options";
 
 const INK = rgb(0.933, 0.953, 0.961);
 const LABEL_BG = rgb(0.047, 0.063, 0.071);
@@ -226,123 +221,6 @@ export async function exportProjectPdf(
   }
 
   return pdf.save();
-}
-
-function normalizeExportPages(pages: readonly number[] | undefined, pageCount: number): number[] {
-  if (pageCount < 1) throw new Error(t("pdfExport.noPages"));
-  if (!pages) return Array.from({ length: pageCount }, (_, index) => index + 1);
-  const selected = [
-    ...new Set(
-      pages
-        .filter((page) => Number.isInteger(page) && page >= 1 && page <= pageCount)
-        .map((page) => Math.round(page)),
-    ),
-  ].sort((a, b) => a - b);
-  if (!selected.length) throw new Error(t("pdfExport.selectPages"));
-  return selected;
-}
-
-function normalizeCrop(crop: NormalizedCrop | undefined): NormalizedCrop | undefined {
-  if (!crop) return undefined;
-  const values = [crop.x, crop.y, crop.width, crop.height];
-  if (!values.every(Number.isFinite)) return undefined;
-  const x = clamp(crop.x, 0, 1);
-  const y = clamp(crop.y, 0, 1);
-  const width = Math.min(clamp(crop.width, 0, 1), 1 - x);
-  const height = Math.min(clamp(crop.height, 0, 1), 1 - y);
-  if (width <= 0 || height <= 0) return undefined;
-  return { x, y, width, height };
-}
-
-export interface PdfCropBox {
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-}
-
-/**
- * Maps a relative view crop onto the page's PDF coordinate space, then clips it
- * against the existing CropBox so a source document can never reveal hidden
- * content. The viewport handles page rotation.
- */
-export function pdfCropBoxForViewport(
-  viewport: Pick<PageViewport, "width" | "height" | "rotation" | "convertToPdfPoint">,
-  crop: NormalizedCrop,
-  existingCrop: PdfCropBox,
-): PdfCropBox {
-  const rotationValue = Number.isFinite(viewport.rotation) ? viewport.rotation : 0;
-  const rotation = ((rotationValue % 360) + 360) % 360;
-  if (rotation % 90 !== 0) {
-    throw new Error(t("pdfExport.rotationUnsupported"));
-  }
-  const rect = pageRectFromCrop(crop, {
-    width: viewport.width,
-    height: viewport.height,
-  });
-  const corners = [
-    viewport.convertToPdfPoint(rect.x, rect.y),
-    viewport.convertToPdfPoint(rect.x + rect.width, rect.y),
-    viewport.convertToPdfPoint(rect.x, rect.y + rect.height),
-    viewport.convertToPdfPoint(rect.x + rect.width, rect.y + rect.height),
-  ];
-  const xs = corners.map((point) => point[0]);
-  const ys = corners.map((point) => point[1]);
-  const box = {
-    x: Math.min(...xs),
-    y: Math.min(...ys),
-    width: Math.max(...xs) - Math.min(...xs),
-    height: Math.max(...ys) - Math.min(...ys),
-  };
-  const clipped = intersectBoxes(box, existingCrop);
-  if (clipped.width < 1 || clipped.height < 1) {
-    throw new Error(t("pdfExport.areaInvalid"));
-  }
-  return clipped;
-}
-
-function applyCrop(page: PDFPage, viewport: PageViewport, crop: NormalizedCrop): void {
-  const box = pdfCropBoxForViewport(viewport, crop, page.getCropBox());
-  page.setCropBox(box.x, box.y, box.width, box.height);
-  page.setMediaBox(box.x, box.y, box.width, box.height);
-}
-
-function intersectBoxes(first: PdfCropBox, second: PdfCropBox): PdfCropBox {
-  const left = Math.max(first.x, second.x);
-  const bottom = Math.max(first.y, second.y);
-  const right = Math.min(first.x + first.width, second.x + second.width);
-  const top = Math.min(first.y + first.height, second.y + second.height);
-  return {
-    x: left,
-    y: bottom,
-    width: Math.max(0, right - left),
-    height: Math.max(0, top - bottom),
-  };
-}
-
-function drawCalibrationLine(page: PDFPage, viewport: PageViewport, p1: Point, p2: Point): void {
-  const color = pdfColor("#a78bfa");
-  const start = toPdfPoint(viewport, p1);
-  const end = toPdfPoint(viewport, p2);
-  page.drawLine({
-    start,
-    end,
-    thickness: 1.5,
-    color,
-    opacity: 1,
-    dashArray: [6, 4],
-    lineCap: LineCapStyle.Round,
-  });
-  for (const point of [start, end]) {
-    page.drawCircle({
-      x: point.x,
-      y: point.y,
-      size: 4.5,
-      color: rgb(0.102, 0.125, 0.141),
-      borderColor: color,
-      borderWidth: 1,
-    });
-  }
 }
 
 function drawLegendPage(
@@ -514,81 +392,6 @@ function truncateText(font: PDFFont, text: string, size: number, maxWidth: numbe
   return `${value}…`;
 }
 
-async function embedFonts(pdf: PDFDocument): Promise<ExportFonts> {
-  try {
-    const [regular, bold, italic, boldItalic] = await Promise.all([
-      fetch(regularFontUrl).then((response) => {
-        if (!response.ok) throw new Error(t("pdfExport.regularFontUnavailable"));
-        return response.arrayBuffer();
-      }),
-      fetch(boldFontUrl).then((response) => {
-        if (!response.ok) throw new Error(t("pdfExport.boldFontUnavailable"));
-        return response.arrayBuffer();
-      }),
-      fetch(italicFontUrl).then((response) => {
-        if (!response.ok) throw new Error(t("pdfExport.regularFontUnavailable"));
-        return response.arrayBuffer();
-      }),
-      fetch(boldItalicFontUrl).then((response) => {
-        if (!response.ok) throw new Error(t("pdfExport.boldFontUnavailable"));
-        return response.arrayBuffer();
-      }),
-    ]);
-    return {
-      regular: await pdf.embedFont(new Uint8Array(regular), { subset: true }),
-      bold: await pdf.embedFont(new Uint8Array(bold), { subset: true }),
-      italic: await pdf.embedFont(new Uint8Array(italic), { subset: true }),
-      boldItalic: await pdf.embedFont(new Uint8Array(boldItalic), { subset: true }),
-    };
-  } catch {
-    return {
-      regular: await pdf.embedFont(StandardFonts.Helvetica),
-      bold: await pdf.embedFont(StandardFonts.HelveticaBold),
-      italic: await pdf.embedFont(StandardFonts.HelveticaOblique),
-      boldItalic: await pdf.embedFont(StandardFonts.HelveticaBoldOblique),
-    };
-  }
-}
-
-function runFont(fonts: ExportFonts, run: { bold: boolean; italic: boolean }): PDFFont {
-  if (run.bold) return run.italic ? fonts.boldItalic : fonts.bold;
-  return run.italic ? fonts.italic : fonts.regular;
-}
-
-async function embedImages(
-  pdf: PDFDocument,
-  project: Project,
-  pages: readonly number[],
-  selectedLayers: ReadonlySet<string>,
-): Promise<Map<string, PDFImage>> {
-  const selectedPages = new Set(pages);
-  const embedded = new Map<string, PDFImage>();
-  const assets = new Map<string, ImageAsset>();
-  for (const layer of project.layers) {
-    if (!selectedLayers.has(layer.id)) continue;
-    for (const item of layer.items) {
-      if (item.kind !== "image" || !item.image || !itemIsVisible(item, layer)) continue;
-      if (!selectedPages.has(item.page)) continue;
-      const asset = project.assets[item.image.assetId];
-      if (asset) assets.set(asset.id, asset);
-    }
-  }
-  for (const asset of assets.values()) {
-    if (!asset.data) continue;
-    try {
-      embedded.set(
-        asset.id,
-        asset.mime === "image/png"
-          ? await pdf.embedPng(asset.data)
-          : await pdf.embedJpg(asset.data),
-      );
-    } catch {
-      // A corrupt image must not abort the rest of the drawing export.
-    }
-  }
-  return embedded;
-}
-
 function drawItem(
   page: PDFPage,
   viewport: PageViewport,
@@ -597,7 +400,7 @@ function drawItem(
   layerOpacity: number,
   fonts: ExportFonts,
   labels: Map<string, LabelLayout>,
-  images: Map<string, PDFImage>,
+  images: ExportImages,
 ): void {
   const color = pdfColor(item.color);
   const width = Math.max(MIN_EXPORT_STROKE_WIDTH, item.strokeWidth);
@@ -1293,33 +1096,6 @@ function drawLabelBackground(
   });
 }
 
-function roundedRectSvgPath(
-  viewport: PageViewport,
-  box: { x: number; y: number; width: number; height: number },
-  radius: number,
-): string {
-  const r = Math.max(0, Math.min(radius, box.width / 2, box.height / 2));
-  const right = box.x + box.width;
-  const bottom = box.y + box.height;
-  const k = r * 0.5522847498;
-  const point = (x: number, y: number) => {
-    const pdfPoint = toPdfPoint(viewport, { x, y });
-    return `${pdfPoint.x} ${-pdfPoint.y}`;
-  };
-  return [
-    `M ${point(box.x + r, box.y)}`,
-    `L ${point(right - r, box.y)}`,
-    `C ${point(right - r + k, box.y)} ${point(right, box.y + r - k)} ${point(right, box.y + r)}`,
-    `L ${point(right, bottom - r)}`,
-    `C ${point(right, bottom - r + k)} ${point(right - r + k, bottom)} ${point(right - r, bottom)}`,
-    `L ${point(box.x + r, bottom)}`,
-    `C ${point(box.x + r - k, bottom)} ${point(box.x, bottom - r + k)} ${point(box.x, bottom - r)}`,
-    `L ${point(box.x, box.y + r)}`,
-    `C ${point(box.x, box.y + r - k)} ${point(box.x + r - k, box.y)} ${point(box.x + r, box.y)}`,
-    "Z",
-  ].join(" ");
-}
-
 function drawCenteredText(
   page: PDFPage,
   viewport: PageViewport,
@@ -1567,64 +1343,6 @@ function drawSymbolItem(
   }
 }
 
-function drawPolyline(
-  page: PDFPage,
-  viewport: PageViewport,
-  points: Point[],
-  color: RGB,
-  width: number,
-  opacity: number,
-  closed: boolean,
-  lineCap: LineCapStyle = LineCapStyle.Round,
-  dashArray?: number[],
-): void {
-  if (points.length < 2) return;
-  const count = closed ? points.length : points.length - 1;
-  for (let index = 0; index < count; index++) {
-    const start = toPdfPoint(viewport, points[index]);
-    const endPoint = points[(index + 1) % points.length];
-    const end = toPdfPoint(viewport, endPoint);
-    page.drawLine({
-      start,
-      end,
-      thickness: width,
-      color,
-      opacity: clamp(opacity, 0, 1),
-      lineCap,
-      dashArray,
-    });
-  }
-}
-
-function drawArrowHead(
-  page: PDFPage,
-  viewport: PageViewport,
-  tip: Point,
-  head: { wingA: Point; wingB: Point },
-  color: RGB,
-  opacity: number,
-): void {
-  const pdfTip = toPdfPoint(viewport, tip);
-  const pdfA = toPdfPoint(viewport, head.wingA);
-  const pdfB = toPdfPoint(viewport, head.wingB);
-  // drawSvgPath flips the SVG y-axis, so negate the PDF y values.
-  const path = `M ${pdfTip.x} ${-pdfTip.y} L ${pdfA.x} ${-pdfA.y} L ${pdfB.x} ${-pdfB.y} Z`;
-  page.drawSvgPath(path, { x: 0, y: 0, color, opacity: clamp(opacity, 0, 1) });
-}
-
-function cloudSvgPath(viewport: PageViewport, curves: ReturnType<typeof cloudCurves>): string {
-  const point = (value: Point) => {
-    const pdf = toPdfPoint(viewport, value);
-    return `${pdf.x} ${-pdf.y}`;
-  };
-  const parts = [`M ${point(curves[0].start)}`];
-  for (const curve of curves) {
-    parts.push(`C ${point(curve.cp1)} ${point(curve.cp2)} ${point(curve.end)}`);
-  }
-  parts.push("Z");
-  return parts.join(" ");
-}
-
 function drawAnnotationPanel(
   page: PDFPage,
   viewport: PageViewport,
@@ -1802,84 +1520,4 @@ function drawDelta(
       opacity,
     );
   }
-}
-
-function itemRectCorners(item: MarkupItem): Point[] {
-  const a = item.points[0];
-  const b = item.points[1] ?? item.points[0];
-  const min = { x: Math.min(a.x, b.x), y: Math.min(a.y, b.y) };
-  const max = { x: Math.max(a.x, b.x), y: Math.max(a.y, b.y) };
-  const center = midpoint(min, max);
-  const rotation = item.rotation ?? 0;
-  return [
-    rotatePoint(min, center, rotation),
-    rotatePoint({ x: max.x, y: min.y }, center, rotation),
-    rotatePoint(max, center, rotation),
-    rotatePoint({ x: min.x, y: max.y }, center, rotation),
-  ];
-}
-
-function pdfRectFromCorners(viewport: PageViewport, corners: Point[]): PdfRect {
-  const pdfCorners = corners.map((point) => toPdfPoint(viewport, point));
-  const widthA = subtract(pdfCorners[1], pdfCorners[0]);
-  const heightA = subtract(pdfCorners[3], pdfCorners[0]);
-  const cross = widthA.x * heightA.y - widthA.y * heightA.x;
-  let anchor = pdfCorners[0];
-  let widthVector = widthA;
-  let heightVector = heightA;
-  if (cross <= 0) {
-    anchor = pdfCorners[3];
-    widthVector = subtract(pdfCorners[2], pdfCorners[3]);
-    heightVector = subtract(pdfCorners[0], pdfCorners[3]);
-  }
-  return {
-    x: anchor.x,
-    y: anchor.y,
-    width: Math.max(0.1, Math.hypot(widthVector.x, widthVector.y)),
-    height: Math.max(0.1, Math.hypot(heightVector.x, heightVector.y)),
-    angle: (Math.atan2(widthVector.y, widthVector.x) * 180) / Math.PI,
-  };
-}
-
-function toPdfPoint(viewport: PageViewport, point: Point): Point {
-  const converted = viewport.convertToPdfPoint(point.x, point.y);
-  return { x: converted[0], y: converted[1] };
-}
-
-function pdfAngle(viewport: PageViewport, rotationDegrees: number): number {
-  const radians = (rotationDegrees * Math.PI) / 180;
-  const start = toPdfPoint(viewport, { x: 0, y: 0 });
-  const end = toPdfPoint(viewport, { x: Math.cos(radians), y: Math.sin(radians) });
-  return (Math.atan2(end.y - start.y, end.x - start.x) * 180) / Math.PI;
-}
-
-function svgPolygon(viewport: PageViewport, points: Point[]): string {
-  const pdfPoints = points.map((point) => toPdfPoint(viewport, point));
-  // drawSvgPath flips the SVG y-axis to PDF coordinates, so negate the PDF y
-  // values here to keep area fills aligned with the separately drawn outline.
-  return `${pdfPoints
-    .map((point, index) => `${index === 0 ? "M" : "L"} ${point.x} ${-point.y}`)
-    .join(" ")} Z`;
-}
-
-function pdfColor(hex: string): RGB {
-  const value = hex.replace("#", "");
-  const full =
-    value.length === 3
-      ? value
-          .split("")
-          .map((part) => part + part)
-          .join("")
-      : value;
-  const int = Number.parseInt(full, 16);
-  if (!Number.isFinite(int) || full.length !== 6) return rgb(0.93, 0.95, 0.96);
-  return rgb(((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255);
-}
-
-function subtract(a: Point, b: Point): Point {
-  return { x: a.x - b.x, y: a.y - b.y };
-}
-
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value));
 }
