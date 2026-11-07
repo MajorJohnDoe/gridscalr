@@ -58,10 +58,13 @@ function pumpBody(): string {
   return joinPaths(smallCircle(32, 32, 16), polyPath([32, 20, 44, 40, 20, 40], true));
 }
 
-/** The same pump circle with a smaller flow triangle pointing left, nudged left. */
-function pumpBodyLeft(): string {
-  return joinPaths(smallCircle(32, 32, 16), polyPath([17, 32, 35.5, 23.5, 35.5, 40.5], true));
+/** The pump circle with a slightly smaller upright flow triangle, nudged up. */
+function pumpBodyUp(): string {
+  return joinPaths(smallCircle(32, 32, 16), polyPath([32, 18, 43, 37, 21, 37], true));
 }
+
+/** The filled upper half of the upright pump triangle. */
+const PUMP_TOP_HALF = polyPath([32, 18, 37.5, 27.5, 26.5, 27.5], true);
 
 function meterBody(): string {
   return joinPaths(rectPath(12, 16, 40, 32), smallCircle(32, 30, 9), linePath(26, 38, 38, 38));
@@ -364,10 +367,10 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     tagPrefix: "CP",
     ports: PUMP_PORTS(),
     shapes: [
-      stroke(pumpBodyLeft()),
-      // Filled arrowhead at the left tip, so the flow direction reads at any
-      // size and matches the orientation of the drawing.
-      fill(polyPath([17, 32, 24.5, 28.55, 24.5, 35.45], true)),
+      stroke(pumpBodyUp()),
+      // The solid top half reads as flow direction at any size and matches the
+      // orientation of the drawing.
+      fill(PUMP_TOP_HALF),
     ],
   }),
   schematicSymbol({
