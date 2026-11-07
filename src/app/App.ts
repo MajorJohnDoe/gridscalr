@@ -70,6 +70,7 @@ import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
 import { classifyOpenTarget } from "./openTarget";
+import { SearchController } from "./searchController";
 import {
   chooseImportPages,
   confirmChecksumMismatch,
@@ -121,9 +122,6 @@ import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
 import { toggleInspector, toggleSidebar } from "../ui/sidebar";
-import { SearchPanel } from "../ui/searchPanel";
-import { PdfTextIndex, type SearchHit } from "../search/textIndex";
-import { disposeOcrWorker, isOcrCurrent, ocrPageToText, runOcrPage } from "../search/ocr";
 import { ReferenceController } from "./referenceController";
 import {
   openPackageFlow,
@@ -176,12 +174,7 @@ export class App {
   private refs: ShellRefs;
   private canvas: CanvasView;
   private reference: ReferenceController;
-  private textIndex: PdfTextIndex | null = null;
-  private searchPanel: SearchPanel | null = null;
-  private searchQuery = "";
-  private searchDebounce: number | null = null;
-  private ocrBusy = false;
-  private ocrToken = 0;
+  private search: SearchController;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -243,7 +236,7 @@ export class App {
       hasReferenceSession: () => this.reference.hasSession,
       openCompare: () => void this.reference.openCompare(),
       openDrawingReference: () => void this.reference.openDrawingReference(),
-      openSearch: () => this.openSearchFlow(),
+      openSearch: () => this.search.open(),
       openQuantities: () => openQuantitiesDialog(this.actions),
       startCalibration: () => this.startCalibration(),
       clearCalibration: () => void this.clearCalibrationFlow(),
@@ -306,6 +299,15 @@ export class App {
       onContextMenu: ({ clientX, clientY }) => showSelectionMenuAt(clientX, clientY, this.actions),
     });
 
+    this.search = new SearchController({
+      host: this.refs.canvasArea,
+      project: () => store.project,
+      renderer: () => this.renderer,
+      canvas: () => this.canvas,
+      enqueuePageSize: (page) => this.enqueuePageSize(page),
+      isDisposed: () => this.disposed,
+    });
+
     this.reference = new ReferenceController({
       canvasArea: this.refs.canvasArea,
       referencePaneHost: this.refs.referencePane,
@@ -339,7 +341,7 @@ export class App {
         }
         if (!autosaveError) this.autosaveWarned = null;
       }
-      if (reason === "project" && this.searchPanel) this.closeSearch();
+      if (reason === "project") this.search.close();
       this.reference.onStoreChange(reason);
       this.renderAll();
     });
@@ -469,7 +471,7 @@ export class App {
       }
       if (event.shiftKey && event.code === "KeyF") {
         event.preventDefault();
-        this.openSearchFlow();
+        this.search.open();
         return;
       }
       switch (key) {
@@ -969,7 +971,7 @@ export class App {
   }
 
   private async resetProject(): Promise<void> {
-    this.closeSearch();
+    this.search.close();
     await this.reference.close(false);
     this.reference.splitView.setOpen(false);
     store.closeProject();
@@ -1112,7 +1114,7 @@ export class App {
     projectPath: string | null,
     dirty: boolean,
   ): Promise<void> {
-    this.closeSearch();
+    this.search.close();
     const loaded: PDFDocumentProxy[] = [];
     const loadedById = new Map<string, PDFDocumentProxy>();
     const loadedByKey = new Map<string, PDFDocumentProxy>();
@@ -1723,144 +1725,6 @@ export class App {
     }
   }
 
-  private openSearchFlow(): void {
-    const project = store.project;
-    if (!project || !this.renderer) return;
-    if (this.searchPanel) {
-      this.searchPanel.focus();
-      return;
-    }
-    this.searchQuery = "";
-    const index = new PdfTextIndex(totalPageCount(project.documents), (page) =>
-      this.renderer!.getPage(page),
-    );
-    for (let page = 1; page <= index.pageCount; page += 1) {
-      const stored = project.pages[String(page)]?.ocr;
-      if (stored && isOcrCurrent(project, page, stored)) {
-        index.seed(page, ocrPageToText(stored, page));
-      }
-    }
-    this.textIndex = index;
-    this.searchPanel = new SearchPanel(this.refs.canvasArea, {
-      onQuery: (query) => this.onSearchQuery(query),
-      onSelect: (hit) => void this.selectSearchHit(hit),
-      onOcr: () => void this.runOcrScans(),
-      onClose: () => this.closeSearch(),
-    });
-    this.searchPanel.setProgress(0, index.pageCount);
-    this.searchPanel.setResults([], "", 0, index.pageCount);
-    void this.indexTextSearch(index);
-  }
-
-  private onSearchQuery(query: string): void {
-    this.searchQuery = query;
-    if (this.searchDebounce !== null) window.clearTimeout(this.searchDebounce);
-    this.searchDebounce = window.setTimeout(() => {
-      this.searchDebounce = null;
-      this.runSearch(query);
-    }, 120);
-  }
-
-  private runSearch(query: string): void {
-    const index = this.textIndex;
-    if (!index || !this.searchPanel) return;
-    this.searchPanel.setResults(index.search(query), query, index.indexedCount, index.pageCount);
-  }
-
-  private async indexTextSearch(index: PdfTextIndex): Promise<void> {
-    await index.indexAll((done, total) => {
-      if (this.textIndex !== index || !this.searchPanel) return;
-      this.searchPanel.setProgress(done, total);
-      if (this.searchQuery.trim()) this.runSearch(this.searchQuery);
-    });
-    if (this.textIndex !== index || !this.searchPanel) return;
-    this.searchPanel.setIndexComplete(index.indexedCount);
-    if (this.searchQuery.trim()) this.runSearch(this.searchQuery);
-  }
-
-  private async selectSearchHit(hit: SearchHit): Promise<void> {
-    const project = store.project;
-    if (!project) return;
-    if (hit.page < 1 || hit.page > totalPageCount(project.documents)) return;
-    await this.enqueuePageSize(hit.page);
-    if (store.ui.page !== hit.page) store.setPage(hit.page);
-    this.canvas.setSearchHits(hit.page, hit.rects);
-    this.canvas.focusBounds(hit.bounds);
-    this.canvas.invalidate();
-  }
-
-  private async runOcrScans(): Promise<void> {
-    const index = this.textIndex;
-    const panel = this.searchPanel;
-    const renderer = this.renderer;
-    if (!index || !panel || !renderer || !store.project || this.ocrBusy) return;
-    this.ocrBusy = true;
-    panel.setOcrBusy(true);
-    const token = ++this.ocrToken;
-    let scanned = 0;
-    try {
-      for (let page = 1; page <= index.pageCount; page += 1) {
-        if (token !== this.ocrToken || this.textIndex !== index || !this.searchPanel) return;
-        const pageText = await index.page(page);
-        if (pageText.text.trim().length >= 8) continue;
-        const project = store.project;
-        if (!project) return;
-        const stored = project.pages[String(page)]?.ocr;
-        if (stored && isOcrCurrent(project, page, stored)) {
-          index.setPageText(page, ocrPageToText(stored, page));
-          continue;
-        }
-        panel.setStatus(t("app.ocrPageProgress", { page, total: index.pageCount }));
-        const ocr = await runOcrPage(project, page, renderer, (message, progress) => {
-          if (token !== this.ocrToken) return;
-          panel.setStatus(
-            t("app.ocrPageProgressDetail", {
-              page,
-              total: index.pageCount,
-              message,
-              percent: Math.round(progress * 100),
-            }),
-          );
-        });
-        if (token !== this.ocrToken || this.textIndex !== index) return;
-        store.setPageOcr(page, ocr);
-        index.setPageText(page, ocrPageToText(ocr, page));
-        scanned += 1;
-        this.runSearch(this.searchQuery);
-      }
-      if (token !== this.ocrToken) return;
-      if (scanned === 0) {
-        panel.setStatus(t("app.everyPageSearchable"));
-      } else {
-        this.runSearch(this.searchQuery);
-        panel.setStatus(t("app.ocrIndexed", { count: scanned }));
-        toast(t("app.ocrIndexed", { count: scanned }), "success");
-      }
-    } catch (error) {
-      if (!this.disposed && token === this.ocrToken) {
-        await messageDialog(t("app.ocrFailed"), errorMessage(error), "warning");
-      }
-    } finally {
-      this.ocrBusy = false;
-      this.searchPanel?.setOcrBusy(false);
-    }
-  }
-
-  private closeSearch(): void {
-    this.ocrToken += 1;
-    this.ocrBusy = false;
-    if (this.searchDebounce !== null) {
-      window.clearTimeout(this.searchDebounce);
-      this.searchDebounce = null;
-    }
-    this.searchPanel?.destroy();
-    this.searchPanel = null;
-    this.textIndex?.dispose();
-    this.textIndex = null;
-    this.searchQuery = "";
-    this.canvas.clearSearchHits();
-  }
-
   private async exportAs(kind: ExportKind): Promise<void> {
     const project = store.project;
     if (!project) return;
@@ -2151,8 +2015,7 @@ export class App {
     this.windowControls = null;
     this.thumbnails?.destroy();
     this.thumbnails = null;
-    this.closeSearch();
-    void disposeOcrWorker();
+    this.search.dispose();
     this.reference.dispose();
     this.canvas.destroy();
     if (this.renderer) void this.renderer.destroy();
