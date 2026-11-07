@@ -250,7 +250,7 @@ src/canvas/items/images.ts embedded image drawing and opacity
 src/canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
 src/canvas/items/counts.ts count symbols and count-type glyphs
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
-src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, wheel, space-pan and long-press helpers
+src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers
 src/canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
 src/canvas/pointer/creation.ts creation-tool pointer-down branches and draft start/finish
 src/canvas/pointer/doubleClick.ts double-click target resolution and edit dispatch
