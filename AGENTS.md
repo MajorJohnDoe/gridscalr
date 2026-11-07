@@ -247,7 +247,8 @@ src/canvas/editors.ts      inline text and measurement-label editors
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
-src/model/symbols.ts       facility-sign artwork, categories, render plan and SVG markup
+src/model/symbols/        symbol types, categories, sign artwork, catalogue, lookup and render plan
+src/model/symbols/signs/  one facility-sign artwork module per category prefix
 src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
 src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
 src/model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork

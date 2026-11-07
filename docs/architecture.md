@@ -51,7 +51,8 @@ src/
   model/                 project types, geometry, radius/diameter/arc/angle/slope/volume measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
-  model/symbols.ts       facility-sign artwork, categories, render plan and SVG markup
+  model/symbols/         symbol types, categories, sign artwork, catalogue, lookup and render plan
+  model/symbols/signs/   one facility-sign artwork module per category prefix
   model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
   model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
   model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
