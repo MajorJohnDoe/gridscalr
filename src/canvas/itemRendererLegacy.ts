@@ -1,9 +1,6 @@
-import { countTypeGlyph } from "../features/countTypes/model";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "../model/annotations";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
-import { countSymbol } from "../model/countSymbols";
-import { arrowHeadGeometry, expandRect } from "../model/geometry";
-import { imageAssetForItem, imageOpacity } from "../model/images";
+import { arrowHeadGeometry } from "../model/geometry";
 import { TEXT_FONT_STACK } from "../model/text";
 import type { MarkupItem } from "../model/types";
 import { drawArrowHead, hexAlpha } from "./geometry";
@@ -18,38 +15,11 @@ export function drawRemainingItem(
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
-  const { context, points, zoom, lineWidth, drawPanel } = state;
+  const { context, zoom, lineWidth, drawPanel } = state;
 
   // Temporary partial switch while the remaining families are extracted.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
   switch (item.kind) {
-    case "count": {
-      const anchorPage = item.points[0];
-      if (!anchorPage) break;
-      const project = context.project;
-      if (!project) break;
-      const symbol = countSymbol(countTypeGlyph(project, item.countType));
-      for (const path of symbol.paths) {
-        ctx.beginPath();
-        path.points.forEach((point, index) => {
-          const screen = context.toScreen({ x: anchorPage.x + point.x, y: anchorPage.y + point.y });
-          if (index === 0) ctx.moveTo(screen.x, screen.y);
-          else ctx.lineTo(screen.x, screen.y);
-        });
-        if (path.closed) ctx.closePath();
-        ctx.stroke();
-      }
-      for (const dot of symbol.dots) {
-        const center = context.toScreen({
-          x: anchorPage.x + dot.center.x,
-          y: anchorPage.y + dot.center.y,
-        });
-        ctx.beginPath();
-        ctx.arc(center.x, center.y, Math.max(0.6, dot.radius * zoom), 0, Math.PI * 2);
-        ctx.fill();
-      }
-      break;
-    }
     case "cloud": {
       const curves = cloudCurves(
         item.points,
@@ -177,20 +147,6 @@ export function drawRemainingItem(
         ctx.font = `500 ${Math.max(6, (item.fontSize ?? 14) * zoom * 0.38)}px ${TEXT_FONT_STACK}`;
         ctx.fillText(item.label, center.x, center.y + size * 0.62);
       }
-      ctx.restore();
-      break;
-    }
-    case "image": {
-      if (points.length < 2) break;
-      const project = context.project;
-      const asset = project ? imageAssetForItem(project, item) : undefined;
-      if (!asset) break;
-      const image = context.imageElement(asset);
-      if (!image) break;
-      const rect = expandRect(points[0], points[1]);
-      ctx.save();
-      ctx.globalAlpha *= imageOpacity(item);
-      ctx.drawImage(image, rect.x, rect.y, rect.width, rect.height);
       ctx.restore();
       break;
     }

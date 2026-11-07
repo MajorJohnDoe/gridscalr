@@ -9,6 +9,8 @@ import {
   type ItemRenderContext,
   type ItemRenderState,
 } from "./context";
+import { drawCountItem } from "./counts";
+import { drawImageItem } from "./images";
 import { drawMeasurementItem } from "./measurement";
 import { drawShapeItem } from "./shapes";
 import { drawSymbolItem, drawSymbolTag } from "./symbols";
@@ -74,6 +76,9 @@ export function dispatchItem(
     case "volume":
       drawMeasurementItem(ctx, item, state);
       break;
+    case "count":
+      drawCountItem(ctx, item, state);
+      break;
     case "pen":
     case "highlight":
     case "line":
@@ -90,6 +95,9 @@ export function dispatchItem(
     case "textbox":
     case "text":
       drawTextItem(ctx, item, state);
+      break;
+    case "image":
+      drawImageItem(ctx, item, state);
       break;
     default:
       drawRemainingItem(ctx, item, state);
