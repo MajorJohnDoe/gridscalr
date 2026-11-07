@@ -1,7 +1,5 @@
 import {
   arcGeometry,
-  arcPolyline,
-  circlePolyline,
   constrainAngle,
   distance,
   itemBounds,
@@ -10,11 +8,9 @@ import {
   symbolSelectionBounds,
   itemRotation,
   midpoint,
-  radiusCircle,
   simplifyPolyline,
   type Bounds,
 } from "../model/geometry";
-import { areaOutline, areaShapeOf } from "../model/area";
 import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
 import { findVertex, hitTest } from "../model/hitTest";
 import {
@@ -25,9 +21,6 @@ import {
 } from "../model/label";
 import {
   CALIBRATION_LABEL_ID,
-  closestPointOnPolyline,
-  LABEL_FIT_POSITIONS,
-  labelFitLabel,
   layoutPageLabels,
   pageLabelSources,
   type LabelLayout,
@@ -112,7 +105,6 @@ import type {
   ImageAsset,
   InspectionStatus,
   ItemKind,
-  LabelFitPosition,
   MarkupItem,
   PageSize,
   Point,
@@ -139,7 +131,6 @@ import {
   zoomAt as zoomViewport,
 } from "./viewport";
 import { calibrationDialog, depthDialog, textDialog } from "../ui/dialogs";
-import { showPopoverAt } from "../ui/popover";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
 import { describeError } from "../io/platformError";
@@ -245,7 +236,6 @@ export class CanvasView {
   private editors: CanvasEditorController;
   private hoverHandle: Handle | null = null;
   private hoverLabelResize = false;
-  private labelConnect: { itemId: string; layerId: string } | null = null;
   private sheetFieldEditor: {
     input: HTMLInputElement | HTMLTextAreaElement;
     page: number;
@@ -331,7 +321,6 @@ export class CanvasView {
       setDraft: (draft) => {
         this.draft = draft;
       },
-      labelConnectActive: () => this.labelConnect !== null,
       hoverHandle: () => this.hoverHandle,
       hoverLabelResize: () => this.hoverLabelResize,
       setHostCursor: (cursor) => {
@@ -385,7 +374,10 @@ export class CanvasView {
         this.pointers.cancelMarquee();
         store.cancelGesture();
       },
-      openContextMenu: (clientX, clientY) => this.openContextMenu(clientX, clientY),
+      openContextMenu: (clientX, clientY) => {
+        const page = this.toPage(this.localFromClient(clientX, clientY));
+        this.hooks.onContextMenu?.({ page, clientX, clientY });
+      },
     };
     this.pointers = new PointerController(this.interaction, pointerHost);
 
@@ -495,7 +487,7 @@ export class CanvasView {
       this.draft = null;
       this.pointers.cancelDrag();
       this.pointers.cancelMarquee();
-      this.labelConnect = null;
+      this.pointers.cancelLabelConnection();
       this.snap = null;
       this.renderedPage = page;
     }
@@ -506,7 +498,7 @@ export class CanvasView {
     }
     if (reason === "tool") {
       this.draft = null;
-      this.labelConnect = null;
+      this.pointers.cancelLabelConnection();
       this.snap = null;
       if (store.ui.hover) store.setHover(null);
       this.updateCursor();
@@ -514,7 +506,7 @@ export class CanvasView {
     if (page !== this.renderedPage) {
       this.lastRender = null;
       this.draft = null;
-      this.labelConnect = null;
+      this.pointers.cancelLabelConnection();
       this.snap = null;
       this.renderedPage = page;
     }
@@ -593,7 +585,7 @@ export class CanvasView {
       this.pointers.marqueeActive ||
       this.pointers.panActive ||
       this.draft !== null ||
-      this.labelConnect !== null ||
+      this.pointers.labelConnectActive ||
       this.editors.hasEditors ||
       this.crop.active
     );
@@ -814,9 +806,9 @@ export class CanvasView {
       return;
     }
 
-    if (this.labelConnect) {
+    if (this.pointers.labelConnectActive) {
       event.preventDefault();
-      this.commitLabelConnection(this.toPage(screen));
+      this.pointers.commitLabelConnection(this.toPage(screen));
       return;
     }
 
@@ -1373,37 +1365,8 @@ export class CanvasView {
   };
 
   private onContextMenu = (event: MouseEvent): void => {
-    event.preventDefault();
-    if (this.pointers.longPressFired) return;
-    this.pointers.cancelTouchLongPress();
-    this.openContextMenu(event.clientX, event.clientY);
+    this.pointers.contextMenu(event);
   };
-
-  private openContextMenu(clientX: number, clientY: number): void {
-    if (this.crop.active) return;
-    const project = store.project;
-    if (!project) return;
-    const screen = this.localFromClient(clientX, clientY);
-    const labelHit = this.measurementLabelHit(screen);
-    if (labelHit && !itemIsLocked(labelHit.item, labelHit.layer)) {
-      store.setSelection({ layerId: labelHit.layer.id, itemId: labelHit.item.id });
-      this.showMeasurementLabelMenu(clientX, clientY, labelHit.item, labelHit.layer.id);
-      return;
-    }
-    const page = this.toPage(screen);
-    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom, {
-      includeLocked: true,
-    });
-    if (hit) {
-      const ref = { layerId: hit.layer.id, itemId: hit.item.id };
-      if (!store.isSelected(ref)) store.setSelection(ref);
-    }
-    this.hooks.onContextMenu?.({
-      page,
-      clientX,
-      clientY,
-    });
-  }
 
   private onWheel = (event: WheelEvent): void => {
     this.pointers.onWheel(event);
@@ -1594,145 +1557,6 @@ export class CanvasView {
       return;
     }
     toast(t("canvas.selectText"), "info");
-  }
-
-  private showMeasurementLabelMenu(x: number, y: number, item: MarkupItem, layerId: string): void {
-    const custom = Boolean(item.labelOffset || item.labelAnchor || item.labelFit);
-    showPopoverAt(x, y, [
-      {
-        label: t("canvas.resetLabelPosition"),
-        icon: "undo",
-        disabled: !custom,
-        action: () => {
-          store.mutate((project) => {
-            const target = findItem(project, item.id)?.item;
-            if (!target) return;
-            delete target.labelOffset;
-            delete target.labelAnchor;
-            delete target.labelFit;
-            target.updatedAt = new Date().toISOString();
-          }, "change");
-        },
-      },
-      {
-        label: t("canvas.resetLabelSize"),
-        icon: "undo",
-        disabled: item.labelSize === undefined,
-        action: () => {
-          store.mutate((project) => {
-            const target = findItem(project, item.id)?.item;
-            if (!target) return;
-            delete target.labelSize;
-            target.updatedAt = new Date().toISOString();
-          }, "change");
-        },
-      },
-      ...(item.kind === "volume"
-        ? [
-            { separator: true as const },
-            {
-              label: t("canvas.setVolumeDepth"),
-              icon: "volume",
-              action: () => this.promptVolumeDepth({ layerId, itemId: item.id }),
-            },
-          ]
-        : []),
-      { separator: true },
-      {
-        label: item.labelFit
-          ? t("canvas.lockInsidePosition", { position: labelFitLabel(item.labelFit) })
-          : t("canvas.lockInsideArea"),
-        icon: "target",
-        disabled: item.kind !== "area" && item.kind !== "volume",
-        children: [
-          ...LABEL_FIT_POSITIONS.map((position) => ({
-            label: `${item.labelFit === position ? "✓ " : ""}${labelFitLabel(position)}`,
-            action: () => this.setMeasurementLabelFit(item.id, position),
-          })),
-          { separator: true },
-          {
-            label: t("canvas.release"),
-            disabled: item.labelFit === undefined,
-            action: () => this.releaseMeasurementLabelFit(item.id),
-          },
-        ],
-      },
-      { separator: true },
-      {
-        label: t("canvas.chooseConnection"),
-        icon: "target",
-        disabled: item.kind === "count" || Boolean(item.labelFit),
-        action: () => {
-          this.labelConnect = { itemId: item.id, layerId };
-          toast(t("canvas.connectionHint"), "info");
-          this.interaction.focus({ preventScroll: true });
-          this.updateCursor();
-        },
-      },
-    ]);
-  }
-
-  private setMeasurementLabelFit(itemId: string, placement: LabelFitPosition): void {
-    store.mutate((project) => {
-      const target = findItem(project, itemId)?.item;
-      if (!target || (target.kind !== "area" && target.kind !== "volume")) return;
-      target.labelFit = placement;
-      delete target.labelOffset;
-      delete target.labelAnchor;
-      target.updatedAt = new Date().toISOString();
-    }, "change");
-  }
-
-  private releaseMeasurementLabelFit(itemId: string): void {
-    store.mutate((project) => {
-      const target = findItem(project, itemId)?.item;
-      if (!target) return;
-      delete target.labelFit;
-      target.updatedAt = new Date().toISOString();
-    }, "change");
-  }
-
-  private commitLabelConnection(page: Point): void {
-    const connect = this.labelConnect;
-    this.labelConnect = null;
-    const project = store.project;
-    if (!connect || !project) {
-      this.updateCursor();
-      return;
-    }
-    const found = findItem(project, connect.itemId);
-    if (!found || itemIsLocked(found.item, found.layer) || found.item.page !== this.viewPage) {
-      this.updateCursor();
-      return;
-    }
-    const circle = radiusCircle(found.item);
-    const point =
-      found.item.kind === "length"
-        ? closestPointOnPolyline(found.item.points, page, false)
-        : found.item.kind === "area"
-          ? closestPointOnPolyline(
-              areaOutline(found.item.points, areaShapeOf(found.item)),
-              page,
-              true,
-            )
-          : found.item.kind === "arc"
-            ? closestPointOnPolyline(arcPolyline(found.item), page, false)
-            : circle
-              ? closestPointOnPolyline(circlePolyline(circle.center, circle.radius), page, true)
-              : found.item.points[0];
-    if (!point) {
-      this.updateCursor();
-      return;
-    }
-    store.mutate((project) => {
-      const target = findItem(project, connect.itemId)?.item;
-      if (!target) return;
-      target.labelAnchor = { ...point };
-      target.updatedAt = new Date().toISOString();
-    }, "change");
-    toast(t("canvas.connectionUpdated"), "success");
-    this.updateCursor();
-    this.drawInteraction();
   }
 
   private measurementLabelHit(screen: Point): LabelHit | null {
@@ -2207,8 +2031,8 @@ export class CanvasView {
       this.crop.cancel();
       return;
     }
-    if (this.labelConnect) {
-      this.labelConnect = null;
+    if (this.pointers.labelConnectActive) {
+      this.pointers.cancelLabelConnection();
       this.updateCursor();
       this.drawInteraction();
       return;

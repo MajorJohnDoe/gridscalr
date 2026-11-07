@@ -26,8 +26,6 @@ export interface PointerHost {
   setDraft(draft: Draft | null): void;
   cropCursor(): string | null;
 
-  labelConnectActive(): boolean;
-
   hoverHandle(): Handle | null;
   hoverLabelResize(): boolean;
 
