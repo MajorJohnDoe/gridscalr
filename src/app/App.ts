@@ -35,7 +35,6 @@ import type {
   Layer,
   PageSize,
   Project,
-  RecentEntry,
   SheetPaperSize,
   SheetTemplateRef,
 } from "../model/types";
@@ -44,33 +43,26 @@ import {
   relativeDocumentPath,
   resolveRelativePath,
   serializeProject,
-  serializeProjectCopy,
   sourceDocumentPaths,
-  suggestedProjectName,
   updateRelativeDocumentPaths,
 } from "../io/projectFile";
 import {
   addRecent,
   basename,
-  chooseSavePath,
   isTauri,
   pathExists,
   pickImage,
   pickPdf,
-  pickProject,
-  pickDrawing,
   readFileBytes,
   readFileText,
-  saveTextFile,
   writeTextFile,
 } from "../io/platform";
-import { assertWritablePath } from "../io/writeGuard";
 import { PdfRenderer } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
-import { classifyOpenTarget } from "./openTarget";
 import { SearchController } from "./searchController";
+import { ProjectSession } from "./projectSession";
 import {
   chooseImportPages,
   confirmChecksumMismatch,
@@ -107,7 +99,6 @@ import {
   drawingExportDialog,
   manualScaleDialog,
   messageDialog,
-  unsavedChangesDialog,
 } from "../ui/dialogs";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
@@ -133,7 +124,6 @@ import { validatePackagedProjectJson } from "../features/projectPackage/model";
 import { toast } from "../ui/toast";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
-import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
 import { buildDiagnostics, projectStats } from "../features/diagnostics/model";
 import { logEvent, readDiagnosticsLog } from "../features/diagnostics/log";
 import { copyDiagnostics, reportProblemDialog } from "../ui/diagnosticsDialog";
@@ -159,10 +149,6 @@ import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
 import { canFitDrawingToArea, fitDrawingToArea } from "../features/schematics/model/fitDrawing";
 import { LANGUAGE_CHANGED_EVENT, currentLocale, t } from "../i18n";
 
-function projectFilters() {
-  return [{ name: t("app.projectFilter"), extensions: ["gridscalr"] }];
-}
-
 interface SizeTask {
   page: number;
   renderer: PdfRenderer;
@@ -175,6 +161,7 @@ export class App {
   private canvas: CanvasView;
   private reference: ReferenceController;
   private search: SearchController;
+  private session: ProjectSession;
   private actions: PanelActions;
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
@@ -185,9 +172,6 @@ export class App {
   private sizeEpoch = 0;
   private unsubscribe: () => void;
   private disposed = false;
-  private closeInProgress = false;
-  private unlistenClose: (() => void) | null = null;
-  private unlistenLaunch: (() => void) | null = null;
   private windowControls: WindowControls | null = null;
   private autosaveWarned: string | null = null;
   private sheetBytesCache = new Map<string, Promise<Uint8Array>>();
@@ -195,15 +179,22 @@ export class App {
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
     this.refs = createShell(root);
+    this.session = new ProjectSession({
+      resetProject: () => this.resetProject(),
+      loadNewPdf: (bytes, name, path) => this.loadNewPdf(bytes, name, path),
+      loadProjectText: (text, path) => this.loadProjectText(text, path),
+      loadProjectData: (project, path, dirty) => this.loadProjectData(project, path, dirty),
+      createSheetProject: (choice) => this.createSheetProject(choice),
+    });
     this.actions = {
-      openPdf: () => void this.openPdfFlow(),
-      openProject: () => void this.openProjectFlow(),
-      newProject: () => void this.newProjectFlow(),
-      closeProject: () => void this.closeProjectFlow(),
-      quit: () => void this.quitFlow(),
-      saveProject: () => void this.saveProjectFlow(false),
-      saveProjectAs: () => void this.saveProjectFlow(true),
-      saveProjectCopy: () => void this.saveProjectCopyFlow(),
+      openPdf: () => void this.session.openPdfFlow(),
+      openProject: () => void this.session.openProjectFlow(),
+      newProject: () => void this.session.newProjectFlow(),
+      closeProject: () => void this.session.closeProjectFlow(),
+      quit: () => void this.session.quitFlow(),
+      saveProject: () => void this.session.saveProject(false),
+      saveProjectAs: () => void this.session.saveProject(true),
+      saveProjectCopy: () => void this.session.saveProjectCopy(),
       packageProject: () => void packageProjectFlow(this.packageHost()),
       openPackage: () => void openPackageFlow(this.packageHost()),
       exportAs: (kind) => void this.exportAs(kind),
@@ -279,16 +270,16 @@ export class App {
           onChangePaper: (paper) => this.changeSheetPaper(page, paper),
         }),
       refresh: () => this.renderAll(),
-      restoreAutosave: () => void this.restoreAutosave(),
+      restoreAutosave: () => void this.session.restoreAutosave(),
       getAutosave: () => store.readAutosavePreview(),
-      openRecent: (entry) => void this.openRecent(entry),
-      openDemoProject: () => void this.openDemoProjectFlow(),
+      openRecent: (entry) => void this.session.openRecent(entry),
+      openDemoProject: () => void this.session.openDemoProjectFlow(),
       copyDiagnostics: () => void this.copyDiagnosticsFlow(),
       reportProblem: () => this.reportProblemFlow(),
     };
     setMenuActions(this.actions);
     this.windowControls = mountWindowControls(this.refs.topbar, {
-      quit: () => void this.quitFlow(),
+      quit: () => void this.session.quitFlow(),
     });
 
     this.canvas = new CanvasView(this.refs.canvasHost, {
@@ -349,10 +340,10 @@ export class App {
     this.bind();
     this.renderAll();
     window.addEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
-    void this.bindWindowClose();
+    void this.session.bindWindowClose();
     void this.bindSmokeTest();
-    void this.bindLaunchFiles();
-    void this.setupDragDrop();
+    void this.session.bindLaunchFiles();
+    void this.session.setupDragDrop();
   }
 
   private readonly onLanguageChanged = (): void => {
@@ -486,11 +477,11 @@ export class App {
           return;
         case "n":
           event.preventDefault();
-          void this.newProjectFlow();
+          void this.session.newProjectFlow();
           return;
         case "q":
           event.preventDefault();
-          if (!event.altKey && !event.shiftKey) void this.quitFlow();
+          if (!event.altKey && !event.shiftKey) void this.session.quitFlow();
           return;
         case "l":
           event.preventDefault();
@@ -512,7 +503,7 @@ export class App {
           return;
         case "s":
           event.preventDefault();
-          void this.saveProjectFlow(event.shiftKey);
+          void this.session.saveProject(event.shiftKey);
           return;
         case "c":
           event.preventDefault();
@@ -524,8 +515,8 @@ export class App {
           return;
         case "o":
           event.preventDefault();
-          if (event.shiftKey) void this.openProjectFlow();
-          else void this.openPdfFlow();
+          if (event.shiftKey) void this.session.openProjectFlow();
+          else void this.session.openPdfFlow();
           return;
         case "e":
           event.preventDefault();
@@ -756,39 +747,6 @@ export class App {
     );
   }
 
-  private async newProjectFlow(): Promise<void> {
-    let sheetChoice = false;
-    try {
-      const choice = await chooseProjectSource("new");
-      if (!choice) return;
-      sheetChoice = choice.kind === "sheet";
-
-      if (choice.kind === "pdf") {
-        const picked = await pickDrawing();
-        if (!picked) return;
-        if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
-          return;
-        }
-        await this.resetProject();
-        await this.loadNewPdf(picked.bytes, picked.name, picked.path);
-        return;
-      }
-
-      if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
-        return;
-      }
-      await this.resetProject();
-      await this.createSheetProject(choice);
-    } catch (error) {
-      logEvent("error", `new project failed: ${errorMessage(error)}`);
-      await messageDialog(
-        sheetChoice ? t("sheet.createFailed") : t("app.couldNotOpenDrawing"),
-        errorMessage(error),
-        "warning",
-      );
-    }
-  }
-
   private sheetLabels(): SheetLabels {
     return resolveSheetLabels((key) => t(key));
   }
@@ -836,14 +794,14 @@ export class App {
 
   private async addPageFlow(): Promise<void> {
     if (!store.project) {
-      await this.openPdfFlow();
+      await this.session.openPdfFlow();
       return;
     }
     try {
       const choice = await chooseProjectSource("add");
       if (!choice) return;
       if (choice.kind === "pdf") {
-        await this.openPdfFlow();
+        await this.session.openPdfFlow();
         return;
       }
       await this.addSheetFlow(choice);
@@ -903,73 +861,6 @@ export class App {
     toast(t("sheet.added", { name: documentRef.name }), "success");
   }
 
-  private async closeProjectFlow(): Promise<void> {
-    if (!(await this.confirmUnsavedChanges(t("app.closeProjectDiscard")))) {
-      return;
-    }
-    await this.resetProject();
-    toast(t("app.projectClosed"), "info");
-  }
-
-  private async quitFlow(): Promise<void> {
-    if (!(await this.confirmUnsavedChanges(t("app.quitDiscard")))) {
-      return;
-    }
-    await store.clearAutosave();
-    if (!isTauri) {
-      window.close();
-      toast(t("app.closeBrowserTab"), "info");
-      return;
-    }
-    await this.destroyWindow(t("app.windowCloseFailed"));
-  }
-
-  private async bindWindowClose(): Promise<void> {
-    if (!isTauri) return;
-    try {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      const win = getCurrentWindow();
-      this.unlistenClose = await win.onCloseRequested(async (event) => {
-        // Always take over the close, then decide explicitly. The Tauri close API
-        // would otherwise destroy the window itself, which needs its own permission
-        // and gives no feedback if it fails.
-        event.preventDefault();
-        if (this.closeInProgress) return;
-        this.closeInProgress = true;
-        try {
-          if (!(await this.confirmUnsavedChanges(t("app.closeAppDiscard")))) {
-            return;
-          }
-          await store.clearAutosave();
-          await this.destroyWindow(t("app.windowCloseFailed"));
-        } finally {
-          this.closeInProgress = false;
-        }
-      });
-    } catch {
-      // The title-bar close still works; only the unsaved-change prompt is unavailable.
-    }
-  }
-
-  private async destroyWindow(failureMessage: string): Promise<void> {
-    try {
-      const { getCurrentWindow } = await import("@tauri-apps/api/window");
-      // destroy() bypasses the close-requested event, so closing cannot re-enter
-      // the unsaved-change prompt.
-      await getCurrentWindow().destroy();
-    } catch {
-      toast(failureMessage, "warning");
-    }
-  }
-
-  private async confirmUnsavedChanges(message: string): Promise<boolean> {
-    if (!store.project || !store.dirty) return true;
-    const choice = await unsavedChangesDialog(message);
-    if (choice === "cancel") return false;
-    if (choice === "discard") return true;
-    return this.saveProjectFlow(false);
-  }
-
   private async resetProject(): Promise<void> {
     this.search.close();
     await this.reference.close(false);
@@ -995,28 +886,6 @@ export class App {
     this.canvas.fitPage();
     this.canvas.invalidate();
     this.renderAll();
-  }
-
-  private async openPdfFlow(): Promise<void> {
-    try {
-      const picked = await pickDrawing();
-      if (!picked) return;
-      await this.loadNewPdf(picked.bytes, picked.name, picked.path);
-    } catch (error) {
-      logEvent("error", `open drawing failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotOpenDrawing"), errorMessage(error), "warning");
-    }
-  }
-
-  private async openProjectFlow(): Promise<void> {
-    try {
-      const picked = await pickProject();
-      if (!picked) return;
-      await this.loadProjectText(picked.text, picked.path);
-    } catch (error) {
-      logEvent("error", `open project failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
-    }
   }
 
   private async loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void> {
@@ -1095,7 +964,7 @@ export class App {
    */
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
-    if (!(await this.confirmUnsavedChanges(t("app.replaceProject")))) {
+    if (!(await this.session.confirmUnsavedChanges(t("app.replaceProject")))) {
       return;
     }
     let project: Project;
@@ -1515,93 +1384,15 @@ export class App {
     toast(t("app.pageDeleted", { page: target }), "info");
   }
 
-  private async saveProjectFlow(saveAs: boolean): Promise<boolean> {
-    const project = store.project;
-    if (!project) return false;
-    try {
-      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
-      const suggested = suggestedProjectName(project);
-      if (!isTauri) {
-        updateRelativeDocumentPaths(project, null);
-        const json = serializeProject(project);
-        const result = await saveTextFile(json, suggested, projectFilters(), {
-          forbiddenPaths: protectedPaths,
-        });
-        if (!result) return false;
-        store.markSaved(null);
-        toast(t("app.projectDownloaded"), "success");
-        return true;
-      }
-
-      let path = store.projectPath;
-      if (saveAs || !path) {
-        const chosen = await chooseSavePath(suggested, projectFilters());
-        if (!chosen) return false;
-        path = chosen;
-      }
-      assertWritablePath(path, protectedPaths);
-      updateRelativeDocumentPaths(project, path);
-      const json = serializeProject(project);
-      await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
-      store.markSaved(path);
-      addRecent({
-        kind: "project",
-        path,
-        name: basename(path),
-        at: new Date().toISOString(),
-      });
-      toast(t("app.projectSaved"), "success");
-      return true;
-    } catch (error) {
-      logEvent("error", `save failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotSaveProject"), errorMessage(error), "warning");
-      return false;
-    }
-  }
-
   /**
    * Writes a backup copy without changing the open project's path or its saved
    * state. Document links in the copy are relative to the copy's folder so the
    * backup stays usable if the original project is moved or replaced.
    */
-  private async saveProjectCopyFlow(): Promise<boolean> {
-    const project = store.project;
-    if (!project) return false;
-    try {
-      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
-      const suggested = suggestedProjectName(project).replace(/\.gridscalr$/i, "-copy.gridscalr");
-      if (!isTauri) {
-        const result = await saveTextFile(serializeProject(project), suggested, projectFilters(), {
-          forbiddenPaths: protectedPaths,
-        });
-        if (!result) return false;
-        toast(t("app.copyDownloaded"), "success");
-        return true;
-      }
-
-      const path = await chooseSavePath(suggested, projectFilters());
-      if (!path) return false;
-      assertWritablePath(path, protectedPaths);
-      const json = serializeProjectCopy(project, path);
-      await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
-      addRecent({
-        kind: "project",
-        path,
-        name: basename(path),
-        at: new Date().toISOString(),
-      });
-      toast(t("app.copySavedTo", { path: basename(path) }), "success");
-      return true;
-    } catch (error) {
-      logEvent("error", `save copy failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotSaveCopy"), errorMessage(error), "warning");
-      return false;
-    }
-  }
 
   private packageHost(): PackageHost {
     return {
-      confirmDiscard: () => this.confirmUnsavedChanges(t("app.packageReplace")),
+      confirmDiscard: () => this.session.confirmUnsavedChanges(t("app.packageReplace")),
       openProject: (path, validatePackage) => this.openPackagedProject(path, validatePackage),
       createDrawingPdf: (project) => this.createPackageDrawingPdf(project),
     };
@@ -1737,79 +1528,11 @@ export class App {
     });
   }
 
-  private async restoreAutosave(): Promise<void> {
-    const payload = await store.readAutosave();
-    if (!payload) {
-      toast(t("app.noRecovery"), "info");
-      return;
-    }
-    let project: Project;
-    try {
-      project = parseProject(JSON.stringify(payload.project));
-    } catch (error) {
-      logEvent("error", `restore session failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotRestoreSession"), errorMessage(error), "warning");
-      return;
-    }
-    await this.loadProjectData(project, payload.projectPath, true);
-  }
-
-  private async openRecent(entry: RecentEntry): Promise<void> {
-    if (!isTauri) {
-      toast(t("app.recentDesktopOnly"), "info");
-      return;
-    }
-    try {
-      if (entry.kind === "pdf") {
-        const bytes = await readFileBytes(entry.path);
-        await this.loadNewPdf(bytes, entry.name, entry.path);
-      } else {
-        const text = await readFileText(entry.path);
-        await this.loadProjectText(text, entry.path);
-      }
-    } catch (error) {
-      logEvent("error", `open recent failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotOpenRecent"), errorMessage(error), "warning");
-    }
-  }
-
-  private async openPath(path: string, failureTitle = t("app.couldNotOpenDropped")): Promise<void> {
-    const target = classifyOpenTarget(path);
-    try {
-      if (target === "drawing") {
-        const bytes = await readFileBytes(path);
-        await this.loadNewPdf(bytes, basename(path), path);
-      } else if (target === "project") {
-        const text = await readFileText(path);
-        await this.loadProjectText(text, path);
-      } else {
-        toast(t("app.dropHint"), "warning");
-      }
-    } catch (error) {
-      logEvent("error", `open file failed: ${errorMessage(error)}`);
-      await messageDialog(failureTitle, errorMessage(error), "warning");
-    }
-  }
-
   /**
    * Copies the bundled demo into the app data folder and opens it from there,
    * so the demo can be measured, edited and saved without touching the
    * installation directory or the bundled fixture.
    */
-  private async openDemoProjectFlow(): Promise<void> {
-    if (!isTauri) {
-      toast(t("welcome.demoUnavailable"), "info");
-      return;
-    }
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const path = await invoke<string>("prepare_demo_project");
-      await this.openPath(path, t("welcome.demoFailed"));
-    } catch (error) {
-      logEvent("error", `demo failed: ${errorMessage(error)}`);
-      await messageDialog(t("welcome.demoFailed"), errorMessage(error), "warning");
-    }
-  }
 
   /**
    * Packaged smoke test used by CI on all three platforms. The app runs the
@@ -1837,7 +1560,7 @@ export class App {
     };
 
     try {
-      await this.openDemoProjectFlow();
+      await this.session.openDemoProjectFlow();
       record("demo opened", Boolean(store.project && store.project.documents.length > 0));
 
       await this.saveProjectToPath(savePath);
@@ -1850,7 +1573,7 @@ export class App {
       store.mutate((project) => {
         project.settings.showGrid = !project.settings.showGrid;
       }, "change");
-      const pending = this.confirmUnsavedChanges("smoke test close prompt");
+      const pending = this.session.confirmUnsavedChanges("smoke test close prompt");
       await new Promise((resolve) => requestAnimationFrame(() => resolve(undefined)));
       const cancel = [...document.querySelectorAll<HTMLButtonElement>(".modal-footer button")].find(
         (button) => button.textContent === "Cancel",
@@ -1923,76 +1646,6 @@ export class App {
    * forwarded. Only the first supported path opens; GridScalr keeps one project
    * per window.
    */
-  private async bindLaunchFiles(): Promise<void> {
-    if (!isTauri) return;
-    try {
-      const { invoke } = await import("@tauri-apps/api/core");
-      const { listen } = await import("@tauri-apps/api/event");
-      const consume = async (): Promise<void> => {
-        try {
-          const paths = await invoke<string[]>("take_launch_paths");
-          if (!paths.length) return;
-          const path = firstLaunchPath(paths);
-          if (!path) {
-            await messageDialog(t("launch.nothingTitle"), t("launch.nothingMessage"), "warning");
-            return;
-          }
-          const supported = paths.filter((entry) => classifyLaunchPath(entry) !== "unknown");
-          if (supported.length > 1) {
-            toast(t("launch.oneFile"), "info");
-          }
-          await this.openPath(path, t("app.couldNotOpenOsFile"));
-        } catch {
-          // A failed launch read must not break the running session.
-        }
-      };
-      this.unlistenLaunch = await listen("gridscalr:paths-queued", () => void consume());
-      await consume();
-    } catch {
-      // The OS integration is optional; File → Open still works.
-    }
-  }
-
-  private async openDroppedFile(file: File): Promise<void> {
-    try {
-      const target = classifyOpenTarget(file.name);
-      if (target === "drawing") {
-        await this.loadNewPdf(new Uint8Array(await file.arrayBuffer()), file.name, null);
-      } else if (target === "project") {
-        await this.loadProjectText(await file.text(), null);
-      } else {
-        toast(t("app.dropHint"), "warning");
-      }
-    } catch (error) {
-      logEvent("error", `dropped file failed: ${errorMessage(error)}`);
-      await messageDialog(t("app.couldNotOpenDropped"), errorMessage(error), "warning");
-    }
-  }
-
-  private async setupDragDrop(): Promise<void> {
-    if (isTauri) {
-      try {
-        const { getCurrentWebview } = await import("@tauri-apps/api/webview");
-        await getCurrentWebview().onDragDropEvent((event) => {
-          const payload = event.payload as { type: string; paths?: string[] };
-          if (payload.type === "drop" && payload.paths?.length) {
-            void this.openPath(payload.paths[0]);
-          }
-        });
-      } catch (error) {
-        console.warn(t("app.nativeDragUnavailable"), error);
-      }
-      return;
-    }
-    window.addEventListener("dragover", (event) => {
-      event.preventDefault();
-    });
-    window.addEventListener("drop", (event) => {
-      event.preventDefault();
-      const file = event.dataTransfer?.files?.[0];
-      if (file) void this.openDroppedFile(file);
-    });
-  }
 
   /** Dev-only test bridge consumed by the Playwright suite. */
   getCanvasTestApi(): CanvasTestApi {
@@ -2007,10 +1660,7 @@ export class App {
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
     window.removeEventListener("paste", this.onPaste);
-    this.unlistenClose?.();
-    this.unlistenClose = null;
-    this.unlistenLaunch?.();
-    this.unlistenLaunch = null;
+    this.session.dispose();
     this.windowControls?.dispose();
     this.windowControls = null;
     this.thumbnails?.destroy();
