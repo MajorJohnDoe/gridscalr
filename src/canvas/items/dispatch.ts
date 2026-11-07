@@ -1,11 +1,9 @@
-import { itemCenter, itemRotation, rotatePoint } from "../../model/geometry";
+import { itemCenter, itemRotation } from "../../model/geometry";
 import type { LabelLayout } from "../../model/labelLayout";
 import { isMeasurementKind } from "../../model/layers";
-import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../../model/symbolTag";
 import type { MarkupItem } from "../../model/types";
 import { drawRemainingItem } from "../itemRendererLegacy";
 import {
-  FONT_STACK,
   createDrawPanel,
   drawLabel,
   type ItemRenderContext,
@@ -13,6 +11,7 @@ import {
 } from "./context";
 import { drawMeasurementItem } from "./measurement";
 import { drawShapeItem } from "./shapes";
+import { drawSymbolItem, drawSymbolTag } from "./symbols";
 import { drawTextItem } from "./text";
 
 export function dispatchItem(
@@ -85,6 +84,9 @@ export function dispatchItem(
     case "rail":
       drawShapeItem(ctx, item, state);
       break;
+    case "symbol":
+      drawSymbolItem(ctx, item, state);
+      break;
     case "textbox":
     case "text":
       drawTextItem(ctx, item, state);
@@ -96,22 +98,7 @@ export function dispatchItem(
   ctx.restore();
 
   if (item.kind === "symbol" && item.tag) {
-    // The tag stays horizontal while the glyph turns: rotate its anchor
-    // position around the symbol centre, then draw plain screen text.
-    const tagPosition = symbolTagPosition(item);
-    if (tagPosition) {
-      const rotation = itemRotation(item);
-      const point =
-        rotation === 0 ? tagPosition : rotatePoint(tagPosition, itemCenter(item), rotation);
-      const screen = context.toScreen(point);
-      ctx.save();
-      ctx.font = `400 ${Math.max(4, SYMBOL_TAG_FONT_SIZE * zoom)}px ${FONT_STACK}`;
-      ctx.fillStyle = "#111111";
-      ctx.textAlign = "left";
-      ctx.textBaseline = "top";
-      ctx.fillText(item.tag, screen.x, screen.y);
-      ctx.restore();
-    }
+    drawSymbolTag(ctx, item, state);
   }
 
   if (isMeasurementKind(item.kind)) {

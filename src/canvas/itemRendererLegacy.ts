@@ -1,12 +1,4 @@
 import { countTypeGlyph } from "../features/countTypes/model";
-import {
-  inspectionStatusColor,
-  symbolCategoryColor,
-  symbolFor,
-  symbolRenderPlan,
-  symbolShapeStrokeWidth,
-  symbolSizeOf,
-} from "../features/schematics/symbols/registry";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "../model/annotations";
 import { cloudCurves, cloudRadiusForPoints } from "../model/cloud";
 import { countSymbol } from "../model/countSymbols";
@@ -15,7 +7,6 @@ import { imageAssetForItem, imageOpacity } from "../model/images";
 import { TEXT_FONT_STACK } from "../model/text";
 import type { MarkupItem } from "../model/types";
 import { drawArrowHead, hexAlpha } from "./geometry";
-import { symbolPath } from "./symbolPath";
 import type { ItemRenderState } from "./items/context";
 
 /**
@@ -57,64 +48,6 @@ export function drawRemainingItem(
         ctx.arc(center.x, center.y, Math.max(0.6, dot.radius * zoom), 0, Math.PI * 2);
         ctx.fill();
       }
-      break;
-    }
-    case "symbol": {
-      const anchor = points[0];
-      if (!anchor) break;
-      const definition = symbolFor(item.symbolId);
-      const accent =
-        definition.style === "schematic"
-          ? "#111111"
-          : definition.id === "unknown"
-            ? item.color
-            : symbolCategoryColor(definition.category);
-      const plan = symbolRenderPlan(definition, accent);
-      const size = symbolSizeOf(item);
-      const scale = (size * zoom) / plan.viewBox;
-      const half = plan.viewBox / 2;
-      ctx.save();
-      ctx.translate(anchor.x, anchor.y);
-      ctx.scale(scale, scale);
-      ctx.translate(-half, -half);
-      for (const shape of plan.shapes) {
-        ctx.save();
-        if (shape.scale !== 1) {
-          ctx.translate(half, half);
-          ctx.scale(shape.scale, shape.scale);
-          ctx.translate(-half, -half);
-        }
-        const path = symbolPath(shape.d);
-        if (shape.fill) {
-          ctx.fillStyle = shape.fill;
-          ctx.fill(path, shape.fillRule);
-        }
-        if (shape.stroke) {
-          ctx.strokeStyle = shape.stroke;
-          // Page-space width converted to local units: the stroke scales with
-          // zoom exactly like the PDF export and the rest of the canvas.
-          ctx.lineWidth = (symbolShapeStrokeWidth(plan, shape, size) * plan.viewBox) / size;
-          ctx.lineCap = "round";
-          ctx.lineJoin = "round";
-          ctx.stroke(path);
-        }
-        ctx.restore();
-      }
-      if (item.status) {
-        ctx.beginPath();
-        ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 1.4, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(15, 19, 21, 0.85)";
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r + 0.7, 0, Math.PI * 2);
-        ctx.fillStyle = "#ffffff";
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(plan.badge.x, plan.badge.y, plan.badge.r, 0, Math.PI * 2);
-        ctx.fillStyle = inspectionStatusColor(item.status);
-        ctx.fill();
-      }
-      ctx.restore();
       break;
     }
     case "cloud": {
