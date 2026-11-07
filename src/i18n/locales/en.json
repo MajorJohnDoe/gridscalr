@@ -1343,6 +1343,8 @@
   "symbol.schematic.weight-gate-valve": "Weight gate valve",
   "symbol.schematic.powered-valve": "Powered valve",
   "symbol.schematic.self-draining-valve": "Self-draining valve",
+  "symbol.schematic.spring-gate-valve": "Spring gate valve",
+  "symbol.schematic.self-operating-release-valve": "Self-operating release valve",
   "symbol.schematic.closed-gate-valve": "Closed gate valve",
   "symbol.schematic.hand-globe-valve": "Hand-operated globe valve",
   "symbol.schematic.globe-valve": "Globe valve",

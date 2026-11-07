@@ -1345,6 +1345,8 @@ export type MessageKey =
   | "symbol.schematic.weight-gate-valve"
   | "symbol.schematic.powered-valve"
   | "symbol.schematic.self-draining-valve"
+  | "symbol.schematic.spring-gate-valve"
+  | "symbol.schematic.self-operating-release-valve"
   | "symbol.schematic.closed-gate-valve"
   | "symbol.schematic.hand-globe-valve"
   | "symbol.schematic.globe-valve"

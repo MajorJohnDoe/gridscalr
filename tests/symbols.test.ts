@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(149);
-    expect(ALL_SYMBOLS).toHaveLength(201);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(151);
+    expect(ALL_SYMBOLS).toHaveLength(203);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(149);
+    expect(symbolsForSet("schematic")).toHaveLength(151);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -387,6 +387,13 @@ describe("schematic symbol set", () => {
       expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
     expect(symbolForAll("schematic.angle-blowdown-valve").ports).toHaveLength(3);
+  });
+
+  it("adds spring gate and self-operating release valves", () => {
+    expect(symbolForAll("schematic.spring-gate-valve").ports).toHaveLength(2);
+    expect(symbolForAll("schematic.self-operating-release-valve").ports).toHaveLength(1);
+    expect(symbolForAll("schematic.spring-gate-valve").category).toBe("valve");
+    expect(symbolForAll("schematic.self-operating-release-valve").category).toBe("valve");
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

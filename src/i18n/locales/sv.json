@@ -1343,6 +1343,8 @@
   "symbol.schematic.weight-gate-valve": "Viktstyrd ventil",
   "symbol.schematic.powered-valve": "Driven ventil",
   "symbol.schematic.self-draining-valve": "Självavtappande ventil",
+  "symbol.schematic.spring-gate-valve": "Fjäderbelastad slussventil",
+  "symbol.schematic.self-operating-release-valve": "Självverkande avlastningsventil",
   "symbol.schematic.closed-gate-valve": "Stängd slussventil",
   "symbol.schematic.hand-globe-valve": "Handmanövrerad sätesventil",
   "symbol.schematic.globe-valve": "Sätesventil",

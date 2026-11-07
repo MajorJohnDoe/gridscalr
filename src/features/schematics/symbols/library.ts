@@ -122,6 +122,22 @@ const RELIEF_SPRING = joinPaths(
 
 const ANGLE_BLOWDOWN_BRANCH = joinPaths(linePath(32, 32, 48, 16), linePath(42, 10, 54, 22));
 
+const SPRING_GATE_SPRING = joinPaths(
+  linePath(32, 32, 32, 14),
+  linePath(26, 13, 38, 13),
+  linePath(28, 10, 36, 10),
+  linePath(26, 7, 38, 7),
+  linePath(28, 4, 36, 4),
+);
+
+const SELF_OPERATING_RELEASE_FILL = polyPath(
+  Array.from({ length: 33 }, (_, index) => {
+    const angle = ((135 - (180 * index) / 32) * Math.PI) / 180;
+    return [32 + Math.cos(angle) * 14, 32 + Math.sin(angle) * 14];
+  }).flat(),
+  true,
+);
+
 const STRAINER_FLANGES = joinPaths(
   linePath(8, 24, 8, 40),
   linePath(56, 24, 56, 40),
@@ -554,6 +570,39 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
       { id: "drain", x: 32, y: 58, direction: "out" },
     ],
     shapes: [stroke(joinPaths(valveBody(), linePath(32, 32, 32, 48))), fill(SELF_DRAINING_HEAD)],
+  }),
+  schematicSymbol({
+    id: "schematic.spring-gate-valve",
+    category: "valve",
+    keywords: [
+      "fjäderbelastad slussventil",
+      "spring gate valve",
+      "fjäder",
+      "slussventil",
+      "ventil",
+      "spg",
+    ],
+    tagPrefix: "SPG",
+    ports: valvePorts(),
+    shapes: [stroke(joinPaths(valveBody(), SPRING_GATE_SPRING))],
+  }),
+  schematicSymbol({
+    id: "schematic.self-operating-release-valve",
+    category: "valve",
+    keywords: [
+      "självverkande avlastningsventil",
+      "self-operating release valve",
+      "avlastning",
+      "självverkande",
+      "ventil",
+      "sor",
+    ],
+    tagPrefix: "SOR",
+    ports: [{ id: "process", x: 32, y: 46, direction: "both" }],
+    shapes: [
+      stroke(joinPaths(smallCircle(32, 32, 14), linePath(42, 22, 22, 42))),
+      fill(SELF_OPERATING_RELEASE_FILL),
+    ],
   }),
   schematicSymbol({
     id: "schematic.closed-gate-valve",
