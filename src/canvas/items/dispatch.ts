@@ -13,6 +13,7 @@ import {
 } from "./context";
 import { drawMeasurementItem } from "./measurement";
 import { drawShapeItem } from "./shapes";
+import { drawTextItem } from "./text";
 
 export function dispatchItem(
   ctx: CanvasRenderingContext2D,
@@ -83,6 +84,10 @@ export function dispatchItem(
     case "polyline":
     case "rail":
       drawShapeItem(ctx, item, state);
+      break;
+    case "textbox":
+    case "text":
+      drawTextItem(ctx, item, state);
       break;
     default:
       drawRemainingItem(ctx, item, state);
