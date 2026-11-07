@@ -218,6 +218,13 @@ src/app/selectionActions.ts selection, bulk edits and item commands
 src/app/documentImport.ts  PDF/TIF import, password retries and checksum checks
 src/app/searchController.ts search panel, text index and OCR run loop
 src/app/openTarget.ts      dropped and opened file classification
+src/app/sheetFlows.ts      sheet creation, add-page and paper changes
+src/app/imageFlows.ts      image insertion and target-layer selection
+src/app/documentFlows.ts   PDF/TIF/project loading and page selection
+src/app/pageFlows.ts       page navigation, duplicate/delete and project reset
+src/app/scaleFlows.ts      calibration, manual scale and fit-to-area actions
+src/app/packageFlows.ts    package host adapter and packaged-project opening
+src/app/diagnosticsFlows.ts diagnostics text, copy and report flow
 src/i18n/locales/*.json    message catalogs; en.json is the source and fallback
 src/i18n/registry.ts       SUPPORTED_LOCALES descriptors, locale matching and pseudo-locale
 src/i18n/types.generated.ts generated MessageKey and MessageCatalog from en.json
