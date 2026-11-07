@@ -101,6 +101,23 @@ export async function waitForApp(page) {
   await page.waitForTimeout(350);
 }
 
+/** Lets fonts, animations and transitions reach their final state before a screenshot. */
+export async function settlePage(page) {
+  await page.evaluate(async () => {
+    await document.fonts.ready;
+    await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+    const animations = document.getAnimations?.() ?? [];
+    await Promise.all(
+      animations
+        .filter((animation) => {
+          const timing = animation.effect?.getComputedTiming?.();
+          return timing?.endTime !== undefined && Number.isFinite(timing.endTime);
+        })
+        .map((animation) => animation.finished.catch(() => undefined)),
+    );
+  });
+}
+
 export async function waitForToastsGone(page) {
   await page.waitForFunction(() => !document.querySelector(".toast"), null, { timeout: 7000 });
 }

@@ -321,7 +321,6 @@ anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 - Add viewport culling for canvas items.
 - Replace full-snapshot history for large projects.
 - Split `App.ts`, `CanvasView.ts`, the stylesheet and large UI sections — [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60).
-- Add coverage, fuzzing and visual regression gates — [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61).
 - Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
