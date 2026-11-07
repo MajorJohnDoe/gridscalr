@@ -252,6 +252,7 @@ src/canvas/items/counts.ts count symbols and count-type glyphs
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
 src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, wheel, space-pan and long-press helpers
 src/canvas/pointer/PointerHost.ts explicit CanvasView surface used by the pointer controller
+src/canvas/pointer/drag.ts item move, vertex, label and measurement-label drag
 src/canvas/pointer/pointerState.ts drag, marquee and pan gesture state
 src/canvas/pointer/groupHandles.ts group selection handles shared by pointer and renderer
 src/canvas/symbolPath.ts   cached Path2D objects for symbol artwork

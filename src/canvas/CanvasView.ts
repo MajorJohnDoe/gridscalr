@@ -17,9 +17,7 @@ import {
   rotatePoint,
   rotatePointsAround,
   simplifyPolyline,
-  translatePoints,
   type Bounds,
-  vertexAngleAnchor,
 } from "../model/geometry";
 import { areaOutline, areaShapeOf } from "../model/area";
 import { COUNT_SYMBOL_RADIUS } from "../model/countSymbols";
@@ -27,7 +25,6 @@ import { findSegment, findVertex, hitTest } from "../model/hitTest";
 import {
   clampLabelSize,
   labelAnchorForPoints,
-  LABEL_PRIMARY_SIZE,
   type LabelBox,
   type LabelMetrics,
 } from "../model/label";
@@ -245,7 +242,6 @@ export class CanvasView {
   private renderTimer: number | null = null;
   private rendering = false;
   private draft: Draft | null = null;
-  private drag: DragState | null = null;
   private pointerScreen: Point | null = null;
   private penActive = false;
   private lastPenAt = 0;
@@ -323,7 +319,7 @@ export class CanvasView {
       height: () => this.height,
       prepare: () => {
         this.draft = null;
-        this.drag = null;
+        this.pointers.cancelDrag();
         this.pointers.cancelPanAndMarquee();
         this.hoverHandle = null;
         this.hoverLabelResize = false;
@@ -347,7 +343,7 @@ export class CanvasView {
       setView: (next) => store.setView(next.zoom, next.panX, next.panY),
       onGestureStart: () => {
         this.pointers.cancelPanAndMarquee();
-        this.drag = null;
+        this.pointers.cancelDrag();
         store.cancelGesture();
         this.cancelDraft();
       },
@@ -361,7 +357,6 @@ export class CanvasView {
       viewport: () => this.view,
       cropActive: () => this.crop.active,
       cropCursor: () => this.crop.cursor(),
-      dragState: () => this.drag,
       labelConnectActive: () => this.labelConnect !== null,
       hoverHandle: () => this.hoverHandle,
       hoverLabelResize: () => this.hoverLabelResize,
@@ -369,10 +364,19 @@ export class CanvasView {
         if (cursor) this.host.dataset.cursor = cursor;
         else delete this.host.dataset.cursor;
       },
+      drawContent: () => this.drawContent(),
       drawInteraction: () => this.drawInteraction(),
+      clearHover: () => {
+        this.hoverHandle = null;
+        this.hoverLabelResize = false;
+      },
+      snapPoint: (point, excludeItemId) => this.snapPoint(point, excludeItemId),
+      clearSnap: () => {
+        this.snap = null;
+      },
       zoomAt: (screen, factor) => this.zoomAt(screen, factor),
       cancelGesture: () => {
-        this.drag = null;
+        this.pointers.cancelDrag();
         this.pointers.cancelMarquee();
         store.cancelGesture();
       },
@@ -401,6 +405,10 @@ export class CanvasView {
       this.drawContent();
       this.drawInteraction();
     });
+  }
+
+  private get drag(): DragState | null {
+    return this.pointers.dragState;
   }
 
   /** The viewport this canvas renders. The primary canvas follows the store. */
@@ -480,7 +488,7 @@ export class CanvasView {
     if (reason === "project" || reason === "undo") {
       this.lastRender = null;
       this.draft = null;
-      this.drag = null;
+      this.pointers.cancelDrag();
       this.pointers.cancelMarquee();
       this.labelConnect = null;
       this.snap = null;
@@ -576,7 +584,7 @@ export class CanvasView {
 
   get isBusy(): boolean {
     return (
-      this.drag !== null ||
+      this.pointers.dragActive ||
       this.pointers.marqueeActive ||
       this.pointers.panActive ||
       this.draft !== null ||
@@ -1128,21 +1136,24 @@ export class CanvasView {
               found.item.labelSize = startLabelSize;
               delete found.item.labelFit;
             }
-            this.drag = {
-              mode: "measurement-label-size",
-              itemId: found.item.id,
-              layerId: found.layer.id,
-              vertexIndex: -1,
-              last: page,
-              moved: false,
-              startPage: page,
-              startLabelSize,
-              startLabelDistance: Math.max(0.001, Math.hypot(page.x - center.x, page.y - center.y)),
-              center,
-            };
-            this.capturePointer(event.pointerId);
-            this.updateCursor();
-            this.drawInteraction();
+            this.pointers.beginDrag(
+              {
+                mode: "measurement-label-size",
+                itemId: found.item.id,
+                layerId: found.layer.id,
+                vertexIndex: -1,
+                last: page,
+                moved: false,
+                startPage: page,
+                startLabelSize,
+                startLabelDistance: Math.max(
+                  0.001,
+                  Math.hypot(page.x - center.x, page.y - center.y),
+                ),
+                center,
+              },
+              event.pointerId,
+            );
             return;
           }
         }
@@ -1171,21 +1182,21 @@ export class CanvasView {
             labelHit.item.labelSize = currentSize;
           }
           delete labelHit.item.labelFit;
-          this.drag = {
-            mode: "measurement-label",
-            itemId: labelHit.item.id,
-            layerId: labelHit.layer.id,
-            vertexIndex: -1,
-            last: page,
-            moved: false,
-            startPage: page,
-            startLabelOffset: labelHit.item.labelOffset
-              ? { ...labelHit.item.labelOffset }
-              : { x: center.x - anchor.x, y: center.y - anchor.y },
-          };
-          this.capturePointer(event.pointerId);
-          this.updateCursor();
-          this.drawInteraction();
+          this.pointers.beginDrag(
+            {
+              mode: "measurement-label",
+              itemId: labelHit.item.id,
+              layerId: labelHit.layer.id,
+              vertexIndex: -1,
+              last: page,
+              moved: false,
+              startPage: page,
+              startLabelOffset: labelHit.item.labelOffset
+                ? { ...labelHit.item.labelOffset }
+                : { x: center.x - anchor.x, y: center.y - anchor.y },
+            },
+            event.pointerId,
+          );
           return;
         }
       }
@@ -1293,19 +1304,19 @@ export class CanvasView {
       return;
     }
     store.beginGesture();
-    this.drag = {
-      mode: vertexIndex >= 0 ? "vertex" : "move",
-      itemId: hit.item.id,
-      layerId: hit.layer.id,
-      vertexIndex,
-      last: page,
-      moved: false,
-      startPage: page,
-      startSelection,
-    };
-    this.capturePointer(event.pointerId);
-    this.updateCursor();
-    this.drawInteraction();
+    this.pointers.beginDrag(
+      {
+        mode: vertexIndex >= 0 ? "vertex" : "move",
+        itemId: hit.item.id,
+        layerId: hit.layer.id,
+        vertexIndex,
+        last: page,
+        moved: false,
+        startPage: page,
+        startSelection,
+      },
+      event.pointerId,
+    );
   }
 
   private beginHandleDrag(
@@ -1315,11 +1326,12 @@ export class CanvasView {
     page: Point,
     event: PointerEvent,
   ): void {
+    let drag: DragState;
     if (handle.role === "label") {
       const label = cloudLabelLayout(item);
       const centroid = averagePoints(item.points);
       store.beginGesture();
-      this.drag = {
+      drag = {
         mode: "label",
         itemId: item.id,
         layerId,
@@ -1335,7 +1347,7 @@ export class CanvasView {
       };
     } else if (handle.role === "vertex") {
       store.beginGesture();
-      this.drag = {
+      drag = {
         mode: "vertex",
         itemId: item.id,
         layerId,
@@ -1347,7 +1359,7 @@ export class CanvasView {
     } else if (handle.role === "rotate") {
       const center = itemCenter(item);
       store.beginGesture();
-      this.drag = {
+      drag = {
         mode: "rotate",
         itemId: item.id,
         layerId,
@@ -1363,7 +1375,7 @@ export class CanvasView {
     } else {
       const bounds = item.kind === "symbol" ? symbolSelectionBounds(item) : itemLocalBounds(item);
       store.beginGesture();
-      this.drag = {
+      drag = {
         mode: "resize",
         itemId: item.id,
         layerId,
@@ -1387,9 +1399,7 @@ export class CanvasView {
             : midpoint(bounds.min, bounds.max),
       };
     }
-    this.capturePointer(event.pointerId);
-    this.updateCursor();
-    this.drawInteraction();
+    this.pointers.beginDrag(drag, event.pointerId);
   }
 
   private beginGroupScale(
@@ -1412,22 +1422,22 @@ export class CanvasView {
     }
     if (!items.length) return;
     store.beginGesture();
-    this.drag = {
-      mode: "scale-selection",
-      itemId: "",
-      layerId: "",
-      vertexIndex: -1,
-      last: page,
-      moved: false,
-      handle: handle.role,
-      startPage: page,
-      scaleAnchor: oppositeHandlePoint(bounds, handle.role),
-      scaleCorner: handleLocalPoint(bounds, handle.role),
-      scaleStartItems: items,
-    };
-    this.capturePointer(event.pointerId);
-    this.updateCursor();
-    this.drawInteraction();
+    this.pointers.beginDrag(
+      {
+        mode: "scale-selection",
+        itemId: "",
+        layerId: "",
+        vertexIndex: -1,
+        last: page,
+        moved: false,
+        handle: handle.role,
+        startPage: page,
+        scaleAnchor: oppositeHandlePoint(bounds, handle.role),
+        scaleCorner: handleLocalPoint(bounds, handle.role),
+        scaleStartItems: items,
+      },
+      event.pointerId,
+    );
   }
 
   private applyGroupScale(page: Point): void {
@@ -1476,8 +1486,10 @@ export class CanvasView {
 
     if (this.pointers.updatePan(event)) return;
 
-    if (this.drag) {
-      this.applyDrag(page, event.shiftKey);
+    if (this.pointers.dragActive) {
+      if (!this.pointers.applyDrag(page, event.shiftKey)) {
+        this.applyTransformDrag(page, event.shiftKey);
+      }
       return;
     }
 
@@ -1592,7 +1604,7 @@ export class CanvasView {
     }
   };
 
-  private applyDrag(page: Point, shiftKey: boolean): void {
+  private applyTransformDrag(page: Point, shiftKey: boolean): void {
     if (!this.drag || !store.project) return;
     if (this.drag.mode === "scale-selection") {
       this.applyGroupScale(page);
@@ -1603,66 +1615,11 @@ export class CanvasView {
     }
     const found = findItem(store.project, this.drag.itemId);
     if (!found || itemIsLocked(found.item, found.layer)) {
-      this.endDrag();
+      this.pointers.endDrag();
       return;
     }
     const item = found.item;
-    if (this.drag.mode === "move") {
-      if (!this.drag.startPage || !this.drag.startSelection?.length) return;
-      const dx = page.x - this.drag.startPage.x;
-      const dy = page.y - this.drag.startPage.y;
-      if (dx === 0 && dy === 0 && !this.drag.moved) return;
-      for (const entry of this.drag.startSelection) {
-        const target = findItem(store.project, entry.ref.itemId);
-        if (!target || itemIsLocked(target.item, target.layer)) continue;
-        target.item.points = translatePoints(entry.points, dx, dy);
-        target.item.updatedAt = new Date().toISOString();
-      }
-      this.drag.last = page;
-      this.drag.moved = true;
-    } else if (this.drag.mode === "vertex") {
-      const index = this.drag.vertexIndex;
-      if (index >= 0 && index < item.points.length) {
-        const angleAnchor = shiftKey ? vertexAngleAnchor(item, index) : null;
-        const target = angleAnchor
-          ? constrainAngle(angleAnchor, page)
-          : this.snapPoint(page, this.drag.itemId);
-        if (angleAnchor) this.snap = null;
-        const localTarget = itemRotation(item) === 0 ? target : pointToItemLocal(item, target);
-        item.points[index] = localTarget;
-        item.updatedAt = new Date().toISOString();
-        this.drag.moved = true;
-      }
-    } else if (this.drag.mode === "label") {
-      if (!this.drag.startPage) return;
-      const start = this.drag.startTextOffset ?? { x: 0, y: 0 };
-      item.textOffset = {
-        x: start.x + (page.x - this.drag.startPage.x),
-        y: start.y + (page.y - this.drag.startPage.y),
-      };
-      item.updatedAt = new Date().toISOString();
-      this.drag.moved = true;
-    } else if (this.drag.mode === "measurement-label") {
-      if (!this.drag.startPage) return;
-      const start = this.drag.startLabelOffset ?? { x: 0, y: 0 };
-      item.labelOffset = {
-        x: start.x + (page.x - this.drag.startPage.x),
-        y: start.y + (page.y - this.drag.startPage.y),
-      };
-      item.updatedAt = new Date().toISOString();
-      this.drag.moved = true;
-    } else if (this.drag.mode === "measurement-label-size") {
-      if (!this.drag.center || !this.drag.startLabelDistance) return;
-      const pointerDistance = Math.hypot(page.x - this.drag.center.x, page.y - this.drag.center.y);
-      const factor = pointerDistance / this.drag.startLabelDistance;
-      const next = clampLabelSize((this.drag.startLabelSize ?? LABEL_PRIMARY_SIZE) * factor);
-      const rounded = Math.round(next * 10) / 10;
-      if (rounded !== item.labelSize) {
-        item.labelSize = rounded;
-        item.updatedAt = new Date().toISOString();
-        this.drag.moved = true;
-      }
-    } else if (this.drag.mode === "resize") {
+    if (this.drag.mode === "resize") {
       this.applyResize(item, page, shiftKey);
     } else {
       this.applyRotation(item, page, shiftKey);
@@ -1851,9 +1808,9 @@ export class CanvasView {
       this.pointers.finishMarquee();
       return;
     }
-    if (this.drag) {
+    if (this.pointers.dragActive) {
       this.snap = null;
-      this.endDrag();
+      this.pointers.endDrag();
       return;
     }
     if (this.draft) {
@@ -1874,19 +1831,6 @@ export class CanvasView {
       }
     }
   };
-
-  private endDrag(): void {
-    if (!this.drag) return;
-    const moved = this.drag.moved;
-    this.drag = null;
-    this.hoverHandle = null;
-    this.hoverLabelResize = false;
-    if (moved) store.endGesture("change");
-    else store.cancelGesture();
-    this.updateCursor();
-    this.drawContent();
-    this.drawInteraction();
-  }
 
   private onPointerLeave = (): void => {
     this.pointers.cancelTouchLongPress();
