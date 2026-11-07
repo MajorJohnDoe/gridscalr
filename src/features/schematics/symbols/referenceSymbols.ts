@@ -10,7 +10,7 @@ import {
   smallCircle,
   stroke,
   valvePorts,
-} from "./definitions";
+} from "./primitives";
 
 /**
  * Additional symbols redrawn as original stroke artwork from the conventions

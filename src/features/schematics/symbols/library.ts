@@ -1,8 +1,8 @@
 import type { SymbolDefinition } from "../../../model/symbols";
 import { roundedRectPathData } from "../../../model/symbolPaths";
 import { REFERENCE_SYMBOLS } from "./referenceSymbols";
+import { FIRST_VENTILATION_SYMBOLS } from "./firstBatch";
 import {
-  FIRST_VENTILATION_SYMBOLS,
   coilPath,
   ductCasing,
   ductPorts,
@@ -16,7 +16,7 @@ import {
   smallCircle,
   stroke,
   valvePorts,
-} from "./definitions";
+} from "./primitives";
 
 /**
  * The full schematic equipment library. The first ten ventilation symbols were

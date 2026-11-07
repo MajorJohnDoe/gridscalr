@@ -226,7 +226,8 @@ src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
-src/features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
+src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
+src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
 src/features/schematics/symbols/library.ts full 156-symbol schematic set
 src/features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
 src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers

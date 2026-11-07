@@ -19,7 +19,8 @@ src/
   features/projectPackage/ui.ts package options, destination and progress dialogs
   features/projectPackage/ipc.ts Tauri package command wrappers and progress channels
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
-  features/schematics/symbols/definitions.ts first ten stroke-only ventilation symbols
+  features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
+  features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
   features/schematics/symbols/library.ts full 156-symbol schematic set
   features/schematics/symbols/referenceSymbols.ts reference-aligned sensors, electrical and general symbols
   features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
