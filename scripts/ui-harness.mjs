@@ -83,9 +83,9 @@ export async function startVite({ port: preferredPort = 1420 } = {}) {
   };
 }
 
-export async function launchBrowser() {
+export async function launchBrowser(options = {}) {
   try {
-    return await chromium.launch();
+    return await chromium.launch(options);
   } catch (error) {
     throw new Error(
       `Could not launch Chromium. Run "npx playwright install chromium" once and try again.\n${error}`,

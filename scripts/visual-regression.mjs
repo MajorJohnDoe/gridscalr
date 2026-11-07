@@ -166,7 +166,14 @@ async function saveFailure(file, actual, diffDataUrl) {
 try {
   await rm(failureDir, { recursive: true, force: true });
   vite = await startVite({ port });
-  browser = await launchBrowser();
+  browser = await launchBrowser({
+    args: [
+      "--font-render-hinting=none",
+      "--disable-font-subpixel-positioning",
+      "--disable-lcd-text",
+      "--force-color-profile=srgb",
+    ],
+  });
   const page = await browser.newPage({
     viewport: { width: 1920, height: 1080 },
     deviceScaleFactor: 1,
