@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.19.2`.
+- Current app version: `0.19.3`.
 - Latest public release: `v0.19.2` (2026-11-06).
 - Current project-file schema: `23`.
 - 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
