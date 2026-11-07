@@ -261,6 +261,12 @@ src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tables
 src/report/                pure report model, shared table rows, CSV and XLSX serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
+src/styles/tokens.css      theme token contract and the default jade palette
+src/styles/base.css        reset, typography and shared utilities
+src/styles/shell.css       top bar, docks, symbol library, canvas and welcome
+src/styles/panels.css      inspector, layers, pages, status bar and popover menu
+src/styles/dialogs.css     dialogs, menus, forms, quantities and preferences
+src/styles/markups.css     Markups panel, revision compare and text search
 src/styles/help.css        help dialog, search, TOC and image lightbox
 src/styles/popovers.css    tool flyouts and measurement options
 src/ui/contextBar.ts       tool-specific context bar and target layer controls

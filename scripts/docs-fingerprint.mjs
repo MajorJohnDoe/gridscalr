@@ -6,7 +6,6 @@ const ROOT_FILES = [
   "index.html",
   "src/app/App.ts",
   "src/main.ts",
-  "src/styles.css",
   "docs/user-guide.md",
   "docs/workflows.md",
   "docs/shortcuts.md",

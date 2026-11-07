@@ -1,4 +1,9 @@
-import "./styles.css";
+import "./styles/tokens.css";
+import "./styles/base.css";
+import "./styles/shell.css";
+import "./styles/panels.css";
+import "./styles/dialogs.css";
+import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";
 import { App } from "./app/App";
