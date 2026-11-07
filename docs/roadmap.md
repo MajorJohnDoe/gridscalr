@@ -187,6 +187,9 @@ Deliverables:
 - Independent page navigation in the reference pane —
   [#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)
 
+The pre-flight work, module boundaries and theme-ready stylesheet structure are
+planned in [`plan/0.20-refactor.md`](plan/0.20-refactor.md).
+
 Exit criteria:
 
 - The reference project opens, edits, saves and packages within the documented
