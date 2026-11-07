@@ -313,16 +313,20 @@ These are internal improvements, not user-facing promises. Record concrete
 items as GitHub issues with the `tech-debt` or `refactor` label rather than
 anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 
-- Split `CanvasView.ts` further into label rendering, annotation drawing and pointer interaction modules.
-- Extract project save/open flows from `App.ts` into focused `src/app/` modules.
-- Split `selectionInspector.ts` and `settingsDialog.ts` into section modules as they grow.
+The next planned splits and themes are sequenced in
+[`plan/post-0.20-refactor.md`](plan/post-0.20-refactor.md).
+
+- Split the PDF exporter by item family — [#126](https://github.com/MajorJohnDoe/gridscalr/issues/126).
+- Split inline editors by editing family — [#127](https://github.com/MajorJohnDoe/gridscalr/issues/127).
+- Extract the remaining `App.ts` flows — [#128](https://github.com/MajorJohnDoe/gridscalr/issues/128).
+- Add light, grey and navy themes — [#129](https://github.com/MajorJohnDoe/gridscalr/issues/129).
 - Lazy-load the PDF.js renderer so the welcome screen and project shell do not parse the PDF runtime before a drawing is opened.
 - Virtualise the Markups table and adapt history/autosave for large projects — [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52).
 - Add viewport culling for canvas items.
 - Replace full-snapshot history for large projects.
-- Split `App.ts`, `CanvasView.ts`, the stylesheet and large UI sections — [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60).
 - Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
+- Further splits of `CanvasView.ts`, `labelLayout.ts`, `sheetTemplate.ts` or the symbol libraries are opportunistic only if those files grow again.
 
 ## Project operations
 
