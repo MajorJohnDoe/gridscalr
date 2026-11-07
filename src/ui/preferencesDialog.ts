@@ -1,4 +1,5 @@
 import { loadAppPreferences, saveAppPreferences, type CsvFormat } from "../io/appPreferences";
+import { clearRecent, getRecent, isTauri, pathExists, removeRecent } from "../io/platform";
 import {
   currentLayerColorDefaults,
   resetLayerColorDefaults,
@@ -18,14 +19,14 @@ import {
 } from "../i18n";
 import { store } from "../state/store";
 import { colorWithEyedropper } from "./colorPicker";
-import { showModal } from "./dialogs";
+import { confirmDialog, showModal } from "./dialogs";
 import { el } from "./dom";
 import { loadPanelPreferences } from "./preferences";
 import { resetPanelLayout, setInspectorCollapsed, setSidebarCollapsed } from "./sidebar";
 import { field, presetEditor, section } from "./settingsControls";
 import { toast } from "./toast";
 
-type PreferenceCategory = "general" | "workspace" | "layers" | "stamps";
+type PreferenceCategory = "general" | "workspace" | "layers" | "stamps" | "data";
 
 function generalSection(): HTMLElement {
   const wrap = section(t("preferences.general"), t("language.note"));
@@ -192,6 +193,102 @@ function stampsSection(): HTMLElement {
   return wrap;
 }
 
+function dataSection(): HTMLElement {
+  const wrap = section(t("preferences.data.title"), t("preferences.data.note"));
+
+  const autosave = store.readAutosavePreview();
+  const recovery = el("div", "settings-actions");
+  const recoveryText = el(
+    "p",
+    "settings-note",
+    autosave
+      ? t("preferences.data.recoveryPresent", {
+          name: autosave.projectName,
+          time: new Date(autosave.savedAt).toLocaleString(),
+        })
+      : t("preferences.data.recoveryEmpty"),
+  );
+  const clearRecovery = el(
+    "button",
+    "btn btn-small btn-ghost",
+    t("preferences.data.clearRecovery"),
+  );
+  clearRecovery.type = "button";
+  clearRecovery.disabled = !autosave;
+  clearRecovery.addEventListener("click", () => {
+    void (async () => {
+      const confirmed = await confirmDialog(
+        t("preferences.data.clearRecoveryTitle"),
+        t("preferences.data.clearRecoveryNote"),
+        t("preferences.data.clearRecovery"),
+        { danger: true },
+      );
+      if (!confirmed) return;
+      await store.clearAutosave();
+      openPreferencesDialog();
+      toast(t("preferences.data.recoveryCleared"), "success");
+    })();
+  });
+  recovery.append(recoveryText, clearRecovery);
+
+  const recent = getRecent();
+  const recentBox = el("div", "preferences-recents");
+  recentBox.append(
+    el(
+      "p",
+      "settings-note",
+      recent.length ? t("preferences.data.recentNote") : t("preferences.data.recentEmpty"),
+    ),
+  );
+  for (const entry of recent) {
+    const row = el("div", "field-row preferences-recent-row");
+    const label = el("span", "settings-note");
+    label.textContent = t("preferences.data.recentEntry", {
+      name: entry.name,
+      kind:
+        entry.kind === "pdf"
+          ? t("preferences.data.kindDrawing")
+          : t("preferences.data.kindProject"),
+    });
+    const missing = el("span", "settings-note is-warning-text", "");
+    const remove = el("button", "btn btn-small btn-ghost", t("preferences.data.remove"));
+    remove.type = "button";
+    remove.addEventListener("click", () => {
+      removeRecent(entry.path, entry.kind);
+      openPreferencesDialog();
+    });
+    row.append(label, missing, remove);
+    recentBox.append(row);
+    if (isTauri) {
+      void pathExists(entry.path).then((exists) => {
+        if (!exists && missing.isConnected) missing.textContent = t("preferences.data.missing");
+      });
+    }
+  }
+  const clearRecents = el("button", "btn btn-small btn-ghost", t("preferences.data.clearRecent"));
+  clearRecents.type = "button";
+  clearRecents.disabled = recent.length === 0;
+  clearRecents.addEventListener("click", () => {
+    void (async () => {
+      const confirmed = await confirmDialog(
+        t("preferences.data.clearRecentTitle"),
+        t("preferences.data.clearRecentNote"),
+        t("preferences.data.clearRecent"),
+        { danger: true },
+      );
+      if (!confirmed) return;
+      clearRecent();
+      openPreferencesDialog();
+      toast(t("preferences.data.recentCleared"), "success");
+    })();
+  });
+
+  const actions = el("div", "settings-actions");
+  actions.append(clearRecents);
+  wrap.append(recovery, recentBox, actions);
+  return wrap;
+}
+
 export function openPreferencesDialog(): void {
   const body = el("div", "preferences-dialog");
   const nav = el("nav", "preferences-nav");
@@ -204,6 +301,7 @@ export function openPreferencesDialog(): void {
     { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
     { id: "layers", label: t("preferences.layers"), render: layersSection },
     { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
+    { id: "data", label: t("preferences.data"), render: dataSection },
   ];
 
   const buttons = new Map<PreferenceCategory, HTMLButtonElement>();

@@ -255,6 +255,13 @@ pub fn path_exists(path: String) -> bool {
     Path::new(&path).exists()
 }
 
+/// Current byte length of an existing file, used to notice a source drawing
+/// that changed while its project stayed open. Missing files return `None`.
+#[tauri::command]
+pub fn file_size(path: String) -> Option<u64> {
+    std::fs::metadata(path).ok().map(|metadata| metadata.len())
+}
+
 /// Copies the bundled demo project and drawing into the app data folder so the
 /// demo can be edited and saved without writing into the installation. An
 /// existing copy is kept, so edits and a moved drawing survive later launches.
@@ -344,6 +351,15 @@ mod tests {
             .collect();
         names.sort();
         names
+    }
+
+    #[test]
+    fn reports_file_size_and_treats_missing_files_as_unknown() {
+        let temp = TestDir::new();
+        let drawing = temp.file("drawing.pdf");
+        fs::write(&drawing, b"123456").expect("write drawing");
+        assert_eq!(file_size(as_string(&drawing)), Some(6));
+        assert_eq!(file_size(as_string(&temp.file("missing.pdf"))), None);
     }
 
     #[test]

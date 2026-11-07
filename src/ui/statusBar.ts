@@ -14,6 +14,7 @@ import {
 } from "../model/units";
 import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { sourceStatus } from "../source/sourceStatus";
 import { store } from "../state/store";
 import { clear, el, escapeHtml } from "./dom";
 import { icon } from "./icons";
@@ -27,17 +28,69 @@ import { t } from "../i18n";
 let scaleChipKey = "";
 /** Same idea for the persistent autosave warning. */
 let warningKey: string | null = null;
+let projectChipKey = "";
+let sourceChipKey = "";
 
 /** Forces the next update to rebuild the cached chips after a language change. */
 export function resetStatusBar(): void {
   scaleChipKey = "";
   warningKey = null;
+  projectChipKey = "";
+  sourceChipKey = "";
 }
 
 export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project;
   clear(refs.statusCoords);
   clear(refs.statusLayer);
+
+  const projectKey = project ? `${store.dirty}|${store.projectPath ?? ""}` : "";
+  if (projectKey !== projectChipKey) {
+    projectChipKey = projectKey;
+    clear(refs.statusProject);
+    if (project) {
+      const chip = el("span", `status-chip${store.dirty ? " is-warning" : " is-calibrated"}`);
+      chip.append(
+        document.createTextNode(
+          store.dirty
+            ? t("status.projectUnsaved")
+            : store.projectPath
+              ? t("status.projectSaved")
+              : t("status.projectNotSaved"),
+        ),
+      );
+      chip.title = store.dirty
+        ? t("status.projectUnsavedTitle")
+        : store.projectPath
+          ? t("status.projectSavedTitle", { path: store.projectPath })
+          : t("status.projectNotSavedTitle");
+      refs.statusProject.append(chip);
+    }
+  }
+
+  const sources = sourceStatus.summary;
+  const sourceKey = `${sources.checked}|${sources.missing}|${sources.changed}|${sources.statuses
+    .map((entry) => `${entry.documentId}:${entry.state}`)
+    .join(",")}`;
+  if (sourceKey !== sourceChipKey) {
+    sourceChipKey = sourceKey;
+    clear(refs.statusSources);
+    if (sources.missing > 0 || sources.changed > 0) {
+      const parts: string[] = [];
+      if (sources.missing > 0) parts.push(t("status.sourcesMissing", { count: sources.missing }));
+      if (sources.changed > 0) parts.push(t("status.sourcesChanged", { count: sources.changed }));
+      const chip = el("span", "status-chip is-warning");
+      chip.innerHTML = `<span class="status-dot"></span>`;
+      chip.append(document.createTextNode(parts.join(" · ")));
+      chip.title = t("status.sourcesTitle", {
+        names: sources.statuses
+          .filter((entry) => entry.state !== "ok")
+          .map((entry) => entry.name)
+          .join(", "),
+      });
+      refs.statusSources.append(chip);
+    }
+  }
 
   // Autosave failures stay visible until a later autosave succeeds, so the
   // warning cannot scroll away like the toast does. Only rebuild on change:

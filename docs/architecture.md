@@ -116,6 +116,9 @@ src/
   styles/markups.css     Markups panel, revision compare and text search
   styles/help.css        help dialog, search, TOC and image lightbox
   styles/popovers.css    tool flyouts, Canvas options and measurement options
+  styles/reference.css   reference page navigation and follow-primary control
+  styles/status.css      status, storage and welcome details
+  styles/responsive.css  laptop widths and high OS scaling
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties header, active-layer and selection sections
   ui/markupsPanel.ts     Markups public surface
@@ -142,7 +145,8 @@ src/
   ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   settings dialog orchestrator
-  ui/settings/           project, metadata, scale, units, labels, display, quantities, count types and stamps sections
+  ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
+  source/sourceStatus.ts source drawing existence and size monitor
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog

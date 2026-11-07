@@ -32,6 +32,7 @@
 - Slope is measured from the two drawn points (rise over run). There is no elevation input for a slope between two real-world levels. Volume depth is entered in the project length unit, not measured from the drawing.
 - OCR uses the bundled English (`eng`) and Swedish (`swe`) Tesseract models only. Other languages are not available, and OCR quality depends on scan resolution, contrast and skew.
 - OCR runs on demand and can take several seconds per scanned page. The stored OCR index makes later searches fast, but re-running OCR replaces the page's stored words.
+- While a project is open, source-file status checks that each drawing still exists and compares its byte size with the size recorded when it was linked. A change that keeps the same byte size is only detected by reopening the project or by the normal checksum check on open.
 - Project saves replace the file with a single rename after flushing a temporary file. A folder or file system that cannot rename over an existing file, such as some read-only or network shares, refuses the save and keeps the previous project; save locally or use **File → Save a copy…**.
 - Project packages are standard unencrypted ZIP files. GridScalr does not encrypt or cryptographically sign them; the manifest checksums detect corruption and accidental changes, not deliberate tampering.
 - Original TIF scans and quantity/drawing exports are opt-in when packaging and are off by default. The TIF document's embedded PDF is enough to open and edit the project; the scan is only needed as source material.

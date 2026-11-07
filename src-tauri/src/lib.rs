@@ -125,6 +125,7 @@ pub fn run() {
             commands::write_text,
             commands::write_binary_base64,
             commands::path_exists,
+            commands::file_size,
             commands::prepare_demo_project,
             package::package_create,
             package::package_inspect,

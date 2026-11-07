@@ -58,6 +58,11 @@ try {
   assert.ok(autosave.preview, "autosave metadata should be present");
   assert.equal(autosave.record, true, "the recovery snapshot should be stored in IndexedDB");
   assert.equal(
+    await page.locator(".status-project .status-chip").count(),
+    1,
+    "the status bar should show whether the project is saved",
+  );
+  assert.equal(
     autosave.legacy,
     null,
     "the legacy localStorage snapshot should be removed after migration",
@@ -691,6 +696,10 @@ try {
     await settingsDialog.getByText("Smart length labels", { exact: true }).count(),
     "project settings should expose smart length labels",
   );
+  assert.ok(
+    (await settingsDialog.innerText()).includes("Project data:"),
+    "project settings should show the project size",
+  );
   assert.equal(
     await settingsDialog.getByLabel("Measurement layer colour").count(),
     0,
@@ -721,6 +730,18 @@ try {
     await preferencesDialog.getByLabel("Drawing layer colour").inputValue(),
     "#f2a93b",
     "new drawing layers should keep the orange default",
+  );
+  await preferencesDialog
+    .getByRole("navigation", { name: "Preference categories" })
+    .getByRole("button", { name: "Data" })
+    .click();
+  assert.ok(
+    (await preferencesDialog.innerText()).includes("Recovery snapshot"),
+    "Preferences should show the recovery snapshot",
+  );
+  assert.ok(
+    await preferencesDialog.getByRole("button", { name: "Clear recovery data" }).count(),
+    "Preferences should offer to clear recovery data",
   );
   await page.keyboard.press("Escape");
   await preferencesDialog.waitFor({ state: "detached" });
@@ -1457,6 +1478,48 @@ try {
     1,
     "the new page should be marked as blank",
   );
+
+  // Common laptop sizes and high OS scaling keep the primary actions in view.
+  const originalViewport = page.viewportSize();
+  for (const size of [
+    { width: 1280, height: 720 },
+    { width: 1024, height: 640 },
+    { width: 760, height: 560 },
+  ]) {
+    await page.setViewportSize(size);
+    await page.waitForTimeout(200);
+    const fits = await page.evaluate(() => {
+      const within = (selector) => {
+        const element = document.querySelector(selector);
+        if (!element) return false;
+        const rect = element.getBoundingClientRect();
+        return (
+          rect.width > 0 &&
+          rect.left >= -1 &&
+          rect.right <= window.innerWidth + 1 &&
+          rect.top >= -1 &&
+          rect.bottom <= window.innerHeight + 1
+        );
+      };
+      return {
+        menu: within(".menubar"),
+        rail: within(".tool-rail"),
+        zoom: within(".status-controls"),
+        save: within(".status-project"),
+        overflow: document.documentElement.scrollWidth <= window.innerWidth + 1,
+      };
+    });
+    assert.equal(fits.menu, true, `the menu should fit at ${size.width}×${size.height}`);
+    assert.equal(fits.rail, true, `the tool rail should fit at ${size.width}×${size.height}`);
+    assert.equal(fits.zoom, true, `status controls should fit at ${size.width}×${size.height}`);
+    assert.equal(fits.save, true, `the save status should fit at ${size.width}×${size.height}`);
+    assert.equal(
+      fits.overflow,
+      true,
+      `the shell should not overflow at ${size.width}×${size.height}`,
+    );
+  }
+  if (originalViewport) await page.setViewportSize(originalViewport);
 
   // Discarding at the end returns to the welcome screen.
   assert.equal(await page.evaluate(() => window.__gridscalr.store.dirty), true);

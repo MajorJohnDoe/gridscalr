@@ -1,0 +1,78 @@
+/* Common laptop widths and 150–200 % OS scaling keep the primary actions in view. */
+
+@media (max-width: 1500px) {
+  .topbar {
+    gap: 6px;
+    padding: 0 6px;
+  }
+
+  .statusbar {
+    gap: 8px;
+    padding: 0 8px;
+  }
+
+  .status-section + .status-section {
+    padding-left: 8px;
+  }
+}
+
+@media (max-width: 1180px) {
+  :root {
+    --dock-w: 230px;
+    --inspector-w: 250px;
+  }
+
+  .doc-meta {
+    display: none;
+  }
+
+  .status-coords {
+    display: none;
+  }
+}
+
+@media (max-width: 960px) {
+  :root {
+    --dock-w: 200px;
+    --inspector-w: 220px;
+    --rail-w: 46px;
+  }
+
+  .topbar-history {
+    display: none;
+  }
+
+  .statusbar .status-label {
+    display: none;
+  }
+
+  .status-sources .status-chip {
+    max-width: 180px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+@media (max-width: 760px) {
+  :root {
+    --dock-w: 170px;
+    --inspector-w: 190px;
+  }
+
+  .doc-line {
+    display: none;
+  }
+
+  .brand {
+    padding-right: 4px;
+  }
+
+  .topbar {
+    overflow: hidden;
+  }
+
+  .status-warning .status-chip,
+  .status-sources .status-chip {
+    max-width: 140px;
+  }
+}

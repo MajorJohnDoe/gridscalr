@@ -306,6 +306,9 @@ src/styles/dialogs.css     dialogs, menus, forms, quantities and preferences
 src/styles/markups.css     Markups panel, revision compare and text search
 src/styles/help.css        help dialog, search, TOC and image lightbox
 src/styles/popovers.css    tool flyouts and measurement options
+src/styles/reference.css   reference page navigation and follow-primary control
+src/styles/status.css      status, storage and welcome details
+src/styles/responsive.css  laptop widths and high OS scaling
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
 src/ui/inspector.ts        Properties header, active-layer and selection sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
@@ -331,7 +334,8 @@ src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
 src/ui/settingsDialog.ts   settings dialog orchestrator
-src/ui/settings/           project, metadata, scale, units, labels, display, quantities, count types and stamps sections
+src/ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
+src/source/sourceStatus.ts source drawing existence and size monitor
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
