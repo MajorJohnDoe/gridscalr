@@ -1,4 +1,5 @@
 import { store, type ToolId } from "../../state/store";
+import { TouchNavigation } from "../touchNavigation";
 import type { Point } from "../../model/types";
 import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
@@ -25,11 +26,77 @@ export class PointerController {
   private pan: PanState | null = null;
   private marquee: MarqueeState | null = null;
   private drag: DragState | null = null;
+  private penActive = false;
+  private lastPenAt = 0;
+  private readonly touchNavigation: TouchNavigation;
 
   constructor(
     private readonly element: HTMLCanvasElement,
     private readonly host: PointerHost,
-  ) {}
+  ) {
+    this.touchNavigation = new TouchNavigation({
+      getView: () => this.host.viewport(),
+      toLocal: (clientX, clientY) => this.localFromClient(clientX, clientY),
+      setView: (next) => store.setView(next.zoom, next.panX, next.panY),
+      onGestureStart: () => {
+        this.cancelPan();
+        this.cancelMarquee();
+        this.cancelDrag();
+        store.cancelGesture();
+        this.host.cancelDraft();
+      },
+      suppressOneFinger: () => this.penActive || performance.now() - this.lastPenAt < 800,
+      capturePointer: (pointerId) => this.capturePointer(pointerId),
+      releasePointer: (pointerId) => this.releasePointer(pointerId),
+    });
+  }
+
+  get touchBlocked(): boolean {
+    return this.touchNavigation.active || this.touchNavigation.suppressed;
+  }
+
+  markPenDown(event: PointerEvent): void {
+    if (event.pointerType !== "pen") return;
+    this.penActive = true;
+    this.lastPenAt = performance.now();
+  }
+
+  touchDown(event: PointerEvent): boolean {
+    if (event.pointerType !== "touch") return false;
+    this.cancelTouchLongPress();
+    this.resetLongPressFired();
+    if (this.touchNavigation.pointerDown(event)) return true;
+    this.startTouchLongPress(event);
+    return false;
+  }
+
+  touchMove(event: PointerEvent): boolean {
+    if (event.pointerType !== "touch") return false;
+    this.trackTouchLongPress(event);
+    if (this.touchNavigation.pointerMove(event)) {
+      event.preventDefault();
+      return true;
+    }
+    return this.longPressFired;
+  }
+
+  touchUp(event: PointerEvent): boolean {
+    if (event.pointerType === "pen") {
+      this.penActive = false;
+      this.lastPenAt = performance.now();
+      return false;
+    }
+    if (event.pointerType !== "touch") return false;
+    this.cancelTouchLongPress();
+    if (this.longPressFired) {
+      this.resetLongPressFired();
+      if (this.element.hasPointerCapture(event.pointerId)) {
+        this.releasePointer(event.pointerId);
+      }
+      return true;
+    }
+    return this.touchNavigation.pointerUp(event);
+  }
 
   get isSpaceDown(): boolean {
     return this.spaceDown;

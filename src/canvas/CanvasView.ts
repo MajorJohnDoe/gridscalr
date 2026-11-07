@@ -57,7 +57,6 @@ import {
   type BoxHandleRole,
 } from "./geometry";
 import { CropController } from "./crop";
-import { TouchNavigation } from "./touchNavigation";
 import { PointerController } from "./pointer/PointerController";
 import type { PointerHost } from "./pointer/PointerHost";
 import { CALIBRATION_COLOR, drawDraft as paintDraft, type Draft } from "./draftRenderer";
@@ -235,9 +234,6 @@ export class CanvasView {
   private rendering = false;
   private draft: Draft | null = null;
   private pointerScreen: Point | null = null;
-  private penActive = false;
-  private lastPenAt = 0;
-  private touchNavigation: TouchNavigation;
   private pointers: PointerController;
   private snap: SnapResult | null = null;
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
@@ -326,24 +322,6 @@ export class CanvasView {
       capturePointer: (pointerId) => this.capturePointer(pointerId),
     });
 
-    this.touchNavigation = new TouchNavigation({
-      getView: () => this.view,
-      toLocal: (clientX, clientY) => {
-        const rect = this.interaction.getBoundingClientRect();
-        return { x: clientX - rect.left, y: clientY - rect.top };
-      },
-      setView: (next) => store.setView(next.zoom, next.panX, next.panY),
-      onGestureStart: () => {
-        this.pointers.cancelPanAndMarquee();
-        this.pointers.cancelDrag();
-        store.cancelGesture();
-        this.cancelDraft();
-      },
-      suppressOneFinger: () => this.penActive || performance.now() - this.lastPenAt < 800,
-      capturePointer: (pointerId) => this.capturePointer(pointerId),
-      releasePointer: (pointerId) => this.releasePointer(pointerId),
-    });
-
     const pointerHost: PointerHost = {
       isReadOnly: () => this.readOnly,
       viewport: () => this.view,
@@ -378,7 +356,8 @@ export class CanvasView {
       createItem: (kind, points, options) => this.createItem(kind, points, options),
       runCalibration: (p1, p2) => this.runCalibration(p1, p2),
       startTextTool: (page) => this.startTextTool(page),
-      touchNavigationBlocked: () => this.touchNavigation.active || this.touchNavigation.suppressed,
+      cancelDraft: () => this.cancelDraft(),
+      touchNavigationBlocked: () => this.pointers.touchBlocked,
       activeTool: () => store.ui.activeTool,
       viewPage: () => this.viewPage,
       toPage: (screen) => this.toPage(screen),
@@ -825,16 +804,8 @@ export class CanvasView {
     this.interaction.focus({ preventScroll: true });
     const screen = this.localPoint(event);
 
-    if (event.pointerType === "pen") {
-      this.penActive = true;
-      this.lastPenAt = performance.now();
-    }
-    if (event.pointerType === "touch") {
-      this.pointers.cancelTouchLongPress();
-      this.pointers.resetLongPressFired();
-      if (this.touchNavigation.pointerDown(event)) return;
-      this.pointers.startTouchLongPress(event);
-    }
+    this.pointers.markPenDown(event);
+    if (this.pointers.touchDown(event)) return;
 
     if (this.crop.active) {
       if (event.button !== 0) return;
@@ -1213,14 +1184,7 @@ export class CanvasView {
     if (!store.project) return;
     const screen = this.localPoint(event);
 
-    if (event.pointerType === "touch") {
-      this.pointers.trackTouchLongPress(event);
-      if (this.touchNavigation.pointerMove(event)) {
-        event.preventDefault();
-        return;
-      }
-      if (this.pointers.longPressFired) return;
-    }
+    if (this.pointers.touchMove(event)) return;
 
     this.pointerScreen = screen;
     const page = this.toPage(screen);
@@ -1350,21 +1314,7 @@ export class CanvasView {
   };
 
   private onPointerUp = (event: PointerEvent): void => {
-    if (event.pointerType === "pen") {
-      this.penActive = false;
-      this.lastPenAt = performance.now();
-    }
-    if (event.pointerType === "touch") {
-      this.pointers.cancelTouchLongPress();
-      if (this.pointers.longPressFired) {
-        this.pointers.resetLongPressFired();
-        if (this.interaction.hasPointerCapture(event.pointerId)) {
-          this.releasePointer(event.pointerId);
-        }
-        return;
-      }
-    }
-    if (this.touchNavigation.pointerUp(event)) return;
+    if (this.pointers.touchUp(event)) return;
     if (this.interaction.hasPointerCapture(event.pointerId)) {
       this.releasePointer(event.pointerId);
     }

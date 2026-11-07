@@ -55,6 +55,7 @@ export interface PointerHost {
   ): { layerId: string; itemId: string } | null;
   runCalibration(p1: Point, p2: Point): Promise<void>;
   startTextTool(page: Point): void;
+  cancelDraft(): void;
   touchNavigationBlocked(): boolean;
   activeTool(): ToolId;
   viewPage(): number;
