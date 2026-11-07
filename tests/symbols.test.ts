@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(123);
-    expect(ALL_SYMBOLS).toHaveLength(175);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(127);
+    expect(ALL_SYMBOLS).toHaveLength(179);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(123);
+    expect(symbolsForSet("schematic")).toHaveLength(127);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -309,6 +309,19 @@ describe("schematic symbol set", () => {
     expect(hydraulic.ports).toHaveLength(2);
     expect(motor.art.shapes.some((shape) => shape.stroke)).toBe(true);
     expect(hydraulic.art.shapes.some((shape) => shape.stroke)).toBe(true);
+  });
+
+  it("adds four heating tank variants with a bottom port", () => {
+    for (const id of [
+      "schematic.tank-2",
+      "schematic.tank-3",
+      "schematic.tank-4",
+      "schematic.open-tank",
+    ]) {
+      const tank = symbolForAll(id);
+      expect(tank.category).toBe("heating");
+      expect(tank.ports, id).toHaveLength(1);
+    }
   });
 
   it("keeps the connection points of the redrawn operation-card symbols", () => {

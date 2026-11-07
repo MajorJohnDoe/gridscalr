@@ -101,6 +101,45 @@ function meterPanelBody(): string {
 
 const METER_PANEL_DOTS = joinPaths(smallCircle(41, 38, 1.5), smallCircle(47, 38, 1.5));
 
+/** Four tank outlines shared by the heating tank symbols. */
+const TANK_2_BODY = joinPaths(
+  linePath(14, 18, 14, 50),
+  linePath(14, 50, 50, 50),
+  linePath(50, 50, 50, 18),
+  linePath(14, 18, 32, 10),
+  linePath(32, 10, 50, 18),
+);
+
+const TANK_3_BODY = joinPaths(
+  linePath(14, 18, 14, 50),
+  linePath(14, 50, 40, 50),
+  linePath(40, 50, 40, 54),
+  linePath(40, 54, 50, 54),
+  linePath(50, 54, 50, 18),
+  linePath(14, 18, 20, 18),
+  linePath(44, 18, 50, 18),
+);
+
+const TANK_4_BODY = joinPaths(
+  linePath(14, 26, 14, 54),
+  linePath(14, 54, 40, 54),
+  linePath(40, 54, 40, 58),
+  linePath(40, 58, 50, 58),
+  linePath(50, 58, 50, 26),
+  linePath(50, 26, 14, 26),
+  linePath(29, 26, 29, 18),
+  linePath(35, 26, 35, 18),
+  linePath(26, 15, 38, 15),
+);
+
+const OPEN_TANK_BODY = joinPaths(
+  linePath(14, 18, 14, 54),
+  linePath(14, 54, 50, 54),
+  linePath(50, 54, 50, 18),
+  linePath(10, 18, 14, 18),
+  linePath(50, 18, 54, 18),
+);
+
 interface VesselGeometry {
   x: number;
   y: number;
@@ -727,6 +766,38 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
     defaultSize: 26,
     ports: expansionVesselPorts(EXPANSION_VESSEL_SMALL),
     shapes: expansionVesselShapes(EXPANSION_VESSEL_SMALL),
+  }),
+  schematicSymbol({
+    id: "schematic.tank-2",
+    category: "heating",
+    keywords: ["tank 2", "tank", "sluten tank", "closed tank", "kärl", "t2"],
+    tagPrefix: "T2",
+    ports: [{ id: "connect", x: 32, y: 50, direction: "both" }],
+    shapes: [stroke(TANK_2_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.tank-3",
+    category: "heating",
+    keywords: ["tank 3", "tank", "öppen tank", "open tank", "kärl", "t3"],
+    tagPrefix: "T3",
+    ports: [{ id: "connect", x: 45, y: 54, direction: "both" }],
+    shapes: [stroke(TANK_3_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.tank-4",
+    category: "heating",
+    keywords: ["tank 4", "tank", "sluten tank", "closed tank", "kärl", "t4"],
+    tagPrefix: "T4",
+    ports: [{ id: "connect", x: 45, y: 58, direction: "both" }],
+    shapes: [stroke(TANK_4_BODY)],
+  }),
+  schematicSymbol({
+    id: "schematic.open-tank",
+    category: "heating",
+    keywords: ["öppen tank", "open tank", "tank", "kärl", "tö"],
+    tagPrefix: "TÖ",
+    ports: [{ id: "connect", x: 32, y: 54, direction: "both" }],
+    shapes: [stroke(OPEN_TANK_BODY)],
   }),
   schematicSymbol({
     id: "schematic.pressure-holding",
