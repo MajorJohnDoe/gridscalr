@@ -247,6 +247,7 @@ export class Store {
   private gestureSnapshot: string | null = null;
   private autosaveTimer: number | null = null;
   private lastAutosaveError: string | null = null;
+  private autosaveMark: { revision: number; path: string | null } | null = null;
   private assetPayloads = new Map<string, string>();
 
   subscribe(listener: Listener): () => void {
@@ -275,6 +276,7 @@ export class Store {
     this.undoStack = [];
     this.redoStack = [];
     this.gestureSnapshot = null;
+    this.autosaveMark = null;
     this.assetPayloads.clear();
     if (!project.assets) project.assets = {};
     for (const asset of Object.values(project.assets)) {
@@ -880,17 +882,19 @@ export class Store {
       void this.writeAutosave();
     }, 900);
   }
-
   private async writeAutosave(): Promise<void> {
     const project = this.project;
     if (!project) return;
-    const payload: AutosavePayload = {
-      project,
-      projectPath: this.projectPath,
-      savedAt: new Date().toISOString(),
-    };
+    const revision = this.revision;
+    if (this.autosaveMark?.revision === revision && this.autosaveMark.path === this.projectPath)
+      return;
     try {
-      await writeAutosaveStorage(payload);
+      await writeAutosaveStorage({
+        project,
+        projectPath: this.projectPath,
+        savedAt: new Date().toISOString(),
+      });
+      this.autosaveMark = { revision, path: this.projectPath };
       const hadError = this.autosaveError !== null;
       this.autosaveError = null;
       this.lastAutosaveError = null;
@@ -921,6 +925,7 @@ export class Store {
       window.clearTimeout(this.autosaveTimer);
       this.autosaveTimer = null;
     }
+    this.autosaveMark = null;
     return clearAutosaveStorage();
   }
 }

@@ -88,6 +88,32 @@ describe("autosave storage", () => {
     expect(storage.has("gridscalr.autosave.v1")).toBe(false);
   });
 
+  it("reads an object-shaped record written before the serialized format", async () => {
+    const value = payload("Previous format.pdf");
+    await new Promise<void>((resolve, reject) => {
+      const request = indexedDB.open("gridscalr", 1);
+      request.onupgradeneeded = () => {
+        const database = request.result;
+        if (!database.objectStoreNames.contains("autosave")) database.createObjectStore("autosave");
+      };
+      request.onsuccess = () => {
+        const database = request.result;
+        const transaction = database.transaction("autosave", "readwrite");
+        transaction.objectStore("autosave").put(value, "current");
+        transaction.oncomplete = () => {
+          database.close();
+          resolve();
+        };
+        transaction.onerror = () => reject(transaction.error);
+      };
+      request.onerror = () => reject(request.error);
+    });
+
+    const restored = await readAutosave();
+    expect(restored?.project.name).toBe("Previous format");
+    expect(restored?.projectPath).toBe(value.projectPath);
+  });
+
   it("clears both the preview and the IndexedDB record", async () => {
     await writeAutosave(payload());
     await clearAutosave();
