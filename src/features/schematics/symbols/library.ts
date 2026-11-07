@@ -1010,6 +1010,36 @@ export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
 
   // --- Ventilation -------------------------------------------------------
   schematicSymbol({
+    id: "schematic.drain-silencer",
+    category: "ventilation",
+    keywords: ["dränljuddämpare", "drain silencer", "ljuddämpare", "drän", "dld"],
+    tagPrefix: "DLD",
+    ports: ductPorts(32),
+    shapes: [
+      stroke(
+        joinPaths(rectPath(14, 14, 36, 36), linePath(26, 14, 26, 50), linePath(38, 14, 38, 50)),
+      ),
+    ],
+  }),
+  schematicSymbol({
+    id: "schematic.exhaust-silencer",
+    category: "ventilation",
+    keywords: ["frånluftsljuddämpare", "exhaust silencer", "ljuddämpare", "frånluft", "eld"],
+    tagPrefix: "ELD",
+    ports: ductPorts(32),
+    shapes: [
+      stroke(
+        joinPaths(
+          rectPath(14, 14, 36, 36),
+          linePath(26, 14, 26, 30),
+          linePath(26, 34, 26, 50),
+          linePath(38, 14, 38, 30),
+          linePath(38, 34, 38, 50),
+        ),
+      ),
+    ],
+  }),
+  schematicSymbol({
     id: "schematic.axial-fan",
     category: "ventilation",
     keywords: ["axialfläkt", "axial fan", "fläkt", "axial", "af"],

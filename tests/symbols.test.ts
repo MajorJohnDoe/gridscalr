@@ -232,10 +232,10 @@ describe("symbol library", () => {
 describe("schematic symbol set", () => {
   it("keeps the facility signs unchanged and adds the schematic set", () => {
     expect(SYMBOLS).toHaveLength(52);
-    expect(SCHEMATIC_SYMBOLS).toHaveLength(153);
-    expect(ALL_SYMBOLS).toHaveLength(205);
+    expect(SCHEMATIC_SYMBOLS).toHaveLength(155);
+    expect(ALL_SYMBOLS).toHaveLength(207);
     expect(symbolsForSet("sign")).toHaveLength(52);
-    expect(symbolsForSet("schematic")).toHaveLength(153);
+    expect(symbolsForSet("schematic")).toHaveLength(155);
     expect(ALL_SYMBOLS.map((symbol) => symbol.id)).toEqual([
       ...SYMBOLS.map((symbol) => symbol.id),
       ...SCHEMATIC_SYMBOLS.map((symbol) => symbol.id),
@@ -400,6 +400,13 @@ describe("schematic symbol set", () => {
     for (const id of ["schematic.vertical-vessel", "schematic.dished-ends-vessel"]) {
       expect(symbolForAll(id).category, id).toBe("heating");
       expect(symbolForAll(id).ports, id).toHaveLength(1);
+    }
+  });
+
+  it("adds drain and exhaust silencers", () => {
+    for (const id of ["schematic.drain-silencer", "schematic.exhaust-silencer"]) {
+      expect(symbolForAll(id).category, id).toBe("ventilation");
+      expect(symbolForAll(id).ports, id).toHaveLength(2);
     }
   });
 

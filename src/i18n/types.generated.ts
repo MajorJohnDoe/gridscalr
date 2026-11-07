@@ -1317,6 +1317,8 @@ export type MessageKey =
   | "symbol.schematic.heat-exchanger"
   | "symbol.schematic.damper"
   | "symbol.schematic.silencer"
+  | "symbol.schematic.drain-silencer"
+  | "symbol.schematic.exhaust-silencer"
   | "symbol.schematic.supply-diffuser"
   | "symbol.schematic.extract-diffuser"
   | "symbol.schematic.duct-sensor"

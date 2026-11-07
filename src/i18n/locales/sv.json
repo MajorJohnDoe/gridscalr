@@ -1315,6 +1315,8 @@
   "symbol.schematic.heat-exchanger": "Värmeväxlare",
   "symbol.schematic.damper": "Spjäll",
   "symbol.schematic.silencer": "Ljuddämpare",
+  "symbol.schematic.drain-silencer": "Dränljuddämpare",
+  "symbol.schematic.exhaust-silencer": "Frånluftsljuddämpare",
   "symbol.schematic.supply-diffuser": "Tilluftsdon",
   "symbol.schematic.extract-diffuser": "Frånluftsdon",
   "symbol.schematic.duct-sensor": "Kanalgivare",

@@ -1315,6 +1315,8 @@
   "symbol.schematic.heat-exchanger": "Heat exchanger",
   "symbol.schematic.damper": "Damper",
   "symbol.schematic.silencer": "Silencer",
+  "symbol.schematic.drain-silencer": "Drain silencer",
+  "symbol.schematic.exhaust-silencer": "Exhaust silencer",
   "symbol.schematic.supply-diffuser": "Supply air diffuser",
   "symbol.schematic.extract-diffuser": "Extract air diffuser",
   "symbol.schematic.duct-sensor": "Duct sensor",
