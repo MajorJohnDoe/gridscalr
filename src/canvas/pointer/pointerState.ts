@@ -1,6 +1,6 @@
-import type { MarkupItem, Point, SelectionRef } from "../model/types";
-import type { Bounds } from "../model/geometry";
-import type { BoxHandleRole } from "./geometry";
+import type { MarkupItem, Point, SelectionRef } from "../../model/types";
+import type { Bounds } from "../../model/geometry";
+import type { BoxHandleRole } from "../geometry";
 
 /** The pointer gesture that is currently in progress. */
 export interface DragState {

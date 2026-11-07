@@ -57,7 +57,6 @@ import { deleteItems, translateItems } from "../model/commands";
 import {
   averagePoints,
   constrainSquare,
-  cursorForRole,
   dedupeLast,
   focusViewTransform,
   handleLocalPoint,
@@ -69,13 +68,15 @@ import {
 } from "./geometry";
 import { CropController } from "./crop";
 import { TouchNavigation } from "./touchNavigation";
+import { PointerController } from "./pointer/PointerController";
+import type { PointerHost } from "./pointer/PointerHost";
 import { CALIBRATION_COLOR, drawDraft as paintDraft, type Draft } from "./draftRenderer";
 import { drawLabelLayout as paintLabelLayout } from "./annotationDraw";
 import { CanvasEditorController, type LabelHit } from "./editors";
 import { drawItem, type ItemRenderContext } from "./itemRenderer";
 import { handleAt, selectionHandles, type Handle } from "./selectionHandles";
-import { groupHandleAt } from "./groupHandles";
-import type { DragState, MarqueeState, PanState } from "./pointerState";
+import { groupHandleAt } from "./pointer/groupHandles";
+import type { DragState, MarqueeState, PanState } from "./pointer/pointerState";
 import {
   drawInteraction as paintInteraction,
   type InteractionRenderContext,
@@ -251,17 +252,14 @@ export class CanvasView {
   private pointerScreen: Point | null = null;
   private penActive = false;
   private lastPenAt = 0;
-  private touchLongPressTimer: number | null = null;
-  private touchLongPressStart: Point | null = null;
-  private touchLongPressFired = false;
   private touchNavigation: TouchNavigation;
+  private pointers: PointerController;
   private snap: SnapResult | null = null;
   private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
   private searchHits: {
     page: number;
     rects: Array<{ x: number; y: number; width: number; height: number }>;
   } | null = null;
-  private spaceDown = false;
   private renderedPage = 0;
   private editors: CanvasEditorController;
   private hoverHandle: Handle | null = null;
@@ -362,6 +360,31 @@ export class CanvasView {
       capturePointer: (pointerId) => this.capturePointer(pointerId),
       releasePointer: (pointerId) => this.releasePointer(pointerId),
     });
+
+    const pointerHost: PointerHost = {
+      isReadOnly: () => this.readOnly,
+      viewport: () => this.view,
+      cropActive: () => this.crop.active,
+      cropCursor: () => this.crop.cursor(),
+      panState: () => this.pan,
+      dragState: () => this.drag,
+      hasMarquee: () => this.marquee !== null,
+      labelConnectActive: () => this.labelConnect !== null,
+      hoverHandle: () => this.hoverHandle,
+      hoverLabelResize: () => this.hoverLabelResize,
+      setHostCursor: (cursor) => {
+        if (cursor) this.host.dataset.cursor = cursor;
+        else delete this.host.dataset.cursor;
+      },
+      zoomAt: (screen, factor) => this.zoomAt(screen, factor),
+      cancelGesture: () => {
+        this.drag = null;
+        this.marquee = null;
+        store.cancelGesture();
+      },
+      openContextMenu: (clientX, clientY) => this.openContextMenu(clientX, clientY),
+    };
+    this.pointers = new PointerController(this.interaction, pointerHost);
 
     this.observer = new ResizeObserver(() => this.resize());
     this.observer.observe(host);
@@ -553,7 +576,7 @@ export class CanvasView {
   }
 
   setSpaceDown(down: boolean): void {
-    this.spaceDown = down;
+    this.pointers.setSpaceDown(down);
     this.updateCursor();
   }
 
@@ -695,46 +718,11 @@ export class CanvasView {
   }
 
   private localPoint(event: PointerEvent | WheelEvent | MouseEvent): Point {
-    return this.localFromClient(event.clientX, event.clientY);
+    return this.pointers.localPoint(event);
   }
 
   private localFromClient(clientX: number, clientY: number): Point {
-    const rect = this.interaction.getBoundingClientRect();
-    return { x: clientX - rect.left, y: clientY - rect.top };
-  }
-
-  private startTouchLongPress(event: PointerEvent): void {
-    this.cancelTouchLongPress();
-    if (event.pointerType !== "touch" || store.ui.activeTool !== "select") return;
-    this.touchLongPressStart = { x: event.clientX, y: event.clientY };
-    this.touchLongPressTimer = window.setTimeout(() => {
-      this.touchLongPressTimer = null;
-      this.touchLongPressFired = true;
-      this.drag = null;
-      this.marquee = null;
-      store.cancelGesture();
-      this.openContextMenu(event.clientX, event.clientY);
-    }, 550);
-  }
-
-  private trackTouchLongPress(event: PointerEvent): void {
-    if (!this.touchLongPressStart || event.pointerType !== "touch") return;
-    if (
-      Math.hypot(
-        event.clientX - this.touchLongPressStart.x,
-        event.clientY - this.touchLongPressStart.y,
-      ) > 8
-    ) {
-      this.cancelTouchLongPress();
-    }
-  }
-
-  private cancelTouchLongPress(): void {
-    if (this.touchLongPressTimer !== null) {
-      window.clearTimeout(this.touchLongPressTimer);
-      this.touchLongPressTimer = null;
-    }
-    this.touchLongPressStart = null;
+    return this.pointers.localFromClient(clientX, clientY);
   }
 
   private toPage(screen: Point): Point {
@@ -792,48 +780,15 @@ export class CanvasView {
   }
 
   private updateCursor(): void {
-    if (this.readOnly) return;
-    const tool = store.ui.activeTool;
-    let cursor = "";
-    if (this.crop.active) {
-      cursor = this.crop.cursor() ?? "crosshair";
-    } else if (this.pan) cursor = "grabbing";
-    else if (this.drag) {
-      if (this.drag.mode === "rotate") cursor = "grabbing";
-      else if (
-        (this.drag.mode === "resize" || this.drag.mode === "scale-selection") &&
-        this.drag.handle
-      ) {
-        cursor = cursorForRole(this.drag.handle);
-      } else if (this.drag.mode === "vertex") cursor = "crosshair";
-      else if (this.drag.mode === "measurement-label-size") cursor = "nwse-resize";
-      else cursor = "move";
-    } else if (this.labelConnect) cursor = "crosshair";
-    else if (this.spaceDown || tool === "pan") cursor = "grab";
-    else if (this.marquee) cursor = "crosshair";
-    else if (this.hoverLabelResize) cursor = "nwse-resize";
-    else if (this.hoverHandle) cursor = this.hoverHandle.cursor;
-    else if (tool === "text") cursor = "text";
-    else if (tool !== "select") cursor = "crosshair";
-    else if (store.ui.hover) cursor = "move";
-    if (cursor) this.host.dataset.cursor = cursor;
-    else delete this.host.dataset.cursor;
+    this.pointers.updateCursor();
   }
 
   private capturePointer(pointerId: number): void {
-    try {
-      this.interaction.setPointerCapture(pointerId);
-    } catch {
-      // Synthetic events and some platforms do not expose an active pointer.
-    }
+    this.pointers.capturePointer(pointerId);
   }
 
   private releasePointer(pointerId: number): void {
-    try {
-      this.interaction.releasePointerCapture(pointerId);
-    } catch {
-      // The pointer may already have been released by the browser.
-    }
+    this.pointers.releasePointer(pointerId);
   }
 
   private onPointerDown = (event: PointerEvent): void => {
@@ -847,10 +802,10 @@ export class CanvasView {
       this.lastPenAt = performance.now();
     }
     if (event.pointerType === "touch") {
-      this.cancelTouchLongPress();
-      this.touchLongPressFired = false;
+      this.pointers.cancelTouchLongPress();
+      this.pointers.resetLongPressFired();
       if (this.touchNavigation.pointerDown(event)) return;
-      this.startTouchLongPress(event);
+      this.pointers.startTouchLongPress(event);
     }
 
     if (this.crop.active) {
@@ -866,7 +821,7 @@ export class CanvasView {
       return;
     }
 
-    if (event.button === 1 || this.spaceDown || store.ui.activeTool === "pan") {
+    if (event.button === 1 || this.pointers.isSpaceDown || store.ui.activeTool === "pan") {
       event.preventDefault();
       this.pan = {
         startX: event.clientX,
@@ -1518,12 +1473,12 @@ export class CanvasView {
     const screen = this.localPoint(event);
 
     if (event.pointerType === "touch") {
-      this.trackTouchLongPress(event);
+      this.pointers.trackTouchLongPress(event);
       if (this.touchNavigation.pointerMove(event)) {
         event.preventDefault();
         return;
       }
-      if (this.touchLongPressFired) return;
+      if (this.pointers.longPressFired) return;
     }
 
     this.pointerScreen = screen;
@@ -1899,9 +1854,9 @@ export class CanvasView {
       this.lastPenAt = performance.now();
     }
     if (event.pointerType === "touch") {
-      this.cancelTouchLongPress();
-      if (this.touchLongPressFired) {
-        this.touchLongPressFired = false;
+      this.pointers.cancelTouchLongPress();
+      if (this.pointers.longPressFired) {
+        this.pointers.resetLongPressFired();
         if (this.interaction.hasPointerCapture(event.pointerId)) {
           this.releasePointer(event.pointerId);
         }
@@ -1993,7 +1948,7 @@ export class CanvasView {
   }
 
   private onPointerLeave = (): void => {
-    this.cancelTouchLongPress();
+    this.pointers.cancelTouchLongPress();
     if (this.crop.active) {
       this.crop.pointerLeave();
       return;
@@ -2106,8 +2061,8 @@ export class CanvasView {
 
   private onContextMenu = (event: MouseEvent): void => {
     event.preventDefault();
-    if (this.touchLongPressFired) return;
-    this.cancelTouchLongPress();
+    if (this.pointers.longPressFired) return;
+    this.pointers.cancelTouchLongPress();
     this.openContextMenu(event.clientX, event.clientY);
   };
 
@@ -2138,16 +2093,7 @@ export class CanvasView {
   }
 
   private onWheel = (event: WheelEvent): void => {
-    if (!store.project) return;
-    event.preventDefault();
-    if (event.ctrlKey || event.metaKey) {
-      const factor = Math.exp(-event.deltaY * 0.0018);
-      this.zoomAt(this.localPoint(event), factor);
-      return;
-    }
-    const dx = event.shiftKey ? event.deltaY : event.deltaX;
-    const dy = event.shiftKey ? 0 : event.deltaY;
-    store.setView(this.viewZoom, this.viewPanX - dx, this.viewPanY - dy);
+    this.pointers.onWheel(event);
   };
 
   private snapCandidates(): readonly SnapCandidate[] {
