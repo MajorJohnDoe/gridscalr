@@ -120,7 +120,6 @@ import {
 import { layoutRichText, runsText, textRunDefaults } from "../model/richText";
 import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { snapToSchematicGrid } from "../features/schematics/model/schematicGrid";
 import {
   resolveSheetLabels,
   SHEET_FIELD,
@@ -2316,11 +2315,7 @@ export class CanvasView {
   }
 
   private snapPolylinePoint(point: Point): Point {
-    const snapped = this.snapPoint(point);
-    if (this.snap) return snapped;
-    const project = store.project;
-    if (!project) return point;
-    return snapToSchematicGrid(project, this.viewPage, point);
+    return this.snapPoint(point);
   }
 
   private constrainPolyline(last: Point, point: Point, free: boolean): Point {
