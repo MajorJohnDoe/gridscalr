@@ -17,7 +17,6 @@ import {
   layerLockedOnPage,
   layerVisibleOnPage,
 } from "../model/layers";
-import { makeId } from "../model/calibration";
 import { normalizeProjectName } from "../model/projectName";
 import { createImageItem } from "../model/images";
 import {
@@ -29,7 +28,6 @@ import {
   totalPageCount,
 } from "../model/documents";
 import { base64ToBytes } from "../io/base64";
-import { isTiff } from "../io/tiff";
 import { SCHEMA_VERSION } from "../model/types";
 import type {
   DocumentRef,
@@ -64,21 +62,21 @@ import {
   readFileBytes,
   readFileText,
   saveTextFile,
-  sha256Hex,
   writeTextFile,
 } from "../io/platform";
 import { assertWritablePath } from "../io/writeGuard";
-import {
-  loadPdfDocument,
-  PasswordRequiredError,
-  PdfPasswordError,
-  PdfRenderer,
-  renderPagePreview,
-} from "../pdf/pdfRenderer";
+import { PdfRenderer } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
 import type { ExportKind } from "./exportFlows";
 import { classifyOpenTarget } from "./openTarget";
+import {
+  chooseImportPages,
+  confirmChecksumMismatch,
+  createImportedDocument,
+  hashBytes,
+  openDocument,
+} from "./documentImport";
 import {
   copySelection,
   cutSelection,
@@ -108,7 +106,6 @@ import {
   drawingExportDialog,
   manualScaleDialog,
   messageDialog,
-  passwordDialog,
   unsavedChangesDialog,
 } from "../ui/dialogs";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
@@ -118,7 +115,6 @@ import { createShell, relabelShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
-import { pageImportDialog } from "../ui/pageImportDialog";
 import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
@@ -830,7 +826,7 @@ export class App {
       project.layers.find((layer) => layer.kind === "draw")?.id ?? project.activeLayerId;
     if (!documentRef.template) return;
     const bytes = await this.sheetBytes(documentRef.template);
-    const pdf = await this.openDocument(bytes, documentRef.name);
+    const pdf = await openDocument(bytes, documentRef.name);
     if (!pdf) return;
     await this.installDocuments([pdf], project, null, false);
     toast(t("sheet.created", { name: project.name }), "success");
@@ -868,7 +864,7 @@ export class App {
       fields: { ...sheet.template.fields },
     };
     const bytes = await this.sheetBytes(next);
-    const proxy = await this.openDocument(bytes, sheet.name);
+    const proxy = await openDocument(bytes, sheet.name);
     if (!proxy) return;
     renderer.replaceDocument(index, proxy, [1]);
     this.thumbnails?.clear();
@@ -893,7 +889,7 @@ export class App {
     if (!documentRef.template) return;
 
     const bytes = await this.sheetBytes(documentRef.template);
-    const pdf = await this.openDocument(bytes, documentRef.name);
+    const pdf = await openDocument(bytes, documentRef.name);
     if (!pdf) return;
 
     store.addDocument(documentRef);
@@ -1022,50 +1018,16 @@ export class App {
   }
 
   private async loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void> {
-    const tiff = isTiff(bytes);
-    let pdfBytes = bytes;
-    let documentRef: DocumentRef;
-    let dpiWarning = false;
-
-    if (tiff) {
-      const tiffModule = await import("../io/tiffImport");
-      let conversion;
-      try {
-        conversion = await tiffModule.tiffToPdf(bytes);
-      } catch (error) {
-        await messageDialog(t("app.couldNotImportTif"), errorMessage(error), "warning");
-        return;
-      }
-      const hash = await this.hashBytes(bytes);
-      documentRef = tiffModule.createTiffDocumentRef({
-        name,
-        path,
-        sha256: hash,
-        sizeBytes: bytes.byteLength,
-        conversion,
-      });
-      pdfBytes = conversion.bytes;
-      dpiWarning = conversion.pages.some((page) => !page.dpiKnown);
-    } else {
-      const hash = await this.hashBytes(bytes);
-      documentRef = {
-        id: makeId("doc"),
-        kind: "pdf",
-        name,
-        path,
-        relativePath: null,
-        sha256: hash,
-        pageCount: 1,
-        sizeBytes: bytes.byteLength,
-      };
-    }
+    const imported = await createImportedDocument(bytes, name, path);
+    if (!imported) return;
+    const { documentRef, pdfBytes, dpiWarning } = imported;
 
     const project = store.project;
 
     if (!project) {
-      const pdf = await this.openDocument(pdfBytes, name);
+      const pdf = await openDocument(pdfBytes, name);
       if (!pdf) return;
-      const pages = await this.chooseImportPages(pdf, name, null);
+      const pages = await chooseImportPages(pdf, name, null, () => this.renderer?.busy ?? false);
       if (!pages) {
         await pdf.loadingTask.destroy();
         return;
@@ -1093,11 +1055,11 @@ export class App {
       return;
     }
 
-    const pdf = await this.openDocument(pdfBytes, name);
+    const pdf = await openDocument(pdfBytes, name);
     if (!pdf) return;
     const lastPage = totalPageCount(project.documents);
     const startPage = lastPage + 1;
-    const pages = await this.chooseImportPages(pdf, name, lastPage);
+    const pages = await chooseImportPages(pdf, name, lastPage, () => this.renderer?.busy ?? false);
     if (!pages) {
       await pdf.loadingTask.destroy();
       return;
@@ -1129,32 +1091,6 @@ export class App {
    * files skip the picker; previews come from a temporary service so they never
    * interfere with the project's cached Pages-panel thumbnails.
    */
-  private async chooseImportPages(
-    pdf: PDFDocumentProxy,
-    name: string,
-    afterPage: number | null,
-  ): Promise<number[] | null> {
-    if (pdf.numPages <= 1) return [1];
-    const previews = new PageThumbnailService(
-      async (page) => {
-        const proxy = await pdf.getPage(page);
-        const canvas = await renderPagePreview(proxy, 144);
-        return canvas.toDataURL("image/jpeg", 0.72);
-      },
-      () => this.renderer?.busy ?? false,
-    );
-    try {
-      return await pageImportDialog({
-        fileName: name,
-        pageCount: pdf.numPages,
-        mode: afterPage === null ? "new" : "add",
-        afterPage: afterPage ?? undefined,
-        requestThumbnail: (page) => previews.request(page),
-      });
-    } finally {
-      previews.destroy();
-    }
-  }
 
   private async loadProjectText(text: string, projectPath: string | null): Promise<void> {
     if (!(await this.confirmUnsavedChanges(t("app.replaceProject")))) {
@@ -1199,7 +1135,7 @@ export class App {
           continue;
         }
         const bytes = await this.sheetBytes(documentRef.template);
-        const document = await this.openDocument(bytes, documentRef.name);
+        const document = await openDocument(bytes, documentRef.name);
         if (!document) return;
         documentRef.pageCount = 1;
         loaded.push(document);
@@ -1262,18 +1198,10 @@ export class App {
 
       // A TIF document carries the hash of the original .tif while `bytes` is
       // the derived PDF, so only referenced PDFs can be checksum verified here.
-      const hash = documentRef.kind === "pdf" ? await this.hashBytes(bytes) : "";
-      if (documentRef.kind === "pdf" && documentRef.sha256 && hash && documentRef.sha256 !== hash) {
-        const proceed = await confirmDialog(
-          t("app.checksumTitle"),
-          t("app.checksumMessage", { name: documentRef.name }),
-          t("app.openAnyway"),
-          { danger: true },
-        );
-        if (!proceed) return;
-      }
+      const hash = documentRef.kind === "pdf" ? await hashBytes(bytes) : "";
+      if (!(await confirmChecksumMismatch(documentRef, hash))) return;
 
-      const document = await this.openDocument(bytes, documentRef.name);
+      const document = await openDocument(bytes, documentRef.name);
       if (!document) return;
 
       if (documentRef.pageCount !== document.numPages) {
@@ -1354,42 +1282,6 @@ export class App {
     await this.enqueuePageSize(1);
     this.canvas.invalidate();
     this.canvas.fitPage();
-  }
-
-  private async openDocument(bytes: Uint8Array, name: string): Promise<PDFDocumentProxy | null> {
-    let password: string | undefined;
-    for (let attempt = 0; attempt < 3; attempt++) {
-      try {
-        return await loadPdfDocument(bytes, password);
-      } catch (error) {
-        if (error instanceof PasswordRequiredError) {
-          const entered = await passwordDialog(name);
-          if (entered === null) return null;
-          password = entered;
-          continue;
-        }
-        if (error instanceof PdfPasswordError) {
-          toast(t("app.passwordRejected"), "error");
-          const entered = await passwordDialog(name);
-          if (entered === null) return null;
-          password = entered;
-          continue;
-        }
-        await messageDialog(t("app.couldNotOpenPdf"), errorMessage(error), "warning");
-        return null;
-      }
-    }
-    toast(t("app.tooManyPasswords"), "error");
-    return null;
-  }
-
-  private async hashBytes(bytes: Uint8Array): Promise<string> {
-    try {
-      return await sha256Hex(bytes);
-    } catch (error) {
-      toast(t("app.checksumFailed", { error: errorMessage(error) }), "warning");
-      return "";
-    }
   }
 
   private enqueuePageSize(page: number): Promise<PageSize | undefined> {
