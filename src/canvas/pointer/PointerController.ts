@@ -1,9 +1,10 @@
-import { store } from "../../state/store";
+import { store, type ToolId } from "../../state/store";
 import type { Point } from "../../model/types";
 import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { cursorForRole } from "../geometry";
+import { handleCreationDown } from "./creation";
 import { applyDragState } from "./drag";
 import { applyTransformState } from "./transform";
 import type { DragState, MarqueeState, PanState } from "./pointerState";
@@ -98,6 +99,25 @@ export class PointerController {
       else if (store.ui.hover) cursor = "move";
     }
     this.host.setHostCursor(cursor);
+  }
+
+  creationDown(page: Point, event: PointerEvent, tool: ToolId): void {
+    handleCreationDown(page, event, tool, {
+      getDraft: () => this.host.draft(),
+      setDraft: (draft) => this.host.setDraft(draft),
+      snapPoint: (point, excludeItemId) => this.host.snapPoint(point, excludeItemId),
+      snapPolylinePoint: (point) => this.host.snapPolylinePoint(point),
+      constrainPolyline: (last, point, free) => this.host.constrainPolyline(last, point, free),
+      clearSnap: () => this.host.clearSnap(),
+      viewZoom: () => this.host.viewZoom(),
+      drawInteraction: () => this.host.drawInteraction(),
+      capturePointer: (pointerId) => this.capturePointer(pointerId),
+      finishDraft: () => this.host.finishDraft(),
+      finishCallout: (point) => this.host.finishCallout(point),
+      createItem: (kind, points, options) => this.host.createItem(kind, points, options),
+      runCalibration: (p1, p2) => this.host.runCalibration(p1, p2),
+      startTextTool: (point) => this.host.startTextTool(point),
+    });
   }
 
   get dragActive(): boolean {
