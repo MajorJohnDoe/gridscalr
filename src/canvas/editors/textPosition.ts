@@ -1,4 +1,5 @@
 import { textBoxLayout } from "../../model/annotations";
+import { normalizeColor } from "../../model/color";
 import { TEXT_LINE_HEIGHT, measureTextWidth, textItemLayout } from "../../model/text";
 import { store } from "../../state/store";
 import { rotatedAabb } from "../geometry";
@@ -59,8 +60,9 @@ export function positionTextEditor(state: EditorState): void {
   input.style.fontSize = `${fontSize}px`;
   input.style.lineHeight = `${lineHeight}px`;
   input.style.fontFamily = FONT_STACK;
-  input.style.color = edit.color;
-  input.style.background = editorSurface(edit.color);
+  const color = normalizeColor(edit.color, store.ui.style.color);
+  input.style.color = color;
+  input.style.background = editorSurface(color);
   input.style.transform = `rotate(${rotation}deg)`;
   input.style.transformOrigin = "center";
   if (edit.resizeHandle) {

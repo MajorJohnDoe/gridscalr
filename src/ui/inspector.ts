@@ -1,11 +1,14 @@
 import {
+  defaultColorForLayer,
   layerLockedOnPage,
   layerVisibleOnPage,
   removeLayer,
+  resolveLayerColor,
   setLayerLockedOnPage,
   setLayerVisibleOnPage,
 } from "../model/layers";
 import { store } from "../state/store";
+import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
 import { clear, el } from "./dom";
@@ -102,13 +105,15 @@ function activeLayerSection(
   colorField.append(el("span", "field-label", t("inspector.layerColour")));
   const color = el("input", "color-swatch");
   color.type = "color";
-  color.value = active.color;
+  const fallbackColor = defaultColorForLayer(active.kind);
+  setColorInput(color, resolveLayerColor(active), fallbackColor);
   color.addEventListener("change", () => {
+    const next = colorInputValue(color, fallbackColor);
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
       if (!layer) return;
-      layer.color = color.value;
-      for (const item of layer.items) item.color = color.value;
+      layer.color = next;
+      for (const item of layer.items) item.color = next;
     }, "layers");
   });
   colorField.append(colorWithEyedropper(color, t("inspector.layerColour")));

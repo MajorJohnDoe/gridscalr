@@ -1,3 +1,4 @@
+import { canonicalColor } from "./color";
 import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
 import { resolveSelection } from "./selection";
 import { translatePoints } from "./geometry";
@@ -111,12 +112,14 @@ export function setItemsColor(
   color: string,
 ): ItemCommandResult {
   const result = emptyResult();
+  const next = canonicalColor(color);
+  if (!next) return result;
   for (const entry of resolveSelection(project, refs)) {
     if (entry.locked) {
       result.skippedLocked += 1;
       continue;
     }
-    entry.item.color = color;
+    entry.item.color = next;
     touch(entry.item);
     result.changed += 1;
   }

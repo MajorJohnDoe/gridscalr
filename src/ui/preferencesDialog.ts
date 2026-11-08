@@ -20,6 +20,7 @@ import {
 import { store } from "../state/store";
 import { currentThemePreference, setThemePreference, THEME_OPTIONS } from "../theme/theme";
 import type { ThemePreference } from "../io/appPreferences";
+import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog, showModal } from "./dialogs";
 import { el } from "./dom";
@@ -131,7 +132,7 @@ function layersSection(): HTMLElement {
     const fieldWrap = el("label", "field settings-field");
     const input = el("input", "color-swatch");
     input.type = "color";
-    input.value = value;
+    setColorInput(input, value, "#f2a93b");
     input.setAttribute("aria-label", label);
     fieldWrap.append(el("span", "field-label", label), colorWithEyedropper(input, label));
     return { fieldWrap, input };
@@ -143,8 +144,8 @@ function layersSection(): HTMLElement {
 
   const save = () => {
     colors = saveLayerColorDefaults({
-      measure: measure.input.value,
-      draw: draw.input.value,
+      measure: colorInputValue(measure.input, colors.measure),
+      draw: colorInputValue(draw.input, colors.draw),
     });
   };
   measure.input.addEventListener("change", save);
@@ -154,8 +155,8 @@ function layersSection(): HTMLElement {
   const signalRed = el("button", "btn btn-small btn-ghost", t("preferences.layers.signalRed"));
   signalRed.type = "button";
   signalRed.addEventListener("click", () => {
-    measure.input.value = "#f70808";
-    draw.input.value = "#f70808";
+    setColorInput(measure.input, "#f70808", "#f70808");
+    setColorInput(draw.input, "#f70808", "#f70808");
     save();
     toast(t("preferences.layers.signalRedDone"), "success");
   });
@@ -163,8 +164,8 @@ function layersSection(): HTMLElement {
   reset.type = "button";
   reset.addEventListener("click", () => {
     colors = resetLayerColorDefaults();
-    measure.input.value = colors.measure;
-    draw.input.value = colors.draw;
+    setColorInput(measure.input, colors.measure, colors.measure);
+    setColorInput(draw.input, colors.draw, colors.draw);
     toast(t("preferences.layers.resetDone"), "success");
   });
   actions.append(signalRed, reset);

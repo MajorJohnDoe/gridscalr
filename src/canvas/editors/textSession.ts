@@ -1,9 +1,11 @@
 import { normalizeDegrees } from "../../model/geometry";
 import { clampTextSize } from "../../model/text";
 import { RichEditorController } from "../richEditor";
+import { normalizeColor } from "../../model/color";
 import type { TextAlign } from "../../model/types";
 import { applyRunStyle, reconcileRuns, type RunStylePatch } from "../../model/richText";
 import { store } from "../../state/store";
+import { colorInputValue, setColorInput } from "../../ui/colorInput";
 import { colorWithEyedropper } from "../../ui/colorPicker";
 import { icon } from "../../ui/icons";
 import { roundTo } from "../geometry";
@@ -83,7 +85,7 @@ export function beginTextEditSession(
   colorField.title = t("editors.textColour");
   const colorInput = document.createElement("input");
   colorInput.type = "color";
-  colorInput.value = session.color;
+  setColorInput(colorInput, session.color, store.ui.style.color);
   colorInput.setAttribute("aria-label", t("editors.textColour"));
   colorField.append(colorWithEyedropper(colorInput, t("editors.textColour")));
 
@@ -226,7 +228,8 @@ export function beginTextEditSession(
 
   const syncStyle = () => {
     const target = edit.richEditor?.element ?? textarea;
-    target.style.color = edit.color;
+    const color = normalizeColor(edit.color, store.ui.style.color);
+    target.style.color = color;
     target.style.fontWeight = edit.bold ? "700" : "400";
     target.style.fontStyle = edit.italic ? "italic" : "normal";
     target.style.textDecoration = edit.underline ? "underline" : "none";
@@ -234,7 +237,7 @@ export function beginTextEditSession(
     edit.richEditor?.setMetrics(
       {
         fontSize: edit.fontSize,
-        color: edit.color,
+        color,
         bold: edit.bold,
         italic: edit.italic,
         underline: edit.underline,
@@ -251,7 +254,6 @@ export function beginTextEditSession(
   const refresh = () => {
     edit.text = edit.richEditor ? edit.richEditor.getText() : textarea.value;
     edit.fontSize = clampTextSize(Number(sizeInput.value));
-    edit.color = colorInput.value;
     edit.rotation = normalizeDegrees(Number(rotationInput.value));
     syncStyle();
     positionTextEditor(state);
@@ -275,8 +277,9 @@ export function beginTextEditSession(
     positionTextEditor(state);
   });
   colorInput.addEventListener("input", () => {
-    if (applyToSelection({ color: colorInput.value })) return;
-    edit.color = colorInput.value;
+    const color = colorInputValue(colorInput, edit.color);
+    if (applyToSelection({ color })) return;
+    edit.color = color;
     syncStyle();
     positionTextEditor(state);
   });

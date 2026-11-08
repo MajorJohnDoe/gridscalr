@@ -3,7 +3,7 @@ import { stampStatusColor } from "../model/stamps";
 import { DRAW_COLOR_PRESETS, STROKE_WIDTH_OPTIONS, drawColorLabel } from "../model/style";
 import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
 import { store, type ToolId } from "../state/store";
-import { colorWithEyedropper } from "./colorPicker";
+import { colorInputValue, colorWithEyedropper, setColorInput } from "./colorPicker";
 import { textDialog } from "./dialogs";
 import { el, option } from "./dom";
 import { icon } from "./icons";
@@ -299,10 +299,10 @@ function renderShapeOptions(panel: HTMLElement, render: () => void): void {
   panel.append(swatches);
   const custom = el("input", "color-swatch");
   custom.type = "color";
-  custom.value = store.ui.style.color;
+  setColorInput(custom, store.ui.style.color, store.ui.style.color);
   custom.setAttribute("aria-label", t("toolFlyout.colour"));
   custom.addEventListener("change", () => {
-    store.setStyle({ color: custom.value });
+    store.setStyle({ color: colorInputValue(custom, store.ui.style.color) });
     render();
   });
   panel.append(colorWithEyedropper(custom, t("toolFlyout.colour")));

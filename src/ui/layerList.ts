@@ -1,5 +1,6 @@
 import { selectionKind } from "../model/selection";
 import {
+  defaultColorForLayer,
   duplicateLayer,
   itemIsLocked,
   itemIsVisible,
@@ -18,6 +19,7 @@ import {
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
 import type { Layer, LayerKind, MarkupItem, Project } from "../model/types";
 import { store } from "../state/store";
+import { colorInputValue, setColorInput } from "./colorInput";
 import { confirmDialog, textDialog } from "./dialogs";
 import { el, escapeHtml } from "./dom";
 import { icon } from "./icons";
@@ -444,15 +446,17 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
       const color = el("input", "layer-color");
       color.type = "color";
-      color.value = layer.color;
+      const fallbackColor = defaultColorForLayer(layer.kind);
+      setColorInput(color, layer.color, fallbackColor);
       color.title = t("layer.colour");
       color.addEventListener("click", (event) => event.stopPropagation());
       color.addEventListener("change", () => {
+        const next = colorInputValue(color, fallbackColor);
         store.mutate((project) => {
           const target = project.layers.find((l) => l.id === layer.id);
           if (!target) return;
-          target.color = color.value;
-          for (const item of target.items) item.color = color.value;
+          target.color = next;
+          for (const item of target.items) item.color = next;
         }, "layers");
       });
 

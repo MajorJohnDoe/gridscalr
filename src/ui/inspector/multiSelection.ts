@@ -8,6 +8,7 @@ import { allRooms, categoryForItem } from "../../model/categories";
 import { setItemsStatus } from "../../model/commands";
 import { LABEL_MAX_SIZE, LABEL_MIN_SIZE, clampLabelSize } from "../../model/label";
 import {
+  DEFAULT_DRAW_COLOR,
   isMeasurementKind,
   itemIsVisible,
   layerLockedOnPage,
@@ -19,6 +20,7 @@ import { STROKE_WIDTH_OPTIONS } from "../../model/style";
 import type { AreaMode, CountType, InspectionStatus, SelectionRef } from "../../model/types";
 import { formatNumber } from "../../model/units";
 import { store } from "../../state/store";
+import { colorInputValue, setColorInput } from "../colorInput";
 import { colorWithEyedropper } from "../colorPicker";
 import { el, option } from "../dom";
 import { icon } from "../icons";
@@ -338,9 +340,11 @@ export function multiSelectionSection(
     colorField.append(el("span", "field-label", t("toolFlyout.colour")));
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
-    colorInput.value = commonColor || "#f2a93b";
+    setColorInput(colorInput, commonColor || DEFAULT_DRAW_COLOR, DEFAULT_DRAW_COLOR);
     colorInput.disabled = lockedCount === resolved.length;
-    colorInput.addEventListener("change", () => actions.setSelectionColor(colorInput.value));
+    colorInput.addEventListener("change", () =>
+      actions.setSelectionColor(colorInputValue(colorInput, DEFAULT_DRAW_COLOR)),
+    );
     colorField.append(colorWithEyedropper(colorInput, t("toolFlyout.colour")));
     section.append(colorField);
 

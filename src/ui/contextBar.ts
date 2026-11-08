@@ -2,6 +2,7 @@ import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor, cloudFillLabel } from "../model/cloud";
 import { countTypeLabel } from "../features/countTypes/model";
 import {
+  DEFAULT_DRAW_COLOR,
   layerAppliesToPage,
   layersForKind,
   layerLockedOnPage,
@@ -22,6 +23,7 @@ import {
 } from "../features/schematics/symbols/registry";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
+import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { clear, el, option } from "./dom";
 import { openMeasureOptions } from "./measureOptions";
@@ -286,10 +288,14 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     const color = el("input", "color-swatch");
     color.type = "color";
     const cloudPreset = store.ui.activeTool === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
-    color.value =
+    const fallbackColor = DEFAULT_DRAW_COLOR;
+    setColorInput(
+      color,
       store.ui.activeTool === "stamp"
         ? stampStatusColor(store.ui.stampText, store.ui.style.color)
-        : (cloudPreset ?? store.ui.style.color);
+        : (cloudPreset ?? store.ui.style.color),
+      fallbackColor,
+    );
     color.title =
       store.ui.activeTool === "stamp"
         ? t("context.stampColour")
@@ -297,7 +303,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
           ? t("context.cloudColour")
           : t("context.markupColour");
     color.disabled = store.ui.activeTool === "stamp" || Boolean(cloudPreset);
-    color.addEventListener("change", () => store.setStyle({ color: color.value }));
+    color.addEventListener("change", () =>
+      store.setStyle({ color: colorInputValue(color, fallbackColor) }),
+    );
     const width = el("select", "select");
     for (const value of STROKE_WIDTH_OPTIONS) {
       width.append(option(String(value), `${value} pt`, value === store.ui.style.strokeWidth));

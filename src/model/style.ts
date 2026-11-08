@@ -1,4 +1,5 @@
 import { t, translate, type MessageKey } from "../i18n";
+import { normalizeColor } from "./color";
 /** Paper-space defaults and selectable line weights. */
 export const DEFAULT_MEASUREMENT_STROKE_WIDTH = 0.75;
 export const DEFAULT_DRAWING_STROKE_WIDTH = 1.5;
@@ -21,4 +22,26 @@ export const DRAW_COLOR_PRESETS = [
 
 export function drawColorLabel(preset: (typeof DRAW_COLOR_PRESETS)[number]): string {
   return t(`color.${preset.id}` as MessageKey);
+}
+
+/** Applies a drawing-style patch without ever storing an invalid colour. */
+export function mergeDrawStyle<T extends { color: string }>(current: T, patch: Partial<T>): T {
+  return {
+    ...current,
+    ...patch,
+    color: normalizeColor(patch.color ?? current.color, current.color),
+  };
+}
+
+/** Applies a pipe/duct line-style patch without ever storing an invalid colour. */
+export function mergeLineStyle<T extends { color: string; widthPt: number }>(
+  current: T,
+  patch: Partial<T>,
+): T {
+  return {
+    ...current,
+    ...patch,
+    color: normalizeColor(patch.color ?? current.color, current.color),
+    widthPt: Math.max(0.3, Math.min(20, patch.widthPt ?? current.widthPt)),
+  };
 }

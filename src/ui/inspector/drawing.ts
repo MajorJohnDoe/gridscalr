@@ -1,6 +1,7 @@
 import { t } from "../../i18n";
-import { findItem } from "../../model/layers";
+import { findItem, resolveItemColor } from "../../model/layers";
 import { store } from "../../state/store";
+import { colorInputValue, setColorInput } from "../colorInput";
 import { colorWithEyedropper } from "../colorPicker";
 import { el, option } from "../dom";
 import type { InspectorContext } from "./context";
@@ -154,13 +155,15 @@ export function appendDrawing(section: HTMLElement, context: InspectorContext): 
     fillColorField.append(el("span", "field-label", t("inspector.fillColour")));
     const fillColor = el("input", "color-swatch");
     fillColor.type = "color";
-    fillColor.value = item.fillColor ?? item.color;
+    const itemColor = resolveItemColor(item);
+    setColorInput(fillColor, item.fillColor ?? itemColor, itemColor);
     fillColor.disabled = !item.fillColor || locked;
     fillColor.addEventListener("change", () => {
+      const next = colorInputValue(fillColor, itemColor);
       store.mutate((project) => {
         const target = findItem(project, item.id)?.item;
         if (!target) return;
-        target.fillColor = fillColor.value;
+        target.fillColor = next;
         target.opacity = target.opacity ?? 0.22;
       }, "change");
     });

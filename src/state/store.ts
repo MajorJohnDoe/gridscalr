@@ -7,9 +7,10 @@ import {
   type DuplicatePageOptions,
   type DuplicatePageResult,
 } from "../model/documents";
+import { normalizeColor } from "../model/color";
 import type { CloudFillPreset } from "../model/cloud";
 import type { ArrowHeads, SheetPaperSize } from "../model/types";
-import { DEFAULT_DRAWING_STROKE_WIDTH } from "../model/style";
+import { DEFAULT_DRAWING_STROKE_WIDTH, mergeDrawStyle, mergeLineStyle } from "../model/style";
 import { DEFAULT_LINE_TYPE_ID } from "../model/lineTypes";
 import { DEFAULT_SYMBOL_ID } from "../model/symbols";
 import { addLayer, ensureActiveLayer, findItem } from "../model/layers";
@@ -396,7 +397,7 @@ export class Store {
     if (!lineType) return;
     this.ui.lineTypeId = id;
     this.ui.lineStyle = {
-      color: lineType.color,
+      color: normalizeColor(lineType.color, this.ui.lineStyle.color),
       widthPt: lineType.widthPt,
       dashed: lineType.style === "dashed",
     };
@@ -404,11 +405,7 @@ export class Store {
   }
 
   setLineStyle(patch: Partial<UIState["lineStyle"]>): void {
-    this.ui.lineStyle = {
-      ...this.ui.lineStyle,
-      ...patch,
-      widthPt: Math.max(0.3, Math.min(20, patch.widthPt ?? this.ui.lineStyle.widthPt)),
-    };
+    this.ui.lineStyle = mergeLineStyle(this.ui.lineStyle, patch);
     this.emit("tool");
   }
 
@@ -534,7 +531,7 @@ export class Store {
   }
 
   setStyle(style: Partial<DrawStyle>): void {
-    this.ui.style = { ...this.ui.style, ...style };
+    this.ui.style = mergeDrawStyle(this.ui.style, style);
     this.emit("tool");
   }
 

@@ -1,4 +1,5 @@
 import { makeId } from "../../model/calibration";
+import { normalizeColor } from "../../model/color";
 import { normalizeDegrees } from "../../model/geometry";
 import {
   addItem,
@@ -7,6 +8,7 @@ import {
   itemIsLocked,
   layerLockedOnPage,
   layerVisibleOnPage,
+  resolveItemColor,
 } from "../../model/layers";
 import { reconcileRuns, runsEqual, runsHaveFormatting } from "../../model/richText";
 import { clampTextSize } from "../../model/text";
@@ -52,7 +54,7 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
         const item = findItem(project, edit.itemId!)?.item;
         if (!item) return;
         item.text = value;
-        item.textColor = edit.color;
+        item.textColor = normalizeColor(edit.color, resolveItemColor(item));
         item.fontSize = clampTextSize(edit.fontSize);
         if (edit.bold) item.textBold = true;
         else delete item.textBold;
@@ -86,7 +88,7 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
         const item = findItem(project, edit.itemId!)?.item;
         if (!item) return;
         item.text = value.trim() || t("reference.revision");
-        item.textColor = edit.color;
+        item.textColor = normalizeColor(edit.color, "#f7fbfc");
         item.fontSize = clampTextSize(edit.fontSize);
         if (edit.bold) item.textBold = true;
         else delete item.textBold;
@@ -121,7 +123,7 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
       const item = findItem(project, edit.itemId!)?.item;
       if (!item) return;
       item.text = value;
-      item.color = edit.color;
+      item.color = normalizeColor(edit.color, resolveItemColor(item));
       item.fontSize = clampTextSize(edit.fontSize);
       if (edit.bold) item.textBold = true;
       else delete item.textBold;
@@ -170,7 +172,7 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
       page: edit.page,
       kind: "text",
       points: [{ ...edit.anchor }],
-      color: edit.color,
+      color: normalizeColor(edit.color, "#f2a93b"),
       strokeWidth: 2,
       text: value,
       fontSize: clampTextSize(edit.fontSize),

@@ -1,7 +1,8 @@
 import { t } from "../../i18n";
-import { findItem, isMeasurementKind } from "../../model/layers";
+import { defaultColorForItem, findItem, isMeasurementKind } from "../../model/layers";
 import { STROKE_WIDTH_OPTIONS } from "../../model/style";
 import { store } from "../../state/store";
+import { colorInputValue, setColorInput } from "../colorInput";
 import { colorWithEyedropper } from "../colorPicker";
 import { el, option } from "../dom";
 import type { InspectorContext } from "./context";
@@ -18,12 +19,14 @@ export function appendStyle(section: HTMLElement, context: InspectorContext): vo
     colorField.append(el("span", "field-label", colorLabel));
     const colorInput = el("input", "color-swatch");
     colorInput.type = "color";
-    colorInput.value = item.color;
+    const fallbackColor = defaultColorForItem(item.kind);
+    setColorInput(colorInput, item.color, fallbackColor);
     colorInput.disabled = locked;
     colorInput.addEventListener("change", () => {
+      const next = colorInputValue(colorInput, fallbackColor);
       store.mutate((project) => {
         const target = findItem(project, item.id)?.item;
-        if (target) target.color = colorInput.value;
+        if (target) target.color = next;
       }, "change");
     });
     colorField.append(colorWithEyedropper(colorInput, colorLabel));

@@ -1,5 +1,7 @@
 import { t } from "../i18n";
 import { el } from "./dom";
+
+export { colorInputValue, setColorInput } from "./colorInput";
 import { icon } from "./icons";
 import { toast } from "./toast";
 

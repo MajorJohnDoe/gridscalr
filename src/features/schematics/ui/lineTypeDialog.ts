@@ -1,6 +1,7 @@
 import { makeId } from "../../../model/calibration";
 import type { LineType } from "../../../model/types";
 import { store } from "../../../state/store";
+import { colorInputValue, setColorInput } from "../../../ui/colorInput";
 import { showModal } from "../../../ui/dialogs";
 import { colorWithEyedropper } from "../../../ui/colorPicker";
 import { el, option } from "../../../ui/dom";
@@ -35,10 +36,10 @@ export async function openLineTypeDialog(): Promise<void> {
 
       const color = el("input", "line-type-color");
       color.type = "color";
-      color.value = type.color;
+      setColorInput(color, type.color, "#4cc9f0");
       color.setAttribute("aria-label", t("lineType.dialog.color"));
       color.addEventListener("input", () => {
-        type.color = color.value;
+        type.color = colorInputValue(color, "#4cc9f0");
       });
 
       const width = el("input", "input line-type-width");
