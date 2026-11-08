@@ -13,7 +13,9 @@ import { countTypesSection } from "./settings/countTypes";
 import { stampsSection } from "./settings/stamps";
 import { categoryLayout } from "./settingsControls";
 
-export function openSettingsDialog(): void {
+type SettingsCategory = "project" | "report" | "measurements" | "display" | "quantities" | "stamps";
+
+export function openSettingsDialog(initialCategory: SettingsCategory = "project"): void {
   if (!store.project) return;
   let refresh = () => {};
   const layout = categoryLayout(
@@ -42,7 +44,10 @@ export function openSettingsDialog(): void {
       {
         id: "quantities",
         label: t("settings.quantitiesTitle"),
-        render: () => [quantitiesSection(refresh), countTypesSection(refresh)],
+        render: () => [
+          quantitiesSection(() => openSettingsDialog("quantities")),
+          countTypesSection(() => openSettingsDialog("quantities")),
+        ],
       },
       {
         id: "stamps",
@@ -50,7 +55,7 @@ export function openSettingsDialog(): void {
         render: () => [stampsSection(refresh)],
       },
     ],
-    "project",
+    initialCategory,
   );
   refresh = layout.refresh;
 
