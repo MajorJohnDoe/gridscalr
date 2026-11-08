@@ -1,6 +1,5 @@
 import { store } from "../state/store";
 import { showModal } from "./dialogs";
-import { el } from "./dom";
 import { t } from "../i18n";
 import { projectSection } from "./settings/project";
 import { storageSection } from "./settings/storage";
@@ -12,34 +11,53 @@ import { displaySection } from "./settings/display";
 import { quantitiesSection } from "./settings/quantities";
 import { countTypesSection } from "./settings/countTypes";
 import { stampsSection } from "./settings/stamps";
+import { categoryLayout } from "./settingsControls";
 
 export function openSettingsDialog(): void {
   if (!store.project) return;
-  const body = el("div", "settings-dialog");
-  const content = el("div", "settings-content");
-  body.append(content);
-
-  const render = () => {
-    if (!store.project) return;
-    content.replaceChildren(
-      projectSection(),
-      storageSection(),
-      metadataSection(render),
-      scaleSection(),
-      unitsSection(),
-      labelsSection(),
-      displaySection(),
-      quantitiesSection(render),
-      countTypesSection(openSettingsDialog),
-      stampsSection(render),
-    );
-  };
-  render();
+  let refresh = () => {};
+  const layout = categoryLayout(
+    t("settings.categories"),
+    [
+      {
+        id: "project",
+        label: t("settings.projectTitle"),
+        render: () => [projectSection(), storageSection()],
+      },
+      {
+        id: "report",
+        label: t("settings.navReport"),
+        render: () => [metadataSection(refresh)],
+      },
+      {
+        id: "measurements",
+        label: t("settings.navMeasurements"),
+        render: () => [scaleSection(), unitsSection(), labelsSection()],
+      },
+      {
+        id: "display",
+        label: t("settings.navDisplay"),
+        render: () => [displaySection()],
+      },
+      {
+        id: "quantities",
+        label: t("settings.quantitiesTitle"),
+        render: () => [quantitiesSection(refresh), countTypesSection(refresh)],
+      },
+      {
+        id: "stamps",
+        label: t("settings.stampsTitle"),
+        render: () => [stampsSection(refresh)],
+      },
+    ],
+    "project",
+  );
+  refresh = layout.refresh;
 
   void showModal({
     title: t("settings.dialogTitle"),
     subtitle: t("settings.dialogSubtitle"),
-    body,
+    body: layout.body,
     wide: true,
     className: "modal-settings",
     actions: [{ label: t("settings.close"), value: "close", primary: true }],

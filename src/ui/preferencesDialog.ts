@@ -26,10 +26,8 @@ import { confirmDialog, showModal } from "./dialogs";
 import { el } from "./dom";
 import { loadPanelPreferences } from "./preferences";
 import { resetPanelLayout, setInspectorCollapsed, setSidebarCollapsed } from "./sidebar";
-import { field, presetEditor, section } from "./settingsControls";
+import { categoryLayout, field, presetEditor, section } from "./settingsControls";
 import { toast } from "./toast";
-
-type PreferenceCategory = "general" | "workspace" | "layers" | "stamps" | "data";
 
 function generalSection(): HTMLElement {
   const wrap = section(t("preferences.general"), t("language.note"));
@@ -307,45 +305,18 @@ function dataSection(): HTMLElement {
 }
 
 export function openPreferencesDialog(): void {
-  const body = el("div", "preferences-dialog");
-  const nav = el("nav", "preferences-nav");
-  nav.setAttribute("aria-label", t("preferences.categories"));
-  const content = el("div", "preferences-body");
-  body.append(nav, content);
-
-  const categories: Array<{ id: PreferenceCategory; label: string; render: () => HTMLElement }> = [
+  const layout = categoryLayout(t("preferences.categories"), [
     { id: "general", label: t("preferences.general"), render: generalSection },
     { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
     { id: "layers", label: t("preferences.layers"), render: layersSection },
     { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
     { id: "data", label: t("preferences.data"), render: dataSection },
-  ];
-
-  const buttons = new Map<PreferenceCategory, HTMLButtonElement>();
-  const select = (id: PreferenceCategory) => {
-    for (const [key, button] of buttons) {
-      const selected = key === id;
-      button.classList.toggle("is-active", selected);
-      if (selected) button.setAttribute("aria-current", "true");
-      else button.removeAttribute("aria-current");
-    }
-    const category = categories.find((entry) => entry.id === id);
-    content.replaceChildren(category ? category.render() : el("div"));
-  };
-
-  for (const category of categories) {
-    const button = el("button", "preferences-tab", category.label);
-    button.type = "button";
-    button.addEventListener("click", () => select(category.id));
-    nav.append(button);
-    buttons.set(category.id, button);
-  }
-  select("general");
+  ]);
 
   void showModal({
     title: t("preferences.title"),
     subtitle: t("preferences.subtitle"),
-    body,
+    body: layout.body,
     wide: true,
     className: "modal-preferences",
     actions: [{ label: t("common.close"), value: "close", primary: true }],

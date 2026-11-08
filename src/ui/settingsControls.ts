@@ -4,6 +4,59 @@ import { t } from "../i18n";
 
 /** Shared building blocks for the Preferences and Project settings dialogs. */
 
+export interface DialogCategory {
+  id: string;
+  label: string;
+  render: () => HTMLElement | HTMLElement[];
+}
+
+export interface CategoryLayout {
+  body: HTMLElement;
+  content: HTMLElement;
+  select: (id: string) => void;
+  refresh: () => void;
+}
+
+/** Two-column dialog layout with a category menu, shared by Preferences and Project settings. */
+export function categoryLayout(
+  ariaLabel: string,
+  categories: readonly DialogCategory[],
+  initialId?: string,
+): CategoryLayout {
+  const body = el("div", "dialog-columns");
+  const nav = el("nav", "dialog-nav");
+  nav.setAttribute("aria-label", ariaLabel);
+  const content = el("div", "dialog-pane");
+  body.append(nav, content);
+
+  const buttons = new Map<string, HTMLButtonElement>();
+  let currentId = initialId ?? categories[0]?.id ?? "";
+
+  const select = (id: string) => {
+    currentId = id;
+    for (const [key, button] of buttons) {
+      const selected = key === id;
+      button.classList.toggle("is-active", selected);
+      if (selected) button.setAttribute("aria-current", "true");
+      else button.removeAttribute("aria-current");
+    }
+    const category = categories.find((entry) => entry.id === id) ?? categories[0];
+    const rendered = category ? category.render() : [];
+    content.replaceChildren(...(Array.isArray(rendered) ? rendered : [rendered]));
+  };
+
+  for (const category of categories) {
+    const button = el("button", "dialog-tab", category.label);
+    button.type = "button";
+    button.addEventListener("click", () => select(category.id));
+    nav.append(button);
+    buttons.set(category.id, button);
+  }
+  if (currentId) select(currentId);
+
+  return { body, content, select, refresh: () => select(currentId) };
+}
+
 export function section(title: string, note?: string): HTMLElement {
   const wrap = el("section", "settings-section");
   wrap.append(el("h3", "", title));
