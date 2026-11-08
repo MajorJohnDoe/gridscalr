@@ -137,6 +137,20 @@ More screens, including the Markups table, the symbol library, revision
 comparison, full-text search and the in-app workflows, are captured in
 [docs/screenshots](docs/screenshots).
 
+## Themes
+
+GridScalr ships with five interface themes. Medium Gray is the default; the
+others are one click away in **Settings → Preferences → General**.
+
+| Default (medium gray) | Light | Dark Gray |
+| --- | --- | --- |
+| ![Medium gray theme with the industrial demo plan](docs/screenshots/theme-medium-grey.png) | ![Light theme with the industrial demo plan](docs/screenshots/theme-light-green.png) | ![Dark gray theme with the industrial demo plan](docs/screenshots/theme-dark-grey.png) |
+| **Dark Jade** | **Navy** | |
+| ![Dark jade theme with the industrial demo plan](docs/screenshots/theme-jade.png) | ![Navy theme with the industrial demo plan](docs/screenshots/theme-navy.png) | |
+
+The theme images are regenerated with `npm run docs:capture` as part of the
+release documentation pass, so they always show the current interface.
+
 ## Requirements
 
 - Node.js 22.12 or newer (tested with Node 24)

@@ -27,6 +27,36 @@ const shots = [
       "A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing annotations.",
   },
   {
+    file: "theme-medium-grey.png",
+    title: "Default (medium gray) theme",
+    alt: "GridScalr with the medium gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "The default neutral mid-gray theme with the jade accent.",
+  },
+  {
+    file: "theme-light-green.png",
+    title: "Light theme",
+    alt: "GridScalr with the light interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "A cool light theme with white panels for bright rooms.",
+  },
+  {
+    file: "theme-dark-grey.png",
+    title: "Dark Gray theme",
+    alt: "GridScalr with the dark gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Low-chroma dark chrome with the jade accent.",
+  },
+  {
+    file: "theme-jade.png",
+    title: "Dark Jade theme",
+    alt: "GridScalr with the original dark jade interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "The original dark palette with the jade accent.",
+  },
+  {
+    file: "theme-navy.png",
+    title: "Navy theme",
+    alt: "GridScalr with the navy interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Blue-shifted dark chrome with the jade accent.",
+  },
+  {
     file: "measure.png",
     title: "Measure and annotate",
     alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
@@ -159,11 +189,29 @@ try {
     await page.screenshot({ path: resolve(screenshotDir, file) });
   };
 
+  const selectTheme = async (theme) => {
+    await page.locator('.menu-trigger[data-menu="settings"]').click();
+    await page.getByRole("menuitem", { name: "Preferences…" }).click();
+    const dialog = page.getByRole("dialog", { name: "Preferences" });
+    await dialog.waitFor();
+    await dialog.getByLabel("Theme").selectOption(theme);
+    await page.waitForTimeout(120);
+    await page.keyboard.press("Escape");
+    await dialog.waitFor({ state: "detached" });
+    await settlePage(page);
+  };
+
   await openDemoProject(page, { base: vite.base });
   await waitForToastsGone(page);
 
   await openMarkupsItem(page, "item_floor_living");
   await capture("hero.png");
+
+  for (const theme of ["medium-grey", "light-green", "dark-grey", "jade", "navy"]) {
+    await selectTheme(theme);
+    await capture(`theme-${theme}.png`);
+  }
+  await selectTheme("medium-grey");
 
   await page.keyboard.press("Escape");
   await page.keyboard.press("l");
@@ -194,7 +242,9 @@ try {
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+,");
-  await page.getByRole("dialog").waitFor();
+  const projectSettings = page.getByRole("dialog", { name: "Project settings" });
+  await projectSettings.waitFor();
+  await projectSettings.getByRole("button", { name: "Quantities", exact: true }).click();
   await page.getByRole("button", { name: /Manage count types/ }).click();
   const countTypesDialog = page.getByRole("dialog", { name: "Count types" });
   await countTypesDialog.getByLabel("New count type name").waitFor();

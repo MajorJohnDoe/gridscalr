@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-07T22:16:30.297Z",
+  "generatedAt": "2026-11-08T08:04:12.921Z",
   "appVersion": "0.21.0",
-  "sourceFingerprint": "e7e95f0f17e7faedcd800a71d47e39171bff47481b31c44edfab7f8328b77ac4",
+  "sourceFingerprint": "1bc289a7316c9a4adcfb5dc82e886735bf6def54e3d7e347de3bc11483fe837f",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -13,6 +13,36 @@
       "title": "Measurement takeoff",
       "alt": "GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel.",
       "description": "A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing annotations."
+    },
+    {
+      "file": "theme-medium-grey.png",
+      "title": "Default (medium gray) theme",
+      "alt": "GridScalr with the medium gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "The default neutral mid-gray theme with the jade accent."
+    },
+    {
+      "file": "theme-light-green.png",
+      "title": "Light theme",
+      "alt": "GridScalr with the light interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "A cool light theme with white panels for bright rooms."
+    },
+    {
+      "file": "theme-dark-grey.png",
+      "title": "Dark Gray theme",
+      "alt": "GridScalr with the dark gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "Low-chroma dark chrome with the jade accent."
+    },
+    {
+      "file": "theme-jade.png",
+      "title": "Dark Jade theme",
+      "alt": "GridScalr with the original dark jade interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "The original dark palette with the jade accent."
+    },
+    {
+      "file": "theme-navy.png",
+      "title": "Navy theme",
+      "alt": "GridScalr with the navy interface theme, a calibrated industrial floor plan and the Properties panel.",
+      "description": "Blue-shifted dark chrome with the jade accent."
     },
     {
       "file": "measure.png",

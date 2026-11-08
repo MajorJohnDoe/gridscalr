@@ -21,7 +21,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 2. `docs/user-guide.md` — the in-app user guide. Keep it accurate whenever the GUI or a user-facing workflow changes.
 3. `docs/workflows.md` — task-oriented guides for operations technicians and technical property managers.
 4. `docs/shortcuts.md` — the in-app shortcut reference.
-5. `docs/screenshots/manifest.json` and the referenced screenshots — regenerate with `npm run docs:capture` when a visible screen changes.
+5. `docs/screenshots/manifest.json`, the referenced screenshots and the `theme-*.png` showcase used by the README and site — regenerate with `npm run docs:capture` when a visible screen or theme changes.
 6. `docs/roadmap.md` — current status, milestones, deferred work and open decisions.
 7. `docs/plan/archive/` — historical planning documents from milestones 2–5. Written in Swedish; not maintained.
 8. `docs/architecture.md` and `docs/adr/` — source map, design choices and accepted architecture decisions.
@@ -182,7 +182,8 @@ To create a Windows release build:
 1. Update the three app-version fields and create or update
    `docs/release-notes/<version>.md`.
 2. Run the documentation pass: update `docs/user-guide.md` and `docs/workflows.md`,
-   run `npm run docs:capture`, and verify with
+   run `npm run docs:capture` (this also regenerates the five `theme-*.png`
+   images used by the README and the landing site), and verify with
    `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`.
 3. Run the checks above.
 4. Commit and push.
@@ -386,7 +387,7 @@ scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and sav
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
-scripts/capture-docs.mjs   Playwright screenshot capture into docs/screenshots
+scripts/capture-docs.mjs   Playwright screenshot and theme-showcase capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/check-file-budgets.mjs blocking line budget for source files
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks

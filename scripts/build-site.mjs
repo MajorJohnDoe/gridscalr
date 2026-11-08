@@ -13,6 +13,11 @@ const baseUrl = "https://majorjohndoe.github.io/gridscalr";
 
 const screenshots = [
   "hero.png",
+  "theme-medium-grey.png",
+  "theme-light-green.png",
+  "theme-dark-grey.png",
+  "theme-jade.png",
+  "theme-navy.png",
   "measure.png",
   "calibration.png",
   "markups.png",
