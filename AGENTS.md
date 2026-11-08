@@ -9,7 +9,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.22.0`.
-- Latest public release: `v0.21.0` (2026-11-07).
+- Latest public release: `v0.22.0` (2026-11-08).
 - Current project-file schema: `23`.
 - 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
@@ -482,7 +482,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.19.3:** complete (released 2026-11-07) — blank A3/A2 pages in the new-project and add-page flows, 37 additional schematic symbols (156 total), corrected valve stems, a left-pointing circulation pump, and the schematic symbol libraries split into category modules. No schema change; the schema remains v23.
 - **0.20.0:** complete (released 2026-11-07) — large-project benchmark and budgets, virtualised Markups table, adaptive undo history, canvas viewport culling, serialised autosave, independent reference-page navigation, saved/source status in the shell, project-size reporting, recovery/recent-file controls and laptop-width layouts. No schema change; the schema remains v23.
 - **0.21.0:** complete (released 2026-11-07) — PDF export, inline editor and App-flow module splits; light, grey and navy themes with System mode, a CSP-safe pre-paint bootstrap and theme contrast checks. No schema change; the schema remains v23.
-- **0.22.0:** release candidate — Medium Gray as the default theme, Dark Gray/Dark Jade rename with preference migration, expandable two-column tool rail, Project settings categories, canonical colour handling and a redrawn rotary heat recovery symbol. No schema change; the schema remains v23.
+- **0.22.0:** complete (released 2026-11-08) — Medium Gray as the default theme, Dark Gray/Dark Jade rename with preference migration, expandable two-column tool rail, Project settings categories, canonical colour handling and a redrawn rotary heat recovery symbol. No schema change; the schema remains v23.
 
 Update the status in `docs/roadmap.md` when a milestone is completed.
 
