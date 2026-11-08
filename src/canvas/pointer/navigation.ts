@@ -5,6 +5,7 @@ import type { Point } from "../../model/types";
 import { store } from "../../state/store";
 import type { Viewport } from "../viewport";
 import type { MarqueeState, PanState } from "./pointerState";
+import { wheelZoomFactor } from "./wheel";
 
 export interface NavigationContext {
   viewport(): Viewport;
@@ -40,7 +41,8 @@ export class NavigationGesture {
     if (!store.project) return;
     event.preventDefault();
     if (event.ctrlKey || event.metaKey) {
-      zoomAt(localPoint, Math.exp(-event.deltaY * 0.0018));
+      const factor = wheelZoomFactor(event);
+      if (factor !== 1) zoomAt(localPoint, factor);
       return;
     }
     const dx = event.shiftKey ? event.deltaY : event.deltaX;
