@@ -94,7 +94,7 @@ export function symbolShapeStrokeWidth(
 export function symbolSvgMarkup(
   symbol: SymbolDefinition,
   size = 24,
-  color = "#e8eef1",
+  color = "currentColor",
   style: SymbolStyle = symbol.style ?? SYMBOL_STYLE,
 ): string {
   const plan = symbolRenderPlan(symbol, color, style);

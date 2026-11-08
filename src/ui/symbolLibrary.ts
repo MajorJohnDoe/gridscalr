@@ -86,7 +86,8 @@ function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));
   button.title = `${symbolName(symbol.id)} · ${symbolCategoryLabel(category)}`;
-  const previewColor = symbol.set === "schematic" ? "#f2f6f8" : SYMBOL_CATEGORY_COLORS[category];
+  const previewColor =
+    symbol.set === "schematic" ? "currentColor" : SYMBOL_CATEGORY_COLORS[category];
   button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 33, previewColor)}</span><span class="symbol-tile-label">${symbolName(symbol.id)}</span>`;
   button.addEventListener("click", () => {
     rememberRecent(symbol.id);

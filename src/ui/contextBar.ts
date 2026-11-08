@@ -221,10 +221,8 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     symbolButton.type = "button";
     symbolButton.title = t("context.openSymbols");
     symbolButton.setAttribute("aria-label", t("context.openSymbols"));
-    const color =
-      definition.style === "schematic"
-        ? "#e8eef1"
-        : symbolCategoryColor(symbolCategoryOf(definition.id));
+    const schematic = definition.style === "schematic";
+    const color = schematic ? "currentColor" : symbolCategoryColor(symbolCategoryOf(definition.id));
     symbolButton.innerHTML = `${symbolSvgMarkup(definition, 16, color)}<span>${symbolName(definition.id)}</span>`;
     symbolButton.addEventListener("click", () => store.setLeftTab("symbols"));
 
@@ -233,7 +231,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       "context-symbol-category",
       symbolCategoryLabel(definition.category),
     );
-    category.style.color = color;
+    if (!schematic) category.style.color = color;
 
     const status = el("select", "select context-symbol-status");
     status.setAttribute("aria-label", t("context.statusNext"));
