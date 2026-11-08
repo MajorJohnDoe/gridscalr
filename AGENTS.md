@@ -215,6 +215,8 @@ do not change the released version must not change the version shown on the site
 
 ```text
 src/app/App.ts             app wiring, file flows, shortcuts
+src/app/clipboardPaste.ts  clipboard image and item paste entry point
+src/app/pageZoomGuard.ts   suppresses WebView2 page zoom for Ctrl + wheel and pinch
 src/app/referenceController.ts reference pane, comparison session and comparison PDF lifecycle
 src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/app/selectionActions.ts selection, bulk edits and item commands

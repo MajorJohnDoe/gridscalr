@@ -1,6 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { CanvasView, type CanvasTestApi } from "../canvas/CanvasView";
-import { hasClipboard } from "../model/clipboard";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import { layerVisibleOnPage } from "../model/layers";
 import { normalizeProjectName } from "../model/projectName";
@@ -24,11 +23,7 @@ import {
   loadProjectText as loadProjectTextFlow,
   type DocumentFlowHost,
 } from "./documentFlows";
-import {
-  insertImageFile,
-  insertImageFlow as insertImageFlowModule,
-  type ImageFlowHost,
-} from "./imageFlows";
+import { insertImageFlow as insertImageFlowModule, type ImageFlowHost } from "./imageFlows";
 import { packageHost as createPackageHost, type PackageFlowHost } from "./packageFlows";
 import {
   deletePageFlow,
@@ -72,7 +67,8 @@ import {
   setSelectionCountQuantity,
   setSelectionLabelSize,
 } from "./selectionActions";
-import { isSupportedImageFile } from "../io/imageIngest";
+import { pasteFromClipboard } from "./clipboardPaste";
+import { installPageZoomGuard } from "./pageZoomGuard";
 import { describeError } from "../io/platformError";
 import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
@@ -128,6 +124,7 @@ export class App {
   private unsubscribe: () => void;
   private disposed = false;
   private windowControls: WindowControls | null = null;
+  private removePageZoomGuard: (() => void) | null = null;
   private autosaveWarned: string | null = null;
 
   constructor(root: HTMLElement) {
@@ -444,16 +441,11 @@ export class App {
     window.addEventListener("keyup", this.onKeyUp);
     window.addEventListener("blur", this.onWindowBlur);
     window.addEventListener("paste", this.onPaste);
-    window.addEventListener("wheel", this.onWindowWheel, { passive: false, capture: true });
+    this.removePageZoomGuard = installPageZoomGuard();
   }
 
   private onWindowBlur = (): void => {
     this.canvas.setSpaceDown(false);
-  };
-
-  /** Keep WebView2 pinch/ctrl-wheel from zooming the whole application. */
-  private onWindowWheel = (event: WheelEvent): void => {
-    if (event.ctrlKey || event.metaKey) event.preventDefault();
   };
 
   private onKeyUp = (event: KeyboardEvent): void => {
@@ -461,31 +453,8 @@ export class App {
   };
 
   private onPaste = (event: ClipboardEvent): void => {
-    if (this.disposed || !store.project) return;
-    if (document.querySelector(".modal-backdrop")) return;
-    if (isEditableTarget(event.target)) return;
-    const clipboard = event.clipboardData;
-    if (!clipboard) return;
-    let image = Array.from(clipboard.files).find(isSupportedImageFile) ?? null;
-    if (!image) {
-      for (const item of Array.from(clipboard.items)) {
-        if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
-        const file = item.getAsFile();
-        if (file && isSupportedImageFile(file)) {
-          image = file;
-          break;
-        }
-      }
-    }
-    if (image) {
-      event.preventDefault();
-      void insertImageFile(this.imageFlowHost(), image);
-      return;
-    }
-    if (hasClipboard(store.project)) {
-      event.preventDefault();
-      pasteSelection();
-    }
+    if (this.disposed) return;
+    void pasteFromClipboard(this.imageFlowHost(), event);
   };
 
   private onKeyDown = (event: KeyboardEvent): void => {
@@ -988,7 +957,8 @@ export class App {
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
     window.removeEventListener("paste", this.onPaste);
-    window.removeEventListener("wheel", this.onWindowWheel, { capture: true });
+    this.removePageZoomGuard?.();
+    this.removePageZoomGuard = null;
     this.session.dispose();
     this.windowControls?.dispose();
     this.windowControls = null;
