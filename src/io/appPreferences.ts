@@ -7,9 +7,9 @@ export type { LanguagePreference };
 /** Locale-aware CSV for Excel, or RFC 4180 interchange for scripts. */
 export type CsvFormat = "locale" | "interchange";
 
-/** Stored theme choice. `system` maps dark to jade and light to light-green. */
+/** Stored theme choice. `system` maps dark to medium grey and light to light green. */
 export type ThemePreference =
-  "system" | "default" | "light-green" | "dark-grey" | "medium-grey" | "navy";
+  "system" | "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy";
 
 export interface AppPreferences {
   /** UI language. `system` follows the operating system locale. */
@@ -39,17 +39,18 @@ function isCsvFormat(value: unknown): value is CsvFormat {
 function isTheme(value: unknown): value is ThemePreference {
   return (
     value === "system" ||
-    value === "default" ||
+    value === "medium-grey" ||
     value === "light-green" ||
     value === "dark-grey" ||
-    value === "medium-grey" ||
+    value === "jade" ||
     value === "navy"
   );
 }
 
-/** `grey` was the pre-0.21.1 name for the palette now called Dark Grey. */
+/** Older releases stored the jade palette as `default` and grey as `grey`. */
 function normalizeTheme(value: unknown): ThemePreference {
   if (value === "grey") return "dark-grey";
+  if (value === "default") return "jade";
   return isTheme(value) ? value : DEFAULT_APP_PREFERENCES.theme;
 }
 

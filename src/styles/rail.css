@@ -1,0 +1,71 @@
+/* Expandable tool rail: one column by default, two columns when expanded. */
+
+.workspace {
+  --rail-w-active: var(--rail-w);
+}
+
+.workspace:has(.tool-rail.is-expanded) {
+  --rail-w-active: 94px;
+}
+
+.tool-rail.is-expanded {
+  width: 94px;
+  flex-basis: 94px;
+  align-items: stretch;
+}
+
+.tool-rail-toggle {
+  width: 40px;
+  height: 24px;
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+}
+
+.tool-rail-toggle:hover {
+  background: var(--panel-hover);
+  color: var(--text);
+}
+
+.tool-rail-toggle:focus-visible {
+  outline: 2px solid var(--jade);
+  outline-offset: -1px;
+}
+
+.tool-rail.is-expanded .tool-rail-toggle {
+  width: 100%;
+  justify-content: flex-start;
+  padding: 0 7px;
+  margin-bottom: 2px;
+}
+
+.tool-rail-tools {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 100%;
+}
+
+.tool-rail.is-expanded .tool-rail-tools {
+  display: grid;
+  grid-template-columns: repeat(2, 40px);
+  justify-content: center;
+  gap: 3px;
+}
+
+.tool-rail.is-expanded .tool-rail-tools .tool-separator {
+  grid-column: 1 / -1;
+  width: 100%;
+  margin: 2px 0;
+}
+
+.tool-rail.is-expanded .tool-markups {
+  width: 100%;
+}

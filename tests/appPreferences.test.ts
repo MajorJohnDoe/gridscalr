@@ -63,9 +63,12 @@ describe("app preferences", () => {
     });
   });
 
-  it("maps the legacy grey theme to dark grey", () => {
+  it("maps legacy theme names to their current palettes", () => {
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ theme: "grey" }));
     expect(loadAppPreferences().theme).toBe("dark-grey");
+
+    localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ theme: "default" }));
+    expect(loadAppPreferences().theme).toBe("jade");
   });
 
   it("merges patches and persists them", () => {

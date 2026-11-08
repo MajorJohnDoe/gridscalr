@@ -1144,7 +1144,7 @@
 
 .dock-restore {
   position: absolute;
-  left: calc(var(--rail-w) + 7px);
+  left: calc(var(--rail-w-active, var(--rail-w)) + 7px);
   top: 50px;
   z-index: 12;
   width: 24px;

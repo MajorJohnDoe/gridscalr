@@ -727,10 +727,10 @@ try {
   await themeSelect.selectOption("system");
   assert.equal(
     await page.evaluate(() => document.documentElement.dataset.theme),
-    "default",
+    "medium-grey",
     "System should follow the dark Chromium preference",
   );
-  await themeSelect.selectOption("default");
+  await themeSelect.selectOption("medium-grey");
   await preferencesDialog
     .getByRole("navigation", { name: "Preference categories" })
     .getByRole("button", { name: "Layers" })

@@ -1,6 +1,7 @@
-/* Medium grey theme: neutral mid-grey chrome inspired by image editors,
-   with a darker canvas surround and the jade accent. */
+/* Medium grey theme: the default neutral mid-grey chrome inspired by image
+   editors, with a darker canvas surround and the jade accent. */
 
+:root,
 :root[data-theme="medium-grey"] {
   color-scheme: dark;
 
@@ -14,14 +15,14 @@
   --text: #e3e6e8;
   --text-strong: #f6f8f9;
   --muted: #adb5bb;
-  --muted-2: #969ea5;
+  --muted-2: #a6aeb5;
   --jade: #4fc7a9;
   --jade-bright: #6edcbd;
   --jade-dim: rgba(79, 199, 169, 0.16);
   --cyan: #5bc8e8;
   --amber: #e5a54b;
   --violet: #b29af5;
-  --danger: #f07b7b;
+  --danger: #f49696;
   --warning: #e8b366;
   --shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
   --markups-bg: #2d3033;

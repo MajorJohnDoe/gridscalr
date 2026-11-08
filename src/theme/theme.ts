@@ -1,7 +1,7 @@
 import { loadAppPreferences, saveAppPreferences, type ThemePreference } from "../io/appPreferences";
 import type { MessageKey } from "../i18n/types.generated";
 
-export type ThemeId = "default" | "light-green" | "dark-grey" | "medium-grey" | "navy";
+export type ThemeId = "medium-grey" | "light-green" | "dark-grey" | "jade" | "navy";
 
 export interface ThemeOption {
   value: ThemePreference;
@@ -10,10 +10,10 @@ export interface ThemeOption {
 
 export const THEME_OPTIONS: ThemeOption[] = [
   { value: "system", labelKey: "theme.system" },
-  { value: "default", labelKey: "theme.default" },
+  { value: "medium-grey", labelKey: "theme.mediumGrey" },
   { value: "light-green", labelKey: "theme.lightGreen" },
   { value: "dark-grey", labelKey: "theme.darkGrey" },
-  { value: "medium-grey", labelKey: "theme.mediumGrey" },
+  { value: "jade", labelKey: "theme.jade" },
   { value: "navy", labelKey: "theme.navy" },
 ];
 
@@ -21,8 +21,8 @@ const LIGHT_QUERY = "(prefers-color-scheme: light)";
 
 export function resolveTheme(preference: ThemePreference): ThemeId {
   if (preference !== "system") return preference;
-  if (typeof window === "undefined" || !window.matchMedia) return "default";
-  return window.matchMedia(LIGHT_QUERY).matches ? "light-green" : "default";
+  if (typeof window === "undefined" || !window.matchMedia) return "medium-grey";
+  return window.matchMedia(LIGHT_QUERY).matches ? "light-green" : "medium-grey";
 }
 
 export function applyTheme(preference: ThemePreference): ThemeId {

@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { repoRoot } from "./ui-harness.mjs";
 
-const THEMES = ["default", "light-green", "dark-grey", "medium-grey", "navy"];
+const THEMES = ["medium-grey", "light-green", "dark-grey", "jade", "navy"];
 const REQUIRED = [
   "--bg",
   "--bg-deep",

@@ -18,6 +18,8 @@ import type { ShellRefs } from "./shell";
 export { PANEL_LIMITS };
 
 interface PanelLayout {
+  toolRail: HTMLElement;
+  railToggle: HTMLButtonElement;
   dock: HTMLElement;
   dockResizer: HTMLElement;
   dockRestore: HTMLButtonElement;
@@ -44,6 +46,12 @@ function applyPreferences(): void {
   layout.inspector.setAttribute("aria-hidden", String(prefs.rightCollapsed));
   layout.dock.inert = prefs.leftCollapsed;
   layout.inspector.inert = prefs.rightCollapsed;
+  layout.toolRail.classList.toggle("is-expanded", prefs.railExpanded);
+  const railLabel = t(prefs.railExpanded ? "shell.collapseToolRail" : "shell.expandToolRail");
+  layout.railToggle.innerHTML = icon(prefs.railExpanded ? "chevronsLeft" : "chevronsRight", 15);
+  layout.railToggle.title = railLabel;
+  layout.railToggle.setAttribute("aria-label", railLabel);
+  layout.railToggle.setAttribute("aria-expanded", String(prefs.railExpanded));
 }
 
 export function initPanelLayout(next: PanelLayout): void {
@@ -70,6 +78,26 @@ export function setSidebarCollapsed(collapsed: boolean): void {
 
 export function toggleSidebar(): void {
   setSidebarCollapsed(!isSidebarCollapsed());
+}
+
+export function isToolRailExpanded(): boolean {
+  return layout
+    ? layout.toolRail.classList.contains("is-expanded")
+    : loadPanelPreferences().railExpanded;
+}
+
+export function setToolRailExpanded(expanded: boolean): void {
+  savePanelPreferences({ railExpanded: expanded });
+  applyPreferences();
+}
+
+export function toggleToolRail(): void {
+  setToolRailExpanded(!isToolRailExpanded());
+}
+
+/** Reapplies translated labels after a language change. */
+export function relabelPanelLayout(): void {
+  applyPreferences();
 }
 
 export function setInspectorCollapsed(collapsed: boolean): void {

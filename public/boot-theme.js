@@ -5,7 +5,7 @@
  */
 (function () {
   var palettes = {
-    default: {
+    jade: {
       bg: "#14181b",
       text: "#e8eef1",
       panel: "#1e2428",
@@ -70,10 +70,11 @@
       theme =
         window.matchMedia && window.matchMedia("(prefers-color-scheme: light)").matches
           ? "light-green"
-          : "default";
+          : "medium-grey";
     }
     if (theme === "grey") theme = "dark-grey";
-    if (!palettes[theme]) theme = "default";
+    if (theme === "default") theme = "jade";
+    if (!palettes[theme]) theme = "medium-grey";
     var palette = palettes[theme];
     var root = document.documentElement;
     root.dataset.theme = theme;

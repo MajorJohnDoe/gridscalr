@@ -1,7 +1,6 @@
-/* Default dark jade theme. This is the reference palette. */
+/* Dark jade theme: the original dark palette with the jade accent. */
 
-:root,
-:root[data-theme="default"] {
+:root[data-theme="jade"] {
   color-scheme: dark;
 
   --bg: #14181b;

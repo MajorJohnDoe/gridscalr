@@ -1,11 +1,12 @@
 import "./styles/tokens.css";
-import "./styles/themes/default.css";
+import "./styles/themes/medium-grey.css";
+import "./styles/themes/jade.css";
 import "./styles/themes/light-green.css";
 import "./styles/themes/dark-grey.css";
-import "./styles/themes/medium-grey.css";
 import "./styles/themes/navy.css";
 import "./styles/base.css";
 import "./styles/shell.css";
+import "./styles/rail.css";
 import "./styles/panels.css";
 import "./styles/reference.css";
 import "./styles/dialogs.css";

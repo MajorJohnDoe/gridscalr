@@ -27,9 +27,9 @@ describe("themes", () => {
     expect(document.documentElement.style.colorScheme).toBe("light");
   });
 
-  it("maps System to jade in dark mode and light-green in light mode", () => {
+  it("maps System to medium grey in dark mode and light-green in light mode", () => {
     mockSystem(false);
-    expect(resolveTheme("system")).toBe("default");
+    expect(resolveTheme("system")).toBe("medium-grey");
     mockSystem(true);
     expect(resolveTheme("system")).toBe("light-green");
   });

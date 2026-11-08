@@ -5,6 +5,7 @@ export interface PanelPreferences {
   leftWidth: number;
   rightCollapsed: boolean;
   rightWidth: number;
+  railExpanded: boolean;
 }
 
 export const DEFAULT_PANELS: PanelPreferences = {
@@ -12,6 +13,7 @@ export const DEFAULT_PANELS: PanelPreferences = {
   leftWidth: 272,
   rightCollapsed: false,
   rightWidth: 304,
+  railExpanded: false,
 };
 
 export const PANEL_LIMITS = {
@@ -43,6 +45,7 @@ export function loadPanelPreferences(): PanelPreferences {
         PANEL_LIMITS.rightMin,
         PANEL_LIMITS.rightMax,
       ),
+      railExpanded: parsed.railExpanded === true,
     };
   } catch {
     return { ...DEFAULT_PANELS };

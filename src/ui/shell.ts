@@ -17,9 +17,11 @@ import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import {
   initPanelLayout,
   PANEL_LIMITS,
+  relabelPanelLayout,
   setInspectorCollapsed,
   setPanelWidth,
   setSidebarCollapsed,
+  toggleToolRail,
 } from "./sidebar";
 import { t } from "../i18n";
 
@@ -43,6 +45,7 @@ export interface ShellRefs {
   pageInput: HTMLInputElement;
   pageTotal: HTMLElement;
   toolRail: HTMLElement;
+  railToggle: HTMLButtonElement;
   markupsBtn: HTMLButtonElement;
   dockTabs: HTMLElement[];
   dockCollapse: HTMLButtonElement;
@@ -132,11 +135,18 @@ export function createShell(root: HTMLElement): ShellRefs {
   toolRail.setAttribute("aria-label", t("shell.toolsAria"));
   toolRail.setAttribute("role", "toolbar");
   toolRail.setAttribute("aria-orientation", "vertical");
+  const railToggle = el("button", "tool-rail-toggle") as HTMLButtonElement;
+  railToggle.type = "button";
+  railToggle.setAttribute("aria-controls", "tool-rail-tools");
+  railToggle.addEventListener("click", toggleToolRail);
+  toolRail.append(railToggle);
+  const railTools = el("div", "tool-rail-tools");
+  railTools.id = "tool-rail-tools";
   let lastGroup = "";
   for (const tool of TOOLS) {
     if (tool.libraryOnly) continue;
     if (lastGroup && tool.group !== lastGroup) {
-      toolRail.append(el("div", "tool-separator"));
+      railTools.append(el("div", "tool-separator"));
     }
     lastGroup = tool.group;
     const family = TOOL_FAMILY_BY_TOOL.get(tool.id);
@@ -170,8 +180,9 @@ export function createShell(root: HTMLElement): ShellRefs {
       btn.addEventListener("click", () => store.setTool(tool.id));
       attachToolFlyout(btn, tool.id);
     }
-    toolRail.append(btn);
+    railTools.append(btn);
   }
+  toolRail.append(railTools);
   toolRail.append(el("div", "tool-spacer"));
   const markupsBtn = el("button", "tool-markups");
   markupsBtn.type = "button";
@@ -326,6 +337,8 @@ export function createShell(root: HTMLElement): ShellRefs {
   root.append(shell);
 
   initPanelLayout({
+    toolRail,
+    railToggle,
     dock,
     dockResizer,
     dockRestore,
@@ -373,6 +386,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     pageInput,
     pageTotal,
     toolRail,
+    railToggle,
     markupsBtn,
     dockTabs: dockTabButtons,
     dockCollapse: collapse,
@@ -434,6 +448,7 @@ function relabelToolRail(refs: ShellRefs): void {
 export function relabelShell(refs: ShellRefs): void {
   relabelMenuBar();
   relabelToolRail(refs);
+  relabelPanelLayout();
 
   refs.toolRail.setAttribute("aria-label", t("shell.toolsAria"));
   for (const button of refs.dockTabs) {
