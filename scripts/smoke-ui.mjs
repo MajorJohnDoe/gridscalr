@@ -678,6 +678,7 @@ try {
   await page.getByRole("button", { name: "Project settings", exact: true }).click();
   const headerSettings = page.getByRole("dialog");
   await headerSettings.waitFor();
+  await headerSettings.getByRole("button", { name: "Measurements", exact: true }).click();
   const lengthUnit = headerSettings.getByLabel("Project length unit");
   await lengthUnit.selectOption("m");
   assert.equal(
@@ -693,12 +694,13 @@ try {
   const settingsDialog = page.getByRole("dialog");
   await settingsDialog.waitFor();
   assert.ok(
-    await settingsDialog.getByText("Smart length labels", { exact: true }).count(),
-    "project settings should expose smart length labels",
-  );
-  assert.ok(
     (await settingsDialog.innerText()).includes("Project data:"),
     "project settings should show the project size",
+  );
+  await settingsDialog.getByRole("button", { name: "Measurements", exact: true }).click();
+  assert.ok(
+    await settingsDialog.getByText("Smart length labels", { exact: true }).count(),
+    "project settings should expose smart length labels",
   );
   assert.equal(
     await settingsDialog.getByLabel("Measurement layer colour").count(),

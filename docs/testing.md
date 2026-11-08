@@ -12,7 +12,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
-| `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the four palettes. |
+| `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves and package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |
