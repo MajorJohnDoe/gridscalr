@@ -227,7 +227,9 @@ try {
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
   await page.keyboard.press("Control+,");
-  await page.getByRole("dialog").waitFor();
+  const projectSettings = page.getByRole("dialog", { name: "Project settings" });
+  await projectSettings.waitFor();
+  await projectSettings.getByRole("button", { name: "Quantities", exact: true }).click();
   await page.getByRole("button", { name: /Manage count types/ }).click();
   const countTypesDialog = page.getByRole("dialog", { name: "Count types" });
   await countTypesDialog.getByLabel("New count type name").waitFor();
