@@ -34,7 +34,7 @@ GridScalr uses a compact, drawing-first layout.
 
 Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
 
-On a touch screen, one finger draws or selects with the active tool. Use **two fingers** to pan and pinch to zoom around the point between them, over either the primary canvas or the reference pane. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again. While a pen is active, or just after it was used, touch is treated as palm input and does not draw. Long-press an item with the Select tool to open the same context menu as a right-click.
+On a touch screen or laptop touchpad, use **two fingers** to pan and pinch to zoom around the point between them, over either the primary canvas or the reference pane. `Ctrl`/`Cmd` + mouse wheel also zooms. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again. While a pen is active, or just after it was used, touch is treated as palm input and does not draw. Long-press an item with the Select tool to open the same context menu as a right-click.
 
 ## Reference view
 
@@ -44,7 +44,7 @@ On a touch screen, one finger draws or selects with the active tool. Use **two f
 - **Revision** compares a saved `.gridscalr` project. Choose **File → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
 - **Drawing** compares a raw PDF drawing. Choose **File → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
 
-The bar also names the loaded reference and shows its page count. **Open…** replaces the reference for the current source, and the close button restores the primary canvas. Drag the divider to change how much room each pane gets, and use the mouse wheel over either pane to zoom.
+The bar also names the loaded reference and shows its page count. **Open…** replaces the reference for the current source, and the close button restores the primary canvas. Drag the divider to change how much room each pane gets, and use the mouse wheel or a touchpad pinch over either pane to zoom.
 
 The reference bar has its own page controls: **‹** and **›**, a page number, and **Follow primary**. Changing the reference page never moves the primary canvas, so you can keep a detail sheet beside the sheet you are measuring. Choosing a page turns off **Follow primary**; press it again to return the reference pane to the primary page. Zoom and pan stay linked in both modes, and switching source resets the reference pane to the primary page.
 

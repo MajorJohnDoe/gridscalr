@@ -57,7 +57,7 @@ On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available 
 | Action | Shortcut |
 | --- | --- |
 | Pan temporarily | Hold `Space` and drag |
-| Zoom | `Ctrl` + mouse wheel, `Ctrl` + `+` / `-` |
+| Zoom | `Ctrl` + mouse wheel, touchpad pinch, `Ctrl` + `+` / `-` |
 | Fit page | `Ctrl+0` |
 | Actual size | `Ctrl+1` |
 | Previous / next page | `PageUp` / `PageDown` |

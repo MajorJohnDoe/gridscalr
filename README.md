@@ -95,7 +95,7 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Package a project and its drawings into a portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Reports and original TIF scans are opt-in.
-- Pan and zoom with the mouse, wheel, or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
+- Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, atomic saves with **Save a copy** backups, autosave recovery,
   recent files, and the user guide bundled under **Help**. The status bar shows
   saved/unsaved state and source-file warnings, and Project settings reports the
