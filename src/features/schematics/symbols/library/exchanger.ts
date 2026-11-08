@@ -43,11 +43,13 @@ export const EXCHANGER_SYMBOLS: SymbolDefinition[] = [
       { id: "secondaryOut", x: 24, y: 56, direction: "out" },
     ],
     shapes: [
-      stroke(rectPath(24, 8, 16, 48)),
+      stroke(rectPath(22, 4, 20, 56)),
       stroke(
-        "M 32 18 C 36.418 18 40 24.268 40 32 C 40 39.732 36.418 46 32 46 C 27.582 46 24 39.732 24 32 C 24 24.268 27.582 18 32 18 Z",
+        joinPaths(
+          "M 38 40 C 38 50 35.5 57 32 57 C 28.5 57 26 50 26 36 C 26 22 28.5 9 32 9 C 35.5 9 38 22 38 32",
+          "M 34.5 25 L 38 32 L 41.5 25",
+        ),
       ),
-      stroke(joinPaths("M 25 25 C 25 12 39 12 39 25", "M 39 25 L 34 22 M 39 25 L 36 30")),
     ],
   }),
   schematicSymbol({
