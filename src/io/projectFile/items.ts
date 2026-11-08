@@ -1,6 +1,7 @@
+import { canonicalColor, normalizeColor } from "../../model/color";
 import { clampLabelSize } from "../../model/label";
 import { isLabelFitPosition } from "../../model/labelLayout";
-import { isMeasurementKind, layerKindForItem } from "../../model/layers";
+import { defaultColorForItem, isMeasurementKind, layerKindForItem } from "../../model/layers";
 import { stampStatusColor } from "../../model/stamps";
 import { SYMBOL_MAX_SIZE, SYMBOL_MIN_SIZE, isInspectionStatus } from "../../model/symbols";
 import type {
@@ -25,6 +26,7 @@ import { normalizeRailRows } from "./rail";
 export function normalizeItem(
   value: unknown,
   layerKind: LayerKind,
+  layerColor: string,
   categoryIds: ReadonlySet<string>,
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
@@ -151,14 +153,12 @@ export function normalizeItem(
         ? 1
         : undefined;
   const textColor =
-    (raw.kind === "cloud" ||
-      raw.kind === "callout" ||
-      raw.kind === "stamp" ||
-      raw.kind === "delta" ||
-      raw.kind === "textbox") &&
-    typeof raw.textColor === "string" &&
-    raw.textColor
-      ? raw.textColor
+    raw.kind === "cloud" ||
+    raw.kind === "callout" ||
+    raw.kind === "stamp" ||
+    raw.kind === "delta" ||
+    raw.kind === "textbox"
+      ? (canonicalColor(raw.textColor) ?? undefined)
       : undefined;
   const textBackground =
     raw.kind === "textbox" && raw.textBackground === "white" ? ("white" as const) : undefined;
@@ -192,6 +192,9 @@ export function normalizeItem(
             : raw.kind === "delta"
               ? "A"
               : undefined;
+  const fallbackColor = normalizeColor(layerColor, defaultColorForItem(raw.kind));
+  const colorFallback =
+    raw.kind === "image" ? "#7aa2f7" : raw.kind === "textbox" ? "#1a2024" : fallbackColor;
   const lineTypeId =
     raw.kind === "polyline" && typeof raw.lineTypeId === "string" ? raw.lineTypeId : undefined;
   const rows = raw.kind === "rail" ? normalizeRailRows(raw.rows) : undefined;
@@ -222,16 +225,10 @@ export function normalizeItem(
     points,
     color:
       raw.kind === "stamp"
-        ? stampStatusColor(text, typeof raw.color === "string" ? raw.color : "#4cc9f0")
-        : typeof raw.color === "string"
-          ? raw.color
-          : raw.kind === "image"
-            ? "#7aa2f7"
-            : raw.kind === "textbox"
-              ? "#1a2024"
-              : "#4cc9f0",
+        ? stampStatusColor(text, normalizeColor(raw.color, colorFallback))
+        : normalizeColor(raw.color, colorFallback),
     strokeWidth: typeof raw.strokeWidth === "number" && raw.strokeWidth > 0 ? raw.strokeWidth : 2,
-    fillColor: typeof raw.fillColor === "string" ? raw.fillColor : undefined,
+    fillColor: canonicalColor(raw.fillColor) ?? undefined,
     opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : undefined,
     text,
     label: typeof raw.label === "string" ? raw.label : undefined,

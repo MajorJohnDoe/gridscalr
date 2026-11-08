@@ -1,3 +1,4 @@
+import { normalizeColor } from "./color";
 import type { MarkupItem, TextRun } from "./types";
 import { TEXT_LINE_HEIGHT } from "./text";
 
@@ -43,14 +44,14 @@ export function resolveTextRun(run: TextRun, defaults: RichTextDefaults): Resolv
     italic: run.italic ?? defaults.italic,
     underline: run.underline ?? defaults.underline,
     size: run.size ?? defaults.fontSize,
-    color: run.color ?? defaults.color,
+    color: normalizeColor(run.color, defaults.color),
   };
 }
 
 export function textRunDefaults(item: MarkupItem): RichTextDefaults {
   return {
     fontSize: item.fontSize ?? 12,
-    color: item.textColor ?? item.color,
+    color: normalizeColor(item.textColor, item.color),
     bold: item.textBold === true,
     italic: item.textItalic === true,
     underline: item.textUnderline === true,

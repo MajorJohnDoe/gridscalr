@@ -1,3 +1,4 @@
+import { canonicalColor } from "../model/color";
 import { distance, rotatePoint, type Bounds } from "../model/geometry";
 import { t } from "../i18n";
 import type { PageRect } from "../model/export";
@@ -312,16 +313,9 @@ export function dedupeLast(points: Point[]): Point[] {
 }
 
 export function hexAlpha(hex: string, alpha: number): string {
-  const value = hex.replace("#", "");
-  const full =
-    value.length === 3
-      ? value
-          .split("")
-          .map((c) => c + c)
-          .join("")
-      : value;
-  const int = parseInt(full, 16);
-  if (!Number.isFinite(int) || full.length !== 6) return `rgba(255,255,255,${alpha})`;
+  const color = canonicalColor(hex);
+  if (!color) return `rgba(255,255,255,${alpha})`;
+  const int = Number.parseInt(color.slice(1), 16);
   return `rgba(${(int >> 16) & 255},${(int >> 8) & 255},${int & 255},${alpha})`;
 }
 

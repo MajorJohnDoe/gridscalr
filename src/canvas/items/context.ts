@@ -51,6 +51,7 @@ export interface ItemRenderState {
   zoom: number;
   points: Point[];
   lineWidth: number;
+  color: string;
   drawPanel: DrawPanel;
 }
 

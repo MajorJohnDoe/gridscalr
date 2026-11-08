@@ -1,4 +1,5 @@
-import { createLayer, normalizeLayerOrder } from "../../model/layers";
+import { normalizeColor } from "../../model/color";
+import { createLayer, defaultColorForLayer, normalizeLayerOrder } from "../../model/layers";
 import type { Layer, LayerPageState } from "../../model/types";
 import { normalizeItem } from "./items";
 
@@ -50,12 +51,7 @@ export function normalizeLayers(
         visible: raw.visible !== false,
         locked: raw.locked === true,
         opacity: typeof raw.opacity === "number" ? Math.max(0, Math.min(1, raw.opacity)) : 1,
-        color:
-          typeof raw.color === "string"
-            ? raw.color
-            : raw.kind === "measure"
-              ? "#4cc9f0"
-              : "#f2a93b",
+        color: normalizeColor(raw.color, defaultColorForLayer(raw.kind)),
         items: [],
       };
       const homePage =
@@ -73,6 +69,7 @@ export function normalizeLayers(
           const normalized = normalizeItem(
             item,
             layer.kind,
+            layer.color,
             categoryIds,
             fallbackCategoryId,
             assetIds,

@@ -1,4 +1,5 @@
 import type { PDFPage, RGB } from "pdf-lib";
+import { resolveItemColor } from "../../../model/layers";
 import { MIN_EXPORT_STROKE_WIDTH } from "../../../model/style";
 import type { MarkupItem } from "../../../model/types";
 import { clamp, pdfColor } from "../geometry";
@@ -16,7 +17,7 @@ export interface ItemStroke {
 
 export function itemStroke(item: MarkupItem, layerOpacity: number): ItemStroke {
   return {
-    color: pdfColor(item.color),
+    color: pdfColor(resolveItemColor(item)),
     width: Math.max(MIN_EXPORT_STROKE_WIDTH, item.strokeWidth),
     opacity: clamp(layerOpacity, 0, 1),
   };

@@ -1,4 +1,5 @@
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "../../model/annotations";
+import { normalizeColor } from "../../model/color";
 import { arrowHeadGeometry } from "../../model/geometry";
 import { TEXT_FONT_STACK } from "../../model/text";
 import type { MarkupItem } from "../../model/types";
@@ -10,7 +11,7 @@ export function drawAnnotationItem(
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
-  const { context, zoom, lineWidth, drawPanel } = state;
+  const { context, zoom, lineWidth, color, drawPanel } = state;
 
   // Annotation cases only; the cloud label is drawn separately after the shape.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
@@ -38,7 +39,7 @@ export function drawAnnotationItem(
       ctx.moveTo(leaderStart.x, leaderStart.y);
       ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
       ctx.stroke();
-      drawArrowHead(ctx, anchor, head, item.color);
+      drawArrowHead(ctx, anchor, head, color);
       ctx.restore();
       if (context.editors.editingItemId !== item.id) {
         drawPanel(
@@ -52,7 +53,7 @@ export function drawAnnotationItem(
           },
           item,
           "rgba(12, 16, 18, 0.92)",
-          item.textColor ?? "#f7fbfc",
+          normalizeColor(item.textColor, "#f7fbfc"),
           false,
         );
       }
@@ -64,8 +65,8 @@ export function drawAnnotationItem(
         ctx,
         layout,
         item,
-        hexAlpha(item.color, Math.max(0.12, item.opacity ?? 0.12)),
-        item.textColor ?? item.color,
+        hexAlpha(color, Math.max(0.12, item.opacity ?? 0.12)),
+        normalizeColor(item.textColor, color),
         true,
         "stamp",
       );
@@ -78,7 +79,7 @@ export function drawAnnotationItem(
       ctx.save();
       ctx.save();
       ctx.globalAlpha *= item.opacity ?? 0.16;
-      ctx.fillStyle = item.color;
+      ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(center.x, center.y - size / 2);
       ctx.lineTo(center.x + size / 2, center.y + size / 2);
@@ -92,7 +93,7 @@ export function drawAnnotationItem(
       ctx.lineTo(center.x - size / 2, center.y + size / 2);
       ctx.closePath();
       ctx.stroke();
-      ctx.fillStyle = item.textColor ?? item.color;
+      ctx.fillStyle = normalizeColor(item.textColor, color);
       ctx.font = `700 ${Math.max(7, (item.fontSize ?? 14) * zoom * 0.7)}px ${TEXT_FONT_STACK}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
@@ -118,6 +119,13 @@ export function drawCloudLabel(
   const { context, drawPanel } = state;
   const label = cloudLabelLayout(item);
   if (label && context.editors.editingItemId !== item.id) {
-    drawPanel(ctx, label, item, "rgba(12, 16, 18, 0.9)", item.textColor ?? "#f7fbfc", true);
+    drawPanel(
+      ctx,
+      label,
+      item,
+      "rgba(12, 16, 18, 0.9)",
+      normalizeColor(item.textColor, "#f7fbfc"),
+      true,
+    );
   }
 }

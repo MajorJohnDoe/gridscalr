@@ -1,7 +1,10 @@
 import { measurementCategory, normalizeRoom } from "../../model/categories";
 import { pageScale, makeId } from "../../model/calibration";
 import { CLOUD_FILL_OPACITY, cloudFillColor } from "../../model/cloud";
+import { normalizeColor } from "../../model/color";
 import {
+  DEFAULT_DRAW_COLOR,
+  DEFAULT_MEASURE_COLOR,
   addItem,
   ensureActiveLayer,
   layerKindForItem,
@@ -88,24 +91,27 @@ export function createItemInStore(
     const cloudPreset = kind === "cloud" ? cloudFillColor(store.ui.cloudFill) : null;
     const lineLike = kind === "polyline" || kind === "line";
     const lineStyle = lineLike ? store.ui.lineStyle : undefined;
+    const drawColor = normalizeColor(style.color, DEFAULT_DRAW_COLOR);
+    const measureColor = normalizeColor(layer.color, DEFAULT_MEASURE_COLOR);
+    const lineColor = normalizeColor(lineStyle?.color, drawColor);
     const item: MarkupItem = {
       id: makeId("item"),
       page: viewPage,
       kind,
       points: points.map((p) => ({ ...p })),
       color: isMeasure
-        ? layer.color
+        ? measureColor
         : kind === "textbox"
           ? "#1a2024"
           : lineLike
-            ? (lineStyle?.color ?? style.color)
+            ? lineColor
             : kind === "rail"
               ? "#4a4a4a"
               : kind === "symbol"
                 ? symbolCategoryColor(symbolCategoryOf(options.symbolId ?? store.ui.symbolId))
                 : kind === "stamp"
-                  ? stampStatusColor(options.text ?? store.ui.stampText, style.color)
-                  : (cloudPreset ?? style.color),
+                  ? stampStatusColor(options.text ?? store.ui.stampText, drawColor)
+                  : (cloudPreset ?? drawColor),
       strokeWidth: isMeasure
         ? DEFAULT_MEASUREMENT_STROKE_WIDTH
         : lineLike
@@ -113,7 +119,7 @@ export function createItemInStore(
           : kind === "rail"
             ? 0.6
             : style.strokeWidth,
-      fillColor: cloudPreset ?? (filled ? style.color : undefined),
+      fillColor: cloudPreset ?? (filled ? drawColor : undefined),
       opacity:
         !isMeasure &&
         (filledShape ||

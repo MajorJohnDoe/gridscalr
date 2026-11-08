@@ -1,5 +1,6 @@
 import { closestPointOnPolygon } from "../model/annotations";
 import { arrowHeadGeometry } from "../model/geometry";
+import { resolveItemColor } from "../model/layers";
 import type { LabelBox, LabelMetrics } from "../model/label";
 import type { LabelLayout } from "../model/labelLayout";
 import { LABEL_FONT_STACK } from "../model/labelFont";
@@ -67,6 +68,7 @@ export function drawAnnotationPanel(
   const padding = layout.padding * zoom;
   const contentLeft = x + padding;
   const contentWidth = Math.max(0, width - padding * 2);
+  const color = resolveItemColor(item);
   ctx.save();
   if (leader && item.kind === "cloud" && item.points.length) {
     const targetPage = closestPointOnPolygon(item.points, layout.center);
@@ -80,16 +82,16 @@ export function drawAnnotationPanel(
     const target = toScreen(targetPage);
     const edge = toScreen(edgePage);
     const head = arrowHeadGeometry(edge, target, 6);
-    ctx.strokeStyle = item.color;
+    ctx.strokeStyle = color;
     ctx.lineWidth = Math.max(0.6, item.strokeWidth * zoom);
     ctx.beginPath();
     ctx.moveTo(edge.x, edge.y);
     ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
     ctx.stroke();
-    drawArrowHead(ctx, target, head, item.color);
+    drawArrowHead(ctx, target, head, color);
   }
   ctx.fillStyle = fill;
-  ctx.strokeStyle = item.color;
+  ctx.strokeStyle = color;
   ctx.lineWidth = Math.max(0.8, item.strokeWidth * zoom);
   roundRect(ctx, x, y, width, height, Math.min(5, height / 4));
   ctx.fill();

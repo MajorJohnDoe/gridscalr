@@ -18,7 +18,7 @@ export function drawSymbolItem(
   state: ItemRenderState,
 ): void {
   if (item.kind !== "symbol") return;
-  const { points, zoom } = state;
+  const { points, zoom, color } = state;
   const anchor = points[0];
   if (!anchor) return;
   const definition = symbolFor(item.symbolId);
@@ -26,7 +26,7 @@ export function drawSymbolItem(
     definition.style === "schematic"
       ? "#111111"
       : definition.id === "unknown"
-        ? item.color
+        ? color
         : symbolCategoryColor(definition.category);
   const plan = symbolRenderPlan(definition, accent);
   const size = symbolSizeOf(item);

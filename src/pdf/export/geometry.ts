@@ -1,6 +1,7 @@
 import { LineCapStyle, rgb, type PDFPage, type RGB } from "pdf-lib";
 import type { PageViewport } from "pdfjs-dist";
 import type { cloudCurves } from "../../model/cloud";
+import { canonicalColor } from "../../model/color";
 import { midpoint, rotatePoint } from "../../model/geometry";
 import type { MarkupItem, Point } from "../../model/types";
 import type { PdfRect } from "./types";
@@ -35,16 +36,9 @@ export function svgPolygon(viewport: PageViewport, points: Point[]): string {
 }
 
 export function pdfColor(hex: string): RGB {
-  const value = hex.replace("#", "");
-  const full =
-    value.length === 3
-      ? value
-          .split("")
-          .map((part) => part + part)
-          .join("")
-      : value;
-  const int = Number.parseInt(full, 16);
-  if (!Number.isFinite(int) || full.length !== 6) return rgb(0.93, 0.95, 0.96);
+  const color = canonicalColor(hex);
+  if (!color) return rgb(0.93, 0.95, 0.96);
+  const int = Number.parseInt(color.slice(1), 16);
   return rgb(((int >> 16) & 255) / 255, ((int >> 8) & 255) / 255, (int & 255) / 255);
 }
 

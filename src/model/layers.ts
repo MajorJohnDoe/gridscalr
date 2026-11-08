@@ -1,4 +1,5 @@
 import { makeId } from "./calibration";
+import { normalizeColor } from "./color";
 import { defaultProjectMetadata } from "./metadata";
 import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
@@ -34,9 +35,27 @@ export const DEFAULT_LAYER_COLORS: LayerColorDefaults = {
 let layerColorDefaults: LayerColorDefaults = { ...DEFAULT_LAYER_COLORS };
 
 function normalizeLayerColor(value: unknown, fallback: string): string {
-  return typeof value === "string" && /^#[0-9a-f]{6}$/i.test(value)
-    ? value.toLowerCase()
-    : fallback;
+  return normalizeColor(value, fallback);
+}
+
+/** Default stroke/text colour for an item whose stored colour is invalid. */
+export function defaultColorForItem(kind: ItemKind): string {
+  return isMeasurementKind(kind) ? DEFAULT_MEASURE_COLOR : DEFAULT_DRAW_COLOR;
+}
+
+/** Default colour for a layer whose stored colour is invalid. */
+export function defaultColorForLayer(kind: LayerKind): string {
+  return kind === "measure" ? DEFAULT_MEASURE_COLOR : DEFAULT_DRAW_COLOR;
+}
+
+/** Resolves an item colour without ever falling back to black. */
+export function resolveItemColor(item: Pick<MarkupItem, "kind" | "color">): string {
+  return normalizeColor(item.color, defaultColorForItem(item.kind));
+}
+
+/** Resolves a layer colour without ever falling back to black. */
+export function resolveLayerColor(layer: Pick<Layer, "kind" | "color">): string {
+  return normalizeColor(layer.color, defaultColorForLayer(layer.kind));
 }
 
 /** App-level colours used by every newly created layer. */
@@ -113,7 +132,7 @@ export function createLayer(
     visible: true,
     locked: false,
     opacity: 1,
-    color: color ?? layerColorDefaults[kind],
+    color: normalizeColor(color ?? layerColorDefaults[kind], defaultColorForLayer(kind)),
     items: [],
     ...(homePage ? { homePage } : {}),
   };

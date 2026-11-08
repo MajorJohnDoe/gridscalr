@@ -26,6 +26,7 @@ import {
   symbolSizeOf,
   type SymbolRenderShape,
 } from "../../../features/schematics/symbols/registry";
+import { resolveItemColor } from "../../../model/layers";
 import { parseSymbolPath, transformSymbolCommands } from "../../../model/symbolPaths";
 import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../../../model/symbolTag";
 import type { MarkupItem, Point } from "../../../model/types";
@@ -43,7 +44,7 @@ export function drawSymbolItem(context: ItemContext, item: MarkupItem, opacity: 
     definition.style === "schematic"
       ? "#111111"
       : definition.id === "unknown"
-        ? item.color
+        ? resolveItemColor(item)
         : symbolCategoryColor(definition.category);
   const rotation = item.rotation ?? 0;
   const plan = symbolRenderPlan(definition, accentHex);

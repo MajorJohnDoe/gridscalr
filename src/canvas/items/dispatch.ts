@@ -1,6 +1,6 @@
 import { itemCenter, itemRotation } from "../../model/geometry";
 import type { LabelLayout } from "../../model/labelLayout";
-import { isMeasurementKind } from "../../model/layers";
+import { isMeasurementKind, resolveItemColor } from "../../model/layers";
 import type { MarkupItem } from "../../model/types";
 import {
   createDrawPanel,
@@ -43,11 +43,13 @@ export function dispatchItem(
       item.kind === "image" ||
       item.kind === "symbol");
   const center = rotatesInPlace ? context.toScreen(itemCenter(item)) : null;
+  const color = resolveItemColor(item);
   const state: ItemRenderState = {
     context,
     zoom,
     points,
     lineWidth,
+    color,
     drawPanel: createDrawPanel(context),
   };
 
@@ -57,8 +59,8 @@ export function dispatchItem(
     ctx.rotate((rotation * Math.PI) / 180);
     ctx.translate(-center.x, -center.y);
   }
-  ctx.strokeStyle = item.color;
-  ctx.fillStyle = item.color;
+  ctx.strokeStyle = color;
+  ctx.fillStyle = color;
   ctx.lineWidth = lineWidth;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";

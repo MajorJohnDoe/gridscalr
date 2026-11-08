@@ -1,5 +1,7 @@
 import { degrees } from "pdf-lib";
+import { normalizeColor } from "../../../model/color";
 import { expandRect, itemCenter, rotatePoint } from "../../../model/geometry";
+import { resolveItemColor } from "../../../model/layers";
 import { layoutRichText, runsText, textRunDefaults } from "../../../model/richText";
 import {
   TEXT_LINE_HEIGHT,
@@ -43,7 +45,7 @@ function drawTextItem(context: ItemContext, item: MarkupItem, layerOpacity: numb
   const font = runFont(fonts, { bold: item.textBold === true, italic: item.textItalic === true });
   const align = item.textAlign ?? "left";
   const baseline = font.heightAtSize(layout.fontSize, { descender: false });
-  const color = pdfColor(item.color);
+  const color = pdfColor(resolveItemColor(item));
   const opacity = clamp(layerOpacity, 0, 1);
   const lineWidths = layout.lines.map((line) => font.widthOfTextAtSize(line, layout.fontSize));
   // Align lines against the block width, matching the canvas layout.
@@ -166,7 +168,7 @@ function drawTextBoxItem(context: ItemContext, item: MarkupItem, layerOpacity: n
     font.widthOfTextAtSize(line, fontSize),
   );
   const lineHeight = fontSize * TEXT_LINE_HEIGHT;
-  const color = pdfColor(item.textColor ?? item.color);
+  const color = pdfColor(normalizeColor(item.textColor, resolveItemColor(item)));
   const baseline = font.heightAtSize(fontSize, { descender: false });
   lines.forEach((line, index) => {
     if (!line) return;

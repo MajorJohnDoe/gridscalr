@@ -45,6 +45,7 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items and page state, remap later item/page-state numbers, keep at least one page in the project, and resync the PDF renderer. Source files are never modified.
 - Derived quantities and summaries are calculated from item data, never stored as separate sources of truth.
 - Exports must use the same visibility and locking rules as the canvas.
+- Invalid or missing colours must never render or export as black. Fall back to the layer or item default.
 - Do not add cloud sync, accounts, telemetry, or network dependencies without an explicit decision.
 
 ## Documentation policy

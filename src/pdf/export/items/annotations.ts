@@ -1,5 +1,7 @@
 import { degrees, LineCapStyle, type PDFPage, type RGB } from "pdf-lib";
 import type { PageViewport } from "pdfjs-dist";
+import { canonicalColor, normalizeColor } from "../../../model/color";
+import { resolveItemColor } from "../../../model/layers";
 import {
   calloutLayout,
   cloudLabelLayout,
@@ -66,12 +68,13 @@ function drawCloudItem(context: ItemContext, item: MarkupItem, layerOpacity: num
   const curves = cloudCurves(item.points, item.cloudRadius ?? cloudRadiusForPoints(item.points));
   if (curves.length) {
     const path = cloudSvgPath(viewport, curves);
+    const fillColor = canonicalColor(item.fillColor);
     page.drawSvgPath(path, {
       x: 0,
       y: 0,
-      ...(item.fillColor
+      ...(fillColor
         ? {
-            color: pdfColor(item.fillColor),
+            color: pdfColor(fillColor),
             opacity: clamp(opacity * (item.opacity ?? 0.12), 0, 1),
           }
         : {}),
@@ -146,7 +149,7 @@ function drawAnnotationPanel(
     height: layout.height,
   };
   const path = roundedRectSvgPath(viewport, box, Math.min(5, layout.height / 4));
-  const border = pdfColor(item.color);
+  const border = pdfColor(resolveItemColor(item));
   if (style === "dark") {
     page.drawSvgPath(path, {
       x: 0,
@@ -170,7 +173,13 @@ function drawAnnotationPanel(
   }
   const isStamp = style === "stamp";
   const font = isStamp || item.textBold === true ? fonts.bold : fonts.regular;
-  const textColor = item.textColor ? pdfColor(item.textColor) : style === "dark" ? INK : border;
+  const textColor = item.textColor
+    ? pdfColor(
+        normalizeColor(item.textColor, style === "dark" ? "#f7fbfc" : resolveItemColor(item)),
+      )
+    : style === "dark"
+      ? INK
+      : border;
   const lineHeight = layout.lineHeight;
   const align = isStamp ? "center" : (item.textAlign ?? "center");
   const contentLeft = box.x + layout.padding;
@@ -250,7 +259,9 @@ function drawDelta(
     borderWidth: Math.max(0.5, width),
     borderOpacity: opacity,
   });
-  const textColor = item.textColor ? pdfColor(item.textColor) : color;
+  const textColor = item.textColor
+    ? pdfColor(normalizeColor(item.textColor, resolveItemColor(item)))
+    : color;
   if (item.text) {
     drawCenteredText(
       page,

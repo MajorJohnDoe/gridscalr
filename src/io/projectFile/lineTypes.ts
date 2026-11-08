@@ -1,3 +1,4 @@
+import { normalizeColor } from "../../model/color";
 import { defaultLineTypes } from "../../model/lineTypes";
 import type { LineType } from "../../model/types";
 
@@ -19,10 +20,7 @@ export function normalizeLineTypes(rawValue: unknown): LineType[] {
         typeof source.name === "string" && source.name.trim()
           ? source.name.trim().slice(0, 80)
           : id,
-      color:
-        typeof source.color === "string" && /^#[0-9a-f]{6}$/i.test(source.color)
-          ? source.color
-          : "#4cc9f0",
+      color: normalizeColor(source.color, "#4cc9f0"),
       widthPt:
         typeof source.widthPt === "number" && Number.isFinite(source.widthPt)
           ? Math.max(0.3, Math.min(20, source.widthPt))

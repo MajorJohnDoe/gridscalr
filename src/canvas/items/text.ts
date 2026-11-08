@@ -1,3 +1,4 @@
+import { normalizeColor } from "../../model/color";
 import { expandRect } from "../../model/geometry";
 import { layoutRichText, runsText, textRunDefaults } from "../../model/richText";
 import {
@@ -16,7 +17,7 @@ export function drawTextItem(
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
-  const { points, zoom } = state;
+  const { points, zoom, color: itemColor } = state;
 
   // Text cases only; other item kinds are handled by their own family module.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
@@ -27,7 +28,7 @@ export function drawTextItem(
       const fontSize = Math.max(0.3, clampTextSize(item.fontSize ?? 12) * zoom);
       const padding = Math.max(0, (item.padding ?? 4) * zoom);
       const lineHeight = fontSize * 1.28;
-      const color = item.textColor ?? item.color;
+      const color = normalizeColor(item.textColor, itemColor);
       ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
@@ -108,7 +109,7 @@ export function drawTextItem(
       const lineHeight = layout.lineHeight * zoom;
       const align = item.textAlign ?? "left";
       ctx.font = `${item.textItalic ? "italic " : ""}${item.textBold ? 700 : 400} ${fontSize}px ${FONT_STACK}`;
-      ctx.fillStyle = item.color;
+      ctx.fillStyle = itemColor;
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const lineWidths = layout.lines.map((line) => ctx.measureText(line).width);
@@ -119,7 +120,7 @@ export function drawTextItem(
         const y = points[0].y + index * lineHeight;
         ctx.fillText(line, x, y);
         if (item.textUnderline) {
-          ctx.strokeStyle = item.color;
+          ctx.strokeStyle = itemColor;
           ctx.lineWidth = Math.max(0.5, fontSize * TEXT_UNDERLINE_WIDTH);
           const underlineY = y + fontSize * (0.86 + TEXT_UNDERLINE_OFFSET);
           ctx.beginPath();

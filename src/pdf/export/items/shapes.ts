@@ -1,6 +1,8 @@
 import { degrees, LineCapStyle, rgb } from "pdf-lib";
 import { rectangleCorners } from "../../../model/area";
+import { canonicalColor } from "../../../model/color";
 import { arrowHeadGeometry, midpoint } from "../../../model/geometry";
+import { resolveItemColor } from "../../../model/layers";
 import { railGeometry, railLegendY } from "../../../model/rail";
 import type { MarkupItem } from "../../../model/types";
 import {
@@ -121,7 +123,7 @@ function drawRailItem(context: ItemContext, item: MarkupItem, layerOpacity: numb
   const { page, viewport, fonts } = context;
   const geometry = railGeometry(item);
   if (!geometry) return;
-  const color = pdfColor(item.color);
+  const color = pdfColor(resolveItemColor(item));
   const textColor = pdfColor("#1a2024");
   const opacity = clamp(layerOpacity, 0, 1);
   const width = Math.max(0.35, item.strokeWidth);
@@ -183,8 +185,9 @@ function drawRectItem(context: ItemContext, item: MarkupItem, layerOpacity: numb
   const { page, viewport } = context;
   const corners = itemRectCorners(item);
   const rect = pdfRectFromCorners(viewport, corners);
-  const color = pdfColor(item.color);
-  const fill = item.fillColor ? pdfColor(item.fillColor) : undefined;
+  const color = pdfColor(resolveItemColor(item));
+  const fillColor = canonicalColor(item.fillColor);
+  const fill = fillColor ? pdfColor(fillColor) : undefined;
   const opacity = clamp(layerOpacity, 0, 1);
   const width = Math.max(0.35, item.strokeWidth);
   page.drawRectangle({
@@ -209,8 +212,9 @@ function drawEllipseItem(context: ItemContext, item: MarkupItem, layerOpacity: n
   const center = midpoint(corners[0], corners[2]);
   const centerPdf = toPdfPoint(viewport, center);
   const rect = pdfRectFromCorners(viewport, corners);
-  const color = pdfColor(item.color);
-  const fill = item.fillColor ? pdfColor(item.fillColor) : undefined;
+  const color = pdfColor(resolveItemColor(item));
+  const fillColor = canonicalColor(item.fillColor);
+  const fill = fillColor ? pdfColor(fillColor) : undefined;
   const opacity = clamp(layerOpacity, 0, 1);
   const width = Math.max(0.35, item.strokeWidth);
   page.drawEllipse({

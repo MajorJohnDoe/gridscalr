@@ -9,7 +9,7 @@ export function drawMeasurementItem(
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
-  const { context, points, zoom, lineWidth } = state;
+  const { context, points, zoom, lineWidth, color } = state;
 
   // Measurement cases only; other item kinds are handled by their own family module.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
@@ -22,7 +22,7 @@ export function drawMeasurementItem(
       }
       ctx.stroke();
       ctx.setLineDash([]);
-      drawEndpoints(ctx, points, item.color, lineWidth);
+      drawEndpoints(ctx, points, color, lineWidth);
       break;
     }
     case "angle": {
@@ -45,7 +45,7 @@ export function drawMeasurementItem(
         );
         ctx.stroke();
       }
-      drawEndpoints(ctx, [start, vertex, end], item.color, lineWidth);
+      drawEndpoints(ctx, [start, vertex, end], color, lineWidth);
       break;
     }
     case "slope": {
@@ -57,7 +57,7 @@ export function drawMeasurementItem(
       ctx.moveTo(start.x, start.y);
       ctx.lineTo(end.x, end.y);
       ctx.stroke();
-      drawEndpoints(ctx, [start, end], item.color, lineWidth);
+      drawEndpoints(ctx, [start, end], color, lineWidth);
       break;
     }
     case "radius":
@@ -89,7 +89,7 @@ export function drawMeasurementItem(
       drawEndpoints(
         ctx,
         item.kind === "diameter" ? [opposite, edge] : [center, edge],
-        item.color,
+        color,
         lineWidth,
       );
       break;
@@ -105,12 +105,7 @@ export function drawMeasurementItem(
       }
       ctx.stroke();
       ctx.setLineDash([]);
-      drawEndpoints(
-        ctx,
-        [curve[0], curve[curve.length - 1]].filter(Boolean),
-        item.color,
-        lineWidth,
-      );
+      drawEndpoints(ctx, [curve[0], curve[curve.length - 1]].filter(Boolean), color, lineWidth);
       break;
     }
     case "area":
@@ -130,7 +125,7 @@ export function drawMeasurementItem(
       outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
       ctx.closePath();
       ctx.stroke();
-      if (shape !== "ellipse") drawEndpoints(ctx, outline, item.color, lineWidth);
+      if (shape !== "ellipse") drawEndpoints(ctx, outline, color, lineWidth);
       break;
     }
     default:

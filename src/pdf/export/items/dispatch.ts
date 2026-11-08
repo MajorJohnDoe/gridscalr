@@ -1,6 +1,7 @@
 import { degrees, type PDFPage } from "pdf-lib";
 import type { PageViewport } from "pdfjs-dist";
 import { imageOpacity } from "../../../model/images";
+import { resolveItemColor } from "../../../model/layers";
 import { MIN_EXPORT_STROKE_WIDTH } from "../../../model/style";
 import type { LabelLayout } from "../../../model/labelLayout";
 import type { MarkupItem, Project } from "../../../model/types";
@@ -25,7 +26,7 @@ export function drawItem(
   labels: Map<string, LabelLayout>,
   images: ExportImages,
 ): void {
-  const color = pdfColor(item.color);
+  const color = pdfColor(resolveItemColor(item));
   const width = Math.max(MIN_EXPORT_STROKE_WIDTH, item.strokeWidth);
   const opacity = clamp(layerOpacity, 0, 1);
   const context = { page, viewport, project, fonts, labels, images };

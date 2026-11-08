@@ -1,6 +1,6 @@
 import { t, translate, type MessageKey } from "../i18n";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
-import { layerVisibleOnPage } from "./layers";
+import { layerVisibleOnPage, resolveItemColor } from "./layers";
 import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
 import {
@@ -198,7 +198,7 @@ export function pageLabelSources(
         }
         const parts = measurementLabelParts(item, project);
         if (!parts) continue;
-        sources.push(measurementLabelSource(item, parts, item.color));
+        sources.push(measurementLabelSource(item, parts, resolveItemColor(item)));
       }
     }
   }

@@ -1,3 +1,4 @@
+import { canonicalColor } from "../../model/color";
 import type {
   AreaShape,
   AreaUnit,
@@ -64,8 +65,6 @@ export function normalizeImageMode(value: unknown): ImageMode {
   return value === "annotation" ? "annotation" : "background";
 }
 
-export const RUN_COLOR = /^#[0-9a-f]{3,8}$/i;
-
 export function normalizeTextRuns(value: unknown): TextRun[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const runs: TextRun[] = [];
@@ -87,7 +86,7 @@ export function normalizeTextRuns(value: unknown): TextRun[] | undefined {
       italic: raw.italic === true ? true : raw.italic === false ? false : undefined,
       underline: raw.underline === true ? true : raw.underline === false ? false : undefined,
       size,
-      color: typeof raw.color === "string" && RUN_COLOR.test(raw.color) ? raw.color : undefined,
+      color: canonicalColor(raw.color) ?? undefined,
     });
   }
   return runs.length ? runs : undefined;

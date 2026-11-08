@@ -1,5 +1,6 @@
 import { rectangleCorners } from "../../model/area";
 import { cloudCurves, cloudRadiusForPoints } from "../../model/cloud";
+import { canonicalColor } from "../../model/color";
 import { arrowHeadGeometry, expandRect } from "../../model/geometry";
 import { railGeometry, railLegendY } from "../../model/rail";
 import type { MarkupItem } from "../../model/types";
@@ -12,7 +13,7 @@ export function drawShapeItem(
   item: MarkupItem,
   state: ItemRenderState,
 ): void {
-  const { context, points, zoom, lineWidth } = state;
+  const { context, points, zoom, lineWidth, color } = state;
 
   // Shape cases only; other item kinds are handled by their own family module.
   // eslint-disable-next-line @typescript-eslint/switch-exhaustiveness-check -- partial family switch
@@ -29,7 +30,7 @@ export function drawShapeItem(
           item.highlightShape === "rectangle" ? rectangleCorners([points[0], points[1]]) : points;
         ctx.save();
         ctx.globalAlpha *= item.opacity ?? 0.3;
-        ctx.fillStyle = item.color;
+        ctx.fillStyle = color;
         ctx.beginPath();
         outline.forEach((p, index) => (index === 0 ? ctx.moveTo(p.x, p.y) : ctx.lineTo(p.x, p.y)));
         ctx.closePath();
@@ -57,7 +58,7 @@ export function drawShapeItem(
       ctx.lineTo(points[1].x, points[1].y);
       ctx.stroke();
       ctx.setLineDash([]);
-      drawEndpoints(ctx, points, item.color, lineWidth);
+      drawEndpoints(ctx, points, color, lineWidth);
       break;
     }
     case "arrow": {
@@ -73,17 +74,18 @@ export function drawShapeItem(
       ctx.lineTo(head.shaftEnd.x, head.shaftEnd.y);
       ctx.stroke();
       ctx.restore();
-      if (startHead) drawArrowHead(ctx, points[0], startHead, item.color);
-      drawArrowHead(ctx, points[1], head, item.color);
+      if (startHead) drawArrowHead(ctx, points[0], startHead, color);
+      drawArrowHead(ctx, points[1], head, color);
       break;
     }
     case "rect": {
       if (points.length < 2) break;
       const rect = expandRect(points[0], points[1]);
-      if (item.fillColor) {
+      const fill = canonicalColor(item.fillColor);
+      if (fill) {
         ctx.save();
         ctx.globalAlpha *= item.opacity ?? 0.15;
-        ctx.fillStyle = item.fillColor;
+        ctx.fillStyle = fill;
         ctx.fillRect(rect.x, rect.y, rect.width, rect.height);
         ctx.restore();
       }
@@ -107,10 +109,11 @@ export function drawShapeItem(
         0,
         Math.PI * 2,
       );
-      if (item.fillColor) {
+      const fill = canonicalColor(item.fillColor);
+      if (fill) {
         ctx.save();
         ctx.globalAlpha *= item.opacity ?? 0.15;
-        ctx.fillStyle = item.fillColor;
+        ctx.fillStyle = fill;
         ctx.fill();
         ctx.restore();
       }
@@ -139,7 +142,7 @@ export function drawShapeItem(
       const left = context.toScreen({ x: geometry.left, y: geometry.top });
       const right = context.toScreen({ x: geometry.right, y: geometry.top });
       const width = Math.max(0.5, item.strokeWidth * zoom);
-      ctx.strokeStyle = item.color;
+      ctx.strokeStyle = color;
       ctx.lineWidth = width;
 
       for (const row of geometry.rows) {
@@ -158,7 +161,7 @@ export function drawShapeItem(
           const badgeWidth = textWidth + padding * 2;
           ctx.save();
           ctx.fillStyle = "#ffffff";
-          ctx.strokeStyle = item.color;
+          ctx.strokeStyle = color;
           ctx.lineWidth = Math.max(0.6, 0.8 * zoom);
           roundRect(ctx, left.x, y - badgeHeight / 2, badgeWidth, badgeHeight, badgeHeight / 2);
           ctx.fill();
@@ -202,10 +205,11 @@ export function drawCloudShape(
   if (!curves.length) return;
   const pathStart = context.toScreen(curves[0].start);
   ctx.save();
-  if (item.fillColor) {
+  const fill = canonicalColor(item.fillColor);
+  if (fill) {
     ctx.save();
     ctx.globalAlpha *= item.opacity ?? 0.12;
-    ctx.fillStyle = item.fillColor;
+    ctx.fillStyle = fill;
     ctx.beginPath();
     ctx.moveTo(pathStart.x, pathStart.y);
     for (const curve of curves) {
