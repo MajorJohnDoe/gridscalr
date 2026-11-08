@@ -26,8 +26,9 @@ try {
 
   // Add a project count type through the real settings workflow.
   await page.keyboard.press("Control+,");
-  const settings = page.getByRole("dialog");
+  const settings = page.getByRole("dialog", { name: "Project settings" });
   await settings.waitFor();
+  await settings.getByRole("button", { name: "Quantities", exact: true }).click();
   await settings.getByRole("button", { name: /Manage count types/ }).click();
   const countTypes = page.getByRole("dialog", { name: "Count types" });
   await countTypes.getByLabel("New count type name").waitFor();
