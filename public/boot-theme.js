@@ -64,7 +64,7 @@
 
   try {
     var stored = JSON.parse(localStorage.getItem("gridscalr.preferences.v1") || "{}");
-    var preference = stored.theme || "system";
+    var preference = stored.theme || "medium-grey";
     var theme = preference;
     if (preference === "system") {
       theme =

@@ -36,7 +36,7 @@ describe("app preferences", () => {
     expect(DEFAULT_APP_PREFERENCES).toEqual({
       language: "system",
       csvFormat: "locale",
-      theme: "system",
+      theme: "medium-grey",
     });
   });
 
@@ -53,13 +53,17 @@ describe("app preferences", () => {
 
   it("loads valid partial preferences and keeps defaults for missing fields", () => {
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ language: "sv" }));
-    expect(loadAppPreferences()).toEqual({ language: "sv", csvFormat: "locale", theme: "system" });
+    expect(loadAppPreferences()).toEqual({
+      language: "sv",
+      csvFormat: "locale",
+      theme: "medium-grey",
+    });
 
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ csvFormat: "interchange" }));
     expect(loadAppPreferences()).toEqual({
       language: "system",
       csvFormat: "interchange",
-      theme: "system",
+      theme: "medium-grey",
     });
   });
 
@@ -73,11 +77,11 @@ describe("app preferences", () => {
 
   it("merges patches and persists them", () => {
     const saved = saveAppPreferences({ language: "en" });
-    expect(saved).toEqual({ language: "en", csvFormat: "locale", theme: "system" });
+    expect(saved).toEqual({ language: "en", csvFormat: "locale", theme: "medium-grey" });
     expect(loadAppPreferences()).toEqual(saved);
 
     const next = saveAppPreferences({ csvFormat: "interchange" });
-    expect(next).toEqual({ language: "en", csvFormat: "interchange", theme: "system" });
+    expect(next).toEqual({ language: "en", csvFormat: "interchange", theme: "medium-grey" });
     expect(loadAppPreferences()).toEqual(next);
   });
 

@@ -25,7 +25,7 @@ const PREFERENCES_KEY = "gridscalr.preferences.v1";
 export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   language: "system",
   csvFormat: "locale",
-  theme: "system",
+  theme: "medium-grey",
 };
 
 function isLanguage(value: unknown): value is LanguagePreference {
