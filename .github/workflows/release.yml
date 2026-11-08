@@ -74,6 +74,76 @@ jobs:
 
       - run: npm ci
 
+      # GitHub's release-asset CDN can return 504 for the older bundler tools.
+      # Fetch them through the API so a release build does not depend on that
+      # download path.
+      - name: Cache Tauri Linux bundler tools
+        if: matrix.platform == 'Linux'
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tools="$HOME/.cache/tauri"
+          mkdir -p "$tools"
+          gh release download apprun-old \
+            --repo tauri-apps/binary-releases \
+            --pattern AppRun-x86_64 \
+            --dir "$tools" \
+            --clobber
+          chmod +x "$tools/AppRun-x86_64"
+          gh release download linuxdeploy-07333c6 \
+            --repo tauri-apps/binary-releases \
+            --pattern linuxdeploy-x86_64.AppImage \
+            --dir "$tools" \
+            --clobber
+          chmod +x "$tools/linuxdeploy-07333c6-x86_64.AppImage"
+          if gh release download continuous \
+            --repo linuxdeploy/linuxdeploy-plugin-appimage \
+            --pattern linuxdeploy-plugin-appimage-x86_64.AppImage \
+            --dir "$tools" \
+            --clobber; then
+            cp "$tools/linuxdeploy-plugin-appimage-x86_64.AppImage" \
+              "$tools/linuxdeploy-plugin-appimage.AppImage"
+            chmod +x "$tools/linuxdeploy-plugin-appimage.AppImage"
+          fi
+
+      - name: Cache Tauri Windows bundler tools
+        if: matrix.platform == 'Windows'
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tools = Join-Path $env:LOCALAPPDATA 'tauri'
+          New-Item -ItemType Directory -Force -Path $tools | Out-Null
+          $tmp = Join-Path $env:RUNNER_TEMP 'tauri-tools'
+          New-Item -ItemType Directory -Force -Path $tmp | Out-Null
+
+          gh release download nsis-3.13 `
+            --repo tauri-apps/binary-releases `
+            --pattern nsis-3.13.zip `
+            --dir $tmp `
+            --clobber
+          Expand-Archive -Path (Join-Path $tmp 'nsis-3.13.zip') -DestinationPath $tmp -Force
+          $nsis = Join-Path $tools 'NSIS'
+          if (Test-Path $nsis) { Remove-Item -Recurse -Force $nsis }
+          Move-Item (Join-Path $tmp 'nsis-3.13') $nsis
+          $plugin = Join-Path $nsis 'Plugins\x86-unicode\additional'
+          New-Item -ItemType Directory -Force -Path $plugin | Out-Null
+          gh release download nsis_tauri_utils-v0.5.3 `
+            --repo tauri-apps/nsis-tauri-utils `
+            --pattern nsis_tauri_utils.dll `
+            --dir $plugin `
+            --clobber
+
+          gh release download wix3141rtm `
+            --repo wixtoolset/wix3 `
+            --pattern wix314-binaries.zip `
+            --dir $tmp `
+            --clobber
+          $wix = Join-Path $tools 'WixTools314'
+          if (Test-Path $wix) { Remove-Item -Recurse -Force $wix }
+          Expand-Archive -Path (Join-Path $tmp 'wix314-binaries.zip') -DestinationPath $wix -Force
+
       - name: Build application and bundles
         shell: bash
         env:
