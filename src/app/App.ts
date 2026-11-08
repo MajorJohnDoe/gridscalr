@@ -444,10 +444,16 @@ export class App {
     window.addEventListener("keyup", this.onKeyUp);
     window.addEventListener("blur", this.onWindowBlur);
     window.addEventListener("paste", this.onPaste);
+    window.addEventListener("wheel", this.onWindowWheel, { passive: false, capture: true });
   }
 
   private onWindowBlur = (): void => {
     this.canvas.setSpaceDown(false);
+  };
+
+  /** Keep WebView2 pinch/ctrl-wheel from zooming the whole application. */
+  private onWindowWheel = (event: WheelEvent): void => {
+    if (event.ctrlKey || event.metaKey) event.preventDefault();
   };
 
   private onKeyUp = (event: KeyboardEvent): void => {
@@ -982,6 +988,7 @@ export class App {
     window.removeEventListener("keyup", this.onKeyUp);
     window.removeEventListener("blur", this.onWindowBlur);
     window.removeEventListener("paste", this.onPaste);
+    window.removeEventListener("wheel", this.onWindowWheel, { capture: true });
     this.session.dispose();
     this.windowControls?.dispose();
     this.windowControls = null;
