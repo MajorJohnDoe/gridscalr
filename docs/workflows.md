@@ -88,7 +88,7 @@ Use **Lock scale** once the scale is verified. This prevents accidental recalibr
 
 ### 3. Measure by category and room
 
-Check the length and area units in **Project settings → Units**. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
+Check the length and area units in **Project settings → Measurements → Units**. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
 
 - Measure gross floor area per room.
 - Add deductions for shafts, openings and other non-orderable areas with the **Deduct** switch in the context bar.
@@ -112,7 +112,7 @@ Measurements without a page scale are excluded and reported in the dialog. Hidde
 
 ### 5. Export the procurement report
 
-Before exporting, open **Settings → Project settings… → Report metadata** and fill in the facility, client, project number, revision, author, date, report title and notes. **Choose logo…** embeds a PNG or JPEG inside the project file; the logo appears on the quantity PDF and in the Excel summary. These fields travel with the `.gridscalr` file and survive project packaging.
+Before exporting, open **Settings → Project settings… → Report → Report metadata** and fill in the facility, client, project number, revision, author, date, report title and notes. **Choose logo…** embeds a PNG or JPEG inside the project file; the logo appears on the quantity PDF and in the Excel summary. These fields travel with the `.gridscalr` file and survive project packaging.
 
 Use **Quantities CSV**, **Quantities to Excel…** or **Quantity PDF** in the Quantities dialog, or **File → Export**.
 
@@ -147,7 +147,7 @@ For fire-safety rounds, ventilation surveys or equipment inventories, place buil
 
 ![Docked Markups list with a saved view, configurable columns, building/floor/room groups, filters and row actions](screenshots/markups-list.png)
 
-Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or changes size while the project is open; **Project settings → Project size and sources** lists the same status before you export.
+Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or changes size while the project is open; **Project settings → Project → Project size and sources** lists the same status before you export.
 
 ### Review checklist
 

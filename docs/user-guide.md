@@ -24,7 +24,7 @@ The demo requires the desktop app. The browser fallback offers open, restore and
 GridScalr uses a compact, drawing-first layout.
 
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
-- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom.
+- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
 - **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
@@ -249,7 +249,7 @@ Choose **Count** (`C`), pick a project count type, and click the plan. Each coun
 
 The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
 
-Manage types in **Settings → Project settings… → Count types**. Built-in types are named by the interface language and cannot be renamed or deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
+Manage types in **Settings → Project settings… → Quantities → Count types**. Built-in types are named by the interface language and cannot be renamed or deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
 
 In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
@@ -263,7 +263,7 @@ Labels are paper-space annotations: the size on the canvas matches the exported 
 
 Right-click an area label and choose **Lock inside area**, then **Center**, **Top left**, **Top right**, **Bottom right** or **Bottom left**. The label moves inside the measured area and uses the largest size that fits, up to the project or per-measurement size. This is useful on A4 sheets, where a 6 pt label would otherwise cover most of the room. Drag the label to release the lock and keep the fitted size, choose **Release** in the same menu, or use **Release inside area** in Properties.
 
-The project label size and compact area labels are in **Settings → Project settings… → Measurement labels**. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; the inspector and CSV keep the full wording. Existing projects keep the full wording until the setting is enabled.
+The project label size and compact area labels are in **Settings → Project settings… → Measurements → Measurement labels**. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; the inspector and CSV keep the full wording. Existing projects keep the full wording until the setting is enabled.
 
 ### Category and room
 
@@ -634,7 +634,7 @@ Settings is split in two. **Preferences** are stored on this computer and never 
 Open **Settings → Preferences…**. The dialog groups app-level choices by category:
 
 - **General** – the interface language: **System**, **English** or **Svenska**, and the theme: **System**, **Default (medium gray)**, **Light**, **Dark Gray**, **Dark Jade** or **Navy**. Both choices are stored on this computer and apply immediately, without restarting the app. **System** follows the OS light/dark preference. The theme changes the interface and canvas surround only; drawing content and PDF exports keep their colours. **CSV format** chooses **Locale (Excel)** for the language's delimiter and decimal mark, or **Interchange (RFC 4180)** for commas and points in scripts and other tools.
-- **Workspace** – expand both panels or reset the panel widths and collapsed state. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
+- **Workspace** – expand both panels or reset the panel widths, collapsed state and tool-rail layout. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
 - **Data** – the recovery snapshot and the recent-file list. **Clear recovery data** and **Clear recent files** remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
@@ -643,16 +643,14 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 
 Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project settings** button in the Properties header.
 
-- **Project** – the project name shown in the title row, reports, exports and suggested file names. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that.
-- **Project size and sources** – the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. A drawing that is missing or whose file size changed on disk is marked here and in the status bar before an export fails.
-- **Report metadata** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
-- **Page scale** – shows the current page's calibration or manual scale and whether it is locked. Change it from the page scale chip in the status bar.
-- **Units** – length and area units for the project. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit.
-- **Measurement labels** – the project label size from 4 to 16 pt and compact area labels (`P 14.48 m` instead of `Perimeter 14.48 m`). Individual measurements can override the size in Properties.
+The dialog uses the same category menu as Preferences:
+
+- **Project** – the project name shown in the title row, reports, exports and suggested file names, plus the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that. A drawing that is missing or whose file size changed on disk is marked here and in the status bar before an export fails.
+- **Report** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
+- **Measurements** – the current page's calibration or manual scale and lock state, length and area units, **Smart length labels**, project label size and compact area labels. Change the page scale from the page scale chip in the status bar. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; individual measurements can override the label size in Properties.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
-- **Quantities** – default category, waste percentage, and rounding step.
+- **Quantities** – default category, waste percentage, rounding step, count types, and **Manage categories…** to rename, reorder, delete and override waste or rounding per category.
 - **Stamps** – the project's own stamp presets, plus **Load app defaults into project** to copy the preferences list.
-- **Manage categories…** – rename, reorder, delete, and override waste/rounding per category.
 
 Project settings are stored in the `.gridscalr` file and are undoable while the project is open. Preferences, panel layout, layer colours and app stamp defaults are stored locally and are not part of the project.
 
