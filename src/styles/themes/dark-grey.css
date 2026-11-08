@@ -1,6 +1,6 @@
-/* Neutral grey theme: low-chroma dark chrome with the jade accent. */
+/* Dark grey theme: low-chroma dark chrome with the jade accent. */
 
-:root[data-theme="grey"] {
+:root[data-theme="dark-grey"] {
   color-scheme: dark;
 
   --bg: #1a1c1e;

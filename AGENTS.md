@@ -311,7 +311,7 @@ src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tab
 src/report/                pure report model, shared table rows, CSV and XLSX serialization
 src/ui/                    shell, top menu, sidebar, page/layer lists, inspector, dialogs, status bar
 src/styles/tokens.css      theme token contract and semantic aliases
-src/styles/themes/         default jade, light-green, grey and navy palettes plus chrome overrides
+src/styles/themes/         default jade, light-green, dark-grey, medium-grey and navy palettes plus chrome overrides
 src/theme/theme.ts         theme preference resolution, application and System-mode watching
 public/boot-theme.js       CSP-safe pre-paint theme bootstrap
 src/styles/base.css        reset, typography and shared utilities

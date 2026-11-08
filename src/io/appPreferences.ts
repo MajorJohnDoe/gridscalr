@@ -8,7 +8,8 @@ export type { LanguagePreference };
 export type CsvFormat = "locale" | "interchange";
 
 /** Stored theme choice. `system` maps dark to jade and light to light-green. */
-export type ThemePreference = "system" | "default" | "light-green" | "grey" | "navy";
+export type ThemePreference =
+  "system" | "default" | "light-green" | "dark-grey" | "medium-grey" | "navy";
 
 export interface AppPreferences {
   /** UI language. `system` follows the operating system locale. */
@@ -40,9 +41,16 @@ function isTheme(value: unknown): value is ThemePreference {
     value === "system" ||
     value === "default" ||
     value === "light-green" ||
-    value === "grey" ||
+    value === "dark-grey" ||
+    value === "medium-grey" ||
     value === "navy"
   );
+}
+
+/** `grey` was the pre-0.21.1 name for the palette now called Dark Grey. */
+function normalizeTheme(value: unknown): ThemePreference {
+  if (value === "grey") return "dark-grey";
+  return isTheme(value) ? value : DEFAULT_APP_PREFERENCES.theme;
 }
 
 export function loadAppPreferences(): AppPreferences {
@@ -55,7 +63,7 @@ export function loadAppPreferences(): AppPreferences {
       csvFormat: isCsvFormat(parsed.csvFormat)
         ? parsed.csvFormat
         : DEFAULT_APP_PREFERENCES.csvFormat,
-      theme: isTheme(parsed.theme) ? parsed.theme : DEFAULT_APP_PREFERENCES.theme,
+      theme: normalizeTheme(parsed.theme),
     };
   } catch {
     return { ...DEFAULT_APP_PREFERENCES };

@@ -34,6 +34,12 @@ describe("themes", () => {
     expect(resolveTheme("system")).toBe("light-green");
   });
 
+  it("applies the medium grey palette as a dark theme", () => {
+    expect(applyTheme("medium-grey")).toBe("medium-grey");
+    expect(document.documentElement.dataset.theme).toBe("medium-grey");
+    expect(document.documentElement.style.colorScheme).toBe("dark");
+  });
+
   it("persists the selected preference", () => {
     setThemePreference("navy");
     expect(loadAppPreferences().theme).toBe("navy");

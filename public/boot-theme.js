@@ -27,7 +27,7 @@
       errorBorder: "#e3b4b4",
       errorText: "#8f2020",
     },
-    grey: {
+    "dark-grey": {
       bg: "#1a1c1e",
       text: "#e7eaec",
       panel: "#23262a",
@@ -37,6 +37,17 @@
       errorBg: "#2a1f1f",
       errorBorder: "#574040",
       errorText: "#ffc0c0",
+    },
+    "medium-grey": {
+      bg: "#303234",
+      text: "#e3e6e8",
+      panel: "#36393b",
+      border: "#4f5459",
+      brand: "#4fc7a9",
+      muted: "#adb5bb",
+      errorBg: "#3a2626",
+      errorBorder: "#6b4444",
+      errorText: "#ffc4c4",
     },
     navy: {
       bg: "#121a26",
@@ -61,6 +72,7 @@
           ? "light-green"
           : "default";
     }
+    if (theme === "grey") theme = "dark-grey";
     if (!palettes[theme]) theme = "default";
     var palette = palettes[theme];
     var root = document.documentElement;

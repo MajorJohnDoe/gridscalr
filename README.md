@@ -77,9 +77,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Switch between English and Swedish in Preferences. The interface, reports,
   XLSX/CSV headings and number formatting follow the selected language, and the
   Swedish help includes a Swedish quick start.
-- Choose the default dark jade theme, Light, Grey or Navy, or follow the operating
-  system light/dark preference. Themes change interface chrome and the canvas
-  surround only; drawing content and PDF exports keep their colours.
+- Choose the default dark jade theme, Light, Dark Gray, Medium Gray or Navy, or
+  follow the operating system light/dark preference. Themes change interface
+  chrome and the canvas surround only; drawing content and PDF exports keep
+  their colours.
 - Open a synchronized reference pane showing the same page, a saved revision or
   a raw PDF drawing beside the primary canvas. Pan, zoom and page changes stay in
   step.

@@ -63,6 +63,11 @@ describe("app preferences", () => {
     });
   });
 
+  it("maps the legacy grey theme to dark grey", () => {
+    localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ theme: "grey" }));
+    expect(loadAppPreferences().theme).toBe("dark-grey");
+  });
+
   it("merges patches and persists them", () => {
     const saved = saveAppPreferences({ language: "en" });
     expect(saved).toEqual({ language: "en", csvFormat: "locale", theme: "system" });
