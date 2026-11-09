@@ -132,19 +132,29 @@ export class PdfRenderer {
     this.recomputeStarts();
   }
 
-  /** Removes an entire source document after its last included page is deleted. */
-  removeDocument(index: number): void {
-    if (index < 0 || index >= this.documents.length) return;
+  /**
+   * Removes one document without destroying its proxy. Undo keeps the proxy in
+   * a cache so a redo can add the same document back without reloading it.
+   */
+  detachDocument(index: number): { document: PDFDocumentProxy; pageMap: number[] } | null {
+    if (index < 0 || index >= this.documents.length) return null;
     this.cancel();
     for (const page of new Set(this.pages.values())) page.cleanup();
     this.pages.clear();
     const [document] = this.documents.splice(index, 1);
-    this.pageMaps.splice(index, 1);
+    const [pageMap] = this.pageMaps.splice(index, 1);
     this.recomputeStarts();
+    return { document, pageMap };
+  }
+
+  /** Removes an entire source document after its last included page is deleted. */
+  removeDocument(index: number): void {
+    const detached = this.detachDocument(index);
+    if (!detached) return;
     // Duplicated pages share the source PDF proxy, so only destroy it when the
     // last project page that uses it has gone.
-    if (document && !this.documents.includes(document)) {
-      void document.loadingTask.destroy().catch(() => undefined);
+    if (!this.documents.includes(detached.document)) {
+      void detached.document.loadingTask.destroy().catch(() => undefined);
     }
   }
 

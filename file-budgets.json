@@ -7,7 +7,7 @@
     "src/canvas/editors": 400
   },
   "files": {
-    "src/app/App.ts": 999,
+    "src/app/App.ts": 1027,
     "src/canvas/CanvasView.ts": 1493,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,

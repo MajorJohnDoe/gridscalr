@@ -38,6 +38,7 @@
     "test:coverage": "vitest run --coverage",
     "test:watch": "vitest",
     "test:ui": "node scripts/smoke-ui.mjs",
+    "test:import": "node scripts/project-import-ui.mjs",
     "test:visual": "node scripts/visual-regression.mjs",
     "test:canvas": "node scripts/canvas-regression.mjs",
     "test:count": "node scripts/count-workflow.mjs",

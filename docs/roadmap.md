@@ -267,6 +267,9 @@ Candidates in expected-value order, not scheduled:
 12. **Read-only package review mode** for contractors without edit access.
 13. **Light, grey and navy themes** for daylight field use — shipped in 0.21.
 14. **Automatic update check** only with an explicit local-first decision.
+15. **Drag-and-drop document and page reordering** — deliberately deferred. It
+    changes the append-only page rule and needs its own ADR, page-remapping
+    tests and a decision about how multi-page PDF blocks move.
 
 ## Deferred by design
 

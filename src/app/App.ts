@@ -25,6 +25,9 @@ import {
 } from "./documentFlows";
 import { insertImageFlow as insertImageFlowModule, type ImageFlowHost } from "./imageFlows";
 import { packageHost as createPackageHost, type PackageFlowHost } from "./packageFlows";
+import { importProjectPagesFlow, type ProjectImportHost } from "./projectImportFlows";
+import { RendererDocumentRegistry } from "./rendererDocuments";
+import type { ImportedRendererDocument } from "./rendererDocuments";
 import {
   deletePageFlow,
   duplicatePageFlow,
@@ -98,7 +101,7 @@ import { logEvent } from "../features/diagnostics/log";
 import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
-import { LANGUAGE_CHANGED_EVENT } from "../i18n";
+import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 
 interface SizeTask {
   page: number;
@@ -114,6 +117,7 @@ export class App {
   private search: SearchController;
   private session: ProjectSession;
   private actions: PanelActions;
+  private readonly documentRegistry = new RendererDocumentRegistry();
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
   private pageSizes = new Map<number, PageSize>();
@@ -141,6 +145,7 @@ export class App {
     this.actions = {
       openPdf: () => void this.session.openPdfFlow(),
       openProject: () => void this.session.openProjectFlow(),
+      importProjectPages: () => void importProjectPagesFlow(this.projectImportHost()),
       newProject: () => void this.session.newProjectFlow(),
       closeProject: () => void this.session.closeProjectFlow(),
       quit: () => void this.session.quitFlow(),
@@ -285,7 +290,18 @@ export class App {
         }
         if (!autosaveError) this.autosaveWarned = null;
       }
-      if (reason === "project") this.search.close();
+      if (reason === "project") {
+        this.documentRegistry.sync(store.project);
+        this.search.close();
+      }
+      if (reason === "undo") {
+        const result = this.documentRegistry.reconcile(store.project, this.renderer);
+        if (result === "changed") this.afterUndoDocumentChange();
+        else if (result === "failed") {
+          logEvent("error", "renderer document reconcile failed");
+          toast(t("projectImport.undoSyncFailed"), "warning");
+        }
+      }
       this.reference.onStoreChange(reason);
       this.renderAll();
     });
@@ -310,6 +326,7 @@ export class App {
   private async destroyRenderer(): Promise<void> {
     const renderer = this.renderer;
     const thumbnails = this.thumbnails;
+    this.documentRegistry.dispose(renderer);
     this.renderer = null;
     this.thumbnails = null;
     thumbnails?.destroy();
@@ -349,6 +366,20 @@ export class App {
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),
+    };
+  }
+
+  private projectImportHost(): ProjectImportHost {
+    return {
+      renderer: () => this.renderer,
+      rendererBusy: () => this.renderer?.busy ?? false,
+      enqueuePageSize: (page) => this.enqueuePageSize(page),
+      resetPageSizes: () => this.resetPageSizes(),
+      fitPage: () => this.canvas.fitPage(),
+      invalidate: () => this.canvas.invalidate(),
+      renderAll: () => this.renderAll(),
+      addImportedDocuments: (entries) => this.addImportedDocuments(entries),
+      closeSearch: () => this.search.close(),
     };
   }
 
@@ -662,6 +693,7 @@ export class App {
   ): Promise<void> {
     const previous = this.renderer;
     const previousThumbnails = this.thumbnails;
+    this.documentRegistry.reset(project, previous);
     const renderer = new PdfRenderer(documents, documentPageMaps(project.documents));
     this.renderer = renderer;
     this.thumbnails = new PageThumbnailService(
@@ -694,6 +726,25 @@ export class App {
     await this.enqueuePageSize(1);
     this.canvas.invalidate();
     this.canvas.fitPage();
+  }
+
+  private addImportedDocuments(entries: readonly ImportedRendererDocument[]): void {
+    const renderer = this.renderer;
+    const project = store.project;
+    if (!renderer || !project) return;
+    this.documentRegistry.addImported(entries, project, renderer);
+    this.thumbnails?.clear();
+    this.resetPageSizes();
+  }
+
+  private afterUndoDocumentChange(): void {
+    this.search.close();
+    void this.reference.close(false);
+    this.reference.splitView.setOpen(false);
+    this.thumbnails?.clear();
+    this.resetPageSizes();
+    void this.enqueuePageSize(store.ui.page);
+    this.canvas.invalidate();
   }
 
   private enqueuePageSize(page: number): Promise<PageSize | undefined> {

@@ -45,7 +45,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   installed builds, hand a drawing to an already running window, and keep the
   window size, position and maximised state between sessions.
 - Keep several sheets in one project. Every new drawing appends pages after the
-  existing ones, so a set of plans shares one takeoff.
+  existing ones, so a set of plans shares one takeoff. Import pages from another
+  project with a thumbnail picker and page-scoped layers, and undo the whole
+  import as one step.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
