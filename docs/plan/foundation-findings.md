@@ -55,7 +55,7 @@ project contents.
 - **Phase:** pre-foundation observation
 - **Severity:** P2
 - **Area:** architecture
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `src/model/layers.ts` imports `features/countTypes/model`.
 - **Problem:** A lower-layer model file depends on a feature module, the reverse
   of the dependency direction in ADR 0008. Shared defaults currently live inside
@@ -66,6 +66,8 @@ project contents.
 - **Next step:** Decide whether the default count types belong in `src/model` or
   whether the feature must provide them through an explicit injection point.
   Handle this as a separate refactor, not inside Phase 1.
+- **Resolution:** Phase 7 removed the unused helper from `paths.ts` and its
+  re-export in `io/projectFile/index.ts`; no caller remained.
 - **Related:** ADR [0008](../adr/0008-integration-module-boundaries.md), ADR
   [0013](../adr/0013-module-first-foundation.md), issue
   [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157).
@@ -76,7 +78,7 @@ project contents.
 - **Phase:** pre-foundation observation
 - **Severity:** P2
 - **Area:** tooling / Rust
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `src-tauri/src/package.rs` is about 2,150 lines and
   `src-tauri/src/commands.rs` about 540; `check:file-budgets` scans only `src/`.
 - **Problem:** The frontend has a blocking file budget, but large Rust modules
@@ -95,7 +97,7 @@ project contents.
 - **Phase:** pre-foundation observation
 - **Severity:** P3
 - **Area:** page model
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `remapPageItems()` is exported from `src/io/projectFile/paths.ts`
   but has no call site in `src/`.
 - **Problem:** It looks like a general page-remap helper, but it only filters
@@ -113,7 +115,7 @@ project contents.
 - **Phase:** 1 — safe save
 - **Severity:** P2
 - **Area:** backup / document loading
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `restoreProjectBackup()` calls `loadProjectData(project, null,
   true)`. With a null project path, `documentFlows.ts` cannot resolve
   `relativePath`, so it relies on each document's stored absolute path.
@@ -135,7 +137,7 @@ project contents.
 - **Phase:** 1 — safe save
 - **Severity:** P3
 - **Area:** backup
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `project_write.rs` stores backups under
   `backups/<safe-project-id>/`, and restore lists only the open project's ID.
 - **Problem:** A duplicated project file keeps the same project ID and shares
@@ -155,7 +157,7 @@ project contents.
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P2
 - **Area:** recovery / read-only session
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `ProjectSession.saveProject()` refuses a normal save when
   `store.readOnly` is set, but the store remains editable and canvas tools stay
   active. The read-only banner points to **Save a copy…**.
@@ -176,7 +178,7 @@ project contents.
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P2
 - **Area:** recovery storage
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `AUTOSAVE_RECORDS_PER_PROJECT = 2` and
   `CHECKPOINTS_PER_PROJECT = 10` in `features/sessionRecovery/record.ts`. Each
   record stores a serialized project string.
@@ -195,7 +197,7 @@ project contents.
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P3
 - **Area:** lease
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `features/sessionRecovery/instance.ts` stores the instance ID in
   `sessionStorage` and derives the host label from the user-agent family only.
 - **Problem:** A window opened with `window.open` can inherit sessionStorage and
@@ -215,7 +217,7 @@ project contents.
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P3
 - **Area:** open-elsewhere watcher
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `features/sessionRecovery/watch.ts` checks size and mtime first,
   then hashes only when either changed.
 - **Problem:** A tool that replaces the file and preserves both size and mtime
@@ -233,7 +235,7 @@ project contents.
 - **Phase:** 4 — source storage
 - **Severity:** P2
 - **Area:** source storage
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `src-tauri/src/source_copy.rs` always derives
   `<project stem>.drawings` next to the project file. ADR 0012 says “a sibling
   folder such as”; robustness §13 open question 5 asked whether the folder should
@@ -273,7 +275,7 @@ project contents.
 - **Phase:** 4 — source storage
 - **Severity:** P3
 - **Area:** source status
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `src/source/sourceStatus.ts` caches a hash by path, byte size and
   stored checksum. A replacement that preserves the byte size between polls
   reuses the cached hash until the app restarts or the document reloads.
@@ -291,7 +293,7 @@ project contents.
 - **Phase:** 4 — source storage
 - **Severity:** P2
 - **Area:** source storage
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `detachManagedCopy()` and page/document removal change the
   project only. `source_copy.rs` never deletes a drawing.
 - **Problem:** Detaching, deleting a page or replacing a source leaves the managed
@@ -329,7 +331,7 @@ project contents.
 - **Phase:** 5 — integrity and project doctor
 - **Severity:** P2
 - **Area:** project integrity
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `src/model/integrity.ts` checks IDs, references, page ranges, OCR
   checksums against stored data, asset MIME/data and geometry. It does not read
   source files, managed-copy folders or package contents.
@@ -349,7 +351,7 @@ project contents.
 - **Phase:** 5 — integrity and project doctor
 - **Severity:** P2
 - **Area:** project integrity / repairs
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `src/features/projectIntegrity/repair.ts` renames later
   duplicates and leaves the first ID in place. References that used the
   duplicated ID cannot identify which occurrence they meant.
@@ -369,7 +371,7 @@ project contents.
 - **Phase:** 5 — integrity and project doctor
 - **Severity:** P2
 - **Area:** import provenance
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `PageRecord.provenance` is written by
   `prepareProjectImport()` and documented in `docs/project-file.md`, but no panel
   or report displays it.
@@ -389,7 +391,7 @@ project contents.
 - **Phase:** 5 — integrity and project doctor
 - **Severity:** P3
 - **Area:** import provenance
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `sourceProvenance()` in `src/app/projectImportFlows.ts` hashes the
   UTF-8 encoding of the text returned by `pickProject()`. Size and mtime come
   from the file metadata when Tauri provides it.
@@ -408,7 +410,7 @@ project contents.
 - **Phase:** 6 — interoperability
 - **Severity:** P2
 - **Area:** PDF export / OCG
-- **Status:** open
+- **Status:** deferred
 - **Evidence:** `src/pdf/export/ocg.ts` creates one OCG per exported visible
   layer. Marked content is written only on pages where the layer is visible, but
   the reader toggles the group for the whole document.
@@ -448,7 +450,7 @@ project contents.
 - **Phase:** 6 — interoperability
 - **Severity:** P2
 - **Area:** save integrity / compare
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** `buildConflictComparison()` calls `compareRevisions()`, which
   matches items by id, then geometry, then the nearest same-kind item inside a
   12 pt move tolerance. It never reads source drawing bytes.
@@ -484,6 +486,102 @@ project contents.
 
 ## Triaged or deferred
 
+### Phase 7 triage
+
+Triaged at the final foundation phase exit (2026-11-10). `fixed` means the
+Phase 7 change closed it; `deferred` means it is recorded but not scheduled for
+the 1.0 quality gate; `accepted` means it is a documented design trade-off or
+known limitation. No deferred entry silently disappears, and none needs a new
+issue while the foundation epic [#59](https://github.com/MajorJohnDoe/gridscalr/issues/59)
+remains the scheduling home.
+
+| Finding | Decision | Rationale |
+| --- | --- | --- |
+| F-001 | deferred | Moving default count types out of the feature module is a separate model refactor; the current direction is documented and not a data-integrity risk. |
+| F-002 | deferred | New Rust commands already live in separate modules; a Rust line-budget gate is tooling work for after the foundation freeze. |
+| F-003 | fixed | The unused `remapPageItems()` helper was removed in Phase 7; no production or test caller existed. |
+| F-005 | deferred | Restoring a backup after a folder move is a portability improvement; **Save a copy…** and packages are the portable paths today. |
+| F-006 | accepted | Backups are a local convenience keyed by project ID, not a portable archive; that is documented in `docs/limitations.md`. |
+| F-007 | accepted | Read-only blocks disk writes while keeping inspection and export available; **Save a copy…** is the explicit output path. |
+| F-008 | deferred | A byte budget needs a quota and pruning design; count-based retention is documented and warns when storage fails. |
+| F-009 | accepted | The lease is advisory by decision; the conditional write is the actual protection. |
+| F-010 | accepted | The metadata watcher is a banner optimisation; the conditional save still detects the hash change at write time. |
+| F-011 | deferred | Template fields remain document-owned by the Phase 3 decision; moving them into page state is a later schema change. |
+| F-012 | deferred | Manual renderer resynchronisation is covered by the structural paths; deriving it from the store is a follow-up refactor. |
+| F-013 | deferred | TIF source replacement waits for the derived-PDF lifetime and checksum rules; the manual path is documented. |
+| F-014 | accepted | The fixed sibling `<project>.drawings/` folder is a documented storage choice and keeps packages simple. |
+| F-015 | accepted | Cloud/network detection only recommends a managed copy; it never blocks or rewrites a reference. |
+| F-016 | accepted | Same-size source polling is a documented trade-off; open and explicit reload still hash the file. |
+| F-017 | deferred | Garbage collection needs an explicit review-and-confirm action; automatic deletion is intentionally forbidden. |
+| F-018 | accepted | A failed consolidation leaves only unreferenced copies; the project and every original remain valid and a retry reuses the content hash. |
+| F-019 | accepted | The validator proves internal references; external source truth stays with the source-status checks and user review. |
+| F-020 | accepted | Duplicate-ID repair cannot attribute ambiguous references; keeping the first occurrence is the documented safe choice. |
+| F-021 | deferred | Provenance is preserved and validated; showing it in Properties or Markups is a presentation change, not an integrity gap. |
+| F-022 | deferred | A raw-byte hash needs a picker API change; the current provenance hash is deterministic for decoded content. |
+| F-023 | deferred | Per-page OCG design is an interoperability trade-off; hidden content is still excluded and the flattened default is unchanged. |
+| F-024 | accepted | Review annotations are deliberately approximate and reader-dependent; they are not project data. |
+| F-025 | accepted | Conflict comparison is read-only and heuristic; a merge would need a common base and semantic IDs. |
+| F-026 | accepted | The share flow writes a local package through the save dialog; no OS share sheet or network dependency is planned. |
+| F-027 | fixed | Source replacement now clears undo/redo at the structural boundary so an older snapshot cannot restore a superseded source reference. |
+
+
+### F-011 — Template sheet fields still belong to a document, not a page
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P2
+- **Area:** template sheets / page identity
+- **Status:** deferred
+- **Evidence:** `DocumentRef.template.fields` stores title-block values. Page
+  duplication and insertion clone the template document in
+  `features/pageModel/pageList.ts` so the copies do not share field objects.
+- **Problem:** A template sheet is one document containing one page. Stable page
+  IDs remove the need for that coupling for PDF pages, but sheet fields remain
+  document-owned. A future page-owned sheet state would simplify duplication and
+  remove one document per sheet.
+- **Impact:** Duplicate/insert works correctly, but the project grows one
+  `DocumentRef` per duplicated template sheet.
+- **Next step:** Decide whether sheet fields should move into `PageRecord.state`
+  in a later schema, with a migration from template documents.
+- **Related:** schema 23 template sheets, ADR
+  [0011](../adr/0011-page-list-and-source-replacement.md).
+
+### F-012 — Renderer page order is synchronized manually
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P2
+- **Area:** canvas / renderer
+- **Status:** deferred
+- **Evidence:** `PdfRenderer.setPageOrder()` must be called after insert,
+  reorder, delete, import and source replacement. `App.afterStructuralPageChange`
+  centralizes most paths; `pageFlows` and import flows call it separately.
+- **Problem:** A future structural operation that forgets to resync the renderer
+  will render the previous page order while the project data is correct.
+- **Impact:** No data loss; the visible page can be stale until the next reload.
+- **Next step:** Derive the renderer order from the store subscription in one
+  place, or add a debug invariant that compares the renderer order with
+  `documentPageOrder(project)` after every structural change.
+- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
+  §7.4.
+
+### F-013 — Replace source supports PDF documents only
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P3
+- **Area:** source replacement
+- **Status:** deferred
+- **Evidence:** `app/replacementFlows.ts` returns the localized **PDF only**
+  warning for TIF and template documents.
+- **Problem:** A reissued scan cannot be mapped in place. The user must add the
+  new TIF as a document and delete the old pages explicitly.
+- **Impact:** No data loss; the workflow is manual for scans.
+- **Next step:** Add TIF replacement once the derived-PDF lifetime and checksum
+  rules are covered, or document the manual path in the user guide.
+- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
+  schema 25 source storage.
+
 No entries yet.
 
 ## Fixed
@@ -508,59 +606,22 @@ No entries yet.
   an unreadable disk file.
 - **Related:** robustness §7.8, Phase 6 interoperability.
 
-### F-011 — Template sheet fields still belong to a document, not a page
+### F-027 — Source replacement did not clear undo history
 
 - **Date:** 2026-11-10
-- **Phase:** 3 — page list and document model
+- **Phase:** 7 — robustness gates
 - **Severity:** P2
-- **Area:** template sheets / page identity
-- **Status:** open
-- **Evidence:** `DocumentRef.template.fields` stores title-block values. Page
-  duplication and insertion clone the template document in
-  `features/pageModel/pageList.ts` so the copies do not share field objects.
-- **Problem:** A template sheet is one document containing one page. Stable page
-  IDs remove the need for that coupling for PDF pages, but sheet fields remain
-  document-owned. A future page-owned sheet state would simplify duplication and
-  remove one document per sheet.
-- **Impact:** Duplicate/insert works correctly, but the project grows one
-  `DocumentRef` per duplicated template sheet.
-- **Next step:** Decide whether sheet fields should move into `PageRecord.state`
-  in a later schema, with a migration from template documents.
-- **Related:** schema 23 template sheets, ADR
-  [0011](../adr/0011-page-list-and-source-replacement.md).
-
-### F-012 — Renderer page order is synchronized manually
-
-- **Date:** 2026-11-10
-- **Phase:** 3 — page list and document model
-- **Severity:** P2
-- **Area:** canvas / renderer
-- **Status:** open
-- **Evidence:** `PdfRenderer.setPageOrder()` must be called after insert,
-  reorder, delete, import and source replacement. `App.afterStructuralPageChange`
-  centralizes most paths; `pageFlows` and import flows call it separately.
-- **Problem:** A future structural operation that forgets to resync the renderer
-  will render the previous page order while the project data is correct.
-- **Impact:** No data loss; the visible page can be stale until the next reload.
-- **Next step:** Derive the renderer order from the store subscription in one
-  place, or add a debug invariant that compares the renderer order with
-  `documentPageOrder(project)` after every structural change.
+- **Area:** page model / source replacement
+- **Status:** fixed
+- **Evidence:** `src/app/replacementFlows.ts` recorded a structural checkpoint
+  and applied `applySourceReplacement()` but left the existing undo and redo
+  stacks in `state/store.ts`.
+- **Problem:** A snapshot taken before the replacement could still be undone
+  after the document reference changed. The renderer was resynchronised, but an
+  older snapshot could restore a superseded source path that the new structure
+  no longer described.
+- **Resolution:** Phase 7 adds `Store.clearHistory()` and calls it immediately
+  after a successful source replacement. The structural checkpoint remains in
+  the recovery store; only the in-memory undo/redo history is discarded.
 - **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
-  §7.4.
-
-### F-013 — Replace source supports PDF documents only
-
-- **Date:** 2026-11-10
-- **Phase:** 3 — page list and document model
-- **Severity:** P3
-- **Area:** source replacement
-- **Status:** open
-- **Evidence:** `app/replacementFlows.ts` returns the localized **PDF only**
-  warning for TIF and template documents.
-- **Problem:** A reissued scan cannot be mapped in place. The user must add the
-  new TIF as a document and delete the old pages explicitly.
-- **Impact:** No data loss; the workflow is manual for scans.
-- **Next step:** Add TIF replacement once the derived-PDF lifetime and checksum
-  rules are covered, or document the manual path in the user guide.
-- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
-  schema 25 source storage.
+  robustness §6 I7 and §7.4.

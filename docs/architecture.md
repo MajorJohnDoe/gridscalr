@@ -250,10 +250,13 @@ docs/workflows.md        role-based guides for operations and property managemen
 docs/shortcuts.md        in-app keyboard reference
 docs/screenshots/        versioned screenshots and capture manifest
 tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry and autosave
+tests/robustness/        seeded page/save sequences, competing saves, the schema 1–25 migration corpus and source-storage gates
+fixtures/legacy/         committed project fixtures for every supported schema; generate with scripts/make-legacy-fixtures.mjs
 scripts/plan-geometry.mjs shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation project
+scripts/make-legacy-fixtures.mjs generator for the schema 1–25 migration corpus
 scripts/ui-harness.mjs shared Playwright server and demo-project helpers
 scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -329,6 +332,7 @@ Do not describe these behaviours as shipped until their migrations and UI land.
 - `npm run check:file-budgets` compares every TypeScript and CSS file under `src` with `file-budgets.json`. New files default to 700 lines, `src/canvas/items` and `src/canvas/pointer` have stricter limits, and listed files may only shrink. CI fails when a budget is exceeded.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches, plus the integration-module import boundary and the line budget. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:coverage` runs the same Vitest suite with the v8 coverage provider and writes text, HTML and `json-summary` reports to `coverage/`. CI uploads the report as an artifact; no threshold is enforced yet.
+- `npm run test:robustness` runs `tests/robustness/` as a named gate. The normal suite includes it; CI also runs the focused command. It covers seeded page identity, competing saves, the schema 1–25 corpus and source storage.
 - `npm run test:ui` and `npm run test:canvas` drive the browser fallback with Playwright.
 - `npm run test:count` drives the full count workflow: custom type creation, placement, pieces per object, Markups count-type filtering/grouping, quantities and presets.
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement.

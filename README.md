@@ -324,11 +324,16 @@ version:
 
 ```bash
 npm test -- --run
+npm run test:robustness
 npm run lint
 npm run build
 npm run check:docs
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
+
+`npm run test:robustness` is the focused gate for page identity, competing
+saves, the schema 1–25 migration corpus and source storage; the normal test
+suite includes the same files. See [docs/testing.md](docs/testing.md).
 
 Never attach real customer drawings to an issue or a pull request.
 
