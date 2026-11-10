@@ -3,6 +3,7 @@ mod package;
 mod project_backup;
 mod project_lease;
 mod project_write;
+mod source_copy;
 
 use std::sync::Mutex;
 
@@ -139,6 +140,9 @@ pub fn run() {
             project_lease::clear_project_lease,
             project_backup::save_project_backup,
             project_backup::list_project_backups,
+            source_copy::source_copy_to_project,
+            source_copy::source_file_hash,
+            source_copy::source_find_by_hash,
             package::package_create,
             package::package_inspect,
             package::package_extract,
