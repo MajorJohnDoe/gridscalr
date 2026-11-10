@@ -36,19 +36,6 @@ export function documentSourceKey(document: DocumentRef): string {
   return `document:${document.id}`;
 }
 
-export function managedRelativePath(projectPath: string, destinationPath: string): string | null {
-  const normalize = (value: string) => value.replace(/\\/g, "/");
-  const projectFolder = normalize(projectPath).split("/").slice(0, -1).join("/");
-  const destination = normalize(destinationPath);
-  if (!projectFolder) return null;
-  const base = projectFolder.split("/");
-  const parts = destination.split("/");
-  if (base[0] !== parts[0]) return null;
-  let index = 0;
-  while (index < base.length && index < parts.length && base[index] === parts[index]) index += 1;
-  return [...Array(base.length - index).fill(".."), ...parts.slice(index)].join("/");
-}
-
 /** Rewrites one document to a verified managed copy, preserving provenance. */
 export function applyManagedCopy(
   document: DocumentRef,
@@ -97,11 +84,4 @@ export function consolidateCandidates(
     });
   }
   return candidates;
-}
-
-export function hasConsolidatableDocuments(
-  project: Project,
-  resolvePath: (document: DocumentRef) => string | null,
-): boolean {
-  return consolidateCandidates(project, resolvePath).length > 0;
 }

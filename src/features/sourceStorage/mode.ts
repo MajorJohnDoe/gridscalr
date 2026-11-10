@@ -48,17 +48,6 @@ export function isManagedDocument(document: DocumentRef): boolean {
   return documentStorage(document) === "managed";
 }
 
-/** The effective storage mode for display, including TIF and template docs. */
-export function storageModeLabelKey(document: DocumentRef): string {
-  if (document.kind === "template") return "sourceStorage.modeEmbedded";
-  if (document.kind === "tiff") return "sourceStorage.modeEmbedded";
-  return isManagedDocument(document) ? "sourceStorage.modeManaged" : "sourceStorage.modeReference";
-}
-
-export function normalizeStorageValue(value: DocumentStorageMode | undefined): DocumentStorageMode {
-  return value === "managed" ? "managed" : "reference";
-}
-
 function segmentMatches(segment: string): boolean {
   const normalized = segment.trim().toLowerCase();
   if (CLOUD_SEGMENTS.has(normalized)) return true;
@@ -85,9 +74,4 @@ export function detectSourceLocation(path: string | null | undefined): SourceLoc
 
 export function shouldRecommendManagedCopy(hint: SourceLocationHint): boolean {
   return hint.kind === "network" || hint.kind === "cloud";
-}
-
-/** Removes a folder and extension from a display name for action copy. */
-export function displayLeafName(name: string): string {
-  return name.split(/[\\/]/).pop() ?? name;
 }

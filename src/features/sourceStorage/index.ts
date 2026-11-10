@@ -5,18 +5,13 @@ export {
   consolidateCandidates,
   detachManagedCopy,
   documentSourceKey,
-  hasConsolidatableDocuments,
-  managedRelativePath,
 } from "./managedCopy";
 export type { ConsolidateCandidate, ManagedCopyInfo } from "./managedCopy";
 export {
   detectSourceLocation,
-  displayLeafName,
   documentStorage,
   isManagedDocument,
-  normalizeStorageValue,
   shouldRecommendManagedCopy,
-  storageModeLabelKey,
 } from "./mode";
 export type { SourceLocationHint, SourceLocationKind } from "./mode";
 export {
