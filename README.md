@@ -98,7 +98,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Reports and original TIF scans are opt-in.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
-- Undo/redo, atomic saves with **Save a copy** backups, autosave recovery,
+- Undo/redo, conditional saves that preserve both versions on a conflict,
+  automatic rolling backups and **Save a copy** exports, autosave recovery,
   recent files, and the user guide bundled under **Help**. The status bar shows
   saved/unsaved state and source-file warnings, and Project settings reports the
   project size, image and OCR contribution, and source-drawing status.

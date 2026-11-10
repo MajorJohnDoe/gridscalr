@@ -149,6 +149,20 @@ For fire-safety rounds, ventilation surveys or equipment inventories, place buil
 
 Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or changes size while the project is open; **Project settings → Project → Project size and sources** lists the same status before you export.
 
+### 8. Save safely across computers
+
+GridScalr checks the project file on disk before every desktop save. If the file changed since it was opened, a conflict dialog appears instead of a silent overwrite.
+
+- Choose **Save as conflicted copy** (the default) to keep both versions. The copy is written next to the project and the disk file stays untouched.
+- Use **Compare with disk version** to review the page and item counts, size and time before deciding.
+- **Reload from disk** discards the in-memory changes and opens the newer file.
+- **Overwrite** replaces the newer file with your version. Use it only when you are certain which copy is correct.
+- A conflict is not a merge. Open the conflicted copy and import pages from the other project if both versions contain useful work.
+
+Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Package project…** when the backup must travel.
+
+Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.
+
 ### Review checklist
 
 - Every floor and source document is included.

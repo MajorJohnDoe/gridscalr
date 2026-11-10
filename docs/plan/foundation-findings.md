@@ -107,6 +107,67 @@ project contents.
   why it must stay. Confirm with a search before deleting.
 - **Related:** issue [#155](https://github.com/MajorJohnDoe/gridscalr/issues/155).
 
+### F-004 — Conflict comparison is metadata-only
+
+- **Date:** 2026-11-10
+- **Phase:** 1 — safe save
+- **Severity:** P2
+- **Area:** save integrity / compare
+- **Status:** deferred
+- **Evidence:** `src/features/saveIntegrity/ui.ts` shows the local and disk page
+  and item counts, size, time and hash. It does not open the revision
+  comparison engine.
+- **Problem:** **Compare with disk version** answers “which file is newer and
+  how large is it”, not “which markups differ”. The visual comparison from a
+  conflict dialog is listed in robustness §7.8 and belongs to Phase 6.
+- **Impact:** The safe default still preserves both versions, but the user must
+  save the conflicted copy and open a revision comparison to see item changes.
+- **Next step:** Reuse the existing revision comparison session with a
+  disk-project source when Phase 6 adds conflict comparison.
+- **Related:** robustness §7.8, Phase 6 interoperability.
+
+### F-005 — Restored backups cannot resolve relative drawing links
+
+- **Date:** 2026-11-10
+- **Phase:** 1 — safe save
+- **Severity:** P2
+- **Area:** backup / document loading
+- **Status:** open
+- **Evidence:** `restoreProjectBackup()` calls `loadProjectData(project, null,
+  true)`. With a null project path, `documentFlows.ts` cannot resolve
+  `relativePath`, so it relies on each document's stored absolute path.
+- **Problem:** A backup stays usable only while the original drawing paths still
+  exist. If the project folder and drawings moved together, a restored backup
+  asks the user to relink even though the backup's relative links were correct
+  for the original location.
+- **Impact:** Restore is reliable for local projects whose drawings stay in
+  place; it is weaker after a folder move or on another computer.
+- **Next step:** Separate the document-resolution base path from the project's
+  save path, so an unsaved copy can resolve relative links without becoming
+  bound to the original file.
+- **Related:** ADR [0010](../adr/0010-project-file-integrity.md), robustness
+  §7.2.
+
+### F-006 — Backup history is keyed only by project ID
+
+- **Date:** 2026-11-10
+- **Phase:** 1 — safe save
+- **Severity:** P3
+- **Area:** backup
+- **Status:** open
+- **Evidence:** `project_write.rs` stores backups under
+  `backups/<safe-project-id>/`, and restore lists only the open project's ID.
+- **Problem:** A duplicated project file keeps the same project ID and shares
+  the backup history. A project whose ID was repaired, or a new unsaved project
+  after a restart, has no discoverable list. A backup that should travel with a
+  project is invisible outside the original computer.
+- **Impact:** Low today; restore remains a local convenience, and **Save a
+  copy…** / **Package project…** are the portable paths.
+- **Next step:** Decide whether backups need a small manifest with project name,
+  path and ID, or whether the project ID alone is enough for the 1.0 scope.
+- **Related:** ADR [0010](../adr/0010-project-file-integrity.md), robustness
+  §7.2.
+
 ## Triaged or deferred
 
 No entries yet.

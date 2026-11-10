@@ -12,14 +12,14 @@
     "src/features/projectIntegrity": 400
   },
   "files": {
-    "src/app/App.ts": 1027,
+    "src/app/App.ts": 1035,
     "src/canvas/CanvasView.ts": 1493,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 810,
     "src/pdf/pdfExport.ts": 138,
-    "src/state/store.ts": 933,
+    "src/state/store.ts": 942,
     "src/styles/dialogs.css": 1694,
     "src/styles/markups.css": 1027,
     "src/styles/panels.css": 1016,
