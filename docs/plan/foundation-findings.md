@@ -246,6 +246,102 @@ project contents.
 - **Related:** robustness §7.3, ADR
   [0010](../adr/0010-project-file-integrity.md).
 
+### F-014 — Managed drawings folder is fixed, not user-selectable
+
+- **Date:** 2026-11-10
+- **Phase:** 4 — source storage
+- **Severity:** P2
+- **Area:** source storage
+- **Status:** open
+- **Evidence:** `src-tauri/src/source_copy.rs` always derives
+  `<project stem>.drawings` next to the project file. ADR 0012 says “a sibling
+  folder such as”; robustness §13 open question 5 asked whether the folder should
+  be selectable.
+- **Problem:** A team cannot choose a shared drawings folder, and renaming the
+  project file leaves an older drawings folder name. Relative links keep working,
+  but a second consolidation creates a new folder.
+- **Impact:** Self-contained projects work as designed; storage layout is not
+  configurable.
+- **Next step:** Decide whether a project-level drawings-folder preference is
+  worth a schema field and a migration, or keep the fixed sibling folder and
+  document it as a design choice.
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), robustness
+  §7.9 and §13.
+
+### F-015 — Cloud/network detection is a path-segment heuristic
+
+- **Date:** 2026-11-10
+- **Phase:** 4 — source storage
+- **Severity:** P3
+- **Area:** import recommendation
+- **Status:** accepted
+- **Evidence:** `src/features/sourceStorage/mode.ts` matches UNC prefixes and a
+  short list of cloud-client folder names.
+- **Problem:** A renamed client folder is not recognised, and an unrelated folder
+  called `Box` or `Sync` could be flagged. The recommendation can therefore be
+  absent or unnecessary.
+- **Impact:** Only the non-blocking recommendation is affected. Reference stays
+  valid and **Use managed copy** is always available.
+- **Next step:** Leave as accepted unless users report missed cloud clients; keep
+  the list in one module and document it in `docs/limitations.md`.
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md).
+
+### F-016 — Same-size source changes can be missed between status polls
+
+- **Date:** 2026-11-10
+- **Phase:** 4 — source storage
+- **Severity:** P3
+- **Area:** source status
+- **Status:** open
+- **Evidence:** `src/source/sourceStatus.ts` caches a hash by path, byte size and
+  stored checksum. A replacement that preserves the byte size between polls
+  reuses the cached hash until the app restarts or the document reloads.
+- **Problem:** The banner can lag behind a same-size replacement. The next open
+  and any explicit Reload still perform a full checksum check.
+- **Impact:** No data loss; the working drawing stays on the old bytes until the
+  user reloads. This is the same class as F-010 for the project file.
+- **Next step:** Add an occasional forced hash while the window is idle, or
+  accept it as the documented polling trade-off.
+- **Related:** F-010, robustness §7.9.
+
+### F-017 — Managed copies are not garbage-collected
+
+- **Date:** 2026-11-10
+- **Phase:** 4 — source storage
+- **Severity:** P2
+- **Area:** source storage
+- **Status:** open
+- **Evidence:** `detachManagedCopy()` and page/document removal change the
+  project only. `source_copy.rs` never deletes a drawing.
+- **Problem:** Detaching, deleting a page or replacing a source leaves the managed
+  copy on disk. Over time the drawings folder can contain files no document
+  references.
+- **Impact:** No data loss and no project corruption; only disk usage grows. A
+  package includes only referenced documents, so unreferenced copies do not
+  travel.
+- **Next step:** Add an explicit **Remove unused drawings** action that lists
+  unreferenced files and moves them to the trash only after confirmation. Never
+  delete a file automatically.
+- **Related:** robustness §7.9, `docs/limitations.md`.
+
+### F-018 — Consolidation failure can leave unreferenced copies
+
+- **Date:** 2026-11-10
+- **Phase:** 4 — source storage
+- **Severity:** P3
+- **Area:** source storage
+- **Status:** accepted
+- **Evidence:** `copyActions.ts` copies each drawing before it mutates the
+  project. If a later copy fails, earlier copied files remain on disk while the
+  project is unchanged.
+- **Problem:** A failed consolidation can leave stray files beside the project.
+- **Impact:** The project and every original stay valid. The user can delete the
+  stray files or run consolidation again; the content-hash name makes the second
+  run reuse an identical copy.
+- **Next step:** Optionally track partial copies in the failure dialog. Do not
+  delete files automatically.
+- **Related:** F-017.
+
 ## Triaged or deferred
 
 No entries yet.

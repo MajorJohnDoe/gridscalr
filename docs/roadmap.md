@@ -127,11 +127,16 @@ Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 **Goal:** a shared or cloud-hosted drawing cannot change the working geometry
 without the user knowing.
 
-- Reference, managed-copy and package modes.
-- **Copy drawing into project** for cloud and network sources.
+**Complete in schema 25** ([#156](https://github.com/MajorJohnDoe/gridscalr/issues/156)).
+
+- Explicit reference and managed-copy modes; package remains transport.
+- Verified managed copies in `<project>.drawings/` and **Copy drawing into
+  project** for cloud and network sources.
 - **Consolidate drawings…**, **Use managed copy** and **Detach from source**.
-- Source-changed banner with reload, relink and copy actions.
-- Automatic relinking by checksum.
+- Source-changed banner with Reload, Use current, Relink and Copy into project.
+  A changed page count routes to **Replace source…**.
+- Additive relink by checksum in the project folder and its drawings folder.
+- Packages include each managed drawing once.
 
 Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 [0012](adr/0012-source-storage-modes.md) · ADR
@@ -272,7 +277,7 @@ full list.
 | --- | --- |
 | Concurrent project edits | Accepted direction in [ADR 0010](adr/0010-project-file-integrity.md). Implementation not started; current behaviour is last save wins. |
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
-| Source storage | Accepted direction in [ADR 0012](adr/0012-source-storage-modes.md). Reference mode is current; managed copies are planned. |
+| Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |

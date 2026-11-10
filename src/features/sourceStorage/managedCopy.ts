@@ -1,0 +1,87 @@
+import type { DocumentRef, Project } from "../../model/types";
+import { isManagedDocument } from "./mode";
+
+/** Verified result returned by the Rust copy command. */
+export interface ManagedCopyInfo {
+  destinationPath: string;
+  relativePath: string;
+  sha256: string;
+  sizeBytes: number;
+}
+
+export interface ConsolidateCandidate {
+  /** First document that references this physical file. */
+  documentId: string;
+  /** Every document that must point at the shared managed copy. */
+  documentIds: string[];
+  name: string;
+  path: string;
+  sha256: string;
+}
+
+/**
+ * A stable identity for one physical source file. The package uses it to
+ * include a managed drawing exactly once, even if several document records
+ * point at the same copy (for example a copied page and its origin).
+ */
+export function documentSourceKey(document: DocumentRef): string {
+  if (document.kind === "template") return `template:${document.id}`;
+  if (isManagedDocument(document) && document.relativePath) {
+    return `managed:${document.relativePath.replace(/\\/g, "/").toLowerCase()}`;
+  }
+  if (document.path) return `path:${document.path.replace(/\\/g, "/").toLowerCase()}`;
+  if (document.relativePath) {
+    return `path:${document.relativePath.replace(/\\/g, "/").toLowerCase()}`;
+  }
+  return `document:${document.id}`;
+}
+
+/** Rewrites one document to a verified managed copy, preserving provenance. */
+export function applyManagedCopy(
+  document: DocumentRef,
+  info: ManagedCopyInfo,
+  original: { path: string | null; sha256: string },
+): void {
+  document.storage = "managed";
+  document.path = info.destinationPath;
+  document.relativePath = info.relativePath;
+  document.sha256 = info.sha256;
+  document.sizeBytes = info.sizeBytes;
+  document.originalPath = original.path;
+  document.originalSha256 = original.sha256 || info.sha256;
+}
+
+/** Keeps the managed copy and clears the provenance link to the original. */
+export function detachManagedCopy(document: DocumentRef): void {
+  document.originalPath = null;
+  delete document.originalSha256;
+}
+
+/**
+ * Every reference PDF that a consolidation would copy. TIF documents carry an
+ * embedded derived PDF and template sheets have no file, so neither is copied.
+ */
+export function consolidateCandidates(
+  project: Project,
+  resolvePath: (document: DocumentRef) => string | null,
+): ConsolidateCandidate[] {
+  const candidates: ConsolidateCandidate[] = [];
+  for (const document of project.documents) {
+    if (document.kind !== "pdf" || isManagedDocument(document)) continue;
+    const path = resolvePath(document);
+    if (!path) continue;
+    const existing = candidates.find((candidate) => candidate.path === path);
+    if (existing) {
+      existing.documentIds.push(document.id);
+      continue;
+    }
+    candidates.push({
+      documentId: document.id,
+      documentIds: [document.id],
+      name: document.name,
+      path,
+      sha256: document.sha256,
+    });
+  }
+  return candidates;
+}

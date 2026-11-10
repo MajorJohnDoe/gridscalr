@@ -2,6 +2,8 @@ export { SessionRecoveryController } from "./controller";
 export type { SessionRecoveryHost, OpenDecision, OpenProjectInfo } from "./ports";
 export { recordStructuralCheckpoint } from "./checkpoint";
 export { openRecoveryChooser, setRecoveryChooserHandler } from "./chooser";
+export { showSessionBanner } from "./ui";
+export type { BannerAction, BannerOptions } from "./ui";
 export { getRecoverySummary, refreshRecoverySummary, subscribeRecoverySummary } from "./summary";
 export {
   AutosaveError,

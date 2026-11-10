@@ -54,8 +54,12 @@ function buildSection(): HTMLElement {
   } else {
     for (const status of summary.statuses) {
       const line = el("p", "settings-note");
-      line.textContent = t("settings.sourceState", {
+      line.textContent = t("settings.sourceMode", {
         name: status.name,
+        mode:
+          status.storage === "managed"
+            ? t("sourceStorage.modeManaged")
+            : t("sourceStorage.modeReference"),
         state: sourceStateLabel(status.state),
       });
       if (status.state !== "ok") line.classList.add("is-warning-text");

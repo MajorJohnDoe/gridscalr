@@ -1,4 +1,10 @@
-export const SCHEMA_VERSION = 24 as const;
+export const SCHEMA_VERSION = 25 as const;
+
+/**
+ * How a source drawing is stored. `reference` points at the original file.
+ * `managed` points at a copy inside the project's drawings folder.
+ */
+export type DocumentStorageMode = "reference" | "managed";
 
 /** Stable page identity. Display page numbers are derived from the page order. */
 export type PageId = string;
@@ -407,6 +413,15 @@ export interface DocumentRef {
   source?: DocumentSourceInfo;
   /** Only for kind "template". */
   template?: SheetTemplateRef;
+  /**
+   * Explicit source storage mode. Missing values load as `reference` through
+   * the schema 24 → 25 migration.
+   */
+  storage?: DocumentStorageMode;
+  /** Original source path when `storage` is `managed`; provenance for relinking. */
+  originalPath?: string | null;
+  /** SHA-256 of the original source at copy time. */
+  originalSha256?: string;
   /**
    * Provenance for a duplicated page: the source document and its source-local
    * page number. This is not a project page reference.

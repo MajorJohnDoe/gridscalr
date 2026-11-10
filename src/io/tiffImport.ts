@@ -155,6 +155,7 @@ export function createTiffDocumentRef(input: TiffDocumentInput): DocumentRef {
     sha256: input.sha256,
     pageCount: input.conversion.pages.length,
     sizeBytes: input.sizeBytes,
+    storage: "reference",
     embeddedPdf: bytesToBase64(input.conversion.bytes),
     source: {
       format: "tiff",

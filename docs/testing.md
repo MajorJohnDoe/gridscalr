@@ -5,7 +5,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 
 | Command | Covers |
 | --- | --- |
-| `npm test -- --run` | Model, I/O, project-file, report, PDF, geometry and package logic in Node. |
+| `npm test -- --run` | Model, I/O, project-file, source-storage, report, PDF, geometry and package logic in Node. |
 | `npm run test:coverage` | The same suite with V8 coverage and the CI thresholds. |
 | `npm run test:ui` | Playwright smoke flow through the browser fallback: open, measure, help, save and package menu state. |
 | `npm run test:import` | Playwright import flow: thumbnail picker, page-scoped layers, undo, redo and source-file immutability. |
@@ -17,7 +17,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
 | `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
-| `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves and package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
+| `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |
 
 ## Fuzzing

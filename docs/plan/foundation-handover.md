@@ -230,3 +230,77 @@ src/app/replacementFlows.ts    file pick, previews, renderer swap and checkpoint
 - F-011 — template sheet fields remain document-owned (P2, open).
 - F-012 — renderer page order is synchronized manually (P2, open).
 - F-013 — source replacement supports PDF only (P3, open).
+
+## Phase 4 — source storage and managed copies (#156)
+
+Status: implemented on `feat/156-source-storage`. No app version bump.
+
+### Scope delivered
+
+- `DocumentRef.storage: "reference" | "managed"` with optional `originalPath`
+  and `originalSha256`; schema 25 and a schema 24 → 25 migration that marks
+  every document as a reference without touching a file.
+- A Rust `source_copy.rs` command copies a PDF into
+  `<project>.drawings/<safe-name>-<hash8>.pdf`, verifies the copied SHA-256 and
+  refuses a destination inside a protected source path. Source hash checks and
+  a non-recursive folder checksum search support relinking.
+- **Use managed copy**, **Detach from source**, **Consolidate drawings…**, the
+  source-changed banner (**Reload**, **Use current**, **Relink**, **Copy into
+  project**) and a non-blocking cloud/UNC import recommendation.
+- Managed copies are linked relatively and keep provenance. Packages include
+  each managed drawing once and clear the sender's original path.
+- Reload/Relink verify the page count and route a change to Phase 3 **Replace
+  source…** rather than guessing.
+
+### Modules
+
+```text
+src/features/sourceStorage/
+  index.ts        public surface
+  mode.ts         reference/managed mode and cloud/UNC hint
+  managedCopy.ts  managed fields, detach and consolidation candidates
+  documents.ts    document lookup and path resolution
+  copyActions.ts  copy and consolidate orchestration
+  sourceActions.ts detach, use-current, reload and relink
+  relink.ts       action list, page/checksum checks and folder search
+  files.ts        Tauri command wrappers
+  controller.ts   banner state and public controller
+  ports.ts        host boundary
+  ui.ts           import recommendation and source banner
+src/io/projectFile/sourceStorage.ts  schema 24 → 25 migration
+src/app/sourceStorageHost.ts         app wiring and renderer replacement
+src-tauri/src/source_copy.rs         verified copy, hash and folder search
+```
+
+`App.ts` adds one field, one factory call and document actions; renderer
+replacement and page-size refresh stay in `sourceStorageHost.ts`.
+
+### Decisions
+
+- A managed copy requires a saved project; the user is prompted to save first
+  and no PDF is ever embedded as a fallback.
+- A source that changed on disk is never copied silently. Copy verifies the
+  stored checksum before writing.
+- Relink by checksum is limited to the project folder and its drawings folder.
+- Managed copy, detach, reload, relink and consolidation are explicit,
+  checkpointed structural actions and clear undo history so an older snapshot
+  cannot restore a previous source path.
+- The managed folder is fixed at `<project>.drawings/`; a selectable folder
+  remains a future decision (F-014).
+
+### New findings
+
+- F-014 — managed drawings folder is fixed, not user-selectable (P2, open).
+- F-015 — cloud/network detection is a path-segment heuristic (P3, accepted).
+- F-016 — same-size source changes can be missed between status polls (P3, open).
+- F-017 — managed copies are not garbage-collected on detach or document removal
+  (P2, open).
+- F-018 — consolidation failure can leave unreferenced copies on disk (P3,
+  accepted).
+
+### Next
+
+- Phase 5, [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157) —
+  integrity validator, load report, project doctor, import preflight and
+  provenance. Validate managed-copy paths and provenance as part of the shared
+  invariant report rather than adding a second validator.

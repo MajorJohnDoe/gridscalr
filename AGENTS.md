@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.22.4`.
 - Latest public release: `v0.22.4` (2026-11-08).
-- Current project-file schema: `24`.
+- Current project-file schema: `25`.
 - 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -450,7 +450,11 @@ src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard naviga
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
 src/ui/settingsDialog.ts   settings dialog orchestrator
 src/ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
-src/source/sourceStatus.ts source drawing existence and size monitor
+src/source/sourceStatus.ts source drawing existence, size and checksum monitor
+src/features/sourceStorage/  reference/managed source modes, managed copies, consolidation, relinking and the source-changed banner
+src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage
+src/app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
+src-tauri/src/source_copy.rs verified managed copy, source hash and folder checksum search
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
@@ -588,6 +592,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.22.0:** complete (released 2026-11-08) — Medium Gray as the default theme, Dark Gray/Dark Jade rename with preference migration, expandable two-column tool rail, Project settings categories, canonical colour handling and a redrawn rotary heat recovery symbol. No schema change; the schema remains v23.
 - **0.22.4:** complete (released 2026-11-08) — Windows touchpad pinch-to-zoom via WebView2 pinch support, normalized wheel deltas and a touchpad-specific zoom sensitivity. No schema change; the schema remains v23.
 - **Project page import:** complete — import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo (PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152)). No schema change; the schema remains v23.
+- **Foundation Phase 4:** complete — explicit reference and managed-copy source storage, verified copies in `<project>.drawings/`, **Consolidate drawings…**, **Use managed copy**, **Detach from source**, the source-changed banner with Reload/Use current/Relink/Copy into project, cloud and network import recommendations, and managed drawings included once in packages. Schema 25 adds `storage`, `originalPath` and `originalSha256`; schema 24 projects migrate to reference without moving a file. No app version bump.
 
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.

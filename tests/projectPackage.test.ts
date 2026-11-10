@@ -130,6 +130,30 @@ describe("project package model", () => {
     expect(new Set(paths).size).toBe(paths.length);
   });
 
+  it("includes each managed drawing once and clears sender provenance", () => {
+    const project = projectWithDocuments();
+    const [first, second] = project.documents;
+    for (const document of [first, second]) {
+      document.storage = "managed";
+      document.path = null;
+      document.relativePath = "Level 01.drawings/Plan-aaaaaaaa.pdf";
+      document.originalPath = "/home/ana/OneDrive/Plan.pdf";
+      document.originalSha256 = "a".repeat(64);
+    }
+    const paths = documentArchivePaths(project);
+    expect(paths.get(first.id)).toBe("documents/Plan.pdf");
+    expect(paths.get(second.id)).toBe(paths.get(first.id));
+    expect(new Set(paths.values()).size).toBe(1);
+
+    const json = portableProjectJson(project, paths);
+    const copy = JSON.parse(json) as Project;
+    expect(copy.documents[0].storage).toBe("managed");
+    expect(copy.documents[0].originalPath).toBeNull();
+    expect(copy.documents[0].originalSha256).toBe("a".repeat(64));
+    expect(JSON.stringify(copy)).not.toContain("/home/ana/OneDrive");
+    expect(() => validatePackagedProjectJson(json)).not.toThrow();
+  });
+
   it("maps only TIF documents to optional source scans", () => {
     const project = projectWithDocuments();
     expect([...sourceScanArchivePaths(project).values()]).toEqual(["source-scans/Site plan.tif"]);

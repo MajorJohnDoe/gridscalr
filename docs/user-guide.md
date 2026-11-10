@@ -107,9 +107,33 @@ A PDF or TIF with several sheets opens a page picker with a preview of every pag
 
 With a project already open, the selected pages are **added after the existing pages**. The picker shows where they will land. New sheets never change existing page numbers unless you reorder or delete a page.
 
+### Drawing sources and managed copies
+
+A PDF drawing is stored in one of two ways:
+
+- **Reference** – GridScalr reads the original file by path and checks its SHA-256. This is the default for an ordinary local file.
+- **Managed copy** – GridScalr copies the PDF into `<project>.drawings/` next to the project file and links it relatively. The original is never modified. This protects the working drawing when the source is on a shared or cloud-synced folder and may change or move.
+
+When you open a drawing from a UNC network path or a folder that looks like OneDrive, Dropbox, Google Drive, iCloud, Box, SharePoint, Nextcloud, ownCloud, Seafile, pCloud, MEGA, Yandex Disk or Nutstore, GridScalr recommends **Copy drawing into project** and explains why. Choose **Cancel** to keep a normal reference; the recommendation is never automatic.
+
+A managed copy needs a saved project. If the project is new and unsaved, GridScalr asks you to save it first, then copies the drawing and saves the managed link. It never falls back to embedding a PDF in the project JSON.
+
+Use the right-click menu on a page card for the drawing actions:
+
+- **Use managed copy** – copy this reference PDF into the project and switch the document to managed mode. Provenance is kept as the original path and checksum.
+- **Detach from source** – keep the managed copy but clear its link to the original path.
+- **Reload source** – re-read the current file and update the checksum. It refuses a changed page count and points to **Replace source…**.
+- **Use current source** – accept the current on-disk checksum without re-rendering the working drawing.
+- **Relink source…** – find a moved reference file. GridScalr verifies the page count, warns on a checksum mismatch, and searches the project folder and its drawings folder by checksum before asking you to pick a file.
+- **Replace source…** – map a new revision when pages were added, removed or moved.
+
+**File → Consolidate drawings…** copies every remaining referenced PDF into the project folder, checks each checksum, rewrites the paths and reports how many drawings were copied. It is one explicit action with a recovery checkpoint; originals are untouched. If any source changed or is missing, the project is not modified.
+
+While a project is open, a source-changed or missing-source banner offers **Reload**, **Use current**, **Relink** and **Copy into project**. Nothing is accepted automatically. A page-count change is never guessed; use **Replace source…** to map the pages.
+
 ### Open a project
 
-**File → Open project…** (`Ctrl/Cmd+Shift+O`) opens a `.gridscalr` file. The source PDFs are referenced by path and SHA-256; if a PDF has moved, GridScalr asks you to locate it.
+**File → Open project…** (`Ctrl/Cmd+Shift+O`) opens a `.gridscalr` file. Source PDFs are referenced by path and SHA-256, or by a relative managed-copy path; if a PDF has moved, GridScalr asks you to locate or relink it.
 
 ### Open from Explorer or Finder
 
@@ -139,7 +163,7 @@ The **Pages** tab shows a preview of each sheet along with its page size, calibr
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
-Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Insert page**, **Replace source…**, **Duplicate page…**, and **Delete page…**.
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Insert page**, the drawing-source actions from **Drawing sources and managed copies**, **Replace source…**, **Duplicate page…**, and **Delete page…**.
 
 Double-click a page name to rename it inline. Named pages show their title in the card and in the title row; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
 
@@ -665,6 +689,8 @@ While a desktop project is open, GridScalr checks the project file stamp every f
 
 - The package contains `README.txt`, `manifest.json`, the project file and the referenced PDFs under `documents/`.
 - Absolute document paths from your computer are removed. PDFs are linked through `documents/`.
+- Each managed drawing is included once, even when several page or document records share the same copy. Packaging does not change the live reference or managed-copy mode.
+- A managed copy's original source path is cleared inside the package, so a folder name from your computer does not travel. Its original checksum stays as provenance.
 - TIF documents keep their embedded PDF, which is enough to open and edit the project. Original TIF scans are optional and off by default.
 - Quantity CSV, Excel and PDF reports and a flattened drawing PDF are optional and off by default. Select them in the package dialog when the recipient needs the output.
 - `manifest.json` records the package format version, app version, creation time, project schema, project checksum, and the size and SHA-256 of every included file. The manifest version is independent of the project schema.
@@ -716,7 +742,7 @@ Open **Settings → Project settings…** (`Ctrl/Cmd+,`) or press the **Project 
 
 The dialog uses the same category menu as Preferences:
 
-- **Project** – the project name shown in the title row, reports, exports and suggested file names, plus the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that. A drawing that is missing or whose file size changed on disk is marked here and in the status bar before an export fails.
+- **Project** – the project name shown in the title row, reports, exports and suggested file names, plus the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that. A drawing that is missing or whose checksum changed on disk is marked here and in the status bar before an export fails, together with whether it is a reference or a managed copy.
 - **Report** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
 - **Measurements** – the current page's calibration or manual scale and lock state, length and area units, **Smart length labels**, project label size and compact area labels. Change the page scale from the page scale chip in the status bar. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; individual measurements can override the label size in Properties.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
@@ -743,7 +769,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are added after the existing pages by default and can be inserted at a chosen position. Deleting a page is a separate, explicit action: that page's items and page state are removed, later pages keep their stable IDs, and the operation cannot be undone.
 
-Schema version 24 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Older projects load normally and are migrated when opened.
+Schema version 25 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved.
 
 ## Keyboard and mouse
 

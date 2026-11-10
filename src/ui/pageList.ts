@@ -338,6 +338,36 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         },
         ...(sourceDocument?.kind === "pdf"
           ? [
+              ...(sourceDocument.storage === "managed"
+                ? [
+                    {
+                      label: t("page.detachFromSource"),
+                      icon: "folder",
+                      action: () => actions.detachFromSource(record.documentId),
+                    },
+                  ]
+                : [
+                    {
+                      label: t("page.useManagedCopy"),
+                      icon: "folder",
+                      action: () => actions.copyDrawingIntoProject(record.documentId),
+                    },
+                  ]),
+              {
+                label: t("page.reloadSource"),
+                icon: "folder",
+                action: () => actions.reloadSource(record.documentId),
+              },
+              {
+                label: t("page.useCurrentSource"),
+                icon: "folder",
+                action: () => actions.useCurrentSource(record.documentId),
+              },
+              {
+                label: t("page.relinkSource"),
+                icon: "folder",
+                action: () => actions.relinkSource(record.documentId),
+              },
               {
                 label: t("page.replaceSource"),
                 icon: "folder",

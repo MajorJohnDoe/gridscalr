@@ -95,6 +95,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.file.importProjectPages"), actions.importProjectPages, {
           disabled: !hasProject,
         }),
+        action(t("menu.file.consolidateDrawings"), actions.consolidateDrawings, {
+          disabled: !hasProject,
+        }),
         action(t("menu.file.compareRevision"), actions.openCompare, { disabled: !hasProject }),
         action(t("menu.file.compareDrawing"), actions.openDrawingReference, {
           disabled: !hasProject,

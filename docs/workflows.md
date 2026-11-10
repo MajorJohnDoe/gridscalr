@@ -147,7 +147,7 @@ For fire-safety rounds, ventilation surveys or equipment inventories, place buil
 
 ![Docked Markups list with a saved view, configurable columns, building/floor/room groups, filters and row actions](screenshots/markups-list.png)
 
-Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or changes size while the project is open; **Project settings → Project → Project size and sources** lists the same status before you export.
+Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or its checksum changes while the project is open; **Project settings → Project → Project size and sources** lists the same status and the source mode before you export.
 
 ### 8. Save safely across computers
 
@@ -168,6 +168,18 @@ GridScalr also keeps scoped recovery snapshots, one per project and app instance
 Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Package project…** when the backup must travel.
 
 Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.
+
+### 9. Protect shared and cloud drawings
+
+A drawing on a network share or in a cloud-synced folder can be replaced or moved by someone else. Keep the working geometry stable before you start measuring.
+
+1. When GridScalr recommends **Copy drawing into project** during import, accept it for a shared or cloud source. Save the project first if GridScalr asks; the managed copy lives in `<project>.drawings/` next to the project file.
+2. For an existing project, right-click the page and choose **Use managed copy**, or run **File → Consolidate drawings…** to copy every remaining referenced PDF in one checkpointed action.
+3. If the original changes while the project is open, the source-changed banner offers **Reload**, **Use current**, **Relink** and **Copy into project**. Nothing is accepted automatically. **Use current** accepts the checksum without changing the working drawing; **Reload** re-reads the file; **Relink** finds a moved file and verifies its checksum.
+4. If the page count changed, use **Replace source…** and map the pages. Do not relink and hope the pages still line up.
+5. A managed copy protects against the original changing or moving, not against someone editing the copy. The checksum remains authoritative and a changed copy is reported the same way.
+6. Use **Detach from source** when the copy is now the master and the original path no longer matters.
+7. Package the project when it must travel. Each managed drawing is included once in the `.gridscalr.zip`; packaging does not change the live source mode.
 
 ### Review checklist
 

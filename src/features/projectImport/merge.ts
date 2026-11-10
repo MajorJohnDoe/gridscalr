@@ -262,6 +262,12 @@ export function prepareDocument(
     name: uniqueDocumentName(destination, sourceDocument.name),
     relativePath: null,
     copiedFrom: undefined,
+    // The destination has not copied the source project's managed drawing yet.
+    // Treat the imported reference as a normal path reference until the user
+    // explicitly copies it into the destination project.
+    storage: "reference",
+    originalPath: undefined,
+    originalSha256: undefined,
   };
   if (sourceDocument.kind === "template") {
     copy.path = null;

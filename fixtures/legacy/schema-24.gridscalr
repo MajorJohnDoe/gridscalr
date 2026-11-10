@@ -1,0 +1,277 @@
+{
+  "schemaVersion": 24,
+  "id": "prj_schema23_fixture",
+  "name": "Schema 23 fixture",
+  "documents": [
+    {
+      "id": "doc_main",
+      "kind": "pdf",
+      "name": "Main.pdf",
+      "path": null,
+      "relativePath": "Main.pdf",
+      "sha256": "hash_main",
+      "pageCount": 3,
+      "sizeBytes": 1234,
+      "excludedPages": [
+        3
+      ]
+    },
+    {
+      "id": "doc_second",
+      "kind": "pdf",
+      "name": "Second.pdf",
+      "path": null,
+      "relativePath": "Second.pdf",
+      "sha256": "hash_second",
+      "pageCount": 2,
+      "sizeBytes": 4321
+    }
+  ],
+  "settings": {
+    "lengthUnit": "m",
+    "areaUnit": "m2",
+    "smartLengthUnits": true,
+    "labelSize": 6,
+    "compactAreaLabels": true,
+    "showGrid": false,
+    "showCalibration": true,
+    "snapToGeometry": true,
+    "snapTolerancePx": 8,
+    "stampPresets": [
+      "APPROVED"
+    ],
+    "quantity": {
+      "defaultCategoryId": "cat_other",
+      "wastePercent": 0,
+      "roundingStep": 0
+    }
+  },
+  "categories": [
+    {
+      "id": "cat_other",
+      "name": "Other"
+    }
+  ],
+  "countTypes": [
+    {
+      "id": "other",
+      "label": "Other",
+      "glyph": "other"
+    }
+  ],
+  "countPresets": [],
+  "lineTypes": [
+    {
+      "id": "supply",
+      "name": "Supply air",
+      "color": "#e30613",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "extract",
+      "name": "Extract air",
+      "color": "#f2c300",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "exhaust",
+      "name": "Exhaust air",
+      "color": "#7a3b12",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "outdoor",
+      "name": "Outdoor air",
+      "color": "#1f4fd8",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "heatingFlow",
+      "name": "Heating flow",
+      "color": "#f28c00",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "heatingReturn",
+      "name": "Heating return",
+      "color": "#c96b00",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "districtFlow",
+      "name": "District heating flow",
+      "color": "#c000c0",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "districtReturn",
+      "name": "District heating return",
+      "color": "#8f008f",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "domesticWater",
+      "name": "Domestic water",
+      "color": "#00a651",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "cooling",
+      "name": "Cooling",
+      "color": "#00b8d4",
+      "widthPt": 2,
+      "style": "solid"
+    },
+    {
+      "id": "control",
+      "name": "Control cable",
+      "color": "#e30613",
+      "widthPt": 1.2,
+      "style": "dashed"
+    },
+    {
+      "id": "bus",
+      "name": "Bus",
+      "color": "#555555",
+      "widthPt": 1.2,
+      "style": "dashed"
+    }
+  ],
+  "assets": {},
+  "pages": [
+    {
+      "id": "page_e574300855f0631e",
+      "documentId": "doc_main",
+      "localPage": 1,
+      "state": {
+        "calibration": {
+          "id": "cal_fixture",
+          "source": "manual",
+          "ratio": 100,
+          "pointsPerMeter": 28.34645669,
+          "createdAt": "2026-01-01T00:00:00.000Z"
+        },
+        "scaleLocked": true,
+        "name": "Ground floor",
+        "building": "House A"
+      }
+    },
+    {
+      "id": "page_435b1420d24edd4e",
+      "documentId": "doc_main",
+      "localPage": 2,
+      "state": {
+        "name": "Upper floor"
+      }
+    },
+    {
+      "id": "page_55ae45c74efeccd6",
+      "documentId": "doc_second",
+      "localPage": 1,
+      "state": {}
+    },
+    {
+      "id": "page_d3c72903578b7b7e",
+      "documentId": "doc_second",
+      "localPage": 2,
+      "state": {
+        "name": "Second source"
+      }
+    }
+  ],
+  "markupsViews": [],
+  "metadata": {
+    "facility": "",
+    "client": "",
+    "projectNumber": "",
+    "revision": "",
+    "preparedBy": "",
+    "reportDate": "",
+    "notes": "",
+    "reportTitle": ""
+  },
+  "reportLogoAssetId": null,
+  "layers": [
+    {
+      "id": "layer_draw",
+      "name": "Markups",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "items": [
+        {
+          "id": "item_draw",
+          "pageId": "page_435b1420d24edd4e",
+          "kind": "text",
+          "points": [
+            {
+              "x": 10,
+              "y": 20
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 2,
+          "text": "Note",
+          "visible": true,
+          "locked": false,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "homePageId": "page_e574300855f0631e",
+      "pageState": {
+        "page_435b1420d24edd4e": {
+          "visible": false
+        }
+      }
+    },
+    {
+      "id": "layer_measure",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f70808",
+      "items": [
+        {
+          "id": "item_measure",
+          "pageId": "page_d3c72903578b7b7e",
+          "kind": "length",
+          "points": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 100,
+              "y": 0
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "categoryId": "cat_other",
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ],
+      "homePageId": "page_d3c72903578b7b7e"
+    }
+  ],
+  "activeLayerId": "layer_measure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-11-10T20:40:34.173Z"
+}

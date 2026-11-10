@@ -61,6 +61,8 @@ import {
 import { SearchController } from "./searchController";
 import { ProjectSession } from "./projectSession";
 import { createSessionRecovery } from "./recoveryHost";
+import type { SourceStorageController } from "../features/sourceStorage";
+import { createSourceStorageController } from "./sourceStorageHost";
 import {
   copySelection,
   cutSelection,
@@ -128,6 +130,7 @@ export class App {
   private search: SearchController;
   private session: ProjectSession;
   private recovery: SessionRecoveryController;
+  private sourceStorage: SourceStorageController;
   private actions: PanelActions;
   private readonly documentRegistry = new RendererDocumentRegistry();
   private renderer: PdfRenderer | null = null;
@@ -157,6 +160,18 @@ export class App {
     this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
       this.renderAll(),
     );
+    this.sourceStorage = createSourceStorageController({
+      saveProject: () => this.session.saveProject(false),
+      replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
+      bannerHost: this.refs.canvasArea,
+      notify: (message, kind) => toast(message, kind),
+      renderer: () => this.renderer,
+      thumbnails: () => this.thumbnails,
+      resetPageSizes: () => this.resetPageSizes(),
+      enqueuePageSize: (page) => this.enqueuePageSize(page),
+      invalidate: () => this.canvas.invalidate(),
+      renderAll: () => this.renderAll(),
+    });
     this.actions = {
       openPdf: () => void this.session.openPdfFlow(),
       openProject: () => void this.session.openProjectFlow(),
@@ -227,6 +242,12 @@ export class App {
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
       insertPage: (pageId, index) => void insertProjectPage(this.pageActionHost(), pageId, index),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
+      consolidateDrawings: () => void this.sourceStorage.consolidate(),
+      copyDrawingIntoProject: (documentId) => void this.sourceStorage.copyIntoProject(documentId),
+      detachFromSource: (documentId) => void this.sourceStorage.detachFromSource(documentId),
+      relinkSource: (documentId) => void this.sourceStorage.relink(documentId),
+      reloadSource: (documentId) => void this.sourceStorage.reload(documentId),
+      useCurrentSource: (documentId) => void this.sourceStorage.useCurrent(documentId),
       cleanupSuperseded: (documentId) =>
         void cleanupSupersededPages(this.pageActionHost(), documentId),
       setSelectionCategory: (categoryId) => setSelectionCategory(categoryId),
@@ -327,6 +348,7 @@ export class App {
     this.bind();
     this.renderAll();
     this.recovery.start();
+    this.sourceStorage.start();
     window.addEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     void this.session.bindWindowClose();
     void this.bindSmokeTest();
@@ -390,6 +412,9 @@ export class App {
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),
+      recommendSourceStorage: (path, name, kind) =>
+        this.sourceStorage.recommendImport(path, name, kind),
+      applySourceStorage: (documentId) => this.sourceStorage.applyImportChoice(documentId),
     };
   }
 
@@ -996,6 +1021,7 @@ export class App {
 
   dispose(): void {
     this.disposed = true;
+    this.sourceStorage.dispose();
     this.recovery.dispose();
     this.unsubscribe();
     window.removeEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
