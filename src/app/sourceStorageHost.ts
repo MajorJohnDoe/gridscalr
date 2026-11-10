@@ -15,6 +15,7 @@ import { openDocument } from "./documentImport";
 
 export interface SourceStorageAppHost {
   saveProject: () => Promise<boolean>;
+  replaceSource: (documentId: string) => void;
   bannerHost: HTMLElement;
   notify: (message: string, kind?: "info" | "success" | "warning" | "error") => void;
   renderer: () => PdfRenderer | null;
@@ -36,6 +37,7 @@ export function createSourceStorageController(host: SourceStorageAppHost): Sourc
     bannerHost: host.bannerHost,
     notify: host.notify,
     ensureSaved: () => host.saveProject(),
+    replaceSource: (documentId) => host.replaceSource(documentId),
     probePdf: async (bytes) => {
       const proxy = await openDocument(bytes, t("app.untitledProject"));
       if (!proxy) return null;

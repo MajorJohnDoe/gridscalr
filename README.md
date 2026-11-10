@@ -94,9 +94,15 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
   labels and a legend, plus markups CSV, project JSON and PNG.
+- Keep a drawing as a normal reference or copy it into the project, either per
+  drawing or with **Consolidate drawings…**. A managed copy protects a shared or
+  cloud-synced source from being changed or moved underneath the takeoff, and a
+  source-changed banner offers explicit Reload, Use current, Relink and Copy
+  into project actions.
 - Package a project and its drawings into a portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
-  on another machine without relinking. Reports and original TIF scans are opt-in.
+  on another machine without relinking. Managed drawings are included once.
+  Reports and original TIF scans are opt-in.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, conditional saves that preserve both versions on a conflict,
   automatic rolling backups and **Save a copy** exports, autosave recovery,
@@ -282,7 +288,7 @@ Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 24 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 25 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is

@@ -145,11 +145,13 @@ describe("project package model", () => {
     expect(paths.get(second.id)).toBe(paths.get(first.id));
     expect([...paths.values()]).toHaveLength(2);
 
-    const copy = JSON.parse(portableProjectJson(project, paths)) as Project;
+    const json = portableProjectJson(project, paths);
+    const copy = JSON.parse(json) as Project;
     expect(copy.documents[0].storage).toBe("managed");
     expect(copy.documents[0].originalPath).toBeNull();
     expect(copy.documents[0].originalSha256).toBe("a".repeat(64));
     expect(JSON.stringify(copy)).not.toContain("/home/ana/OneDrive");
+    expect(() => validatePackagedProjectJson(json)).not.toThrow();
   });
 
   it("maps only TIF documents to optional source scans", () => {

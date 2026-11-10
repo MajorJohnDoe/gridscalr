@@ -80,15 +80,16 @@ export async function reloadSource(host: SourceStorageHost, documentId: string):
     const pageCount = await host.probePdf(bytes);
     if (pageCount === null) throw new Error(t("sourceStorage.reloadFailed"));
     if (pageCountChanged(document.pageCount, pageCount)) {
-      await messageDialog(
+      const replace = await confirmDialog(
         t("sourceStorage.pageCountChangedTitle"),
         t("sourceStorage.pageCountChangedMessage", {
           name: document.name,
           expected: document.pageCount,
           actual: pageCount,
         }),
-        "warning",
+        t("sourceStorage.replaceSourceAction"),
       );
+      if (replace) host.replaceSource(documentId);
       return;
     }
     const hash = await sha256Hex(bytes);
@@ -152,15 +153,16 @@ export async function relinkSource(host: SourceStorageHost, documentId: string):
     const pageCount = await host.probePdf(bytes);
     if (pageCount === null) throw new Error(t("sourceStorage.relinkOpenFailed"));
     if (pageCountChanged(document.pageCount, pageCount)) {
-      await messageDialog(
+      const replace = await confirmDialog(
         t("sourceStorage.pageCountChangedTitle"),
         t("sourceStorage.pageCountChangedMessage", {
           name: document.name,
           expected: document.pageCount,
           actual: pageCount,
         }),
-        "warning",
+        t("sourceStorage.replaceSourceAction"),
       );
+      if (replace) host.replaceSource(documentId);
       return;
     }
     if (document.sha256 && !checksumMatches(document.sha256, hash)) {

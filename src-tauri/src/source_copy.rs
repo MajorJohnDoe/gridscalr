@@ -5,9 +5,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::commands::{
-    ensure_writable, replace_file, sync_directory, unique_sibling, CommandError,
-};
+use crate::commands::{ensure_writable, replace_file, unique_sibling, CommandError};
 
 /// Copies one reference drawing into the project's sibling drawings folder.
 ///
@@ -45,15 +43,6 @@ const WINDOWS_RESERVED: [&str; 22] = [
     "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8",
     "com9", "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
 ];
-
-fn hex_digest(bytes: &[u8]) -> String {
-    let digest = Sha256::digest(bytes);
-    let mut text = String::with_capacity(digest.len() * 2);
-    for byte in digest {
-        text.push_str(&format!("{byte:02x}"));
-    }
-    text
-}
 
 fn hash_file(path: &Path) -> std::io::Result<String> {
     let mut file = File::open(path)?;

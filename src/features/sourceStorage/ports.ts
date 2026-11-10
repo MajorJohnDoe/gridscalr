@@ -10,6 +10,8 @@ export interface SourceStorageHost {
   probePdf: (bytes: Uint8Array) => Promise<number | null>;
   /** Replaces the in-memory PDF for one document after reload or relink. */
   reloadDocument: (documentId: string) => Promise<boolean>;
+  /** Opens the Phase 3 page-mapping flow for a changed source. */
+  replaceSource: (documentId: string) => void;
   /** Records a recovery checkpoint before a structural source change. */
   checkpoint: (label: string) => Promise<void>;
   /** Refresh UI and source status after a document reference changed. */

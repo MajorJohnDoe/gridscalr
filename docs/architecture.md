@@ -206,7 +206,9 @@ src/
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   settings dialog orchestrator
   ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
-  source/sourceStatus.ts source drawing existence and size monitor
+  source/sourceStatus.ts source drawing existence, size and checksum monitor
+  features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
+  app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
@@ -224,6 +226,7 @@ src/
   help/images.ts         Vite asset URLs for bundled help screenshots
   io/projectFile/        project schema normalization, serialization, relative paths, source-path protection
   io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
+  io/projectFile/sourceStorage.ts schema 24 → 25 reference/managed storage migration
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export
@@ -234,6 +237,7 @@ src-tauri/
   src/project_lease.rs   advisory sidecar lease read/write/heartbeat/clear with owner checks
   src/project_backup.rs  app-data backup directory, naming, rolling rotation and backup commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
+  src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions
   tauri.conf.json        undecorated Windows/Linux window drawn by ui/windowChrome.ts
@@ -318,7 +322,7 @@ Do not describe these behaviours as shipped until their migrations and UI land.
 ## Testing and fixtures
 
 - `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry, autosave and project-package manifest/path rules.
-- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes, canonical source-path protection and package create/extract security, checksums, cancellation and limits. CI runs the same tests.
+- `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic replacement, failed replacement, missing parents, large writes, canonical source-path protection, verified managed source copies, source folder checksum search, and package create/extract security, checksums, cancellation and limits. CI runs the same tests.
 - `npm run check:file-budgets` compares every TypeScript and CSS file under `src` with `file-budgets.json`. New files default to 700 lines, `src/canvas/items` and `src/canvas/pointer` have stricter limits, and listed files may only shrink. CI fails when a budget is exceeded.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches, plus the integration-module import boundary and the line budget. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:coverage` runs the same Vitest suite with the v8 coverage provider and writes text, HTML and `json-summary` reports to `coverage/`. CI uploads the report as an artifact; no threshold is enforced yet.

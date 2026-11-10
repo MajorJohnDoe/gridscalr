@@ -114,7 +114,10 @@ export class SourceStorageController {
       }
       if (this.banners.has(status.documentId)) continue;
       const actions = sourceChangeActions(document)
-        .filter((action) => status.state === "changed" || action !== "useCurrent")
+        .filter(
+          (action) =>
+            status.state === "changed" || (action !== "useCurrent" && action !== "copyIntoProject"),
+        )
         .map((action) => ({
           label: sourceActionLabel(action),
           onClick: () => {

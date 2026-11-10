@@ -162,6 +162,7 @@ export class App {
     );
     this.sourceStorage = createSourceStorageController({
       saveProject: () => this.session.saveProject(false),
+      replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
       bannerHost: this.refs.canvasArea,
       notify: (message, kind) => toast(message, kind),
       renderer: () => this.renderer,

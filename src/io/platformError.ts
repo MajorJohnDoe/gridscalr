@@ -6,6 +6,7 @@ import { t, type MessageKey } from "../i18n";
  */
 const COMMAND_ERROR_KEYS: Record<string, MessageKey> = {
   sourceOverwrite: "error.sourceOverwrite",
+  sourceCopyConflict: "error.sourceCopyConflict",
   notAFile: "error.notAFile",
   createFolderFailed: "error.createFolderFailed",
   writeFailed: "error.writeFailed",
