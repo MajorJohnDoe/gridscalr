@@ -4,7 +4,12 @@
     "src/canvas/items": 400,
     "src/canvas/pointer": 500,
     "src/pdf/export": 400,
-    "src/canvas/editors": 400
+    "src/canvas/editors": 400,
+    "src/features/saveIntegrity": 400,
+    "src/features/sessionRecovery": 400,
+    "src/features/pageModel": 400,
+    "src/features/sourceStorage": 400,
+    "src/features/projectIntegrity": 400
   },
   "files": {
     "src/app/App.ts": 1027,

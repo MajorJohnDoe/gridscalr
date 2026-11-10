@@ -534,6 +534,26 @@ Rules:
 - A managed copy protects against the original moving or changing; it does not
   protect against someone editing the copy. The checksum remains authoritative.
 
+### 7.10 Module-first implementation
+
+The foundation phases follow [ADR 0013](../adr/0013-module-first-foundation.md).
+The short version:
+
+- each new foundation feature has `index.ts`, pure model, controller, UI and IO
+  files as needed;
+- other modules import only the feature's `index.ts`;
+- new files target 300 lines and must not exceed 400;
+- new foundation feature directories use a 400-line file budget;
+- new files must not enter the legacy budget exception list;
+- `npm run check:modules` enforces the public surface and deep-import rule;
+- each phase issue records its module map before production code is written;
+- `App.ts` and `CanvasView.ts` stay wiring-only.
+
+The concrete module maps are in the phase issues and in ADR 0013. The main
+expected directories are `features/saveIntegrity`, `features/sessionRecovery`,
+`features/pageModel`, `features/sourceStorage` and
+`features/projectIntegrity`.
+
 ## 8. Schema 24 and 25 sketch
 
 Schema 24 carries the explicit page list. It deliberately adds no revision
@@ -596,6 +616,7 @@ Complete 2026-11-10.
 - ADR 0010: project-file integrity and concurrent editing.
 - ADR 0011: explicit page order and source replacement.
 - ADR 0012: source storage modes.
+- ADR 0013: module-first foundation work.
 - The invariants from section 6 are recorded in `AGENTS.md`.
 - The #44 backup claim is surfaced in this plan and in `docs/limitations.md`.
 - The phase issues are created as #153–#159.

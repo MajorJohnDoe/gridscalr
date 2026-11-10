@@ -83,7 +83,10 @@ Schema history and migration rules are documented in
 ## Foundation workstreams
 
 These are the current priorities. They are capabilities, not release numbers.
-Each should have an issue before implementation; larger ones have a plan or ADR.
+Each has an issue before implementation; larger ones have a plan or ADR. New
+foundation modules follow [ADR 0013](adr/0013-module-first-foundation.md):
+300-line target, 400-line hard limit, an `index.ts` public surface and no new
+legacy budget exceptions.
 
 ### 1. Save integrity and recovery
 

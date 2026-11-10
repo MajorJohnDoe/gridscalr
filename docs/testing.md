@@ -13,6 +13,8 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
+| `npm run check:file-budgets` | Blocking line budgets for source files and the new foundation feature directories. |
+| `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
 | `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves and package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |

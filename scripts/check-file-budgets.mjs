@@ -51,6 +51,20 @@ for (const file of files) {
 const violations = results.filter((entry) => entry.lines > entry.budget);
 
 if (process.argv.includes("--update")) {
+  const unknown = violations.filter((entry) => config.files?.[entry.file] === undefined);
+  if (unknown.length) {
+    console.error("Refusing to record a new oversized file:");
+    for (const entry of unknown) {
+      console.error(
+        `- ${entry.file}: ${entry.lines} lines, budget ${entry.budget} (+${entry.lines - entry.budget})`,
+      );
+    }
+    console.error(
+      "Split the file or adjust the directory budget deliberately in file-budgets.json. New files must not be added to the legacy exception list.",
+    );
+    process.exit(1);
+  }
+
   const next = {
     defaultMax: config.defaultMax,
     directoryMax: config.directoryMax ?? {},
@@ -61,7 +75,7 @@ if (process.argv.includes("--update")) {
     Object.entries(next.files).sort(([a], [b]) => a.localeCompare(b)),
   );
   await writeFile(configPath, `${JSON.stringify(next, null, 2)}\n`);
-  console.log(`Recorded ${violations.length} file budget(s).`);
+  console.log(`Recorded ${violations.length} existing file budget(s).`);
   process.exit(0);
 }
 

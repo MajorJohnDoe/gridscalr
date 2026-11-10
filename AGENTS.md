@@ -83,6 +83,32 @@ See [`docs/adr/0010-project-file-integrity.md`](docs/adr/0010-project-file-integ
 and [`docs/adr/0012-source-storage-modes.md`](docs/adr/0012-source-storage-modes.md).
 The phased work is in [`docs/plan/robustness.md`](docs/plan/robustness.md).
 
+## Module-first foundation work
+
+The foundation phases follow [ADR 0013](docs/adr/0013-module-first-foundation.md).
+The rule exists because adding logic to a large integration file is cheaper in
+the short term and much more expensive later.
+
+- Every new foundation feature lives in `src/features/<area>/` and has an
+  `index.ts` public surface. Other modules import only that surface.
+- Separate pure model, controller, UI and IO responsibilities. Do not create a
+  `utils.ts` or `helpers.ts` grab bag; name files by domain.
+- New files target 300 lines and must not exceed 400. A new foundation feature
+  directory must not exceed 400 lines per file.
+- New files must not be added to `LEGACY_LARGE_FILES` or to a per-file
+  `file-budgets.json` exception. `npm run check:file-budgets -- --update` may
+  adjust an existing legacy budget; it refuses a new oversized file.
+- `npm run check:modules` enforces the foundation feature `index.ts` and blocks
+  imports into a foundation feature's internals.
+- `model` must not import `ui`, `app`, `canvas` or Tauri. `ui` must not contain
+  business rules. `io` must not contain UI or model decisions.
+- New Rust commands live in a separate Rust module instead of growing
+  `src-tauri/src/commands.rs`.
+- Each foundation phase issue records its module map before production code is
+  added. A new responsibility gets a new file, not a larger existing one.
+- `App.ts` and `CanvasView.ts` remain wiring only; the 50–100 line rule in ADR
+  0001 still applies.
+
 ## Documentation policy
 
 Docs are maintained deliberately, not on every commit. Split the work in two.
@@ -156,6 +182,7 @@ Run the relevant checks from the repository root:
 ```bash
 npm run check:versions
 npm run check:file-budgets
+npm run check:modules
 npm run check:docs
 npm run format:check
 npm run lint
@@ -450,6 +477,7 @@ scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogu
 scripts/capture-docs.mjs   Playwright screenshot and theme-showcase capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/check-file-budgets.mjs blocking line budget for source files
+scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 scripts/build-site.mjs     builds site-dist from site/, icons, screenshots and release metadata
 scripts/check-site.mjs     link, asset, language parity, release and SEO checks for the built site

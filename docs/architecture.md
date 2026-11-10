@@ -279,6 +279,8 @@ describes the current schema 23 code.
   replacement.
 - [ADR 0012](adr/0012-source-storage-modes.md): reference, managed-copy and
   package source modes.
+- [ADR 0013](adr/0013-module-first-foundation.md): module-first layout, public
+  `index.ts` surfaces, 300/400-line budgets and the foundation module maps.
 - [`plan/robustness.md`](plan/robustness.md): phases, invariants and tests.
 
 Do not describe these behaviours as shipped until their migrations and UI land.
