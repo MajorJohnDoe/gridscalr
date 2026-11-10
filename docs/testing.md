@@ -20,6 +20,12 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |
 
+`tests/pdfExport.test.ts` inspects the produced PDF bytes and objects for the
+flattened drawing, optional-content groups (including pdf.js group resolution),
+review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
+covers conditional writes, conflicted copies, backups and the read-only
+**Compare with disk version** summary, including unreadable disk data.
+
 ## Fuzzing
 
 `tests/fuzz.test.ts` uses a deterministic, seeded PRNG with no external

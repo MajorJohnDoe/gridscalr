@@ -54,9 +54,10 @@ The project file inside the package is a portable copy:
 Exported reports and original TIF scans are opt-in. The embedded TIF-derived PDF
 is enough to open and edit a project.
 
-The app provides `File → Package project…` and `File → Open package…`. Opening a
-package extracts it to a folder next to the archive, verifies checksums and opens
-the project. Manual unzip followed by opening the `.gridscalr` must also work.
+The app provides `File → Share project package…` (formerly **Package
+project…**) and `File → Open package…`. Opening a package extracts it to a
+folder next to the archive, verifies checksums and opens the project. Manual
+unzip followed by opening the `.gridscalr` must also work.
 
 ## Implementation constraints
 

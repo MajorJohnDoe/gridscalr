@@ -18,13 +18,13 @@
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 810,
-    "src/pdf/pdfExport.ts": 138,
+    "src/pdf/pdfExport.ts": 117,
     "src/state/store.ts": 942,
     "src/styles/dialogs.css": 1694,
     "src/styles/markups.css": 1027,
     "src/styles/panels.css": 1016,
     "src/styles/shell.css": 1792,
-    "src/ui/dialogs.ts": 902,
+    "src/ui/dialogs.ts": 521,
     "src/ui/toolFlyouts.ts": 707
   }
 }

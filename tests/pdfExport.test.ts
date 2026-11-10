@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-import { PDFDocument, PDFArray, PDFRawStream, decodePDFRawStream, degrees } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFArray,
+  PDFDict,
+  PDFHexString,
+  PDFName,
+  PDFRawStream,
+  decodePDFRawStream,
+  degrees,
+} from "pdf-lib";
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
@@ -786,5 +795,212 @@ describe("flattened PDF export", () => {
     expect(output.getPageCount()).toBe(3);
     expect(output.getPage(0).getSize()).toEqual({ width: 100, height: 100 });
     expect(output.getPage(2).getSize()).toEqual({ width: 200, height: 200 });
+  });
+});
+
+async function optionalContentNames(bytes: Uint8Array): Promise<string[]> {
+  const doc = await PDFDocument.load(bytes);
+  const properties = doc.catalog.lookupMaybe(PDFName.of("OCProperties"), PDFDict);
+  if (!properties) return [];
+  const groups = properties.lookupMaybe(PDFName.of("OCGs"), PDFArray);
+  if (!groups) return [];
+  return groups.asArray().map((ref) => {
+    const dict = doc.context.lookup(ref, PDFDict);
+    const name = dict.get(PDFName.of("Name"));
+    return name instanceof PDFHexString ? name.decodeText() : String(name);
+  });
+}
+
+function exportOptions(project: Project): {
+  pages: number[];
+  layerIds: string[];
+  includeLabels: boolean;
+  includeCalibration: boolean;
+  includeLegend: boolean;
+} {
+  return {
+    pages: [1, 2],
+    layerIds: project.layers.map((layer) => layer.id),
+    includeLabels: true,
+    includeCalibration: true,
+    includeLegend: false,
+  };
+}
+
+describe("optional OCG layer export", () => {
+  it("writes one optional-content group per exported visible layer", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    project.layers.forEach((layer, index) => {
+      layer.name = index === 0 ? "Markups" : "Measurements";
+    });
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    const names = await optionalContentNames(bytes);
+    expect(names).toEqual(["Markups", "Measurements"]);
+
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.catalog.get(PDFName.of("OCProperties"))).toBeTruthy();
+    const content = await decodePageContent(bytes);
+    expect(content).toContain("BDC");
+    expect(content).toContain("EMC");
+
+    // pdf.js resolves the same groups from the catalog, which proves the
+    // structure is real OCG data and not only a dictionary name.
+    const task = pdfjs.getDocument({ data: bytes.slice() });
+    const document = await task.promise;
+    const config = await document.getOptionalContentConfig();
+    const groupNames = [...config].map(([, group]) => group.name);
+    expect(groupNames).toEqual(["Markups", "Measurements"]);
+    await task.destroy();
+  });
+
+  it("excludes hidden layers and hidden items from the optional groups", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    project.layers[0].name = "Visible layer";
+    project.layers[1].name = "Hidden layer";
+    project.layers[1].visible = false;
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    expect(await optionalContentNames(bytes)).toEqual(["Visible layer"]);
+
+    // Page-scoped visibility is the same rule the canvas uses.
+    project.layers[1].visible = true;
+    project.layers[1].pageState = {
+      [pageIdFor(1)]: { visible: false },
+      [pageIdFor(2)]: { visible: false },
+    };
+    const scoped = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    expect(await optionalContentNames(scoped)).toEqual(["Visible layer"]);
+  });
+
+  it("leaves the flattened PDF unchanged when the option is off", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const off = await exportProjectPdf(project, renderer, exportOptions(project));
+    const explicitOff = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: false,
+    });
+    expect(Buffer.from(explicitOff).equals(Buffer.from(off))).toBe(true);
+
+    const doc = await PDFDocument.load(off);
+    expect(doc.catalog.get(PDFName.of("OCProperties"))).toBeUndefined();
+    const content = await decodePageContent(off);
+    expect(content).not.toContain("BDC");
+  });
+});
+
+interface ReviewAnnotation {
+  subtype: string;
+  contents: string;
+  author: string;
+  rect: number[];
+  color: number[];
+}
+
+async function reviewAnnotations(bytes: Uint8Array, pageIndex = 0): Promise<ReviewAnnotation[]> {
+  const doc = await PDFDocument.load(bytes);
+  const annots = doc.getPage(pageIndex).node.Annots();
+  if (!annots) return [];
+  const decode = (value: unknown): string =>
+    value instanceof PDFHexString ? value.decodeText() : String(value ?? "");
+  return annots.asArray().map((ref) => {
+    const dict = doc.context.lookup(ref, PDFDict);
+    const array = (key: string): number[] => {
+      const entry = dict.lookupMaybe(PDFName.of(key), PDFArray);
+      return entry ? entry.asArray().map((item) => Number(String(item))) : [];
+    };
+    const rawSubtype = String(dict.get(PDFName.of("Subtype"))).replace("/", "");
+    return {
+      subtype: rawSubtype.charAt(0).toUpperCase() + rawSubtype.slice(1),
+      contents: decode(dict.get(PDFName.of("Contents"))),
+      author: decode(dict.get(PDFName.of("T"))),
+      rect: array("Rect"),
+      color: array("C"),
+    };
+  });
+}
+
+describe("review-only PDF annotations", () => {
+  it("writes standard annotations for visible items and keeps their labels", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeAnnotations: true,
+    });
+    const annotations = await reviewAnnotations(bytes);
+    const pageOneItems = project.layers.reduce(
+      (total, layer) => total + layer.items.filter((item) => item.pageId === pageIdFor(1)).length,
+      0,
+    );
+    expect(annotations).toHaveLength(pageOneItems);
+    expect(new Set(annotations.map((entry) => entry.subtype))).toEqual(
+      new Set(["Square", "Line", "Polygon", "Text"]),
+    );
+    expect(annotations.every((entry) => entry.author === "GridScalr")).toBe(true);
+    expect(annotations.some((entry) => entry.contents.includes("Wall A"))).toBe(true);
+    expect(annotations.some((entry) => entry.contents.includes("Plan note"))).toBe(true);
+    for (const entry of annotations) {
+      expect(entry.rect).toHaveLength(4);
+      expect(entry.color).toHaveLength(3);
+      expect(entry.color.some((value) => value > 0)).toBe(true);
+    }
+  });
+
+  it("excludes hidden items and hidden layers but keeps locked items", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const text = draw.items.find((item) => item.kind === "text")!;
+    text.locked = true;
+    const rect = draw.items.find((item) => item.id === "item_rect")!;
+    rect.visible = false;
+
+    const withLocked = await reviewAnnotations(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeAnnotations: true,
+      }),
+    );
+    expect(withLocked.some((entry) => entry.contents.includes("Plan note"))).toBe(true);
+    expect(withLocked.some((entry) => entry.rect.join(",") === "")).toBe(false);
+
+    draw.visible = false;
+    const withoutLayer = await reviewAnnotations(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeAnnotations: true,
+      }),
+    );
+    expect(withoutLayer.some((entry) => entry.contents.includes("Plan note"))).toBe(false);
+  });
+
+  it("does not replace the flattened page and is off by default", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const off = await exportProjectPdf(project, renderer, exportOptions(project));
+    const on = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeAnnotations: true,
+    });
+    expect(await reviewAnnotations(off)).toEqual([]);
+    expect(Buffer.from(off).equals(Buffer.from(on))).toBe(false);
+    // Same flattened artwork and the same text layer in both files.
+    expect(await decodePageContent(on)).toBe(await decodePageContent(off));
+    const onText = await textItems(on, 1);
+    const offText = await textItems(off, 1);
+    expect(onText.map((item) => item.text)).toEqual(offText.map((item) => item.text));
   });
 });

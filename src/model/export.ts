@@ -22,6 +22,10 @@ export interface DrawingExportOptions {
   includeLabels: boolean;
   includeCalibration: boolean;
   includeLegend: boolean;
+  /** Opt-in: write project layers as PDF optional-content groups. */
+  includeOcg?: boolean;
+  /** Opt-in: add review-only standard PDF annotations. */
+  includeAnnotations?: boolean;
 }
 
 export interface PageRect {
@@ -56,6 +60,8 @@ export function defaultDrawingExportOptions(
     includeLabels: true,
     includeCalibration: true,
     includeLegend: false,
+    includeOcg: false,
+    includeAnnotations: false,
   };
 }
 

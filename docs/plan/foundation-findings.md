@@ -107,25 +107,6 @@ project contents.
   why it must stay. Confirm with a search before deleting.
 - **Related:** issue [#155](https://github.com/MajorJohnDoe/gridscalr/issues/155).
 
-### F-004 — Conflict comparison is metadata-only
-
-- **Date:** 2026-11-10
-- **Phase:** 1 — safe save
-- **Severity:** P2
-- **Area:** save integrity / compare
-- **Status:** deferred
-- **Evidence:** `src/features/saveIntegrity/ui.ts` shows the local and disk page
-  and item counts, size, time and hash. It does not open the revision
-  comparison engine.
-- **Problem:** **Compare with disk version** answers “which file is newer and
-  how large is it”, not “which markups differ”. The visual comparison from a
-  conflict dialog is listed in robustness §7.8 and belongs to Phase 6.
-- **Impact:** The safe default still preserves both versions, but the user must
-  save the conflicted copy and open a revision comparison to see item changes.
-- **Next step:** Reuse the existing revision comparison session with a
-  disk-project source when Phase 6 adds conflict comparison.
-- **Related:** robustness §7.8, Phase 6 interoperability.
-
 ### F-005 — Restored backups cannot resolve relative drawing links
 
 - **Date:** 2026-11-10
@@ -421,13 +402,111 @@ project contents.
   to match package or backup checksums exactly.
 - **Related:** F-021, robustness §7.7.
 
+### F-023 — OCG groups cannot express page-scoped layer visibility
+
+- **Date:** 2026-11-10
+- **Phase:** 6 — interoperability
+- **Severity:** P2
+- **Area:** PDF export / OCG
+- **Status:** open
+- **Evidence:** `src/pdf/export/ocg.ts` creates one OCG per exported visible
+  layer. Marked content is written only on pages where the layer is visible, but
+  the reader toggles the group for the whole document.
+- **Problem:** A layer that is visible on one page and hidden on another cannot
+  be represented faithfully. Turning the group off hides the layer on every
+  exported page where it was visible.
+- **Impact:** The flattened default is unchanged and hidden content never
+  exports. Only the optional reader-side toggle is coarser than the canvas rule.
+- **Next step:** Decide whether per-page OCGs (`Layer — Page 3`) or one group
+  per layer with per-page marked content and a documented trade-off is the right
+  long-term model. Keep hidden layers excluded either way.
+- **Related:** robustness §7.8, `docs/limitations.md`.
+
+### F-024 — Review annotations have approximate geometry and reader-dependent appearance
+
+- **Date:** 2026-11-10
+- **Phase:** 6 — interoperability
+- **Severity:** P2
+- **Area:** PDF export / annotations
+- **Status:** accepted
+- **Evidence:** `src/pdf/export/annotations.ts` writes `Square`, `Circle`, `Line`,
+  `PolyLine`, `Polygon` and `Text` dictionaries with no appearance stream.
+- **Problem:** A reader draws its own appearance for these dictionaries. Item
+  labels, leaders and measurement values are not reproduced, and a rotated or
+  complex item is represented by its bounding box or vertex list. The
+  annotations are not a project and cannot be imported back.
+- **Impact:** They are useful for review, filtering and comments in another
+  reader but must not be presented as an editable or measurement-exact output.
+- **Next step:** Leave as the documented review artifact. If appearance fidelity
+  becomes a requirement, add generated appearance streams behind a separate
+  decision and keep the flattened page unchanged.
+- **Related:** `docs/limitations.md`, robustness §7.8.
+
+### F-025 — Conflict comparison is heuristic and project-data only
+
+- **Date:** 2026-11-10
+- **Phase:** 6 — interoperability
+- **Severity:** P2
+- **Area:** save integrity / compare
+- **Status:** open
+- **Evidence:** `buildConflictComparison()` calls `compareRevisions()`, which
+  matches items by id, then geometry, then the nearest same-kind item inside a
+  12 pt move tolerance. It never reads source drawing bytes.
+- **Problem:** A heavily reworked item can appear as removed plus added rather
+  than changed. A source PDF that changed outside GridScalr is not part of the
+  conflict comparison, because the project stores the source checksum
+  separately.
+- **Impact:** The summary is read-only and the safe default still preserves both
+  versions, but the diff is not a formal three-way merge base.
+- **Next step:** Keep comparison read-only. A future merge would need a common
+  base and stable semantic IDs, as recorded in robustness §12.
+- **Related:** F-004, ADR [0010](../adr/0010-project-file-integrity.md).
+
+### F-026 — Share package has no operating-system share sheet
+
+- **Date:** 2026-11-10
+- **Phase:** 6 — interoperability
+- **Severity:** P3
+- **Area:** package / share flow
+- **Status:** accepted
+- **Evidence:** **File → Share project package…** opens the normal save dialog
+  and writes a local `.gridscalr.zip`. There is no email, upload or OS share
+  integration.
+- **Problem:** The action is the obvious in-app share path but does not hand the
+  file to another application automatically.
+- **Impact:** The user still chooses where the package is written and sends it
+  through their own channel. This keeps the app local-first with no network
+  dependency.
+- **Next step:** Add an OS share integration only with an explicit product
+  decision; it must not introduce a network dependency or bypass the source
+  write guard.
+- **Related:** ADR [0002](../adr/0002-project-package.md), robustness §7.8.
+
 ## Triaged or deferred
 
 No entries yet.
 
 ## Fixed
 
-No entries yet.
+### F-004 — Conflict comparison is metadata-only
+
+- **Date:** 2026-11-10
+- **Phase:** 1 — safe save
+- **Severity:** P2
+- **Area:** save integrity / compare
+- **Status:** fixed
+- **Evidence:** The Phase 1 dialog showed only the local and disk page and item
+  counts, size, time and hash. It did not open the revision comparison engine.
+- **Problem:** **Compare with disk version** answers “which file is newer and
+  how large is it”, not “which markups differ”. The visual comparison from a
+  conflict dialog is listed in robustness §7.8 and belongs to Phase 6.
+- **Impact:** The safe default still preserves both versions, but the user must
+  save the conflicted copy and open a revision comparison to see item changes.
+- **Resolution:** Phase 6 reads the disk project through the save-integrity
+  port and runs `compareRevisions()` on the local and disk projects. The
+  conflict dialog shows a read-only summary. The metadata fallback remains for
+  an unreadable disk file.
+- **Related:** robustness §7.8, Phase 6 interoperability.
 
 ### F-011 — Template sheet fields still belong to a document, not a page
 

@@ -4,7 +4,7 @@ import { layerVisibleOnPage } from "../model/layers";
 import { pageIdAt } from "../model/pages";
 import type { Project } from "../model/types";
 import { store } from "../state/store";
-import { drawingExportDialog } from "../ui/dialogs";
+import { drawingExportDialog } from "../ui/drawingExportDialog";
 
 /** The export dialog loop, including the interactive crop step. */
 export async function chooseDrawingExport(

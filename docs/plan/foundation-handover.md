@@ -373,3 +373,73 @@ src/app/projectDoctorFlows.ts           App wiring for doctor and load report
 - Phase 6, [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158) —
   interoperability: real OCG layers, annotation export, package/share flow,
   relinking search by checksum and **Compare with disk version**.
+
+## Phase 6 — interoperability (#158)
+
+Status: implemented on `feat/158-interoperability`, PR
+[#165](https://github.com/MajorJohnDoe/gridscalr/pull/165). No app version bump;
+schema stays 25.
+
+### Scope delivered
+
+- Opt-in **Optional layers (OCG)** in the drawing export. `src/pdf/export/ocg.ts`
+  writes `/OCProperties` on the catalog, one `/OCG` per exported visible layer
+  and `/OC … BDC` … `EMC` around that layer's drawing on each page. Hidden
+  layers, page-scoped hidden layers and hidden items are still excluded.
+- Opt-in **Review annotations** in the drawing export.
+  `src/pdf/export/annotations.ts` writes standard `Square`, `Circle`, `Line`,
+  `PolyLine`, `Polygon` and `Text` annotation dictionaries with `/Rect`, `/C`,
+  `/Contents`, `/T` = GridScalr and `/NM` = item ID. No appearance stream, no
+  project data and no change to the flattened page.
+- **Compare with disk version** at a save conflict now parses the disk project
+  through the save-integrity port and runs the existing `compareRevisions()`
+  engine. The dialog shows changed/added/removed item counts, page rows and
+  changed fields including `countQuantity` and `depth`. Invalid disk data falls
+  back to the metadata summary. Nothing is merged or written.
+- **File → Share project package…** replaces the old Package wording. The
+  existing package flow is unchanged: one action, managed drawings once,
+  sender paths cleared, optional reports/drawing PDF.
+
+### Modules
+
+```text
+src/pdf/export/ocg.ts                 optional-content catalog, OCGs and BDC/EMC
+src/pdf/export/annotations.ts         review-only annotation dictionaries
+src/features/saveIntegrity/compare.ts read-only conflict comparison summary
+src/pdf/pdfExport.ts                  orchestration only; wraps layer drawing
+src/ui/dialogs.ts                     two opt-in export checkboxes
+```
+
+### Decisions
+
+- OCG and annotations are one-off export options, never project data, and both
+  default off so the flattened PDF is byte-identical to the previous default.
+- The OCG wrapper uses a page `/Properties` entry for each group instead of an
+  inline dictionary, which keeps the content stream standards-shaped and lets
+  pdf.js resolve the same group names.
+- Review annotations are sticky notes for text-like items to avoid a missing
+  `/DA` font and keep the flattened text untouched. Geometry is the item bounds
+  or vertex list, not a generated appearance.
+- Conflict comparison is read-only. **Save as conflicted copy** remains the
+  default and the conflict action state is unchanged by comparing.
+
+### New findings
+
+- F-023 — OCG groups cannot express page-scoped layer visibility (P2, open).
+- F-024 — review annotations have approximate geometry and reader-dependent
+  appearance (P2, accepted).
+- F-025 — conflict comparison is heuristic and project-data only (P2, open).
+- F-026 — share package has no operating-system share sheet (P3, accepted).
+- F-004 — conflict comparison is no longer metadata-only (fixed).
+
+### Checks
+
+Full AGENTS pre-commit list plus `npm run test:ui`, `test:import`,
+`test:canvas`, `test:count`, `test:touch`, `test:visual`, `cargo test --lib` and
+GitHub CI on Ubuntu, Windows and macOS.
+
+### Next
+
+- Phase 7, [#159](https://github.com/MajorJohnDoe/gridscalr/issues/159) —
+  stateful and property-based page/save flows, concurrent-save and
+  crash-during-save tests, a migration corpus and CI gates.
