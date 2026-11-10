@@ -10,11 +10,11 @@ export interface SheetSourceChoice {
   name: string;
 }
 
-export type ProjectSourceChoice = { kind: "pdf" } | SheetSourceChoice;
+export type ProjectSourceChoice = { kind: "pdf" } | { kind: "empty" } | SheetSourceChoice;
 
 export type SheetSourceMode = "new" | "add";
 
-type SourceKind = "pdf" | "sheet" | "blank";
+type SourceKind = "pdf" | "sheet" | "blank" | "empty";
 
 interface SourceOption {
   kind: SourceKind;
@@ -42,6 +42,16 @@ export async function chooseProjectSource(
     sourceOption("sheet-source", "sheet", t("sheet.source.sheet"), t("sheet.source.sheetNote")),
     sourceOption("sheet-source", "blank", t("sheet.source.blank"), t("sheet.source.blankNote")),
   ];
+  if (mode === "new") {
+    options.push(
+      sourceOption(
+        "sheet-source",
+        "empty",
+        t("sheet.source.emptyProject"),
+        t("sheet.source.emptyProjectNote"),
+      ),
+    );
+  }
   for (const option of options) sourceList.append(option.row);
   sourceSection.append(sourceList);
   body.append(sourceSection);
@@ -91,7 +101,7 @@ export async function chooseProjectSource(
     for (const option of options) {
       option.row.classList.toggle("is-selected", option.input.checked);
     }
-    fields.hidden = source === "pdf";
+    fields.hidden = source === "pdf" || source === "empty";
     templateField.hidden = source !== "sheet";
     nameLabel.textContent =
       mode === "new"
@@ -102,18 +112,22 @@ export async function chooseProjectSource(
     note.textContent =
       source === "pdf"
         ? t("sheet.source.notePdf")
-        : source === "blank"
-          ? t("sheet.source.noteBlank")
-          : t("sheet.source.noteSheet");
+        : source === "empty"
+          ? t("sheet.source.noteEmptyProject")
+          : source === "blank"
+            ? t("sheet.source.noteBlank")
+            : t("sheet.source.noteSheet");
     if (primary) {
       primary.textContent =
         source === "pdf"
           ? t("sheet.source.chooseFile")
-          : mode === "new"
+          : source === "empty"
             ? t("sheet.source.createProject")
-            : source === "blank"
-              ? t("sheet.source.addBlank")
-              : t("sheet.source.addSheet");
+            : mode === "new"
+              ? t("sheet.source.createProject")
+              : source === "blank"
+                ? t("sheet.source.addBlank")
+                : t("sheet.source.addSheet");
     }
   };
   for (const option of options) option.input.addEventListener("change", update);
@@ -142,6 +156,7 @@ export async function chooseProjectSource(
 
   if (result !== "continue") return null;
   if (source === "pdf") return { kind: "pdf" };
+  if (source === "empty") return { kind: "empty" };
 
   return {
     kind: "sheet",

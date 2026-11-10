@@ -282,7 +282,7 @@ Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 23 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 24 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is

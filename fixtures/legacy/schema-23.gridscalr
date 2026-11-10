@@ -1,0 +1,114 @@
+{
+  "schemaVersion": 23,
+  "id": "prj_schema23_fixture",
+  "name": "Schema 23 fixture",
+  "documents": [
+    {
+      "id": "doc_main",
+      "kind": "pdf",
+      "name": "Main.pdf",
+      "path": null,
+      "relativePath": "Main.pdf",
+      "sha256": "hash_main",
+      "pageCount": 3,
+      "excludedPages": [3],
+      "sizeBytes": 1234
+    },
+    {
+      "id": "doc_second",
+      "kind": "pdf",
+      "name": "Second.pdf",
+      "path": null,
+      "relativePath": "Second.pdf",
+      "sha256": "hash_second",
+      "pageCount": 2,
+      "sizeBytes": 4321
+    }
+  ],
+  "settings": {
+    "lengthUnit": "m",
+    "areaUnit": "m2",
+    "smartLengthUnits": true,
+    "labelSize": 6,
+    "compactAreaLabels": true,
+    "showGrid": false,
+    "showCalibration": true,
+    "snapToGeometry": true,
+    "snapTolerancePx": 8,
+    "stampPresets": ["APPROVED"],
+    "quantity": { "defaultCategoryId": "cat_other", "wastePercent": 0, "roundingStep": 0 }
+  },
+  "categories": [{ "id": "cat_other", "name": "Other" }],
+  "countTypes": [{ "id": "other", "label": "Other", "glyph": "other" }],
+  "countPresets": [],
+  "lineTypes": [],
+  "assets": {},
+  "pages": {
+    "1": {
+      "name": "Ground floor",
+      "building": "House A",
+      "calibration": {
+        "id": "cal_fixture",
+        "source": "manual",
+        "ratio": 100,
+        "pointsPerMeter": 28.34645669,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "scaleLocked": true
+    },
+    "2": { "name": "Upper floor" },
+    "4": { "name": "Second source" }
+  },
+  "markupsViews": [],
+  "layers": [
+    {
+      "id": "layer_draw",
+      "name": "Markups",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "homePage": 1,
+      "pageState": { "2": { "visible": false } },
+      "items": [
+        {
+          "id": "item_draw",
+          "page": 2,
+          "kind": "text",
+          "points": [{ "x": 10, "y": 20 }],
+          "color": "#f2a93b",
+          "strokeWidth": 2,
+          "text": "Note",
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "layer_measure",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f70808",
+      "homePage": 4,
+      "items": [
+        {
+          "id": "item_measure",
+          "page": 4,
+          "kind": "length",
+          "points": [{ "x": 0, "y": 0 }, { "x": 100, "y": 0 }],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z"
+        }
+      ]
+    }
+  ],
+  "activeLayerId": "layer_measure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}

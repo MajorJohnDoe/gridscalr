@@ -247,6 +247,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (record.state.scaleLocked) {
       badges.append(el("span", "page-badge", t("page.scaleLocked")));
     }
+    const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
+    if (sourceDocument?.superseded) {
+      badges.append(el("span", "page-badge is-superseded", t("page.supersededBadge")));
+    }
     const itemCount = project.layers.reduce(
       (count, layer) => count + layer.items.filter((item) => item.pageId === pageId).length,
       0,
@@ -332,16 +336,39 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
           icon: "target",
           action: () => pageLocationDialog(project, pageId, page),
         },
-        {
-          label: t("page.insertBefore"),
-          icon: "plus",
-          action: () => actions.insertPage(pageId, page - 1),
-        },
-        {
-          label: t("page.insertAfter"),
-          icon: "plus",
-          action: () => actions.insertPage(pageId, page),
-        },
+        ...(sourceDocument?.kind === "pdf"
+          ? [
+              {
+                label: t("page.replaceSource"),
+                icon: "folder",
+                action: () => actions.replaceSource(record.documentId),
+              },
+            ]
+          : []),
+        ...(sourceDocument?.superseded
+          ? [
+              {
+                label: t("page.cleanupSuperseded"),
+                icon: "trash",
+                danger: true,
+                action: () => actions.cleanupSuperseded(record.documentId),
+              },
+            ]
+          : []),
+        ...(sheetDocument
+          ? []
+          : [
+              {
+                label: t("page.insertBefore"),
+                icon: "plus",
+                action: () => actions.insertPage(pageId, page - 1),
+              },
+              {
+                label: t("page.insertAfter"),
+                icon: "plus",
+                action: () => actions.insertPage(pageId, page),
+              },
+            ]),
         {
           label: t("page.duplicate"),
           icon: "copy",

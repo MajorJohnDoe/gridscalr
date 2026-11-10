@@ -103,6 +103,7 @@ export async function addPageFlow(host: SheetFlowHost): Promise<void> {
       await host.openPdfFlow();
       return;
     }
+    if (choice.kind === "empty") return;
     await addSheetFlow(host, choice);
   } catch (error) {
     logEvent("error", `add page failed: ${errorMessage(error)}`);

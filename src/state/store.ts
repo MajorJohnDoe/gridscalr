@@ -6,7 +6,7 @@ import {
   type DeletePageSummary,
   type DuplicatePageOptions,
   type DuplicatePageSummary,
-} from "../features/pageModel/pageList";
+} from "../features/pageModel";
 import { includedLocalPages } from "../model/documents";
 import {
   currentPageId,

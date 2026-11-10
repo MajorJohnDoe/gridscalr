@@ -38,6 +38,10 @@ export async function exportProject(kind: ExportKind, context: ExportContext): P
   const { project, renderer, canvas } = context;
   const safe = safeProjectName(project);
   const protectedPaths = sourceDocumentPaths(project, context.projectPath);
+  if (!project.pages.length && (kind === "drawing" || kind === "png")) {
+    toast(t("export.noPages"), "warning");
+    return;
+  }
   try {
     if (kind === "csv") {
       const csv = serializeMarkupCsv(project);

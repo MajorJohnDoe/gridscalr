@@ -78,7 +78,7 @@ Add every floor or building part to one project. Select several pages in the pag
 
 If you need a page only for notes or sketches, add a blank A3 or A2 page with **Add pages… → Blank page** instead of importing a drawing.
 
-New pages are appended after the existing pages. Existing page numbers and measurements do not move unless you explicitly delete a page.
+New pages are appended after the existing pages by default. Existing page numbers and measurements do not move unless you reorder or delete a page.
 
 ### 2. Calibrate and lock the scales
 
@@ -193,7 +193,7 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 6. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
 7. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
 
-The import appends pages, so it never moves an existing page on its own. The source project is read-only. The import is one undo step, but deleting a page is a separate structural step and cannot be undone. Confirm the page numbers and quantities before deleting.
+The import appends pages by default, so it never moves an existing page on its own. An explicit insertion position can place the imported pages at a chosen point. The source project is read-only. The import is one undo step, but deleting a page is a separate structural step and cannot be undone. Confirm the page numbers and quantities before deleting.
 
 ## Related reference
 

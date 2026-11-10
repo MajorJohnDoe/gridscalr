@@ -143,20 +143,6 @@ function ensureLayerKinds(project: Project, fallbackPageId: PageId | null): void
   project.layers = normalizeLayerOrder(project.layers);
 }
 
-function removeUnusedDocuments(project: Project): string[] {
-  const used = new Set(project.pages.map((record) => record.documentId));
-  for (const document of project.documents) {
-    if (document.copiedFrom) used.add(document.copiedFrom.documentId);
-  }
-  const removed: string[] = [];
-  project.documents = project.documents.filter((document) => {
-    if (used.has(document.id)) return true;
-    removed.push(document.id);
-    return false;
-  });
-  return removed;
-}
-
 function removeUnusedAssets(project: Project): void {
   const used = new Set<string>();
   for (const layer of project.layers) {
@@ -204,7 +190,9 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
   if (!project.pages.length) project.layers = [];
   ensureLayerKinds(project, fallbackPageId);
 
-  const removedDocuments = removeUnusedDocuments(project);
+  // Documents stay in place so renderer document indices remain aligned. An
+  // explicit cleanup or a later document-management action removes unused refs.
+  const removedDocuments: string[] = [];
   removeUnusedAssets(project);
 
   if (!project.layers.some((layer) => layer.id === project.activeLayerId)) {

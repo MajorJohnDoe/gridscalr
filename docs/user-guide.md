@@ -26,7 +26,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
 - **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
-- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, duplicated and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
@@ -105,7 +105,7 @@ A blank page is an A3 or A2 page with no drawing frame, title block, revision ta
 
 A PDF or TIF with several sheets opens a page picker with a preview of every page before anything is imported. Clear the pages you do not need, or use **Select all** / **Clear all**, then choose **Create project** or **Add pages**. Single-page files skip the picker.
 
-With a project already open, the selected pages are **added after the existing pages**. The picker shows where they will land. New sheets never change existing page numbers unless you explicitly delete a page.
+With a project already open, the selected pages are **added after the existing pages**. The picker shows where they will land. New sheets never change existing page numbers unless you reorder or delete a page.
 
 ### Open a project
 
@@ -139,7 +139,7 @@ The **Pages** tab shows a preview of each sheet along with its page size, calibr
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
-Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Duplicate page…**, and **Delete page…**.
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Insert page**, **Replace source…**, **Duplicate page…**, and **Delete page…**.
 
 Double-click a page name to rename it inline. Named pages show their title in the card and in the title row; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
 
@@ -151,7 +151,21 @@ Right-click a page card and choose **Duplicate page…**. Choose whether to copy
 - **Page scale** – keeps the calibration and scale lock.
 - **Markups and drawings** – copies every item on the source page.
 
-The copy is appended at the end and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility, lock settings, building and floor labels always follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
+The copy is appended at the end with a new stable page ID and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility, lock settings, building and floor labels always follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
+
+### Reorder, insert and delete pages
+
+Drag a page card onto another card to change the project page order. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet. Right-click a card for **Insert page before…** or **Insert page after…** to add another record for the same source sheet at that position. Page numbers in the title row, Markups and reports follow the current order.
+
+**Delete page…** removes that page record, its items and its layer page state. Later pages are not renumbered in the saved file; only their displayed numbers change. Deleting is structural and cannot be undone. A project may have no pages at all.
+
+### Replace a source drawing
+
+Right-click a page card and choose **Replace source…** when a drawing is reissued with pages in a different order or with a sheet missing. Pick the new PDF, then map each project page to a page in the new file. Mapped pages keep their ID, markups and page settings. Pages without a mapping stay on the old source, marked **Superseded source**, until you review them and use **Remove superseded pages…**. Calibration and scale are kept; check them after replacing the source. The original files are never modified.
+
+### Start with a blank project
+
+**File → New project** offers **Blank project** beside a PDF import and a sheet. A blank project starts with no documents and no pages, but keeps its settings, categories, count types and default layers. Add pages or import project pages whenever you are ready.
 
 ### Import pages from another project
 
@@ -161,7 +175,7 @@ Use **File → Import pages from project…**, or right-click the empty area bel
 2. The picker groups its pages by source document. Each card shows the sheet preview, page name, location and item count. No pages are selected at first.
 3. Select the pages you need and choose **Import**.
 
-The pages are appended after the existing pages. Existing page numbers never move. The source project is read-only and is never changed.
+The pages are appended after the existing pages by default. Existing page numbers do not move unless you reorder or delete a page. The source project is read-only and is never changed.
 
 - **Each imported page gets its own layers.** New page-scoped layers use the source layer names, colours, opacity, visibility and lock state. Items are never merged into layers that already exist on another page. If you switch the Layers list to **All pages**, layers with the same name from different pages are shown separately.
 - **Copied page data:** page name, building and floor, calibration and scale lock, OCR text, and every item on the page. Operation-card title-block fields are copied exactly.
@@ -727,9 +741,9 @@ The help content is bundled with the application. It does not use the network. U
 
 A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items including vector symbols and statuses, and embedded images. Referenced PDFs are not embedded; a TIF's converted PDF is embedded because the scan cannot be read directly at render time.
 
-New sheets are always added after the existing pages. Deleting a page is a separate, explicit action: measurements and page scale on that page are removed, later measurements move down one page number, and the operation cannot be undone. Pages cannot be inserted or reordered.
+New sheets are added after the existing pages by default and can be inserted at a chosen position. Deleting a page is a separate, explicit action: that page's items and page state are removed, later pages keep their stable IDs, and the operation cannot be undone.
 
-Schema version 23 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, and the optional report metadata and report-logo reference from schema 22. Schema 23 adds operation card sheet documents with a template id and version, an A3/A2 paper size and a map of title-block field values. Older projects load normally and are migrated when opened.
+Schema version 24 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Older projects load normally and are migrated when opened.
 
 ## Keyboard and mouse
 

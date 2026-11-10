@@ -511,10 +511,11 @@ try {
     const now = new Date().toISOString();
     store.mutate((project) => {
       const layer = project.layers.find((entry) => entry.kind === "draw");
+      const pageId = project.pages[0].id;
       layer.items.push(
         {
           id: "item_snap_fan",
-          page: 1,
+          pageId,
           kind: "symbol",
           points: [{ x: 950, y: 220 }],
           color: "#111111",
@@ -526,7 +527,7 @@ try {
         },
         {
           id: "item_snap_sensor",
-          page: 1,
+          pageId,
           kind: "symbol",
           points: [{ x: 1000, y: 320 }],
           color: "#111111",

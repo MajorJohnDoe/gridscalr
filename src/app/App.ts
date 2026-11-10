@@ -1,11 +1,9 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { CanvasView, type CanvasTestApi } from "../canvas/CanvasView";
-import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
-import { layerVisibleOnPage } from "../model/layers";
-import { normalizeProjectName } from "../model/projectName";
+import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { documentPageMaps } from "../model/documents";
 import { documentPageOrder, pageIdAt } from "../model/pages";
-import type { PageId, PageSize, Project } from "../model/types";
+import type { PageSize, Project } from "../model/types";
 import {
   relativeDocumentPath,
   serializeProject,
@@ -16,6 +14,8 @@ import { isTauri, pathExists, readFileText, writeTextFile } from "../io/platform
 import { PdfRenderer } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
 import { exportProject } from "./exportFlows";
+import { chooseDrawingExport } from "./drawingExportFlow";
+import { beginProjectRename } from "./projectNameEditor";
 import type { ExportKind } from "./exportFlows";
 import { copyDiagnosticsFlow, reportProblemFlow } from "./diagnosticsFlows";
 import {
@@ -27,6 +27,14 @@ import {
 import { insertImageFlow as insertImageFlowModule, type ImageFlowHost } from "./imageFlows";
 import { packageHost as createPackageHost, type PackageFlowHost } from "./packageFlows";
 import { importProjectPagesFlow, type ProjectImportHost } from "./projectImportFlows";
+import { replaceSourceFlow, type ReplacementFlowHost } from "./replacementFlows";
+import {
+  cleanupSupersededPages,
+  createEmptyProject,
+  insertProjectPage,
+  reorderProjectPage,
+  type PageActionHost,
+} from "../features/pageModel";
 import { RendererDocumentRegistry } from "./rendererDocuments";
 import type { ImportedRendererDocument } from "./rendererDocuments";
 import {
@@ -78,7 +86,6 @@ import { describeError } from "../io/platformError";
 import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
-import { drawingExportDialog } from "../ui/dialogs";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
@@ -145,6 +152,7 @@ export class App {
       loadProjectData: (project, path, dirty) =>
         loadProjectDataFlow(this.documentFlowHost(), project, path, dirty),
       createSheetProject: (choice) => createSheetProjectFlow(this.sheetFlowHost(), choice),
+      createEmptyProject: () => createEmptyProject(this.pageActionHost()),
     });
     this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
       this.renderAll(),
@@ -215,8 +223,12 @@ export class App {
       setSelectionStrokeWidth: (width) => setSelectionStrokeWidth(width),
       deletePage: (pageId) => void deletePageFlow(this.pageFlowHost(), pageId),
       duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
-      reorderPage: (pageId, targetIndex) => this.reorderPage(pageId, targetIndex),
-      insertPage: (pageId, index) => this.insertPage(pageId, index),
+      reorderPage: (pageId, targetIndex) =>
+        reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
+      insertPage: (pageId, index) => insertProjectPage(this.pageActionHost(), pageId, index),
+      replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
+      cleanupSuperseded: (documentId) =>
+        void cleanupSupersededPages(this.pageActionHost(), documentId),
       setSelectionCategory: (categoryId) => setSelectionCategory(categoryId),
       setSelectionRoom: (room) => setSelectionRoom(room),
       setSelectionAreaMode: (mode) => setSelectionAreaMode(mode),
@@ -369,7 +381,12 @@ export class App {
       rendererBusy: () => this.renderer?.busy ?? false,
       installDocuments: (documents, project, path, dirty) =>
         this.installDocuments(documents, project, path, dirty),
-      addDocumentToRenderer: (document, pages) => this.renderer?.addDocument(document, pages),
+      addDocumentToRenderer: (document, pages) => {
+        this.renderer?.addDocument(document, pages);
+        if (store.project) {
+          this.renderer?.setPageOrder(documentPageOrder(store.project));
+        }
+      },
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),
@@ -473,7 +490,7 @@ export class App {
       event.stopPropagation();
     });
     refs.pageInput.addEventListener("focus", () => refs.pageInput.select());
-    refs.projectName.addEventListener("dblclick", () => this.beginProjectRename());
+    refs.projectName.addEventListener("dblclick", () => beginProjectRename(this.refs.projectName));
 
     window.addEventListener("keydown", this.onKeyDown);
     window.addEventListener("keyup", this.onKeyUp);
@@ -618,7 +635,7 @@ export class App {
     if (event.key === "F2") {
       event.preventDefault();
       if (store.ui.selection.length === 1) requestMarkupRename(this.refs);
-      else this.beginProjectRename();
+      else beginProjectRename(this.refs.projectName);
       return;
     }
 
@@ -734,21 +751,39 @@ export class App {
       }
     });
     store.setProject(project, projectPath, dirty);
-    await this.enqueuePageSize(project.pages.length ? 1 : 0);
+    if (project.pages.length) await this.enqueuePageSize(1);
     this.canvas.invalidate();
     this.canvas.fitPage();
   }
 
-  private reorderPage(pageId: PageId, targetIndex: number): void {
-    if (!store.reorderPage(pageId, targetIndex)) return;
-    this.afterStructuralPageChange();
+  private replacementFlowHost(): ReplacementFlowHost {
+    return {
+      renderer: () => this.renderer,
+      thumbnails: () => this.thumbnails,
+      resetPageSizes: () => this.resetPageSizes(),
+      enqueuePageSize: (page) => this.enqueuePageSize(page),
+      fitPage: () => this.canvas.fitPage(),
+      invalidate: () => this.canvas.invalidate(),
+      renderAll: () => this.renderAll(),
+    };
   }
 
-  private insertPage(pageId: PageId, index: number): void {
-    const created = store.insertPageRecord(pageId, index);
-    if (!created) return;
-    this.afterStructuralPageChange();
-    void this.enqueuePageSize(store.ui.page);
+  private pageActionHost(): PageActionHost {
+    return {
+      ...this.replacementFlowHost(),
+      closeSearch: () => this.search.close(),
+      closeReference: () => this.reference.close(false),
+      afterStructuralChange: () => this.afterStructuralPageChange(),
+      installProject: async (project) => {
+        project.settings.stampPresets = loadGlobalStampPresets();
+        await this.installDocuments([], project, null, false);
+      },
+      detachDocument: (documentId) => {
+        const project = store.project;
+        const index = project?.documents.findIndex((entry) => entry.id === documentId) ?? -1;
+        if (index >= 0) this.renderer?.removeDocument(index);
+      },
+    };
   }
 
   private afterStructuralPageChange(): void {
@@ -774,6 +809,7 @@ export class App {
   }
 
   private afterUndoDocumentChange(): void {
+    if (store.project) this.renderer?.setPageOrder(documentPageOrder(store.project));
     this.search.close();
     void this.reference.close(false);
     this.reference.splitView.setOpen(false);
@@ -841,92 +877,6 @@ export class App {
     showPackageDialogPreview(store.project);
   }
 
-  private beginProjectRename(): void {
-    const project = store.project;
-    const name = this.refs.projectName;
-    if (!project || name.isContentEditable) return;
-    const original = project.name;
-    let finished = false;
-    const finish = (commit: boolean) => {
-      if (finished) return;
-      finished = true;
-      name.contentEditable = "false";
-      name.classList.remove("is-editing");
-      name.removeEventListener("keydown", onKey);
-      name.removeEventListener("blur", onBlur);
-      const value = normalizeProjectName(name.textContent ?? "", original);
-      if (!commit || value === original) {
-        name.textContent = original;
-        return;
-      }
-      store.mutate((current) => {
-        current.name = value;
-      }, "change");
-    };
-    const onBlur = () => finish(true);
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Enter") {
-        event.preventDefault();
-        event.stopPropagation();
-        finish(true);
-      } else if (event.key === "Escape") {
-        event.preventDefault();
-        event.stopPropagation();
-        finish(false);
-      }
-    };
-    name.contentEditable = "plaintext-only";
-    name.classList.add("is-editing");
-    name.textContent = original;
-    name.focus({ preventScroll: true });
-    const selection = window.getSelection();
-    if (selection) {
-      const range = document.createRange();
-      range.selectNodeContents(name);
-      selection.removeAllRanges();
-      selection.addRange(range);
-    }
-    name.addEventListener("keydown", onKey);
-    name.addEventListener("blur", onBlur);
-  }
-
-  private async chooseDrawingExport(project: Project): Promise<DrawingExportOptions | null> {
-    let options = defaultDrawingExportOptions(project, store.ui.page);
-    let initialAreaMode: "whole" | "crop" | undefined;
-    let cropReferencePage = store.ui.page;
-    for (;;) {
-      const pageCount = project.pages.length;
-      const pageNumbers = Array.from({ length: pageCount }, (_, index) => index + 1);
-      const result = await drawingExportDialog({
-        currentPage: store.ui.page,
-        pageCount,
-        layers: project.layers.map((layer) => ({
-          id: layer.id,
-          name: layer.name,
-          kind: layer.kind,
-          visible: pageNumbers.some((page) => {
-            const pageId = pageIdAt(project, page);
-            return pageId ? layerVisibleOnPage(layer, pageId) : false;
-          }),
-          color: layer.color,
-        })),
-        initial: options,
-        initialAreaMode,
-        cropReferencePage,
-      });
-      if (!result) return null;
-      options = result.options;
-      if (result.action === "export") return options;
-
-      initialAreaMode = "crop";
-      const crop = await this.canvas.pickExportCrop(options.crop);
-      if (crop) {
-        options = { ...options, crop };
-        cropReferencePage = store.ui.page;
-      }
-    }
-  }
-
   private async exportAs(kind: ExportKind): Promise<void> {
     const project = store.project;
     if (!project) return;
@@ -935,7 +885,7 @@ export class App {
       projectPath: store.projectPath,
       renderer: this.renderer,
       canvas: this.canvas,
-      chooseDrawingExport: (target) => this.chooseDrawingExport(target),
+      chooseDrawingExport: (target) => chooseDrawingExport(this.canvas, target),
     });
   }
 

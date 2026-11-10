@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 23,
+  "schemaVersion": 24,
   "id": "prj_demo_takeoff",
   "name": "Northgate Logistics Hub - Takeoff",
   "documents": [
@@ -81,53 +81,68 @@
     "notes": "Demo project for the GridScalr documentation."
   },
   "reportLogoAssetId": null,
-  "pages": {
-    "1": {
-      "name": "Ground floor",
-      "building": "Northgate",
-      "floor": "Ground floor",
-      "calibration": {
-        "id": "cal_demo_page_1",
-        "source": "reference",
-        "p1": {
-          "x": 184.01574804,
-          "y": 636.566929125
-        },
-        "p2": {
-          "x": 467.48031504,
-          "y": 636.566929125
-        },
-        "knownLength": 10,
-        "unit": "m",
-        "pointsPerMeter": 28.3464567,
-        "createdAt": "2026-10-26T09:00:00.000Z"
+  "pages": [
+    {
+      "id": "page_demo_1",
+      "documentId": "doc_demo_plan",
+      "localPage": 1,
+      "state": {
+        "name": "Ground floor",
+        "building": "Northgate",
+        "floor": "Ground floor",
+        "calibration": {
+          "id": "cal_demo_page_1",
+          "source": "reference",
+          "p1": {
+            "x": 184.01574804,
+            "y": 636.566929125
+          },
+          "p2": {
+            "x": 467.48031504,
+            "y": 636.566929125
+          },
+          "knownLength": 10,
+          "unit": "m",
+          "pointsPerMeter": 28.3464567,
+          "createdAt": "2026-10-26T09:00:00.000Z"
+        }
       }
     },
-    "2": {
-      "name": "Mezzanine",
-      "building": "Northgate",
-      "floor": "Mezzanine",
-      "calibration": {
-        "id": "cal_demo_page_2",
-        "source": "manual",
-        "ratio": 50,
-        "pointsPerMeter": 56.6929134,
-        "createdAt": "2026-10-26T09:00:00.000Z"
+    {
+      "id": "page_demo_2",
+      "documentId": "doc_demo_plan",
+      "localPage": 2,
+      "state": {
+        "name": "Mezzanine",
+        "building": "Northgate",
+        "floor": "Mezzanine",
+        "calibration": {
+          "id": "cal_demo_page_2",
+          "source": "manual",
+          "ratio": 50,
+          "pointsPerMeter": 56.6929134,
+          "createdAt": "2026-10-26T09:00:00.000Z"
+        }
       }
     },
-    "3": {
-      "name": "Site plan",
-      "building": "Northgate",
-      "floor": "Site",
-      "calibration": {
-        "id": "cal_demo_page_3",
-        "source": "manual",
-        "ratio": 400,
-        "pointsPerMeter": 7.08661417,
-        "createdAt": "2026-10-26T09:00:00.000Z"
+    {
+      "id": "page_demo_3",
+      "documentId": "doc_demo_plan",
+      "localPage": 3,
+      "state": {
+        "name": "Site plan",
+        "building": "Northgate",
+        "floor": "Site",
+        "calibration": {
+          "id": "cal_demo_page_3",
+          "source": "manual",
+          "ratio": 400,
+          "pointsPerMeter": 7.08661417,
+          "createdAt": "2026-10-26T09:00:00.000Z"
+        }
       }
     }
-  },
+  ],
   "markupsViews": [
     {
       "id": "view_room_review",
@@ -221,7 +236,7 @@
       "items": [
         {
           "id": "item_cloud_dock",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "cloud",
           "points": [
             {
@@ -259,7 +274,7 @@
         },
         {
           "id": "item_callout_window",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "callout",
           "points": [
             {
@@ -285,7 +300,7 @@
         },
         {
           "id": "item_text_hatch",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "text",
           "points": [
             {
@@ -304,7 +319,7 @@
         },
         {
           "id": "item_arrow_aisle",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "arrow",
           "points": [
             {
@@ -326,7 +341,7 @@
         },
         {
           "id": "item_stamp_inspected",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "stamp",
           "points": [
             {
@@ -345,7 +360,7 @@
         },
         {
           "id": "item_delta_b",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "delta",
           "points": [
             {
@@ -365,7 +380,7 @@
         },
         {
           "id": "item_cloud_stair",
-          "page": 2,
+          "pageId": "page_demo_2",
           "kind": "cloud",
           "points": [
             {
@@ -403,7 +418,7 @@
         },
         {
           "id": "item_text_railing",
-          "page": 2,
+          "pageId": "page_demo_2",
           "kind": "text",
           "points": [
             {
@@ -423,7 +438,7 @@
         },
         {
           "id": "item_symbol_extinguisher",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -442,7 +457,7 @@
         },
         {
           "id": "item_symbol_exit",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -462,7 +477,7 @@
         },
         {
           "id": "item_symbol_supply",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -481,7 +496,7 @@
         },
         {
           "id": "item_symbol_panel",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -500,7 +515,7 @@
         },
         {
           "id": "item_symbol_aed",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -519,7 +534,7 @@
         },
         {
           "id": "item_symbol_cctv",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "symbol",
           "points": [
             {
@@ -550,7 +565,7 @@
       "items": [
         {
           "id": "item_floor_living",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "area",
           "points": [
             {
@@ -580,7 +595,7 @@
         },
         {
           "id": "item_wall_partition",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "length",
           "points": [
             {
@@ -608,7 +623,7 @@
         },
         {
           "id": "item_wall_warehouse",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "length",
           "points": [
             {
@@ -636,7 +651,7 @@
         },
         {
           "id": "item_facade_window",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "length",
           "points": [
             {
@@ -664,7 +679,7 @@
         },
         {
           "id": "item_facade_dock",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "length",
           "points": [
             {
@@ -692,7 +707,7 @@
         },
         {
           "id": "item_count_dock",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "count",
           "points": [
             {
@@ -717,7 +732,7 @@
         },
         {
           "id": "item_count_entrance",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "count",
           "points": [
             {
@@ -742,7 +757,7 @@
         },
         {
           "id": "item_count_window",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "count",
           "points": [
             {
@@ -767,7 +782,7 @@
         },
         {
           "id": "item_count_radiator",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "count",
           "points": [
             {
@@ -792,7 +807,7 @@
         },
         {
           "id": "item_count_toilet",
-          "page": 1,
+          "pageId": "page_demo_1",
           "kind": "count",
           "points": [
             {
@@ -817,7 +832,7 @@
         },
         {
           "id": "item_floor_mezz",
-          "page": 2,
+          "pageId": "page_demo_2",
           "kind": "area",
           "points": [
             {
@@ -851,7 +866,7 @@
         },
         {
           "id": "item_floor_stair_void",
-          "page": 2,
+          "pageId": "page_demo_2",
           "kind": "area",
           "points": [
             {
@@ -881,7 +896,7 @@
         },
         {
           "id": "item_railing_mezz",
-          "page": 2,
+          "pageId": "page_demo_2",
           "kind": "length",
           "points": [
             {
@@ -909,7 +924,7 @@
         },
         {
           "id": "item_ground_yard",
-          "page": 3,
+          "pageId": "page_demo_3",
           "kind": "area",
           "points": [
             {

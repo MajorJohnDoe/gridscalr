@@ -156,11 +156,12 @@ export function migrateItemPage(
 ): Record<string, unknown> | null {
   if (!isObject(rawValue)) return null;
   const raw = { ...rawValue } as Record<string, unknown>;
-  const resolved =
-    migration.resolvePage(raw.pageId) ?? migration.resolvePage(raw.page) ?? migration.firstPageId;
-  if (raw.pageId !== undefined && migration.resolvePage(raw.pageId) === null) {
+  const storedPage = migration.resolvePage(raw.pageId);
+  const legacyPage = migration.resolvePage(raw.page);
+  const resolved = storedPage ?? legacyPage ?? migration.firstPageId;
+  if (raw.pageId !== undefined && storedPage === null) {
     migration.warnings.push("projectFile.migrationInvalidItemPage");
-  } else if (raw.pageId === undefined && raw.page !== undefined && resolved === null) {
+  } else if (raw.pageId === undefined && raw.page !== undefined && legacyPage === null) {
     migration.warnings.push("projectFile.migrationInvalidItemPage");
   }
   if (!resolved) return null;

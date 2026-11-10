@@ -11,6 +11,7 @@ import "./styles/panels.css";
 import "./styles/reference.css";
 import "./styles/dialogs.css";
 import "./styles/projectImport.css";
+import "./styles/pageModel.css";
 import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";

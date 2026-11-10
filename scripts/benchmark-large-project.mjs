@@ -25,6 +25,12 @@ try {
       // images to make the serialized project large. Source PDF bytes are not
       // duplicated; package streaming is benchmarked separately in Rust.
       project.documents[0].pageCount = targetPages;
+      project.pages = Array.from({ length: targetPages }, (_, index) => ({
+        id: `bench_page_${index + 1}`,
+        documentId: project.documents[0].id,
+        localPage: index + 1,
+        state: {},
+      }));
       const perPage = Math.ceil(targetItems / targetPages);
       measure.items = [];
       for (let index = 0; index < targetItems; index += 1) {
@@ -32,7 +38,7 @@ try {
         measure.items.push({
           ...base,
           id: `bench_${index}`,
-          page: pageNumber,
+          pageId: `bench_page_${pageNumber}`,
           label: `Benchmark ${index}`,
           points: base.points.map((point) => ({
             x: point.x + (index % perPage) * 8,
@@ -59,7 +65,7 @@ try {
         };
         draw.items.push({
           id,
-          page: 1,
+          pageId: "bench_page_1",
           kind: "image",
           assetId: id,
           points: [

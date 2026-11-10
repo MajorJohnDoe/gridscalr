@@ -253,3 +253,60 @@ No entries yet.
 ## Fixed
 
 No entries yet.
+
+### F-011 — Template sheet fields still belong to a document, not a page
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P2
+- **Area:** template sheets / page identity
+- **Status:** open
+- **Evidence:** `DocumentRef.template.fields` stores title-block values. Page
+  duplication and insertion clone the template document in
+  `features/pageModel/pageList.ts` so the copies do not share field objects.
+- **Problem:** A template sheet is one document containing one page. Stable page
+  IDs remove the need for that coupling for PDF pages, but sheet fields remain
+  document-owned. A future page-owned sheet state would simplify duplication and
+  remove one document per sheet.
+- **Impact:** Duplicate/insert works correctly, but the project grows one
+  `DocumentRef` per duplicated template sheet.
+- **Next step:** Decide whether sheet fields should move into `PageRecord.state`
+  in a later schema, with a migration from template documents.
+- **Related:** schema 23 template sheets, ADR
+  [0011](../adr/0011-page-list-and-source-replacement.md).
+
+### F-012 — Renderer page order is synchronized manually
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P2
+- **Area:** canvas / renderer
+- **Status:** open
+- **Evidence:** `PdfRenderer.setPageOrder()` must be called after insert,
+  reorder, delete, import and source replacement. `App.afterStructuralPageChange`
+  centralizes most paths; `pageFlows` and import flows call it separately.
+- **Problem:** A future structural operation that forgets to resync the renderer
+  will render the previous page order while the project data is correct.
+- **Impact:** No data loss; the visible page can be stale until the next reload.
+- **Next step:** Derive the renderer order from the store subscription in one
+  place, or add a debug invariant that compares the renderer order with
+  `documentPageOrder(project)` after every structural change.
+- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
+  §7.4.
+
+### F-013 — Replace source supports PDF documents only
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P3
+- **Area:** source replacement
+- **Status:** open
+- **Evidence:** `app/replacementFlows.ts` returns the localized **PDF only**
+  warning for TIF and template documents.
+- **Problem:** A reissued scan cannot be mapped in place. The user must add the
+  new TIF as a document and delete the old pages explicitly.
+- **Impact:** No data loss; the workflow is manual for scans.
+- **Next step:** Add TIF replacement once the derived-PDF lifetime and checksum
+  rules are covered, or document the manual path in the user guide.
+- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
+  schema 25 source storage.

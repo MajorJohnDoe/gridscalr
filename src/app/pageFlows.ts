@@ -5,6 +5,8 @@ import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
+import { openDocument } from "./documentImport";
+import { sheetBytes } from "./sheetFlows";
 import { confirmDialog } from "../ui/dialogs";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { toast } from "../ui/toast";
@@ -87,10 +89,22 @@ export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Pro
   await recordStructuralCheckpoint(
     t("sessionRecovery.checkpoint.duplicatePage", { page: sourcePage }),
   );
+  const knownDocuments = new Set(project.documents.map((entry) => entry.id));
   const result = store.duplicatePage(pageId, options);
   if (!result) {
     toast(t("app.pageDuplicateFailed"), "warning");
     return;
+  }
+  // A duplicated template sheet owns a cloned document. Load its proxy so the
+  // renderer document list stays aligned with project.documents.
+  const renderer = host.renderer();
+  for (const document of project.documents) {
+    if (knownDocuments.has(document.id) || document.kind !== "template" || !document.template) {
+      continue;
+    }
+    const bytes = await sheetBytes(document.template);
+    const proxy = await openDocument(bytes, document.name);
+    if (proxy) renderer?.addDocument(proxy, [1]);
   }
   syncRendererPageOrder(host);
   await host.enqueuePageSize(result.pageNumber);

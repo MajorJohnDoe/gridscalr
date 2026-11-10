@@ -50,6 +50,7 @@ export interface ProjectSessionHost {
   loadProjectText(text: string, projectPath: string | null): Promise<boolean>;
   loadProjectData(project: Project, projectPath: string | null, dirty: boolean): Promise<boolean>;
   createSheetProject(choice: SheetSourceChoice): Promise<void>;
+  createEmptyProject(): Promise<void>;
 }
 
 function projectFilters() {
@@ -80,6 +81,14 @@ export class ProjectSession {
       const choice = await chooseProjectSource("new");
       if (!choice) return;
       sheetChoice = choice.kind === "sheet";
+
+      if (choice.kind === "empty") {
+        if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) return;
+        await this.recovery?.discardOpenProject();
+        await this.host.resetProject();
+        await this.host.createEmptyProject();
+        return;
+      }
 
       if (choice.kind === "pdf") {
         const picked = await pickDrawing();

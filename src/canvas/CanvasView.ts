@@ -377,8 +377,7 @@ export class CanvasView {
   }
 
   private get viewPageId(): string | null {
-    const project = this.sceneProject;
-    return project ? pageIdAt(project, this.viewPage) : null;
+    return this.sceneProject ? pageIdAt(this.sceneProject, this.viewPage) : null;
   }
 
   private get viewZoom(): number {

@@ -49,10 +49,12 @@ const scales = {
   3: { pointsPerMeter: SITE.scalePpm, sourceUnit: "m" },
 };
 
+const pageId = (page) => `page_demo_${page}`;
+
 function item(id, kind, page, points, extra = {}) {
   return {
     id,
-    page,
+    pageId: pageId(page),
     kind,
     points,
     color: "#4cc9f0",
@@ -316,47 +318,62 @@ const project = {
     notes: "Demo project for the GridScalr documentation.",
   },
   reportLogoAssetId: null,
-  pages: {
-    1: {
-      name: "Ground floor",
-      building: "Northgate",
-      floor: "Ground floor",
-      calibration: {
-        id: "cal_demo_page_1",
-        source: "reference",
-        p1: p1(PLAN.calibration.p1.x, PLAN.calibration.p1.y),
-        p2: p1(PLAN.calibration.p2.x, PLAN.calibration.p2.y),
-        knownLength: PLAN.calibration.metres,
-        unit: "m",
-        pointsPerMeter: PLAN.scalePpm,
-        createdAt: now,
+  pages: [
+    {
+      id: pageId(1),
+      documentId: "doc_demo_plan",
+      localPage: 1,
+      state: {
+        name: "Ground floor",
+        building: "Northgate",
+        floor: "Ground floor",
+        calibration: {
+          id: "cal_demo_page_1",
+          source: "reference",
+          p1: p1(PLAN.calibration.p1.x, PLAN.calibration.p1.y),
+          p2: p1(PLAN.calibration.p2.x, PLAN.calibration.p2.y),
+          knownLength: PLAN.calibration.metres,
+          unit: "m",
+          pointsPerMeter: PLAN.scalePpm,
+          createdAt: now,
+        },
       },
     },
-    2: {
-      name: "Mezzanine",
-      building: "Northgate",
-      floor: "Mezzanine",
-      calibration: {
-        id: "cal_demo_page_2",
-        source: "manual",
-        ratio: 50,
-        pointsPerMeter: MEZZANINE.scalePpm,
-        createdAt: now,
+    {
+      id: pageId(2),
+      documentId: "doc_demo_plan",
+      localPage: 2,
+      state: {
+        name: "Mezzanine",
+        building: "Northgate",
+        floor: "Mezzanine",
+        calibration: {
+          id: "cal_demo_page_2",
+          source: "manual",
+          ratio: 50,
+          pointsPerMeter: MEZZANINE.scalePpm,
+          createdAt: now,
+        },
       },
     },
-    3: {
-      name: "Site plan",
-      building: "Northgate",
-      floor: "Site",
-      calibration: {
-        id: "cal_demo_page_3",
-        source: "manual",
-        ratio: 400,
-        pointsPerMeter: SITE.scalePpm,
-        createdAt: now,
+    {
+      id: pageId(3),
+      documentId: "doc_demo_plan",
+      localPage: 3,
+      state: {
+        name: "Site plan",
+        building: "Northgate",
+        floor: "Site",
+        calibration: {
+          id: "cal_demo_page_3",
+          source: "manual",
+          ratio: 400,
+          pointsPerMeter: SITE.scalePpm,
+          createdAt: now,
+        },
       },
     },
-  },
+  ],
   markupsViews: [
     {
       id: "view_room_review",

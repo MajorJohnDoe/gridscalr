@@ -7,19 +7,18 @@ layers, markup items, and embedded images. Referenced PDFs are **not** embedded;
 a TIF's converted PDF is, because the scan cannot be read directly at render
 time.
 
-Schema 24 (explicit page list and stable page IDs) and schema 25 (source storage
-modes) are planned but not implemented. Their decisions are recorded in
-[ADR 0011](adr/0011-page-list-and-source-replacement.md) and
-[ADR 0012](adr/0012-source-storage-modes.md). This document describes schema 23
-until those migrations ship.
+Schema 24 implements the explicit page list and stable page IDs described in
+[ADR 0011](adr/0011-page-list-and-source-replacement.md). Schema 25 (source
+storage modes) is planned but not implemented; see
+[ADR 0012](adr/0012-source-storage-modes.md). This document describes schema 24.
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 23: the old `document` entry becomes the first element of `documents`, and page keys keep their numbers. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Schema 13 adds vector facility symbols with a stable `symbolId`, category-derived colour, rotation, and optional inspection status. Schema 14 adds the optional `symbolSize` on facility symbols; a missing value renders the 24 pt default. Schema 15 adds the optional measurement `labelSize` override and the project `labelSize` and `compactAreaLabels` settings; missing values use a 6 pt label and the full `Perimeter` wording. Schema 16 adds the optional area `labelFit` position, which keeps the label inside the area and fits its size to the available space. Schema 17 adds optional per-page OCR data (`ocr`) with words, bounding boxes, language and engine metadata, and the source document checksum/page used to invalidate stale OCR. Schema 18 adds the radius, diameter and three-point arc measurement kinds; they use the existing points and scale fields. Schema 19 adds angle, slope and volume measurement kinds; volumes store an optional `depth` in the project length unit and use the existing polygon points. Schema 20 adds ordered project count types (`countTypes`) with a stable id, label and one of the built-in glyphs, plus an optional `countQuantity` on count items. Schema 21 adds reusable Count tool presets (`countPresets`) and count-type columns, filters and grouping in saved Markups views. Schema 22 adds optional procurement metadata (`metadata`) for facility, client, project number, revision, author, report date, report title and notes, plus an optional report-logo reference (`reportLogoAssetId`) to an embedded project image asset. Missing metadata migrates to empty values and a missing or invalid logo reference is dropped. Schema 23 adds template sheet documents (`kind: "template"`) with a stable template id and version, a paper size (`A3` or `A2`) and a string map of title-block or table field values. `sheet.details` stores the optional multi-line system/equipment block; field values may contain explicit newlines. A template document has no source file, exactly one page and an empty checksum. Missing or invalid template metadata falls back to the built-in drawing frame; unknown field ids are preserved. Schema 23 also adds project line types (`lineTypes`) for schematic media classes, and the `polyline` and `rail` item kinds. Polylines store an optional `lineTypeId` and dashed style; rails store editable `rows`, row spacing and badge/legend toggles. Text boxes may carry an optional `runs` array of formatted ranges (`text`, `bold`, `italic`, `underline`, `size`, `color`); `text` remains the plain-text fallback, so older boxes open unchanged and the schema version does not change. Symbols may also carry an optional free-text `tag` and a `tagOffset`; neither is numbered automatically. Missing count types migrate to the five built-in definitions, missing quantities mean one piece, unknown item ids fall back to `other`, and built-in types cannot be deleted. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Page state beyond the last included page is dropped. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load. Unknown symbol ids are preserved and render as a safe fallback; invalid statuses are dropped.
+Version 1–5 projects load normally and are migrated to schema 24: the old `document` entry becomes the first element of `documents`, and numeric page references are converted to stable page IDs. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Schema 13 adds vector facility symbols with a stable `symbolId`, category-derived colour, rotation, and optional inspection status. Schema 14 adds the optional `symbolSize` on facility symbols; a missing value renders the 24 pt default. Schema 15 adds the optional measurement `labelSize` override and the project `labelSize` and `compactAreaLabels` settings; missing values use a 6 pt label and the full `Perimeter` wording. Schema 16 adds the optional area `labelFit` position, which keeps the label inside the area and fits its size to the available space. Schema 17 adds optional per-page OCR data (`ocr`) with words, bounding boxes, language and engine metadata, and the source document checksum/page used to invalidate stale OCR. Schema 18 adds the radius, diameter and three-point arc measurement kinds; they use the existing points and scale fields. Schema 19 adds angle, slope and volume measurement kinds; volumes store an optional `depth` in the project length unit and use the existing polygon points. Schema 20 adds ordered project count types (`countTypes`) with a stable id, label and one of the built-in glyphs, plus an optional `countQuantity` on count items. Schema 21 adds reusable Count tool presets (`countPresets`) and count-type columns, filters and grouping in saved Markups views. Schema 22 adds optional procurement metadata (`metadata`) for facility, client, project number, revision, author, report date, report title and notes, plus an optional report-logo reference (`reportLogoAssetId`) to an embedded project image asset. Missing metadata migrates to empty values and a missing or invalid logo reference is dropped. Schema 23 adds template sheet documents (`kind: "template"`) with a stable template id and version, a paper size (`A3` or `A2`) and a string map of title-block or table field values. `sheet.details` stores the optional multi-line system/equipment block; field values may contain explicit newlines. A template document has no source file, exactly one page and an empty checksum. Missing or invalid template metadata falls back to the built-in drawing frame; unknown field ids are preserved. Schema 23 also adds project line types (`lineTypes`) for schematic media classes, and the `polyline` and `rail` item kinds. Polylines store an optional `lineTypeId` and dashed style; rails store editable `rows`, row spacing and badge/legend toggles. Text boxes may carry an optional `runs` array of formatted ranges (`text`, `bold`, `italic`, `underline`, `size`, `color`); `text` remains the plain-text fallback, so older boxes open unchanged and the schema version does not change. Symbols may also carry an optional free-text `tag` and a `tagOffset`; neither is numbered automatically. Missing count types migrate to the five built-in definitions, missing quantities mean one piece, unknown item ids fall back to `other`, and built-in types cannot be deleted. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Schema 24 replaces numeric page identity with an ordered `pages` array of `PageRecord` objects. Each record has a stable `id`, a `documentId`, a 1-based source-local `localPage` and a `state` object that holds the calibration, scale lock, name, building, floor and OCR data that used to live in the numeric `pages` map. Items store `pageId` instead of `page`; layers store `homePageId` and key `pageState` by page ID. Page numbers are derived from array order and are never stored. A project may have zero pages and zero documents; empty is valid. `DocumentRef.superseded` marks a source whose remaining pages were not mapped during **Replace source…**. Migration from schema 23 builds the page list in document order from `documents` and `excludedPages`, assigns deterministic IDs, moves each numeric page state into the matching record, and reports invalid numeric references instead of silently remapping them. Old page state beyond the last included page is reported and not kept. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load. Unknown symbol ids are preserved and render as a safe fallback; invalid statuses are dropped.
 
 ```json
 {
-  "schemaVersion": 23,
+  "schemaVersion": 24,
   "name": "Level 01",
   "documents": [
     {
@@ -100,31 +99,41 @@ Version 1–5 projects load normally and are migrated to schema 23: the old `doc
     "notes": "Priced against revision A drawings."
   },
   "reportLogoAssetId": null,
-  "pages": {
-    "1": {
-      "name": "Ground floor",
-      "calibration": {
-        "id": "cal_...",
-        "source": "reference",
-        "p1": { "x": 120, "y": 460 },
-        "p2": { "x": 420, "y": 460 },
-        "knownLength": 10,
-        "unit": "m",
-        "pointsPerMeter": 30,
-        "createdAt": "2026-10-20T18:41:05.215Z"
-      },
-      "scaleLocked": true
+  "pages": [
+    {
+      "id": "page_1",
+      "documentId": "doc_8f21c3",
+      "localPage": 1,
+      "state": {
+        "name": "Ground floor",
+        "calibration": {
+          "id": "cal_...",
+          "source": "reference",
+          "p1": { "x": 120, "y": 460 },
+          "p2": { "x": 420, "y": 460 },
+          "knownLength": 10,
+          "unit": "m",
+          "pointsPerMeter": 30,
+          "createdAt": "2026-10-20T18:41:05.215Z"
+        },
+        "scaleLocked": true
+      }
     },
-    "2": {
-      "calibration": {
-        "id": "cal_...",
-        "source": "manual",
-        "ratio": 100,
-        "pointsPerMeter": 28.34645669,
-        "createdAt": "2026-10-20T18:42:11.031Z"
+    {
+      "id": "page_2",
+      "documentId": "doc_8f21c3",
+      "localPage": 2,
+      "state": {
+        "calibration": {
+          "id": "cal_...",
+          "source": "manual",
+          "ratio": 100,
+          "pointsPerMeter": 28.34645669,
+          "createdAt": "2026-10-20T18:42:11.031Z"
+        }
       }
     }
-  },
+  ],
   "layers": [
     {
       "id": "layer_...",
@@ -134,11 +143,22 @@ Version 1–5 projects load normally and are migrated to schema 23: the old `doc
       "locked": false,
       "opacity": 1,
       "color": "#4cc9f0",
-      "homePage": 1,
+      "homePageId": "page_1",
       "pageState": {
-        "2": { "visible": false }
+        "page_2": { "visible": false }
       },
-      "items": []
+      "items": [
+        {
+          "id": "item_...",
+          "pageId": "page_1",
+          "kind": "length",
+          "points": [{ "x": 120, "y": 460 }, { "x": 420, "y": 460 }],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "createdAt": "2026-10-20T18:41:05.215Z",
+          "updatedAt": "2026-10-20T18:41:05.215Z"
+        }
+      ]
     }
   ],
   "activeLayerId": "layer_..."
@@ -154,7 +174,7 @@ Two companion stores sit outside the project JSON and are never part of a packag
 - `<project>.gridscalr.lock` is an advisory sidecar lease with app instance, project ID, open time, heartbeat, project hash, coarse host label and app version. It is not project data. Deleting it never changes the project; a stale or corrupt lock is ignored and can be cleared explicitly.
 - Recovery snapshots and structural checkpoints live in the local browser/desktop recovery store (IndexedDB, with a small localStorage fallback), scoped by project ID and app instance. They store a serialized project plus the base file SHA-256, but they are never written into the `.gridscalr` file, a package or a report.
 
-Neither store changes `schemaVersion`; the current schema remains 23.
+Neither store changes `schemaVersion`; the current schema remains 24.
 
 Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The Rust side resolves real paths, including symlinks and junctions, and compares file identities when the destination exists, so a source drawing cannot be reached through an alternate spelling or link.
 

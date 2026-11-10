@@ -22,7 +22,6 @@ import { applyTransformState } from "./transform";
 import { beginSelection, updateHover } from "./targets";
 import type { DragState, MarqueeState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
-
 /**
  * Owns pointer input that is independent of a particular gesture: coordinate
  * conversion, pointer capture, cursor selection, wheel navigation, space-pan
@@ -261,7 +260,6 @@ export class PointerController {
     }
     this.creationDown(page, event, tool);
   };
-
   private beginSelection(page: Point, screen: Point, event: PointerEvent): void {
     beginSelection(page, screen, event, {
       toScreen: (point) => this.host.toScreen(point),
@@ -277,7 +275,6 @@ export class PointerController {
       measurementLabelHit: (point) => this.host.measurementLabelHit(point),
     });
   }
-
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (!store.project) return;
     const screen = localPoint(this.element, event);

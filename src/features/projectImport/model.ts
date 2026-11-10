@@ -1,4 +1,5 @@
 import { makeId } from "../../model/calibration";
+import { importedLayerIdentity, importInsertionIndex } from "../pageModel";
 import { normalizeLayerOrder } from "../../model/layers";
 import { pageRecordAt, pageNumber } from "../../model/pages";
 import type {
@@ -225,7 +226,7 @@ export function prepareProjectImport(
     groups.set(entry.documentIndex, list);
   }
 
-  let nextPage = (insertIndex ?? destination.pages.length) + 1;
+  let nextPage = importInsertionIndex(destination, insertIndex) + 1;
   let ocrDropped = 0;
   let imageItemsSkipped = 0;
   const documents: DocumentRef[] = [];
@@ -290,10 +291,11 @@ export function prepareProjectImport(
         const pageItems = sourceLayer.items.filter((item) => item.pageId === entry.record.id);
         const hasOverride = Boolean(sourceLayer.pageState?.[entry.record.id]);
         if (!pageItems.length && !hasOverride) continue;
-        let layer = layersBySourceId.get(sourceLayer.id);
+        const identity = importedLayerIdentity(sourceLayer);
+        let layer = layersBySourceId.get(identity);
         if (!layer) {
           layer = createImportedLayer(sourceLayer, newPageId);
-          layersBySourceId.set(sourceLayer.id, layer);
+          layersBySourceId.set(identity, layer);
           createdLayers.push(layer);
         }
         applyImportedLayerPageState(layer, sourceLayer, entry.record.id, newPageId);

@@ -91,7 +91,6 @@ export class PdfRenderer {
     pageMaps?: number[][],
     pageOrder?: DocumentPageOrderEntry[] | null,
   ) {
-    if (!documents.length) throw new Error(t("pdf.noDocument"));
     this.pageOrder = pageOrder ?? null;
     this.pageMaps = documents.map((document, index) => {
       const requested = pageMaps?.[index];

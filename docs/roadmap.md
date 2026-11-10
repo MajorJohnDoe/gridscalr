@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.22.4** · Project-file schema: **23**
+Current version: **0.22.4** · Project-file schema: **24**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -271,7 +271,7 @@ full list.
 | Decision | Current position |
 | --- | --- |
 | Concurrent project edits | Accepted direction in [ADR 0010](adr/0010-project-file-integrity.md). Implementation not started; current behaviour is last save wins. |
-| Page order | Accepted direction in [ADR 0011](adr/0011-page-list-and-source-replacement.md). Append-only remains until schema 24 ships. |
+| Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Accepted direction in [ADR 0012](adr/0012-source-storage-modes.md). Reference mode is current; managed copies are planned. |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
