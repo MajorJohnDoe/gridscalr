@@ -242,7 +242,9 @@ source PDF or TIF is never modified; every save and export resolves real paths,
 including symlinks and junctions, and refuses to overwrite any document that
 belongs to the project. Project files are replaced atomically, so a failed save
 keeps the previous file. Project data autosaves to a local IndexedDB recovery
-store.
+store. In the desktop shell, `src-tauri/src/project_write.rs` owns conditional
+writes and file stamps, while `src-tauri/src/project_backup.rs` owns app-data
+backups.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

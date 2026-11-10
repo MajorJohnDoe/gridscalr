@@ -213,7 +213,8 @@ src/
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
   src/commands.rs        atomic text/binary replacement, canonical path checks, structured errors, reads, demo copy, smoke exit and commands
-  src/project_write.rs   conditional project write, read-back hash stamp and rolling app-data backups
+  src/project_write.rs   conditional project write, read-back hash stamp and file-stamp command
+  src/project_backup.rs  app-data backup directory, naming, rolling rotation and backup commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions
