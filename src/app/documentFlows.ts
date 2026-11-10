@@ -127,7 +127,7 @@ export async function loadProjectText(
 ): Promise<boolean> {
   if (!(await host.confirmReplace(t("app.replaceProject")))) return false;
   let project: Project;
-  let migrationWarnings = 0;
+  let migrationWarnings: number;
   try {
     const parsed = parseProjectWithReport(text);
     project = parsed.project;
