@@ -109,6 +109,14 @@ export class ProjectLeaseSession {
     this.startHeartbeat();
   }
 
+  /** A save must not proceed if another instance now owns the lease. */
+  async verifyOwnership(): Promise<boolean> {
+    if (!this.leasePath) return true;
+    const read = await readProjectLease(this.leasePath);
+    const state = classifyLease(read, this.instanceId);
+    return state !== "liveOther" && state !== "staleOther";
+  }
+
   async release(): Promise<void> {
     const path = this.leasePath;
     if (!path) {

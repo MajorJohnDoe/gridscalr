@@ -102,6 +102,8 @@ Full AGENTS pre-commit list plus `npm run test:ui`, `test:import`,
   project ID, opened time, 30-second heartbeat, project hash, coarse host label
   and app version. A live foreign lease offers **Open read-only** (default),
   **Take over** and **Cancel**. Stale and corrupt leases are information only.
+  A save verifies lease ownership first, so a taken-over session cannot write
+  even before its next heartbeat.
 - Read-only sessions can export, package and **Save a copy**, but normal Save and
   Save As are refused and the status bar shows **Read-only**.
 - Non-blocking file-change banner with **Reload from disk**, using a cheap

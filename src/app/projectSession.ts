@@ -193,6 +193,7 @@ export class ProjectSession {
       toast(t("sessionRecovery.readOnly.saveBlocked"), "warning");
       return false;
     }
+    if (this.recovery && !(await this.recovery.confirmWriteAccess())) return false;
     const saved = await saveProjectWithIntegrity(this.savePorts(), saveAs);
     if (saved) await this.recovery?.onSaved(store.projectPath);
     return saved;

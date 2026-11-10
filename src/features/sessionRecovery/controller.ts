@@ -98,6 +98,17 @@ export class SessionRecoveryController {
     this.leases.abort();
   }
 
+  /**
+   * Confirms this instance still owns the project lease. A takeover by another
+   * instance turns the session read-only before any file write can happen.
+   */
+  async confirmWriteAccess(): Promise<boolean> {
+    if (!this.host.desktop) return true;
+    const owned = await this.leases.verifyOwnership();
+    if (!owned) this.handleOwnershipLost();
+    return owned;
+  }
+
   async onSaved(path: string | null): Promise<void> {
     if (this.currentProjectId) {
       await clearAutosavesForInstance(this.currentProjectId, this.instanceId);

@@ -636,7 +636,7 @@ Before a structural action GridScalr writes a labelled checkpoint to the same lo
 
 In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
 
-- If another live instance has the project open, GridScalr offers **Open read-only** (the default), **Take over** and **Cancel**. Choose **Take over** only when the other session is finished; the other instance then sees a save conflict or becomes read-only on its next heartbeat.
+- If another live instance has the project open, GridScalr offers **Open read-only** (the default), **Take over** and **Cancel**. Choose **Take over** only when the other session is finished; the other instance then becomes read-only on its next heartbeat or save attempt.
 - A read-only session can view, export, package and **Save a copy…**, but a normal Save is refused with a clear message. The status bar shows **Read-only**.
 - A lock without a heartbeat for more than five minutes, or a corrupt lock, is information only and never blocks opening. A stale-lock banner offers **Clear stale lock**.
 - The lock is advisory. Cloud clients and sleeping laptops make it unreliable; the conditional save described above is the actual protection. A crash can leave a stale lock for up to five minutes.
