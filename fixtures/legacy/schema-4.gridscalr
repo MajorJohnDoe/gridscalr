@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 4,
+  "id": "prj_schema_4",
+  "name": "Schema 4 fixture",
+  "document": {
+    "id": "doc_main",
+    "kind": "pdf",
+    "name": "Legacy plan.pdf",
+    "path": "/legacy/schema-4/Legacy plan.pdf",
+    "relativePath": "Legacy plan.pdf",
+    "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "pageCount": 2,
+    "sizeBytes": 2048
+  },
+  "settings": {
+    "lengthUnit": "m",
+    "areaUnit": "m2",
+    "showGrid": false,
+    "showCalibration": true,
+    "snapToGeometry": true,
+    "quantity": {
+      "defaultCategoryId": "cat_other",
+      "wastePercent": 5,
+      "roundingStep": 0.5
+    },
+    "snapTolerancePx": 10
+  },
+  "categories": [
+    {
+      "id": "cat_floor",
+      "name": "Floor",
+      "wastePercent": 10,
+      "roundingStep": 0.5
+    },
+    {
+      "id": "cat_other",
+      "name": "Other"
+    }
+  ],
+  "pages": {
+    "1": {
+      "calibration": {
+        "id": "cal_fixture",
+        "p1": {
+          "x": 0,
+          "y": 0
+        },
+        "p2": {
+          "x": 100,
+          "y": 0
+        },
+        "knownLength": 10,
+        "unit": "m",
+        "pointsPerMeter": 10,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    "2": {
+      "calibration": {
+        "id": "cal_manual",
+        "source": "manual",
+        "ratio": 100,
+        "pointsPerMeter": 28.34645669,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "scaleLocked": true
+    }
+  },
+  "layers": [
+    {
+      "id": "layer_draw",
+      "name": "Markups",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "items": [
+        {
+          "id": "item_text",
+          "page": 1,
+          "kind": "text",
+          "points": [
+            {
+              "x": 160,
+              "y": 420
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Legacy note",
+          "visible": false,
+          "locked": true
+        }
+      ]
+    },
+    {
+      "id": "layer_measure",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#e30613",
+      "items": [
+        {
+          "id": "item_measure",
+          "page": 1,
+          "kind": "length",
+          "points": [
+            {
+              "x": 100,
+              "y": 100
+            },
+            {
+              "x": 220,
+              "y": 100
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "room": "Room A"
+        },
+        {
+          "id": "item_count",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 300,
+              "y": 200
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other",
+          "countType": "other"
+        },
+        {
+          "id": "item_area",
+          "page": 1,
+          "kind": "area",
+          "points": [
+            {
+              "x": 100,
+              "y": 300
+            },
+            {
+              "x": 240,
+              "y": 380
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "areaMode": "subtract",
+          "areaShape": "rectangle"
+        }
+      ]
+    }
+  ],
+  "activeLayerId": "layer_measure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}

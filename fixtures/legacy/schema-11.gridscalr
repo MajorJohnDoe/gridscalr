@@ -1,0 +1,338 @@
+{
+  "schemaVersion": 11,
+  "id": "prj_schema_11",
+  "name": "Schema 11 fixture",
+  "documents": [
+    {
+      "id": "doc_main",
+      "kind": "pdf",
+      "name": "Legacy plan.pdf",
+      "path": "/legacy/schema-11/Legacy plan.pdf",
+      "relativePath": "Legacy plan.pdf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "pageCount": 3,
+      "sizeBytes": 2048,
+      "excludedPages": [
+        3
+      ]
+    },
+    {
+      "id": "doc_scan",
+      "kind": "tiff",
+      "name": "Legacy scan.tif",
+      "path": "/legacy/schema-11/Legacy scan.tif",
+      "relativePath": "Legacy scan.tif",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "pageCount": 1,
+      "sizeBytes": 4096,
+      "embeddedPdf": "JVBERi0xLjQK",
+      "source": {
+        "format": "tiff",
+        "dpi": [
+          400,
+          400
+        ],
+        "originalName": "Legacy scan.tif"
+      },
+      "copiedFrom": {
+        "documentId": "doc_main",
+        "page": 1
+      }
+    }
+  ],
+  "settings": {
+    "lengthUnit": "m",
+    "areaUnit": "m2",
+    "showGrid": false,
+    "showCalibration": true,
+    "snapToGeometry": true,
+    "quantity": {
+      "defaultCategoryId": "cat_other",
+      "wastePercent": 5,
+      "roundingStep": 0.5
+    },
+    "snapTolerancePx": 10,
+    "stampPresets": [
+      "APPROVED",
+      "FOR INFORMATION"
+    ],
+    "smartLengthUnits": true
+  },
+  "categories": [
+    {
+      "id": "cat_floor",
+      "name": "Floor",
+      "wastePercent": 10,
+      "roundingStep": 0.5
+    },
+    {
+      "id": "cat_other",
+      "name": "Other"
+    }
+  ],
+  "assets": {
+    "asset_logo": {
+      "id": "asset_logo",
+      "name": "Legacy logo.png",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1,
+      "byteSize": 68,
+      "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  },
+  "pages": {
+    "1": {
+      "name": "Ground floor",
+      "calibration": {
+        "id": "cal_fixture",
+        "p1": {
+          "x": 0,
+          "y": 0
+        },
+        "p2": {
+          "x": 100,
+          "y": 0
+        },
+        "knownLength": 10,
+        "unit": "m",
+        "pointsPerMeter": 10,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      }
+    },
+    "2": {
+      "name": "Upper floor",
+      "calibration": {
+        "id": "cal_manual",
+        "source": "manual",
+        "ratio": 100,
+        "pointsPerMeter": 28.34645669,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "scaleLocked": true
+    },
+    "3": {}
+  },
+  "layers": [
+    {
+      "id": "layer_draw",
+      "name": "Markups",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "items": [
+        {
+          "id": "item_text",
+          "page": 1,
+          "kind": "text",
+          "points": [
+            {
+              "x": 160,
+              "y": 420
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Legacy note",
+          "visible": false,
+          "locked": true
+        },
+        {
+          "id": "item_image",
+          "page": 1,
+          "kind": "image",
+          "points": [
+            {
+              "x": 80,
+              "y": 440
+            },
+            {
+              "x": 160,
+              "y": 500
+            }
+          ],
+          "color": "#7aa2f7",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "image": {
+            "assetId": "asset_logo",
+            "mode": "annotation"
+          }
+        },
+        {
+          "id": "item_callout",
+          "page": 1,
+          "kind": "callout",
+          "points": [
+            {
+              "x": 320,
+              "y": 360
+            },
+            {
+              "x": 360,
+              "y": 330
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Check valve",
+          "fontSize": 12
+        },
+        {
+          "id": "item_stamp",
+          "page": 1,
+          "kind": "stamp",
+          "points": [
+            {
+              "x": 340,
+              "y": 420
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "APPROVED"
+        },
+        {
+          "id": "item_cloud",
+          "page": 1,
+          "kind": "cloud",
+          "points": [
+            {
+              "x": 300,
+              "y": 450
+            },
+            {
+              "x": 360,
+              "y": 450
+            },
+            {
+              "x": 330,
+              "y": 490
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Rev A",
+          "cloudRadius": 8
+        },
+        {
+          "id": "item_delta",
+          "page": 1,
+          "kind": "delta",
+          "points": [
+            {
+              "x": 380,
+              "y": 450
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "A"
+        }
+      ],
+      "homePage": 1,
+      "pageState": {
+        "2": {
+          "visible": false
+        }
+      }
+    },
+    {
+      "id": "layer_measure",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#e30613",
+      "items": [
+        {
+          "id": "item_measure",
+          "page": 1,
+          "kind": "length",
+          "points": [
+            {
+              "x": 100,
+              "y": 100
+            },
+            {
+              "x": 220,
+              "y": 100
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "room": "Room A",
+          "labelOffset": {
+            "x": 5,
+            "y": -5
+          },
+          "labelAnchor": {
+            "x": 10,
+            "y": 0
+          },
+          "lineStyle": "dashed"
+        },
+        {
+          "id": "item_count",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 300,
+              "y": 200
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other",
+          "countType": "other"
+        },
+        {
+          "id": "item_area",
+          "page": 1,
+          "kind": "area",
+          "points": [
+            {
+              "x": 100,
+              "y": 300
+            },
+            {
+              "x": 240,
+              "y": 380
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "areaMode": "subtract",
+          "areaShape": "rectangle"
+        }
+      ],
+      "homePage": 1
+    }
+  ],
+  "activeLayerId": "layer_measure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}

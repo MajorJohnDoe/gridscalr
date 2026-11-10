@@ -1,0 +1,586 @@
+{
+  "schemaVersion": 22,
+  "id": "prj_schema_22",
+  "name": "Schema 22 fixture",
+  "documents": [
+    {
+      "id": "doc_main",
+      "kind": "pdf",
+      "name": "Legacy plan.pdf",
+      "path": "/legacy/schema-22/Legacy plan.pdf",
+      "relativePath": "Legacy plan.pdf",
+      "sha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "pageCount": 3,
+      "sizeBytes": 2048,
+      "excludedPages": [
+        3
+      ]
+    },
+    {
+      "id": "doc_scan",
+      "kind": "tiff",
+      "name": "Legacy scan.tif",
+      "path": "/legacy/schema-22/Legacy scan.tif",
+      "relativePath": "Legacy scan.tif",
+      "sha256": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "pageCount": 1,
+      "sizeBytes": 4096,
+      "embeddedPdf": "JVBERi0xLjQK",
+      "source": {
+        "format": "tiff",
+        "dpi": [
+          400,
+          400
+        ],
+        "originalName": "Legacy scan.tif"
+      },
+      "copiedFrom": {
+        "documentId": "doc_main",
+        "page": 1
+      }
+    }
+  ],
+  "settings": {
+    "lengthUnit": "m",
+    "areaUnit": "m2",
+    "showGrid": false,
+    "showCalibration": true,
+    "snapToGeometry": true,
+    "quantity": {
+      "defaultCategoryId": "cat_other",
+      "wastePercent": 5,
+      "roundingStep": 0.5
+    },
+    "snapTolerancePx": 10,
+    "stampPresets": [
+      "APPROVED",
+      "FOR INFORMATION"
+    ],
+    "smartLengthUnits": true,
+    "labelSize": 7,
+    "compactAreaLabels": true
+  },
+  "categories": [
+    {
+      "id": "cat_floor",
+      "name": "Floor",
+      "wastePercent": 10,
+      "roundingStep": 0.5
+    },
+    {
+      "id": "cat_other",
+      "name": "Other"
+    }
+  ],
+  "countTypes": [
+    {
+      "id": "door",
+      "label": "Door",
+      "glyph": "door"
+    },
+    {
+      "id": "window",
+      "label": "Window",
+      "glyph": "window"
+    },
+    {
+      "id": "valve",
+      "label": "Valve",
+      "glyph": "fixture"
+    },
+    {
+      "id": "other",
+      "label": "Other",
+      "glyph": "other"
+    }
+  ],
+  "countPresets": [
+    {
+      "id": "preset_valve",
+      "countType": "valve",
+      "categoryId": "cat_other",
+      "room": "Room A",
+      "quantity": 2
+    }
+  ],
+  "assets": {
+    "asset_logo": {
+      "id": "asset_logo",
+      "name": "Legacy logo.png",
+      "mime": "image/png",
+      "width": 1,
+      "height": 1,
+      "byteSize": 68,
+      "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="
+    }
+  },
+  "pages": {
+    "1": {
+      "name": "Ground floor",
+      "building": "House A",
+      "floor": "Floor 1",
+      "calibration": {
+        "id": "cal_fixture",
+        "p1": {
+          "x": 0,
+          "y": 0
+        },
+        "p2": {
+          "x": 100,
+          "y": 0
+        },
+        "knownLength": 10,
+        "unit": "m",
+        "pointsPerMeter": 10,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "ocr": {
+        "text": "Legacy OCR text",
+        "words": [
+          {
+            "text": "Legacy",
+            "x": 10,
+            "y": 10,
+            "width": 40,
+            "height": 12,
+            "confidence": 90
+          }
+        ],
+        "engine": "tesseract",
+        "languages": "eng",
+        "generatedAt": "2026-01-01T00:00:00.000Z",
+        "documentSha256": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "sourcePage": 1,
+        "width": 600,
+        "height": 800
+      }
+    },
+    "2": {
+      "name": "Upper floor",
+      "building": "House A",
+      "floor": "Floor 2",
+      "calibration": {
+        "id": "cal_manual",
+        "source": "manual",
+        "ratio": 100,
+        "pointsPerMeter": 28.34645669,
+        "createdAt": "2026-01-01T00:00:00.000Z"
+      },
+      "scaleLocked": true
+    },
+    "3": {}
+  },
+  "markupsViews": [
+    {
+      "id": "view_legacy",
+      "name": "Legacy view",
+      "columns": [
+        "name",
+        "page",
+        "category",
+        "countType"
+      ],
+      "pageFilter": "all",
+      "typeFilter": "all",
+      "categoryId": "cat_floor",
+      "symbolCategory": null,
+      "countType": "valve",
+      "search": "legacy",
+      "groupBy": [
+        "countType",
+        "room"
+      ],
+      "sort": {
+        "column": "name",
+        "direction": "asc"
+      }
+    }
+  ],
+  "metadata": {
+    "facility": "Legacy facility",
+    "client": "Legacy client",
+    "projectNumber": "2026-159",
+    "revision": "A",
+    "preparedBy": "Fixture generator",
+    "reportDate": "2026-01-01",
+    "notes": "Migration corpus fixture.",
+    "reportTitle": "Legacy quantities"
+  },
+  "reportLogoAssetId": "asset_logo",
+  "layers": [
+    {
+      "id": "layer_draw",
+      "name": "Markups",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "items": [
+        {
+          "id": "item_text",
+          "page": 1,
+          "kind": "text",
+          "points": [
+            {
+              "x": 160,
+              "y": 420
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Legacy note",
+          "visible": false,
+          "locked": true
+        },
+        {
+          "id": "item_image",
+          "page": 1,
+          "kind": "image",
+          "points": [
+            {
+              "x": 80,
+              "y": 440
+            },
+            {
+              "x": 160,
+              "y": 500
+            }
+          ],
+          "color": "#7aa2f7",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "image": {
+            "assetId": "asset_logo",
+            "mode": "annotation"
+          }
+        },
+        {
+          "id": "item_callout",
+          "page": 1,
+          "kind": "callout",
+          "points": [
+            {
+              "x": 320,
+              "y": 360
+            },
+            {
+              "x": 360,
+              "y": 330
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Check valve",
+          "fontSize": 12
+        },
+        {
+          "id": "item_stamp",
+          "page": 1,
+          "kind": "stamp",
+          "points": [
+            {
+              "x": 340,
+              "y": 420
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "APPROVED"
+        },
+        {
+          "id": "item_cloud",
+          "page": 1,
+          "kind": "cloud",
+          "points": [
+            {
+              "x": 300,
+              "y": 450
+            },
+            {
+              "x": 360,
+              "y": 450
+            },
+            {
+              "x": 330,
+              "y": 490
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "Rev A",
+          "cloudRadius": 8
+        },
+        {
+          "id": "item_delta",
+          "page": 1,
+          "kind": "delta",
+          "points": [
+            {
+              "x": 380,
+              "y": 450
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "text": "A"
+        },
+        {
+          "id": "item_symbol",
+          "page": 1,
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 240,
+              "y": 250
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "symbolId": "fire.extinguisher",
+          "status": "approved",
+          "symbolSize": 32
+        }
+      ],
+      "homePage": 1,
+      "pageState": {
+        "2": {
+          "visible": false
+        }
+      }
+    },
+    {
+      "id": "layer_measure",
+      "name": "Measurements",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#e30613",
+      "items": [
+        {
+          "id": "item_measure",
+          "page": 1,
+          "kind": "length",
+          "points": [
+            {
+              "x": 100,
+              "y": 100
+            },
+            {
+              "x": 220,
+              "y": 100
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "room": "Room A",
+          "labelOffset": {
+            "x": 5,
+            "y": -5
+          },
+          "labelAnchor": {
+            "x": 10,
+            "y": 0
+          },
+          "lineStyle": "dashed",
+          "labelSize": 8
+        },
+        {
+          "id": "item_count",
+          "page": 1,
+          "kind": "count",
+          "points": [
+            {
+              "x": 300,
+              "y": 200
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other",
+          "countType": "valve",
+          "countQuantity": 3
+        },
+        {
+          "id": "item_area",
+          "page": 1,
+          "kind": "area",
+          "points": [
+            {
+              "x": 100,
+              "y": 300
+            },
+            {
+              "x": 240,
+              "y": 380
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_floor",
+          "areaMode": "subtract",
+          "areaShape": "rectangle",
+          "labelFit": "center"
+        },
+        {
+          "id": "item_radius",
+          "page": 1,
+          "kind": "radius",
+          "points": [
+            {
+              "x": 400,
+              "y": 100
+            },
+            {
+              "x": 460,
+              "y": 100
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other"
+        },
+        {
+          "id": "item_diameter",
+          "page": 1,
+          "kind": "diameter",
+          "points": [
+            {
+              "x": 400,
+              "y": 160
+            },
+            {
+              "x": 460,
+              "y": 160
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other"
+        },
+        {
+          "id": "item_arc",
+          "page": 1,
+          "kind": "arc",
+          "points": [
+            {
+              "x": 400,
+              "y": 220
+            },
+            {
+              "x": 460,
+              "y": 220
+            },
+            {
+              "x": 430,
+              "y": 260
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other"
+        },
+        {
+          "id": "item_angle",
+          "page": 1,
+          "kind": "angle",
+          "points": [
+            {
+              "x": 500,
+              "y": 100
+            },
+            {
+              "x": 550,
+              "y": 100
+            },
+            {
+              "x": 500,
+              "y": 150
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other"
+        },
+        {
+          "id": "item_slope",
+          "page": 1,
+          "kind": "slope",
+          "points": [
+            {
+              "x": 500,
+              "y": 200
+            },
+            {
+              "x": 560,
+              "y": 230
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other"
+        },
+        {
+          "id": "item_volume",
+          "page": 1,
+          "kind": "volume",
+          "points": [
+            {
+              "x": 500,
+              "y": 300
+            },
+            {
+              "x": 580,
+              "y": 300
+            },
+            {
+              "x": 560,
+              "y": 360
+            }
+          ],
+          "color": "#e30613",
+          "strokeWidth": 2,
+          "createdAt": "2026-01-01T00:00:00.000Z",
+          "updatedAt": "2026-01-01T00:00:00.000Z",
+          "categoryId": "cat_other",
+          "depth": 2.5
+        }
+      ],
+      "homePage": 1
+    }
+  ],
+  "activeLayerId": "layer_measure",
+  "createdAt": "2026-01-01T00:00:00.000Z",
+  "updatedAt": "2026-01-01T00:00:00.000Z"
+}
