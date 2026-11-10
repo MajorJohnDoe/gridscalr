@@ -446,8 +446,9 @@ GitHub CI on Ubuntu, Windows and macOS.
 
 ## Phase 7 — robustness, concurrency and migration gates (#159)
 
-Status: implemented on `feat/159-robustness-gates`. No app version bump; schema
-stays 25.
+Status: implemented on `feat/159-robustness-gates`, PR
+[#166](https://github.com/MajorJohnDoe/gridscalr/pull/166). No app version bump;
+schema stays 25.
 
 ### Scope delivered
 
