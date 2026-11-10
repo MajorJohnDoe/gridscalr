@@ -122,17 +122,17 @@ export async function loadProjectText(
   host: DocumentFlowHost,
   text: string,
   projectPath: string | null,
-): Promise<void> {
-  if (!(await host.confirmReplace(t("app.replaceProject")))) return;
+): Promise<boolean> {
+  if (!(await host.confirmReplace(t("app.replaceProject")))) return false;
   let project: Project;
   try {
     project = parseProject(text);
   } catch (error) {
     logEvent("error", `open project failed: ${errorMessage(error)}`);
     await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
-    return;
+    return false;
   }
-  await loadProjectData(host, project, projectPath, false);
+  return loadProjectData(host, project, projectPath, false);
 }
 
 export async function loadProjectData(
@@ -140,7 +140,7 @@ export async function loadProjectData(
   project: Project,
   projectPath: string | null,
   dirty: boolean,
-): Promise<void> {
+): Promise<boolean> {
   host.closeSearch();
   const loaded: PDFDocumentProxy[] = [];
   const loadedById = new Map<string, PDFDocumentProxy>();
@@ -154,7 +154,7 @@ export async function loadProjectData(
 
   for (const documentRef of project.documents) {
     if (documentRef.kind === "template") {
-      if (!documentRef.template) return;
+      if (!documentRef.template) return false;
       const cacheKey = `template:${documentRef.template.id}:${documentRef.template.version}:${documentRef.template.paper}:${currentLocale()}`;
       const cached = loadedByKey.get(cacheKey);
       if (cached) {
@@ -165,7 +165,7 @@ export async function loadProjectData(
       }
       const bytes = await sheetBytes(documentRef.template);
       const document = await openDocument(bytes, documentRef.name);
-      if (!document) return;
+      if (!document) return false;
       documentRef.pageCount = 1;
       loaded.push(document);
       loadedById.set(documentRef.id, document);
@@ -218,7 +218,7 @@ export async function loadProjectData(
 
     if (!bytes) {
       const picked = await pickPdf();
-      if (!picked) return;
+      if (!picked) return false;
       bytes = picked.bytes;
       pdfPath = picked.path;
       documentRef.name = picked.name;
@@ -228,10 +228,10 @@ export async function loadProjectData(
     // A TIF document carries the hash of the original .tif while `bytes` is
     // the derived PDF, so only referenced PDFs can be checksum verified here.
     const hash = documentRef.kind === "pdf" ? await hashBytes(bytes) : "";
-    if (!(await confirmChecksumMismatch(documentRef, hash))) return;
+    if (!(await confirmChecksumMismatch(documentRef, hash))) return false;
 
     const document = await openDocument(bytes, documentRef.name);
-    if (!document) return;
+    if (!document) return false;
 
     if (documentRef.pageCount !== document.numPages) {
       toast(
@@ -269,4 +269,5 @@ export async function loadProjectData(
     dirty ? t("app.autosavedRestored") : t("app.loadedProject", { name: project.name }),
     "success",
   );
+  return true;
 }

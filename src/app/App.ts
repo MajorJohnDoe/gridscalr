@@ -98,6 +98,7 @@ import {
 import { toast } from "../ui/toast";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { logEvent } from "../features/diagnostics/log";
+import { writeProjectConditional } from "../features/saveIntegrity";
 import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
@@ -152,6 +153,8 @@ export class App {
       saveProject: () => void this.session.saveProject(false),
       saveProjectAs: () => void this.session.saveProject(true),
       saveProjectCopy: () => void this.session.saveProjectCopy(),
+      backupProject: () => void this.session.backupNowFlow(),
+      restoreProjectBackup: () => void this.session.restoreBackupFlow(),
       packageProject: () => void packageProjectFlow(createPackageHost(this.packageFlowHost())),
       openPackage: () => void openPackageFlow(createPackageHost(this.packageFlowHost())),
       exportAs: (kind) => void this.exportAs(kind),
@@ -979,7 +982,12 @@ export class App {
     if (!project) throw new Error("no-open-project");
     const protectedPaths = sourceDocumentPaths(project, store.projectPath);
     updateRelativeDocumentPaths(project, path);
-    await writeTextFile(path, serializeProject(project), { forbiddenPaths: protectedPaths });
+    store.fileStamp = await writeProjectConditional(
+      path,
+      serializeProject(project),
+      null,
+      protectedPaths,
+    );
     store.markSaved(path);
   }
 

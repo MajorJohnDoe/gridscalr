@@ -138,6 +138,12 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.file.saveCopy"), actions.saveProjectCopy, {
           disabled: !hasProject,
         }),
+        action(t("menu.file.backupNow"), actions.backupProject, {
+          disabled: !hasProject || !isTauri,
+        }),
+        action(t("menu.file.restoreBackup"), actions.restoreProjectBackup, {
+          disabled: !hasProject || !isTauri,
+        }),
         separator(),
         action(t("menu.file.package"), actions.packageProject, {
           disabled: !hasProject || !isTauri,

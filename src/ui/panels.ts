@@ -32,6 +32,8 @@ export interface PanelActions {
   saveProject: () => void;
   saveProjectAs: () => void;
   saveProjectCopy: () => void;
+  backupProject: () => void;
+  restoreProjectBackup: () => void;
   packageProject: () => void;
   openPackage: () => void;
   exportAs: (

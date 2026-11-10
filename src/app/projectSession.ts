@@ -18,7 +18,6 @@ import {
   serializeProjectCopy,
   sourceDocumentPaths,
   suggestedProjectName,
-  updateRelativeDocumentPaths,
 } from "../io/projectFile";
 import { assertWritablePath } from "../io/writeGuard";
 import { describeError } from "../io/platformError";
@@ -32,12 +31,19 @@ import { toast } from "../ui/toast";
 import { store } from "../state/store";
 import { classifyOpenTarget } from "./openTarget";
 import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
+import {
+  backupProjectNow,
+  computeFileStamp,
+  createSaveIntegrityPorts,
+  restoreProjectBackup,
+  saveProjectWithIntegrity,
+} from "../features/saveIntegrity";
 
 export interface ProjectSessionHost {
   resetProject(): Promise<void>;
   loadNewPdf(bytes: Uint8Array, name: string, path: string | null): Promise<void>;
-  loadProjectText(text: string, projectPath: string | null): Promise<void>;
-  loadProjectData(project: Project, projectPath: string | null, dirty: boolean): Promise<void>;
+  loadProjectText(text: string, projectPath: string | null): Promise<boolean>;
+  loadProjectData(project: Project, projectPath: string | null, dirty: boolean): Promise<boolean>;
   createSheetProject(choice: SheetSourceChoice): Promise<void>;
 }
 
@@ -105,7 +111,7 @@ export class ProjectSession {
     try {
       const picked = await pickProject();
       if (!picked) return;
-      await this.host.loadProjectText(picked.text, picked.path);
+      await this.loadProjectTextWithStamp(picked.text, picked.path);
     } catch (error) {
       logEvent("error", `open project failed: ${describeError(error)}`);
       await messageDialog(t("app.couldNotOpenProject"), describeError(error), "warning");
@@ -169,47 +175,55 @@ export class ProjectSession {
   }
 
   async saveProject(saveAs: boolean): Promise<boolean> {
-    const project = store.project;
-    if (!project) return false;
-    try {
-      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
-      const suggested = suggestedProjectName(project);
-      if (!isTauri) {
-        updateRelativeDocumentPaths(project, null);
-        const json = serializeProject(project);
-        const result = await saveTextFile(json, suggested, projectFilters(), {
-          forbiddenPaths: protectedPaths,
-        });
-        if (!result) return false;
-        store.markSaved(null);
-        toast(t("app.projectDownloaded"), "success");
-        return true;
-      }
+    return saveProjectWithIntegrity(this.savePorts(), saveAs);
+  }
 
-      let path = store.projectPath;
-      if (saveAs || !path) {
-        const chosen = await chooseSavePath(suggested, projectFilters());
-        if (!chosen) return false;
-        path = chosen;
-      }
-      assertWritablePath(path, protectedPaths);
-      updateRelativeDocumentPaths(project, path);
-      const json = serializeProject(project);
-      await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
-      store.markSaved(path);
-      addRecent({
-        kind: "project",
-        path,
-        name: basename(path),
-        at: new Date().toISOString(),
-      });
-      toast(t("app.projectSaved"), "success");
-      return true;
-    } catch (error) {
-      logEvent("error", `save failed: ${describeError(error)}`);
-      await messageDialog(t("app.couldNotSaveProject"), describeError(error), "warning");
-      return false;
+  async backupNowFlow(): Promise<boolean> {
+    return backupProjectNow(this.savePorts());
+  }
+
+  async restoreBackupFlow(): Promise<boolean> {
+    return restoreProjectBackup(this.savePorts());
+  }
+
+  private savePorts() {
+    return createSaveIntegrityPorts({
+      loadProjectText: (text, path) => this.loadProjectTextWithStamp(text, path),
+      loadProjectData: (project, path, dirty) =>
+        this.loadProjectDataWithStamp(project, path, dirty),
+    });
+  }
+
+  private async loadProjectDataWithStamp(
+    project: Project,
+    path: string | null,
+    dirty: boolean,
+  ): Promise<boolean> {
+    const loaded = await this.host.loadProjectData(project, path, dirty);
+    if (!loaded) return false;
+    await this.captureStamp(path);
+    return true;
+  }
+
+  private async captureStamp(path: string | null): Promise<void> {
+    if (!path || !isTauri) {
+      store.fileStamp = null;
+      return;
     }
+    try {
+      store.fileStamp = await computeFileStamp(path);
+    } catch (error) {
+      store.fileStamp = null;
+      logEvent("warn", `project stamp failed: ${describeError(error)}`);
+    }
+  }
+
+  /** Loads a project and captures the disk version it was loaded from. */
+  private async loadProjectTextWithStamp(text: string, path: string | null): Promise<boolean> {
+    const loaded = await this.host.loadProjectText(text, path);
+    if (!loaded) return false;
+    await this.captureStamp(path);
+    return true;
   }
 
   /**
@@ -266,7 +280,7 @@ export class ProjectSession {
       await messageDialog(t("app.couldNotRestoreSession"), describeError(error), "warning");
       return;
     }
-    await this.host.loadProjectData(project, payload.projectPath, true);
+    await this.loadProjectDataWithStamp(project, payload.projectPath, true);
   }
 
   async openRecent(entry: RecentEntry): Promise<void> {
@@ -280,7 +294,7 @@ export class ProjectSession {
         await this.host.loadNewPdf(bytes, entry.name, entry.path);
       } else {
         const text = await readFileText(entry.path);
-        await this.host.loadProjectText(text, entry.path);
+        await this.loadProjectTextWithStamp(text, entry.path);
       }
     } catch (error) {
       logEvent("error", `open recent failed: ${describeError(error)}`);
@@ -296,7 +310,7 @@ export class ProjectSession {
         await this.host.loadNewPdf(bytes, basename(path), path);
       } else if (target === "project") {
         const text = await readFileText(path);
-        await this.host.loadProjectText(text, path);
+        await this.loadProjectTextWithStamp(text, path);
       } else {
         toast(t("app.dropHint"), "warning");
       }
@@ -379,7 +393,7 @@ export class ProjectSession {
       if (target === "drawing") {
         await this.host.loadNewPdf(new Uint8Array(await file.arrayBuffer()), file.name, null);
       } else if (target === "project") {
-        await this.host.loadProjectText(await file.text(), null);
+        await this.loadProjectTextWithStamp(await file.text(), null);
       } else {
         toast(t("app.dropHint"), "warning");
       }

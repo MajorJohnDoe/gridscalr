@@ -156,6 +156,13 @@ export type ChangeReason =
 
 type Listener = (reason: ChangeReason) => void;
 
+/** Runtime-only fingerprint of the file the editor loaded. Never serialized. */
+export interface FileStamp {
+  sha256: string;
+  sizeBytes: number;
+  modifiedAt: number;
+}
+
 export type { AutosavePayload, AutosavePreview };
 
 export function toolLayerKind(tool: ToolId): LayerKind | null {
@@ -237,6 +244,8 @@ export class Store {
   project: Project | null = null;
   ui: UIState = defaultUI();
   projectPath: string | null = null;
+  /** Expected disk state captured on open and after a verified save. */
+  fileStamp: FileStamp | null = null;
   dirty = false;
   /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
   autosaveError: AutosaveError | null = null;
@@ -271,6 +280,7 @@ export class Store {
   setProject(project: Project, projectPath: string | null, dirty = false): void {
     this.project = project;
     this.projectPath = projectPath;
+    this.fileStamp = null;
     this.dirty = dirty;
     this.autosaveError = null;
     this.revision += 1;
@@ -315,6 +325,7 @@ export class Store {
   closeProject(): void {
     this.project = null;
     this.projectPath = null;
+    this.fileStamp = null;
     this.dirty = false;
     this.autosaveError = null;
     this.revision += 1;

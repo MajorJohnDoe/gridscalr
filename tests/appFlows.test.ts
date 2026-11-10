@@ -51,7 +51,7 @@ describe("app flows", () => {
     const confirmDiscard = vi.fn(async () => true);
     const hostValue = packageHost({
       confirmDiscard,
-      loadProjectData: vi.fn(async () => undefined),
+      loadProjectData: vi.fn(async () => true),
       renderer: () => null,
     });
     expect(await hostValue.confirmDiscard()).toBe(true);
