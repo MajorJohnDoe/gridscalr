@@ -282,6 +282,8 @@ describes the current schema 23 code.
 - [ADR 0013](adr/0013-module-first-foundation.md): module-first layout, public
   `index.ts` surfaces, 300/400-line budgets and the foundation module maps.
 - [`plan/robustness.md`](plan/robustness.md): phases, invariants and tests.
+- [`plan/foundation-findings.md`](plan/foundation-findings.md): larger
+  out-of-scope findings discovered during the phases.
 
 Do not describe these behaviours as shipped until their migrations and UI land.
 

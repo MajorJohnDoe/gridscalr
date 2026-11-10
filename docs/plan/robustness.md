@@ -609,6 +609,12 @@ fixture for the previous schema.
 | 6 | P2 | optional | OCG export, annotation export, package/share flow, relink search | Interoperability improves without changing the source of truth |
 | 7 | P1 | none | Stateful tests, conflict tests, crash tests, migration corpus, CI gate | The invariants are enforced by tests, not only by review |
 
+Every phase uses [`foundation-findings.md`](foundation-findings.md) for larger
+problems discovered while implementing. Fix an in-scope problem immediately; log
+an out-of-scope or risky finding with evidence, impact and a next step. Triage the
+log at the phase exit, convert accepted work into an issue and review it before a
+release.
+
 ### Phase 0 — Decision and documentation
 
 Complete 2026-11-10.
@@ -735,6 +741,7 @@ Update in the same change as the behaviour:
 - `docs/shortcuts.md` and the README shortcut table only if a shortcut changes.
 - `docs/roadmap.md`: foundation workstreams and the 1.0 quality gate; no
   version-numbered schedule.
+- `docs/plan/foundation-findings.md`: out-of-scope risks found during each phase.
 - `README.md`: architecture map entries for the new modules.
 - `AGENTS.md`: the rules below.
 
@@ -843,3 +850,5 @@ as the acceptance gate.
 - The source PDF/TIF is never written by any new path.
 - The documentation and `AGENTS.md` describe the actual save, recovery, page and
   source-storage behaviour.
+- The findings log is reviewed at every phase exit, and accepted entries have an
+  issue or an explicit deferred decision.

@@ -106,6 +106,9 @@ the short term and much more expensive later.
   `src-tauri/src/commands.rs`.
 - Each foundation phase issue records its module map before production code is
   added. A new responsibility gets a new file, not a larger existing one.
+- Fix an in-scope problem immediately. Record a larger or out-of-scope finding in
+  [`docs/plan/foundation-findings.md`](docs/plan/foundation-findings.md), triage it
+  at the phase exit and convert accepted work into an issue.
 - `App.ts` and `CanvasView.ts` remain wiring only; the 50–100 line rule in ADR
   0001 still applies.
 
@@ -157,6 +160,11 @@ grow a static TODO list in the roadmap.
   issue. Keep implementation detail and verification in the pull request.
 - Do not add anonymous `TODO` comments. Record technical debt as an issue or a
   roadmap item.
+- During a foundation phase, use
+  [`docs/plan/foundation-findings.md`](docs/plan/foundation-findings.md) for
+  larger findings that are out of scope or need a later decision. Fix in-scope
+  problems immediately. Review the log at every phase exit and before a release;
+  convert accepted entries into issues.
 - Security and dependency alerts stay open until they are fixed or explicitly
   accepted. A tracking issue may reference them but must not replace them.
 
@@ -218,7 +226,9 @@ confirm:
 - a schema change has a migration fixture for the previous schema;
 - a source drawing is never written by the new path;
 - planned conflict, page-order or source-storage behavior is not described as
-  shipped.
+  shipped;
+- new out-of-scope findings are recorded in
+  `docs/plan/foundation-findings.md` and the log is reviewed at the phase exit.
 
 Before a feature or GUI change is reported as complete, either update `docs/user-guide.md`
 and the affected screenshots, or record `Docs impact: deferred — <what>` in the PR.

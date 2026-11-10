@@ -191,6 +191,9 @@ before the first production file is added.
 - `npm run lint` keeps the integration-module import boundaries.
 - `AGENTS.md` states the rule for contributors and agents.
 - Each phase issue carries its module map and acceptance criteria.
+- Larger out-of-scope findings are recorded in
+  [`plan/foundation-findings.md`](../plan/foundation-findings.md) and triaged at
+  the phase exit.
 - A pull request that needs a new file above 400 lines must split it or record an
   explicit decision before implementation.
 

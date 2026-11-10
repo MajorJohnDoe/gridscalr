@@ -10,7 +10,8 @@
 - [ ] Desktop shell or file I/O change
 - [ ] Documentation only
 - [ ] New feature logic lives in a feature module; `App.ts`/`CanvasView.ts` only wire it
-- [ ] File budgets are respected; `npm run check:file-budgets` passes
+- [ ] File budgets are respected; `npm run check:file-budgets` and `npm run check:modules` pass
+- [ ] Foundation findings log reviewed; new out-of-scope risks are in `docs/plan/foundation-findings.md`
 
 Budget impact: <!-- none, or the files and line deltas this PR changes -->
 
@@ -27,6 +28,8 @@ Budget impact: <!-- none, or the files and line deltas this PR changes -->
 ## Verification
 
 - [ ] `npm run check:versions`
+- [ ] `npm run check:file-budgets`
+- [ ] `npm run check:modules`
 - [ ] `npm run check:docs`
 - [ ] `npx tsc --noEmit`
 - [ ] `npm run lint`
