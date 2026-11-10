@@ -11,7 +11,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Current app version: `0.22.4`.
 - Latest public release: `v0.22.4` (2026-11-08).
 - Current project-file schema: `23`.
-- 1.0 target: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance. See `docs/roadmap.md` and `docs/adr/`.
+- 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
 
@@ -22,7 +22,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 3. `docs/workflows.md` — task-oriented guides for operations technicians and technical property managers.
 4. `docs/shortcuts.md` — the in-app shortcut reference.
 5. `docs/screenshots/manifest.json`, the referenced screenshots and the `theme-*.png` showcase used by the README and site — regenerate with `npm run docs:capture` when a visible screen or theme changes.
-6. `docs/roadmap.md` — current status, milestones, deferred work and open decisions.
+6. `docs/roadmap.md` — current status, foundation workstreams, the 1.0 quality gate, backlog and open decisions.
 7. `docs/plan/archive/` — historical planning documents from milestones 2–5. Written in Swedish; not maintained.
 8. `docs/architecture.md` and `docs/adr/` — source map, design choices and accepted architecture decisions.
 9. `docs/project-file.md` — the `.gridscalr` format and schema history.
@@ -34,19 +34,54 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 
 ## Non-negotiable product rules
 
-- The app is local-first. Never overwrite the source PDF. Reference it by path plus SHA-256.
+- The app is local-first. Never overwrite the source PDF. Reference it by path plus SHA-256 through the current reference mode or, from schema 25, an explicit managed-copy mode. Never base64-embed an ordinary PDF in the project JSON.
 - Hidden items must not render, hit-test, or export.
 - Hidden layers behave like hidden items. Layer visibility/locking takes precedence over per-item flags.
 - Locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
 - Project files must remain backward compatible. Every schema change needs migration tests for the current and previous version.
-- New documents always append pages at the end. Never insert or reorder pages.
-- Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items and page state, remap later item/page-state numbers, keep at least one page in the project, and resync the PDF renderer. Source files are never modified.
+- Pages have stable IDs from schema 24 onward. Until that migration lands, do not add new persistent page-number references; use the existing page helpers and keep the migration path open. Imports append by default, but insert, reorder and source replacement become explicit, tested operations with schema 24.
+- Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items and page state, keep the remaining page references valid, and resync the PDF renderer. Until schema 24, preserve the numeric remap and its tests; from schema 24, cascade by page ID. A project may have zero pages from schema 24 onward. Source files are never modified.
 - Derived quantities and summaries are calculated from item data, never stored as separate sources of truth.
 - Exports must use the same visibility and locking rules as the canvas.
 - Invalid or missing colours must never render or export as black. Fall back to the layer or item default.
 - Do not add cloud sync, accounts, telemetry, or network dependencies without an explicit decision.
+
+## Data integrity and concurrent editing
+
+These rules protect the project file as the source of truth. They are accepted
+but not fully implemented yet; the phases are in
+`docs/plan/robustness.md`. Until a phase lands, do not deepen the gap: no new
+unconditional project writes, no new persistent page-number references, and no
+new source-storage mode.
+
+- Every project save is a conditional write against the file version the editor
+  loaded. Never overwrite a file that changed on disk without explicit
+  confirmation.
+- A conflict preserves both versions. The default is **Save as conflicted copy**,
+  never a silent overwrite.
+- Every persistent entity has a stable, unique ID. Never use array indexes or
+  display page numbers as persistent references.
+- Page identity is independent of page order. Imports append by default, but
+  insert, reorder and source replacement are explicit, tested operations that
+  cascade by page ID.
+- A project may have zero pages. Empty is a valid state, not a corrupt file.
+- Autosave is scoped to one project identity and one base file version. Never
+  restore an autosave over a changed disk file.
+- Validate project invariants before saving and after loading. Do not silently
+  drop user data.
+- Structural operations write a recovery checkpoint and stay explicit.
+- A sidecar lock is advisory. It may warn, but it is never the safety mechanism.
+- Source storage is explicit: reference, managed copy or package. Never
+  base64-embed ordinary PDFs in the project JSON.
+- Tests are required for concurrent save, crash during save, migration from the
+  previous schema, and page delete/import/reorder/replace invariants.
+
+See [`docs/adr/0010-project-file-integrity.md`](docs/adr/0010-project-file-integrity.md),
+[`docs/adr/0011-page-list-and-source-replacement.md`](docs/adr/0011-page-list-and-source-replacement.md)
+and [`docs/adr/0012-source-storage-modes.md`](docs/adr/0012-source-storage-modes.md).
+The phased work is in [`docs/plan/robustness.md`](docs/plan/robustness.md).
 
 ## Documentation policy
 
@@ -76,6 +111,10 @@ Rules that keep the deferral honest:
 ## Issue tracking
 
 An issue is the unit of intent; a pull request is the unit of change.
+
+The roadmap is a map of foundation workstreams and a 1.0 quality gate, not a
+version-numbered schedule. Concrete features and fixes belong in issues; do not
+grow a static TODO list in the roadmap.
 
 - Features, user-visible bugs, schema changes, architecture changes, security
   follow-ups and refactors larger than roughly half a day get a GitHub issue.
@@ -142,6 +181,17 @@ Before committing, confirm that:
 - `docs/shortcuts.md` and the README shortcut table include every shortcut that changed.
 - `README.md` highlights, workflow, and architecture map still match the code.
 - `Help → About` still reports the version from `package.json`.
+
+For changes that touch saving, pages, source documents or project loading, also
+confirm:
+
+- the save is conditional and cannot silently overwrite a changed file;
+- every new persistent reference uses a stable ID;
+- page insert, delete, reorder, import or replacement has an invariant test;
+- a schema change has a migration fixture for the previous schema;
+- a source drawing is never written by the new path;
+- planned conflict, page-order or source-storage behavior is not described as
+  shipped.
 
 Before a feature or GUI change is reported as complete, either update `docs/user-guide.md`
 and the affected screenshots, or record `Docs impact: deferred — <what>` in the PR.
@@ -495,8 +545,10 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.21.0:** complete (released 2026-11-07) — PDF export, inline editor and App-flow module splits; light, grey and navy themes with System mode, a CSP-safe pre-paint bootstrap and theme contrast checks. No schema change; the schema remains v23.
 - **0.22.0:** complete (released 2026-11-08) — Medium Gray as the default theme, Dark Gray/Dark Jade rename with preference migration, expandable two-column tool rail, Project settings categories, canonical colour handling and a redrawn rotary heat recovery symbol. No schema change; the schema remains v23.
 - **0.22.4:** complete (released 2026-11-08) — Windows touchpad pinch-to-zoom via WebView2 pinch support, normalized wheel deltas and a touchpad-specific zoom sensitivity. No schema change; the schema remains v23.
+- **Project page import:** complete — import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo (PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152)). No schema change; the schema remains v23.
 
-Update the status in `docs/roadmap.md` when a milestone is completed.
+Update the status in `docs/roadmap.md` when a milestone is completed. The current
+focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.
 
 ## Start-of-session checklist
 
@@ -504,5 +556,5 @@ Update the status in `docs/roadmap.md` when a milestone is completed.
 2. Run `git status` and check that the working tree is not carrying unexplained changes.
 3. Run `gh auth status` if GitHub operations are needed.
 4. Check the latest CI status with `gh run list --repo MajorJohnDoe/gridscalr`.
-5. Confirm which milestone or fix is in scope before editing.
+5. Confirm which foundation workstream or issue is in scope before editing.
 6. Make the smallest coherent change, run the checks, update the in-app documentation, commit, push, and verify CI.

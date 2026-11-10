@@ -267,6 +267,22 @@ Key design choices:
 - **The landing site is separate from the app.** `site/` is hand-authored HTML, CSS and a small progressive-enhancement script with a native-dialog screenshot lightbox. `scripts/build-site.mjs` copies it with the app icon, all documentation screenshots and `site/release.json` values into the gitignored `site-dist/`, and `.github/workflows/pages.yml` deploys that output. The site reuses screenshots and brand assets but no application code or build output. `site/release.json` is the single source for the displayed release version and download links and is updated for every tagged release.
 - **Tauri prototype freezing stays off.** `@pdf-lib/fontkit` assigns to a prototype property inherited from `Object.prototype`; Tauri's `freezePrototype` makes that assignment throw and prevents the window from starting. GridScalr does not execute untrusted JavaScript, so this hardening is left disabled.
 
+## Planned foundation work
+
+The data-integrity work is accepted but not implemented. The source map above
+describes the current schema 23 code.
+
+- [ADR 0010](adr/0010-project-file-integrity.md): conditional project writes,
+  conflict copies, scoped autosave and advisory lock leases.
+- [ADR 0011](adr/0011-page-list-and-source-replacement.md): explicit
+  `PageRecord[]`, stable `PageId`s, empty projects, reorder/insert and source
+  replacement.
+- [ADR 0012](adr/0012-source-storage-modes.md): reference, managed-copy and
+  package source modes.
+- [`plan/robustness.md`](plan/robustness.md): phases, invariants and tests.
+
+Do not describe these behaviours as shipped until their migrations and UI land.
+
 ## Testing and fixtures
 
 - `npm test` runs the Vitest suite for the model, project files, hit testing, TIFF parsing, PDF/XLSX export, revision matching, text search and OCR conversion, viewport math, Markdown, help images, the demo project, canvas geometry, autosave and project-package manifest/path rules.

@@ -1,9 +1,10 @@
 # Project-file robustness and concurrent editing
 
-**Status:** proposed 2026-11-10. Discussion draft; no implementation is scheduled.
+**Status:** accepted 2026-11-10. The decisions are recorded in ADR 0010–0012;
+implementation has not started.
 **Scope:** concurrent edits on local, network and cloud-synced files; save and
-recovery integrity; stable page identity; layer and markup binding; import and
-structural-operation safety.
+recovery integrity; explicit page order and source replacement; source storage
+modes; layer and markup binding; import and structural-operation safety.
 **Related:** PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152),
 issue [#44](https://github.com/MajorJohnDoe/gridscalr/issues/44),
 issue [#53](https://github.com/MajorJohnDoe/gridscalr/issues/53),
@@ -38,6 +39,20 @@ writes, scoped recovery, stable page identities, referential-integrity checks
 and recovery checkpoints for structural operations. It does not add cloud sync,
 accounts, collaboration or a server.
 
+### 1.1 Decisions from the 2026-11-10 discussion
+
+| Question | Decision |
+| --- | --- |
+| Conflict default | **Save as conflicted copy** is the default. Compare with the disk version is a secondary action. |
+| Live lock | Warn and let the user choose, with **Open read-only** as the default. A stale lock must never block. The lock is an advisory lease, not the safety mechanism. |
+| Backup location | Automatic rolling backups and structural checkpoints live in app data. Portable backups are explicit or use `.gridscalr.zip`. No automatic `.bak` beside a cloud-synced project. |
+| Imported layers | One destination layer per source layer identity, shared across pages through `PageId`. Do not match layers by display name. |
+| Revision lineage | A file hash, size and mtime are enough for the first version. No revision DAG, `revisionId` or `parentRevisionId` in schema 24. |
+| Append-only | Append-only is a default import behaviour, not a model law. Stable `PageId`s make insert, reorder and source replacement safe. |
+| Empty project | A project with zero pages is valid for schema 24 and later. It can be filled by importing pages from PDFs or other projects. |
+| Source storage | Support reference, managed copy and package modes. Do not base64-embed ordinary PDFs in `.gridscalr`. |
+| 1.0 | 1.0 is a quality gate, not a schedule. Roadmap work is organised by foundation workstreams; feature details live in issues. |
+
 ## 2. What is already strong
 
 The plan should not regress these properties:
@@ -51,8 +66,9 @@ The plan should not regress these properties:
   and exportable but cannot be edited.
 - Quantities are derived from item data, never stored as a separate source of
   truth.
-- Pages are append-only. New pages append at the end; deleting a page is an
-  explicit structural action.
+- Pages currently append at the end and deleting a page is an explicit
+  structural action. This plan keeps append as the default import behaviour but
+  replaces append-only as a model rule with an explicit page list (§7.4).
 - One bulk edit is one undo step. Importing pages from another project is one
   undo step.
 - Project packages are standard ZIP files with a manifest and per-file SHA-256
@@ -99,7 +115,7 @@ a claim that one product is universally safer.
 | Area | Bluebeam Revu | GridScalr today | Robustness assessment |
 | --- | --- | --- | --- |
 | Truth | The PDF is the document; annotations and OCG layers live in it | PDF/TIF are immutable sources; the project is the truth | Deliberate. Correct for takeoff, but the project must be protected like a database |
-| Pages | PDF page tree; insert, delete, move, extract | Append-only; deletion is structural and not undoable | Stable, but built on numeric page numbers |
+| Pages | PDF page tree; insert, delete, move, extract | Append-only today; deletion is structural and not undoable | Stable, but built on numeric page numbers; §7.4 replaces this with an explicit page list |
 | Layers | PDF optional-content groups, toggleable in compatible readers | Project layers with `measure` or `draw`, page-scoped visibility and locking | Strong for measurement, weaker for interoperability |
 | Markups | PDF annotations | Typed project items | Structured and deterministic, not editable in Acrobat/Revu |
 | Quantities | Markups List over annotations | First-class derived data | GridScalr is stronger here |
@@ -153,6 +169,8 @@ These are the rules the implementation must enforce.
 | I7 | Structural operations write a recovery checkpoint and remain explicit. |
 | I8 | Source drawings remain immutable. No new save, export, package or recovery path may write to a source file. |
 | I9 | Derived quantities and summaries remain calculated from item data, not stored as a second truth. |
+| I10 | A project may have zero pages. Empty projects and zero-page exports are explicit states, not corruption. |
+| I11 | Every document declares whether it is a reference, a managed copy or package-only. The mode is visible and never inferred silently. |
 
 ## 7. Target architecture
 
@@ -165,8 +183,6 @@ interface ProjectFileStamp {
   sha256: string;
   sizeBytes: number;
   modifiedAt: number;
-  /** Optional once schema 24 stores it. */
-  revisionId?: string;
 }
 ```
 
@@ -191,7 +207,7 @@ Conflict dialog options:
   untouched and keep the local project open.
 - **Reload from disk**: discard the local in-memory version after confirmation.
 - **Overwrite**: explicit danger action, with the disk version described
-  (time, size, revision if known).
+  (time, size and file hash if known).
 - **Cancel**: keep editing without writing.
 
 The write should move into a Rust command such as
@@ -226,7 +242,6 @@ interface AutosaveRecord {
   projectPath: string | null;
   instanceId: string;
   baseFileSha256: string | null;
-  baseRevisionId: string | null;
   savedAt: string;
   serialized: string;
 }
@@ -246,31 +261,43 @@ Rules:
 
 ### 7.3 Open-elsewhere awareness
 
-A sidecar lock is useful as a warning, not as a safety mechanism:
+A sidecar lease is useful as a warning, not as a safety mechanism:
 
 ```text
 <project>.gridscalr.lock
 ```
 
-Contents: instance ID, project ID, opened time, last heartbeat, app version and
-an optional machine label. Refresh the heartbeat while the project is open and
-remove the lock on a clean close.
+Contents: instance ID, project ID, opened time, last heartbeat, project hash,
+app version and an optional machine label. Refresh the heartbeat every 30
+seconds while the project is open and remove the lease on a clean close. Treat a
+lease without a heartbeat for five minutes as stale.
 
 On open:
 
-- a live lock from another instance offers **Open read-only**, **Take over** or
-  **Cancel**;
-- a stale lock is shown as information, not a block;
-- a read-only session can export and package but cannot save over the project;
+- a live lease from another instance offers **Open read-only** (the default),
+  **Take over** or **Cancel**;
+- a stale lease is shown as information, not a block;
+- a corrupt or unsynchronised lease is ignored;
+- **Take over** writes a new lease atomically; the old instance sees a save
+  conflict on its next write;
+- a read-only session can export, package and **Save a copy**, but cannot save
+  over the project;
 - a file watcher may show a non-blocking banner when the project file changes
-  outside the app.
+  outside the app;
+- never delete a lease owned by another instance automatically. Offer an explicit
+  **Clear stale lock** action.
 
-Cloud clients and sleeping laptops make locks unreliable. Invariant I1 remains
+Cloud clients and sleeping laptops make leases unreliable. Invariant I1 remains
 the real protection.
 
-### 7.4 Stable page identity
+### 7.4 Page list and document model
 
-Introduce a `PageId` and make the page list explicit:
+The current model derives pages from the document array and stores page
+references as numbers. That is why append-only exists: every insertion or
+reorder would invalidate item and layer references. The replacement is an
+explicit page list with stable IDs.
+
+#### Stable page records
 
 ```ts
 type PageId = string;
@@ -294,29 +321,73 @@ interface Layer {
 }
 ```
 
-`Project.pages` becomes an ordered `PageRecord[]` or a map plus an explicit
-order array. Page numbers are derived from the order. UI, reports and exports
-keep showing numbers, but persistent references use IDs.
+`Project.pages` becomes an ordered `PageRecord[]`. Page numbers are derived from
+the array order. UI, reports and exports keep showing numbers, but persistent
+references use IDs. Documents remain the source-file records; the page list is
+the project's own order.
 
-Structural operations:
+#### Empty projects
 
-- **Delete page:** remove the page record, its items and its layer page state.
+A project with zero pages is valid for schema 24 and later:
+
+- `documents: []`, `pages: []`;
+- settings, categories, count types, line types and default layers still exist;
+- the welcome screen offers **Blank project** beside the PDF and sheet flows;
+- pages can be imported from PDFs or another project at any time;
+- exports, reports and the canvas show an empty state instead of failing;
+- older schemas still require at least one page, but the new project flow does
+  not.
+
+#### Insert, reorder and delete
+
+- **Import pages** appends by default. The import dialog can insert at a chosen
+  position.
+- **Reorder pages** by drag and drop. The page list changes; every `PageId`,
+  item and layer stays attached to its page.
+- **Delete page** removes the page record, its items and its layer page state.
   No later page is renumbered in stored data.
-- **Duplicate page:** create a new `PageId`; copy the source state and items to
-  it.
-- **Import pages:** create new `PageId`s and map source items to them. The
-  destination append order stays the same.
-- **Document removal:** remove page records that belong to the document and
-  clear dangling `copiedFrom` references.
+- **Duplicate page** creates a new `PageId` and copies the source state and
+  items to it.
+- **Insert page** adds a `PageRecord` at the chosen index. A page from an
+  existing document can be inserted without duplicating the document.
+- **Document removal** must not leave page records pointing at a deleted
+  document. The user chooses whether to remove those pages or move them to
+  another source first.
 - **Layer cleanup:** a page deletion must not leave an empty layer pointing at a
   different page. Either remove the layer when it loses its last page, or offer
   an explicit cleanup action.
 
-Revision comparison should match pages by `pageId` first, then by document and
-local page. This keeps comparison reliable when pages are inserted or deleted.
+Append remains the default for import because it gives stable, predictable page
+numbers. It is no longer a model law.
 
-Page reordering remains out of scope until a separate ADR. Stable IDs are the
-prerequisite that makes it safe later.
+#### Replace a source document
+
+A new revision PDF can swap pages, add a page or omit one. The project must keep
+the markup attached to the right page without inventing a revision DAG.
+
+Flow:
+
+1. Choose the document and **Replace source…**.
+2. Read the new PDF page count, checksum and page sizes.
+3. Show a mapping of old page → new page with previews.
+4. Default to the same page index; allow manual mapping when pages moved.
+5. Keep `PageId`, items and page state for mapped pages.
+6. Pages that cannot be mapped stay on the old `DocumentRef` as **superseded**
+   until the user reviews them. This preserves items instead of deleting them.
+7. Add the new `DocumentRef`, or update the old one when every page is mapped.
+8. Warn when page size, calibration or drawing scale changes.
+
+The superseded-document approach avoids a revision tree while still preserving
+unmatched pages. Removing superseded pages is an explicit cleanup action.
+
+#### Comparison and migration
+
+Revision comparison matches pages by `PageId` first, then by document and local
+page. This keeps comparison reliable when pages are inserted or deleted.
+
+Schema 24 migration builds the page list from the document order and existing
+`excludedPages`, assigns page IDs, and maps every numeric item, layer home page
+and page-state key. Invalid references are reported, not silently remapped.
 
 ### 7.5 Layer and markup binding
 
@@ -405,9 +476,11 @@ Add:
   types, assets, missing files and checksum warnings;
 - provenance on imported pages: source project ID, revision, source page ID,
   import time and app version;
-- an explicit layer policy. Today each page gets its own new layer. Decide
-  whether to preserve a source layer across imported pages or keep one layer per
-  page, then test it;
+- one destination layer per source layer identity, shared across imported pages
+  through `PageId`; never merge layers by display name without an explicit user
+  choice;
+- an optional merge choice when the same source project is imported again, or
+  when the user explicitly wants to reuse an existing layer;
 - a structural checkpoint before page delete, duplicate, add-document and paper
   change;
 - a page-delete summary that names the item count, layer count, page scale and
@@ -425,19 +498,50 @@ These are additive options, not a change to the source of truth:
   the user to relink;
 - add “Compare with disk version” to the conflict dialog using the existing
   revision comparison engine;
-- defer page reordering until after stable page IDs and a separate ADR.
+- page reordering, insert and source replacement are part of §7.4 and schema 24,
+  not a later interoperability spike.
 
-## 8. Schema 24 sketch
+### 7.9 Source storage modes
 
-Schema 24 is the first schema that should carry stable page identity.
+A referenced PDF can move or change outside GridScalr. SHA-256 detects the
+change, but detection is not protection. The project needs an explicit storage
+mode.
+
+| Mode | What is stored | Best for | Risk |
+| --- | --- | --- | --- |
+| **Reference** | Path plus SHA-256 | Local, stable files | The file can move or change |
+| **Managed copy** | A copy inside the project folder, relative path plus SHA-256 | Shared cloud folders, network shares, unstable sources | The project folder grows; the copy can still be edited, but the checksum warns |
+| **Package** | `.gridscalr.zip` with its drawings | Transport and archive | Not the live editing file |
+
+Rules:
+
+- Reference is the default for a local file that is unlikely to change.
+- If the source is in a known cloud folder or on a network share, the import
+  dialog recommends **Copy drawing into project** and explains why.
+- A managed copy lives in a sibling folder such as
+  `Project.drawings/<safe-name>-<hash8>.pdf` and is referenced relatively.
+- `DocumentRef.storage` makes the mode explicit. Keep an optional
+  `originalPath`/`originalSha256` for provenance and relinking.
+- **Consolidate drawings…** copies every referenced PDF into the project folder
+  and rewrites the paths. The originals are untouched.
+- **Use managed copy** and **Detach from source** are explicit document actions.
+- **Source changed on disk** appears as a banner in reference mode, with
+  **Reload**, **Use current**, **Relink** and **Copy into project**.
+- A package includes managed copies once; it never duplicates them.
+- Do not base64-embed ordinary PDFs in `.gridscalr`. The project file would grow
+  into a save, autosave and undo problem. The existing TIF embedded-PDF exception
+  stays because it is a derived document format.
+- A managed copy protects against the original moving or changing; it does not
+  protect against someone editing the copy. The checksum remains authoritative.
+
+## 8. Schema 24 and 25 sketch
+
+Schema 24 carries the explicit page list. It deliberately adds no revision
+lineage: the file hash is enough for conflict detection in the first version.
 
 ```ts
 interface Project {
   schemaVersion: 24;
-  /** Optional lineage for future comparison and conflict review. */
-  revisionId?: string;
-  parentRevisionId?: string;
-  savedAt?: string;
   pages: PageRecord[];
   // documents, layers, categories, countTypes, lineTypes, assets, ...
   // unchanged except for the page references above
@@ -451,32 +555,50 @@ Migration from schema 23:
 3. Map every numeric page in `MarkupItem.page`, `Layer.homePage` and
    `Layer.pageState` to that `PageId`.
 4. Move `Project.pages[number]` into the matching `PageRecord.state`.
-5. Drop invalid page references into the load report rather than silently
-   remapping them.
+5. Report invalid page references instead of silently remapping them.
 6. Write schema 24 and keep the existing migration tests for schemas 1–23.
 
-The migration must be deterministic for a given input file and covered by a
+Schema 25 adds the source storage mode:
+
+```ts
+interface DocumentRef {
+  storage?: "reference" | "managed";
+  /** Original source path when storage is "managed". */
+  originalPath?: string | null;
+  /** Checksum of the original source at copy time. */
+  originalSha256?: string;
+}
+```
+
+Migration from schema 24 sets `storage: "reference"` for every existing
+document. A separate schema keeps each migration small and testable.
+
+Both migrations must be deterministic for a given input file and covered by a
 fixture for the previous schema.
 
 ## 9. Phased plan
 
 | Phase | Priority | Schema | Scope | Exit criteria |
 | --- | --- | --- | --- | --- |
-| 0 | P0 | none | ADR, this plan, invariants and issue breakdown | The team agrees on the rules before code |
+| 0 | P0 | none | ADRs, this plan, invariants and issue breakdown | Complete 2026-11-10: ADRs 0010–0012 accepted and this plan recorded |
 | 1 | P0 | none | Conditional save, conflict dialog, backups, read-back, relative-path fix | A changed disk file cannot be overwritten without an explicit choice |
-| 2 | P0/P1 | none | Autosave v2, lock hint, read-only open, file watcher, structural checkpoints | A forgotten machine cannot silently overwrite another machine's work |
-| 3 | P1 | 24 | Stable `PageId`, page list, delete/import/duplicate rewrite, migration | No structural page operation can move an item to the wrong page |
-| 4 | P1 | none | Integrity validator, project doctor, import preflight and provenance | A damaged or imported file cannot cause silent data loss |
-| 5 | P2 | optional | OCG export, annotation export, package/share flow, relink search, page reorder ADR | Interoperability improves without changing the source of truth |
-| 6 | P1 | none | Stateful tests, conflict tests, crash tests, migration corpus, CI gate | The invariants are enforced by tests, not only by review |
+| 2 | P0/P1 | none | Autosave v2, lock lease, read-only open, file watcher, structural checkpoints | A forgotten machine cannot silently overwrite another machine's work |
+| 3 | P1 | 24 | Explicit page list, empty projects, insert/reorder/delete, source replacement | No page operation can move an item to the wrong page |
+| 4 | P1 | 25 | Reference/managed-copy storage, consolidate, source-changed flow | A shared or cloud source cannot change the working drawing silently |
+| 5 | P1 | none | Integrity validator, project doctor, import preflight and provenance | A damaged or imported file cannot cause silent data loss |
+| 6 | P2 | optional | OCG export, annotation export, package/share flow, relink search | Interoperability improves without changing the source of truth |
+| 7 | P1 | none | Stateful tests, conflict tests, crash tests, migration corpus, CI gate | The invariants are enforced by tests, not only by review |
 
 ### Phase 0 — Decision and documentation
 
-- Write ADR 0010: “The project file is the truth; writes are compare-and-swap
-  and pages have stable identities.”
-- Record the invariants from section 6.
-- Resolve the #44 backup claim in the roadmap or the code.
-- Create the P0/P1 issues listed in section 14.
+Complete 2026-11-10.
+
+- ADR 0010: project-file integrity and concurrent editing.
+- ADR 0011: explicit page order and source replacement.
+- ADR 0012: source storage modes.
+- The invariants from section 6 are recorded in `AGENTS.md`.
+- The #44 backup claim is surfaced in this plan and in `docs/limitations.md`.
+- The P0/P1 issues in section 14 still need to be created.
 - No production code.
 
 ### Phase 1 — Safe save
@@ -498,16 +620,28 @@ fixture for the previous schema.
 - Add an optional file watcher banner.
 - Add structural checkpoints before destructive operations.
 
-### Phase 3 — Stable page identity
+### Phase 3 — Page list and document model
 
-- Add `PageId` and `PageRecord`.
+- Add `PageId` and `PageRecord[]` as the canonical page order.
 - Migrate items, layers, page state and page records.
-- Rewrite delete, duplicate and import to use IDs.
+- Allow empty projects with zero pages.
+- Implement insert, reorder, delete and duplicate by page ID.
+- Implement **Replace source…** with page mapping and superseded documents.
+- Rewrite import to preserve one layer per source layer identity.
 - Update comparison to match pages by ID.
 - Add schema 23 → 24 migration tests.
-- Update the project file documentation.
+- Update the project file documentation and the user guide.
 
-### Phase 4 — Integrity and project doctor
+### Phase 4 — Source storage and managed copies
+
+- Add `DocumentRef.storage` and optional `originalPath`/`originalSha256`.
+- Add reference and managed-copy import modes.
+- Add **Consolidate drawings…**, **Use managed copy** and **Detach from source**.
+- Add the source-changed banner and the reload/relink/copy actions.
+- Add schema 24 → 25 migration tests.
+- Update packaging so managed copies are included once.
+
+### Phase 5 — Integrity and project doctor
 
 - Add the validator and the load report.
 - Add pre-save validation and post-save round-trip.
@@ -515,18 +649,18 @@ fixture for the previous schema.
 - Add import preflight and provenance.
 - Add explicit duplicate-ID repair.
 
-### Phase 5 — Interoperability
+### Phase 6 — Interoperability
 
 - OCG export spike.
 - Optional annotation export.
 - Package/share flow.
 - Relinking search by checksum.
 - “Compare with disk version”.
-- Page reorder ADR.
 
-### Phase 6 — Test and CI gates
+### Phase 7 — Test and CI gates
 
-- Stateful and property-based sequences of add/delete/import/undo/redo/save/load.
+- Stateful and property-based sequences of add/delete/import/reorder/replace/
+  undo/redo/save/load.
 - Concurrent-save tests with a mocked or temporary file system.
 - Crash-during-save tests for the Rust command.
 - A migration corpus with one fixture per schema version.
@@ -541,14 +675,20 @@ Add tests close to the code they protect:
   restores relative paths.
 - `tests/autosave.test.ts`: two projects keep separate recovery records; a
   recovery based on an older file is never auto-restored.
-- `tests/documents.test.ts`: delete, duplicate and import preserve page IDs and
-  leave no orphan items or layer page state.
+- `tests/documents.test.ts`: delete, duplicate, insert, reorder and import
+  preserve page IDs and leave no orphan items or layer page state.
+- `tests/documents.test.ts`: empty projects with zero pages save, reload and
+  accept imported pages.
+- `tests/documents.test.ts`: source replacement keeps mapped page IDs and leaves
+  unmatched pages on the superseded document.
 - `tests/integrity.test.ts`: duplicate IDs, out-of-range pages, dangling
   categories/counts/line types/assets and dangling `copiedFrom`.
-- `tests/projectFile.test.ts`: schema 23 → 24 migration and a round-trip of a
-  project with pages, layers, items, OCR and page state.
-- `tests/projectImport.test.ts`: provenance, layer policy, preflight counts and
-  one-undo-step behaviour.
+- `tests/projectFile.test.ts`: schema 23 → 24 and 24 → 25 migrations and a
+  round-trip of a project with pages, layers, items, OCR and page state.
+- `tests/projectImport.test.ts`: provenance, one layer per source layer
+  identity, preflight counts and one-undo-step behaviour.
+- `tests/sourceStorage.test.ts`: reference and managed-copy modes, consolidate,
+  source-changed flow and package inclusion.
 - Rust tests: conditional write rejects a changed file; a crash between temp
   write and rename leaves a readable previous file.
 - Playwright: conflict dialog and recovery chooser in the browser fallback where
@@ -562,15 +702,18 @@ single happy-path test misses.
 
 Update in the same change as the behaviour:
 
-- `docs/project-file.md`: stable page IDs, revision metadata, schema 24.
+- `docs/project-file.md`: stable page IDs, explicit page order, empty projects,
+  source storage modes and schemas 24–25.
 - `docs/user-guide.md`: conflict dialog, conflicted copies, recovery chooser,
-  read-only open and backup restore.
-- `docs/limitations.md`: current last-writer-wins behaviour before Phase 1, and
-  the new conflict behaviour after it.
-- `docs/workflows.md`: what to do when a project is open on two machines.
+  read-only open, backup restore, page reorder/insert/replace and managed copies.
+- `docs/limitations.md`: current last-writer-wins behaviour before Phase 1, the
+  new conflict behaviour after it, and the current append-only limitation until
+  Phase 3.
+- `docs/workflows.md`: what to do when a project is open on two machines, and
+  when a shared drawing changes.
 - `docs/shortcuts.md` and the README shortcut table only if a shortcut changes.
-- `docs/roadmap.md`: a new data-integrity milestone after agreement; do not
-  claim backups before they exist.
+- `docs/roadmap.md`: foundation workstreams and the 1.0 quality gate; no
+  version-numbered schedule.
 - `README.md`: architecture map entries for the new modules.
 - `AGENTS.md`: the rules below.
 
@@ -585,15 +728,19 @@ Proposed `AGENTS.md` addition:
 >   never a silent overwrite.
 > - Every persistent entity has a stable, unique ID. Never use array indexes or
 >   display page numbers as persistent references.
-> - Page identity is independent of page order. Deleting or importing a page
->   must not renumber references; it cascades by page ID.
+> - Page identity is independent of page order. Imports append by default, but
+>   insert, reorder and source replacement are explicit, tested operations that
+>   cascade by page ID.
+> - A project may have zero pages. Empty is a valid state, not a corrupt file.
 > - Autosave is scoped to one project identity and one base file version. Never
 >   restore an autosave over a changed disk file.
 > - Validate project invariants before saving and after loading. Do not silently
 >   drop user data.
 > - Structural operations write a recovery checkpoint and stay explicit.
+> - Source storage is explicit: reference, managed copy or package. Never
+>   base64-embed ordinary PDFs in the project JSON.
 > - Tests are required for concurrent save, crash during save, migration from
->   the previous schema, and page delete/import invariants.
+>   the previous schema, and page delete/import/reorder/replace invariants.
 
 Add a robustness check to the pull-request template or the release checklist:
 
@@ -619,28 +766,28 @@ Add a robustness check to the pull-request template or the release checklist:
 - **No lock file as the safety mechanism.** Locks are advisory; conditional
   writes are the guarantee.
 - **No silent repair.** A damaged project opens with a report and a choice.
-- **No page reorder before stable page IDs.** The current append-only rule stays
-  until a separate ADR.
+- **No page reorder before the explicit page list exists.** It is part of Phase
+  3, not a later spike.
+- **No automatic `.bak` beside a cloud-synced project.** Automatic backups live
+  in app data; portable copies are explicit.
 - **No OCG or annotation export in the first phase.** Interoperability is
   additive and can follow the integrity work.
 
-## 13. Open questions for discussion
+## 13. Remaining questions
 
-1. Should a conflict default to **Save as conflicted copy** or to **Compare with
-   disk version** and then choose?
-2. Should the sidecar lock open the project read-only automatically, or only
-   warn and let the user choose?
-3. Should backups live next to the project or in app data? Next to the project
-   is discoverable; app data avoids cluttering shared folders.
-4. Should imported pages preserve the source layer grouping, or keep one layer
-   per page as today?
-5. Should a deleted page remove empty layers that lose their last page, or show
+These are the questions that still need a decision. The 2026-11-10 decisions are
+recorded in §1.1.
+
+1. Should a deleted page remove empty layers that lose their last page, or show
    a cleanup prompt?
-6. Should schema 24 store `revisionId` and `parentRevisionId`, or is a file hash
-   enough for the first release?
-7. When should the 1.0 schema freeze happen relative to Phase 3?
-8. Should source drawings be re-hashed before every package/export, or only on
+2. Should cross-document page reorder be allowed in the first UI, or only
+   reorder inside a document block until the interaction is proven?
+3. How long should unmatched superseded pages remain in a project after source
+   replacement before the user is prompted to archive or remove them?
+4. Should source drawings be re-hashed before every package/export, or only on
    open and on demand?
+5. Should schema 25's managed-copy folder be user-selectable, or always a
+   sibling folder named after the project?
 
 ## 14. Proposed issue breakdown
 
@@ -649,15 +796,19 @@ Use the existing labels and milestones. These are titles, not issue numbers.
 - **P0:** Detect and resolve concurrent project saves.
 - **P0:** Add rolling project backups and restore.
 - **P0:** Scope autosave per project and base file version.
-- **P1:** Add an open-elsewhere lock hint and read-only mode.
-- **P1:** Add stable page IDs and migrate the project file to schema 24.
+- **P1:** Add an open-elsewhere lock lease and read-only mode.
+- **P1:** Add the explicit page list, stable page IDs and schema 24.
+- **P1:** Allow empty projects with zero pages.
+- **P1:** Add page insert, reorder and drag-and-drop ordering.
+- **P1:** Add source replacement with page mapping and superseded pages.
+- **P1:** Add reference and managed-copy source modes, schema 25.
+- **P1:** Add **Consolidate drawings** and the source-changed flow.
 - **P1:** Validate project integrity before save and after load.
 - **P1:** Add structural-operation recovery checkpoints.
-- **P1:** Add import preflight, provenance and a documented layer policy.
+- **P1:** Add import preflight, provenance and shared layer identity.
 - **P2:** Add automatic relinking by checksum.
 - **P2:** Spike PDF optional-content-group export.
 - **P2:** Spike optional PDF annotation export.
-- **P2:** Write the page-reorder ADR after schema 24.
 
 ## 15. Acceptance criteria for the whole plan
 
@@ -665,11 +816,14 @@ Use the existing labels and milestones. These are titles, not issue numbers.
   explicit user choice.
 - A changed disk file cannot be overwritten by a normal Save.
 - A recovery snapshot is tied to the project and base version it came from.
-- A page deletion or import cannot leave an item pointing at a missing or wrong
-  page.
+- A project can start with zero pages and be filled by importing pages later.
+- Inserting, deleting, reordering or replacing a page cannot leave an item
+  pointing at a missing or wrong page.
+- A shared or cloud source can be protected by a managed copy, and a changed
+  reference is reported with an explicit choice.
 - A damaged project opens with a report, not silent data loss.
 - Every schema change has a migration fixture and a test from the previous
   schema.
 - The source PDF/TIF is never written by any new path.
-- The documentation and `AGENTS.md` describe the actual save and recovery
-  behaviour.
+- The documentation and `AGENTS.md` describe the actual save, recovery, page and
+  source-storage behaviour.

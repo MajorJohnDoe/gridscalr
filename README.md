@@ -227,7 +227,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 | [Project files](docs/project-file.md) | The `.gridscalr` format, schema history and migration rules. |
 | [Known limitations](docs/limitations.md) | What the app deliberately does not do yet. |
 | [Releasing](docs/releasing.md) | The manual release checklist. |
-| [Roadmap](docs/roadmap.md) | Shipped milestones, deferred work and open decisions. |
+| [Roadmap](docs/roadmap.md) | Shipped milestones, foundation workstreams, the 1.0 quality gate and open decisions. |
 
 The same reference material ships inside the app: **Help → User guide**,
 **Help → Workflows**, **Help → Keyboard shortcuts** and **Help → About**, which
@@ -282,9 +282,10 @@ change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
 deliberately deferred.
 
-The 1.0 target covers Windows, macOS and Linux artifacts, English and Swedish UI,
-portable `.gridscalr.zip` project packages and tested large-project performance.
-Architecture decisions are recorded in [docs/adr](docs/adr/README.md).
+1.0 is a quality gate, not a schedule. It covers Windows, macOS and Linux
+artifacts, English and Swedish UI, portable `.gridscalr.zip` project packages,
+tested large-project performance, and production-ready save, recovery and source
+handling. Architecture decisions are recorded in [docs/adr](docs/adr/README.md).
 
 ## Contributing
 

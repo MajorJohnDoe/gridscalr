@@ -1,7 +1,17 @@
 # Project files
 
 
-A `.gridscalr` file is UTF-8 JSON. It contains one or more document references, per-page calibrations and locations, settings, categories, saved Markups views, layers, markup items, and embedded images. Referenced PDFs are **not** embedded; a TIF's converted PDF is, because the scan cannot be read directly at render time.
+A `.gridscalr` file is UTF-8 JSON. It contains one or more document references,
+per-page calibrations and locations, settings, categories, saved Markups views,
+layers, markup items, and embedded images. Referenced PDFs are **not** embedded;
+a TIF's converted PDF is, because the scan cannot be read directly at render
+time.
+
+Schema 24 (explicit page list and stable page IDs) and schema 25 (source storage
+modes) are planned but not implemented. Their decisions are recorded in
+[ADR 0011](adr/0011-page-list-and-source-replacement.md) and
+[ADR 0012](adr/0012-source-storage-modes.md). This document describes schema 23
+until those migrations ship.
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 

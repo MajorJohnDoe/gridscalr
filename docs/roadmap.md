@@ -1,21 +1,20 @@
 # Roadmap
 
-GridScalr is pre-1.0. This page is the current status: what is shipped, what is
-planned for 1.0, what is deliberately deferred, and which decisions are still open.
-Detailed planning documents from the implementation period live in
-[`docs/plan/archive/`](plan/archive/README.md); they are historical and written in
-Swedish.
+GridScalr is pre-1.0. This page records the current status, the foundation
+workstreams, the release quality gate and the backlog. It is not a schedule.
+Detailed planning documents live in `docs/plan/`; the historical
+implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
 Current version: **0.22.4** · Project-file schema: **23**
 
-1.0 target: **Windows, macOS and Linux**, English and Swedish UI, portable project
-packages, and tested large-project performance. The 1.0 architecture decisions are
-recorded in [`docs/adr/`](adr/README.md).
+1.0 is a **quality gate**, not a target date. Work is organised by foundation
+workstreams so the product can release many versions while the base becomes
+stable. Feature details belong in GitHub issues, not in a version-numbered
+roadmap.
 
 ## Product principles
 
-These are not negotiable without an explicit decision, and they apply to every
-milestone:
+These are not negotiable without an explicit decision:
 
 - Local-first. A source PDF or TIF is referenced by path and SHA-256 and is never
   overwritten.
@@ -30,10 +29,16 @@ milestone:
   a separate source of truth.
 - Exports use the same visibility and locking rules as the canvas.
 - No accounts, cloud sync, collaboration, telemetry or network dependencies.
+- Every project save is a conditional write. A changed disk file is never
+  overwritten without an explicit choice. Accepted direction; implementation
+  pending.
+- Pages have stable IDs from schema 24 onward. Imports append by default, but
+  insert, reorder and source replacement are explicit, tested operations.
+- Source storage is explicit: reference, managed copy or package (schema 25).
 
 `AGENTS.md` carries the same rules for contributors, with more detail.
 
-## Milestones
+## Shipped
 
 | Milestone | Scope | Status | Schema |
 | --- | --- | --- | --- |
@@ -62,214 +67,167 @@ milestone:
 | 0.16.0 | Count schedule: quantity rows per count type, Markups count-type column/filter/grouping, count legend glyphs and reusable presets | Complete | v21 |
 | 0.16.1 | Two-finger touch pan and pinch zoom on both canvases, pen/palm priority and long-press context menu | Complete | v21 |
 | 0.17.0 | Portable `.gridscalr.zip` packages, Windows/macOS/Linux builds, safer saving, preferences, diagnostics, demo onboarding, i18n foundation | Complete | v21 |
-| **0.18.0** | **Swedish/English UI and reports, locale formatting, project metadata and report branding** | **Complete** | v22 |
-| **Schematic sheets** | **Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 156 schematic symbols and a fit-to-area action** | **Complete** | v23 |
-| **0.19.0** | **Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer** | **Complete** | v23 |
-| **0.19.3** | **Blank A3/A2 pages and 37 additional schematic symbols; valve-stem and circulation-pump fixes; symbol libraries split by category** | **Complete** | v23 |
-| **0.20.0** | **Large-project performance, code health, testing gates, shell polish and independent reference page navigation** | **Complete** | v23 |
-| **0.21.0** | **PDF export, editor and App-flow splits; light, grey and navy themes with System mode** | **Complete** | v23 |
-| **0.22.0** | **Medium Gray default theme, Dark Gray/Dark Jade rename, expandable tool rail, Project settings categories and colour hardening** | **Complete** | v23 |
-| **0.22.4** | **Windows touchpad pinch-to-zoom** | **Complete** | v23 |
-| **1.0.0** | **Release candidate hardening, documentation, clean installs and public 1.0** | **Planned** | v23 |
+| 0.18.0 | Swedish/English UI and reports, locale formatting, project metadata and report branding | Complete | v22 |
+| Schematic sheets | Template pages, title-block fields, rich text boxes, rails, schematic drawing tools, 156 schematic symbols and a fit-to-area action | Complete | v23 |
+| 0.19.0 | Reviewed operation-card symbols: 119 schematic symbols, distinguishable check valves, switches and page-scoped move-to-layer | Complete | v23 |
+| 0.19.3 | Blank A3/A2 pages and 37 additional schematic symbols; valve-stem and circulation-pump fixes; symbol libraries split by category | Complete | v23 |
+| 0.20.0 | Large-project performance, code health, testing gates, shell polish and independent reference page navigation | Complete | v23 |
+| 0.21.0 | PDF export, editor and App-flow splits; light, grey and navy themes with System mode | Complete | v23 |
+| 0.22.0 | Medium Gray default theme, Dark Gray/Dark Jade rename, expandable tool rail, Project settings categories and colour hardening | Complete | v23 |
+| 0.22.4 | Windows touchpad pinch-to-zoom | Complete | v23 |
+| Import pages | Import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo | Complete | v23 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
-## Path to 1.0
+## Foundation workstreams
 
-The program index is issue
-[#59 — Roadmap: GridScalr 1.0](https://github.com/MajorJohnDoe/gridscalr/issues/59).
-Work is grouped into release milestones so each stage can be tested and released
-independently.
+These are the current priorities. They are capabilities, not release numbers.
+Each should have an issue before implementation; larger ones have a plan or ADR.
 
-### 0.17.0 — Portable projects and platform foundation
+### 1. Save integrity and recovery
 
-**Goal:** send a project to another person and run GridScalr on all three desktop
-platforms.
+**Goal:** no silent overwrite, no lost recovery snapshot, and a clear path back.
 
-Deliverables:
+- Conditional project writes against the loaded file hash.
+- **Save as conflicted copy** as the default conflict action.
+- Rolling backups in app data and an explicit **Backup now…** flow.
+- Autosave per project and base file version.
+- Advisory lock lease with **Open read-only** as the default.
+- Read-back verification and a failed-save relative-path fix.
 
-- Portable `.gridscalr.zip` packages with manifest, checksums, relative paths and
-  opt-in exports/original scans — [#40](https://github.com/MajorJohnDoe/gridscalr/issues/40)
-- Windows, universal macOS and Linux x86_64 artifacts with checksums and CI matrix —
-  [#41](https://github.com/MajorJohnDoe/gridscalr/issues/41)
-- Separate app preferences from project settings, plus local diagnostics and support
-  links — [#42](https://github.com/MajorJohnDoe/gridscalr/issues/42)
-- `.gridscalr` file association, single instance and window state —
-  [#43](https://github.com/MajorJohnDoe/gridscalr/issues/43)
-- Safer atomic saving, backups and canonical path protection —
-  [#44](https://github.com/MajorJohnDoe/gridscalr/issues/44)
-- Bundle the demo project and add a three-step quick start —
-  [#45](https://github.com/MajorJohnDoe/gridscalr/issues/45)
-- Packaged desktop smoke tests on all three platforms —
-  [#46](https://github.com/MajorJohnDoe/gridscalr/issues/46)
-- Typed message catalogs, language selection and English fallback —
-  [#47](https://github.com/MajorJohnDoe/gridscalr/issues/47)
+Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
+[0010](adr/0010-project-file-integrity.md) · Issues
+[#44](https://github.com/MajorJohnDoe/gridscalr/issues/44),
+[#53](https://github.com/MajorJohnDoe/gridscalr/issues/53).
 
-Exit criteria:
+### 2. Page and document model
 
-- A multi-PDF project packages, transfers and opens without relinking.
-- All three platforms produce startable artifacts from the same tag.
-- A failed save never destroys the previous project.
-- New UI strings use catalog keys.
-- The packaged app passes a launch/open/save smoke test on each platform.
+**Goal:** pages can be inserted, reordered, deleted and replaced without breaking
+markup references; an empty project is a valid starting point.
 
-### 0.18.0 — Swedish, English and professional output
+- Stable `PageId` and an ordered `PageRecord[]`.
+- Empty projects with zero pages.
+- Insert, drag-and-drop reorder, duplicate and delete by ID.
+- **Replace source…** with page mapping and superseded pages.
+- Import preserves one layer per source layer identity across pages.
+- Revision comparison matches pages by ID.
 
-**Goal:** a Swedish user can complete the full workflow and send a professional
-procurement report.
+Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
+[0011](adr/0011-page-list-and-source-replacement.md) · PR
+[#152](https://github.com/MajorJohnDoe/gridscalr/pull/152).
 
-Deliverables:
+### 3. Source storage and relinking
 
-- Complete Swedish UI, reports, XLSX/CSV headings and locale-aware formatting —
-  [#48](https://github.com/MajorJohnDoe/gridscalr/issues/48)
-- Optional project metadata and report branding, schema 22 —
-  [#49](https://github.com/MajorJohnDoe/gridscalr/issues/49)
-- Swedish quick start and language-aware help fallback —
-  [#50](https://github.com/MajorJohnDoe/gridscalr/issues/50)
-- Honest “count schedule” wording for doors, windows and fixtures —
-  [#51](https://github.com/MajorJohnDoe/gridscalr/issues/51)
+**Goal:** a shared or cloud-hosted drawing cannot change the working geometry
+without the user knowing.
 
-Implementation is complete: JSON catalogs, the locale registry, lazy loading,
-ICU plurals, locale-aware numbers/dates and CSV modes, a fully translated
-English/Swedish UI and report output, schema 22 project metadata and branding,
-a Swedish quick start with explicit English fallback, and aligned count-schedule
-wording. See [`adr/0007-localization-at-scale.md`](adr/0007-localization-at-scale.md).
+- Reference, managed-copy and package modes.
+- **Copy drawing into project** for cloud and network sources.
+- **Consolidate drawings…**, **Use managed copy** and **Detach from source**.
+- Source-changed banner with reload, relink and copy actions.
+- Automatic relinking by checksum.
 
-Exit criteria:
+Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
+[0012](adr/0012-source-storage-modes.md) · ADR
+[0002](adr/0002-project-package.md).
 
-- Swedish and English UI are complete and selectable.
-- A Swedish quantity PDF/XLSX/CSV uses Swedish headings and number formatting.
-- Project metadata renders on reports and survives packaging.
-- Missing translations fail CI.
-- English remains complete.
+### 4. Import and merge
 
-### Schematic sheets
+**Goal:** bringing pages in from another project is predictable and traceable.
 
-**Goal:** a technician can create an operation card from a blank sheet template,
-fill in the title block and table cells, draw the schematic and export the result
-without preparing a PDF first.
+- Preflight report with pages, items, references and missing files.
+- Provenance for imported pages and source documents.
+- One destination layer per source layer identity, not per page.
+- Explicit merge choices when importing the same project again.
+- One import remains one undo step.
 
-Delivered in 0.19.0.
+PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152) is merged. The
+remaining work is provenance, preflight and layer identity.
 
-Deliverables:
+### 5. Integrity validation and project doctor
 
-- Template sheet documents and schema 23
-- Built-in drawing frame and data-summary templates on A3/A2
-- Editable title-block and table fields on the canvas and in a form
-- Wrapped text boxes with an optional white background and per-range rich text
-- Configurable I/O rails with reorderable rows, polyline drawing with an ortho
-  constraint and editable media line types
-- 156 schematic symbols with tags, ports and a generated review catalogue
-- Drawing-area overflow warning and an undoable fit-to-area action
+**Goal:** a damaged or imported file opens with a report and a choice, never with
+silent data loss.
 
-The locked decisions, phases and acceptance criteria live in
-[`plan/operation-cards.md`](plan/operation-cards.md).
+- Shared project validator with referential-integrity rules.
+- Pre-save validation and post-save round-trip.
+- Load report for invalid or dropped data.
+- Project doctor with repair, read-only open and diagnostics.
+- Duplicate-ID and out-of-range page repair.
 
-Exit criteria:
+Plan: [`plan/robustness.md`](plan/robustness.md).
 
-- A blank operation card can be created, saved, reopened, packaged and exported.
-- Template values are visible in the export even when every layer is hidden.
-- Template-only packages reopen without external files.
-- The same document model, undo, layer visibility and locking rules apply.
+### 6. Interoperability
 
-### 0.20.0 — Scale and workflow
+**Goal:** a recipient can review the result in the PDF ecosystem without making
+the PDF the source of truth.
 
-**Goal:** large drawing sets and many objects are a tested, supported use case, and the code and shell are ready for a 1.0 maintenance cycle.
+- Optional PDF optional-content-group (OCG) export.
+- Optional standard PDF annotation export.
+- Package/share flow that includes drawings once.
+- **Compare with disk version** at a save conflict.
 
-Deliverables:
+This work is additive and follows the integrity work.
 
-- Reference project, benchmarks, virtualised Markups, adaptive history, faster
-  autosave and canvas viewport culling —
-  [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52)
-- Split the integration modules, UI sections and stylesheet before 1.0 —
-  [#60](https://github.com/MajorJohnDoe/gridscalr/issues/60)
-- Coverage, fuzzing and visual regression gates —
-  [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61)
-- Shell status feedback, project size, source-file status and small-screen layout —
-  [#63](https://github.com/MajorJohnDoe/gridscalr/issues/63)
-- Independent page navigation in the reference pane —
-  [#23](https://github.com/MajorJohnDoe/gridscalr/issues/23)
+### 7. Performance and test gates
 
-The pre-flight work, module boundaries and theme-ready stylesheet structure are
-planned in [`plan/0.20-refactor.md`](plan/0.20-refactor.md).
+**Goal:** the foundation stays fast and the invariants stay enforced.
 
-Exit criteria:
+- Large-project budgets from [`limitations.md`](limitations.md).
+- Stateful and property-based tests for page, import and save flows.
+- Conflict, crash and migration-corpus tests.
+- Coverage, fuzzing and visual gates in CI.
 
-- The reference project opens, edits, saves and packages within the documented
-  budgets.
-- No UI freeze over two seconds without progress and cancel.
-- Memory and autosave limits are documented in `docs/limitations.md`.
-- The same budgets are checked on Windows, macOS and Linux.
-- Integration modules and styles are split without behaviour changes.
-- Coverage, fuzzing and visual regression gates run in CI.
-- Autosave, project size and source-file status are visible in the shell.
-- Common laptop resolutions and 150–200 % scaling remain usable.
+Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
+[#61](https://github.com/MajorJohnDoe/gridscalr/issues/61).
 
-### 1.0.0 — Release candidate and hardening
+## 1.0 release gate
 
-**Goal:** a release candidate that is safe to call 1.0.
-
-Deliverables:
-
-- Release-candidate gate, clean install/upgrade/uninstall and schema freeze —
-  [#53](https://github.com/MajorJohnDoe/gridscalr/issues/53)
-- Complete 1.0 documentation, screenshots, website and release notes —
-  [#54](https://github.com/MajorJohnDoe/gridscalr/issues/54)
-- Accessibility and performance release gates —
-  [#55](https://github.com/MajorJohnDoe/gridscalr/issues/55)
-- Security audit of Tauri capabilities, CSP, path handling and dependency surface —
-  [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62)
-
-Exit criteria:
-
-- All P0/P1 issues closed.
-- Schema 22 migration and project packages verified.
-- Clean installation and upgrade tested on Windows, macOS and Linux.
-- `1.0.0-rc.1` has been exercised before `1.0.0`.
-- Strict documentation and site checks pass.
-- Release notes and all platform artifacts are published.
-
-## Definition of done for 1.0
+1.0 is reached when the foundation is stable and these criteria are met. There is
+no date and no version-numbered path. The umbrella tracking issue is
+[#59](https://github.com/MajorJohnDoe/gridscalr/issues/59).
 
 1. Windows, macOS and Linux artifacts are built, checksummed and installable.
 2. English and Swedish UI, reports and export formats are complete.
 3. A project can be packaged, sent and opened by another person.
 4. Large projects meet the documented performance budgets.
 5. Saving, recovery, diagnostics and project metadata are production-ready.
-6. Packaged desktop smoke tests pass on all platforms.
-7. The schema and migration promise are frozen and documented.
-8. No P0/P1 bugs, no unaccepted dependency alerts, and the release checklist is
+6. Concurrent editing and source-storage behaviour are documented and tested.
+7. Packaged desktop smoke tests pass on all platforms.
+8. The schema and migration promise are frozen and documented.
+9. No P0/P1 bugs, no unaccepted dependency alerts, and the release checklist is
    complete.
-9. The Tauri capability, CSP and path-handling review is complete.
-10. Coverage, fuzzing and visual regression gates are part of CI.
+10. The Tauri capability, CSP and path-handling review is complete.
+11. Coverage, fuzzing and visual regression gates are part of CI.
 
-## After 1.0
+Related: [#53](https://github.com/MajorJohnDoe/gridscalr/issues/53),
+[#54](https://github.com/MajorJohnDoe/gridscalr/issues/54),
+[#55](https://github.com/MajorJohnDoe/gridscalr/issues/55),
+[#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 
-Candidates in expected-value order, not scheduled:
+## Backlog and candidates
 
-1. **Code signing and macOS notarization** — deferred by decision; tracked in
-   [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56).
-2. **Full Swedish user guide, workflows and additional languages** — the 1.0 help
-   system is ready; translation follows in
-   [#57](https://github.com/MajorJohnDoe/gridscalr/issues/57).
-3. **Broader TIF decoding** for LZW/Deflate, greyscale, colour and JPEG-in-TIFF
-   scans — [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58).
-4. **Project templates** for recurring properties and portfolios.
-5. **Facility symbol quantities in the procurement report.**
-6. **Snap directly to PDF vector geometry** as a separate spike.
-7. **Semantic PDF vector comparison** as a separate spike.
-8. **Additional OCR languages** with matching traineddata and license review.
-9. **Wall and ceiling areas from length × height**, and elevation-aware slopes.
-10. **Custom measurement fields** for richer door, window and equipment schedules.
-11. **Statutory area classification** (BTA/BRA/NTA/LOA) only with an explicit
-    decision and a separate validation model.
-12. **Read-only package review mode** for contractors without edit access.
-13. **Light, grey and navy themes** for daylight field use — shipped in 0.21.
-14. **Automatic update check** only with an explicit local-first decision.
-15. **Drag-and-drop document and page reordering** — deliberately deferred. It
-    changes the append-only page rule and needs its own ADR, page-remapping
-    tests and a decision about how multi-page PDF blocks move.
+These are candidates, not promises. Create an issue before implementation; keep
+the problem, scope, non-goals and acceptance criteria in the issue.
+
+- Code signing and macOS notarization — [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56).
+- Full Swedish user guide, workflows and additional languages —
+  [#57](https://github.com/MajorJohnDoe/gridscalr/issues/57).
+- Broader TIF decoding for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans —
+  [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58).
+- Project templates for recurring properties and portfolios.
+- Facility symbol quantities in the procurement report.
+- Snap directly to PDF vector geometry as a separate spike.
+- Semantic PDF vector comparison as a separate spike.
+- Additional OCR languages with matching traineddata and license review.
+- Wall and ceiling areas from length × height, and elevation-aware slopes.
+- Custom measurement fields for richer door, window and equipment schedules.
+- Statutory area classification (BTA/BRA/NTA/LOA) only with an explicit decision
+  and a separate validation model.
+- Read-only package review mode for contractors without edit access.
+- Automatic update check only with an explicit local-first decision.
+- Custom symbol uploads and custom count artwork.
 
 ## Deferred by design
 
@@ -277,12 +235,14 @@ These are known gaps, not bugs. See [`limitations.md`](limitations.md) for the
 full list.
 
 - No cloud sync, accounts, collaboration or automatic updates.
-- Pages are append-only. Deleting a page is an explicit structural action; pages
-  cannot be inserted or reordered.
+- Pages append by default and cannot be inserted or reordered until the explicit
+  page list ships in Phase 3. Deleting a page is an explicit structural action.
 - Markups are stored in the project, not as PDF annotations or optional-content
   groups. The drawing PDF export flattens visible markups into page content.
 - Images are embedded in the project file. External image assets are only worth
   adding if project size becomes a practical problem.
+- Ordinary PDFs are referenced or managed-copied, not base64-embedded in the
+  project JSON. Packages carry them for transport.
 - Quantity reports are CSV, XLSX and PDF. The Excel workbook is derived on demand
   and never replaces the item data.
 - The symbol library is built in; custom symbol uploads and symbol quantities in
@@ -292,27 +252,30 @@ full list.
   rating fields.
 - Rectangle and ellipse quick areas cannot be rotated.
 - Text notes do not wrap in a fixed box; `Shift+Enter` inserts a line break.
-- The full user guide and workflows remain English-only for 1.0; the Swedish quick
-  start and help fallback ship with the Swedish UI.
+- The full user guide and workflows are English-only. The Swedish UI includes a
+  Swedish quick start and an explicit English fallback.
 
 ## Open decisions
 
 | Decision | Current position |
 | --- | --- |
-| Windows code signing | Deferred for 1.0. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
-| macOS signing and notarization | Deferred for 1.0. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
+| Concurrent project edits | Accepted direction in [ADR 0010](adr/0010-project-file-integrity.md). Implementation not started; current behaviour is last save wins. |
+| Page order | Accepted direction in [ADR 0011](adr/0011-page-list-and-source-replacement.md). Append-only remains until schema 24 ships. |
+| Source storage | Accepted direction in [ADR 0012](adr/0012-source-storage-modes.md). Reference mode is current; managed copies are planned. |
+| Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
+| macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |
-| Full Swedish help | Quick start and UI chrome in 1.0; full guide/workflows after 1.0. |
+| Full Swedish help | UI is complete; the full guide/workflows translation is not scheduled. |
 | External image assets | Deferred until embedded project files become too large in practice. |
 | TIF codecs beyond CCITT G3/G4 | Deferred; would need a decoding fallback. Tracked in [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58). |
 | Revision comparison scope | Shipped with visual overlay, side-by-side and a markup diff. Semantic PDF vector diff is a separate spike. |
 | OCR engine | Bundled Tesseract.js with English and Swedish models. Additional languages require new traineddata assets and license review. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |
-| Count schedule attributes | Count schedules only for 1.0; no width, height or fire rating. |
+| Count schedule attributes | Not scheduled; no width, height or fire rating. |
 | Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
-| Theme | Four palettes ship in 0.21: dark jade (default), Light, Grey and Navy, with System following the OS preference. |
+| Theme | Medium Gray is the default; Light, Dark Gray, Dark Jade and Navy are optional, with System following the OS preference. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |
-| Concurrent project edits | No conflict detection; the last save wins. A discussion draft is in [`plan/robustness.md`](plan/robustness.md). Not scheduled. |
+| 1.0 | A quality gate, not a schedule. See the release gate above. |
 
 ## Technical debt and post-release refactors
 
@@ -320,16 +283,13 @@ These are internal improvements, not user-facing promises. Record concrete
 items as GitHub issues with the `tech-debt` or `refactor` label rather than
 anonymous `TODO` comments in code; see **Issue tracking** in `AGENTS.md`.
 
-The next planned splits and themes are sequenced in
+The next planned splits are sequenced in
 [`plan/post-0.20-refactor.md`](plan/post-0.20-refactor.md).
 
 - Split the PDF exporter by item family — [#126](https://github.com/MajorJohnDoe/gridscalr/issues/126).
 - Split inline editors by editing family — [#127](https://github.com/MajorJohnDoe/gridscalr/issues/127).
 - Extract the remaining `App.ts` flows — [#128](https://github.com/MajorJohnDoe/gridscalr/issues/128).
-- Light, grey and navy themes shipped in 0.21 — [#129](https://github.com/MajorJohnDoe/gridscalr/issues/129).
 - Lazy-load the PDF.js renderer so the welcome screen and project shell do not parse the PDF runtime before a drawing is opened.
-- Virtualise the Markups table and adapt history/autosave for large projects — [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52).
-- Add viewport culling for canvas items.
 - Replace full-snapshot history for large projects.
 - Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
 - Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
