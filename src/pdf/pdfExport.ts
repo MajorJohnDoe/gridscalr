@@ -1,10 +1,11 @@
 import * as fontkit from "@pdf-lib/fontkit";
-import { PDFDocument } from "pdf-lib";
+import { PDFDocument, type PDFPage } from "pdf-lib";
 import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
 import { drawItem } from "./export/items/dispatch";
 import { drawLabel } from "./export/labels";
 import { drawLegendPage } from "./export/legend";
+import { createOptionalContent, type OptionalContentWriter } from "./export/ocg";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
 import { applyCrop, drawCalibrationLine } from "./export/page";
 import { pageIdAt } from "../model/pages";
@@ -57,6 +58,20 @@ export async function exportProjectPdf(
   const includeLegend = options?.includeLegend === true;
   const crop = normalizeCrop(options?.crop);
   const images = await embedImages(pdf, project, selectedPages, selectedLayers);
+  const ocg = options?.includeOcg
+    ? createOptionalContent(
+        pdf,
+        project.layers.filter(
+          (layer) =>
+            selectedLayers.has(layer.id) &&
+            layer.opacity > 0 &&
+            selectedPages.some((pageNumber) => {
+              const pageId = pageIdAt(project, pageNumber);
+              return pageId ? layerVisibleOnPage(layer, pageId) : false;
+            }),
+        ),
+      )
+    : null;
 
   for (const pageNumber of selectedPages) {
     const pdfPage = pages[pageNumber - 1];
@@ -82,11 +97,18 @@ export async function exportProjectPdf(
     for (const layer of project.layers) {
       if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
         continue;
-      for (const item of layer.items) {
-        if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
-        if (item.kind !== "image" || item.image?.mode === "annotation") continue;
-        drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
-      }
+      drawLayer(
+        pdfPage,
+        () => {
+          for (const item of layer.items) {
+            if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
+            if (item.kind !== "image" || item.image?.mode === "annotation") continue;
+            drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+          }
+        },
+        layer.id,
+        ocg,
+      );
     }
 
     const sheetDocument = templateDocumentForPage(project, pageNumber);
@@ -104,11 +126,18 @@ export async function exportProjectPdf(
     for (const layer of project.layers) {
       if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
         continue;
-      for (const item of layer.items) {
-        if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
-        if (item.kind === "image" && item.image?.mode !== "annotation") continue;
-        drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
-      }
+      drawLayer(
+        pdfPage,
+        () => {
+          for (const item of layer.items) {
+            if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
+            if (item.kind === "image" && item.image?.mode !== "annotation") continue;
+            drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+          }
+        },
+        layer.id,
+        ocg,
+      );
     }
 
     if (includeCalibration) {
@@ -132,5 +161,18 @@ export async function exportProjectPdf(
     drawLegendPage(pdf, fonts, project, selectedPages, selectedLayers);
   }
 
+  ocg?.finalize();
   return pdf.save();
+}
+
+/** Runs one layer's drawing inside an OCG marked-content sequence when enabled. */
+function drawLayer(
+  page: PDFPage,
+  draw: () => void,
+  layerId: string,
+  ocg: OptionalContentWriter | null,
+): void {
+  const marked = ocg?.begin(page, layerId) ?? false;
+  draw();
+  if (marked) ocg?.end(page);
 }

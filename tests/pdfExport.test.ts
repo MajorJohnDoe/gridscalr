@@ -1,7 +1,16 @@
 import { describe, expect, it } from "vitest";
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
-import { PDFDocument, PDFArray, PDFRawStream, decodePDFRawStream, degrees } from "pdf-lib";
+import {
+  PDFDocument,
+  PDFArray,
+  PDFDict,
+  PDFHexString,
+  PDFName,
+  PDFRawStream,
+  decodePDFRawStream,
+  degrees,
+} from "pdf-lib";
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
@@ -786,5 +795,108 @@ describe("flattened PDF export", () => {
     expect(output.getPageCount()).toBe(3);
     expect(output.getPage(0).getSize()).toEqual({ width: 100, height: 100 });
     expect(output.getPage(2).getSize()).toEqual({ width: 200, height: 200 });
+  });
+});
+
+async function optionalContentNames(bytes: Uint8Array): Promise<string[]> {
+  const doc = await PDFDocument.load(bytes);
+  const properties = doc.catalog.lookupMaybe(PDFName.of("OCProperties"), PDFDict);
+  if (!properties) return [];
+  const groups = properties.lookupMaybe(PDFName.of("OCGs"), PDFArray);
+  if (!groups) return [];
+  return groups.asArray().map((ref) => {
+    const dict = doc.context.lookup(ref, PDFDict);
+    const name = dict.get(PDFName.of("Name"));
+    return name instanceof PDFHexString ? name.decodeText() : String(name);
+  });
+}
+
+function exportOptions(project: Project): {
+  pages: number[];
+  layerIds: string[];
+  includeLabels: boolean;
+  includeCalibration: boolean;
+  includeLegend: boolean;
+} {
+  return {
+    pages: [1, 2],
+    layerIds: project.layers.map((layer) => layer.id),
+    includeLabels: true,
+    includeCalibration: true,
+    includeLegend: false,
+  };
+}
+
+describe("optional OCG layer export", () => {
+  it("writes one optional-content group per exported visible layer", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    project.layers.forEach((layer, index) => {
+      layer.name = index === 0 ? "Markups" : "Measurements";
+    });
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    const names = await optionalContentNames(bytes);
+    expect(names).toEqual(["Markups", "Measurements"]);
+
+    const doc = await PDFDocument.load(bytes);
+    expect(doc.catalog.get(PDFName.of("OCProperties"))).toBeTruthy();
+    const content = await decodePageContent(bytes);
+    expect(content).toContain("BDC");
+    expect(content).toContain("EMC");
+
+    // pdf.js resolves the same groups from the catalog, which proves the
+    // structure is real OCG data and not only a dictionary name.
+    const task = pdfjs.getDocument({ data: bytes.slice() });
+    const document = await task.promise;
+    const config = await document.getOptionalContentConfig();
+    const groupNames = [...config].map(([, group]) => group.name);
+    expect(groupNames).toEqual(["Markups", "Measurements"]);
+    await task.destroy();
+  });
+
+  it("excludes hidden layers and hidden items from the optional groups", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    project.layers[0].name = "Visible layer";
+    project.layers[1].name = "Hidden layer";
+    project.layers[1].visible = false;
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    expect(await optionalContentNames(bytes)).toEqual(["Visible layer"]);
+
+    // Page-scoped visibility is the same rule the canvas uses.
+    project.layers[1].visible = true;
+    project.layers[1].pageState = {
+      [pageIdFor(1)]: { visible: false },
+      [pageIdFor(2)]: { visible: false },
+    };
+    const scoped = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    expect(await optionalContentNames(scoped)).toEqual(["Visible layer"]);
+  });
+
+  it("leaves the flattened PDF unchanged when the option is off", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const off = await exportProjectPdf(project, renderer, exportOptions(project));
+    const explicitOff = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: false,
+    });
+    expect(Buffer.from(explicitOff).equals(Buffer.from(off))).toBe(true);
+
+    const doc = await PDFDocument.load(off);
+    expect(doc.catalog.get(PDFName.of("OCProperties"))).toBeUndefined();
+    const content = await decodePageContent(off);
+    expect(content).not.toContain("BDC");
   });
 });

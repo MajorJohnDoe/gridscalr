@@ -643,6 +643,13 @@ export function drawingExportDialog(
   }
   layerSection.append(layerList);
   layerSection.append(el("p", "export-note", t("dialogs.export.layersNote")));
+  let includeOcg = initial.includeOcg === true;
+  const ocgCheck = exportCheckbox(t("dialogs.export.ocg"), t("dialogs.export.ocgNote"), includeOcg);
+  ocgCheck.input.addEventListener("change", () => {
+    includeOcg = ocgCheck.input.checked;
+    update();
+  });
+  layerSection.append(ocgCheck.row);
   body.append(layerSection);
 
   const optionsSection = el("section", "export-section");
@@ -662,6 +669,12 @@ export function drawingExportDialog(
     t("dialogs.export.legendNote"),
     includeLegend,
   );
+  let includeAnnotations = initial.includeAnnotations === true;
+  const annotationsCheck = exportCheckbox(
+    t("dialogs.export.annotations"),
+    t("dialogs.export.annotationsNote"),
+    includeAnnotations,
+  );
   labelsCheck.input.addEventListener("change", () => {
     includeLabels = labelsCheck.input.checked;
     update();
@@ -674,7 +687,16 @@ export function drawingExportDialog(
     includeLegend = legendCheck.input.checked;
     update();
   });
-  optionsSection.append(labelsCheck.row, calibrationCheck.row, legendCheck.row);
+  annotationsCheck.input.addEventListener("change", () => {
+    includeAnnotations = annotationsCheck.input.checked;
+    update();
+  });
+  optionsSection.append(
+    labelsCheck.row,
+    calibrationCheck.row,
+    legendCheck.row,
+    annotationsCheck.row,
+  );
   body.append(optionsSection);
 
   const syncAreaRadios = () => {
@@ -723,6 +745,8 @@ export function drawingExportDialog(
     includeLabels,
     includeCalibration,
     includeLegend,
+    includeOcg,
+    includeAnnotations,
   });
 
   const validation = (): string | null => {
