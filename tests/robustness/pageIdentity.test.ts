@@ -446,6 +446,17 @@ describe("stateful page identity sequences", () => {
     }
   });
 
+  it("clears undo and redo at a structural boundary", () => {
+    store.setProject(baseProject(), PATH, false);
+    store.mutate((project) => {
+      project.layers[0].items[0].visible = false;
+    });
+    expect(store.canUndo).toBe(true);
+    store.clearHistory();
+    expect(store.canUndo).toBe(false);
+    expect(store.canRedo).toBe(false);
+  });
+
   it("records a checkpoint before a structural page action", async () => {
     store.setProject(baseProject(), PATH, false);
     await recordStructuralCheckpoint("Before inserting a page");

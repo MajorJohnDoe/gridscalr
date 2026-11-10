@@ -9,5 +9,4 @@ export {
   sourceDocumentPaths,
   updateRelativeDocumentPaths,
   serializeProjectCopy,
-  remapPageItems,
 } from "./paths";
