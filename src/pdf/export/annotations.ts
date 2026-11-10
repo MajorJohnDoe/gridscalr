@@ -71,6 +71,8 @@ function annotationShape(viewport: PageViewport, item: MarkupItem): AnnotationSh
       if (item.areaShape === "rectangle") return { kind: "square", vertices: [] };
       if (item.areaShape === "ellipse") return { kind: "circle", vertices: [] };
       return { kind: "polygon", vertices: itemVertices(viewport, item) };
+    case "volume":
+      return { kind: "polygon", vertices: itemVertices(viewport, item) };
     case "rect":
     case "image":
     case "count":
@@ -103,7 +105,6 @@ function annotationShape(viewport: PageViewport, item: MarkupItem): AnnotationSh
     case "callout":
     case "stamp":
     case "delta":
-    case "volume":
       return { kind: "text", vertices: [] };
   }
 }
@@ -169,7 +170,6 @@ export function addReviewAnnotation(
       "Vertices",
       shape.vertices.flatMap((point) => [point.x, point.y]),
     );
-    if (shape.kind === "polygon") dict.set(PDFName.of("IC"), PDFArray.withContext(context));
   }
   if (shape.kind === "text") {
     // A sticky note keeps the flattened text untouched and needs no /DA font.
