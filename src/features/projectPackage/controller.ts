@@ -185,6 +185,16 @@ function prepareScans(
   return scans;
 }
 
+/** One archive entry per physical source, even with several document records. */
+function uniqueSourceRequests(requests: PackageSourceRequest[]): PackageSourceRequest[] {
+  const seen = new Map<string, PackageSourceRequest>();
+  for (const request of requests) {
+    const key = request.archivePath.toLowerCase();
+    if (!seen.has(key)) seen.set(key, request);
+  }
+  return [...seen.values()];
+}
+
 function checksumMessage(failures: { name: string }[]): string {
   return t("package.checksumMessage", {
     files: failures.map((file) => `• ${file.name}`).join("\n"),
@@ -258,9 +268,13 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
       projectSchema: SCHEMA_VERSION,
       appVersion: __APP_VERSION__,
       createdAt: new Date().toISOString(),
-      documents: prepareDocuments(project, documentPaths, overrides, store.projectPath),
+      documents: uniqueSourceRequests(
+        prepareDocuments(project, documentPaths, overrides, store.projectPath),
+      ),
       exports: [] as PackageDataRequest[],
-      sourceScans: prepareScans(project, scanPaths, overrides, store.projectPath),
+      sourceScans: uniqueSourceRequests(
+        prepareScans(project, scanPaths, overrides, store.projectPath),
+      ),
       protectedPaths: protectedPathsFor(project),
     };
 

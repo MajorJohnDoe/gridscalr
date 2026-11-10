@@ -374,6 +374,23 @@ export class Store {
     this.emit("project");
   }
 
+  /**
+   * Applies an explicit source-storage change (managed copy, detach or
+   * relink). It changes document references, not drawing geometry, but it
+   * clears history so an older snapshot cannot silently restore the previous
+   * source path over the new one.
+   */
+  applySourceStorageChange(mutate: (documents: DocumentRef[]) => void): void {
+    if (!this.project) return;
+    mutate(this.project.documents);
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+  }
+
   /** Changes a template sheet's paper. Structural like adding or deleting a page. */
   setTemplatePaper(pageId: PageId, paper: SheetPaperSize): void {
     if (!this.project) return;

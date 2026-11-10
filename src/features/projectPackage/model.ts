@@ -2,6 +2,7 @@ import { serializeProject } from "../../io/projectFile";
 import { describeError } from "../../io/platformError";
 import type { Project } from "../../model/types";
 import { t } from "../../i18n";
+import { documentSourceKey } from "../sourceStorage";
 
 export const PACKAGE_FORMAT = "gridscalr-package";
 export const PACKAGE_FORMAT_VERSION = 1;
@@ -166,16 +167,27 @@ function scanExtension(name: string): string {
   return name.toLowerCase().endsWith(".tiff") ? ".tiff" : ".tif";
 }
 
-/** Maps each PDF document id to its path inside the package. */
+/**
+ * Maps each PDF document id to its path inside the package. Two document
+ * records that point at the same physical file (a managed copy shared by a
+ * page and its duplicate, or two references to one path) share one archive
+ * entry instead of duplicating the drawing.
+ */
 export function documentArchivePaths(project: Project): Map<string, string> {
   const used = new Set<string>();
   const paths = new Map<string, string>();
+  const bySource = new Map<string, string>();
   for (const document of project.documents) {
     if (document.kind !== "pdf") continue;
-    paths.set(
-      document.id,
-      `documents/${uniqueArchiveName(document.name, ".pdf", used, "Drawing")}`,
-    );
+    const sourceKey = documentSourceKey(document);
+    const existing = bySource.get(sourceKey);
+    if (existing) {
+      paths.set(document.id, existing);
+      continue;
+    }
+    const archivePath = `documents/${uniqueArchiveName(document.name, ".pdf", used, "Drawing")}`;
+    bySource.set(sourceKey, archivePath);
+    paths.set(document.id, archivePath);
   }
   return paths;
 }
@@ -184,12 +196,18 @@ export function documentArchivePaths(project: Project): Map<string, string> {
 export function sourceScanArchivePaths(project: Project): Map<string, string> {
   const used = new Set<string>();
   const paths = new Map<string, string>();
+  const bySource = new Map<string, string>();
   for (const document of project.documents) {
     if (document.kind !== "tiff") continue;
-    paths.set(
-      document.id,
-      `source-scans/${uniqueArchiveName(document.name, scanExtension(document.name), used, "Scan")}`,
-    );
+    const sourceKey = documentSourceKey(document);
+    const existing = bySource.get(sourceKey);
+    if (existing) {
+      paths.set(document.id, existing);
+      continue;
+    }
+    const archivePath = `source-scans/${uniqueArchiveName(document.name, scanExtension(document.name), used, "Scan")}`;
+    bySource.set(sourceKey, archivePath);
+    paths.set(document.id, archivePath);
   }
   return paths;
 }
@@ -219,6 +237,9 @@ export function portableProjectJson(
   const copy = structuredClone(project);
   for (const document of copy.documents) {
     document.path = null;
+    // The sender's original absolute path never travels inside a package.
+    // The checksum stays as provenance for the managed copy.
+    document.originalPath = null;
     if (document.kind === "pdf") {
       document.relativePath = documentPaths.get(document.id) ?? null;
       const override = overrides[document.id];

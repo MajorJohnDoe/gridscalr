@@ -1,4 +1,4 @@
-import { fileSize, isTauri, pathExists } from "../io/platform";
+import { fileSize, isTauri, pathExists, readFileBytes, sha256Hex } from "../io/platform";
 import { resolveRelativePath } from "../io/projectFile";
 import type { Project } from "../model/types";
 import { store } from "../state/store";
@@ -10,6 +10,7 @@ export interface SourceFileStatus {
   name: string;
   path: string | null;
   state: SourceFileState;
+  storage: "reference" | "managed";
 }
 
 export interface SourceStatusSummary {
@@ -41,6 +42,8 @@ class SourceStatusMonitor {
   private timer: number | null = null;
   private unsubscribe: (() => void) | null = null;
   private focusListener: (() => void) | null = null;
+  /** One hash per path/size/stored-checksum so polling does not re-read files. */
+  private hashCache = new Map<string, string>();
 
   get summary(): SourceStatusSummary {
     return {
@@ -75,6 +78,7 @@ class SourceStatusMonitor {
     this.focusListener = null;
     if (this.timer !== null) window.clearInterval(this.timer);
     this.timer = null;
+    this.hashCache.clear();
     this.listeners.clear();
   }
 
@@ -94,16 +98,45 @@ class SourceStatusMonitor {
       for (const document of project.documents) {
         // Embedded TIF pages need no external file.
         if (document.kind === "tiff" && document.embeddedPdf) continue;
+        const storage = document.storage === "managed" ? "managed" : "reference";
         const path = resolvedDocumentPath(document, projectPath);
         if (!path) continue;
         if (!(await pathExists(path))) {
-          next.push({ documentId: document.id, name: document.name, path, state: "missing" });
+          next.push({
+            documentId: document.id,
+            name: document.name,
+            path,
+            state: "missing",
+            storage,
+          });
           continue;
         }
         const size = await fileSize(path);
-        const state =
-          document.sizeBytes && size !== null && size !== document.sizeBytes ? "changed" : "ok";
-        next.push({ documentId: document.id, name: document.name, path, state });
+        let state: SourceFileState = "ok";
+        if (document.kind === "pdf" && document.sha256) {
+          const key = `${path}|${size ?? 0}|${document.sha256}`;
+          let hash = this.hashCache.get(key);
+          if (!hash) {
+            try {
+              hash = await sha256Hex(await readFileBytes(path));
+              if (this.hashCache.size > 256) this.hashCache.clear();
+              this.hashCache.set(key, hash);
+            } catch {
+              hash = undefined;
+            }
+          }
+          if (hash && hash.toLowerCase() !== document.sha256.toLowerCase()) state = "changed";
+          else if (!hash && size !== null && size !== document.sizeBytes) state = "changed";
+        } else if (document.sizeBytes && size !== null && size !== document.sizeBytes) {
+          state = "changed";
+        }
+        next.push({
+          documentId: document.id,
+          name: document.name,
+          path,
+          state,
+          storage,
+        });
       }
       this.statuses = next;
       this.checkedAt = new Date().toISOString();

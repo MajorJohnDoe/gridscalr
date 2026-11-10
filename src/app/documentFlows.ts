@@ -36,6 +36,14 @@ export interface DocumentFlowHost {
   enqueuePageSize(page: number): Promise<PageSize | undefined>;
   fitPage(): void;
   invalidate(): void;
+  /** Returns true when the user accepted a managed-copy recommendation. */
+  recommendSourceStorage(
+    path: string | null,
+    name: string,
+    kind: DocumentRef["kind"],
+  ): Promise<boolean>;
+  /** Applies a recommended managed copy once the document exists in the store. */
+  applySourceStorage(documentId: string): Promise<void>;
 }
 
 function errorMessage(error: unknown): string {
@@ -58,6 +66,7 @@ export async function loadNewPdf(
   const imported = await createImportedDocument(bytes, name, path);
   if (!imported) return;
   const { documentRef, pdfBytes, dpiWarning } = imported;
+  const copyRecommended = await host.recommendSourceStorage(path, name, documentRef.kind);
 
   const project = store.project;
 
@@ -74,6 +83,7 @@ export async function loadNewPdf(
     const created = createProject(documentRef);
     created.settings.stampPresets = loadGlobalStampPresets();
     await host.installDocuments([pdf], created, null, false);
+    if (copyRecommended) await host.applySourceStorage(documentRef.id);
     if (path) {
       addRecent({ kind: "pdf", path, name, at: new Date().toISOString() });
     }
@@ -110,6 +120,7 @@ export async function loadNewPdf(
   await host.enqueuePageSize(startPage);
   host.fitPage();
   host.invalidate();
+  if (copyRecommended) await host.applySourceStorage(documentRef.id);
   if (dpiWarning) toast(t("app.dpiAssumed"), "warning");
   toast(
     t("app.addedPages", {
@@ -256,7 +267,9 @@ export async function loadProjectData(
 
     if (documentRef.kind === "pdf") {
       documentRef.path = isTauri ? pdfPath : null;
-      documentRef.relativePath = null;
+      // A managed copy keeps its relative link even when it was resolved
+      // through that link, so moving the project folder keeps working.
+      if (documentRef.storage !== "managed") documentRef.relativePath = null;
       documentRef.sizeBytes = bytes.byteLength;
       if (hash) documentRef.sha256 = hash;
     }

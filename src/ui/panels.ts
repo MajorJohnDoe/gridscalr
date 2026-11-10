@@ -93,6 +93,12 @@ export interface PanelActions {
   reorderPage: (pageId: PageId, targetIndex: number) => void;
   insertPage: (pageId: PageId, index: number) => void;
   replaceSource: (documentId: string) => void;
+  consolidateDrawings: () => void;
+  copyDrawingIntoProject: (documentId: string) => void;
+  detachFromSource: (documentId: string) => void;
+  relinkSource: (documentId: string) => void;
+  reloadSource: (documentId: string) => void;
+  useCurrentSource: (documentId: string) => void;
   cleanupSuperseded: (documentId: string) => void;
   refresh: () => void;
   openRecovery: () => void;
