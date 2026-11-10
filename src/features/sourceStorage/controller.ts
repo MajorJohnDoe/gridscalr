@@ -4,7 +4,7 @@ import { sourceStatus } from "../../source/sourceStatus";
 import { store } from "../../state/store";
 import { copyDocumentIntoProject, consolidateDrawings } from "./copyActions";
 import { findDocument } from "./documents";
-import { detectSourceLocation, documentStorage, shouldRecommendManagedCopy } from "./mode";
+import { detectSourceLocation, shouldRecommendManagedCopy } from "./mode";
 import type { SourceStorageHost } from "./ports";
 import { sourceChangeActions } from "./relink";
 import {
@@ -109,9 +109,7 @@ export class SourceStorageController {
       const document = findDocument(project, status.documentId);
       if (!document || document.kind !== "pdf") continue;
       active.add(status.documentId);
-      if (this.dismissed.has(status.documentId) || documentStorage(document) !== "reference") {
-        continue;
-      }
+      if (this.dismissed.has(status.documentId)) continue;
       if (this.banners.has(status.documentId)) continue;
       const actions = sourceChangeActions(document)
         .filter(

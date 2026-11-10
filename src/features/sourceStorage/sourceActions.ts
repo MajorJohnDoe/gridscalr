@@ -76,6 +76,11 @@ export async function reloadSource(host: SourceStorageHost, documentId: string):
     return;
   }
   try {
+    const info = await sourceFileHash(path);
+    if (!info) {
+      await relinkSource(host, documentId);
+      return;
+    }
     const bytes = await readFileBytes(path);
     const pageCount = await host.probePdf(bytes);
     if (pageCount === null) throw new Error(t("sourceStorage.reloadFailed"));
