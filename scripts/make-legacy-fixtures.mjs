@@ -334,10 +334,7 @@ function drawingItems(version) {
         ],
         {
           text: "Bold note",
-          runs: [
-            { text: "Bold", bold: true },
-            { text: " note" },
-          ],
+          runs: [{ text: "Bold", bold: true }, { text: " note" }],
           textBackground: "white",
           padding: 6,
         },

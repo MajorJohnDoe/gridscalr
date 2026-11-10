@@ -33,9 +33,7 @@ function findItem(project: Project, id: string) {
 }
 
 function measurementItems(project: Project) {
-  return project.layers
-    .filter((layer) => layer.kind === "measure")
-    .flatMap((layer) => layer.items);
+  return project.layers.filter((layer) => layer.kind === "measure").flatMap((layer) => layer.items);
 }
 
 function drawItems(project: Project) {
@@ -190,9 +188,7 @@ describe("migration corpus", () => {
       const first = parseProjectWithReport(fixtureText(file)).project;
       const second = parseProjectWithReport(fixtureText(file)).project;
       expect(second.pages.map((page) => page.id)).toEqual(first.pages.map((page) => page.id));
-      expect(second.pages.map((page) => page.state)).toEqual(
-        first.pages.map((page) => page.state),
-      );
+      expect(second.pages.map((page) => page.state)).toEqual(first.pages.map((page) => page.state));
       expect(
         second.layers.flatMap((layer) => layer.items.map((item) => [item.id, item.pageId])),
       ).toEqual(first.layers.flatMap((layer) => layer.items.map((item) => [item.id, item.pageId])));
