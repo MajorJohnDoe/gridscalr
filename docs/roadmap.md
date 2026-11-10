@@ -169,6 +169,10 @@ silent data loss.
 - Project doctor with repair, read-only open and diagnostics.
 - Duplicate-ID and out-of-range page repair.
 
+Implemented in Phase 5 on `feat/157-project-integrity` (PR
+[#164](https://github.com/MajorJohnDoe/gridscalr/pull/164)); the import
+preflight and provenance work from §4 also lands with it.
+
 Plan: [`plan/robustness.md`](plan/robustness.md) · Issue
 [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157).
 

@@ -2,17 +2,23 @@ import { normalizeColor } from "../../model/color";
 import { defaultLineTypes } from "../../model/lineTypes";
 import type { LineType } from "../../model/types";
 
-export function normalizeLineTypes(rawValue: unknown): LineType[] {
+export function normalizeLineTypes(rawValue: unknown, report?: (code: string) => void): LineType[] {
   const defaults = defaultLineTypes();
   if (!Array.isArray(rawValue)) return defaults;
   const result: LineType[] = [];
   const seen = new Set<string>();
   for (const entry of rawValue) {
-    if (!entry || typeof entry !== "object") continue;
+    if (!entry || typeof entry !== "object") {
+      report?.("droppedLineType");
+      continue;
+    }
     const source = entry as Partial<LineType>;
     const id =
       typeof source.id === "string" && source.id.trim() ? source.id.trim().slice(0, 60) : "";
-    if (!id || seen.has(id)) continue;
+    if (!id || seen.has(id)) {
+      report?.("droppedLineType");
+      continue;
+    }
     seen.add(id);
     result.push({
       id,

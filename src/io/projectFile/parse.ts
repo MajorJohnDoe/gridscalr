@@ -128,30 +128,36 @@ export function parseProjectWithReport(text: string): {
   const pageIds = new Set(migration.records.map((record) => record.id));
 
   const base = createProject(documents[0], createDefaultLayers(migration.firstPageId ?? undefined));
-  const categories = normalizeCategories(raw.categories);
-  load.drop("droppedCategory", droppedCount(arrayLength(raw.categories), categories.length));
+  const categories = normalizeCategories(raw.categories, reportDrop);
   load.repair("repairedCategoryId", duplicateIdCount(raw.categories));
-  const countTypes = normalizeCountTypes(raw.countTypes);
-  load.drop("droppedCountType", droppedCount(arrayLength(raw.countTypes), countTypes.length));
-  load.repair("repairedCountTypeId", duplicateIdCount(raw.countTypes));
+  const countTypes = normalizeCountTypes(raw.countTypes, reportDrop);
   const settings = normalizeSettings(raw.settings, categories);
+  const rawDefaultCategory = (
+    raw.settings as { quantity?: { defaultCategoryId?: unknown } } | undefined
+  )?.quantity?.defaultCategoryId;
+  if (
+    typeof rawDefaultCategory === "string" &&
+    rawDefaultCategory !== settings.quantity.defaultCategoryId
+  ) {
+    load.repair("repairedDefaultCategory");
+  }
   const countPresets = normalizeCountPresets(
     raw.countPresets,
     new Set(categories.map((category) => category.id)),
     new Set(countTypes.map((countType) => countType.id)),
     settings.quantity.defaultCategoryId,
+    reportDrop,
   );
   load.drop("droppedCountPreset", droppedCount(arrayLength(raw.countPresets), countPresets.length));
   load.repair("repairedCountPresetId", duplicateIdCount(raw.countPresets));
   const assets = normalizeAssets(raw.assets);
   load.drop("droppedAsset", droppedCount(objectKeyCount(raw.assets), Object.keys(assets).length));
-  const lineTypes = normalizeLineTypes(raw.lineTypes);
-  load.drop("droppedLineType", droppedCount(arrayLength(raw.lineTypes), lineTypes.length));
-  load.repair("repairedLineTypeId", duplicateIdCount(raw.lineTypes));
+  const lineTypes = normalizeLineTypes(raw.lineTypes, reportDrop);
   const markupsViews = normalizeMarkupsViews(
     raw.markupsViews,
     new Set(categories.map((category) => category.id)),
     new Set(countTypes.map((countType) => countType.id)),
+    reportDrop,
   );
   load.drop("droppedMarkupsView", droppedCount(arrayLength(raw.markupsViews), markupsViews.length));
   load.repair("repairedMarkupsViewId", duplicateIdCount(raw.markupsViews));
@@ -166,7 +172,6 @@ export function parseProjectWithReport(text: string): {
     migration.firstPageId,
     reportDrop,
   );
-  load.drop("droppedLayer", droppedCount(arrayLength(raw.layers), layers.length));
   load.drop("droppedItem", droppedCount(rawItemCount(raw.layers), parsedItemCount(layers)));
   const project: Project = {
     ...base,

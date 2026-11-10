@@ -317,8 +317,9 @@ src/app/documentFlows.ts   PDF/TIF/project loading and page selection
 src/app/pageFlows.ts       page navigation, duplicate/delete and project reset
 src/app/scaleFlows.ts      calibration, manual scale and fit-to-area actions
 src/app/packageFlows.ts    package host adapter and packaged-project opening
-src/app/projectImportFlows.ts project page import, partial imports and history-aware commit
+src/app/projectImportFlows.ts project page import, preflight, provenance and history-aware commit
 src/app/projectImportSource.ts source project document loading, previews and missing-file recovery
+src/app/projectDoctorFlows.ts project doctor and load-report wiring
 src/app/rendererDocuments.ts renderer/proxy cache that keeps import undo and redo instant
 src/app/diagnosticsFlows.ts diagnostics text, copy and report flow
 src/i18n/locales/*.json    message catalogs; en.json is the source and fallback
@@ -335,7 +336,13 @@ src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
 src/features/projectImport/model.ts source-page inspection, import planning and commit
 src/features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
+src/features/projectImport/preflight.ts import counts, missing files and checksum warnings
+src/features/projectImport/preflightUi.ts localized preflight dialog
 src/features/projectImport/ui.ts graphical source-page picker with lazy previews
+src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
+src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
+src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics
+src/features/projectIntegrity/ui.ts localized doctor, issue list and repair controls
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
 src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
@@ -389,6 +396,7 @@ src/canvas/crop.ts         export crop mode, overlay and toolbar
 src/canvas/editors.ts      public CanvasEditorController surface
 src/canvas/editors/        controller facade, text/textbox sessions, label editor and shared helpers
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
+src/model/integrity.ts     shared referential-integrity rules and round-trip shape comparison
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
 src/model/symbols/        symbol types, categories, sign artwork, catalogue, lookup and render plan
@@ -459,6 +467,7 @@ src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
 src/io/projectFile/       schema normalization, migration, serialization, relative paths
+src/io/projectFile/report.ts load-report counts for dropped and repaired data
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
@@ -593,6 +602,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.22.4:** complete (released 2026-11-08) — Windows touchpad pinch-to-zoom via WebView2 pinch support, normalized wheel deltas and a touchpad-specific zoom sensitivity. No schema change; the schema remains v23.
 - **Project page import:** complete — import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo (PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152)). No schema change; the schema remains v23.
 - **Foundation Phase 4:** complete — explicit reference and managed-copy source storage, verified copies in `<project>.drawings/`, **Consolidate drawings…**, **Use managed copy**, **Detach from source**, the source-changed banner with Reload/Use current/Relink/Copy into project, cloud and network import recommendations, and managed drawings included once in packages. Schema 25 adds `storage`, `originalPath` and `originalSha256`; schema 24 projects migrate to reference without moving a file. No app version bump.
+- **Foundation Phase 5:** complete — shared `validateProject()` referential-integrity rules, a load report with dropped/repaired codes, pre-save validation and serialize → parse → write round-trip verification, the **Project doctor** with read-only open, explicit duplicate-ID/dangling-reference/stale-OCR repairs, repaired-copy save and path-free diagnostics, plus an import preflight and optional page provenance. Schema stays 25; provenance is additive and optional. No app version bump.
 
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.

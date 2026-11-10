@@ -18,14 +18,20 @@ export function uniqueCategoryName(categories: Category[], wanted: string): stri
   }
 }
 
-export function normalizeCategories(value: unknown): Category[] {
+export function normalizeCategories(value: unknown, report?: (code: string) => void): Category[] {
   const categories: Category[] = [];
   if (Array.isArray(value)) {
     for (const entry of value) {
-      if (typeof entry !== "object" || entry === null) continue;
+      if (typeof entry !== "object" || entry === null) {
+        report?.("droppedCategory");
+        continue;
+      }
       const raw = entry as Partial<Category>;
       const name = typeof raw.name === "string" ? normalizeCategoryName(raw.name) : "";
-      if (!name) continue;
+      if (!name) {
+        report?.("droppedCategory");
+        continue;
+      }
       const clipped = name.slice(0, CATEGORY_NAME_MAX_LENGTH).trim();
       let id = typeof raw.id === "string" && raw.id ? raw.id : makeId("cat");
       if (categories.some((category) => category.id === id)) {

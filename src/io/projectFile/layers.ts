@@ -53,10 +53,12 @@ export function normalizeLayers(
   if (Array.isArray(rawLayers)) {
     for (const value of rawLayers) {
       if (typeof value !== "object" || value === null) {
+        report?.("droppedLayer");
         continue;
       }
       const raw = value as Partial<Layer>;
       if (raw.kind !== "measure" && raw.kind !== "draw") {
+        report?.("droppedLayer");
         continue;
       }
       const layer: Layer = {

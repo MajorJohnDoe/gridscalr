@@ -201,11 +201,27 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 2. Save a copy before changing anything.
 3. Choose **File → Import pages from project…** and pick the other file.
 4. In the picker, select the corrected sheet. Check its page name and item count, then import it.
-5. If the old, incorrect version is still in the project, delete that page from the Pages tab. Later pages move down one number, so the corrected sheet takes its place.
-6. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
-7. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
+5. Review the **Import preflight** counts, unreadable files and checksum warnings before choosing **Import pages**. Cancel leaves both projects untouched.
+6. If the old, incorrect version is still in the project, delete that page from the Pages tab. Later pages move down one number, so the corrected sheet takes its place.
+7. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
+8. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
 
-The import appends pages by default, so it never moves an existing page on its own. An explicit insertion position can place the imported pages at a chosen point. The source project is read-only. The import is one undo step, but deleting a page is a separate structural step and cannot be undone. Confirm the page numbers and quantities before deleting.
+The import appends pages by default, so it never moves an existing page on its own. An explicit insertion position can place the imported pages at a chosen point. The source project is read-only. Imported pages keep optional provenance with the source project ID, source revision hash/size/mtime, source page ID, import time and app version. The import is one undo step, but deleting a page is a separate structural step and cannot be undone. Confirm the page numbers and quantities before deleting.
+
+## Check a damaged project
+
+A normal save validates the project first. Duplicate IDs, missing page or layer references, dangling categories, count types, line types, assets or logos, invalid page ranges and invalid image geometry are errors: the save stops and the **Project doctor** opens. Warnings such as stale OCR or invalid optional provenance are listed and can be accepted.
+
+Use this when a project fails to open cleanly, a save is blocked, or someone sends a file after manual editing.
+
+1. Read the **Load report** or **Project doctor** issue list. It names each problem by severity and entity and does not hide dropped data.
+2. Choose **Open read-only** when you only need to inspect or export the original. A normal Save is refused; **Save a copy…** keeps any local work.
+3. Choose **Export diagnostics…** when the file must go to support. The text contains issue codes and counts only, never drawing content, labels or paths.
+4. Apply the explicit repairs you need: duplicate IDs, dangling references or stale OCR. Nothing is written yet.
+5. Choose **Save repaired copy…** and save the copy in a new file. The original is never repaired in place and is never overwritten by a normal save while it is invalid.
+6. Open the repaired copy, review the pages, quantities and source links, and use it for the next revision.
+
+The doctor cannot prove that a drawing is the right revision, that a quantity is commercially correct, or that every external file still exists. It protects the project's internal references and prevents a silent loss of pages, items or settings; it does not invent missing data.
 
 ## Related reference
 

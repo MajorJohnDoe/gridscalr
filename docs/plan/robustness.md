@@ -670,6 +670,9 @@ Complete 2026-11-10.
 
 ### Phase 5 — Integrity and project doctor
 
+Complete on `feat/157-project-integrity`, PR
+[#164](https://github.com/MajorJohnDoe/gridscalr/pull/164). Schema stays 25.
+
 - Add the validator and the load report.
 - Add pre-save validation and post-save round-trip.
 - Add the project doctor dialog.

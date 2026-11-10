@@ -84,9 +84,12 @@ function validateAsset(asset: ImageAsset, key: string, issues: ProjectIssue[]): 
 }
 
 function validateItemGeometry(item: MarkupItem, issues: ProjectIssue[]): void {
-  if (!item.points.every(isFinitePoint)) {
+  if (!item.points.length || !item.points.every(isFinitePoint)) {
     issues.push(issue("error", "invalidItemGeometry", { kind: "item", id: item.id }));
     return;
+  }
+  if (item.kind === "polyline" && item.points.length > 500) {
+    issues.push(issue("error", "invalidItemGeometry", { kind: "item", id: item.id }));
   }
   if (item.kind === "image" || item.kind === "textbox") {
     const [first, second] = item.points;
@@ -158,7 +161,7 @@ export function validateProject(project: Project): ProjectIssue[] {
         issue("warning", "invalidDocumentStorage", { kind: "document", id: document.id }),
       );
     }
-    if (document.storage === "managed" && document.kind !== "template" && !document.relativePath) {
+    if (document.storage === "managed" && document.kind === "pdf" && !document.relativePath) {
       issues.push(
         issue("error", "managedSourceMissingRelativePath", { kind: "document", id: document.id }),
       );
