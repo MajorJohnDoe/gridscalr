@@ -270,7 +270,9 @@ path-free diagnostics; `src/model/integrity.ts` holds the pure rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a
-source drawing.
+source drawing. The `tests/robustness/` gate exercises seeded page and save
+sequences, competing writers, the committed `fixtures/legacy/` schema 1–25
+corpus and source storage; run it alone with `npm run test:robustness`.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.
