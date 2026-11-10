@@ -53,7 +53,7 @@ Right-click or long-press the Cloud, Callout, Stamp and Arrow tools to choose va
 1. Choose **File → Export → Drawing PDF…**.
 2. Select the current page, all pages or a page range.
 3. Choose whole pages or a selected crop area.
-4. Include the visible layers, labels, calibration line and, when useful, a legend.
+4. Include the visible layers, labels, calibration line and, when useful, a legend. For a recipient who reviews in another PDF reader, optionally enable **Optional layers (OCG)** or **Review annotations**. Both are off by default, keep the flattened drawing intact, and annotations are a review artifact rather than an editable project.
 5. Save the file under a new name.
 
 ![Drawing export with pages, layers, labels and legend options](screenshots/export.png)
@@ -154,7 +154,7 @@ Save the `.gridscalr` project next to the drawing set. If the project or drawing
 GridScalr checks the project file on disk before every desktop save. If the file changed since it was opened, a conflict dialog appears instead of a silent overwrite.
 
 - Choose **Save as conflicted copy** (the default) to keep both versions. The copy is written next to the project and the disk file stays untouched.
-- Use **Compare with disk version** to review the page and item counts, size and time before deciding.
+- Use **Compare with disk version** to open a read-only difference summary for the local and disk projects, including changed, added and removed markups and quantity fields. It never merges or writes.
 - **Reload from disk** discards the in-memory changes and opens the newer file.
 - **Overwrite** replaces the newer file with your version. Use it only when you are certain which copy is correct.
 - A conflict is not a merge. Open the conflicted copy and import pages from the other project if both versions contain useful work.
@@ -165,7 +165,7 @@ If the project file changes outside the app while it is open, a non-blocking ban
 
 GridScalr also keeps scoped recovery snapshots, one per project and app instance, plus labelled checkpoints before page deletion, duplication, page import and paper changes. Open **Restore last session** on the welcome screen or **Settings → Preferences → Data → Review recovery data…** to see every recoverable project. A snapshot labelled **based on an older file version** was taken from a different disk version; it opens only when you choose it. Use that path after a crash instead of copying a cloud file over a newer one.
 
-Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Package project…** when the backup must travel.
+Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Share project package…** when the backup must travel.
 
 Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.
 
@@ -179,7 +179,7 @@ A drawing on a network share or in a cloud-synced folder can be replaced or move
 4. If the page count changed, use **Replace source…** and map the pages. Do not relink and hope the pages still line up.
 5. A managed copy protects against the original changing or moving, not against someone editing the copy. The checksum remains authoritative and a changed copy is reported the same way.
 6. Use **Detach from source** when the copy is now the master and the original path no longer matters.
-7. Package the project when it must travel. Each managed drawing is included once in the `.gridscalr.zip`; packaging does not change the live source mode.
+7. Share the project when it must travel: **File → Share project package…** writes one `.gridscalr.zip` with managed drawings included once and sender paths cleared. Sharing does not change the live source mode.
 
 ### Review checklist
 

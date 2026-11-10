@@ -411,6 +411,8 @@ src/pdf/pdfRenderer.ts     PDF.js lifecycle and progressive page rendering
 src/pdf/thumbnails.ts      on-demand, cached page previews for the Pages panel
 src/pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
 src/pdf/export/            options, page crop, fonts, images, geometry, labels, legend
+src/pdf/export/ocg.ts      optional-content groups for exported project layers
+src/pdf/export/annotations.ts review-only standard PDF annotation dictionaries
 src/pdf/export/items/      measurement, shapes, text, symbols, counts, annotations and dispatch
 src/pdf/reportPdf.ts       print-friendly A4 quantity report
 src/pdf/comparePdf.ts      side-by-side comparison PDF with visuals and diff tables
@@ -475,6 +477,7 @@ src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
 src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+src/features/saveIntegrity/compare.ts read-only conflict comparison summary
 src/io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
 src/model/metadata.ts      optional report metadata and logo reference normalization
 src/model/annotations.ts   callout, stamp, delta, and cloud-label layout
@@ -603,6 +606,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **Project page import:** complete — import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo (PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152)). No schema change; the schema remains v23.
 - **Foundation Phase 4:** complete — explicit reference and managed-copy source storage, verified copies in `<project>.drawings/`, **Consolidate drawings…**, **Use managed copy**, **Detach from source**, the source-changed banner with Reload/Use current/Relink/Copy into project, cloud and network import recommendations, and managed drawings included once in packages. Schema 25 adds `storage`, `originalPath` and `originalSha256`; schema 24 projects migrate to reference without moving a file. No app version bump.
 - **Foundation Phase 5:** complete — shared `validateProject()` referential-integrity rules, a load report with dropped/repaired codes, pre-save validation and serialize → parse → write round-trip verification, the **Project doctor** with read-only open, explicit duplicate-ID/dangling-reference/stale-OCR repairs, repaired-copy save and path-free diagnostics, plus an import preflight and optional page provenance. Schema stays 25; provenance is additive and optional. No app version bump.
+- **Foundation Phase 6:** complete — opt-in PDF optional-content-group export for visible project layers, opt-in review-only standard PDF annotations, a real read-only **Compare with disk version** in the save conflict dialog using the revision comparison engine, and **Share project package…** as the single share action with managed drawings included once. Flattened PDF stays the deterministic default. No schema change; the schema remains 25. No app version bump.
 
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.

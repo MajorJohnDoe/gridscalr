@@ -39,6 +39,7 @@ src/
   features/saveIntegrity/index.ts public surface for conditional saves and backups
   features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
   features/saveIntegrity/conflict.ts conflict classification and default action
+  features/saveIntegrity/compare.ts read-only local-versus-disk comparison summary
   features/saveIntegrity/backup.ts rolling-backup naming and rotation rules
   features/saveIntegrity/controller.ts save, conflict, no-op, backup and restore orchestration
   features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
@@ -141,6 +142,8 @@ src/
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
   pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
   pdf/export/options.ts  export page range and crop normalization
+  pdf/export/ocg.ts      optional-content groups for exported project layers
+  pdf/export/annotations.ts review-only standard PDF annotations
   pdf/export/page.ts     crop application and calibration line drawing
   pdf/export/fonts.ts    embedded font set and run selection
   pdf/export/images.ts   image asset embedding

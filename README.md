@@ -98,22 +98,27 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Search every page, run local English/Swedish OCR on scanned sheets, jump to a
   highlighted result, and keep the PDF and OCR indexes on your machine.
 - Export the drawing as a flattened PDF with page ranges, crops, visible layers,
-  labels and a legend, plus markups CSV, project JSON and PNG.
+  labels and a legend, plus markups CSV, project JSON and PNG. For review in
+  other PDF readers, optionally write visible layers as PDF optional-content
+  groups or add review-only standard annotations; both are off by default and
+  never replace the flattened drawing.
 - Keep a drawing as a normal reference or copy it into the project, either per
   drawing or with **Consolidate drawings…**. A managed copy protects a shared or
   cloud-synced source from being changed or moved underneath the takeoff, and a
   source-changed banner offers explicit Reload, Use current, Relink and Copy
   into project actions.
-- Package a project and its drawings into a portable `.gridscalr.zip` with a
+- Share a project and its drawings as one portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
-  on another machine without relinking. Managed drawings are included once.
-  Reports and original TIF scans are opt-in.
+  on another machine without relinking. Managed drawings are included once and
+  sender paths are cleared. Reports and original TIF scans are opt-in.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, conditional saves that preserve both versions on a conflict,
   automatic rolling backups and **Save a copy** exports, autosave recovery,
-  recent files, and the user guide bundled under **Help**. The status bar shows
-  saved/unsaved state and source-file warnings, and Project settings reports the
-  project size, image and OCR contribution, and source-drawing status.
+  recent files, and the user guide bundled under **Help**. A save conflict can
+  show a read-only difference summary against the disk version without merging
+  either file. The status bar shows saved/unsaved state and source-file warnings,
+  and Project settings reports the project size, image and OCR contribution, and
+  source-drawing status.
 
 Hidden items never render, hit-test or export. Locked items stay visible and
 exportable but cannot be moved, edited or deleted. Derived quantities are always
@@ -262,6 +267,10 @@ read-only open and the external-change watcher. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator
 surface, explicit repairs, the project doctor, load-report presentation and
 path-free diagnostics; `src/model/integrity.ts` holds the pure rules.
+`src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
+writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
+builds the read-only conflict comparison. None of them writes project data or a
+source drawing.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

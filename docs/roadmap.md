@@ -186,8 +186,11 @@ the PDF the source of truth.
 - Package/share flow that includes drawings once.
 - **Compare with disk version** at a save conflict.
 
-This work is additive and follows the integrity work. Issue
-[#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
+This work is additive and follows the integrity work. Implemented in Phase 6 on
+`feat/158-interoperability` (PR
+[#165](https://github.com/MajorJohnDoe/gridscalr/pull/165)). The flattened PDF
+stays the deterministic default; both interoperability options are opt-in.
+Issue [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 
 ### 7. Performance and test gates
 

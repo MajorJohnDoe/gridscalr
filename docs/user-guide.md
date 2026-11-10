@@ -673,7 +673,7 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 A desktop save is conditional against the file version GridScalr loaded. If another program, a second window or a cloud client changed the project file on disk, GridScalr opens a conflict dialog instead of overwriting it:
 
 - **Save as conflicted copy** is the default. It writes `<project> (conflicted copy YYYY-MM-DD HHMM).gridscalr` next to the original, leaves the disk file untouched and keeps your project open.
-- **Compare with disk version** shows the local and disk versions side by side with their page and item counts, size and time, plus the disk file hash.
+- **Compare with disk version** opens a read-only comparison of your in-memory project and the parsed disk project. It lists page and item counts plus the changed, added and removed markups, changed pages and quantity fields such as pieces per object and volume depth. Nothing is merged or written. If the disk file exists but is not a readable project, the dialog falls back to the file summary and says so.
 - **Reload from disk** discards the in-memory version and opens the disk file after confirmation.
 - **Overwrite** writes your version over the disk file. This is an explicit danger action.
 - **Cancel** keeps editing without writing.
@@ -712,11 +712,11 @@ In the desktop app, opening a project also checks for a sidecar lock file named 
 
 While a desktop project is open, GridScalr checks the project file stamp every few seconds when the window is visible. If the file changed outside the app, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes. The browser fallback has no sidecar lock, file watcher or read-only enforcement; it keeps the scoped IndexedDB recovery store only.
 
-### Package a project
+### Share a project package
 
-**File → Package project…** writes the project and its drawings as one standard ZIP named `<project>.gridscalr.zip`. The package is a transport container; the `.gridscalr` format is unchanged.
+**File → Share project package…** is the share action for a project. It writes the project and its drawings as one standard ZIP named `<project>.gridscalr.zip`. The package is a transport container; the `.gridscalr` format is unchanged, and the recipient opens it with **File → Open package…** or by extracting the project and its `documents/` folder. The flattened drawing PDF stays the deterministic drawing export, while the package is what carries the editable project to another computer.
 
-![Package project dialog with optional exports and TIF scans](screenshots/package.png)
+![Share project package dialog with optional exports and TIF scans](screenshots/package.png)
 
 - The package contains `README.txt`, `manifest.json`, the project file and the referenced PDFs under `documents/`.
 - Absolute document paths from your computer are removed. PDFs are linked through `documents/`.
@@ -732,18 +732,22 @@ While a desktop project is open, GridScalr checks the project file stamp every f
 
 You can also unzip the package yourself and open the `.gridscalr` file with **File → Open project…**. Keep the `documents/` folder next to the project file so the relative links resolve.
 
-Packages are not encrypted and are not cryptographically signed; the checksums detect corruption and accidental changes. Package project and Open package require the desktop app and are disabled in the browser fallback.
+Packages are not encrypted and are not cryptographically signed; the checksums detect corruption and accidental changes. Share project package and Open package require the desktop app and are disabled in the browser fallback.
 
 ### Export
 
 **File → Export** contains:
 
-- **Drawing PDF…** – opens the drawing export dialog. Choose whole pages or a selected area, current page / all pages / a page range, visible layers, labels, the calibration line, and an optional legend. The export writes `<project>-markups.pdf`.
+- **Drawing PDF…** – opens the drawing export dialog. Choose whole pages or a selected area, current page / all pages / a page range, visible layers, labels, the calibration line, an optional legend, and optional reader layers or review annotations. The export writes `<project>-markups.pdf`.
   **Selected area** enters a one-off crop mode. Drag a rectangle, adjust it with the handles, then press `Enter` or **Use area**. `Esc` cancels. The crop is stored relative to the page and applied to every selected page.
 
   A layer hidden on every page is listed but disabled. A layer hidden on one page is skipped there and still exported where it is visible. Hidden items are always excluded; locked items are exported.
 
   **Legend** adds a separate A4 page at the end of the export.
+
+  **Optional layers (OCG)** is off by default. When enabled, every exported visible layer becomes a real PDF optional-content group that compatible readers can toggle. The flattened drawing is unchanged. A layer hidden on a page is wrapped only where it is visible, but a reader toggles the group for the whole file, so switching it off hides that layer on every page of the export. Hidden layers and hidden items are never exported, with or without OCG.
+
+  **Review annotations** is off by default. When enabled, visible items also get standard PDF annotations (`Square`, `Circle`, `Line`, `PolyLine`, `Polygon` or a `Text` sticky note) with a rectangle, colour, contents and the author **GridScalr**. They are a review artifact for other PDF readers, not an editable GridScalr project: GridScalr does not attach appearance streams, does not encode item data for round-tripping, does not replace or hide the flattened artwork and cannot import annotations edited elsewhere. Locked items are annotated and hidden items are not.
 - **View as PNG** – exports the rendered page and markup layers at the current view.
 - **Markups to CSV** – exports page, type, layer, label, computed value, unit, details, PDF-coordinate vertices, symbol name, symbol category, and inspection status.
 - **Quantities to CSV** – writes `<project>-quantities.csv` for spreadsheets and procurement tools.
