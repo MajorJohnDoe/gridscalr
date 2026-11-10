@@ -25,6 +25,7 @@ src/
   app/projectImportSource.ts source project document loading, previews and missing-file recovery
   app/rendererDocuments.ts renderer/proxy cache that keeps import undo and redo instant
   app/diagnosticsFlows.ts diagnostics text, copy and report flow
+  app/recoveryHost.ts   session-recovery host wiring for autosave, leases and banners
   features/              feature modules; see docs/adr/0001-feature-modules.md
   features/countTypes/model.ts count definitions, normalization, management and quantity helpers
   features/countTypes/ui.ts count-type management dialog
@@ -43,6 +44,19 @@ src/
   features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
   features/saveIntegrity/files.ts conditional-write, stamp, read-back and backup IPC
   features/saveIntegrity/ui.ts conflict, comparison and restore dialogs
+  features/sessionRecovery/index.ts public surface for scoped autosave, leases and recovery
+  features/sessionRecovery/autosave.ts recovery snapshot API, pruning and legacy migration
+  features/sessionRecovery/recoveryStore.ts IndexedDB records, localStorage fallback and legacy cleanup
+  features/sessionRecovery/recovery.ts base-version comparison and recoverable entry collection
+  features/sessionRecovery/lease.ts pure lease model, stale boundary and classification
+  features/sessionRecovery/leaseFiles.ts Rust lease command wrappers and ownership errors
+  features/sessionRecovery/leaseSession.ts acquire, heartbeat, take-over and release lifecycle
+  features/sessionRecovery/controller.ts autosave loop, lease adoption, chooser and watcher orchestration
+  features/sessionRecovery/checkpoint.ts labelled structural-operation checkpoints
+  features/sessionRecovery/watch.ts visible-window project file polling
+  features/sessionRecovery/summary.ts synchronous recovery summary for the welcome screen and Preferences
+  features/sessionRecovery/ui.ts recovery chooser, lease dialog and non-blocking banners
+  features/sessionRecovery/record.ts recovery record types, IDs and retention constants
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
   features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
   features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
@@ -121,9 +135,8 @@ src/
   model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
   model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
   model/symbolPaths.ts   shared SVG path parsing and transforms for symbol artwork
-  state/store.ts         immutable project snapshots, undo/redo, multi-selection UI state, autosave
+  state/store.ts         immutable project snapshots, undo/redo, multi-selection and read-only UI state
   state/history.ts       adaptive undo-history limits from the serialized snapshot size
-  state/autosave.ts      IndexedDB recovery store with legacy localStorage fallback
   pdf/pdfRenderer.ts     PDF.js document lifecycle and progressive crop rendering
   pdf/thumbnails.ts      lazily rendered, cached page previews for the Pages panel
   pdf/pdfExport.ts       flattened vector PDF export entry point and page orchestration
@@ -214,6 +227,7 @@ src/
 src-tauri/
   src/commands.rs        atomic text/binary replacement, canonical path checks, structured errors, reads, demo copy, smoke exit and commands
   src/project_write.rs   conditional project write, read-back hash stamp and file-stamp command
+  src/project_lease.rs   advisory sidecar lease read/write/heartbeat/clear with owner checks
   src/project_backup.rs  app-data backup directory, naming, rolling rotation and backup commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state

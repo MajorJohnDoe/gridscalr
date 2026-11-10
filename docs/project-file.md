@@ -149,6 +149,13 @@ Saving a project is atomic. GridScalr flushes a temporary file in the project's 
 
 A desktop save is also conditional. The editor keeps a runtime `ProjectFileStamp` with the SHA-256, byte size and modification time of the file it loaded. The Rust command re-reads and hashes the target immediately before the rename; a mismatch returns a structured `projectConflict` error instead of overwriting the newer file. After writing, GridScalr reads the file back and verifies the hash and size before it marks the project saved. The stamp is runtime state only: it is not serialized into the project JSON, adds no field and does not change the schema. It is captured again whenever the project is opened and after each verified save. The browser fallback still uses a download and never claims a conditional write.
 
+Two companion stores sit outside the project JSON and are never part of a package:
+
+- `<project>.gridscalr.lock` is an advisory sidecar lease with app instance, project ID, open time, heartbeat, project hash, coarse host label and app version. It is not project data. Deleting it never changes the project; a stale or corrupt lock is ignored and can be cleared explicitly.
+- Recovery snapshots and structural checkpoints live in the local browser/desktop recovery store (IndexedDB, with a small localStorage fallback), scoped by project ID and app instance. They store a serialized project plus the base file SHA-256, but they are never written into the `.gridscalr` file, a package or a report.
+
+Neither store changes `schemaVersion`; the current schema remains 23.
+
 Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The Rust side resolves real paths, including symlinks and junctions, and compares file identities when the destination exists, so a source drawing cannot be reached through an alternate spelling or link.
 
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.

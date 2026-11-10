@@ -1,7 +1,7 @@
 import { pageDisplayName, primaryDocument, totalPageCount } from "../model/documents";
 import type { AreaMode, CountType, ImageMode, PageSize, RecentEntry } from "../model/types";
 import { store } from "../state/store";
-import type { AutosavePreview } from "../state/store";
+import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
 import { renderContextBar } from "./contextBar";
@@ -90,8 +90,8 @@ export interface PanelActions {
   deletePage: (page: number) => void;
   duplicatePage: (page: number) => void;
   refresh: () => void;
-  restoreAutosave: () => void;
-  getAutosave: () => AutosavePreview | null;
+  openRecovery: () => void;
+  getRecoverySummary: () => RecoverySummary;
   openRecent: (entry: RecentEntry) => void;
   openDemoProject: () => void;
   copyDiagnostics: () => void;

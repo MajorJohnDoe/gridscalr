@@ -79,3 +79,91 @@ Full AGENTS pre-commit list plus `npm run test:ui`, `test:import`,
   autosave, recovery chooser, advisory leases and read-only open. Phase 2 must
   consume the Phase 1 stamp rather than introduce a second file-identity model.
   The Phase 1 conflict dialog is reused for take-over/save conflicts.
+
+## Phase 2 — Recovery and open-elsewhere
+
+- **Issue:** [#154](https://github.com/MajorJohnDoe/gridscalr/issues/154).
+- **PR:** [#161](https://github.com/MajorJohnDoe/gridscalr/pull/161).
+- **Schema:** unchanged (23). Recovery records and the sidecar lease are outside
+  the project JSON.
+
+### Completed
+
+- IndexedDB v2 recovery records keyed by project ID and instance ID. Each project
+  keeps the latest autosave plus one previous; checkpoints are separate and
+  capped at ten per project. Every record stores the Phase 1 base file SHA-256.
+- Legacy `current` and `gridscalr.autosave.v1` snapshots migrate to an explicit
+  record with an unknown base hash; nothing is restored automatically.
+- Recovery chooser on the welcome screen, Preferences → Data and the project
+  flow. It lists every project and instance, labels snapshots based on an older
+  or unknown file version, and requires an explicit Restore, Discard or Cancel.
+  A successful normal save clears this instance's record.
+- Atomic sidecar lease in `src-tauri/src/project_lease.rs` with instance ID,
+  project ID, opened time, 30-second heartbeat, project hash, coarse host label
+  and app version. A live foreign lease offers **Open read-only** (default),
+  **Take over** and **Cancel**. Stale and corrupt leases are information only.
+  A save verifies lease ownership first, so a taken-over session cannot write
+  even before its next heartbeat.
+- Read-only sessions can export, package and **Save a copy**, but normal Save and
+  Save As are refused and the status bar shows **Read-only**.
+- Non-blocking file-change banner with **Reload from disk**, using a cheap
+  metadata check before hashing. No network.
+- Labelled checkpoints before page delete/duplicate, add/import pages, sheet add
+  and paper change.
+- Browser fallback keeps the scoped IndexedDB recovery store and has no sidecar
+  lease, read-only enforcement or file watcher.
+
+### Modules
+
+```text
+src/features/sessionRecovery/
+  index.ts          public surface
+  record.ts         record types, IDs, retention and sorting
+  autosave.ts       scoped snapshot API, migration and cleanup
+  recoveryStore.ts  IndexedDB v2, localStorage fallback and legacy cleanup
+  recovery.ts       base-version comparison and recoverable entries
+  lease.ts          pure lease model, stale boundary and classification
+  leaseFiles.ts     Rust lease command wrappers
+  leaseSession.ts   acquire, take-over, heartbeat and release lifecycle
+  controller.ts     autosave loop, chooser, read-only and watcher orchestration
+  checkpoint.ts     labelled structural checkpoints
+  watch.ts          metadata-first project file polling
+  summary.ts        synchronous summary for welcome and Preferences
+  ui.ts             chooser, lease dialog and banners
+  ports.ts          host boundary
+src/app/recoveryHost.ts  app host wiring
+src-tauri/src/project_lease.rs  atomic lease commands
+```
+
+`state/autosave.ts` is retired; `state/store.ts` keeps only runtime read-only and
+autosave-error state.
+
+### Decisions
+
+- A stale lease is not taken over automatically. The banner offers an explicit
+  **Clear stale lock**, which clears only the observed stale owner and then
+  acquires a fresh lease. Corrupt leases are ignored and replaced.
+- Read-only blocks Save and Save As, not in-memory editing (F-007). Local edits
+  leave through **Save a copy…**.
+- Recovery retention is count-based, not byte-based (F-008).
+- The watcher checks size and mtime first and hashes only when either changes
+  (F-010).
+
+### New findings
+
+- F-007 — read-only mode blocks saving, not editing (P2, open).
+- F-008 — recovery retention is count-based, not size-based (P2, open).
+- F-009 — lease instance identity is session-scoped and coarse (P3, open).
+- F-010 — metadata watcher can miss a same-size, same-mtime change (P3, open).
+
+### Checks
+
+Full AGENTS pre-commit list plus `npm run tauri build -- --no-bundle`,
+`npm run test:ui`, `test:import`, `test:canvas`, `test:count`, `test:touch`,
+`test:visual`, `cargo test --lib` and GitHub CI on Ubuntu, Windows and macOS.
+
+### Next
+
+- Phase 3, [#155](https://github.com/MajorJohnDoe/gridscalr/issues/155) — explicit
+  page list and schema 24. Keep the recovery records and lease metadata stable;
+  page checkpoints keep working once page deletion cascades by page ID.

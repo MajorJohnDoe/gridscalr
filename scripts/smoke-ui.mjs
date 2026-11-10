@@ -34,29 +34,37 @@ try {
   assert.equal(await page.locator(".page-card").count(), 3, "expected three page cards");
 
   const autosave = await page.evaluate(async () => {
-    const preview = localStorage.getItem("gridscalr.autosave.meta.v1");
     const legacy = localStorage.getItem("gridscalr.autosave.v1");
-    const record = await new Promise((resolve) => {
-      const request = indexedDB.open("gridscalr", 1);
-      request.onsuccess = () => {
-        const database = request.result;
-        const transaction = database.transaction("autosave", "readonly");
-        const get = transaction.objectStore("autosave").get("current");
-        get.onsuccess = () => {
-          database.close();
-          resolve(Boolean(get.result));
+    const meta = localStorage.getItem("gridscalr.autosave.meta.v1");
+    for (let attempt = 0; attempt < 40; attempt += 1) {
+      const count = await new Promise((resolve) => {
+        const request = indexedDB.open("gridscalr", 2);
+        request.onsuccess = () => {
+          const database = request.result;
+          if (!database.objectStoreNames.contains("recovery")) {
+            database.close();
+            resolve(0);
+            return;
+          }
+          const transaction = database.transaction("recovery", "readonly");
+          const get = transaction.objectStore("recovery").getAll();
+          get.onsuccess = () => {
+            database.close();
+            resolve(Array.isArray(get.result) ? get.result.length : 0);
+          };
+          get.onerror = () => {
+            database.close();
+            resolve(0);
+          };
         };
-        get.onerror = () => {
-          database.close();
-          resolve(false);
-        };
-      };
-      request.onerror = () => resolve(false);
-    });
-    return { preview, legacy, record };
+        request.onerror = () => resolve(0);
+      });
+      if (count > 0) return { records: count, legacy, meta };
+      await new Promise((resolve) => setTimeout(resolve, 100));
+    }
+    return { records: 0, legacy, meta };
   });
-  assert.ok(autosave.preview, "autosave metadata should be present");
-  assert.equal(autosave.record, true, "the recovery snapshot should be stored in IndexedDB");
+  assert.ok(autosave.records > 0, "a scoped recovery record should be stored in IndexedDB");
   assert.equal(
     await page.locator(".status-project .status-chip").count(),
     1,
@@ -66,6 +74,11 @@ try {
     autosave.legacy,
     null,
     "the legacy localStorage snapshot should be removed after migration",
+  );
+  assert.equal(
+    autosave.meta,
+    null,
+    "the legacy recovery metadata should be removed after migration",
   );
   assert.equal(
     await page.getByText("Editable", { exact: true }).count(),
@@ -752,8 +765,8 @@ try {
     .getByRole("button", { name: "Data" })
     .click();
   assert.ok(
-    (await preferencesDialog.innerText()).includes("Recovery snapshot"),
-    "Preferences should show the recovery snapshot",
+    (await preferencesDialog.innerText()).includes("Recovery data"),
+    "Preferences should show the recovery data summary",
   );
   assert.ok(
     await preferencesDialog.getByRole("button", { name: "Clear recovery data" }).count(),

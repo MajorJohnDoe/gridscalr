@@ -26,16 +26,6 @@ import {
 } from "../model/categories";
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
-import {
-  clearAutosave as clearAutosaveStorage,
-  readAutosavePreview,
-  readAutosave as readAutosaveStorage,
-  writeAutosave as writeAutosaveStorage,
-  AutosaveError,
-  describeAutosaveFailure,
-  type AutosavePayload,
-  type AutosavePreview,
-} from "./autosave";
 import { pushHistory } from "./history";
 import type {
   AreaMode,
@@ -163,7 +153,11 @@ export interface FileStamp {
   modifiedAt: number;
 }
 
-export type { AutosavePayload, AutosavePreview };
+/** Runtime autosave state consumed by the status bar and diagnostics. */
+export interface AutosaveFailure {
+  message: string;
+  quotaExceeded: boolean;
+}
 
 export function toolLayerKind(tool: ToolId): LayerKind | null {
   switch (tool) {
@@ -247,17 +241,16 @@ export class Store {
   /** Expected disk state captured on open and after a verified save. */
   fileStamp: FileStamp | null = null;
   dirty = false;
+  /** A read-only session may export, package and save a copy, but not overwrite. */
+  readOnly = false;
   /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
-  autosaveError: AutosaveError | null = null;
+  autosaveError: AutosaveFailure | null = null;
   /** Increments whenever project data changes, including undo and redo. */
   revision = 0;
   private listeners = new Set<Listener>();
   private undoStack: string[] = [];
   private redoStack: string[] = [];
   private gestureSnapshot: string | null = null;
-  private autosaveTimer: number | null = null;
-  private lastAutosaveError: string | null = null;
-  private autosaveMark: { revision: number; path: string | null } | null = null;
   private assetPayloads = new Map<string, string>();
 
   subscribe(listener: Listener): () => void {
@@ -282,12 +275,12 @@ export class Store {
     this.projectPath = projectPath;
     this.fileStamp = null;
     this.dirty = dirty;
+    this.readOnly = false;
     this.autosaveError = null;
     this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
     this.gestureSnapshot = null;
-    this.autosaveMark = null;
     this.assetPayloads.clear();
     if (!project.assets) project.assets = {};
     for (const asset of Object.values(project.assets)) {
@@ -319,7 +312,6 @@ export class Store {
     }
     this.ui.symbolStatus = null;
     this.emit("project");
-    this.scheduleAutosave();
   }
 
   closeProject(): void {
@@ -327,18 +319,20 @@ export class Store {
     this.projectPath = null;
     this.fileStamp = null;
     this.dirty = false;
+    this.readOnly = false;
     this.autosaveError = null;
     this.revision += 1;
     this.undoStack = [];
     this.redoStack = [];
     this.assetPayloads.clear();
     this.ui = defaultUI();
-    if (this.autosaveTimer !== null) {
-      window.clearTimeout(this.autosaveTimer);
-      this.autosaveTimer = null;
-    }
     this.emit("project");
-    void this.clearAutosave();
+  }
+
+  setReadOnly(readOnly: boolean): void {
+    if (this.readOnly === readOnly) return;
+    this.readOnly = readOnly;
+    this.emit("save");
   }
 
   setView(zoom: number, panX: number, panY: number): void {
@@ -361,7 +355,6 @@ export class Store {
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
-    this.scheduleAutosave();
   }
 
   /** Changes a template sheet's paper. Structural like adding or deleting a page. */
@@ -375,7 +368,6 @@ export class Store {
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
-    this.scheduleAutosave();
   }
 
   /**
@@ -399,7 +391,6 @@ export class Store {
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
-    this.scheduleAutosave();
     return result;
   }
 
@@ -617,7 +608,6 @@ export class Store {
     this.dirty = true;
     this.revision += 1;
     this.emit("change");
-    this.scheduleAutosave();
   }
 
   renamePage(page: number, name: string): void {
@@ -651,7 +641,6 @@ export class Store {
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
-    this.scheduleAutosave();
     return result;
   }
 
@@ -797,7 +786,7 @@ export class Store {
   mutate(
     mutator: (project: Project) => void,
     reason: ChangeReason = "change",
-    options: { history?: boolean; dirty?: boolean; autosave?: boolean } = {},
+    options: { history?: boolean; dirty?: boolean } = {},
   ): void {
     if (!this.project) return;
     const history = options.history !== false;
@@ -810,7 +799,6 @@ export class Store {
     this.revision += 1;
     if (options.dirty !== false) this.dirty = true;
     this.emit(reason);
-    if (options.autosave !== false) this.scheduleAutosave();
   }
 
   beginGesture(): void {
@@ -830,7 +818,6 @@ export class Store {
       this.dirty = true;
       this.revision += 1;
       this.emit(reason);
-      this.scheduleAutosave();
     }
     this.gestureSnapshot = null;
   }
@@ -850,7 +837,6 @@ export class Store {
     this.project = this.restoreSnapshot(previous);
     this.afterHistoryRestore();
     this.emit("undo");
-    this.scheduleAutosave();
   }
 
   redo(): void {
@@ -860,7 +846,6 @@ export class Store {
     this.project = this.restoreSnapshot(next);
     this.afterHistoryRestore();
     this.emit("undo");
-    this.scheduleAutosave();
   }
 
   private afterHistoryRestore(): void {
@@ -881,61 +866,6 @@ export class Store {
     this.projectPath = path;
     this.dirty = false;
     this.emit("save");
-    this.scheduleAutosave();
-  }
-
-  private scheduleAutosave(): void {
-    if (this.autosaveTimer !== null) window.clearTimeout(this.autosaveTimer);
-    this.autosaveTimer = window.setTimeout(() => {
-      this.autosaveTimer = null;
-      void this.writeAutosave();
-    }, 900);
-  }
-  private async writeAutosave(): Promise<void> {
-    const project = this.project;
-    if (!project) return;
-    const revision = this.revision;
-    if (this.autosaveMark?.revision === revision && this.autosaveMark.path === this.projectPath)
-      return;
-    try {
-      await writeAutosaveStorage({
-        project,
-        projectPath: this.projectPath,
-        savedAt: new Date().toISOString(),
-      });
-      this.autosaveMark = { revision, path: this.projectPath };
-      const hadError = this.autosaveError !== null;
-      this.autosaveError = null;
-      this.lastAutosaveError = null;
-      // Re-render the persistent warning once autosave recovers.
-      if (hadError) this.emit("save");
-    } catch (error) {
-      const failure = error instanceof AutosaveError ? error : describeAutosaveFailure(error);
-      // Autosave runs after every edit. Only alert when the message changes so
-      // a full storage quota does not produce a warning on each keystroke.
-      if (this.lastAutosaveError !== failure.message) {
-        this.lastAutosaveError = failure.message;
-        this.autosaveError = failure;
-        this.emit("save");
-      }
-    }
-  }
-
-  readAutosavePreview(): AutosavePreview | null {
-    return readAutosavePreview();
-  }
-
-  readAutosave(): Promise<AutosavePayload | null> {
-    return readAutosaveStorage();
-  }
-
-  clearAutosave(): Promise<void> {
-    if (this.autosaveTimer !== null) {
-      window.clearTimeout(this.autosaveTimer);
-      this.autosaveTimer = null;
-    }
-    this.autosaveMark = null;
-    return clearAutosaveStorage();
   }
 }
 

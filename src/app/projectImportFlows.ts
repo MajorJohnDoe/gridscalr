@@ -20,6 +20,7 @@ import { store } from "../state/store";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { logEvent } from "../features/diagnostics/log";
+import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import type { SourceSelection } from "./projectImportSource";
 import { ProjectImportSource } from "./projectImportSource";
 
@@ -161,6 +162,12 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
   }
 
   let importWarnings: ImportWarning[] = [];
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.importPages", {
+      count: prepared.pageMap.length,
+      name: source.name,
+    }),
+  );
   try {
     store.mutate((project) => {
       importWarnings = commitProjectImport(project, prepared).warnings;

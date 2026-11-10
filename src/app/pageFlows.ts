@@ -10,6 +10,7 @@ import type { MarkupItem, PageSize } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
+import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { confirmDialog } from "../ui/dialogs";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { toast } from "../ui/toast";
@@ -80,6 +81,7 @@ export async function duplicatePageFlow(host: PageFlowHost, page: number): Promi
   const sourceDocumentIndex = documentIndexForPage(project.documents, target);
   const renderer = host.renderer();
   const sourceProxy = renderer?.documents[sourceDocumentIndex];
+  await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.duplicatePage", { page: target }));
   const result = store.duplicatePage(target, options);
   if (!result) {
     toast(t("app.pageDuplicateFailed"), "warning");
@@ -117,6 +119,7 @@ export async function deletePageFlow(host: PageFlowHost, page: number): Promise<
     { danger: true },
   );
   if (!confirmed) return;
+  await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.deletePage", { page: target }));
   const renderer = host.renderer();
   const result = store.deletePage(target);
   if (!result) {

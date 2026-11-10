@@ -44,11 +44,17 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.statusCoords);
   clear(refs.statusLayer);
 
-  const projectKey = project ? `${store.dirty}|${store.projectPath ?? ""}` : "";
+  const projectKey = project ? `${store.dirty}|${store.projectPath ?? ""}|${store.readOnly}` : "";
   if (projectKey !== projectChipKey) {
     projectChipKey = projectKey;
     clear(refs.statusProject);
     if (project) {
+      if (store.readOnly) {
+        const readOnlyChip = el("span", "status-chip is-warning");
+        readOnlyChip.append(document.createTextNode(t("status.readOnly")));
+        readOnlyChip.title = t("status.readOnlyTitle");
+        refs.statusProject.append(readOnlyChip);
+      }
       const chip = el("span", `status-chip${store.dirty ? " is-warning" : " is-calibrated"}`);
       chip.append(
         document.createTextNode(

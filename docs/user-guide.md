@@ -13,7 +13,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 5. Review **View → Quantities…**.
 6. Save the project with **File → Save**.
 
-The welcome screen also offers **Open drawing**, **Open project**, **Open demo project**, **Restore last session**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities.
+The welcome screen also offers **Open drawing**, **Open project**, **Open demo project**, **Restore last session** (the recovery chooser), and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities.
 
 **Open demo project** loads a bundled sample with one drawing, three sheets and finished measurements. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
 
@@ -619,9 +619,29 @@ The source PDF or TIF is never overwritten. Every save and export resolves real 
 
 The status bar shows whether the project is **Saved**, has **Unsaved changes**, or is **Not saved to a file** yet. It also warns when a source drawing is missing or has changed on disk.
 
-Autosave keeps a recovery snapshot in a local IndexedDB database; a localStorage fallback is used only when IndexedDB is unavailable. If recovery storage is full or unavailable, GridScalr shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
+Autosave keeps recovery snapshots in a local IndexedDB database (with a localStorage fallback only when IndexedDB is unavailable). Each snapshot is scoped to one project and one app instance, so two open projects cannot overwrite each other's recovery. GridScalr keeps the latest snapshot per project plus one previous one. If recovery storage is full or unavailable, the status bar shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
 
-Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding also removes the recovery snapshot.
+Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding removes this session's recovery snapshot and releases the project lock.
+
+### Recovery and open-elsewhere
+
+**Restore last session** on the welcome screen, **Settings → Preferences → Data → Review recovery data…**, and the recovery entry in the project flow all open the same recovery chooser. It lists every stored snapshot and checkpoint that GridScalr can restore on this computer, including the session and save time. Nothing is restored automatically.
+
+- A snapshot is labelled **based on the current file**, **based on an older file version**, **base file version unknown**, **project file is missing** or **unsaved project**.
+- GridScalr compares the base file SHA-256 stored with the snapshot against the current file on disk. A snapshot based on an older or unknown file version still opens, but only after you choose it explicitly.
+- **Restore** opens the snapshot as unsaved work. **Discard** deletes that one record. **Cancel** changes nothing.
+- A normal save clears this session's autosave record deliberately. Other instances and projects are not touched.
+
+Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Checkpoints are listed separately in the recovery chooser and are never restored automatically. Up to ten checkpoints per project are kept.
+
+In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
+
+- If another live instance has the project open, GridScalr offers **Open read-only** (the default), **Take over** and **Cancel**. Choose **Take over** only when the other session is finished; the other instance then becomes read-only on its next heartbeat or save attempt.
+- A read-only session can view, export, package and **Save a copy…**, but a normal Save is refused with a clear message. The status bar shows **Read-only**.
+- A lock without a heartbeat for more than five minutes, or a corrupt lock, is information only and never blocks opening. A stale-lock banner offers **Clear stale lock**.
+- The lock is advisory. Cloud clients and sleeping laptops make it unreliable; the conditional save described above is the actual protection. A crash can leave a stale lock for up to five minutes.
+
+While a desktop project is open, GridScalr checks the project file stamp every few seconds when the window is visible. If the file changed outside the app, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes. The browser fallback has no sidecar lock, file watcher or read-only enforcement; it keeps the scoped IndexedDB recovery store only.
 
 ### Package a project
 
@@ -674,7 +694,7 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Workspace** – expand both panels or reset the panel widths, collapsed state and tool-rail layout. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
-- **Data** – the recovery snapshot and the recent-file list. **Clear recovery data** and **Clear recent files** remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Review recovery data…** opens the recovery chooser. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
 
 ### Project settings
 

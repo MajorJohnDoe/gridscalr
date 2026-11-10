@@ -20,6 +20,15 @@ pub struct FileStamp {
     pub modified_at: i64,
 }
 
+/// Cheap change detector for the external-change watcher. It never reads the
+/// file contents; the hash is read only after size or mtime changes.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileMetadata {
+    pub size_bytes: u64,
+    pub modified_at: i64,
+}
+
 /// A save failure with enough information for the conflict dialog. `current`
 /// is the disk stamp seen immediately before the rename, or `None` when the
 /// target was missing. Backups reuse the same structured error shape.
@@ -242,6 +251,19 @@ pub fn project_file_stamp(path: String) -> Result<Option<FileStamp>, WriteError>
 }
 
 #[tauri::command]
+pub fn project_file_metadata(path: String) -> Result<Option<FileMetadata>, WriteError> {
+    match fs::metadata(Path::new(&path)) {
+        Ok(metadata) if metadata.is_file() => Ok(Some(FileMetadata {
+            size_bytes: metadata.len(),
+            modified_at: modified_ms(&metadata),
+        })),
+        Ok(_) => Ok(None),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
+        Err(error) => Err(WriteError::new("readFailed", format!("{path}: {error}"))),
+    }
+}
+
+#[tauri::command]
 pub fn write_project_conditional(
     path: String,
     contents: String,
@@ -385,5 +407,22 @@ mod tests {
         assert!(stamp_of(&temp.file("missing.gridscalr"))
             .expect("stamp")
             .is_none());
+    }
+
+    #[test]
+    fn reports_cheap_metadata_without_hashing_the_file() {
+        let temp = TestDir::new();
+        let target = temp.file("project.gridscalr");
+        fs::write(&target, b"project").expect("write project");
+        let metadata = project_file_metadata(target.to_string_lossy().to_string())
+            .expect("metadata")
+            .expect("exists");
+        assert_eq!(metadata.size_bytes, 7);
+        assert!(metadata.modified_at > 0);
+        assert!(project_file_metadata(
+            temp.file("missing.gridscalr").to_string_lossy().to_string()
+        )
+        .expect("metadata")
+        .is_none());
     }
 }

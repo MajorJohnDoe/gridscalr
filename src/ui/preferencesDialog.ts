@@ -18,6 +18,12 @@ import {
   type LanguagePreference,
 } from "../i18n";
 import { store } from "../state/store";
+import {
+  clearAllRecovery,
+  getRecoverySummary,
+  openRecoveryChooser,
+  refreshRecoverySummary,
+} from "../features/sessionRecovery";
 import { currentThemePreference, setThemePreference, THEME_OPTIONS } from "../theme/theme";
 import type { ThemePreference } from "../io/appPreferences";
 import { colorInputValue, setColorInput } from "./colorInput";
@@ -211,25 +217,41 @@ function stampsSection(): HTMLElement {
 function dataSection(): HTMLElement {
   const wrap = section(t("preferences.data.title"), t("preferences.data.note"));
 
-  const autosave = store.readAutosavePreview();
+  const summary = getRecoverySummary();
+  const hasRecovery = summary.count + summary.checkpoints > 0;
   const recovery = el("div", "settings-actions");
   const recoveryText = el(
     "p",
     "settings-note",
-    autosave
-      ? t("preferences.data.recoveryPresent", {
-          name: autosave.projectName,
-          time: new Date(autosave.savedAt).toLocaleString(),
+    summary.latest
+      ? t("preferences.data.recoverySummary", {
+          count: summary.count,
+          checkpoints: summary.checkpoints,
+          name: summary.latest.projectName,
+          time: new Date(summary.latest.savedAt).toLocaleString(),
         })
-      : t("preferences.data.recoveryEmpty"),
+      : t("preferences.data.recoveryNone"),
   );
+  const reviewRecovery = el(
+    "button",
+    "btn btn-small btn-ghost",
+    t("preferences.data.reviewRecovery"),
+  );
+  reviewRecovery.type = "button";
+  reviewRecovery.disabled = !hasRecovery;
+  reviewRecovery.addEventListener("click", () => {
+    void (async () => {
+      await openRecoveryChooser();
+      openPreferencesDialog();
+    })();
+  });
   const clearRecovery = el(
     "button",
     "btn btn-small btn-ghost",
     t("preferences.data.clearRecovery"),
   );
   clearRecovery.type = "button";
-  clearRecovery.disabled = !autosave;
+  clearRecovery.disabled = !hasRecovery;
   clearRecovery.addEventListener("click", () => {
     void (async () => {
       const confirmed = await confirmDialog(
@@ -239,12 +261,13 @@ function dataSection(): HTMLElement {
         { danger: true },
       );
       if (!confirmed) return;
-      await store.clearAutosave();
+      await clearAllRecovery();
+      await refreshRecoverySummary();
       openPreferencesDialog();
       toast(t("preferences.data.recoveryCleared"), "success");
     })();
   });
-  recovery.append(recoveryText, clearRecovery);
+  recovery.append(recoveryText, reviewRecovery, clearRecovery);
 
   const recent = getRecent();
   const recentBox = el("div", "preferences-recents");
@@ -305,20 +328,23 @@ function dataSection(): HTMLElement {
 }
 
 export function openPreferencesDialog(): void {
-  const layout = categoryLayout(t("preferences.categories"), [
-    { id: "general", label: t("preferences.general"), render: generalSection },
-    { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
-    { id: "layers", label: t("preferences.layers"), render: layersSection },
-    { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
-    { id: "data", label: t("preferences.data"), render: dataSection },
-  ]);
+  void (async () => {
+    await refreshRecoverySummary();
+    const layout = categoryLayout(t("preferences.categories"), [
+      { id: "general", label: t("preferences.general"), render: generalSection },
+      { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
+      { id: "layers", label: t("preferences.layers"), render: layersSection },
+      { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
+      { id: "data", label: t("preferences.data"), render: dataSection },
+    ]);
 
-  void showModal({
-    title: t("preferences.title"),
-    subtitle: t("preferences.subtitle"),
-    body: layout.body,
-    wide: true,
-    className: "modal-preferences",
-    actions: [{ label: t("common.close"), value: "close", primary: true }],
-  });
+    void showModal({
+      title: t("preferences.title"),
+      subtitle: t("preferences.subtitle"),
+      body: layout.body,
+      wide: true,
+      className: "modal-preferences",
+      actions: [{ label: t("common.close"), value: "close", primary: true }],
+    });
+  })();
 }
