@@ -250,6 +250,7 @@ describe("safe save", () => {
       { text: "disk version", path: "/work/Test project.gridscalr" },
     ]);
     expect(fake.wrote).toHaveLength(0);
+    expect(store.dirty).toBe(false);
   });
 
   it("resolves a conditional-write race through the same conflict dialog", async () => {

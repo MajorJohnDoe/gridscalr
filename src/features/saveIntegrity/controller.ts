@@ -183,7 +183,17 @@ async function resolveConflict(
   if (action === "cancel") return false;
   if (action === "reload") {
     const text = await ports.readText(path);
-    return ports.loadProjectText(text, path);
+    // The conflict dialog already confirmed that the in-memory version is
+    // discarded, so the load must not ask the unsaved-changes prompt again.
+    const wasDirty = store.dirty;
+    store.dirty = false;
+    let loaded = false;
+    try {
+      loaded = await ports.loadProjectText(text, path);
+    } finally {
+      if (!loaded) store.dirty = wasDirty;
+    }
+    return loaded;
   }
   if (action === "overwrite") {
     return writeSuccessfully(project, path, null, ports, protectedPaths, true);
