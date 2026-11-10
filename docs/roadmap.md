@@ -99,7 +99,8 @@ Each should have an issue before implementation; larger ones have a plan or ADR.
 Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 [0010](adr/0010-project-file-integrity.md) · Issues
 [#44](https://github.com/MajorJohnDoe/gridscalr/issues/44),
-[#53](https://github.com/MajorJohnDoe/gridscalr/issues/53).
+[#153](https://github.com/MajorJohnDoe/gridscalr/issues/153),
+[#154](https://github.com/MajorJohnDoe/gridscalr/issues/154).
 
 ### 2. Page and document model
 
@@ -115,7 +116,8 @@ markup references; an empty project is a valid starting point.
 
 Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 [0011](adr/0011-page-list-and-source-replacement.md) · PR
-[#152](https://github.com/MajorJohnDoe/gridscalr/pull/152).
+[#152](https://github.com/MajorJohnDoe/gridscalr/pull/152) · Issue
+[#155](https://github.com/MajorJohnDoe/gridscalr/issues/155).
 
 ### 3. Source storage and relinking
 
@@ -130,7 +132,8 @@ without the user knowing.
 
 Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 [0012](adr/0012-source-storage-modes.md) · ADR
-[0002](adr/0002-project-package.md).
+[0002](adr/0002-project-package.md) · Issue
+[#156](https://github.com/MajorJohnDoe/gridscalr/issues/156).
 
 ### 4. Import and merge
 
@@ -143,7 +146,9 @@ Plan: [`plan/robustness.md`](plan/robustness.md) · ADR
 - One import remains one undo step.
 
 PR [#152](https://github.com/MajorJohnDoe/gridscalr/pull/152) is merged. The
-remaining work is provenance, preflight and layer identity.
+remaining work is tracked with the integrity and page-model issues
+[#155](https://github.com/MajorJohnDoe/gridscalr/issues/155) and
+[#157](https://github.com/MajorJohnDoe/gridscalr/issues/157).
 
 ### 5. Integrity validation and project doctor
 
@@ -156,7 +161,8 @@ silent data loss.
 - Project doctor with repair, read-only open and diagnostics.
 - Duplicate-ID and out-of-range page repair.
 
-Plan: [`plan/robustness.md`](plan/robustness.md).
+Plan: [`plan/robustness.md`](plan/robustness.md) · Issue
+[#157](https://github.com/MajorJohnDoe/gridscalr/issues/157).
 
 ### 6. Interoperability
 
@@ -168,7 +174,8 @@ the PDF the source of truth.
 - Package/share flow that includes drawings once.
 - **Compare with disk version** at a save conflict.
 
-This work is additive and follows the integrity work.
+This work is additive and follows the integrity work. Issue
+[#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 
 ### 7. Performance and test gates
 
@@ -180,7 +187,8 @@ This work is additive and follows the integrity work.
 - Coverage, fuzzing and visual gates in CI.
 
 Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
-[#61](https://github.com/MajorJohnDoe/gridscalr/issues/61).
+[#61](https://github.com/MajorJohnDoe/gridscalr/issues/61),
+[#159](https://github.com/MajorJohnDoe/gridscalr/issues/159).
 
 ## 1.0 release gate
 

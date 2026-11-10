@@ -598,7 +598,7 @@ Complete 2026-11-10.
 - ADR 0012: source storage modes.
 - The invariants from section 6 are recorded in `AGENTS.md`.
 - The #44 backup claim is surfaced in this plan and in `docs/limitations.md`.
-- The P0/P1 issues in section 14 still need to be created.
+- The phase issues are created as #153–#159.
 - No production code.
 
 ### Phase 1 — Safe save
@@ -789,26 +789,21 @@ recorded in §1.1.
 5. Should schema 25's managed-copy folder be user-selectable, or always a
    sibling folder named after the project?
 
-## 14. Proposed issue breakdown
+## 14. Issue breakdown
 
-Use the existing labels and milestones. These are titles, not issue numbers.
+Created 2026-11-10 as sub-issues of the roadmap epic #59:
 
-- **P0:** Detect and resolve concurrent project saves.
-- **P0:** Add rolling project backups and restore.
-- **P0:** Scope autosave per project and base file version.
-- **P1:** Add an open-elsewhere lock lease and read-only mode.
-- **P1:** Add the explicit page list, stable page IDs and schema 24.
-- **P1:** Allow empty projects with zero pages.
-- **P1:** Add page insert, reorder and drag-and-drop ordering.
-- **P1:** Add source replacement with page mapping and superseded pages.
-- **P1:** Add reference and managed-copy source modes, schema 25.
-- **P1:** Add **Consolidate drawings** and the source-changed flow.
-- **P1:** Validate project integrity before save and after load.
-- **P1:** Add structural-operation recovery checkpoints.
-- **P1:** Add import preflight, provenance and shared layer identity.
-- **P2:** Add automatic relinking by checksum.
-- **P2:** Spike PDF optional-content-group export.
-- **P2:** Spike optional PDF annotation export.
+- [#153](https://github.com/MajorJohnDoe/gridscalr/issues/153) — Phase 1: harden project saves against concurrent edits.
+- [#154](https://github.com/MajorJohnDoe/gridscalr/issues/154) — Phase 2: scope autosave and add advisory project leases.
+- [#155](https://github.com/MajorJohnDoe/gridscalr/issues/155) — Phase 3: explicit page list and stable page IDs (schema 24).
+- [#156](https://github.com/MajorJohnDoe/gridscalr/issues/156) — Phase 4: managed source copies and relinking (schema 25).
+- [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157) — Phase 5: project integrity validation and project doctor.
+- [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158) — Phase 6: optional OCG and annotation export.
+- [#159](https://github.com/MajorJohnDoe/gridscalr/issues/159) — Phase 7: robustness, concurrency and migration gates.
+
+Each issue carries the phase scope, non-goals and acceptance criteria. Split a
+phase into smaller issues only when parallel work needs it; keep the phase issue
+as the acceptance gate.
 
 ## 15. Acceptance criteria for the whole plan
 
