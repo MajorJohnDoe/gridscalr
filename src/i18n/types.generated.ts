@@ -2537,6 +2537,21 @@ export type MessageKey =
   | "projectIntegrity.saveBlocked.title"
   | "projectIntegrity.diagnosticsFilter"
   | "projectIntegrity.diagnosticsSaved"
-  | "projectIntegrity.issue.roundTripParse";
+  | "projectIntegrity.issue.roundTripParse"
+  | "projectImport.preflight.title"
+  | "projectImport.preflight.intro"
+  | "projectImport.preflight.pages"
+  | "projectImport.preflight.items"
+  | "projectImport.preflight.documents"
+  | "projectImport.preflight.categories"
+  | "projectImport.preflight.countTypes"
+  | "projectImport.preflight.lineTypes"
+  | "projectImport.preflight.assets"
+  | "projectImport.preflight.missing"
+  | "projectImport.preflight.skippedPages"
+  | "projectImport.preflight.checksum"
+  | "projectImport.preflight.pageCount"
+  | "projectImport.preflight.importWarnings"
+  | "projectImport.preflight.import";
 
 export type MessageCatalog = Record<MessageKey, string>;

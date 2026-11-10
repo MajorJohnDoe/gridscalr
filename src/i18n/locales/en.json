@@ -2535,5 +2535,20 @@
   "projectIntegrity.saveBlocked.title": "The project cannot be saved",
   "projectIntegrity.diagnosticsFilter": "Diagnostics text",
   "projectIntegrity.diagnosticsSaved": "Diagnostics saved to {path}.",
-  "projectIntegrity.issue.roundTripParse": "The serialized project could not be parsed back."
+  "projectIntegrity.issue.roundTripParse": "The serialized project could not be parsed back.",
+  "projectImport.preflight.title": "Import preflight",
+  "projectImport.preflight.intro": "Review what will be added before the project changes. Cancel leaves the project and the source file untouched.",
+  "projectImport.preflight.pages": "Pages",
+  "projectImport.preflight.items": "Items",
+  "projectImport.preflight.documents": "Documents",
+  "projectImport.preflight.categories": "Categories",
+  "projectImport.preflight.countTypes": "Count types",
+  "projectImport.preflight.lineTypes": "Line types",
+  "projectImport.preflight.assets": "Image assets",
+  "projectImport.preflight.missing": "Unreadable source files: {names}.",
+  "projectImport.preflight.skippedPages": "Skipped pages: {pages}.",
+  "projectImport.preflight.checksum": "Checksum warning for: {names}.",
+  "projectImport.preflight.pageCount": "{name} now has {actual} pages instead of {expected}.",
+  "projectImport.preflight.importWarnings": "{count} additional warning(s) will be shown after the import.",
+  "projectImport.preflight.import": "Import pages"
 }

@@ -12,7 +12,7 @@
     "src/features/projectIntegrity": 400
   },
   "files": {
-    "src/app/App.ts": 1048,
+    "src/app/App.ts": 1063,
     "src/canvas/CanvasView.ts": 1493,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,

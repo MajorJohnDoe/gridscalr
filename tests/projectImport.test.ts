@@ -6,6 +6,7 @@ import {
   prepareProjectImport,
   ProjectImportError,
 } from "../src/features/projectImport/model";
+import { buildImportPreflight } from "../src/features/projectImport/preflight";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { parseProject } from "../src/io/projectFile";
 import { serializeProject } from "../src/io/projectFile/serialize";
@@ -271,6 +272,69 @@ describe("project page import", () => {
     });
     expect(groups[1].pages[0]).toMatchObject({ page: 4, name: "Card 1", itemCount: 1 });
     expect(groups[2].pages[0]).toMatchObject({ page: 5, name: "Scan 1", itemCount: 0 });
+  });
+
+  it("records optional provenance on imported pages", () => {
+    const destination = destinationProject();
+    const source = sourceProject();
+    const provenance = {
+      sourceProjectId: source.id,
+      sourceRevisionSha256: "d".repeat(64),
+      sourceRevisionSize: 4096,
+      sourceRevisionModifiedAt: NOW,
+      appVersion: "0.22.4",
+    };
+    const prepared = prepareProjectImport(
+      destination,
+      source,
+      [1, 5],
+      new Map(),
+      undefined,
+      provenance,
+    );
+    expect(prepared.pages).toHaveLength(2);
+    for (const page of prepared.pages) {
+      expect(page.provenance).toMatchObject({
+        ...provenance,
+        sourcePageId: page.id === prepared.pageMap[0].newPageId ? pageIdFor(1) : "page_5",
+      });
+      expect(Number.isNaN(Date.parse(page.provenance!.importedAt))).toBe(false);
+    }
+    commitProjectImport(destination, prepared);
+    expect(destination.pages[2].provenance?.sourcePageId).toBe(pageIdFor(1));
+    expect(destination.pages[3].provenance?.sourcePageId).toBe("page_5");
+  });
+
+  it("builds a preflight report before the import mutates anything", () => {
+    const destination = destinationProject();
+    const source = sourceProject();
+    const before = JSON.stringify(destination);
+    const prepared = prepareProjectImport(destination, source, [1, 2, 4, 5]);
+    const preflight = buildImportPreflight({
+      prepared,
+      sourceName: source.name,
+      skipped: [3, 5],
+      warnings: [
+        { code: "checksum", documentName: "Plan.pdf" },
+        { code: "pageCount", documentName: "Plan.pdf", expected: 3, actual: 4 },
+        { code: "skippedPage", page: 5, documentName: "Scan.tif" },
+      ],
+    });
+    expect(preflight).toMatchObject({
+      sourceName: source.name,
+      documents: 3,
+      pages: 4,
+      items: 10,
+      categories: 1,
+      countTypes: 1,
+      lineTypes: 1,
+      assets: 1,
+      missingDocuments: ["Scan.tif"],
+      skippedPages: [3, 5],
+      checksumDocuments: ["Plan.pdf"],
+    });
+    expect(preflight.pageCountChanges).toEqual([{ name: "Plan.pdf", expected: 3, actual: 4 }]);
+    expect(JSON.stringify(destination)).toBe(before);
   });
 
   it("appends pages in source order and keeps the source untouched", () => {

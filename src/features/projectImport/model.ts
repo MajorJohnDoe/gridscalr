@@ -73,6 +73,15 @@ export interface ImportPageMapEntry {
   sourceLocalPage: number;
 }
 
+/** Revision identity captured when importing from another project file. */
+export interface ImportProvenanceSource {
+  sourceProjectId: string;
+  sourceRevisionSha256: string;
+  sourceRevisionSize: number;
+  sourceRevisionModifiedAt: string | null;
+  appVersion: string;
+}
+
 export type ImportWarning =
   | {
       code: "units";
@@ -180,6 +189,7 @@ export function prepareProjectImport(
   pages: readonly number[],
   overrides: ImportDocumentOverrides = new Map(),
   insertIndex?: number,
+  provenance?: ImportProvenanceSource,
 ): PreparedProjectImport {
   const selectedNumbers = [...new Set(pages.map((page) => Math.round(page)))].sort((a, b) => a - b);
   if (!selectedNumbers.length) throw new ProjectImportError("noSelection");
@@ -229,6 +239,7 @@ export function prepareProjectImport(
   let nextPage = importInsertionIndex(destination, insertIndex) + 1;
   let ocrDropped = 0;
   let imageItemsSkipped = 0;
+  const importedAt = provenance ? new Date().toISOString() : null;
   const documents: DocumentRef[] = [];
   const pagesOut: PageRecord[] = [];
   const pageMap: ImportPageMapEntry[] = [];
@@ -276,6 +287,15 @@ export function prepareProjectImport(
         documentId: documentRef.id,
         localPage: entry.record.localPage,
         state: state ?? {},
+        ...(provenance && importedAt
+          ? {
+              provenance: {
+                ...provenance,
+                sourcePageId: entry.record.id,
+                importedAt,
+              },
+            }
+          : {}),
       });
       pageMap.push({
         sourcePage: entry.sourcePage,

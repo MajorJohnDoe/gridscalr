@@ -163,13 +163,13 @@ export function buildDoctorDiagnostics(
   let items = 0;
   for (const layer of project.layers) items += layer.items.length;
   const lines = [
-    "GridScalr project doctor",
-    `Schema: ${project.schemaVersion}`,
-    `Project shape: ${project.documents.length} documents, ${project.pages.length} pages, ` +
+    `GridScalr project doctor`,
+    `schema: ${project.schemaVersion}`,
+    `shape: ${project.documents.length} documents, ${project.pages.length} pages, ` +
       `${project.layers.length} layers, ${items} items, ` +
       `${Object.keys(project.assets).length} assets, ${project.categories.length} categories, ` +
       `${project.countTypes.length} count types, ${project.lineTypes.length} line types`,
-    `Issues: ${counts.errors} error(s), ${counts.warnings} warning(s)`,
+    `issues: ${counts.errors} error(s), ${counts.warnings} warning(s)`,
   ];
   for (const issue of issues) {
     const entity = issue.entity
@@ -178,9 +178,13 @@ export function buildDoctorDiagnostics(
     lines.push(`- [${issue.severity}] ${issue.code}${entity}`);
   }
   if (loadReport) {
-    lines.push(`Load warnings: ${loadReport.warnings.length}`);
-    for (const entry of loadReport.dropped) lines.push(`- dropped ${entry.code}: ${entry.count}`);
-    for (const entry of loadReport.repaired) lines.push(`- repaired ${entry.code}: ${entry.count}`);
+    lines.push(`load warnings: ${loadReport.warnings.length}`);
+    for (const entry of loadReport.dropped) {
+      lines.push(`- dropped ${entry.code}: ${entry.count}`);
+    }
+    for (const entry of loadReport.repaired) {
+      lines.push(`- repaired ${entry.code}: ${entry.count}`);
+    }
   }
   return `${lines.join("\n")}\n`;
 }

@@ -2535,5 +2535,20 @@
   "projectIntegrity.saveBlocked.title": "Projektet kan inte sparas",
   "projectIntegrity.diagnosticsFilter": "Diagnostiktext",
   "projectIntegrity.diagnosticsSaved": "Diagnostiken sparades till {path}.",
-  "projectIntegrity.issue.roundTripParse": "Det serialiserade projektet kunde inte läsas tillbaka."
+  "projectIntegrity.issue.roundTripParse": "Det serialiserade projektet kunde inte läsas tillbaka.",
+  "projectImport.preflight.title": "Förhandsgranskning av import",
+  "projectImport.preflight.intro": "Granska vad som läggs till innan projektet ändras. Avbryt lämnar projektet och källfilen orörda.",
+  "projectImport.preflight.pages": "Sidor",
+  "projectImport.preflight.items": "Objekt",
+  "projectImport.preflight.documents": "Dokument",
+  "projectImport.preflight.categories": "Kategorier",
+  "projectImport.preflight.countTypes": "Räkningstyper",
+  "projectImport.preflight.lineTypes": "Linjetyper",
+  "projectImport.preflight.assets": "Bildresurser",
+  "projectImport.preflight.missing": "Oläsbara källfiler: {names}.",
+  "projectImport.preflight.skippedPages": "Överhoppade sidor: {pages}.",
+  "projectImport.preflight.checksum": "Kontrollsummevarning för: {names}.",
+  "projectImport.preflight.pageCount": "{name} har nu {actual} sidor i stället för {expected}.",
+  "projectImport.preflight.importWarnings": "{count} ytterligare varning(ar) visas efter importen.",
+  "projectImport.preflight.import": "Importera sidor"
 }
