@@ -12,6 +12,30 @@ export function normalizeSheetFields(rawValue: unknown): Record<string, string> 
   return fields;
 }
 
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
+
+/**
+ * Appends the storage fields in one fixed order so a parse → serialize →
+ * parse round trip produces byte-identical JSON.
+ */
+function normalizeStorageFields(document: DocumentRef, rawDoc: Partial<DocumentRef>): void {
+  if (document.kind === "template") {
+    document.storage = "reference";
+    return;
+  }
+  if (rawDoc.storage === "managed" || rawDoc.storage === "reference") {
+    document.storage = rawDoc.storage;
+  }
+  if (typeof rawDoc.originalPath === "string" && rawDoc.originalPath) {
+    document.originalPath = rawDoc.originalPath;
+  } else if (rawDoc.originalPath === null) {
+    document.originalPath = null;
+  }
+  if (typeof rawDoc.originalSha256 === "string" && SHA256_PATTERN.test(rawDoc.originalSha256)) {
+    document.originalSha256 = rawDoc.originalSha256.toLowerCase();
+  }
+}
+
 export function normalizeDocument(rawValue: unknown): DocumentRef {
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
@@ -64,6 +88,7 @@ export function normalizeDocument(rawValue: unknown): DocumentRef {
     document.sha256 = "";
     document.pageCount = 1;
     document.sizeBytes = 0;
+    normalizeStorageFields(document, rawDoc);
     return document;
   }
 
@@ -109,5 +134,6 @@ export function normalizeDocument(rawValue: unknown): DocumentRef {
           : document.name,
     };
   }
+  normalizeStorageFields(document, rawDoc);
   return document;
 }

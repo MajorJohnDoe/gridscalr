@@ -16,6 +16,7 @@ import { normalizeLineTypes } from "./lineTypes";
 import { normalizeDocument } from "./documents";
 import { normalizeOcr } from "./ocr";
 import { migrateLayers, migratePages } from "./pages";
+import { migrateSourceStorage } from "./sourceStorage";
 
 export interface ProjectLoadReport {
   /** Translation keys for invalid references found while migrating. */
@@ -80,6 +81,8 @@ export function parseProjectWithReport(text: string): {
       : [];
   // Schema 5 and earlier stored exactly one document. Migration wraps it in a list.
   const documents = rawDocuments.map((entry) => normalizeDocument(entry));
+  // Schema 24 → 25: every document becomes an explicit reference. No file moves.
+  migrateSourceStorage(documents, raw.schemaVersion);
   const seen = new Set<string>();
   for (const document of documents) {
     if (seen.has(document.id)) document.id = makeId("doc");

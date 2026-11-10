@@ -158,6 +158,7 @@ export function defaultDocument(name = t("app.untitledProject"), pageCount = 1):
     sha256: "",
     pageCount,
     sizeBytes: 0,
+    storage: "reference",
   };
 }
 

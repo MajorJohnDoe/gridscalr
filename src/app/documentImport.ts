@@ -92,6 +92,7 @@ export async function createImportedDocument(
       sha256: await hashBytes(bytes),
       pageCount: 1,
       sizeBytes: bytes.byteLength,
+      storage: "reference",
     },
     pdfBytes: bytes,
     dpiWarning: false,
