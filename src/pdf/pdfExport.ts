@@ -1,25 +1,18 @@
 import * as fontkit from "@pdf-lib/fontkit";
-import { PDFDocument, type PDFPage } from "pdf-lib";
+import { PDFDocument } from "pdf-lib";
 import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
-import { drawItem } from "./export/items/dispatch";
-import { addReviewAnnotation } from "./export/annotations";
-import { drawLabel } from "./export/labels";
 import { drawLegendPage } from "./export/legend";
-import { createOptionalContent, type OptionalContentWriter } from "./export/ocg";
+import { createOptionalContent } from "./export/ocg";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
-import { applyCrop, drawCalibrationLine } from "./export/page";
+import { applyCrop } from "./export/page";
+import { drawPageContent } from "./export/content";
 import { pageIdAt } from "../model/pages";
-import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import type { DrawingExportOptions } from "../model/export";
-import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
-import { CALIBRATION_LABEL_ID, layoutPageLabels, pageLabelSources } from "../model/labelLayout";
+import { layerVisibleOnPage } from "../model/layers";
+import { layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
-import { t } from "../i18n";
-import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { resolveSheetLabels, sheetTemplateFor } from "../features/schematics/model/sheetTemplate";
-import { drawSheetFields } from "../features/schematics/render/sheetPdf";
 
 export { pdfCropBoxForViewport } from "./export/options";
 export type { PdfCropBox } from "./export/options";
@@ -93,69 +86,20 @@ export async function exportProjectPdf(
         labelSize: project.settings.labelSize,
       },
     );
-
-    // Background images sit above the source page and below every markup.
-    for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
-        continue;
-      drawLayer(
-        pdfPage,
-        () => {
-          for (const item of layer.items) {
-            if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
-            if (item.kind !== "image" || item.image?.mode === "annotation") continue;
-            drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
-            if (options?.includeAnnotations) {
-              addReviewAnnotation(pdfPage, viewport, project, item);
-            }
-          }
-        },
-        layer.id,
-        ocg,
-      );
-    }
-
-    const sheetDocument = templateDocumentForPage(project, pageNumber);
-    if (sheetDocument?.template) {
-      const sheetSpec = sheetTemplateFor(
-        sheetDocument.template.id,
-        sheetDocument.template.paper,
-        resolveSheetLabels((key) => t(key)),
-      );
-      if (sheetSpec) {
-        drawSheetFields(pdfPage, sheetSpec, sheetDocument.template.fields, fonts);
-      }
-    }
-
-    for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
-        continue;
-      drawLayer(
-        pdfPage,
-        () => {
-          for (const item of layer.items) {
-            if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
-            if (item.kind === "image" && item.image?.mode !== "annotation") continue;
-            drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
-            if (options?.includeAnnotations) {
-              addReviewAnnotation(pdfPage, viewport, project, item);
-            }
-          }
-        },
-        layer.id,
-        ocg,
-      );
-    }
-
-    if (includeCalibration) {
-      const calibration = pageCalibration(project, pageId);
-      if (calibration && isReferenceCalibration(calibration)) {
-        drawCalibrationLine(pdfPage, viewport, calibration.p1, calibration.p2);
-        const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);
-        if (calibrationLabel) drawLabel(pdfPage, viewport, calibrationLabel, 1, fonts);
-      }
-    }
-
+    drawPageContent({
+      page: pdfPage,
+      pageNumber,
+      viewport,
+      project,
+      pageId,
+      layerIds: selectedLayers,
+      fonts,
+      labels,
+      images,
+      includeCalibration,
+      includeAnnotations: options?.includeAnnotations === true,
+      ocg,
+    });
     if (crop) applyCrop(pdfPage, viewport, crop);
   }
 
@@ -170,16 +114,4 @@ export async function exportProjectPdf(
 
   ocg?.finalize();
   return pdf.save();
-}
-
-/** Runs one layer's drawing inside an OCG marked-content sequence when enabled. */
-function drawLayer(
-  page: PDFPage,
-  draw: () => void,
-  layerId: string,
-  ocg: OptionalContentWriter | null,
-): void {
-  const marked = ocg?.begin(page, layerId) ?? false;
-  draw();
-  if (marked) ocg?.end(page);
 }

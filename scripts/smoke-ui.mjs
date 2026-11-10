@@ -99,7 +99,7 @@ try {
 
   // Package commands are visible but disabled in the browser fallback.
   await page.getByRole("menuitem", { name: "File" }).click();
-  const packageItem = page.getByRole("menuitem", { name: /Package project/ });
+  const packageItem = page.getByRole("menuitem", { name: /Share project package/ });
   const openPackageItem = page.getByRole("menuitem", { name: /Open package/ });
   assert.equal(await packageItem.isDisabled(), true, "package should be desktop-only");
   assert.equal(await openPackageItem.isDisabled(), true, "open package should be desktop-only");
