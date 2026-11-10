@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.22.4** · Project-file schema: **24**
+Current version: **0.22.4** · Project-file schema: **25**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -30,8 +30,7 @@ These are not negotiable without an explicit decision:
 - Exports use the same visibility and locking rules as the canvas.
 - No accounts, cloud sync, collaboration, telemetry or network dependencies.
 - Every project save is a conditional write. A changed disk file is never
-  overwritten without an explicit choice. Accepted direction; implementation
-  pending.
+  overwritten without an explicit choice.
 - Pages have stable IDs from schema 24 onward. Imports append by default, but
   insert, reorder and source replacement are explicit, tested operations.
 - Source storage is explicit: reference, managed copy or package (schema 25).
@@ -200,6 +199,10 @@ Issue [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 - Stateful and property-based tests for page, import and save flows.
 - Conflict, crash and migration-corpus tests.
 - Coverage, fuzzing and visual gates in CI.
+
+Implemented in Phase 7 ([#159](https://github.com/MajorJohnDoe/gridscalr/issues/159)):
+`tests/robustness/` runs as `npm run test:robustness` and in the normal suite,
+and CI names the focused step. The migration corpus covers schema 1–25.
 
 Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
 [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61),

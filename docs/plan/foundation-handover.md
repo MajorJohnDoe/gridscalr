@@ -443,3 +443,93 @@ GitHub CI on Ubuntu, Windows and macOS.
 - Phase 7, [#159](https://github.com/MajorJohnDoe/gridscalr/issues/159) —
   stateful and property-based page/save flows, concurrent-save and
   crash-during-save tests, a migration corpus and CI gates.
+
+## Phase 7 — robustness, concurrency and migration gates (#159)
+
+Status: implemented on `feat/159-robustness-gates`, PR
+[#166](https://github.com/MajorJohnDoe/gridscalr/pull/166). No app version bump;
+schema stays 25.
+
+### Scope delivered
+
+- `tests/robustness/pageIdentity.test.ts` runs a deterministic, seeded sequence
+  of insert, reorder, duplicate, delete, import, source replacement, bulk edit,
+  undo/redo, save and load. Every step checks unique IDs, every item/layer/page
+  reference, display page numbers, stable `PageId` bindings, operation-accounted
+  counts and `validateProject()` errors. It proves one import and one bulk edit
+  are one undo step, structural page actions clear history and a checkpoint is
+  written before a structural action.
+- `tests/robustness/saveConflict.test.ts` models two writers against one path:
+  a stale stamp conflicts, the default conflicted copy preserves both versions,
+  overwrite needs the explicit action, a failed write keeps the previous file
+  and in-memory project valid, a deleted target is not recreated and a no-op save
+  does not rewrite.
+- Rust `project_write` tests cover the conditional write against a changed file,
+  a failure between the flushed temporary file and the rename (previous file
+  remains readable), a missing/empty expected hash as the explicit overwrite
+  path, hash case, and a second writer that still holds the loaded stamp.
+- `fixtures/legacy/` now contains a deliberate fixture for every schema 1–25:
+  the older single-`document` shape, numeric page maps, each version's added
+  fields, and the schema 24 page list and schema 25 storage mode. The original
+  schema 23/24 fixtures remain, and `scripts/make-legacy-fixtures.mjs`
+  regenerates the corpus deterministically.
+- `tests/robustness/migrations.test.ts` loads every fixture, checks the
+  version-specific data, deterministic page IDs, reported invalid references and
+  the no-move schema 24 → 25 path.
+- `tests/robustness/sourceStorage.test.ts` covers reference versus managed
+  mode, managed-copy identity, consolidation leaving the original bytes
+  untouched, a changed reference never being auto-accepted, managed drawings
+  included once in a package, empty project save/load/import, and page identity
+  through reorder, delete and source replacement.
+- `npm run test:robustness` runs only `tests/robustness/`. The normal
+  `npm test -- --run` suite includes it, and CI runs the focused command as a
+  named step. `docs/testing.md` records the suites and their limits.
+- `Store.clearHistory()` and source replacement now discard undo/redo at the
+  structural boundary (F-027). The unused `remapPageItems()` helper was removed
+  (F-003).
+
+### Findings
+
+`docs/plan/foundation-findings.md` now has a Phase 7 triage table for F-001 to
+F-027. F-003 and F-027 are fixed; the rest are deferred or accepted with a
+written rationale. No finding was silently closed and no app version was
+changed.
+
+### Checks
+
+Full AGENTS pre-commit list plus `npm run test:robustness`, `cargo test --lib`
+and the Playwright suites (`test:ui`, `test:import`, `test:canvas`, `test:count`,
+`test:touch`, `test:visual`).
+
+## Foundation complete
+
+All seven foundation phases are implemented. This is not a 1.0 release claim:
+the app version remains 0.22.4, the project schema remains 25, and no tag is
+created by this phase.
+
+The tests now enforce:
+
+- conditional saves, conflicted copies and a readable previous file after a
+  failed or interrupted replace;
+- unique IDs and live references for documents, pages, layers, items,
+  categories, count types, line types, count presets and Markups views;
+- stable page identity through insert, reorder, duplicate, delete, import and
+  source replacement;
+- one import or bulk edit as one history step, structural actions clearing
+  history and checkpoints before structural actions;
+- deterministic migration from every supported schema, with invalid references
+  reported rather than silently dropped;
+- reference/managed source modes, verified copies, package-once behaviour and
+  empty projects;
+- source files remaining immutable through copy, consolidation and package
+  paths.
+
+Remaining limitations stay in [`docs/limitations.md`](../limitations.md) and the
+triaged findings log. The tests cannot prove a real cloud client racing between
+the final hash check and the rename, a process kill at every instruction, or
+external source truth without reading the drawing. Those remain documented
+limits, not hidden assumptions.
+
+No Phase 8 exists. Future work is product maintenance and the 1.0 quality gate
+in [`docs/roadmap.md`](../roadmap.md), tracked through issues rather than a new
+foundation phase.

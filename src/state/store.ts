@@ -287,9 +287,7 @@ export class Store {
     this.readOnly = false;
     this.autosaveError = null;
     this.revision += 1;
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     this.assetPayloads.clear();
     if (!project.assets) project.assets = {};
     for (const asset of Object.values(project.assets)) {
@@ -331,8 +329,7 @@ export class Store {
     this.readOnly = false;
     this.autosaveError = null;
     this.revision += 1;
-    this.undoStack = [];
-    this.redoStack = [];
+    this.clearHistory();
     this.assetPayloads.clear();
     this.ui = defaultUI();
     this.emit("project");
@@ -367,8 +364,7 @@ export class Store {
         state: {},
       });
     }
-    this.undoStack = [];
-    this.redoStack = [];
+    this.clearHistory();
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
@@ -383,9 +379,7 @@ export class Store {
   applySourceStorageChange(mutate: (documents: DocumentRef[]) => void): void {
     if (!this.project) return;
     mutate(this.project.documents);
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
@@ -398,11 +392,20 @@ export class Store {
     const document = this.project.documents.find((entry) => entry.id === record?.documentId);
     if (!document?.template) return;
     document.template.paper = paper;
-    this.undoStack = [];
-    this.redoStack = [];
+    this.clearHistory();
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
+  }
+
+  /**
+   * Clears undo and redo at a structural boundary. A snapshot from before the
+   * boundary cannot describe the new page or source structure.
+   */
+  clearHistory(): void {
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
   }
 
   /**
@@ -414,9 +417,7 @@ export class Store {
     if (!this.project) return null;
     const result = deletePageRecord(this.project, pageId);
     if (!result) return null;
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     for (const assetId of [...this.assetPayloads.keys()]) {
       if (!this.project.assets[assetId]) this.assetPayloads.delete(assetId);
     }
@@ -433,9 +434,7 @@ export class Store {
   reorderPage(pageId: PageId, targetIndex: number): boolean {
     if (!this.project) return false;
     if (!movePageRecord(this.project, pageId, targetIndex)) return false;
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
@@ -453,9 +452,7 @@ export class Store {
       index,
     });
     if (!record) return null;
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     this.ui.page = pageNumber(this.project, record.id);
     this.ui.selection = [];
     this.ui.hover = null;
@@ -701,9 +698,7 @@ export class Store {
     if (!this.project) return null;
     const result = duplicatePageRecord(this.project, pageId, options);
     if (!result) return null;
-    this.undoStack = [];
-    this.redoStack = [];
-    this.gestureSnapshot = null;
+    this.clearHistory();
     this.ui.page = result.pageNumber;
     this.ui.selection = [];
     this.ui.hover = null;

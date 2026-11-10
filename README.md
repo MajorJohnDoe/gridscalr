@@ -270,7 +270,9 @@ path-free diagnostics; `src/model/integrity.ts` holds the pure rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a
-source drawing.
+source drawing. The `tests/robustness/` gate exercises seeded page and save
+sequences, competing writers, the committed `fixtures/legacy/` schema 1–25
+corpus and source storage; run it alone with `npm run test:robustness`.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.
@@ -324,11 +326,16 @@ version:
 
 ```bash
 npm test -- --run
+npm run test:robustness
 npm run lint
 npm run build
 npm run check:docs
 cargo check --manifest-path src-tauri/Cargo.toml
 ```
+
+`npm run test:robustness` is the focused gate for page identity, competing
+saves, the schema 1–25 migration corpus and source storage; the normal test
+suite includes the same files. See [docs/testing.md](docs/testing.md).
 
 Never attach real customer drawings to an issue or a pull request.
 

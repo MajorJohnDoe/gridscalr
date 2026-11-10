@@ -106,6 +106,9 @@ export async function replaceSourceFlow(
       return;
     }
 
+    // Replacing a source is structural: an older undo snapshot could restore a
+    // superseded document reference that no longer matches the renderer.
+    store.clearHistory();
     const documentIndex = project.documents.findIndex((entry) => entry.id === documentId);
     if (applied.updatedDocument && documentIndex >= 0) {
       renderer.replaceDocument(

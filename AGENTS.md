@@ -494,11 +494,14 @@ docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
+tests/robustness/          seeded page/save sequences, competing saves, the schema 1–25 migration corpus and source-storage gates
+fixtures/legacy/           committed project fixtures for every supported schema
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
 scripts/plan-geometry.mjs  shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs   legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation demo project
+scripts/make-legacy-fixtures.mjs generator for the schema 1–25 migration corpus
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -537,6 +540,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
+- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–25 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
+- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–25. Regenerate schemas 1–22, `schema-23-full`, `schema-24-full` and `schema-25` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
 - `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.

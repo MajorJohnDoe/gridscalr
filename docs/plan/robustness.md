@@ -1,7 +1,7 @@
 # Project-file robustness and concurrent editing
 
-**Status:** accepted 2026-11-10. The decisions are recorded in ADR 0010–0012;
-implementation has not started.
+**Status:** accepted 2026-11-10. All seven phases are implemented; Phase 7
+completed 2026-11-10. The decisions are recorded in ADR 0010–0012.
 **Scope:** concurrent edits on local, network and cloud-synced files; save and
 recovery integrity; explicit page order and source replacement; source storage
 modes; layer and markup binding; import and structural-operation safety.
@@ -607,7 +607,7 @@ fixture for the previous schema.
 | 4 | P1 | 25 | Reference/managed-copy storage, consolidate, source-changed flow | A shared or cloud source cannot change the working drawing silently |
 | 5 | P1 | none | Integrity validator, project doctor, import preflight and provenance | A damaged or imported file cannot cause silent data loss |
 | 6 | P2 | optional | OCG export, annotation export, package/share flow, relink search | Interoperability improves without changing the source of truth |
-| 7 | P1 | none | Stateful tests, conflict tests, crash tests, migration corpus, CI gate | The invariants are enforced by tests, not only by review |
+| 7 | P1 | none | Stateful tests, conflict tests, crash tests, migration corpus, CI gate | Complete 2026-11-10: the invariants are enforced by `tests/robustness/` and a named CI step |
 
 Every phase uses [`foundation-findings.md`](foundation-findings.md) for larger
 problems discovered while implementing. Fix an in-scope problem immediately; log

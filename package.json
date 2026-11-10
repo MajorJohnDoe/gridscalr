@@ -36,6 +36,7 @@
     "icons": "tauri icon src-tauri/icons/app-icon.svg --output src-tauri/icons",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:robustness": "vitest run tests/robustness",
     "test:watch": "vitest",
     "test:ui": "node scripts/smoke-ui.mjs",
     "test:import": "node scripts/project-import-ui.mjs",
