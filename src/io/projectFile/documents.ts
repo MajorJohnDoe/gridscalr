@@ -23,14 +23,13 @@ function normalizeStorageFields(document: DocumentRef, rawDoc: Partial<DocumentR
     document.storage = "reference";
     return;
   }
-  if (rawDoc.storage === "managed" || rawDoc.storage === "reference") {
-    document.storage = rawDoc.storage;
+  if (rawDoc.storage !== "managed") {
+    if (rawDoc.storage === "reference") document.storage = "reference";
+    return;
   }
-  if (typeof rawDoc.originalPath === "string" && rawDoc.originalPath) {
-    document.originalPath = rawDoc.originalPath;
-  } else if (rawDoc.originalPath === null) {
-    document.originalPath = null;
-  }
+  document.storage = "managed";
+  document.originalPath =
+    typeof rawDoc.originalPath === "string" && rawDoc.originalPath ? rawDoc.originalPath : null;
   if (typeof rawDoc.originalSha256 === "string" && SHA256_PATTERN.test(rawDoc.originalSha256)) {
     document.originalSha256 = rawDoc.originalSha256.toLowerCase();
   }

@@ -16,8 +16,5 @@ export function migrateSourceStorage(documents: readonly DocumentRef[], fromSche
       delete document.originalPath;
       delete document.originalSha256;
     }
-    if (document.storage === "managed" && document.originalPath === undefined) {
-      document.originalPath = null;
-    }
   }
 }

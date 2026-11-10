@@ -143,7 +143,7 @@ describe("project package model", () => {
     const paths = documentArchivePaths(project);
     expect(paths.get(first.id)).toBe("documents/Plan.pdf");
     expect(paths.get(second.id)).toBe(paths.get(first.id));
-    expect([...paths.values()]).toHaveLength(2);
+    expect(new Set(paths.values()).size).toBe(1);
 
     const json = portableProjectJson(project, paths);
     const copy = JSON.parse(json) as Project;

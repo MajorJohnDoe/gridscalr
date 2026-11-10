@@ -137,7 +137,7 @@ fn safe_base(display_name: &str, fallback: &str) -> String {
             }
         })
         .collect();
-    base = base.trim().trim_end_matches(['.', ' ']).to_string();
+    base = base.trim().trim_matches(['.', ' ']).to_string();
     if base.is_empty() {
         base = fallback.to_string();
     }

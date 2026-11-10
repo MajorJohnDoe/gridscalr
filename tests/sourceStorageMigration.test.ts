@@ -12,6 +12,13 @@ function fixture(): Record<string, unknown> {
   return JSON.parse(schema24) as Record<string, unknown>;
 }
 
+/** Serialization always refreshes updatedAt; everything else must be stable. */
+function stable(text: string): Record<string, unknown> {
+  const value = JSON.parse(text) as Record<string, unknown>;
+  delete value.updatedAt;
+  return value;
+}
+
 describe("schema 24 → 25 source-storage migration", () => {
   it("marks every existing document as a reference without moving paths", () => {
     const { project, report } = parseProjectWithReport(schema24);
@@ -42,6 +49,8 @@ describe("schema 24 → 25 source-storage migration", () => {
     expect(parsed.documents[0].originalPath).toBe("/home/ana/OneDrive/Main.pdf");
     expect(parsed.documents[0].originalSha256).toBe(sha);
     expect(parsed.documents[1].storage).toBe("reference");
+    const text = serializeProject(parsed);
+    expect(stable(serializeProject(parseProject(text)))).toEqual(stable(text));
   });
 
   it("does not trust a pre-schema-25 managed marker or provenance", () => {
@@ -73,6 +82,6 @@ describe("schema 24 → 25 source-storage migration", () => {
     const text = serializeProject(first);
     expect(text).toContain('"storage": "reference"');
     const second = parseProject(text);
-    expect(serializeProject(second)).toBe(serializeProject(first));
+    expect(stable(serializeProject(second))).toEqual(stable(serializeProject(first)));
   });
 });
