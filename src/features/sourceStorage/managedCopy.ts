@@ -10,7 +10,10 @@ export interface ManagedCopyInfo {
 }
 
 export interface ConsolidateCandidate {
+  /** First document that references this physical file. */
   documentId: string;
+  /** Every document that must point at the shared managed copy. */
+  documentIds: string[];
   name: string;
   path: string;
   sha256: string;
@@ -80,9 +83,14 @@ export function consolidateCandidates(
     if (document.kind !== "pdf" || isManagedDocument(document)) continue;
     const path = resolvePath(document);
     if (!path) continue;
-    if (candidates.some((candidate) => candidate.path === path)) continue;
+    const existing = candidates.find((candidate) => candidate.path === path);
+    if (existing) {
+      existing.documentIds.push(document.id);
+      continue;
+    }
     candidates.push({
       documentId: document.id,
+      documentIds: [document.id],
       name: document.name,
       path,
       sha256: document.sha256,

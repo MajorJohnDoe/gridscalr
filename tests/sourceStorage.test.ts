@@ -102,9 +102,15 @@ describe("sourceStorage mode", () => {
       embeddedPdf: "JVBERi0xLjQK",
       path: "/tmp/Scan.tif",
     };
-    project.documents.push(managed, scan);
+    const duplicate: DocumentRef = {
+      ...defaultDocument("Plan copy.pdf", 1),
+      id: "doc_duplicate_reference",
+      path: reference.path,
+    };
+    project.documents.push(managed, scan, duplicate);
     const candidates = consolidateCandidates(project, (document) => document.path);
     expect(candidates.map((candidate) => candidate.documentId)).toEqual([reference.id]);
+    expect(candidates[0].documentIds).toEqual([reference.id, duplicate.id]);
   });
 
   it("offers no copy action for an already managed document", () => {

@@ -123,7 +123,7 @@ export async function consolidateDrawings(host: SourceStorageHost): Promise<void
   try {
     // Verify every source before writing a single copy.
     const changes: {
-      documentId: string;
+      documentIds: string[];
       copy: ManagedCopyInfo;
       originalPath: string;
       originalSha256: string;
@@ -135,7 +135,7 @@ export async function consolidateDrawings(host: SourceStorageHost): Promise<void
         throw new Error(t("sourceStorage.sourceChangedBeforeCopy", { name: candidate.name }));
       }
       changes.push({
-        documentId: candidate.documentId,
+        documentIds: candidate.documentIds,
         copy: { destinationPath: "", relativePath: "", sha256: "", sizeBytes: 0 },
         originalPath: candidate.path,
         originalSha256: info.sha256,
@@ -143,7 +143,7 @@ export async function consolidateDrawings(host: SourceStorageHost): Promise<void
     }
     await host.checkpoint(t("sourceStorage.checkpoint.consolidate"));
     for (const change of changes) {
-      const candidate = candidates.find((entry) => entry.documentId === change.documentId)!;
+      const candidate = candidates.find((entry) => entry.documentId === change.documentIds[0])!;
       const copy = await copySourceToProject({
         sourcePath: candidate.path,
         projectPath,
@@ -157,12 +157,14 @@ export async function consolidateDrawings(host: SourceStorageHost): Promise<void
     }
     store.applySourceStorageChange((documents) => {
       for (const change of changes) {
-        const target = documents.find((entry) => entry.id === change.documentId);
-        if (!target) continue;
-        applyManagedCopy(target, change.copy, {
-          path: change.originalPath,
-          sha256: change.originalSha256,
-        });
+        for (const documentId of change.documentIds) {
+          const target = documents.find((entry) => entry.id === documentId);
+          if (!target) continue;
+          applyManagedCopy(target, change.copy, {
+            path: change.originalPath,
+            sha256: change.originalSha256,
+          });
+        }
       }
     });
     host.afterChange();
