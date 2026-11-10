@@ -5,7 +5,8 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 
 | Command | Covers |
 | --- | --- |
-| `npm test -- --run` | Model, I/O, project-file, source-storage, report, PDF, geometry and package logic in Node. |
+| `npm test -- --run` | Model, I/O, project-file, source-storage, report, PDF, geometry and package logic in Node, including `tests/robustness/`. |
+| `npm run test:robustness` | The robustness gate only: seeded page and save sequences, concurrent and crash-safe writes, the schema 1–25 migration corpus, source storage and empty projects. |
 | `npm run test:coverage` | The same suite with V8 coverage and the CI thresholds. |
 | `npm run test:ui` | Playwright smoke flow through the browser fallback: open, measure, help, save and package menu state. |
 | `npm run test:import` | Playwright import flow: thumbnail picker, page-scoped layers, undo, redo and source-file immutability. |
@@ -25,6 +26,32 @@ flattened drawing, optional-content groups (including pdf.js group resolution),
 review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
 covers conditional writes, conflicted copies, backups and the read-only
 **Compare with disk version** summary, including unreadable disk data.
+
+## Robustness gate
+
+`npm run test:robustness` runs only `tests/robustness/`. The normal
+`npm test -- --run` suite includes the same files, and CI runs the focused
+command as a named step so a robustness failure is visible without reading the
+full Vitest log.
+
+| Suite | Protects |
+| --- | --- |
+| `pageIdentity.test.ts` | A seeded sequence of insert, reorder, duplicate, delete, import, source replacement, bulk edit, undo/redo, save and load. After every step it checks unique IDs, live item, layer-home and layer-page-state references, display page numbers, stable `PageId` bindings, operation-accounted counts and `validateProject()` errors. One import and one bulk edit are one undo step; structural page actions clear history and write checkpoints. |
+| `saveConflict.test.ts` | Two writers against one project path. A stale stamp conflicts, the default conflicted copy preserves both versions, overwrite requires an explicit choice, a failed write keeps the previous file and the in-memory project valid, a deleted target is not recreated, and a no-op save does not rewrite. |
+| `migrations.test.ts` | One committed fixture per schema 1–25. Each fixture uses that version's structure, migrates to schema 25, preserves its documents, pages, measurements, categories, assets and version-specific fields, produces deterministic page IDs, reports invalid references instead of dropping them, and proves schema 24 → 25 does not move source paths. |
+| `sourceStorage.test.ts` | Reference versus managed mode, managed-copy identity, consolidation leaving the original bytes untouched, a changed reference being reported and never auto-accepted, a managed drawing included once in a package, empty project save/load/import, and page identity through reorder, delete and source replacement. |
+
+The Rust `project_write` tests prove the conditional write rejects a changed
+file, keeps the previous file when the replace step fails between the flushed
+temporary file and the rename, treats a missing/empty expected hash as the
+explicit overwrite path, ignores hash case, and rejects a second writer that
+still holds the loaded stamp. The `source_copy` tests prove the source bytes
+are unchanged after a verified copy.
+
+The gate cannot prove a real cloud client racing between the final hash check
+and the rename, or a process kill at every possible instruction. Those remain
+documented limitations; the tests prove the application-level compare-and-swap
+and the readable previous file.
 
 ## Fuzzing
 
