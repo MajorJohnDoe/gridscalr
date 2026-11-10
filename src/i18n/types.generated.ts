@@ -2370,6 +2370,8 @@ export type MessageKey =
   | "replace.cleanupAction"
   | "replace.cleanupDone"
   | "sessionRecovery.checkpoint.replaceSource"
+  | "sessionRecovery.checkpoint.reorderPage"
+  | "sessionRecovery.checkpoint.insertPage"
   | "sessionRecovery.reloadDiscard"
   | "sessionRecovery.reloaded"
   | "sessionRecovery.host.desktop"

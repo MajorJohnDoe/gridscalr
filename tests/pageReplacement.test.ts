@@ -8,6 +8,8 @@ import {
 import { removeDocumentAndPages } from "../src/features/pageModel";
 import { createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef } from "../src/model/types";
+import { parseProject } from "../src/io/projectFile";
+import { serializeProject } from "../src/io/projectFile/serialize";
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 const NOW = "2026-01-01T00:00:00.000Z";
@@ -107,6 +109,8 @@ describe("source replacement", () => {
     const layer = project.layers.find((entry) => entry.kind === "measure")!;
     expect(layer.items.map((entry) => entry.pageId)).toEqual([pageIdFor(1), pageIdFor(3)]);
     expect(pagesForDocument(project, oldId)).toEqual([pageIdFor(2)]);
+    const reloaded = parseProject(serializeProject(project));
+    expect(reloaded.documents.find((entry) => entry.id === oldId)?.superseded).toBe(true);
   });
 
   it("ignores invalid mappings and refuses an empty map", () => {

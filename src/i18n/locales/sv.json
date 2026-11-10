@@ -2368,6 +2368,8 @@
   "replace.cleanupAction": "Ta bort sidor",
   "replace.cleanupDone": "Tog bort {count} ersatt(a) sida/sidor.",
   "sessionRecovery.checkpoint.replaceSource": "Före byte av källan {name}",
+  "sessionRecovery.checkpoint.reorderPage": "Före omordning av sida {page}",
+  "sessionRecovery.checkpoint.insertPage": "Före infogning av en sida efter sida {page}",
   "sessionRecovery.reloadDiscard": "Om inläsningen från disken fortsätter förkastas osparade ändringar i det här fönstret. Fortsätta?",
   "sessionRecovery.reloaded": "Projektet lästes om från disken.",
   "sessionRecovery.host.desktop": "Dator · {platform}",

@@ -2368,6 +2368,8 @@
   "replace.cleanupAction": "Remove pages",
   "replace.cleanupDone": "Removed {count} superseded page(s).",
   "sessionRecovery.checkpoint.replaceSource": "Before replacing the source {name}",
+  "sessionRecovery.checkpoint.reorderPage": "Before reordering page {page}",
+  "sessionRecovery.checkpoint.insertPage": "Before inserting a page after page {page}",
   "sessionRecovery.reloadDiscard": "Reloading from disk discards unsaved changes in this window. Continue?",
   "sessionRecovery.reloaded": "Project reloaded from disk.",
   "sessionRecovery.host.desktop": "Desktop · {platform}",

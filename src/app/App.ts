@@ -224,8 +224,8 @@ export class App {
       deletePage: (pageId) => void deletePageFlow(this.pageFlowHost(), pageId),
       duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
       reorderPage: (pageId, targetIndex) =>
-        reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
-      insertPage: (pageId, index) => insertProjectPage(this.pageActionHost(), pageId, index),
+        void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
+      insertPage: (pageId, index) => void insertProjectPage(this.pageActionHost(), pageId, index),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
       cleanupSuperseded: (documentId) =>
         void cleanupSupersededPages(this.pageActionHost(), documentId),

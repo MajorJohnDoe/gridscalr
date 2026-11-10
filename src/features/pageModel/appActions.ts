@@ -1,5 +1,6 @@
 import { t } from "../../i18n";
 import { createProject } from "../../model/layers";
+import { pageNumber } from "../../model/pages";
 import type { PageId, PageSize, Project } from "../../model/types";
 import type { PdfRenderer } from "../../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../../pdf/thumbnails";
@@ -33,13 +34,31 @@ export async function createEmptyProject(host: PageActionHost): Promise<void> {
   toast(t("app.blankProjectOpened"), "success");
 }
 
-export function reorderPage(host: PageActionHost, pageId: PageId, targetIndex: number): boolean {
+export async function reorderPage(
+  host: PageActionHost,
+  pageId: PageId,
+  targetIndex: number,
+): Promise<boolean> {
+  const project = store.project;
+  if (!project) return false;
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.reorderPage", { page: pageNumber(project, pageId) }),
+  );
   if (!store.reorderPage(pageId, targetIndex)) return false;
   host.afterStructuralChange();
   return true;
 }
 
-export function insertPage(host: PageActionHost, pageId: PageId, index: number): void {
+export async function insertPage(
+  host: PageActionHost,
+  pageId: PageId,
+  index: number,
+): Promise<void> {
+  const project = store.project;
+  if (!project) return;
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.insertPage", { page: pageNumber(project, pageId) }),
+  );
   if (!store.insertPageRecord(pageId, index)) return;
   host.afterStructuralChange();
   void host.enqueuePageSize(store.ui.page);
