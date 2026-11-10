@@ -312,6 +312,7 @@ full list.
 | Statutory area classifications | Not implemented. BTA/BRA/NTA/LOA are not calculated; categories and rooms are user-defined. |
 | Theme | Four palettes ship in 0.21: dark jade (default), Light, Grey and Navy, with System following the OS preference. |
 | Project package format | Standard `.gridscalr.zip` with manifest and relative paths. See [ADR 0002](adr/0002-project-package.md). |
+| Concurrent project edits | No conflict detection; the last save wins. A discussion draft is in [`plan/robustness.md`](plan/robustness.md). Not scheduled. |
 
 ## Technical debt and post-release refactors
 
