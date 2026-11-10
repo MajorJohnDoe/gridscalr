@@ -491,6 +491,27 @@ export interface ProjectMetadata {
 }
 
 /**
+ * Optional provenance for a page imported from another project.
+ * Additive in schema 25; older files simply omit it.
+ */
+export interface PageProvenance {
+  /** Stable ID of the source project. */
+  sourceProjectId: string;
+  /** SHA-256 of the source project file at import time. */
+  sourceRevisionSha256: string;
+  /** Byte size of the source project file at import time. */
+  sourceRevisionSize: number;
+  /** ISO modification time, or null when the platform did not provide it. */
+  sourceRevisionModifiedAt: string | null;
+  /** Stable page ID inside the source project. */
+  sourcePageId: PageId;
+  /** ISO timestamp of the import. */
+  importedAt: string;
+  /** GridScalr version that performed the import. */
+  appVersion: string;
+}
+
+/**
  * One page in the project order. The same source page may appear more than once
  * (duplicate/insert); identity is `id`, order is the array position.
  */
@@ -500,6 +521,8 @@ export interface PageRecord {
   /** 1-based page inside the source document. */
   localPage: number;
   state: PageState;
+  /** Optional provenance for an imported page. */
+  provenance?: PageProvenance;
 }
 
 export interface Project {

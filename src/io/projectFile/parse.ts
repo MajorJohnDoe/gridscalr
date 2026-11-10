@@ -2,6 +2,7 @@ import { normalizeCountPresets, normalizeCountTypes } from "../../features/count
 import { t } from "../../i18n";
 import { makeId } from "../../model/calibration";
 import { totalPageCount } from "../../model/documents";
+import { validateProject } from "../../model/integrity";
 import { createDefaultLayers, createProject } from "../../model/layers";
 import { normalizeMarkupsViews } from "../../model/markups";
 import { normalizeProjectMetadata } from "../../model/metadata";
@@ -17,12 +18,18 @@ import { normalizeDocument } from "./documents";
 import { normalizeOcr } from "./ocr";
 import { migrateLayers, migratePages } from "./pages";
 import { migrateSourceStorage } from "./sourceStorage";
+import {
+  arrayLength,
+  droppedCount,
+  duplicateIdCount,
+  LoadReportBuilder,
+  objectKeyCount,
+  parsedItemCount,
+  rawItemCount,
+} from "./report";
+import type { ProjectLoadReport } from "./report";
 
-export interface ProjectLoadReport {
-  /** Translation keys for invalid references found while migrating. */
-  warnings: string[];
-  migratedFrom: number;
-}
+export type { ProjectLoadReport } from "./report";
 
 function normalizePageState(value: unknown): PageState | undefined {
   if (typeof value !== "object" || value === null) return undefined;
@@ -79,19 +86,28 @@ export function parseProjectWithReport(text: string): {
     : legacy
       ? [legacy]
       : [];
+  const load = new LoadReportBuilder();
+  const reportDrop = (code: string, count = 1): void => load.drop(code, count);
   // Schema 5 and earlier stored exactly one document. Migration wraps it in a list.
-  const documents = rawDocuments.map((entry) => normalizeDocument(entry));
+  const documents = rawDocuments.map((entry) => normalizeDocument(entry, reportDrop));
   // Schema 24 → 25: every document becomes an explicit reference. No file moves.
   migrateSourceStorage(documents, raw.schemaVersion);
   const seen = new Set<string>();
   for (const document of documents) {
-    if (seen.has(document.id)) document.id = makeId("doc");
+    if (seen.has(document.id)) {
+      document.id = makeId("doc");
+      load.repair("duplicateDocumentId");
+    }
     seen.add(document.id);
   }
+  load.drop("droppedDocument", droppedCount(rawDocuments.length, documents.length));
   for (const document of documents) {
     if (!document.copiedFrom) continue;
     const source = documents.find((candidate) => candidate.id === document.copiedFrom!.documentId);
-    if (!source || document.copiedFrom.page > source.pageCount) document.copiedFrom = undefined;
+    if (!source || document.copiedFrom.page > source.pageCount) {
+      document.copiedFrom = undefined;
+      load.drop("droppedCopiedFromTarget");
+    }
   }
   const total = totalPageCount(documents);
   const supportsEmpty = raw.schemaVersion >= 24;
@@ -99,7 +115,11 @@ export function parseProjectWithReport(text: string): {
   if (total < 1 && !supportsEmpty) throw new Error(t("projectFile.noPages"));
 
   const projectId = typeof raw.id === "string" && raw.id ? raw.id : makeId("project");
+  const duplicatePageIds = duplicateIdCount(raw.pages);
   const migration = migratePages(raw.pages, documents, projectId);
+  load.repair("repairedPageId", duplicatePageIds);
+  load.drop("droppedPage", droppedCount(arrayLength(raw.pages), migration.records.length));
+  load.drop("droppedPageProvenance", migration.provenanceDropped);
   const pageStates = migration.states;
   for (const record of migration.records) {
     const state = normalizePageState(pageStates.get(record.id));
@@ -109,7 +129,11 @@ export function parseProjectWithReport(text: string): {
 
   const base = createProject(documents[0], createDefaultLayers(migration.firstPageId ?? undefined));
   const categories = normalizeCategories(raw.categories);
+  load.drop("droppedCategory", droppedCount(arrayLength(raw.categories), categories.length));
+  load.repair("repairedCategoryId", duplicateIdCount(raw.categories));
   const countTypes = normalizeCountTypes(raw.countTypes);
+  load.drop("droppedCountType", droppedCount(arrayLength(raw.countTypes), countTypes.length));
+  load.repair("repairedCountTypeId", duplicateIdCount(raw.countTypes));
   const settings = normalizeSettings(raw.settings, categories);
   const countPresets = normalizeCountPresets(
     raw.countPresets,
@@ -117,7 +141,33 @@ export function parseProjectWithReport(text: string): {
     new Set(countTypes.map((countType) => countType.id)),
     settings.quantity.defaultCategoryId,
   );
+  load.drop("droppedCountPreset", droppedCount(arrayLength(raw.countPresets), countPresets.length));
+  load.repair("repairedCountPresetId", duplicateIdCount(raw.countPresets));
   const assets = normalizeAssets(raw.assets);
+  load.drop("droppedAsset", droppedCount(objectKeyCount(raw.assets), Object.keys(assets).length));
+  const lineTypes = normalizeLineTypes(raw.lineTypes);
+  load.drop("droppedLineType", droppedCount(arrayLength(raw.lineTypes), lineTypes.length));
+  load.repair("repairedLineTypeId", duplicateIdCount(raw.lineTypes));
+  const markupsViews = normalizeMarkupsViews(
+    raw.markupsViews,
+    new Set(categories.map((category) => category.id)),
+    new Set(countTypes.map((countType) => countType.id)),
+  );
+  load.drop("droppedMarkupsView", droppedCount(arrayLength(raw.markupsViews), markupsViews.length));
+  load.repair("repairedMarkupsViewId", duplicateIdCount(raw.markupsViews));
+  const migratedLayers = migrateLayers(raw.layers, migration);
+  const layers = normalizeLayers(
+    migratedLayers,
+    new Set(categories.map((category) => category.id)),
+    new Set(countTypes.map((countType) => countType.id)),
+    settings.quantity.defaultCategoryId,
+    new Set(Object.keys(assets)),
+    pageIds,
+    migration.firstPageId,
+    reportDrop,
+  );
+  load.drop("droppedLayer", droppedCount(arrayLength(raw.layers), layers.length));
+  load.drop("droppedItem", droppedCount(rawItemCount(raw.layers), parsedItemCount(layers)));
   const project: Project = {
     ...base,
     id: projectId,
@@ -127,7 +177,7 @@ export function parseProjectWithReport(text: string): {
     categories,
     countTypes,
     countPresets,
-    lineTypes: normalizeLineTypes(raw.lineTypes),
+    lineTypes,
     assets,
     pages: migration.records,
     metadata: normalizeProjectMetadata(raw.metadata),
@@ -138,35 +188,34 @@ export function parseProjectWithReport(text: string): {
         assets[raw.reportLogoAssetId].mime === "image/jpeg")
         ? raw.reportLogoAssetId
         : null,
-    markupsViews: normalizeMarkupsViews(
-      raw.markupsViews,
-      new Set(categories.map((category) => category.id)),
-      new Set(countTypes.map((countType) => countType.id)),
-    ),
-    layers: normalizeLayers(
-      migrateLayers(raw.layers, migration),
-      new Set(categories.map((category) => category.id)),
-      new Set(countTypes.map((countType) => countType.id)),
-      settings.quantity.defaultCategoryId,
-      new Set(Object.keys(assets)),
-      pageIds,
-      migration.firstPageId,
-    ),
+    markupsViews,
+    layers,
     activeLayerId: typeof raw.activeLayerId === "string" ? raw.activeLayerId : base.activeLayerId,
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : base.createdAt,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : base.updatedAt,
   };
+  if (
+    typeof raw.reportLogoAssetId === "string" &&
+    !project.reportLogoAssetId
+  ) {
+    load.repair("repairedReportLogo");
+  }
 
   if (!project.layers.some((layer) => layer.id === project.activeLayerId)) {
     project.activeLayerId =
       project.layers.find((layer) => layer.kind === "measure")?.id ?? project.layers[0].id;
+    if (typeof raw.activeLayerId === "string") load.repair("repairedActiveLayer");
   }
 
+  const counts = load.counts();
   return {
     project,
     report: {
       warnings: [...migration.warnings],
       migratedFrom: raw.schemaVersion,
+      dropped: counts.dropped,
+      repaired: counts.repaired,
+      issues: validateProject(project),
     },
   };
 }
