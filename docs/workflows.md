@@ -159,6 +159,12 @@ GridScalr checks the project file on disk before every desktop save. If the file
 - **Overwrite** replaces the newer file with your version. Use it only when you are certain which copy is correct.
 - A conflict is not a merge. Open the conflicted copy and import pages from the other project if both versions contain useful work.
 
+When the same project is already open in another GridScalr window or on another computer, the desktop app shows the sidecar lock and offers **Open read-only** by default. Use it to inspect the current disk file without writing. **Take over** is for the case where the other session has finished or crashed; it writes a new lock, and the old session becomes read-only or gets a save conflict on its next write. A lock without a heartbeat for five minutes is stale and never blocks; **Clear stale lock** removes it. A **Read-only** chip in the status bar means a normal Save is refused; use **File → Save a copy…** to keep any local work.
+
+If the project file changes outside the app while it is open, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes.
+
+GridScalr also keeps scoped recovery snapshots, one per project and app instance, plus labelled checkpoints before page deletion, duplication, page import and paper changes. Open **Restore last session** on the welcome screen or **Settings → Preferences → Data → Review recovery data…** to see every recoverable project. A snapshot labelled **based on an older file version** was taken from a different disk version; it opens only when you choose it. Use that path after a crash instead of copying a cloud file over a newer one.
+
 Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Package project…** when the backup must travel.
 
 Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.

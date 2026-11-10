@@ -184,6 +184,9 @@ try {
   await page.reload({ waitUntil: "domcontentloaded" });
   await page.getByRole("button", { name: "Restore last session" }).waitFor();
   await page.getByRole("button", { name: "Restore last session" }).click();
+  const recoveryDialog = page.getByRole("dialog", { name: "Recover work" });
+  await recoveryDialog.waitFor();
+  await recoveryDialog.getByRole("button", { name: "Restore", exact: true }).click();
   await page.getByText("Destination page").first().waitFor();
   await waitForApp(page);
   await waitForToastsGone(page);

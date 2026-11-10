@@ -1,6 +1,7 @@
 mod commands;
 mod package;
 mod project_backup;
+mod project_lease;
 mod project_write;
 
 use std::sync::Mutex;
@@ -130,7 +131,12 @@ pub fn run() {
             commands::file_size,
             commands::prepare_demo_project,
             project_write::project_file_stamp,
+            project_write::project_file_metadata,
             project_write::write_project_conditional,
+            project_lease::read_project_lease,
+            project_lease::write_project_lease,
+            project_lease::heartbeat_project_lease,
+            project_lease::clear_project_lease,
             project_backup::save_project_backup,
             project_backup::list_project_backups,
             package::package_create,

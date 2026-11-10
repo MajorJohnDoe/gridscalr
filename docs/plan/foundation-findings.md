@@ -168,6 +168,84 @@ project contents.
 - **Related:** ADR [0010](../adr/0010-project-file-integrity.md), robustness
   §7.2.
 
+### F-007 — Read-only mode blocks saving, not editing
+
+- **Date:** 2026-11-10
+- **Phase:** 2 — recovery and open-elsewhere
+- **Severity:** P2
+- **Area:** recovery / read-only session
+- **Status:** open
+- **Evidence:** `ProjectSession.saveProject()` refuses a normal save when
+  `store.readOnly` is set, but the store remains editable and canvas tools stay
+  active. The read-only banner points to **Save a copy…**.
+- **Problem:** The label says read-only, but the in-memory project can still be
+  changed. A user may expect that taking over is required for any edit. The
+  refusal is safe for the disk file, but the interaction is ambiguous.
+- **Impact:** No silent overwrite is possible. Local edits in a read-only
+  session survive only through **Save a copy…**, which is easy to miss.
+- **Next step:** Decide whether a read-only session should also disable
+  mutations and tools, or be named **View only** with the copy flow made
+  explicit. Do not silently enable Save.
+- **Related:** robustness §7.3, issue
+  [#154](https://github.com/MajorJohnDoe/gridscalr/issues/154).
+
+### F-008 — Recovery retention is count-based, not size-based
+
+- **Date:** 2026-11-10
+- **Phase:** 2 — recovery and open-elsewhere
+- **Severity:** P2
+- **Area:** recovery storage
+- **Status:** open
+- **Evidence:** `AUTOSAVE_RECORDS_PER_PROJECT = 2` and
+  `CHECKPOINTS_PER_PROJECT = 10` in `features/sessionRecovery/record.ts`. Each
+  record stores a serialized project string.
+- **Problem:** A large project keeps two full autosaves and up to ten full
+  checkpoints without a byte budget. On a quota-limited origin this can exhaust
+  storage and turn autosave off exactly when the project is largest.
+- **Impact:** The status bar warns on quota failure, and saving to a file still
+  works, but recovery may stop earlier than expected.
+- **Next step:** Add a byte budget or age-based pruning for checkpoints, and
+  report recovery storage size in Preferences or diagnostics.
+- **Related:** robustness §7.2, `docs/limitations.md`.
+
+### F-009 — Lease instance identity is session-scoped and coarse
+
+- **Date:** 2026-11-10
+- **Phase:** 2 — recovery and open-elsewhere
+- **Severity:** P3
+- **Area:** lease
+- **Status:** open
+- **Evidence:** `features/sessionRecovery/instance.ts` stores the instance ID in
+  `sessionStorage` and derives the host label from the user-agent family only.
+- **Problem:** A window opened with `window.open` can inherit sessionStorage and
+  therefore the same instance ID. The host label cannot distinguish two
+  computers of the same operating system. Neither is used as identity for
+  access control; the lease only warns.
+- **Impact:** In a rare duplicate-instance case the app may treat another live
+  session as its own. The conditional write still prevents silent overwrite.
+- **Next step:** Add a per-window random suffix and, if useful, an optional
+  user-set non-personal machine label. Keep the lease advisory.
+- **Related:** ADR [0010](../adr/0010-project-file-integrity.md), robustness
+  §7.3.
+
+### F-010 — Metadata watcher can miss a same-size, same-mtime change
+
+- **Date:** 2026-11-10
+- **Phase:** 2 — recovery and open-elsewhere
+- **Severity:** P3
+- **Area:** open-elsewhere watcher
+- **Status:** open
+- **Evidence:** `features/sessionRecovery/watch.ts` checks size and mtime first,
+  then hashes only when either changed.
+- **Problem:** A tool that replaces the file and preserves both size and mtime
+  is not noticed by the banner. The conditional save still detects the hash
+  mismatch on the next save.
+- **Impact:** Only the non-blocking banner is affected; no data is overwritten.
+- **Next step:** Leave as designed unless banner accuracy becomes important, or
+  add an occasional full hash while the window is idle.
+- **Related:** robustness §7.3, ADR
+  [0010](../adr/0010-project-file-integrity.md).
+
 ## Triaged or deferred
 
 No entries yet.

@@ -38,6 +38,11 @@ import {
   restoreProjectBackup,
   saveProjectWithIntegrity,
 } from "../features/saveIntegrity";
+import type {
+  SessionRecoveryController,
+  OpenDecision,
+  RecoveryRecord,
+} from "../features/sessionRecovery";
 
 export interface ProjectSessionHost {
   resetProject(): Promise<void>;
@@ -60,8 +65,14 @@ export class ProjectSession {
   private unlistenClose: (() => void) | null = null;
   private unlistenLaunch: (() => void) | null = null;
   private closeInProgress = false;
+  private recovery: SessionRecoveryController | null = null;
 
   constructor(private readonly host: ProjectSessionHost) {}
+
+  /** App wires the recovery controller after both objects exist. */
+  attachRecovery(controller: SessionRecoveryController): void {
+    this.recovery = controller;
+  }
 
   async newProjectFlow(): Promise<void> {
     let sheetChoice = false;
@@ -76,6 +87,7 @@ export class ProjectSession {
         if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
           return;
         }
+        await this.recovery?.discardOpenProject();
         await this.host.resetProject();
         await this.host.loadNewPdf(picked.bytes, picked.name, picked.path);
         return;
@@ -84,6 +96,7 @@ export class ProjectSession {
       if (!(await this.confirmUnsavedChanges(t("app.newProjectReplace")))) {
         return;
       }
+      await this.recovery?.discardOpenProject();
       await this.host.resetProject();
       await this.host.createSheetProject(choice);
     } catch (error) {
@@ -122,6 +135,7 @@ export class ProjectSession {
     if (!(await this.confirmUnsavedChanges(t("app.closeProjectDiscard")))) {
       return;
     }
+    await this.recovery?.discardOpenProject();
     await this.host.resetProject();
     toast(t("app.projectClosed"), "info");
   }
@@ -130,7 +144,7 @@ export class ProjectSession {
     if (!(await this.confirmUnsavedChanges(t("app.quitDiscard")))) {
       return;
     }
-    await store.clearAutosave();
+    await this.recovery?.discardOpenProject();
     if (!isTauri) {
       window.close();
       toast(t("app.closeBrowserTab"), "info");
@@ -155,7 +169,7 @@ export class ProjectSession {
           if (!(await this.confirmUnsavedChanges(t("app.closeAppDiscard")))) {
             return;
           }
-          await store.clearAutosave();
+          await this.recovery?.discardOpenProject();
           await this.destroyWindow(t("app.windowCloseFailed"));
         } finally {
           this.closeInProgress = false;
@@ -175,7 +189,13 @@ export class ProjectSession {
   }
 
   async saveProject(saveAs: boolean): Promise<boolean> {
-    return saveProjectWithIntegrity(this.savePorts(), saveAs);
+    if (store.readOnly) {
+      toast(t("sessionRecovery.readOnly.saveBlocked"), "warning");
+      return false;
+    }
+    const saved = await saveProjectWithIntegrity(this.savePorts(), saveAs);
+    if (saved) await this.recovery?.onSaved(store.projectPath);
+    return saved;
   }
 
   async backupNowFlow(): Promise<boolean> {
@@ -194,14 +214,34 @@ export class ProjectSession {
     });
   }
 
+  private async recoveryDecision(
+    path: string | null,
+    project: { id: string; name: string },
+  ): Promise<OpenDecision> {
+    if (!this.recovery) return { proceed: true, readOnly: false };
+    try {
+      return await this.recovery.beforeOpen(path, project);
+    } catch (error) {
+      // A lease problem is advisory. It must never prevent opening a project.
+      logEvent("warn", `project lease check failed: ${describeError(error)}`);
+      return { proceed: true, readOnly: false };
+    }
+  }
+
   private async loadProjectDataWithStamp(
     project: Project,
     path: string | null,
     dirty: boolean,
   ): Promise<boolean> {
+    const decision = await this.recoveryDecision(path, { id: project.id, name: project.name });
+    if (!decision.proceed) return false;
     const loaded = await this.host.loadProjectData(project, path, dirty);
-    if (!loaded) return false;
+    if (!loaded) {
+      this.recovery?.abortOpen();
+      return false;
+    }
     await this.captureStamp(path);
+    await this.recovery?.afterOpen(path, project.id, decision.readOnly);
     return true;
   }
 
@@ -220,9 +260,24 @@ export class ProjectSession {
 
   /** Loads a project and captures the disk version it was loaded from. */
   private async loadProjectTextWithStamp(text: string, path: string | null): Promise<boolean> {
+    let parsed: Project | null = null;
+    try {
+      parsed = parseProject(text);
+    } catch {
+      // The document flow reports the parse failure with the user-facing dialog.
+    }
+    let decision: OpenDecision = { proceed: true, readOnly: false };
+    if (parsed) {
+      decision = await this.recoveryDecision(path, { id: parsed.id, name: parsed.name });
+      if (!decision.proceed) return false;
+    }
     const loaded = await this.host.loadProjectText(text, path);
-    if (!loaded) return false;
+    if (!loaded) {
+      this.recovery?.abortOpen();
+      return false;
+    }
     await this.captureStamp(path);
+    await this.recovery?.afterOpen(path, parsed?.id ?? "", decision.readOnly);
     return true;
   }
 
@@ -266,21 +321,42 @@ export class ProjectSession {
     }
   }
 
-  async restoreAutosave(): Promise<void> {
-    const payload = await store.readAutosave();
-    if (!payload) {
+  async openRecoveryChooser(): Promise<void> {
+    if (!this.recovery) {
       toast(t("app.noRecovery"), "info");
       return;
     }
+    await this.recovery.openChooser();
+  }
+
+  /** Restores one explicitly chosen record as unsaved work. */
+  async restoreRecoveryRecord(record: RecoveryRecord): Promise<boolean> {
     let project: Project;
     try {
-      project = parseProject(JSON.stringify(payload.project));
+      project = parseProject(record.serialized);
     } catch (error) {
       logEvent("error", `restore session failed: ${describeError(error)}`);
       await messageDialog(t("app.couldNotRestoreSession"), describeError(error), "warning");
+      return false;
+    }
+    return this.loadProjectDataWithStamp(project, record.projectPath, true);
+  }
+
+  /** Reloads the open project from disk after the external-change banner. */
+  async reloadFromDisk(): Promise<void> {
+    const path = store.projectPath;
+    if (!path || !isTauri) {
+      toast(t("app.noRecovery"), "info");
       return;
     }
-    await this.loadProjectDataWithStamp(project, payload.projectPath, true);
+    if (!(await this.confirmUnsavedChanges(t("sessionRecovery.reloadDiscard")))) return;
+    try {
+      await this.loadProjectTextWithStamp(await readFileText(path), path);
+      toast(t("sessionRecovery.reloaded"), "success");
+    } catch (error) {
+      logEvent("error", `reload from disk failed: ${describeError(error)}`);
+      await messageDialog(t("app.couldNotOpenProject"), describeError(error), "warning");
+    }
   }
 
   async openRecent(entry: RecentEntry): Promise<void> {

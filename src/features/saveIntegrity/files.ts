@@ -37,9 +37,27 @@ export class ProjectWriteConflictError extends Error {
   }
 }
 
+export interface ProjectFileMetadata {
+  sizeBytes: number;
+  modifiedAt: number;
+}
+
+function metadataFrom(value: unknown): ProjectFileMetadata | null {
+  const item = record(value);
+  if (!item || typeof item.sizeBytes !== "number" || typeof item.modifiedAt !== "number") {
+    return null;
+  }
+  return { sizeBytes: item.sizeBytes, modifiedAt: item.modifiedAt };
+}
+
 /** Current hash, size and mtime of a project file, or null when it is missing. */
 export async function computeFileStamp(path: string): Promise<ProjectFileStamp | null> {
   return stampFrom(await tauriInvoke<unknown>("project_file_stamp", { path }));
+}
+
+/** Size and mtime only. Used by the watcher before it spends a hash read. */
+export async function computeFileMetadata(path: string): Promise<ProjectFileMetadata | null> {
+  return metadataFrom(await tauriInvoke<unknown>("project_file_metadata", { path }));
 }
 
 /**

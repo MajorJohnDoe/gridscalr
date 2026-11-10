@@ -10,6 +10,7 @@ import type { DocumentRef, PageSize, Project } from "../model/types";
 import { currentLocale, t } from "../i18n";
 import { store } from "../state/store";
 import { logEvent } from "../features/diagnostics/log";
+import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import {
@@ -102,6 +103,7 @@ export async function loadNewPdf(
   documentRef.pageCount = pdf.numPages;
   documentRef.excludedPages = excludedSourcePages(pdf.numPages, pages);
   if (documentRef.kind === "tiff") documentRef.relativePath = null;
+  await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.addPages", { name }));
   store.addDocument(documentRef);
   host.addDocumentToRenderer(pdf, pages);
   store.setPage(startPage);

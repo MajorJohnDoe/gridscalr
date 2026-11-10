@@ -33,3 +33,88 @@
   background: transparent;
   border-color: transparent;
 }
+
+/* Non-blocking session banners inside the canvas area. */
+.session-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  z-index: 40;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(720px, calc(100% - 32px));
+  padding: 7px 8px 7px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel-raised);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.session-banner.is-warning {
+  border-color: var(--warning);
+}
+
+.session-banner-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.session-banner .banner-action {
+  flex: 0 0 auto;
+}
+
+.session-banner-close {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+}
+
+.session-banner-close:hover {
+  color: var(--text);
+}
+
+.recovery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 46vh;
+  overflow: auto;
+}
+
+.recovery-group-title {
+  margin: 10px 0 2px;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.recovery-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 7px;
+  cursor: pointer;
+}
+
+.recovery-row:hover {
+  border-color: var(--border);
+  background: var(--surface-sunken);
+}
+
+.recovery-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.recovery-row-meta {
+  color: var(--muted);
+  font-size: 11px;
+}

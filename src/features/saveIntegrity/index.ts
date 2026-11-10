@@ -2,7 +2,13 @@ export { saveProjectWithIntegrity, backupProjectNow, restoreProjectBackup } from
 export type { SaveIntegrityPorts } from "./controller";
 export { createSaveIntegrityPorts } from "./ports";
 export type { SaveIntegrityHost } from "./ports";
-export { computeFileStamp, ProjectWriteConflictError, writeProjectConditional } from "./files";
+export {
+  computeFileMetadata,
+  computeFileStamp,
+  ProjectWriteConflictError,
+  writeProjectConditional,
+} from "./files";
+export type { ProjectFileMetadata } from "./files";
 export { BACKUP_LIMIT, backupFileName, newestBackupNames } from "./backup";
 export type { BackupEntry } from "./backup";
 export { classifyConflict, defaultConflictAction } from "./conflict";

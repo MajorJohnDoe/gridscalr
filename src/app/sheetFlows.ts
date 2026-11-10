@@ -8,6 +8,7 @@ import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
 import { openDocument } from "./documentImport";
+import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { describeError } from "../io/platformError";
 import { logEvent } from "../features/diagnostics/log";
 import { messageDialog } from "../ui/dialogs";
@@ -128,6 +129,7 @@ export async function changeSheetPaper(
   const bytes = await sheetBytes(next);
   const proxy = await openDocument(bytes, sheet.name);
   if (!proxy) return;
+  await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.changePaper", { page, paper }));
   renderer.replaceDocument(index, proxy, [1]);
   host.thumbnails()?.clear();
   host.resetPageSize(page);
@@ -152,6 +154,9 @@ export async function addSheetFlow(host: SheetFlowHost, choice: SheetSourceChoic
   const pdf = await openDocument(bytes, documentRef.name);
   if (!pdf) return;
 
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.addSheet", { name: documentRef.name }),
+  );
   store.addDocument(documentRef);
   renderer.addDocument(pdf, [1]);
   store.setPage(startPage);

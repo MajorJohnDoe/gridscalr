@@ -51,6 +51,7 @@ import {
 } from "./sheetFlows";
 import { SearchController } from "./searchController";
 import { ProjectSession } from "./projectSession";
+import { createSessionRecovery } from "./recoveryHost";
 import {
   copySelection,
   cutSelection,
@@ -99,6 +100,7 @@ import { toast } from "../ui/toast";
 import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { logEvent } from "../features/diagnostics/log";
 import { writeProjectConditional } from "../features/saveIntegrity";
+import type { SessionRecoveryController } from "../features/sessionRecovery";
 import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
 import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
@@ -117,6 +119,7 @@ export class App {
   private reference: ReferenceController;
   private search: SearchController;
   private session: ProjectSession;
+  private recovery: SessionRecoveryController;
   private actions: PanelActions;
   private readonly documentRegistry = new RendererDocumentRegistry();
   private renderer: PdfRenderer | null = null;
@@ -130,7 +133,6 @@ export class App {
   private disposed = false;
   private windowControls: WindowControls | null = null;
   private removePageZoomGuard: (() => void) | null = null;
-  private autosaveWarned: string | null = null;
 
   constructor(root: HTMLElement) {
     loadLayerColorDefaults();
@@ -143,6 +145,9 @@ export class App {
         loadProjectDataFlow(this.documentFlowHost(), project, path, dirty),
       createSheetProject: (choice) => createSheetProjectFlow(this.sheetFlowHost(), choice),
     });
+    this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
+      this.renderAll(),
+    );
     this.actions = {
       openPdf: () => void this.session.openPdfFlow(),
       openProject: () => void this.session.openProjectFlow(),
@@ -231,8 +236,8 @@ export class App {
           onChangePaper: (paper) => changeSheetPaper(this.sheetFlowHost(), page, paper),
         }),
       refresh: () => this.renderAll(),
-      restoreAutosave: () => void this.session.restoreAutosave(),
-      getAutosave: () => store.readAutosavePreview(),
+      openRecovery: () => void this.recovery.openChooser(),
+      getRecoverySummary: () => this.recovery.summary(),
       openRecent: (entry) => void this.session.openRecent(entry),
       openDemoProject: () => void this.session.openDemoProjectFlow(),
       copyDiagnostics: () => void copyDiagnosticsFlow(),
@@ -284,15 +289,6 @@ export class App {
         this.updateTitle();
         return;
       }
-      if (reason === "save") {
-        const autosaveError = store.autosaveError;
-        if (autosaveError && autosaveError.message !== this.autosaveWarned) {
-          this.autosaveWarned = autosaveError.message;
-          toast(autosaveError.message, "warning", autosaveError.quotaExceeded ? 10000 : 7000);
-          logEvent("warn", `autosave failed: ${autosaveError.message}`);
-        }
-        if (!autosaveError) this.autosaveWarned = null;
-      }
       if (reason === "project") {
         this.documentRegistry.sync(store.project);
         this.search.close();
@@ -311,6 +307,7 @@ export class App {
 
     this.bind();
     this.renderAll();
+    this.recovery.start();
     window.addEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     void this.session.bindWindowClose();
     void this.bindSmokeTest();
@@ -1010,6 +1007,7 @@ export class App {
 
   dispose(): void {
     this.disposed = true;
+    this.recovery.dispose();
     this.unsubscribe();
     window.removeEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     window.removeEventListener("keydown", this.onKeyDown);

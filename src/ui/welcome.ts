@@ -47,15 +47,17 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
     actionsWrap.append(demo);
   }
 
-  const autosave = actions.getAutosave();
-  if (autosave) {
+  const recovery = actions.getRecoverySummary();
+  if (recovery.count || recovery.checkpoints) {
     const restore = el("button", "btn", t("welcome.restore"));
     restore.type = "button";
     restore.innerHTML = `${icon("undo", 15)}<span>${t("welcome.restore")}</span>`;
-    restore.title = t("welcome.autosavedAt", {
-      time: new Date(autosave.savedAt).toLocaleString(),
-    });
-    restore.addEventListener("click", actions.restoreAutosave);
+    restore.title = recovery.latest
+      ? t("welcome.autosavedAt", {
+          time: new Date(recovery.latest.savedAt).toLocaleString(),
+        })
+      : t("sessionRecovery.title");
+    restore.addEventListener("click", actions.openRecovery);
     actionsWrap.append(restore);
   }
   card.append(actionsWrap);
