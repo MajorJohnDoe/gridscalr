@@ -147,6 +147,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.file.restoreBackup"), actions.restoreProjectBackup, {
           disabled: !hasProject || !isTauri,
         }),
+        action(t("menu.file.projectDoctor"), actions.openProjectDoctor, {
+          disabled: !hasProject,
+        }),
         separator(),
         action(t("menu.file.package"), actions.packageProject, {
           disabled: !hasProject || !isTauri,

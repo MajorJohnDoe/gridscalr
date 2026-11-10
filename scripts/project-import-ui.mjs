@@ -203,6 +203,10 @@ try {
   await dialog.getByRole("checkbox").check();
   await dialog.getByRole("button", { name: /Import 1 page/ }).click();
   await dialog.waitFor({ state: "detached" });
+  const preflight = page.getByRole("dialog", { name: "Import preflight" });
+  await preflight.waitFor();
+  await preflight.getByRole("button", { name: "Import pages", exact: true }).click();
+  await preflight.waitFor({ state: "detached" });
   await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 2);
   await waitForToastsGone(page);
 

@@ -22,7 +22,7 @@ import {
 } from "../src/features/saveIntegrity";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 import { createProject, defaultDocument } from "../src/model/layers";
-import type { Project } from "../src/model/types";
+import type { MarkupItem, Project } from "../src/model/types";
 import { store } from "../src/state/store";
 
 function stampFor(contents: string): ProjectFileStamp {
@@ -53,6 +53,7 @@ interface FakeState {
   diskStamp: ProjectFileStamp | null;
   conflictAction: "conflicted-copy" | "compare" | "reload" | "overwrite" | "cancel";
   writeError: Error | null;
+  validationReports: number;
 }
 
 function fakePorts(state: FakeState): SaveIntegrityPorts {
@@ -101,6 +102,10 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
     },
     conflict: async () => state.conflictAction,
     compare: async () => undefined,
+    confirmValidationWarnings: async () => true,
+    reportValidationErrors: async () => {
+      state.validationReports += 1;
+    },
     chooseBackup: async () => (state.backups.length ? "/backups/0.gridscalr" : null),
     listBackups: async () =>
       state.backups.map((entry, index) => ({
@@ -127,6 +132,7 @@ function state(): FakeState {
     diskStamp: null,
     conflictAction: "cancel",
     writeError: null,
+    validationReports: 0,
   };
 }
 
@@ -189,6 +195,38 @@ describe("safe save", () => {
     expect(await saveProjectWithIntegrity(ports, false)).toBe(true);
     expect(fake.wrote).toHaveLength(0);
     expect(fake.notifications).toHaveLength(1);
+  });
+
+  it("blocks a normal save when a reference is dangling", async () => {
+    store.project = makeProject();
+    const measure = store.project.layers.find((layer) => layer.kind === "measure")!;
+    const dangling: MarkupItem = {
+      id: "item_dangling",
+      pageId: "page_missing",
+      kind: "length",
+      points: [
+        { x: 0, y: 0 },
+        { x: 10, y: 0 },
+      ],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      categoryId: store.project.settings.quantity.defaultCategoryId,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    };
+    measure.items.push(dangling);
+    store.projectPath = "/work/Test project.gridscalr";
+    store.fileStamp = stampFor("on disk");
+    store.dirty = true;
+    const fake = state();
+    fake.disk.set("/work/Test project.gridscalr", "on disk");
+    const ports = fakePorts(fake);
+
+    expect(await saveProjectWithIntegrity(ports, false)).toBe(false);
+    expect(fake.validationReports).toBe(1);
+    expect(fake.wrote).toHaveLength(0);
+    expect(fake.disk.get("/work/Test project.gridscalr")).toBe("on disk");
+    expect(store.dirty).toBe(true);
   });
 
   it("saves a conflicted copy when the disk file changed and keeps both versions", async () => {

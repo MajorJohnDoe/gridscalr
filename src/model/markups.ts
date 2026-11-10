@@ -216,6 +216,7 @@ export function normalizeMarkupsViews(
   value: unknown,
   categoryIds: ReadonlySet<string>,
   countTypeIds: ReadonlySet<string> = new Set(),
+  report?: (code: string) => void,
 ): MarkupsView[] {
   if (!Array.isArray(value)) return [];
   const views: MarkupsView[] = [];
@@ -242,9 +243,15 @@ export function normalizeMarkupsViews(
         : "all";
     const categoryId =
       typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId) ? raw.categoryId : null;
+    if (typeof raw.categoryId === "string" && categoryId === null) {
+      report?.("repairedMarkupsViewCategory");
+    }
     const symbolCategory = normalizeSymbolCategory(raw.symbolCategory);
     const countType =
       typeof raw.countType === "string" && countTypeIds.has(raw.countType) ? raw.countType : null;
+    if (typeof raw.countType === "string" && countType === null) {
+      report?.("repairedMarkupsViewCountType");
+    }
     views.push({
       id,
       name,

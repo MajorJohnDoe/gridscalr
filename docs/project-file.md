@@ -185,6 +185,52 @@ On desktop, GridScalr tries each referenced PDF's stored absolute path first, th
 
 Layer IDs, item IDs, document IDs, calibration data, quick-area shapes, scale locks, timestamps, style values, text styling, category IDs, per-item visibility/lock flags, snap settings, stamp presets, annotation text and layouts, and embedded image assets are preserved in the file. Reading validates the schema, normalizes older projects, repairs category references, drops page state beyond the last included page, and drops items that do not match their layer kind or reference a missing image.
 
+## Integrity validation and provenance
+
+`parseProjectWithReport(text)` returns a `ProjectLoadReport` alongside the
+project. It contains the existing migration warnings plus `dropped` and
+`repaired` counts (stable codes such as `droppedItem`, `repairedCategoryId` and
+`droppedPageProvenance`) and the `issues` that remain after normalization. The
+producer never reports a property as preserved when normalization removed it.
+
+Before a normal save, `validateProject(project)` checks every persistent ID and
+reference: documents, pages, layers, items, assets, categories, count types,
+line types, page state, page ranges, count presets, Markups views, the active
+layer, the report logo, `excludedPages`, `copiedFrom`, OCR source revision,
+asset MIME/data agreement, and image and text-box geometry. Errors block the
+save; warnings are shown for acceptance. After serialisation, GridScalr parses
+the text back and compares entity counts before writing. The same conditional,
+verified write is used after the round trip. Autosave recovery is not blocked by
+validation, but an invalid project is not written over a project file by a
+normal save. This applies to the browser download fallback too.
+
+From schema 25, a page record may carry optional provenance. It is additive and
+older files simply omit it; no schema bump is required.
+
+```json
+{
+  "id": "page_1",
+  "documentId": "doc_8f21c3",
+  "localPage": 1,
+  "state": {},
+  "provenance": {
+    "sourceProjectId": "project_...",
+    "sourceRevisionSha256": "d5c2…",
+    "sourceRevisionSize": 1048576,
+    "sourceRevisionModifiedAt": "2026-11-10T09:30:00.000Z",
+    "sourcePageId": "page_...",
+    "importedAt": "2026-11-10T09:35:12.000Z",
+    "appVersion": "0.22.4"
+  }
+}
+```
+
+`sourceRevisionModifiedAt` is `null` when the platform did not provide a
+modification time. A partial or malformed provenance object is dropped as a
+whole and counted in the load report; the page itself is kept. Provenance is
+descriptive context for a page imported from another project, not a signature or
+a revision ancestry model.
+
 ## Source storage modes
 
 `DocumentRef.storage` is explicit:

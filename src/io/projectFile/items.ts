@@ -34,11 +34,13 @@ export function normalizeItem(
   countTypeIds: ReadonlySet<string>,
   pageIds: ReadonlySet<PageId>,
   fallbackPageId: PageId | null,
+  report?: (code: string) => void,
 ): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
   if (!raw.kind || !ITEM_KINDS.has(raw.kind)) return null;
   if (layerKindForItem(raw.kind) !== layerKind) return null;
+  if (typeof raw.pageId === "string" && !pageIds.has(raw.pageId)) report?.("repairedItemPage");
   const pageId =
     typeof raw.pageId === "string" && pageIds.has(raw.pageId) ? raw.pageId : fallbackPageId;
   if (!pageId) return null;
@@ -55,13 +57,20 @@ export function normalizeItem(
   let image: MarkupItem["image"];
   if (raw.kind === "image") {
     if (!raw.image || typeof raw.image.assetId !== "string" || !assetIds.has(raw.image.assetId)) {
+      report?.("droppedImageAsset");
       return null;
     }
-    if (points.length < 2) return null;
+    if (points.length < 2) {
+      report?.("droppedImageGeometry");
+      return null;
+    }
     if (points.length > 2) points.length = 2;
     const width = Math.abs(points[1].x - points[0].x);
     const height = Math.abs(points[1].y - points[0].y);
-    if (width < 0.5 || height < 0.5) return null;
+    if (width < 0.5 || height < 0.5) {
+      report?.("droppedImageGeometry");
+      return null;
+    }
     image = {
       assetId: raw.image.assetId,
       mode: normalizeImageMode(raw.image.mode),
@@ -79,11 +88,17 @@ export function normalizeItem(
     points.length = 2;
   }
   if (raw.kind === "textbox") {
-    if (points.length < 2) return null;
+    if (points.length < 2) {
+      report?.("droppedTextboxGeometry");
+      return null;
+    }
     if (points.length > 2) points.length = 2;
     const width = Math.abs(points[1].x - points[0].x);
     const height = Math.abs(points[1].y - points[0].y);
-    if (width < 2 || height < 2) return null;
+    if (width < 2 || height < 2) {
+      report?.("droppedTextboxGeometry");
+      return null;
+    }
   }
   if (raw.kind === "polyline") {
     if (points.length < 2) return null;
@@ -221,6 +236,10 @@ export function normalizeItem(
         : raw.kind === "delta"
           ? 14
           : undefined;
+  const categoryValid = typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId);
+  if (isMeasure && !categoryValid) report?.("repairedItemCategory");
+  const countTypeValid = typeof raw.countType === "string" && countTypeIds.has(raw.countType);
+  if (raw.kind === "count" && !countTypeValid) report?.("repairedItemCountType");
   return {
     id:
       typeof raw.id === "string"
@@ -262,11 +281,7 @@ export function normalizeItem(
                 : "mm",
             }
           : null,
-    categoryId: isMeasure
-      ? typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId)
-        ? raw.categoryId
-        : fallbackCategoryId
-      : undefined,
+    categoryId: isMeasure ? (categoryValid ? raw.categoryId : fallbackCategoryId) : undefined,
     room: isMeasure && room ? room : undefined,
     areaMode:
       raw.kind === "area"
@@ -299,12 +314,7 @@ export function normalizeItem(
     rowSpacing,
     showBadges,
     showLegend,
-    countType:
-      raw.kind === "count"
-        ? typeof raw.countType === "string" && countTypeIds.has(raw.countType)
-          ? raw.countType
-          : "other"
-        : undefined,
+    countType: raw.kind === "count" ? (countTypeValid ? raw.countType : "other") : undefined,
     countQuantity:
       raw.kind === "count" &&
       typeof raw.countQuantity === "number" &&

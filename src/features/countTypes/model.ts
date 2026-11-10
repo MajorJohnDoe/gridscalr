@@ -67,15 +67,24 @@ function normalizeCountTypeId(value: unknown): string {
  * built-ins, ids are unique, labels are unique case-insensitively and `other`
  * always exists as the fallback for unknown items.
  */
-export function normalizeCountTypes(value: unknown): CountTypeDef[] {
+export function normalizeCountTypes(
+  value: unknown,
+  report?: (code: string) => void,
+): CountTypeDef[] {
   const types: CountTypeDef[] = [];
   if (Array.isArray(value)) {
     for (const entry of value) {
-      if (typeof entry !== "object" || entry === null) continue;
+      if (typeof entry !== "object" || entry === null) {
+        report?.("droppedCountType");
+        continue;
+      }
       const raw = entry as Partial<CountTypeDef>;
       const id = normalizeCountTypeId(raw.id);
       const label = typeof raw.label === "string" ? normalizeCountTypeName(raw.label) : "";
-      if (!id || !label || types.some((type) => type.id === id)) continue;
+      if (!id || !label || types.some((type) => type.id === id)) {
+        report?.("droppedCountType");
+        continue;
+      }
       types.push({
         id,
         label: uniqueCountTypeName(types, label),
@@ -95,6 +104,7 @@ export function normalizeCountPresets(
   categoryIds: ReadonlySet<string>,
   countTypeIds: ReadonlySet<string>,
   fallbackCategoryId: string,
+  report?: (code: string) => void,
 ): CountPreset[] {
   if (!Array.isArray(value)) return [];
   const presets: CountPreset[] = [];
@@ -102,15 +112,13 @@ export function normalizeCountPresets(
   for (const entry of value) {
     if (typeof entry !== "object" || entry === null) continue;
     const raw = entry as Partial<CountPreset>;
-    const countType =
-      typeof raw.countType === "string" && countTypeIds.has(raw.countType)
-        ? raw.countType
-        : "other";
+    const countTypeValid = typeof raw.countType === "string" && countTypeIds.has(raw.countType);
+    if (!countTypeValid) report?.("repairedCountPresetType");
+    const countType = countTypeValid ? raw.countType! : "other";
     if (!countTypeIds.has(countType)) continue;
-    const categoryId =
-      typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId)
-        ? raw.categoryId
-        : fallbackCategoryId;
+    const categoryValid = typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId);
+    if (!categoryValid) report?.("repairedCountPresetCategory");
+    const categoryId = categoryValid ? raw.categoryId! : fallbackCategoryId;
     let id =
       typeof raw.id === "string" && raw.id.trim() ? raw.id.trim().slice(0, 80) : makeId("preset");
     if (ids.has(id)) id = makeId("preset");

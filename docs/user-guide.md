@@ -207,11 +207,42 @@ The pages are appended after the existing pages by default. Existing page number
 - **Missing PDFs:** a page whose PDF cannot be found is greyed out. Use **Locate…** to point at the file, or leave it unselected. If a selected page cannot be read during the import, it is skipped and listed in a warning.
 - **Undo:** the whole import is one step. `Ctrl/Cmd+Z` removes the imported pages and their layers; `Ctrl/Cmd+Shift+Z` brings them back. The imported PDFs stay in memory until the project is closed or replaced, which is what makes redo immediate.
 - **Units and metadata:** the destination project keeps its units, metadata, settings, saved Markups views and count presets. Imported measurements keep their geometry and are displayed in the destination's units.
+- **Preflight:** before anything changes, GridScalr shows the pages, items, documents, categories, count types, line types and image assets that will be added, plus unreadable source files, skipped pages, checksum warnings and page-count changes. Choose **Cancel** to leave the project untouched.
+- **Provenance:** each imported page stores the source project ID, the source file's SHA-256, size and modification time, the source page ID, the import time and the GridScalr version. This is additive optional data in schema 25; older files load unchanged and are never given invented provenance.
 - **Packages:** `.gridscalr.zip` cannot be imported directly. Extract the package first and choose the `.gridscalr` file inside it.
 
 The preview shows the sheet background, like the Pages panel; markups are not composited into the thumbnail. Use the page name and item count to identify the right card.
 
 To replace a sheet that was edited in the wrong project, import the corrected sheet first and then delete the old page. Later pages move down one number, so the corrected sheet lands in the old position. Deleting a page is still a separate structural step and cannot be undone.
+
+### Project integrity and the project doctor
+
+GridScalr checks a project's internal references before a normal save and after
+opening a file. The checks cover duplicate document, page, layer, item, asset,
+category, count-type, line-type, count-preset and Markups-view IDs; missing
+pages, layer home pages, page state, categories, count types, line types, image
+assets and report logos; page ranges, copied-page provenance, OCR source
+revision, asset MIME/data agreement and image or text-box geometry. Zero pages
+and zero documents are valid, not corrupt.
+
+- **Normal save:** errors block the save and open the **Project doctor**.
+  Warnings are listed and can be accepted. A clean project saves normally.
+- **Round trip:** after serialising, GridScalr parses the result back and checks
+  that no documents, pages, layers, items, assets, categories, count types, line
+  types, count presets or Markups views would be dropped before it writes.
+- **Load report:** when an opened project contains dropped, repaired or invalid
+  data, the load report names it instead of filtering it silently.
+- **Project doctor:** open it from **File → Project doctor…**, or from a blocked
+  save or a load report. It lists issues by severity and entity, and offers
+  explicit repairs for duplicate IDs, dangling references and stale OCR. A
+  repair changes an in-memory copy only; **Save repaired copy…** writes that copy
+  to a new file. The source project is never repaired in place.
+- **Read-only:** choose **Open read-only** in a load report to inspect the
+  damaged project without allowing a normal save over the file. Use **Save a
+  copy…** or **Save repaired copy…** to keep work.
+- **Diagnostics:** **Export diagnostics…** writes a technical text file with
+  issue codes, entity kinds and counts. It contains no drawing names, labels,
+  project metadata or file paths.
 
 ### Delete a page
 
@@ -769,7 +800,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are added after the existing pages by default and can be inserted at a chosen position. Deleting a page is a separate, explicit action: that page's items and page state are removed, later pages keep their stable IDs, and the operation cannot be undone.
 
-Schema version 25 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved.
+Schema version 25 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance, plus optional `provenance` on imported page records (source project and revision identity, source page ID, import time and app version). Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved. Missing or malformed optional provenance is dropped with a load-report entry, never guessed.
 
 ## Keyboard and mouse
 

@@ -6,12 +6,19 @@ import { normalizeItem } from "./items";
 export function normalizeLayerPageState(
   value: unknown,
   pageIds: ReadonlySet<PageId>,
+  report?: (code: string) => void,
 ): Record<PageId, LayerPageState> | undefined {
   if (typeof value !== "object" || value === null) return undefined;
   const states: Record<PageId, LayerPageState> = {};
   for (const [key, rawState] of Object.entries(value)) {
-    if (!pageIds.has(key)) continue;
-    if (typeof rawState !== "object" || rawState === null) continue;
+    if (!pageIds.has(key)) {
+      report?.("droppedLayerPageState");
+      continue;
+    }
+    if (typeof rawState !== "object" || rawState === null) {
+      report?.("droppedLayerPageState");
+      continue;
+    }
     const raw = rawState as LayerPageState;
     const state: LayerPageState = {};
     if (typeof raw.visible === "boolean") state.visible = raw.visible;
@@ -19,6 +26,17 @@ export function normalizeLayerPageState(
     if (state.visible !== undefined || state.locked !== undefined) states[key] = state;
   }
   return Object.keys(states).length ? states : undefined;
+}
+
+function uniqueLayerId(candidate: string, used: Set<string>): string {
+  let id = candidate;
+  let suffix = 2;
+  while (used.has(id)) {
+    id = `${candidate}_${suffix}`;
+    suffix += 1;
+  }
+  used.add(id);
+  return id;
 }
 
 export function normalizeLayers(
@@ -29,13 +47,20 @@ export function normalizeLayers(
   assetIds: ReadonlySet<string>,
   pageIds: ReadonlySet<PageId>,
   fallbackPageId: PageId | null,
+  report?: (code: string) => void,
 ): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
     for (const value of rawLayers) {
-      if (typeof value !== "object" || value === null) continue;
+      if (typeof value !== "object" || value === null) {
+        report?.("droppedLayer");
+        continue;
+      }
       const raw = value as Partial<Layer>;
-      if (raw.kind !== "measure" && raw.kind !== "draw") continue;
+      if (raw.kind !== "measure" && raw.kind !== "draw") {
+        report?.("droppedLayer");
+        continue;
+      }
       const layer: Layer = {
         id:
           typeof raw.id === "string"
@@ -58,8 +83,11 @@ export function normalizeLayers(
         typeof raw.homePageId === "string" && pageIds.has(raw.homePageId)
           ? raw.homePageId
           : undefined;
+      if (typeof raw.homePageId === "string" && !homePageId) {
+        report?.("droppedLayerHomePage");
+      }
       if (homePageId) layer.homePageId = homePageId;
-      const pageState = normalizeLayerPageState(raw.pageState, pageIds);
+      const pageState = normalizeLayerPageState(raw.pageState, pageIds, report);
       if (pageState) layer.pageState = pageState;
       if (Array.isArray(raw.items)) {
         for (const item of raw.items) {
@@ -73,6 +101,7 @@ export function normalizeLayers(
             countTypeIds,
             pageIds,
             fallbackPageId,
+            report,
           );
           if (normalized) layer.items.push(normalized);
         }
@@ -93,8 +122,12 @@ export function normalizeLayers(
   const ids = new Set<string>();
   return normalizeLayerOrder(
     layers.map((layer) => {
-      if (ids.has(layer.id)) layer.id = `${layer.id}_${Math.random().toString(36).slice(2, 6)}`;
-      ids.add(layer.id);
+      if (ids.has(layer.id)) {
+        report?.("repairedLayerId");
+        layer.id = uniqueLayerId(layer.id, ids);
+      } else {
+        ids.add(layer.id);
+      }
       return layer;
     }),
   );

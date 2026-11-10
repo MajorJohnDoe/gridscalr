@@ -46,8 +46,13 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   window size, position and maximised state between sessions.
 - Keep several sheets in one project. Every new drawing appends pages after the
   existing ones, so a set of plans shares one takeoff. Import pages from another
-  project with a thumbnail picker and page-scoped layers, and undo the whole
-  import as one step.
+  project with a thumbnail picker, a preflight report and page-scoped layers,
+  keep optional source revision provenance, and undo the whole import as one
+  step.
+- Validate every project before saving and after opening. A damaged file opens
+  with a load report and a **Project doctor** that lists issues by severity and
+  entity, offers read-only open, explicit duplicate-ID, dangling-reference and
+  stale-OCR repairs, saves a repaired copy and exports path-free diagnostics.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
@@ -253,7 +258,10 @@ shell, `src-tauri/src/project_write.rs` owns conditional writes and file stamps,
 `src-tauri/src/project_lease.rs` owns the advisory sidecar lease, and
 `src-tauri/src/project_backup.rs` owns app-data backups. The
 `src/features/sessionRecovery/` module owns recovery records, the chooser,
-read-only open and the external-change watcher.
+read-only open and the external-change watcher. The
+`src/features/projectIntegrity/` module owns the shared pre-save/load validator
+surface, explicit repairs, the project doctor, load-report presentation and
+path-free diagnostics; `src/model/integrity.ts` holds the pure rules.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

@@ -1,6 +1,6 @@
 import { includedLocalPages } from "../../model/documents";
 import { stablePageId } from "../../model/pages";
-import type { DocumentRef, PageId, PageRecord } from "../../model/types";
+import type { DocumentRef, PageId, PageProvenance, PageRecord } from "../../model/types";
 
 /**
  * Schema 23 → 24 page migration and schema 24 page normalization.
@@ -18,9 +18,69 @@ export interface PageMigration {
   /** True when the input used the pre-24 numeric page map. */
   legacy: boolean;
   warnings: string[];
+  /** Invalid optional provenance entries that were dropped. */
+  provenanceDropped: number;
   firstPageId: PageId | null;
   /** Resolves a stored pageId or a legacy page number. */
   resolvePage(value: unknown): PageId | null;
+}
+
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
+
+function stringField(value: unknown, maxLength = 120): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed ? trimmed.slice(0, maxLength) : null;
+}
+
+function isoTimestamp(value: unknown): string | null {
+  const text = stringField(value, 60);
+  if (!text || Number.isNaN(Date.parse(text))) return null;
+  return text;
+}
+
+/**
+ * Optional page provenance is additive in schema 25. A partial or malformed
+ * record is dropped as a whole and reported, never guessed at.
+ */
+export function normalizePageProvenance(value: unknown): PageProvenance | undefined {
+  if (typeof value !== "object" || value === null) return undefined;
+  const raw = value as Partial<PageProvenance>;
+  const sourceProjectId = stringField(raw.sourceProjectId);
+  const sourceRevisionSha256 =
+    typeof raw.sourceRevisionSha256 === "string" && SHA256_PATTERN.test(raw.sourceRevisionSha256)
+      ? raw.sourceRevisionSha256.toLowerCase()
+      : null;
+  const sourceRevisionSize =
+    typeof raw.sourceRevisionSize === "number" &&
+    Number.isFinite(raw.sourceRevisionSize) &&
+    raw.sourceRevisionSize >= 0
+      ? Math.round(raw.sourceRevisionSize)
+      : null;
+  const sourcePageId = stringField(raw.sourcePageId);
+  const importedAt = isoTimestamp(raw.importedAt);
+  const appVersion = stringField(raw.appVersion, 40);
+  const modifiedAt =
+    raw.sourceRevisionModifiedAt === null ? null : isoTimestamp(raw.sourceRevisionModifiedAt);
+  if (
+    !sourceProjectId ||
+    !sourceRevisionSha256 ||
+    sourceRevisionSize === null ||
+    !sourcePageId ||
+    !importedAt ||
+    !appVersion
+  ) {
+    return undefined;
+  }
+  return {
+    sourceProjectId,
+    sourceRevisionSha256,
+    sourceRevisionSize,
+    sourceRevisionModifiedAt: modifiedAt,
+    sourcePageId,
+    importedAt,
+    appVersion,
+  };
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -60,6 +120,7 @@ function arrayRecords(
   documents: readonly DocumentRef[],
   projectId: string,
   warnings: string[],
+  onProvenanceDropped: () => void,
 ): PageRecord[] {
   const documentIds = new Set(documents.map((document) => document.id));
   const used = new Set<string>();
@@ -85,12 +146,18 @@ function arrayRecords(
       typeof raw.id === "string" && raw.id
         ? raw.id
         : stablePageId(projectId || "project", documentId, localPage, index + 1);
-    records.push({
+    const provenance = normalizePageProvenance((value as { provenance?: unknown }).provenance);
+    if ((value as { provenance?: unknown }).provenance !== undefined && !provenance) {
+      onProvenanceDropped();
+    }
+    const record: PageRecord = {
       id: uniqueId(candidate, used),
       documentId,
       localPage,
       state: {},
-    });
+    };
+    if (provenance) record.provenance = provenance;
+    records.push(record);
   });
   return records;
 }
@@ -101,8 +168,11 @@ export function migratePages(
   projectId: string,
 ): PageMigration {
   const warnings: string[] = [];
+  let provenanceDropped = 0;
   const records = Array.isArray(rawPages)
-    ? arrayRecords(rawPages, documents, projectId, warnings)
+    ? arrayRecords(rawPages, documents, projectId, warnings, () => {
+        provenanceDropped += 1;
+      })
     : legacyRecords(documents, projectId);
   const legacy = !Array.isArray(rawPages);
   const byId = new Set(records.map((record) => record.id));
@@ -144,6 +214,7 @@ export function migratePages(
     states,
     legacy,
     warnings,
+    provenanceDropped,
     firstPageId: first,
     resolvePage,
   };

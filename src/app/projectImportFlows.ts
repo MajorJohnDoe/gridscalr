@@ -4,12 +4,18 @@ import {
   prepareProjectImport,
   ProjectImportError,
 } from "../features/projectImport/model";
-import type { ImportWarning, PreparedProjectImport } from "../features/projectImport/model";
+import type {
+  ImportProvenanceSource,
+  ImportWarning,
+  PreparedProjectImport,
+} from "../features/projectImport/model";
 import type { ProjectImportGroupOption } from "../features/projectImport/ui";
 import { projectImportDialog } from "../features/projectImport/ui";
+import { buildImportPreflight } from "../features/projectImport/preflight";
+import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
 import type { ImportedRendererDocument } from "./rendererDocuments";
 import { t } from "../i18n";
-import { pickProject } from "../io/platform";
+import { isTauri, pickProject, sha256Hex } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { parseProject } from "../io/projectFile";
 import { sameFilePath } from "../io/writeGuard";
@@ -21,6 +27,7 @@ import { store } from "../state/store";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { logEvent } from "../features/diagnostics/log";
+import { computeFileMetadata } from "../features/saveIntegrity";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import type { SourceSelection } from "./projectImportSource";
 import { ProjectImportSource } from "./projectImportSource";
@@ -39,6 +46,37 @@ export interface ProjectImportHost {
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : describeError(error);
+}
+
+/**
+ * Captures the source project revision identity before the import mutates the
+ * destination. Only the source file and its metadata are read.
+ */
+async function sourceProvenance(
+  source: Project,
+  picked: { text: string; path: string | null },
+): Promise<ImportProvenanceSource> {
+  const bytes = new TextEncoder().encode(picked.text);
+  let size = bytes.byteLength;
+  let modifiedAt: string | null = null;
+  if (isTauri && picked.path) {
+    try {
+      const metadata = await computeFileMetadata(picked.path);
+      if (metadata) {
+        size = metadata.sizeBytes;
+        modifiedAt = new Date(metadata.modifiedAt).toISOString();
+      }
+    } catch {
+      // The hash and size still identify the revision without metadata.
+    }
+  }
+  return {
+    sourceProjectId: source.id,
+    sourceRevisionSha256: await sha256Hex(bytes),
+    sourceRevisionSize: size,
+    sourceRevisionModifiedAt: modifiedAt,
+    appVersion: __APP_VERSION__,
+  };
 }
 
 export async function importProjectPagesFlow(host: ProjectImportHost): Promise<void> {
@@ -123,13 +161,33 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
   }
 
   let prepared: PreparedProjectImport;
+  let provenance: ImportProvenanceSource;
   try {
-    prepared = prepareProjectImport(destination, source, resolved.pages, resolved.overrides);
+    provenance = await sourceProvenance(source, picked);
+    prepared = prepareProjectImport(
+      destination,
+      source,
+      resolved.pages,
+      resolved.overrides,
+      undefined,
+      provenance,
+    );
   } catch (error) {
     loader.dispose(new Set());
     const message =
       error instanceof ProjectImportError ? t("projectImport.failed") : errorMessage(error);
     await messageDialog(t("projectImport.failed"), message, "warning");
+    return;
+  }
+
+  const preflight = buildImportPreflight({
+    prepared,
+    sourceName: source.name,
+    skipped: resolved.skipped,
+    warnings: resolved.warnings,
+  });
+  if (!(await projectImportPreflightDialog(preflight))) {
+    loader.dispose(new Set());
     return;
   }
 

@@ -342,6 +342,85 @@ project contents.
   delete files automatically.
 - **Related:** F-017.
 
+### F-019 — The validator proves internal references, not external truth
+
+- **Date:** 2026-11-10
+- **Phase:** 5 — integrity and project doctor
+- **Severity:** P2
+- **Area:** project integrity
+- **Status:** open
+- **Evidence:** `src/model/integrity.ts` checks IDs, references, page ranges, OCR
+  checksums against stored data, asset MIME/data and geometry. It does not read
+  source files, managed-copy folders or package contents.
+- **Problem:** A structurally valid project can still point at a missing,
+  replaced or wrong source PDF. The doctor cannot prove that a drawing is the
+  right revision or that quantities are commercially correct.
+- **Impact:** The save is safe against internal data loss, but external source
+  truth still depends on the source-status banner, checksum checks on open and
+  the user's review.
+- **Next step:** Consider a source-availability section in the doctor that uses
+  the existing source-status checks without making file existence a save error.
+- **Related:** `docs/limitations.md`, robustness §7.6 and §7.9.
+
+### F-020 — Duplicate-ID repair keeps the first occurrence
+
+- **Date:** 2026-11-10
+- **Phase:** 5 — integrity and project doctor
+- **Severity:** P2
+- **Area:** project integrity / repairs
+- **Status:** open
+- **Evidence:** `src/features/projectIntegrity/repair.ts` renames later
+  duplicates and leaves the first ID in place. References that used the
+  duplicated ID cannot identify which occurrence they meant.
+- **Problem:** Items and page state that logically belonged to the renamed
+  duplicate stay attached to the first occurrence. The repair preserves every
+  entity but can associate references with the wrong page, layer or category.
+- **Impact:** No data is deleted, but a repaired copy may need a manual review of
+  affected pages and markups.
+- **Next step:** If a future import or sync path can produce duplicate IDs with
+  distinguishable references, add a mapping-aware repair with a review step.
+  Do not guess from array order without evidence.
+- **Related:** `docs/limitations.md`, `tests/projectDoctor.test.ts`.
+
+### F-021 — Import provenance is stored but not shown in the interface
+
+- **Date:** 2026-11-10
+- **Phase:** 5 — integrity and project doctor
+- **Severity:** P2
+- **Area:** import provenance
+- **Status:** open
+- **Evidence:** `PageRecord.provenance` is written by
+  `prepareProjectImport()` and documented in `docs/project-file.md`, but no panel
+  or report displays it.
+- **Problem:** A user cannot see which source project revision a page came from
+  without inspecting the JSON. The data is useful for support and later merge
+  decisions but currently invisible.
+- **Impact:** Provenance is still preserved and validated; only its presentation
+  is missing.
+- **Next step:** Add a read-only source line to Properties or the Markups detail
+  for imported pages, and include it in diagnostics only when it contains no
+  paths or personal data.
+- **Related:** robustness §7.7, schema 25 optional fields.
+
+### F-022 — Import revision hash is computed from decoded text
+
+- **Date:** 2026-11-10
+- **Phase:** 5 — integrity and project doctor
+- **Severity:** P3
+- **Area:** import provenance
+- **Status:** open
+- **Evidence:** `sourceProvenance()` in `src/app/projectImportFlows.ts` hashes the
+  UTF-8 encoding of the text returned by `pickProject()`. Size and mtime come
+  from the file metadata when Tauri provides it.
+- **Problem:** A BOM, newline normalization or a different read path could make
+  the provenance hash differ from a raw file hash computed elsewhere. It is still
+  deterministic for the same decoded content.
+- **Impact:** Provenance remains a useful revision identity inside GridScalr, but
+  it is not a byte-for-byte file hash for external verification.
+- **Next step:** Add a raw-byte file hash to `PickedProject` if provenance needs
+  to match package or backup checksums exactly.
+- **Related:** F-021, robustness §7.7.
+
 ## Triaged or deferred
 
 No entries yet.

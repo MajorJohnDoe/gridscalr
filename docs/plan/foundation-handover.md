@@ -302,5 +302,74 @@ replacement and page-size refresh stay in `sourceStorageHost.ts`.
 
 - Phase 5, [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157) —
   integrity validator, load report, project doctor, import preflight and
-  provenance. Validate managed-copy paths and provenance as part of the shared
-  invariant report rather than adding a second validator.
+  provenance.
+
+## Phase 5 — integrity and project doctor (#157)
+
+Status: implemented on `feat/157-project-integrity`, PR
+[#164](https://github.com/MajorJohnDoe/gridscalr/pull/164). No app version bump;
+schema stays 25.
+
+### Scope delivered
+
+- Pure `validateProject()` in `src/model/integrity.ts` with duplicate-ID,
+  reference, page-range, count-preset, Markups-view, active-layer, report-logo,
+  `excludedPages`, `copiedFrom`, OCR checksum/source-page, asset MIME/data and
+  image/text-box geometry rules. Zero documents and zero pages are valid.
+- `ProjectLoadReport` extended with `dropped`, `repaired` and `issues`; the parser
+  reports every normalization drop and repair instead of filtering silently.
+- Normal save validates before serialisation, shows warnings for acceptance,
+  blocks errors and opens the doctor. Serialisation is followed by parse and
+  entity-shape comparison before the existing conditional verified write.
+  Browser Save validates too; autosave is not blocked.
+- Project doctor: load report, issue list by severity/entity, **Open read-only**,
+  **Save repaired copy…**, **Export diagnostics…**, and explicit duplicate-ID,
+  dangling-reference and stale-OCR repairs. Repairs work on a copy; reparsed
+  open uses the in-memory repaired project only after the user chose it.
+- Import preflight counts pages, items, documents, merged categories, count
+  types, line types, assets, missing files, skipped pages, checksums and page
+  count changes before mutation. Imported pages keep optional provenance.
+- Optional `PageRecord.provenance` (source project ID, revision SHA-256/size/
+  mtime, source page ID, import time, app version). Schema 25; older files load
+  unchanged and malformed provenance is dropped with a load-report code.
+
+### Modules
+
+```text
+src/model/integrity.ts                  pure validator and shape comparison
+src/io/projectFile/report.ts            load-report counts
+src/io/projectFile/{parse,pages,items,layers,documents}.ts  reporting hooks
+src/features/projectIntegrity/
+  index.ts                              public surface
+  validator.ts                          re-export of the shared rules
+  repair.ts                             explicit repairs
+  doctor.ts                             doctor loop, load decision, diagnostics
+  ui.ts                                 localized doctor and warning dialog
+src/features/projectImport/preflight.ts import preflight model
+src/features/projectImport/preflightUi.ts preflight dialog
+src/app/projectDoctorFlows.ts           App wiring for doctor and load report
+```
+
+### Decisions
+
+- The validator lives in `src/model`, not in the feature, so `io` and
+  `saveIntegrity` can call it without a reversed dependency.
+- Saved repair output is always a copy. The doctor never repairs the open file in
+  place and never blocks autosave recovery.
+- Provenance is descriptive and optional, not a signature or revision DAG.
+- Repairs keep the first duplicate ID; references stay attached to it (F-020).
+- The validator does not read external sources, so it proves internal
+  consistency only (F-019).
+
+### New findings
+
+- F-019 — validator proves internal references, not external source truth (P2, open).
+- F-020 — duplicate-ID repair keeps the first occurrence (P2, open).
+- F-021 — import provenance is stored but not shown in the UI (P2, open).
+- F-022 — import revision hash is computed from decoded text (P3, open).
+
+### Next
+
+- Phase 6, [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158) —
+  interoperability: real OCG layers, annotation export, package/share flow,
+  relinking search by checksum and **Compare with disk version**.

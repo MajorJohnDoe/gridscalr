@@ -1,6 +1,7 @@
 import { t } from "../../i18n";
 import { logEvent } from "../diagnostics/log";
 import { totalPageCount } from "../../model/documents";
+import { compareProjectShape, validateProject, type ProjectIssue } from "../../model/integrity";
 import type { Project } from "../../model/types";
 import { describeError } from "../../io/platformError";
 import {
@@ -43,6 +44,8 @@ export interface SaveIntegrityPorts {
   notifyError: (title: string, message: string) => Promise<void> | void;
   conflict: (info: ConflictDialogInfo) => Promise<ConflictAction>;
   compare: (local: VersionSummary, disk: VersionSummary | null) => Promise<void>;
+  confirmValidationWarnings: (issues: readonly ProjectIssue[]) => Promise<boolean>;
+  reportValidationErrors: (issues: readonly ProjectIssue[], project: Project) => Promise<void>;
   chooseBackup: (entries: BackupEntry[]) => Promise<string | null>;
   listBackups: (projectId: string) => Promise<BackupEntry[]>;
   saveBackup: (projectId: string, contents: string) => Promise<void>;
@@ -86,6 +89,56 @@ function restoreRelativePaths(project: Project, previous: (string | null)[]): vo
   });
 }
 
+/** Checks both the current project and a parse round trip of its serialized text. */
+async function validateBeforeWrite(
+  project: Project,
+  ports: SaveIntegrityPorts,
+  json: string,
+): Promise<boolean> {
+  const all = validateProject(project);
+  const issues = all.filter((entry) => entry.severity === "error");
+  if (issues.length) {
+    await ports.reportValidationErrors(all, project);
+    return false;
+  }
+  let roundTrip: ProjectIssue[];
+  try {
+    const parsed = parseProject(json);
+    roundTrip = [...validateProject(parsed), ...compareProjectShape(project, parsed)].filter(
+      (entry) => entry.severity === "error",
+    );
+  } catch {
+    roundTrip = [
+      {
+        severity: "error",
+        code: "roundTripParse",
+        message: "round trip parse failed",
+        entity: { kind: "project" },
+      },
+    ];
+  }
+  if (roundTrip.length) {
+    await ports.reportValidationErrors(roundTrip, project);
+    return false;
+  }
+  return true;
+}
+
+async function acceptValidationWarnings(
+  project: Project,
+  ports: SaveIntegrityPorts,
+): Promise<boolean> {
+  const issues = validateProject(project);
+  const errors = issues.filter((entry) => entry.severity === "error");
+  if (errors.length) {
+    await ports.reportValidationErrors(issues, project);
+    return false;
+  }
+  const warnings = issues.filter((entry) => entry.severity === "warning");
+  if (!warnings.length) return true;
+  return ports.confirmValidationWarnings(warnings);
+}
+
 async function backupSafely(
   ports: SaveIntegrityPorts,
   projectId: string,
@@ -118,6 +171,10 @@ async function writeSuccessfully(
   try {
     updateRelativeDocumentPaths(project, path);
     const json = serializeProject(project);
+    if (!(await validateBeforeWrite(project, ports, json))) {
+      restoreRelativePaths(project, previousPaths);
+      return false;
+    }
     const stamp = await ports.write(path, json, expectedSha256, protectedPaths);
     if (markSaved) {
       store.fileStamp = stamp;
@@ -212,7 +269,10 @@ async function saveInBrowser(
     const json = serializeProject(project);
     // Validate the payload before handing it to the download fallback. The
     // browser has no path, so it can never claim a conditional write.
-    parseProject(json);
+    if (!(await validateBeforeWrite(project, ports, json))) {
+      restoreRelativePaths(project, previousPaths);
+      return false;
+    }
     if (!(await ports.browserSave(json, suggestedProjectName(project), protectedPaths))) {
       restoreRelativePaths(project, previousPaths);
       return false;
@@ -237,6 +297,7 @@ export async function saveProjectWithIntegrity(
     ports.notify(t("saveIntegrity.noChanges"), "info");
     return true;
   }
+  if (!(await acceptValidationWarnings(project, ports))) return false;
   const protectedPaths = sourceDocumentPaths(project, store.projectPath);
   try {
     if (!ports.desktop) return await saveInBrowser(project, ports, protectedPaths);

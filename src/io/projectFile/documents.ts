@@ -35,7 +35,7 @@ function normalizeStorageFields(document: DocumentRef, rawDoc: Partial<DocumentR
   }
 }
 
-export function normalizeDocument(rawValue: unknown): DocumentRef {
+export function normalizeDocument(rawValue: unknown, report?: (code: string) => void): DocumentRef {
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
   ) as Partial<DocumentRef> & {
@@ -93,15 +93,18 @@ export function normalizeDocument(rawValue: unknown): DocumentRef {
 
   if (rawDoc.superseded === true) document.superseded = true;
   if (Array.isArray(rawDoc.excludedPages)) {
+    const rawExcluded = rawDoc.excludedPages.filter(
+      (value) => typeof value === "number" && Number.isFinite(value),
+    );
     const excluded = [
       ...new Set(
-        rawDoc.excludedPages
-          .filter((value): value is number => typeof value === "number" && Number.isFinite(value))
+        rawExcluded
           .map((value) => Math.round(value))
           .filter((value) => value >= 1 && value <= document.pageCount),
       ),
     ].sort((a, b) => a - b);
     if (excluded.length) document.excludedPages = excluded;
+    if (excluded.length !== rawDoc.excludedPages.length) report?.("droppedExcludedPage");
   }
   if (rawDoc.copiedFrom && typeof rawDoc.copiedFrom === "object") {
     const copied = rawDoc.copiedFrom as { documentId?: unknown; page?: unknown };
@@ -114,6 +117,8 @@ export function normalizeDocument(rawValue: unknown): DocumentRef {
       copied.page <= document.pageCount
     ) {
       document.copiedFrom = { documentId: copied.documentId, page: copied.page };
+    } else {
+      report?.("droppedCopiedFrom");
     }
   }
   if (kind === "tiff") {
