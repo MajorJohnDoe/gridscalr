@@ -9,6 +9,7 @@ import {
   type PDFPage,
   type PDFRef,
 } from "pdf-lib";
+import { t } from "../../i18n";
 
 /**
  * Optional content (OCG) support for the drawing export. pdf-lib has no
@@ -112,7 +113,7 @@ export function createOptionalContent(
         on.push(ref);
       }
       const defaults = PDFDict.withContext(context);
-      defaults.set(PDFName.of("Name"), PDFHexString.fromText("GridScalr layers"));
+      defaults.set(PDFName.of("Name"), PDFHexString.fromText(t("export.ocgGroupName")));
       defaults.set(PDFName.of("BaseState"), PDFName.of("ON"));
       defaults.set(PDFName.of("Order"), order);
       defaults.set(PDFName.of("ON"), on);

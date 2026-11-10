@@ -15,6 +15,7 @@ import {
 import { assertWritablePath } from "../../io/writeGuard";
 import { store } from "../../state/store";
 import type { BackupEntry } from "./backup";
+import { buildConflictComparison, type ConflictComparisonInfo } from "./compare";
 import { classifyConflict, type ConflictAction, type VersionSummary } from "./conflict";
 import { ProjectWriteConflictError } from "./files";
 import { conflictedCopyPath, isNoOpSave, type ProjectFileStamp } from "./stamp";
@@ -43,7 +44,7 @@ export interface SaveIntegrityPorts {
   notify: (message: string, kind?: "info" | "success" | "warning" | "error") => void;
   notifyError: (title: string, message: string) => Promise<void> | void;
   conflict: (info: ConflictDialogInfo) => Promise<ConflictAction>;
-  compare: (local: VersionSummary, disk: VersionSummary | null) => Promise<void>;
+  compare: (info: ConflictComparisonInfo) => Promise<void>;
   confirmValidationWarnings: (issues: readonly ProjectIssue[]) => Promise<boolean>;
   reportValidationErrors: (issues: readonly ProjectIssue[], project: Project) => Promise<void>;
   chooseBackup: (entries: BackupEntry[]) => Promise<string | null>;
@@ -75,11 +76,24 @@ function summarize(
   };
 }
 
-function summarizeDisk(text: string, stamp: ProjectFileStamp | null): VersionSummary | null {
+interface DiskVersion {
+  project: Project | null;
+  summary: VersionSummary | null;
+  error: boolean;
+}
+
+async function readDiskVersion(
+  path: string,
+  current: ProjectFileStamp | null,
+  ports: SaveIntegrityPorts,
+): Promise<DiskVersion> {
+  if (!current) return { project: null, summary: null, error: false };
   try {
-    return summarize(parseProject(text), text, stamp);
+    const text = await ports.readText(path);
+    const project = parseProject(text);
+    return { project, summary: summarize(project, text, current), error: false };
   } catch {
-    return null;
+    return { project: null, summary: null, error: true };
   }
 }
 
@@ -223,18 +237,18 @@ async function resolveConflict(
   const localJson = serializeProjectCopy(project, path);
   // The in-memory version has no file hash yet; show its data summary only.
   const local = summarize(project, localJson, null);
-  let disk: VersionSummary | null = null;
-  if (current) {
-    try {
-      disk = summarizeDisk(await ports.readText(path), current);
-    } catch {
-      disk = null;
-    }
-  }
+  const disk = await readDiskVersion(path, current, ports);
+  const comparison = buildConflictComparison(
+    project,
+    local,
+    disk.project,
+    disk.summary,
+    disk.error,
+  );
   let action: ConflictAction;
   do {
-    action = await ports.conflict({ targetPath: path, current, local, disk });
-    if (action === "compare") await ports.compare(local, disk);
+    action = await ports.conflict({ targetPath: path, current, local, disk: disk.summary });
+    if (action === "compare") await ports.compare(comparison);
   } while (action === "compare");
 
   if (action === "cancel") return false;

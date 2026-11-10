@@ -3,13 +3,14 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
-import { withTestPageIds } from "./helpers/pages";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   BACKUP_LIMIT,
   backupFileName,
   backupProjectNow,
   classifyConflict,
   conflictedCopyPath,
+  defaultConflictAction,
   isNoOpSave,
   newestBackupNames,
   ProjectWriteConflictError,
@@ -17,6 +18,7 @@ import {
   saveProjectWithIntegrity,
   sameFileVersion,
   type BackupEntry,
+  type ConflictComparisonInfo,
   type ProjectFileStamp,
   type SaveIntegrityPorts,
 } from "../src/features/saveIntegrity";
@@ -52,6 +54,8 @@ interface FakeState {
   errors: string[];
   diskStamp: ProjectFileStamp | null;
   conflictAction: "conflicted-copy" | "compare" | "reload" | "overwrite" | "cancel";
+  conflictQueue: Array<"conflicted-copy" | "compare" | "reload" | "overwrite" | "cancel">;
+  comparisons: ConflictComparisonInfo[];
   writeError: Error | null;
   validationReports: number;
 }
@@ -100,8 +104,10 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
     notifyError: (title, message) => {
       state.errors.push(`${title}: ${message}`);
     },
-    conflict: async () => state.conflictAction,
-    compare: async () => undefined,
+    conflict: async () => state.conflictQueue.shift() ?? state.conflictAction,
+    compare: async (info) => {
+      state.comparisons.push(info);
+    },
     confirmValidationWarnings: async () => true,
     reportValidationErrors: async () => {
       state.validationReports += 1;
@@ -131,6 +137,8 @@ function state(): FakeState {
     errors: [],
     diskStamp: null,
     conflictAction: "cancel",
+    conflictQueue: [],
+    comparisons: [],
     writeError: null,
     validationReports: 0,
   };
@@ -380,5 +388,129 @@ describe("backups", () => {
     expect(fake.loadedData[0].dirty).toBe(true);
     expect(fake.loadedData[0].project.name).toBe("Older backup");
     expect(store.projectPath).toBe("/work/Test project.gridscalr");
+  });
+});
+
+describe("compare with disk version", () => {
+  const timestamp = "2026-01-01T00:00:00.000Z";
+
+  function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
+    return {
+      id: "item_compare",
+      pageId: pageIdFor(1),
+      kind: "length",
+      points: [
+        { x: 10, y: 10 },
+        { x: 110, y: 10 },
+      ],
+      color: "#e5484d",
+      strokeWidth: 2,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+      ...overrides,
+    };
+  }
+
+  function localProject(): Project {
+    const project = makeProject();
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push(
+      makeItem({ id: "item_length", kind: "length", label: "Wall A" }),
+      makeItem({
+        id: "item_count",
+        kind: "count",
+        points: [{ x: 40, y: 40 }],
+        countType: "door",
+        countQuantity: 2,
+      }),
+    );
+    for (const item of measure.items) {
+      item.categoryId = project.settings.quantity.defaultCategoryId;
+    }
+    return project;
+  }
+
+  function diskProject(): Project {
+    const project = parseProject(serializeProject(localProject()));
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    const length = measure.items.find((item) => item.id === "item_length")!;
+    length.label = "Wall A revised";
+    length.pageId = pageIdFor(2);
+    const count = measure.items.find((item) => item.id === "item_count")!;
+    count.countQuantity = 5;
+    project.pages.push({
+      id: "page_extra",
+      documentId: project.documents[0].id,
+      localPage: 1,
+      state: {},
+    });
+    return project;
+  }
+
+  function prepare(diskContents: string): { fake: FakeState; ports: SaveIntegrityPorts } {
+    store.project = localProject();
+    store.projectPath = "/work/Test project.gridscalr";
+    store.fileStamp = stampFor("loaded version");
+    store.dirty = true;
+    const fake = state();
+    fake.disk.set("/work/Test project.gridscalr", diskContents);
+    fake.diskStamp = stampFor(diskContents);
+    return { fake, ports: fakePorts(fake) };
+  }
+
+  it("reports item, page and quantity differences against a valid disk project", async () => {
+    const disk = diskProject();
+    const contents = serializeProject(disk);
+    const { fake, ports } = prepare(contents);
+    fake.conflictQueue = ["compare", "cancel"];
+
+    expect(await saveProjectWithIntegrity(ports, false)).toBe(false);
+    expect(fake.comparisons).toHaveLength(1);
+    const comparison = fake.comparisons[0];
+    expect(comparison.diskError).toBe(false);
+    expect(comparison.diff).not.toBeNull();
+    expect(comparison.diff!.summary.pages).toBe(3);
+    expect(comparison.diff!.summary.changed).toBeGreaterThan(0);
+    const changed = comparison.diff!.items.filter((item) => item.status === "changed");
+    const length = changed.find((item) => item.label === "Wall A");
+    expect(length?.changes.map((change) => change.field)).toEqual(
+      expect.arrayContaining(["label", "page"]),
+    );
+    const count = changed.find((item) => item.kind === "count");
+    expect(count?.changes.map((change) => change.field)).toContain("countQuantity");
+    expect(comparison.diff!.warnings.length).toBeGreaterThan(0);
+
+    // Comparison is read-only and does not change the conflict action.
+    expect(fake.wrote).toHaveLength(0);
+    expect(fake.disk.get("/work/Test project.gridscalr")).toBe(contents);
+    expect(store.dirty).toBe(true);
+    expect(defaultConflictAction()).toBe("conflicted-copy");
+  });
+
+  it("falls back to the metadata summary when the disk project is invalid", async () => {
+    const { fake, ports } = prepare("{ not a project");
+    fake.conflictQueue = ["compare", "cancel"];
+
+    expect(await saveProjectWithIntegrity(ports, false)).toBe(false);
+    expect(fake.comparisons).toHaveLength(1);
+    expect(fake.comparisons[0].diskError).toBe(true);
+    expect(fake.comparisons[0].diff).toBeNull();
+    expect(fake.comparisons[0].disk).toBeNull();
+    // The conflict dialog still received its actions and the write stayed blocked.
+    expect(fake.wrote).toHaveLength(0);
+    expect(store.dirty).toBe(true);
+  });
+
+  it("keeps Save as conflicted copy after comparing", async () => {
+    const disk = diskProject();
+    const contents = serializeProject(disk);
+    const { fake, ports } = prepare(contents);
+    fake.conflictQueue = ["compare", "conflicted-copy"];
+
+    expect(await saveProjectWithIntegrity(ports, false)).toBe(true);
+    expect(fake.comparisons).toHaveLength(1);
+    expect(fake.wrote).toHaveLength(1);
+    expect(fake.wrote[0].path).toMatch(/conflicted copy/);
+    expect(fake.disk.get("/work/Test project.gridscalr")).toBe(contents);
   });
 });
