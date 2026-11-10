@@ -1858,6 +1858,7 @@ export type MessageKey =
   | "projectFile.newerVersion"
   | "projectFile.noDocument"
   | "projectFile.noPages"
+  | "projectFile.migrationWarnings"
   | "image.readFailed"
   | "image.encodeFailed"
   | "image.unsupportedEnvironment"

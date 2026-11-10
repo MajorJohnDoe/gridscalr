@@ -1856,6 +1856,7 @@
   "projectFile.newerVersion": "This project was created by a newer version of GridScalr.",
   "projectFile.noDocument": "Project file has no document reference.",
   "projectFile.noPages": "Project file has no remaining pages.",
+  "projectFile.migrationWarnings": "The project loaded, but {count} old page reference(s) could not be mapped and were reported. Check the pages and measurements before saving.",
   "image.readFailed": "Could not read the image.",
   "image.encodeFailed": "Could not encode the image.",
   "image.unsupportedEnvironment": "This environment cannot process images.",
