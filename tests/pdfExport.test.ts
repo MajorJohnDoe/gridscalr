@@ -900,3 +900,107 @@ describe("optional OCG layer export", () => {
     expect(content).not.toContain("BDC");
   });
 });
+
+interface ReviewAnnotation {
+  subtype: string;
+  contents: string;
+  author: string;
+  rect: number[];
+  color: number[];
+}
+
+async function reviewAnnotations(bytes: Uint8Array, pageIndex = 0): Promise<ReviewAnnotation[]> {
+  const doc = await PDFDocument.load(bytes);
+  const annots = doc.getPage(pageIndex).node.Annots();
+  if (!annots) return [];
+  const decode = (value: unknown): string =>
+    value instanceof PDFHexString ? value.decodeText() : String(value ?? "");
+  return annots.asArray().map((ref) => {
+    const dict = doc.context.lookup(ref, PDFDict);
+    const array = (key: string): number[] => {
+      const entry = dict.lookupMaybe(PDFName.of(key), PDFArray);
+      return entry ? entry.asArray().map((item) => Number(String(item))) : [];
+    };
+    const rawSubtype = String(dict.get(PDFName.of("Subtype"))).replace("/", "");
+    return {
+      subtype: rawSubtype.charAt(0).toUpperCase() + rawSubtype.slice(1),
+      contents: decode(dict.get(PDFName.of("Contents"))),
+      author: decode(dict.get(PDFName.of("T"))),
+      rect: array("Rect"),
+      color: array("C"),
+    };
+  });
+}
+
+describe("review-only PDF annotations", () => {
+  it("writes standard annotations for visible items and keeps their labels", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeAnnotations: true,
+    });
+    const annotations = await reviewAnnotations(bytes);
+    const pageOneItems = project.layers.reduce(
+      (total, layer) => total + layer.items.filter((item) => item.pageId === pageIdFor(1)).length,
+      0,
+    );
+    expect(annotations).toHaveLength(pageOneItems);
+    expect(new Set(annotations.map((entry) => entry.subtype))).toEqual(
+      new Set(["Square", "Line", "Polygon", "Text"]),
+    );
+    expect(annotations.every((entry) => entry.author === "GridScalr")).toBe(true);
+    expect(annotations.some((entry) => entry.contents.includes("Wall A"))).toBe(true);
+    expect(annotations.some((entry) => entry.contents.includes("Plan note"))).toBe(true);
+    for (const entry of annotations) {
+      expect(entry.rect).toHaveLength(4);
+      expect(entry.color).toHaveLength(3);
+      expect(entry.color.some((value) => value > 0)).toBe(true);
+    }
+  });
+
+  it("excludes hidden items and hidden layers but keeps locked items", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const text = draw.items.find((item) => item.kind === "text")!;
+    text.locked = true;
+    const rect = draw.items.find((item) => item.id === "item_rect")!;
+    rect.visible = false;
+
+    const withLocked = await reviewAnnotations(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeAnnotations: true,
+      }),
+    );
+    expect(withLocked.some((entry) => entry.contents.includes("Plan note"))).toBe(true);
+    expect(withLocked.some((entry) => entry.rect.join(",") === "")).toBe(false);
+
+    draw.visible = false;
+    const withoutLayer = await reviewAnnotations(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeAnnotations: true,
+      }),
+    );
+    expect(withoutLayer.some((entry) => entry.contents.includes("Plan note"))).toBe(false);
+  });
+
+  it("does not replace the flattened page and is off by default", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const off = await exportProjectPdf(project, renderer, exportOptions(project));
+    const on = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeAnnotations: true,
+    });
+    expect(await reviewAnnotations(off)).toEqual([]);
+    expect(Buffer.from(off).equals(Buffer.from(on))).toBe(false);
+    // Same flattened artwork and the same text layer in both files.
+    expect(await decodePageContent(on)).toBe(await decodePageContent(off));
+    const onText = await textItems(on, 1);
+    const offText = await textItems(off, 1);
+    expect(onText.map((item) => item.text)).toEqual(offText.map((item) => item.text));
+  });
+});

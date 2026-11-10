@@ -3,6 +3,7 @@ import { PDFDocument, type PDFPage } from "pdf-lib";
 import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
 import { drawItem } from "./export/items/dispatch";
+import { addReviewAnnotation } from "./export/annotations";
 import { drawLabel } from "./export/labels";
 import { drawLegendPage } from "./export/legend";
 import { createOptionalContent, type OptionalContentWriter } from "./export/ocg";
@@ -104,6 +105,9 @@ export async function exportProjectPdf(
             if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
             if (item.kind !== "image" || item.image?.mode === "annotation") continue;
             drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+            if (options?.includeAnnotations) {
+              addReviewAnnotation(pdfPage, viewport, project, item);
+            }
           }
         },
         layer.id,
@@ -133,6 +137,9 @@ export async function exportProjectPdf(
             if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
             if (item.kind === "image" && item.image?.mode !== "annotation") continue;
             drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
+            if (options?.includeAnnotations) {
+              addReviewAnnotation(pdfPage, viewport, project, item);
+            }
           }
         },
         layer.id,
