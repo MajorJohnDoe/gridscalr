@@ -1,5 +1,7 @@
 mod commands;
 mod package;
+mod project_backup;
+mod project_write;
 
 use std::sync::Mutex;
 
@@ -127,6 +129,10 @@ pub fn run() {
             commands::path_exists,
             commands::file_size,
             commands::prepare_demo_project,
+            project_write::project_file_stamp,
+            project_write::write_project_conditional,
+            project_backup::save_project_backup,
+            project_backup::list_project_backups,
             package::package_create,
             package::package_inspect,
             package::package_extract,

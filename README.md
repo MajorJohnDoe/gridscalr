@@ -98,7 +98,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Reports and original TIF scans are opt-in.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
-- Undo/redo, atomic saves with **Save a copy** backups, autosave recovery,
+- Undo/redo, conditional saves that preserve both versions on a conflict,
+  automatic rolling backups and **Save a copy** exports, autosave recovery,
   recent files, and the user guide bundled under **Help**. The status bar shows
   saved/unsaved state and source-file warnings, and Project settings reports the
   project size, image and OCR contribution, and source-drawing status.
@@ -241,7 +242,9 @@ source PDF or TIF is never modified; every save and export resolves real paths,
 including symlinks and junctions, and refuses to overwrite any document that
 belongs to the project. Project files are replaced atomically, so a failed save
 keeps the previous file. Project data autosaves to a local IndexedDB recovery
-store.
+store. In the desktop shell, `src-tauri/src/project_write.rs` owns conditional
+writes and file stamps, while `src-tauri/src/project_backup.rs` owns app-data
+backups.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

@@ -35,6 +35,14 @@ src/
   features/projectImport/model.ts source-page inspection, import planning and commit
   features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
   features/projectImport/ui.ts graphical source-page picker with lazy previews
+  features/saveIntegrity/index.ts public surface for conditional saves and backups
+  features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
+  features/saveIntegrity/conflict.ts conflict classification and default action
+  features/saveIntegrity/backup.ts rolling-backup naming and rotation rules
+  features/saveIntegrity/controller.ts save, conflict, no-op, backup and restore orchestration
+  features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
+  features/saveIntegrity/files.ts conditional-write, stamp, read-back and backup IPC
+  features/saveIntegrity/ui.ts conflict, comparison and restore dialogs
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
   features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
   features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
@@ -205,6 +213,8 @@ src/
   io/sha256.ts           dependency-free SHA-256 fallback
 src-tauri/
   src/commands.rs        atomic text/binary replacement, canonical path checks, structured errors, reads, demo copy, smoke exit and commands
+  src/project_write.rs   conditional project write, read-back hash stamp and file-stamp command
+  src/project_backup.rs  app-data backup directory, naming, rolling rotation and backup commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions

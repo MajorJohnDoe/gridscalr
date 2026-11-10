@@ -77,7 +77,7 @@ pub(crate) fn replace_file(
     }
 }
 
-fn write_flushed(path: &Path, data: &[u8]) -> std::io::Result<()> {
+pub(crate) fn write_flushed(path: &Path, data: &[u8]) -> std::io::Result<()> {
     let mut file = File::create(path)?;
     file.write_all(data)?;
     file.sync_all()?;

@@ -595,9 +595,23 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 
 ### Save
 
-- **File → Save** (`Ctrl/Cmd+S`) writes a `.gridscalr` project file.
+- **File → Save** (`Ctrl/Cmd+S`) writes a `.gridscalr` project file. If there are no unsaved changes, Save does not rewrite the file.
 - **File → Save as…** (`Ctrl/Cmd+Shift+S`) writes to a new path and keeps working there.
 - **File → Save a copy…** writes a backup copy without changing the open project or its saved state. The copy stores document links relative to its own folder, so it stays usable on its own. Use it before a risky edit or before moving a project.
+- **File → Back up now…** writes an on-demand backup in the local app data folder.
+- **File → Restore backup…** opens one of the stored backups as an unsaved copy. The current project file is not changed.
+
+A desktop save is conditional against the file version GridScalr loaded. If another program, a second window or a cloud client changed the project file on disk, GridScalr opens a conflict dialog instead of overwriting it:
+
+- **Save as conflicted copy** is the default. It writes `<project> (conflicted copy YYYY-MM-DD HHMM).gridscalr` next to the original, leaves the disk file untouched and keeps your project open.
+- **Compare with disk version** shows the local and disk versions side by side with their page and item counts, size and time, plus the disk file hash.
+- **Reload from disk** discards the in-memory version and opens the disk file after confirmation.
+- **Overwrite** writes your version over the disk file. This is an explicit danger action.
+- **Cancel** keeps editing without writing.
+
+GridScalr also keeps up to three automatic rolling backups per project in the app data folder. They rotate on each successful save and are never added to recent files or package files. Restoring a backup opens it as an unsaved copy, so choose **File → Save as…** to keep it.
+
+After every desktop write, GridScalr reads the file back and verifies the bytes before it marks the project saved. If the file was deleted on disk, Save treats it as a conflict instead of recreating it silently. The browser fallback still downloads the project and cannot perform a conditional write.
 
 Saving is atomic. GridScalr writes and flushes a temporary file next to the project and then replaces the project file in one rename. If writing or replacing fails, the previous file is left unchanged and the error message says so. A crash during a save therefore leaves either the old project or the new one, never neither. An interrupted save can leave a hidden `.tmp` file next to the project; the project file itself is intact, and the leftover can be deleted.
 
