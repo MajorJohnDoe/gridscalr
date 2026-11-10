@@ -1,0 +1,112 @@
+/* ---------- Import pages from another project ---------- */
+
+.project-import {
+  gap: 10px;
+}
+
+.project-import-source {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11.5px;
+}
+
+.project-import-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-height: min(56vh, 520px);
+  overflow-y: auto;
+  padding: 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--bg-deep);
+}
+
+.project-import-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.project-import-group-head {
+  position: sticky;
+  top: -8px;
+  z-index: 3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 2px 6px;
+  background: var(--bg-deep);
+}
+
+.project-import-group-title {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.project-import-group-meta {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.project-import-locate {
+  flex: none;
+}
+
+.project-import .page-import-grid {
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  max-height: none;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.project-import .page-import-tile:not(.is-selected) .page-import-thumb {
+  opacity: 1;
+}
+
+.project-import .page-import-thumb {
+  height: 112px;
+  aspect-ratio: auto;
+}
+
+.project-import .page-import-caption {
+  display: block;
+  text-align: left;
+}
+
+.project-import-caption {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.project-import-page-name {
+  color: var(--text);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.project-import-page-meta {
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.project-import-tile.is-unavailable {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.project-import-tile.is-unavailable .page-import-thumb {
+  filter: grayscale(1);
+}
+
+.project-import .page-import-thumb.is-preview-missing .page-import-placeholder {
+  color: var(--warning);
+}

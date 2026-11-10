@@ -229,6 +229,9 @@ src/app/documentFlows.ts   PDF/TIF/project loading and page selection
 src/app/pageFlows.ts       page navigation, duplicate/delete and project reset
 src/app/scaleFlows.ts      calibration, manual scale and fit-to-area actions
 src/app/packageFlows.ts    package host adapter and packaged-project opening
+src/app/projectImportFlows.ts project page import, partial imports and history-aware commit
+src/app/projectImportSource.ts source project document loading, previews and missing-file recovery
+src/app/rendererDocuments.ts renderer/proxy cache that keeps import undo and redo instant
 src/app/diagnosticsFlows.ts diagnostics text, copy and report flow
 src/i18n/locales/*.json    message catalogs; en.json is the source and fallback
 src/i18n/registry.ts       SUPPORTED_LOCALES descriptors, locale matching and pseudo-locale
@@ -242,6 +245,9 @@ src/features/projectPackage/model.ts package manifest, safe names and portable p
 src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
 src/features/projectPackage/ipc.ts package command wrappers
+src/features/projectImport/model.ts source-page inspection, import planning and commit
+src/features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
+src/features/projectImport/ui.ts graphical source-page picker with lazy previews
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
 src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
@@ -323,6 +329,7 @@ src/styles/shell.css       top bar, docks, symbol library, canvas and welcome
 src/styles/rail.css        expandable tool rail and its two-column layout
 src/styles/panels.css      inspector, layers, pages, status bar and popover menu
 src/styles/dialogs.css     dialogs, menus, forms, quantities and preferences
+src/styles/projectImport.css project page import picker and source-document groups
 src/styles/markups.css     Markups panel, revision compare and text search
 src/styles/help.css        help dialog, search, TOC and image lightbox
 src/styles/popovers.css    tool flyouts and measurement options
@@ -423,6 +430,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
+- `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.
 - `tests/fuzz.test.ts` runs deterministic, seeded fuzzing for project JSON, package manifests, archive names and document paths.
 - The CI `desktop` job builds the Tauri shell on Ubuntu, Windows and macOS and runs the packaged app with `--smoke-test <dir>`. The app opens its bundled demo, saves to the directory, reopens it, checks the unsaved-changes prompt and exits 0/1 with `result.json`. Use the same flag locally against `src-tauri/target/debug/gridscalr` (prefix with `xvfb-run -a` on headless Linux).

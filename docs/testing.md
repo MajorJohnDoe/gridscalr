@@ -8,6 +8,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm test -- --run` | Model, I/O, project-file, report, PDF, geometry and package logic in Node. |
 | `npm run test:coverage` | The same suite with V8 coverage and the CI thresholds. |
 | `npm run test:ui` | Playwright smoke flow through the browser fallback: open, measure, help, save and package menu state. |
+| `npm run test:import` | Playwright import flow: thumbnail picker, page-scoped layers, undo, redo and source-file immutability. |
 | `npm run test:canvas` | Pointer-level canvas gestures: draw, resize, rotate, text, locks, crop and split view. |
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |

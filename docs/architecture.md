@@ -21,6 +21,9 @@ src/
   app/pageFlows.ts       page navigation, duplicate/delete and project reset
   app/scaleFlows.ts      calibration, manual scale and fit-to-area actions
   app/packageFlows.ts    package host adapter and packaged-project opening
+  app/projectImportFlows.ts project page import, partial imports and history-aware commit
+  app/projectImportSource.ts source project document loading, previews and missing-file recovery
+  app/rendererDocuments.ts renderer/proxy cache that keeps import undo and redo instant
   app/diagnosticsFlows.ts diagnostics text, copy and report flow
   features/              feature modules; see docs/adr/0001-feature-modules.md
   features/countTypes/model.ts count definitions, normalization, management and quantity helpers
@@ -29,6 +32,9 @@ src/
   features/projectPackage/controller.ts package creation and open-package flows, checksums and progress
   features/projectPackage/ui.ts package options, destination and progress dialogs
   features/projectPackage/ipc.ts Tauri package command wrappers and progress channels
+  features/projectImport/model.ts source-page inspection, import planning and commit
+  features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
+  features/projectImport/ui.ts graphical source-page picker with lazy previews
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
   features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
   features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
@@ -145,6 +151,7 @@ src/
   styles/shell.css       top bar, docks, symbol library, canvas and welcome
   styles/panels.css      inspector, layers, pages, status bar and popover menu
   styles/dialogs.css     dialogs, menus, forms, quantities and preferences
+  styles/projectImport.css project page import picker and source-document groups
   styles/markups.css     Markups panel, revision compare and text search
   styles/help.css        help dialog, search, TOC and image lightbox
   styles/popovers.css    tool flyouts, Canvas options and measurement options

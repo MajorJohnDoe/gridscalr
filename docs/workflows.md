@@ -161,6 +161,20 @@ Save the `.gridscalr` project next to the drawing set. If the project or drawing
 - The exported CSV, Excel workbook or PDF matches the reviewed quantities.
 - When comparing revisions, the diff list and comparison PDF were checked before the new quantities were ordered.
 
+## Recover a project split across two files
+
+Use this when the same drawing set was edited in two `.gridscalr` files by mistake and each file has one correct sheet.
+
+1. Open the project that should keep its page order and settings.
+2. Save a copy before changing anything.
+3. Choose **File → Import pages from project…** and pick the other file.
+4. In the picker, select the corrected sheet. Check its page name and item count, then import it.
+5. If the old, incorrect version is still in the project, delete that page from the Pages tab. Later pages move down one number, so the corrected sheet takes its place.
+6. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
+7. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
+
+The import appends pages, so it never moves an existing page on its own. The source project is read-only. The import is one undo step, but deleting a page is a separate structural step and cannot be undone. Confirm the page numbers and quantities before deleting.
+
 ## Related reference
 
 - [Measure](user-guide.md#measure)

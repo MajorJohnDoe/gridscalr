@@ -42,7 +42,7 @@ export function normalizeCountTypeName(value: string): string {
   return value.replace(/\s+/g, " ").trim().slice(0, COUNT_TYPE_NAME_MAX_LENGTH);
 }
 
-function uniqueCountTypeName(
+export function uniqueCountTypeName(
   types: readonly CountTypeDef[],
   name: string,
   exceptId?: string,

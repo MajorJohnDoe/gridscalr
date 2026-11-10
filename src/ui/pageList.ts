@@ -320,6 +320,11 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         icon: "plus",
         action: () => actions.addPages(),
       },
+      {
+        label: t("page.importProjectPages"),
+        icon: "plus",
+        action: () => actions.importProjectPages(),
+      },
     ]);
   });
   refs.dockBody.append(list);

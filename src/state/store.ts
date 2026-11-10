@@ -856,6 +856,7 @@ export class Store {
     if (!this.project) return;
     this.revision += 1;
     this.dirty = true;
+    this.ui.page = Math.max(1, Math.min(totalPageCount(this.project.documents), this.ui.page));
     this.ui.selection = this.ui.selection.filter((ref) => {
       const found = findItem(this.project!, ref.itemId);
       return Boolean(found && found.layer.id === ref.layerId);

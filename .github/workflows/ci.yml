@@ -41,6 +41,7 @@ jobs:
       - run: npm run build
       - run: npx playwright install --with-deps chromium
       - run: npm run test:ui
+      - run: npm run test:import
       - run: npm run test:canvas
       - run: npm run test:count
       - run: npm run test:touch

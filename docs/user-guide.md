@@ -153,6 +153,28 @@ Right-click a page card and choose **Duplicate page…**. Choose whether to copy
 
 The copy is appended at the end and references the same source sheet. The original PDF or TIF is never modified. Page-specific layer visibility, lock settings, building and floor labels always follow the copy. Duplicating is structural and cannot be undone. It is useful when the same drawing needs a separate takeoff, such as one page for windows and another for doors.
 
+### Import pages from another project
+
+Use **File → Import pages from project…**, or right-click the empty area below the page cards and choose **Import pages from project…**, when work was split across two `.gridscalr` files.
+
+1. Choose the source project.
+2. The picker groups its pages by source document. Each card shows the sheet preview, page name, location and item count. No pages are selected at first.
+3. Select the pages you need and choose **Import**.
+
+The pages are appended after the existing pages. Existing page numbers never move. The source project is read-only and is never changed.
+
+- **Each imported page gets its own layers.** New page-scoped layers use the source layer names, colours, opacity, visibility and lock state. Items are never merged into layers that already exist on another page. If you switch the Layers list to **All pages**, layers with the same name from different pages are shown separately.
+- **Copied page data:** page name, building and floor, calibration and scale lock, OCR text, and every item on the page. Operation-card title-block fields are copied exactly.
+- **Merged project data:** only the categories, count types, line types and embedded images that the imported items actually use. Matching categories are reused by name; conflicting names keep the destination project's settings.
+- **Missing PDFs:** a page whose PDF cannot be found is greyed out. Use **Locate…** to point at the file, or leave it unselected. If a selected page cannot be read during the import, it is skipped and listed in a warning.
+- **Undo:** the whole import is one step. `Ctrl/Cmd+Z` removes the imported pages and their layers; `Ctrl/Cmd+Shift+Z` brings them back. The imported PDFs stay in memory until the project is closed or replaced, which is what makes redo immediate.
+- **Units and metadata:** the destination project keeps its units, metadata, settings, saved Markups views and count presets. Imported measurements keep their geometry and are displayed in the destination's units.
+- **Packages:** `.gridscalr.zip` cannot be imported directly. Extract the package first and choose the `.gridscalr` file inside it.
+
+The preview shows the sheet background, like the Pages panel; markups are not composited into the thumbnail. Use the page name and item count to identify the right card.
+
+To replace a sheet that was edited in the wrong project, import the corrected sheet first and then delete the old page. Later pages move down one number, so the corrected sheet lands in the old position. Deleting a page is still a separate structural step and cannot be undone.
+
 ### Delete a page
 
 If you imported the wrong drawing, delete the page from the **Pages** tab:
@@ -167,6 +189,7 @@ Deleting a page:
 - Keeps every earlier page on its existing number.
 - Deletes the source document reference when its last remaining page is removed. The original PDF or TIF file on disk is never modified.
 - Cannot be undone.
+- Leaves empty page-scoped layers behind. Remove them from the Layers panel if they are no longer needed.
 
 A project must keep at least one page. New drawings are still always added at the end.
 
