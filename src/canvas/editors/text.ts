@@ -5,6 +5,7 @@ import { runsFromItem } from "../../model/richText";
 import { clampTextSize } from "../../model/text";
 import type { Layer, MarkupItem, Point } from "../../model/types";
 import { store } from "../../state/store";
+import { pageIdAt } from "../../model/pages";
 import { toast } from "../../ui/toast";
 import { t } from "../../i18n";
 import type { EditorState } from "./shared";
@@ -18,7 +19,7 @@ export function startNewText(state: EditorState, point: Point): void {
     mode: "text",
     itemId: null,
     layerId: null,
-    page: store.ui.page,
+    pageId: store.project ? (pageIdAt(store.project, store.ui.page) ?? "") : "",
     anchor: point,
     text: "",
     color: style.color,
@@ -43,7 +44,7 @@ export function startTextEdit(state: EditorState, item: MarkupItem, layer: Layer
     mode: "text",
     itemId: item.id,
     layerId: layer.id,
-    page: item.page,
+    pageId: item.pageId,
     anchor: item.points[0] ?? { x: 0, y: 0 },
     text: item.text ?? "",
     color: item.color,
@@ -82,7 +83,7 @@ export function startTextBoxEdit(state: EditorState, item: MarkupItem, layer: La
     mode: "textbox",
     itemId: item.id,
     layerId: layer.id,
-    page: item.page,
+    pageId: item.pageId,
     anchor: { x: rect.x, y: rect.y },
     text: item.text ?? "",
     color,
@@ -126,7 +127,7 @@ export function startCloudTextEdit(state: EditorState, item: MarkupItem, layer: 
     mode: "cloud",
     itemId: item.id,
     layerId: layer.id,
-    page: item.page,
+    pageId: item.pageId,
     anchor: label?.center ?? itemCenter(item),
     text: item.text ?? "",
     color,
@@ -167,7 +168,7 @@ export function startCalloutTextEdit(state: EditorState, item: MarkupItem, layer
     mode: "callout",
     itemId: item.id,
     layerId: layer.id,
-    page: item.page,
+    pageId: item.pageId,
     anchor: layout.center,
     text: item.text ?? "",
     color,

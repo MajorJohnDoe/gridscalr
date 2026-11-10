@@ -1,12 +1,20 @@
 import {
-  deletePageFromProject,
-  duplicatePageFromProject,
-  projectDocumentForPage,
-  totalPageCount,
-  type DeletePageResult,
+  deletePage as deletePageRecord,
+  duplicatePage as duplicatePageRecord,
+  insertPage as insertPageRecord,
+  movePage as movePageRecord,
+  type DeletePageSummary,
   type DuplicatePageOptions,
-  type DuplicatePageResult,
-} from "../model/documents";
+  type DuplicatePageSummary,
+} from "../features/pageModel";
+import { includedLocalPages } from "../model/documents";
+import {
+  currentPageId,
+  ensurePageState,
+  makePageId,
+  pageNumber,
+  pageRecordById,
+} from "../model/pages";
 import { normalizeColor } from "../model/color";
 import type { CloudFillPreset } from "../model/cloud";
 import type { ArrowHeads, SheetPaperSize } from "../model/types";
@@ -29,6 +37,7 @@ import { selectionKey, uniqueSelectionRefs } from "../model/selection";
 import { pushHistory } from "./history";
 import type {
   AreaMode,
+  PageId,
   AreaShape,
   HighlightShape,
   Category,
@@ -350,6 +359,14 @@ export class Store {
   addDocument(document: DocumentRef): void {
     if (!this.project) return;
     this.project.documents.push(document);
+    for (const localPage of includedLocalPages(document)) {
+      this.project.pages.push({
+        id: makePageId(),
+        documentId: document.id,
+        localPage,
+        state: {},
+      });
+    }
     this.undoStack = [];
     this.redoStack = [];
     this.dirty = true;
@@ -358,9 +375,10 @@ export class Store {
   }
 
   /** Changes a template sheet's paper. Structural like adding or deleting a page. */
-  setTemplatePaper(page: number, paper: SheetPaperSize): void {
+  setTemplatePaper(pageId: PageId, paper: SheetPaperSize): void {
     if (!this.project) return;
-    const document = projectDocumentForPage(this.project, page);
+    const record = pageRecordById(this.project, pageId);
+    const document = this.project.documents.find((entry) => entry.id === record?.documentId);
     if (!document?.template) return;
     document.template.paper = paper;
     this.undoStack = [];
@@ -375,9 +393,9 @@ export class Store {
    * importing a document: the source files are untouched and the operation is
    * not added to the undo stack.
    */
-  deletePage(page: number): DeletePageResult | null {
+  deletePage(pageId: PageId): DeletePageSummary | null {
     if (!this.project) return null;
-    const result = deletePageFromProject(this.project, page);
+    const result = deletePageRecord(this.project, pageId);
     if (!result) return null;
     this.undoStack = [];
     this.redoStack = [];
@@ -385,13 +403,49 @@ export class Store {
     for (const assetId of [...this.assetPayloads.keys()]) {
       if (!this.project.assets[assetId]) this.assetPayloads.delete(assetId);
     }
-    this.ui.page = result.page;
+    this.ui.page = result.nextPageId ? pageNumber(this.project, result.nextPageId) : 1;
     this.ui.selection = [];
     this.ui.hover = null;
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
     return result;
+  }
+
+  /** Structural page reorder. Display numbers change; no stored reference moves. */
+  reorderPage(pageId: PageId, targetIndex: number): boolean {
+    if (!this.project) return false;
+    if (!movePageRecord(this.project, pageId, targetIndex)) return false;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    return true;
+  }
+
+  /** Inserts a new page record for an existing document page at an index. */
+  insertPageRecord(pageId: PageId, index: number): PageId | null {
+    if (!this.project) return null;
+    const source = pageRecordById(this.project, pageId);
+    if (!source) return null;
+    const record = insertPageRecord(this.project, {
+      documentId: source.documentId,
+      localPage: source.localPage,
+      index,
+    });
+    if (!record) return null;
+    this.undoStack = [];
+    this.redoStack = [];
+    this.gestureSnapshot = null;
+    this.ui.page = pageNumber(this.project, record.id);
+    this.ui.selection = [];
+    this.ui.hover = null;
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    return record.id;
   }
 
   setLineType(id: string): void {
@@ -413,7 +467,7 @@ export class Store {
 
   setPage(page: number): void {
     if (!this.project) return;
-    const clamped = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
+    const clamped = Math.max(1, Math.min(Math.max(1, this.project.pages.length), Math.round(page)));
     if (clamped === this.ui.page) return;
     this.ui.page = clamped;
     this.ui.selection = [];
@@ -426,7 +480,11 @@ export class Store {
     if (this.project) {
       const kind = toolLayerKind(tool);
       if (kind) {
-        ensureActiveLayer(this.project, kind, this.ui.page);
+        ensureActiveLayer(
+          this.project,
+          kind,
+          currentPageId(this.project, this.ui.page) ?? undefined,
+        );
         // Every markup tool targets a layer, so surface the Layers tab while
         // the user draws. Library tools keep the symbol library in view.
         this.ui.leftTab = LIBRARY_TOOLS.has(tool) ? "symbols" : "layers";
@@ -591,36 +649,30 @@ export class Store {
   createLayer(kind: LayerKind): void {
     if (!this.project) return;
     this.mutate((project) => {
-      addLayer(project, kind, this.ui.page);
+      addLayer(project, kind, currentPageId(project, this.ui.page) ?? undefined);
     }, "layers");
   }
 
   /** Stores or clears derived OCR data without adding an undo step. */
-  setPageOcr(page: number, ocr: OcrPage | undefined): void {
+  setPageOcr(pageId: PageId, ocr: OcrPage | undefined): void {
     if (!this.project) return;
-    const target = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
-    const key = String(target);
-    const state = this.project.pages[key] ?? {};
+    const state = ensurePageState(this.project, pageId);
+    if (!state) return;
     if (ocr) state.ocr = ocr;
     else delete state.ocr;
-    if (Object.keys(state).length) this.project.pages[key] = state;
-    else delete this.project.pages[key];
     this.dirty = true;
     this.revision += 1;
     this.emit("change");
   }
 
-  renamePage(page: number, name: string): void {
+  renamePage(pageId: PageId, name: string): void {
     if (!this.project) return;
-    const target = Math.max(1, Math.min(totalPageCount(this.project.documents), Math.round(page)));
     const trimmed = name.trim().slice(0, 80);
     this.mutate((project) => {
-      const key = String(target);
-      const state = project.pages[key] ?? {};
+      const state = ensurePageState(project, pageId);
+      if (!state) return;
       if (trimmed) state.name = trimmed;
       else delete state.name;
-      if (Object.keys(state).length) project.pages[key] = state;
-      else delete project.pages[key];
     }, "change");
   }
 
@@ -628,14 +680,14 @@ export class Store {
    * Appends a duplicate of one page. Like importing a document, this is
    * structural and clears the undo history.
    */
-  duplicatePage(page: number, options: DuplicatePageOptions): DuplicatePageResult | null {
+  duplicatePage(pageId: PageId, options: DuplicatePageOptions): DuplicatePageSummary | null {
     if (!this.project) return null;
-    const result = duplicatePageFromProject(this.project, page, options);
+    const result = duplicatePageRecord(this.project, pageId, options);
     if (!result) return null;
     this.undoStack = [];
     this.redoStack = [];
     this.gestureSnapshot = null;
-    this.ui.page = result.page;
+    this.ui.page = result.pageNumber;
     this.ui.selection = [];
     this.ui.hover = null;
     this.dirty = true;
@@ -852,7 +904,7 @@ export class Store {
     if (!this.project) return;
     this.revision += 1;
     this.dirty = true;
-    this.ui.page = Math.max(1, Math.min(totalPageCount(this.project.documents), this.ui.page));
+    this.ui.page = Math.max(1, Math.min(Math.max(1, this.project.pages.length), this.ui.page));
     this.ui.selection = this.ui.selection.filter((ref) => {
       const found = findItem(this.project!, ref.itemId);
       return Boolean(found && found.layer.id === ref.layerId);

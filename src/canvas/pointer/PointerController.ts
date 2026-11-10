@@ -22,7 +22,6 @@ import { applyTransformState } from "./transform";
 import { beginSelection, updateHover } from "./targets";
 import type { DragState, MarqueeState } from "./pointerState";
 import type { PointerHost } from "./PointerHost";
-
 /**
  * Owns pointer input that is independent of a particular gesture: coordinate
  * conversion, pointer capture, cursor selection, wheel navigation, space-pan
@@ -45,6 +44,7 @@ export class PointerController {
   ) {
     this.navigation = new NavigationGesture({
       viewport: () => this.host.viewport(),
+      viewPageId: () => this.host.viewPageId(),
       capturePointer: (pointerId) => capturePointer(this.element, pointerId),
       updateCursor: () => this.updateCursor(),
       drawInteraction: () => this.host.drawInteraction(),
@@ -260,11 +260,11 @@ export class PointerController {
     }
     this.creationDown(page, event, tool);
   };
-
   private beginSelection(page: Point, screen: Point, event: PointerEvent): void {
     beginSelection(page, screen, event, {
       toScreen: (point) => this.host.toScreen(point),
       viewPage: () => this.host.viewPage(),
+      viewPageId: () => this.host.viewPageId(),
       viewZoom: () => this.host.viewZoom(),
       beginDrag: (drag, pointerId) => this.beginDrag(drag, pointerId),
       beginMarquee: (marqueePage, additive, pointerId) =>
@@ -275,7 +275,6 @@ export class PointerController {
       measurementLabelHit: (point) => this.host.measurementLabelHit(point),
     });
   }
-
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (!store.project) return;
     const screen = localPoint(this.element, event);
@@ -310,6 +309,7 @@ export class PointerController {
       const hover = updateHover(page, screen, {
         toScreen: (point) => this.host.toScreen(point),
         viewPage: () => this.host.viewPage(),
+        viewPageId: () => this.host.viewPageId(),
         viewZoom: () => this.host.viewZoom(),
         labelResizeAt: (item, point) => this.host.labelResizeAt(item, point),
       });

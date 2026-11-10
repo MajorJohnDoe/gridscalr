@@ -67,6 +67,7 @@ export function normalizeDocument(rawValue: unknown): DocumentRef {
     return document;
   }
 
+  if (rawDoc.superseded === true) document.superseded = true;
   if (Array.isArray(rawDoc.excludedPages)) {
     const excluded = [
       ...new Set(

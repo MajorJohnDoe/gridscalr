@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.22.4`.
 - Latest public release: `v0.22.4` (2026-11-08).
-- Current project-file schema: `23`.
+- Current project-file schema: `24`.
 - 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -41,8 +41,9 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
 - Project files must remain backward compatible. Every schema change needs migration tests for the current and previous version.
-- Pages have stable IDs from schema 24 onward. Until that migration lands, do not add new persistent page-number references; use the existing page helpers and keep the migration path open. Imports append by default, but insert, reorder and source replacement become explicit, tested operations with schema 24.
-- Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items and page state, keep the remaining page references valid, and resync the PDF renderer. Until schema 24, preserve the numeric remap and its tests; from schema 24, cascade by page ID. A project may have zero pages from schema 24 onward. Source files are never modified.
+- Pages have stable IDs from schema 24 onward. `Project.pages` is the ordered page list; page numbers are display data. Every new persistent page reference uses `PageId`.
+- Imports append by default. Insert, reorder, duplicate, delete and source replacement are explicit, tested operations that cascade by page ID.
+- Deleting a page is an explicit structural action, not an undoable edit. It must delete that page's items, page state and layer membership by page ID, keep the remaining page references valid, and resync the PDF renderer. A project may have zero pages. Source files are never modified.
 - Derived quantities and summaries are calculated from item data, never stored as separate sources of truth.
 - Exports must use the same visibility and locking rules as the canvas.
 - Invalid or missing colours must never render or export as black. Fall back to the layer or item default.
@@ -64,8 +65,8 @@ new source-storage mode.
 - Every persistent entity has a stable, unique ID. Never use array indexes or
   display page numbers as persistent references.
 - Page identity is independent of page order. Imports append by default, but
-  insert, reorder and source replacement are explicit, tested operations that
-  cascade by page ID.
+  insert, reorder, duplicate, delete and source replacement are explicit, tested
+  operations that cascade by page ID.
 - A project may have zero pages. Empty is a valid state, not a corrupt file.
 - Autosave is scoped to one project identity and one base file version. Never
   restore an autosave over a changed disk file.
@@ -458,7 +459,10 @@ src/io/writeGuard.ts       source-path protection shared by all saves and export
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
 src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
-src/model/documents.ts     page mapping, included-page lists, and page deletion remapping
+src/model/documents.ts     source-document page math, included-page lists and import maps
+src/model/pages.ts         PageId, PageRecord and every page resolver
+src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+src/io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
 src/model/metadata.ts      optional report metadata and logo reference normalization
 src/model/annotations.ts   callout, stamp, delta, and cloud-label layout
 src/model/cloud.ts         revision-cloud bezier geometry

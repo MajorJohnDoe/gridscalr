@@ -31,7 +31,7 @@ export function startLabelEdit(state: EditorState, hit: LabelHit): void {
   const edit: LabelEditSession = {
     itemId: hit.item.id,
     layerId: hit.layer.id,
-    page: hit.item.page,
+    pageId: hit.item.pageId,
     value: hit.item.label ?? "",
     original: hit.item.label,
     closing: false,

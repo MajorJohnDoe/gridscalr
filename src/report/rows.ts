@@ -7,6 +7,7 @@ import {
   symbolName,
 } from "../features/schematics/symbols/registry";
 import type { MarkupItem, Project } from "../model/types";
+import { pageNumber } from "../model/pages";
 import type { QuantityReport } from "./reportModel";
 import type { QuantityRow } from "../model/quantity";
 import { t, translate, type MessageKey } from "../i18n";
@@ -139,7 +140,7 @@ function markupRow(project: Project, item: MarkupItem, layerName: string): Repor
   const metrics = itemMetrics(item, project);
   const isSymbol = item.kind === "symbol";
   return [
-    textCell(String(item.page)),
+    textCell(String(pageNumber(project, item.pageId))),
     textCell(itemKindLabel(item.kind)),
     textCell(layerName),
     textCell(item.label ?? ""),

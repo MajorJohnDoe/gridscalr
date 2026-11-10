@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor } from "./helpers/pages";
 import {
   arrowHeadGeometry,
   boundingBox,
@@ -106,7 +107,7 @@ describe("geometry", () => {
   it("grows a symbol's bounds with its stored plate size", () => {
     const symbol: MarkupItem = {
       id: "symbol",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol",
       points: [{ x: 100, y: 100 }],
       color: "#e5484d",

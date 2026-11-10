@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef, Project } from "../src/model/types";
 import { createTemplateDocument } from "../src/features/schematics/model/sheetDocument";
 import {
@@ -20,7 +21,7 @@ import {
 } from "../src/features/projectPackage/model";
 
 function projectWithDocuments(): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.name = "Level 01";
   project.documents[0].path = "/home/ana/drawings/Plan.pdf";
   project.documents[0].relativePath = "../drawings/Plan.pdf";

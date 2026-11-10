@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { Store } from "../src/state/store";
 
 function makeStore(): Store {
   const store = new Store();
-  store.setProject(createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers()), null);
+  store.setProject(withTestPageIds(createProject(defaultDocument("Plan.pdf", 1))), null);
   return store;
 }
 

@@ -167,3 +167,66 @@ Full AGENTS pre-commit list plus `npm run tauri build -- --no-bundle`,
 - Phase 3, [#155](https://github.com/MajorJohnDoe/gridscalr/issues/155) — explicit
   page list and schema 24. Keep the recovery records and lease metadata stable;
   page checkpoints keep working once page deletion cascades by page ID.
+
+## Phase 3 — page list and document model (#155)
+
+Status: implemented on `feat/155-page-model`, PR
+[#162](https://github.com/MajorJohnDoe/gridscalr/pull/162). No app version bump.
+
+### Scope delivered
+
+- `PageId` and `PageRecord[]` as the canonical page order; `MarkupItem.pageId`,
+  `Layer.homePageId` and page-state keys by page ID.
+- Schema 24 migration with deterministic page IDs, page/item/layer/page-state
+  mapping and invalid-reference warnings.
+- Insert, drag-and-drop reorder, duplicate and delete by stable page ID.
+- Empty projects and the **Blank project** starting flow.
+- **Replace source…** with page mapping, superseded documents and explicit
+  cleanup.
+- One destination layer per source layer identity on project import; import
+  appends by default and accepts an insertion index.
+- Revision comparison matches by PageId first, then the fallback page position.
+
+### Modules
+
+```text
+src/model/pages.ts             PageId, PageRecord and resolvers
+src/features/pageModel/
+  index.ts                     public surface
+  pageList.ts                  insert, move, delete, duplicate, cleanup
+  replacement.ts               source mapping and superseded documents
+  importMapping.ts             source layer identity and insertion index
+  ui.ts                        replacement mapping dialog
+src/io/projectFile/pages.ts    schema 23 → 24 migration and normalization
+src/app/replacementFlows.ts    file pick, previews, renderer swap and checkpoint
+```
+
+### Migration IDs and strategy
+
+- IDs are `page_` plus an FNV-style hash of project ID, document ID, source-local
+  page and document-order ordinal. The same input always produces the same IDs.
+- The page list is built in document order from `documents` and
+  `excludedPages`; numeric page state moves into `record.state`.
+- Invalid item pages fall back to the first page and are reported. Invalid layer
+  home pages are cleared, invalid page-state keys are dropped, and all three are
+  reported. Nothing is silently renumbered.
+- `DocumentRef.copiedFrom.page` remains a source-local provenance number, not a
+  project page reference. `DocumentRef.superseded` is persisted.
+
+### Decisions
+
+- Runtime `ui.page` stays a 1-based display number; every stored reference is a
+  page ID.
+- Deleting the last page of a document removes that document. Template sheets
+  clone their document on duplicate/insert so their field maps stay independent.
+- Replacing a source updates the existing `DocumentRef` when every old page is
+  mapped; otherwise a new document is added and the old one is marked
+  superseded. Cleanup is explicit and checkpointed.
+- Cross-document reorder is supported by the model and enabled in the UI. TIF
+  replacement is out of scope (F-013).
+
+### New findings
+
+- F-011 — template sheet fields remain document-owned (P2, open).
+- F-012 — renderer page order is synchronized manually (P2, open).
+- F-013 — source replacement supports PDF only (P3, open).

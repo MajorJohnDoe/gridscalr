@@ -369,7 +369,7 @@ try {
   await page.keyboard.press("Control+0");
   await page.waitForTimeout(350);
   const calibrationPoints = await page.evaluate(() => {
-    const calibration = window.__gridscalr.store.project.pages[1].calibration;
+    const calibration = window.__gridscalr.store.project.pages[0].state.calibration;
     if (!calibration || calibration.source !== "reference") return null;
     const host = document.querySelector("#canvas-interaction").getBoundingClientRect();
     const first = window.__gridscalr.canvas.pageToScreen(calibration.p1);

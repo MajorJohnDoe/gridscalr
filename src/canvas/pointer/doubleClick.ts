@@ -2,7 +2,7 @@ import { areaShapeOf } from "../../model/area";
 import { nearestPointOnSegment, pointToItemLocal } from "../../model/geometry";
 import { findSegment, hitTest } from "../../model/hitTest";
 import { findItem } from "../../model/layers";
-import type { Layer, MarkupItem, Point } from "../../model/types";
+import type { Layer, MarkupItem, PageId, Point } from "../../model/types";
 import { store, type ToolId } from "../../state/store";
 import type { LabelHit } from "../editors";
 
@@ -11,6 +11,7 @@ export interface DoubleClickContext {
   cropActive(): boolean;
   activeTool(): ToolId;
   viewPage(): number;
+  viewPageId(): PageId | null;
   viewZoom(): number;
   toPage(screen: Point): Point;
   finishDraft(): void;
@@ -59,7 +60,7 @@ export function handleDoubleClick(screen: Point, context: DoubleClickContext): v
   }
 
   const project = store.project;
-  const hit = hitTest(project, context.viewPage(), page, 7 / context.viewZoom());
+  const hit = hitTest(project, context.viewPageId() ?? "", page, 7 / context.viewZoom());
   if (!hit) {
     if (tool === "select") context.editSheetFieldAt(context.viewPage(), screen);
     return;

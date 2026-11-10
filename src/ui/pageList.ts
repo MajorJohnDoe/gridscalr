@@ -1,11 +1,5 @@
-import {
-  pageBuilding,
-  pageDisplayName,
-  pageFloor,
-  pageLocationLabel,
-  totalPageCount,
-} from "../model/documents";
-import type { PageSize, Project } from "../model/types";
+import { pageBuilding, pageDisplayName, pageFloor, pageLocationLabel } from "../model/pages";
+import type { PageId, PageSize, Project } from "../model/types";
 import { store } from "../state/store";
 import { isBlankSheet, templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { el } from "./dom";
@@ -22,6 +16,7 @@ interface PendingThumbnail {
 }
 
 let thumbnailObserver: IntersectionObserver | null = null;
+let draggedPageId: PageId | null = null;
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -49,8 +44,7 @@ function applyThumbnail(pending: PendingThumbnail, url: string): void {
   pending.placeholder.hidden = true;
 }
 
-/** Updates one card when its page size arrives after the panel was rendered. */
-function beginPageRename(title: HTMLElement, page: number): void {
+function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void {
   if (title.querySelector(".page-name-input")) return;
   const input = el("input", "page-name-input");
   input.value = title.textContent ?? "";
@@ -63,7 +57,7 @@ function beginPageRename(title: HTMLElement, page: number): void {
   const finish = (save: boolean) => {
     if (done) return;
     done = true;
-    if (save) store.renamePage(page, input.value);
+    if (save) store.renamePage(pageId, input.value);
     else store.emit("change");
   };
   input.addEventListener("keydown", (event) => {
@@ -83,14 +77,14 @@ function beginPageRename(title: HTMLElement, page: number): void {
 
 function locationValues(project: Project, field: "building" | "floor"): string[] {
   const values = new Set<string>();
-  for (const state of Object.values(project.pages)) {
-    const value = field === "building" ? state.building?.trim() : state.floor?.trim();
+  for (const record of project.pages) {
+    const value = field === "building" ? record.state.building?.trim() : record.state.floor?.trim();
     if (value) values.add(value);
   }
   return [...values].sort((a, b) => a.localeCompare(b));
 }
 
-function pageLocationDialog(project: Project, page: number): void {
+function pageLocationDialog(project: Project, pageId: PageId, page: number): void {
   const body = el("div", "form-stack");
   body.append(el("p", "modal-message", t("page.locationNote")));
 
@@ -99,7 +93,7 @@ function pageLocationDialog(project: Project, page: number): void {
   const building = el("input", "input");
   building.type = "text";
   building.maxLength = 80;
-  building.value = pageBuilding(project, page) ?? "";
+  building.value = pageBuilding(project, pageId) ?? "";
   building.placeholder = t("page.buildingPlaceholder");
   const buildingList = el("datalist");
   buildingList.id = `page-building-options-${page}`;
@@ -116,7 +110,7 @@ function pageLocationDialog(project: Project, page: number): void {
   const floor = el("input", "input");
   floor.type = "text";
   floor.maxLength = 80;
-  floor.value = pageFloor(project, page) ?? "";
+  floor.value = pageFloor(project, pageId) ?? "";
   floor.placeholder = t("page.floorPlaceholder");
   const floorList = el("datalist");
   floorList.id = `page-floor-options-${page}`;
@@ -129,7 +123,7 @@ function pageLocationDialog(project: Project, page: number): void {
   floorField.append(floor, floorList);
 
   body.append(buildingField, floorField);
-  const locationName = pageDisplayName(project, page);
+  const locationName = pageDisplayName(project, pageId);
   void showModal({
     title: t("page.location"),
     subtitle: locationName
@@ -145,14 +139,12 @@ function pageLocationDialog(project: Project, page: number): void {
     const nextBuilding = building.value.replace(/\s+/g, " ").trim().slice(0, 80);
     const nextFloor = floor.value.replace(/\s+/g, " ").trim().slice(0, 80);
     store.mutate((current) => {
-      const key = String(page);
-      const pageState = current.pages[key] ?? {};
-      if (nextBuilding) pageState.building = nextBuilding;
-      else delete pageState.building;
-      if (nextFloor) pageState.floor = nextFloor;
-      else delete pageState.floor;
-      if (Object.keys(pageState).length) current.pages[key] = pageState;
-      else delete current.pages[key];
+      const record = current.pages.find((entry) => entry.id === pageId);
+      if (!record) return;
+      if (nextBuilding) record.state.building = nextBuilding;
+      else delete record.state.building;
+      if (nextFloor) record.state.floor = nextFloor;
+      else delete record.state.floor;
     }, "change");
   });
 }
@@ -170,17 +162,39 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
   if (thumb) applyThumbShape(thumb, size);
 }
 
+function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
+  const empty = el("div", "page-list page-list-empty");
+  empty.append(el("p", "empty-note", t("page.emptyProject")));
+  const add = el("button", "btn btn-small", t("page.addPages"));
+  add.type = "button";
+  add.addEventListener("click", () => actions.addPages());
+  const importPages = el("button", "btn btn-small", t("page.importProjectPages"));
+  importPages.type = "button";
+  importPages.addEventListener("click", () => actions.importProjectPages());
+  empty.append(add, importPages);
+  refs.dockBody.append(empty);
+}
+
 export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   disconnectPageThumbnails();
+  refs.dockBody.querySelector(".page-list")?.remove();
   const project = store.project!;
+  if (!project.pages.length) {
+    renderEmptyPages(refs, actions);
+    return;
+  }
   const list = el("div", "page-list");
-  const total = totalPageCount(project.documents);
+  const total = project.pages.length;
   const max = Math.min(total, 400);
   const pendingThumbnails = new Map<Element, PendingThumbnail>();
   for (let page = 1; page <= max; page++) {
+    const record = project.pages[page - 1];
+    const pageId = record.id;
     const card = el("button", "page-card");
     card.type = "button";
+    card.draggable = true;
     card.dataset.page = String(page);
+    card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
     const thumb = el("div", "page-thumb");
     const size = actions.getPageSize(page);
@@ -197,16 +211,16 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
     const sheetDocument = templateDocumentForPage(project, page);
-    const pageName = pageDisplayName(project, page);
+    const pageName = pageDisplayName(project, pageId);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
     title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
     title.addEventListener("dblclick", (event) => {
       event.preventDefault();
       event.stopPropagation();
-      beginPageRename(title, page);
+      beginPageRename(title, pageId, page);
     });
     info.append(title);
-    const location = pageLocationLabel(project, page);
+    const location = pageLocationLabel(project, pageId);
     if (location) {
       const locationNode = el("div", "page-location", location);
       locationNode.title = location;
@@ -218,7 +232,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
     info.append(sizeNode);
     const badges = el("div", "page-badges");
-    if (sheetDocument) {
+    if (record.documentId && sheetDocument) {
       badges.append(
         el(
           "span",
@@ -227,14 +241,18 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         ),
       );
     }
-    if (project.pages[String(page)]?.calibration) {
+    if (record.state.calibration) {
       badges.append(el("span", "page-badge is-calibrated", t("page.calibrated")));
     }
-    if (project.pages[String(page)]?.scaleLocked) {
+    if (record.state.scaleLocked) {
       badges.append(el("span", "page-badge", t("page.scaleLocked")));
     }
+    const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
+    if (sourceDocument?.superseded) {
+      badges.append(el("span", "page-badge is-superseded", t("page.supersededBadge")));
+    }
     const itemCount = project.layers.reduce(
-      (count, layer) => count + layer.items.filter((item) => item.page === page).length,
+      (count, layer) => count + layer.items.filter((item) => item.pageId === pageId).length,
       0,
     );
     if (itemCount)
@@ -255,9 +273,34 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       }),
     );
     card.addEventListener("click", () => actions.goToPage(page, true));
+    card.addEventListener("dragstart", (event) => {
+      draggedPageId = pageId;
+      card.classList.add("is-dragging");
+      event.dataTransfer?.setData("text/plain", pageId);
+      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    });
+    card.addEventListener("dragend", () => {
+      draggedPageId = null;
+      for (const entry of list.querySelectorAll(".page-card")) {
+        entry.classList.remove("is-dragging", "is-drop-target");
+      }
+    });
+    card.addEventListener("dragover", (event) => {
+      if (!draggedPageId || draggedPageId === pageId) return;
+      event.preventDefault();
+      card.classList.add("is-drop-target");
+    });
+    card.addEventListener("dragleave", () => card.classList.remove("is-drop-target"));
+    card.addEventListener("drop", (event) => {
+      event.preventDefault();
+      card.classList.remove("is-drop-target");
+      const source = draggedPageId ?? event.dataTransfer?.getData("text/plain") ?? null;
+      draggedPageId = null;
+      if (!source || source === pageId) return;
+      actions.reorderPage(source, page - 1);
+    });
     card.addEventListener("contextmenu", (event) => {
       event.preventDefault();
-      const locked = total <= 1;
       showPopoverAt(event.clientX, event.clientY, [
         {
           label: t("page.goTo", { page }),
@@ -271,10 +314,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
             void textDialog(
               t("page.rename"),
               t("page.titleFallback", { page }),
-              pageDisplayName(project, page) ?? "",
+              pageDisplayName(project, pageId) ?? "",
               t("page.name"),
             ).then((value) => {
-              if (value !== null) store.renamePage(page, value);
+              if (value !== null) store.renamePage(pageId, value);
             });
           },
         },
@@ -291,20 +334,52 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         {
           label: t("page.setLocation"),
           icon: "target",
-          action: () => pageLocationDialog(project, page),
+          action: () => pageLocationDialog(project, pageId, page),
         },
+        ...(sourceDocument?.kind === "pdf"
+          ? [
+              {
+                label: t("page.replaceSource"),
+                icon: "folder",
+                action: () => actions.replaceSource(record.documentId),
+              },
+            ]
+          : []),
+        ...(sourceDocument?.superseded
+          ? [
+              {
+                label: t("page.cleanupSuperseded"),
+                icon: "trash",
+                danger: true,
+                action: () => actions.cleanupSuperseded(record.documentId),
+              },
+            ]
+          : []),
+        ...(sheetDocument
+          ? []
+          : [
+              {
+                label: t("page.insertBefore"),
+                icon: "plus",
+                action: () => actions.insertPage(pageId, page - 1),
+              },
+              {
+                label: t("page.insertAfter"),
+                icon: "plus",
+                action: () => actions.insertPage(pageId, page),
+              },
+            ]),
         {
           label: t("page.duplicate"),
           icon: "copy",
-          action: () => actions.duplicatePage(page),
+          action: () => actions.duplicatePage(pageId),
         },
         { separator: true },
         {
           label: t("page.delete"),
           icon: "trash",
           danger: true,
-          disabled: locked,
-          action: () => actions.deletePage(page),
+          action: () => actions.deletePage(pageId),
         },
       ]);
     });

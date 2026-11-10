@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   itemBounds,
   itemCenter,
@@ -9,13 +10,13 @@ import {
 } from "../src/model/geometry";
 import { hitTest } from "../src/model/hitTest";
 import { textItemLayout, clampTextSize } from "../src/model/text";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem } from "../src/model/types";
 
 function textItem(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
     id: "item_text",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "text",
     points: [{ x: 100, y: 100 }],
     color: "#f2a93b",
@@ -57,7 +58,7 @@ describe("text layout and rotated item geometry", () => {
 
   it("hit-tests the rotated text area rather than its unrotated box", () => {
     const item = textItem({ rotation: 90 });
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     project.layers[0].items.push(item);
 
     const local = itemLocalBounds(item);
@@ -67,13 +68,13 @@ describe("text layout and rotated item geometry", () => {
       y: center.y,
     };
     const inside = itemLocalToPage(item, insideLocal);
-    expect(hitTest(project, 1, inside, 1)).not.toBeNull();
+    expect(hitTest(project, pageIdFor(1), inside, 1)).not.toBeNull();
 
     const outsideLocal = {
       x: local.max.x + 5,
       y: center.y,
     };
     const outside = itemLocalToPage(item, outsideLocal);
-    expect(hitTest(project, 1, outside, 1)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), outside, 1)).toBeNull();
   });
 });

@@ -1,16 +1,12 @@
-import {
-  documentIndexForPage,
-  documentPageMaps,
-  pageDisplayName,
-  projectDocumentForPage,
-  totalPageCount,
-} from "../model/documents";
+import { pageDisplayName, pageNumber, pageRecordById, documentPageOrder } from "../model/pages";
 import { findItem } from "../model/layers";
-import type { MarkupItem, PageSize } from "../model/types";
+import type { MarkupItem, PageId, PageSize } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
+import { openDocument } from "./documentImport";
+import { sheetBytes } from "./sheetFlows";
 import { confirmDialog } from "../ui/dialogs";
 import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { toast } from "../ui/toast";
@@ -31,10 +27,19 @@ export interface PageFlowHost {
   destroyRenderer(): Promise<void>;
 }
 
+/** Keeps the renderer's display-page order in sync with the project page list. */
+export function syncRendererPageOrder(host: PageFlowHost): void {
+  const project = store.project;
+  if (!project) return;
+  host.renderer()?.setPageOrder(documentPageOrder(project));
+  host.thumbnails()?.clear();
+  host.resetPageSizes();
+}
+
 export async function goToPage(host: PageFlowHost, page: number, fit = true): Promise<void> {
   const project = store.project;
   if (!project) return;
-  const target = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(page)));
+  const target = Math.max(1, Math.min(Math.max(1, project.pages.length), Math.round(page)));
   if (target !== store.ui.page) store.setPage(target);
   const size = await host.enqueuePageSize(target);
   if (size && fit) {
@@ -45,13 +50,14 @@ export async function goToPage(host: PageFlowHost, page: number, fit = true): Pr
 
 export async function navigateToItem(
   host: PageFlowHost,
-  page: number,
+  pageId: PageId,
   layerId: string,
   itemId: string,
 ): Promise<void> {
   const project = store.project;
   if (!project) return;
-  const target = Math.max(1, Math.min(totalPageCount(project.documents), Math.round(page)));
+  const target = pageNumber(project, pageId);
+  if (!target) return;
   if (target !== store.ui.page) store.setPage(target);
   await host.enqueuePageSize(target);
   const found = findItem(project, itemId);
@@ -60,58 +66,68 @@ export async function navigateToItem(
   host.invalidate();
 }
 
-export async function duplicatePageFlow(host: PageFlowHost, page: number): Promise<void> {
+export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Promise<void> {
   const project = store.project;
   if (!project) return;
-  const total = totalPageCount(project.documents);
-  const target = Math.max(1, Math.min(total, Math.round(page)));
-  const sourceName = pageDisplayName(project, target);
+  const source = pageRecordById(project, pageId);
+  if (!source) return;
+  const sourcePage = pageNumber(project, pageId);
+  const total = project.pages.length;
+  const sourceName = pageDisplayName(project, pageId);
   const defaultName = sourceName
     ? t("app.pageCopyName", { name: sourceName })
-    : t("app.pageCopyDefault", { page: target });
-  const hasScale = Boolean(project.pages[String(target)]?.calibration);
+    : t("app.pageCopyDefault", { page: sourcePage });
+  const hasScale = Boolean(source.state.calibration);
   const options = await duplicatePageDialog({
-    page: target,
+    page: sourcePage,
     newPage: total + 1,
     defaultName,
     hasScale,
   });
   if (!options) return;
 
-  const sourceDocumentIndex = documentIndexForPage(project.documents, target);
-  const renderer = host.renderer();
-  const sourceProxy = renderer?.documents[sourceDocumentIndex];
-  await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.duplicatePage", { page: target }));
-  const result = store.duplicatePage(target, options);
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.duplicatePage", { page: sourcePage }),
+  );
+  const knownDocuments = new Set(project.documents.map((entry) => entry.id));
+  const result = store.duplicatePage(pageId, options);
   if (!result) {
     toast(t("app.pageDuplicateFailed"), "warning");
     return;
   }
-  if (sourceProxy && renderer) renderer.addDocument(sourceProxy, [result.sourceLocalPage]);
-  host.thumbnails()?.clear();
-  host.resetPageSizes();
-  await host.enqueuePageSize(result.page);
+  // A duplicated template sheet owns a cloned document. Load its proxy so the
+  // renderer document list stays aligned with project.documents.
+  const renderer = host.renderer();
+  for (const document of project.documents) {
+    if (knownDocuments.has(document.id) || document.kind !== "template" || !document.template) {
+      continue;
+    }
+    const bytes = await sheetBytes(document.template);
+    const proxy = await openDocument(bytes, document.name);
+    if (proxy) renderer?.addDocument(proxy, [1]);
+  }
+  syncRendererPageOrder(host);
+  await host.enqueuePageSize(result.pageNumber);
   host.fitPage();
   host.invalidate();
   host.renderAll();
-  toast(t("app.pageDuplicated", { from: target, to: result.page }), "success");
+  toast(t("app.pageDuplicated", { from: sourcePage, to: result.pageNumber }), "success");
 }
 
-export async function deletePageFlow(host: PageFlowHost, page: number): Promise<void> {
+export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promise<void> {
   const project = store.project;
   if (!project) return;
-  const source = projectDocumentForPage(project, page);
-  const total = totalPageCount(project.documents);
-  if (total <= 1) {
-    toast(t("app.lastPage"), "warning");
-    return;
-  }
-  const target = Math.max(1, Math.min(total, Math.round(page)));
-  const pageName = pageDisplayName(project, target);
+  const record = pageRecordById(project, pageId);
+  if (!record) return;
+  const total = project.pages.length;
+  if (total <= 0) return;
+  const target = pageNumber(project, pageId);
+  const document = project.documents.find((entry) => entry.id === record.documentId);
+  const pageName = pageDisplayName(project, pageId);
   const targetLabel = pageName
     ? t("app.deletePageNamed", { name: pageName, page: target })
     : t("app.deletePageNumbered", { page: target });
-  const sourceLabel = source ? t("app.deletePageFromSource", { name: source.name }) : "";
+  const sourceLabel = document ? t("app.deletePageFromSource", { name: document.name }) : "";
   const confirmed = await confirmDialog(
     t("app.deletePageTitle"),
     t("app.deletePageMessage", { target: targetLabel, source: sourceLabel }),
@@ -120,22 +136,17 @@ export async function deletePageFlow(host: PageFlowHost, page: number): Promise<
   );
   if (!confirmed) return;
   await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.deletePage", { page: target }));
-  const renderer = host.renderer();
-  const result = store.deletePage(target);
+  const result = store.deletePage(pageId);
   if (!result) {
     toast(t("app.pageDeleteFailed"), "warning");
     return;
   }
-  if (result.removedDocumentIndex !== null) renderer?.removeDocument(result.removedDocumentIndex);
-  const current = store.project;
-  if (current) renderer?.setPageMaps(documentPageMaps(current.documents));
-  host.thumbnails()?.clear();
-  host.resetPageSizes();
+  syncRendererPageOrder(host);
   await host.enqueuePageSize(store.ui.page);
   host.fitPage();
   host.invalidate();
   host.renderAll();
-  toast(t("app.pageDeleted", { page: target }), "info");
+  toast(t("app.pageDeleted", { page: result.pageNumber }), "info");
 }
 
 export async function resetProject(host: PageFlowHost): Promise<void> {

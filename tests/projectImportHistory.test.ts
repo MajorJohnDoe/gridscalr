@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { Store } from "../src/state/store";
 import type { DocumentRef } from "../src/model/types";
 
@@ -19,11 +20,7 @@ function extraDocument(): DocumentRef {
 
 function makeStore(): Store {
   const store = new Store();
-  store.setProject(
-    createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers()),
-    null,
-    false,
-  );
+  store.setProject(withTestPageIds(createProject(defaultDocument("Plan.pdf", 1))), null, false);
   return store;
 }
 
@@ -43,11 +40,16 @@ describe("project import history", () => {
 
     store.mutate((draft) => {
       draft.documents.push(extraDocument());
-      draft.pages["2"] = { name: "Second" };
+      draft.pages.push({
+        id: "page_2",
+        documentId: "doc_extra",
+        localPage: 1,
+        state: { name: "Second" },
+      });
       const layer = draft.layers.find((entry) => entry.kind === "draw")!;
       layer.items.push({
         id: "item_new",
-        page: 2,
+        pageId: pageIdFor(2),
         kind: "text",
         points: [{ x: 1, y: 1 }],
         color: "#ffffff",
@@ -59,7 +61,7 @@ describe("project import history", () => {
     }, "project");
 
     expect(store.project!.documents).toHaveLength(2);
-    expect(store.project!.pages["2"].name).toBe("Second");
+    expect(store.project!.pages[1].state.name).toBe("Second");
     expect(store.project!.layers.length).toBe(layerCount);
     expect(store.canUndo).toBe(true);
 
@@ -68,7 +70,7 @@ describe("project import history", () => {
 
     store.undo();
     expect(store.project!.documents).toHaveLength(1);
-    expect(store.project!.pages["2"]).toBeUndefined();
+    expect(store.project!.pages[1]).toBeUndefined();
     expect(
       store.project!.layers.flatMap((layer) => layer.items).some((item) => item.id === "item_new"),
     ).toBe(false);
@@ -76,7 +78,7 @@ describe("project import history", () => {
 
     store.redo();
     expect(store.project!.documents).toHaveLength(2);
-    expect(store.project!.pages["2"].name).toBe("Second");
+    expect(store.project!.pages[1].state.name).toBe("Second");
     expect(
       store.project!.layers.flatMap((layer) => layer.items).some((item) => item.id === "item_new"),
     ).toBe(true);
@@ -87,6 +89,10 @@ describe("project import history", () => {
     store.mutate((draft) => {
       draft.documents.push(extraDocument());
       draft.documents.push({ ...extraDocument(), id: "doc_third" });
+      draft.pages.push(
+        { id: "page_2", documentId: "doc_extra", localPage: 1, state: {} },
+        { id: "page_3", documentId: "doc_third", localPage: 1, state: {} },
+      );
     }, "project");
     store.setPage(3);
     expect(store.ui.page).toBe(3);

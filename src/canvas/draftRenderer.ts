@@ -27,7 +27,15 @@ import { measureLabelText } from "../model/labelFont";
 import { previewLabelLayout, type LabelLayout } from "../model/labelLayout";
 import { measurementLayerColor } from "../model/layers";
 import { TEXT_FONT_STACK } from "../model/text";
-import type { AreaShape, ArrowHeads, MarkupItem, PageSize, Point, Project } from "../model/types";
+import type {
+  AreaShape,
+  ArrowHeads,
+  MarkupItem,
+  PageId,
+  PageSize,
+  Point,
+  Project,
+} from "../model/types";
 import {
   formatArea,
   formatLength,
@@ -106,6 +114,7 @@ export interface DraftScene {
   draft: Draft;
   project: Project;
   viewPage: number;
+  viewPageId: PageId | null;
   zoom: number;
   pageSize: PageSize | undefined;
   toScreen: (point: Point) => Point;
@@ -171,10 +180,10 @@ export function drawDraft(ctx: CanvasRenderingContext2D, scene: DraftScene): voi
   const draft = scene.draft;
   const zoom = scene.zoom;
   const project = scene.project;
-  const scale = pageScale(project, scene.viewPage);
+  const scale = pageScale(project, scene.viewPageId);
   const unit = project.settings.lengthUnit;
   const areaUnit = project.settings.areaUnit;
-  const measureColor = measurementLayerColor(project, scene.viewPage);
+  const measureColor = scene.viewPageId ? measurementLayerColor(project, scene.viewPageId) : "";
   const colors = draftColors(draft, {
     measureColor,
     calibrationColor: CALIBRATION_COLOR,

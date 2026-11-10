@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { clearClipboard, copyItems, duplicateItems, pasteItems } from "../src/model/clipboard";
 import {
   addItem,
   addLayer,
-  createDefaultLayers,
   createProject,
   defaultDocument,
   findItem,
@@ -16,14 +16,14 @@ import { resolveSelection, selectionKind, uniqueSelectionRefs } from "../src/mod
 import type { MarkupItem } from "../src/model/types";
 
 function makeProject() {
-  return createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
 }
 
 function makeItem(id: string, page = 1, kind: MarkupItem["kind"] = "length"): MarkupItem {
   const now = "2026-01-01T00:00:00.000Z";
   return {
     id,
-    page,
+    pageId: pageIdFor(page),
     kind,
     points: [
       { x: 10, y: 10 },
@@ -135,11 +135,11 @@ describe("internal clipboard", () => {
     addItem(project, measure.id, makeItem("item_a"));
     const source = findItem(project, "item_a")!;
     expect(copyItems(project, [{ layerId: measure.id, itemId: "item_a" }])).toBe(1);
-    const refs = pasteItems(project, 2);
+    const refs = pasteItems(project, pageIdFor(2));
     expect(refs).toHaveLength(1);
     const pasted = findItem(project, refs[0].itemId)!;
     expect(pasted.item.id).not.toBe(source.item.id);
-    expect(pasted.item.page).toBe(2);
+    expect(pasted.item.pageId).toBe(pageIdFor(2));
     expect(pasted.item.points).toEqual(source.item.points);
     expect(pasted.layer.id).toBe(measure.id);
   });
@@ -149,7 +149,7 @@ describe("internal clipboard", () => {
     const measure = layersForKind(project, "measure")[0];
     addItem(project, measure.id, makeItem("item_a"));
     copyItems(project, [{ layerId: measure.id, itemId: "item_a" }]);
-    const refs = pasteItems(project, 1);
+    const refs = pasteItems(project, pageIdFor(1));
     const pasted = findItem(project, refs[0].itemId)!;
     expect(pasted.item.points[0]).toEqual({ x: 22, y: 22 });
   });

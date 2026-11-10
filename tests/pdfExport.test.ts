@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument, PDFArray, PDFRawStream, decodePDFRawStream, degrees } from "pdf-lib";
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
 import { LABEL_PRIMARY_SIZE, LABEL_SECONDARY_SIZE } from "../src/model/label";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const now = "2026-01-01T00:00:00.000Z";
@@ -13,7 +14,7 @@ const now = "2026-01-01T00:00:00.000Z";
 function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
   return {
     id: "item_export",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "text",
     points: [{ x: 20, y: 30 }],
     color: "#f2a93b",
@@ -38,9 +39,9 @@ async function decodePageContent(bytes: Uint8Array): Promise<string> {
 }
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Export.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Export.pdf", 2)));
   project.name = "Export test";
-  project.pages["1"] = {
+  project.pages[0].state = {
     calibration: createCalibration({ x: 10, y: 10 }, { x: 110, y: 10 }, 10, "m"),
   };
   const draw = project.layers.find((layer) => layer.kind === "draw")!;
@@ -253,7 +254,7 @@ describe("flattened PDF export", () => {
 
   it("exports only pages still included in the project", async () => {
     const project = makeProject();
-    project.documents[0].excludedPages = [2];
+    project.pages.splice(1, 1);
     const bytes = await exportProjectPdf(project, await makeRenderer());
     const doc = await PDFDocument.load(bytes);
     expect(doc.getPageCount()).toBe(1);
@@ -748,12 +749,16 @@ describe("flattened PDF export", () => {
     const firstBytes = await first.save();
     const secondBytes = await second.save();
 
-    const project = createProject(defaultDocument("First.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("First.pdf", 1)));
     project.documents.push({
       ...defaultDocument("Second.pdf", 2),
       id: "doc_second",
       kind: "pdf",
     });
+    project.pages.push(
+      { id: "page_2", documentId: "doc_second", localPage: 1, state: {} },
+      { id: "page_3", documentId: "doc_second", localPage: 2, state: {} },
+    );
 
     const sizes = [
       { width: 100, height: 100 },

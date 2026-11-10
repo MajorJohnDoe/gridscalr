@@ -8,6 +8,7 @@ import {
   parsePageRange,
 } from "../src/model/export";
 import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { setLayerVisibleOnPage } from "../src/model/layers";
 
 describe("drawing export model", () => {
@@ -75,9 +76,8 @@ describe("drawing export model", () => {
   });
 
   it("defaults exports to the current page and all visible layers", () => {
-    const project = createProject(
-      { ...defaultDocument("Export.pdf", 3), pageCount: 3 },
-      createDefaultLayers(),
+    const project = withTestPageIds(
+      createProject({ ...defaultDocument("Export.pdf", 3), pageCount: 3 }, createDefaultLayers()),
     );
     project.layers[0].visible = false;
     const options = defaultDrawingExportOptions(project, 99);
@@ -95,10 +95,10 @@ describe("drawing export model", () => {
 
 describe("page-scoped export defaults", () => {
   it("selects a layer when it is visible on at least one page", () => {
-    const project = createProject(defaultDocument("Export.pdf", 2), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Export.pdf", 2)));
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.visible = false;
-    setLayerVisibleOnPage(draw, 2, true);
+    setLayerVisibleOnPage(draw, pageIdFor(2), true);
     const options = defaultDrawingExportOptions(project, 1);
     expect(options.layerIds).toContain(draw.id);
   });

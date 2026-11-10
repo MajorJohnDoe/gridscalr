@@ -1,4 +1,4 @@
-import { totalPageCount } from "./documents";
+import { pageIdAt } from "./pages";
 import { layerVisibleOnPage } from "./layers";
 import type { PageSize, Project } from "./types";
 import { t } from "../i18n";
@@ -40,13 +40,18 @@ export function defaultDrawingExportOptions(
   project: Project,
   currentPage: number,
 ): DrawingExportOptions {
-  const pageCount = totalPageCount(project.documents);
-  const page = Math.max(1, Math.min(pageCount, Math.round(currentPage)));
+  const pageCount = project.pages.length;
+  const page = Math.max(1, Math.min(Math.max(1, pageCount), Math.round(currentPage)));
   const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
   return {
-    pages: [page],
+    pages: pageCount ? [page] : [],
     layerIds: project.layers
-      .filter((layer) => pages.some((candidate) => layerVisibleOnPage(layer, candidate)))
+      .filter((layer) =>
+        pages.some((candidate) => {
+          const pageId = pageIdAt(project, candidate);
+          return pageId ? layerVisibleOnPage(layer, pageId) : false;
+        }),
+      )
       .map((layer) => layer.id),
     includeLabels: true,
     includeCalibration: true,

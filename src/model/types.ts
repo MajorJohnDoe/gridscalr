@@ -1,4 +1,7 @@
-export const SCHEMA_VERSION = 23 as const;
+export const SCHEMA_VERSION = 24 as const;
+
+/** Stable page identity. Display page numbers are derived from the page order. */
+export type PageId = string;
 
 export type LengthUnit = "mm" | "cm" | "m" | "in" | "ft" | "yd";
 export type AreaUnit = "mm2" | "cm2" | "m2" | "in2" | "ft2" | "yd2";
@@ -144,7 +147,8 @@ export interface TextRun {
 
 export interface MarkupItem {
   id: string;
-  page: number;
+  /** Stable project page. Never a display page number. */
+  pageId: PageId;
   kind: ItemKind;
   points: Point[];
   color: string;
@@ -261,10 +265,10 @@ export interface Layer {
   opacity: number;
   color: string;
   items: MarkupItem[];
-  /** Page-specific visibility and lock overrides. */
-  pageState?: Record<string, LayerPageState>;
+  /** Page-specific visibility and lock overrides, keyed by stable page ID. */
+  pageState?: Record<PageId, LayerPageState>;
   /** The page where the layer was created. Keeps empty layers discoverable. */
-  homePage?: number;
+  homePageId?: PageId;
 }
 
 export interface OcrWord {
@@ -403,8 +407,17 @@ export interface DocumentRef {
   source?: DocumentSourceInfo;
   /** Only for kind "template". */
   template?: SheetTemplateRef;
-  /** Set when this reference is a duplicated page of another document entry. */
+  /**
+   * Provenance for a duplicated page: the source document and its source-local
+   * page number. This is not a project page reference.
+   */
   copiedFrom?: { documentId: string; page: number };
+  /**
+   * True when every project page was moved to a replacement source document.
+   * The reference is kept so unmatched pages can still render until an
+   * explicit cleanup removes them.
+   */
+  superseded?: boolean;
 }
 
 export interface ProjectSettings {
@@ -462,11 +475,23 @@ export interface ProjectMetadata {
   reportTitle: string;
 }
 
+/**
+ * One page in the project order. The same source page may appear more than once
+ * (duplicate/insert); identity is `id`, order is the array position.
+ */
+export interface PageRecord {
+  id: PageId;
+  documentId: string;
+  /** 1-based page inside the source document. */
+  localPage: number;
+  state: PageState;
+}
+
 export interface Project {
   schemaVersion: typeof SCHEMA_VERSION;
   id: string;
   name: string;
-  /** Source documents in page order. New documents append; pages can be deleted explicitly. */
+  /** Source documents referenced by page records. */
   documents: DocumentRef[];
   settings: ProjectSettings;
   /** Ordered category list. At least one category always exists. */
@@ -479,7 +504,8 @@ export interface Project {
   lineTypes: LineType[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
-  pages: Record<string, PageState>;
+  /** Canonical page order. Array position is the display page number. */
+  pages: PageRecord[];
   /** Saved Markups table configurations. Order is display order. */
   markupsViews: MarkupsView[];
   /** Optional procurement metadata shown on reports. */

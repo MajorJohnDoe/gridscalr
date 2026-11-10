@@ -1,6 +1,6 @@
 import { el } from "./dom";
 import { showModal } from "./dialogs";
-import type { DuplicatePageOptions } from "../model/documents";
+import type { DuplicatePageOptions } from "../features/pageModel";
 import { t } from "../i18n";
 
 interface DuplicatePageDialogInput {

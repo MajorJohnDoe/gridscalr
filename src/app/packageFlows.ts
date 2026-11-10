@@ -1,4 +1,4 @@
-import { totalPageCount } from "../model/documents";
+import { pageIdAt } from "../model/pages";
 import type { Project } from "../model/types";
 import { parseProject } from "../io/projectFile";
 import { readFileText } from "../io/platform";
@@ -45,9 +45,14 @@ async function createPackageDrawingPdf(
 ): Promise<Uint8Array | null> {
   const renderer = host.renderer();
   if (!renderer) throw new Error(t("app.sourcePdfMissing"));
-  const pages = Array.from({ length: totalPageCount(project.documents) }, (_, index) => index + 1);
+  const pages = Array.from({ length: project.pages.length }, (_, index) => index + 1);
   const layerIds = project.layers
-    .filter((layer) => pages.some((page) => layerVisibleOnPage(layer, page)))
+    .filter((layer) =>
+      pages.some((page) => {
+        const pageId = pageIdAt(project, page);
+        return pageId ? layerVisibleOnPage(layer, pageId) : false;
+      }),
+    )
     .map((layer) => layer.id);
   const { exportProjectPdf } = await import("../pdf/pdfExport");
   return exportProjectPdf(project, renderer, {

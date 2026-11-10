@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor } from "./helpers/pages";
 import {
   areaCentroid,
   areaOutline,
@@ -19,7 +20,7 @@ const RECT: Point[] = [
 function areaItem(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
     id: "area",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "area",
     points: RECT,
     color: "#4cc9f0",

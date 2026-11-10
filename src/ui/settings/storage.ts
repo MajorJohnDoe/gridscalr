@@ -23,7 +23,7 @@ function buildSection(): HTMLElement {
   const assets = Object.values(project.assets ?? {});
   const imageBytes = assets.reduce((sum, asset) => sum + bytes(asset.data ?? ""), 0);
   const ocrBytes = Object.values(project.pages).reduce(
-    (sum, page) => sum + (page.ocr ? bytes(JSON.stringify(page.ocr)) : 0),
+    (sum, page) => sum + (page.state.ocr ? bytes(JSON.stringify(page.state.ocr)) : 0),
     0,
   );
   const items = project.layers.reduce((sum, layer) => sum + layer.items.length, 0);

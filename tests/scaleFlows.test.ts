@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 vi.mock("../src/ui/dialogs", () => ({
   confirmDialog: vi.fn(),
@@ -12,7 +13,7 @@ vi.mock("../src/features/schematics/model/fitDrawing", () => ({
 }));
 
 import { createManualCalibration, setPageCalibration } from "../src/model/calibration";
-import { createProject, createDefaultLayers, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import {
   clearCalibrationFlow,
   fitDrawingToArea,
@@ -24,12 +25,11 @@ import { store } from "../src/state/store";
 import { manualScaleDialog } from "../src/ui/dialogs";
 
 function makeProject(calibrated = false) {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   if (calibrated) {
-    setPageCalibration(project, 1, createManualCalibration(100), {
+    setPageCalibration(project, pageIdFor(1), createManualCalibration(100), {
       applyToAll: false,
       updateMeasurements: false,
-      pageCount: 1,
     });
   }
   store.project = project;
@@ -52,13 +52,13 @@ describe("scale flows", () => {
   it("locks a calibrated page", () => {
     const project = makeProject(true);
     setScaleLock(true);
-    expect(project.pages["1"]?.scaleLocked).toBe(true);
+    expect(project.pages[0].state.scaleLocked).toBe(true);
   });
 
   it("does nothing when there is no calibration to lock", () => {
     const project = makeProject();
     setScaleLock(true);
-    expect(project.pages["1"]?.scaleLocked).toBeUndefined();
+    expect(project.pages[0].state.scaleLocked).toBeUndefined();
   });
 
   it("returns from manual scale when the dialog is cancelled", async () => {
@@ -78,6 +78,6 @@ describe("scale flows", () => {
   it("returns early when the page has no calibration to clear", async () => {
     makeProject();
     await clearCalibrationFlow();
-    expect(store.project?.pages["1"]?.calibration).toBeUndefined();
+    expect(store.project?.pages[0].state.calibration).toBeUndefined();
   });
 });

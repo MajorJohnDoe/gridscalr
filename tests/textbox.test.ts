@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 import { wrapText } from "../src/model/text";
@@ -27,12 +28,12 @@ describe("text box wrapping", () => {
 
 describe("text box persistence", () => {
   it("round-trips text box fields and geometry", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1));
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const layer = project.layers.find((entry) => entry.kind === "draw")!;
     const now = "2026-11-04T00:00:00.000Z";
     const item: MarkupItem = {
       id: "item_textbox",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [
         { x: 10, y: 10 },
@@ -71,12 +72,12 @@ describe("text box persistence", () => {
   });
 
   it("drops a text box without two corners", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1));
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const layer = project.layers.find((entry) => entry.kind === "draw")!;
     const now = "2026-11-04T00:00:00.000Z";
     layer.items.push({
       id: "item_broken",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [{ x: 10, y: 10 }],
       color: "#1a2024",

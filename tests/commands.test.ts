@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import {
   deleteItems,
   setItemsColor,
@@ -16,7 +17,7 @@ import type { MarkupItem, Project, SelectionRef } from "../src/model/types";
 function makeItem(id: string, kind: MarkupItem["kind"], page = 1): MarkupItem {
   return {
     id,
-    page,
+    pageId: pageIdFor(page),
     kind,
     points: [
       { x: 10, y: 10 },
@@ -36,7 +37,7 @@ function setup(): {
   drawItem: MarkupItem;
   measureItem: MarkupItem;
 } {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   const draw = project.layers.find((layer) => layer.kind === "draw")!;
   const measure = project.layers.find((layer) => layer.kind === "measure")!;
   const drawItem = makeItem("draw_item", "text");

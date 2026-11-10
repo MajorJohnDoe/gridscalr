@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { itemSelectionBounds, symbolSelectionBounds } from "../src/model/geometry";
 import { hitTest } from "../src/model/hitTest";
@@ -10,7 +11,7 @@ const now = "2026-11-05T00:00:00.000Z";
 function item(overrides: Partial<MarkupItem>): MarkupItem {
   return {
     id: "item",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "line",
     points: [
       { x: 0, y: 0 },
@@ -25,7 +26,7 @@ function item(overrides: Partial<MarkupItem>): MarkupItem {
 }
 
 function withItems(items: MarkupItem[]): { project: Project; layerId: string } {
-  const project = createProject(defaultDocument("Plan.pdf", 1));
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   const draw = project.layers.find((layer) => layer.kind === "draw")!;
   draw.items.push(...items);
   return { project, layerId: draw.id };
@@ -92,8 +93,8 @@ describe("selection scaling", () => {
       symbolSize: 40,
     });
     const { project } = withItems([symbol]);
-    expect(hitTest(project, 1, { x: 100, y: 87.5 }, 2)).toBeNull();
-    expect(hitTest(project, 1, { x: 100, y: 85 }, 2)?.item.id).toBe("symbol");
+    expect(hitTest(project, pageIdFor(1), { x: 100, y: 87.5 }, 2)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 100, y: 85 }, 2)?.item.id).toBe("symbol");
   });
 
   it("returns the union of the visible selection bounds", () => {

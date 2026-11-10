@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   addItem,
   addLayer,
-  createDefaultLayers,
   createProject,
   defaultDocument,
   layersForKind,
@@ -10,12 +9,13 @@ import {
 } from "../src/model/layers";
 import { calculateQuantities, calculateQuantitiesByPage } from "../src/model/quantity";
 import type { MarkupItem, Project } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 const SCALE = { pointsPerMeter: 100, sourceUnit: "m" as const };
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.settings.lengthUnit = "m";
   return project;
 }
@@ -32,12 +32,13 @@ function measureLayer(project: Project) {
 
 function add(
   project: Project,
-  item: Partial<MarkupItem> & Pick<MarkupItem, "kind">,
+  item: Partial<MarkupItem> & Pick<MarkupItem, "kind"> & { page?: number },
   layerId = measureLayer(project).id,
 ): MarkupItem {
+  const { page = 1, ...rest } = item;
   const created: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(page),
     points: [
       { x: 10, y: 10 },
       { x: 110, y: 10 },
@@ -49,7 +50,7 @@ function add(
     scale: { ...SCALE },
     createdAt: NOW,
     updatedAt: NOW,
-    ...item,
+    ...rest,
   };
   addItem(project, layerId, created);
   return created;
@@ -57,7 +58,7 @@ function add(
 
 function lengthItem(
   project: Project,
-  extra: Partial<MarkupItem> = {},
+  extra: Partial<MarkupItem> & { page?: number } = {},
   layerId?: string,
 ): MarkupItem {
   return add(
@@ -74,13 +75,17 @@ function lengthItem(
   );
 }
 
-function areaItem(project: Project, extra: Partial<MarkupItem> = {}, layerId?: string): MarkupItem {
+function areaItem(
+  project: Project,
+  extra: Partial<MarkupItem> & { page?: number } = {},
+  layerId?: string,
+): MarkupItem {
   return add(project, { kind: "area", ...extra }, layerId);
 }
 
 function countItem(
   project: Project,
-  extra: Partial<MarkupItem> = {},
+  extra: Partial<MarkupItem> & { page?: number } = {},
   layerId?: string,
 ): MarkupItem {
   return add(
@@ -246,7 +251,7 @@ describe("quantity rows", () => {
     const project = makeProject();
     const floor = categoryId(project, "Floor");
     const layer = measureLayer(project);
-    setLayerVisibleOnPage(layer, 1, false);
+    setLayerVisibleOnPage(layer, pageIdFor(1), false);
     lengthItem(project, { categoryId: floor, room: "A", page: 1 }, layer.id);
     lengthItem(project, { categoryId: floor, room: "A", page: 2 }, layer.id);
 
@@ -273,8 +278,8 @@ describe("quantity rows", () => {
     lengthItem(project, { categoryId: wall, room: "Room A", page: 2 }, first.id);
     const before = JSON.stringify(project);
 
-    expect(calculateQuantities(project, { page: 1 }).rows).toHaveLength(2);
-    expect(calculateQuantities(project, { page: 2 }).rows[0].categoryName).toBe("Wall");
+    expect(calculateQuantities(project, { page: pageIdFor(1) }).rows).toHaveLength(2);
+    expect(calculateQuantities(project, { page: pageIdFor(2) }).rows[0].categoryName).toBe("Wall");
     expect(calculateQuantities(project, { page: "all", categoryId: floor }).rows).toHaveLength(2);
     expect(calculateQuantities(project, { page: "all", layerIds: [second.id] }).rows).toHaveLength(
       1,
@@ -464,7 +469,7 @@ describe("quantity rows by page", () => {
 
   it("uses page names and location labels in the page sections", () => {
     const project = makeProject();
-    project.pages["2"] = { name: "Mezzanine", building: "House A", floor: "Level 2" };
+    project.pages[1].state = { name: "Mezzanine", building: "House A", floor: "Level 2" };
     const floor = categoryId(project, "Floor");
     lengthItem(project, { categoryId: floor, room: "A", page: 2 });
 

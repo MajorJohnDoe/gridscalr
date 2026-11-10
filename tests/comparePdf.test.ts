@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
+import { withTestPageIds } from "./helpers/pages";
 import { PDFDocument } from "pdf-lib";
 import { compareRevisions } from "../src/compare/revisionDiff";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { exportComparisonPdf } from "../src/pdf/comparePdf";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 
 function project(pages: number) {
-  const value = createProject(defaultDocument("Plan.pdf", pages), createDefaultLayers());
+  const value = withTestPageIds(createProject(defaultDocument("Plan.pdf", pages)));
   value.name = "Current takeoff";
   return value;
 }

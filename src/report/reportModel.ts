@@ -1,6 +1,5 @@
 import { calculateQuantities, type QuantityFilters, type QuantitySummary } from "../model/quantity";
 import { formatScale } from "../model/units";
-import { totalPageCount } from "../model/documents";
 import type { ImageAsset, Project, ProjectMetadata } from "../model/types";
 import { t } from "../i18n";
 
@@ -58,10 +57,13 @@ export function buildQuantityReport(
 }
 
 function describeScale(project: Project): string {
-  const calibrated = Object.entries(project.pages)
-    .map(([page, state]) => ({ page: Number(page), calibration: state.calibration }))
-    .filter((entry) => entry.calibration)
-    .sort((a, b) => a.page - b.page);
+  const calibrated = project.pages
+    .map((record, index) => ({
+      page: index + 1,
+      pageId: record.id,
+      calibration: record.state.calibration,
+    }))
+    .filter((entry) => entry.calibration);
   if (!calibrated.length) return t("report.noCalibration");
   const unique = new Set(
     calibrated.map((entry) => {
@@ -77,7 +79,7 @@ function describeScale(project: Project): string {
   const calibration = calibrated[0].calibration;
   if (!calibration) return t("report.noCalibration");
   const pages =
-    calibrated.length === totalPageCount(project.documents)
+    calibrated.length === project.pages.length
       ? t("report.allPages")
       : t("report.pagesCalibrated", {
           count: calibrated.length,

@@ -13,7 +13,8 @@ import { pickProject } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { parseProject } from "../io/projectFile";
 import { sameFilePath } from "../io/writeGuard";
-import { includedLocalPages, totalPageCount } from "../model/documents";
+import { includedLocalPages } from "../model/documents";
+import { documentPageOrder, pageNumber } from "../model/pages";
 import type { PageSize, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -88,7 +89,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
     selection = await projectImportDialog({
       sourceName: source.name,
       fileName: picked.name,
-      destinationPage: totalPageCount(destination.documents) + 1,
+      destinationPage: destination.pages.length + 1,
       groups: dialogGroups,
       requestThumbnail: (page) => loader.preview(page),
       locateDocument: (documentId) => loader.locate(documentId),
@@ -173,6 +174,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
       importWarnings = commitProjectImport(project, prepared).warnings;
     }, "project");
     host.addImportedDocuments(entries);
+    renderer.setPageOrder(documentPageOrder(store.project ?? destination));
   } catch (error) {
     loader.dispose(new Set(entries.map((entry) => entry.proxy)));
     logEvent("error", `import project commit failed: ${errorMessage(error)}`);
@@ -181,7 +183,9 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
   }
 
   loader.dispose(new Set(entries.map((entry) => entry.proxy)));
-  const firstPage = prepared.pageMap[0]?.newPage ?? store.ui.page;
+  const firstPage = prepared.pageMap[0]?.newPageId
+    ? pageNumber(store.project ?? destination, prepared.pageMap[0].newPageId)
+    : store.ui.page;
   store.setPage(firstPage);
   host.closeSearch();
   host.resetPageSizes();

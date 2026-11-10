@@ -4,6 +4,7 @@ import type {
   ItemKind,
   Layer,
   MarkupItem,
+  PageId,
   Point,
 } from "../../model/types";
 import type { LabelHit } from "../editors";
@@ -66,6 +67,7 @@ export interface PointerHost {
   touchNavigationBlocked(): boolean;
   activeTool(): ToolId;
   viewPage(): number;
+  viewPageId(): PageId | null;
   toPage(screen: Point): Point;
   calibrationLabelHit(screen: Point): boolean;
   editCalibration(): Promise<void> | void;

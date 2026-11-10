@@ -9,6 +9,7 @@ import type {
   Layer,
   LineType,
   MarkupItem,
+  PageId,
   PageState,
   Project,
 } from "../../model/types";
@@ -28,7 +29,7 @@ export interface MergedAssets {
 
 export function collectReferences(
   source: Project,
-  selected: ReadonlySet<number>,
+  selected: ReadonlySet<PageId>,
 ): {
   categories: Set<string>;
   countTypes: Set<string>;
@@ -41,7 +42,7 @@ export function collectReferences(
   const assets = new Set<string>();
   for (const layer of source.layers) {
     for (const item of layer.items) {
-      if (!selected.has(item.page)) continue;
+      if (!selected.has(item.pageId)) continue;
       if (item.categoryId) categories.add(item.categoryId);
       if (item.countType) countTypes.add(item.countType);
       if (item.lineTypeId) lineTypes.add(item.lineTypeId);
@@ -318,12 +319,13 @@ export function clonePageState(
   return Object.keys(copy).length ? copy : undefined;
 }
 
-export function createImportedLayer(
-  sourceLayer: Layer,
-  sourcePage: number,
-  newPage: number,
-): Layer {
-  const layer: Layer = {
+/**
+ * One destination layer per source layer identity. The same instance is reused
+ * for every imported page; it is never re-created per page and never matched by
+ * display name.
+ */
+export function createImportedLayer(sourceLayer: Layer, homePageId: PageId): Layer {
+  return {
     id: makeId("layer"),
     name: sourceLayer.name,
     kind: sourceLayer.kind,
@@ -332,25 +334,35 @@ export function createImportedLayer(
     opacity: sourceLayer.opacity,
     color: sourceLayer.color,
     items: [],
-    homePage: newPage,
+    homePageId,
   };
-  const override = sourceLayer.pageState?.[String(sourcePage)];
-  if (override) {
-    const pageState: { visible?: boolean; locked?: boolean } = {};
-    if (override.visible !== undefined && override.visible !== layer.visible) {
-      pageState.visible = override.visible;
-    }
-    if (override.locked !== undefined && override.locked !== layer.locked) {
-      pageState.locked = override.locked;
-    }
-    if (Object.keys(pageState).length) layer.pageState = { [String(newPage)]: pageState };
+}
+
+/** Copies one page-scoped visibility/lock override onto the shared layer. */
+export function applyImportedLayerPageState(
+  layer: Layer,
+  sourceLayer: Layer,
+  sourcePageId: PageId,
+  newPageId: PageId,
+): void {
+  const override = sourceLayer.pageState?.[sourcePageId];
+  if (!override) return;
+  const pageState: { visible?: boolean; locked?: boolean } = {};
+  if (override.visible !== undefined && override.visible !== layer.visible) {
+    pageState.visible = override.visible;
   }
-  return layer;
+  if (override.locked !== undefined && override.locked !== layer.locked) {
+    pageState.locked = override.locked;
+  }
+  if (Object.keys(pageState).length) {
+    layer.pageState ??= {};
+    layer.pageState[newPageId] = pageState;
+  }
 }
 
 export function cloneImportedItem(
   item: MarkupItem,
-  page: number,
+  pageId: PageId,
   categoryMap: ReadonlyMap<string, string>,
   countTypeMap: ReadonlyMap<string, string>,
   lineTypeMap: ReadonlyMap<string, string>,
@@ -359,7 +371,7 @@ export function cloneImportedItem(
 ): MarkupItem | null {
   const copy = structuredClone(item);
   copy.id = makeId("item");
-  copy.page = page;
+  copy.pageId = pageId;
   if (copy.categoryId) {
     copy.categoryId = categoryMap.get(copy.categoryId) ?? fallbackCategoryId;
   }

@@ -7,7 +7,7 @@ import {
   labelFitLabel,
 } from "../../model/labelLayout";
 import { findItem } from "../../model/layers";
-import type { LabelFitPosition, MarkupItem, Point } from "../../model/types";
+import type { LabelFitPosition, MarkupItem, PageId, Point } from "../../model/types";
 import { store } from "../../state/store";
 import { showPopoverAt } from "../../ui/popover";
 import { t } from "../../i18n";
@@ -19,6 +19,7 @@ export interface ContextMenuContext {
   localFromClient(clientX: number, clientY: number): Point;
   toPage(screen: Point): Point;
   viewPage(): number;
+  viewPageId(): PageId | null;
   viewZoom(): number;
   measurementLabelHit(screen: Point): LabelHit | null;
   isLocked(item: MarkupItem, layer: { id: string }): boolean;
@@ -46,7 +47,7 @@ export function openContextMenu(
     return;
   }
   const page = context.toPage(screen);
-  const hit = hitTest(project, context.viewPage(), page, 7 / context.viewZoom(), {
+  const hit = hitTest(project, context.viewPageId() ?? "", page, 7 / context.viewZoom(), {
     includeLocked: true,
   });
   if (hit) {
@@ -167,7 +168,7 @@ export function commitLabelConnection(
   if (
     !found ||
     context.isLocked(found.item, found.layer) ||
-    found.item.page !== context.viewPage()
+    found.item.pageId !== context.viewPageId()
   ) {
     context.updateCursor();
     return;

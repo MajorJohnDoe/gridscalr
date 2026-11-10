@@ -2,6 +2,7 @@ import { t } from "../i18n";
 import { applyMeasurementBulkEdit } from "../model/bulkEdit";
 import type { MeasurementBulkPatch, MeasurementBulkResult } from "../model/bulkEdit";
 import { copyItems, duplicateItems, hasClipboard, pasteItems } from "../model/clipboard";
+import { pageIdAt } from "../model/pages";
 import {
   deleteItems,
   emptyItemCommandResult,
@@ -59,7 +60,8 @@ export function pasteSelection(): void {
   }
   let refs: SelectionRef[] = [];
   store.mutate((project) => {
-    refs = pasteItems(project, store.ui.page);
+    const pageId = pageIdAt(project, store.ui.page);
+    refs = pageId ? pasteItems(project, pageId) : [];
   }, "change");
   if (!refs.length) {
     toast(t("app.pasteFailed"), "warning");
@@ -148,7 +150,7 @@ export function setSelectionVisible(visible: boolean): void {
   if (!project || !store.ui.selection.length) return;
   const resolved = resolveSelection(project, store.ui.selection);
   const targetable = visible
-    ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.page))
+    ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId))
     : resolved;
   if (!targetable.length) {
     toast(t("app.layerHiddenShow"), "warning");
@@ -175,7 +177,7 @@ export function setSelectionLocked(locked: boolean): void {
   const resolved = resolveSelection(project, store.ui.selection);
   const targetable = locked
     ? resolved
-    : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
+    : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.pageId));
   if (!targetable.length) {
     toast(t("app.layerLockedUnlock"), "warning");
     return;

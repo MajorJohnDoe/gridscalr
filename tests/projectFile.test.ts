@@ -1,11 +1,12 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   createCalibration,
   createManualCalibration,
   manualPointsPerMeter,
 } from "../src/model/calibration";
 import { findCategory } from "../src/model/categories";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem, Project } from "../src/model/types";
 import {
@@ -24,12 +25,12 @@ import {
 } from "../src/io/projectFile";
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Floor Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Floor Plan.pdf", 2)));
   const measure = project.layers.find((layer) => layer.kind === "measure")!;
   const now = "2026-01-01T00:00:00.000Z";
   const item: MarkupItem = {
     id: "item_a",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "length",
     points: [
       { x: 10, y: 10 },
@@ -43,7 +44,7 @@ function makeProject(): Project {
     updatedAt: now,
   };
   measure.items.push(item);
-  project.pages["1"] = {
+  project.pages[0].state = {
     calibration: createCalibration({ x: 0, y: 0 }, { x: 100, y: 0 }, 5, "m"),
   };
   return project;
@@ -59,7 +60,7 @@ describe("project files", () => {
     expect(parsed.documents[0].name).toBe("Floor Plan.pdf");
     expect(parsed.documents[0].pageCount).toBe(2);
     expect(parsed.layers).toHaveLength(2);
-    expect(parsed.pages["1"].calibration?.pointsPerMeter).toBe(20);
+    expect(parsed.pages[0].state.calibration?.pointsPerMeter).toBe(20);
 
     const measure = parsed.layers.find((layer) => layer.kind === "measure")!;
     expect(measure.items).toHaveLength(1);
@@ -112,7 +113,7 @@ describe("project files", () => {
     measureLayer.items[0].labelSize = 11.5;
     measureLayer.items.push({
       id: "item_area_fit",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "area",
       points: [
         { x: 20, y: 20 },
@@ -202,11 +203,11 @@ describe("project files", () => {
 
   it("round-trips page names, page-scoped layer state and copied page references", () => {
     const project = makeProject();
-    project.pages["1"].name = "Windows";
-    project.pages["2"] = { name: "Details" };
+    project.pages[0].state.name = "Windows";
+    project.pages[1].state = { name: "Details" };
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
-    measure.homePage = 1;
-    measure.pageState = { "2": { visible: false, locked: true } };
+    measure.homePageId = pageIdFor(1);
+    measure.pageState = { [pageIdFor(2)]: { visible: false, locked: true } };
     project.documents.push({
       ...project.documents[0],
       id: "doc_copy",
@@ -215,11 +216,13 @@ describe("project files", () => {
     });
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.pages["1"].name).toBe("Windows");
-    expect(parsed.pages["2"].name).toBe("Details");
+    expect(parsed.pages[0].state.name).toBe("Windows");
+    expect(parsed.pages[1].state.name).toBe("Details");
     const parsedMeasure = parsed.layers.find((layer) => layer.kind === "measure")!;
-    expect(parsedMeasure.homePage).toBe(1);
-    expect(parsedMeasure.pageState).toEqual({ "2": { visible: false, locked: true } });
+    expect(parsedMeasure.homePageId).toBe(pageIdFor(1));
+    expect(parsedMeasure.pageState).toEqual({
+      [pageIdFor(2)]: { visible: false, locked: true },
+    });
     expect(parsed.documents[1].copiedFrom).toEqual({
       documentId: parsed.documents[0].id,
       page: 1,
@@ -228,8 +231,8 @@ describe("project files", () => {
 
   it("round-trips page locations and saved Markups views", () => {
     const project = makeProject();
-    project.pages["1"].building = "Building A";
-    project.pages["1"].floor = "Floor 2";
+    project.pages[0].state.building = "Building A";
+    project.pages[0].state.floor = "Floor 2";
     project.markupsViews = [
       {
         id: "view_vent",
@@ -247,8 +250,8 @@ describe("project files", () => {
     ];
 
     const parsed = parseProject(serializeProject(project));
-    expect(parsed.pages["1"].building).toBe("Building A");
-    expect(parsed.pages["1"].floor).toBe("Floor 2");
+    expect(parsed.pages[0].state.building).toBe("Building A");
+    expect(parsed.pages[0].state.floor).toBe("Floor 2");
     expect(parsed.markupsViews).toHaveLength(1);
     expect(parsed.markupsViews[0]).toMatchObject({
       id: "view_vent",
@@ -264,19 +267,19 @@ describe("project files", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 11;
     delete raw.markupsViews;
-    delete raw.pages["1"].building;
-    delete raw.pages["1"].floor;
+    delete raw.pages[0].state.building;
+    delete raw.pages[0].state.floor;
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.markupsViews).toEqual([]);
-    expect(parsed.pages["1"].building).toBeUndefined();
-    expect(parsed.pages["1"].floor).toBeUndefined();
+    expect(parsed.pages[0].state.building).toBeUndefined();
+    expect(parsed.pages[0].state.floor).toBeUndefined();
   });
 
   it("drops invalid page locations and stale view categories", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
-    raw.pages["1"].building = "   ";
-    raw.pages["1"].floor = 42;
+    raw.pages[0].state.building = "   ";
+    raw.pages[0].state.floor = 42;
     raw.markupsViews = [
       {
         id: "view_a",
@@ -292,8 +295,8 @@ describe("project files", () => {
       },
     ];
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.pages["1"].building).toBeUndefined();
-    expect(parsed.pages["1"].floor).toBeUndefined();
+    expect(parsed.pages[0].state.building).toBeUndefined();
+    expect(parsed.pages[0].state.floor).toBeUndefined();
     expect(parsed.markupsViews[0].categoryId).toBeNull();
   });
 
@@ -304,7 +307,7 @@ describe("project files", () => {
       delete page.name;
     }
     for (const layer of raw.layers as Array<Record<string, unknown>>) {
-      delete layer.homePage;
+      delete layer.homePageId;
       delete layer.pageState;
     }
     for (const document of raw.documents as Array<Record<string, unknown>>) {
@@ -312,22 +315,22 @@ describe("project files", () => {
     }
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.pages["1"].name).toBeUndefined();
+    expect(parsed.pages[0].state.name).toBeUndefined();
     expect(parsed.layers.every((layer) => !layer.pageState)).toBe(true);
-    expect(parsed.layers.find((layer) => layer.kind === "draw")?.homePage).toBe(1);
+    expect(parsed.layers.find((layer) => layer.kind === "draw")?.homePageId).toBe("page_1");
   });
 
   it("drops page names and layer overrides that do not fit the project", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
-    raw.pages["1"].name = "Kept";
+    raw.pages[0].state.name = "Kept";
     raw.pages["9"] = { name: "Outside" };
-    raw.layers[0].homePage = 9;
-    raw.layers[0].pageState = { "9": { visible: false } };
+    raw.layers[0].homePageId = "page_9";
+    raw.layers[0].pageState = { page_9: { visible: false } };
     raw.documents[0].copiedFrom = { documentId: "missing", page: 1 };
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.pages["1"].name).toBe("Kept");
-    expect(parsed.pages["9"]).toBeUndefined();
-    expect(parsed.layers[0].homePage).toBe(1);
+    expect(parsed.pages[0].state.name).toBe("Kept");
+    expect(parsed.pages[8]).toBeUndefined();
+    expect(parsed.layers[0].homePageId).toBe("page_1");
     expect(parsed.layers[0].pageState).toBeUndefined();
     expect(parsed.documents[0].copiedFrom).toBeUndefined();
   });
@@ -366,7 +369,7 @@ describe("project files", () => {
     const draw = raw.layers.find((layer: { kind: string }) => layer.kind === "draw");
     draw.items.push({
       id: "item_label_on_text",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "text",
       points: [{ x: 20, y: 20 }],
       color: "#f2a93b",
@@ -404,7 +407,7 @@ describe("project files", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "item_text",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "text",
       points: [{ x: 20, y: 20 }],
       color: "#f2a93b",
@@ -431,7 +434,7 @@ describe("project files", () => {
     draw.items.push(
       {
         id: "note_styled",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "text",
         points: [{ x: 20, y: 20 }],
         color: "#f2a93b",
@@ -446,7 +449,7 @@ describe("project files", () => {
       },
       {
         id: "callout_styled",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "callout",
         points: [
           { x: 40, y: 40 },
@@ -465,7 +468,7 @@ describe("project files", () => {
       },
       {
         id: "cloud_styled",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "cloud",
         points: [
           { x: 0, y: 0 },
@@ -510,7 +513,7 @@ describe("project files", () => {
     draw.items.push(
       {
         id: "note_bad",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "text",
         points: [{ x: 20, y: 20 }],
         color: "#f2a93b",
@@ -524,7 +527,7 @@ describe("project files", () => {
       },
       {
         id: "stamp_extra",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "stamp",
         points: [{ x: 20, y: 20 }],
         color: "#35c2a1",
@@ -925,7 +928,7 @@ describe("project files", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "item_symbol",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol",
       points: [{ x: 60, y: 80 }],
       color: "#e5484d",
@@ -954,7 +957,7 @@ describe("project files", () => {
     const project = makeProject();
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     const base = {
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol" as const,
       points: [{ x: 60, y: 80 }],
       color: "#e5484d",
@@ -984,7 +987,7 @@ describe("project files", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "item_symbol",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol",
       points: [{ x: 60, y: 80 }],
       color: "#e5484d",
@@ -1012,7 +1015,7 @@ describe("project files", () => {
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push({
       id: "item_count",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "count",
       points: [{ x: 30, y: 40 }],
       color: "#4cc9f0",
@@ -1108,7 +1111,7 @@ describe("project files", () => {
 
   it("round-trips manual scales, scale locks, quick areas, and snap tolerance", () => {
     const project = makeProject();
-    project.pages["1"] = {
+    project.pages[0].state = {
       calibration: createManualCalibration(100),
       scaleLocked: true,
     };
@@ -1116,7 +1119,7 @@ describe("project files", () => {
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push({
       id: "item_quick_area",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "area",
       points: [
         { x: 10, y: 20 },
@@ -1133,8 +1136,8 @@ describe("project files", () => {
     const parsed = parseProject(serializeProject(project));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.settings.snapTolerancePx).toBe(12);
-    expect(parsed.pages["1"].scaleLocked).toBe(true);
-    const calibration = parsed.pages["1"].calibration;
+    expect(parsed.pages[0].state.scaleLocked).toBe(true);
+    const calibration = parsed.pages[0].state.calibration;
     expect(calibration?.source).toBe("manual");
     if (calibration?.source === "manual") {
       expect(calibration.ratio).toBe(100);
@@ -1149,10 +1152,10 @@ describe("project files", () => {
   it("normalizes a source-less reference calibration from schema v3", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 3;
-    delete raw.pages["1"].calibration.source;
+    delete raw.pages[0].state.calibration.source;
 
     const parsed = parseProject(JSON.stringify(raw));
-    const calibration = parsed.pages["1"].calibration;
+    const calibration = parsed.pages[0].state.calibration;
     expect(calibration?.source).toBe("reference");
     if (calibration?.source !== "manual") {
       expect(calibration?.p1).toEqual({ x: 0, y: 0 });
@@ -1164,7 +1167,7 @@ describe("project files", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 3;
     raw.settings.snapTolerancePx = 1;
-    raw.pages["1"] = {
+    raw.pages[0].state = {
       calibration: {
         id: "cal_manual",
         source: "manual",
@@ -1174,7 +1177,7 @@ describe("project files", () => {
       },
       scaleLocked: true,
     };
-    raw.pages["2"] = {
+    raw.pages[1].state = {
       calibration: {
         id: "cal_invalid_manual",
         source: "manual",
@@ -1187,7 +1190,7 @@ describe("project files", () => {
     measure.items.push(
       {
         id: "bad_rectangle",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "area",
         points: [
           { x: 0, y: 0 },
@@ -1200,7 +1203,7 @@ describe("project files", () => {
       },
       {
         id: "unknown_shape",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "area",
         points: [
           { x: 0, y: 0 },
@@ -1212,7 +1215,7 @@ describe("project files", () => {
       },
       {
         id: "undersized_ellipse",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "area",
         points: [{ x: 0, y: 0 }],
         color: "#4cc9f0",
@@ -1223,7 +1226,7 @@ describe("project files", () => {
     const draw = raw.layers.find((layer: { kind: string }) => layer.kind === "draw");
     draw.items.push({
       id: "drawing_with_shape",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "rect",
       points: [
         { x: 0, y: 0 },
@@ -1237,9 +1240,9 @@ describe("project files", () => {
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.settings.snapTolerancePx).toBe(2);
-    expect(parsed.pages["2"]).toBeUndefined();
+    expect(parsed.pages[1].state.calibration).toBeUndefined();
 
-    const calibration = parsed.pages["1"].calibration;
+    const calibration = parsed.pages[0].state.calibration;
     expect(calibration?.source).toBe("manual");
     if (calibration?.source === "manual") {
       expect(calibration.pointsPerMeter).toBeCloseTo(manualPointsPerMeter(200), 6);
@@ -1299,7 +1302,7 @@ describe("project files", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "item_image",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "image",
       points: [
         { x: 20, y: 20 },
@@ -1346,7 +1349,7 @@ describe("project files", () => {
       .find((layer) => layer.kind === "draw")!
       .items.push({
         id: "item_image_mode",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "image",
         points: [
           { x: 0, y: 0 },
@@ -1383,7 +1386,7 @@ describe("project files", () => {
     };
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     const base = {
-      page: 1,
+      pageId: pageIdFor(1),
       color: "#7aa2f7",
       strokeWidth: 1,
       createdAt: "2026-01-01T00:00:00.000Z",
@@ -1434,8 +1437,10 @@ describe("project files", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
     expect(raw.schemaVersion).toBe(SCHEMA_VERSION);
+    const pageOneState = raw.pages[0].state;
     delete raw.documents;
     raw.schemaVersion = 5;
+    raw.pages = { "1": pageOneState, "2": {} };
     raw.document = {
       name: "Legacy.pdf",
       path: "/plans/Legacy.pdf",
@@ -1459,7 +1464,7 @@ describe("project files", () => {
     });
     expect(parsed.documents[0].id).toMatch(/^doc_/);
     // Page state keys survive unchanged so calibrations keep pointing at the right sheet.
-    expect(parsed.pages["1"].calibration?.pointsPerMeter).toBe(20);
+    expect(parsed.pages[0].state.calibration?.pointsPerMeter).toBe(20);
   });
 
   it("round-trips a project with an embedded TIF document", () => {
@@ -1476,7 +1481,12 @@ describe("project files", () => {
       embeddedPdf: "JVBERi0xLjQK",
       source: { format: "tiff", dpi: [400, 400], originalName: "Plan.tif" },
     });
-    project.pages["3"] = { calibration: createManualCalibration(100) };
+    project.pages.push({
+      id: "page_3",
+      documentId: "doc_tif",
+      localPage: 1,
+      state: { calibration: createManualCalibration(100) },
+    });
 
     const parsed = parseProject(serializeProject(project));
     expect(parsed.documents).toHaveLength(2);
@@ -1488,19 +1498,20 @@ describe("project files", () => {
       embeddedPdf: "JVBERi0xLjQK",
       source: { format: "tiff", dpi: [400, 400], originalName: "Plan.tif" },
     });
-    expect(parsed.pages["3"].calibration?.source).toBe("manual");
+    expect(parsed.pages[2].state.calibration?.source).toBe("manual");
   });
 
   it("round-trips removed source pages and drops invalid exclusions", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
     raw.documents[0].excludedPages = [2, 2, 0, 99];
+    raw.pages.splice(1, 1);
     raw.schemaVersion = 6;
 
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.documents[0].excludedPages).toEqual([2]);
-    expect(parsed.pages["2"]).toBeUndefined();
+    expect(parsed.pages[1]).toBeUndefined();
   });
 
   it("round-trips stamp presets and the new markup kinds", () => {
@@ -1509,7 +1520,7 @@ describe("project files", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "stamp_item",
-      page: 2,
+      pageId: pageIdFor(2),
       kind: "stamp",
       points: [{ x: 30, y: 40 }],
       color: "#35c2a1",
@@ -1525,10 +1536,10 @@ describe("project files", () => {
     const stamp = parsed.layers
       .flatMap((layer) => layer.items)
       .find((item) => item.id === "stamp_item");
-    expect(stamp).toMatchObject({ kind: "stamp", text: "GODKÄND", page: 2 });
+    expect(stamp).toMatchObject({ kind: "stamp", text: "GODKÄND", pageId: pageIdFor(2) });
     draw.items.push({
       id: "double_arrow",
-      page: 2,
+      pageId: pageIdFor(2),
       kind: "arrow",
       points: [
         { x: 10, y: 10 },
@@ -1586,7 +1597,7 @@ describe("project files", () => {
     const raw = JSON.parse(serializeProject(project));
     raw.pages["9"] = { calibration: createManualCalibration(50) };
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.pages["9"]).toBeUndefined();
+    expect(parsed.pages[8]).toBeUndefined();
   });
 
   it("migrates a schema 19 project to count types and default quantities", () => {
@@ -1597,7 +1608,7 @@ describe("project files", () => {
     const measure = raw.layers.find((layer: { kind: string }) => layer.kind === "measure");
     measure.items.push({
       id: "count_legacy",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "count",
       points: [{ x: 20, y: 30 }],
       color: "#4cc9f0",
@@ -1638,7 +1649,7 @@ describe("project files", () => {
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push({
       id: "count_socket",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "count",
       points: [{ x: 40, y: 50 }],
       color: "#f70808",
@@ -1764,11 +1775,11 @@ describe("project files", () => {
     });
   });
 
-  it("migrates schema 22 projects to schema 23", () => {
+  it("migrates schema 22 projects to the current schema", () => {
     const raw = JSON.parse(serializeProject(makeProject()));
     raw.schemaVersion = 22;
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.schemaVersion).toBe(23);
+    expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
     expect(parsed.documents.every((document) => document.kind !== "template")).toBe(true);
   });
 

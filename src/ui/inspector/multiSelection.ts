@@ -85,7 +85,7 @@ export function multiSelectionSection(
     for (const candidate of moveTargetLayers(
       project,
       kind,
-      resolved.map((entry) => entry.item.page),
+      resolved.map((entry) => entry.item.pageId),
     )) {
       if (candidate.locked) continue;
       if (resolved.every((entry) => entry.layer.id === candidate.id)) continue;
@@ -381,7 +381,7 @@ export function multiSelectionSection(
 
   const toggles = el("div", "field-row");
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));
-  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.page));
+  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId));
   const visible = el("button", `toggle${anyVisible ? " is-on" : ""}`);
   visible.type = "button";
   visible.disabled = !anyVisible && !canShow;
@@ -389,7 +389,7 @@ export function multiSelectionSection(
   visible.innerHTML = `${icon(anyVisible ? "eye" : "eyeOff", 13)}<span>${anyVisible ? t("common.hide") : t("common.show")}</span>`;
   visible.addEventListener("click", () => actions.setSelectionVisible(!anyVisible));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
-  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
+  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.pageId));
   const lock = el("button", `toggle${!anyUnlocked ? " is-on" : ""}`);
   lock.type = "button";
   lock.disabled = !anyUnlocked && !canUnlock;

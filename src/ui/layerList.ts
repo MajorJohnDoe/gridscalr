@@ -17,6 +17,7 @@ import {
   swapLayers,
 } from "../model/layers";
 import { itemKindLabel, itemLabel, itemMetrics } from "../model/measure";
+import { pageIdAt, pageNumber } from "../model/pages";
 import type { Layer, LayerKind, MarkupItem, Project } from "../model/types";
 import { store } from "../state/store";
 import { colorInputValue, setColorInput } from "./colorInput";
@@ -78,8 +79,8 @@ function beginInlineRename(row: HTMLElement, name: HTMLElement, layerId: string)
   input.addEventListener("click", (event) => event.stopPropagation());
 }
 
-function scopeItemsFor(layer: Layer, page: number): MarkupItem[] {
-  return layerScope === "page" ? layer.items.filter((item) => item.page === page) : layer.items;
+function scopeItemsFor(layer: Layer, pageId: string): MarkupItem[] {
+  return layerScope === "page" ? layer.items.filter((item) => item.pageId === pageId) : layer.items;
 }
 
 function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
@@ -87,8 +88,9 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   const layer = project?.layers.find((l) => l.id === layerId);
   if (!project || !layer) return [];
   const page = store.ui.page;
-  const scopeItems = scopeItemsFor(layer, page);
-  const lockedHere = layerLockedOnPage(layer, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const scopeItems = scopeItemsFor(layer, pageId);
+  const lockedHere = layerLockedOnPage(layer, pageId);
   const group = project.layers.filter((l) => l.kind === layer.kind);
   const index = group.findIndex((l) => l.id === layerId);
   const expanded = expandedLayers.has(layerId);
@@ -181,7 +183,7 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
             const target = project.layers.find((l) => l.id === layerId);
             if (!target) return;
             if (layerScope === "page") {
-              target.items = target.items.filter((item) => item.page !== page);
+              target.items = target.items.filter((item) => item.pageId !== pageId);
             } else {
               target.items = [];
             }
@@ -237,6 +239,7 @@ function buildLayerItems(
     const itemLocked = itemIsLocked(item, layer);
     const deduction = item.kind === "area" && item.areaMode === "subtract";
     const label = itemLabel(item, project);
+    const itemPage = pageNumber(project, item.pageId);
 
     const row = el("button", "layer-item-row");
     row.type = "button";
@@ -249,7 +252,7 @@ function buildLayerItems(
       label,
       itemKindLabel(item.kind),
       deduction ? t("layer.deduction") : "",
-      t("layer.itemPageLabel", { page: item.page }),
+      t("layer.itemPageLabel", { page: itemPage }),
       itemHidden ? t("layer.hidden") : "",
       itemLocked ? t("layer.locked") : "",
     ]
@@ -260,7 +263,7 @@ function buildLayerItems(
       t("layer.itemAria", {
         kind: itemKindLabel(item.kind),
         label,
-        page: item.page,
+        page: itemPage,
         deduction: deduction ? t("layer.deductionSuffix") : "",
       }),
     );
@@ -270,7 +273,7 @@ function buildLayerItems(
     iconWrap.style.color = item.color;
     const name = el("span", "layer-item-label", label);
     const value = el("span", "layer-item-value", metrics?.primary ?? "");
-    const page = el("span", "layer-item-page", `p.${item.page}`);
+    const page = el("span", "layer-item-page", `p.${itemPage}`);
     row.append(iconWrap, name, value, page);
 
     if (itemLocked) {
@@ -287,11 +290,11 @@ function buildLayerItems(
 
     row.addEventListener("click", (event) => {
       if (event.shiftKey || event.ctrlKey || event.metaKey) {
-        if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+        if (itemPage !== store.ui.page) actions.goToPage(itemPage, false);
         store.toggleSelection(ref);
         return;
       }
-      actions.navigateToItem(item.page, layer.id, item.id);
+      actions.navigateToItem(item.pageId, layer.id, item.id);
     });
     row.addEventListener("contextmenu", (event) => {
       event.preventDefault();
@@ -329,6 +332,7 @@ function addLayerRow(refs: ShellRefs): void {
 export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project!;
   const page = store.ui.page;
+  const pageId = pageIdAt(project, page) ?? "";
   const groups: Array<{ kind: LayerKind; title: string; note: string }> = [
     { kind: "draw", title: t("layer.drawingLayers"), note: t("layer.belowMeasurements") },
     { kind: "measure", title: t("layer.measurementLayers"), note: t("layer.topOfStack") },
@@ -363,7 +367,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
   for (const group of groups) {
     const layers = [...layersForKind(project, group.kind)]
-      .filter((layer) => layerScope === "all" || layerAppliesToPage(layer, page))
+      .filter((layer) => layerScope === "all" || layerAppliesToPage(layer, pageId))
       .reverse();
     visibleLayerCount += layers.length;
     const header = el("div", "layer-group-title");
@@ -373,10 +377,11 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     refs.dockBody.append(header);
 
     for (const layer of layers) {
-      const scopeItems = scopeItemsFor(layer, page);
+      const scopeItems = scopeItemsFor(layer, pageId);
       const effectiveVisible =
-        layerScope === "page" ? layerVisibleOnPage(layer, page) : layer.visible;
-      const effectiveLocked = layerScope === "page" ? layerLockedOnPage(layer, page) : layer.locked;
+        layerScope === "page" ? layerVisibleOnPage(layer, pageId) : layer.visible;
+      const effectiveLocked =
+        layerScope === "page" ? layerLockedOnPage(layer, pageId) : layer.locked;
       const row = el("div", "layer-row");
       row.dataset.layerId = layer.id;
       row.classList.toggle("is-active", layer.id === project.activeLayerId);
@@ -485,7 +490,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           const target = project.layers.find((l) => l.id === layer.id);
           if (!target) return;
           if (layerScope === "page") {
-            setLayerVisibleOnPage(target, page, !layerVisibleOnPage(target, page));
+            setLayerVisibleOnPage(target, pageId, !layerVisibleOnPage(target, pageId));
           } else {
             setLayerVisibleGlobally(target, !target.visible);
           }
@@ -506,7 +511,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           const target = project.layers.find((l) => l.id === layer.id);
           if (!target) return;
           if (layerScope === "page") {
-            setLayerLockedOnPage(target, page, !layerLockedOnPage(target, page));
+            setLayerLockedOnPage(target, pageId, !layerLockedOnPage(target, pageId));
           } else {
             setLayerLockedGlobally(target, !target.locked);
           }
@@ -592,7 +597,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
   if (active) {
     const note = el("div", "empty-note small");
     note.style.paddingTop = "4px";
-    const applies = layerScope === "all" || layerAppliesToPage(active, page);
+    const applies = layerScope === "all" || layerAppliesToPage(active, pageId);
     note.innerHTML = `${icon("info", 14)} ${t("layer.itemsCreatedIn", {
       name: "<strong>" + escapeHtml(active.name) + "</strong>",
       kind: t(active.kind === "measure" ? "layer.measurementLayer" : "layer.drawingLayer"),

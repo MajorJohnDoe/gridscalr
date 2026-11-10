@@ -19,7 +19,7 @@ import {
 } from "../../model/layers";
 import { resolveSelection } from "../../model/selection";
 import { selectionBounds } from "../../model/transform";
-import type { MarkupItem, Point, SelectionRef } from "../../model/types";
+import type { MarkupItem, PageId, Point, SelectionRef } from "../../model/types";
 import { symbolSizeOf } from "../../features/schematics/symbols/registry";
 import { store } from "../../state/store";
 import {
@@ -36,6 +36,7 @@ import type { DragState } from "./pointerState";
 export interface SelectionContext {
   toScreen(point: Point): Point;
   viewPage(): number;
+  viewPageId(): PageId | null;
   viewZoom(): number;
   beginDrag(drag: DragState, pointerId: number): void;
   beginMarquee(page: Point, additive: boolean, pointerId: number): void;
@@ -48,6 +49,7 @@ export interface SelectionContext {
 export interface HoverContext {
   toScreen(point: Point): Point;
   viewPage(): number;
+  viewPageId(): PageId | null;
   viewZoom(): number;
   labelResizeAt(item: MarkupItem, screen: Point): boolean;
 }
@@ -149,7 +151,7 @@ function beginGroupScale(
     if (
       entry.locked ||
       !itemIsVisible(entry.item, entry.layer) ||
-      layerLockedOnPage(entry.layer, entry.item.page)
+      layerLockedOnPage(entry.layer, entry.item.pageId)
     ) {
       continue;
     }
@@ -331,7 +333,7 @@ export function beginSelection(
     }
   }
 
-  const hit = hitTest(project, context.viewPage(), page, 7 / context.viewZoom(), {
+  const hit = hitTest(project, context.viewPageId() ?? "", page, 7 / context.viewZoom(), {
     includeLocked: true,
   });
   if (!hit) {
@@ -432,7 +434,7 @@ export function updateHover(
     }
   }
   if (!handle && !labelResize) {
-    const hit = hitTest(project, context.viewPage(), page, 7 / context.viewZoom());
+    const hit = hitTest(project, context.viewPageId() ?? "", page, 7 / context.viewZoom());
     return {
       handle,
       labelResize,

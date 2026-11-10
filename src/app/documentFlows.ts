@@ -2,7 +2,7 @@ import type { PDFDocumentProxy } from "pdfjs-dist";
 import { base64ToBytes } from "../io/base64";
 import { addRecent, basename, isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { describeError } from "../io/platformError";
-import { parseProject, resolveRelativePath } from "../io/projectFile";
+import { parseProjectWithReport, resolveRelativePath } from "../io/projectFile";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { createProject } from "../model/layers";
 import { excludedSourcePages, totalPageCount } from "../model/documents";
@@ -127,14 +127,21 @@ export async function loadProjectText(
 ): Promise<boolean> {
   if (!(await host.confirmReplace(t("app.replaceProject")))) return false;
   let project: Project;
+  let migrationWarnings: number;
   try {
-    project = parseProject(text);
+    const parsed = parseProjectWithReport(text);
+    project = parsed.project;
+    migrationWarnings = parsed.report.warnings.length;
   } catch (error) {
     logEvent("error", `open project failed: ${errorMessage(error)}`);
     await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
     return false;
   }
-  return loadProjectData(host, project, projectPath, false);
+  const loaded = await loadProjectData(host, project, projectPath, false);
+  if (loaded && migrationWarnings > 0) {
+    toast(t("projectFile.migrationWarnings", { count: migrationWarnings }), "warning");
+  }
+  return loaded;
 }
 
 export async function loadProjectData(

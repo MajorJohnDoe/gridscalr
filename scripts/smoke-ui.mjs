@@ -499,7 +499,7 @@ try {
   await locationDialog.getByRole("button", { name: "Apply" }).click();
   await locationDialog.waitFor({ state: "detached" });
   assert.equal(
-    await page.evaluate(() => window.__gridscalr.store.project.pages["1"]?.building),
+    await page.evaluate(() => window.__gridscalr.store.project.pages[0]?.state.building),
     "Building A",
     "the page location should be stored in the project",
   );
@@ -1188,8 +1188,8 @@ try {
   );
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.project.documents.length),
-    2,
-    "the duplicate is a single-page document reference",
+    1,
+    "the duplicate reuses the same source document",
   );
 
   await page.getByRole("button", { name: "Layers", exact: true }).click();
@@ -1226,7 +1226,7 @@ try {
   await page.getByRole("menuitem", { name: "Open drawing…" }).click();
   const ocrChooser = await ocrChooserPromise;
   await ocrChooser.setFiles(ocrPath);
-  await page.waitForFunction(() => window.__gridscalr.store.project?.documents.length === 3, null, {
+  await page.waitForFunction(() => window.__gridscalr.store.project?.documents.length === 2, null, {
     timeout: 15000,
   });
   await page.waitForTimeout(300);

@@ -5,6 +5,7 @@ import {
   type QuantityTypeTotal,
 } from "../model/quantity";
 import { formatNumber } from "../model/units";
+import { currentPageId } from "../model/pages";
 import { store } from "../state/store";
 import { clear, el, option } from "./dom";
 import { icon } from "./icons";
@@ -59,7 +60,7 @@ function filtersKey(projectId: string): string {
   return JSON.stringify({
     projectId,
     page: pageFilter,
-    currentPage: store.ui.page,
+    currentPage: currentPageId(store.project!, store.ui.page),
     category: categoryFilter,
     room: roomFilter,
     hidden: includeHidden,
@@ -75,7 +76,7 @@ function currentSummary(): QuantitySummary | null {
     return cachedSummary;
   }
   cachedSummary = calculateQuantities(project, {
-    page: pageFilter === "current" ? store.ui.page : "all",
+    page: pageFilter === "current" ? (currentPageId(project, store.ui.page) ?? "all") : "all",
     layerIds: layerFilter ? [...layerFilter] : null,
     categoryId: categoryFilter || null,
     room: roomFilter,

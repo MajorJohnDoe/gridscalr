@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { hitTest } from "../src/model/hitTest";
 import { defaultLineTypes } from "../src/model/lineTypes";
@@ -12,7 +13,7 @@ const now = "2026-11-04T00:00:00.000Z";
 function item(overrides: Partial<MarkupItem>): MarkupItem {
   return {
     id: "item",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "polyline",
     points: [],
     color: "#e30613",
@@ -24,7 +25,7 @@ function item(overrides: Partial<MarkupItem>): MarkupItem {
 }
 
 function withItems(items: MarkupItem[]): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 1));
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   const draw = project.layers.find((layer) => layer.kind === "draw")!;
   draw.items.push(...items);
   return project;
@@ -39,7 +40,7 @@ describe("schematic line types", () => {
   });
 
   it("round-trips project line types and restores defaults when missing", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1));
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     project.lineTypes = [
       { id: "custom", name: "Custom", color: "#123456", widthPt: 3, style: "dashed" },
     ];
@@ -74,7 +75,7 @@ describe("rails", () => {
     expect(geometry.rows[0].y).toBe(40);
     expect(geometry.rows[4].y).toBe(80);
 
-    const hit = hitTest(project, 1, { x: 100, y: 60 }, 1);
+    const hit = hitTest(project, pageIdFor(1), { x: 100, y: 60 }, 1);
     expect(hit?.item.id).toBe("rail");
   });
 
@@ -100,7 +101,7 @@ describe("rails", () => {
       rows: defaultRailRows("plc"),
       rowSpacing: 10,
     });
-    const candidates = collectSnapCandidates(withItems([rail]), 1);
+    const candidates = collectSnapCandidates(withItems([rail]), pageIdFor(1));
     expect(candidates.some((entry) => entry.point.x === 30 && entry.point.y === 40)).toBe(true);
     expect(candidates.some((entry) => entry.point.x === 115 && entry.point.y === 40)).toBe(true);
   });
@@ -117,9 +118,9 @@ describe("polylines", () => {
       ],
     });
     const project = withItems([polyline]);
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 2)?.item.id).toBe("polyline");
-    expect(hitTest(project, 1, { x: 100, y: 50 }, 2)?.item.id).toBe("polyline");
-    expect(hitTest(project, 1, { x: 50, y: 50 }, 2)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 2)?.item.id).toBe("polyline");
+    expect(hitTest(project, pageIdFor(1), { x: 100, y: 50 }, 2)?.item.id).toBe("polyline");
+    expect(hitTest(project, pageIdFor(1), { x: 50, y: 50 }, 2)).toBeNull();
   });
 
   it("round-trips line type and style", () => {

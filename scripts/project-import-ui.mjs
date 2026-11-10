@@ -208,17 +208,19 @@ try {
 
   const imported = await page.evaluate(() => {
     const project = window.__gridscalr.store.project;
+    const pageOneId = project.pages[0]?.id;
+    const pageTwoId = project.pages[1]?.id;
     const pageTwo = project.layers
       .flatMap((layer) => layer.items)
-      .filter((item) => item.page === 2);
+      .filter((item) => item.pageId === pageTwoId);
     const length = pageTwo.find((item) => item.kind === "length");
     return {
       documents: project.documents.length,
-      pages: Object.keys(project.pages).sort(),
-      pageTwoName: project.pages["2"]?.name,
+      pages: project.pages.map((page) => page.id),
+      pageTwoName: project.pages[1]?.state.name,
       pageTwoItems: pageTwo.length,
       pageTwoLayers: project.layers
-        .filter((layer) => layer.homePage === 2)
+        .filter((layer) => layer.homePageId === pageTwoId)
         .map((layer) => ({ name: layer.name, items: layer.items.length }))
         .sort((a, b) => a.name.localeCompare(b.name)),
       category: length
@@ -226,13 +228,13 @@ try {
         : null,
       currentPage: window.__gridscalr.store.ui.page,
       pageOneItems: project.layers.reduce(
-        (sum, layer) => sum + layer.items.filter((item) => item.page === 1).length,
+        (sum, layer) => sum + layer.items.filter((item) => item.pageId === pageOneId).length,
         0,
       ),
     };
   });
   assert.equal(imported.documents, 2);
-  assert.deepEqual(imported.pages, ["1", "2"]);
+  assert.equal(imported.pages.length, 2);
   assert.equal(imported.pageTwoName, "Source sheet");
   assert.equal(imported.pageTwoItems, 3);
   assert.deepEqual(imported.pageTwoLayers, [
@@ -247,7 +249,7 @@ try {
   await page.waitForFunction(() => window.__gridscalr.store.project?.documents.length === 1);
   const undone = await page.evaluate(() => ({
     documents: window.__gridscalr.store.project.documents.length,
-    hasPageTwo: Boolean(window.__gridscalr.store.project.pages["2"]),
+    hasPageTwo: window.__gridscalr.store.project.pages.length >= 2,
     currentPage: window.__gridscalr.store.ui.page,
   }));
   assert.equal(undone.documents, 1);
@@ -261,9 +263,10 @@ try {
     const project = window.__gridscalr.store.project;
     return {
       documents: project.documents.length,
-      pageTwoName: project.pages["2"]?.name,
+      pageTwoName: project.pages[1]?.state.name,
       pageTwoItems: project.layers.reduce(
-        (sum, layer) => sum + layer.items.filter((item) => item.page === 2).length,
+        (sum, layer) =>
+          sum + layer.items.filter((item) => item.pageId === project.pages[1]?.id).length,
         0,
       ),
     };

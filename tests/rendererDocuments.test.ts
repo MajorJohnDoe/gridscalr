@@ -1,7 +1,8 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { describe, expect, it, vi } from "vitest";
+import { withTestPageIds } from "./helpers/pages";
 import { RendererDocumentRegistry } from "../src/app/rendererDocuments";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef, Project } from "../src/model/types";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 
@@ -20,7 +21,7 @@ function documentRef(id: string, pageCount = 1, excludedPages?: number[]): Docum
 }
 
 function projectWith(documents: DocumentRef[]): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   project.documents = documents;
   return project;
 }

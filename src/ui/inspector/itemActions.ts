@@ -15,7 +15,7 @@ export function appendItemActions(section: HTMLElement, context: InspectorContex
   const layerField = el("label", "field");
   layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
   const layerSelect = el("select", "select");
-  const layerCandidates = moveTargetLayers(project, layer.kind, [item.page]);
+  const layerCandidates = moveTargetLayers(project, layer.kind, [item.pageId]);
   for (const candidate of layerCandidates) {
     layerSelect.append(option(candidate.id, candidate.name, candidate.id === layer.id));
   }
@@ -32,15 +32,15 @@ export function appendItemActions(section: HTMLElement, context: InspectorContex
   const visibilityRow = el("div", "field-row");
   const visibleToggle = el("button", `toggle${!hidden ? " is-on" : ""}`);
   visibleToggle.type = "button";
-  const layerShown = layerVisibleOnPage(layer, item.page);
+  const layerShown = layerVisibleOnPage(layer, item.pageId);
   visibleToggle.disabled = !layerShown;
   visibleToggle.title = layerShown ? t("inspector.showHideMarkup") : t("inspector.showLayerFirst");
   visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? t("common.hidden") : t("common.visible")}</span>`;
   visibleToggle.addEventListener("click", () => actions.setSelectionVisible(hidden));
   const lockToggle = el("button", `toggle${locked ? " is-on" : ""}`);
   lockToggle.type = "button";
-  lockToggle.disabled = layerLockedOnPage(layer, item.page);
-  lockToggle.title = layerLockedOnPage(layer, item.page)
+  lockToggle.disabled = layerLockedOnPage(layer, item.pageId);
+  lockToggle.title = layerLockedOnPage(layer, item.pageId)
     ? t("inspector.unlockLayerFirst")
     : t("inspector.lockUnlockMarkup");
   lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? t("layer.locked") : t("common.unlocked")}</span>`;

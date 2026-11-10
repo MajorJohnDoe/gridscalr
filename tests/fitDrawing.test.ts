@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createDefaultLayers, createProject } from "../src/model/layers";
 import { createTemplateDocument } from "../src/features/schematics/model/sheetDocument";
 import {
@@ -14,7 +15,7 @@ const now = "2026-11-04T00:00:00.000Z";
 function lineItem(id: string, points: { x: number; y: number }[]): MarkupItem {
   return {
     id,
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "polyline",
     points,
     color: "#e30613",
@@ -26,7 +27,7 @@ function lineItem(id: string, points: { x: number; y: number }[]): MarkupItem {
 
 function sampleProject() {
   const documentRef = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Sheet");
-  return createProject(documentRef, createDefaultLayers());
+  return withTestPageIds(createProject(documentRef));
 }
 
 describe("drawing area fitting", () => {
@@ -109,7 +110,7 @@ describe("drawing area fitting", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     const symbol: MarkupItem = {
       id: "item_symbol",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol",
       points: [{ x: -200, y: -200 }],
       color: "#2d7dd2",
@@ -121,7 +122,7 @@ describe("drawing area fitting", () => {
     };
     const text: MarkupItem = {
       id: "item_text",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "text",
       points: [{ x: area.width + 400, y: area.height + 300 }],
       color: "#1a2024",

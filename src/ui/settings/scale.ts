@@ -7,14 +7,16 @@ import {
 } from "../../model/calibration";
 import { formatNumber, formatScale } from "../../model/units";
 import { store } from "../../state/store";
+import { pageIdAt } from "../../model/pages";
 import { el } from "../dom";
 import { section } from "../settingsControls";
 
 export function scaleSection(): HTMLElement {
   const project = store.project!;
   const page = store.ui.page;
-  const calibration = pageCalibration(project, page);
-  const locked = pageScaleLocked(project, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const calibration = pageCalibration(project, pageId);
+  const locked = pageScaleLocked(project, pageId);
   const wrap = section(t("settings.scaleTitle"), t("settings.scaleNote"));
   const value = el("p", "settings-scale-value");
   if (!calibration) {
@@ -29,7 +31,7 @@ export function scaleSection(): HTMLElement {
     value.textContent = t("settings.scaleValue", {
       page,
       detail,
-      scale: formatScale(pageScale(project, page), calibration),
+      scale: formatScale(pageScale(project, pageId), calibration),
       locked: locked ? t("settings.scaleLockedSuffix") : "",
     });
   }

@@ -1,17 +1,16 @@
 import { normalizeColor } from "../../model/color";
 import { createLayer, defaultColorForLayer, normalizeLayerOrder } from "../../model/layers";
-import type { Layer, LayerPageState } from "../../model/types";
+import type { Layer, LayerPageState, PageId } from "../../model/types";
 import { normalizeItem } from "./items";
 
 export function normalizeLayerPageState(
   value: unknown,
-  totalPages: number,
-): Record<string, LayerPageState> | undefined {
+  pageIds: ReadonlySet<PageId>,
+): Record<PageId, LayerPageState> | undefined {
   if (typeof value !== "object" || value === null) return undefined;
-  const states: Record<string, LayerPageState> = {};
+  const states: Record<PageId, LayerPageState> = {};
   for (const [key, rawState] of Object.entries(value)) {
-    const page = Number(key);
-    if (!Number.isInteger(page) || page < 1 || page > totalPages) continue;
+    if (!pageIds.has(key)) continue;
     if (typeof rawState !== "object" || rawState === null) continue;
     const raw = rawState as LayerPageState;
     const state: LayerPageState = {};
@@ -28,7 +27,8 @@ export function normalizeLayers(
   countTypeIds: ReadonlySet<string>,
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
-  totalPages: number,
+  pageIds: ReadonlySet<PageId>,
+  fallbackPageId: PageId | null,
 ): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
@@ -54,15 +54,12 @@ export function normalizeLayers(
         color: normalizeColor(raw.color, defaultColorForLayer(raw.kind)),
         items: [],
       };
-      const homePage =
-        typeof raw.homePage === "number" &&
-        Number.isInteger(raw.homePage) &&
-        raw.homePage >= 1 &&
-        raw.homePage <= totalPages
-          ? raw.homePage
+      const homePageId =
+        typeof raw.homePageId === "string" && pageIds.has(raw.homePageId)
+          ? raw.homePageId
           : undefined;
-      if (homePage) layer.homePage = homePage;
-      const pageState = normalizeLayerPageState(raw.pageState, totalPages);
+      if (homePageId) layer.homePageId = homePageId;
+      const pageState = normalizeLayerPageState(raw.pageState, pageIds);
       if (pageState) layer.pageState = pageState;
       if (Array.isArray(raw.items)) {
         for (const item of raw.items) {
@@ -74,21 +71,25 @@ export function normalizeLayers(
             fallbackCategoryId,
             assetIds,
             countTypeIds,
+            pageIds,
+            fallbackPageId,
           );
           if (normalized) layer.items.push(normalized);
         }
       }
       // Older empty layers had no page membership. Keep them discoverable on
       // the first page instead of hiding them from page-scoped Layers.
-      if (!layer.homePage && layer.items.length === 0) layer.homePage = 1;
+      if (!layer.homePageId && layer.items.length === 0 && fallbackPageId) {
+        layer.homePageId = fallbackPageId;
+      }
       layers.push(layer);
     }
   }
 
   if (!layers.some((l) => l.kind === "measure"))
-    layers.push(createLayer("measure", "Measurements", undefined, 1));
+    layers.push(createLayer("measure", "Measurements", undefined, fallbackPageId ?? undefined));
   if (!layers.some((l) => l.kind === "draw"))
-    layers.push(createLayer("draw", "Markups", undefined, 1));
+    layers.push(createLayer("draw", "Markups", undefined, fallbackPageId ?? undefined));
   const ids = new Set<string>();
   return normalizeLayerOrder(
     layers.map((layer) => {

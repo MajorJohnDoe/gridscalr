@@ -210,6 +210,9 @@ src/
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
+  model/pages.ts         PageId, PageRecord and every page resolver
+  features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+  app/replacementFlows.ts file pick, previews, renderer swap and checkpoint
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults
@@ -220,6 +223,7 @@ src/
   help/content.ts        Vite raw imports of the user guide, workflows and shortcuts
   help/images.ts         Vite asset URLs for bundled help screenshots
   io/projectFile/        project schema normalization, serialization, relative paths, source-path protection
+  io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export

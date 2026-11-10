@@ -13,13 +13,34 @@ const QUICK_START_STEPS = [
 ] as const;
 
 export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
-  const show = !store.project;
+  const project = store.project;
+  const emptyProject = Boolean(project && project.pages.length === 0);
+  const show = !project || emptyProject;
   refs.welcome.classList.toggle("hidden", !show);
   if (!show) {
     refs.welcome.textContent = "";
     return;
   }
   clear(refs.welcome);
+  if (emptyProject && project) {
+    const emptyCard = el("div", "welcome-card empty-project-card");
+    const brand = el("div", "welcome-brand");
+    brand.innerHTML = brandMark(42);
+    brand.append(el("h1", "welcome-title", project.name));
+    emptyCard.append(brand);
+    emptyCard.append(el("p", "welcome-subtitle", t("welcome.emptyProject")));
+    const emptyActions = el("div", "welcome-actions");
+    const addPages = el("button", "btn btn-primary", t("page.addPages"));
+    addPages.type = "button";
+    addPages.addEventListener("click", actions.addPages);
+    const importPages = el("button", "btn", t("page.importProjectPages"));
+    importPages.type = "button";
+    importPages.addEventListener("click", actions.importProjectPages);
+    emptyActions.append(addPages, importPages);
+    emptyCard.append(emptyActions);
+    refs.welcome.append(emptyCard);
+    return;
+  }
   const card = el("div", "welcome-card");
   const brand = el("div", "welcome-brand");
   brand.innerHTML = brandMark(42);

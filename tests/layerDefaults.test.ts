@@ -1,4 +1,5 @@
 import { afterEach, describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   DEFAULT_DRAW_COLOR,
   DEFAULT_LAYER_COLORS,
@@ -28,7 +29,7 @@ describe("layer colour defaults", () => {
     setDefaultLayerColors({ measure: "#ff00aa", draw: "#00AAFF" });
     expect(defaultLayerColors()).toEqual({ measure: "#ff00aa", draw: "#00aaff" });
 
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const created = addLayer(project, "measure");
     expect(created.color).toBe("#ff00aa");
     expect(project.layers.find((layer) => layer.kind === "draw")?.color).toBe("#00aaff");
@@ -42,16 +43,16 @@ describe("layer colour defaults", () => {
   });
 
   it("uses the editable measurement layer colour for live previews", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     project.activeLayerId = measure.id;
     measure.color = "#123456";
-    expect(measurementLayerColor(project, 1)).toBe("#123456");
+    expect(measurementLayerColor(project, pageIdFor(1))).toBe("#123456");
 
     measure.visible = false;
     const fallback = addLayer(project, "measure");
     fallback.color = "#654321";
     project.activeLayerId = measure.id;
-    expect(measurementLayerColor(project, 1)).toBe("#654321");
+    expect(measurementLayerColor(project, pageIdFor(1))).toBe("#654321");
   });
 });

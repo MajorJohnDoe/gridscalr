@@ -31,7 +31,7 @@ import {
   type LabelParts,
 } from "./label";
 import { formatNumber } from "./units";
-import type { LabelFitPosition, MarkupItem, PageSize, Point, Project } from "./types";
+import type { LabelFitPosition, MarkupItem, PageId, PageSize, Point, Project } from "./types";
 
 export type LabelPlacement = "center" | "outside" | "line";
 
@@ -170,7 +170,7 @@ export function measurementLabelSource(
 /** Collects every visible measurement/calibration label in render order. */
 export function pageLabelSources(
   project: Project,
-  page: number,
+  pageId: PageId,
   options: LabelSourceOptions = {},
 ): LabelSource[] {
   const sources: LabelSource[] = [];
@@ -179,10 +179,10 @@ export function pageLabelSources(
 
   if (includeLabels) {
     for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, page) || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0) continue;
       if (options.layerIds && !options.layerIds.has(layer.id)) continue;
       for (const item of layer.items) {
-        if (item.page !== page || item.visible === false) continue;
+        if (item.pageId !== pageId || item.visible === false) continue;
         if (
           item.kind !== "length" &&
           item.kind !== "area" &&
@@ -204,7 +204,7 @@ export function pageLabelSources(
   }
 
   if (includeCalibration) {
-    const calibration = pageCalibration(project, page);
+    const calibration = pageCalibration(project, pageId);
     if (calibration && isReferenceCalibration(calibration)) {
       sources.push({
         id: CALIBRATION_LABEL_ID,

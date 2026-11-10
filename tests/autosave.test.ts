@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { Project } from "../src/model/types";
 import {
   AUTOSAVE_RECORDS_PER_PROJECT,
@@ -18,7 +19,7 @@ import {
 } from "../src/features/sessionRecovery";
 
 function makeProject(name: string): Project {
-  const project = createProject(defaultDocument(name, 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument(name, 1)));
   project.name = name.replace(/\.pdf$/, "");
   return project;
 }

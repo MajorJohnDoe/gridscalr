@@ -1,19 +1,20 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   createManualCalibration,
   manualPointsPerMeter,
   setPageCalibration,
 } from "../src/model/calibration";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { itemScaleWarning } from "../src/model/measure";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const now = "2026-01-01T00:00:00.000Z";
 
 function makeProject(ratio: number | null): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   if (ratio !== null) {
-    setPageCalibration(project, 1, createManualCalibration(ratio), { pageCount: 1 });
+    setPageCalibration(project, pageIdFor(1), createManualCalibration(ratio), {});
   }
   return project;
 }
@@ -21,7 +22,7 @@ function makeProject(ratio: number | null): Project {
 function makeArea(scale: MarkupItem["scale"]): MarkupItem {
   return {
     id: "item_area",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "area",
     points: [
       { x: 0, y: 0 },

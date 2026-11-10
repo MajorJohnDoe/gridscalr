@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   applyRunStyle,
   layoutRichText,
@@ -83,7 +84,7 @@ describe("run formatting", () => {
   it("detects formatting that differs from the box style", () => {
     const item: MarkupItem = {
       id: "item",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [],
       color: "#1a2024",
@@ -102,7 +103,7 @@ describe("run formatting", () => {
   it("uses one plain run for boxes without runs", () => {
     const item: MarkupItem = {
       id: "item",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [],
       color: "#1a2024",
@@ -127,12 +128,12 @@ describe("run formatting", () => {
 
 describe("rich text persistence", () => {
   it("round-trips runs and the plain-text fallback", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1));
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const layer = project.layers.find((entry) => entry.kind === "draw")!;
     const now = "2026-11-04T00:00:00.000Z";
     layer.items.push({
       id: "item_rich",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [
         { x: 10, y: 10 },
@@ -177,14 +178,14 @@ describe("rich text persistence", () => {
   });
 
   it("drops malformed run entries without breaking the text", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1));
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const raw = JSON.parse(serializeProject(project)) as {
       layers: Array<{ kind: string; items: unknown[] }>;
     };
     const drawLayer = raw.layers.find((entry) => entry.kind === "draw")!;
     drawLayer.items.push({
       id: "item_bad_runs",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [
         { x: 10, y: 10 },

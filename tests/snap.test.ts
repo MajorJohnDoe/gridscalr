@@ -1,12 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { createCalibration, createManualCalibration } from "../src/model/calibration";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import {
   collectSnapCandidates,
   excludeOwnSnapTargets,
@@ -14,13 +8,14 @@ import {
   type SnapCandidate,
 } from "../src/model/snap";
 import type { MarkupItem, Project } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
   return {
     id: "item",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "length",
     points: [
       { x: 0, y: 0 },
@@ -35,7 +30,7 @@ function makeItem(overrides: Partial<MarkupItem>): MarkupItem {
 }
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
   const measure = layersForKind(project, "measure")[0];
   addItem(
     project,
@@ -104,7 +99,7 @@ function has(
 
 describe("markup snapping", () => {
   it("collects endpoints, midpoints, intersections, and rectangle corners", () => {
-    const candidates = collectSnapCandidates(makeProject(), 1);
+    const candidates = collectSnapCandidates(makeProject(), pageIdFor(1));
     expect(has(candidates, "endpoint", 0, 0)).toBe(true);
     expect(has(candidates, "endpoint", 100, 0)).toBe(true);
     expect(has(candidates, "midpoint", 50, 0)).toBe(true);
@@ -116,7 +111,7 @@ describe("markup snapping", () => {
   });
 
   it("includes schematic symbol ports as endpoint targets", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const draw = layersForKind(project, "draw")[0];
     addItem(
       project,
@@ -129,14 +124,14 @@ describe("markup snapping", () => {
         points: [{ x: 100, y: 100 }],
       }),
     );
-    const candidates = collectSnapCandidates(project, 1);
+    const candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 83, 100)).toBe(true);
     expect(has(candidates, "endpoint", 117, 100)).toBe(true);
   });
 
   it("projects a pointer onto a rail or pipe segment between its snap points", () => {
     const project = makeProject();
-    const candidates = collectSnapCandidates(project, 1);
+    const candidates = collectSnapCandidates(project, pageIdFor(1));
     const result = findSnap({ x: 70, y: 3 }, candidates, 8, 1);
     expect(result?.kind).toBe("segment");
     expect(result?.point.x).toBeCloseTo(70, 5);
@@ -171,7 +166,7 @@ describe("markup snapping", () => {
         ],
       }),
     );
-    const candidates = collectSnapCandidates(project, 1);
+    const candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 0, 100)).toBe(true);
     expect(has(candidates, "endpoint", 100, 100)).toBe(true);
     expect(has(candidates, "endpoint", 100, 200)).toBe(true);
@@ -199,7 +194,7 @@ describe("markup snapping", () => {
         ],
       }),
     );
-    const candidates = collectSnapCandidates(project, 1);
+    const candidates = collectSnapCandidates(project, pageIdFor(1));
 
     const available = excludeOwnSnapTargets(candidates, "horizontal");
     // The neighbour still owns the shared endpoint.
@@ -212,14 +207,14 @@ describe("markup snapping", () => {
   });
 
   it("does not add midpoints or intersections for ellipses", () => {
-    const candidates = collectSnapCandidates(makeProject(), 1);
+    const candidates = collectSnapCandidates(makeProject(), pageIdFor(1));
     const fromEllipse = candidates.filter((candidate) => candidate.itemIds?.includes("ellipse"));
     expect(fromEllipse.length).toBeGreaterThan(0);
     expect(fromEllipse.every((candidate) => candidate.kind === "endpoint")).toBe(true);
   });
 
   it("picks the nearest candidate within the screen-pixel threshold", () => {
-    const candidates = collectSnapCandidates(makeProject(), 1);
+    const candidates = collectSnapCandidates(makeProject(), pageIdFor(1));
     expect(findSnap({ x: 98, y: 0 }, candidates, 8, 1)).toMatchObject({
       kind: "endpoint",
       point: { x: 100, y: 0 },
@@ -261,30 +256,30 @@ describe("markup snapping", () => {
     });
     addItem(project, measure.id, hidden);
     addItem(project, measure.id, locked);
-    let candidates = collectSnapCandidates(project, 1);
+    let candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 700, 700)).toBe(false);
     expect(has(candidates, "endpoint", 900, 900)).toBe(true);
 
     measure.visible = false;
-    candidates = collectSnapCandidates(project, 1);
+    candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(candidates).toHaveLength(0);
   });
 
   it("includes visible reference calibration endpoints and ignores manual scales", () => {
     const project = makeProject();
-    project.pages["1"] = {
+    project.pages[0].state = {
       calibration: createCalibration({ x: 500, y: 500 }, { x: 600, y: 500 }, 10, "m"),
     };
-    let candidates = collectSnapCandidates(project, 1);
+    let candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 500, 500)).toBe(true);
 
     project.settings.showCalibration = false;
-    candidates = collectSnapCandidates(project, 1);
+    candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 500, 500)).toBe(false);
 
     project.settings.showCalibration = true;
-    project.pages["1"] = { calibration: createManualCalibration(100) };
-    candidates = collectSnapCandidates(project, 1);
+    project.pages[0].state = { calibration: createManualCalibration(100) };
+    candidates = collectSnapCandidates(project, pageIdFor(1));
     expect(has(candidates, "endpoint", 500, 500)).toBe(false);
   });
 });
