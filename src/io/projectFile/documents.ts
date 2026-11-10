@@ -35,10 +35,7 @@ function normalizeStorageFields(document: DocumentRef, rawDoc: Partial<DocumentR
   }
 }
 
-export function normalizeDocument(
-  rawValue: unknown,
-  report?: (code: string) => void,
-): DocumentRef {
+export function normalizeDocument(rawValue: unknown, report?: (code: string) => void): DocumentRef {
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
   ) as Partial<DocumentRef> & {

@@ -102,6 +102,7 @@ export interface PanelActions {
   cleanupSuperseded: (documentId: string) => void;
   refresh: () => void;
   openRecovery: () => void;
+  openProjectDoctor: () => void;
   getRecoverySummary: () => RecoverySummary;
   openRecent: (entry: RecentEntry) => void;
   openDemoProject: () => void;

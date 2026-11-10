@@ -1,4 +1,5 @@
 import { t } from "../i18n";
+import type { ProjectIssue } from "../model/integrity";
 import type { Project, RecentEntry } from "../model/types";
 import {
   addRecent,
@@ -51,6 +52,7 @@ export interface ProjectSessionHost {
   loadProjectData(project: Project, projectPath: string | null, dirty: boolean): Promise<boolean>;
   createSheetProject(choice: SheetSourceChoice): Promise<void>;
   createEmptyProject(): Promise<void>;
+  openProjectDoctor?: (issues?: readonly ProjectIssue[]) => Promise<void>;
 }
 
 function projectFilters() {
@@ -221,6 +223,7 @@ export class ProjectSession {
       loadProjectText: (text, path) => this.loadProjectTextWithStamp(text, path),
       loadProjectData: (project, path, dirty) =>
         this.loadProjectDataWithStamp(project, path, dirty),
+      openProjectDoctor: this.host.openProjectDoctor,
     });
   }
 
@@ -286,8 +289,9 @@ export class ProjectSession {
       this.recovery?.abortOpen();
       return false;
     }
+    const loadReportReadOnly = store.readOnly;
     await this.captureStamp(path);
-    await this.recovery?.afterOpen(path, parsed?.id ?? "", decision.readOnly);
+    await this.recovery?.afterOpen(path, parsed?.id ?? "", decision.readOnly || loadReportReadOnly);
     return true;
   }
 
@@ -297,15 +301,30 @@ export class ProjectSession {
    * backup stays usable if the original project is moved or replaced.
    */
   async saveProjectCopy(): Promise<boolean> {
-    const project = store.project;
-    if (!project) return false;
+    return this.saveProjectCopyOf(store.project, "-copy");
+  }
+
+  /**
+   * Writes a copy of the given project without touching the open project's path
+   * or saved state. Used by Save a copy and by the project doctor's repaired copy.
+   */
+  async saveProjectCopyOf(sourceProject: Project | null, suffix = "-copy"): Promise<boolean> {
+    if (!sourceProject) return false;
     try {
-      const protectedPaths = sourceDocumentPaths(project, store.projectPath);
-      const suggested = suggestedProjectName(project).replace(/\.gridscalr$/i, "-copy.gridscalr");
+      const protectedPaths = sourceDocumentPaths(sourceProject, store.projectPath);
+      const suggested = suggestedProjectName(sourceProject).replace(
+        /\.gridscalr$/i,
+        `${suffix}.gridscalr`,
+      );
       if (!isTauri) {
-        const result = await saveTextFile(serializeProject(project), suggested, projectFilters(), {
-          forbiddenPaths: protectedPaths,
-        });
+        const result = await saveTextFile(
+          serializeProject(sourceProject),
+          suggested,
+          projectFilters(),
+          {
+            forbiddenPaths: protectedPaths,
+          },
+        );
         if (!result) return false;
         toast(t("app.copyDownloaded"), "success");
         return true;
@@ -314,7 +333,7 @@ export class ProjectSession {
       const path = await chooseSavePath(suggested, projectFilters());
       if (!path) return false;
       assertWritablePath(path, protectedPaths);
-      const json = serializeProjectCopy(project, path);
+      const json = serializeProjectCopy(sourceProject, path);
       await writeTextFile(path, json, { forbiddenPaths: protectedPaths });
       addRecent({
         kind: "project",

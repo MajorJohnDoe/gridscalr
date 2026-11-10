@@ -27,6 +27,11 @@ import {
 import { insertImageFlow as insertImageFlowModule, type ImageFlowHost } from "./imageFlows";
 import { packageHost as createPackageHost, type PackageFlowHost } from "./packageFlows";
 import { importProjectPagesFlow, type ProjectImportHost } from "./projectImportFlows";
+import {
+  confirmProjectLoadReportFlow,
+  openProjectDoctorFlow,
+  type ProjectDoctorFlowHost,
+} from "./projectDoctorFlows";
 import { replaceSourceFlow, type ReplacementFlowHost } from "./replacementFlows";
 import {
   cleanupSupersededPages,
@@ -156,6 +161,7 @@ export class App {
         loadProjectDataFlow(this.documentFlowHost(), project, path, dirty),
       createSheetProject: (choice) => createSheetProjectFlow(this.sheetFlowHost(), choice),
       createEmptyProject: () => createEmptyProject(this.pageActionHost()),
+      openProjectDoctor: (issues) => openProjectDoctorFlow(this.projectDoctorHost(), issues),
     });
     this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
       this.renderAll(),
@@ -282,6 +288,7 @@ export class App {
       openDemoProject: () => void this.session.openDemoProjectFlow(),
       copyDiagnostics: () => void copyDiagnosticsFlow(),
       reportProblem: () => reportProblemFlow(),
+      openProjectDoctor: () => void openProjectDoctorFlow(this.projectDoctorHost()),
     };
     setMenuActions(this.actions);
     this.windowControls = mountWindowControls(this.refs.topbar, {
@@ -415,6 +422,14 @@ export class App {
       recommendSourceStorage: (path, name, kind) =>
         this.sourceStorage.recommendImport(path, name, kind),
       applySourceStorage: (documentId) => this.sourceStorage.applyImportChoice(documentId),
+      confirmLoadReport: (report, project) =>
+        confirmProjectLoadReportFlow(this.projectDoctorHost(), report, project),
+    };
+  }
+
+  private projectDoctorHost(): ProjectDoctorFlowHost {
+    return {
+      saveRepairedCopy: (project) => this.session.saveProjectCopyOf(project, "-repaired"),
     };
   }
 

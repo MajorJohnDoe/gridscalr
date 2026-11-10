@@ -61,9 +61,7 @@ export function normalizePageProvenance(value: unknown): PageProvenance | undefi
   const importedAt = isoTimestamp(raw.importedAt);
   const appVersion = stringField(raw.appVersion, 40);
   const modifiedAt =
-    raw.sourceRevisionModifiedAt === null
-      ? null
-      : isoTimestamp(raw.sourceRevisionModifiedAt);
+    raw.sourceRevisionModifiedAt === null ? null : isoTimestamp(raw.sourceRevisionModifiedAt);
   if (
     !sourceProjectId ||
     !sourceRevisionSha256 ||

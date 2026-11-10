@@ -194,10 +194,7 @@ export function parseProjectWithReport(text: string): {
     createdAt: typeof raw.createdAt === "string" ? raw.createdAt : base.createdAt,
     updatedAt: typeof raw.updatedAt === "string" ? raw.updatedAt : base.updatedAt,
   };
-  if (
-    typeof raw.reportLogoAssetId === "string" &&
-    !project.reportLogoAssetId
-  ) {
+  if (typeof raw.reportLogoAssetId === "string" && !project.reportLogoAssetId) {
     load.repair("repairedReportLogo");
   }
 

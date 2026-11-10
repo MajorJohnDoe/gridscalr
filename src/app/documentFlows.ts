@@ -3,6 +3,8 @@ import { base64ToBytes } from "../io/base64";
 import { addRecent, basename, isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { parseProjectWithReport, resolveRelativePath } from "../io/projectFile";
+import type { ProjectLoadReport } from "../io/projectFile";
+import type { LoadReportDecision } from "../features/projectIntegrity";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { createProject } from "../model/layers";
 import { excludedSourcePages, totalPageCount } from "../model/documents";
@@ -44,6 +46,11 @@ export interface DocumentFlowHost {
   ): Promise<boolean>;
   /** Applies a recommended managed copy once the document exists in the store. */
   applySourceStorage(documentId: string): Promise<void>;
+  /** Shows the load report and doctor for a damaged or migrated project. */
+  confirmLoadReport: (
+    report: ProjectLoadReport,
+    project: Project,
+  ) => Promise<{ decision: LoadReportDecision; project?: Project }>;
 }
 
 function errorMessage(error: unknown): string {
@@ -138,20 +145,31 @@ export async function loadProjectText(
 ): Promise<boolean> {
   if (!(await host.confirmReplace(t("app.replaceProject")))) return false;
   let project: Project;
-  let migrationWarnings: number;
+  let report: ProjectLoadReport;
   try {
     const parsed = parseProjectWithReport(text);
     project = parsed.project;
-    migrationWarnings = parsed.report.warnings.length;
+    report = parsed.report;
   } catch (error) {
     logEvent("error", `open project failed: ${errorMessage(error)}`);
     await messageDialog(t("app.couldNotOpenProject"), errorMessage(error), "warning");
     return false;
   }
-  const loaded = await loadProjectData(host, project, projectPath, false);
-  if (loaded && migrationWarnings > 0) {
-    toast(t("projectFile.migrationWarnings", { count: migrationWarnings }), "warning");
+  let chosen = project;
+  let readOnly = false;
+  const reportHasContent =
+    report.warnings.length > 0 ||
+    report.dropped.some((entry) => entry.count > 0) ||
+    report.repaired.some((entry) => entry.count > 0) ||
+    report.issues.length > 0;
+  if (reportHasContent) {
+    const outcome = await host.confirmLoadReport(report, project);
+    if (outcome.decision === "cancel") return false;
+    chosen = outcome.project ?? project;
+    readOnly = outcome.decision === "read-only";
   }
+  const loaded = await loadProjectData(host, chosen, projectPath, false);
+  if (loaded && readOnly) store.setReadOnly(true);
   return loaded;
 }
 

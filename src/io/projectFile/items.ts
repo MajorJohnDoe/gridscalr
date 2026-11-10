@@ -236,11 +236,9 @@ export function normalizeItem(
         : raw.kind === "delta"
           ? 14
           : undefined;
-  const categoryValid =
-    typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId);
+  const categoryValid = typeof raw.categoryId === "string" && categoryIds.has(raw.categoryId);
   if (isMeasure && !categoryValid) report?.("repairedItemCategory");
-  const countTypeValid =
-    typeof raw.countType === "string" && countTypeIds.has(raw.countType);
+  const countTypeValid = typeof raw.countType === "string" && countTypeIds.has(raw.countType);
   if (raw.kind === "count" && !countTypeValid) report?.("repairedItemCountType");
   return {
     id:
@@ -283,11 +281,7 @@ export function normalizeItem(
                 : "mm",
             }
           : null,
-    categoryId: isMeasure
-      ? categoryValid
-        ? raw.categoryId
-        : fallbackCategoryId
-      : undefined,
+    categoryId: isMeasure ? (categoryValid ? raw.categoryId : fallbackCategoryId) : undefined,
     room: isMeasure && room ? room : undefined,
     areaMode:
       raw.kind === "area"
@@ -320,12 +314,7 @@ export function normalizeItem(
     rowSpacing,
     showBadges,
     showLegend,
-    countType:
-      raw.kind === "count"
-        ? countTypeValid
-          ? raw.countType
-          : "other"
-        : undefined,
+    countType: raw.kind === "count" ? (countTypeValid ? raw.countType : "other") : undefined,
     countQuantity:
       raw.kind === "count" &&
       typeof raw.countQuantity === "number" &&

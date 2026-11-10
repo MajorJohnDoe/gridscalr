@@ -38,7 +38,12 @@ function issue(
 function isFinitePoint(value: unknown): boolean {
   if (typeof value !== "object" || value === null) return false;
   const point = value as { x?: unknown; y?: unknown };
-  return typeof point.x === "number" && Number.isFinite(point.x) && typeof point.y === "number" && Number.isFinite(point.y);
+  return (
+    typeof point.x === "number" &&
+    Number.isFinite(point.x) &&
+    typeof point.y === "number" &&
+    Number.isFinite(point.y)
+  );
 }
 
 function isIsoTimestamp(value: string): boolean {
@@ -90,16 +95,12 @@ function validateItemGeometry(item: MarkupItem, issues: ProjectIssue[]): void {
       return;
     }
     const minimum = item.kind === "image" ? 0.5 : 2;
-    if (
-      Math.abs(second.x - first.x) < minimum ||
-      Math.abs(second.y - first.y) < minimum
-    ) {
+    if (Math.abs(second.x - first.x) < minimum || Math.abs(second.y - first.y) < minimum) {
       issues.push(
-        issue(
-          "error",
-          item.kind === "image" ? "invalidImageGeometry" : "invalidTextboxGeometry",
-          { kind: "item", id: item.id },
-        ),
+        issue("error", item.kind === "image" ? "invalidImageGeometry" : "invalidTextboxGeometry", {
+          kind: "item",
+          id: item.id,
+        }),
       );
     }
   }
@@ -144,33 +145,38 @@ export function validateProject(project: Project): ProjectIssue[] {
   for (const document of project.documents) {
     checkUnique(issues, documentIds, document.id, "document", "duplicateDocumentId");
     if (!Number.isInteger(document.pageCount) || document.pageCount < 1) {
-      issues.push(issue("error", "invalidDocumentPageCount", { kind: "document", id: document.id }));
+      issues.push(
+        issue("error", "invalidDocumentPageCount", { kind: "document", id: document.id }),
+      );
     }
-    if (document.storage !== undefined && document.storage !== "reference" && document.storage !== "managed") {
-      issues.push(issue("warning", "invalidDocumentStorage", { kind: "document", id: document.id }));
+    if (
+      document.storage !== undefined &&
+      document.storage !== "reference" &&
+      document.storage !== "managed"
+    ) {
+      issues.push(
+        issue("warning", "invalidDocumentStorage", { kind: "document", id: document.id }),
+      );
     }
     if (document.storage === "managed" && document.kind !== "template" && !document.relativePath) {
       issues.push(
         issue("error", "managedSourceMissingRelativePath", { kind: "document", id: document.id }),
       );
     }
-    if (
-      document.originalSha256 !== undefined &&
-      !SHA256_PATTERN.test(document.originalSha256)
-    ) {
-      issues.push(issue("warning", "invalidOriginalSourceHash", { kind: "document", id: document.id }));
+    if (document.originalSha256 !== undefined && !SHA256_PATTERN.test(document.originalSha256)) {
+      issues.push(
+        issue("warning", "invalidOriginalSourceHash", { kind: "document", id: document.id }),
+      );
     }
     for (const excluded of document.excludedPages ?? []) {
-      if (
-        !Number.isInteger(excluded) ||
-        excluded < 1 ||
-        excluded > document.pageCount
-      ) {
+      if (!Number.isInteger(excluded) || excluded < 1 || excluded > document.pageCount) {
         issues.push(issue("warning", "invalidExcludedPage", { kind: "document", id: document.id }));
       }
     }
     if (document.copiedFrom) {
-      const source = project.documents.find((entry) => entry.id === document.copiedFrom?.documentId);
+      const source = project.documents.find(
+        (entry) => entry.id === document.copiedFrom?.documentId,
+      );
       if (!source) {
         issues.push(
           issue("warning", "missingCopiedFromDocument", { kind: "document", id: document.id }),
@@ -180,7 +186,9 @@ export function validateProject(project: Project): ProjectIssue[] {
         document.copiedFrom.page < 1 ||
         document.copiedFrom.page > source.pageCount
       ) {
-        issues.push(issue("warning", "invalidCopiedFromPage", { kind: "document", id: document.id }));
+        issues.push(
+          issue("warning", "invalidCopiedFromPage", { kind: "document", id: document.id }),
+        );
       }
     }
   }
@@ -224,7 +232,10 @@ export function validateProject(project: Project): ProjectIssue[] {
   }
   if (!categoryIds.has(project.settings.quantity.defaultCategoryId)) {
     issues.push(
-      issue("error", "missingDefaultCategory", { kind: "settings", id: "quantity.defaultCategoryId" }),
+      issue("error", "missingDefaultCategory", {
+        kind: "settings",
+        id: "quantity.defaultCategoryId",
+      }),
     );
   }
 
@@ -276,7 +287,9 @@ export function validateProject(project: Project): ProjectIssue[] {
   }
 
   if (!layerIds.has(project.activeLayerId)) {
-    issues.push(issue("error", "missingActiveLayer", { kind: "settings", id: project.activeLayerId }));
+    issues.push(
+      issue("error", "missingActiveLayer", { kind: "settings", id: project.activeLayerId }),
+    );
   } else {
     const active = project.layers.find((layer) => layer.id === project.activeLayerId);
     if (active && active.kind !== "measure" && active.kind !== "draw") {
@@ -303,7 +316,9 @@ export function validateProject(project: Project): ProjectIssue[] {
   for (const preset of project.countPresets) {
     checkUnique(issues, presetIds, preset.id, "countPreset", "duplicateCountPresetId");
     if (!categoryIds.has(preset.categoryId)) {
-      issues.push(issue("error", "missingCountPresetCategory", { kind: "countPreset", id: preset.id }));
+      issues.push(
+        issue("error", "missingCountPresetCategory", { kind: "countPreset", id: preset.id }),
+      );
     }
     if (!countTypeIds.has(preset.countType)) {
       issues.push(issue("error", "missingCountPresetType", { kind: "countPreset", id: preset.id }));
@@ -313,10 +328,14 @@ export function validateProject(project: Project): ProjectIssue[] {
   for (const view of project.markupsViews) {
     checkUnique(issues, viewIds, view.id, "markupsView", "duplicateMarkupsViewId");
     if (view.categoryId && !categoryIds.has(view.categoryId)) {
-      issues.push(issue("warning", "missingMarkupsViewCategory", { kind: "markupsView", id: view.id }));
+      issues.push(
+        issue("warning", "missingMarkupsViewCategory", { kind: "markupsView", id: view.id }),
+      );
     }
     if (view.countType && !countTypeIds.has(view.countType)) {
-      issues.push(issue("warning", "missingMarkupsViewCountType", { kind: "markupsView", id: view.id }));
+      issues.push(
+        issue("warning", "missingMarkupsViewCountType", { kind: "markupsView", id: view.id }),
+      );
     }
   }
 
