@@ -153,6 +153,21 @@ pub(crate) fn write_conditional(
     data: &[u8],
     expected_sha256: Option<&str>,
 ) -> Result<FileStamp, WriteError> {
+    write_conditional_with(path, data, expected_sha256, replace_file)
+}
+
+/// The conditional write with an injectable replace step. Production passes the
+/// atomic rename; tests can inject a failure between the flushed temporary file
+/// and the rename to prove the previous project stays readable.
+fn write_conditional_with<F>(
+    path: &Path,
+    data: &[u8],
+    expected_sha256: Option<&str>,
+    replace: F,
+) -> Result<FileStamp, WriteError>
+where
+    F: FnOnce(&Path, &Path, &str) -> Result<(), CommandError>,
+{
     let (_parent, display_name) = target_details(path)?;
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {
@@ -207,7 +222,7 @@ pub(crate) fn write_conditional(
         }
     }
 
-    replace_file(&temp, path, &display_name).map_err(WriteError::from)?;
+    replace(&temp, path, &display_name).map_err(WriteError::from)?;
     sync_directory(path.parent().unwrap_or_else(|| Path::new(".")));
 
     // Read the file back and verify the bytes and the stamp used by the next
@@ -399,6 +414,80 @@ mod tests {
             Some(&first.sha256.to_uppercase()),
         )
         .expect("uppercase hash matches");
+    }
+
+    #[test]
+    fn writes_over_an_existing_file_only_without_an_expected_hash() {
+        let temp = TestDir::new();
+        let target = temp.file("project.gridscalr");
+        fs::write(&target, b"previous version").expect("write previous");
+
+        // A missing expected hash is the explicit overwrite and save-as path.
+        let stamp = write_conditional(&target, b"new version", None).expect("unconditional write");
+        assert_eq!(stamp.sha256, hex_digest(b"new version"));
+        assert_eq!(
+            fs::read_to_string(&target).expect("read project"),
+            "new version"
+        );
+
+        // An empty hash is treated exactly like a missing one.
+        write_conditional(&target, b"third version", Some("   ")).expect("empty hash overwrite");
+        assert_eq!(
+            fs::read_to_string(&target).expect("read project"),
+            "third version"
+        );
+    }
+
+    #[test]
+    fn a_failure_between_temp_write_and_rename_keeps_the_previous_file() {
+        let temp = TestDir::new();
+        let target = temp.file("project.gridscalr");
+        fs::write(&target, b"previous readable version").expect("write previous");
+
+        let error = write_conditional_with(&target, b"new version", None, |_temp, _path, name| {
+            // Simulate a crash or a failing atomic replace after the temporary
+            // file has been flushed. The target must remain untouched.
+            Err(CommandError::new(
+                "replaceFailed",
+                format!("{name}: simulated failure before rename"),
+            ))
+        })
+        .expect_err("the injected replace failure must fail the write");
+
+        assert_eq!(error.code, "replaceFailed");
+        assert_eq!(
+            fs::read_to_string(&target).expect("read previous"),
+            "previous readable version"
+        );
+        // The temporary sibling is left behind exactly as a crash would leave
+        // it; it is never renamed over the previous project.
+        let siblings = names(&temp.0);
+        assert!(siblings.contains(&"project.gridscalr".to_string()));
+        assert!(siblings.len() > 1, "the flushed temporary file remains");
+    }
+
+    #[test]
+    fn two_writers_with_the_same_loaded_stamp_cannot_both_overwrite() {
+        let temp = TestDir::new();
+        let target = temp.file("project.gridscalr");
+        fs::write(&target, b"base version").expect("write base");
+        let loaded = stamp_of(&target).expect("stamp").expect("exists").sha256;
+
+        // Two writers open the same file version. The first verified write
+        // moves the disk hash; the second still holds the loaded stamp and must
+        // be rejected instead of overwriting the first writer.
+        write_conditional(&target, b"writer A", Some(&loaded)).expect("first writer");
+        let error = write_conditional(&target, b"writer B", Some(&loaded))
+            .expect_err("the second writer must conflict");
+
+        assert_eq!(error.code, "projectConflict");
+        let current = error.current.expect("conflict carries the disk stamp");
+        assert_eq!(current.sha256, hex_digest(b"writer A"));
+        assert_eq!(
+            fs::read_to_string(&target).expect("read project"),
+            "writer A"
+        );
+        assert_eq!(names(&temp.0), vec!["project.gridscalr".to_string()]);
     }
 
     #[test]
