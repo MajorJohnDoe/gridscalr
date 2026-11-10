@@ -1,5 +1,5 @@
 import type { Worker } from "tesseract.js";
-import { localPageNumber, projectDocumentForPage } from "../model/documents";
+import { documentForPageRecord, pageRecordAt } from "../model/pages";
 import type { OcrPage, OcrWord, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageText } from "./textIndex";
@@ -81,8 +81,9 @@ export async function runOcrPage(
   renderer: PdfRenderer,
   onProgress?: (message: string, progress: number) => void,
 ): Promise<OcrPage> {
-  const document = projectDocumentForPage(project, page);
-  if (!document) throw new Error(t("ocr.noSource"));
+  const record = pageRecordAt(project, page);
+  const document = documentForPageRecord(project, record);
+  if (!document || !record) throw new Error(t("ocr.noSource"));
   const size = await renderer.getPageSize(page);
   const rendered = await renderer.renderCrop(
     page,
@@ -111,7 +112,7 @@ export async function runOcrPage(
       languages: OCR_LANGUAGE_LABEL,
       generatedAt: new Date().toISOString(),
       documentSha256: document.sha256,
-      sourcePage: localPageNumber(project.documents, page),
+      sourcePage: record.localPage,
       width: size.width,
       height: size.height,
     };
@@ -141,12 +142,10 @@ export function ocrPageToText(ocr: OcrPage, page: number): PageText {
 /** True when stored OCR still belongs to the page's current source revision. */
 export function isOcrCurrent(project: Project, page: number, ocr: OcrPage | undefined): boolean {
   if (!ocr) return false;
-  const document = projectDocumentForPage(project, page);
-  if (!document) return false;
-  return (
-    ocr.documentSha256 === document.sha256 &&
-    ocr.sourcePage === localPageNumber(project.documents, page)
-  );
+  const record = pageRecordAt(project, page);
+  const document = documentForPageRecord(project, record);
+  if (!document || !record) return false;
+  return ocr.documentSha256 === document.sha256 && ocr.sourcePage === record.localPage;
 }
 
 export async function disposeOcrWorker(): Promise<void> {

@@ -1,23 +1,18 @@
 import { describe, expect, it } from "vitest";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import { hitTest, itemIntersectsBounds } from "../src/model/hitTest";
 import type { MarkupItem } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 function makeProject() {
-  return createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
 }
 
 function makeItem(overrides: Partial<MarkupItem> = {}): MarkupItem {
   const now = "2026-01-01T00:00:00.000Z";
   return {
     id: "item_a",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "length",
     points: [
       { x: 10, y: 10 },
@@ -62,17 +57,17 @@ describe("hit testing", () => {
     const project = makeProject();
     const layer = layersForKind(project, "measure")[0];
     addItem(project, layer.id, makeItem({ visible: false }));
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 5)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 5)).toBeNull();
   });
 
   it("ignores locked items unless explicitly included", () => {
     const project = makeProject();
     const layer = layersForKind(project, "measure")[0];
     addItem(project, layer.id, makeItem({ locked: true }));
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 5)).toBeNull();
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 5, { includeLocked: true })?.item.id).toBe(
-      "item_a",
-    );
+    expect(hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 5)).toBeNull();
+    expect(
+      hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 5, { includeLocked: true })?.item.id,
+    ).toBe("item_a");
   });
 
   it("ignores locked layers unless explicitly included", () => {
@@ -80,10 +75,10 @@ describe("hit testing", () => {
     const layer = layersForKind(project, "measure")[0];
     layer.locked = true;
     addItem(project, layer.id, makeItem());
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 5)).toBeNull();
-    expect(hitTest(project, 1, { x: 50, y: 10 }, 5, { includeLocked: true })?.item.id).toBe(
-      "item_a",
-    );
+    expect(hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 5)).toBeNull();
+    expect(
+      hitTest(project, pageIdFor(1), { x: 50, y: 10 }, 5, { includeLocked: true })?.item.id,
+    ).toBe("item_a");
   });
 
   it("hit-tests rectangle and ellipse quick areas by their shape", () => {
@@ -116,12 +111,12 @@ describe("hit testing", () => {
       }),
     );
 
-    expect(hitTest(project, 1, { x: 60, y: 35 }, 2)?.item.id).toBe("rect_area");
-    expect(hitTest(project, 1, { x: 10, y: 10 }, 2, { includeLocked: true })?.item.id).toBe(
-      "rect_area",
-    );
-    expect(hitTest(project, 1, { x: 250, y: 35 }, 2)?.item.id).toBe("ellipse_area");
-    expect(hitTest(project, 1, { x: 202, y: 12 }, 1)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 60, y: 35 }, 2)?.item.id).toBe("rect_area");
+    expect(
+      hitTest(project, pageIdFor(1), { x: 10, y: 10 }, 2, { includeLocked: true })?.item.id,
+    ).toBe("rect_area");
+    expect(hitTest(project, pageIdFor(1), { x: 250, y: 35 }, 2)?.item.id).toBe("ellipse_area");
+    expect(hitTest(project, pageIdFor(1), { x: 202, y: 12 }, 1)).toBeNull();
   });
 
   it("keeps unfilled rectangles and ellipses click-through inside", () => {
@@ -158,13 +153,13 @@ describe("hit testing", () => {
     addItem(project, layer.id, filledRect);
 
     // The inside of an outline shape belongs to the drawing beneath it.
-    expect(hitTest(project, 1, { x: 60, y: 35 }, 2)).toBeNull();
-    expect(hitTest(project, 1, { x: 250, y: 35 }, 2)).toBeNull();
-    expect(hitTest(project, 1, { x: 450, y: 35 }, 2)?.item.id).toBe("filled_rect");
+    expect(hitTest(project, pageIdFor(1), { x: 60, y: 35 }, 2)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 250, y: 35 }, 2)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 450, y: 35 }, 2)?.item.id).toBe("filled_rect");
 
     // The outline itself still selects.
-    expect(hitTest(project, 1, { x: 10, y: 35 }, 2)?.item.id).toBe("outline_rect");
-    expect(hitTest(project, 1, { x: 250, y: 10 }, 2)?.item.id).toBe("outline_ellipse");
+    expect(hitTest(project, pageIdFor(1), { x: 10, y: 35 }, 2)?.item.id).toBe("outline_rect");
+    expect(hitTest(project, pageIdFor(1), { x: 250, y: 10 }, 2)?.item.id).toBe("outline_ellipse");
 
     // A marquee inside the empty box does not grab it, unlike a filled box.
     expect(itemIntersectsBounds(outlineRect, { x: 40, y: 30 }, { x: 60, y: 40 })).toBe(false);

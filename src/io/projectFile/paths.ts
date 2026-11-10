@@ -88,8 +88,10 @@ export function serializeProjectCopy(project: Project, projectPath: string | nul
   }
 }
 
-export function remapPageItems(project: Project, pageCount: number): void {
+/** Drops items whose stable page no longer exists. */
+export function remapPageItems(project: Project): void {
+  const pageIds = new Set(project.pages.map((page) => page.id));
   for (const layer of project.layers) {
-    layer.items = layer.items.filter((item) => item.page <= pageCount);
+    layer.items = layer.items.filter((item) => pageIds.has(item.pageId));
   }
 }

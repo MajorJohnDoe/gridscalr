@@ -1,5 +1,6 @@
 import { addItem } from "../model/layers";
 import { createImageItem } from "../model/images";
+import { pageIdAt } from "../model/pages";
 import type { ImageAsset, Layer, PageSize } from "../model/types";
 import { ingestImageBlob, isSupportedImageFile } from "../io/imageIngest";
 import { pickImage } from "../io/platform";
@@ -45,6 +46,11 @@ export async function insertImageFile(host: ImageFlowHost, file: File): Promise<
     return;
   }
   const page = store.ui.page;
+  const pageId = pageIdAt(project, page);
+  if (!pageId) {
+    toast(t("app.waitForRender"), "warning");
+    return;
+  }
   const pageSize = await host.enqueuePageSize(page);
   if (!pageSize) {
     toast(t("app.waitForRender"), "warning");
@@ -56,7 +62,7 @@ export async function insertImageFile(host: ImageFlowHost, file: File): Promise<
     toast(t("app.showDrawingLayer"), "warning");
     return;
   }
-  const item = createImageItem(asset, page, pageSize, "background");
+  const item = createImageItem(asset, pageId, pageSize, "background");
   store.registerImageAsset(asset);
   store.mutate((project) => {
     project.assets[asset.id] = asset;
@@ -69,19 +75,22 @@ export async function insertImageFile(host: ImageFlowHost, file: File): Promise<
 function imageTargetLayer(): Layer | null {
   const project = store.project;
   if (!project) return null;
-  const page = store.ui.page;
+  const pageId = pageIdAt(project, store.ui.page);
+  if (!pageId) return null;
   const active = project.layers.find((layer) => layer.id === project.activeLayerId);
   if (
     active &&
     active.kind === "draw" &&
-    layerVisibleOnPage(active, page) &&
-    !layerLockedOnPage(active, page)
+    layerVisibleOnPage(active, pageId) &&
+    !layerLockedOnPage(active, pageId)
   ) {
     return active;
   }
   const candidate = project.layers.find(
     (layer) =>
-      layer.kind === "draw" && layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page),
+      layer.kind === "draw" &&
+      layerVisibleOnPage(layer, pageId) &&
+      !layerLockedOnPage(layer, pageId),
   );
   if (candidate) {
     store.setActiveLayer(candidate.id);

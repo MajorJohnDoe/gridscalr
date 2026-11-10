@@ -25,9 +25,9 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   const resolved = resolveSelection(project, refs);
   const kind = selectionKind(project, refs);
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));
-  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.page));
+  const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId));
   const anyUnlocked = resolved.some((entry) => !entry.locked);
-  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.page));
+  const canUnlock = resolved.some((entry) => !layerLockedOnPage(entry.layer, entry.item.pageId));
   const items: PopoverItem[] = [];
 
   if (!resolved.length) {
@@ -81,7 +81,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
     },
   );
 
-  const pages = resolved.map((entry) => entry.item.page);
+  const pages = resolved.map((entry) => entry.item.pageId);
   const targets = kind ? moveTargetLayers(project, kind, pages) : [];
   const layerChoices = targets.filter(
     (layer) => !resolved.every((entry) => entry.layer.id === layer.id),
@@ -94,7 +94,7 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
         icon: "layers",
         children: layerChoices.map((layer) => ({
           label: layer.name,
-          disabled: resolved.some((entry) => layerLockedOnPage(layer, entry.item.page)),
+          disabled: resolved.some((entry) => layerLockedOnPage(layer, entry.item.pageId)),
           action: () => actions.moveSelectionToLayer(layer.id),
         })),
       },

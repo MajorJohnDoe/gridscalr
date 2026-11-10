@@ -1,29 +1,23 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { compareRevisions } from "../src/compare/revisionDiff";
 import { createManualCalibration } from "../src/model/calibration";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(name = "Revision A", pages = 2): Project {
-  const project = createProject(defaultDocument("Plan.pdf", pages), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", pages)));
   project.name = name;
-  project.pages["1"] = { name: "Ground floor", calibration: createManualCalibration(100) };
-  if (pages > 1) project.pages["2"] = { calibration: createManualCalibration(100) };
+  project.pages[0].state = { name: "Ground floor", calibration: createManualCalibration(100) };
   return project;
 }
 
 function add(project: Project, item: Partial<MarkupItem> & Pick<MarkupItem, "kind">): MarkupItem {
   const created: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     points: [
       { x: 10, y: 10 },
       { x: 110, y: 10 },
@@ -133,7 +127,7 @@ describe("revision diff", () => {
     const current = makeProject("Revision A", 2);
     const reference = makeProject("Revision B", 1);
     reference.documents[0].name = "Other plan.pdf";
-    reference.pages["1"] = { calibration: createManualCalibration(50) };
+    reference.pages[0].state = { calibration: createManualCalibration(50) };
 
     const diff = compareRevisions(current, reference);
     expect(diff.summary.pages).toBe(2);

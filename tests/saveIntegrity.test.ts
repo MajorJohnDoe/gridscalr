@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { beforeEach, describe, expect, it } from "vitest";
+import { withTestPageIds } from "./helpers/pages";
 import {
   BACKUP_LIMIT,
   backupFileName,
@@ -20,7 +21,7 @@ import {
   type SaveIntegrityPorts,
 } from "../src/features/saveIntegrity";
 import { parseProject, serializeProject } from "../src/io/projectFile";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { Project } from "../src/model/types";
 import { store } from "../src/state/store";
 
@@ -34,7 +35,7 @@ function stampFor(contents: string): ProjectFileStamp {
 }
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.name = "Test project";
   project.documents[0].path = "/drawings/Plan.pdf";
   project.documents[0].relativePath = "old-value";

@@ -1,4 +1,5 @@
-export { parseProject } from "./parse";
+export { parseProject, parseProjectWithReport } from "./parse";
+export type { ProjectLoadReport } from "./parse";
 export { serializeProject } from "./serialize";
 export { isMeasurementKind } from "../../model/layers";
 export {

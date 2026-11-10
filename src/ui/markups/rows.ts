@@ -11,7 +11,13 @@ import { t } from "../../i18n";
 import { categoryForItem } from "../../model/categories";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
 import { formatTimestamp, timestampValue } from "../../model/dates";
-import { pageBuilding, pageDisplayName, pageFloor } from "../../model/documents";
+import {
+  currentPageId,
+  pageBuilding,
+  pageDisplayName,
+  pageFloor,
+  pageNumber,
+} from "../../model/pages";
 import {
   findItem,
   isMeasurementKind,
@@ -51,7 +57,11 @@ export function filteredRows(project: Project): MarkupRow[] {
   const rows: MarkupRow[] = [];
   for (const layer of project.layers) {
     for (const item of layer.items) {
-      if (markupsState.settings.pageFilter === "current" && item.page !== store.ui.page) continue;
+      if (
+        markupsState.settings.pageFilter === "current" &&
+        item.pageId !== currentPageId(project, store.ui.page)
+      )
+        continue;
       const kind = isMeasurementKind(item.kind)
         ? "measure"
         : item.kind === "symbol"
@@ -106,7 +116,7 @@ export function compareRows(a: MarkupRow, b: MarkupRow, project: Project): numbe
     if (result !== 0) return sort.direction === "desc" ? -result : result;
   }
   return (
-    a.item.page - b.item.page ||
+    pageNumber(project, a.item.pageId) - pageNumber(project, b.item.pageId) ||
     a.layer.name.localeCompare(b.layer.name) ||
     itemLabel(a.item, project).localeCompare(itemLabel(b.item, project), undefined, {
       numeric: true,
@@ -128,7 +138,7 @@ export function sortValue(
     case "type":
       return itemKindLabel(row.item.kind);
     case "page":
-      return row.item.page;
+      return pageNumber(project, row.item.pageId);
     case "layer":
       return row.layer.name.toLocaleLowerCase();
     case "value":
@@ -174,17 +184,16 @@ export function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Pr
         ? countTypeLabel(project, row.item.countType)
         : t("markups.other");
     case "page": {
-      const name = pageDisplayName(project, row.item.page);
-      return name
-        ? t("markups.pageWithName", { page: row.item.page, name })
-        : t("markups.pageOnly", { page: row.item.page });
+      const page = pageNumber(project, row.item.pageId);
+      const name = pageDisplayName(project, row.item.pageId);
+      return name ? t("markups.pageWithName", { page, name }) : t("markups.pageOnly", { page });
     }
     case "layer":
       return row.layer.name;
     case "building":
-      return pageBuilding(project, row.item.page) ?? t("markups.unassigned");
+      return pageBuilding(project, row.item.pageId) ?? t("markups.unassigned");
     case "floor":
-      return pageFloor(project, row.item.page) ?? t("markups.unassigned");
+      return pageFloor(project, row.item.pageId) ?? t("markups.unassigned");
   }
 }
 
@@ -250,8 +259,8 @@ export function markupRowElement(
   const deduction = item.kind === "area" && item.areaMode === "subtract";
   const hidden = !itemIsVisible(item, layer);
   const locked = itemIsLocked(item, layer);
-  const layerShown = layerVisibleOnPage(layer, item.page);
-  const layerLocked = layerLockedOnPage(layer, item.page);
+  const layerShown = layerVisibleOnPage(layer, item.pageId);
+  const layerLocked = layerLockedOnPage(layer, item.pageId);
 
   const tr = el("tr", "markups-row");
   tr.dataset.itemId = item.id;
@@ -288,18 +297,19 @@ export function markupRowElement(
 
   cells.set("type", el("td", "markups-type", itemKindLabel(item.kind)));
 
-  const pageCell = el("td", "markups-page", `p.${item.page}`);
-  const pageName = pageDisplayName(project, item.page);
-  if (pageName) pageCell.title = t("markups.pageWithName", { page: item.page, name: pageName });
+  const itemPage = pageNumber(project, item.pageId);
+  const pageCell = el("td", "markups-page", `p.${itemPage}`);
+  const pageName = pageDisplayName(project, item.pageId);
+  if (pageName) pageCell.title = t("markups.pageWithName", { page: itemPage, name: pageName });
   cells.set("page", pageCell);
 
   const layerCell = el("td", "markups-layer-cell");
   const layerSelect = el("select", "markups-layer-select");
   layerSelect.setAttribute("aria-label", t("markups.layerFor", { name: labelText }));
   layerSelect.title = t("markups.moveLayer");
-  for (const candidate of moveTargetLayers(project, layer.kind, [item.page])) {
+  for (const candidate of moveTargetLayers(project, layer.kind, [item.pageId])) {
     const candidateOption = option(candidate.id, candidate.name, candidate.id === layer.id);
-    if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.page)) {
+    if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.pageId)) {
       candidateOption.disabled = true;
     }
     layerSelect.append(candidateOption);
@@ -401,7 +411,7 @@ export function markupRowElement(
       ? hidden
         ? t("markups.showItem")
         : t("markups.hideItem")
-      : t("markups.layerHiddenOnPage", { page: item.page }),
+      : t("markups.layerHiddenOnPage", { page: pageNumber(project, item.pageId) }),
   );
   eye.classList.toggle("is-on", !hidden);
   eye.disabled = !layerShown;
@@ -419,7 +429,7 @@ export function markupRowElement(
   const lock = layerAction(
     locked ? "lock" : "unlock",
     layerLocked
-      ? t("markups.layerLockedOnPage", { page: item.page })
+      ? t("markups.layerLockedOnPage", { page: pageNumber(project, item.pageId) })
       : locked
         ? t("markups.unlockItem")
         : t("markups.lockItem"),
@@ -441,7 +451,7 @@ export function markupRowElement(
     if (cell) tr.append(cell);
   }
 
-  const navigate = () => actions.navigateToItem(item.page, layer.id, item.id);
+  const navigate = () => actions.navigateToItem(item.pageId, layer.id, item.id);
   tr.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, select, input, textarea")) return;
@@ -458,7 +468,9 @@ export function markupRowElement(
       const anchor = markupsState.rangeAnchor ?? ref;
       const start = rows.findIndex((entry) => selectionKey(entry) === selectionKey(anchor));
       const end = rows.findIndex((entry) => selectionKey(entry) === selectionKey(ref));
-      if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+      if (pageNumber(project, item.pageId) !== store.ui.page) {
+        actions.goToPage(pageNumber(project, item.pageId), false);
+      }
       if (start >= 0 && end >= 0) {
         const [from, to] = start <= end ? [start, end] : [end, start];
         store.setSelectionMany(rows.slice(from, to + 1));
@@ -468,7 +480,9 @@ export function markupRowElement(
       return;
     }
     if (event.ctrlKey || event.metaKey) {
-      if (item.page !== store.ui.page) actions.goToPage(item.page, false);
+      if (pageNumber(project, item.pageId) !== store.ui.page) {
+        actions.goToPage(pageNumber(project, item.pageId), false);
+      }
       store.toggleSelection(ref);
       markupsState.rangeAnchor = ref;
       return;

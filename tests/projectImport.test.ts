@@ -6,10 +6,11 @@ import {
   prepareProjectImport,
   ProjectImportError,
 } from "../src/features/projectImport/model";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { parseProject } from "../src/io/projectFile";
 import { serializeProject } from "../src/io/projectFile/serialize";
 import type { DocumentRef, ImageAsset, Layer, MarkupItem, Project } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 
@@ -33,7 +34,7 @@ function item(
 ): MarkupItem {
   return {
     id,
-    page,
+    pageId: pageIdFor(page),
     kind,
     points: [
       { x: 10, y: 10 },
@@ -85,7 +86,7 @@ function tifDocument(id = "doc_tif"): DocumentRef {
 function destinationProject(): Project {
   const document = defaultDocument("Plan.pdf", 2);
   document.sha256 = "hash_dest";
-  const project = createProject(document, createDefaultLayers());
+  const project = withTestPageIds(createProject(document));
   project.name = "Destination";
   project.settings.lengthUnit = "m";
   project.settings.areaUnit = "m2";
@@ -108,7 +109,7 @@ function destinationProject(): Project {
 function sourceProject(): Project {
   const pdf = defaultDocument("Plan.pdf", 3);
   pdf.sha256 = "hash_plan";
-  const project = createProject(pdf, createDefaultLayers());
+  const project = withTestPageIds(createProject(pdf));
   project.name = "Source";
   project.settings.lengthUnit = "cm";
   project.settings.areaUnit = "m2";
@@ -118,6 +119,10 @@ function sourceProject(): Project {
     "title.page": "7",
   };
   project.documents.push(template, tifDocument());
+  project.pages.push(
+    { id: "page_4", documentId: template.id, localPage: 1, state: {} },
+    { id: "page_5", documentId: project.documents[2].id, localPage: 1, state: {} },
+  );
 
   project.categories.push({
     id: "cat_src_walls",
@@ -153,7 +158,7 @@ function sourceProject(): Project {
   project.assets.asset_src = asset("asset_src", "data:image/png;base64,BBBB");
   project.assets.asset_unused = asset("asset_unused", "data:image/png;base64,CCCC");
 
-  project.pages["1"] = {
+  project.pages[0].state = {
     name: "Plan 1",
     building: "Building A",
     floor: "Floor 1",
@@ -179,10 +184,10 @@ function sourceProject(): Project {
       height: 50,
     },
   };
-  project.pages["2"] = { name: "Plan 2" };
-  project.pages["3"] = { name: "Plan 3" };
-  project.pages["4"] = { name: "Card 1" };
-  project.pages["5"] = {
+  project.pages[1].state = { name: "Plan 2" };
+  project.pages[2].state = { name: "Plan 3" };
+  project.pages[3].state = { name: "Card 1" };
+  project.pages[4].state = {
     name: "Scan 1",
     ocr: {
       text: "scan",
@@ -211,7 +216,7 @@ function sourceProject(): Project {
     item("src_text_2", 2, "text", { text: "two" }),
     item("src_rect_4", 4, "rect"),
   ]);
-  markups.pageState = { "1": { visible: false, locked: true } };
+  markups.pageState = { [pageIdFor(1)]: { visible: false, locked: true } };
 
   const measurements = layer("layer_src_measure", "Measurements", "measure", [
     item("src_length_2", 2, "length", {
@@ -298,11 +303,11 @@ describe("project page import", () => {
     expect(result.importedItemCount).toBe(10);
     expect(destination.documents).toHaveLength(4);
     expect(destination.documents[1].name).toBe("Plan.pdf 2");
-    expect(destination.pages["3"].name).toBe("Plan 1");
-    expect(destination.pages["3"].calibration?.id).not.toBe("cal_src");
-    expect(destination.pages["3"].scaleLocked).toBe(true);
-    expect(destination.pages["3"].ocr?.text).toBe("pump");
-    expect(destination.pages["6"].ocr?.text).toBe("scan");
+    expect(destination.pages[2].state.name).toBe("Plan 1");
+    expect(destination.pages[2].state.calibration?.id).not.toBe("cal_src");
+    expect(destination.pages[2].state.scaleLocked).toBe(true);
+    expect(destination.pages[2].state.ocr?.text).toBe("pump");
+    expect(destination.pages[5].state.ocr?.text).toBe("scan");
     expect(JSON.stringify(source)).toBe(before);
   });
 
@@ -316,20 +321,28 @@ describe("project page import", () => {
     );
 
     const prepared = prepareProjectImport(destination, source, [1, 2, 4]);
+    const pageIdForNew = (newPage: number) =>
+      prepared.pageMap.find((entry) => entry.newPage === newPage)!.newPageId;
     const markups = prepared.createdLayers.filter((entry) => entry.name === "Markups");
-    expect(markups).toHaveLength(3);
-    expect(markups.map((entry) => entry.homePage)).toEqual([3, 4, 5]);
-    expect(markups.map((entry) => entry.items.length)).toEqual([4, 1, 1]);
-    expect(markups[0].pageState).toEqual({ "3": { visible: false, locked: true } });
+    expect(markups).toHaveLength(1);
+    expect(markups[0].homePageId).toBe(pageIdForNew(3));
+    expect(markups[0].items).toHaveLength(6);
+    expect(markups[0].pageState).toEqual({
+      [pageIdForNew(3)]: { visible: false, locked: true },
+    });
     expect(markups.every((entry) => !destinationLayerIds.has(entry.id))).toBe(true);
 
     const measurements = prepared.createdLayers.filter((entry) => entry.name === "Measurements");
     expect(measurements).toHaveLength(1);
-    expect(measurements[0].homePage).toBe(4);
+    expect(measurements[0].homePageId).toBe(pageIdForNew(4));
     expect(measurements[0].items).toHaveLength(3);
 
     const hidden = prepared.createdLayers.find((entry) => entry.name === "Hidden layer");
-    expect(hidden).toMatchObject({ visible: false, locked: true, homePage: 3 });
+    expect(hidden).toMatchObject({
+      visible: false,
+      locked: true,
+      homePageId: pageIdForNew(3),
+    });
     expect(hidden?.items[0]).toMatchObject({ visible: false, locked: true });
 
     const empty = prepared.createdLayers.find((entry) => entry.name === "Empty");
@@ -394,7 +407,11 @@ describe("project page import", () => {
     expect(destination.assets.asset_src.data).toBe("data:image/png;base64,AAAA");
     const importedImage = destination.layers
       .flatMap((entry) => entry.items)
-      .find((entry) => entry.kind === "image" && entry.page === 3)!.image!;
+      .find(
+        (entry) =>
+          entry.kind === "image" &&
+          entry.pageId === prepared.pageMap.find((map) => map.newPage === 3)!.newPageId,
+      )!.image!;
     expect(destination.assets[importedImage.assetId].data).toBe("data:image/png;base64,BBBB");
   });
 
@@ -439,7 +456,9 @@ describe("project page import", () => {
     expect(dropped.warnings).toEqual(
       expect.arrayContaining([expect.objectContaining({ code: "ocrDropped", count: 1 })]),
     );
-    expect(dropped.pageStates["3"]?.ocr).toBeUndefined();
+    expect(
+      dropped.pages.find((page) => page.id === dropped.pageMap[0].newPageId)?.state.ocr,
+    ).toBeUndefined();
   });
 
   it("keeps hidden and locked items and preserves timestamps", () => {
@@ -460,14 +479,20 @@ describe("project page import", () => {
     commitProjectImport(destination, prepared);
     const parsed = parseProject(serializeProject(destination));
     expect(parsed.documents).toHaveLength(destination.documents.length);
-    expect(parsed.pages["3"]?.name).toBe("Plan 1");
-    expect(parsed.pages["7"]?.name).toBe("Scan 1");
+    expect(parsed.pages[2].state?.name).toBe("Plan 1");
+    expect(parsed.pages[6].state?.name).toBe("Scan 1");
     const importedItems = parsed.layers.reduce(
-      (sum, entry) => sum + entry.items.filter((item) => item.page >= 3).length,
+      (sum, entry) =>
+        sum +
+        entry.items.filter((item) => parsed.pages.findIndex((page) => page.id === item.pageId) >= 2)
+          .length,
       0,
     );
     const destinationItems = destination.layers.reduce(
-      (sum, entry) => sum + entry.items.filter((item) => item.page >= 3).length,
+      (sum, entry) =>
+        sum +
+        entry.items.filter((item) => parsed.pages.findIndex((page) => page.id === item.pageId) >= 2)
+          .length,
       0,
     );
     expect(importedItems).toBe(destinationItems);
@@ -512,7 +537,9 @@ describe("project page import", () => {
       pageCount: 4,
     });
     expect(prepared.documents[0].excludedPages).toEqual([2, 4]);
-    expect(prepared.pageStates["3"]?.ocr).toBeUndefined();
+    expect(
+      prepared.pages.find((page) => page.id === prepared.pageMap[0].newPageId)?.state.ocr,
+    ).toBeUndefined();
   });
 
   it("gives copied documents unique names", () => {

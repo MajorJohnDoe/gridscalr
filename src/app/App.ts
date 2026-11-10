@@ -3,8 +3,9 @@ import { CanvasView, type CanvasTestApi } from "../canvas/CanvasView";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import { layerVisibleOnPage } from "../model/layers";
 import { normalizeProjectName } from "../model/projectName";
-import { documentPageMaps, totalPageCount } from "../model/documents";
-import type { PageSize, Project } from "../model/types";
+import { documentPageMaps } from "../model/documents";
+import { documentPageOrder, pageIdAt } from "../model/pages";
+import type { PageId, PageSize, Project } from "../model/types";
 import {
   relativeDocumentPath,
   serializeProject,
@@ -212,8 +213,10 @@ export class App {
       setSelectionLocked: (locked) => setSelectionLocked(locked),
       setSelectionColor: (color) => setSelectionColor(color),
       setSelectionStrokeWidth: (width) => setSelectionStrokeWidth(width),
-      deletePage: (page) => void deletePageFlow(this.pageFlowHost(), page),
-      duplicatePage: (page) => void duplicatePageFlow(this.pageFlowHost(), page),
+      deletePage: (pageId) => void deletePageFlow(this.pageFlowHost(), pageId),
+      duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
+      reorderPage: (pageId, targetIndex) => this.reorderPage(pageId, targetIndex),
+      insertPage: (pageId, index) => this.insertPage(pageId, index),
       setSelectionCategory: (categoryId) => setSelectionCategory(categoryId),
       setSelectionRoom: (room) => setSelectionRoom(room),
       setSelectionAreaMode: (mode) => setSelectionAreaMode(mode),
@@ -231,10 +234,14 @@ export class App {
       getPageThumbnail: (page) => this.thumbnails?.get(page) ?? null,
       requestPageThumbnail: (page) => this.thumbnails?.request(page) ?? Promise.resolve(null),
       addPages: () => void addPageFlowModule(this.sheetFlowHost()),
-      editSheetFields: (page) =>
+      editSheetFields: (page) => {
+        const pageId = store.project ? pageIdAt(store.project, page) : null;
         void openSheetFieldsDialog(page, {
-          onChangePaper: (paper) => changeSheetPaper(this.sheetFlowHost(), page, paper),
-        }),
+          onChangePaper: (paper) => {
+            if (pageId) void changeSheetPaper(this.sheetFlowHost(), pageId, paper);
+          },
+        });
+      },
       refresh: () => this.renderAll(),
       openRecovery: () => void this.recovery.openChooser(),
       getRecoverySummary: () => this.recovery.summary(),
@@ -694,7 +701,11 @@ export class App {
     const previous = this.renderer;
     const previousThumbnails = this.thumbnails;
     this.documentRegistry.reset(project, previous);
-    const renderer = new PdfRenderer(documents, documentPageMaps(project.documents));
+    const renderer = new PdfRenderer(
+      documents,
+      documentPageMaps(project.documents),
+      documentPageOrder(project),
+    );
     this.renderer = renderer;
     this.thumbnails = new PageThumbnailService(
       async (page) => {
@@ -723,9 +734,34 @@ export class App {
       }
     });
     store.setProject(project, projectPath, dirty);
-    await this.enqueuePageSize(1);
+    await this.enqueuePageSize(project.pages.length ? 1 : 0);
     this.canvas.invalidate();
     this.canvas.fitPage();
+  }
+
+  private reorderPage(pageId: PageId, targetIndex: number): void {
+    if (!store.reorderPage(pageId, targetIndex)) return;
+    this.afterStructuralPageChange();
+  }
+
+  private insertPage(pageId: PageId, index: number): void {
+    const created = store.insertPageRecord(pageId, index);
+    if (!created) return;
+    this.afterStructuralPageChange();
+    void this.enqueuePageSize(store.ui.page);
+  }
+
+  private afterStructuralPageChange(): void {
+    const project = store.project;
+    if (!project) return;
+    this.renderer?.setPageOrder(documentPageOrder(project));
+    this.thumbnails?.clear();
+    this.resetPageSizes();
+    this.search.close();
+    void this.reference.close(false);
+    this.canvas.invalidate();
+    this.renderAll();
+    void this.enqueuePageSize(store.ui.page);
   }
 
   private addImportedDocuments(entries: readonly ImportedRendererDocument[]): void {
@@ -859,7 +895,7 @@ export class App {
     let initialAreaMode: "whole" | "crop" | undefined;
     let cropReferencePage = store.ui.page;
     for (;;) {
-      const pageCount = totalPageCount(project.documents);
+      const pageCount = project.pages.length;
       const pageNumbers = Array.from({ length: pageCount }, (_, index) => index + 1);
       const result = await drawingExportDialog({
         currentPage: store.ui.page,
@@ -868,7 +904,10 @@ export class App {
           id: layer.id,
           name: layer.name,
           kind: layer.kind,
-          visible: pageNumbers.some((page) => layerVisibleOnPage(layer, page)),
+          visible: pageNumbers.some((page) => {
+            const pageId = pageIdAt(project, page);
+            return pageId ? layerVisibleOnPage(layer, pageId) : false;
+          }),
           color: layer.color,
         })),
         initial: options,

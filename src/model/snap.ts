@@ -10,7 +10,7 @@ import {
   radiusCircle,
   rotatePoint,
 } from "./geometry";
-import type { MarkupItem, Point, Project } from "./types";
+import type { MarkupItem, PageId, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
 import { railGeometry } from "./rail";
 import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
@@ -235,15 +235,15 @@ function addUnique(
  * Pure candidate builder for one page. The canvas caches the result by project
  * revision/page so dragging stays responsive.
  */
-export function collectSnapCandidates(project: Project, page: number): SnapCandidate[] {
+export function collectSnapCandidates(project: Project, pageId: PageId): SnapCandidate[] {
   const candidates: SnapCandidate[] = [];
   const seen = new Map<string, SnapCandidate>();
   const segments: Segment[] = [];
 
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, page)) continue;
+    if (!layerVisibleOnPage(layer, pageId)) continue;
     for (const item of layer.items) {
-      if (item.page !== page || item.visible === false) continue;
+      if (item.pageId !== pageId || item.visible === false) continue;
 
       for (const point of endpointCandidates(item)) {
         addUnique(candidates, seen, {
@@ -278,7 +278,7 @@ export function collectSnapCandidates(project: Project, page: number): SnapCandi
   }
 
   if (project.settings.showCalibration) {
-    const calibration = pageCalibration(project, page);
+    const calibration = pageCalibration(project, pageId);
     if (calibration && isReferenceCalibration(calibration)) {
       for (const point of [calibration.p1, calibration.p2]) {
         addUnique(candidates, seen, { point: { ...point }, kind: "endpoint" });

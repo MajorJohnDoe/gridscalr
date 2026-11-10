@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor } from "./helpers/pages";
 import {
   calloutLayout,
   cloudLabelLayout,
@@ -16,7 +17,7 @@ import type { MarkupItem } from "../src/model/types";
 
 const base: MarkupItem = {
   id: "item",
-  page: 1,
+  pageId: pageIdFor(1),
   kind: "stamp",
   points: [{ x: 100, y: 100 }],
   color: "#35c2a1",

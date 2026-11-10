@@ -1,6 +1,6 @@
 import { t } from "../i18n";
 import type { Project } from "../model/types";
-import { totalPageCount } from "../model/documents";
+import { pageIdAt } from "../model/pages";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { disposeOcrWorker, isOcrCurrent, ocrPageToText, runOcrPage } from "../search/ocr";
 import { PdfTextIndex, type SearchHit } from "../search/textIndex";
@@ -43,11 +43,9 @@ export class SearchController {
       return;
     }
     this.query = "";
-    const index = new PdfTextIndex(totalPageCount(project.documents), (page) =>
-      renderer.getPage(page),
-    );
+    const index = new PdfTextIndex(project.pages.length, (page) => renderer.getPage(page));
     for (let page = 1; page <= index.pageCount; page += 1) {
-      const stored = project.pages[String(page)]?.ocr;
+      const stored = project.pages[page - 1]?.state.ocr;
       if (stored && isOcrCurrent(project, page, stored)) {
         index.seed(page, ocrPageToText(stored, page));
       }
@@ -108,7 +106,7 @@ export class SearchController {
   private async selectHit(hit: SearchHit): Promise<void> {
     const project = this.options.project();
     if (!project) return;
-    if (hit.page < 1 || hit.page > totalPageCount(project.documents)) return;
+    if (hit.page < 1 || hit.page > project.pages.length) return;
     await this.options.enqueuePageSize(hit.page);
     if (store.ui.page !== hit.page) store.setPage(hit.page);
     const canvas = this.options.canvas();
@@ -133,7 +131,9 @@ export class SearchController {
         if (pageText.text.trim().length >= 8) continue;
         const project = this.options.project();
         if (!project) return;
-        const stored = project.pages[String(page)]?.ocr;
+        const pageId = pageIdAt(project, page);
+        if (!pageId) continue;
+        const stored = project.pages[page - 1]?.state.ocr;
         if (stored && isOcrCurrent(project, page, stored)) {
           index.setPageText(page, ocrPageToText(stored, page));
           continue;
@@ -151,7 +151,7 @@ export class SearchController {
           );
         });
         if (token !== this.ocrToken || this.index !== index) return;
-        store.setPageOcr(page, ocr);
+        store.setPageOcr(pageId, ocr);
         index.setPageText(page, ocrPageToText(ocr, page));
         scanned += 1;
         this.run(this.query);

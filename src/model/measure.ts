@@ -148,7 +148,7 @@ export function itemScaleWarning(item: MarkupItem, project: Project): string | n
   }
   // Items without a snapshot predate the field and follow the page.
   if (item.scale === undefined) return null;
-  const page = pageScale(project, item.page);
+  const page = pageScale(project, item.pageId);
   if (!item.scale) {
     return page ? t("measure.beforeCalibration") : null;
   }

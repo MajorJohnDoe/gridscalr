@@ -14,7 +14,14 @@ import {
 import { defaultRailRows, RAIL_ROW_SPACING } from "../../model/rail";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../../model/style";
 import { stampStatusColor } from "../../model/stamps";
-import type { AreaShape, InspectionStatus, ItemKind, MarkupItem, Point } from "../../model/types";
+import type {
+  AreaShape,
+  InspectionStatus,
+  ItemKind,
+  MarkupItem,
+  PageId,
+  Point,
+} from "../../model/types";
 import {
   symbolCategoryColor,
   symbolCategoryOf,
@@ -41,7 +48,7 @@ export function createItemInStore(
   kind: ItemKind,
   points: Point[],
   options: ItemOptions,
-  viewPage: number,
+  pageId: PageId,
 ): CreatedItemRef | null {
   const project = store.project;
   if (!project) return null;
@@ -49,11 +56,11 @@ export function createItemInStore(
   const active = project.layers.find(
     (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
   );
-  if (active && (!layerVisibleOnPage(active, viewPage) || layerLockedOnPage(active, viewPage))) {
+  if (active && (!layerVisibleOnPage(active, pageId) || layerLockedOnPage(active, pageId))) {
     toast(
       t("canvas.layerUnavailable", {
         name: active.name,
-        state: layerLockedOnPage(active, viewPage)
+        state: layerLockedOnPage(active, pageId)
           ? t("canvas.stateLocked")
           : t("canvas.stateHidden"),
       }),
@@ -63,9 +70,9 @@ export function createItemInStore(
   }
   let layerId = "";
   let itemId = "";
-  const scale = pageScale(project, viewPage);
+  const scale = pageScale(project, pageId);
   store.mutate((project) => {
-    const layer = ensureActiveLayer(project, layerKind, viewPage);
+    const layer = ensureActiveLayer(project, layerKind, pageId);
     const now = new Date().toISOString();
     const style = store.ui.style;
     const isMeasure = layerKind === "measure";
@@ -96,7 +103,7 @@ export function createItemInStore(
     const lineColor = normalizeColor(lineStyle?.color, drawColor);
     const item: MarkupItem = {
       id: makeId("item"),
-      page: viewPage,
+      pageId,
       kind,
       points: points.map((p) => ({ ...p })),
       color: isMeasure

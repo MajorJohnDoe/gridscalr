@@ -1,5 +1,5 @@
 import { findItem, itemIsLocked } from "./layers";
-import type { Layer, LayerKind, MarkupItem, Project, SelectionRef } from "./types";
+import type { Layer, LayerKind, MarkupItem, PageId, Project, SelectionRef } from "./types";
 
 export interface ResolvedSelection {
   ref: SelectionRef;
@@ -46,8 +46,8 @@ export function selectionKind(project: Project, refs: SelectionRef[]): LayerKind
   return layers.every((kind) => kind === layers[0]) ? layers[0] : null;
 }
 
-export function selectionPage(project: Project, refs: SelectionRef[]): number | null {
-  const pages = resolveSelection(project, refs).map((entry) => entry.item.page);
+export function selectionPage(project: Project, refs: SelectionRef[]): PageId | null {
+  const pages = resolveSelection(project, refs).map((entry) => entry.item.pageId);
   if (!pages.length) return null;
-  return pages.every((page) => page === pages[0]) ? pages[0] : null;
+  return pages.every((pageId) => pageId === pages[0]) ? pages[0] : null;
 }

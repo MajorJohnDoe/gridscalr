@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createManualCalibration, setPageCalibration } from "../src/model/calibration";
 import { itemNeedsPageScale } from "../src/model/measure";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { LabelMeasure } from "../src/model/label";
 import {
   layoutPageLabels,
@@ -23,13 +18,13 @@ const PAGE: PageSize = { width: 800, height: 600 };
 const measure: LabelMeasure = (text, size) => text.length * size * 0.55;
 
 function projectWith(items: Array<Partial<MarkupItem> & Pick<MarkupItem, "kind">>) {
-  const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
-  setPageCalibration(project, 1, createManualCalibration(100), { pageCount: 1 });
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
+  setPageCalibration(project, pageIdFor(1), createManualCalibration(100), {});
   const layer = layersForKind(project, "measure")[0];
   const created = items.map((item, index) => {
     const entry: MarkupItem = {
       id: item.id ?? `item_${index}`,
-      page: 1,
+      pageId: pageIdFor(1),
       points: [
         { x: 0, y: 0 },
         { x: 100, y: 0 },
@@ -48,7 +43,7 @@ function projectWith(items: Array<Partial<MarkupItem> & Pick<MarkupItem, "kind">
 }
 
 function layoutFor(project: Project, item: MarkupItem): LabelLayout {
-  const sources = pageLabelSources(project, 1);
+  const sources = pageLabelSources(project, pageIdFor(1));
   const layout = layoutPageLabels(sources, { pageSize: PAGE, measure }).get(item.id);
   if (!layout) throw new Error("label layout missing");
   return layout;

@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { PageSize, Project, SheetPaperSize, SheetTemplateRef } from "../model/types";
-import { documentIndexForPage, projectDocumentForPage, totalPageCount } from "../model/documents";
+import { documentPageOrder, pageNumber, pageRecordById } from "../model/pages";
 import { createProject } from "../model/layers";
 import { normalizeProjectName } from "../model/projectName";
 import { currentLocale, t } from "../i18n";
@@ -112,15 +112,17 @@ export async function addPageFlow(host: SheetFlowHost): Promise<void> {
 
 export async function changeSheetPaper(
   host: SheetFlowHost,
-  page: number,
+  pageId: string,
   paper: SheetPaperSize,
 ): Promise<void> {
   const project = store.project;
   const renderer = host.renderer();
   if (!project || !renderer) return;
-  const sheet = projectDocumentForPage(project, page);
-  if (!sheet?.template || sheet.template.paper === paper) return;
-  const index = documentIndexForPage(project.documents, page);
+  const record = pageRecordById(project, pageId);
+  const sheet = project.documents.find((entry) => entry.id === record?.documentId);
+  if (!sheet?.template || sheet.template.paper === paper || !record) return;
+  const page = pageNumber(project, pageId);
+  const index = project.documents.findIndex((entry) => entry.id === sheet.id);
   const next: SheetTemplateRef = {
     ...sheet.template,
     paper,
@@ -135,7 +137,7 @@ export async function changeSheetPaper(
   host.resetPageSize(page);
   await host.enqueuePageSize(page);
   host.fitPage();
-  store.setTemplatePaper(page, paper);
+  store.setTemplatePaper(pageId, paper);
   host.invalidate();
   toast(t("sheet.paperChanged", { paper }), "success");
 }
@@ -145,7 +147,7 @@ export async function addSheetFlow(host: SheetFlowHost, choice: SheetSourceChoic
   const renderer = host.renderer();
   if (!project || !renderer) return;
 
-  const startPage = totalPageCount(project.documents) + 1;
+  const startPage = project.pages.length + 1;
   const documentRef = createTemplateDocument(choice.templateId, choice.paper, choice.name);
   prefillSheetFields(project, documentRef, templateSheetCount(project) + 1);
   if (!documentRef.template) return;
@@ -159,6 +161,7 @@ export async function addSheetFlow(host: SheetFlowHost, choice: SheetSourceChoic
   );
   store.addDocument(documentRef);
   renderer.addDocument(pdf, [1]);
+  renderer.setPageOrder(documentPageOrder(store.project ?? project));
   store.setPage(startPage);
   await host.enqueuePageSize(startPage);
   host.fitPage();

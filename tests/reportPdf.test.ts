@@ -1,14 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument } from "pdf-lib";
 import { createCalibration } from "../src/model/calibration";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
 import { exportQuantityReportPdf } from "../src/pdf/reportPdf";
@@ -19,12 +14,12 @@ const GENERATED = "2026-10-22T12:00:00.000Z";
 const SCALE = { pointsPerMeter: 100, sourceUnit: "m" as const };
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("plan.pdf", 2)));
   project.name = "Mängd ÅÄÖ";
-  project.pages["1"] = {
+  project.pages[0].state = {
     calibration: createCalibration({ x: 10, y: 10 }, { x: 110, y: 10 }, 10, "m"),
   };
-  project.pages["2"] = {
+  project.pages[0].state = {
     calibration: createCalibration({ x: 10, y: 10 }, { x: 110, y: 10 }, 10, "m"),
   };
   project.settings.lengthUnit = "m";
@@ -45,7 +40,7 @@ function add(
 ): MarkupItem {
   const item: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind,
     points:
       kind === "count"

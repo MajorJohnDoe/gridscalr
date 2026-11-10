@@ -38,7 +38,7 @@ export function setItemsVisible(
 ): ItemCommandResult {
   const result = emptyResult();
   for (const entry of resolveSelection(project, refs)) {
-    if (visible && !layerVisibleOnPage(entry.layer, entry.item.page)) {
+    if (visible && !layerVisibleOnPage(entry.layer, entry.item.pageId)) {
       result.skippedLayerHidden += 1;
       continue;
     }
@@ -60,7 +60,7 @@ export function setItemsLocked(
 ): ItemCommandResult {
   const result = emptyResult();
   for (const entry of resolveSelection(project, refs)) {
-    if (!locked && layerLockedOnPage(entry.layer, entry.item.page)) {
+    if (!locked && layerLockedOnPage(entry.layer, entry.item.pageId)) {
       result.skippedLayerLocked += 1;
       continue;
     }

@@ -33,9 +33,9 @@ describe("app flows", () => {
     store.project = null;
     const pageHost = host();
     await goToPage(pageHost, 2);
-    await navigateToItem(pageHost, 2, "layer", "item");
-    await duplicatePageFlow(pageHost, 1);
-    await deletePageFlow(pageHost, 1);
+    await navigateToItem(pageHost, "page_2", "layer", "item");
+    await duplicatePageFlow(pageHost, "page_1");
+    await deletePageFlow(pageHost, "page_1");
     expect(pageHost.enqueuePageSize).not.toHaveBeenCalled();
   });
 

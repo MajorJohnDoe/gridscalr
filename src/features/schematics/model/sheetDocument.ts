@@ -1,5 +1,5 @@
 import { makeId } from "../../../model/calibration";
-import { projectDocumentForPage } from "../../../model/documents";
+import { documentForPageRecord, pageRecordAt } from "../../../model/pages";
 import type { DocumentRef, Project } from "../../../model/types";
 import {
   SHEET_FIELD,
@@ -33,10 +33,10 @@ export function createTemplateDocument(
 }
 
 export function templateDocumentForPage(
-  project: Pick<Project, "documents">,
+  project: Pick<Project, "pages" | "documents">,
   page: number,
 ): DocumentRef | undefined {
-  const document = projectDocumentForPage(project, page);
+  const document = documentForPageRecord(project, pageRecordAt(project, page));
   return document?.kind === "template" ? document : undefined;
 }
 

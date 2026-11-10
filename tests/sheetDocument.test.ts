@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
-import { duplicatePageFromProject, totalPageCount } from "../src/model/documents";
+import { withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
+import { duplicatePage as duplicatePageRecord } from "../src/features/pageModel";
 import {
   createTemplateDocument,
   isBlankSheet,
@@ -11,7 +12,7 @@ import {
 import { BLANK_TEMPLATE_ID, SHEET_FIELD } from "../src/features/schematics/model/sheetTemplate";
 
 function project() {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.name = "North wing";
   project.metadata.projectNumber = "U-100";
   project.metadata.preparedBy = "A. Handläggare";
@@ -83,10 +84,16 @@ describe("template sheet documents", () => {
     const projectValue = project();
     const sheet = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Sheet");
     projectValue.documents.push(sheet);
+    projectValue.pages.push({
+      id: "page_3",
+      documentId: sheet.id,
+      localPage: 1,
+      state: {},
+    });
     sheet.template!.fields[SHEET_FIELD.projectName] = "Original";
-    const sourcePage = totalPageCount(projectValue.documents);
+    const sourcePageId = "page_3";
 
-    const result = duplicatePageFromProject(projectValue, sourcePage, {
+    const result = duplicatePageRecord(projectValue, sourcePageId, {
       copyMarkups: false,
       copyScale: false,
       copyName: false,
@@ -107,6 +114,10 @@ describe("template sheet documents", () => {
     const first = createTemplateDocument("gridscalr.operation-card.frame", "A3", "First");
     const second = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Second");
     projectValue.documents.push(first, second);
+    projectValue.pages.push(
+      { id: "page_3", documentId: first.id, localPage: 1, state: {} },
+      { id: "page_4", documentId: second.id, localPage: 1, state: {} },
+    );
 
     expect(templateSheetCount(projectValue)).toBe(2);
     expect(templateDocumentForPage(projectValue, 1)).toBeUndefined();

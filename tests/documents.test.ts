@@ -1,21 +1,33 @@
 import { describe, expect, it } from "vitest";
 import {
-  deletePageFromProject,
-  documentIndexForPage,
-  duplicatePageFromProject,
-  pageDisplayName,
   documentPageMaps,
   documentPageRange,
   documentStartPage,
   excludedSourcePages,
   includedLocalPages,
   localPageNumber,
-  pageDocumentLabel,
   primaryDocument,
   totalPageCount,
 } from "../src/model/documents";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
+import {
+  currentPageId,
+  documentPageOrder,
+  pageIdAt,
+  pageIdForDocumentPage,
+  pageNumber,
+  pageRecordAt,
+  pageStateOf,
+} from "../src/model/pages";
+import {
+  cleanupEmptyLayers,
+  deletePage,
+  duplicatePage,
+  insertPage,
+  movePage,
+} from "../src/features/pageModel";
 import type { DocumentRef } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 function pdf(name: string, pageCount: number): DocumentRef {
   return { ...defaultDocument(name, pageCount), kind: "pdf", sha256: name };
@@ -46,37 +58,18 @@ describe("document page mapping", () => {
     expect(totalPageCount([partial])).toBe(2);
   });
 
-  it("maps global pages onto documents in order", () => {
-    expect(documentIndexForPage(documents, 1)).toBe(0);
-    expect(documentIndexForPage(documents, 3)).toBe(0);
-    expect(documentIndexForPage(documents, 4)).toBe(1);
-    expect(documentIndexForPage(documents, 5)).toBe(1);
-  });
-
-  it("clamps pages outside the project to the nearest document", () => {
-    expect(documentIndexForPage(documents, 0)).toBe(0);
-    expect(documentIndexForPage(documents, 99)).toBe(1);
-  });
-
-  it("computes document start pages and ranges", () => {
+  it("computes source document starts and ranges", () => {
     expect(documentStartPage(documents, 0)).toBe(1);
     expect(documentStartPage(documents, 1)).toBe(4);
     expect(documentPageRange(documents, 0)).toEqual({ start: 1, end: 3 });
     expect(documentPageRange(documents, 1)).toEqual({ start: 4, end: 5 });
   });
 
-  it("converts global pages to local page numbers", () => {
+  it("converts source-document pages to local page numbers", () => {
     expect(localPageNumber(documents, 1)).toBe(1);
     expect(localPageNumber(documents, 3)).toBe(3);
     expect(localPageNumber(documents, 4)).toBe(1);
     expect(localPageNumber(documents, 5)).toBe(2);
-  });
-
-  it("labels pages with their source document only when there are several", () => {
-    const project = { documents };
-    expect(pageDocumentLabel(project, 1)).toBe("Bottom.pdf · p. 1/3");
-    expect(pageDocumentLabel(project, 4)).toBe("Upper.pdf · p. 1/2");
-    expect(pageDocumentLabel({ documents: [documents[0]] }, 2)).toBe("Bottom.pdf");
   });
 
   it("exposes the primary document", () => {
@@ -104,173 +97,159 @@ describe("document page mapping", () => {
   });
 });
 
-function pageProject() {
-  const project = createProject(pdf("Bottom.pdf", 3), createDefaultLayers());
-  project.documents.push(pdf("Upper.pdf", 1));
-  const measure = project.layers.find((layer) => layer.kind === "measure")!;
-  measure.items = [
-    {
-      id: "p1",
-      page: 1,
-      kind: "count",
-      points: [{ x: 0, y: 0 }],
-      color: "#fff",
-      strokeWidth: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "p2",
-      page: 2,
-      kind: "count",
-      points: [{ x: 0, y: 0 }],
-      color: "#fff",
-      strokeWidth: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "p3",
-      page: 3,
-      kind: "count",
-      points: [{ x: 0, y: 0 }],
-      color: "#fff",
-      strokeWidth: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: "p4",
-      page: 4,
-      kind: "count",
-      points: [{ x: 0, y: 0 }],
-      color: "#fff",
-      strokeWidth: 1,
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-  project.pages = { "1": {}, "2": {}, "3": {}, "4": {} };
+function projectWithPages() {
+  const project = withTestPageIds(createProject(pdf("Bottom.pdf", 3)));
+  project.documents.push(pdf("Upper.pdf", 2));
+  project.pages.push({
+    id: "page_4",
+    documentId: project.documents[1].id,
+    localPage: 1,
+    state: {},
+  });
+  project.pages.push({
+    id: "page_5",
+    documentId: project.documents[1].id,
+    localPage: 2,
+    state: {},
+  });
   return project;
 }
 
-const now = "2026-01-01T00:00:00.000Z";
+describe("stable page identity", () => {
+  it("derives display numbers from the page order", () => {
+    const project = projectWithPages();
+    expect(project.pages).toHaveLength(5);
+    expect(pageNumber(project, "page_1")).toBe(1);
+    expect(pageNumber(project, "page_4")).toBe(4);
+    expect(pageNumber(project, "missing")).toBe(0);
+    expect(pageIdAt(project, 2)).toBe(pageIdFor(2));
+    expect(pageRecordAt(project, 5)?.localPage).toBe(2);
+    expect(currentPageId(project, 3)).toBe(pageIdFor(3));
+  });
 
-describe("page deletion", () => {
-  it("removes the page, its items, and remaps later pages", () => {
-    const project = pageProject();
-    const result = deletePageFromProject(project, 2);
-    expect(result).toEqual({ page: 2, removedDocumentIndex: null });
-    expect(totalPageCount(project.documents)).toBe(3);
-    expect(project.documents[0].excludedPages).toEqual([2]);
-    const measure = project.layers.find((layer) => layer.kind === "measure")!;
-    expect(measure.items.map((item) => [item.id, item.page])).toEqual([
-      ["p1", 1],
-      ["p3", 2],
-      ["p4", 3],
+  it("resolves a source document page to its project page", () => {
+    const project = projectWithPages();
+    const upper = project.documents[1];
+    expect(pageIdForDocumentPage(project, upper.id, 2)).toBe("page_5");
+    expect(pageIdForDocumentPage(project, upper.id, 9)).toBeNull();
+  });
+
+  it("reports the renderer order as document index plus local page", () => {
+    const project = projectWithPages();
+    expect(documentPageOrder(project)).toEqual([
+      { documentIndex: 0, localPage: 1 },
+      { documentIndex: 0, localPage: 2 },
+      { documentIndex: 0, localPage: 3 },
+      { documentIndex: 1, localPage: 1 },
+      { documentIndex: 1, localPage: 2 },
     ]);
-    expect(Object.keys(project.pages)).toEqual(["1", "2", "3"]);
+    movePage(project, "page_5", 0);
+    expect(documentPageOrder(project)[0]).toEqual({ documentIndex: 1, localPage: 2 });
   });
 
-  it("removes a document when its last included page is deleted", () => {
-    const project = pageProject();
-    const result = deletePageFromProject(project, 4);
-    expect(result).toEqual({ page: 3, removedDocumentIndex: 1 });
-    expect(project.documents.map((document) => document.name)).toEqual(["Bottom.pdf"]);
-    const measure = project.layers.find((layer) => layer.kind === "measure")!;
-    expect(measure.items.map((item) => item.id)).toEqual(["p1", "p2", "p3"]);
-  });
-
-  it("refuses to delete the last remaining page", () => {
-    const project = createProject(pdf("Only.pdf", 1), createDefaultLayers());
-    expect(deletePageFromProject(project, 1)).toBeNull();
-  });
-
-  it("refuses pages outside the project", () => {
-    const project = pageProject();
-    expect(deletePageFromProject(project, 0)).toBeNull();
-    expect(deletePageFromProject(project, 99)).toBeNull();
-  });
-
-  it("remaps page-scoped layer state and home pages", () => {
-    const project = pageProject();
-    const layer = project.layers.find((entry) => entry.kind === "measure")!;
-    layer.homePage = 2;
-    layer.pageState = {
-      "2": { visible: false },
-      "3": { locked: true },
-    };
-    project.pages["3"].name = "Detail";
-    deletePageFromProject(project, 2);
-    expect(layer.homePage).toBe(2);
-    expect(layer.pageState).toEqual({ "2": { locked: true } });
-    expect(project.pages["2"].name).toBe("Detail");
+  it("stores page state on the record", () => {
+    const project = projectWithPages();
+    pageStateOf(project, "page_2")!.name = "Details";
+    expect(pageStateOf(project, "page_2")?.name).toBe("Details");
   });
 });
 
-describe("page duplication", () => {
-  function duplicateProject() {
-    const project = pageProject();
-    project.pages["2"] = {
-      name: "Windows",
-      building: "Building A",
-      floor: "Floor 2",
-      calibration: {
-        id: "cal_2",
-        source: "reference",
-        p1: { x: 0, y: 0 },
-        p2: { x: 100, y: 0 },
-        knownLength: 10,
-        unit: "m",
-        pointsPerMeter: 10,
-        createdAt: now,
-      },
-      scaleLocked: true,
+describe("page operations", () => {
+  function item(id: string, pageId: string) {
+    return {
+      id,
+      pageId,
+      kind: "count" as const,
+      points: [{ x: 0, y: 0 }],
+      color: "#fff",
+      strokeWidth: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
     };
-    const layer = project.layers.find((entry) => entry.kind === "measure")!;
-    layer.homePage = 1;
-    layer.pageState = { "2": { visible: false } };
-    return { project, layer };
   }
 
-  it("appends a page copy with scale, name, layer state and markups", () => {
-    const { project, layer } = duplicateProject();
-    const result = duplicatePageFromProject(project, 2, {
+  it("inserts a page record at a chosen index without touching other pages", () => {
+    const project = projectWithPages();
+    const record = insertPage(project, {
+      documentId: project.documents[0].id,
+      localPage: 1,
+      index: 1,
+    });
+    expect(record).not.toBeNull();
+    expect(project.pages[1].id).toBe(record!.id);
+    expect(pageNumber(project, "page_2")).toBe(3);
+  });
+
+  it("reorders pages without changing any page ID", () => {
+    const project = projectWithPages();
+    const ids = project.pages.map((page) => page.id);
+    expect(movePage(project, "page_5", 0)).toBe(true);
+    expect(project.pages.map((page) => page.id)).toEqual([
+      "page_5",
+      "page_1",
+      "page_2",
+      "page_3",
+      "page_4",
+    ]);
+    expect(new Set(project.pages.map((page) => page.id))).toEqual(new Set(ids));
+  });
+
+  it("deletes a page, its items and its layer state by ID", () => {
+    const project = projectWithPages();
+    const layer = project.layers.find((entry) => entry.kind === "measure")!;
+    layer.items.push(item("a", "page_2"), item("b", "page_3"));
+    layer.pageState = { page_2: { visible: false } };
+    const summary = deletePage(project, "page_2");
+    expect(summary?.removedItems).toBe(1);
+    expect(project.pages.map((page) => page.id)).toEqual(["page_1", "page_3", "page_4", "page_5"]);
+    expect(layer.items.map((entry) => entry.pageId)).toEqual(["page_3"]);
+    expect(layer.pageState).toBeUndefined();
+    // Later pages keep their identity; only the display number changes.
+    expect(pageNumber(project, "page_3")).toBe(2);
+  });
+
+  it("duplicates a page with a new PageId and copies its items", () => {
+    const project = projectWithPages();
+    const layer = project.layers.find((entry) => entry.kind === "measure")!;
+    layer.items.push(item("a", "page_2"));
+    pageStateOf(project, "page_2")!.name = "Copy me";
+    const summary = duplicatePage(project, "page_2", {
       copyMarkups: true,
       copyScale: true,
       copyName: true,
-      name: "Windows copy",
+      name: "Copy",
     });
-    expect(result).toEqual({ page: 5, sourceDocumentIndex: 0, sourceLocalPage: 2 });
-    expect(project.documents).toHaveLength(3);
-    const copyDocument = project.documents[2];
-    expect(copyDocument.excludedPages).toEqual([1, 3]);
-    expect(copyDocument.copiedFrom).toEqual({ documentId: project.documents[0].id, page: 2 });
-    expect(project.pages["5"]).toMatchObject({
-      name: "Windows copy",
-      building: "Building A",
-      floor: "Floor 2",
-      scaleLocked: true,
-      calibration: { id: "cal_2", pointsPerMeter: 10 },
-    });
-    const copied = layer.items.filter((item) => item.page === 5);
-    expect(copied).toHaveLength(1);
-    expect(copied[0].id).not.toBe("p2");
-    expect(layer.pageState?.["5"]).toEqual({ visible: false });
-    expect(pageDisplayName(project, 5)).toBe("Windows copy");
+    expect(summary?.copiedItems).toBe(1);
+    const copy = project.pages[project.pages.length - 1];
+    expect(copy.id).not.toBe("page_2");
+    expect(copy.documentId).toBe(project.pages[1].documentId);
+    expect(copy.localPage).toBe(project.pages[1].localPage);
+    expect(copy.state.name).toBe("Copy");
+    expect(layer.items.find((entry) => entry.pageId === copy.id)?.id).not.toBe("a");
   });
 
-  it("can omit markups, scale and name", () => {
-    const { project, layer } = duplicateProject();
-    const result = duplicatePageFromProject(project, 2, {
-      copyMarkups: false,
-      copyScale: false,
-      copyName: false,
-      name: "Ignored",
-    });
-    expect(result?.page).toBe(5);
-    expect(project.pages["5"]).toEqual({ building: "Building A", floor: "Floor 2" });
-    expect(layer.items.filter((item) => item.page === 5)).toHaveLength(0);
-    expect(layer.pageState?.["5"]).toEqual({ visible: false });
+  it("removes an empty layer when it loses its last page", () => {
+    const project = projectWithPages();
+    const extra = {
+      ...project.layers.find((entry) => entry.kind === "measure")!,
+      id: "layer_extra",
+      name: "Extra",
+      items: [],
+      pageState: undefined,
+      homePageId: "page_2",
+    };
+    project.layers.push(extra);
+    const before = project.layers.length;
+    deletePage(project, "page_2");
+    expect(project.layers.length).toBe(before - 1);
+    expect(project.layers.find((entry) => entry.id === extra.id)).toBeUndefined();
+    expect(cleanupEmptyLayers(project)).toBe(0);
+  });
+
+  it("supports an empty project", () => {
+    const project = withTestPageIds(createProject());
+    expect(project.pages).toEqual([]);
+    expect(project.documents).toEqual([]);
+    expect(project.layers.map((layer) => layer.kind)).toEqual(["draw", "measure"]);
   });
 });

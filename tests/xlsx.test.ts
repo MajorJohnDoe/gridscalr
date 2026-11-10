@@ -1,13 +1,8 @@
 import { strFromU8, unzipSync } from "fflate";
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createManualCalibration } from "../src/model/calibration";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
 import { exportQuantityWorkbook } from "../src/report/xlsx";
@@ -17,25 +12,24 @@ const NOW = "2026-01-01T00:00:00.000Z";
 const GENERATED = "2026-10-22T12:00:00.000Z";
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.name = "Example project";
   project.documents[0].sha256 = "abc123";
   project.settings.lengthUnit = "m";
   project.settings.areaUnit = "m2";
-  project.pages["1"] = {
+  project.pages[0].state = {
     name: "Ground floor",
     building: "House A",
     floor: "Level 1",
     calibration: createManualCalibration(100),
   };
-  project.pages["2"] = { calibration: createManualCalibration(100) };
   return project;
 }
 
 function add(project: Project, kind: "length" | "area" | "count", extra: Partial<MarkupItem> = {}) {
   const item: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind,
     points:
       kind === "count"

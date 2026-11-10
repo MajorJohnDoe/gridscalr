@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createManualCalibration } from "../src/model/calibration";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import type { MarkupItem, Project } from "../src/model/types";
 import { buildQuantityReport } from "../src/report/reportModel";
 import { QUANTITY_CSV_COLUMNS, serializeQuantityCsv } from "../src/report/csv";
@@ -16,7 +11,7 @@ const GENERATED = "2026-10-22T12:00:00.000Z";
 const SCALE = { pointsPerMeter: 100, sourceUnit: "m" as const };
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("plan, final.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("plan, final.pdf", 2)));
   project.name = "Example, project";
   project.documents[0].sha256 = "abc123";
   project.settings.lengthUnit = "m";
@@ -33,7 +28,7 @@ function add(
 ): MarkupItem {
   const item: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind,
     points:
       kind === "count"
@@ -64,8 +59,8 @@ function categoryId(project: Project, name: string): string {
 describe("quantity CSV", () => {
   it("reports a manual drawing scale as 1:N", () => {
     const project = makeProject();
-    project.pages["1"] = { calibration: createManualCalibration(100) };
-    project.pages["2"] = { calibration: createManualCalibration(100) };
+    project.pages[0].state = { calibration: createManualCalibration(100) };
+    project.pages[1].state = { calibration: createManualCalibration(100) };
     const report = buildQuantityReport(project, { generatedAt: GENERATED });
     expect(report.scaleSummary).toBe("All pages · 1:100");
   });

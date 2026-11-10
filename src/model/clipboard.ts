@@ -8,7 +8,7 @@ import {
   layerVisibleOnPage,
 } from "./layers";
 import { resolveSelection } from "./selection";
-import type { Layer, MarkupItem, Project, SelectionRef } from "./types";
+import type { Layer, MarkupItem, PageId, Project, SelectionRef } from "./types";
 
 export interface ClipboardItem {
   item: MarkupItem;
@@ -17,7 +17,7 @@ export interface ClipboardItem {
 
 export interface ClipboardPayload {
   projectId: string;
-  page: number;
+  pageId: PageId;
   items: ClipboardItem[];
   capturedAt: string;
 }
@@ -29,7 +29,7 @@ export function copyItems(project: Project, refs: SelectionRef[]): number {
   if (!resolved.length) return 0;
   clipboard = {
     projectId: project.id,
-    page: resolved[0].item.page,
+    pageId: resolved[0].item.pageId,
     items: resolved.map(({ item, layer }) => ({
       sourceLayerId: layer.id,
       item: {
@@ -62,15 +62,15 @@ function targetLayerFor(
   project: Project,
   sourceLayerId: string,
   item: MarkupItem,
-  page: number,
+  pageId: PageId,
 ): Layer {
   const kind = layerKindForItem(item.kind);
   const source = project.layers.find((layer) => layer.id === sourceLayerId);
   if (
     source &&
     source.kind === kind &&
-    layerVisibleOnPage(source, page) &&
-    !layerLockedOnPage(source, page)
+    layerVisibleOnPage(source, pageId) &&
+    !layerLockedOnPage(source, pageId)
   ) {
     return source;
   }
@@ -79,29 +79,29 @@ function targetLayerFor(
     (layer) =>
       layer.id === project.activeLayerId &&
       layer.kind === kind &&
-      layerVisibleOnPage(layer, page) &&
-      !layerLockedOnPage(layer, page),
+      layerVisibleOnPage(layer, pageId) &&
+      !layerLockedOnPage(layer, pageId),
   );
   if (active) return active;
 
   const editable = project.layers.find(
     (layer) =>
-      layer.kind === kind && layerVisibleOnPage(layer, page) && !layerLockedOnPage(layer, page),
+      layer.kind === kind && layerVisibleOnPage(layer, pageId) && !layerLockedOnPage(layer, pageId),
   );
   if (editable) {
     project.activeLayerId = editable.id;
     return editable;
   }
-  return ensureActiveLayer(project, kind, page);
+  return ensureActiveLayer(project, kind, pageId);
 }
 
-export function pasteItems(project: Project, page: number): SelectionRef[] {
+export function pasteItems(project: Project, pageId: PageId): SelectionRef[] {
   if (!clipboard || clipboard.projectId !== project.id) return [];
   const refs: SelectionRef[] = [];
   for (const entry of clipboard.items) {
-    const layer = targetLayerFor(project, entry.sourceLayerId, entry.item, page);
-    const offset = entry.item.page === page ? 12 : 0;
-    const copy = cloneItem(entry.item, offset, page);
+    const layer = targetLayerFor(project, entry.sourceLayerId, entry.item, pageId);
+    const offset = entry.item.pageId === pageId ? 12 : 0;
+    const copy = cloneItem(entry.item, offset, pageId);
     addItem(project, layer.id, copy);
     refs.push({ layerId: layer.id, itemId: copy.id });
   }
@@ -117,8 +117,8 @@ export function duplicateItems(
   const created: SelectionRef[] = [];
   for (const { layer, item } of resolved) {
     if (itemIsLocked(item, layer)) continue;
-    const target = targetLayerFor(project, layer.id, item, item.page);
-    const copy = cloneItem(item, offset, item.page);
+    const target = targetLayerFor(project, layer.id, item, item.pageId);
+    const copy = cloneItem(item, offset, item.pageId);
     addItem(project, target.id, copy);
     created.push({ layerId: target.id, itemId: copy.id });
   }

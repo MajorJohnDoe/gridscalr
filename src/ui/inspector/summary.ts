@@ -16,6 +16,7 @@ import { itemKindLabel, itemNeedsPageScale, itemScaleWarning } from "../../model
 import { el } from "../dom";
 import { icon } from "../icons";
 import type { InspectorContext } from "./context";
+import { pageNumber } from "../../model/pages";
 
 export function appendSummary(section: HTMLElement, context: InspectorContext): void {
   const { project, item, layer, locked, hidden, metrics } = context;
@@ -62,7 +63,7 @@ export function appendSummary(section: HTMLElement, context: InspectorContext): 
       "div",
       "selection-secondary",
       t("selection.pageSummary", {
-        page: item.page,
+        page: pageNumber(project, item.pageId),
         layer: layer.name,
         count: item.points.length,
       }),
@@ -83,8 +84,11 @@ export function appendSummary(section: HTMLElement, context: InspectorContext): 
       el(
         "div",
         "empty-note small",
-        layerLockedOnPage(layer, item.page)
-          ? t("inspector.lockedOnPageMessage", { name: layer.name, page: item.page })
+        layerLockedOnPage(layer, item.pageId)
+          ? t("inspector.lockedOnPageMessage", {
+              name: layer.name,
+              page: pageNumber(project, item.pageId),
+            })
           : t("inspector.lockedEdit"),
       ),
     );

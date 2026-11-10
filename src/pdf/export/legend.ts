@@ -3,6 +3,7 @@ import { countQuantityOf, countTypeLabel } from "../../features/countTypes/model
 import { countSymbol } from "../../model/countSymbols";
 import { formatPageList } from "../../model/export";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
+import { pageIdAt } from "../../model/pages";
 import type { CountGlyph, CountType, Point, Project } from "../../model/types";
 import { t } from "../../i18n";
 import { clamp, pdfColor } from "./geometry";
@@ -65,7 +66,10 @@ export function drawLegendPage(
     (layer) =>
       layer.opacity > 0 &&
       selectedLayerIds.has(layer.id) &&
-      pages.some((page) => layerVisibleOnPage(layer, page)),
+      pages.some((page) => {
+        const pageId = pageIdAt(project, page);
+        return pageId ? layerVisibleOnPage(layer, pageId) : false;
+      }),
   );
   if (!layers.length) {
     page.drawText(t("pdfExport.noLayers"), {
@@ -155,12 +159,17 @@ function exportedCounts(
   pages: readonly number[],
   selectedLayerIds: ReadonlySet<string>,
 ): Map<CountType, number> {
-  const pageSet = new Set(pages);
+  const pageSet = new Set(
+    pages
+      .map((page) => pageIdAt(project, page))
+      .filter((pageId): pageId is string => Boolean(pageId)),
+  );
   const counts = new Map<CountType, number>();
   for (const layer of project.layers) {
     if (layer.opacity <= 0 || !selectedLayerIds.has(layer.id)) continue;
     for (const item of layer.items) {
-      if (item.kind !== "count" || !itemIsVisible(item, layer) || !pageSet.has(item.page)) continue;
+      if (item.kind !== "count" || !itemIsVisible(item, layer) || !pageSet.has(item.pageId))
+        continue;
       const type = item.countType ?? "other";
       counts.set(type, (counts.get(type) ?? 0) + countQuantityOf(item));
     }

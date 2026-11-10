@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor } from "./helpers/pages";
 import { SYMBOL_SIZE } from "../src/model/symbols";
 import {
   clampPointToPage,
@@ -62,7 +63,7 @@ describe("canvas geometry", () => {
   it("anchors Shift-dragged line and pipe vertices on their neighbour", () => {
     const line = {
       id: "line",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "line" as const,
       points: [
         { x: 0, y: 0 },
@@ -185,7 +186,7 @@ describe("selection handles", () => {
     const { selectionHandles } = await import("../src/canvas/selectionHandles");
     const item = {
       id: "line",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "line" as const,
       points: [
         { x: 0, y: 0 },
@@ -204,7 +205,7 @@ describe("selection handles", () => {
     const { selectionHandles } = await import("../src/canvas/selectionHandles");
     const item = {
       id: "text",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "text" as const,
       points: [{ x: 10, y: 20 }],
       text: "Note",
@@ -226,7 +227,7 @@ describe("selection handles", () => {
     ]);
     const item = {
       id: "symbol",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "symbol" as const,
       symbolId: "fire.extinguisher",
       points: [{ x: 100, y: 100 }],
@@ -256,7 +257,7 @@ describe("selection handles", () => {
     const { selectionHandles } = await import("../src/canvas/selectionHandles");
     const item = {
       id: "count",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "count" as const,
       points: [{ x: 10, y: 20 }],
       color: "#000",

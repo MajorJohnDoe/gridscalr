@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { withTestPageIds } from "./helpers/pages";
 
 vi.mock("../src/io/platform", () => ({
   isTauri: true,
@@ -8,12 +9,12 @@ vi.mock("../src/io/platform", () => ({
 }));
 
 import { fileSize, pathExists } from "../src/io/platform";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { sourceStatus } from "../src/source/sourceStatus";
 import { store } from "../src/state/store";
 
 function projectWithSize(sizeBytes = 100) {
-  const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
   project.documents[0].path = "/drawings/plan.pdf";
   project.documents[0].sizeBytes = sizeBytes;
   return project;

@@ -147,11 +147,14 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
   const active = project.layers.find(
     (layer) => layer.id === project.activeLayerId && layer.kind === "draw",
   );
-  if (active && (!layerVisibleOnPage(active, edit.page) || layerLockedOnPage(active, edit.page))) {
+  if (
+    active &&
+    (!layerVisibleOnPage(active, edit.pageId) || layerLockedOnPage(active, edit.pageId))
+  ) {
     toast(
       t("canvas.layerUnavailable", {
         name: active.name,
-        state: layerLockedOnPage(active, edit.page)
+        state: layerLockedOnPage(active, edit.pageId)
           ? t("canvas.stateLocked")
           : t("canvas.stateHidden"),
       }),
@@ -165,11 +168,11 @@ export async function commitTextEdit(state: EditorState): Promise<void> {
   let itemId = "";
   closeTextEditor(state);
   store.mutate((project) => {
-    const layer = ensureActiveLayer(project, "draw", edit.page);
+    const layer = ensureActiveLayer(project, "draw", edit.pageId);
     const now = new Date().toISOString();
     const item: MarkupItem = {
       id: makeId("item"),
-      page: edit.page,
+      pageId: edit.pageId,
       kind: "text",
       points: [{ ...edit.anchor }],
       color: normalizeColor(edit.color, "#f2a93b"),

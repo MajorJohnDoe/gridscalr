@@ -39,6 +39,7 @@ import {
   type InteractionRenderContext,
 } from "./interactionRenderer";
 import type { NormalizedCrop } from "../model/export";
+import { pageIdAt } from "../model/pages";
 import { resolveSelection } from "../model/selection";
 import {
   createCalibration,
@@ -56,7 +57,6 @@ import {
   type SnapResult,
 } from "../model/snap";
 import { TEXT_FONT_STACK } from "../model/text";
-import { totalPageCount } from "../model/documents";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import {
   resolveSheetLabels,
@@ -164,7 +164,8 @@ export class CanvasView {
   private drafts: DraftLifecycle;
   private pointers: PointerController;
   private snap: SnapResult | null = null;
-  private snapCache: { revision: number; page: number; candidates: SnapCandidate[] } | null = null;
+  private snapCache: { revision: number; pageId: string; candidates: SnapCandidate[] } | null =
+    null;
   private searchHits: {
     page: number;
     rects: Array<{ x: number; y: number; width: number; height: number }>;
@@ -308,6 +309,7 @@ export class CanvasView {
       touchNavigationBlocked: () => this.pointers.touchBlocked,
       activeTool: () => store.ui.activeTool,
       viewPage: () => this.viewPage,
+      viewPageId: () => this.viewPageId,
       toPage: (screen) => this.toPage(screen),
       calibrationLabelHit: (screen) => this.calibrationLabelHit(screen),
       editCalibration: () => this.editCalibration(),
@@ -372,6 +374,11 @@ export class CanvasView {
 
   private get viewPage(): number {
     return this.view.page;
+  }
+
+  private get viewPageId(): string | null {
+    const project = this.sceneProject;
+    return project ? pageIdAt(project, this.viewPage) : null;
   }
 
   private get viewZoom(): number {
@@ -678,7 +685,7 @@ export class CanvasView {
     const project = this.sceneProject;
     const size = this.pageSize();
     if (!project || !size) return new Map();
-    return layoutPageLabels(pageLabelSources(project, this.viewPage), {
+    return layoutPageLabels(pageLabelSources(project, this.viewPageId ?? ""), {
       pageSize: size,
       measure: measureLabelText,
       labelSize: project.settings.labelSize,
@@ -734,12 +741,12 @@ export class CanvasView {
     if (
       !this.snapCache ||
       this.snapCache.revision !== store.revision ||
-      this.snapCache.page !== this.viewPage
+      this.snapCache.pageId !== this.viewPageId
     ) {
       this.snapCache = {
         revision: store.revision,
-        page: this.viewPage,
-        candidates: collectSnapCandidates(project, this.viewPage),
+        pageId: this.viewPageId ?? "",
+        candidates: this.viewPageId ? collectSnapCandidates(project, this.viewPageId) : [],
       };
     }
     return this.snapCache.candidates;
@@ -784,19 +791,21 @@ export class CanvasView {
     const project = store.project;
     if (!project) return;
     const page = this.viewPage;
-    if (pageScaleLocked(project, page)) {
+    const pageId = this.viewPageId;
+    if (!pageId) return;
+    if (pageScaleLocked(project, pageId)) {
       this.drafts.setDraft(null);
       toast(t("canvas.scaleLockedCalibrate"), "warning");
       this.drawInteraction();
       return;
     }
     const pagesAffected = project.layers.some(
-      (layer) => layer.kind === "measure" && layer.items.some((item) => item.page === page),
+      (layer) => layer.kind === "measure" && layer.items.some((item) => item.pageId === pageId),
     );
     const result = await calibrationDialog({
       defaultUnit: project.settings.lengthUnit,
       hasMeasurements: pagesAffected,
-      pageCount: totalPageCount(project.documents),
+      pageCount: project.pages.length,
       currentPage: page,
     });
     if (!result) {
@@ -804,12 +813,11 @@ export class CanvasView {
       return;
     }
     const calibration = createCalibration(p1, p2, result.knownLength, result.unit);
-    let changed: number[] = [];
+    let changed: string[] = [];
     store.mutate((project) => {
-      changed = setPageCalibration(project, page, calibration, {
+      changed = setPageCalibration(project, pageId, calibration, {
         applyToAll: result.applyToAll,
         updateMeasurements: result.updateMeasurements,
-        pageCount: totalPageCount(project.documents),
       });
     }, "change");
     if (!changed.length) {
@@ -818,9 +826,7 @@ export class CanvasView {
       return;
     }
     store.setTool("select");
-    const lockedSkipped = result.applyToAll
-      ? totalPageCount(project.documents) - changed.length
-      : 0;
+    const lockedSkipped = result.applyToAll ? project.pages.length - changed.length : 0;
     toast(
       result.applyToAll
         ? t("canvas.scaleSetMany", {
@@ -843,9 +849,11 @@ export class CanvasView {
     const project = store.project;
     if (!project) return;
     const page = this.viewPage;
-    const calibration = pageCalibration(project, page);
+    const pageId = this.viewPageId;
+    if (!pageId) return;
+    const calibration = pageCalibration(project, pageId);
     if (!calibration) return;
-    if (pageScaleLocked(project, page)) {
+    if (pageScaleLocked(project, pageId)) {
       toast(t("canvas.scaleLockedEdit"), "warning");
       return;
     }
@@ -854,7 +862,7 @@ export class CanvasView {
       return;
     }
     const pagesAffected = project.layers.some(
-      (layer) => layer.kind === "measure" && layer.items.some((item) => item.page === page),
+      (layer) => layer.kind === "measure" && layer.items.some((item) => item.pageId === pageId),
     );
     const result = await calibrationDialog({
       mode: "edit",
@@ -862,16 +870,15 @@ export class CanvasView {
       initialKnownLength: calibration.knownLength,
       initialUnit: calibration.unit,
       hasMeasurements: pagesAffected,
-      pageCount: totalPageCount(project.documents),
+      pageCount: project.pages.length,
       currentPage: page,
     });
     if (!result) return;
     const next = createCalibration(calibration.p1, calibration.p2, result.knownLength, result.unit);
     store.mutate((project) => {
-      setPageCalibration(project, page, next, {
+      setPageCalibration(project, pageId, next, {
         applyToAll: false,
         updateMeasurements: result.updateMeasurements,
-        pageCount: totalPageCount(project.documents),
       });
     }, "change");
     toast(
@@ -921,10 +928,10 @@ export class CanvasView {
     const layouts = this.pageLabelLayouts();
     for (let l = project.layers.length - 1; l >= 0; l--) {
       const layer = project.layers[l];
-      if (!layerVisibleOnPage(layer, this.viewPage) || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, this.viewPageId ?? "") || layer.opacity <= 0) continue;
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
-        if (item.page !== this.viewPage || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== this.viewPageId || !itemIsVisible(item, layer)) continue;
         if (!isMeasurementKind(item.kind)) continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
@@ -960,8 +967,8 @@ export class CanvasView {
   private startTextTool(page: Point): void {
     const project = store.project;
     if (!project) return;
-    const hit = hitTest(project, this.viewPage, page, 7 / this.viewZoom);
-    if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPage)) {
+    const hit = hitTest(project, this.viewPageId ?? "", page, 7 / this.viewZoom);
+    if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPageId ?? "")) {
       store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
       this.editors.startTextEdit(hit.item, hit.layer);
     } else {
@@ -974,7 +981,7 @@ export class CanvasView {
     points: Point[],
     options: ItemOptions = {},
   ): { layerId: string; itemId: string } | null {
-    return createItemInStore(kind, points, options, this.viewPage);
+    return createItemInStore(kind, points, options, this.viewPageId ?? "");
   }
 
   public finishDraft(): void {
@@ -1157,20 +1164,20 @@ export class CanvasView {
     if (!project) return;
     const size = this.pageSize();
     if (!size) return;
-    const page = this.viewPage;
+    const pageId = this.viewPageId;
     const labels = this.pageLabelLayouts();
     const visible = visiblePageBounds(this.view, this.width, this.height, VIEW_CULL_MARGIN);
     const renderContext = this.itemRenderContext();
 
     // Background images sit above the PDF but below every markup layer.
-    drawVisibleItems(ctx, project, page, labels, renderContext, visible, true);
+    drawVisibleItems(ctx, project, pageId ?? "", labels, renderContext, visible, true);
 
     this.drawSheetFields(ctx);
 
-    drawVisibleItems(ctx, project, page, labels, renderContext, visible, false);
+    drawVisibleItems(ctx, project, pageId ?? "", labels, renderContext, visible, false);
 
     if (project.settings.showCalibration) {
-      const calibration = pageCalibration(project, page);
+      const calibration = pageCalibration(project, pageId);
       if (calibration && isReferenceCalibration(calibration)) {
         const p1 = this.toScreen(calibration.p1);
         const p2 = this.toScreen(calibration.p2);
@@ -1410,6 +1417,7 @@ export class CanvasView {
       draft: this.drafts.draft,
       project: store.project,
       viewPage: this.viewPage,
+      viewPageId: this.viewPageId,
       zoom: this.viewZoom,
       pageSize: this.pageSize(),
       toScreen: (point) => this.toScreen(point),

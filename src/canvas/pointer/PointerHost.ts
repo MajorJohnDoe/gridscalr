@@ -66,6 +66,7 @@ export interface PointerHost {
   touchNavigationBlocked(): boolean;
   activeTool(): ToolId;
   viewPage(): number;
+  viewPageId(): import("../../model/types").PageId | null;
   toPage(screen: Point): Point;
   calibrationLabelHit(screen: Point): boolean;
   editCalibration(): Promise<void> | void;

@@ -2,6 +2,7 @@ import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import type { Point } from "../../model/types";
+import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
 import type { Viewport } from "../viewport";
 import type { MarqueeState, PanState } from "./pointerState";
@@ -9,6 +10,7 @@ import { wheelZoomFactor } from "./wheel";
 
 export interface NavigationContext {
   viewport(): Viewport;
+  viewPageId(): PageId | null;
   capturePointer(pointerId: number): void;
   updateCursor(): void;
   drawInteraction(): void;
@@ -115,9 +117,9 @@ export class NavigationGesture {
     const min = { x: rect.x, y: rect.y };
     const max = { x: rect.x + rect.width, y: rect.y + rect.height };
     for (const layer of store.project.layers) {
-      if (!layerVisibleOnPage(layer, view.page)) continue;
+      if (!layerVisibleOnPage(layer, this.context.viewPageId() ?? "")) continue;
       for (const item of layer.items) {
-        if (item.page !== view.page || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== this.context.viewPageId() || !itemIsVisible(item, layer)) continue;
         if (itemIntersectsBounds(item, min, max)) {
           refs.push({ layerId: layer.id, itemId: item.id });
         }

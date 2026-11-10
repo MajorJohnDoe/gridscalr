@@ -5,6 +5,7 @@ import {
   type PDFPageProxy,
 } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import type { DocumentPageOrderEntry } from "../model/pages";
 import type { PageSize, Point } from "../model/types";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
@@ -80,14 +81,18 @@ export class PdfRenderer {
   private activeTasks = new Set<{ cancel: () => void }>();
   /** 1-based global page where each document starts. */
   private starts: number[] = [];
-  /** Source-local pages included for each document, in global order. */
+  /** Source-local pages included for each document, in document order. */
   private pageMaps: number[][];
+  /** Explicit project page order. When set, display pages follow this list. */
+  private pageOrder: DocumentPageOrderEntry[] | null;
 
   constructor(
     public readonly documents: PDFDocumentProxy[],
     pageMaps?: number[][],
+    pageOrder?: DocumentPageOrderEntry[] | null,
   ) {
     if (!documents.length) throw new Error(t("pdf.noDocument"));
+    this.pageOrder = pageOrder ?? null;
     this.pageMaps = documents.map((document, index) => {
       const requested = pageMaps?.[index];
       if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
@@ -117,7 +122,15 @@ export class PdfRenderer {
     this.recomputeStarts();
   }
 
-  /** Replaces the included source pages after a page removal. */
+  /** Sets the display page order explicitly. Identity stays in the project. */
+  setPageOrder(pageOrder: DocumentPageOrderEntry[] | null): void {
+    this.cancel();
+    for (const page of new Set(this.pages.values())) page.cleanup();
+    this.pages.clear();
+    this.pageOrder = pageOrder;
+  }
+
+  /** Replaces the included source pages after a document change. */
   setPageMaps(pageMaps: number[][]): void {
     this.cancel();
     for (const page of new Set(this.pages.values())) page.cleanup();
@@ -180,11 +193,20 @@ export class PdfRenderer {
   }
 
   get pageCount(): number {
+    if (this.pageOrder) return this.pageOrder.length;
     return this.pageMaps.reduce((sum, pages) => sum + pages.length, 0);
   }
 
-  /** 0-based document index and 1-based local page for a global page number. */
+  /** 0-based document index and 1-based local page for a display page number. */
   private locate(pageNumber: number): { index: number; localPage: number } {
+    if (this.pageOrder) {
+      if (!this.pageOrder.length) return { index: 0, localPage: 1 };
+      const page = Math.max(1, Math.min(this.pageCount, Math.round(pageNumber)));
+      const entry = this.pageOrder[page - 1];
+      return entry
+        ? { index: entry.documentIndex, localPage: entry.localPage }
+        : { index: 0, localPage: 1 };
+    }
     const page = Math.max(1, Math.min(this.pageCount, Math.round(pageNumber)));
     let index = 0;
     for (let i = 0; i < this.starts.length; i++) {

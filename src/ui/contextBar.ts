@@ -23,6 +23,7 @@ import {
 } from "../features/schematics/symbols/registry";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
+import { pageIdAt } from "../model/pages";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { clear, el, option } from "./dom";
@@ -85,8 +86,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   const layerTarget = el("label", "layer-target");
   if (activeLayer) {
     const page = store.ui.page;
-    const activeVisible = layerVisibleOnPage(activeLayer, page);
-    const activeLocked = layerLockedOnPage(activeLayer, page);
+    const pageId = pageIdAt(project, page) ?? "";
+    const activeVisible = layerVisibleOnPage(activeLayer, pageId);
+    const activeLocked = layerLockedOnPage(activeLayer, pageId);
     layerTarget.classList.toggle(
       "is-warning",
       Boolean(targetKind && (!activeVisible || activeLocked)),
@@ -104,9 +106,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       // visible so the picker never silently shows a different layer than the
       // one new items would use.
       for (const candidate of [...layersForKind(project, kind)]
-        .filter((layer) => layer.id === activeLayer.id || layerAppliesToPage(layer, page))
+        .filter((layer) => layer.id === activeLayer.id || layerAppliesToPage(layer, pageId))
         .reverse()) {
-        const otherPage = !layerAppliesToPage(candidate, page);
+        const otherPage = !layerAppliesToPage(candidate, pageId);
         group.append(
           option(
             candidate.id,
@@ -123,12 +125,12 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       if (
         targetKind &&
         next &&
-        (!layerVisibleOnPage(next, page) || layerLockedOnPage(next, page))
+        (!layerVisibleOnPage(next, pageId) || layerLockedOnPage(next, pageId))
       ) {
         toast(
           t("context.targetUnavailable", {
             name: next.name,
-            state: layerLockedOnPage(next, page)
+            state: layerLockedOnPage(next, pageId)
               ? t("context.stateLocked")
               : t("context.stateHidden"),
           }),

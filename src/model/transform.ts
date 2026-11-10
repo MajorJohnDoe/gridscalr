@@ -90,8 +90,8 @@ export function scaleSelection(
     if (
       itemIsLocked(item, layer) ||
       !itemIsVisible(item, layer) ||
-      !layerVisibleOnPage(layer, item.page) ||
-      layerLockedOnPage(layer, item.page)
+      !layerVisibleOnPage(layer, item.pageId) ||
+      layerLockedOnPage(layer, item.pageId)
     ) {
       continue;
     }

@@ -1,5 +1,5 @@
 import { categoryForItem, normalizeRoom } from "./categories";
-import { pageBuilding, pageDisplayName, pageFloor } from "./documents";
+import { pageBuilding, pageDisplayName, pageFloor, pageNumber } from "./pages";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { itemScaleForDisplay } from "./measure";
@@ -7,13 +7,13 @@ import { countQuantityOf, countTypeFor } from "../features/countTypes/model";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
 import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
 import { t } from "../i18n";
-import type { MarkupItem, Project } from "./types";
+import type { MarkupItem, PageId, Project } from "./types";
 
 export type QuantityType = "length" | "area" | "count" | "angle" | "slope" | "volume";
 
 export interface QuantityFilters {
-  /** A page number, or "all" for every page. */
-  page: number | "all";
+  /** A stable page ID, or "all" for every page. */
+  page: PageId | "all";
   /** null or undefined means every layer. An empty array selects no layers. */
   layerIds?: readonly string[] | null;
   /** null or undefined means every category. */
@@ -100,10 +100,13 @@ interface GroupAccumulator {
   items: number;
   wastePercent: number;
   roundingStep: number;
-  page?: number;
+  pageId?: PageId;
 }
 
 export interface QuantityByPageRow extends QuantityRow {
+  /** Stable identity used for grouping. */
+  pageId: PageId;
+  /** 1-based display number derived from the current page order. */
   page: number;
   /** Page title, or "Page N" when the page has no title. */
   pageName: string;
@@ -112,6 +115,8 @@ export interface QuantityByPageRow extends QuantityRow {
 }
 
 export interface QuantityPageSection {
+  pageId: PageId;
+  /** 1-based display number derived from the current page order. */
   page: number;
   pageName: string;
   building: string;
@@ -221,7 +226,7 @@ function totalsFromRows(rows: QuantityRow[]): QuantityTypeTotal[] {
 function forEachMeasuredItem(
   project: Project,
   filters: {
-    page?: number | "all";
+    page?: PageId | "all";
     layerIds?: readonly string[] | null;
     categoryId?: string | null;
     room?: string;
@@ -244,7 +249,7 @@ function forEachMeasuredItem(
       const category = categoryForItem(project, item);
       if (!category) continue;
       const room = normalizeRoom(item.room ?? "") ?? "";
-      if (filters.page !== undefined && filters.page !== "all" && item.page !== filters.page) {
+      if (filters.page !== undefined && filters.page !== "all" && item.pageId !== filters.page) {
         continue;
       }
       if (filters.layerIds && !filters.layerIds.includes(layer.id)) continue;
@@ -468,7 +473,7 @@ export function calculateQuantitiesByPage(
   const units = projectUnits(project);
 
   const counters = forEachMeasuredItem(project, filters, (entry) => {
-    const key = `${entry.item.page}\u0000${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}\u0000${entry.countTypeId ?? ""}`;
+    const key = `${entry.item.pageId}\u0000${entry.categoryId}\u0000${roomKey(entry.room)}\u0000${entry.type}\u0000${entry.countTypeId ?? ""}`;
     let group = groups.get(key);
     if (!group) {
       group = {
@@ -483,7 +488,7 @@ export function calculateQuantitiesByPage(
         items: 0,
         wastePercent: entry.wastePercent,
         roundingStep: entry.roundingStep,
-        page: entry.item.page,
+        pageId: entry.item.pageId,
       };
       groups.set(key, group);
     }
@@ -496,7 +501,8 @@ export function calculateQuantitiesByPage(
   const rows: QuantityByPageRow[] = [...groups.values()]
     .map((group) => ({
       ...rowFromGroup(group, units),
-      page: group.page ?? 1,
+      pageId: group.pageId ?? "",
+      page: pageNumber(project, group.pageId),
       pageName: "",
       building: "",
       floor: "",
@@ -519,12 +525,13 @@ export function calculateQuantitiesByPage(
   const pages: QuantityPageSection[] = [];
   for (const row of rows) {
     row.pageName =
-      pageDisplayName(project, row.page) ?? t("quantity.pageLabel", { page: row.page });
-    row.building = pageBuilding(project, row.page) ?? "";
-    row.floor = pageFloor(project, row.page) ?? "";
+      pageDisplayName(project, row.pageId) ?? t("quantity.pageLabel", { page: row.page });
+    row.building = pageBuilding(project, row.pageId) ?? "";
+    row.floor = pageFloor(project, row.pageId) ?? "";
     let page = pages[pages.length - 1];
-    if (!page || page.page !== row.page) {
+    if (!page || page.pageId !== row.pageId) {
       page = {
+        pageId: row.pageId,
         page: row.page,
         pageName: row.pageName,
         building: row.building,

@@ -4,11 +4,13 @@ import type {
   LengthUnit,
   ManualCalibration,
   MarkupItem,
+  PageId,
   Point,
   Project,
   ReferenceCalibration,
   ScaleSnapshot,
 } from "./types";
+import { ensurePageState, pageStateOf } from "./pages";
 import { unitToMeters } from "./units";
 import { t } from "../i18n";
 
@@ -81,16 +83,25 @@ export function calibrationScaleSnapshot(cal: Calibration): ScaleSnapshot {
   };
 }
 
-export function pageCalibration(project: Project | null, page: number): Calibration | undefined {
-  return project?.pages[String(page)]?.calibration;
+export function pageCalibration(
+  project: Project | null,
+  pageId: PageId | null | undefined,
+): Calibration | undefined {
+  return pageStateOf(project, pageId)?.calibration;
 }
 
-export function pageScaleLocked(project: Project | null, page: number): boolean {
-  return project?.pages[String(page)]?.scaleLocked === true;
+export function pageScaleLocked(
+  project: Project | null,
+  pageId: PageId | null | undefined,
+): boolean {
+  return pageStateOf(project, pageId)?.scaleLocked === true;
 }
 
-export function pageScale(project: Project | null, page: number): ScaleSnapshot | null {
-  const cal = pageCalibration(project, page);
+export function pageScale(
+  project: Project | null,
+  pageId: PageId | null | undefined,
+): ScaleSnapshot | null {
+  const cal = pageCalibration(project, pageId);
   if (!cal) return null;
   return calibrationScaleSnapshot(cal);
 }
@@ -99,7 +110,7 @@ export function itemScale(item: MarkupItem, project: Project | null): ScaleSnaps
   // undefined means the item predates scale snapshots and follows the page;
   // null means it was explicitly created uncalibrated and should stay that way.
   if (item.scale === null) return null;
-  return item.scale ?? pageScale(project, item.page);
+  return item.scale ?? pageScale(project, item.pageId);
 }
 
 /** The drawing ratio (the N in 1:N) implied by a scale snapshot. */
@@ -117,26 +128,24 @@ function cloneCalibration(calibration: Calibration): Calibration {
   };
 }
 
-/** Sets a scale and returns the page numbers that were actually changed. */
+/** Sets a scale and returns the stable page IDs that were actually changed. */
 export function setPageCalibration(
   project: Project,
-  page: number,
+  pageId: PageId,
   calibration: Calibration,
-  options: { applyToAll?: boolean; updateMeasurements?: boolean; pageCount: number },
-): number[] {
-  const pages = options.applyToAll
-    ? Array.from({ length: options.pageCount }, (_, i) => i + 1)
-    : [page];
-  const changed: number[] = [];
+  options: { applyToAll?: boolean; updateMeasurements?: boolean },
+): PageId[] {
+  const targets = options.applyToAll ? project.pages.map((record) => record.id) : [pageId];
+  const changed: PageId[] = [];
 
-  for (const pageNumber of pages) {
-    const key = String(pageNumber);
-    const state = project.pages[key] ?? {};
+  for (const targetId of targets) {
+    const state = ensurePageState(project, targetId);
+    if (!state) continue;
     // A locked page keeps its current scale even when another page applies a
     // calibration to all pages.
     if (state.scaleLocked) continue;
-    project.pages[key] = { ...state, calibration: cloneCalibration(calibration) };
-    changed.push(pageNumber);
+    state.calibration = cloneCalibration(calibration);
+    changed.push(targetId);
   }
 
   if (options.updateMeasurements) {
@@ -144,7 +153,7 @@ export function setPageCalibration(
     for (const layer of project.layers) {
       if (layer.kind !== "measure") continue;
       for (const item of layer.items) {
-        if (changed.includes(item.page)) item.scale = { ...scale };
+        if (changed.includes(item.pageId)) item.scale = { ...scale };
       }
     }
   }
@@ -152,9 +161,8 @@ export function setPageCalibration(
   return changed;
 }
 
-export function setPageScaleLocked(project: Project, page: number, locked: boolean): boolean {
-  const key = String(page);
-  const state = project.pages[key];
+export function setPageScaleLocked(project: Project, pageId: PageId, locked: boolean): boolean {
+  const state = pageStateOf(project, pageId);
   if (!state?.calibration) return false;
   if (locked) state.scaleLocked = true;
   else delete state.scaleLocked;
@@ -162,12 +170,10 @@ export function setPageScaleLocked(project: Project, page: number, locked: boole
 }
 
 /** Clears a page scale. Locked pages must be unlocked first. */
-export function clearPageCalibration(project: Project, page: number): boolean {
-  const key = String(page);
-  const state = project.pages[key];
+export function clearPageCalibration(project: Project, pageId: PageId): boolean {
+  const state = pageStateOf(project, pageId);
   if (!state || state.scaleLocked) return false;
   delete state.calibration;
   delete state.scaleLocked;
-  if (!Object.keys(state).length) delete project.pages[key];
   return true;
 }

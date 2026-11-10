@@ -10,6 +10,7 @@ import type {
   LayerKind,
   LengthUnit,
   MarkupItem,
+  PageId,
   TextAlign,
 } from "../../model/types";
 import {
@@ -31,11 +32,16 @@ export function normalizeItem(
   fallbackCategoryId: string,
   assetIds: ReadonlySet<string>,
   countTypeIds: ReadonlySet<string>,
+  pageIds: ReadonlySet<PageId>,
+  fallbackPageId: PageId | null,
 ): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
   if (!raw.kind || !ITEM_KINDS.has(raw.kind)) return null;
   if (layerKindForItem(raw.kind) !== layerKind) return null;
+  const pageId =
+    typeof raw.pageId === "string" && pageIds.has(raw.pageId) ? raw.pageId : fallbackPageId;
+  if (!pageId) return null;
   if (!Array.isArray(raw.points) || !raw.points.every(isPoint)) return null;
   if (raw.points.length === 0) return null;
   const now = new Date().toISOString();
@@ -220,7 +226,7 @@ export function normalizeItem(
       typeof raw.id === "string"
         ? raw.id
         : `item_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-    page: typeof raw.page === "number" && raw.page >= 1 ? Math.round(raw.page) : 1,
+    pageId,
     kind: raw.kind,
     points,
     color:

@@ -1,4 +1,10 @@
-import { pageBuilding, pageDisplayName, pageFloor, totalPageCount } from "../model/documents";
+import {
+  pageBuilding,
+  pageDisplayName,
+  pageFloor,
+  pageNumber,
+  pageRecordById,
+} from "../model/pages";
 import { itemBounds, itemCenter, type Bounds } from "../model/geometry";
 import { itemKindLabel } from "../model/measure";
 import { pageCalibration } from "../model/calibration";
@@ -19,6 +25,11 @@ export interface DiffChange {
 
 export interface DiffItem {
   status: DiffStatus;
+  /** Current (or reference-only) page ID. */
+  pageId: string;
+  /** Page identity key: document id plus source-local page. */
+  pageKey: string;
+  /** Display number derived from the current page order. */
   page: number;
   kind: MarkupItem["kind"];
   kindLabel: string;
@@ -62,6 +73,20 @@ export interface RevisionDiffOptions {
 interface Entry {
   layer: Layer;
   item: MarkupItem;
+  pageKey: string;
+}
+
+function pageKeyOf(project: Project, pageId: string, sharedIds: ReadonlySet<string>): string {
+  if (sharedIds.has(pageId)) return `id:${pageId}`;
+  const record = pageRecordById(project, pageId);
+  if (!record) return "";
+  const document = project.documents.find((entry) => entry.id === record.documentId);
+  if (document) return `${document.name}\u0000${record.localPage}`;
+  return `n:${pageNumber(project, pageId)}`;
+}
+
+function samePage(a: Entry, b: Entry): boolean {
+  return a.item.pageId === b.item.pageId || (Boolean(a.pageKey) && a.pageKey === b.pageKey);
 }
 
 const DEFAULT_MOVE_TOLERANCE = 12;
@@ -78,10 +103,10 @@ function pointKey(point: Point): string {
   return `${round(point.x, 0.5)},${round(point.y, 0.5)}`;
 }
 
-function geometryKey(item: MarkupItem): string {
+function geometryKey(item: MarkupItem, pageKey: string): string {
   return JSON.stringify({
     kind: item.kind,
-    page: item.page,
+    page: pageKey,
     points: item.points.map(pointKey),
     symbolId: item.symbolId ?? "",
     assetId: item.image?.assetId ?? "",
@@ -116,13 +141,13 @@ function displayPointOffset(value: Point | undefined): string {
   return value ? `${round(value.x, 0.1)}, ${round(value.y, 0.1)}` : t("diff.value.none");
 }
 
-function displayValue(project: Project, item: MarkupItem, field: string): string {
+function displayValue(project: Project, item: MarkupItem, field: string, page: number): string {
   const record = item as unknown as Record<string, unknown>;
   switch (field) {
     case "kind":
       return itemKindLabel(item.kind);
     case "page":
-      return t("diff.page", { page: item.page });
+      return t("diff.page", { page });
     case "points":
       return geometrySummary(item);
     case "categoryId":
@@ -173,7 +198,6 @@ function displayValue(project: Project, item: MarkupItem, field: string): string
 
 const COMPARED_FIELDS: Array<keyof MarkupItem> = [
   "kind",
-  "page",
   "points",
   "color",
   "fillColor",
@@ -229,15 +253,25 @@ function changesFor(
   reference: { layer: Layer; item: MarkupItem },
   currentProject: Project,
   referenceProject: Project,
+  currentPage: number,
+  referencePage: number,
 ): DiffChange[] {
   const changes: DiffChange[] = [];
+  if (currentPage && referencePage && currentPage !== referencePage) {
+    changes.push({
+      field: "page",
+      label: fieldLabel("page"),
+      before: displayValue(referenceProject, reference.item, "page", referencePage),
+      after: displayValue(currentProject, current.item, "page", currentPage),
+    });
+  }
   for (const field of COMPARED_FIELDS) {
     if (!fieldChanged(current.item, reference.item, field)) continue;
     changes.push({
       field,
       label: fieldLabel(field),
-      before: displayValue(referenceProject, reference.item, field),
-      after: displayValue(currentProject, current.item, field),
+      before: displayValue(referenceProject, reference.item, field, referencePage),
+      after: displayValue(currentProject, current.item, field, currentPage),
     });
   }
   if (current.layer.id !== reference.layer.id && current.layer.name !== reference.layer.name) {
@@ -251,10 +285,12 @@ function changesFor(
   return changes;
 }
 
-function collect(project: Project): Entry[] {
+function collect(project: Project, sharedIds: ReadonlySet<string>): Entry[] {
   const entries: Entry[] = [];
   for (const layer of project.layers) {
-    for (const item of layer.items) entries.push({ layer, item });
+    for (const item of layer.items) {
+      entries.push({ layer, item, pageKey: pageKeyOf(project, item.pageId, sharedIds) });
+    }
   }
   return entries;
 }
@@ -289,7 +325,7 @@ function nearestCandidate(
   let bestDistance = Number.POSITIVE_INFINITY;
   for (const candidate of candidates) {
     if (used.has(candidate)) continue;
-    if (candidate.item.page !== current.item.page) continue;
+    if (!samePage(candidate, current)) continue;
     if (candidate.item.kind !== current.item.kind) continue;
     const distance = distanceBetween(current.item, candidate.item);
     if (distance > tolerance || distance >= bestDistance) continue;
@@ -310,8 +346,12 @@ export function compareRevisions(
   options: RevisionDiffOptions = {},
 ): RevisionDiff {
   const tolerance = Math.max(0, options.moveTolerance ?? DEFAULT_MOVE_TOLERANCE);
-  const currentEntries = collect(current);
-  const referenceEntries = collect(reference);
+  const referenceIds = new Set(reference.pages.map((record) => record.id));
+  const sharedIds = new Set(
+    current.pages.map((record) => record.id).filter((id) => referenceIds.has(id)),
+  );
+  const currentEntries = collect(current, sharedIds);
+  const referenceEntries = collect(reference, sharedIds);
   const used = new Set<Entry>();
   const items: DiffItem[] = [];
 
@@ -324,15 +364,18 @@ export function compareRevisions(
       : referenceEntries.find(
           (candidate) =>
             !used.has(candidate) &&
-            candidate.item.page === entry.item.page &&
-            geometryKey(candidate.item) === geometryKey(entry.item),
+            samePage(candidate, entry) &&
+            geometryKey(candidate.item, candidate.pageKey) ===
+              geometryKey(entry.item, entry.pageKey),
         );
     const nearest =
       idMatch ?? signatureMatch ?? nearestCandidate(entry, referenceEntries, used, tolerance);
     if (!nearest) {
       items.push({
         status: "added",
-        page: entry.item.page,
+        pageId: entry.item.pageId,
+        pageKey: entry.pageKey,
+        page: pageNumber(current, entry.item.pageId),
         kind: entry.item.kind,
         kindLabel: itemKindLabel(entry.item.kind),
         label: itemLabel(entry.item),
@@ -344,10 +387,19 @@ export function compareRevisions(
       continue;
     }
     used.add(nearest);
-    const changes = changesFor(entry, nearest, current, reference);
+    const changes = changesFor(
+      entry,
+      nearest,
+      current,
+      reference,
+      pageNumber(current, entry.item.pageId),
+      pageNumber(reference, nearest.item.pageId),
+    );
     items.push({
       status: changes.length ? "changed" : "unchanged",
-      page: entry.item.page,
+      pageId: entry.item.pageId,
+      pageKey: entry.pageKey,
+      page: pageNumber(current, entry.item.pageId),
       kind: entry.item.kind,
       kindLabel: itemKindLabel(entry.item.kind),
       label: itemLabel(entry.item),
@@ -363,7 +415,9 @@ export function compareRevisions(
     if (used.has(entry)) continue;
     items.push({
       status: "removed",
-      page: entry.item.page,
+      pageId: entry.item.pageId,
+      pageKey: entry.pageKey,
+      page: pageNumber(reference, entry.item.pageId),
       kind: entry.item.kind,
       kindLabel: itemKindLabel(entry.item.kind),
       label: itemLabel(entry.item),
@@ -382,31 +436,59 @@ export function compareRevisions(
     return a.label.localeCompare(b.label);
   });
 
-  const pageCount = Math.max(
-    totalPageCount(current.documents),
-    totalPageCount(reference.documents),
-  );
-  const pages: DiffPage[] = [];
-  for (let page = 1; page <= pageCount; page += 1) {
-    const pageItems = items.filter((item) => item.page === page);
-    pages.push({
+  const pageRows: Array<{
+    key: string;
+    currentId: string | null;
+    referenceId: string | null;
+  }> = [];
+  const usedReference = new Set<string>();
+  current.pages.forEach((record, index) => {
+    const key = pageKeyOf(current, record.id, sharedIds);
+    let match = reference.pages.find(
+      (candidate) =>
+        !usedReference.has(candidate.id) && pageKeyOf(reference, candidate.id, sharedIds) === key,
+    );
+    // A renamed source document still describes the same sheet position.
+    if (!match) match = reference.pages[index];
+    if (match && !usedReference.has(match.id)) usedReference.add(match.id);
+    pageRows.push({
+      key,
+      currentId: record.id,
+      referenceId: match?.id ?? null,
+    });
+  });
+  for (const record of reference.pages) {
+    if (usedReference.has(record.id)) continue;
+    pageRows.push({
+      key: pageKeyOf(reference, record.id, sharedIds),
+      currentId: null,
+      referenceId: record.id,
+    });
+  }
+  const pages: DiffPage[] = pageRows.map((row) => {
+    const page = row.currentId
+      ? pageNumber(current, row.currentId)
+      : pageNumber(reference, row.referenceId);
+    const pageItems = items.filter((item) => item.pageKey === row.key);
+    return {
       page,
       pageName:
-        pageDisplayName(current, page) ??
-        pageDisplayName(reference, page) ??
+        pageDisplayName(current, row.currentId) ??
+        pageDisplayName(reference, row.referenceId) ??
         t("compare.pageLabel", { page }),
-      building: pageBuilding(current, page) ?? pageBuilding(reference, page) ?? "",
-      floor: pageFloor(current, page) ?? pageFloor(reference, page) ?? "",
+      building:
+        pageBuilding(current, row.currentId) ?? pageBuilding(reference, row.referenceId) ?? "",
+      floor: pageFloor(current, row.currentId) ?? pageFloor(reference, row.referenceId) ?? "",
       added: pageItems.filter((item) => item.status === "added").length,
       removed: pageItems.filter((item) => item.status === "removed").length,
       changed: pageItems.filter((item) => item.status === "changed").length,
       unchanged: pageItems.filter((item) => item.status === "unchanged").length,
-    });
-  }
+    };
+  });
 
   const warnings: string[] = [];
-  const currentPages = totalPageCount(current.documents);
-  const referencePages = totalPageCount(reference.documents);
+  const currentPages = current.pages.length;
+  const referencePages = reference.pages.length;
   if (currentPages !== referencePages) {
     warnings.push(
       t("compare.pageCountsDiffer", { current: currentPages, reference: referencePages }),
@@ -420,16 +502,17 @@ export function compareRevisions(
   ) {
     warnings.push(t("diff.differentFiles"));
   }
-  for (let page = 1; page <= Math.min(currentPages, referencePages); page += 1) {
-    const left = pageCalibration(current, page);
-    const right = pageCalibration(reference, page);
+  for (const row of pageRows) {
+    if (!row.currentId || !row.referenceId) continue;
+    const left = pageCalibration(current, row.currentId);
+    const right = pageCalibration(reference, row.referenceId);
     if (!left || !right) continue;
     const delta =
       Math.abs(left.pointsPerMeter - right.pointsPerMeter) / Math.max(left.pointsPerMeter, 1);
     if (delta < 0.001) continue;
     warnings.push(
       t("compare.pageScalesDiffer", {
-        page,
+        page: pageNumber(current, row.currentId),
         left: calibrationLabel(left),
         right: calibrationLabel(right),
       }),
@@ -441,7 +524,7 @@ export function compareRevisions(
     removed: items.filter((item) => item.status === "removed").length,
     changed: items.filter((item) => item.status === "changed").length,
     unchanged: items.filter((item) => item.status === "unchanged").length,
-    pages: pageCount,
+    pages: pages.length,
   };
   return { items, pages, summary, warnings };
 }

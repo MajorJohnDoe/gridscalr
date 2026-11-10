@@ -1,7 +1,7 @@
 import type { LabelBox, LabelMetrics } from "../../model/label";
 import type { LabelLayout } from "../../model/labelLayout";
 import { TEXT_FONT_STACK } from "../../model/text";
-import type { Layer, MarkupItem, Point, TextAlign, TextRun } from "../../model/types";
+import type { Layer, MarkupItem, PageId, Point, TextAlign, TextRun } from "../../model/types";
 import type { RichEditorController } from "../richEditor";
 
 export const FONT_STACK = TEXT_FONT_STACK;
@@ -43,7 +43,7 @@ export interface TextEditSession {
   mode: "text" | "textbox" | "cloud" | "callout";
   itemId: string | null;
   layerId: string | null;
-  page: number;
+  pageId: PageId;
   anchor: Point;
   text: string;
   color: string;
@@ -69,7 +69,7 @@ export interface TextEditSession {
 export interface LabelEditSession {
   itemId: string;
   layerId: string;
-  page: number;
+  pageId: PageId;
   value: string;
   original: string | undefined;
   closing: boolean;

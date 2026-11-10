@@ -71,7 +71,7 @@ export function drawInteraction(
   }
   const selected = resolveSelection(store.project, store.ui.selection).filter(
     (entry) =>
-      layerVisibleOnPage(entry.layer, entry.item.page) && itemIsVisible(entry.item, entry.layer),
+      layerVisibleOnPage(entry.layer, entry.item.pageId) && itemIsVisible(entry.item, entry.layer),
   );
 
   if (selected.length) {

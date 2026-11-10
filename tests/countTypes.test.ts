@@ -1,13 +1,8 @@
 // @vitest-environment jsdom
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { setLanguagePreference } from "../src/i18n";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import { calculateQuantities } from "../src/model/quantity";
 import { itemMetrics } from "../src/model/measure";
 import {
@@ -30,13 +25,13 @@ import type { MarkupItem, Project } from "../src/model/types";
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(): Project {
-  return createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
 }
 
 function countItem(project: Project, overrides: Partial<MarkupItem> = {}): MarkupItem {
   const item: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "count",
     points: [{ x: 30, y: 30 }],
     color: "#f70808",

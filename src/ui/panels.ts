@@ -1,5 +1,6 @@
-import { pageDisplayName, primaryDocument, totalPageCount } from "../model/documents";
-import type { AreaMode, CountType, ImageMode, PageSize, RecentEntry } from "../model/types";
+import { primaryDocument } from "../model/documents";
+import { pageDisplayName, pageIdAt } from "../model/pages";
+import type { AreaMode, CountType, ImageMode, PageId, PageSize, RecentEntry } from "../model/types";
 import { store } from "../state/store";
 import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
@@ -79,7 +80,7 @@ export interface PanelActions {
   setSelectionImageMode: (mode: ImageMode) => void;
   setSelectionOpacity: (opacity: number) => void;
   goToPage: (page: number, fit?: boolean) => void;
-  navigateToItem: (page: number, layerId: string, itemId: string) => void;
+  navigateToItem: (pageId: PageId, layerId: string, itemId: string) => void;
   ensurePageSize: (page: number) => void;
   getPageSize: (page: number) => PageSize | undefined;
   getPageThumbnail: (page: number) => string | null;
@@ -87,8 +88,10 @@ export interface PanelActions {
   addPages: () => void;
   importProjectPages: () => void;
   editSheetFields: (page: number) => void;
-  deletePage: (page: number) => void;
-  duplicatePage: (page: number) => void;
+  deletePage: (pageId: PageId) => void;
+  duplicatePage: (pageId: PageId) => void;
+  reorderPage: (pageId: PageId, targetIndex: number) => void;
+  insertPage: (pageId: PageId, index: number) => void;
   refresh: () => void;
   openRecovery: () => void;
   getRecoverySummary: () => RecoverySummary;
@@ -141,11 +144,11 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   refs.docName.textContent = project
     ? (primaryDocument(project.documents)?.name ?? t("shell.noDrawing"))
     : t("shell.noDrawing");
-  const pageName = project ? pageDisplayName(project, store.ui.page) : undefined;
+  const pageName = project ? pageDisplayName(project, pageIdAt(project, store.ui.page)) : undefined;
   refs.docMeta.textContent = project
     ? t("panels.pageOf", {
         page: store.ui.page,
-        total: totalPageCount(project.documents),
+        total: project.pages.length,
         name: pageName ? t("panels.pageNameSuffix", { name: pageName }) : "",
       })
     : "";
@@ -156,12 +159,11 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;
-  refs.pageNextBtn.disabled =
-    !hasProject || store.ui.page >= (project ? totalPageCount(project.documents) : 1);
+  refs.pageNextBtn.disabled = !hasProject || store.ui.page >= (project ? project.pages.length : 1);
   if (document.activeElement !== refs.pageInput) {
     refs.pageInput.value = hasProject ? String(store.ui.page) : "1";
   }
-  refs.pageTotal.textContent = `/ ${project ? totalPageCount(project.documents) : 0}`;
+  refs.pageTotal.textContent = `/ ${project ? project.pages.length : 0}`;
 }
 
 function renderToolRail(refs: ShellRefs): void {

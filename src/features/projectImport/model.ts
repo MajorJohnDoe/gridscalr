@@ -1,5 +1,6 @@
-import { documentStartPage, includedLocalPages, totalPageCount } from "../../model/documents";
+import { makeId } from "../../model/calibration";
 import { normalizeLayerOrder } from "../../model/layers";
+import { pageRecordAt, pageNumber } from "../../model/pages";
 import type {
   Category,
   CountTypeDef,
@@ -8,10 +9,12 @@ import type {
   ImageAsset,
   Layer,
   LineType,
-  PageState,
+  PageId,
+  PageRecord,
   Project,
 } from "../../model/types";
 import {
+  applyImportedLayerPageState,
   cloneImportedItem,
   clonePageState,
   collectReferences,
@@ -24,7 +27,7 @@ import {
 } from "./merge";
 
 export interface ImportPageInfo {
-  /** 1-based page in the source project. */
+  /** 1-based page in the source project (display order). */
   page: number;
   documentIndex: number;
   documentId: string;
@@ -62,6 +65,8 @@ export type ImportDocumentOverrides = ReadonlyMap<string, ImportDocumentOverride
 export interface ImportPageMapEntry {
   sourcePage: number;
   newPage: number;
+  sourcePageId: PageId;
+  newPageId: PageId;
   sourceDocumentId: string;
   newDocumentId: string;
   sourceLocalPage: number;
@@ -83,13 +88,15 @@ export type ImportWarning =
 
 export interface PreparedProjectImport {
   documents: DocumentRef[];
-  pageStates: Record<string, PageState>;
+  pages: PageRecord[];
   createdLayers: Layer[];
   categories: Category[];
   countTypes: CountTypeDef[];
   lineTypes: LineType[];
   assets: Record<string, ImageAsset>;
   pageMap: ImportPageMapEntry[];
+  /** 0-based insertion index. Missing appends. */
+  insertIndex?: number;
   activeLayerId: string | null;
   warnings: ImportWarning[];
 }
@@ -115,79 +122,80 @@ export class ProjectImportError extends Error {
 
 /** Pages in the source project, grouped in document order for the picker. */
 export function inspectProjectImport(source: Project): ImportDocumentGroup[] {
-  const counts = new Map<number, number>();
+  const counts = new Map<PageId, number>();
   for (const layer of source.layers) {
     for (const item of layer.items) {
-      counts.set(item.page, (counts.get(item.page) ?? 0) + 1);
+      counts.set(item.pageId, (counts.get(item.pageId) ?? 0) + 1);
     }
   }
 
-  const groups: ImportDocumentGroup[] = [];
-  source.documents.forEach((document, index) => {
-    const localPages = includedLocalPages(document);
-    if (!localPages.length) return;
-    const start = documentStartPage(source.documents, index);
-    const pages = localPages.map((localPage, offset): ImportPageInfo => {
-      const page = start + offset;
-      const state = source.pages[String(page)];
-      return {
-        page,
-        documentIndex: index,
-        documentId: document.id,
-        documentName: document.name,
-        documentKind: document.kind,
-        localPage,
-        name: state?.name,
-        building: state?.building,
-        floor: state?.floor,
-        itemCount: counts.get(page) ?? 0,
-      };
-    });
-    groups.push({
+  const groups = new Map<string, ImportDocumentGroup>();
+  for (const document of source.documents) {
+    groups.set(document.id, {
       documentId: document.id,
       documentName: document.name,
       documentKind: document.kind,
       pageCount: document.pageCount,
-      pages,
+      pages: [],
+    });
+  }
+  source.pages.forEach((record, index) => {
+    const document = source.documents.find((entry) => entry.id === record.documentId);
+    const group = document ? groups.get(document.id) : undefined;
+    if (!document || !group) return;
+    group.pages.push({
+      page: index + 1,
+      documentIndex: source.documents.indexOf(document),
+      documentId: document.id,
+      documentName: document.name,
+      documentKind: document.kind,
+      localPage: record.localPage,
+      name: record.state.name,
+      building: record.state.building,
+      floor: record.state.floor,
+      itemCount: counts.get(record.id) ?? 0,
     });
   });
-  return groups;
+  return [...groups.values()].filter((group) => group.pages.length > 0);
+}
+
+interface SourcePageEntry {
+  record: PageRecord;
+  sourcePage: number;
+  documentIndex: number;
 }
 
 /**
  * Builds everything needed to append source pages. The source project is only
  * read: all copied objects are new, and no source field is modified.
+ *
+ * One destination layer is created per source layer identity, shared across
+ * every imported page through stable page IDs. Layers are never matched by
+ * display name.
  */
 export function prepareProjectImport(
   destination: Project,
   source: Project,
   pages: readonly number[],
   overrides: ImportDocumentOverrides = new Map(),
+  insertIndex?: number,
 ): PreparedProjectImport {
-  const selected = [...new Set(pages.map((page) => Math.round(page)))].sort((a, b) => a - b);
-  if (!selected.length) throw new ProjectImportError("noSelection");
+  const selectedNumbers = [...new Set(pages.map((page) => Math.round(page)))].sort((a, b) => a - b);
+  if (!selectedNumbers.length) throw new ProjectImportError("noSelection");
 
-  const total = totalPageCount(source.documents);
-  for (const page of selected) {
-    if (page < 1 || page > total) throw new ProjectImportError("invalidPage", page);
-  }
-
-  const pageLookup = new Map<number, { documentIndex: number; localPage: number }>();
-  const localToGlobal = new Map<string, number>();
-  source.documents.forEach((document, index) => {
-    const start = documentStartPage(source.documents, index);
-    includedLocalPages(document).forEach((localPage, offset) => {
-      const page = start + offset;
-      pageLookup.set(page, { documentIndex: index, localPage });
-      localToGlobal.set(`${index}:${localPage}`, page);
-    });
+  const lookup = new Map<number, SourcePageEntry>();
+  source.pages.forEach((record, index) => {
+    const documentIndex = source.documents.findIndex((doc) => doc.id === record.documentId);
+    if (documentIndex < 0) return;
+    lookup.set(index + 1, { record, sourcePage: index + 1, documentIndex });
   });
-  for (const page of selected) {
-    if (!pageLookup.has(page)) throw new ProjectImportError("invalidPage", page);
+  for (const page of selectedNumbers) {
+    if (!lookup.has(page)) throw new ProjectImportError("invalidPage", page);
   }
 
-  const selectedSet = new Set(selected);
-  const references = collectReferences(source, selectedSet);
+  const selected = selectedNumbers.map((page) => lookup.get(page)!);
+  const selectedIds = new Set(selected.map((entry) => entry.record.id));
+  const references = collectReferences(source, selectedIds);
   const categories = mergeCategories(destination, source, references.categories);
   const countTypes = mergeCountTypes(destination, source, references.countTypes);
   const lineTypes = mergeLineTypes(destination, source, references.lineTypes);
@@ -210,32 +218,35 @@ export function prepareProjectImport(
   if (countTypes.missing) warnings.push({ code: "missingCountType", count: countTypes.missing });
   if (lineTypes.missing) warnings.push({ code: "missingLineType", count: lineTypes.missing });
 
-  const groups = new Map<number, number[]>();
-  for (const page of selected) {
-    const entry = pageLookup.get(page)!;
+  const groups = new Map<number, SourcePageEntry[]>();
+  for (const entry of selected) {
     const list = groups.get(entry.documentIndex) ?? [];
-    list.push(entry.localPage);
+    list.push(entry);
     groups.set(entry.documentIndex, list);
   }
 
-  let nextPage = totalPageCount(destination.documents) + 1;
+  let nextPage = (insertIndex ?? destination.pages.length) + 1;
   let ocrDropped = 0;
   let imageItemsSkipped = 0;
   const documents: DocumentRef[] = [];
-  const pageStates: Record<string, PageState> = {};
+  const pagesOut: PageRecord[] = [];
   const pageMap: ImportPageMapEntry[] = [];
   const createdLayers: Layer[] = [];
+  const layersBySourceId = new Map<string, Layer>();
 
   for (const documentIndex of [...groups.keys()].sort((a, b) => a - b)) {
     const sourceDocument = source.documents[documentIndex];
-    const localPages = groups.get(documentIndex)!.sort((a, b) => a - b);
+    const entries = [...groups.get(documentIndex)!].sort(
+      (a, b) => a.record.localPage - b.record.localPage,
+    );
+    const localPages = entries.map((entry) => entry.record.localPage);
     const override = overrides.get(sourceDocument.id);
     const actualPageCount = override?.pageCount ?? sourceDocument.pageCount;
     for (const localPage of localPages) {
       if (localPage > actualPageCount) {
         throw new ProjectImportError(
           "invalidPage",
-          localToGlobal.get(`${documentIndex}:${localPage}`),
+          entries.find((entry) => entry.record.localPage === localPage)?.sourcePage,
         );
       }
     }
@@ -248,35 +259,48 @@ export function prepareProjectImport(
     );
     documents.push(documentRef);
 
-    for (const localPage of localPages) {
-      const sourcePage = localToGlobal.get(`${documentIndex}:${localPage}`)!;
+    for (const entry of entries) {
+      const newPageId = makeId("page");
       const newPage = nextPage++;
-      pageMap.push({
-        sourcePage,
-        newPage,
-        sourceDocumentId: sourceDocument.id,
-        newDocumentId: documentRef.id,
-        sourceLocalPage: localPage,
-      });
-
-      const sourceState = source.pages[String(sourcePage)];
-      const pageState = clonePageState(
+      const sourceState = entry.record.state;
+      const state = clonePageState(
         sourceState,
         documentRef,
-        localPage,
+        entry.record.localPage,
         override?.dropOcr === true,
       );
-      if (pageState) pageStates[String(newPage)] = pageState;
-      if (sourceState?.ocr && !pageState?.ocr) ocrDropped += 1;
+      if (sourceState?.ocr && !state?.ocr) ocrDropped += 1;
+      pagesOut.push({
+        id: newPageId,
+        documentId: documentRef.id,
+        localPage: entry.record.localPage,
+        state: state ?? {},
+      });
+      pageMap.push({
+        sourcePage: entry.sourcePage,
+        newPage,
+        sourcePageId: entry.record.id,
+        newPageId,
+        sourceDocumentId: sourceDocument.id,
+        newDocumentId: documentRef.id,
+        sourceLocalPage: entry.record.localPage,
+      });
 
       for (const sourceLayer of source.layers) {
-        const pageItems = sourceLayer.items.filter((item) => item.page === sourcePage);
-        if (!pageItems.length) continue;
-        const layer = createImportedLayer(sourceLayer, sourcePage, newPage);
+        const pageItems = sourceLayer.items.filter((item) => item.pageId === entry.record.id);
+        const hasOverride = Boolean(sourceLayer.pageState?.[entry.record.id]);
+        if (!pageItems.length && !hasOverride) continue;
+        let layer = layersBySourceId.get(sourceLayer.id);
+        if (!layer) {
+          layer = createImportedLayer(sourceLayer, newPageId);
+          layersBySourceId.set(sourceLayer.id, layer);
+          createdLayers.push(layer);
+        }
+        applyImportedLayerPageState(layer, sourceLayer, entry.record.id, newPageId);
         for (const item of pageItems) {
           const copy = cloneImportedItem(
             item,
-            newPage,
+            newPageId,
             categories.map,
             countTypes.map,
             lineTypes.map,
@@ -289,7 +313,6 @@ export function prepareProjectImport(
           }
           layer.items.push(copy);
         }
-        if (layer.items.length) createdLayers.push(layer);
       }
     }
   }
@@ -307,13 +330,14 @@ export function prepareProjectImport(
 
   return {
     documents,
-    pageStates,
+    pages: pagesOut,
     createdLayers,
     categories: categories.added,
     countTypes: countTypes.added,
     lineTypes: lineTypes.added,
     assets: assets.added,
     pageMap,
+    insertIndex,
     activeLayerId: activeLayer?.id ?? null,
     warnings,
   };
@@ -325,7 +349,11 @@ export function commitProjectImport(
   prepared: PreparedProjectImport,
 ): ImportCommitResult {
   destination.documents.push(...prepared.documents);
-  Object.assign(destination.pages, prepared.pageStates);
+  const index =
+    prepared.insertIndex === undefined
+      ? destination.pages.length
+      : Math.max(0, Math.min(destination.pages.length, prepared.insertIndex));
+  destination.pages.splice(index, 0, ...prepared.pages);
   destination.categories.push(...prepared.categories);
   destination.countTypes.push(...prepared.countTypes);
   destination.lineTypes.push(...prepared.lineTypes);
@@ -345,4 +373,14 @@ export function commitProjectImport(
     importedItemCount: prepared.createdLayers.reduce((sum, layer) => sum + layer.items.length, 0),
     warnings: prepared.warnings,
   };
+}
+
+/** Display page number for a committed page ID. */
+export function importedPageNumber(destination: Project, pageId: PageId): number {
+  return pageNumber(destination, pageId);
+}
+
+/** Source page record at a 1-based display number. */
+export function sourcePageAt(source: Project, page: number): PageRecord | undefined {
+  return pageRecordAt(source, page);
 }

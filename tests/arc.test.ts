@@ -1,13 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { createManualCalibration } from "../src/model/calibration";
 import { arcGeometry, arcPolyline, itemBounds, measurementValue } from "../src/model/geometry";
-import {
-  addItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  layersForKind,
-} from "../src/model/layers";
+import { addItem, createProject, defaultDocument, layersForKind } from "../src/model/layers";
 import { calculateQuantities } from "../src/model/quantity";
 import { SCHEMA_VERSION } from "../src/model/types";
 import type { MarkupItem } from "../src/model/types";
@@ -18,7 +13,7 @@ const NOW = "2026-01-01T00:00:00.000Z";
 function item(kind: MarkupItem["kind"], points: MarkupItem["points"]): MarkupItem {
   return {
     id: `item_${kind}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind,
     points,
     color: "#4cc9f0",
@@ -69,7 +64,7 @@ describe("radius, diameter and arc geometry", () => {
   });
 
   it("round-trips the new measurement kinds through the project file", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const layer = layersForKind(project, "measure")[0];
     addItem(
       project,
@@ -105,8 +100,8 @@ describe("radius, diameter and arc geometry", () => {
   });
 
   it("reports radius and arc measurements as length quantities", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
-    project.pages["1"] = { calibration: createManualCalibration(100) };
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
+    project.pages[0].state = { calibration: createManualCalibration(100) };
     const layer = layersForKind(project, "measure")[0];
     addItem(
       project,

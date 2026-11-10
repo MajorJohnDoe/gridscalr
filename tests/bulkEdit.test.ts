@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import { applyMeasurementBulkEdit } from "../src/model/bulkEdit";
 import {
   addItem,
   addLayer,
-  createDefaultLayers,
   createProject,
   defaultDocument,
   layersForKind,
@@ -13,7 +13,7 @@ import type { Layer, MarkupItem, Project, SelectionRef } from "../src/model/type
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(): Project {
-  return createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
 }
 
 function categoryId(project: Project, name: string): string {
@@ -33,7 +33,7 @@ function add(
 ): MarkupItem {
   const created: MarkupItem = {
     id: `item_${Math.random().toString(36).slice(2)}`,
-    page: 1,
+    pageId: pageIdFor(1),
     points: [
       { x: 10, y: 10 },
       { x: 110, y: 10 },

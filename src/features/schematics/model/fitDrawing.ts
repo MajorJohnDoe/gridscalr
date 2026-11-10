@@ -8,6 +8,7 @@ import {
 import type { MarkupItem, Project } from "../../../model/types";
 import { t } from "../../../i18n";
 import { templateDocumentForPage } from "./sheetDocument";
+import { pageIdAt } from "../../../model/pages";
 import { resolveSheetLabels, sheetTemplateFor } from "./sheetTemplate";
 
 export interface DrawingArea {
@@ -32,10 +33,12 @@ export function drawingAreaForPage(project: Project, page: number): DrawingArea 
 
 function visibleBounds(project: Project, page: number): Bounds | null {
   let bounds: Bounds | null = null;
+  const pageId = pageIdAt(project, page);
+  if (!pageId) return null;
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, page)) continue;
+    if (!layerVisibleOnPage(layer, pageId)) continue;
     for (const item of layer.items) {
-      if (item.page !== page || !itemIsVisible(item, layer)) continue;
+      if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
       const next = itemBounds(item);
       bounds = bounds
         ? {
@@ -64,12 +67,15 @@ export function drawingOverflowsArea(project: Project, page: number): boolean {
 /** True when the page overflows and at least one item can be moved. */
 export function canFitDrawingToArea(project: Project, page: number): boolean {
   if (!drawingOverflowsArea(project, page)) return false;
+  const pageId = pageIdAt(project, page);
+  if (!pageId) return false;
   return project.layers.some(
     (layer) =>
-      layerVisibleOnPage(layer, page) &&
-      !layerLockedOnPage(layer, page) &&
+      layerVisibleOnPage(layer, pageId) &&
+      !layerLockedOnPage(layer, pageId) &&
       layer.items.some(
-        (item) => item.page === page && itemIsVisible(item, layer) && !itemIsLocked(item, layer),
+        (item) =>
+          item.pageId === pageId && itemIsVisible(item, layer) && !itemIsLocked(item, layer),
       ),
   );
 }
@@ -126,10 +132,13 @@ export function fitDrawingToArea(project: Project, page: number): boolean {
   };
   const targetCenter = { x: area.x + area.width / 2, y: area.y + area.height / 2 };
   let moved = false;
+  const pageId = pageIdAt(project, page);
+  if (!pageId) return false;
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, page) || layerLockedOnPage(layer, page)) continue;
+    if (!layerVisibleOnPage(layer, pageId) || layerLockedOnPage(layer, pageId)) continue;
     for (const item of layer.items) {
-      if (item.page !== page || !itemIsVisible(item, layer) || itemIsLocked(item, layer)) continue;
+      if (item.pageId !== pageId || !itemIsVisible(item, layer) || itemIsLocked(item, layer))
+        continue;
       scaleItem(item, scale, sourceCenter, targetCenter);
       moved = true;
     }

@@ -5,6 +5,7 @@ import {
   pageScaleLocked,
   scaleRatio,
 } from "../model/calibration";
+import { pageIdAt } from "../model/pages";
 import {
   displayedLengthUnit,
   formatCoordinate,
@@ -124,11 +125,12 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   }
 
   const page = store.ui.page;
-  const calibration = pageCalibration(project, page);
-  const scale = pageScale(project, page);
-  const locked = pageScaleLocked(project, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const calibration = pageCalibration(project, pageId);
+  const scale = pageScale(project, pageId);
+  const locked = pageScaleLocked(project, pageId);
   const isSheet = templateDocumentForPage(project, page) ? 1 : 0;
-  const key = `${project.id}|${page}|${calibration ? 1 : 0}|${locked ? 1 : 0}|${scale}|${isSheet}`;
+  const key = `${project.id}|${pageId}|${calibration ? 1 : 0}|${locked ? 1 : 0}|${scale}|${isSheet}`;
   if (key !== scaleChipKey) {
     scaleChipKey = key;
     clear(refs.statusCalibration);
@@ -174,8 +176,9 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
     chip.append(document.createTextNode(t("status.sheet")));
     return chip;
   }
-  const calibration = pageCalibration(project, page);
-  const locked = pageScaleLocked(project, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const calibration = pageCalibration(project, pageId);
+  const locked = pageScaleLocked(project, pageId);
   const button = el(
     "button",
     `status-chip status-chip-action${calibration ? " is-calibrated" : " is-warning"}`,
@@ -186,7 +189,7 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
     document.createTextNode(
       calibration
         ? `${locked ? t("status.scaleLocked") : t("status.calibrated")} · ${formatScaleRatio(
-            scaleRatio(pageScale(project, page)),
+            scaleRatio(pageScale(project, pageId)),
           )}`
         : t("status.noScale"),
     ),
@@ -194,7 +197,7 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   const caret = el("span", "status-chip-caret");
   caret.innerHTML = icon("chevronRight", 10);
   button.append(caret);
-  button.title = scaleTooltip(project, page);
+  button.title = scaleTooltip(project, pageId);
   button.setAttribute(
     "aria-label",
     `${calibration ? t("status.pageScale") : t("status.noPageScale")} ${t(
@@ -206,8 +209,8 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   return button;
 }
 
-function scaleTooltip(project: Project, page: number): string {
-  const calibration = pageCalibration(project, page);
+function scaleTooltip(project: Project, pageId: string): string {
+  const calibration = pageCalibration(project, pageId);
   if (!calibration) {
     return t("status.setScaleTooltip");
   }
@@ -218,16 +221,19 @@ function scaleTooltip(project: Project, page: number): string {
           length: formatNumber(calibration.knownLength, 2),
           unit: calibration.unit,
         }),
-    formatScale(pageScale(project, page), calibration),
+    formatScale(pageScale(project, pageId), calibration),
   ];
-  lines.push(pageScaleLocked(project, page) ? t("status.scaleIsLocked") : t("status.clickOptions"));
+  lines.push(
+    pageScaleLocked(project, pageId) ? t("status.scaleIsLocked") : t("status.clickOptions"),
+  );
   return lines.join("\n");
 }
 
 function scaleItems(project: Project, actions: PanelActions): PopoverItem[] {
   const page = store.ui.page;
-  const calibration = pageCalibration(project, page);
-  const locked = pageScaleLocked(project, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const calibration = pageCalibration(project, pageId);
+  const locked = pageScaleLocked(project, pageId);
   const items: PopoverItem[] = [
     {
       label: calibration ? t("status.recalibrate") : t("status.calibrate"),

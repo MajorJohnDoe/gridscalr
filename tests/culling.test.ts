@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor } from "./helpers/pages";
 import { boundsIntersect, itemRenderBounds } from "../src/canvas/items/visible";
 import { visiblePageBounds, type Viewport } from "../src/canvas/viewport";
 import type { LabelLayout } from "../src/model/labelLayout";
@@ -9,7 +10,7 @@ const view: Viewport = { page: 1, zoom: 2, panX: -100, panY: 50 };
 function line(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
     id: "item_line",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "length",
     points: [
       { x: 1000, y: 1000 },

@@ -2,7 +2,6 @@ import { describe, expect, it } from "vitest";
 import {
   addItem,
   addLayer,
-  createDefaultLayers,
   createProject,
   defaultDocument,
   duplicateLayer,
@@ -29,16 +28,17 @@ import {
   swapLayers,
 } from "../src/model/layers";
 import type { MarkupItem } from "../src/model/types";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 function makeProject() {
-  return createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
 }
 
 function makeItem(id: string, page = 1, kind: MarkupItem["kind"] = "length"): MarkupItem {
   const now = "2026-01-01T00:00:00.000Z";
   return {
     id,
-    page,
+    pageId: pageIdFor(page),
     kind,
     points: [
       { x: 0, y: 0 },
@@ -156,7 +156,7 @@ describe("layers", () => {
     addItem(project, measureA.id, makeItem("item_b", 2));
 
     expect(findItem(project, "item_a")?.layer.id).toBe(measureA.id);
-    expect(itemCountForPage(project, 2)).toBe(1);
+    expect(itemCountForPage(project, pageIdFor(2))).toBe(1);
     expect(moveItemToLayer(project, measureA.id, "item_a", measureB.id)).toBe(true);
     expect(findItem(project, "item_a")?.layer.id).toBe(measureB.id);
     expect(findItem(project, "item_a")?.item.updatedAt).not.toBe("2026-01-01T00:00:00.000Z");
@@ -181,25 +181,25 @@ describe("page-scoped layer state", () => {
     const item = makeItem("item_page_2", 2);
     addItem(project, layer.id, item);
 
-    setLayerVisibleOnPage(layer, 2, false);
-    setLayerLockedOnPage(layer, 2, true);
-    expect(layerVisibleOnPage(layer, 1)).toBe(true);
-    expect(layerVisibleOnPage(layer, 2)).toBe(false);
-    expect(layerLockedOnPage(layer, 1)).toBe(false);
-    expect(layerLockedOnPage(layer, 2)).toBe(true);
+    setLayerVisibleOnPage(layer, pageIdFor(2), false);
+    setLayerLockedOnPage(layer, pageIdFor(2), true);
+    expect(layerVisibleOnPage(layer, pageIdFor(1))).toBe(true);
+    expect(layerVisibleOnPage(layer, pageIdFor(2))).toBe(false);
+    expect(layerLockedOnPage(layer, pageIdFor(1))).toBe(false);
+    expect(layerLockedOnPage(layer, pageIdFor(2))).toBe(true);
     expect(itemIsVisible(item, layer)).toBe(false);
     expect(itemIsLocked(item, layer)).toBe(true);
 
-    setLayerVisibleOnPage(layer, 2, true);
-    setLayerLockedOnPage(layer, 2, false);
+    setLayerVisibleOnPage(layer, pageIdFor(2), true);
+    setLayerLockedOnPage(layer, pageIdFor(2), false);
     expect(layer.pageState).toBeUndefined();
   });
 
   it("clears page overrides when a global default changes", () => {
     const project = makeProject();
     const layer = layersForKind(project, "draw")[0];
-    setLayerVisibleOnPage(layer, 2, false);
-    setLayerLockedOnPage(layer, 2, true);
+    setLayerVisibleOnPage(layer, pageIdFor(2), false);
+    setLayerLockedOnPage(layer, pageIdFor(2), true);
     setLayerVisibleGlobally(layer, true);
     setLayerLockedGlobally(layer, false);
     expect(layer.pageState).toBeUndefined();
@@ -208,42 +208,42 @@ describe("page-scoped layer state", () => {
   it("identifies layers that belong to a page", () => {
     const project = makeProject();
     const layer = layersForKind(project, "measure")[0];
-    layer.homePage = 1;
-    expect(layerAppliesToPage(layer, 1)).toBe(true);
-    expect(layerAppliesToPage(layer, 2)).toBe(false);
+    layer.homePageId = pageIdFor(1);
+    expect(layerAppliesToPage(layer, pageIdFor(1))).toBe(true);
+    expect(layerAppliesToPage(layer, pageIdFor(2))).toBe(false);
     addItem(project, layer.id, makeItem("item_page_2", 2));
-    expect(layerAppliesToPage(layer, 2)).toBe(true);
+    expect(layerAppliesToPage(layer, pageIdFor(2))).toBe(true);
   });
 
   it("offers only layers that apply to the given pages as move targets", () => {
     const project = makeProject();
     const [pageOne] = layersForKind(project, "draw");
-    pageOne.homePage = 1;
+    pageOne.homePageId = pageIdFor(1);
     addItem(project, pageOne.id, makeItem("item_page_1", 1));
 
-    const emptyOnPageTwo = addLayer(project, "draw", 2);
+    const emptyOnPageTwo = addLayer(project, "draw", pageIdFor(2));
 
-    const usedOnPageTwo = addLayer(project, "draw", 1);
+    const usedOnPageTwo = addLayer(project, "draw", pageIdFor(1));
     addItem(project, usedOnPageTwo.id, makeItem("item_page_2", 2));
 
     const ids = (pages: number[]) =>
-      moveTargetLayers(project, "draw", pages).map((layer) => layer.id);
+      moveTargetLayers(project, "draw", pages.map(pageIdFor)).map((layer) => layer.id);
 
     expect(ids([1])).toEqual([pageOne.id, usedOnPageTwo.id]);
     expect(ids([2])).toEqual([emptyOnPageTwo.id, usedOnPageTwo.id]);
     expect(ids([3])).toEqual([]);
     expect(ids([1, 2])).toEqual([pageOne.id, emptyOnPageTwo.id, usedOnPageTwo.id]);
-    expect(moveTargetLayers(project, "measure", [2])).toEqual([]);
+    expect(moveTargetLayers(project, "measure", [pageIdFor(2)])).toEqual([]);
   });
 
   it("creates a new page-scoped layer when every applicable layer is hidden", () => {
     const project = makeProject();
     const current = layersForKind(project, "measure")[0];
     project.activeLayerId = current.id;
-    setLayerVisibleOnPage(current, 2, false);
-    const created = ensureActiveLayer(project, "measure", 2);
+    setLayerVisibleOnPage(current, pageIdFor(2), false);
+    const created = ensureActiveLayer(project, "measure", pageIdFor(2));
     expect(created.id).not.toBe(current.id);
-    expect(created.homePage).toBe(2);
-    expect(layerVisibleOnPage(created, 2)).toBe(true);
+    expect(created.homePageId).toBe(pageIdFor(2));
+    expect(layerVisibleOnPage(created, pageIdFor(2))).toBe(true);
   });
 });

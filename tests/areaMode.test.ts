@@ -1,10 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  cloneItem,
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-} from "../src/model/layers";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
+import { cloneItem, createProject, defaultDocument } from "../src/model/layers";
 import { itemMetrics } from "../src/model/measure";
 import { measurementLabelParts } from "../src/model/label";
 import type { MarkupItem, Project } from "../src/model/types";
@@ -12,13 +8,13 @@ import type { MarkupItem, Project } from "../src/model/types";
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(): Project {
-  return createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
 }
 
 function makeArea(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
     id: "item_area",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "area",
     points: [
       { x: 10, y: 10 },

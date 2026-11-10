@@ -45,6 +45,8 @@ describe("colour normalization", () => {
       "category",
       new Set(),
       new Set(),
+      new Set(["page_1"]),
+      "page_1",
     );
     expect(item?.color).toBe("#f70808");
     expect(item?.fillColor).toBe("#f26d6d");

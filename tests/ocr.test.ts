@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { SCHEMA_VERSION } from "../src/model/types";
 import type { OcrPage, Project } from "../src/model/types";
 import { parseProject, serializeProject } from "../src/io/projectFile";
@@ -7,7 +8,7 @@ import { isOcrCurrent, ocrPageToText } from "../src/search/ocr";
 import { searchTextPage } from "../src/search/textIndex";
 
 function makeProject(): Project {
-  const project = createProject(defaultDocument("Scan.pdf", 2), createDefaultLayers());
+  const project = withTestPageIds(createProject(defaultDocument("Scan.pdf", 2)));
   project.documents[0].sha256 = "scan-sha";
   return project;
 }
@@ -51,20 +52,20 @@ describe("OCR index", () => {
 
   it("round-trips OCR through the project file", () => {
     const project = makeProject();
-    project.pages["1"] = { ocr: makeOcr() };
+    project.pages[0].state = { ocr: makeOcr() };
     const parsed = parseProject(serializeProject(project));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.pages["1"].ocr).toEqual(makeOcr());
+    expect(parsed.pages[0].state.ocr).toEqual(makeOcr());
   });
 
   it("drops invalid OCR records but keeps the rest of the page state", () => {
     const project = makeProject();
-    project.pages["1"] = { name: "Scanned sheet", ocr: makeOcr() };
+    project.pages[0].state = { name: "Scanned sheet", ocr: makeOcr() };
     const raw = JSON.parse(serializeProject(project));
-    raw.pages["1"].ocr.documentSha256 = "";
+    raw.pages[0].state.ocr.documentSha256 = "";
     const parsed = parseProject(JSON.stringify(raw));
-    expect(parsed.pages["1"].name).toBe("Scanned sheet");
-    expect(parsed.pages["1"].ocr).toBeUndefined();
+    expect(parsed.pages[0].state.name).toBe("Scanned sheet");
+    expect(parsed.pages[0].state.ocr).toBeUndefined();
   });
 
   it("loads a schema 16 project without OCR and upgrades it to the current schema", () => {
@@ -73,6 +74,6 @@ describe("OCR index", () => {
     raw.schemaVersion = 16;
     const parsed = parseProject(JSON.stringify(raw));
     expect(parsed.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(parsed.pages["1"]?.ocr).toBeUndefined();
+    expect(parsed.pages[0]?.state.ocr).toBeUndefined();
   });
 });

@@ -7,7 +7,7 @@ import { drawLabel } from "./export/labels";
 import { drawLegendPage } from "./export/legend";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
 import { applyCrop, drawCalibrationLine } from "./export/page";
-import { documentPageMaps } from "../model/documents";
+import { pageIdAt } from "../model/pages";
 import { isReferenceCalibration, pageCalibration } from "../model/calibration";
 import type { DrawingExportOptions } from "../model/export";
 import { itemIsVisible, layerVisibleOnPage } from "../model/layers";
@@ -30,17 +30,21 @@ export async function exportProjectPdf(
   // Merge every source document into one working PDF so page numbers, crops and
   // labels keep referring to the same global page index as the canvas.
   const pdf = await PDFDocument.create();
-  const pageMaps = documentPageMaps(project.documents);
-  for (let index = 0; index < project.documents.length; index++) {
-    const included = pageMaps[index] ?? [];
-    if (!included.length) continue;
-    const bytes = await renderer.getDocumentData(index);
-    const source = await PDFDocument.load(bytes);
-    const copied = await pdf.copyPages(
-      source,
-      included.map((page) => page - 1),
-    );
-    for (const page of copied) pdf.addPage(page);
+  const sources = await Promise.all(
+    project.documents.map(async (_, index) => {
+      try {
+        return await PDFDocument.load(await renderer.getDocumentData(index));
+      } catch {
+        return null;
+      }
+    }),
+  );
+  const documentIndices = new Map(project.documents.map((document, index) => [document.id, index]));
+  for (const record of project.pages) {
+    const source = sources[documentIndices.get(record.documentId) ?? -1];
+    if (!source || record.localPage < 1 || record.localPage > source.getPageCount()) continue;
+    const [copied] = await pdf.copyPages(source, [record.localPage - 1]);
+    pdf.addPage(copied);
   }
   pdf.registerFontkit(fontkit);
   const fonts = await embedFonts(pdf);
@@ -56,10 +60,12 @@ export async function exportProjectPdf(
 
   for (const pageNumber of selectedPages) {
     const pdfPage = pages[pageNumber - 1];
+    const pageId = pageIdAt(project, pageNumber);
+    if (!pdfPage || !pageId) continue;
     const pdfjsPage = await renderer.getPage(pageNumber);
     const viewport = pdfjsPage.getViewport({ scale: 1 });
     const labels = layoutPageLabels(
-      pageLabelSources(project, pageNumber, {
+      pageLabelSources(project, pageId, {
         layerIds: selectedLayers,
         includeLabels,
         includeCalibration,
@@ -74,14 +80,10 @@ export async function exportProjectPdf(
 
     // Background images sit above the source page and below every markup.
     for (const layer of project.layers) {
-      if (
-        !layerVisibleOnPage(layer, pageNumber) ||
-        layer.opacity <= 0 ||
-        !selectedLayers.has(layer.id)
-      )
+      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
         continue;
       for (const item of layer.items) {
-        if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
         drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
       }
@@ -100,21 +102,17 @@ export async function exportProjectPdf(
     }
 
     for (const layer of project.layers) {
-      if (
-        !layerVisibleOnPage(layer, pageNumber) ||
-        layer.opacity <= 0 ||
-        !selectedLayers.has(layer.id)
-      )
+      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !selectedLayers.has(layer.id))
         continue;
       for (const item of layer.items) {
-        if (item.page !== pageNumber || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
         if (item.kind === "image" && item.image?.mode !== "annotation") continue;
         drawItem(pdfPage, viewport, project, item, layer.opacity, fonts, labels, images);
       }
     }
 
     if (includeCalibration) {
-      const calibration = pageCalibration(project, pageNumber);
+      const calibration = pageCalibration(project, pageId);
       if (calibration && isReferenceCalibration(calibration)) {
         drawCalibrationLine(pdfPage, viewport, calibration.p1, calibration.p2);
         const calibrationLabel = labels.get(CALIBRATION_LABEL_ID);

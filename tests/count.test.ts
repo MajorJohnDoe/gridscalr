@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   addItem,
   cloneItem,
-  createDefaultLayers,
   createProject,
   defaultDocument,
   layerKindForItem,
@@ -26,13 +26,13 @@ import type { MarkupItem, Project } from "../src/model/types";
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(): Project {
-  return createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
 }
 
 function makeCount(overrides: Partial<MarkupItem> = {}): MarkupItem {
   return {
     id: "item_count",
-    page: 1,
+    pageId: pageIdFor(1),
     kind: "count",
     points: [{ x: 150, y: 100 }],
     color: "#4cc9f0",
@@ -71,21 +71,21 @@ describe("count hit testing", () => {
     const layer = layersForKind(project, "measure")[0];
     addItem(project, layer.id, makeCount());
 
-    expect(hitTest(project, 1, { x: 154, y: 100 }, 6)?.item.id).toBe("item_count");
-    expect(hitTest(project, 1, { x: 160, y: 100 }, 6)).toBeNull();
+    expect(hitTest(project, pageIdFor(1), { x: 154, y: 100 }, 6)?.item.id).toBe("item_count");
+    expect(hitTest(project, pageIdFor(1), { x: 160, y: 100 }, 6)).toBeNull();
 
     const hiddenProject = makeProject();
     const hiddenLayer = layersForKind(hiddenProject, "measure")[0];
     addItem(hiddenProject, hiddenLayer.id, makeCount({ visible: false }));
-    expect(hitTest(hiddenProject, 1, { x: 150, y: 100 }, 6)).toBeNull();
+    expect(hitTest(hiddenProject, pageIdFor(1), { x: 150, y: 100 }, 6)).toBeNull();
 
     const lockedProject = makeProject();
     const lockedLayer = layersForKind(lockedProject, "measure")[0];
     addItem(lockedProject, lockedLayer.id, makeCount({ locked: true }));
-    expect(hitTest(lockedProject, 1, { x: 150, y: 100 }, 6)).toBeNull();
-    expect(hitTest(lockedProject, 1, { x: 150, y: 100 }, 6, { includeLocked: true })?.item.id).toBe(
-      "item_count",
-    );
+    expect(hitTest(lockedProject, pageIdFor(1), { x: 150, y: 100 }, 6)).toBeNull();
+    expect(
+      hitTest(lockedProject, pageIdFor(1), { x: 150, y: 100 }, 6, { includeLocked: true })?.item.id,
+    ).toBe("item_count");
   });
 });
 
@@ -124,7 +124,7 @@ describe("count metrics and labels", () => {
     const item = makeCount();
     addItem(project, layer.id, item);
 
-    const source = pageLabelSources(project, 1).find((entry) => entry.id === item.id);
+    const source = pageLabelSources(project, pageIdFor(1)).find((entry) => entry.id === item.id);
     expect(source?.kind).toBe("count");
     expect(source?.obstacle).toEqual({
       min: { x: 144, y: 94 },

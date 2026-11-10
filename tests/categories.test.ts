@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import {
   addCategory,
   allRooms,
@@ -17,13 +18,13 @@ import {
   renameCategory,
   setDefaultCategory,
 } from "../src/model/categories";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import type { ItemKind, MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
 
 function makeProject(): Project {
-  return createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+  return withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
 }
 
 function categoryId(project: Project, name: string): string {
@@ -40,7 +41,7 @@ function addItem(project: Project, kind: ItemKind, extra: Partial<MarkupItem> = 
   if (!layer) throw new Error("Missing target layer");
   const item: MarkupItem = {
     id: `item_${layer.items.length + 1}`,
-    page: 1,
+    pageId: pageIdFor(1),
     kind,
     points: [
       { x: 10, y: 10 },

@@ -1,9 +1,10 @@
 import { describe, expect, it } from "vitest";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
 import * as pdfjs from "pdfjs-dist/legacy/build/pdf.mjs";
 import { PDFDocument } from "pdf-lib";
 import { exportProjectPdf } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
-import { createDefaultLayers, createProject } from "../src/model/layers";
+import { createProject } from "../src/model/layers";
 import {
   createTemplateDocument,
   prefillSheetFields,
@@ -38,7 +39,7 @@ describe("template sheet export", () => {
     const staticBytes = await buildStaticSheetPdf(template);
 
     const documentRef = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Sheet");
-    const project = createProject(documentRef, createDefaultLayers());
+    const project = withTestPageIds(createProject(documentRef));
     project.name = "Export sheet";
     prefillSheetFields(project, documentRef, 1);
     documentRef.template!.fields["title.card"] = "56-01-01";
@@ -48,7 +49,7 @@ describe("template sheet export", () => {
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       id: "item_textbox",
-      page: 1,
+      pageId: pageIdFor(1),
       kind: "textbox",
       points: [
         { x: 60, y: 60 },
@@ -67,7 +68,7 @@ describe("template sheet export", () => {
     draw.items.push(
       {
         id: "item_polyline",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "polyline",
         points: [
           { x: 60, y: 200 },
@@ -83,7 +84,7 @@ describe("template sheet export", () => {
       },
       {
         id: "item_rail",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "rail",
         points: [
           { x: 60, y: 380 },
@@ -98,7 +99,7 @@ describe("template sheet export", () => {
       },
       {
         id: "item_rich_textbox",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "textbox",
         points: [
           { x: 60, y: 300 },
@@ -120,7 +121,7 @@ describe("template sheet export", () => {
       },
       {
         id: "item_symbol",
-        page: 1,
+        pageId: pageIdFor(1),
         kind: "symbol",
         points: [{ x: 360, y: 300 }],
         color: "#2d7dd2",

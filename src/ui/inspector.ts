@@ -8,6 +8,7 @@ import {
   setLayerVisibleOnPage,
 } from "../model/layers";
 import { store } from "../state/store";
+import { pageIdAt } from "../model/pages";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
@@ -145,8 +146,9 @@ function activeLayerSection(
 
   const toggles = el("div", "field-row");
   const page = store.ui.page;
-  const activeVisible = layerVisibleOnPage(active, page);
-  const activeLocked = layerLockedOnPage(active, page);
+  const pageId = pageIdAt(project, page) ?? "";
+  const activeVisible = layerVisibleOnPage(active, pageId);
+  const activeLocked = layerLockedOnPage(active, pageId);
   const visible = el("button", `toggle${activeVisible ? " is-on" : ""}`);
   visible.type = "button";
   visible.title = t("inspector.visibilityOnPage", { page });
@@ -154,7 +156,7 @@ function activeLayerSection(
   visible.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) setLayerVisibleOnPage(layer, page, !layerVisibleOnPage(layer, page));
+      if (layer) setLayerVisibleOnPage(layer, pageId, !layerVisibleOnPage(layer, pageId));
     }, "layers");
   });
   const locked = el("button", `toggle${activeLocked ? " is-on" : ""}`);
@@ -164,7 +166,7 @@ function activeLayerSection(
   locked.addEventListener("click", () => {
     store.mutate((project) => {
       const layer = project.layers.find((l) => l.id === active.id);
-      if (layer) setLayerLockedOnPage(layer, page, !layerLockedOnPage(layer, page));
+      if (layer) setLayerLockedOnPage(layer, pageId, !layerLockedOnPage(layer, pageId));
     }, "layers");
   });
   toggles.append(visible, locked);

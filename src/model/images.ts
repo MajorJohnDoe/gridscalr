@@ -1,5 +1,5 @@
 import { makeId } from "./calibration";
-import type { ImageAsset, ImageMode, MarkupItem, PageSize, Point, Project } from "./types";
+import type { ImageAsset, ImageMode, MarkupItem, PageId, PageSize, Point, Project } from "./types";
 
 /** Hard limits for one embedded image. */
 export const IMAGE_MAX_BYTES = 20 * 1024 * 1024;
@@ -52,7 +52,7 @@ export function initialImageSize(asset: ImageAsset, pageSize: PageSize): PageSiz
 
 export function createImageItem(
   asset: ImageAsset,
-  page: number,
+  pageId: PageId,
   pageSize: PageSize,
   mode: ImageMode = "background",
   center?: Point,
@@ -71,7 +71,7 @@ export function createImageItem(
   const now = new Date().toISOString();
   return {
     id: makeId("item"),
-    page,
+    pageId,
     kind: "image",
     points: [
       { x: centerX - halfWidth, y: centerY - halfHeight },

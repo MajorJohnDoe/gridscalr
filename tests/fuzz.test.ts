@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { withTestPageIds } from "./helpers/pages";
 import { parseProject, serializeProject } from "../src/io/projectFile";
 import { SCHEMA_VERSION } from "../src/model/types";
-import { createDefaultLayers, createProject, defaultDocument } from "../src/model/layers";
+import { createProject, defaultDocument } from "../src/model/layers";
 import { totalPageCount } from "../src/model/documents";
 import {
   documentArchivePaths,
@@ -143,7 +144,7 @@ describe("untrusted project JSON fuzzing", () => {
 
   it("accepts or rejects randomly mutated projects without crashing", () => {
     const rng = prng(0x5eed2);
-    const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
     const valid = JSON.parse(serializeProject(project)) as Record<string, unknown>;
     const targets = [
       valid,
@@ -298,7 +299,7 @@ describe("archive name fuzzing", () => {
   it("keeps generated document paths safe and unique for random names", () => {
     const rng = prng(0x5eed8);
     for (let index = 0; index < 50; index += 1) {
-      const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+      const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
       project.documents = Array.from({ length: 1 + Math.floor(rng() * 5) }, (_, itemIndex) => ({
         ...defaultDocument(randomString(rng) || `Plan ${itemIndex}.pdf`, 1),
         id: `doc_${itemIndex}`,

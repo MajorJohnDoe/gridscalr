@@ -1,17 +1,13 @@
 import { describe, expect, it } from "vitest";
-import {
-  createDefaultLayers,
-  createProject,
-  defaultDocument,
-  setLayerVisibleOnPage,
-} from "../src/model/layers";
+import { pageIdFor, withTestPageIds } from "./helpers/pages";
+import { createProject, defaultDocument, setLayerVisibleOnPage } from "../src/model/layers";
 import type { MarkupItem } from "../src/model/types";
 import { serializeMarkupCsv } from "../src/report/markupCsv";
 
 function item(id: string, kind: MarkupItem["kind"], label: string, page = 1): MarkupItem {
   return {
     id,
-    page,
+    pageId: pageIdFor(page),
     kind,
     points: [
       { x: 10, y: 20 },
@@ -28,7 +24,7 @@ function item(id: string, kind: MarkupItem["kind"], label: string, page = 1): Ma
 
 describe("markup CSV", () => {
   it("includes visible measurements and drawings on visible layers", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     measure.items.push(item("length", "length", 'Wall, "A"'));
@@ -45,7 +41,7 @@ describe("markup CSV", () => {
   });
 
   it("keeps the value and unit consistent when smart lengths are enabled", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     project.settings.lengthUnit = "cm";
     project.settings.smartLengthUnits = true;
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
@@ -69,20 +65,20 @@ describe("markup CSV", () => {
   });
 
   it("applies layer visibility separately per page", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 2), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 2)));
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push(item("page-1", "length", "Page 1 wall"));
-    measure.items.push({ ...item("page-2", "length", "Page 2 wall"), page: 2 });
-    setLayerVisibleOnPage(measure, 1, false);
+    measure.items.push({ ...item("page-2", "length", "Page 2 wall"), pageId: pageIdFor(2) });
+    setLayerVisibleOnPage(measure, pageIdFor(1), false);
     const csv = serializeMarkupCsv(project);
     expect(csv).not.toContain("Page 1 wall");
     expect(csv).toContain("Page 2 wall");
-    setLayerVisibleOnPage(measure, 2, false);
+    setLayerVisibleOnPage(measure, pageIdFor(2), false);
     expect(serializeMarkupCsv(project)).not.toContain("Page 2 wall");
   });
 
   it("excludes hidden layers and hidden items", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push(item("visible", "length", "Visible"));
     measure.items.push({ ...item("hidden", "length", "Hidden"), visible: false });
@@ -97,7 +93,7 @@ describe("markup CSV", () => {
   });
 
   it("uses the locale delimiter without changing the stable English columns", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const measure = project.layers.find((layer) => layer.kind === "measure")!;
     measure.items.push(item("length", "length", "Wall; A"));
 
@@ -110,7 +106,7 @@ describe("markup CSV", () => {
   });
 
   it("exports symbol names, categories, and inspection status", () => {
-    const project = createProject(defaultDocument("Plan.pdf", 1), createDefaultLayers());
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
     const draw = project.layers.find((layer) => layer.kind === "draw")!;
     draw.items.push({
       ...item("symbol", "symbol", "Extinguisher"),
