@@ -134,6 +134,11 @@ build. It runs two audits and applies one reviewed exception list:
 | npm | `npm audit --json` | `package-lock.json`, production and development |
 | Rust | `cargo audit --json` | `src-tauri/Cargo.lock`, every target-specific crate |
 
+CI installs `cargo-audit` with `taiki-e/install-action`. Locally, install it once
+with `cargo install cargo-audit --locked`; `npm run check:dependencies` then runs
+both audits. `npm run check:dependencies -- --help` lists the offline report and
+summary options.
+
 The CI job **Dependency advisory gate** prints the result to the job log, writes
 a Markdown summary to the step summary, and uploads the raw reports plus
 `gate-result.json` as the `dependency-audit` artifact. The **Release build**
