@@ -150,23 +150,19 @@ tests for page changes.
 
 {SCHEMA_ADDENDUM}
 
-Run the full pre-commit list from AGENTS.md plus phase-specific tests:
-- npm run check:versions
-- npm run check:file-budgets
-- npm run check:modules
-- npm run check:docs
-- npm run format:check
-- npm run lint
-- npm run check:i18n
-- npm run check:themes
-- npx tsc --noEmit
-- npm test -- --run
-- npm run build
-- cargo fmt --manifest-path src-tauri/Cargo.toml --check
-- cargo check --manifest-path src-tauri/Cargo.toml
-- cargo test --manifest-path src-tauri/Cargo.toml --lib
-- For UI changes: npm run test:ui, test:import, test:canvas, test:count,
-  test:touch and test:visual.
+Run the local gate from AGENTS.md, plus the focused tests this phase can break:
+- the guard scripts (`check:versions`, `check:file-budgets`, `check:modules`,
+  `check:security`, `check:dependencies`, `check:docs`, `check:i18n`,
+  `check:themes`), `format:check` and `npx tsc --noEmit`;
+- `npx vitest run` over the test files the change touches or can break;
+- the area-specific additions in AGENTS.md: `tests/robustness/` for save, lease,
+  recovery and path work; `cargo fmt --check`, `cargo check` and
+  `cargo test --lib` for Rust; `test:visual` and the matching browser suite for
+  rendered or interaction changes; `tauri build -- --no-bundle` once before the
+  push for desktop shell changes; `docs:capture` when a captured screen changed.
+
+CI remains authoritative and runs the whole list on the PR head. State in the
+handover which suites you ran locally and which you left to CI.
 
 Commit with a conventional message. Push the branch and open a PR linked to
 #{ISSUE}. Do not merge the PR. Leave it ready for the conductor.
