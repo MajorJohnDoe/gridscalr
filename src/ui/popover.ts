@@ -110,9 +110,10 @@ function mountPopover(popover: HTMLElement, left: number, top: number): void {
   }, 0);
 }
 
-export function showPopover(anchor: HTMLElement, items: PopoverItem[]): void {
-  const popover = buildPopover(items);
-  document.body.append(popover);
+function anchoredPosition(
+  anchor: HTMLElement,
+  popover: HTMLElement,
+): { left: number; top: number } {
   const rect = anchor.getBoundingClientRect();
   const width = popover.offsetWidth;
   const height = popover.offsetHeight;
@@ -120,6 +121,30 @@ export function showPopover(anchor: HTMLElement, items: PopoverItem[]): void {
   let top = rect.bottom + 5;
   if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
   if (top + height > window.innerHeight - 8) top = rect.top - height - 5;
+  return { left, top };
+}
+
+export function showPopover(anchor: HTMLElement, items: PopoverItem[]): void {
+  const popover = buildPopover(items);
+  document.body.append(popover);
+  const { left, top } = anchoredPosition(anchor, popover);
+  popover.remove();
+  mountPopover(popover, left, top);
+}
+
+/**
+ * Shows arbitrary content in the shared popover shell. Positioning, outside
+ * click and Escape handling stay in one place; the caller owns the content.
+ */
+export function showContentPopover(
+  anchor: HTMLElement,
+  content: HTMLElement,
+  className = "",
+): void {
+  const popover = el("div", className ? `popover ${className}` : "popover");
+  popover.append(content);
+  document.body.append(popover);
+  const { left, top } = anchoredPosition(anchor, popover);
   popover.remove();
   mountPopover(popover, left, top);
 }

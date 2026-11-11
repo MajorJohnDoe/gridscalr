@@ -71,6 +71,20 @@ failure on both `IDBObjectStore.put` and `localStorage.setItem` to prove the
 write rejects with an `AutosaveError` whose message names the file save and the
 recovery center.
 
+## Project status popover
+
+`tests/statusOverview.test.ts` covers the pure model and the rendered popover.
+The model tests assert the save state (saved, unsaved, not saved to a file), the
+available actions for clean, view-only, paused-autosave, disabled-autosave,
+pending-warning and empty-recovery states, the desktop-only backup rule, and the
+newest-backup and time-formatting helpers. The DOM tests render each combination
+and check the localized rows, the disabled action with a tooltip, the action
+routing and Escape dismissal. The controller tests prove the model reads the live
+store, autosave preference and validation result, that the recovery summary
+updates after a save, that the backup list is read exactly once per open, that
+the browser fallback never reads it, and that a failed read still opens the
+popover.
+
 ## Robustness gate
 
 `npm run test:robustness` runs only `tests/robustness/`. The normal

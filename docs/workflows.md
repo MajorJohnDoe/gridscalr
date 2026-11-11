@@ -147,7 +147,7 @@ For fire-safety rounds, ventilation surveys or equipment inventories, place buil
 
 ![Docked Markups list with a saved view, configurable columns, building/floor/room groups, filters and row actions](screenshots/markups-list.png)
 
-Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or its checksum changes while the project is open; **Project settings → Project → Project size and sources** lists the same status and the source mode before you export.
+Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or its checksum changes while the project is open; click the saved/unsaved chip for the last save and automatic backup times, the autosave interval, pending validation warnings and the recovery summary, with **Backup now**, **Review recovery…**, **Open project doctor…** and the session pause action. **Project settings → Project → Project size and sources** lists the same source status and the source mode before you export.
 
 ### 8. Save safely across computers
 

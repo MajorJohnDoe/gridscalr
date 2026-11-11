@@ -12,6 +12,7 @@ export type { SaveIntegrityHost } from "./ports";
 export {
   computeFileMetadata,
   computeFileStamp,
+  listProjectBackups,
   ProjectWriteConflictError,
   writeProjectConditional,
 } from "./files";

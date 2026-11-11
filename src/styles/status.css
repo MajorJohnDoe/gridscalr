@@ -228,3 +228,66 @@
   border-radius: 8px;
   text-align: center;
 }
+
+/* ---------- Project status popover ---------- */
+
+.status-popover-content {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 264px;
+  max-width: min(340px, calc(100vw - 16px));
+}
+
+.status-popover-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.status-popover-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.status-popover-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.status-popover-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
+  gap: 10px;
+  align-items: baseline;
+  font-size: 11px;
+}
+
+.status-popover-label {
+  color: var(--muted-2);
+}
+
+.status-popover-value {
+  color: var(--text);
+  text-align: right;
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.status-popover-value.is-warning {
+  color: var(--warning);
+}
+
+.status-popover-note {
+  margin: 0;
+  padding: 6px 8px;
+  border-left: 2px solid var(--warning);
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.4;
+}
