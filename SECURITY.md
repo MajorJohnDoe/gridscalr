@@ -55,6 +55,22 @@ for a package and verify its checksums.
 Packages are unencrypted and unsigned. Their manifest checksums detect
 corruption and accidental changes, not deliberate tampering.
 
+## Dependencies
+
+A dependency and advisory gate runs on every pull request and before a release
+build. `npm run check:dependencies` audits `package-lock.json` with `npm audit`
+and `src-tauri/Cargo.lock` with `cargo audit`, then applies the reviewed entries
+in [`security/dependency-allowlist.json`](security/dependency-allowlist.json).
+A new advisory at or above moderate blocks unless it is accepted with a reason
+and a review expiry. The gate fails closed when it cannot read the advisory
+databases; it never reports an unverified tree as clean.
+
+The current exceptions are the Linux-only `glib` soundness advisory tracked by
+[#21](https://github.com/MajorJohnDoe/gridscalr/issues/21) and four unmaintained
+Rust crates with no known vulnerability. The npm advisory in development-only
+tooling was fixed with a scoped override. The full process, threshold and current
+position are in [`docs/security-policy.md`](docs/security-policy.md).
+
 ## 1.0 guidance
 
 The 0.24.0 security audit is recorded in
@@ -67,14 +83,16 @@ P0–P3 findings with acceptance criteria. Before 1.0:
 - the configured CSP covers the page and the bundled Web Workers, and the
   shipped policy contains no development origin;
 - Tauri capabilities are limited to the permissions the app calls;
-
-Both are now enforced by `npm run check:security` against
-[`security/policy.json`](security/policy.json) and verified by
-`npm run test:csp`; see [`docs/security-policy.md`](docs/security-policy.md).
 - the write guard protects a managed copy's original drawing as well as the
   copy;
 - the Windows path and write-guard tests run on Windows;
 - `docs/limitations.md` and this policy agree on every accepted risk.
+
+The CSP and capability items are enforced by `npm run check:security` against
+[`security/policy.json`](security/policy.json) and verified by
+`npm run test:csp`; see [`docs/security-policy.md`](docs/security-policy.md). The
+dependency item is enforced by `npm run check:dependencies` and the reviewed
+allowlist.
 
 ## Unsigned builds
 

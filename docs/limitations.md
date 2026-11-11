@@ -77,7 +77,7 @@
 - The language selector covers the interface, reports and export headings. A low-level filesystem failure shows a localized message and keeps the operating system's technical detail as a separate line.
 - The static boot fallback in `index.html` is English until the selected catalog loads; it is replaced before the app starts, and startup failures after that point use the active language.
 - Diagnostics and the local event log are stored on the computer only. There is no telemetry, crash reporting or upload, and the log keeps the last 80 entries with paths, drawing names and labels removed. Startup failures before the log is available are shown on the boot screen instead.
-- The Linux GTK stack currently resolves `glib 0.18.5`, which has a medium-severity soundness advisory fixed in `glib 0.20.0`. GridScalr cannot upgrade it independently because Tauri's GTK 0.18 dependencies pin that generation. The Windows artifacts do not use this code path; revisit with a future Tauri/GTK upgrade.
+- The Linux GTK stack currently resolves `glib 0.18.5`, which has a medium-severity soundness advisory fixed in `glib 0.20.0`. GridScalr cannot upgrade it independently because Tauri's GTK 0.18 dependencies pin that generation. The Windows artifacts do not use this code path; the dependency gate accepts it with a written reason and a quarterly review until a future Tauri/GTK upgrade. Tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
 ## Large-project performance
 

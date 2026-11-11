@@ -1,0 +1,56 @@
+{
+  "$comment": "Reviewed exceptions for npm run check:dependencies. Every entry needs an advisory ID, a stated reason, reviewedAt, a reviewBy date and an optional tracking issue. An expired entry, a stale entry that no longer matches an advisory, or an entry without a reason fails the gate. Read docs/security-policy.md before changing this file. The list is reviewed quarterly; reviewBy is the hard expiry.",
+  "reviewed": "2026-11-11",
+  "entries": [
+    {
+      "ecosystem": "cargo",
+      "package": "glib",
+      "advisory": "RUSTSEC-2024-0429",
+      "kind": "unsound",
+      "reason": "glib 0.18.5 has an unsoundness advisory fixed in 0.20.0. Tauri's GTK 0.18 generation pins glib 0.18.x and the app never calls the affected VariantStrIter impls directly. Linux-only; the Windows and macOS artifacts do not link it. Revisit with the Tauri/gtk-rs 0.20 upgrade.",
+      "reviewedAt": "2026-11-11",
+      "reviewBy": "2027-02-11",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
+    },
+    {
+      "ecosystem": "cargo",
+      "package": "proc-macro-error",
+      "advisory": "RUSTSEC-2024-0370",
+      "kind": "unmaintained",
+      "reason": "Build-time only through glib-macros and gtk. The crate is unmaintained but has no known vulnerability and is not linked into the shipped binary. Removing it needs the same Tauri/gtk-rs upgrade as glib.",
+      "reviewedAt": "2026-11-11",
+      "reviewBy": "2027-02-11",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
+    },
+    {
+      "ecosystem": "cargo",
+      "package": "zvariant",
+      "advisory": "RUSTSEC-2026-0370",
+      "kind": "unmaintained",
+      "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
+      "reviewedAt": "2026-11-11",
+      "reviewBy": "2027-02-11",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
+    },
+    {
+      "ecosystem": "cargo",
+      "package": "zbus_names",
+      "advisory": "RUSTSEC-2026-0371",
+      "kind": "unmaintained",
+      "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
+      "reviewedAt": "2026-11-11",
+      "reviewBy": "2027-02-11",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
+    },
+    {
+      "ecosystem": "cargo",
+      "package": "zvariant_derive",
+      "advisory": "RUSTSEC-2026-0372",
+      "kind": "unmaintained",
+      "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
+      "reviewedAt": "2026-11-11",
+      "reviewBy": "2027-02-11",
+      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
+    }
+  ]
+}

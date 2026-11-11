@@ -194,6 +194,7 @@ npm run check:versions
 npm run check:file-budgets
 npm run check:modules
 npm run check:security
+npm run check:dependencies
 npm run check:docs
 npm run format:check
 npm run lint
@@ -343,8 +344,8 @@ do not change the released version must not change the version shown on the site
 
 ## CI and build hosts
 
-- `.github/workflows/ci.yml` runs lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests. Its `desktop` job compiles the Tauri shell on Ubuntu, Windows and macOS, so platform-specific code is checked before a tag exists.
-- `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags.
+- `.github/workflows/ci.yml` runs the dependency advisory gate, lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests. Its `desktop` job compiles the Tauri shell on Ubuntu, Windows and macOS, so platform-specific code is checked before a tag exists.
+- `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags. Its build jobs depend on the same dependency advisory gate.
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the `Release build` workflow for Windows and macOS artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
 - If GitHub rejects a push because the OAuth token lacks a scope, refresh it with `gh auth refresh -h github.com -s workflow` when adding or changing workflow files.
@@ -562,8 +563,12 @@ scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/check-file-budgets.mjs blocking line budget for source files
 scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
+scripts/check-dependencies.mjs dependency and advisory gate runner
+scripts/dependency-gate.mjs pure audit parsing, allowlist and threshold rules
+scripts/check-versions.mjs   app-version agreement across the four version fields
 scripts/csp-regression.mjs  browser CSP, PDF worker and OCR worker regression
 security/policy.json       machine-checked CSP and capability justification
+security/dependency-allowlist.json reviewed npm and Rust advisory exceptions with reasons and expiry
 docs/security-policy.md    desktop security policy and how to change it
 src-tauri/src/smoke.rs     debug-only packaged smoke-test commands
 src/model/pathText.ts      shared absolute-path sanitizer for diagnostics and error copies
@@ -608,6 +613,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
 - `npm run test:csp` opens the demo in the browser fallback, checks the single dev policy, starts the real Tesseract worker, and proves a blob worker inherits the policy and cannot fetch a remote origin.
 - `npm run check:security` compares the shipped CSP and capabilities with the reasoned record in `security/policy.json`, rejects a second page policy and inline styles, and verifies the debug-only smoke commands and worker bootstraps. See `docs/security-policy.md`.
+- `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.

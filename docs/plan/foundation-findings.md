@@ -889,6 +889,49 @@ confirmed against the audit.
   guarantee. Revisit only if the browser fallback gains a real save target.
 - **Related:** `docs/limitations.md`, `src-tauri/src/path_guard.rs`.
 
+### F-048 — The minimatch override is outside the declared ESLint range
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 4 — dependency and advisory gate
+- **Severity:** P3
+- **Area:** dependency tooling
+- **Status:** accepted
+- **Evidence:** `package.json` has `overrides: { "minimatch": "^11.0.1" }`.
+  `eslint 10.14.0` and `@typescript-eslint/typescript-estree 8.72.1` declare
+  `minimatch ^10.2.x`, which is inside the advisory range. No released
+  ESLint/typescript-eslint version declares minimatch 11 yet.
+- **Problem:** The override forces a major version the parent tools do not
+  declare. A future ESLint or typescript-eslint change that relies on a
+  minimatch 10 behaviour could break linting.
+- **Impact:** `npm run lint`, the full test suite, the build and the UI suites
+  pass with 11.0.7. The alternative is an accepted moderate advisory in
+  development tooling, which the gate would have to carry indefinitely.
+- **Next step:** Remove the override as soon as both tools declare minimatch 11
+  and `npm audit` stays clean without it. Re-run lint and the dependency gate
+  when removing it.
+- **Related:** F-039, `package.json`.
+
+### F-049 — The dependency gate depends on live advisory databases
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 4 — dependency and advisory gate
+- **Severity:** P3
+- **Area:** dependency tooling
+- **Status:** accepted
+- **Evidence:** `npm audit` queries the npm registry and `cargo audit` fetches
+  the RustSec advisory database. `scripts/check-dependencies.mjs` retries three
+  times and then fails closed with an explicit message.
+- **Problem:** A network outage or a registry problem blocks the gate and
+  therefore a pull request or release build, even when the tree is unchanged.
+  The result is only as current as the advisory source it can read.
+- **Impact:** The gate never reports an unverified tree as clean. A cached
+  report can reproduce a run with `--npm-report` / `--cargo-report`, but the
+  real gate intentionally checks the current database.
+- **Next step:** Keep the fail-closed behaviour. Revisit a pinned advisory
+  snapshot only if the live source becomes unreliable, and document that choice
+  before changing it.
+- **Related:** `docs/security-policy.md`, `.github/workflows/ci.yml`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

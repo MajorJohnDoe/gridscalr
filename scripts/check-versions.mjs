@@ -9,6 +9,7 @@ async function read(relativePath) {
 }
 
 const packageJson = JSON.parse(await read("package.json"));
+const packageLock = JSON.parse(await read("package-lock.json"));
 const tauriConfig = JSON.parse(await read("src-tauri/tauri.conf.json"));
 const cargoToml = await read("src-tauri/Cargo.toml");
 const cargoLock = await read("src-tauri/Cargo.lock");
@@ -21,6 +22,7 @@ const cargoLockVersion = cargoLock.match(
 
 const versions = {
   "package.json": packageJson.version,
+  "package-lock.json": packageLock.version,
   "src-tauri/tauri.conf.json": tauriConfig.version,
   "src-tauri/Cargo.toml": cargoVersion,
   "src-tauri/Cargo.lock": cargoLockVersion,
@@ -41,7 +43,16 @@ if (uniqueVersions.size !== 1) {
   for (const [file, version] of Object.entries(versions)) {
     console.error(`  ${file}: ${version}`);
   }
-  console.error("Update package.json, tauri.conf.json, Cargo.toml and Cargo.lock together.");
+  console.error(
+    "Update package.json, package-lock.json, tauri.conf.json, Cargo.toml and Cargo.lock together.",
+  );
+  process.exit(1);
+}
+
+if (packageLock.packages?.[""]?.version !== packageLock.version) {
+  console.error(
+    `package-lock.json root entries disagree: version ${packageLock.version}, packages[""] ${packageLock.packages?.[""]?.version}.`,
+  );
   process.exit(1);
 }
 
