@@ -68,6 +68,7 @@ export interface ShellRefs {
   welcome: HTMLElement;
   statusCalibration: HTMLElement;
   statusProject: HTMLElement;
+  statusAutosave: HTMLElement;
   statusCoords: HTMLElement;
   statusWarning: HTMLElement;
   statusSources: HTMLElement;
@@ -292,6 +293,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   const statusbar = el("footer", "statusbar");
   const statusCalibration = el("div", "status-section");
   const statusProject = el("div", "status-section status-project");
+  const statusAutosave = el("div", "status-section status-autosave");
   const statusCoords = el("div", "status-section status-coords");
   const statusWarning = el("div", "status-section status-warning");
   const statusSources = el("div", "status-section status-sources");
@@ -324,6 +326,7 @@ export function createShell(root: HTMLElement): ShellRefs {
   statusbar.append(
     statusCalibration,
     statusProject,
+    statusAutosave,
     statusCoords,
     statusWarning,
     statusSources,
@@ -409,6 +412,7 @@ export function createShell(root: HTMLElement): ShellRefs {
     welcome,
     statusCalibration,
     statusProject,
+    statusAutosave,
     statusCoords,
     statusWarning,
     statusSources,

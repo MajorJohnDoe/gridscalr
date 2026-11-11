@@ -37,6 +37,7 @@ describe("app preferences", () => {
       language: "system",
       csvFormat: "locale",
       theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 15 },
     });
   });
 
@@ -49,6 +50,16 @@ describe("app preferences", () => {
       JSON.stringify({ language: "klingon", csvFormat: "semicolon", theme: "neon" }),
     );
     expect(loadAppPreferences()).toEqual(DEFAULT_APP_PREFERENCES);
+
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ autosave: { enabled: "yes", intervalSeconds: 7 } }),
+    );
+    expect(loadAppPreferences().autosave).toEqual({ enabled: true, intervalSeconds: 15 });
+    expect(loadAppPreferences()).toEqual({
+      ...DEFAULT_APP_PREFERENCES,
+      autosave: { enabled: true, intervalSeconds: 15 },
+    });
   });
 
   it("loads valid partial preferences and keeps defaults for missing fields", () => {
@@ -57,6 +68,7 @@ describe("app preferences", () => {
       language: "sv",
       csvFormat: "locale",
       theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 15 },
     });
 
     localStorage.setItem("gridscalr.preferences.v1", JSON.stringify({ csvFormat: "interchange" }));
@@ -64,7 +76,41 @@ describe("app preferences", () => {
       language: "system",
       csvFormat: "interchange",
       theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 15 },
     });
+  });
+
+  it("migrates the stored shape without losing the other preferences", () => {
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ language: "sv", csvFormat: "interchange", theme: "navy" }),
+    );
+    expect(loadAppPreferences()).toEqual({
+      language: "sv",
+      csvFormat: "interchange",
+      theme: "navy",
+      autosave: { enabled: true, intervalSeconds: 15 },
+    });
+  });
+
+  it("normalizes each autosave field independently", () => {
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ autosave: { enabled: false, intervalSeconds: 60 } }),
+    );
+    expect(loadAppPreferences().autosave).toEqual({ enabled: false, intervalSeconds: 60 });
+
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ autosave: { enabled: false, intervalSeconds: 45 } }),
+    );
+    expect(loadAppPreferences().autosave).toEqual({ enabled: false, intervalSeconds: 15 });
+
+    localStorage.setItem(
+      "gridscalr.preferences.v1",
+      JSON.stringify({ autosave: { enabled: "later", intervalSeconds: 30 } }),
+    );
+    expect(loadAppPreferences().autosave).toEqual({ enabled: true, intervalSeconds: 30 });
   });
 
   it("maps legacy theme names to their current palettes", () => {
@@ -77,12 +123,40 @@ describe("app preferences", () => {
 
   it("merges patches and persists them", () => {
     const saved = saveAppPreferences({ language: "en" });
-    expect(saved).toEqual({ language: "en", csvFormat: "locale", theme: "medium-grey" });
+    expect(saved).toEqual({
+      language: "en",
+      csvFormat: "locale",
+      theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 15 },
+    });
     expect(loadAppPreferences()).toEqual(saved);
 
     const next = saveAppPreferences({ csvFormat: "interchange" });
-    expect(next).toEqual({ language: "en", csvFormat: "interchange", theme: "medium-grey" });
+    expect(next).toEqual({
+      language: "en",
+      csvFormat: "interchange",
+      theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 15 },
+    });
     expect(loadAppPreferences()).toEqual(next);
+  });
+
+  it("round-trips the autosave preference with the other fields", () => {
+    const saved = saveAppPreferences({
+      language: "sv",
+      autosave: { enabled: false, intervalSeconds: 60 },
+    });
+    expect(saved.autosave).toEqual({ enabled: false, intervalSeconds: 60 });
+    expect(loadAppPreferences()).toEqual(saved);
+
+    const enabled = saveAppPreferences({ autosave: { enabled: true, intervalSeconds: 30 } });
+    expect(enabled).toEqual({
+      language: "sv",
+      csvFormat: "locale",
+      theme: "medium-grey",
+      autosave: { enabled: true, intervalSeconds: 30 },
+    });
+    expect(loadAppPreferences()).toEqual(enabled);
   });
 
   it("resets to the defaults", () => {

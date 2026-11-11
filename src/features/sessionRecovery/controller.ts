@@ -8,6 +8,12 @@ import {
   listRecoveryRecords,
   writeAutosaveRecord,
 } from "./autosave";
+import {
+  autosaveIntervalMs,
+  autosaveState,
+  subscribeAutosaveState,
+  type AutosaveState,
+} from "./autosavePreference";
 import { setRecoveryChooserHandler } from "./chooser";
 import { appVersion, instanceId } from "./instance";
 import { ProjectLeaseSession } from "./leaseSession";
@@ -20,6 +26,9 @@ import { createProjectWatcher, type ProjectWatcher } from "./watch";
 
 const SKIP_REASONS = new Set(["cursor", "view", "selection", "page", "tool", "save"]);
 
+/** Smallest delay between a change and the first snapshot. */
+const AUTOSAVE_DEBOUNCE_MS = 900;
+
 /**
  * Owns the scoped autosave loop, the advisory sidecar lease, the external-change
  * watcher and the explicit recovery chooser. ProjectSession and App only call
@@ -30,9 +39,11 @@ export class SessionRecoveryController {
   private readonly leases: ProjectLeaseSession;
   private unsubscribeStore: (() => void) | null = null;
   private unsubscribeSummary: (() => void) | null = null;
+  private unsubscribeAutosave: (() => void) | null = null;
   private autosaveTimer: number | null = null;
   private watcher: ProjectWatcher | null = null;
   private lastAutosave: { revision: number; path: string | null } | null = null;
+  private lastAutosaveAt = 0;
   private lastAutosaveError: string | null = null;
   private currentProjectId: string | null = null;
   private currentProjectPath: string | null = null;
@@ -56,6 +67,9 @@ export class SessionRecoveryController {
     this.unsubscribeSummary = subscribeRecoverySummary((summary) =>
       this.host.onSummaryChange(summary),
     );
+    this.unsubscribeAutosave = subscribeAutosaveState((state) =>
+      this.onAutosavePreferenceChange(state),
+    );
     setRecoveryChooserHandler(() => this.openChooser());
     void refreshRecoverySummary();
     this.scheduleAutosave();
@@ -78,6 +92,7 @@ export class SessionRecoveryController {
     this.currentProjectId = projectId;
     this.currentProjectPath = path;
     this.lastAutosave = null;
+    this.lastAutosaveAt = 0;
     if (previousProjectId && previousProjectId !== projectId) {
       await clearAutosavesForInstance(previousProjectId, this.instanceId);
     }
@@ -114,6 +129,7 @@ export class SessionRecoveryController {
       await clearAutosavesForInstance(this.currentProjectId, this.instanceId);
     }
     this.lastAutosave = null;
+    this.lastAutosaveAt = 0;
     this.lastAutosaveError = null;
     if (path && path !== this.currentProjectPath) {
       await this.leases.moveTo(
@@ -138,6 +154,8 @@ export class SessionRecoveryController {
     this.removeBanner = null;
     this.currentProjectId = null;
     this.currentProjectPath = null;
+    this.lastAutosave = null;
+    this.lastAutosaveAt = 0;
     void refreshRecoverySummary();
   }
 
@@ -177,6 +195,8 @@ export class SessionRecoveryController {
     this.unsubscribeStore = null;
     this.unsubscribeSummary?.();
     this.unsubscribeSummary = null;
+    this.unsubscribeAutosave?.();
+    this.unsubscribeAutosave = null;
     setRecoveryChooserHandler(null);
   }
 
@@ -199,6 +219,7 @@ export class SessionRecoveryController {
       this.currentProjectId = null;
       this.currentProjectPath = null;
       this.lastAutosave = null;
+      this.lastAutosaveAt = 0;
       void this.leases.release();
       void refreshRecoverySummary();
       return;
@@ -207,12 +228,31 @@ export class SessionRecoveryController {
     this.scheduleAutosave();
   }
 
+  /**
+   * A preference change takes effect immediately: disabling or pausing clears
+   * the pending timer, and re-enabling schedules from the current revision.
+   */
+  private onAutosavePreferenceChange(state: AutosaveState): void {
+    if (this.disposed) return;
+    if (!state.active) {
+      this.stopAutosave();
+      if (store.autosaveError) store.autosaveError = null;
+    } else {
+      this.scheduleAutosave();
+    }
+    store.emit("save");
+  }
+
   private scheduleAutosave(): void {
     this.stopAutosave();
+    if (!store.project || !autosaveState().active) return;
+    const now = Date.now();
+    const nextSlot = this.lastAutosaveAt > 0 ? this.lastAutosaveAt + autosaveIntervalMs() : now;
+    const delay = Math.max(AUTOSAVE_DEBOUNCE_MS, nextSlot - now);
     this.autosaveTimer = window.setTimeout(() => {
       this.autosaveTimer = null;
       void this.writeAutosaveNow();
-    }, 900);
+    }, delay);
   }
 
   private stopAutosave(): void {
@@ -222,7 +262,7 @@ export class SessionRecoveryController {
 
   private async writeAutosaveNow(): Promise<void> {
     const project = store.project;
-    if (!project) return;
+    if (!project || !autosaveState().active) return;
     const revision = store.revision;
     const path = store.projectPath;
     if (this.lastAutosave?.revision === revision && this.lastAutosave.path === path) return;
@@ -238,6 +278,7 @@ export class SessionRecoveryController {
         appVersion: appVersion(),
       });
       this.lastAutosave = { revision, path };
+      this.lastAutosaveAt = Date.now();
       if (store.autosaveError) {
         store.autosaveError = null;
         store.emit("save");
