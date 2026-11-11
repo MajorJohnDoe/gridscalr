@@ -5,6 +5,7 @@ import {
   chooseSavePath,
   isTauri,
   pathExists,
+  pickPdf,
   saveTextFile,
 } from "../../io/platform";
 import { loadAppPreferences } from "../../io/appPreferences";
@@ -45,6 +46,10 @@ export function createSaveIntegrityPorts(host: SaveIntegrityHost): SaveIntegrity
     write: (path, contents, expectedSha256, protectedPaths) =>
       writeProjectConditional(path, contents, expectedSha256, protectedPaths),
     pathExists,
+    locateDrawing: async () => {
+      const picked = await pickPdf();
+      return picked ? { path: picked.path, name: picked.name } : null;
+    },
     readText: readProjectFileText,
     browserSave: async (contents, filename, protectedPaths) => {
       const result = await saveTextFile(contents, filename, projectFilters(), {

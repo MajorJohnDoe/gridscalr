@@ -81,6 +81,7 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
     },
     pathExists: async (path) =>
       state.disk.has(path) || state.wrote.some((item) => item.path === path),
+    locateDrawing: async () => null,
     readText: async (path) => {
       const backup = /^\/backups\/(\d+)\.gridscalr$/.exec(path);
       if (backup) {

@@ -94,6 +94,7 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
       return stampFor(contents);
     },
     pathExists: async (path) => state.disk.has(path),
+    locateDrawing: async () => null,
     readText: async (path) => read(path),
     browserSave: async () => true,
     loadProjectText: async () => true,

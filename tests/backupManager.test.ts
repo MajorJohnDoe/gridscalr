@@ -24,6 +24,8 @@ import { t } from "../src/i18n";
 function makeProject(name = "Test project"): Project {
   const project = createProject(defaultDocument("Plan.pdf", 2));
   project.name = name;
+  project.documents[0].path = "/work/drawings/Plan.pdf";
+  project.documents[0].relativePath = "drawings/Plan.pdf";
   return project;
 }
 
@@ -55,6 +57,10 @@ interface FakeState {
   confirmResult: boolean;
   discardResult: boolean;
   retention: number;
+  /** Paths the fake file system reports as present. */
+  existing: Set<string>;
+  /** Replacement drawings handed back by the locate picker, in order. */
+  located: Array<{ path: string; name: string } | null>;
 }
 
 function fakeState(): FakeState {
@@ -70,6 +76,8 @@ function fakeState(): FakeState {
     confirmResult: true,
     discardResult: true,
     retention: 3,
+    existing: new Set(["/work/drawings/Plan.pdf"]),
+    located: [],
   };
 }
 
@@ -77,6 +85,8 @@ function fakePorts(state: FakeState): BackupPorts {
   return {
     desktop: true,
     backupRetention: () => state.retention,
+    pathExists: async (path) => state.existing.has(path),
+    locateDrawing: async () => state.located.shift() ?? null,
     listBackups: async () => [...state.entries],
     saveBackup: async (projectId, contents, projectPath, retention) => {
       state.saved.push({ projectId, contents, projectPath, retention });
@@ -369,5 +379,159 @@ describe("backup manager flows", () => {
     expect(document.querySelector(".recovery-empty")).not.toBeNull();
     footerButton(t("common.close"))?.click();
     await expect(flow).resolves.toBe(false);
+  });
+});
+
+async function waitFor(selector: string): Promise<HTMLElement | null> {
+  for (let attempt = 0; attempt < 25; attempt++) {
+    await nextFrame();
+    const node = document.querySelector<HTMLElement>(selector);
+    if (node) return node;
+  }
+  return null;
+}
+
+/** A backup whose drawing link is relative to the folder the backup came from. */
+function movedProjectBackup(drawingPath: string): Project {
+  const project = makeProject("Older backup");
+  project.documents[0].path = drawingPath;
+  project.documents[0].relativePath = "drawings/Plan.pdf";
+  return project;
+}
+
+describe("backup restore link resolution", () => {
+  it("resolves relative links from the moved project folder", async () => {
+    store.project = makeProject();
+    store.projectPath = "/new/place/Test project.gridscalr";
+    const state = fakeState();
+    const backup = entry({ projectPath: "/old/place/Test project.gridscalr" });
+    state.entries = [backup];
+    state.contents.set(
+      backup.path,
+      serializeProject(movedProjectBackup("/old/place/drawings-old/Plan.pdf")),
+    );
+    // The old folder is gone; only the moved project folder has the drawings.
+    state.existing = new Set(["/new/place/drawings/Plan.pdf"]);
+
+    const flow = openBackupManagerFlow(fakePorts(state));
+    await nextFrame();
+    footerButton(t("saveIntegrity.managerRestoreCopy"))?.click();
+    await expect(flow).resolves.toBe(true);
+
+    expect(document.querySelector(".modal-restore-links")).toBeNull();
+    expect(state.loaded).toHaveLength(1);
+    expect(state.loaded[0].project.documents[0].path).toBe("/new/place/drawings/Plan.pdf");
+    expect(state.loaded[0].path).toBeNull();
+    expect(state.saved).toHaveLength(0);
+  });
+
+  it("reports a drawing that moved away and relinks only after an explicit pick", async () => {
+    store.project = makeProject();
+    store.projectPath = "/new/place/Test project.gridscalr";
+    const state = fakeState();
+    const backup = entry({ projectPath: "/old/place/Test project.gridscalr" });
+    state.entries = [backup];
+    state.contents.set(
+      backup.path,
+      serializeProject(movedProjectBackup("/old/place/drawings-old/Plan.pdf")),
+    );
+    // Only the stale absolute copy survives; the relative link no longer resolves.
+    state.existing = new Set(["/old/place/drawings-old/Plan.pdf"]);
+    state.located = [{ path: "/new/place/Plan-renamed.pdf", name: "Plan-renamed.pdf" }];
+
+    const flow = openBackupManagerFlow(fakePorts(state));
+    await nextFrame();
+    footerButton(t("saveIntegrity.managerRestoreCopy"))?.click();
+
+    const report = await waitFor(".modal-restore-links");
+    expect(report).not.toBeNull();
+    expect(report?.textContent).toContain("Plan.pdf");
+    expect(state.loaded).toHaveLength(0);
+
+    footerButton(t("saveIntegrity.restoreLinksLocate"))?.click();
+    await expect(flow).resolves.toBe(true);
+
+    expect(state.loaded).toHaveLength(1);
+    const document = state.loaded[0].project.documents[0];
+    expect(document.path).toBe("/new/place/Plan-renamed.pdf");
+    expect(document.name).toBe("Plan-renamed.pdf");
+    expect(document.relativePath).toBeNull();
+    expect(document.storage).toBe("reference");
+    // Restore reads only: no backup and no drawing is written.
+    expect(state.saved).toHaveLength(0);
+    expect(state.entries).toHaveLength(1);
+  });
+
+  it("reports a source that is genuinely gone with no recorded link", async () => {
+    store.project = makeProject();
+    store.projectPath = "/new/place/Test project.gridscalr";
+    const state = fakeState();
+    const backup = entry();
+    state.entries = [backup];
+    const lost = makeProject("Older backup");
+    lost.documents[0].path = null;
+    lost.documents[0].relativePath = null;
+    state.contents.set(backup.path, serializeProject(lost));
+    state.located = [{ path: "/new/place/Recovered.pdf", name: "Recovered.pdf" }];
+
+    const flow = openBackupManagerFlow(fakePorts(state));
+    await nextFrame();
+    footerButton(t("saveIntegrity.managerRestoreCopy"))?.click();
+
+    const report = await waitFor(".modal-restore-links");
+    expect(report?.textContent).toContain(t("saveIntegrity.restoreNoLink", { name: "Plan.pdf" }));
+    footerButton(t("saveIntegrity.restoreLinksLocate"))?.click();
+    await expect(flow).resolves.toBe(true);
+    expect(state.loaded[0].project.documents[0].path).toBe("/new/place/Recovered.pdf");
+    expect(state.saved).toHaveLength(0);
+  });
+
+  it("keeps the open project unchanged when the relink offer is declined", async () => {
+    store.project = makeProject();
+    store.projectPath = "/new/place/Test project.gridscalr";
+    const state = fakeState();
+    const backup = entry({ projectPath: "/old/place/Test project.gridscalr" });
+    state.entries = [backup];
+    state.contents.set(
+      backup.path,
+      serializeProject(movedProjectBackup("/old/place/drawings-old/Plan.pdf")),
+    );
+    state.existing = new Set(["/old/place/drawings-old/Plan.pdf"]);
+
+    const flow = openBackupManagerFlow(fakePorts(state));
+    await nextFrame();
+    footerButton(t("saveIntegrity.managerRestoreCopy"))?.click();
+    await waitFor(".modal-restore-links");
+    footerButton(t("common.cancel"))?.click();
+    await expect(flow).resolves.toBe(false);
+
+    expect(state.loaded).toHaveLength(0);
+    expect(state.notices.at(-1)?.message).toBe(t("saveIntegrity.restoreCancelled"));
+    expect(store.projectPath).toBe("/new/place/Test project.gridscalr");
+    expect(state.saved).toHaveLength(0);
+  });
+
+  it("aborts when the drawing picker is cancelled instead of loading nothing", async () => {
+    store.project = makeProject();
+    store.projectPath = "/new/place/Test project.gridscalr";
+    const state = fakeState();
+    const backup = entry({ projectPath: "/old/place/Test project.gridscalr" });
+    state.entries = [backup];
+    state.contents.set(
+      backup.path,
+      serializeProject(movedProjectBackup("/old/place/drawings-old/Plan.pdf")),
+    );
+    state.existing = new Set(["/old/place/drawings-old/Plan.pdf"]);
+    state.located = [null];
+
+    const flow = openBackupManagerFlow(fakePorts(state));
+    await nextFrame();
+    footerButton(t("saveIntegrity.managerRestoreCopy"))?.click();
+    await waitFor(".modal-restore-links");
+    footerButton(t("saveIntegrity.restoreLinksLocate"))?.click();
+    await expect(flow).resolves.toBe(false);
+
+    expect(state.loaded).toHaveLength(0);
+    expect(state.notices.at(-1)?.message).toBe(t("saveIntegrity.restoreCancelled"));
   });
 });

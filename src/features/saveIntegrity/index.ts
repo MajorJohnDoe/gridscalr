@@ -6,7 +6,7 @@ export {
   openBackupManagerFlow,
   setBackupManagerHandler,
 } from "./backupController";
-export type { BackupPorts } from "./backupController";
+export type { BackupPorts, LocatedDrawing } from "./backupController";
 export { createSaveIntegrityPorts } from "./ports";
 export type { SaveIntegrityHost } from "./ports";
 export {
@@ -33,3 +33,20 @@ export { buildConflictComparison } from "./compare";
 export type { ConflictComparisonInfo } from "./compare";
 export { conflictTimestamp, conflictedCopyPath, isNoOpSave, sameFileVersion } from "./stamp";
 export type { ProjectFileStamp } from "./stamp";
+export {
+  applyRestoreLinkPlan,
+  applyRestoreRelink,
+  documentNeedsSource,
+  planRestoreLinks,
+  restoreLinkBases,
+} from "./restoreLinks";
+export type {
+  RestoreBaseKind,
+  RestoreLinkBase,
+  RestoreLinkEntry,
+  RestoreLinkPlan,
+  RestoreLinkReason,
+  RestoreMatch,
+} from "./restoreLinks";
+export { showRestoreLinkReport } from "./restoreUi";
+export type { RestoreLinkDecision } from "./restoreUi";

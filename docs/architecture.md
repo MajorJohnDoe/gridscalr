@@ -44,6 +44,8 @@ src/
   features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and confirmed delete flows
   features/saveIntegrity/backupManagerModel.ts pure backup selection, replace availability and origin-warning rules
   features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog
+  features/saveIntegrity/restoreLinks.ts pure resolution of a restored backup's relative drawing links
+  features/saveIntegrity/restoreUi.ts unresolved-drawing report with the explicit locate action
   features/saveIntegrity/controller.ts save, conflict and no-op orchestration
   features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
   features/saveIntegrity/files.ts conditional-write, stamp, read-back and backup IPC
