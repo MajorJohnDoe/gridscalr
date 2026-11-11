@@ -873,7 +873,7 @@ The conductor creates these after review. Existing phases keep their scope.
 | Make PDF export byte-deterministic and deflake its test (F-043) | The phase 1 CI run hit a wall-clock flake; the export claims determinism | `tests`, `tech-debt` |
 | Run the Rust test suite on Windows and add Windows path tests (F-036) | The path guarantee is Windows-relevant and untested there | `tests`, `tech-debt` |
 
-The remaining findings map to existing phases 2–4 and do not need a new issue.
+The remaining findings map to existing phases 2–5 and do not need a new issue.
 
 ### Observations
 
