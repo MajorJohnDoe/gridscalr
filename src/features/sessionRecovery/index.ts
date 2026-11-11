@@ -65,6 +65,7 @@ export type { BaseVersionState, RecoverableEntry, StampReader } from "./recovery
 export {
   LEASE_HEARTBEAT_MS,
   LEASE_STALE_MS,
+  canTakeOver,
   classifyLease,
   createLease,
   isLeaseStale,

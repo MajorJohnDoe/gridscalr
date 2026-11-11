@@ -8,7 +8,13 @@ import type { Handle } from "../selectionHandles";
 import { cursorForState } from "./cursor";
 import { attachPointerListeners, detachPointerListeners } from "./listeners";
 import { capturePointer, localFromClient, localPoint, releasePointer } from "./primitives";
-import { contextMenuContext, creationContext, doubleClickContext } from "./contexts";
+import {
+  contextMenuContext,
+  creationContext,
+  doubleClickContext,
+  hoverContext,
+  selectionContext,
+} from "./contexts";
 import { commitLabelConnection, openContextMenu } from "./contextMenu";
 import {
   finishDraftOnPointerUp,
@@ -170,6 +176,7 @@ export class PointerController {
     this.host.setHostCursor(
       cursorForState({
         readOnly: this.host.isReadOnly(),
+        viewOnly: this.host.isViewOnly(),
         cropActive: this.host.cropActive(),
         cropCursor: this.host.cropCursor(),
         panActive: this.navigation.panActive,
@@ -258,22 +265,21 @@ export class PointerController {
       this.beginSelection(page, screen, event);
       return;
     }
-    this.creationDown(page, event, tool);
+    if (!this.host.isViewOnly()) this.creationDown(page, event, tool);
   };
   private beginSelection(page: Point, screen: Point, event: PointerEvent): void {
-    beginSelection(page, screen, event, {
-      toScreen: (point) => this.host.toScreen(point),
-      viewPage: () => this.host.viewPage(),
-      viewPageId: () => this.host.viewPageId(),
-      viewZoom: () => this.host.viewZoom(),
-      beginDrag: (drag, pointerId) => this.beginDrag(drag, pointerId),
-      beginMarquee: (marqueePage, additive, pointerId) =>
-        this.beginMarquee(marqueePage, additive, pointerId),
-      drawInteraction: () => this.host.drawInteraction(),
-      labelResizeAt: (item, point) => this.host.labelResizeAt(item, point),
-      pageLabelLayouts: () => this.host.pageLabelLayouts(),
-      measurementLabelHit: (point) => this.host.measurementLabelHit(point),
-    });
+    beginSelection(
+      page,
+      screen,
+      event,
+      selectionContext(
+        this.host,
+        (drag, pointerId) => this.beginDrag(drag, pointerId),
+        (marqueePage, additive, pointerId) => this.beginMarquee(marqueePage, additive, pointerId),
+        (item, point) => this.host.labelResizeAt(item, point),
+        (point) => this.host.measurementLabelHit(point),
+      ),
+    );
   }
   private readonly onPointerMove = (event: PointerEvent): void => {
     if (!store.project) return;
@@ -306,13 +312,7 @@ export class PointerController {
 
     const tool = store.ui.activeTool;
     if (tool === "select") {
-      const hover = updateHover(page, screen, {
-        toScreen: (point) => this.host.toScreen(point),
-        viewPage: () => this.host.viewPage(),
-        viewPageId: () => this.host.viewPageId(),
-        viewZoom: () => this.host.viewZoom(),
-        labelResizeAt: (item, point) => this.host.labelResizeAt(item, point),
-      });
+      const hover = updateHover(page, screen, hoverContext(this.host));
       this.hoverHandle = hover.handle;
       this.hoverLabelResize = hover.labelResize;
       store.setHover(hover.hover);

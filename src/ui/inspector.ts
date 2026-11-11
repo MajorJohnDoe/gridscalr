@@ -20,6 +20,7 @@ import { selectionSection } from "./selectionInspector";
 import { openSettingsDialog } from "./settingsDialog";
 import { setInspectorCollapsed } from "./sidebar";
 import { t } from "../i18n";
+import { disableEditingControls, viewOnlyPanelNote } from "../features/viewOnly";
 
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.inspector);
@@ -32,8 +33,10 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   const settingsTab = el("button", "inspector-tab", t("inspector.projectSettings"));
   settingsTab.type = "button";
   settingsTab.setAttribute("aria-pressed", "false");
-  settingsTab.title = t("inspector.settingsTitle");
-  settingsTab.disabled = !store.project;
+  settingsTab.title = store.readOnly
+    ? `${t("inspector.settingsTitle")} · ${t("viewOnly.disabled")}`
+    : t("inspector.settingsTitle");
+  settingsTab.disabled = !store.project || store.readOnly;
   settingsTab.addEventListener("click", () => openSettingsDialog());
   tabs.append(propertiesTab, settingsTab);
   const headerActions = el("span", "inspector-header-actions");
@@ -58,6 +61,11 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   layerSection.classList.add("active-layer-section");
   const selection = selectionSection(project, actions);
   selection.classList.add("selection-section");
+  if (store.readOnly) {
+    refs.inspector.append(viewOnlyPanelNote());
+    disableEditingControls(layerSection, true);
+    disableEditingControls(selection, true);
+  }
   // A selected markup is the task at hand. Put it above the layer-wide
   // settings so the two colour controls are harder to confuse.
   if (store.ui.selection.length) {

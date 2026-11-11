@@ -241,9 +241,9 @@ and zero documents are valid, not corrupt.
   explicit repairs for duplicate IDs, dangling references and stale OCR. A
   repair changes an in-memory copy only; **Save repaired copy…** writes that copy
   to a new file. The source project is never repaired in place.
-- **Read-only:** choose **Open read-only** in a load report to inspect the
-  damaged project without allowing a normal save over the file. Use **Save a
-  copy…** or **Save repaired copy…** to keep work.
+- **View-only:** choose **Open view-only** in a load report to inspect the
+  damaged project without changing it. Use **Save a copy…** or **Save repaired
+  copy…** to keep work.
 - **Diagnostics:** **Export diagnostics…** writes a technical text file with
   issue codes, entity kinds and counts. It contains no drawing names, labels,
   project metadata or file paths.
@@ -715,12 +715,21 @@ Before a structural action GridScalr writes a labelled checkpoint to the same lo
 
 In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
 
-- If another live instance has the project open, GridScalr offers **Open read-only** (the default), **Take over** and **Cancel**. Choose **Take over** only when the other session is finished; the other instance then becomes read-only on its next heartbeat or save attempt.
-- A read-only session can view, export, package and **Save a copy…**, but a normal Save is refused with a clear message. The status bar shows **Read-only**.
+- If another live instance has the project open, GridScalr offers **Open view-only** (the default), **Take over** and **Cancel**. Choose **Take over** only when the other session is finished; the other instance becomes view-only on its next heartbeat or save attempt.
 - A lock without a heartbeat for more than five minutes, or a corrupt lock, is information only and never blocks opening. A stale-lock banner offers **Clear stale lock**.
 - The lock is advisory. Cloud clients and sleeping laptops make it unreliable; the conditional save described above is the actual protection. A crash can leave a stale lock for up to five minutes.
 
-While a desktop project is open, GridScalr checks the project file stamp every few seconds when the window is visible. If the file changed outside the app, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes. The browser fallback has no sidecar lock, file watcher or read-only enforcement; it keeps the scoped IndexedDB recovery store only.
+#### View-only sessions
+
+A view-only session is a true inspection mode. The banner and the status bar say **View-only**, and no command changes the project:
+
+- Pan, zoom, page navigation, search, the reference pane and selecting an item to read its Properties keep working.
+- Export, package and **File → Save a copy…** keep working. A normal Save and Save As are refused.
+- Drawing and measurement tools, inline editors, drag, resize, rotate, vertex edits, bulk edits, item commands, layer and category changes, page changes, property fields, delete and paste are disabled. Their menu entries, context menus and shortcuts are disabled or ignored too.
+- **Take over to edit** in the banner re-checks the project lock before enabling editing. If another live window still owns the project, the session stays view-only and explains why. A stale, corrupt or missing lock is replaced and editing starts immediately.
+- Taking over is explicit. Nothing enables editing silently, and a view-only session never overwrites the project file.
+
+While a desktop project is open, GridScalr checks the project file stamp every few seconds when the window is visible. If the file changed outside the app, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes. The browser fallback has no sidecar lock, file watcher or view-only enforcement; it keeps the scoped IndexedDB recovery store only.
 
 ### Share a project package
 

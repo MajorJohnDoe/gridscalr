@@ -24,7 +24,7 @@ import { getRecoverySummary, refreshRecoverySummary, subscribeRecoverySummary } 
 import { openRecoveryCenter } from "./centerUi";
 import { needsRestoreConfirmation } from "./centerModel";
 import { confirmDialog } from "../../ui/dialogs";
-import { showFileChangedBanner, showReadOnlyBanner } from "./ui";
+import { showFileChangedBanner, showViewOnlyBanner } from "./ui";
 import { createProjectWatcher, type ProjectWatcher } from "./watch";
 
 const SKIP_REASONS = new Set(["cursor", "view", "selection", "page", "tool", "save"]);
@@ -103,9 +103,7 @@ export class SessionRecoveryController {
     this.removeBanner?.();
     this.removeBanner = null;
     if (readOnly) {
-      this.removeBanner = showReadOnlyBanner(this.host.bannerHost, {
-        onSaveCopy: () => this.host.onSaveCopy(),
-      });
+      this.removeBanner = this.viewOnlyBanner();
     }
     if (this.host.desktop && path) this.startWatcher(path);
     this.scheduleAutosave();
@@ -235,12 +233,40 @@ export class SessionRecoveryController {
     setRecoveryCenterHandler(null);
   }
 
+  /** Re-checks the lease and only then enables editing again. */
+  async takeOverToEdit(): Promise<boolean> {
+    if (!store.readOnly) return true;
+    const project = store.project;
+    if (!project) return false;
+    const allowed = await this.leases.takeOver(
+      this.currentProjectPath,
+      project.id,
+      store.fileStamp?.sha256 ?? null,
+    );
+    if (!allowed) {
+      this.host.notify(t("viewOnly.takeOverBlocked"), "warning");
+      return false;
+    }
+    store.setReadOnly(false);
+    this.removeBanner?.();
+    this.removeBanner = null;
+    this.watcher?.reset();
+    this.scheduleAutosave();
+    this.host.notify(t("viewOnly.takenOver"), "success");
+    return true;
+  }
+
+  private viewOnlyBanner(): () => void {
+    return showViewOnlyBanner(this.host.bannerHost, {
+      onTakeOver: () => this.takeOverToEdit(),
+      onSaveCopy: () => this.host.onSaveCopy(),
+    });
+  }
+
   private handleOwnershipLost(): void {
     store.setReadOnly(true);
     this.removeBanner?.();
-    this.removeBanner = showReadOnlyBanner(this.host.bannerHost, {
-      onSaveCopy: () => this.host.onSaveCopy(),
-    });
+    this.removeBanner = this.viewOnlyBanner();
     this.host.notify(t("sessionRecovery.readOnly.takenOver"), "warning");
   }
 

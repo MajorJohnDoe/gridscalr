@@ -159,7 +159,7 @@ GridScalr checks the project file on disk before every desktop save. If the file
 - **Overwrite** replaces the newer file with your version. Use it only when you are certain which copy is correct.
 - A conflict is not a merge. Open the conflicted copy and import pages from the other project if both versions contain useful work.
 
-When the same project is already open in another GridScalr window or on another computer, the desktop app shows the sidecar lock and offers **Open read-only** by default. Use it to inspect the current disk file without writing. **Take over** is for the case where the other session has finished or crashed; it writes a new lock, and the old session becomes read-only or gets a save conflict on its next write. A lock without a heartbeat for five minutes is stale and never blocks; **Clear stale lock** removes it. A **Read-only** chip in the status bar means a normal Save is refused; use **File → Save a copy…** to keep any local work.
+When the same project is already open in another GridScalr window or on another computer, the desktop app shows the sidecar lock and offers **Open view-only** by default. Use it to inspect, search and export the current disk file without writing; every editing command is disabled. **Take over to edit** in the banner re-checks the lock and only enables editing when no live window still owns the project. **Take over** at open is for the case where the other session has finished or crashed; it writes a new lock, and the old session becomes view-only or gets a save conflict on its next write. A lock without a heartbeat for five minutes is stale and never blocks; **Clear stale lock** removes it. A **View-only** chip in the status bar and the banner mean a normal Save is refused; use **File → Save a copy…** to keep a copy.
 
 If the project file changes outside the app while it is open, a non-blocking banner offers **Reload from disk**. Reload asks before discarding unsaved changes.
 
@@ -215,7 +215,7 @@ A normal save validates the project first. Duplicate IDs, missing page or layer 
 Use this when a project fails to open cleanly, a save is blocked, or someone sends a file after manual editing.
 
 1. Read the **Load report** or **Project doctor** issue list. It names each problem by severity and entity and does not hide dropped data.
-2. Choose **Open read-only** when you only need to inspect or export the original. A normal Save is refused; **Save a copy…** keeps any local work.
+2. Choose **Open view-only** when you only need to inspect or export the original. Editing is disabled; **Save a copy…** keeps a copy.
 3. Choose **Export diagnostics…** when the file must go to support. The text contains issue codes and counts only, never drawing content, labels or paths.
 4. Apply the explicit repairs you need: duplicate IDs, dangling references or stale OCR. Nothing is written yet.
 5. Choose **Save repaired copy…** and save the copy in a new file. The original is never repaired in place and is never overwritten by a normal save while it is invalid.

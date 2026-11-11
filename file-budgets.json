@@ -12,18 +12,18 @@
     "src/features/projectIntegrity": 400
   },
   "files": {
-    "src/app/App.ts": 1080,
-    "src/canvas/CanvasView.ts": 1493,
+    "src/app/App.ts": 1091,
+    "src/canvas/CanvasView.ts": 1513,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
     "src/model/labelLayout.ts": 810,
     "src/pdf/pdfExport.ts": 117,
-    "src/state/store.ts": 942,
+    "src/state/store.ts": 945,
     "src/styles/dialogs.css": 1694,
     "src/styles/markups.css": 1027,
     "src/styles/panels.css": 1016,
-    "src/styles/shell.css": 1792,
+    "src/styles/shell.css": 1810,
     "src/ui/dialogs.ts": 525,
     "src/ui/toolFlyouts.ts": 707
   }

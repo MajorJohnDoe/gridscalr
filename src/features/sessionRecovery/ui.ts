@@ -103,14 +103,21 @@ export function showFileChangedBanner(
   });
 }
 
-export function showReadOnlyBanner(
-  host: HTMLElement,
-  options: { onSaveCopy: () => void | Promise<unknown>; onDismiss?: () => void },
-): () => void {
+export interface ViewOnlyBannerOptions {
+  onTakeOver: () => void | Promise<unknown>;
+  onSaveCopy: () => void | Promise<unknown>;
+  onDismiss?: () => void;
+}
+
+/** View-only is visible in the canvas until the user edits or dismisses it. */
+export function showViewOnlyBanner(host: HTMLElement, options: ViewOnlyBannerOptions): () => void {
   return showSessionBanner(host, {
-    id: "read-only",
-    message: t("sessionRecovery.readOnly.banner"),
-    actions: [{ label: t("sessionRecovery.saveCopy"), onClick: options.onSaveCopy }],
+    id: "view-only",
+    message: t("viewOnly.banner"),
+    actions: [
+      { label: t("viewOnly.takeOver"), onClick: options.onTakeOver },
+      { label: t("sessionRecovery.saveCopy"), onClick: options.onSaveCopy },
+    ],
     onDismiss: options.onDismiss,
   });
 }

@@ -3,6 +3,7 @@ import type { CreationContext } from "./creation";
 import type { ContextMenuContext } from "./contextMenu";
 import type { DoubleClickContext } from "./doubleClick";
 import type { PointerHost } from "./PointerHost";
+import type { HoverContext, SelectionContext } from "./targets";
 
 export function creationContext(
   host: PointerHost,
@@ -74,5 +75,38 @@ export function doubleClickContext(host: PointerHost): DoubleClickContext {
     startCloudTextEdit: (item, layer) => host.startCloudTextEdit(item, layer),
     startCalloutTextEdit: (item, layer) => host.startCalloutTextEdit(item, layer),
     editItemText: (item) => host.editItemText(item),
+  };
+}
+
+export function selectionContext(
+  host: PointerHost,
+  beginDrag: SelectionContext["beginDrag"],
+  beginMarquee: SelectionContext["beginMarquee"],
+  labelResizeAt: SelectionContext["labelResizeAt"],
+  measurementLabelHit: SelectionContext["measurementLabelHit"],
+): SelectionContext {
+  return {
+    editable: () => !host.isViewOnly(),
+    toScreen: (point) => host.toScreen(point),
+    viewPage: () => host.viewPage(),
+    viewPageId: () => host.viewPageId(),
+    viewZoom: () => host.viewZoom(),
+    beginDrag,
+    beginMarquee,
+    drawInteraction: () => host.drawInteraction(),
+    labelResizeAt,
+    pageLabelLayouts: () => host.pageLabelLayouts(),
+    measurementLabelHit,
+  };
+}
+
+export function hoverContext(host: PointerHost): HoverContext {
+  return {
+    editable: () => !host.isViewOnly(),
+    toScreen: (point) => host.toScreen(point),
+    viewPage: () => host.viewPage(),
+    viewPageId: () => host.viewPageId(),
+    viewZoom: () => host.viewZoom(),
+    labelResizeAt: (item, point) => host.labelResizeAt(item, point),
   };
 }

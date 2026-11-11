@@ -23,6 +23,20 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
   if (!project) return;
   const refs = store.ui.selection;
   const resolved = resolveSelection(project, refs);
+  if (store.readOnly) {
+    showPopoverAt(
+      x,
+      y,
+      resolved.length
+        ? [
+            { label: t("menu.edit.copy"), icon: "copy", action: actions.copySelection },
+            { separator: true },
+            { label: t("viewOnly.disabled"), icon: "info", disabled: true },
+          ]
+        : [{ label: t("viewOnly.disabled"), icon: "info", disabled: true }],
+    );
+    return;
+  }
   const kind = selectionKind(project, refs);
   const anyVisible = resolved.some((entry) => itemIsVisible(entry.item, entry.layer));
   const canShow = resolved.some((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId));

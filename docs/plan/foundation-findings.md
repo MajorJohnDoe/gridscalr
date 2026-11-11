@@ -160,21 +160,23 @@ project contents.
 - **Date:** 2026-11-10
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P2
-- **Area:** recovery / read-only session
-- **Status:** accepted
-- **Evidence:** `ProjectSession.saveProject()` refuses a normal save when
-  `store.readOnly` is set, but the store remains editable and canvas tools stay
-  active. The read-only banner points to **Save a copy…**.
-- **Problem:** The label says read-only, but the in-memory project can still be
+- **Area:** recovery / view-only session
+- **Status:** fixed
+- **Evidence:** `ProjectSession.saveProject()` refused a normal save when
+  `store.readOnly` was set, but the store remained editable and canvas tools
+  stayed active. The banner pointed only to **Save a copy…**.
+- **Problem:** The label said read-only, but the in-memory project could still be
   changed. A user may expect that taking over is required for any edit. The
-  refusal is safe for the disk file, but the interaction is ambiguous.
-- **Impact:** No silent overwrite is possible. Local edits in a read-only
-  session survive only through **Save a copy…**, which is easy to miss.
-- **Next step:** Decide whether a read-only session should also disable
-  mutations and tools, or be named **View only** with the copy flow made
-  explicit. Do not silently enable Save.
+  refusal was safe for the disk file, but the interaction was ambiguous.
+- **Impact:** No silent overwrite was possible. Local edits in a read-only
+  session survived only through **Save a copy…**, which was easy to miss.
+- **Resolution:** 0.24.0 phase 11 makes read-only a true **View-only** mode. The
+  store, canvas, inspectors, menus, context menus and shortcuts reject every
+  project mutation. Inspection, search, reference view, export, package and
+  **Save a copy…** stay available. **Take over to edit** re-checks the lease
+  before editing is enabled.
 - **Related:** robustness §7.3, issue
-  [#154](https://github.com/MajorJohnDoe/gridscalr/issues/154).
+  [#154](https://github.com/MajorJohnDoe/gridscalr/issues/154), [#177](https://github.com/MajorJohnDoe/gridscalr/issues/177).
 
 ### F-008 — Recovery retention is count-based, not size-based
 
@@ -1287,6 +1289,43 @@ confirmed against the audit.
   and placeholder work if partial opening is requested.
 - **Related:** #176, F-005.
 
+### F-067 — View-only cannot change the active layer
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 11 — view-only mode
+- **Severity:** P3
+- **Area:** view-only / layers
+- **Status:** deferred
+- **Evidence:** `project.activeLayerId` is serialized project data, so the
+  view-only store guard blocks `setActiveLayer()`. The context-bar layer picker
+  is hidden in view-only and layer rows only expand.
+- **Problem:** A user who wants to browse a different layer's items cannot make
+  that layer active. Items remain reachable from the Layers list and Markups
+  table, which navigate and select without changing the project.
+- **Impact:** Inspection still works through existing lists. Only the
+  "which layer receives next item" concept is unavailable, and there is no next
+  item in view-only.
+- **Next step:** If an inspection-only layer focus is wanted, keep it in UI
+  state rather than in `Project.activeLayerId`.
+- **Related:** #177.
+
+### F-068 — View-only screenshots are deferred
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 11 — view-only mode
+- **Severity:** P3
+- **Area:** documentation / screenshots
+- **Status:** accepted
+- **Evidence:** The banner and status chip change the visible shell, but the
+  capture manifest does not currently include a view-only session.
+- **Problem:** The user guide describes the banner without a matching committed
+  screenshot.
+- **Impact:** No functional gap. The strict screenshot check runs in the 0.24.0
+  documentation pass, which can add the capture then.
+- **Next step:** Add a view-only banner capture to `docs/screenshots/manifest.json`
+  during phase 14.
+- **Related:** #177, #180.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
@@ -1305,7 +1344,7 @@ remains the scheduling home.
 | F-003 | fixed | The unused `remapPageItems()` helper was removed in Phase 7; no production or test caller existed. |
 | F-005 | fixed | 0.24.0 phase 10 resolves a restored backup's relative drawing links from the recorded origin and then from the open project's folder, reports what cannot be resolved, and requires an explicit relink instead of a stale absolute path. |
 | F-006 | accepted | Backups are a local convenience keyed by project ID, not a portable archive; that is documented in `docs/limitations.md`. |
-| F-007 | accepted | Read-only blocks disk writes while keeping inspection and export available; **Save a copy…** is the explicit output path. |
+| F-007 | fixed | 0.24.0 phase 11 makes read-only a true **View-only** mode: no mutation path can change the project, and **Take over to edit** re-checks the lease. |
 | F-008 | fixed | 0.24.0 phase 8 added a 64 MiB per-project and 256 MiB total byte budget with size-aware pruning, kept the newest autosave and checkpoint, and reports recovery storage size in the center and diagnostics. |
 | F-009 | accepted | The lease is advisory by decision; the conditional write is the actual protection. |
 | F-010 | accepted | The metadata watcher is a banner optimisation; the conditional save still detects the hash change at write time. |
@@ -1326,6 +1365,8 @@ remains the scheduling home.
 | F-025 | accepted | Conflict comparison is read-only and heuristic; a merge would need a common base and semantic IDs. |
 | F-026 | accepted | The share flow writes a local package through the save dialog; no OS share sheet or network dependency is planned. |
 | F-027 | fixed | Source replacement now clears undo/redo at the structural boundary so an older snapshot cannot restore a superseded source reference. |
+| F-067 | deferred | View-only blocks the context-bar layer picker because the active layer is persisted project data; an inspection-only layer focus would need session state. |
+| F-068 | accepted | The view-only banner is a visible shell change; screenshot recapture is deferred to the 0.24.0 documentation pass. |
 
 
 ### F-011 — Template sheet fields still belong to a document, not a page

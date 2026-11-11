@@ -7,6 +7,8 @@ export interface SearchPanelActions {
   onQuery: (query: string) => void;
   onSelect: (hit: SearchHit) => void;
   onOcr: () => void;
+  /** OCR stores a rebuildable page index, so view-only keeps it disabled. */
+  canRunOcr?: () => boolean;
   onClose: () => void;
 }
 
@@ -89,7 +91,9 @@ export class SearchPanel {
     this.ocrButton = el("button", "btn btn-small", t("search.ocrScans"));
     this.ocrButton.type = "button";
     this.ocrButton.innerHTML = `${icon("target", 13)}<span>${t("search.ocrScans")}</span>`;
-    this.ocrButton.title = t("search.ocrTitle");
+    const ocrAllowed = this.actions.canRunOcr?.() ?? true;
+    this.ocrButton.title = ocrAllowed ? t("search.ocrTitle") : t("viewOnly.ocrDisabled");
+    this.ocrButton.disabled = !ocrAllowed;
     this.ocrButton.addEventListener("click", () => this.actions.onOcr());
     footer.append(this.ocrButton);
 

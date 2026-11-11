@@ -20,6 +20,8 @@ import type { Viewport } from "../viewport";
  */
 export interface PointerHost {
   isReadOnly(): boolean;
+  /** The open project is view-only: inspect and navigate, never edit. */
+  isViewOnly(): boolean;
   viewport(): Viewport;
 
   cropActive(): boolean;

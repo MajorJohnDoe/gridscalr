@@ -52,6 +52,7 @@ export function layerAction(iconName: string, label: string, extraClass = ""): H
 }
 
 function beginInlineRename(row: HTMLElement, name: HTMLElement, layerId: string): void {
+  if (store.readOnly) return;
   const input = el("input", "layer-name-input");
   input.value = name.textContent ?? "";
   row.replaceChild(input, name);
@@ -94,7 +95,7 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   const group = project.layers.filter((l) => l.kind === layer.kind);
   const index = group.findIndex((l) => l.id === layerId);
   const expanded = expandedLayers.has(layerId);
-  return [
+  const items: PopoverItem[] = [
     {
       label: scopeItems.length
         ? expanded
@@ -211,6 +212,7 @@ function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
       },
     },
   ];
+  return store.readOnly ? items.slice(0, 1) : items;
 }
 
 function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActions): void {
@@ -314,6 +316,7 @@ function addLayerRow(refs: ShellRefs): void {
   const addMeasure = el("button", "btn btn-small", t("layer.addMeasure"));
   addMeasure.type = "button";
   addMeasure.title = t("layer.createOnPage", { page });
+  addMeasure.disabled = store.readOnly;
   addMeasure.addEventListener("click", () => {
     store.createLayer("measure");
     toast(t("layer.measurementCreated", { page }), "success");
@@ -321,6 +324,7 @@ function addLayerRow(refs: ShellRefs): void {
   const addDraw = el("button", "btn btn-small", t("layer.addDrawing"));
   addDraw.type = "button";
   addDraw.title = t("layer.createOnPage", { page });
+  addDraw.disabled = store.readOnly;
   addDraw.addEventListener("click", () => {
     store.createLayer("draw");
     toast(t("layer.drawingCreated", { page }), "success");
@@ -387,7 +391,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       row.classList.toggle("is-active", layer.id === project.activeLayerId);
       row.classList.toggle("is-hidden", !effectiveVisible);
       row.classList.toggle("is-page-scoped", layerScope === "page");
-      row.draggable = true;
+      row.draggable = !store.readOnly;
 
       const expanded = expandedLayers.has(layer.id);
       const panelId = `layer-items-${layer.id}`;
@@ -451,6 +455,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
       const color = el("input", "layer-color");
       color.type = "color";
+      color.disabled = store.readOnly;
       const fallbackColor = defaultColorForLayer(layer.kind);
       setColorInput(color, layer.color, fallbackColor);
       color.title = t("layer.colour");
@@ -484,6 +489,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           ? t(effectiveVisible ? "layer.hideOnPage" : "layer.showOnPage", { page })
           : t(effectiveVisible ? "layer.hideAll" : "layer.showAll");
       eye.classList.toggle("is-on", effectiveVisible);
+      eye.disabled = store.readOnly;
       eye.addEventListener("click", (event) => {
         event.stopPropagation();
         store.mutate((project) => {
@@ -505,6 +511,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           ? t(effectiveLocked ? "layer.unlockOnPage" : "layer.lockOnPage", { page })
           : t(effectiveLocked ? "layer.unlockAll" : "layer.lockAll");
       lock.classList.toggle("is-locked", effectiveLocked);
+      lock.disabled = store.readOnly;
       lock.addEventListener("click", (event) => {
         event.stopPropagation();
         store.mutate((project) => {
@@ -518,6 +525,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
         }, "layers");
       });
       const menu = layerAction("markups", t("layer.actions"), "layer-menu-btn");
+      menu.disabled = store.readOnly;
       menu.addEventListener("click", (event) => {
         event.stopPropagation();
         showLayerMenu(menu, layer.id, actions);
@@ -538,6 +546,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
           beginInlineRename(row, name, layer.id);
           return;
         }
+        if (store.readOnly) return;
         store.setActiveLayer(layer.id);
         if (!effectiveVisible) {
           toast(
@@ -552,6 +561,10 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
         showLayerMenuAt(event.clientX, event.clientY, layer.id, actions);
       });
       row.addEventListener("dragstart", (event) => {
+        if (store.readOnly) {
+          event.preventDefault();
+          return;
+        }
         draggedId = layer.id;
         event.dataTransfer?.setData("text/plain", layer.id);
         if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";

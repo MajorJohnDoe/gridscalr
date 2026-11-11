@@ -92,6 +92,7 @@ export async function createSheetProject(
 }
 
 export async function addPageFlow(host: SheetFlowHost): Promise<void> {
+  if (store.readOnly) return;
   if (!store.project) {
     await host.openPdfFlow();
     return;
@@ -116,6 +117,7 @@ export async function changeSheetPaper(
   pageId: string,
   paper: SheetPaperSize,
 ): Promise<void> {
+  if (store.readOnly) return;
   const project = store.project;
   const renderer = host.renderer();
   if (!project || !renderer) return;
@@ -144,6 +146,7 @@ export async function changeSheetPaper(
 }
 
 export async function addSheetFlow(host: SheetFlowHost, choice: SheetSourceChoice): Promise<void> {
+  if (store.readOnly) return;
   const project = store.project;
   const renderer = host.renderer();
   if (!project || !renderer) return;

@@ -86,6 +86,7 @@ function symbolTile(symbol: SymbolDefinition): HTMLButtonElement {
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));
   button.title = `${symbolName(symbol.id)} · ${symbolCategoryLabel(category)}`;
+  button.disabled = store.readOnly;
   const previewColor =
     symbol.set === "schematic" ? "currentColor" : SYMBOL_CATEGORY_COLORS[category];
   button.innerHTML = `<span class="symbol-tile-icon">${symbolSvgMarkup(symbol, 33, previewColor)}</span><span class="symbol-tile-label">${symbolName(symbol.id)}</span>`;
@@ -120,6 +121,7 @@ function specialTile(entry: SpecialEntry): HTMLButtonElement {
   button.classList.toggle("is-active", active);
   button.setAttribute("aria-pressed", String(active));
   button.title = `${t(entry.labelKey)} · ${t(entry.hintKey)}`;
+  button.disabled = store.readOnly;
   button.innerHTML = `<span class="symbol-tile-icon">${icon(entry.icon, 33)}</span><span class="symbol-tile-label">${t(entry.labelKey)}</span>`;
   button.addEventListener("click", () => store.setTool(entry.tool));
   return button;

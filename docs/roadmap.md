@@ -95,7 +95,7 @@ limit, an `index.ts` public surface and no new legacy budget exceptions.
 - **Save as conflicted copy** as the default conflict action.
 - Rolling backups in app data and an explicit **Backup now…** flow.
 - Autosave per project and base file version.
-- Advisory lock lease with **Open read-only** as the default.
+- Advisory lock lease with **Open view-only** as the default and an explicit **Take over to edit**.
 - Read-back verification and a failed-save relative-path fix.
 
 Plan: [`plan/robustness.md`](plan/robustness.md) · ADR

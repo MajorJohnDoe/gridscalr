@@ -5,6 +5,7 @@ import type { DragState } from "./pointerState";
 
 export interface CursorState {
   readOnly: boolean;
+  viewOnly: boolean;
   cropActive: boolean;
   cropCursor: string | null;
   panActive: boolean;
@@ -20,6 +21,13 @@ export interface CursorState {
 
 export function cursorForState(state: CursorState): string {
   if (state.readOnly) return "";
+  if (state.viewOnly) {
+    if (state.panActive) return "grabbing";
+    if (state.spaceDown || state.activeTool === "pan") return "grab";
+    if (state.marquee) return "crosshair";
+    if (state.hover) return "pointer";
+    return "";
+  }
   if (state.cropActive) return state.cropCursor ?? "crosshair";
   if (state.panActive) return "grabbing";
   if (state.drag) {
