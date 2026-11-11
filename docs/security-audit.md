@@ -4,7 +4,7 @@
 **Epic:** [#167](https://github.com/MajorJohnDoe/gridscalr/issues/167)
 **Date:** 2026-11-11
 **App version:** 0.23.0, project schema 25
-**Status:** audit complete. Fifteen findings: no P0, no P1, eight P2 and seven
+**Status:** audit complete. Sixteen findings: no P0, no P1, eight P2 and eight
 P3. Production changes are deferred to phases 2–5; this phase only records the
 threat model, evidence and proposed fixes.
 
@@ -15,7 +15,7 @@ This document is the reference for the follow-up phases:
 | 2 | [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168) | F-028, F-029, F-030, F-037, F-038, F-042 |
 | 3 | [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169) | F-031, F-032, F-033, F-034, F-036, F-041 |
 | 4 | [#170](https://github.com/MajorJohnDoe/gridscalr/issues/170) | F-035, F-039, F-040 |
-| 5 | [#171](https://github.com/MajorJohnDoe/gridscalr/issues/171) | Abuse tests for the path, archive and project input above |
+| 5 | [#171](https://github.com/MajorJohnDoe/gridscalr/issues/171) | F-043, plus abuse tests for the path, archive and project input above |
 
 Findings are kept in [`plan/foundation-findings.md`](plan/foundation-findings.md)
 as F-028 onwards. Proposed new issues are listed at the end.
@@ -817,6 +817,28 @@ the static and runtime expectation is proposed for phase 4/5.
 - **Acceptance criteria:** a copied error never contains an absolute path; the
   on-screen detail is still useful; tests cover the sanitizer.
 
+### F-043 — PDF export embeds a wall-clock time, so byte-identical output is not guaranteed
+
+- **Severity:** P3
+- **Status:** open
+- **Owner:** phase 5, [#171](https://github.com/MajorJohnDoe/gridscalr/issues/171)
+- **Evidence:** `src/pdf/pdfExport.ts` calls `PDFDocument.create()` with the
+  pdf-lib default `updateMetadata: true`. pdf-lib writes
+  `/ModificationDate (D:YYYYMMDDHHmmSSZ)` with second precision; the exported
+  object stream contains `D:20261111073258Z`. The `pdfExport` test that exports
+  the same project twice and compares bytes fails when the two exports straddle
+  a second boundary. The phase 1 PR failed once on that assertion and passed on
+  a local re-run.
+- **Impact:** Test reliability only. Content and quantities are unchanged; no
+  security property depends on the timestamp. A byte-for-byte reproducibility
+  claim for exports is imprecise.
+- **Proposed fix:** Create the document with `updateMetadata: false` and set a
+  project-derived timestamp, or compare exports after normalising the metadata
+  date. Choose one and make the test deterministic.
+- **Acceptance criteria:** two exports of the same project are byte-identical
+  regardless of when they run; the test no longer depends on timing; the export
+  metadata still identifies GridScalr and the app version.
+
 ## 10. Verified mitigations
 
 | Mitigation | Evidence | Tested |
@@ -848,9 +870,29 @@ The conductor creates these after review. Existing phases keep their scope.
 | Add a project/package trust note and an out-of-folder reference warning (F-034) | Users need to know what opening an untrusted project can do | `documentation`, `enhancement` |
 | Clean stale atomic-write temporary siblings (F-041) | Project data left beside the project after a crash | `bug`, `tech-debt` |
 | Sanitize copied error details (F-042) | Path disclosure in support screenshots | `enhancement` |
+| Make PDF export byte-deterministic and deflake its test (F-043) | The phase 1 CI run hit a wall-clock flake; the export claims determinism | `tests`, `tech-debt` |
 | Run the Rust test suite on Windows and add Windows path tests (F-036) | The path guarantee is Windows-relevant and untested there | `tests`, `tech-debt` |
 
 The remaining findings map to existing phases 2–4 and do not need a new issue.
+
+### Observations
+
+These are not security findings and have no F-ID:
+
+- The CI run for this audit failed once on the PDF export determinism test.
+  That is a pre-existing wall-clock flake, recorded as F-043, not a regression
+  from this change. A re-run is expected to pass.
+- `package-lock.json` still records the root package version as `0.22.4` while
+  `package.json` is `0.23.0`. It does not affect `npm ci` or the dependency
+  graph, and `check:versions` does not read it. Refresh it with the next routine
+  dependency change (phase 4).
+- The `style` attribute in `statusBar.ts` and the inline boot `<style>` are the
+  only reasons for `'unsafe-inline'`. Both are removed by F-038; no separate
+  issue is needed.
+- `tauri-plugin-fs` is compiled through `tauri-plugin-dialog` but is never
+  registered and has no capability, so none of its commands are reachable. This
+  is correct; a future fs plugin registration must add an explicit scoped
+  capability.
 
 ## 12. Residual risks and accepted trade-offs
 

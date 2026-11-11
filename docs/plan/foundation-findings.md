@@ -780,6 +780,31 @@ confirmed against the audit.
   follow-up.
 - **Related:** `docs/security-audit.md` §7.
 
+### F-043 — PDF export embeds a wall-clock time, so byte-identical output is not guaranteed
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit (found during the CI run)
+- **Severity:** P3
+- **Area:** PDF export / tests
+- **Status:** open
+- **Evidence:** `src/pdf/pdfExport.ts` calls `PDFDocument.create()` with the
+  pdf-lib default `updateMetadata: true`. pdf-lib writes
+  `/ModificationDate (D:YYYYMMDDHHmmSSZ)` with second precision. The
+  `pdfExport` test "leaves the flattened PDF unchanged when the option is off"
+  exports the same project twice and compares the bytes; when the two exports
+  straddle a second boundary the bytes differ. The 0.24.0 phase 1 PR failed
+  once on exactly this assertion and passed on a local re-run.
+- **Problem:** The exported content is deterministic but the file bytes are not,
+  because the metadata time changes. The test is therefore flaky, and any
+  byte-for-byte reproducibility claim for exports is imprecise.
+- **Impact:** Test reliability only. The visual and measurement content is
+  unchanged, and no security property depends on the timestamp.
+- **Next step:** Either create the PDF with `updateMetadata: false` and set a
+  project-derived timestamp, or compare the exports after normalising the
+  metadata date. Choose one and cover it with a deterministic test. Phase 5
+  (#171) is a reasonable home because it owns determinism and fuzz gates.
+- **Related:** `docs/security-audit.md` §13, `tests/pdfExport.test.ts`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
