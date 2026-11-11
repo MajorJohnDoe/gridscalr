@@ -1,5 +1,7 @@
 mod commands;
+mod disk_space;
 mod package;
+mod path_guard;
 mod project_backup;
 mod project_lease;
 mod project_write;

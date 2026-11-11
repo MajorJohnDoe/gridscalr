@@ -14,6 +14,8 @@ import {
   sourceChangeActions,
   shouldRecommendManagedCopy,
   applyManagedCopy,
+  outsideProjectReferences,
+  outsideReferenceIssues,
 } from "../src/features/sourceStorage";
 
 function managedDocument(): DocumentRef {
@@ -141,5 +143,54 @@ describe("sourceStorage mode", () => {
     expect(pageCountChanged(3, 4)).toBe(true);
     expect(pageCountChanged(3, 3)).toBe(false);
     expect(pageCountChanged(0, 4)).toBe(false);
+  });
+});
+
+describe("outside project references", () => {
+  const projectPath = "/home/ana/projects/Level 01.gridscalr";
+
+  function projectWith(...documents: DocumentRef[]) {
+    const project = createProject(documents[0] ?? defaultDocument("Plan.pdf"));
+    project.documents = documents;
+    return project;
+  }
+
+  it("warns about a drawing outside the project folder without rejecting it", () => {
+    const inside = { ...defaultDocument("Inside.pdf"), path: "/home/ana/projects/Inside.pdf" };
+    const outside = { ...defaultDocument("Shared.pdf"), path: "/home/ana/shared/Shared.pdf" };
+    const references = outsideProjectReferences(projectWith(inside, outside), projectPath);
+    expect(references).toEqual([
+      { documentId: outside.id, name: "Shared.pdf", path: "/home/ana/shared/Shared.pdf" },
+    ]);
+    expect(outsideReferenceIssues(projectWith(outside), projectPath)).toEqual([
+      {
+        severity: "warning",
+        code: "outsideProjectReference",
+        message: "outsideProjectReference",
+        entity: { kind: "document", id: outside.id },
+      },
+    ]);
+  });
+
+  it("resolves a .. relative reference and still reports it", () => {
+    const document = {
+      ...defaultDocument("Shared.pdf"),
+      path: null,
+      relativePath: "../shared/Shared.pdf",
+    };
+    const references = outsideProjectReferences(projectWith(document), projectPath);
+    expect(references.map((reference) => reference.path)).toEqual(["/home/ana/shared/Shared.pdf"]);
+  });
+
+  it("does not warn about a managed copy or a saved project", () => {
+    const managed = {
+      ...defaultDocument("Plan.pdf"),
+      storage: "managed" as const,
+      path: "/home/ana/projects/Level 01.drawings/Plan-1234abcd.pdf",
+      relativePath: "Level 01.drawings/Plan-1234abcd.pdf",
+    };
+    expect(outsideProjectReferences(projectWith(managed), projectPath)).toEqual([]);
+    const outside = { ...defaultDocument("Shared.pdf"), path: "/home/ana/shared/Shared.pdf" };
+    expect(outsideProjectReferences(projectWith(outside), null)).toEqual([]);
   });
 });

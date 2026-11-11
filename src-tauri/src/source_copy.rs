@@ -5,7 +5,10 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 
-use crate::commands::{ensure_writable, replace_file, unique_sibling, CommandError};
+use crate::commands::{replace_file, unique_sibling, CommandError};
+use crate::path_guard::{
+    clean_stale_temporaries, ensure_inside_root, ensure_writable, is_inside, MAX_HASH_SCAN_BYTES,
+};
 
 /// Copies one reference drawing into the project's sibling drawings folder.
 ///
@@ -67,35 +70,8 @@ fn is_sha256(value: &str) -> bool {
     value.len() == 64 && value.chars().all(|character| character.is_ascii_hexdigit())
 }
 
-/// File-system comparison key: forward slashes, no duplicate separators and
-/// case-insensitive. A false positive only asks for another name.
-fn comparison_key(path: &Path) -> String {
-    let text = path.to_string_lossy().replace('\\', "/");
-    let mut key = String::with_capacity(text.len());
-    let mut previous_slash = false;
-    for character in text.chars() {
-        if character == '/' {
-            if previous_slash {
-                continue;
-            }
-            previous_slash = true;
-        } else {
-            previous_slash = false;
-        }
-        key.extend(character.to_lowercase());
-    }
-    while key.ends_with('/') && key.len() > 1 {
-        key.pop();
-    }
-    key
-}
-
-fn is_inside(path: &Path, parent: &Path) -> bool {
-    let target = comparison_key(path);
-    let base = comparison_key(parent);
-    target == base || target.starts_with(&format!("{base}/"))
-}
-
+/// File-system comparison key is owned by `path_guard`; this module must not
+/// grow a second, subtly different comparison.
 fn ensure_destination_free(
     destination: &Path,
     protected_paths: &[String],
@@ -214,6 +190,9 @@ pub(crate) fn copy_to_project(
     let folder = project_folder(project_path)?;
     let drawings_name = format!("{}.drawings", project_stem(project_path));
     let drawings_folder = folder.join(&drawings_name);
+    // A symlinked or junctioned drawings folder must not redirect the copy
+    // outside the project folder.
+    ensure_inside_root(&drawings_folder, &folder, "unsafePath")?;
     let file_name = format!(
         "{}-{}.pdf",
         safe_base(&request.display_name, "Drawing"),
@@ -242,6 +221,7 @@ pub(crate) fn copy_to_project(
                 format!("{}: {error}", drawings_folder.display()),
             )
         })?;
+        clean_stale_temporaries(&destination);
         let temp = unique_sibling(&destination, "copy");
         if let Err(error) = copy_stream(source, &temp) {
             let _ = fs::remove_file(&temp);
@@ -343,11 +323,12 @@ pub(crate) fn find_by_hash(
     };
     let expected = expected_sha256.to_ascii_lowercase();
     let mut checked = 0;
+    let mut scanned_bytes = 0_u64;
     for entry in entries {
         let entry = entry.map_err(|error| {
             CommandError::new("readFailed", format!("{}: {error}", folder.display()))
         })?;
-        if checked >= 4096 {
+        if checked >= 4096 || scanned_bytes >= MAX_HASH_SCAN_BYTES {
             break;
         }
         let path = entry.path();
@@ -362,6 +343,10 @@ pub(crate) fn find_by_hash(
             continue;
         }
         checked += 1;
+        let size = fs::metadata(&path)
+            .map(|metadata| metadata.len())
+            .unwrap_or(0);
+        scanned_bytes = scanned_bytes.saturating_add(size);
         let Some(info) = file_info(&path)? else {
             continue;
         };
@@ -487,6 +472,31 @@ mod tests {
             .to_string()];
         let error = copy_to_project(&copy).expect_err("must reject");
         assert_eq!(error.code, "sourceOverwrite");
+    }
+
+    #[cfg(unix)]
+    #[test]
+    fn rejects_a_drawings_folder_that_escapes_the_project_through_a_symlink() {
+        use std::os::unix::fs::symlink;
+
+        let dir = TestDir::new();
+        let outside = TestDir::new();
+        let source = dir.file("Plan.pdf", b"%PDF-1.4 source");
+        symlink(&outside.0, dir.0.join("Level 01.drawings")).expect("create symlink");
+
+        let error = copy_to_project(&request(&dir, &source, "Plan.pdf"))
+            .expect_err("a symlinked drawings folder must be rejected");
+        assert_eq!(error.code, "unsafePath");
+        assert_eq!(
+            fs::read_dir(&outside.0).expect("read outside").count(),
+            0,
+            "nothing may be written outside the project folder"
+        );
+        assert_eq!(
+            fs::read(&source).expect("read source"),
+            b"%PDF-1.4 source",
+            "the source drawing is never modified"
+        );
     }
 
     #[test]

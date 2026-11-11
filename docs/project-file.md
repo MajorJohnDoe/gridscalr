@@ -184,7 +184,9 @@ Two companion stores sit outside the project JSON and are never part of a packag
 
 Neither store changes `schemaVersion`; the current schema remains 25.
 
-Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The Rust side resolves real paths, including symlinks and junctions, and compares file identities when the destination exists, so a source drawing cannot be reached through an alternate spelling or link.
+Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The protected set contains each document's stored `path`, its resolved `relativePath`, the non-empty `originalPath` of a managed copy and the managed-copy folder itself. The Rust side resolves real paths, including symlinks and junctions, anchors relative spellings to the current directory, strips the Windows `\\?\` verbatim prefix, compares case-insensitively and compares file identities when the destination exists. A destination inside the managed-copy folder is refused even under a new file name. A drive-relative spelling such as `C:Plan.pdf` is rejected as ambiguous rather than assumed safe. Reading a project is capped at 256 MB, so an oversized file fails with a structured error and the open project stays untouched.
+
+A project may legitimately reference a drawing outside its own folder. Opening such a project shows a dismissible warning that names the drawings and offers **Copy into project** and **Relink**; the project doctor lists the same warning. This is a trust-model note, not a boundary: a project is input and can reference any PDF the user can read.
 
 On desktop, GridScalr tries each referenced PDF's stored absolute path first, then a path relative to the project file. If a PDF is missing, it asks you to locate it. If the file exists but its SHA-256 differs from the stored checksum, GridScalr warns before continuing. TIF documents need no external file: their converted PDF is embedded, and the stored path and checksum only record where the original scan came from. The project file is designed to stay useful when a project folder is moved without the drawings it references.
 
@@ -288,6 +290,13 @@ package entry; packaging does not silently promote it to a managed copy. A TIF
 document keeps its embedded derived PDF; original TIF scans are optional and off
 by default. Quantity CSV/XLSX/PDF reports and a flattened drawing PDF are also
 opt-in.
+
+Extraction validates every archive entry before writing: no absolute, drive,
+UNC, backslash, control-character, `..`, duplicate or symlink entry is accepted.
+The package file itself may be at most 2 GiB; the uncompressed total at most
+2 GiB with 1 GiB per entry and 4096 entries. The open-package dialog shows the
+uncompressed size and extraction refuses when the destination volume lacks that
+size plus a 64 MiB reserve.
 
 `manifest.json` version 1 is independent of the project schema and contains:
 

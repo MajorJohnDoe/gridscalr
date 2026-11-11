@@ -45,8 +45,26 @@ The Rust `project_write` tests prove the conditional write rejects a changed
 file, keeps the previous file when the replace step fails between the flushed
 temporary file and the rename, treats a missing/empty expected hash as the
 explicit overwrite path, ignores hash case, and rejects a second writer that
-still holds the loaded stamp. The `source_copy` tests prove the source bytes
-are unchanged after a verified copy.
+still holds the loaded stamp. It also proves a stale generated temporary sibling
+is removed on the next save and that a fresh one is kept. The `source_copy` tests
+prove the source bytes are unchanged after a verified copy, that a drawings
+folder symlinked outside the project is refused, and that nothing is written
+outside the project.
+
+## Path and package hardening tests
+
+`src-tauri/src/path_guard_tests.rs` covers the shared guard: protected source
+paths and case variants, Windows drive case and UNC spellings, the `\\?\`
+verbatim prefix, relative-path anchoring, distinct case-variant files, managed
+folder containment, traversal spellings, a symlink escape, a symlinked project
+folder that stays inside, empty and drive-relative targets, the bounded-read
+boundary and stale temporary cleanup. `tests/writeGuard.test.ts` covers the
+frontend counterpart, including `originalPath` protection and the managed-copy
+folder as a protected root. `tests/sourceStorage.test.ts` covers the
+out-of-folder warning and its doctor issue without rejecting a legitimate
+reference. `package.rs` tests reject traversal, absolute, drive, UNC, backslash
+and control-character entry names, an over-limit manifest total, and a
+destination volume without free space.
 
 The gate cannot prove a real cloud client racing between the final hash check
 and the rename, or a process kill at every possible instruction. Those remain

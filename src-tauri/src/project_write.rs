@@ -6,9 +6,8 @@ use std::time::UNIX_EPOCH;
 use serde::Serialize;
 use sha2::{Digest, Sha256};
 
-use crate::commands::{
-    ensure_writable, replace_file, sync_directory, unique_sibling, write_flushed, CommandError,
-};
+use crate::commands::{replace_file, sync_directory, unique_sibling, write_flushed, CommandError};
+use crate::path_guard::{clean_stale_temporaries, ensure_writable, MAX_PROJECT_BYTES};
 
 /// The expected on-disk state of a project file. The hash is authoritative;
 /// size and mtime let the UI describe the disk version without reading it.
@@ -169,6 +168,17 @@ where
     F: FnOnce(&Path, &Path, &str) -> Result<(), CommandError>,
 {
     let (_parent, display_name) = target_details(path)?;
+    if data.len() as u64 > MAX_PROJECT_BYTES {
+        return Err(WriteError::new(
+            "fileTooLarge",
+            format!(
+                "{display_name}: {} bytes exceeds the {MAX_PROJECT_BYTES} byte project limit",
+                data.len()
+            ),
+        ));
+    }
+    // A crashed earlier save may have left flushed temporary siblings behind.
+    clean_stale_temporaries(path);
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {
         let _ = fs::remove_file(&temp);
@@ -487,6 +497,17 @@ mod tests {
             fs::read_to_string(&target).expect("read project"),
             "writer A"
         );
+        assert_eq!(names(&temp.0), vec!["project.gridscalr".to_string()]);
+    }
+
+    #[test]
+    fn removes_a_stale_temporary_sibling_on_the_next_save() {
+        let temp = TestDir::new();
+        let target = temp.file("project.gridscalr");
+        let stale = temp.file(".project.gridscalr.999999.100.0.tmp");
+        fs::write(&stale, b"crashed save").expect("write stale temp");
+        write_conditional(&target, b"project", None).expect("save");
+        assert!(!stale.exists(), "a stale temporary sibling is cleaned up");
         assert_eq!(names(&temp.0), vec!["project.gridscalr".to_string()]);
     }
 

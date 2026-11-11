@@ -1,11 +1,16 @@
 use std::fs::{self, File};
 use std::io::Write;
-use std::path::{Component, Path, PathBuf};
+use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
 
 use base64::Engine;
 use serde::Serialize;
 use tauri::ipc::Response;
+
+use crate::path_guard::{
+    clean_stale_temporaries, ensure_writable, read_limited, read_text_limited, MAX_PROJECT_BYTES,
+    MAX_SOURCE_BYTES,
+};
 
 /// A user-facing command failure. The frontend maps `code` to a catalog message
 /// and shows `detail` as a separate technical line.
@@ -42,6 +47,10 @@ fn atomic_write(path: &Path, data: &[u8]) -> Result<(), CommandError> {
     fs::create_dir_all(&parent).map_err(|error| {
         CommandError::new("createFolderFailed", format!("{display_name}: {error}"))
     })?;
+    // A crashed earlier save may have left a flushed temporary sibling behind.
+    // Cleaning it here keeps project data out of the folder without ever
+    // touching a file a live writer may still own (F-041).
+    clean_stale_temporaries(path);
 
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {
@@ -115,116 +124,15 @@ pub(crate) fn unique_sibling(path: &Path, suffix: &str) -> PathBuf {
     ))
 }
 
-/// The guard compares resolved targets, so a symlink, junction or an alternate
-/// spelling such as `drawings/../drawings/plan.pdf` cannot reach a source file.
-pub(crate) fn ensure_writable(path: &str, protected_paths: &[String]) -> Result<(), CommandError> {
-    let target = Path::new(path);
-    let target_key = comparison_key(&resolved_path(target));
-    let protected: Vec<&String> = protected_paths
-        .iter()
-        .filter(|protected| !protected.trim().is_empty())
-        .collect();
-
-    for source in &protected {
-        let source_path = Path::new(source.as_str());
-        if comparison_key(&resolved_path(source_path)) == target_key {
-            return Err(CommandError::new("sourceOverwrite", ""));
-        }
-        // Canonical paths miss hard links, which are a second name for the same
-        // file. Comparing file identities closes that gap when both exist.
-        if target.exists() && same_file::is_same_file(target, source_path).unwrap_or(false) {
-            return Err(CommandError::new("sourceOverwrite", ""));
-        }
-    }
-    Ok(())
-}
-
-/// Resolves every existing part of the path, including symlinks and junctions,
-/// and keeps the missing tail so a not-yet-created save target still compares
-/// against its real parent folder.
-fn resolved_path(path: &Path) -> PathBuf {
-    if let Ok(resolved) = fs::canonicalize(path) {
-        return resolved;
-    }
-    let mut existing = path.to_path_buf();
-    let mut tail: Vec<std::ffi::OsString> = Vec::new();
-    while let Some(name) = existing.file_name() {
-        tail.push(name.to_os_string());
-        let Some(parent) = existing.parent() else {
-            break;
-        };
-        existing = if parent.as_os_str().is_empty() {
-            PathBuf::from(".")
-        } else {
-            parent.to_path_buf()
-        };
-        if let Ok(resolved) = fs::canonicalize(&existing) {
-            let mut result = resolved;
-            for part in tail.iter().rev() {
-                result.push(part);
-            }
-            return result;
-        }
-    }
-    lexical_path(path)
-}
-
-fn lexical_path(path: &Path) -> PathBuf {
-    let mut result = PathBuf::new();
-    for component in path.components() {
-        match component {
-            Component::ParentDir => {
-                result.pop();
-            }
-            Component::CurDir => {}
-            other => result.push(other.as_os_str()),
-        }
-    }
-    result
-}
-
-/// Case-insensitive key with forward slashes, matching the conservative
-/// frontend guard. Windows canonical paths carry a `\\?\` verbatim prefix that
-/// an unresolved protected path does not, so it is stripped before comparing.
-fn comparison_key(path: &Path) -> String {
-    let text = path.to_string_lossy().replace('\\', "/");
-    let text = if let Some(rest) = text.strip_prefix("//?/UNC/") {
-        format!("//{rest}")
-    } else if let Some(rest) = text.strip_prefix("//?/") {
-        rest.to_string()
-    } else {
-        text
-    };
-    let mut key = String::with_capacity(text.len());
-    let mut previous_slash = false;
-    for character in text.chars() {
-        if character == '/' {
-            if previous_slash {
-                continue;
-            }
-            previous_slash = true;
-        } else {
-            previous_slash = false;
-        }
-        key.extend(character.to_lowercase());
-    }
-    while key.ends_with('/') && key.len() > 1 {
-        key.pop();
-    }
-    key
-}
-
 #[tauri::command]
 pub fn read_binary(path: String) -> Result<Response, CommandError> {
-    let bytes = fs::read(&path)
-        .map_err(|error| CommandError::new("readFailed", format!("{path}: {error}")))?;
+    let bytes = read_limited(Path::new(&path), MAX_SOURCE_BYTES)?;
     Ok(Response::new(bytes))
 }
 
 #[tauri::command]
 pub fn read_text(path: String) -> Result<String, CommandError> {
-    fs::read_to_string(&path)
-        .map_err(|error| CommandError::new("readFailed", format!("{path}: {error}")))
+    read_text_limited(Path::new(&path), MAX_PROJECT_BYTES)
 }
 
 #[tauri::command]
@@ -305,6 +213,7 @@ fn copy_demo_assets(resource_dir: &Path, data_dir: &Path) -> Result<String, Comm
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::path_guard::{comparison_key, resolved_path};
 
     struct TestDir(PathBuf);
 

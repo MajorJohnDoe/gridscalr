@@ -131,9 +131,13 @@ Use the right-click menu on a page card for the drawing actions:
 
 While a project is open, a source-changed or missing-source banner offers **Reload**, **Use current**, **Relink** and **Copy into project**. Nothing is accepted automatically. A page-count change is never guessed; use **Replace source…** to map the pages.
 
+A project can reference a drawing outside its own folder, for example a shared plan library. Opening such a project shows a dismissible warning that names the drawings and offers **Copy into project** or **Relink**. GridScalr never blocks a legitimate reference, but treat a project file as input: it can point at any PDF you are allowed to read, so only open projects from a source you trust. The warning also appears in **File → Project doctor…**.
+
+GridScalr never writes to a referenced drawing, to the original path recorded behind a managed copy, or anywhere inside the `<project>.drawings/` folder. A save or export that resolves there, through a symlink or an alternate spelling, is refused.
+
 ### Open a project
 
-**File → Open project…** (`Ctrl/Cmd+Shift+O`) opens a `.gridscalr` file. Source PDFs are referenced by path and SHA-256, or by a relative managed-copy path; if a PDF has moved, GridScalr asks you to locate or relink it.
+**File → Open project…** (`Ctrl/Cmd+Shift+O`) opens a `.gridscalr` file. Source PDFs are referenced by path and SHA-256, or by a relative managed-copy path; if a PDF has moved, GridScalr asks you to locate or relink it. A project file above 256 MB is refused with a clear message instead of being loaded, and the open project is left untouched.
 
 ### Open from Explorer or Finder
 

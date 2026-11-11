@@ -1400,6 +1400,7 @@ name = "gridscalr"
 version = "0.23.0"
 dependencies = [
  "base64 0.23.1",
+ "libc",
  "same-file",
  "serde",
  "serde_json",
@@ -1409,6 +1410,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-single-instance",
  "tauri-plugin-window-state",
+ "windows-sys 0.61.2",
  "zip",
 ]
 

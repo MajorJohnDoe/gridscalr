@@ -5,8 +5,11 @@ import { store } from "../../state/store";
 import { copyDocumentIntoProject, consolidateDrawings } from "./copyActions";
 import { findDocument } from "./documents";
 import { detectSourceLocation, shouldRecommendManagedCopy } from "./mode";
+import { outsideProjectReferences } from "./outsideReferences";
 import type { SourceStorageHost } from "./ports";
+import { showOutsideReferenceBanner } from "./referenceWarning";
 import { sourceChangeActions } from "./relink";
+
 import {
   acceptCurrentSource,
   detachDocumentFromSource,
@@ -29,23 +32,34 @@ function sourceActionLabel(action: string): string {
  */
 export class SourceStorageController {
   private unsubscribe: (() => void) | null = null;
+  private unsubscribeStore: (() => void) | null = null;
   private banners = new Map<string, () => void>();
   private dismissed = new Set<string>();
+  private outsideBanner: (() => void) | null = null;
+  private outsideDismissedKey: string | null = null;
 
   constructor(private readonly host: SourceStorageHost) {}
 
   start(): void {
     if (!this.host.desktop || this.unsubscribe) return;
     this.unsubscribe = sourceStatus.subscribe(() => this.renderBanners());
+    this.unsubscribeStore = store.subscribe((reason) => {
+      if (reason === "project" || reason === "save") this.renderOutsideWarning();
+    });
     this.renderBanners();
+    this.renderOutsideWarning();
   }
 
   dispose(): void {
     this.unsubscribe?.();
     this.unsubscribe = null;
+    this.unsubscribeStore?.();
+    this.unsubscribeStore = null;
     for (const remove of this.banners.values()) remove();
     this.banners.clear();
     this.dismissed.clear();
+    this.outsideBanner?.();
+    this.outsideBanner = null;
   }
 
   /** Returns true when the user wants the picked drawing copied into the project. */
@@ -94,6 +108,44 @@ export class SourceStorageController {
     else if (action === "useCurrent") void this.useCurrent(documentId);
     else if (action === "relink") void this.relink(documentId);
     else if (action === "copyIntoProject") void this.copyIntoProject(documentId);
+  }
+
+  private renderOutsideWarning(): void {
+    const project = store.project;
+    const references = project ? outsideProjectReferences(project, store.projectPath) : [];
+    const key = `${store.projectPath ?? ""}|${references
+      .map((reference) => reference.path.toLowerCase())
+      .sort()
+      .join("|")}`;
+    if (!references.length) {
+      this.outsideBanner?.();
+      this.outsideBanner = null;
+      this.outsideDismissedKey = null;
+      return;
+    }
+    if (this.outsideDismissedKey === key || this.outsideBanner) return;
+    const single = references.length === 1 ? references[0] : null;
+    this.outsideBanner = showOutsideReferenceBanner(this.host.bannerHost, {
+      references,
+      onCopy: () => {
+        this.outsideBanner?.();
+        this.outsideBanner = null;
+        this.outsideDismissedKey = key;
+        void this.consolidate();
+      },
+      onRelink: single
+        ? () => {
+            this.outsideBanner?.();
+            this.outsideBanner = null;
+            this.outsideDismissedKey = key;
+            void this.relink(single.documentId);
+          }
+        : undefined,
+      onDismiss: () => {
+        this.outsideBanner = null;
+        this.outsideDismissedKey = key;
+      },
+    });
   }
 
   private renderBanners(): void {

@@ -92,12 +92,22 @@ export function packageDestinationDialog(
   projectName: string,
   destination: string,
   exists: boolean,
+  uncompressedBytes = 0,
 ): Promise<PackageDestinationChoice | null> {
   const body = el("div", "form-stack");
   body.append(
-    el("p", "modal-message", `“${projectName}” will be extracted to this folder:`),
+    el("p", "modal-message", t("package.destinationIntro", { name: projectName })),
     el("p", "package-destination", destination),
   );
+  if (uncompressedBytes > 0) {
+    body.append(
+      el(
+        "p",
+        "modal-message",
+        t("package.uncompressedSize", { size: formatBytes(uncompressedBytes) }),
+      ),
+    );
+  }
   if (exists) {
     body.append(el("p", "modal-message", t("package.destinationExists")));
   }

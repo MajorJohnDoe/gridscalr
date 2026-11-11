@@ -355,7 +355,12 @@ export async function openPackageFlow(host: PackageHost): Promise<void> {
   let mode: "new" | "replace" | "reuse" | null = null;
   while (!mode) {
     const exists = await pathExists(destination);
-    const choice = await packageDestinationDialog(inspection.projectName, destination, exists);
+    const choice = await packageDestinationDialog(
+      inspection.projectName,
+      destination,
+      exists,
+      inspection.uncompressedBytes,
+    );
     if (!choice) return;
     if (choice === "choose") {
       const folder = await chooseDirectory();

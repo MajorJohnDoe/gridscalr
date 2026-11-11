@@ -811,6 +811,84 @@ confirmed against the audit.
   (#171) is a reasonable home because it owns determinism and fuzz gates.
 - **Related:** `docs/security-audit.md` §13, `tests/pdfExport.test.ts`.
 
+### F-044 — Package creation has no total output cap
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 3 — path and package hardening
+- **Severity:** P3
+- **Area:** project package / disk
+- **Status:** open
+- **Evidence:** `package_create` accepts a project JSON string, any number of
+  `documents`/`exports`/`source_scans` sources and writes until the sources are
+  exhausted. Phase 3 caps *extraction* at 2 GiB uncompressed and checks free
+  space there, but the creating side has no equivalent total-byte or free-space
+  check.
+- **Problem:** A user can build a package larger than any extraction will accept,
+  and a nearly full destination only fails part-way through the write.
+- **Impact:** A failed write is cleaned up by the existing temporary-file rename
+  and cancellation paths, so no partial package is left. Disk space can still be
+  consumed while the write runs.
+- **Next step:** Mirror `disk_space::available_bytes` and the extraction cap in
+  `create_package`, and show the expected size in the package options dialog.
+  Schedule with the package work in 0.25.0 or as a small follow-up.
+- **Related:** `src-tauri/src/package.rs`, F-033.
+
+### F-045 — A managed copy has no source-size cap
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 3 — path and package hardening
+- **Severity:** P3
+- **Area:** source storage
+- **Status:** open
+- **Evidence:** `copy_to_project` hashes and streams the source without a size
+  limit, then verifies the copy. Phase 3 bounds *reads* at 1 GiB but the copy
+  command is a separate path.
+- **Problem:** Copying a multi-gigabyte PDF into `<project>.drawings/` succeeds
+  and doubles the disk use of the drawing without a warning.
+- **Impact:** Disk use and time only; the checksum verification still proves the
+  copy matches the source.
+- **Next step:** Apply `MAX_SOURCE_BYTES` to the managed-copy source and report a
+  localized `fileTooLarge` before streaming. Small follow-up.
+- **Related:** `src-tauri/src/source_copy.rs`, `src-tauri/src/path_guard.rs`.
+
+### F-046 — Stale temporary cleanup runs only on save
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 3 — path and package hardening
+- **Severity:** P3
+- **Area:** atomic writes
+- **Status:** open
+- **Evidence:** `clean_stale_temporaries()` is called by `atomic_write` and
+  `write_conditional_with`. Opening a project never triggers it, and package
+  extraction and backup temporary folders keep their own naming and cleanup.
+- **Problem:** A crash followed by an open-only session leaves a full project
+  copy beside the project until the next save.
+- **Impact:** Local disk use and a project-data artifact in a shared folder. The
+  project file itself stays readable and the cleanup is conservative.
+- **Next step:** Call the same helper after a project loads and extend it to the
+  package extraction temporary folder. Small follow-up.
+- **Related:** F-041, `docs/limitations.md`.
+
+### F-047 — The browser fallback guard is textual only
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 3 — path and package hardening
+- **Severity:** P3
+- **Area:** write guard
+- **Status:** accepted
+- **Evidence:** `src/io/writeGuard.ts` compares normalised path text. The browser
+  fallback has no file-system API to canonicalize a symlink or compare file
+  identities, so only the Rust guard resolves real paths.
+- **Problem:** In the browser fallback a case variant or an unresolved symlink
+  cannot be proven different from a source path; the textual comparison is the
+  conservative choice but is not a filesystem identity check.
+- **Impact:** The browser fallback writes by download and cannot overwrite an
+  existing file in place. The desktop app, where a save can replace a file, uses
+  the full Rust guard.
+- **Next step:** Keep the textual guard and the documented desktop-only
+  guarantee. Revisit only if the browser fallback gains a real save target.
+- **Related:** `docs/limitations.md`, `src-tauri/src/path_guard.rs`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

@@ -1,4 +1,5 @@
 import type { RecentEntry } from "../model/types";
+import { MAX_PROJECT_BYTES, MAX_SOURCE_BYTES } from "./limits";
 import { sha256Fallback } from "./sha256";
 import { assertWritablePath } from "./writeGuard";
 import { t } from "../i18n";
@@ -71,6 +72,9 @@ export async function pickDrawing(): Promise<PickedPdf | null> {
   }
   const file = await browserFilePicker("application/pdf,.pdf,image/tiff,.tif,.tiff");
   if (!file) return null;
+  if (file.size > MAX_SOURCE_BYTES) {
+    throw new Error(t("platform.drawingTooLarge", { size: formatBytes(MAX_SOURCE_BYTES) }));
+  }
   return {
     name: file.name,
     path: null,
@@ -92,6 +96,9 @@ export async function pickPdf(): Promise<PickedPdf | null> {
   }
   const file = await browserFilePicker("application/pdf,.pdf");
   if (!file) return null;
+  if (file.size > MAX_SOURCE_BYTES) {
+    throw new Error(t("platform.drawingTooLarge", { size: formatBytes(MAX_SOURCE_BYTES) }));
+  }
   return {
     name: file.name,
     path: null,
@@ -136,6 +143,9 @@ export async function pickProject(): Promise<PickedProject | null> {
   }
   const file = await browserFilePicker(".gridscalr,.json,application/json");
   if (!file) return null;
+  if (file.size > MAX_PROJECT_BYTES) {
+    throw new Error(t("platform.projectTooLarge", { size: formatBytes(MAX_PROJECT_BYTES) }));
+  }
   return { name: file.name, path: null, text: await file.text() };
 }
 
