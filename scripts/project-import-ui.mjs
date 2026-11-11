@@ -337,6 +337,15 @@ try {
   assert.equal(afterDropUndo.documents, 2);
   assert.equal(afterDropUndo.pages, 2);
 
+  await page.keyboard.press("Control+Shift+z");
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 5);
+  const afterDropRedo = await page.evaluate(() => ({
+    documents: window.__gridscalr.store.project.documents.length,
+    pages: window.__gridscalr.store.project.pages.length,
+  }));
+  assert.equal(afterDropRedo.documents, 3);
+  assert.equal(afterDropRedo.pages, 5);
+
   assert.equal(await readFile(sourcePath, "utf8"), sourceBefore);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`Project import UI passed: ${repoRoot}`);
