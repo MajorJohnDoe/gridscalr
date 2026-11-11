@@ -690,9 +690,11 @@ Saving is atomic. GridScalr writes and flushes a temporary file next to the proj
 
 The source PDF or TIF is never overwritten. Every save and export resolves real paths, including symlinks and junctions, before comparing the destination with the source documents. A protected file is refused even when it is reached through another spelling or a link, including a second PDF or TIF in a multi-document project.
 
-The status bar shows whether the project is **Saved**, has **Unsaved changes**, or is **Not saved to a file** yet. It also warns when a source drawing is missing or has changed on disk.
+The status bar shows whether the project is **Saved**, has **Unsaved changes**, or is **Not saved to a file** yet. It also warns when a source drawing is missing or has changed on disk, and it shows whether autosave is **on**, **off** or **paused**.
 
 Autosave keeps recovery snapshots in a local IndexedDB database (with a localStorage fallback only when IndexedDB is unavailable). Each snapshot is scoped to one project and one app instance, so two open projects cannot overwrite each other's recovery. GridScalr keeps the latest snapshot per project plus one previous one. If recovery storage is full or unavailable, the status bar shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
+
+Autosave is on by default. It writes at most one recovery snapshot every 15 seconds after a change. Open **Settings → Preferences… → Data** to turn it off, to choose a 30- or 60-second interval, or to **Pause for this session**. A pause lasts until you close and reopen GridScalr. Turning autosave off or pausing stops periodic snapshots immediately; it never saves the project file. Structural checkpoints are still written before page, source and import operations, and the unsaved-changes prompt still protects work whenever you close or replace a project. A longer interval writes less often, so more of your most recent work is at risk if the app crashes.
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding removes this session's recovery snapshot and releases the project lock.
 

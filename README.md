@@ -259,7 +259,9 @@ source PDF or TIF is never modified; every save and export resolves real paths,
 including symlinks and junctions, and refuses to overwrite any document that
 belongs to the project. Project files are replaced atomically, so a failed save
 keeps the previous file. Project data autosaves to a local IndexedDB recovery
-store, scoped by project and app instance with the base file hash. In the desktop
+store, scoped by project and app instance with the base file hash. Autosave can
+be turned off, given a 15, 30 or 60 second interval, or paused for the session in
+**Preferences → Data**. In the desktop
 shell, `src-tauri/src/project_write.rs` owns conditional writes and file stamps,
 `src-tauri/src/project_lease.rs` owns the advisory sidecar lease, and
 `src-tauri/src/project_backup.rs` owns app-data backups. The

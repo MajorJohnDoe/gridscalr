@@ -37,6 +37,18 @@ low finding is reported only, and an unreadable report fails closed.
 `npm run check:dependencies` runs the same rules against the live npm registry
 and RustSec advisory database.
 
+## Autosave preference
+
+`tests/appPreferences.test.ts` covers the stored shape: defaults, malformed and
+per-field invalid input, migration from the pre-autosave shape without losing
+language, CSV format or theme, and a round trip with the interval and enabled
+flag. `tests/autosavePreference.test.ts` covers the session pause, the supported
+interval choices and a fresh module start. `tests/sessionRecoveryController.test.ts`
+drives the loop with fake timers and fake IndexedDB: enabled writes after the
+debounce, the interval throttles repeated changes, turning autosave off or
+pausing cancels a pending write, resuming writes the current revision, and an
+explicit structural checkpoint is still written when autosave is off.
+
 ## Robustness gate
 
 `npm run test:robustness` runs only `tests/robustness/`. The normal

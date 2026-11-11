@@ -53,6 +53,7 @@ src/
   features/sessionRecovery/leaseFiles.ts Rust lease command wrappers and ownership errors
   features/sessionRecovery/leaseSession.ts acquire, heartbeat, take-over and release lifecycle
   features/sessionRecovery/controller.ts autosave loop, lease adoption, chooser and watcher orchestration
+  features/sessionRecovery/autosavePreference.ts app-level autosave enabled, interval and session pause
   features/sessionRecovery/checkpoint.ts labelled structural-operation checkpoints
   features/sessionRecovery/watch.ts visible-window project file polling
   features/sessionRecovery/summary.ts synchronous recovery summary for the welcome screen and Preferences
@@ -209,6 +210,7 @@ src/
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   settings dialog orchestrator
   ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
+  ui/settings/autosave.ts Preferences → Data autosave controls
   source/sourceStatus.ts source drawing existence, size and checksum monitor
   features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
   app/sourceStorageHost.ts source-storage controller wiring and renderer replacement

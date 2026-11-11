@@ -1,4 +1,13 @@
 export { SessionRecoveryController } from "./controller";
+export {
+  autosaveIntervalMs,
+  autosaveState,
+  setAutosaveEnabled,
+  setAutosaveIntervalSeconds,
+  setAutosavePausedForSession,
+  subscribeAutosaveState,
+} from "./autosavePreference";
+export type { AutosaveState, AutosaveStatus } from "./autosavePreference";
 export type { SessionRecoveryHost, OpenDecision, OpenProjectInfo } from "./ports";
 export { recordStructuralCheckpoint } from "./checkpoint";
 export { openRecoveryChooser, setRecoveryChooserHandler } from "./chooser";

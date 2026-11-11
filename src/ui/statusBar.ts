@@ -15,6 +15,7 @@ import {
 } from "../model/units";
 import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { autosaveState } from "../features/sessionRecovery";
 import { sourceStatus } from "../source/sourceStatus";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
@@ -31,6 +32,7 @@ let scaleChipKey = "";
 let warningKey: string | null = null;
 let projectChipKey = "";
 let sourceChipKey = "";
+let autosaveChipKey = "";
 
 /** Forces the next update to rebuild the cached chips after a language change. */
 export function resetStatusBar(): void {
@@ -38,6 +40,7 @@ export function resetStatusBar(): void {
   warningKey = null;
   projectChipKey = "";
   sourceChipKey = "";
+  autosaveChipKey = "";
 }
 
 export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
@@ -72,6 +75,30 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
           ? t("status.projectSavedTitle", { path: store.projectPath })
           : t("status.projectNotSavedTitle");
       refs.statusProject.append(chip);
+    }
+  }
+
+  // Autosave state is informational here. Preferences → Data owns the setting.
+  const autosave = autosaveState();
+  const autosaveKey = project ? `${autosave.status}|${autosave.intervalSeconds}` : "";
+  if (autosaveKey !== autosaveChipKey) {
+    autosaveChipKey = autosaveKey;
+    clear(refs.statusAutosave);
+    if (project) {
+      const chip = el("span", `status-chip${autosave.active ? "" : " is-warning"}`);
+      if (autosave.status === "enabled") {
+        chip.append(
+          document.createTextNode(t("status.autosaveOn", { seconds: autosave.intervalSeconds })),
+        );
+        chip.title = t("status.autosaveOnTitle", { seconds: autosave.intervalSeconds });
+      } else if (autosave.status === "paused") {
+        chip.append(document.createTextNode(t("status.autosavePaused")));
+        chip.title = t("status.autosavePausedTitle");
+      } else {
+        chip.append(document.createTextNode(t("status.autosaveOff")));
+        chip.title = t("status.autosaveOffTitle");
+      }
+      refs.statusAutosave.append(chip);
     }
   }
 

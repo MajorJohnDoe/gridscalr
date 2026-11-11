@@ -1010,6 +1010,45 @@ confirmed against the audit.
 - **Related:** `src/features/projectPackage/model.ts`,
   `src/io/platformError.ts`.
 
+### F-053 — The session pause is process memory, so a renderer reload resumes autosave
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 6 — autosave preference
+- **Severity:** P3
+- **Area:** session recovery / preferences
+- **Status:** accepted
+- **Evidence:** `pausedForSession` is module state in
+  `src/features/sessionRecovery/autosavePreference.ts` and is deliberately not
+  written to localStorage. A full renderer reload recreates the module, so the
+  pause clears even though the operating-system process did not restart.
+- **Problem:** “Pause for this session” has no durable marker that distinguishes
+  a reload from a real new app start. The preference is defined to reset on a new
+  start, and a reload behaves the same way.
+- **Impact:** A reload silently resumes periodic snapshots. Nothing is lost and
+  no file is written unexpectedly; the user simply has to pause again.
+- **Next step:** If pause must survive a reload within one process, add a
+  sessionStorage marker plus a process-start identifier. Do not persist it in
+  `AppPreferences`.
+- **Related:** `docs/user-guide.md` autosave section, #172.
+
+### F-054 — The autosave status chip is informational only
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 6 — autosave preference
+- **Severity:** P3
+- **Area:** status bar / preferences
+- **Status:** deferred
+- **Evidence:** The new status chip shows on/off/paused but has no menu. Every
+  change goes through **Preferences → Data**.
+- **Problem:** A user who notices that autosave is off cannot pause or change it
+  from the status area, which is where the state is most visible.
+- **Impact:** One extra dialog step; the state is always visible and the setting
+  is discoverable from the guide.
+- **Next step:** Give the chip a popover with pause/resume, interval and a link
+  to Preferences as part of the save/backup/autosave status popover in
+  [#178](https://github.com/MajorJohnDoe/gridscalr/issues/178).
+- **Related:** #178, #172.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
