@@ -413,6 +413,7 @@ src/features/projectIntegrity/ public surface, referential-integrity validation,
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics
 src/features/projectIntegrity/ui.ts localized doctor, issue list and repair controls
+src/features/statusOverview/ pure project-status model, one-read controller and the status popover
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
 src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols

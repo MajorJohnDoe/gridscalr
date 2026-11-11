@@ -1326,6 +1326,44 @@ confirmed against the audit.
   during phase 14.
 - **Related:** #177, #180.
 
+### F-069 — A failed backup-list read looks like no backup
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 12 — status popover
+- **Severity:** P3
+- **Area:** save integrity / status overview
+- **Status:** accepted
+- **Evidence:** `collectStatusOverview()` catches a `listProjectBackups()`
+  rejection and passes `lastBackupAt: null`, which the popover renders as
+  **No automatic backup yet**.
+- **Problem:** A transient app-data read failure is indistinguishable from a
+  project that has never been backed up.
+- **Impact:** No data loss and the popover still opens. The user may believe a
+  backup does not exist while it does; the backup manager and **Backup now**
+  remain available and would show the real list.
+- **Next step:** If this proves confusing, carry a `backupReadFailed` flag
+  through the model and show a distinct unavailable message. It needs no new
+  storage or API.
+- **Related:** #178, #175.
+
+### F-070 — Last save time is the file modification time
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 12 — status popover
+- **Severity:** P3
+- **Area:** status overview
+- **Status:** accepted
+- **Evidence:** The popover uses `store.fileStamp.modifiedAt` as the last save
+  time. The browser fallback has no stamp and therefore shows **Not available**.
+- **Problem:** For a project opened from disk the time is the previous save,
+  possibly written by another application or computer. The browser download is
+  a save the popover cannot date.
+- **Impact:** The value is honest about the file, not about this session. It
+  needs no extra runtime state and cannot drift from the file on disk.
+- **Next step:** If a session-relative save time is wanted, record a runtime
+  `lastSavedAt` on `Store.markSaved()` rather than persisting it in the project.
+- **Related:** #178.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

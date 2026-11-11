@@ -14,6 +14,7 @@ const FOUNDATION_FEATURES = [
   "src/features/pageModel",
   "src/features/sourceStorage",
   "src/features/projectIntegrity",
+  "src/features/statusOverview",
 ];
 
 const errors = [];

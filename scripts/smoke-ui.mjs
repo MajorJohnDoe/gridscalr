@@ -167,7 +167,7 @@ try {
     0,
     "Properties should no longer host the scale card",
   );
-  const scaleChip = page.locator(".status-chip-action");
+  const scaleChip = page.locator('.status-chip[aria-haspopup="menu"]');
   await scaleChip.waitFor();
   assert.match(
     (await scaleChip.textContent()) ?? "",
@@ -182,6 +182,26 @@ try {
   assert.match(scaleMenuText, /Lock scale|Unlock scale/, "the scale menu should offer the lock");
   await page.keyboard.press("Escape");
   await scaleMenu.waitFor({ state: "detached" });
+
+  // The saved/unsaved chip opens the project status popover. The browser
+  // fallback cannot write app-data backups, so that action is disabled.
+  const statusChip = page.locator('.status-chip[aria-haspopup="dialog"]');
+  await statusChip.waitFor();
+  await statusChip.click();
+  const statusPopover = page.locator(".status-popover");
+  await statusPopover.waitFor();
+  const statusText = (await statusPopover.textContent()) ?? "";
+  assert.match(statusText, /Last saved/, "the popover should show the last save");
+  assert.match(statusText, /Last automatic backup/, "the popover should show the last backup");
+  assert.match(statusText, /Autosave/, "the popover should show the autosave state");
+  assert.match(statusText, /Validation warnings/, "the popover should show validation state");
+  assert.equal(
+    await statusPopover.getByRole("button", { name: "Backup now" }).isDisabled(),
+    true,
+    "backup should be disabled in the browser fallback",
+  );
+  await page.keyboard.press("Escape");
+  await statusPopover.waitFor({ state: "detached" });
 
   // Site coordinates read as a position, with a unit on each axis.
   await page.locator(".statusbar .status-label", { hasText: "Position" }).waitFor();

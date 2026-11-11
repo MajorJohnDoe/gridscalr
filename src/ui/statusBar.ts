@@ -15,7 +15,14 @@ import {
 } from "../model/units";
 import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { autosaveState, openRecoveryCenter } from "../features/sessionRecovery";
+import { listProjectBackups } from "../features/saveIntegrity";
+import {
+  autosaveState,
+  openRecoveryCenter,
+  setAutosavePausedForSession,
+} from "../features/sessionRecovery";
+import { collectStatusOverview, showStatusOverviewPopover } from "../features/statusOverview";
+import { isTauri } from "../io/platform";
 import { sourceStatus } from "../source/sourceStatus";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
@@ -48,7 +55,9 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.statusCoords);
   clear(refs.statusLayer);
 
-  const projectKey = project ? `${store.dirty}|${store.projectPath ?? ""}|${store.readOnly}` : "";
+  const projectKey = project
+    ? `${project.id}|${store.dirty}|${store.projectPath ?? ""}|${store.readOnly}`
+    : "";
   if (projectKey !== projectChipKey) {
     projectChipKey = projectKey;
     clear(refs.statusProject);
@@ -59,21 +68,28 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
         readOnlyChip.title = t("status.readOnlyTitle");
         refs.statusProject.append(readOnlyChip);
       }
-      const chip = el("span", `status-chip${store.dirty ? " is-warning" : " is-calibrated"}`);
-      chip.append(
-        document.createTextNode(
-          store.dirty
-            ? t("status.projectUnsaved")
-            : store.projectPath
-              ? t("status.projectSaved")
-              : t("status.projectNotSaved"),
-        ),
+      const chip = el(
+        "button",
+        `status-chip status-chip-action${store.dirty ? " is-warning" : " is-calibrated"}`,
       );
-      chip.title = store.dirty
+      chip.type = "button";
+      const label = store.dirty
+        ? t("status.projectUnsaved")
+        : store.projectPath
+          ? t("status.projectSaved")
+          : t("status.projectNotSaved");
+      const title = store.dirty
         ? t("status.projectUnsavedTitle")
         : store.projectPath
           ? t("status.projectSavedTitle", { path: store.projectPath })
           : t("status.projectNotSavedTitle");
+      chip.append(document.createTextNode(label));
+      chip.title = `${title}\n${t("statusOverview.open")}`;
+      chip.setAttribute("aria-haspopup", "dialog");
+      chip.setAttribute("aria-label", `${label}. ${t("statusOverview.open")}`);
+      chip.addEventListener("click", () => {
+        void openProjectStatus(chip, actions);
+      });
       refs.statusProject.append(chip);
     }
   }
@@ -319,4 +335,24 @@ function warningChip(text: string): HTMLElement {
   node.innerHTML = `<span class="status-dot"></span>`;
   node.append(document.createTextNode(text));
   return node;
+}
+
+/**
+ * Opens the project status popover. The model is read once per open; the backup
+ * list is the only disk read and it is never polled from a render or a timer.
+ */
+async function openProjectStatus(anchor: HTMLElement, actions: PanelActions): Promise<void> {
+  const overview = await collectStatusOverview({
+    desktop: isTauri,
+    listBackups: (projectId) => listProjectBackups(projectId),
+  });
+  if (!overview.hasProject) return;
+  showStatusOverviewPopover(anchor, overview, {
+    backupNow: () => actions.backupProject(),
+    reviewRecovery: () => actions.openRecovery(),
+    openDoctor: () => actions.openProjectDoctor(),
+    setAutosavePaused: (paused) => {
+      setAutosavePausedForSession(paused);
+    },
+  });
 }

@@ -223,6 +223,7 @@ src/
   ui/settings/backups.ts Preferences → Data backup retention and manager entry
   source/sourceStatus.ts source drawing existence, size and checksum monitor
   features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
+  features/statusOverview/ project status summary model and popover for save, backup, autosave, validation and recovery
   app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks

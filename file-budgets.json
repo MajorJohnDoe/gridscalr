@@ -9,7 +9,8 @@
     "src/features/sessionRecovery": 400,
     "src/features/pageModel": 400,
     "src/features/sourceStorage": 400,
-    "src/features/projectIntegrity": 400
+    "src/features/projectIntegrity": 400,
+    "src/features/statusOverview": 400
   },
   "files": {
     "src/app/App.ts": 1091,
