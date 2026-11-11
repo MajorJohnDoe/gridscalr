@@ -15,7 +15,7 @@ import {
 } from "../model/units";
 import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
-import { autosaveState } from "../features/sessionRecovery";
+import { autosaveState, openRecoveryCenter } from "../features/sessionRecovery";
 import { sourceStatus } from "../source/sourceStatus";
 import { store } from "../state/store";
 import { clear, el } from "./dom";
@@ -134,12 +134,21 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
     warningKey = autosaveMessage;
     clear(refs.statusWarning);
     if (autosaveMessage) {
+      const quota = store.autosaveError?.quotaExceeded === true;
       const chip = el("button", "status-chip is-warning status-chip-action");
       chip.type = "button";
       chip.innerHTML = `<span class="status-dot"></span>`;
-      chip.append(document.createTextNode(t("status.autosaveFailing")));
-      chip.title = t("status.autosaveTitle");
-      chip.addEventListener("click", () => actions.reportProblem());
+      chip.append(
+        document.createTextNode(
+          quota ? t("status.recoveryStorageFull") : t("status.autosaveFailing"),
+        ),
+      );
+      chip.title = quota ? t("status.recoveryStorageFullTitle") : t("status.autosaveTitle");
+      chip.addEventListener("click", () => {
+        // A full quota is actionable: open the center so old records can go.
+        if (quota) void openRecoveryCenter();
+        else actions.reportProblem();
+      });
       refs.statusWarning.append(chip);
     }
   }

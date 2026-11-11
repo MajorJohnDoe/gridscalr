@@ -1,12 +1,8 @@
 import { t } from "../../i18n";
 import type { Project } from "../../model/types";
-import {
-  AUTOSAVE_RECORDS_PER_PROJECT,
-  CHECKPOINTS_PER_PROJECT,
-  isRecoveryRecord,
-  sortRecoveryRecords,
-  type RecoveryRecord,
-} from "./record";
+import { planRecoveryPrune, type RecoveryPruneOptions } from "./budget";
+import { describeAutosaveFailure } from "./failure";
+import { isRecoveryRecord, sortRecoveryRecords, type RecoveryRecord } from "./record";
 
 const DB_NAME = "gridscalr";
 const DB_VERSION = 2;
@@ -57,40 +53,53 @@ function writeLocalFallback(records: RecoveryRecord[]): void {
   localStorage.setItem(FALLBACK_KEY, JSON.stringify(records));
 }
 
-function prune(records: RecoveryRecord[], projectId: string): Set<string> {
-  const autosaves = sortRecoveryRecords(
-    records.filter((record) => record.projectId === projectId && record.kind === "autosave"),
-  );
-  const checkpoints = sortRecoveryRecords(
-    records.filter((record) => record.projectId === projectId && record.kind === "checkpoint"),
-  );
-  const remove = new Set<string>();
-  for (const record of autosaves.slice(AUTOSAVE_RECORDS_PER_PROJECT)) remove.add(record.id);
-  for (const record of checkpoints.slice(CHECKPOINTS_PER_PROJECT)) remove.add(record.id);
-  return remove;
+function prune(
+  records: RecoveryRecord[],
+  keepId: string,
+  options: RecoveryPruneOptions,
+): Set<string> {
+  return new Set(planRecoveryPrune(records, { ...options, keepId }));
 }
 
-function writeFallback(record: RecoveryRecord): void {
+function writeFallback(record: RecoveryRecord, options: RecoveryPruneOptions): void {
   const records = sortRecoveryRecords(readLocalFallback());
   const merged = [...records.filter((entry) => entry.id !== record.id), record];
-  const remove = prune(merged, record.projectId);
+  const remove = prune(merged, record.id, options);
   writeLocalFallback(merged.filter((entry) => !remove.has(entry.id)));
 }
 
-export async function writeRecord(record: RecoveryRecord): Promise<void> {
+/**
+ * Writes one record. The merged set is pruned before the new record is stored,
+ * so a write that would exceed the byte budget deletes its oldest records
+ * first instead of needing peak space for both. The newest autosave and newest
+ * checkpoint of every project, plus the record being written, are never pruned.
+ */
+export async function writeRecord(
+  record: RecoveryRecord,
+  options: RecoveryPruneOptions = {},
+): Promise<void> {
   try {
     const database = await openRecoveryDatabase();
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, "readwrite");
       const store = transaction.objectStore(STORE_NAME);
-      store.put(record, record.id);
       const request = store.getAll();
       request.onsuccess = () => {
-        const existing = Array.isArray(request.result)
-          ? request.result.filter(isRecoveryRecord)
-          : [];
-        const merged = [...existing.filter((entry) => entry.id !== record.id), record];
-        for (const id of prune(merged, record.projectId)) store.delete(id);
+        try {
+          const existing = Array.isArray(request.result)
+            ? request.result.filter(isRecoveryRecord)
+            : [];
+          const merged = [...existing.filter((entry) => entry.id !== record.id), record];
+          for (const id of prune(merged, record.id, options)) store.delete(id);
+          store.put(record, record.id);
+        } catch (error) {
+          try {
+            transaction.abort();
+          } catch {
+            // An already finished transaction needs no abort.
+          }
+          reject(error);
+        }
       };
       transaction.oncomplete = () => {
         database.close();
@@ -110,19 +119,9 @@ export async function writeRecord(record: RecoveryRecord): Promise<void> {
     // Keep a small fallback when IndexedDB is unavailable. It is keyed by
     // project and instance as well, so it can never mix two projects.
     try {
-      writeFallback(record);
+      writeFallback(record, options);
     } catch (fallbackError) {
-      throw new Error(
-        t("autosave.failedDetail", {
-          detail:
-            fallbackError instanceof Error
-              ? fallbackError.message
-              : error instanceof Error
-                ? error.message
-                : "",
-        }),
-        { cause: fallbackError },
-      );
+      throw describeAutosaveFailure(error, fallbackError);
     }
   }
 }

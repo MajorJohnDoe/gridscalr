@@ -3,13 +3,13 @@ import { formatDate, formatNumber } from "../../i18n/format";
 import { showModal } from "../../ui/dialogs";
 import { el } from "../../ui/dom";
 import type { RecoverableEntry } from "./recovery";
+import { RECOVERY_BUDGET, recoveryUsage, serializedBytes } from "./budget";
 import {
   baseVersionLabelKey,
   defaultCenterSelection,
   findCenterEntry,
   groupRecoveryEntries,
   needsRestoreConfirmation,
-  serializedBytes,
   type RecoveryCenterChoice,
   type RecoveryProjectGroup,
 } from "./centerModel";
@@ -77,7 +77,19 @@ function projectSection(group: RecoveryProjectGroup, selected: string | null): H
     group.projectPath ?? t("recoveryCenter.unsavedPath"),
   );
   if (group.projectPath) path.title = group.projectPath;
-  header.append(path);
+  const bytes = group.instances.reduce(
+    (total, instance) =>
+      total + instance.entries.reduce((sum, entry) => sum + serializedBytes(entry.record), 0),
+    0,
+  );
+  header.append(
+    path,
+    el(
+      "p",
+      "recovery-project-size",
+      t("recoveryCenter.projectStored", { size: formatBytes(bytes) }),
+    ),
+  );
   section.append(header);
   for (const instance of group.instances) {
     section.append(el("h4", "recovery-instance-title", instanceLabel(instance.entries[0])));
@@ -99,13 +111,25 @@ export async function openRecoveryCenter(
 ): Promise<RecoveryCenterChoice> {
   const groups = groupRecoveryEntries(entries);
   let selected = defaultCenterSelection(groups, options.selectedId ?? null);
+  const usage = recoveryUsage(entries.map((entry) => entry.record));
   const body = el("div", "form-stack recovery-center");
   body.append(el("p", "modal-message", t("recoveryCenter.intro")));
+  body.append(
+    el(
+      "p",
+      "recovery-storage",
+      t("recoveryCenter.storageUsage", {
+        used: formatBytes(usage.totalBytes),
+        budget: formatBytes(RECOVERY_BUDGET.totalBytes),
+      }),
+    ),
+  );
 
   const legend = el("div", "recovery-legend");
   legend.append(
     el("p", "settings-note", t("recoveryCenter.autosaveExplanation")),
     el("p", "settings-note", t("recoveryCenter.checkpointExplanation")),
+    el("p", "settings-note", t("recoveryCenter.budgetNote")),
   );
   body.append(legend);
 

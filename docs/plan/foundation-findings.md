@@ -178,17 +178,18 @@ project contents.
 - **Phase:** 2 — recovery and open-elsewhere
 - **Severity:** P2
 - **Area:** recovery storage
-- **Status:** deferred
+- **Status:** fixed — 0.24.0 phase 8 ([#174](https://github.com/MajorJohnDoe/gridscalr/issues/174))
 - **Evidence:** `AUTOSAVE_RECORDS_PER_PROJECT = 2` and
   `CHECKPOINTS_PER_PROJECT = 10` in `features/sessionRecovery/record.ts`. Each
   record stores a serialized project string.
-- **Problem:** A large project keeps two full autosaves and up to ten full
-  checkpoints without a byte budget. On a quota-limited origin this can exhaust
-  storage and turn autosave off exactly when the project is largest.
-- **Impact:** The status bar warns on quota failure, and saving to a file still
-  works, but recovery may stop earlier than expected.
-- **Next step:** Add a byte budget or age-based pruning for checkpoints, and
-  report recovery storage size in Preferences or diagnostics.
+- **Problem:** A large project kept two full autosaves and up to ten full
+  checkpoints without a byte budget. On a quota-limited origin this could exhaust
+  storage and turn autosave off exactly when the project was largest.
+- **Fix:** `features/sessionRecovery/budget.ts` adds a 64 MiB per-project and
+  256 MiB total budget, size-aware pruning oldest first, and protection for the
+  newest autosave and newest checkpoint. The store prunes before writing, the
+  recovery center and diagnostics report the footprint, and a quota failure
+  names the file save and the recovery center.
 - **Related:** robustness §7.2, `docs/limitations.md`.
 
 ### F-009 — Lease instance identity is session-scoped and coarse
@@ -1055,21 +1056,99 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 7 — recovery center
 - **Severity:** P3
 - **Area:** session recovery / performance
-- **Status:** deferred
+- **Status:** fixed — 0.24.0 phase 8 ([#174](https://github.com/MajorJohnDoe/gridscalr/issues/174))
 - **Evidence:** `serializedBytes()` in
-  `src/features/sessionRecovery/centerModel.ts` runs
+  `src/features/sessionRecovery/centerModel.ts` ran
   `new TextEncoder().encode(record.serialized)` for every record each time the
-  center opens.
-- **Problem:** The store does not persist the serialized byte size, so the
-  dialog allocates a second copy of every snapshot string to measure it.
-- **Impact:** With a large project or a full retention window this can add a
-  visible pause when the center opens. It allocates memory proportional to the
-  stored recovery data.
-- **Next step:** Persist `serializedBytes` when a record is written, or read
-  only the record metadata for the list and compute size lazily. The byte budget
-  and pruning work in [#174](https://github.com/MajorJohnDoe/gridscalr/issues/174)
-  is the natural place.
+  center opened.
+- **Problem:** The store did not persist the serialized byte size, so the
+  dialog allocated a second copy of every snapshot string to measure it.
+- **Fix:** `RecoveryRecord.serializedBytes` is written with every new record
+  (including the legacy migration), and `serializedBytes()` in `budget.ts` reads
+  it. Only records written before the change are encoded once, when they are
+  listed or pruned.
 - **Related:** #173, #174, F-008.
+
+### F-057 — The recovery byte budget does not consult the browser quota estimate
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 8 — recovery byte budget
+- **Severity:** P3
+- **Area:** recovery storage
+- **Status:** deferred
+- **Evidence:** `RECOVERY_BUDGET` in `src/features/sessionRecovery/budget.ts` is a
+  fixed 64 MiB per project and 256 MiB total. Nothing calls
+  `navigator.storage.estimate()`.
+- **Problem:** An origin with a small quota, or one that already stores a large
+  amount of other site data, can hit the browser limit below 256 MiB.
+- **Impact:** Pruning still runs, the newest autosave and newest checkpoint are
+  kept, and the quota path reports the actionable message. A user cannot tell
+  from the center how much of the *browser* quota remains, only how much of the
+  GridScalr budget is used.
+- **Next step:** Read `navigator.storage.estimate()` when the store opens, cache
+  it, and lower the effective total budget to a fraction of the reported quota.
+  Show the effective figure in the recovery center instead of the fixed value.
+  Keep the fixed budget when the estimate is unavailable.
+- **Related:** #174, F-008.
+
+### F-058 — Pruning counts serialized snapshot bytes only
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 8 — recovery byte budget
+- **Severity:** P3
+- **Area:** recovery storage
+- **Status:** accepted
+- **Evidence:** `serializedBytes()` measures `record.serialized`, not the record
+  object with its id, project name, path, label and instance ID.
+- **Problem:** The reported total is slightly below the bytes IndexedDB actually
+  stores.
+- **Impact:** The metadata is a few hundred bytes per record and bounded by the
+  twelve-record count limit, so it cannot meaningfully change the budget
+  behaviour. Reporting the snapshot size keeps one number for the center, the
+  budget and diagnostics.
+- **Next step:** If a future store adds long metadata such as a host label or
+  note, include the JSON envelope overhead in the measurement.
+- **Related:** #174, F-055.
+
+### F-059 — The localStorage fallback cannot hold a large project
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 8 — recovery byte budget
+- **Severity:** P3
+- **Area:** recovery storage
+- **Status:** accepted
+- **Evidence:** `writeFallback()` in `recoveryStore.ts` serializes every record
+  into one `localStorage` key, and the browser quota for that storage is about
+  5 MB.
+- **Problem:** When IndexedDB is unavailable, a large project cannot be stored at
+  any reasonable budget.
+- **Impact:** The write fails with the quota message naming **File → Save** and
+  the recovery center, and the project stays open. Recovery is unavailable in
+  that environment rather than silently truncated.
+- **Next step:** None planned. IndexedDB is the supported store; the fallback is
+  a small-store convenience.
+- **Related:** #174, F-008.
+
+### F-060 — The localStorage fallback is budgeted separately from IndexedDB
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 8 — recovery byte budget
+- **Severity:** P3
+- **Area:** recovery storage
+- **Status:** accepted
+- **Evidence:** `writeRecord()` prunes the records it reads from IndexedDB and
+  `writeFallback()` prunes the records in the localStorage key. A successful
+  IndexedDB write does not re-import fallback records, so both stores can hold
+  records at the same time.
+- **Problem:** The reported total comes from the merged read, but each store is
+  pruned against its own contents. The merged footprint can therefore exceed the
+  total budget by the fallback's small contents.
+- **Impact:** The fallback only appears when IndexedDB is unavailable and is
+  capped at roughly 5 MB by the browser. The newest autosave and checkpoint are
+  still protected and the quota path stays actionable.
+- **Next step:** On the first successful IndexedDB write, merge fallback records
+  into IndexedDB, prune the merged set, and clear the fallback key.
+- **Related:** #174, F-009, F-059.
 
 ### F-056 — Recovery instances have no human-readable label
 
@@ -1110,7 +1189,7 @@ remains the scheduling home.
 | F-005 | deferred | Restoring a backup after a folder move is a portability improvement; **Save a copy…** and packages are the portable paths today. |
 | F-006 | accepted | Backups are a local convenience keyed by project ID, not a portable archive; that is documented in `docs/limitations.md`. |
 | F-007 | accepted | Read-only blocks disk writes while keeping inspection and export available; **Save a copy…** is the explicit output path. |
-| F-008 | deferred | A byte budget needs a quota and pruning design; count-based retention is documented and warns when storage fails. |
+| F-008 | fixed | 0.24.0 phase 8 added a 64 MiB per-project and 256 MiB total byte budget with size-aware pruning, kept the newest autosave and checkpoint, and reports recovery storage size in the center and diagnostics. |
 | F-009 | accepted | The lease is advisory by decision; the conditional write is the actual protection. |
 | F-010 | accepted | The metadata watcher is a banner optimisation; the conditional save still detects the hash change at write time. |
 | F-011 | deferred | Template fields remain document-owned by the Phase 3 decision; moving them into page state is a later schema change. |

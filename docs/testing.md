@@ -54,6 +54,23 @@ and app instance, newest-first ordering, UTF-8 serialized size, preferred and
 fallback selection, older/unknown/missing base-version labels, deletion of only
 the selected record from the local store, and the empty-state dialog.
 
+## Recovery byte budget
+
+`tests/recoveryBudget.test.ts` covers retention under a byte budget. It asserts
+the documented defaults are a multiple of the 8 MB reference snapshot, that a
+persisted `serializedBytes` is used (and corrupt metadata is re-measured), and
+that usage reports total and per-project bytes largest first. The pruning order
+is tested directly: count overflow oldest first, oldest-first byte pruning,
+checkpoints before an autosave at the same timestamp, cross-project pruning when
+the origin budget is exceeded, per-project isolation, the newest-autosave and
+newest-checkpoint guarantee, the record being written never being pruned, and a
+project that alone exceeds the budget keeping its two newest records. The store
+tests write large synthetic records through `writeRecord` with a small injected
+budget, prove the pruning happens before the write completes, and mock a quota
+failure on both `IDBObjectStore.put` and `localStorage.setItem` to prove the
+write rejects with an `AutosaveError` whose message names the file save and the
+recovery center.
+
 ## Robustness gate
 
 `npm run test:robustness` runs only `tests/robustness/`. The normal

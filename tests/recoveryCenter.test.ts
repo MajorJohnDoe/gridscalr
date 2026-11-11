@@ -195,6 +195,31 @@ describe("recovery center dialog", () => {
     await expect(result).resolves.toEqual({ action: "cancel", record: null });
   });
 
+  it("shows the recovery budget and each project's stored size", async () => {
+    const entries = [
+      entry({ id: "first", projectId: "p1", serialized: "abc" }),
+      entry({ id: "second", projectId: "p2", serialized: "ab" }),
+    ];
+    const result = showRecoveryCenter(entries);
+    await nextFrame();
+    const storage = document.querySelector(".recovery-storage");
+    expect(storage?.textContent).toContain(
+      t("recoveryCenter.storageUsage", {
+        used: "5 B",
+        budget: "256 MB",
+      }),
+    );
+    const sizes = [...document.querySelectorAll(".recovery-project-size")].map(
+      (node) => node.textContent,
+    );
+    expect(sizes).toEqual([
+      t("recoveryCenter.projectStored", { size: "3 B" }),
+      t("recoveryCenter.projectStored", { size: "2 B" }),
+    ]);
+    footerButton(t("common.close"))?.click();
+    await expect(result).resolves.toMatchObject({ action: "cancel" });
+  });
+
   it("returns only the selected record", async () => {
     const entries = [
       entry({ id: "first", savedAt: "2026-10-02T10:00:00.000Z" }),

@@ -1,4 +1,5 @@
 import { t } from "../../i18n";
+import { textBytes } from "./budget";
 import { appVersion } from "./instance";
 import {
   clearLegacy,
@@ -25,46 +26,6 @@ export interface CheckpointInput extends AutosaveInput {
   label: string;
 }
 
-const QUOTA_MESSAGE = t("autosave.quota");
-
-/** A recovery-snapshot failure the user has to act on. */
-export class AutosaveError extends Error {
-  readonly quotaExceeded: boolean;
-
-  constructor(message: string, quotaExceeded = false) {
-    super(message);
-    this.name = "AutosaveError";
-    this.quotaExceeded = quotaExceeded;
-  }
-}
-
-function isQuotaExceeded(error: unknown): boolean {
-  if (!(error instanceof Error)) return false;
-  const name = error.name;
-  const code = (error as { code?: unknown }).code;
-  return (
-    name === "QuotaExceededError" ||
-    name === "NS_ERROR_DOM_QUOTA_REACHED" ||
-    code === 22 ||
-    code === 1014 ||
-    /quota|storage is full|out of space/i.test(error.message)
-  );
-}
-
-/** Turns storage failures into a message that names the next action. */
-export function describeAutosaveFailure(primary: unknown, fallback?: unknown): AutosaveError {
-  if (isQuotaExceeded(primary) || isQuotaExceeded(fallback)) {
-    return new AutosaveError(QUOTA_MESSAGE, true);
-  }
-  const detail =
-    primary instanceof Error && primary.message
-      ? primary.message
-      : fallback instanceof Error && fallback.message
-        ? fallback.message
-        : "";
-  return new AutosaveError(detail ? t("autosave.failedDetail", { detail }) : t("autosave.failed"));
-}
-
 let pendingWrite: Promise<unknown> = Promise.resolve();
 
 function queue<T>(operation: () => Promise<T>): Promise<T> {
@@ -84,6 +45,7 @@ function autosaveRecord(input: AutosaveInput): RecoveryRecord {
     baseFileSha256: input.baseFileSha256,
     savedAt: input.savedAt,
     serialized: input.serialized,
+    serializedBytes: textBytes(input.serialized),
     appVersion: input.appVersion,
   };
 }
@@ -112,6 +74,7 @@ async function migrateLegacy(): Promise<void> {
   }
   const project = snapshot.project;
   const projectId = String(project.id ?? "legacy-project");
+  const serialized = JSON.stringify(project);
   await writeRecord({
     id: autosaveRecordId(projectId, "legacy"),
     kind: "autosave",
@@ -123,7 +86,8 @@ async function migrateLegacy(): Promise<void> {
     // only as an explicit recovery, always labelled as an unknown base version.
     baseFileSha256: null,
     savedAt: snapshot.savedAt,
-    serialized: JSON.stringify(project),
+    serialized,
+    serializedBytes: textBytes(serialized),
     appVersion: appVersion(),
   });
   await clearLegacy();

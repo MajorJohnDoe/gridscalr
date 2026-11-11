@@ -123,6 +123,21 @@
   overflow-wrap: anywhere;
 }
 
+.recovery-project-size {
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.recovery-storage {
+  margin: 0;
+  padding: 6px 10px;
+  border-left: 3px solid var(--accent);
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  font-size: 12px;
+}
+
 .recovery-instance-title {
   margin: 4px 0 0;
   font-size: 11px;

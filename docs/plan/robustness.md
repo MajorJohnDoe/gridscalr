@@ -257,7 +257,12 @@ Rules:
 - delete or mark the record after a successful save, depending on whether the
   recovery is still useful;
 - keep structural-operation checkpoints in the same store with a clear label,
-  for example “Before deleting page 12”.
+  for example “Before deleting page 12”;
+- keep the count limits inside an explicit byte budget (64 MiB per project and
+  256 MiB per origin), prune oldest first before a write that would exceed it,
+  never prune the newest autosave or the newest checkpoint of a project, and
+  report the total and per-project footprint in the recovery center and
+  diagnostics.
 
 ### 7.3 Open-elsewhere awareness
 

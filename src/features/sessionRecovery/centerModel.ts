@@ -40,11 +40,6 @@ export function baseVersionLabelKey(state: RecoverableEntry["state"]): MessageKe
   return BASE_VERSION_KEYS[state];
 }
 
-/** UTF-8 bytes of the stored snapshot, which is what the local store holds. */
-export function serializedBytes(record: Pick<RecoveryRecord, "serialized">): number {
-  return new TextEncoder().encode(record.serialized).byteLength;
-}
-
 function sortedEntries(entries: readonly RecoverableEntry[]): RecoverableEntry[] {
   const order = new Map(entries.map((entry, index) => [entry.record.id, index]));
   return [...entries].sort((left, right) => {

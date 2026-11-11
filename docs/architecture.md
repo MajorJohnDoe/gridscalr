@@ -47,7 +47,9 @@ src/
   features/saveIntegrity/ui.ts conflict, comparison and restore dialogs
   features/sessionRecovery/index.ts public surface for scoped autosave, leases and recovery
   features/sessionRecovery/autosave.ts recovery snapshot API, pruning and legacy migration
-  features/sessionRecovery/recoveryStore.ts IndexedDB records, localStorage fallback and legacy cleanup
+  features/sessionRecovery/budget.ts pure retention rules: byte budget, usage totals and prune order
+  features/sessionRecovery/failure.ts storage failure classification and the actionable quota message
+  features/sessionRecovery/recoveryStore.ts IndexedDB records, budget pruning before write, localStorage fallback and legacy cleanup
   features/sessionRecovery/recovery.ts base-version comparison and recoverable entry collection
   features/sessionRecovery/lease.ts pure lease model, stale boundary and classification
   features/sessionRecovery/leaseFiles.ts Rust lease command wrappers and ownership errors
