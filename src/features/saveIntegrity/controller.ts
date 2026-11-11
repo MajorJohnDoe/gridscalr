@@ -31,7 +31,6 @@ export interface SaveIntegrityPorts extends BackupPorts {
     expectedSha256: string | null,
     protectedPaths: readonly string[],
   ) => Promise<ProjectFileStamp>;
-  pathExists: (path: string) => Promise<boolean>;
   readText: (path: string) => Promise<string>;
   browserSave: (
     contents: string,

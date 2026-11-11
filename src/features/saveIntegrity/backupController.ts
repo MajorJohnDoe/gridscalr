@@ -9,12 +9,24 @@ import type { BackupEntry } from "./backup";
 import { sortBackupsNewestFirst } from "./backup";
 import { openBackupManager } from "./backupManagerUi";
 import { canReplaceOpenProject } from "./backupManagerModel";
+import { applyRestoreLinkPlan, applyRestoreRelink, planRestoreLinks } from "./restoreLinks";
+import { showRestoreLinkReport } from "./restoreUi";
+
+/** A drawing the user picked to replace an unresolvable link of a backup. */
+export interface LocatedDrawing {
+  path: string | null;
+  name: string;
+}
 
 /** Storage and host actions the backup manager needs. */
 export interface BackupPorts {
   desktop: boolean;
   /** Rolling backup retention from app preferences, applied on the next save. */
   backupRetention: () => number;
+  /** Read-only existence probe used to resolve a restored backup's links. */
+  pathExists: (path: string) => Promise<boolean>;
+  /** Asks for one replacement drawing after the restore report was accepted. */
+  locateDrawing: () => Promise<LocatedDrawing | null>;
   listBackups: (projectId: string) => Promise<BackupEntry[]>;
   saveBackup: (
     projectId: string,
@@ -103,9 +115,36 @@ async function restoreBackup(
     if (!confirmed) return false;
   }
   const restored = parseProject(await ports.readText(entry.path));
+  // A restored backup resolves relative links from the path recorded with the
+  // backup and then from the open project's folder, which is the moved project
+  // when the folder moved. Anything left unresolved is reported and located
+  // explicitly before the project loads; no source drawing is written.
+  const plan = await planRestoreLinks(
+    restored,
+    entry.projectPath,
+    store.projectPath,
+    ports.pathExists,
+  );
+  if (plan.unresolved.length) {
+    const decision = await showRestoreLinkReport(plan.unresolved, entry.projectPath);
+    if (decision !== "relink") {
+      ports.notify(t("saveIntegrity.restoreCancelled"), "info");
+      return false;
+    }
+    for (const item of plan.unresolved) {
+      const picked = await ports.locateDrawing();
+      if (!picked?.path) {
+        ports.notify(t("saveIntegrity.restoreCancelled"), "info");
+        return false;
+      }
+      const document = restored.documents.find((candidate) => candidate.id === item.documentId);
+      if (document) applyRestoreRelink(document, picked.path, picked.name);
+    }
+  }
+  applyRestoreLinkPlan(restored, plan);
   // Neither path writes a drawing or the project file. Replace binds the
   // backup to the open path so a later Save updates that file; restore-as-copy
-  // keeps the project unsaved. F-005 still governs relative drawing links.
+  // keeps the project unsaved.
   const targetPath = replace ? currentPath : null;
   const loaded = await ports.loadProjectData(restored, targetPath, true);
   if (loaded) {

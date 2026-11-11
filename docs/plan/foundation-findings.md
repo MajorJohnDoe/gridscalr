@@ -115,21 +115,25 @@ project contents.
 - **Phase:** 1 — safe save
 - **Severity:** P2
 - **Area:** backup / document loading
-- **Status:** deferred
-- **Evidence:** `restoreProjectBackup()` calls `loadProjectData(project, null,
-  true)`. With a null project path, `documentFlows.ts` cannot resolve
-  `relativePath`, so it relies on each document's stored absolute path.
-- **Problem:** A backup stays usable only while the original drawing paths still
-  exist. If the project folder and drawings moved together, a restored backup
-  asks the user to relink even though the backup's relative links were correct
-  for the original location.
-- **Impact:** Restore is reliable for local projects whose drawings stay in
-  place; it is weaker after a folder move or on another computer.
-- **Next step:** Separate the document-resolution base path from the project's
-  save path, so an unsaved copy can resolve relative links without becoming
-  bound to the original file.
+- **Status:** fixed
+- **Evidence:** `restoreProjectBackup()` called `loadProjectData(project, null,
+  true)`. With a null project path, `documentFlows.ts` could not resolve
+  `relativePath`, so it relied on each document's stored absolute path.
+- **Problem:** A backup stayed usable only while the original drawing paths
+  still existed. If the project folder and drawings moved together, a restored
+  backup asked the user to relink even though the backup's relative links were
+  correct for the original location.
+- **Resolution:** 0.24.0 phase 10 ([#176](https://github.com/MajorJohnDoe/gridscalr/issues/176))
+  adds the pure `planRestoreLinks()` model. A restored backup resolves each
+  relative link against the origin path recorded in the backup manifest and
+  then against the folder of the open project, so a moved project folder and a
+  backup written before the manifest both resolve. A document whose relative
+  link no longer resolves is reported before the load and must be located
+  explicitly; the stale absolute path is never substituted silently. A document
+  without a relative link still uses its stored absolute path, which is its
+  only reference.
 - **Related:** ADR [0010](../adr/0010-project-file-integrity.md), robustness
-  §7.2.
+  §7.2, F-063.
 
 ### F-006 — Backup history is keyed only by project ID
 
@@ -1213,19 +1217,75 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 9 — backup manager
 - **Severity:** P2
 - **Area:** backup / document loading
-- **Status:** deferred
-- **Evidence:** `restoreBackup()` passes `null` as the project path for
-  restore-as-copy, so `loadProjectData()` resolves relative drawing links only
-  from each document's stored absolute path. The manager now warns when the
+- **Status:** fixed
+- **Evidence:** `restoreBackup()` passed `null` as the project path for
+  restore-as-copy, so `loadProjectData()` resolved relative drawing links only
+  from each document's stored absolute path. The manager warned when the
   selected backup came from another path.
-- **Problem:** This is the user-visible half of F-005. The warning makes the
-  limitation explicit but does not resolve the link.
-- **Impact:** A backup remains reliable while the drawings stay at their
-  recorded paths. After a folder move the user is asked to relink, as before.
-- **Next step:** Phase 10, [#176](https://github.com/MajorJohnDoe/gridscalr/issues/176),
-  separates the document-resolution base path from the save path. Do not
-  half-fix it in this phase.
-- **Related:** #175, #176, F-005.
+- **Problem:** This was the user-visible half of F-005. The warning made the
+  limitation explicit but did not resolve the link.
+- **Resolution:** 0.24.0 phase 10 resolves the restored project before it is
+  loaded: the recorded origin first, the open project's folder second, and an
+  explicit locate step for anything left. Restore-as-copy still keeps the
+  project unsaved and writes neither a drawing nor a project file.
+- **Related:** #175, [#176](https://github.com/MajorJohnDoe/gridscalr/issues/176), F-005.
+
+### F-064 — A drawing located during restore is stored as an absolute reference
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 10 — backup restore links
+- **Severity:** P3
+- **Area:** backup / document loading
+- **Status:** accepted
+- **Evidence:** `applyRestoreRelink()` sets the picked path, clears
+  `relativePath` and stores the document as `reference`.
+- **Problem:** The new location's relative link is unknown while the restored
+  project is unsaved, so the relinked drawing cannot be made portable within
+  this restore. The same backup restored again needs the same drawing located
+  again.
+- **Impact:** The restored project works and can be saved; **Save as…** / **Save
+  a copy…** then recompute relative links from the chosen folder.
+- **Next step:** None planned. A folder-level picker would make a better
+  relative link available; see F-065.
+- **Related:** #176, F-005.
+
+### F-065 — Restore locates unresolved drawings one file at a time
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 10 — backup restore links
+- **Severity:** P3
+- **Area:** backup / document loading
+- **Status:** deferred
+- **Evidence:** `showRestoreLinkReport()` lists every unresolved drawing, and
+  the confirm loop then calls `locateDrawing()` once per document.
+- **Problem:** When a whole drawings folder moved to a known new location, the
+  user picks each drawing separately. There is no single "the drawings folder is
+  here now" action.
+- **Impact:** Correct but repetitive for a project with many drawings. Nothing
+  is guessed or scanned automatically.
+- **Next step:** Consider a folder picker that resolves the remaining relative
+  links against one chosen folder, with the same checksum verification.
+- **Related:** #176, F-064.
+
+### F-066 — A project still cannot open with a missing source drawing
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 10 — backup restore links
+- **Severity:** P3
+- **Area:** project loading / renderer
+- **Status:** accepted
+- **Evidence:** `loadProjectData()` requires a `PDFDocumentProxy` for every
+  external document and aborts when the picker is cancelled. The restore flow
+  therefore cancels the whole restore instead of opening a partial project.
+- **Problem:** Opening a project with a known-missing drawing would need a
+  placeholder document and a page-rendering path for it. That is a larger
+  renderer change than a restore fix.
+- **Impact:** Cancelling **Locate drawings…** leaves the open project unchanged,
+  which is safe but means no partial restore. The source-changed banner already
+  reports a missing source after a normal open.
+- **Next step:** None planned for 0.24.0. Revisit with the source-replacement
+  and placeholder work if partial opening is requested.
+- **Related:** #176, F-005.
 
 ## Triaged or deferred
 
@@ -1243,7 +1303,7 @@ remains the scheduling home.
 | F-001 | deferred | Moving default count types out of the feature module is a separate model refactor; the current direction is documented and not a data-integrity risk. |
 | F-002 | deferred | New Rust commands already live in separate modules; a Rust line-budget gate is tooling work for after the foundation freeze. |
 | F-003 | fixed | The unused `remapPageItems()` helper was removed in Phase 7; no production or test caller existed. |
-| F-005 | deferred | Restoring a backup after a folder move is a portability improvement; **Save a copy…** and packages are the portable paths today. |
+| F-005 | fixed | 0.24.0 phase 10 resolves a restored backup's relative drawing links from the recorded origin and then from the open project's folder, reports what cannot be resolved, and requires an explicit relink instead of a stale absolute path. |
 | F-006 | accepted | Backups are a local convenience keyed by project ID, not a portable archive; that is documented in `docs/limitations.md`. |
 | F-007 | accepted | Read-only blocks disk writes while keeping inspection and export available; **Save a copy…** is the explicit output path. |
 | F-008 | fixed | 0.24.0 phase 8 added a 64 MiB per-project and 256 MiB total byte budget with size-aware pruning, kept the newest autosave and checkpoint, and reports recovery storage size in the center and diagnostics. |

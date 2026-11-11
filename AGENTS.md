@@ -531,6 +531,8 @@ src/features/pageModel/    page insert/reorder/delete/duplicate, source replacem
 src/features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and delete
 src/features/saveIntegrity/backupManagerModel.ts pure backup selection and origin-warning rules
 src/features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog
+src/features/saveIntegrity/restoreLinks.ts pure resolution of a restored backup's relative drawing links
+src/features/saveIntegrity/restoreUi.ts unresolved-drawing report with the explicit locate action
 src/features/saveIntegrity/compare.ts read-only conflict comparison summary
 src/io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
 src/model/metadata.ts      optional report metadata and logo reference normalization
