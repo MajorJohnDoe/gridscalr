@@ -484,6 +484,327 @@ project contents.
   write guard.
 - **Related:** ADR [0002](../adr/0002-project-package.md), robustness §7.8.
 
+### 0.24.0 phase 1 — security audit (2026-11-11)
+
+Full evidence, impact and acceptance criteria are in
+[`docs/security-audit.md`](../security-audit.md). No P0 was found. These entries
+are `open` because the follow-up phases exist but their scope still has to be
+confirmed against the audit.
+
+#### F-028 — The shipped page has two CSP policies and keeps dev origins
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** CSP / webview
+- **Status:** open
+- **Evidence:** `index.html` has a meta CSP with `script-src 'self'` and
+  `connect-src ... ws://localhost:1420 http://localhost:1420`. Tauri adds a
+  different policy as an HTML response header from `src-tauri/tauri.conf.json`.
+  Both are enforced; the meta tag is never replaced.
+- **Problem:** The production build still allows the page to open an HTTP or
+  WebSocket connection to `localhost:1420`, and the two policies can drift. A
+  main-thread WebAssembly use would fail against the meta tag while passing
+  against the configured policy. `object-src`, `base-uri`, `frame-src` and
+  `form-action` are missing and `freezePrototype` is off.
+- **Impact:** A weaker-than-intended policy and a fragile configuration. No
+  current exploit and no current user-visible break, because the bundled
+  WebAssembly runs inside workers.
+- **Next step:** Make one policy authoritative, keep dev origins in `devCsp`,
+  add the missing directives and evaluate `freezePrototype`. Phase 2, #168.
+- **Related:** `docs/security-audit.md` §4, `index.html`,
+  `src-tauri/tauri.conf.json`.
+
+#### F-029 — Worker contexts are outside the configured CSP
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** CSP / worker
+- **Status:** open
+- **Evidence:** PDF.js and Tesseract are started as same-origin URL workers.
+  Tauri attaches the CSP header only to HTML assets, and Chromium does not apply
+  a page's meta CSP to a same-origin URL worker (verified with a worker that
+  compiled WebAssembly under `script-src 'self'`).
+- **Problem:** `script-src`, `connect-src` and `worker-src` do not constrain what
+  the PDF.js and Tesseract workers can load or fetch.
+- **Impact:** A compromised bundled worker could load or fetch an arbitrary
+  origin without a CSP violation. No malicious worker code exists today, so this
+  is containment rather than an active exploit.
+- **Next step:** Give worker responses a policy (header on all assets or a
+  `blob:` worker that inherits the document policy) and prove that OCR and
+  scanned PDFs still work. Phase 2, #168.
+- **Related:** `docs/security-audit.md` §4.3, `src/pdf/pdfRenderer.ts`,
+  `src/search/ocr.ts`.
+
+#### F-030 — `core:default` grants more than GridScalr uses
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** Tauri capabilities
+- **Status:** open
+- **Evidence:** `src-tauri/capabilities/default.json` grants `core:default`,
+  which expands to path, event, window, webview, app, image, resources, menu and
+  tray defaults. The frontend uses only `api/core`, `api/window`, `api/webview`
+  and `api/event`; it creates no native menu, tray or image and does not call
+  `close()`.
+- **Problem:** Every extra permission is reachable after a renderer compromise.
+  `core:image:allow-from-path` and the menu/tray/devtools commands are
+  unnecessary.
+- **Impact:** A larger blast radius than the app needs; it also weakens the
+  "capabilities are no broader than the app needs" 1.0 criterion.
+- **Next step:** Replace `core:default` with `core:event:default`, the six
+  explicit window permissions and `dialog:default`; drop `allow-close`. Phase 2,
+  #168.
+- **Related:** `docs/security-audit.md` §3.1.
+
+#### F-031 — The write guard ignores the original path of a managed copy
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** source storage / write guard
+- **Status:** open
+- **Evidence:** `sourceDocumentPaths()` adds `document.path` and the resolved
+  `relativePath` only. A managed document keeps its original drawing in
+  `DocumentRef.originalPath`, which is never protected.
+- **Problem:** The original behind a managed copy can be overwritten if the user
+  chooses it as a save or export target.
+- **Impact:** Source data loss through an alternate path, which is the failure
+  the guard exists to prevent.
+- **Next step:** Include every `originalPath` in `sourceDocumentPaths()` and
+  cover it in the write-guard and save tests. Phase 3, #169.
+- **Related:** `docs/security-audit.md` §5.1, ADR
+  [0012](../adr/0012-source-storage-modes.md).
+
+#### F-032 — No byte limit on project or file reads
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** project loading / IPC
+- **Status:** open
+- **Evidence:** `read_text`, `read_binary` and `file_size` read or hash the whole
+  file. `parseProjectWithReport()` calls `JSON.parse()` with no size check.
+  `source_find_by_hash()` hashes up to 4096 files with no total-byte budget.
+- **Problem:** An oversized or crafted project can exhaust WebView memory and
+  lose unsaved work; a multi-gigabyte source has the same effect.
+- **Impact:** Denial of service with a possible loss of unsaved edits.
+- **Next step:** Add a project-file limit before the read, a per-source read
+  limit and a total budget for the checksum search; document the limit. Phase 3,
+  #169.
+- **Related:** `docs/security-audit.md` §6.1.
+
+#### F-033 — Package extraction can write 16 GiB without disclosure
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** project package
+- **Status:** open
+- **Evidence:** `MAX_TOTAL_BYTES = 16 GiB` and `MAX_ENTRY_BYTES = 4 GiB` in
+  `src-tauri/src/package.rs`. `package_inspect` does not return the uncompressed
+  total and extraction does not check free space.
+- **Problem:** A malicious or corrupted package can fill the destination disk
+  before checksum verification or the final rename completes.
+- **Impact:** Disk exhaustion and a failed extraction; the temporary folder is
+  removed but the disk can already be full.
+- **Next step:** Show the uncompressed total in the open-package dialog, check
+  free space and decide whether 16 GiB is the right 1.0 cap. Phase 3, #169.
+- **Related:** `docs/security-audit.md` §6.2.
+
+#### F-034 — An untrusted project can reference any local path
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** project input / path resolution
+- **Status:** open
+- **Evidence:** `normalizeDocument()` accepts any absolute `path` and any
+  `relativePath`; `resolveRelativePath()` resolves `..`. The existing test
+  asserts that `../../drawings/a.pdf` resolves outside the project folder.
+- **Problem:** Opening a project from an untrusted source can make the app read,
+  hash and display any local PDF/TIF the user can access. It cannot write to the
+  file and cannot send it anywhere.
+- **Impact:** Local disclosure on screen and a mismatch with a naive reading of
+  the `SECURITY.md` path-traversal guarantee. Reference mode intentionally
+  allows drawings outside the project folder.
+- **Next step:** State the trust model in `SECURITY.md` and the user guide, and
+  add a project-doctor warning for references outside the project folder. Do not
+  confine paths. Phase 3, #169, plus a documentation note.
+- **Related:** `docs/security-audit.md` §5.5, `SECURITY.md`.
+
+#### F-035 — GitHub Actions are referenced by mutable tags
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P2
+- **Area:** release supply chain
+- **Status:** open
+- **Evidence:** The workflows use `actions/checkout@v7`,
+  `actions/upload-artifact@v7`, `Swatinem/rust-cache@v2`,
+  `dtolnay/rust-toolchain@stable` and other major tags.
+- **Problem:** A moved or compromised tag runs new code in the build that
+  produces the release artifacts. Tokens are read-only but the artifacts are the
+  target, and the builds are unsigned.
+- **Impact:** A tampered release is hard for a user to detect.
+- **Next step:** Pin every third-party action to a commit SHA with a version
+  comment and let Dependabot update the pins. Phase 4, #170.
+- **Related:** `docs/security-audit.md` §8.3.
+
+#### F-036 — Windows path guarantees are built but not tested on Windows
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** tests / filesystem
+- **Status:** open
+- **Evidence:** `cargo test --lib` runs only on Ubuntu. The Windows and macOS CI
+  jobs build and smoke-test but do not run the Rust unit tests; the symlink and
+  hard-link cases are `#[cfg(unix)]` or skipped by the filesystem.
+- **Problem:** Junctions, UNC spellings, verbatim prefixes, trailing dots or
+  spaces and alternate data streams are handled in the guard but never exercised
+  on Windows.
+- **Impact:** A regression in the source write guard could ship undetected.
+- **Next step:** Run the save and package Rust test modules on Windows and add
+  Windows-only junction and trailing-dot tests. Phase 3, #169.
+- **Related:** `docs/security-audit.md` §5.1.
+
+#### F-037 — Test-only IPC commands are shipped in release builds
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** Tauri commands
+- **Status:** open
+- **Evidence:** `smoke_test_dir` and `finish_smoke_test` are registered
+  unconditionally; `finish_smoke_test` calls `app.exit(code)`.
+- **Problem:** A renderer script can read a path string and exit the app, a
+  capability that exists only for CI.
+- **Impact:** Small; no data exposure.
+- **Next step:** Register the commands only when `--smoke-test` is supplied or
+  behind a debug build, while keeping the packaged smoke test working. Phase 2,
+  #168.
+- **Related:** `docs/security-audit.md` §3.2.
+
+#### F-038 — `style-src 'unsafe-inline'` is only needed by two declarations
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** CSP / UI markup
+- **Status:** open
+- **Evidence:** `index.html` has an inline `<style>` block for the boot fallback;
+  `src/ui/statusBar.ts` builds a `style="color:..."` attribute in an `innerHTML`
+  string.
+- **Problem:** The inline style block and the attribute force
+  `style-src 'unsafe-inline'`, although every other style change uses the CSSOM.
+- **Impact:** A weaker style policy and an avoidable HTML sink. The colour is
+  canonicalized, so there is no current injection.
+- **Next step:** Move the boot styles to an external CSS file, set the status-bar
+  colour through the CSSOM and drop `'unsafe-inline'`. Phase 2, #168.
+- **Related:** `docs/security-audit.md` §4.1 and §7.
+
+#### F-039 — Development-only npm advisory remains open
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** dependencies
+- **Status:** open
+- **Evidence:** `npm audit` reports 10 moderate, all from `minimatch 10.2.6`
+  (GHSA-g3hv-75wg-m249, Dependabot alert #4) through `eslint 10.14.0` and
+  `typescript-eslint 8.72.1`. `npm audit --omit=dev` reports 0.
+- **Problem:** A glob denial of service in developer tooling, not shipped.
+- **Impact:** None for users; a slow lint run on hostile glob input.
+- **Next step:** Update through the next eslint/typescript-eslint release or a
+  scoped override; otherwise accept it explicitly in the dependency gate. Phase
+  4, #170.
+- **Related:** `docs/security-audit.md` §8.1.
+
+#### F-040 — Rust audit: one accepted advisory and four unmaintained crates
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** dependencies
+- **Status:** open
+- **Evidence:** OSV over all 462 lockfile packages: `glib 0.18.5`
+  (GHSA-wrw7-89jp-8q8g, Dependabot alert #1) plus unmaintained
+  `proc-macro-error 1.0.4`, `zvariant 5.15.1`, `zbus_names 4.3.5` and
+  `zvariant_derive 5.15.1`.
+- **Problem:** The glib soundness bug is Linux-only and pinned by Tauri's GTK
+  0.18 generation; the unmaintained crates have no known vulnerability but will
+  receive no fixes.
+- **Impact:** Low; Windows artifacts are unaffected. The decision is already
+  tracked by #21.
+- **Next step:** Add `cargo audit` or `cargo deny` with a reviewed ignore list
+  and revisit at the next Tauri/GTK upgrade. Phase 4, #170.
+- **Related:** `docs/security-audit.md` §8.2, issue
+  [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
+
+#### F-041 — A crashed save leaves project data in a temporary sibling
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** save integrity / filesystem
+- **Status:** open
+- **Evidence:** `atomic_write()` and `write_conditional()` create
+  `.<name>.<pid>.<nanos>.<counter>.tmp` beside the target. The failure test
+  asserts that the flushed temporary file remains after a replace failure.
+- **Problem:** A crash between flush and rename leaves a full project copy beside
+  the project, including in a cloud-synced folder, and it is never cleaned up.
+- **Impact:** Data can be synced or seen by another person; disk usage grows.
+- **Next step:** Remove stale temporary siblings for the same target on open or
+  the next save, using PID plus age so a live process is never disturbed. Phase
+  3, #169.
+- **Related:** `docs/security-audit.md` §5.2.
+
+#### F-042 — IPC error details expose absolute paths
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit
+- **Severity:** P3
+- **Area:** diagnostics / error reporting
+- **Status:** open
+- **Evidence:** `CommandError.detail` and `WriteError.detail` embed the full path
+  and OS error; `src/io/platformError.ts` shows the detail as a technical line
+  that can be copied.
+- **Problem:** A screenshot or copied error can reveal a customer folder or
+  drawing name.
+- **Impact:** Local disclosure only; diagnostics already sanitizes paths.
+- **Next step:** Offer a sanitized copy action or sanitize the path in the
+  dialog while keeping the on-screen detail. Phase 2, #168, or a small
+  follow-up.
+- **Related:** `docs/security-audit.md` §7.
+
+### F-043 — PDF export embeds a wall-clock time, so byte-identical output is not guaranteed
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 1 — security audit (found during the CI run)
+- **Severity:** P3
+- **Area:** PDF export / tests
+- **Status:** open
+- **Evidence:** `src/pdf/pdfExport.ts` calls `PDFDocument.create()` with the
+  pdf-lib default `updateMetadata: true`. pdf-lib writes
+  `/ModificationDate (D:YYYYMMDDHHmmSSZ)` with second precision. The
+  `pdfExport` test "leaves the flattened PDF unchanged when the option is off"
+  exports the same project twice and compares the bytes; when the two exports
+  straddle a second boundary the bytes differ. The 0.24.0 phase 1 PR failed
+  once on exactly this assertion and passed on a local re-run.
+- **Problem:** The exported content is deterministic but the file bytes are not,
+  because the metadata time changes. The test is therefore flaky, and any
+  byte-for-byte reproducibility claim for exports is imprecise.
+- **Impact:** Test reliability only. The visual and measurement content is
+  unchanged, and no security property depends on the timestamp.
+- **Next step:** Either create the PDF with `updateMetadata: false` and set a
+  project-derived timestamp, or compare the exports after normalising the
+  metadata date. Choose one and cover it with a deterministic test. Phase 5
+  (#171) is a reasonable home because it owns determinism and fuzz gates.
+- **Related:** `docs/security-audit.md` §13, `tests/pdfExport.test.ts`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
