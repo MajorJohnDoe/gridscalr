@@ -724,7 +724,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** dependencies
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `npm audit` reports 10 moderate, all from `minimatch 10.2.6`
   (GHSA-g3hv-75wg-m249, Dependabot alert #4) through `eslint 10.14.0` and
   `typescript-eslint 8.72.1`. `npm audit --omit=dev` reports 0.
@@ -733,6 +733,9 @@ confirmed against the audit.
 - **Next step:** Update through the next eslint/typescript-eslint release or a
   scoped override; otherwise accept it explicitly in the dependency gate. Phase
   4, #170.
+- **Resolution:** A scoped `overrides` entry pins `minimatch` to `^11.0.1` and
+  `npm audit` is clean. The override sits outside ESLint's declared range, which
+  is recorded as the accepted F-048.
 - **Related:** `docs/security-audit.md` §8.1.
 
 #### F-040 — Rust audit: one accepted advisory and four unmaintained crates
@@ -741,7 +744,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** dependencies
-- **Status:** open
+- **Status:** accepted
 - **Evidence:** OSV over all 462 lockfile packages: `glib 0.18.5`
   (GHSA-wrw7-89jp-8q8g, Dependabot alert #1) plus unmaintained
   `proc-macro-error 1.0.4`, `zvariant 5.15.1`, `zbus_names 4.3.5` and
@@ -753,6 +756,10 @@ confirmed against the audit.
   tracked by #21.
 - **Next step:** Add `cargo audit` or `cargo deny` with a reviewed ignore list
   and revisit at the next Tauri/GTK upgrade. Phase 4, #170.
+- **Resolution:** `security/dependency-allowlist.json` accepts the glib advisory
+  and the four unmaintained crates with a written reason and a 2027-02-11 review
+  date; `npm run check:dependencies` fails on an expired or stale entry. glib
+  stays tracked by [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 - **Related:** `docs/security-audit.md` §8.2, issue
   [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
@@ -762,7 +769,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** save integrity / filesystem
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `atomic_write()` and `write_conditional()` create
   `.<name>.<pid>.<nanos>.<counter>.tmp` beside the target. The failure test
   asserts that the flushed temporary file remains after a replace failure.
@@ -772,6 +779,9 @@ confirmed against the audit.
 - **Next step:** Remove stale temporary siblings for the same target on open or
   the next save, using PID plus age so a live process is never disturbed. Phase
   3, #169.
+- **Resolution:** The shared path guard removes generated temporary siblings on
+  the next save when they are older than ten minutes and do not carry the
+  running process's id.
 - **Related:** `docs/security-audit.md` §5.2.
 
 #### F-042 — IPC error details expose absolute paths

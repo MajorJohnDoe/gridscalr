@@ -8,7 +8,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Frontend: TypeScript, HTML5 Canvas, PDF.js, Vite. No UI framework.
 - Desktop shell: Rust/Tauri 2.
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
-- Current app version: `0.23.0`.
+- Current app version: `0.24.0`.
 - Latest public release: `v0.23.0` (2026-11-11).
 - Current project-file schema: `25`.
 - 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
@@ -415,6 +415,8 @@ src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and pa
 src/features/projectIntegrity/ui.ts localized doctor, issue list and repair controls
 src/features/conflictedCopies/ strict discovery naming, delete guards, manager flow and dialog for conflicted copies
 src/features/statusOverview/ pure project-status model, one-read controller and the status popover
+src/features/viewOnly/ inspection-tool rule and the panel guard for a true view-only session
+src/features/sessionRecovery/ scoped autosave, byte-budgeted recovery store, recovery center, lease takeover and external-change watcher
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
 src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols

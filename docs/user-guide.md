@@ -40,7 +40,7 @@ On a touch screen or laptop touchpad, use **two fingers** to pan and pinch to zo
 
 **View → Reference view (same page)** (`Ctrl/Cmd+Shift+2`) opens a second, read-only canvas beside the main one. Its toolbar selects the source:
 
-- **Same page** mirrors the current page by default. Both panes stay synchronized when you pan, zoom or change pages. The bar shows a short hint explaining that this is not a second drawing.
+- **Same page** mirrors the current page by default. Pan and zoom stay synchronized, and the reference follows the primary page until you choose another page in the reference bar. The bar shows a short hint explaining that this is not a second drawing.
 - **Revision** compares a saved `.gridscalr` project. Choose **File → Compare with revision…**, use **Open…** in the pane, or select **Revision** and pick the file.
 - **Drawing** compares a raw PDF drawing. Choose **File → Compare with drawing…**, use **Open…**, or select **Drawing** and pick the PDF.
 
@@ -217,7 +217,7 @@ The pages are appended after the existing pages by default. Existing page number
 
 The preview shows the sheet background, like the Pages panel; markups are not composited into the thumbnail. Use the page name and item count to identify the right card.
 
-To replace a sheet that was edited in the wrong project, import the corrected sheet first and then delete the old page. Later pages move down one number, so the corrected sheet lands in the old position. Deleting a page is still a separate structural step and cannot be undone.
+To replace a sheet that was edited in the wrong project, import the corrected sheet first and then delete the old page. The later pages keep their stable IDs and their measurements, so the corrected sheet takes the old position and the displayed numbers after it move down by one. Deleting a page is still a separate structural step and cannot be undone.
 
 ### Project integrity and the project doctor
 
@@ -258,13 +258,12 @@ If you imported the wrong drawing, delete the page from the **Pages** tab:
 Deleting a page:
 
 - Removes all measurements, highlights, images, and page scale stored on that page.
-- Moves measurements and page state on later pages down one page number.
-- Keeps every earlier page on its existing number.
+- Keeps every other page's stable ID, measurements and page state. Only the displayed page numbers after it move down by one.
 - Deletes the source document reference when its last remaining page is removed. The original PDF or TIF file on disk is never modified.
 - Cannot be undone.
 - Leaves empty page-scoped layers behind. Remove them from the Layers panel if they are no longer needed.
 
-A project must keep at least one page. New drawings are still always added at the end.
+A project may have zero pages. An empty project is valid, and you can open a drawing or add a sheet or blank page at any time.
 
 ## Set the page scale
 
@@ -705,6 +704,8 @@ The status bar shows whether the project is **Saved**, has **Unsaved changes**, 
 
 Click the saved/unsaved chip to open the project status popover. It shows the time of the last save, the time of the last automatic backup, the autosave state and interval, how many validation warnings are pending, and whether a recovery record is available. It also shows the number of conflicted copies beside the project when there is at least one. The popover is a summary, not a history log, and it never writes anything by itself. It offers **Backup now**, **Review recovery…**, **Open project doctor…** and **Manage conflicted copies…**, and while autosave is on it also offers **Pause autosave for this session** or **Resume autosave**. An action that cannot run in the current state, such as **Backup now** in the browser fallback or **Review recovery…** with no stored record, is disabled with the reason in its tooltip. The popover reads the current store, the autosave preference, the recovery summary and the validation result when it opens; it does not poll the disk or refresh on a timer. The separate source-status chip is unchanged.
 
+![Project status popover with the last save, last backup, autosave state, pending validation warnings and the recovery record](screenshots/status-popover.png)
+
 Autosave keeps recovery snapshots in a local IndexedDB database (with a localStorage fallback only when IndexedDB is unavailable). Each snapshot is scoped to one project and one app instance, so two open projects cannot overwrite each other's recovery. Recovery storage has a byte budget of **64 MiB per project and 256 MiB for all projects on this computer**, in addition to the two-autosave and ten-checkpoint count limits. The newest autosave and the newest checkpoint of every project are always kept; older records are pruned oldest first when a write would exceed the budget. A project whose snapshot alone is larger than 64 MiB keeps those two newest records and no others. A full or unavailable store shows a persistent **Recovery storage full** or **Autosave failing** chip in the status bar; clicking it opens the recovery center so old records can be deleted. Save the project to a file first, then free space; autosave resumes after the next change.
 
 Autosave is on by default. It writes at most one recovery snapshot every 15 seconds after a change. Open **Settings → Preferences… → Data** to turn it off, to choose a 30- or 60-second interval, or to **Pause for this session**. The project status popover in the status bar offers the same **Pause autosave for this session** and **Resume autosave** actions without opening Preferences. A pause lasts until you close and reopen GridScalr. Turning autosave off or pausing stops periodic snapshots immediately; it never saves the project file. Structural checkpoints are still written before page, source and import operations, and the unsaved-changes prompt still protects work whenever you close or replace a project. A longer interval writes less often, so more of your most recent work is at risk if the app crashes.
@@ -723,6 +724,8 @@ Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Al
 - GridScalr keeps the newest autosave and the newest checkpoint for every project and prunes the oldest records first, so the 64 MiB per-project and 256 MiB total budgets hold even for very large projects. Deleting records from the center frees space immediately and needs no other cleanup.
 - When no records are stored, the center explains the difference between an autosave and a checkpoint and does not offer a restore action.
 
+![Recovery center listing autosaves and checkpoints with their time, size and base-version state](screenshots/recovery-center.png)
+
 Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Up to ten checkpoints per project are kept, and the byte budget above applies to them together with the autosaves.
 
 In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
@@ -735,7 +738,7 @@ In the desktop app, opening a project also checks for a sidecar lock file named 
 
 A view-only session is a true inspection mode. The banner and the status bar say **View-only**, and no command changes the project:
 
-- Pan, zoom, page navigation, search, the reference pane and selecting an item to read its Properties keep working.
+- Pan, zoom, page navigation, search, the reference pane and selecting an item to read its Properties keep working. Search still reads the PDF text layer and any OCR text already stored in the project; running OCR again is disabled because it would store a page index in the project.
 - Export, package and **File → Save a copy…** keep working. A normal Save and Save As are refused.
 - Drawing and measurement tools, inline editors, drag, resize, rotate, vertex edits, bulk edits, item commands, layer and category changes, page changes, property fields, delete and paste are disabled. Their menu entries, context menus and shortcuts are disabled or ignored too.
 - **Take over to edit** in the banner re-checks the project lock before enabling editing. If another live window still owns the project, the session stays view-only and explains why. A stale, corrupt or missing lock is replaced and editing starts immediately.
@@ -800,7 +803,11 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Workspace** – expand both panels or reset the panel widths, collapsed state and tool-rail layout. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
-- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Open recovery center…** opens the recovery center, where one selected record can be restored or deleted and the storage total and per-project size are shown. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+- **Data** – autosave, rolling backups, recovery snapshots and the recent-file list.
+  **Autosave recovery** turns snapshots on or off, sets the **Write at most every** interval to 15, 30 or 60 seconds, and offers **Pause for this session**. The current state is explained below the controls. **Rolling backups** sets **Backups kept per project** from 2 to 10 (default 3); the new limit applies on the next successful save, and **Open backup manager…** opens the manager for the open project.
+  **Open recovery center…** lists every stored autosave and structural checkpoint, where one selected record can be restored or deleted and the storage total and per-project size are shown. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+
+![Preferences dialog on the Data category with autosave controls, rolling backup retention and the recovery center action](screenshots/preferences-data.png)
 
 ### Project settings
 

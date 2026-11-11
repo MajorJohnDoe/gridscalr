@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.23.0** · Project-file schema: **25**
+Current version: **0.24.0** · Project-file schema: **25**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -76,6 +76,7 @@ These are not negotiable without an explicit decision:
 | 0.22.4 | Windows touchpad pinch-to-zoom | Complete | v23 |
 | Import pages | Import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo | Complete | v23 |
 | 0.23.0 | Foundation: conditional saves and backups, scoped recovery and leases, stable page IDs (schema 24), managed source copies (schema 25), integrity doctor, OCG/annotation export and robustness gates | Complete | v25 |
+| 0.24.0 | File safety completed: security audit and CSP/capability hardening, path and package limits, dependency advisory gate, adversarial corpus, autosave preference, recovery center and byte budget, backup manager with relative-link restore, true view-only, status popover and conflicted-copy management | Complete | v25 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
@@ -287,7 +288,7 @@ full list.
 
 | Decision | Current position |
 | --- | --- |
-| Concurrent project edits | Complete in 0.23.0: conditional writes, conflicted copies, scoped recovery, advisory leases and read-only open. See [ADR 0010](adr/0010-project-file-integrity.md). |
+| Concurrent project edits | Complete in 0.24.0: conditional writes, conflicted-copy management, autosave preference, recovery center and byte budget, backup manager, advisory leases, true view-only with explicit takeover and the project status popover. See [ADR 0010](adr/0010-project-file-integrity.md). |
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |

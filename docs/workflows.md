@@ -147,7 +147,7 @@ For fire-safety rounds, ventilation surveys or equipment inventories, place buil
 
 ![Docked Markups list with a saved view, configurable columns, building/floor/room groups, filters and row actions](screenshots/markups-list.png)
 
-Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or its checksum changes while the project is open; click the saved/unsaved chip for the last save and automatic backup times, the autosave interval, pending validation warnings and the recovery summary, with **Backup now**, **Review recovery…**, **Open project doctor…** and the session pause action. **Project settings → Project → Project size and sources** lists the same source status and the source mode before you export.
+Save the `.gridscalr` project next to the drawing set. If the project or drawings are moved together, GridScalr follows the stored relative paths. If a source PDF has moved, it asks you to locate it and verifies the checksum before continuing. The status bar shows saved/unsaved state and warns if a source drawing disappears or its checksum changes while the project is open; click the saved/unsaved chip for the last save and automatic backup times, the autosave interval, pending validation warnings, the recovery summary and the conflicted-copy count, with **Backup now**, **Review recovery…**, **Open project doctor…**, **Manage conflicted copies…** and the session pause action. **Project settings → Project → Project size and sources** lists the same source status and the source mode before you export.
 
 ### 8. Save safely across computers
 
@@ -165,7 +165,9 @@ If the project file changes outside the app while it is open, a non-blocking ban
 
 GridScalr also keeps scoped recovery snapshots, one per project and app instance, plus labelled checkpoints before page deletion, duplication, page import and paper changes. Open **Recovery center** on the welcome screen or **Settings → Preferences… → Data → Open recovery center…** to see every record grouped by project and instance, with its save time, size and base-version state. A snapshot labelled **based on an older file version** was taken from a different disk version; it opens only after a second confirmation. Use that path after a crash instead of copying a cloud file over a newer one.
 
-Up to three automatic rolling backups per project are kept in the local app data folder and rotate on successful saves. **File → Back up now…** writes one immediately; **File → Restore backup…** opens a stored backup as an unsaved copy. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Share project package…** when the backup must travel.
+GridScalr keeps between 2 and 10 rolling backups per project in the local app data folder (default 3, set in **Preferences → Data**); the limit applies from the next successful save. **File → Back up now…** writes one immediately. **File → Backup manager…** lists them with time, size and origin path: **Restore as copy** opens a backup as unsaved work, **Replace open project** binds it to the current path after a second confirmation and writes nothing until you save, and **Delete selected** / **Delete all** remove only the app-data copies. Backups are local to this computer and are never added to recent files or packages. Use **File → Save a copy…** or **Share project package…** when the backup must travel.
+
+**File → Conflicted copies…** lists the copies written beside the project by **Save as conflicted copy**. **Open as project** loads one without touching the original, **Compare with open project** shows the read-only revision difference, and **Delete selected** removes one file after confirmation. The same manager is reachable from the project status popover.
 
 Saving with no unsaved changes does not rewrite the file. In the browser fallback, Save downloads a file instead and cannot check the disk version.
 
@@ -202,7 +204,7 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 3. Choose **File → Import pages from project…** and pick the other file.
 4. In the picker, select the corrected sheet. Check its page name and item count, then import it.
 5. Review the **Import preflight** counts, unreadable files and checksum warnings before choosing **Import pages**. Cancel leaves both projects untouched.
-6. If the old, incorrect version is still in the project, delete that page from the Pages tab. Later pages move down one number, so the corrected sheet takes its place.
+6. If the old, incorrect version is still in the project, delete that page from the Pages tab. The other pages keep their stable IDs and measurements, so the corrected sheet takes the old position and the later displayed numbers move down by one.
 7. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
 8. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
 
