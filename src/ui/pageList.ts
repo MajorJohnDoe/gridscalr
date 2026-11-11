@@ -2,6 +2,14 @@ import { pageBuilding, pageDisplayName, pageFloor, pageLocationLabel } from "../
 import type { PageId, PageSize, Project } from "../model/types";
 import { store } from "../state/store";
 import { isBlankSheet, templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import {
+  documentRunHeader,
+  documentSegments,
+  pageReorder,
+  PAGE_REORDER_HINT_ID,
+  PAGE_REORDER_KEYSHORTCUTS,
+  pageReorderHint,
+} from "../features/pageReorder";
 import { el } from "./dom";
 import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
@@ -16,7 +24,6 @@ interface PendingThumbnail {
 }
 
 let thumbnailObserver: IntersectionObserver | null = null;
-let draggedPageId: PageId | null = null;
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -163,6 +170,7 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
 }
 
 function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
+  pageReorder.detach();
   const empty = el("div", "page-list page-list-empty");
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
@@ -188,16 +196,30 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   const list = el("div", "page-list");
   const total = project.pages.length;
   const max = Math.min(total, 400);
+  const runs = new Map<number, { documentId: string | null; count: number }>();
+  if (project.documents.length > 1) {
+    for (const segment of documentSegments(project.pages)) runs.set(segment.start, segment);
+  }
   const pendingThumbnails = new Map<Element, PendingThumbnail>();
   for (let page = 1; page <= max; page++) {
     const record = project.pages[page - 1];
     const pageId = record.id;
+    const run = runs.get(page - 1);
+    if (run) {
+      const document = project.documents.find((entry) => entry.id === run.documentId);
+      list.append(documentRunHeader(document?.name ?? "", run.count));
+    }
     const card = el("button", "page-card");
     card.type = "button";
     card.draggable = !store.readOnly;
     card.dataset.page = String(page);
     card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
+    if (!store.readOnly) {
+      card.setAttribute("aria-keyshortcuts", PAGE_REORDER_KEYSHORTCUTS);
+      card.setAttribute("aria-describedby", PAGE_REORDER_HINT_ID);
+    }
+    pageReorder.decorateCard(card, pageId);
     const thumb = el("div", "page-thumb");
     const size = actions.getPageSize(page);
     applyThumbShape(thumb, size);
@@ -274,38 +296,12 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
           : "",
       }),
     );
-    card.addEventListener("click", () => actions.goToPage(page, true));
-    card.addEventListener("dragstart", (event) => {
-      if (store.readOnly) {
-        event.preventDefault();
-        return;
-      }
-      draggedPageId = pageId;
-      card.classList.add("is-dragging");
-      event.dataTransfer?.setData("text/plain", pageId);
-      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
+    card.addEventListener("click", (event) => {
+      if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
-    card.addEventListener("dragend", () => {
-      draggedPageId = null;
-      for (const entry of list.querySelectorAll(".page-card")) {
-        entry.classList.remove("is-dragging", "is-drop-target");
-      }
-    });
-    card.addEventListener("dragover", (event) => {
-      if (!draggedPageId || draggedPageId === pageId) return;
-      event.preventDefault();
-      card.classList.add("is-drop-target");
-    });
-    card.addEventListener("dragleave", () => card.classList.remove("is-drop-target"));
-    card.addEventListener("drop", (event) => {
-      event.preventDefault();
-      card.classList.remove("is-drop-target");
-      if (store.readOnly) return;
-      const source = draggedPageId ?? event.dataTransfer?.getData("text/plain") ?? null;
-      draggedPageId = null;
-      if (!source || source === pageId) return;
-      actions.reorderPage(source, page - 1);
-    });
+    card.addEventListener("dragstart", (event) => pageReorder.handleDragStart(event, pageId, card));
+    card.addEventListener("dragend", () => pageReorder.handleDragEnd());
+    card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
     card.addEventListener("contextmenu", (event) => {
       event.preventDefault();
       const goToItem = {
@@ -445,7 +441,14 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       },
     ]);
   });
+  pageReorder.setActions({
+    reorder: (pageIds, insertionIndex) => actions.reorderPages(pageIds, insertionIndex),
+    goToPage: (page) => actions.goToPage(page, true),
+  });
+  list.append(pageReorderHint());
   refs.dockBody.append(list);
+  pageReorder.bindList(list, refs.dockBody);
+  pageReorder.afterRender();
   if (total > max) {
     const note = el("div", "empty-note small", t("page.showingFirst", { shown: max, total }));
     refs.dockBody.append(note);

@@ -54,6 +54,21 @@ In a **View-only** session, shortcuts that would change the project are ignored:
 | Lock / unlock selection | Context menu or Properties |
 | Hide / show selection | Context menu or Properties |
 
+## Pages panel
+
+| Action | Shortcut |
+| --- | --- |
+| Select one page | Click, or `Shift` + click for a range |
+| Add or remove a page from the selection | `Ctrl` / `Cmd` + click |
+| Move the selected pages up / down | `Alt+Up` / `Alt+Down` |
+| Move the selected pages to the start / end | `Alt+Home` / `Alt+End` |
+| Move the selected pages with the mouse | Drag a selected card to the drop line |
+| Rename a page | Double-click the page title |
+
+Dragging a card that is part of a multi-page selection moves the whole
+selection. A drop that crosses into another source document shows the document
+name on the drop line. Every drop writes one recovery checkpoint.
+
 ## View and navigation
 
 | Action | Shortcut |

@@ -1,6 +1,12 @@
 import { makeId } from "../../model/calibration";
 import { createLayer, normalizeLayerOrder } from "../../model/layers";
-import { pageIndex, pageNumber, pageRecordById } from "../../model/pages";
+import {
+  pageIndex,
+  pageListAfterMove,
+  pageListOrderChanges,
+  pageNumber,
+  pageRecordById,
+} from "../../model/pages";
 import type {
   Layer,
   LayerKind,
@@ -125,6 +131,23 @@ export function movePage(project: Project, pageId: PageId, targetIndex: number):
 
 export function movePageBy(project: Project, pageId: PageId, delta: number): boolean {
   return movePage(project, pageId, pageIndex(project, pageId) + delta);
+}
+
+/**
+ * Moves every selected page as one block to `insertionIndex`, an index in the
+ * current list. Relative order inside the block is kept and every `PageId`,
+ * item and layer page state stays attached to its page.
+ */
+export function movePages(
+  project: Project,
+  pageIds: readonly PageId[],
+  insertionIndex: number,
+): boolean {
+  const selected = new Set(pageIds);
+  if (!pageListOrderChanges(project.pages, selected, insertionIndex)) return false;
+  project.pages = pageListAfterMove(project.pages, selected, insertionIndex);
+  project.updatedAt = new Date().toISOString();
+  return true;
 }
 
 function layerHasPageReference(layer: Layer): boolean {

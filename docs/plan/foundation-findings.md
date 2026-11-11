@@ -1594,3 +1594,28 @@ No entries yet.
   platform. The smoke harness stays in `ci.yml`, where the debug build supports
   it, and the release notes list the artifacts rather than a GUI run.
 - **Related:** F-037, phase 2, `docs/releasing.md`.
+
+### F-075 — The Pages panel stops rendering at 400 cards
+
+- **Date:** 2026-11-11
+- **Phase:** 0.25.0 phase 1 — page drag-and-drop
+- **Severity:** P3
+- **Area:** pages panel
+- **Status:** accepted — next step is a decoupled list, not a larger cap
+- **Evidence:** `renderPages()` in `src/ui/pageList.ts` computes
+  `const max = Math.min(total, 400)` and renders a note "Showing the first
+  {shown} of {total} pages" past that limit. Every page card, and therefore every
+  drag, keyboard reorder and multi-page selection, only exists for the rendered
+  pages.
+- **Problem:** A project with more than 400 pages can select, drag and keyboard
+  reorder only the first 400. Pages past the cap keep their IDs and data but are
+  unreachable from the panel, and a selection cannot span the cap.
+- **Impact:** No data loss: the model already handles arbitrary page counts and
+  reorder is pure array ordering by `PageId`. The gap is discoverability and
+  reach for unusually large projects, and it is unchanged by the 0.25.0 reorder
+  polish because the cap predates it.
+- **Next step:** Virtualise the page list, or add a jump-to-page control that
+  extends the rendered window around the target. Triage with the page status and
+  filter work in #185 and the context-menu work in #186 rather than raising the
+  fixed cap.
+- **Related:** robustness §7.4, ADR 0011, #185, #186.

@@ -257,6 +257,38 @@ export function documentPageOrder(project: PageListProject): DocumentPageOrderEn
   }));
 }
 
+/**
+ * Page order after every selected page is moved as one contiguous block.
+ * `insertionIndex` is a 0-based index in the current list: the block is placed
+ * before the record that currently sits at that index. The input is never
+ * mutated, so callers can compare before committing a structural change.
+ */
+export function pageListAfterMove<T extends { id: PageId }>(
+  pages: readonly T[],
+  selectedIds: ReadonlySet<PageId>,
+  insertionIndex: number,
+): T[] {
+  if (!selectedIds.size) return [...pages];
+  const selected = pages.filter((page) => selectedIds.has(page.id));
+  if (!selected.length) return [...pages];
+  const remaining = pages.filter((page) => !selectedIds.has(page.id));
+  const clamped = Math.max(0, Math.min(pages.length, Math.round(insertionIndex)));
+  const selectedBefore = pages.slice(0, clamped).filter((page) => selectedIds.has(page.id)).length;
+  const insertAt = Math.max(0, Math.min(remaining.length, clamped - selectedBefore));
+  return [...remaining.slice(0, insertAt), ...selected, ...remaining.slice(insertAt)];
+}
+
+/** True when the insertion would change the visible page order. */
+export function pageListOrderChanges<T extends { id: PageId }>(
+  pages: readonly T[],
+  selectedIds: ReadonlySet<PageId>,
+  insertionIndex: number,
+): boolean {
+  if (!selectedIds.size) return false;
+  const next = pageListAfterMove(pages, selectedIds, insertionIndex);
+  return next.some((page, index) => page.id !== pages[index]?.id);
+}
+
 /** Settings shape guard used by the empty-project flow. */
 export function hasPages(project: PageListProject | null | undefined): boolean {
   return Boolean(project && project.pages.length > 0);

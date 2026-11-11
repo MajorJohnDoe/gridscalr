@@ -37,6 +37,7 @@ import {
   createEmptyProject,
   insertProjectPage,
   reorderProjectPage,
+  reorderProjectPages,
   type PageActionHost,
 } from "../features/pageModel";
 import { RendererDocumentRegistry } from "./rendererDocuments";
@@ -248,6 +249,8 @@ export class App {
       duplicatePage: (pageId) => void duplicatePageFlow(this.pageFlowHost(), pageId),
       reorderPage: (pageId, targetIndex) =>
         void reorderProjectPage(this.pageActionHost(), pageId, targetIndex),
+      reorderPages: (pageIds, insertionIndex) =>
+        void reorderProjectPages(this.pageActionHost(), pageIds, insertionIndex),
       insertPage: (pageId, index) => void insertProjectPage(this.pageActionHost(), pageId, index),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
       consolidateDrawings: () => void this.sourceStorage.consolidate(),

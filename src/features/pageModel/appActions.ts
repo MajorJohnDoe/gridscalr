@@ -1,6 +1,6 @@
 import { t } from "../../i18n";
 import { createProject } from "../../model/layers";
-import { pageNumber } from "../../model/pages";
+import { pageListOrderChanges, pageNumber } from "../../model/pages";
 import type { PageId, PageSize, Project } from "../../model/types";
 import type { PdfRenderer } from "../../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../../pdf/thumbnails";
@@ -45,6 +45,28 @@ export async function reorderPage(
     t("sessionRecovery.checkpoint.reorderPage", { page: pageNumber(project, pageId) }),
   );
   if (!store.reorderPage(pageId, targetIndex)) return false;
+  host.afterStructuralChange();
+  return true;
+}
+
+/**
+ * Moves the current page selection as one block. A drop is one structural
+ * action, so it writes exactly one recovery checkpoint regardless of how many
+ * pages it moves.
+ */
+export async function reorderPages(
+  host: PageActionHost,
+  pageIds: readonly PageId[],
+  insertionIndex: number,
+): Promise<boolean> {
+  const project = store.project;
+  if (!project) return false;
+  const selected = new Set(pageIds);
+  if (!pageListOrderChanges(project.pages, selected, insertionIndex)) return false;
+  await recordStructuralCheckpoint(
+    t("sessionRecovery.checkpoint.reorderPages", { count: selected.size }),
+  );
+  if (!store.reorderPages([...selected], insertionIndex)) return false;
   host.afterStructuralChange();
   return true;
 }

@@ -6,6 +6,7 @@ export {
   layerKindHasPages,
   movePage,
   movePageBy,
+  movePages,
   removeDocumentAndPages,
 } from "./pageList";
 export type {
@@ -29,5 +30,7 @@ export {
   createEmptyProject,
   insertPage as insertProjectPage,
   reorderPage as reorderProjectPage,
+  reorderPages,
+  reorderPages as reorderProjectPages,
 } from "./appActions";
 export type { PageActionHost } from "./appActions";
