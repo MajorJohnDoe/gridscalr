@@ -1,17 +1,22 @@
 # Desktop security policy
 
-**Scope:** the WebView Content Security Policy, the Tauri capability list and the
-bundled worker boundary for the desktop shell.
-**Machine-checked record:** [`../security/policy.json`](../security/policy.json).
-**Check:** `npm run check:security` (also runs in CI and in the pre-commit list).
+**Scope:** the WebView Content Security Policy, the Tauri capability list, the
+bundled worker boundary and the npm/Rust advisory gate for the desktop shell.
+**Machine-checked records:** [`../security/policy.json`](../security/policy.json)
+for the CSP and capabilities, and
+[`../security/dependency-allowlist.json`](../security/dependency-allowlist.json)
+for dependency exceptions.
+**Checks:** `npm run check:security` and `npm run check:dependencies` (both also
+run in CI and in the pre-commit list).
 **Browser regression:** `npm run test:csp`.
 **Related:** [`security-audit.md`](security-audit.md) findings F-028, F-029,
 F-030, F-037, F-038, F-039, F-040 and F-042, and
 [`limitations.md`](limitations.md).
 
-The configuration is the source of truth. This document and
-`security/policy.json` record why each directive and permission exists; the check
-fails when the configuration changes without a matching, reasoned entry.
+The configuration is the source of truth. This document,
+`security/policy.json` and `security/dependency-allowlist.json` record why each
+directive, permission and exception exists; the checks fail when the
+configuration changes without a matching, reasoned entry.
 
 ## One production policy
 
