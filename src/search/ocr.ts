@@ -26,7 +26,10 @@ function getWorker(): Promise<Worker> {
           corePath: assetUrl("tesseract/tesseract-core-simd.wasm.js"),
           langPath: assetUrl("tessdata/"),
           gzip: true,
-          workerBlobURL: false,
+          // A blob worker inherits the page Content Security Policy; a plain URL
+          // worker would run without one in the Tauri webview (F-029). Tesseract
+          // still loads the same bundled script and WASM core.
+          workerBlobURL: true,
           logger: (message) => {
             activeProgress?.(message.status, message.progress);
           },

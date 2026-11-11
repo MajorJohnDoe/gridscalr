@@ -64,6 +64,7 @@ import {
   type SheetFlowHost,
 } from "./sheetFlows";
 import { SearchController } from "./searchController";
+import { runOcrPage } from "../search/ocr";
 import { ProjectSession } from "./projectSession";
 import { createSessionRecovery } from "./recoveryHost";
 import type { SourceStorageController } from "../features/sourceStorage";
@@ -941,7 +942,8 @@ export class App {
    * JSON report next to the requested directory and exits with the result.
    */
   private async bindSmokeTest(): Promise<void> {
-    if (!isTauri) return;
+    // The smoke-test commands are compiled into debug builds only (F-037).
+    if (!isTauri || !__TAURI_DEBUG__) return;
     try {
       const { invoke } = await import("@tauri-apps/api/core");
       const directory = await invoke<string | null>("smoke_test_dir");
@@ -963,6 +965,21 @@ export class App {
     try {
       await this.session.openDemoProjectFlow();
       record("demo opened", Boolean(store.project && store.project.documents.length > 0));
+      // Loading a page and its operator list runs the PDF.js worker in the
+      // packaged webview, covering the production CSP.
+      const firstPage = await this.renderer?.getPage(1);
+      record(
+        "pdf page loaded",
+        Boolean(firstPage && (await firstPage.getOperatorList()).fnArray.length),
+      );
+      // The OCR step proves the bundled Tesseract worker starts under the
+      // production policy in the packaged webview.
+      if (store.project && this.renderer) {
+        const ocr = await runOcrPage(store.project, 1, this.renderer);
+        record("ocr ran", ocr.words.length > 0);
+      } else {
+        record("ocr ran", false, "no renderer");
+      }
 
       await this.saveProjectToPath(savePath);
       record("project saved", await pathExists(savePath));

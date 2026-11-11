@@ -4,6 +4,7 @@ import { manualPointsPerMeter } from "../model/calibration";
 
 import { formatNumber, LENGTH_UNITS, lengthUnitLabel } from "../model/units";
 import { el, option } from "./dom";
+import { appendSanitizedCopy } from "./errorDetails";
 import { icon } from "./icons";
 import { t } from "../i18n";
 
@@ -210,6 +211,9 @@ export function messageDialog(
     text.append(el("p", "modal-message", paragraph));
   }
   body.append(iconWrap, text);
+  // Absolute paths stay on screen because they help troubleshooting, but the
+  // copy action writes a sanitized version (F-042).
+  appendSanitizedCopy(body, message);
   return showModal({
     title,
     body,

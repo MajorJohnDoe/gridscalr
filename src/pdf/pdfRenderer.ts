@@ -10,7 +10,29 @@ import type { PageSize, Point } from "../model/types";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
 
-GlobalWorkerOptions.workerSrc = workerUrl;
+/**
+ * PDF.js runs in its own worker. A same-origin URL worker does not inherit the
+ * page Content Security Policy in the Tauri webview, so it would run without one
+ * (F-029). Creating the worker from a blob shim makes the document policy apply
+ * inside it: `worker-src 'self' blob:` allows the worker, and its imports stay
+ * on the bundled module.
+ */
+function pdfWorkerSource(): string {
+  if (typeof Worker === "undefined" || typeof URL.createObjectURL !== "function") {
+    return workerUrl;
+  }
+  try {
+    const moduleUrl =
+      typeof document === "undefined" ? workerUrl : new URL(workerUrl, document.baseURI).href;
+    const shim = `import ${JSON.stringify(moduleUrl)};`;
+    return URL.createObjectURL(new Blob([shim], { type: "text/javascript" }));
+  } catch {
+    // A browser without blob support falls back to the plain worker URL.
+    return workerUrl;
+  }
+}
+
+GlobalWorkerOptions.workerSrc = pdfWorkerSource();
 
 export class PasswordRequiredError extends Error {
   constructor() {

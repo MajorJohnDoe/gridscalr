@@ -225,6 +225,8 @@
   "common.clear": "Rensa",
   "dialogs.unsavedTitle": "Osparade ändringar",
   "dialogs.discardChanges": "Kasta ändringar",
+  "dialogs.copySanitizedDetails": "Kopiera rensade detaljer",
+  "dialogs.detailsCopied": "Detaljerna kopierades utan filsökvägar.",
   "dialogs.textLabel": "Text",
   "dialogs.textRequired": "Ange lite text.",
   "dialogs.depth.message": "Ange höjden eller djupet som gör om den uppmätta arean till en volym.",

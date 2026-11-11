@@ -3,82 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; img-src 'self' data: blob:; style-src 'self' 'unsafe-inline'; font-src 'self' data:; script-src 'self'; worker-src 'self' blob:; connect-src 'self' ipc: http://ipc.localhost ws://localhost:1420 http://localhost:1420"
-    />
+    <!--
+      No Content-Security-Policy meta tag here. The desktop shell adds the single
+      authoritative production policy as a response header from
+      src-tauri/tauri.conf.json. The Vite dev server injects the development
+      policy for the browser fallback; see security/policy.json and
+      docs/security-policy.md.
+    -->
     <title>GridScalr</title>
+    <link rel="stylesheet" href="/boot.css" />
     <script src="./boot-theme.js"></script>
-    <style>
-      html,
-      body {
-        margin: 0;
-        min-height: 100%;
-        background: var(--boot-bg, #303234);
-        color: var(--boot-text, #e3e6e8);
-        font-family: Inter, "Segoe UI", system-ui, sans-serif;
-      }
-
-      #app {
-        min-height: 100vh;
-      }
-
-      .boot-fallback {
-        box-sizing: border-box;
-        display: grid;
-        min-height: 100vh;
-        padding: 24px;
-        place-items: center;
-      }
-
-      .boot-card {
-        box-sizing: border-box;
-        width: min(680px, 100%);
-        padding: 28px 32px;
-        border: 1px solid var(--boot-border, #4f5459);
-        border-radius: 10px;
-        background: var(--boot-panel, #36393b);
-        box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45);
-      }
-
-      .boot-brand {
-        color: var(--boot-text, #f6f8f9);
-        font-size: 22px;
-        font-weight: 650;
-      }
-
-      .boot-brand span {
-        color: var(--boot-brand, #4fc7a9);
-      }
-
-      .boot-status {
-        margin: 14px 0 6px;
-        font-size: 14px;
-        font-weight: 600;
-      }
-
-      .boot-hint {
-        margin: 0;
-        color: var(--boot-muted, #adb5bb);
-        font-size: 13px;
-        line-height: 1.55;
-      }
-
-      .boot-error {
-        max-height: 280px;
-        overflow: auto;
-        margin: 18px 0 0;
-        padding: 12px;
-        border: 1px solid var(--boot-error-border, #6b4444);
-        border-radius: 6px;
-        background: var(--boot-error-bg, #3a2626);
-        color: var(--boot-error-text, #ffc4c4);
-        font-size: 12px;
-        line-height: 1.45;
-        white-space: pre-wrap;
-        user-select: text;
-      }
-    </style>
     <script type="module" src="/boot-error.js"></script>
   </head>
   <body>

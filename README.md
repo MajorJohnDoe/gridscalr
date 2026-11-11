@@ -275,6 +275,15 @@ source drawing. The `tests/robustness/` gate exercises seeded page and save
 sequences, competing writers, the committed `fixtures/legacy/` schema 1–25
 corpus and source storage; run it alone with `npm run test:robustness`.
 
+The desktop shell enforces one production Content Security Policy as an HTML
+response header, with no development origin: see
+[`security/policy.json`](security/policy.json) and
+[`docs/security-policy.md`](docs/security-policy.md). Every Tauri capability has
+a documented call site, and the PDF.js and Tesseract workers inherit the page
+policy through blob shims. `npm run check:security` fails when a directive or
+permission changes without that record; `npm run test:csp` verifies the policy in
+a browser.
+
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.
 

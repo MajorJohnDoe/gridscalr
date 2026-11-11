@@ -1,0 +1,83 @@
+{
+  "$comment": "Machine-checked security policy for the desktop shell. src-tauri/tauri.conf.json and src-tauri/capabilities/default.json must match this file exactly; scripts/check-security-policy.mjs fails when a CSP directive or permission changes without a documented reason. The human-readable companion is docs/security-policy.md.",
+  "freezePrototype": {
+    "value": false,
+    "reason": "Evaluated in phase 2 and kept off. Object.freeze(Object.prototype) makes every inherited built-in non-writable, and pdf-lib assigns PDFHeader.prototype.toString, so the page throws `Cannot assign to read only property 'toString' of object '#<PDFHeader>'` while loading. Reproduced in Chromium with an init script and in the packaged WebKitGTK smoke test, which never left the boot screen. Revisit only if pdf-lib stops overriding Object.prototype members."
+  },
+  "csp": {
+    "production": {
+      "default-src": {
+        "sources": ["'self'"],
+        "reason": "Every asset is served from the bundled frontend; the app has no network dependency."
+      },
+      "img-src": {
+        "sources": ["'self'", "data:", "blob:"],
+        "reason": "Embedded PNG/JPEG assets are data URLs, and page thumbnails and render canvases use blob URLs."
+      },
+      "style-src": {
+        "sources": ["'self'"],
+        "reason": "Application styles are bundled CSS files. The boot screen uses public/boot.css and all dynamic styling uses the CSSOM, so no inline style attribute or style element is needed."
+      },
+      "font-src": {
+        "sources": ["'self'", "data:"],
+        "reason": "Bundled Liberation Sans and the PDF.js standard font data are served locally; some font data is inlined as data URLs."
+      },
+      "script-src": {
+        "sources": ["'self'", "'wasm-unsafe-eval'", "blob:"],
+        "reason": "'wasm-unsafe-eval' lets PDF.js decode CCITT/JBIG2 pages and lets Tesseract compile its WASM core. blob: is required because PDF.js wraps its worker module in a blob URL when the tauri: scheme has an opaque origin; workers are created from blob URLs so they inherit this policy."
+      },
+      "worker-src": {
+        "sources": ["'self'", "blob:"],
+        "reason": "The PDF.js and Tesseract workers are bundled scripts. They are created from blob shims so the document policy applies inside them (F-029)."
+      },
+      "connect-src": {
+        "sources": ["'self'", "ipc:", "http://ipc.localhost"],
+        "reason": "'self' covers local asset and worker-language fetches; ipc: and http://ipc.localhost are the Tauri IPC transports on the supported platforms. No remote origin is allowed."
+      },
+      "object-src": {
+        "sources": ["'none'"],
+        "reason": "The app never embeds a plugin or object element."
+      },
+      "base-uri": {
+        "sources": ["'none'"],
+        "reason": "base-uri is not covered by default-src; the app uses document-relative URLs only."
+      },
+      "frame-src": {
+        "sources": ["'none'"],
+        "reason": "The app creates no iframe, frame or object; PDF pages are rendered to canvas."
+      },
+      "form-action": {
+        "sources": ["'none'"],
+        "reason": "The app has no form submission; dialogs and settings are handled in-process."
+      }
+    },
+    "developmentAdditions": {
+      "script-src": {
+        "sources": ["'unsafe-inline'"],
+        "reason": "The Vite dev server injects an inline module bootstrap and HMR client. This source is only present in devCsp and is removed from the production policy."
+      },
+      "style-src": {
+        "sources": ["'unsafe-inline'"],
+        "reason": "Vite injects stylesheets as style elements during development. Production CSS is emitted as files, so the shipped policy keeps style-src 'self'."
+      },
+      "connect-src": {
+        "sources": ["http://localhost:1420", "ws://localhost:1420"],
+        "reason": "Vite HMR websocket and module requests during development only. The production policy has no localhost or ws: origin."
+      }
+    },
+    "authoritativeProductionPolicy": "src-tauri/tauri.conf.json app.security.csp is the only page policy in the shipped desktop app; the shell adds it as an HTML response header. index.html deliberately carries no meta CSP. The Vite dev server injects app.security.devCsp as a meta tag for the browser fallback only (vite.config.ts developmentCsp).",
+    "workerPolicy": "PDF.js (src/pdf/pdfRenderer.ts) and Tesseract (src/search/ocr.ts) create their workers from blob shims, so the worker global inherits the document policy and cannot fetch or import a remote URL. A same-origin URL worker would run without a policy in the Tauri webview (F-029)."
+  },
+  "capabilities": {
+    "core:event:default": "Window resize, close-requested, drag-and-drop and launch-path delivery all use the event API (listen/unlisten).",
+    "core:window:allow-destroy": "The title-bar close and File -> Quit call destroy() after the unsaved-changes prompt.",
+    "core:window:allow-internal-toggle-maximize": "Double-clicking the custom title bar drags/maximizes through the data-tauri-drag-region script.",
+    "core:window:allow-is-maximized": "The title bar chooses the maximize or restore glyph and label.",
+    "core:window:allow-minimize": "The title-bar minimize button.",
+    "core:window:allow-start-dragging": "Dragging the custom title bar starts a native window move.",
+    "core:window:allow-toggle-maximize": "The title-bar maximize/restore button.",
+    "dialog:allow-open": "File -> Open project/drawing and Relink use the native open dialog.",
+    "dialog:allow-save": "Save, Save As, export targets and package output use the native save dialog."
+  },
+  "testOnlyCommands": "smoke_test_dir and finish_smoke_test live in src-tauri/src/smoke.rs and are compiled with #[cfg(debug_assertions)] only. A normal release build has no handler that can exit the app (F-037)."
+}

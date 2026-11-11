@@ -29,6 +29,31 @@ const ocrFiles: Record<string, string> = {
 const packageJson = JSON.parse(readFileSync(path.join(root, "package.json"), "utf8")) as {
   version: string;
 };
+const tauriConfig = JSON.parse(
+  readFileSync(path.join(root, "src-tauri/tauri.conf.json"), "utf8"),
+) as { app?: { security?: { devCsp?: string } } };
+
+/**
+ * The desktop shell adds the production Content-Security-Policy as an HTML
+ * response header. The Vite dev server and the browser fallback have no shell,
+ * so this plugin injects the development policy from the same
+ * `src-tauri/tauri.conf.json` source. A production build deliberately carries no
+ * meta tag, which keeps exactly one page policy in the shipped app. The check in
+ * scripts/check-security-policy.mjs guards the relationship.
+ */
+function developmentCsp(): Plugin {
+  const csp = tauriConfig.app?.security?.devCsp;
+  return {
+    name: "gridscalr-dev-csp",
+    apply: "serve",
+    transformIndexHtml(html) {
+      if (!csp) return html;
+      const content = csp.replaceAll("&", "&amp;").replaceAll('"', "&quot;");
+      const tag = `<meta http-equiv="Content-Security-Policy" content="${content}" />`;
+      return html.replace("    <title>", `    ${tag}\n    <title>`);
+    },
+  };
+}
 
 /**
  * PDF.js 6 decodes CCITT fax data and JBIG2 through WebAssembly. It fetches
@@ -111,8 +136,12 @@ export default defineConfig({
   clearScreen: false,
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version),
+    // Tauri sets TAURI_ENV_DEBUG=true for `tauri build --debug` and `tauri dev`,
+    // and leaves it unset otherwise. The frontend uses it to decide whether the
+    // debug-only smoke-test IPC commands exist.
+    __TAURI_DEBUG__: JSON.stringify(process.env.TAURI_ENV_DEBUG === "true"),
   },
-  plugins: [pdfjsWasm(), ocrAssets()],
+  plugins: [developmentCsp(), pdfjsWasm(), ocrAssets()],
   server: {
     port: 1420,
     strictPort: true,

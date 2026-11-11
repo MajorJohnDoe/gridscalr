@@ -8,6 +8,13 @@
 P3. Production changes are deferred to phases 2–5; this phase only records the
 threat model, evidence and proposed fixes.
 
+**Phase 2 update:** F-028, F-029, F-030, F-037, F-038 and F-042 are fixed in
+0.24.0 phase 2 ([#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)).
+The shipped policy and its machine-checked justification are in
+[`security-policy.md`](security-policy.md) and
+[`../security/policy.json`](../security/policy.json). The audit text below
+records the state at the time of the review.
+
 This document is the reference for the follow-up phases:
 
 | Phase | Issue | Audit findings |
@@ -176,6 +183,11 @@ access. The audit therefore focuses on (a) not allowing the guard to be bypassed
 from trusted UI flows and (b) keeping the renderer free of script injection.
 
 ## 4. CSP
+
+> **Phase 2:** the configuration described in this section was replaced. The
+> single production policy, the dev-only meta injection and the worker boundary
+> are documented in [`security-policy.md`](security-policy.md). The text below
+> preserves the audit evidence.
 
 ### 4.1 Configured policies
 
@@ -485,7 +497,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-028 — The shipped page has two CSP policies, and the production build keeps dev origins
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — dev meta tag removed, one production policy, hardening directives added; `freezePrototype` was evaluated and kept off with a recorded reason (pdf-lib overrides `toString`); see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)
 - **Evidence:** `index.html` declares a meta CSP with `script-src 'self'` and
   `connect-src ... ws://localhost:1420 http://localhost:1420`.
@@ -515,7 +527,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-029 — Worker contexts are outside the configured CSP
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — both bundled workers start from blob shims and inherit the page policy; see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)
 - **Evidence:** `src/pdf/pdfRenderer.ts` sets
   `GlobalWorkerOptions.workerSrc` to a same-origin URL;
@@ -544,7 +556,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-030 — `core:default` grants more than GridScalr uses
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — explicit event, window and dialog permissions only; see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)
 - **Evidence:** Section 3.1. `core:default` expands to nine sets including
   `core:menu`, `core:tray`, `core:image` (`from-path` reads arbitrary image
@@ -702,7 +714,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-037 — Test-only IPC commands are shipped in release builds
 
 - **Severity:** P3
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — smoke commands compile with debug assertions only; see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)
 - **Evidence:** `smoke_test_dir` and `finish_smoke_test` are registered
   unconditionally in `src-tauri/src/lib.rs`. `finish_smoke_test` calls
@@ -720,7 +732,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-038 — `style-src 'unsafe-inline'` is only needed by two static declarations
 
 - **Severity:** P3
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — boot styles moved to public/boot.css, status bar uses the CSSOM; see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)
 - **Evidence:** `index.html` contains an inline `<style>` block for the boot
   fallback. `src/ui/statusBar.ts` builds a `style="color:${active.color}"`
@@ -801,7 +813,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-042 — IPC error details expose absolute paths
 
 - **Severity:** P3
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 2 — error dialogs add a copy action that removes absolute paths and keeps the error code; see [security-policy.md](security-policy.md).
 - **Owner:** phase 2, [#168](https://github.com/MajorJohnDoe/gridscalr/issues/168) or a small follow-up
 - **Evidence:** `CommandError.detail` and `WriteError.detail` embed the full path
   and OS error text, for example `{path}: Permission denied`.
