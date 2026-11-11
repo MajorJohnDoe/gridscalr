@@ -22,6 +22,8 @@ export interface StatusOverviewInput {
   autosaveIntervalSeconds: number;
   recoveryRecords: number;
   recoveryCheckpoints: number;
+  /** Conflicted copies found in the project's folder; read once per open. */
+  conflictedCopies: number;
   warnings: number;
   errors: number;
   desktop: boolean;
@@ -31,6 +33,8 @@ export interface StatusOverviewActionState {
   backupNow: boolean;
   reviewRecovery: boolean;
   openDoctor: boolean;
+  /** Conflicted copies live beside the saved project, so a path is required. */
+  openConflictedCopies: boolean;
   /** The pause/resume row is offered only while autosave is on or paused. */
   toggleAutosave: boolean;
   autosavePaused: boolean;
@@ -48,6 +52,7 @@ export interface StatusOverview {
   recoveryRecords: number;
   recoveryCheckpoints: number;
   recoveryAvailable: boolean;
+  conflictedCopies: number;
   warnings: number;
   errors: number;
   actions: StatusOverviewActionState;
@@ -67,6 +72,7 @@ export function buildStatusOverview(input: StatusOverviewInput): StatusOverview 
     recoveryRecords: Math.max(0, input.recoveryRecords),
     recoveryCheckpoints: Math.max(0, input.recoveryCheckpoints),
     recoveryAvailable,
+    conflictedCopies: Math.max(0, input.conflictedCopies),
     warnings: Math.max(0, input.warnings),
     errors: Math.max(0, input.errors),
     actions: {
@@ -74,6 +80,7 @@ export function buildStatusOverview(input: StatusOverviewInput): StatusOverview 
       backupNow: input.hasProject && input.desktop,
       reviewRecovery: input.hasProject && recoveryAvailable,
       openDoctor: input.hasProject,
+      openConflictedCopies: input.hasProject && input.desktop && Boolean(input.projectPath),
       toggleAutosave: input.hasProject && input.autosaveStatus !== "disabled",
       autosavePaused: input.autosaveStatus === "paused",
     },

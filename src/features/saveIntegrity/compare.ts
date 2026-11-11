@@ -1,6 +1,25 @@
 import { compareRevisions, type RevisionDiff } from "../../compare/revisionDiff";
+import { totalPageCount } from "../../model/documents";
 import type { Project } from "../../model/types";
 import type { VersionSummary } from "./conflict";
+import type { ProjectFileStamp } from "./stamp";
+
+/** Page, item and byte counts for one side of a comparison. */
+export function summarizeProjectVersion(
+  project: Project,
+  contents: string,
+  stamp: ProjectFileStamp | null = null,
+): VersionSummary {
+  return {
+    name: project.name,
+    pages: totalPageCount(project.documents),
+    items: project.layers.reduce((total, layer) => total + layer.items.length, 0),
+    sizeBytes: new TextEncoder().encode(contents).byteLength,
+    updatedAt: project.updatedAt || null,
+    sha256: stamp?.sha256,
+    modifiedAt: stamp?.modifiedAt,
+  };
+}
 
 /**
  * Read-only comparison shown from a save conflict. It reuses the revision

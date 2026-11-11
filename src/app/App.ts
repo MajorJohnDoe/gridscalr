@@ -13,10 +13,9 @@ import {
 import { isTauri, pathExists, readFileText, writeTextFile } from "../io/platform";
 import { PdfRenderer } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
-import { exportProject } from "./exportFlows";
+import { exportProject, type ExportKind } from "./exportFlows";
 import { chooseDrawingExport } from "./drawingExportFlow";
 import { beginProjectRename } from "./projectNameEditor";
-import type { ExportKind } from "./exportFlows";
 import { copyDiagnosticsFlow, reportProblemFlow } from "./diagnosticsFlows";
 import {
   loadNewPdf as loadNewPdfFlow,
@@ -192,6 +191,7 @@ export class App {
       saveProjectCopy: () => void this.session.saveProjectCopy(),
       backupProject: () => void this.session.backupNowFlow(),
       openBackupManager: () => void this.session.backupManagerFlow(),
+      openConflictedCopies: () => void this.session.conflictedCopiesFlow(),
       packageProject: () => void packageProjectFlow(createPackageHost(this.packageFlowHost())),
       openPackage: () => void openPackageFlow(createPackageHost(this.packageFlowHost())),
       exportAs: (kind) => void this.exportAs(kind),

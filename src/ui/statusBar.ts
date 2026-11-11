@@ -16,6 +16,7 @@ import {
 import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { listProjectBackups } from "../features/saveIntegrity";
+import { countConflictedCopies } from "../features/conflictedCopies";
 import {
   autosaveState,
   openRecoveryCenter,
@@ -345,12 +346,14 @@ async function openProjectStatus(anchor: HTMLElement, actions: PanelActions): Pr
   const overview = await collectStatusOverview({
     desktop: isTauri,
     listBackups: (projectId) => listProjectBackups(projectId),
+    countConflictedCopies: (projectPath) => countConflictedCopies(projectPath),
   });
   if (!overview.hasProject) return;
   showStatusOverviewPopover(anchor, overview, {
     backupNow: () => actions.backupProject(),
     reviewRecovery: () => actions.openRecovery(),
     openDoctor: () => actions.openProjectDoctor(),
+    openConflictedCopies: () => actions.openConflictedCopies(),
     setAutosavePaused: (paused) => {
       setAutosavePausedForSession(paused);
     },

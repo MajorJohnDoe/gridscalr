@@ -9,14 +9,16 @@ export interface StatusOverviewHost {
   desktop: boolean;
   /** Reads the rolling backup list for one project. Called once per popover open. */
   listBackups: (projectId: string) => Promise<BackupEntry[]>;
+  /** Counts conflicted copies beside the saved project. Called once per open. */
+  countConflictedCopies: (projectPath: string) => Promise<number>;
 }
 
 /**
  * Builds the popover model from the live store, the autosave preference, the
  * in-memory recovery summary and the current validation result. The backup list
- * is the only disk read; it happens once when the popover opens, never on a
- * render or a timer. A failed read falls back to an unknown backup time instead
- * of blocking the popover.
+ * and the conflicted-copy count are the only disk reads; both happen once when
+ * the popover opens, never on a render or a timer. A failed read falls back to
+ * an unknown value instead of blocking the popover.
  */
 export async function collectStatusOverview(host: StatusOverviewHost): Promise<StatusOverview> {
   const project = store.project;
@@ -27,6 +29,14 @@ export async function collectStatusOverview(host: StatusOverviewHost): Promise<S
       lastBackupAt = newestBackupAt(entries.map((entry) => entry.modifiedAt));
     } catch {
       lastBackupAt = null;
+    }
+  }
+  let conflictedCopies = 0;
+  if (project && host.desktop && store.projectPath) {
+    try {
+      conflictedCopies = await host.countConflictedCopies(store.projectPath);
+    } catch {
+      conflictedCopies = 0;
     }
   }
   const issues = project
@@ -45,6 +55,7 @@ export async function collectStatusOverview(host: StatusOverviewHost): Promise<S
     autosaveIntervalSeconds: autosave.intervalSeconds,
     recoveryRecords: recovery.count,
     recoveryCheckpoints: recovery.checkpoints,
+    conflictedCopies,
     warnings: issues.filter((issue) => issue.severity === "warning").length,
     errors: issues.filter((issue) => issue.severity === "error").length,
     desktop: host.desktop,

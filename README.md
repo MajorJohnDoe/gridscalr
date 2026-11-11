@@ -116,7 +116,11 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   automatic rolling backups and **Save a copy** exports, autosave recovery,
   recent files, and the user guide bundled under **Help**. A save conflict can
   show a read-only difference summary against the disk version without merging
-  either file. The status bar shows saved/unsaved state and source-file warnings,
+  either file. **File → Conflicted copies…** lists the copies beside the project,
+  opens one as its own project, compares it with the open project and deletes it
+  after confirmation; discovery matches only the documented name, never follows
+  a link and never deletes automatically. The status bar shows saved/unsaved
+  state and source-file warnings,
   and Project settings reports the project size, image and OCR contribution, and
   source-drawing status.
 
@@ -269,7 +273,11 @@ shell, `src-tauri/src/project_write.rs` owns conditional writes and file stamps,
 `src-tauri/src/project_backup.rs` owns app-data backups with their origin
 metadata, retention and delete commands. The backup manager in
 `src/features/saveIntegrity/` lists, restores, replaces and deletes them; the
-kept count is a 2–10 preference applied on the next successful save. The
+kept count is a 2–10 preference applied on the next successful save.
+`src-tauri/src/conflicted_copy.rs` lists and deletes only files named like a
+conflicted copy of the open project in its own folder, refusing a symbolic link
+and the project's own file; `src/features/conflictedCopies/` opens, compares and
+deletes them after confirmation. The
 `src/features/sessionRecovery/` module owns recovery records, the recovery center,
 view-only open, takeover and the external-change watcher. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator

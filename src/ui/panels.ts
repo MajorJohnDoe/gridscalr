@@ -36,6 +36,7 @@ export interface PanelActions {
   saveProjectCopy: () => void;
   backupProject: () => void;
   openBackupManager: () => void;
+  openConflictedCopies: () => void;
   packageProject: () => void;
   openPackage: () => void;
   exportAs: (

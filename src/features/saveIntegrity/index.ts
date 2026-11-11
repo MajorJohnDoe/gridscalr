@@ -30,8 +30,9 @@ export {
 export type { BackupManagerAction, BackupManagerChoice } from "./backupManagerModel";
 export { classifyConflict, defaultConflictAction } from "./conflict";
 export type { ConflictAction, ConflictKind, VersionSummary } from "./conflict";
-export { buildConflictComparison } from "./compare";
+export { buildConflictComparison, summarizeProjectVersion } from "./compare";
 export type { ConflictComparisonInfo } from "./compare";
+export { compareDialog } from "./ui";
 export { conflictTimestamp, conflictedCopyPath, isNoOpSave, sameFileVersion } from "./stamp";
 export type { ProjectFileStamp } from "./stamp";
 export {

@@ -1364,6 +1364,58 @@ confirmed against the audit.
   `lastSavedAt` on `Store.markSaved()` rather than persisting it in the project.
 - **Related:** #178.
 
+### F-071 — Conflicted-copy discovery is limited to the current folder and name
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 13 — conflicted-copy manager
+- **Severity:** P3
+- **Area:** save integrity / conflicted copies
+- **Status:** accepted
+- **Evidence:** `list_conflicted_copies` scans the parent folder of the open
+  project and matches only the documented name for its current stem.
+- **Problem:** A project renamed or moved after a conflict leaves its copies
+  under the old name in the old folder, where the manager no longer sees them.
+- **Impact:** No data loss and no silent deletion. The copies remain ordinary
+  files that can be opened from **File → Open project…**.
+- **Next step:** If users ask for it, add an explicit **Choose folder…** scan
+  that lists matches for a picked stem. It must keep the strict name, no-symlink
+  and single-file-delete rules.
+- **Related:** #179, #169.
+
+### F-072 — Conflicted copies are not part of the recovery center
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 13 — conflicted-copy manager
+- **Severity:** P3
+- **Area:** recovery / conflicted copies
+- **Status:** accepted
+- **Evidence:** The recovery center lists IndexedDB autosaves and checkpoints
+  only. Conflicted copies are opened from **File** and the status popover.
+- **Problem:** There are two places to look for unsaved or conflicting work,
+  each with a different origin and lifetime.
+- **Impact:** The popover names the copy count and links to the manager, so a
+  user who starts at recovery still finds the path. No storage is duplicated.
+- **Next step:** Merge the two lists only if the recovery center becomes a
+  general "my project's versions" surface; that needs a product decision.
+- **Related:** #179, #173.
+
+### F-073 — A listed copy is identified by name, not by content
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 13 — conflicted-copy manager
+- **Severity:** P3
+- **Area:** save integrity / conflicted copies
+- **Status:** accepted
+- **Evidence:** The list shows file name, time and size. The copy is parsed only
+  when it is opened or compared.
+- **Problem:** A file renamed to exactly the conflicted-copy pattern but with
+  unrelated content is listed. Deleting it is still explicit and single-file.
+- **Impact:** A misleading row at most; opening it reports a parse failure, and
+  comparing reports the unreadable-copy state instead of a diff.
+- **Next step:** Reuse `buildConflictComparison` to show the project name in the
+  row if list-time parsing proves cheap enough for large projects.
+- **Related:** #179.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

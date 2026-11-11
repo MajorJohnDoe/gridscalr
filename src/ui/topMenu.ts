@@ -148,6 +148,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.file.backupManager"), actions.openBackupManager, {
           disabled: !hasProject || !isTauri,
         }),
+        action(t("menu.file.conflictedCopies"), actions.openConflictedCopies, {
+          disabled: !hasProject || !isTauri,
+        }),
         action(t("menu.file.projectDoctor"), actions.openProjectDoctor, {
           disabled: !hasProject,
         }),
