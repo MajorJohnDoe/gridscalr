@@ -1049,6 +1049,48 @@ confirmed against the audit.
   [#178](https://github.com/MajorJohnDoe/gridscalr/issues/178).
 - **Related:** #178, #172.
 
+### F-055 — The recovery center re-encodes every snapshot to show its size
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 7 — recovery center
+- **Severity:** P3
+- **Area:** session recovery / performance
+- **Status:** deferred
+- **Evidence:** `serializedBytes()` in
+  `src/features/sessionRecovery/centerModel.ts` runs
+  `new TextEncoder().encode(record.serialized)` for every record each time the
+  center opens.
+- **Problem:** The store does not persist the serialized byte size, so the
+  dialog allocates a second copy of every snapshot string to measure it.
+- **Impact:** With a large project or a full retention window this can add a
+  visible pause when the center opens. It allocates memory proportional to the
+  stored recovery data.
+- **Next step:** Persist `serializedBytes` when a record is written, or read
+  only the record metadata for the list and compute size lazily. The byte budget
+  and pruning work in [#174](https://github.com/MajorJohnDoe/gridscalr/issues/174)
+  is the natural place.
+- **Related:** #173, #174, F-008.
+
+### F-056 — Recovery instances have no human-readable label
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 7 — recovery center
+- **Severity:** P3
+- **Area:** session recovery / usability
+- **Status:** deferred
+- **Evidence:** `RecoveryRecord` stores `instanceId` and `appVersion`, but no
+  host label or session start time. The center shows the first eight characters
+  of the instance ID.
+- **Problem:** A record written by an earlier app session is identified by a
+  random ID that means nothing to the user, so two machines or two windows are
+  hard to tell apart after a restart.
+- **Impact:** The user can still see the project, save time, label and base
+  version, but the instance grouping is less useful than the lease's
+  `Desktop · Windows` label.
+- **Next step:** Add an optional, non-personal host label to the recovery record
+  in a future store migration. Do not block phase 7 on it.
+- **Related:** #173, `src/features/sessionRecovery/instance.ts`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

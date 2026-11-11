@@ -49,6 +49,11 @@ debounce, the interval throttles repeated changes, turning autosave off or
 pausing cancels a pending write, resuming writes the current revision, and an
 explicit structural checkpoint is still written when autosave is off.
 
+`tests/recoveryCenter.test.ts` covers the recovery center: grouping per project
+and app instance, newest-first ordering, UTF-8 serialized size, preferred and
+fallback selection, older/unknown/missing base-version labels, deletion of only
+the selected record from the local store, and the empty-state dialog.
+
 ## Robustness gate
 
 `npm run test:robustness` runs only `tests/robustness/`. The normal

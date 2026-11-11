@@ -265,7 +265,7 @@ be turned off, given a 15, 30 or 60 second interval, or paused for the session i
 shell, `src-tauri/src/project_write.rs` owns conditional writes and file stamps,
 `src-tauri/src/project_lease.rs` owns the advisory sidecar lease, and
 `src-tauri/src/project_backup.rs` owns app-data backups. The
-`src/features/sessionRecovery/` module owns recovery records, the chooser,
+`src/features/sessionRecovery/` module owns recovery records, the recovery center,
 read-only open and the external-change watcher. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator
 surface, explicit repairs, the project doctor, load-report presentation and

@@ -142,12 +142,12 @@ export async function openDemoProject(page, { base } = {}) {
   );
 
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Restore last session" }).waitFor();
-  await page.getByRole("button", { name: "Restore last session" }).click();
-  const recoveryDialog = page.getByRole("dialog", { name: "Recover work" });
+  await page.getByRole("button", { name: "Recovery center" }).waitFor();
+  await page.getByRole("button", { name: "Recovery center" }).click();
+  const recoveryDialog = page.getByRole("dialog", { name: "Recovery center" });
   await recoveryDialog.waitFor();
   const chooserPromise = page.waitForEvent("filechooser");
-  await recoveryDialog.getByRole("button", { name: "Restore", exact: true }).click();
+  await recoveryDialog.getByRole("button", { name: "Restore selected" }).click();
   const chooser = await chooserPromise;
   await chooser.setFiles(pdfPath);
 

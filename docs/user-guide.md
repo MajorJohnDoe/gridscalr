@@ -13,7 +13,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 5. Review **View → Quantities…**.
 6. Save the project with **File → Save**.
 
-The welcome screen also offers **Open drawing**, **Open project**, **Open demo project**, **Restore last session** (the recovery chooser), and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities.
+The welcome screen also offers **Open drawing**, **Open project**, **Open demo project**, **Recovery center**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities.
 
 **Open demo project** loads a bundled sample with one drawing, three sheets and finished measurements. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
 
@@ -698,16 +698,18 @@ Autosave is on by default. It writes at most one recovery snapshot every 15 seco
 
 Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Alt+F4 asks before discarding unsaved changes. Discarding removes this session's recovery snapshot and releases the project lock.
 
-### Recovery and open-elsewhere
+### Recovery center and open-elsewhere
 
-**Restore last session** on the welcome screen, **Settings → Preferences → Data → Review recovery data…**, and the recovery entry in the project flow all open the same recovery chooser. It lists every stored snapshot and checkpoint that GridScalr can restore on this computer, including the session and save time. Nothing is restored automatically.
+**Recovery center** on the welcome screen and **Settings → Preferences… → Data → Open recovery center…** open the same dialog. It lists every autosave and structural checkpoint GridScalr stores on this computer, grouped by project and app instance. Each record shows its label, save time, serialized size, the project name and path (**Not saved to a file yet** when the project has no file) and whether its base file hash still matches the file on disk. Nothing is restored automatically.
 
-- A snapshot is labelled **based on the current file**, **based on an older file version**, **base file version unknown**, **project file is missing** or **unsaved project**.
-- GridScalr compares the base file SHA-256 stored with the snapshot against the current file on disk. A snapshot based on an older or unknown file version still opens, but only after you choose it explicitly.
-- **Restore** opens the snapshot as unsaved work. **Discard** deletes that one record. **Cancel** changes nothing.
-- A normal save clears this session's autosave record deliberately. Other instances and projects are not touched.
+- An **autosave** is unsaved work written after a change while a project is open. Saving the project removes that session's autosave record.
+- A **checkpoint** is a labelled snapshot written before a structural action, such as **Before deleting page 12** or **Before replacing the source Plan.pdf**. Checkpoints stay until they are deleted or rotated out.
+- A record is labelled **based on the current file**, **based on an older file version**, **base file version unknown**, **project file is missing** or **unsaved project**. The center compares the base file SHA-256 stored with the record against the current file on disk.
+- Select one record and choose **Restore selected** or **Delete selected**. **Restore** opens that one snapshot as unsaved work and replaces the project open in the window; if that project has unsaved changes, GridScalr asks before replacing it. **Delete** removes only the selected record after confirmation. Other snapshots, checkpoints, app instances, project files and drawings are never touched.
+- A record based on an older, unknown or missing file version shows a warning in the center and asks for a second confirmation before it is restored.
+- When no records are stored, the center explains the difference between an autosave and a checkpoint and does not offer a restore action.
 
-Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Checkpoints are listed separately in the recovery chooser and are never restored automatically. Up to ten checkpoints per project are kept.
+Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Up to ten checkpoints per project are kept.
 
 In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
 
@@ -775,7 +777,7 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Workspace** – expand both panels or reset the panel widths, collapsed state and tool-rail layout. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
-- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Review recovery data…** opens the recovery chooser. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Open recovery center…** opens the recovery center, where one selected record can be restored or deleted. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
 
 ### Project settings
 

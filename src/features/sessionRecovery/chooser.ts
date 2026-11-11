@@ -1,10 +1,11 @@
 let handler: (() => Promise<void>) | null = null;
 
 /** Registered by the session controller; Preferences and the welcome screen call it. */
-export function setRecoveryChooserHandler(next: (() => Promise<void>) | null): void {
+export function setRecoveryCenterHandler(next: (() => Promise<void>) | null): void {
   handler = next;
 }
 
-export function openRecoveryChooser(): Promise<void> {
+/** Opens the recovery center from any entry point, including an empty store. */
+export function openRecoveryCenter(): Promise<void> {
   return handler ? handler() : Promise.resolve();
 }
