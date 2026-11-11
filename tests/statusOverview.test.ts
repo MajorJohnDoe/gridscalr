@@ -31,6 +31,7 @@ function overview(overrides: Partial<StatusOverviewInput> = {}): StatusOverview 
     autosaveIntervalSeconds: 15,
     recoveryRecords: 1,
     recoveryCheckpoints: 0,
+    conflictedCopies: 0,
     warnings: 0,
     errors: 0,
     desktop: true,
@@ -42,6 +43,7 @@ interface Calls {
   backupNow: number;
   reviewRecovery: number;
   openDoctor: number;
+  openConflictedCopies: number;
   paused: boolean[];
 }
 
@@ -49,7 +51,13 @@ function show(
   overrides: Partial<StatusOverviewInput> = {},
   actionOverrides: Partial<StatusOverviewActions> = {},
 ): Calls {
-  const calls: Calls = { backupNow: 0, reviewRecovery: 0, openDoctor: 0, paused: [] };
+  const calls: Calls = {
+    backupNow: 0,
+    reviewRecovery: 0,
+    openDoctor: 0,
+    openConflictedCopies: 0,
+    paused: [],
+  };
   const actions: StatusOverviewActions = {
     backupNow: () => {
       calls.backupNow += 1;
@@ -59,6 +67,9 @@ function show(
     },
     openDoctor: () => {
       calls.openDoctor += 1;
+    },
+    openConflictedCopies: () => {
+      calls.openConflictedCopies += 1;
     },
     setAutosavePaused: (paused) => {
       calls.paused.push(paused);
@@ -106,6 +117,7 @@ describe("status overview model", () => {
       backupNow: true,
       reviewRecovery: true,
       openDoctor: true,
+      openConflictedCopies: true,
       toggleAutosave: true,
       autosavePaused: false,
     });
@@ -130,6 +142,7 @@ describe("status overview model", () => {
       backupNow: false,
       reviewRecovery: false,
       openDoctor: false,
+      openConflictedCopies: false,
       toggleAutosave: false,
       autosavePaused: false,
     });
@@ -250,6 +263,26 @@ describe("status overview popover", () => {
     expect(browser.backupNow).toBe(0);
   });
 
+  it("shows the conflicted-copy count and opens the manager", () => {
+    const calls = show({ conflictedCopies: 2 });
+    expect(rowValue(t("statusOverview.conflictedCopies"))).toBe(
+      t("statusOverview.conflictedCopyCount", { count: 2 }),
+    );
+    actionButton(t("statusOverview.manageConflictedCopies"))?.click();
+    expect(calls.openConflictedCopies).toBe(1);
+  });
+
+  it("hides an empty copy row and disables the manager without a saved desktop project", () => {
+    show();
+    expect(rowValue(t("statusOverview.conflictedCopies"))).toBeNull();
+    document.querySelectorAll(".popover").forEach((node) => node.remove());
+    const browser = show({ desktop: false });
+    const button = actionButton(t("statusOverview.manageConflictedCopies"));
+    expect(button?.disabled).toBe(true);
+    button?.click();
+    expect(browser.openConflictedCopies).toBe(0);
+  });
+
   it("closes on Escape", () => {
     show();
     expect(document.querySelector(".status-popover")).not.toBeNull();
@@ -273,11 +306,16 @@ describe("status overview controller", () => {
     const project = createProject(defaultDocument("Plan.pdf", 2));
     store.setProject(project, null, false);
     const reads: string[] = [];
+    const copyReads: string[] = [];
     const host = {
       desktop: true,
       listBackups: async (projectId: string) => {
         reads.push(projectId);
         return [backupEntry(BACKUP_AT), backupEntry(BACKUP_AT + 1000)];
+      },
+      countConflictedCopies: async (projectPath: string) => {
+        copyReads.push(projectPath);
+        return 2;
       },
     };
 
@@ -285,6 +323,8 @@ describe("status overview controller", () => {
     expect(unsaved.saveState).toBe("notSaved");
     expect(unsaved.savedAt).toBeNull();
     expect(unsaved.lastBackupAt).toBe(BACKUP_AT + 1000);
+    expect(unsaved.conflictedCopies).toBe(0);
+    expect(copyReads).toHaveLength(0);
     expect(reads).toEqual([project.id]);
 
     store.projectPath = "/work/Plan.gridscalr";
@@ -293,6 +333,8 @@ describe("status overview controller", () => {
     const saved = await collectStatusOverview(host);
     expect(saved.saveState).toBe("saved");
     expect(saved.savedAt).toBe(SAVED_AT);
+    expect(saved.conflictedCopies).toBe(2);
+    expect(copyReads).toEqual(["/work/Plan.gridscalr"]);
     expect(reads).toHaveLength(2);
 
     setAutosavePausedForSession(true);
@@ -316,8 +358,13 @@ describe("status overview controller", () => {
         reads += 1;
         return [backupEntry(BACKUP_AT)];
       },
+      countConflictedCopies: async () => {
+        reads += 1;
+        return 1;
+      },
     });
     expect(reads).toBe(0);
+    expect(model.conflictedCopies).toBe(0);
     expect(model.lastBackupAt).toBeNull();
     expect(model.actions.backupNow).toBe(false);
   });
@@ -329,8 +376,12 @@ describe("status overview controller", () => {
       listBackups: async () => {
         throw new Error("unavailable");
       },
+      countConflictedCopies: async () => {
+        throw new Error("unavailable");
+      },
     });
     expect(model.lastBackupAt).toBeNull();
+    expect(model.conflictedCopies).toBe(0);
     expect(model.hasProject).toBe(true);
   });
 });

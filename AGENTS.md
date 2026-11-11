@@ -413,6 +413,7 @@ src/features/projectIntegrity/ public surface, referential-integrity validation,
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics
 src/features/projectIntegrity/ui.ts localized doctor, issue list and repair controls
+src/features/conflictedCopies/ strict discovery naming, delete guards, manager flow and dialog for conflicted copies
 src/features/statusOverview/ pure project-status model, one-read controller and the status popover
 src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
 src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
@@ -536,6 +537,7 @@ src/features/sourceStorage/  reference/managed source modes, managed copies, con
 src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage
 src/app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
 src-tauri/src/source_copy.rs verified managed copy, source hash and folder checksum search
+src-tauri/src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog

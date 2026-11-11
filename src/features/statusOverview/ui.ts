@@ -9,6 +9,7 @@ export interface StatusOverviewActions {
   backupNow: () => void;
   reviewRecovery: () => void;
   openDoctor: () => void;
+  openConflictedCopies: () => void;
   setAutosavePaused: (paused: boolean) => void;
 }
 
@@ -101,6 +102,14 @@ function buildContent(overview: StatusOverview, actions: StatusOverviewActions):
     ),
     row(t("statusOverview.recovery"), recoveryValue(overview)),
   );
+  if (overview.conflictedCopies > 0) {
+    rows.append(
+      row(
+        t("statusOverview.conflictedCopies"),
+        t("statusOverview.conflictedCopyCount", { count: overview.conflictedCopies }),
+      ),
+    );
+  }
   if (overview.errors > 0) {
     rows.append(
       row(
@@ -137,6 +146,13 @@ function buildContent(overview: StatusOverview, actions: StatusOverviewActions):
       "info",
       overview.actions.openDoctor,
       actions.openDoctor,
+    ),
+    actionButton(
+      t("statusOverview.manageConflictedCopies"),
+      "warning",
+      overview.actions.openConflictedCopies,
+      actions.openConflictedCopies,
+      t("statusOverview.conflictedCopiesUnavailable"),
     ),
   );
   if (overview.actions.toggleAutosave) {

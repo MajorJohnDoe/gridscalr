@@ -1,4 +1,5 @@
 mod commands;
+mod conflicted_copy;
 mod disk_space;
 mod package;
 mod path_guard;
@@ -139,6 +140,8 @@ pub fn run() {
             project_backup::list_project_backups,
             project_backup::delete_project_backup,
             project_backup::delete_all_project_backups,
+            conflicted_copy::list_conflicted_copies,
+            conflicted_copy::delete_conflicted_copy,
             source_copy::source_copy_to_project,
             source_copy::source_file_hash,
             source_copy::source_find_by_hash,

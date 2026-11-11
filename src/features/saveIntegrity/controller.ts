@@ -1,6 +1,5 @@
 import { t } from "../../i18n";
 import { logEvent } from "../diagnostics/log";
-import { totalPageCount } from "../../model/documents";
 import { compareProjectShape, validateProject, type ProjectIssue } from "../../model/integrity";
 import type { Project } from "../../model/types";
 import { describeError } from "../../io/platformError";
@@ -15,7 +14,11 @@ import {
 import { assertWritablePath } from "../../io/writeGuard";
 import { store } from "../../state/store";
 import type { BackupPorts } from "./backupController";
-import { buildConflictComparison, type ConflictComparisonInfo } from "./compare";
+import {
+  buildConflictComparison,
+  summarizeProjectVersion,
+  type ConflictComparisonInfo,
+} from "./compare";
 import { classifyConflict, type ConflictAction, type VersionSummary } from "./conflict";
 import { ProjectWriteConflictError } from "./files";
 import { conflictedCopyPath, isNoOpSave, type ProjectFileStamp } from "./stamp";
@@ -48,28 +51,12 @@ export interface SaveIntegrityPorts extends BackupPorts {
   reportValidationErrors: (issues: readonly ProjectIssue[], project: Project) => Promise<void>;
 }
 
-function textSize(contents: string): number {
-  return new TextEncoder().encode(contents).byteLength;
-}
-
-function itemCount(project: Project): number {
-  return project.layers.reduce((total, layer) => total + layer.items.length, 0);
-}
-
 function summarize(
   project: Project,
   contents: string,
   stamp: ProjectFileStamp | null,
 ): VersionSummary {
-  return {
-    name: project.name,
-    pages: totalPageCount(project.documents),
-    items: itemCount(project),
-    sizeBytes: textSize(contents),
-    updatedAt: project.updatedAt || null,
-    sha256: stamp?.sha256,
-    modifiedAt: stamp?.modifiedAt,
-  };
+  return summarizeProjectVersion(project, contents, stamp);
 }
 
 interface DiskVersion {

@@ -85,6 +85,18 @@ updates after a save, that the backup list is read exactly once per open, that
 the browser fallback never reads it, and that a failed read still opens the
 popover.
 
+## Conflicted copies
+
+`tests/conflictedCopies.test.ts` covers the strict file-name rule, the
+folder-scoped entry filter, newest-first ordering, the total size and the delete
+guards. It also drives the dialog and the full flow: opening a copy as its own
+project without writing the original, comparing through the revision engine,
+reporting an unreadable copy, the confirmed single-file delete, a cancelled
+confirmation, the only-surviving-copy guard when the project file is missing, a
+look-alike dropped from the desktop result, and a delete that leaves the file in
+place. The Rust module has its own tests for the name parser, the folder scan,
+the symlink refusal and the single-file delete.
+
 ## Robustness gate
 
 `npm run test:robustness` runs only `tests/robustness/`. The normal

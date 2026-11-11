@@ -40,6 +40,7 @@ import {
   saveProjectWithIntegrity,
   setBackupManagerHandler,
 } from "../features/saveIntegrity";
+import { createConflictedCopyPorts, openConflictedCopiesFlow } from "../features/conflictedCopies";
 import type {
   SessionRecoveryController,
   OpenDecision,
@@ -219,6 +220,15 @@ export class ProjectSession {
 
   async backupManagerFlow(): Promise<boolean> {
     return openBackupManagerFlow(this.savePorts());
+  }
+
+  /** Lists, opens, compares and deletes the copies beside the saved project. */
+  async conflictedCopiesFlow(): Promise<boolean> {
+    return openConflictedCopiesFlow(
+      createConflictedCopyPorts({
+        openProject: (path) => this.openPath(path, t("conflictedCopies.openFailed")),
+      }),
+    );
   }
 
   private savePorts() {

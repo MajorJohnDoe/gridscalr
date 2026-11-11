@@ -50,6 +50,10 @@ src/
   features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
   features/saveIntegrity/files.ts conditional-write, stamp, read-back and backup IPC
   features/saveIntegrity/ui.ts conflict and comparison dialogs
+  features/conflictedCopies/model.ts strict conflicted-copy naming, ordering and delete guards
+  features/conflictedCopies/ipc.ts conflicted-copy list and delete command wrappers
+  features/conflictedCopies/controller.ts list, open, compare and confirmed-delete flow
+  features/conflictedCopies/ui.ts conflicted-copy list dialog and delete confirmation
   features/sessionRecovery/index.ts public surface for scoped autosave, leases and recovery
   features/sessionRecovery/autosave.ts recovery snapshot API, pruning and legacy migration
   features/sessionRecovery/budget.ts pure retention rules: byte budget, usage totals and prune order
@@ -252,6 +256,7 @@ src-tauri/
   src/project_write.rs   conditional project write, read-back hash stamp and file-stamp command
   src/project_lease.rs   advisory sidecar lease read/write/heartbeat/clear with owner checks
   src/project_backup.rs  app-data backup directory, origin metadata, rolling retention, list and delete commands
+  src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
