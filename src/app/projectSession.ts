@@ -46,6 +46,7 @@ import type {
   OpenDecision,
   RecoveryRecord,
 } from "../features/sessionRecovery";
+import type { DroppedFile } from "../features/pageFileDrop";
 
 export interface ProjectSessionHost {
   resetProject(): Promise<void>;
@@ -55,6 +56,15 @@ export interface ProjectSessionHost {
   createSheetProject(choice: SheetSourceChoice): Promise<void>;
   createEmptyProject(): Promise<void>;
   openProjectDoctor?: (issues?: readonly ProjectIssue[]) => Promise<void>;
+  /** Pages-panel file drop: insertion line, leave and handled drop. */
+  pageDrop: {
+    over: (files: readonly DroppedFile[], point: { x: number; y: number }) => unknown;
+    leave: () => void;
+    drop: (
+      files: readonly DroppedFile[],
+      point: { x: number; y: number },
+    ) => boolean | Promise<boolean>;
+  };
 }
 
 function projectFilters() {
@@ -527,10 +537,36 @@ export class ProjectSession {
     if (isTauri) {
       try {
         const { getCurrentWebview } = await import("@tauri-apps/api/webview");
+        let dragged: DroppedFile[] = [];
         await getCurrentWebview().onDragDropEvent((event) => {
-          const payload = event.payload as { type: string; paths?: string[] };
+          const payload = event.payload as {
+            type: string;
+            paths?: string[];
+            position?: { x: number; y: number };
+          };
+          if (payload.type === "enter") {
+            dragged = this.droppedFiles(payload.paths ?? []);
+            if (payload.position) {
+              this.host.pageDrop.over(dragged, this.clientPoint(payload.position));
+            }
+            return;
+          }
+          if (payload.type === "over") {
+            if (dragged.length && payload.position) {
+              this.host.pageDrop.over(dragged, this.clientPoint(payload.position));
+            }
+            return;
+          }
+          if (payload.type === "leave") {
+            dragged = [];
+            this.host.pageDrop.leave();
+            return;
+          }
           if (payload.type === "drop" && payload.paths?.length) {
-            void this.openPath(payload.paths[0]);
+            const files = dragged.length ? dragged : this.droppedFiles(payload.paths);
+            dragged = [];
+            const point = payload.position ? this.clientPoint(payload.position) : { x: 0, y: 0 };
+            void this.handleNativeDrop(files, point);
           }
         });
       } catch (error) {
@@ -546,6 +582,24 @@ export class ProjectSession {
       const file = event.dataTransfer?.files?.[0];
       if (file) void this.openDroppedFile(file);
     });
+  }
+
+  private droppedFiles(paths: readonly string[]): DroppedFile[] {
+    return paths.map((path) => ({ name: basename(path), path }));
+  }
+
+  /** Tauri reports physical pixels; the DOM and the panel use CSS pixels. */
+  private clientPoint(position: { x: number; y: number }): { x: number; y: number } {
+    const ratio = typeof window === "undefined" ? 1 : window.devicePixelRatio || 1;
+    return { x: position.x / ratio, y: position.y / ratio };
+  }
+
+  private async handleNativeDrop(
+    files: readonly DroppedFile[],
+    point: { x: number; y: number },
+  ): Promise<void> {
+    const handled = await this.host.pageDrop.drop(files, point);
+    if (!handled && files.length) await this.openPath(files[0].path ?? files[0].name);
   }
 
   dispose(): void {

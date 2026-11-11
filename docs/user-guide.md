@@ -185,6 +185,8 @@ The copy is appended at the end with a new stable page ID and references the sam
 
 Drag a page card and drop it on the line between two cards to change the project page order. The panel scrolls while a card is held near its top or bottom edge. `Ctrl/Cmd` + click adds pages to the selection and `Shift` + click selects a range, so dragging any selected card moves the whole selection as one block. Pages from another source document are grouped under a document heading, and a drop that crosses into another document names that document on the drop line. `Alt` + `Up` / `Down` moves the selection one position and `Alt` + `Home` / `End` moves it to the ends; the result is announced to screen readers. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet, and every drop writes one recovery checkpoint. Right-click a card for **Insert page before…** or **Insert page after…** to add another record for the same source sheet at that position. Page numbers in the title row, Markups and reports follow the current order.
 
+Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line shows where the pages will land; dropping below the last card appends. The usual page picker and import preflight appear before anything changes, and the whole import is one undo step. Dropping a `.gridscalr` project here does not open or replace the current project; use **File → Import pages from project…** instead.
+
 **Delete page…** removes that page record, its items and its layer page state. Later pages are not renumbered in the saved file; only their displayed numbers change. Deleting is structural and cannot be undone. A project may have no pages at all.
 
 ### Replace a source drawing

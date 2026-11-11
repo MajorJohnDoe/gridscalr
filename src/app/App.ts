@@ -26,6 +26,7 @@ import {
 import { insertImageFlow as insertImageFlowModule, type ImageFlowHost } from "./imageFlows";
 import { packageHost as createPackageHost, type PackageFlowHost } from "./packageFlows";
 import { importProjectPagesFlow, type ProjectImportHost } from "./projectImportFlows";
+import { installPageFileDrop } from "./pageDropSetup";
 import {
   confirmProjectLoadReportFlow,
   openProjectDoctorFlow,
@@ -164,6 +165,11 @@ export class App {
       createSheetProject: (choice) => createSheetProjectFlow(this.sheetFlowHost(), choice),
       createEmptyProject: () => createEmptyProject(this.pageActionHost()),
       openProjectDoctor: (issues) => openProjectDoctorFlow(this.projectDoctorHost(), issues),
+      pageDrop: installPageFileDrop({
+        dockBody: this.refs.dockBody,
+        projectImportHost: () => this.projectImportHost(),
+        sourceStorage: () => this.sourceStorage,
+      }),
     });
     this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
       this.renderAll(),
@@ -299,7 +305,6 @@ export class App {
     this.windowControls = mountWindowControls(this.refs.topbar, {
       quit: () => void this.session.quitFlow(),
     });
-
     this.canvas = new CanvasView(this.refs.canvasHost, {
       getRenderer: () => this.renderer,
       getPageSize: (page) => this.pageSizes.get(page),
@@ -307,7 +312,6 @@ export class App {
       onError: (message) => toast(message, "error"),
       onContextMenu: ({ clientX, clientY }) => showSelectionMenuAt(clientX, clientY, this.actions),
     });
-
     this.search = new SearchController({
       host: this.refs.canvasArea,
       project: () => store.project,
@@ -415,12 +419,8 @@ export class App {
       rendererBusy: () => this.renderer?.busy ?? false,
       installDocuments: (documents, project, path, dirty) =>
         this.installDocuments(documents, project, path, dirty),
-      addDocumentToRenderer: (document, pages) => {
-        this.renderer?.addDocument(document, pages);
-        if (store.project) {
-          this.renderer?.setPageOrder(documentPageOrder(store.project));
-        }
-      },
+      addDocumentToRenderer: (documentId, document, pages) =>
+        this.documentRegistry.addProjectDocument(documentId, document, pages, this.renderer),
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),

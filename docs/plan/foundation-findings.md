@@ -1619,3 +1619,27 @@ No entries yet.
   filter work in #185 and the context-menu work in #186 rather than raising the
   fixed cap.
 - **Related:** robustness §7.4, ADR 0011, #185, #186.
+
+### F-076 — A managed copy after a Pages-panel drop is a second history boundary
+
+- **Date:** 2026-11-11
+- **Phase:** 0.25.0 phase 2 — Pages-panel file drop
+- **Severity:** P2
+- **Area:** pages panel / source storage
+- **Status:** accepted — the ordinary import is still one undo step
+- **Evidence:** `importDroppedDrawing()` commits the pages with one
+  `store.mutate`. If the user accepts the managed-copy recommendation for a
+  cloud or network drawing, `SourceStorageController.applyImportChoice()` runs
+  afterwards and `applySourceStorageChange()` calls `store.clearHistory()`.
+- **Problem:** A drawing imported from OneDrive, a UNC path or another
+  recommended location cannot be removed with one Undo after the managed copy is
+  accepted. The import and the copy are two structural operations, and the copy
+  deliberately clears history so an older snapshot cannot restore the previous
+  source path.
+- **Impact:** No data loss, and the source file is still never modified. The
+  acceptance rule holds for ordinary reference imports; the exception is the
+  opt-in copy mode, which is already documented as a separate source change.
+- **Next step:** Fold the managed-copy choice into the import transaction, or
+  provide an explicit “Remove imported pages and copy” action, when source
+  storage and history are revisited in phase 11 (#191).
+- **Related:** ADR 0012, phase 2 #183, phase 11 #191, `docs/limitations.md`.
