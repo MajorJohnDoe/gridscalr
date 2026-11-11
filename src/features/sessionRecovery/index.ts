@@ -18,7 +18,6 @@ export {
   findCenterEntry,
   groupRecoveryEntries,
   needsRestoreConfirmation,
-  serializedBytes,
 } from "./centerModel";
 export type {
   RecoveryCenterAction,
@@ -26,16 +25,31 @@ export type {
   RecoveryInstanceGroup,
   RecoveryProjectGroup,
 } from "./centerModel";
+export {
+  EMPTY_RECOVERY_USAGE,
+  RECOVERY_BUDGET,
+  planRecoveryPrune,
+  protectedRecordIds,
+  recoveryUsage,
+  serializedBytes,
+  textBytes,
+} from "./budget";
+export type {
+  RecoveryBudget,
+  RecoveryProjectUsage,
+  RecoveryPruneOptions,
+  RecoveryUsage,
+} from "./budget";
+export { AutosaveError, describeAutosaveFailure, isQuotaExceeded } from "./failure";
 export { openRecoveryCenter as showRecoveryCenter } from "./centerUi";
 export { showSessionBanner } from "./ui";
 export type { BannerAction, BannerOptions } from "./ui";
 export { getRecoverySummary, refreshRecoverySummary, subscribeRecoverySummary } from "./summary";
+export { getRecoveryUsage } from "./summary";
 export {
-  AutosaveError,
   clearAllRecovery,
   clearAutosavesForInstance,
   deleteRecoveryRecord,
-  describeAutosaveFailure,
   listRecoveryRecords,
   writeAutosaveRecord,
   writeCheckpointRecord,

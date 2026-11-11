@@ -88,6 +88,12 @@ const input = {
   locale: "en-GB",
   viewport: { width: 1460, height: 920, dpr: 1 },
   autosaveFailure: "/home/anna/Secret failed to persist",
+  recovery: {
+    records: 4,
+    totalBytes: 12 * 1024 * 1024,
+    budgetBytes: 256 * 1024 * 1024,
+    projectBytes: [8 * 1024 * 1024, 4 * 1024 * 1024],
+  },
   log: [
     {
       at: "2026-11-03T18:00:00.000Z",
@@ -136,6 +142,8 @@ describe("buildDiagnostics", () => {
     expect(text).toContain("Platform: windows · production build");
     expect(text).toContain("area 1");
     expect(text).toContain("Autosave: failing — <path> failed to persist");
+    expect(text).toContain("Recovery storage: 4 record(s) · 12.0 MB of 256.0 MB");
+    expect(text).toContain("2 project(s): 8.0 MB, 4.0 MB");
     expect(text).not.toContain("Secret");
     expect(text).not.toContain("/home/anna");
     expect(text).not.toContain("42");

@@ -319,6 +319,8 @@ export class SessionRecoveryController {
         store.emit("save");
       }
       this.lastAutosaveError = null;
+      // Keep the published footprint current for diagnostics and Preferences.
+      void refreshRecoverySummary();
     } catch (error) {
       const failure = error instanceof Error ? error : new Error(String(error));
       if (this.lastAutosaveError !== failure.message) {

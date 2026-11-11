@@ -15,6 +15,12 @@ export interface RecoveryRecord {
   baseFileSha256: string | null;
   savedAt: string;
   serialized: string;
+  /**
+   * UTF-8 bytes of `serialized`, persisted so listing and pruning never have to
+   * encode the snapshot again. Missing on records written before schema-free
+   * store change; `serializedBytes()` falls back to encoding those.
+   */
+  serializedBytes?: number;
   /** Localized label for a structural checkpoint, for example "Before deleting page 12". */
   label?: string;
   appVersion: string;
@@ -64,6 +70,10 @@ export function isRecoveryRecord(value: unknown): value is RecoveryRecord {
     (record.baseFileSha256 === null || typeof record.baseFileSha256 === "string") &&
     typeof record.savedAt === "string" &&
     typeof record.serialized === "string" &&
+    (record.serializedBytes === undefined ||
+      (typeof record.serializedBytes === "number" &&
+        Number.isFinite(record.serializedBytes) &&
+        record.serializedBytes >= 0)) &&
     typeof record.appVersion === "string" &&
     (record.label === undefined || typeof record.label === "string")
   );

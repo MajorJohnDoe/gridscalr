@@ -692,7 +692,7 @@ The source PDF or TIF is never overwritten. Every save and export resolves real 
 
 The status bar shows whether the project is **Saved**, has **Unsaved changes**, or is **Not saved to a file** yet. It also warns when a source drawing is missing or has changed on disk, and it shows whether autosave is **on**, **off** or **paused**.
 
-Autosave keeps recovery snapshots in a local IndexedDB database (with a localStorage fallback only when IndexedDB is unavailable). Each snapshot is scoped to one project and one app instance, so two open projects cannot overwrite each other's recovery. GridScalr keeps the latest snapshot per project plus one previous one. If recovery storage is full or unavailable, the status bar shows a warning. Save the project to a file, then free space in the app or browser storage; autosave resumes after the next change.
+Autosave keeps recovery snapshots in a local IndexedDB database (with a localStorage fallback only when IndexedDB is unavailable). Each snapshot is scoped to one project and one app instance, so two open projects cannot overwrite each other's recovery. Recovery storage has a byte budget of **64 MiB per project and 256 MiB for all projects on this computer**, in addition to the two-autosave and ten-checkpoint count limits. The newest autosave and the newest checkpoint of every project are always kept; older records are pruned oldest first when a write would exceed the budget. A project whose snapshot alone is larger than 64 MiB keeps those two newest records and no others. A full or unavailable store shows a persistent **Recovery storage full** or **Autosave failing** chip in the status bar; clicking it opens the recovery center so old records can be deleted. Save the project to a file first, then free space; autosave resumes after the next change.
 
 Autosave is on by default. It writes at most one recovery snapshot every 15 seconds after a change. Open **Settings → Preferences… → Data** to turn it off, to choose a 30- or 60-second interval, or to **Pause for this session**. A pause lasts until you close and reopen GridScalr. Turning autosave off or pausing stops periodic snapshots immediately; it never saves the project file. Structural checkpoints are still written before page, source and import operations, and the unsaved-changes prompt still protects work whenever you close or replace a project. A longer interval writes less often, so more of your most recent work is at risk if the app crashes.
 
@@ -700,16 +700,17 @@ Closing the window with the title-bar X, **File → Quit** (`Ctrl/Cmd+Q`), or Al
 
 ### Recovery center and open-elsewhere
 
-**Recovery center** on the welcome screen and **Settings → Preferences… → Data → Open recovery center…** open the same dialog. It lists every autosave and structural checkpoint GridScalr stores on this computer, grouped by project and app instance. Each record shows its label, save time, serialized size, the project name and path (**Not saved to a file yet** when the project has no file) and whether its base file hash still matches the file on disk. Nothing is restored automatically.
+**Recovery center** on the welcome screen and **Settings → Preferences… → Data → Open recovery center…** open the same dialog. It lists every autosave and structural checkpoint GridScalr stores on this computer, grouped by project and app instance. The top of the dialog shows how much of the 256 MiB recovery budget is in use, and every project shows its own stored size. Each record shows its label, save time, serialized size, the project name and path (**Not saved to a file yet** when the project has no file) and whether its base file hash still matches the file on disk. Nothing is restored automatically.
 
 - An **autosave** is unsaved work written after a change while a project is open. Saving the project removes that session's autosave record.
 - A **checkpoint** is a labelled snapshot written before a structural action, such as **Before deleting page 12** or **Before replacing the source Plan.pdf**. Checkpoints stay until they are deleted or rotated out.
 - A record is labelled **based on the current file**, **based on an older file version**, **base file version unknown**, **project file is missing** or **unsaved project**. The center compares the base file SHA-256 stored with the record against the current file on disk.
 - Select one record and choose **Restore selected** or **Delete selected**. **Restore** opens that one snapshot as unsaved work and replaces the project open in the window; if that project has unsaved changes, GridScalr asks before replacing it. **Delete** removes only the selected record after confirmation. Other snapshots, checkpoints, app instances, project files and drawings are never touched.
 - A record based on an older, unknown or missing file version shows a warning in the center and asks for a second confirmation before it is restored.
+- GridScalr keeps the newest autosave and the newest checkpoint for every project and prunes the oldest records first, so the 64 MiB per-project and 256 MiB total budgets hold even for very large projects. Deleting records from the center frees space immediately and needs no other cleanup.
 - When no records are stored, the center explains the difference between an autosave and a checkpoint and does not offer a restore action.
 
-Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Up to ten checkpoints per project are kept.
+Before a structural action GridScalr writes a labelled checkpoint to the same local store: **Before deleting page 12**, **Before duplicating page 4**, **Before adding…**, **Before importing…**, **Before changing page 2 paper to A2** and **Before adding sheet…**. Up to ten checkpoints per project are kept, and the byte budget above applies to them together with the autosaves.
 
 In the desktop app, opening a project also checks for a sidecar lock file named `<project>.gridscalr.lock`. The lock records the app instance, project ID, open time, a 30-second heartbeat, the project hash, a coarse host label (`Desktop · Windows`, `Browser · Linux`) and the app version. It never contains a user name, computer name or project content.
 
@@ -777,7 +778,7 @@ Open **Settings → Preferences…**. The dialog groups app-level choices by cat
 - **Workspace** – expand both panels or reset the panel widths, collapsed state and tool-rail layout. GridScalr has a fixed three-column workspace; it does not support floating or docked panels.
 - **Layers** – default colours for new measurement and drawing layers. The measurement default is signal red (`#f70808`) and the drawing default is orange (`#f2a93b`). Existing layers keep their colour.
 - **Stamps** – the stamp presets that new projects start with. **Use the project's presets as defaults** copies the open project's list into the app defaults.
-- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Open recovery center…** opens the recovery center, where one selected record can be restored or deleted. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
+- **Data** – recovery snapshots and checkpoints plus the recent-file list. **Open recovery center…** opens the recovery center, where one selected record can be restored or deleted and the storage total and per-project size are shown. **Clear recovery data** removes every stored recovery snapshot and structural checkpoint, and **Clear recent files** removes the recent-file list. These remove local convenience data only; project files and source drawings are never touched. Missing recent files are marked and can be removed one at a time.
 
 ### Project settings
 
@@ -800,7 +801,7 @@ Project settings are stored in the `.gridscalr` file and are undoable while the 
 - **Help → Workflows** opens task-oriented guides for operations technicians and technical property managers.
 - **Help → User guide** (`F1`) opens this guide inside the app.
 - **Help → Keyboard shortcuts** (`?`) opens the shortcut reference.
-- **Help → Copy diagnostics** copies a report with the app version, project schema, platform, WebView version, build mode, viewport, autosave state and anonymised project statistics (documents, pages, layers, items by kind, categories, count types, embedded data size). It never includes the project name, drawing names, labels or file paths. The last few runtime events are included; see [Troubleshooting](#troubleshooting).
+- **Help → Copy diagnostics** copies a report with the app version, project schema, platform, WebView version, build mode, viewport, autosave state, recovery storage use (total and per project, without names or paths) and anonymised project statistics (documents, pages, layers, items by kind, categories, count types, embedded data size). It never includes the project name, drawing names, labels or file paths. The last few runtime events are included; see [Troubleshooting](#troubleshooting).
 - **Help → Report a problem…** shows the same diagnostics next to the issue tracker link, with buttons to copy both.
 - **Help → About GridScalr** shows the installed version and project schema.
 
@@ -856,7 +857,7 @@ Restart the app and make sure Microsoft Edge WebView2 is up to date. On Linux, c
 
 ### Autosave is failing
 
-When the recovery snapshot cannot be written, the status bar shows a persistent **Autosave failing** chip until an autosave succeeds again. The project stays open and saving to a file still works; free local storage or close other browser tabs, then continue editing. Click the chip or use **Help → Copy diagnostics** to include the message and recent events in a bug report. Autosave never stores drawing content in the log; paths and names are stripped.
+When the recovery snapshot cannot be written, the status bar shows a persistent **Autosave failing** chip until an autosave succeeds again. If the local store is full, the chip reads **Recovery storage full** and opens the recovery center when clicked, so old records can be deleted. The project stays open and saving to a file still works; free local storage or close other browser tabs, then continue editing. Use **Help → Copy diagnostics** to include the message and recent events in a bug report. Autosave never stores drawing content in the log; paths and names are stripped.
 
 ### Something failed without a message
 

@@ -22,6 +22,15 @@ export interface ProjectStats {
   embeddedBytes: number;
 }
 
+/** Recovery footprint, without project names or paths. */
+export interface RecoveryStorageStats {
+  records: number;
+  totalBytes: number;
+  budgetBytes: number;
+  /** Serialized bytes per project, largest first. */
+  projectBytes: number[];
+}
+
 export interface DiagnosticsInput {
   version: string;
   schemaVersion: number;
@@ -33,6 +42,7 @@ export interface DiagnosticsInput {
   viewport: { width: number; height: number; dpr: number };
   project: ProjectStats | null;
   autosaveFailure: string | null;
+  recovery: RecoveryStorageStats | null;
   log: LogEntry[];
 }
 
@@ -115,6 +125,20 @@ export function buildDiagnostics(input: DiagnosticsInput): string {
       input.autosaveFailure ? `failing — ${sanitizeDiagnosticText(input.autosaveFailure)}` : "ok"
     }`,
   );
+
+  const recovery = input.recovery;
+  if (recovery) {
+    const projectSizes = recovery.projectBytes.slice(0, 5).map((bytes) => formatBytes(bytes));
+    const hidden = recovery.projectBytes.length - projectSizes.length;
+    if (hidden > 0) projectSizes.push(`+${hidden} more`);
+    const perProject = projectSizes.length
+      ? ` · ${recovery.projectBytes.length} project(s): ${projectSizes.join(", ")}`
+      : "";
+    lines.push(
+      `Recovery storage: ${recovery.records} record(s) · ` +
+        `${formatBytes(recovery.totalBytes)} of ${formatBytes(recovery.budgetBytes)}${perProject}`,
+    );
+  }
 
   if (input.log.length) {
     lines.push(`Recent log (${input.log.length}):`);
