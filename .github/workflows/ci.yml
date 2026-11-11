@@ -77,19 +77,30 @@ jobs:
           retention-days: 14
       - run: npm run build
       - name: Install Chromium for the browser suites
-        timeout-minutes: 15
+        timeout-minutes: 18
         run: |
-          # `--with-deps` calls apt. A mirror outage here took twelve minutes
-          # and failed a phase that had no code problem. Retry three times with
-          # a five minute cap per attempt and a clear error.
+          # `--with-deps` calls apt. On 2026-11-11 the runner could not resolve
+          # the Ubuntu mirrors, so the step retried for twelve minutes and
+          # failed a phase that had no code problem. Install the shared
+          # libraries when apt works, and fall back to the browser alone when it
+          # does not: the hosted runner image already carries them, and the
+          # suites fail loudly if one is actually missing.
           for attempt in 1 2 3; do
             if timeout 300 npx playwright install --with-deps chromium; then
               exit 0
             fi
-            echo "::warning::Playwright install attempt ${attempt} failed; retrying"
-            sleep $((attempt * 15))
+            echo "::warning::Playwright install with system packages failed (attempt ${attempt})"
+            sleep $((attempt * 10))
           done
-          echo "::error::Playwright browser install failed after three attempts. This is a runner or mirror problem, not a code failure."
+          echo "::warning::Falling back to the browser alone; apt appears unreachable on this runner."
+          for attempt in 1 2 3; do
+            if timeout 240 npx playwright install chromium; then
+              exit 0
+            fi
+            echo "::warning::Browser-only install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 10))
+          done
+          echo "::error::Playwright browser install failed after all attempts."
           exit 1
       - run: npm run test:ui
       - run: npm run test:import
