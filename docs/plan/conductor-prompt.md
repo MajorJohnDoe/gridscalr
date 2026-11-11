@@ -77,7 +77,11 @@ How to run one phase:
 6. Verify the PR independently with the defensive review checklist.
 7. Merge with squash and delete the branch only when the phase is sound.
 8. Update the handover on `main` and the epic checklist.
-9. Start the next phase only after the previous merge is green on `main`.
+9. Start the next phase once the handover commit is pushed, rather than waiting
+   for its CI run to finish. The next branch is cut from that pushed commit, so
+   the base is fixed and reviewable; if the handover run later fails, stop and
+   re-verify every branch cut from it before merging anything. A phase never
+   merges until its own PR and the `main` commit it is based on are both green.
 
 Defensive review:
 - The worker STATUS is a claim, not proof.

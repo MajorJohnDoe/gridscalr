@@ -187,7 +187,12 @@ grow a static TODO list in the roadmap.
 
 ### Before every commit
 
-Run the relevant checks from the repository root:
+Verification has two tiers. The **local gate** is fast enough to run on every
+commit; **CI is authoritative** and runs the full list on the exact SHA that
+gets merged. Do not report a change as complete, and do not merge, until that
+full CI run is green.
+
+The local gate (target: under two minutes):
 
 ```bash
 npm run check:versions
@@ -201,19 +206,31 @@ npm run lint
 npm run check:i18n
 npm run check:themes
 npx tsc --noEmit
-npm test -- --run
-npm run build
-cargo fmt --manifest-path src-tauri/Cargo.toml --check
-cargo check --manifest-path src-tauri/Cargo.toml
+npx vitest run <the test files the change touches or can break>
 ```
 
-For changes that affect the desktop shell, also run:
+Add what the change actually affects:
 
-```bash
-npm run tauri build -- --no-bundle
-```
+- project file, schema, page, source or package changes: the focused migration,
+  round-trip and invariant tests, locally;
+- save, lease or recovery changes: `tests/robustness/`;
+- Rust changes: `cargo fmt --check`, `cargo check` and
+  `cargo test --lib`;
+- rendered or interaction changes: `npm run test:visual`, and the matching
+  browser suite (`test:ui`, `test:import`, `test:canvas`, `test:count`,
+  `test:touch`, `test:csp`);
+- desktop shell changes: `npm run tauri build -- --no-bundle` once, before the
+  push rather than after every intermediate fix;
+- a captured screen changed: `npm run docs:capture`.
 
-A docs-only change does not need the full build, but it must not leave broken links or contradictory instructions.
+`.github/workflows/ci.yml` remains the full list: every check above, the whole
+`npm test -- --run` suite, `npm run build`, the Rust build and tests, and the
+`desktop` job on Ubuntu, Windows and macOS. Because CI runs all of it on the PR
+head, running the same heavyweight suites locally on every commit duplicates
+work without adding a guarantee.
+
+A docs-only change does not need the full build, but it must not leave broken
+links or contradictory instructions.
 
 Before committing, confirm that:
 
