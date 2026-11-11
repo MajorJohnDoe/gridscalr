@@ -189,6 +189,7 @@ describe("view-only command surface", () => {
     store.renamePage(pageIdFor(1), "Renamed");
     store.deletePage(pageIdFor(1));
     store.reorderPage(pageIdFor(1), 0);
+    store.reorderPages([pageIdFor(1), pageIdFor(2)], 1);
     store.insertPageRecord(pageIdFor(1), 0);
     store.duplicatePage(pageIdFor(1), {
       name: "Copy",

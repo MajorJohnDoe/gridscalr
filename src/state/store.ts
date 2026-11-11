@@ -3,6 +3,7 @@ import {
   duplicatePage as duplicatePageRecord,
   insertPage as insertPageRecord,
   movePage as movePageRecord,
+  movePages as movePagesRecord,
   type DeletePageSummary,
   type DuplicatePageOptions,
   type DuplicatePageSummary,
@@ -438,6 +439,20 @@ export class Store {
   reorderPage(pageId: PageId, targetIndex: number): boolean {
     if (!this.project || this.readOnly) return false;
     if (!movePageRecord(this.project, pageId, targetIndex)) return false;
+    this.clearHistory();
+    this.dirty = true;
+    this.revision += 1;
+    this.emit("project");
+    return true;
+  }
+
+  /**
+   * Structural multi-page reorder. The whole selection moves as one block to
+   * `insertionIndex`; one call is one structural action and one undo boundary.
+   */
+  reorderPages(pageIds: readonly PageId[], insertionIndex: number): boolean {
+    if (!this.project || this.readOnly) return false;
+    if (!movePagesRecord(this.project, pageIds, insertionIndex)) return false;
     this.clearHistory();
     this.dirty = true;
     this.revision += 1;

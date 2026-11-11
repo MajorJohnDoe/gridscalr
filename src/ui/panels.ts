@@ -93,6 +93,7 @@ export interface PanelActions {
   deletePage: (pageId: PageId) => void;
   duplicatePage: (pageId: PageId) => void;
   reorderPage: (pageId: PageId, targetIndex: number) => void;
+  reorderPages: (pageIds: readonly PageId[], insertionIndex: number) => void;
   insertPage: (pageId: PageId, index: number) => void;
   replaceSource: (documentId: string) => void;
   consolidateDrawings: () => void;
