@@ -76,6 +76,7 @@ function hasSelection(): boolean {
 function buildMenus(actions: PanelActions): MenuDefinition[] {
   const project = store.project;
   const hasProject = Boolean(project);
+  const viewOnly = store.readOnly;
   const recent = getRecent();
 
   return [
@@ -93,10 +94,10 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           shortcut: APP_SHORTCUTS.openDrawing,
         }),
         action(t("menu.file.importProjectPages"), actions.importProjectPages, {
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.file.consolidateDrawings"), actions.consolidateDrawings, {
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.file.compareRevision"), actions.openCompare, { disabled: !hasProject }),
         action(t("menu.file.compareDrawing"), actions.openDrawingReference, {
@@ -132,11 +133,11 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         separator(),
         action(t("menu.file.save"), actions.saveProject, {
           shortcut: APP_SHORTCUTS.save,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.file.saveAs"), actions.saveProjectAs, {
           shortcut: APP_SHORTCUTS.saveAs,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.file.saveCopy"), actions.saveProjectCopy, {
           disabled: !hasProject,
@@ -165,7 +166,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
               }),
             ]),
         separator(),
-        action(t("menu.file.importImage"), actions.insertImage, { disabled: !hasProject }),
+        action(t("menu.file.importImage"), actions.insertImage, {
+          disabled: !hasProject || viewOnly,
+        }),
         {
           kind: "submenu",
           label: t("menu.file.export"),
@@ -194,16 +197,16 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
       items: () => [
         action(t("menu.edit.undo"), actions.undo, {
           shortcut: APP_SHORTCUTS.undo,
-          disabled: !store.canUndo,
+          disabled: viewOnly || !store.canUndo,
         }),
         action(t("menu.edit.redo"), actions.redo, {
           shortcut: APP_SHORTCUTS.redo,
-          disabled: !store.canRedo,
+          disabled: viewOnly || !store.canRedo,
         }),
         separator(),
         action(t("menu.edit.cut"), actions.cutSelection, {
           shortcut: APP_SHORTCUTS.cut,
-          disabled: !hasSelection(),
+          disabled: viewOnly || !hasSelection(),
         }),
         action(t("menu.edit.copy"), actions.copySelection, {
           shortcut: APP_SHORTCUTS.copy,
@@ -211,21 +214,21 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         }),
         action(t("menu.edit.paste"), actions.pasteSelection, {
           shortcut: APP_SHORTCUTS.paste,
-          disabled: !hasProject || !hasClipboard(project!),
+          disabled: viewOnly || !hasProject || !hasClipboard(project!),
         }),
         action(t("menu.edit.duplicate"), actions.duplicateSelection, {
           shortcut: APP_SHORTCUTS.duplicate,
-          disabled: !hasSelection(),
+          disabled: viewOnly || !hasSelection(),
         }),
         action(t("menu.edit.delete"), actions.deleteSelection, {
           shortcut: APP_SHORTCUTS.delete,
-          disabled: !hasSelection(),
+          disabled: viewOnly || !hasSelection(),
           danger: true,
         }),
         separator(),
         action(t("menu.edit.rename"), actions.renameSelection, {
           shortcut: APP_SHORTCUTS.rename,
-          disabled: store.ui.selection.length !== 1,
+          disabled: viewOnly || store.ui.selection.length !== 1,
         }),
       ],
     },
@@ -267,15 +270,15 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         separator(),
         action(t("menu.view.showGrid"), () => toggleSetting("showGrid"), {
           checked: project?.settings.showGrid ?? false,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.view.showScale"), () => toggleSetting("showCalibration"), {
           checked: project?.settings.showCalibration ?? false,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.view.snap"), () => toggleSetting("snapToGeometry"), {
           checked: project?.settings.snapToGeometry ?? false,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         separator(),
         action(t("menu.view.search"), actions.openSearch, {
@@ -301,10 +304,10 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.settings.preferences"), () => openPreferencesDialog()),
         action(t("menu.settings.project"), () => openSettingsDialog(), {
           shortcut: APP_SHORTCUTS.settings,
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
         action(t("menu.settings.categories"), () => void openCategoriesDialog(), {
-          disabled: !hasProject,
+          disabled: !hasProject || viewOnly,
         }),
       ],
     },

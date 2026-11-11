@@ -94,6 +94,7 @@ import { describeError } from "../io/platformError";
 import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
+import { isEditingTool } from "../features/viewOnly";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
@@ -549,7 +550,7 @@ export class App {
   };
 
   private onPaste = (event: ClipboardEvent): void => {
-    if (this.disposed) return;
+    if (this.disposed || store.readOnly) return;
     void pasteFromClipboard(this.imageFlowHost(), event);
   };
 
@@ -581,11 +582,13 @@ export class App {
       switch (key) {
         case "z":
           event.preventDefault();
+          if (store.readOnly) return;
           if (event.shiftKey) store.redo();
           else store.undo();
           return;
         case "y":
           event.preventDefault();
+          if (store.readOnly) return;
           store.redo();
           return;
         case "n":
@@ -602,10 +605,12 @@ export class App {
           return;
         case "d":
           event.preventDefault();
+          if (store.readOnly) return;
           duplicateSelection();
           return;
         case ",":
           event.preventDefault();
+          if (store.readOnly) return;
           openSettingsDialog();
           return;
         case "\\":
@@ -624,6 +629,7 @@ export class App {
           return;
         case "x":
           event.preventDefault();
+          if (store.readOnly) return;
           cutSelection();
           return;
         case "o":
@@ -675,6 +681,7 @@ export class App {
 
     if (event.key === "F2") {
       event.preventDefault();
+      if (store.readOnly) return;
       if (store.ui.selection.length === 1) requestMarkupRename(this.refs);
       else beginProjectRename(this.refs.projectName);
       return;
@@ -703,12 +710,14 @@ export class App {
     if (event.key === "Enter") {
       if (event.target instanceof HTMLButtonElement) return;
       event.preventDefault();
+      if (store.readOnly) return;
       this.canvas.finishDraft();
       return;
     }
 
     if (event.key === "Delete" || event.key === "Backspace") {
       event.preventDefault();
+      if (store.readOnly) return;
       if (!this.canvas.removeLastPoint()) this.canvas.deleteSelection();
       return;
     }
@@ -726,6 +735,7 @@ export class App {
 
     if (event.key.startsWith("Arrow") && store.ui.selection.length) {
       event.preventDefault();
+      if (store.readOnly) return;
       const step = (event.shiftKey ? 10 : 1) / store.ui.zoom;
       const dx = event.key === "ArrowLeft" ? -step : event.key === "ArrowRight" ? step : 0;
       const dy = event.key === "ArrowUp" ? -step : event.key === "ArrowDown" ? step : 0;
@@ -738,6 +748,7 @@ export class App {
     const tool = TOOL_KEYS[combo] ?? (event.shiftKey ? undefined : TOOL_KEYS[key]);
     if (tool) {
       event.preventDefault();
+      if (store.readOnly && isEditingTool(tool)) return;
       store.setTool(tool);
       return;
     }

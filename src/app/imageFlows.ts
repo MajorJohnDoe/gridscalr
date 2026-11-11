@@ -19,7 +19,7 @@ function errorMessage(error: unknown): string {
 }
 
 export async function insertImageFlow(host: ImageFlowHost): Promise<void> {
-  if (!store.project) return;
+  if (!store.project || store.readOnly) return;
   let file: File | null;
   try {
     file = await pickImage();
@@ -33,7 +33,7 @@ export async function insertImageFlow(host: ImageFlowHost): Promise<void> {
 
 export async function insertImageFile(host: ImageFlowHost, file: File): Promise<void> {
   const project = store.project;
-  if (!project) return;
+  if (!project || store.readOnly) return;
   if (!isSupportedImageFile(file)) {
     toast(t("app.chooseImage"), "warning");
     return;

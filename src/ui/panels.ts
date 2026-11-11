@@ -1,7 +1,7 @@
 import { primaryDocument } from "../model/documents";
 import { pageDisplayName, pageIdAt } from "../model/pages";
 import type { AreaMode, CountType, ImageMode, PageId, PageSize, RecentEntry } from "../model/types";
-import { store } from "../state/store";
+import { store, type ToolId } from "../state/store";
 import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
@@ -20,6 +20,7 @@ import {
   type ToolFamilyId,
 } from "./toolDefs";
 import { t } from "../i18n";
+import { isEditingTool } from "../features/viewOnly";
 
 export interface PanelActions {
   openPdf: () => void;
@@ -163,8 +164,8 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     : "";
   refs.dirtyDot.classList.toggle("hidden", !store.dirty || !hasProject);
   refs.dirtyDot.title = t("dialogs.unsavedTitle");
-  refs.undoBtn.disabled = !store.canUndo;
-  refs.redoBtn.disabled = !store.canRedo;
+  refs.undoBtn.disabled = store.readOnly || !store.canUndo;
+  refs.redoBtn.disabled = store.readOnly || !store.canRedo;
   refs.zoomReadout.textContent = `${Math.round(store.ui.zoom * 100)}%`;
   refs.pageInput.disabled = !hasProject;
   refs.pagePrevBtn.disabled = !hasProject || store.ui.page <= 1;
@@ -177,14 +178,24 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
 
 function renderToolRail(refs: ShellRefs): void {
   rememberFamilyTool(store.ui.activeTool);
-  for (const btn of refs.toolRail.querySelectorAll<HTMLElement>(
+  const viewOnly = store.readOnly;
+  for (const btn of refs.toolRail.querySelectorAll<HTMLButtonElement>(
     "[data-tool]:not([data-tool-group])",
   )) {
-    const active = btn.dataset.tool === store.ui.activeTool;
+    const tool = btn.dataset.tool as ToolId;
+    const definition = TOOL_BY_ID.get(tool);
+    const active = tool === store.ui.activeTool;
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
+    btn.disabled = viewOnly && isEditingTool(tool);
+    if (definition) {
+      btn.title = definition.shortcut
+        ? `${t(definition.label)} (${definition.shortcut})`
+        : t(definition.label);
+    }
+    if (btn.disabled) btn.title = `${btn.title} · ${t("viewOnly.disabled")}`;
   }
-  for (const btn of refs.toolRail.querySelectorAll<HTMLElement>("[data-tool-group]")) {
+  for (const btn of refs.toolRail.querySelectorAll<HTMLButtonElement>("[data-tool-group]")) {
     const family = TOOL_FAMILY_BY_ID.get(btn.dataset.toolGroup as ToolFamilyId);
     if (!family) continue;
     const memberId = familyToolForDisplay(family, store.ui.activeTool);
@@ -197,6 +208,11 @@ function renderToolRail(refs: ShellRefs): void {
     }
     btn.classList.toggle("is-active", active);
     btn.setAttribute("aria-pressed", String(active));
+    btn.title = member
+      ? `${t(member.label)} (${member.shortcut}) · ${t(family.label)}`
+      : t(family.label);
+    btn.disabled = viewOnly;
+    if (viewOnly) btn.title = `${btn.title} · ${t("viewOnly.disabled")}`;
   }
   const markupsActive = Boolean(store.project) && isMarkupsOpen();
   refs.markupsBtn.classList.toggle("is-active", markupsActive);

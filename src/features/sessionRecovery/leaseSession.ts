@@ -3,7 +3,13 @@ import { describeError } from "../../io/platformError";
 import type { ProjectFileStamp } from "../saveIntegrity";
 import { logEvent } from "../diagnostics/log";
 import { appVersion, hostLabel } from "./instance";
-import { LEASE_HEARTBEAT_MS, classifyLease, createLease, type ProjectLease } from "./lease";
+import {
+  LEASE_HEARTBEAT_MS,
+  canTakeOver,
+  classifyLease,
+  createLease,
+  type ProjectLease,
+} from "./lease";
 import {
   LeaseOwnedElsewhereError,
   clearProjectLease,
@@ -107,6 +113,27 @@ export class ProjectLeaseSession {
     await this.release();
     await this.acquire(path, projectId, sha256);
     this.startHeartbeat();
+  }
+
+  /**
+   * Enables editing again by explicitly re-reading the lease. A live owner
+   * keeps the session view-only; a stale, corrupt or missing lease is replaced.
+   */
+  async takeOver(
+    path: string | null,
+    projectId: string,
+    projectSha256: string | null,
+  ): Promise<boolean> {
+    if (!this.host.desktop || !path) return true;
+    const read = await readProjectLease(path);
+    if (!canTakeOver(classifyLease(read, this.instanceId))) return false;
+    this.stopHeartbeat();
+    this.lease = null;
+    this.leasePath = null;
+    await this.acquire(path, projectId, projectSha256);
+    if (!this.lease || this.leasePath !== path) return false;
+    this.startHeartbeat();
+    return true;
   }
 
   /** A save must not proceed if another instance now owns the lease. */

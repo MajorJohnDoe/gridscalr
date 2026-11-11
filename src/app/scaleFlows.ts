@@ -17,7 +17,7 @@ import { toast } from "../ui/toast";
 import { t } from "../i18n";
 
 export function startCalibration(): void {
-  if (!store.project) return;
+  if (!store.project || store.readOnly) return;
   const page = store.ui.page;
   const pageId = pageIdAt(store.project, page);
   if (!pageId || pageScaleLocked(store.project, pageId)) {
@@ -30,7 +30,7 @@ export function startCalibration(): void {
 
 export async function openManualScaleFlow(): Promise<void> {
   const project = store.project;
-  if (!project) return;
+  if (!project || store.readOnly) return;
   const page = store.ui.page;
   const pageId = pageIdAt(project, page);
   if (!pageId || pageScaleLocked(project, pageId)) {
@@ -75,7 +75,7 @@ export async function openManualScaleFlow(): Promise<void> {
 
 export function setScaleLock(locked: boolean): void {
   const project = store.project;
-  if (!project) return;
+  if (!project || store.readOnly) return;
   const page = store.ui.page;
   const pageId = pageIdAt(project, page);
   if (!pageId || !pageCalibration(project, pageId)) {
@@ -94,7 +94,7 @@ export function setScaleLock(locked: boolean): void {
 export function fitDrawingToArea(invalidate: () => void): void {
   const project = store.project;
   const page = store.ui.page;
-  if (!project || !canFitDrawingToArea(project, page)) {
+  if (!project || store.readOnly || !canFitDrawingToArea(project, page)) {
     toast(t("context.fitDrawingNothing"), "info");
     return;
   }
@@ -112,7 +112,7 @@ export function fitDrawingToArea(invalidate: () => void): void {
 
 export async function clearCalibrationFlow(): Promise<void> {
   const project = store.project;
-  if (!project) return;
+  if (!project || store.readOnly) return;
   const page = store.ui.page;
   const pageId = pageIdAt(project, page);
   if (!pageId || !pageCalibration(project, pageId)) return;

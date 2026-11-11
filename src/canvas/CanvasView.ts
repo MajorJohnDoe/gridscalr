@@ -269,6 +269,7 @@ export class CanvasView {
 
     const pointerHost: PointerHost = {
       isReadOnly: () => this.readOnly,
+      isViewOnly: () => store.readOnly,
       viewport: () => this.view,
       cropActive: () => this.crop.active,
       cropCursor: () => this.crop.cursor(),
@@ -405,6 +406,11 @@ export class CanvasView {
     return this.options.readOnly === true;
   }
 
+  /** The reference pane never edits, and a view-only session has no editors. */
+  private get editingDisabled(): boolean {
+    return this.options.readOnly === true || store.readOnly;
+  }
+
   pageToScreen(point: Point): Point {
     return toScreenPoint(this.view, point);
   }
@@ -431,6 +437,15 @@ export class CanvasView {
     if (this.readOnly && !this.isVisible) return;
     if (reason === "view" || reason === "page" || reason === "project" || reason === "undo") {
       this.commitSheetField(false);
+    }
+    if (reason === "save" && store.readOnly) {
+      // Losing the lease mid-gesture must not leave a draft or editor open.
+      this.drafts.setDraft(null);
+      this.pointers.cancelDrag();
+      this.pointers.cancelMarquee();
+      this.pointers.cancelLabelConnection();
+      this.commitSheetField(false);
+      this.editors.cancelActiveEditors();
     }
     this.editors.handleStoreChange(reason);
     const page = this.viewPage;
@@ -787,6 +802,7 @@ export class CanvasView {
   }
 
   private runCalibration = async (p1: Point, p2: Point): Promise<void> => {
+    if (this.editingDisabled) return;
     const project = store.project;
     if (!project) return;
     const page = this.viewPage;
@@ -890,6 +906,7 @@ export class CanvasView {
   };
 
   public editSelectedText(): void {
+    if (this.editingDisabled) return;
     const selection = store.primarySelection;
     if (!selection || !store.project) return;
     const found = findItem(store.project, selection.itemId);
@@ -964,6 +981,7 @@ export class CanvasView {
   }
 
   private startTextTool(page: Point): void {
+    if (this.editingDisabled) return;
     const project = store.project;
     if (!project) return;
     const hit = hitTest(project, this.viewPageId ?? "", page, 7 / this.viewZoom);
@@ -996,6 +1014,7 @@ export class CanvasView {
   }
 
   public deleteSelection(): void {
+    if (this.editingDisabled) return;
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const resolved = resolveSelection(project, store.ui.selection);
@@ -1015,6 +1034,7 @@ export class CanvasView {
   }
 
   public nudgeSelection(dx: number, dy: number): void {
+    if (this.editingDisabled) return;
     const project = store.project;
     if (!project || !store.ui.selection.length) return;
     const movable = resolveSelection(project, store.ui.selection).filter((entry) => !entry.locked);
@@ -1372,7 +1392,7 @@ export class CanvasView {
 
   private interactionRenderContext(): InteractionRenderContext {
     return {
-      readOnly: this.readOnly,
+      readOnly: this.editingDisabled,
       page: this.viewPage,
       zoom: this.viewZoom,
       toScreen: (point) => this.toScreen(point),

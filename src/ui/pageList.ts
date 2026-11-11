@@ -45,7 +45,7 @@ function applyThumbnail(pending: PendingThumbnail, url: string): void {
 }
 
 function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void {
-  if (title.querySelector(".page-name-input")) return;
+  if (store.readOnly || title.querySelector(".page-name-input")) return;
   const input = el("input", "page-name-input");
   input.value = title.textContent ?? "";
   input.maxLength = 80;
@@ -167,9 +167,11 @@ function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   empty.append(el("p", "empty-note", t("page.emptyProject")));
   const add = el("button", "btn btn-small", t("page.addPages"));
   add.type = "button";
+  add.disabled = store.readOnly;
   add.addEventListener("click", () => actions.addPages());
   const importPages = el("button", "btn btn-small", t("page.importProjectPages"));
   importPages.type = "button";
+  importPages.disabled = store.readOnly;
   importPages.addEventListener("click", () => actions.importProjectPages());
   empty.append(add, importPages);
   refs.dockBody.append(empty);
@@ -192,7 +194,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const pageId = record.id;
     const card = el("button", "page-card");
     card.type = "button";
-    card.draggable = true;
+    card.draggable = !store.readOnly;
     card.dataset.page = String(page);
     card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
@@ -274,6 +276,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     );
     card.addEventListener("click", () => actions.goToPage(page, true));
     card.addEventListener("dragstart", (event) => {
+      if (store.readOnly) {
+        event.preventDefault();
+        return;
+      }
       draggedPageId = pageId;
       card.classList.add("is-dragging");
       event.dataTransfer?.setData("text/plain", pageId);
@@ -294,6 +300,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     card.addEventListener("drop", (event) => {
       event.preventDefault();
       card.classList.remove("is-drop-target");
+      if (store.readOnly) return;
       const source = draggedPageId ?? event.dataTransfer?.getData("text/plain") ?? null;
       draggedPageId = null;
       if (!source || source === pageId) return;
@@ -301,12 +308,17 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     });
     card.addEventListener("contextmenu", (event) => {
       event.preventDefault();
+      const goToItem = {
+        label: t("page.goTo", { page }),
+        icon: "pages",
+        action: () => actions.goToPage(page, true),
+      };
+      if (store.readOnly) {
+        showPopoverAt(event.clientX, event.clientY, [goToItem]);
+        return;
+      }
       showPopoverAt(event.clientX, event.clientY, [
-        {
-          label: t("page.goTo", { page }),
-          icon: "pages",
-          action: () => actions.goToPage(page, true),
-        },
+        goToItem,
         {
           label: t("page.renameEllipsis"),
           icon: "text",
@@ -419,6 +431,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     // Cards have their own menu; this one covers the empty panel area.
     if ((event.target as HTMLElement | null)?.closest(".page-card")) return;
     event.preventDefault();
+    if (store.readOnly) return;
     showPopoverAt(event.clientX, event.clientY, [
       {
         label: t("page.addPages"),

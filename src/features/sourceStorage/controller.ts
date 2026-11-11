@@ -80,26 +80,32 @@ export class SourceStorageController {
   }
 
   copyIntoProject(documentId: string): Promise<boolean> {
+    if (store.readOnly) return Promise.resolve(false);
     return copyDocumentIntoProject(this.host, documentId);
   }
 
   consolidate(): Promise<void> {
+    if (store.readOnly) return Promise.resolve();
     return consolidateDrawings(this.host);
   }
 
   detachFromSource(documentId: string): Promise<void> {
+    if (store.readOnly) return Promise.resolve();
     return detachDocumentFromSource(this.host, documentId);
   }
 
   useCurrent(documentId: string): Promise<void> {
+    if (store.readOnly) return Promise.resolve();
     return acceptCurrentSource(this.host, documentId);
   }
 
   reload(documentId: string): Promise<void> {
+    if (store.readOnly) return Promise.resolve();
     return reloadSource(this.host, documentId);
   }
 
   relink(documentId: string): Promise<void> {
+    if (store.readOnly) return Promise.resolve();
     return relinkSource(this.host, documentId);
   }
 

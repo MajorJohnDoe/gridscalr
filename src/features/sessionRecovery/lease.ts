@@ -40,6 +40,14 @@ export function classifyLease(
   return isLeaseStale(lease, now) ? "staleOther" : "liveOther";
 }
 
+/**
+ * Explicit takeover is allowed unless another live instance still owns the
+ * project. A stale or corrupt sidecar never blocks the user.
+ */
+export function canTakeOver(state: LeaseState): boolean {
+  return state !== "liveOther";
+}
+
 export function createLease(input: {
   instanceId: string;
   projectId: string;

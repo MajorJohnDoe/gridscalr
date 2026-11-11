@@ -81,7 +81,7 @@ async function sourceProvenance(
 
 export async function importProjectPagesFlow(host: ProjectImportHost): Promise<void> {
   const destination = store.project;
-  if (!destination) return;
+  if (!destination || store.readOnly) return;
 
   const picked = await pickProject();
   if (!picked) return;

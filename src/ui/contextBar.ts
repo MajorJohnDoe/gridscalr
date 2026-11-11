@@ -69,6 +69,12 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   refs.contextBar.append(toolWrap);
   refs.contextBar.append(el("div", "context-hint", tool ? t(tool.hint) : ""));
   if (!project) return;
+  if (store.readOnly) {
+    const note = el("span", "context-view-only", t("viewOnly.contextHint"));
+    note.title = t("viewOnly.statusTitle");
+    refs.contextBar.append(note);
+    return;
+  }
 
   if (drawingOverflowsArea(project, store.ui.page)) {
     const warning = el("button", "context-area-warning");

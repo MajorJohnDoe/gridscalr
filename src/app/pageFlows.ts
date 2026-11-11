@@ -67,6 +67,7 @@ export async function navigateToItem(
 }
 
 export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Promise<void> {
+  if (store.readOnly) return;
   const project = store.project;
   if (!project) return;
   const source = pageRecordById(project, pageId);
@@ -115,6 +116,7 @@ export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Pro
 }
 
 export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promise<void> {
+  if (store.readOnly) return;
   const project = store.project;
   if (!project) return;
   const record = pageRecordById(project, pageId);

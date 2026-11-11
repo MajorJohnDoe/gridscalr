@@ -55,6 +55,7 @@ export class SearchController {
       onQuery: (query) => this.onQuery(query),
       onSelect: (hit) => void this.selectHit(hit),
       onOcr: () => void this.runOcr(),
+      canRunOcr: () => !store.readOnly,
       onClose: () => this.close(),
     });
     this.panel.setProgress(0, index.pageCount);
@@ -120,6 +121,7 @@ export class SearchController {
     const panel = this.panel;
     const renderer = this.options.renderer();
     if (!index || !panel || !renderer || !this.options.project() || this.ocrBusy) return;
+    if (store.readOnly) return;
     this.ocrBusy = true;
     panel.setOcrBusy(true);
     const token = ++this.ocrToken;

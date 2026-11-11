@@ -34,6 +34,7 @@ import {
 } from "../model/categories";
 import type { RemoveCategoryResult } from "../model/categories";
 import { selectionKey, uniqueSelectionRefs } from "../model/selection";
+import { resolveViewOnlyTool } from "../features/viewOnly";
 import { pushHistory } from "./history";
 import type {
   AreaMode,
@@ -250,7 +251,10 @@ export class Store {
   /** Expected disk state captured on open and after a verified save. */
   fileStamp: FileStamp | null = null;
   dirty = false;
-  /** A read-only session may export, package and save a copy, but not overwrite. */
+  /**
+   * View-only: inspection, export, package and Save a copy work, but no command
+   * may change project data. The guards below and in the UI enforce it.
+   */
   readOnly = false;
   /** Last recovery-snapshot error, consumed by the UI after an autosave attempt. */
   autosaveError: AutosaveFailure | null = null;
@@ -354,7 +358,7 @@ export class Store {
    * Pages are append-only; existing page indexes never move.
    */
   addDocument(document: DocumentRef): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     this.project.documents.push(document);
     for (const localPage of includedLocalPages(document)) {
       this.project.pages.push({
@@ -377,7 +381,7 @@ export class Store {
    * source path over the new one.
    */
   applySourceStorageChange(mutate: (documents: DocumentRef[]) => void): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     mutate(this.project.documents);
     this.clearHistory();
     this.dirty = true;
@@ -387,7 +391,7 @@ export class Store {
 
   /** Changes a template sheet's paper. Structural like adding or deleting a page. */
   setTemplatePaper(pageId: PageId, paper: SheetPaperSize): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     const record = pageRecordById(this.project, pageId);
     const document = this.project.documents.find((entry) => entry.id === record?.documentId);
     if (!document?.template) return;
@@ -414,7 +418,7 @@ export class Store {
    * not added to the undo stack.
    */
   deletePage(pageId: PageId): DeletePageSummary | null {
-    if (!this.project) return null;
+    if (!this.project || this.readOnly) return null;
     const result = deletePageRecord(this.project, pageId);
     if (!result) return null;
     this.clearHistory();
@@ -432,7 +436,7 @@ export class Store {
 
   /** Structural page reorder. Display numbers change; no stored reference moves. */
   reorderPage(pageId: PageId, targetIndex: number): boolean {
-    if (!this.project) return false;
+    if (!this.project || this.readOnly) return false;
     if (!movePageRecord(this.project, pageId, targetIndex)) return false;
     this.clearHistory();
     this.dirty = true;
@@ -443,7 +447,7 @@ export class Store {
 
   /** Inserts a new page record for an existing document page at an index. */
   insertPageRecord(pageId: PageId, index: number): PageId | null {
-    if (!this.project) return null;
+    if (!this.project || this.readOnly) return null;
     const source = pageRecordById(this.project, pageId);
     if (!source) return null;
     const record = insertPageRecord(this.project, {
@@ -490,8 +494,10 @@ export class Store {
   }
 
   setTool(tool: ToolId): void {
-    this.ui.activeTool = tool;
-    if (this.project) {
+    const next = this.readOnly ? resolveViewOnlyTool(tool) : tool;
+    if (this.readOnly && next === this.ui.activeTool) return;
+    this.ui.activeTool = next;
+    if (this.project && !this.readOnly) {
       const kind = toolLayerKind(tool);
       if (kind) {
         ensureActiveLayer(
@@ -654,7 +660,7 @@ export class Store {
   }
 
   setActiveLayer(layerId: string): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     if (!this.project.layers.some((l) => l.id === layerId)) return;
     this.project.activeLayerId = layerId;
     this.emit("layers");
@@ -669,7 +675,7 @@ export class Store {
 
   /** Stores or clears derived OCR data without adding an undo step. */
   setPageOcr(pageId: PageId, ocr: OcrPage | undefined): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     const state = ensurePageState(this.project, pageId);
     if (!state) return;
     if (ocr) state.ocr = ocr;
@@ -695,7 +701,7 @@ export class Store {
    * structural and clears the undo history.
    */
   duplicatePage(pageId: PageId, options: DuplicatePageOptions): DuplicatePageSummary | null {
-    if (!this.project) return null;
+    if (!this.project || this.readOnly) return null;
     const result = duplicatePageRecord(this.project, pageId, options);
     if (!result) return null;
     this.clearHistory();
@@ -830,6 +836,7 @@ export class Store {
 
   /** Keeps embedded image payloads available across undo and redo. */
   registerImageAsset(asset: ImageAsset): void {
+    if (this.readOnly) return;
     this.assetPayloads.set(asset.id, asset.data);
   }
 
@@ -852,7 +859,7 @@ export class Store {
     reason: ChangeReason = "change",
     options: { history?: boolean; dirty?: boolean } = {},
   ): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     const history = options.history !== false;
     if (history) {
       const before = this.snapshot();
@@ -866,7 +873,7 @@ export class Store {
   }
 
   beginGesture(): void {
-    if (!this.project) return;
+    if (!this.project || this.readOnly) return;
     this.gestureSnapshot = this.snapshot();
   }
 
@@ -895,6 +902,7 @@ export class Store {
   }
 
   undo(): void {
+    if (this.readOnly) return;
     const previous = this.undoStack.pop();
     if (!previous || !this.project) return;
     pushHistory(this.redoStack, this.snapshot() ?? JSON.stringify(this.project));
@@ -904,6 +912,7 @@ export class Store {
   }
 
   redo(): void {
+    if (this.readOnly) return;
     const next = this.redoStack.pop();
     if (!next || !this.project) return;
     pushHistory(this.undoStack, this.snapshot() ?? JSON.stringify(this.project));

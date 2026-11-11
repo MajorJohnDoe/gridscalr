@@ -40,7 +40,8 @@ export function openContextMenu(
   const project = store.project;
   if (!project) return;
   const screen = context.localFromClient(clientX, clientY);
-  const labelHit = context.measurementLabelHit(screen);
+  // View-only keeps the selection menu, which is also where Copy lives.
+  const labelHit = store.readOnly ? null : context.measurementLabelHit(screen);
   if (labelHit && !context.isLocked(labelHit.item, labelHit.layer)) {
     context.selectItem(labelHit.layer.id, labelHit.item.id);
     showMeasurementLabelMenu(clientX, clientY, labelHit.item, labelHit.layer.id, context);
@@ -160,7 +161,7 @@ export function commitLabelConnection(
   context: ContextMenuContext,
 ): void {
   const project = store.project;
-  if (!connect || !project) {
+  if (!connect || !project || store.readOnly) {
     context.updateCursor();
     return;
   }

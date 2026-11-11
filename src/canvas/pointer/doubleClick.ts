@@ -34,7 +34,7 @@ export interface DoubleClickContext {
 /** Double-click target resolution and edit dispatch for the select and text tools. */
 export function handleDoubleClick(screen: Point, context: DoubleClickContext): void {
   if (context.touchNavigationBlocked()) return;
-  if (!store.project || context.cropActive()) return;
+  if (!store.project || store.readOnly || context.cropActive()) return;
   const tool = context.activeTool();
   if (tool === "length" || tool === "area" || tool === "volume" || tool === "polyline") {
     context.finishDraft();

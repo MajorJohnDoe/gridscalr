@@ -34,7 +34,7 @@ export async function replaceSourceFlow(
 ): Promise<void> {
   const project = store.project;
   const renderer = host.renderer();
-  if (!project || !renderer) return;
+  if (!project || !renderer || store.readOnly) return;
   const document = project.documents.find((entry) => entry.id === documentId);
   if (!document) return;
   if (document.kind !== "pdf") {

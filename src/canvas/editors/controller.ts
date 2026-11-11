@@ -101,6 +101,12 @@ export class CanvasEditorController {
     if (this.state.label && !this.state.label.closing) void commitLabelEdit(this.state);
   }
 
+  /** Drops an open editor without committing, for entry into view-only. */
+  cancelActiveEditors(): void {
+    cancelTextEdit(this.state);
+    cancelLabelEdit(this.state);
+  }
+
   destroy(): void {
     document.removeEventListener("pointerdown", this.onDocumentPointerDown, true);
     this.state.text?.container.remove();

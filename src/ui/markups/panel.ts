@@ -142,12 +142,16 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   markupsState.saveViewBtn.type = "button";
   markupsState.saveViewBtn.innerHTML = icon("check", 14);
   markupsState.saveViewBtn.setAttribute("aria-label", t("markups.saveView"));
+  markupsState.saveViewBtn.disabled = store.readOnly;
   markupsState.saveViewBtn.addEventListener("click", () => saveCurrentView(actions));
 
   const more = el("button", "icon-btn");
   more.type = "button";
-  more.title = t("markups.moreOptions");
+  more.title = store.readOnly
+    ? `${t("markups.moreOptions")} · ${t("viewOnly.disabled")}`
+    : t("markups.moreOptions");
   more.setAttribute("aria-label", t("markups.moreOptions"));
+  more.disabled = store.readOnly;
   more.innerHTML = icon("markupsState.settings", 14);
   more.addEventListener("click", () =>
     showPopover(more, [

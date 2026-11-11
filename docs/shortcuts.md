@@ -2,6 +2,8 @@
 
 On macOS, use `Cmd` wherever `Ctrl` is shown. The in-app reference is available from **Help → Keyboard shortcuts** or by pressing `?`.
 
+In a **View-only** session, shortcuts that would change the project are ignored: tools other than Select and Pan, undo/redo, cut, paste, duplicate, delete, rename and nudges. Navigation, search, zoom, export and Save a copy keep working.
+
 ## Tools
 
 | Action | Shortcut |

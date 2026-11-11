@@ -34,6 +34,8 @@ import { groupHandleAt } from "./groupHandles";
 import type { DragState } from "./pointerState";
 
 export interface SelectionContext {
+  /** False in view-only: select and marquee, but never drag or resize. */
+  editable(): boolean;
   toScreen(point: Point): Point;
   viewPage(): number;
   viewPageId(): PageId | null;
@@ -47,6 +49,7 @@ export interface SelectionContext {
 }
 
 export interface HoverContext {
+  editable(): boolean;
   toScreen(point: Point): Point;
   viewPage(): number;
   viewPageId(): PageId | null;
@@ -185,11 +188,12 @@ export function beginSelection(
 ): void {
   const project = store.project;
   if (!project) return;
+  const editable = context.editable();
   const modifier = event.shiftKey || event.ctrlKey || event.metaKey;
   const selection = store.ui.selection;
   const primary = store.primarySelection;
 
-  if (!modifier && selection.length > 1) {
+  if (editable && !modifier && selection.length > 1) {
     const bounds = selectionBounds(project, selection);
     const groupHandle =
       bounds && groupHandleAt(bounds, screen, (point) => context.toScreen(point), 10);
@@ -199,7 +203,7 @@ export function beginSelection(
     }
   }
 
-  if (!modifier) {
+  if (editable && !modifier) {
     if (selection.length === 1 && primary) {
       const found = findItem(project, primary.itemId);
       if (
@@ -283,7 +287,7 @@ export function beginSelection(
     }
   }
 
-  if (!modifier && selection.length === 1 && primary) {
+  if (editable && !modifier && selection.length === 1 && primary) {
     const found = findItem(project, primary.itemId);
     if (found && !itemIsLocked(found.item, found.layer)) {
       if (found.item.kind === "cloud") {
@@ -352,7 +356,7 @@ export function beginSelection(
   const alreadySelected = store.isSelected(ref);
   if (!alreadySelected) store.setSelection(ref);
 
-  if (itemIsLocked(hit.item, hit.layer)) {
+  if (!editable || itemIsLocked(hit.item, hit.layer)) {
     context.drawInteraction();
     return;
   }
@@ -412,7 +416,16 @@ export function updateHover(
   hover: { layerId: string; itemId: string; vertexIndex: number } | null;
 } {
   const project = store.project;
-  if (!project) return { handle: null, labelResize: false, hover: null };
+  if (!project || !context.editable()) {
+    const hit = project
+      ? hitTest(project, context.viewPageId() ?? "", page, 7 / context.viewZoom())
+      : null;
+    return {
+      handle: null,
+      labelResize: false,
+      hover: hit ? { layerId: hit.layer.id, itemId: hit.item.id, vertexIndex: -1 } : null,
+    };
+  }
   let handle: Handle | null = null;
   let labelResize = false;
   const selection = store.primarySelection;

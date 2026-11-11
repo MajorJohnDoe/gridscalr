@@ -198,7 +198,7 @@ export function groupValue(row: MarkupRow, field: MarkupsGroupField, project: Pr
 }
 
 export function beginMarkupRename(label: HTMLElement, itemId: string, fallback: string): void {
-  if (label.querySelector(".markups-name-input")) return;
+  if (store.readOnly || label.querySelector(".markups-name-input")) return;
   const project = store.project;
   const found = project ? findItem(project, itemId) : undefined;
   if (!found || itemIsLocked(found.item, found.layer)) return;
@@ -314,7 +314,7 @@ export function markupRowElement(
     }
     layerSelect.append(candidateOption);
   }
-  layerSelect.disabled = locked;
+  layerSelect.disabled = locked || store.readOnly;
   layerSelect.addEventListener("click", (event) => event.stopPropagation());
   layerSelect.addEventListener("change", (event) => {
     event.stopPropagation();
@@ -379,7 +379,7 @@ export function markupRowElement(
         option(inspection, inspectionStatusLabel(inspection), item.status === inspection),
       );
     }
-    status.disabled = locked;
+    status.disabled = locked || store.readOnly;
     status.style.color = inspectionStatusColor(item.status ?? undefined);
     status.addEventListener("click", (event) => event.stopPropagation());
     status.addEventListener("change", (event) => {
@@ -414,7 +414,7 @@ export function markupRowElement(
       : t("markups.layerHiddenOnPage", { page: pageNumber(project, item.pageId) }),
   );
   eye.classList.toggle("is-on", !hidden);
-  eye.disabled = !layerShown;
+  eye.disabled = !layerShown || store.readOnly;
   eye.addEventListener("click", (event) => {
     event.stopPropagation();
     const next = item.visible === false;
@@ -435,7 +435,7 @@ export function markupRowElement(
         : t("markups.lockItem"),
   );
   lock.classList.toggle("is-locked", locked);
-  lock.disabled = layerLocked;
+  lock.disabled = layerLocked || store.readOnly;
   lock.addEventListener("click", (event) => {
     event.stopPropagation();
     const next = item.locked !== true;
