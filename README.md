@@ -282,7 +282,10 @@ response header, with no development origin: see
 a documented call site, and the PDF.js and Tesseract workers inherit the page
 policy through blob shims. `npm run check:security` fails when a directive or
 permission changes without that record; `npm run test:csp` verifies the policy in
-a browser.
+a browser. `npm run check:dependencies` audits the npm and Rust lock files on
+every pull request and before a release build, and fails on a new advisory at or
+above moderate unless it is accepted in a reviewed allowlist with a reason and
+an expiry date.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

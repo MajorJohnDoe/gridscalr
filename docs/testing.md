@@ -16,6 +16,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
 | `npm run check:file-budgets` | Blocking line budgets for source files and the new foundation feature directories. |
 | `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
+| `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
@@ -26,6 +27,15 @@ flattened drawing, optional-content groups (including pdf.js group resolution),
 review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
 covers conditional writes, conflicted copies, backups and the read-only
 **Compare with disk version** summary, including unreadable disk data.
+
+## Dependency gate
+
+`tests/dependencyGate.test.ts` feeds synthetic npm and cargo reports to the pure
+rules in `scripts/dependency-gate.mjs`: a new moderate, high or critical advisory
+blocks, an accepted entry passes, an expired or stale allowlist entry fails, a
+low finding is reported only, and an unreadable report fails closed.
+`npm run check:dependencies` runs the same rules against the live npm registry
+and RustSec advisory database.
 
 ## Robustness gate
 

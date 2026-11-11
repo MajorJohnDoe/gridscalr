@@ -40,6 +40,7 @@ interface and confirm that every theme is still visible and correctly named.
 
 ```bash
 npm run check:versions
+npm run check:dependencies
 npm run check:docs
 npm run format:check
 npm run lint
@@ -53,6 +54,12 @@ npm run site:build
 npm run site:check
 ```
 
+`npm run check:dependencies` runs `npm audit` and `cargo audit` against
+`security/dependency-allowlist.json`. A new unaccepted advisory at or above
+moderate, an expired review date, or a stale allowlist entry blocks the release.
+Fix the advisory or renew the entry as described in
+[`security-policy.md`](security-policy.md).
+
 Commit and push `main`, then confirm that CI is green before tagging. CI builds
 the desktop shell on Ubuntu, Windows and macOS, so platform-specific code is
 compiled before the tag exists.
@@ -60,7 +67,9 @@ compiled before the tag exists.
 ## 4. Cross-platform build
 
 Push the tag (the **Release build** workflow starts on `v*`), or run the same
-workflow manually when rehearsing:
+workflow manually when rehearsing. The workflow runs the dependency and advisory
+gate first and the build jobs depend on it, so a tag with an unaccepted or
+expired advisory produces no artifacts.
 
 ```bash
 VERSION=0.18.0

@@ -6,7 +6,8 @@ bundled worker boundary for the desktop shell.
 **Check:** `npm run check:security` (also runs in CI and in the pre-commit list).
 **Browser regression:** `npm run test:csp`.
 **Related:** [`security-audit.md`](security-audit.md) findings F-028, F-029,
-F-030, F-037, F-038 and F-042, and [`limitations.md`](limitations.md).
+F-030, F-037, F-038, F-039, F-040 and F-042, and
+[`limitations.md`](limitations.md).
 
 The configuration is the source of truth. This document and
 `security/policy.json` record why each directive and permission exists; the check
@@ -117,6 +118,94 @@ workers are also covered in a production build.
 `core:window:allow-close` is intentionally absent: the close flow calls
 `destroy()` after prompting. The dialog plugin's `message`, `ask` and `confirm`
 commands are not granted because those dialogs are app-drawn.
+
+## Dependency and advisory gate
+
+`npm run check:dependencies` runs on every pull request and before a release
+build. It runs two audits and applies one reviewed exception list:
+
+| Audit | Command | Coverage |
+| --- | --- | --- |
+| npm | `npm audit --json` | `package-lock.json`, production and development |
+| Rust | `cargo audit --json` | `src-tauri/Cargo.lock`, every target-specific crate |
+
+The CI job **Dependency advisory gate** prints the result to the job log, writes
+a Markdown summary to the step summary, and uploads the raw reports plus
+`gate-result.json` as the `dependency-audit` artifact. The **Release build**
+workflow depends on the same job, so a tag cannot produce artifacts while an
+unaccepted advisory is open.
+
+### Threshold
+
+- An npm advisory of `moderate`, `high` or `critical` blocks unless it is
+  accepted in [`security/dependency-allowlist.json`](../security/dependency-allowlist.json).
+  `low` and `info` are reported but do not block.
+- A Rust vulnerability blocks at `moderate` or above. A vulnerability without a
+  CVSS score is treated as `high`, so the gate fails closed.
+- Rust `unsound`, `unmaintained` and `yanked` findings block unless accepted,
+  because they have no patch and need a conscious decision. `notice` is
+  reported only, and a low or informational finding never needs an entry.
+
+The threshold is deliberately stricter than "high or critical only": a moderate
+advisory is either fixed or written down, never silently ignored.
+
+### Reviewed allowlist
+
+Each entry in `security/dependency-allowlist.json` needs every field:
+
+| Field | Meaning |
+| --- | --- |
+| `ecosystem` | `npm` or `cargo`. |
+| `package` | The affected package name. |
+| `advisory` | The GHSA, CVE or RUSTSEC identifier. |
+| `kind` | Optional; the Rust warning kind (`unsound`, `unmaintained`, `yanked`). |
+| `reason` | Why this build is not exploitable and what blocks the fix. At least 20 characters. |
+| `reviewedAt` | The date the entry was last reviewed. |
+| `reviewBy` | The hard expiry date. The entry is valid through this date. |
+| `issue` | Optional tracking issue or advisory URL. Must be `http(s)`. |
+
+`reviewBy` is an expiry, not a reminder: the gate fails when the date has
+passed, so an accepted advisory cannot stay accepted by inertia. An entry that
+no longer matches an advisory is also a failure, which keeps the list small and
+current. Review the whole file quarterly and before a release.
+
+### Accepting or clearing an advisory
+
+1. Try to fix it first: update the dependency, or add a scoped `overrides`
+   entry when the parent tool still declares the vulnerable range. Run the
+   affected tests and the full check list.
+2. If it cannot be fixed without breaking the app, add one entry with the
+   reason, the date and the blocking upgrade or upstream issue. An accepted
+   advisory is reported on every run.
+3. When the dependency moves, remove the entry. The stale check fails the gate
+   until it is gone, and the run then proves the advisory is cleared.
+4. Never edit the scanner, add an ignore flag outside the allowlist, or make
+   the gate report a pass for an unverified tree. A change to the gate itself is
+   a security change and needs review.
+
+### Network failure
+
+Both audits need a live advisory source: the npm registry and the RustSec
+advisory database. The script retries three times by default and then **fails
+closed** with an explicit message that the reports could not be read. That is
+not a clean result. Re-run the job, or supply cached reports with
+`--npm-report` and `--cargo-report`; the same threshold and allowlist rules
+apply.
+
+### Current position (2026-11-11)
+
+- `minimatch` (GHSA-g3hv-75wg-m249) is fixed by a scoped `overrides` entry in
+  `package.json`. It was a development-only glob denial of service through
+  ESLint and typescript-eslint; the npm audit is now clean.
+- `glib 0.18.5` (RUSTSEC-2024-0429) is accepted until Tauri moves off the GTK
+  0.18 generation. It is tracked by [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21)
+  and is Linux-only.
+- The four unmaintained crates `proc-macro-error`, `zvariant`, `zbus_names` and
+  `zvariant_derive` are accepted with the same review date. They have no known
+  vulnerability and arrive through the GTK build and the Linux single-instance
+  channel.
+- Every entry is due for review on 2027-02-11. The gate fails after that date
+  until the list is renewed or the advisories are fixed.
 
 ## Test-only commands
 

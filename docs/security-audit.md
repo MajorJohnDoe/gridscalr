@@ -444,15 +444,19 @@ as a residual risk, not a numbered finding.
 
 ### 8.1 npm
 
+- `npm audit`: **0 vulnerabilities** after 0.24.0 phase 4. The ten moderate
+  development-only findings came from `minimatch 10.2.6`
+  (GHSA-g3hv-75wg-m249, Dependabot alert #4) through `eslint 10.14.0` and
+  `typescript-eslint 8.72.1`. They are fixed by a scoped
+  `overrides: { "minimatch": "^11.0.1" }` entry in `package.json`; lint, the
+  full test suite and the build pass with it (F-039).
 - `npm audit --omit=dev`: **0 vulnerabilities**.
-- `npm audit`: 10 moderate, all development-only, all from one advisory:
-  `minimatch 10.2.6` (GHSA-g3hv-75wg-m249, Dependabot alert #4) reached through
-  `eslint 10.14.0` and `typescript-eslint 8.72.1`. The advisory is a glob
-  denial of service in a developer-run tool; it is not shipped. Accepted until
-  phase 4 fixes or explicitly accepts it (F-039).
 - Runtime versions reviewed: `pdfjs-dist 6.4.299`, `pdf-lib 1.17.1`,
   `tesseract.js 7.0.0`, `@tauri-apps/api 2.12.4`, `fflate 0.8.3`,
   `intl-messageformat 12.1.4`.
+- `npm run check:dependencies` runs `npm audit` on every pull request and
+  release build and applies the reviewed allowlist in
+  `security/dependency-allowlist.json`.
 
 ### 8.2 Rust
 
@@ -469,6 +473,12 @@ No advisory was found for `tauri 2.12.5`, `wry 0.57.0`, `zip 9.2.1`,
 `tauri-plugin-dialog 2.8.4`, `tauri-plugin-window-state 2.5.0` or
 `tauri-plugin-single-instance 2.5.5`. The earlier `tokio` alert (Dependabot #2)
 is fixed.
+
+`npm run check:dependencies` now runs this scan as `cargo audit` on every pull
+request and release build. The five findings above are the complete reviewed
+allowlist for `src-tauri`, each with a reason and a `reviewBy` date of
+2027-02-11; a new vulnerability or unmaintained warning fails until it is fixed
+or explicitly accepted (F-040).
 
 Licences: `cargo metadata` over all 462 packages reports 205 `MIT OR
 Apache-2.0`, 113 `MIT`, 49 `Apache-2.0 OR MIT`, 18 `Unicode-3.0`, 17
@@ -758,18 +768,19 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-039 — Development-only npm advisory remains open
 
 - **Severity:** P3
-- **Status:** open, accepted until fixed or explicitly accepted
+- **Status:** fixed in 0.24.0 phase 4 — `package.json` scopes `minimatch` to
+  `^11.0.1`; `npm audit` reports 0 and lint, tests and build pass.
 - **Owner:** phase 4, [#170](https://github.com/MajorJohnDoe/gridscalr/issues/170)
-- **Evidence:** `npm audit`: 10 moderate, all from `minimatch 10.2.6`
-  (GHSA-g3hv-75wg-m249, Dependabot alert #4) through `eslint 10.14.0` and
-  `typescript-eslint 8.72.1`. `npm audit --omit=dev`: 0. The advisory is a glob
-  denial of service in tooling.
-- **Impact:** No shipped code is affected. A developer running lint or a script
+- **Evidence:** `npm audit` originally reported 10 moderate findings, all from
+  `minimatch 10.2.6` (GHSA-g3hv-75wg-m249, Dependabot alert #4) through
+  `eslint 10.14.0` and `typescript-eslint 8.72.1`. `npm audit --omit=dev`: 0.
+  The advisory is a glob denial of service in tooling.
+- **Impact:** No shipped code was affected. A developer running lint or a script
   on attacker-controlled glob input could hit a slowdown.
-- **Proposed fix:** Update to a fixed `minimatch` through the next
-  `eslint`/`typescript-eslint` release, or add a scoped npm `overrides` entry if
-  the tools accept it. Do not add a global override that breaks the lint
-  configuration.
+- **Resolution:** A scoped npm `overrides` entry resolves `minimatch` to 11.0.7
+  for ESLint and typescript-eslint, whose declared ranges still stop at 10.x.
+  `npm run lint`, `npm run test:ui` and the full suite pass. The override is
+  temporary: remove it when both tools declare minimatch 11 (F-048).
 - **Acceptance criteria:** `npm audit` reports no moderate or higher advisory,
   or the remaining advisory is explicitly accepted in the audit gate with a
   date and reason; lint still passes.
@@ -777,7 +788,10 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-040 — Rust audit: one accepted soundness advisory and four unmaintained crates
 
 - **Severity:** P3
-- **Status:** open, glib tracked by [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21)
+- **Status:** accepted in 0.24.0 phase 4, glib tracked by
+  [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21). The dependency
+  gate runs `cargo audit` on every pull request and release build and accepts
+  these five entries with a reason and a review expiry of 2027-02-11.
 - **Owner:** phase 4, [#170](https://github.com/MajorJohnDoe/gridscalr/issues/170)
 - **Evidence:** Section 8.2. `glib 0.18.5` (GHSA-wrw7-89jp-8q8g,
   Dependabot alert #1) is pinned by Tauri's GTK 0.18 generation.
@@ -787,10 +801,11 @@ the static and runtime expectation is proposed for phase 4/5.
 - **Impact:** The glib bug is a soundness issue in a Linux-only code path that
   GridScalr does not call directly; the Windows artifacts are unaffected. The
   unmaintained crates have no known vulnerability but will not receive fixes.
-- **Proposed fix:** Add `cargo audit` or `cargo deny` to CI with an explicit,
-  reviewed ignore list for the five entries, and revisit when Tauri moves to
-  gtk-rs 0.20. Do not vendor or patch glib. Record the decision in
-  `docs/limitations.md` and `SECURITY.md`.
+- **Resolution:** `security/dependency-allowlist.json` records the five
+  accepted entries. The gate fails on an expired entry, a stale entry, a new
+  vulnerability or a new unsound/unmaintained/yanked crate. `glib`, `zvariant`,
+  `zbus_names`, `zvariant_derive` and `proc-macro-error` are only accepted while
+  Tauri's GTK 0.18 generation remains; the entries are reviewed quarterly.
 - **Acceptance criteria:** the dependency gate runs on every pull request and
   fails on a new advisory; the five accepted entries are listed with a reason;
   the glib alert closes or is explicitly accepted for 1.0.
@@ -900,10 +915,12 @@ These are not security findings and have no F-ID:
 - The CI run for this audit failed once on the PDF export determinism test.
   That is a pre-existing wall-clock flake, recorded as F-043, not a regression
   from this change. A re-run is expected to pass.
-- `package-lock.json` still records the root package version as `0.22.4` while
-  `package.json` is `0.23.0`. It does not affect `npm ci` or the dependency
-  graph, and `check:versions` does not read it. Refresh it with the next routine
-  dependency change (phase 4).
+- `package-lock.json` recorded the root package version as `0.22.4` while
+  `package.json` was `0.23.0`. Resolved in 0.24.0 phase 4; `npm run
+  check:versions` now compares `package-lock.json` with the other three files.
+- The `minimatch` override is outside ESLint's declared `^10.2.6` range. It is
+  a deliberate, tested exception recorded as F-048; remove it when ESLint and
+  typescript-eslint declare minimatch 11.
 - The `style` attribute in `statusBar.ts` and the inline boot `<style>` are the
   only reasons for `'unsafe-inline'`. Both are removed by F-038; no separate
   issue is needed.
@@ -934,6 +951,7 @@ These are not security findings and have no F-ID:
 ## 13. How to re-run the checks
 
 ```bash
+npm run check:dependencies
 npm audit
 npm audit --omit=dev
 npm run check:docs
@@ -942,7 +960,7 @@ npm run test:robustness
 cargo test --manifest-path src-tauri/Cargo.toml --lib
 ```
 
-For the dependency corpus, export every name/version pair from
-`src-tauri/Cargo.lock` and post them to `https://api.osv.dev/v1/querybatch`
-(one request per 500 packages). Phase 4 replaces this manual step with
-`cargo audit` or `cargo deny` in CI.
+`npm run check:dependencies` replaces the manual OSV batch described below. It
+runs `npm audit` and `cargo audit` and applies
+`security/dependency-allowlist.json`; the raw reports are written to
+`dependency-reports/` in CI and attached to the workflow run.

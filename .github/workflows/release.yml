@@ -10,8 +10,34 @@ permissions:
   contents: read
 
 jobs:
+  dependencies:
+    name: Dependency advisory gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Run the dependency and advisory gate
+        run: npm run check:dependencies -- --report-dir dependency-reports
+
+      - uses: actions/upload-artifact@v7
+        if: always()
+        with:
+          name: dependency-audit
+          path: dependency-reports/
+          if-no-files-found: ignore
+          retention-days: 14
+
   build:
     name: Build ${{ matrix.platform }}
+    needs: dependencies
     strategy:
       fail-fast: false
       matrix:
