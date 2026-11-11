@@ -380,7 +380,9 @@ src/app/exportFlows.ts     CSV, XLSX, PDF, PNG and JSON export orchestration
 src/app/selectionActions.ts selection, bulk edits and item commands
 src/app/documentImport.ts  PDF/TIF import, password retries and checksum checks
 src/app/searchController.ts search panel, text index and OCR run loop
-src/app/openTarget.ts      dropped and opened file classification
+src/app/openTarget.ts      shared PDF/TIF/project drop classification re-export
+src/app/droppedDrawingFlows.ts Pages-panel PDF/TIF drop through import preflight and one-step commit
+src/app/pageDropSetup.ts   Pages-panel file-drop controller wiring
 src/app/sheetFlows.ts      sheet creation, add-page and paper changes
 src/app/imageFlows.ts      image insertion and target-layer selection
 src/app/documentFlows.ts   PDF/TIF/project loading and page selection
@@ -409,6 +411,8 @@ src/features/projectImport/merge.ts category, count-type, line-type, asset and d
 src/features/projectImport/preflight.ts import counts, missing files and checksum warnings
 src/features/projectImport/preflightUi.ts localized preflight dialog
 src/features/projectImport/ui.ts graphical source-page picker with lazy previews
+src/features/pageFileDrop/model.ts Pages-panel drop target classification and pointer rules
+src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and shared insertion line
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics

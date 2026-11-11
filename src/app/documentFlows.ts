@@ -34,7 +34,7 @@ export interface DocumentFlowHost {
     path: string | null,
     dirty: boolean,
   ): Promise<void>;
-  addDocumentToRenderer(document: PDFDocumentProxy, pages: number[]): void;
+  addDocumentToRenderer(documentId: string, document: PDFDocumentProxy, pages: number[]): void;
   enqueuePageSize(page: number): Promise<PageSize | undefined>;
   fitPage(): void;
   invalidate(): void;
@@ -122,7 +122,7 @@ export async function loadNewPdf(
   if (documentRef.kind === "tiff") documentRef.relativePath = null;
   await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.addPages", { name }));
   store.addDocument(documentRef);
-  host.addDocumentToRenderer(pdf, pages);
+  host.addDocumentToRenderer(documentRef.id, pdf, pages);
   store.setPage(startPage);
   await host.enqueuePageSize(startPage);
   host.fitPage();

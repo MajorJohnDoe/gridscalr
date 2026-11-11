@@ -102,13 +102,15 @@ export async function createImportedDocument(
 /**
  * Asks which pages of a picked PDF or TIF should join the project. Single-page
  * files skip the picker; previews come from a temporary service so they never
- * interfere with the project's cached Pages-panel thumbnails.
+ * interfere with the project's cached Pages-panel thumbnails. An insertion
+ * index comes from a drop on the Pages panel and defaults to appending.
  */
 export async function chooseImportPages(
   pdf: PDFDocumentProxy,
   name: string,
   afterPage: number | null,
   rendererBusy: () => boolean,
+  insertion?: { index: number; destinationPages: number },
 ): Promise<number[] | null> {
   if (pdf.numPages <= 1) return [1];
   const previews = new PageThumbnailService(async (page) => {
@@ -122,6 +124,8 @@ export async function chooseImportPages(
       pageCount: pdf.numPages,
       mode: afterPage === null ? "new" : "add",
       afterPage: afterPage ?? undefined,
+      destinationPages: insertion?.destinationPages,
+      insertAt: insertion?.index,
       requestThumbnail: (page) => previews.request(page),
     });
   } finally {

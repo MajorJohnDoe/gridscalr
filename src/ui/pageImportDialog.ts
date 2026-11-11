@@ -9,6 +9,10 @@ export interface PageImportDialogOptions {
   mode: "new" | "add";
   /** Global page after which appended pages land. */
   afterPage?: number;
+  /** Pages already in the destination project. */
+  destinationPages?: number;
+  /** 0-based insertion index chosen by a drop. Missing appends. */
+  insertAt?: number;
   requestThumbnail: (page: number) => Promise<string | null>;
 }
 
@@ -70,20 +74,17 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
     tiles.set(page, { element: tile, image, placeholder });
   }
 
-  const note = el(
-    "p",
-    "export-note",
-    options.mode === "add"
-      ? t("importDialog.noteAdd", { page: options.afterPage ?? 1 })
-      : t("importDialog.noteNew"),
-  );
+  const note = el("p", "export-note", insertionNote(options));
   body.append(head, grid, note);
 
   const sync = () => {
     summary.textContent =
       options.pageCount === 1
         ? t("importDialog.summaryOne")
-        : `${selected.size} of ${options.pageCount} pages selected`;
+        : t("importDialog.summarySelected", {
+            selected: selected.size,
+            total: options.pageCount,
+          });
     selectNone.disabled = selected.size === 0;
     selectAll.disabled = selected.size === options.pageCount;
     if (primary) {
@@ -146,6 +147,22 @@ export async function pageImportDialog(options: PageImportDialogOptions): Promis
   } finally {
     observers.active?.disconnect();
   }
+}
+
+/**
+ * Describes where the selected pages land. A drop chooses an insertion index;
+ * an ordinary add keeps the append wording.
+ */
+function insertionNote(options: PageImportDialogOptions): string {
+  if (options.mode === "new") return t("importDialog.noteNew");
+  const destinationPages = options.destinationPages ?? options.afterPage ?? 1;
+  if (destinationPages === 0) return t("importDialog.noteFirst");
+  const insertAt = options.insertAt;
+  if (insertAt === undefined || insertAt >= destinationPages) {
+    return t("importDialog.noteAdd", { page: destinationPages });
+  }
+  if (insertAt <= 0) return t("importDialog.noteInsertStart");
+  return t("importDialog.noteInsert", { page: insertAt + 1 });
 }
 
 function observeTiles(

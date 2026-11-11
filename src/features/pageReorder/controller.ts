@@ -111,11 +111,11 @@ export class PageReorderController {
       event.preventDefault();
       return;
     }
-    const pages = projectEntries();
     if (!this.selection.includes(pageId)) {
       this.selection = [pageId];
       this.anchor = pageId;
     }
+    const pages = projectEntries();
     this.dragging = dragSet(pages, new Set(this.selection), pageId);
     this.applySelection();
     card.classList.add("is-dragging");
@@ -124,7 +124,11 @@ export class PageReorderController {
         other.classList.add("is-dragging");
       }
     }
+    // The text payload and the custom type are the internal page-drag markers.
+    // An operating-system file drop only ever carries `Files`, which the file
+    // drop controller uses to keep the two gestures apart.
     event.dataTransfer?.setData("text/plain", this.dragging.join("\n"));
+    event.dataTransfer?.setData("application/x-gridscalr-page-order", this.dragging.join("\n"));
     if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
   }
 
@@ -178,6 +182,28 @@ export class PageReorderController {
     this.anchor = null;
   }
 
+  /**
+   * Shows the same insertion line for a file drop and returns the 0-based
+   * insertion index. Returns 0 when the panel has no list (an empty project).
+   */
+  showExternalDrop(clientY: number): number {
+    const list = this.list;
+    if (!list) return 0;
+    const cards = this.cards();
+    const spans = cards.map((card) => {
+      const rect = card.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    const insertionIndex = insertionIndexAt(spans, clientY);
+    this.indicator.show(list, cards, insertionIndex, null);
+    return insertionIndex;
+  }
+
+  /** Hides the file-drop line without disturbing an internal card drag. */
+  hideExternalDrop(): void {
+    if (!this.dragging.length) this.indicator.hide();
+  }
+
   private cards(): HTMLElement[] {
     if (!this.list) return [];
     return [...this.list.querySelectorAll<HTMLElement>(".page-card")];
@@ -216,6 +242,7 @@ export class PageReorderController {
   }
 
   private handleDragOver(event: DragEvent): void {
+    if (this.isFileDrag(event)) return;
     if (!this.dragging.length || store.readOnly) return;
     event.preventDefault();
     if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
@@ -238,12 +265,17 @@ export class PageReorderController {
   }
 
   private handleDrop(event: DragEvent): void {
+    if (this.isFileDrag(event)) return;
     event.preventDefault();
     const plan = this.plan;
     const pageIds = [...this.dragging];
     this.clearDragState();
     if (!plan || !pageIds.length || store.readOnly) return;
     this.actions?.reorder(pageIds, plan.insertionIndex);
+  }
+
+  private isFileDrag(event: DragEvent): boolean {
+    return Array.from(event.dataTransfer?.types ?? []).includes("Files");
   }
 
   private clearDragState(): void {

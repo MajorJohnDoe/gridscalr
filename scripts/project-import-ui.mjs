@@ -280,6 +280,72 @@ try {
   assert.equal(redone.pageTwoItems, 3);
   assert.equal(await page.locator(".page-card").count(), 2);
 
+  // A PDF dropped on the Pages panel goes through the page picker and the
+  // existing import preflight, inserts at the drop line and is one undo step.
+  const planPath = join(repoRoot, "fixtures", "industrial-plan.pdf");
+  const planBytes = await readFile(planPath);
+  const planBase64 = planBytes.toString("base64");
+  await page.evaluate(
+    ({ name, base64 }) => {
+      const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+      const file = new File([bytes], name, { type: "application/pdf" });
+      const transfer = new DataTransfer();
+      transfer.items.add(file);
+      const list = document.querySelector(".page-list");
+      if (!list) throw new Error("page list missing");
+      const rect = list.getBoundingClientRect();
+      list.dispatchEvent(
+        new DragEvent("drop", {
+          bubbles: true,
+          cancelable: true,
+          clientX: rect.left + 20,
+          clientY: rect.bottom - 2,
+          dataTransfer: transfer,
+        }),
+      );
+    },
+    { name: "industrial-plan.pdf", base64: planBase64 },
+  );
+  const pageDialog = page.getByRole("dialog", { name: "Add pages" });
+  await pageDialog.waitFor();
+  await pageDialog.getByRole("button", { name: "Add 3 pages" }).click();
+  await pageDialog.waitFor({ state: "detached" });
+  const dropPreflight = page.getByRole("dialog", { name: "Import preflight" });
+  await dropPreflight.waitFor();
+  await dropPreflight.getByRole("button", { name: "Import pages", exact: true }).click();
+  await dropPreflight.waitFor({ state: "detached" });
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 5);
+  await waitForToastsGone(page);
+  const afterDrop = await page.evaluate(() => ({
+    documents: window.__gridscalr.store.project.documents.length,
+    pages: window.__gridscalr.store.project.pages.length,
+    lastLocalPages: window.__gridscalr.store.project.pages
+      .slice(-3)
+      .map((record) => record.localPage),
+  }));
+  assert.equal(afterDrop.documents, 3);
+  assert.equal(afterDrop.pages, 5);
+  assert.deepEqual(afterDrop.lastLocalPages, [1, 2, 3]);
+  assert.deepEqual(await readFile(planPath), planBytes);
+
+  await page.keyboard.press("Control+z");
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 2);
+  const afterDropUndo = await page.evaluate(() => ({
+    documents: window.__gridscalr.store.project.documents.length,
+    pages: window.__gridscalr.store.project.pages.length,
+  }));
+  assert.equal(afterDropUndo.documents, 2);
+  assert.equal(afterDropUndo.pages, 2);
+
+  await page.keyboard.press("Control+Shift+z");
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 5);
+  const afterDropRedo = await page.evaluate(() => ({
+    documents: window.__gridscalr.store.project.documents.length,
+    pages: window.__gridscalr.store.project.pages.length,
+  }));
+  assert.equal(afterDropRedo.documents, 3);
+  assert.equal(afterDropRedo.pages, 5);
+
   assert.equal(await readFile(sourcePath, "utf8"), sourceBefore);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`Project import UI passed: ${repoRoot}`);

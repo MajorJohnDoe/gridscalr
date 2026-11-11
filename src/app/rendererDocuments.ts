@@ -1,7 +1,9 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { documentPageMaps } from "../model/documents";
+import { documentPageOrder } from "../model/pages";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
+import { store } from "../state/store";
 
 export interface ImportedRendererDocument {
   id: string;
@@ -47,6 +49,19 @@ export class RendererDocumentRegistry {
     }
     renderer.setPageMaps(documentPageMaps(project.documents));
     this.lastIds = project.documents.map((document) => document.id);
+  }
+
+  /** Adds one document and then applies the project's explicit page order. */
+  addProjectDocument(
+    documentId: string,
+    proxy: PDFDocumentProxy,
+    pageMap: number[],
+    renderer: PdfRenderer | null,
+  ): void {
+    const project = store.project;
+    if (!project || !renderer) return;
+    this.addImported([{ id: documentId, proxy, pageMap }], project, renderer);
+    renderer.setPageOrder(documentPageOrder(project));
   }
 
   /**

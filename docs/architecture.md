@@ -14,7 +14,9 @@ src/
   app/selectionActions.ts selection, bulk edits and item commands
   app/documentImport.ts  PDF/TIF import, password retries and checksum checks
   app/searchController.ts search panel, text index and OCR run loop
-  app/openTarget.ts      dropped and opened file classification
+  app/openTarget.ts      re-export of the shared dropped and opened file classification
+  app/droppedDrawingFlows.ts PDF/TIF Pages-panel drop through the project-import selection, preflight and commit
+  app/pageDropSetup.ts   binds the Pages-panel file-drop controller to the import host
   app/sheetFlows.ts      operation-card sheet creation, add-page and paper changes
   app/imageFlows.ts      image insertion and target-layer selection
   app/documentFlows.ts   PDF/TIF/project loading and source-page selection
@@ -36,6 +38,9 @@ src/
   features/projectImport/model.ts source-page inspection, import planning and commit
   features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
   features/projectImport/ui.ts graphical source-page picker with lazy previews
+  features/pageReorder/ page-card drag, multi-selection, drop line and keyboard reorder
+  features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
+  features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
   features/saveIntegrity/index.ts public surface for conditional saves and backups
   features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
   features/saveIntegrity/conflict.ts conflict classification and default action
@@ -233,6 +238,7 @@ src/
   ui/settingsControls.ts shared section, field, checkbox and preset-editor building blocks
   ui/diagnosticsDialog.ts copy diagnostics and the report-a-problem support dialog
   model/pages.ts         PageId, PageRecord and every page resolver
+  model/openTarget.ts    PDF/TIF/project classification shared by window and Pages-panel drops
   features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
   app/replacementFlows.ts file pick, previews, renderer swap and checkpoint
   model/cloud.ts         revision-cloud bezier geometry

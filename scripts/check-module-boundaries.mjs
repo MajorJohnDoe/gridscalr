@@ -17,6 +17,7 @@ const FOUNDATION_FEATURES = [
   "src/features/statusOverview",
   "src/features/conflictedCopies",
   "src/features/pageReorder",
+  "src/features/pageFileDrop",
 ];
 
 const errors = [];
