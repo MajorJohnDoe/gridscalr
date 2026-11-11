@@ -225,6 +225,8 @@
   "common.clear": "Clear",
   "dialogs.unsavedTitle": "Unsaved changes",
   "dialogs.discardChanges": "Discard changes",
+  "dialogs.copySanitizedDetails": "Copy sanitized details",
+  "dialogs.detailsCopied": "Details copied without file paths.",
   "dialogs.textLabel": "Text",
   "dialogs.textRequired": "Enter some text.",
   "dialogs.depth.message": "Enter the height or depth used to turn the measured area into a volume.",

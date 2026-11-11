@@ -853,3 +853,7 @@ When the recovery snapshot cannot be written, the status bar shows a persistent 
 ### Something failed without a message
 
 Runtime errors are recorded in a local, rolling log of the last 80 events (no drawing content, labels or paths). **Help → Copy diagnostics** includes the most recent entries so a maintainer can see what happened after startup. The log is stored on this computer only and is never uploaded.
+
+### An error dialog mentions a file path
+
+A failed file operation keeps the technical detail on screen because it helps troubleshooting, and that detail can include a folder or drawing name. When the message contains an absolute path, the dialog offers **Copy sanitized details**, which copies the same message with paths replaced by `<path>` and keeps the error code. **Help → Copy diagnostics** never includes paths.

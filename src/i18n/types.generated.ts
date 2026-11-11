@@ -227,6 +227,8 @@ export type MessageKey =
   | "common.clear"
   | "dialogs.unsavedTitle"
   | "dialogs.discardChanges"
+  | "dialogs.copySanitizedDetails"
+  | "dialogs.detailsCopied"
   | "dialogs.textLabel"
   | "dialogs.textRequired"
   | "dialogs.depth.message"

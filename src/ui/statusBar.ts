@@ -17,7 +17,7 @@ import type { Project } from "../model/types";
 import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import { sourceStatus } from "../source/sourceStatus";
 import { store } from "../state/store";
-import { clear, el, escapeHtml } from "./dom";
+import { clear, el } from "./dom";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
@@ -160,9 +160,19 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
     refs.statusCoords.innerHTML = `<span class="status-label">${t("status.position")}</span> <span class="status-value">X —  Y —</span>`;
   }
   const active = project.layers.find((layer) => layer.id === project.activeLayerId);
-  refs.statusLayer.innerHTML = active
-    ? `<span class="status-label">${t("status.layer")}</span> <span class="status-value" style="color:${active.color}">${escapeHtml(active.name)}</span>`
-    : "";
+  if (!active) {
+    refs.statusLayer.textContent = "";
+    return;
+  }
+  // The layer colour is applied through the CSSOM. An inline `style` attribute
+  // would force `style-src 'unsafe-inline'` on the application policy (F-038).
+  const layerValue = el("span", "status-value", active.name);
+  layerValue.style.color = active.color;
+  refs.statusLayer.replaceChildren(
+    el("span", "status-label", t("status.layer")),
+    document.createTextNode(" "),
+    layerValue,
+  );
 }
 
 /**

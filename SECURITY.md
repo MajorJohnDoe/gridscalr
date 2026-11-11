@@ -67,6 +67,10 @@ P0–P3 findings with acceptance criteria. Before 1.0:
 - the configured CSP covers the page and the bundled Web Workers, and the
   shipped policy contains no development origin;
 - Tauri capabilities are limited to the permissions the app calls;
+
+Both are now enforced by `npm run check:security` against
+[`security/policy.json`](security/policy.json) and verified by
+`npm run test:csp`; see [`docs/security-policy.md`](docs/security-policy.md).
 - the write guard protects a managed copy's original drawing as well as the
   copy;
 - the Windows path and write-guard tests run on Windows;

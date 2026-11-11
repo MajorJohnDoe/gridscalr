@@ -44,4 +44,11 @@
   window.addEventListener("unhandledrejection", function (event) {
     showStartupError(event.reason, "Unhandled startup error.");
   });
+
+  document.addEventListener("securitypolicyviolation", function (event) {
+    showStartupError(
+      "Blocked by " + event.violatedDirective + ": " + event.blockedURI,
+      "Content Security Policy",
+    );
+  });
 })();

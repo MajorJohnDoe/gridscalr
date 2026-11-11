@@ -3,6 +3,8 @@ mod package;
 mod project_backup;
 mod project_lease;
 mod project_write;
+#[cfg(debug_assertions)]
+mod smoke;
 mod source_copy;
 
 use std::sync::Mutex;
@@ -16,10 +18,6 @@ use tauri::{Emitter, Manager};
 /// callback. Keeping one queue means every source behaves the same.
 #[derive(Default)]
 struct LaunchPaths(Mutex<Vec<String>>);
-
-/// Output directory requested by `--smoke-test`, consumed by the frontend.
-#[derive(Default)]
-struct SmokeTest(Mutex<Option<String>>);
 
 impl LaunchPaths {
     fn push<R: tauri::Runtime>(app: &tauri::AppHandle<R>, paths: Vec<String>) {
@@ -78,16 +76,6 @@ fn handle_opened_files<R: tauri::Runtime>(app: &tauri::AppHandle<R>, event: taur
 }
 
 #[tauri::command]
-fn smoke_test_dir(state: tauri::State<'_, SmokeTest>) -> Option<String> {
-    state.0.lock().ok().and_then(|directory| directory.clone())
-}
-
-#[tauri::command]
-fn finish_smoke_test(app: tauri::AppHandle, code: i32) {
-    app.exit(code);
-}
-
-#[tauri::command]
 fn take_launch_paths(state: tauri::State<'_, LaunchPaths>) -> Vec<String> {
     match state.0.lock() {
         Ok(mut queued) => std::mem::take(&mut *queued),
@@ -119,10 +107,17 @@ pub fn run() {
             );
     }
 
-    let app = builder
+    let app_builder = builder
         .plugin(tauri_plugin_dialog::init())
-        .manage(LaunchPaths::default())
-        .manage(SmokeTest::default())
+        .manage(LaunchPaths::default());
+
+    // The smoke-test state and commands exist in debug builds only. Keeping the
+    // gated entries out of a release handler means a renderer compromise cannot
+    // exit the app through CI-only plumbing (F-037).
+    #[cfg(debug_assertions)]
+    let app_builder = app_builder.manage(smoke::SmokeTest::default());
+
+    let app = app_builder
         .invoke_handler(tauri::generate_handler![
             commands::read_binary,
             commands::read_text,
@@ -148,15 +143,22 @@ pub fn run() {
             package::package_extract,
             package::package_cancel,
             take_launch_paths,
-            smoke_test_dir,
-            finish_smoke_test,
+            #[cfg(debug_assertions)]
+            smoke::smoke_test_dir,
+            #[cfg(debug_assertions)]
+            smoke::finish_smoke_test,
         ])
         .setup(|app| {
             let argv: Vec<String> = std::env::args().collect();
             let (paths, smoke) = launch_arguments(&argv);
-            if let Ok(mut directory) = app.state::<SmokeTest>().0.lock() {
-                *directory = smoke;
+            #[cfg(debug_assertions)]
+            {
+                if let Some(state) = app.try_state::<smoke::SmokeTest>() {
+                    state.set(smoke);
+                }
             }
+            #[cfg(not(debug_assertions))]
+            let _ = smoke;
             LaunchPaths::push(app.handle(), paths);
             Ok(())
         })

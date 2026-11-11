@@ -1,4 +1,5 @@
 import { t, type MessageKey } from "../i18n";
+import { sanitizePaths } from "../model/pathText";
 
 /**
  * Rust commands reject with `{ code, detail }`. The code picks a catalog
@@ -62,4 +63,26 @@ export function describeError(error: unknown): string {
   if (fallback) return fallback;
   if (error instanceof Error) return error.message;
   return String(error);
+}
+
+/**
+ * A support-facing version of a structured command error that keeps the stable
+ * code but replaces absolute paths. The on-screen detail keeps the raw text
+ * because it is the useful part of the troubleshooting step; only the copied
+ * summary is sanitized (F-042).
+ */
+export function commandErrorForCopy(error: unknown): string | null {
+  if (typeof error !== "object" || error === null) return null;
+  const code = (error as { code?: unknown }).code;
+  const detail = sanitizePaths(commandErrorDetail(error));
+  if (typeof code === "string") {
+    if (!code) return detail || null;
+    return detail ? `${code}: ${detail}` : code;
+  }
+  return detail || null;
+}
+
+/** Sanitized copy text for any error the UI already rendered. */
+export function errorTextForCopy(error: unknown): string {
+  return sanitizePaths(describeError(error));
 }

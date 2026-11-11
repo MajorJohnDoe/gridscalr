@@ -497,7 +497,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P2
 - **Area:** CSP / webview
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `index.html` has a meta CSP with `script-src 'self'` and
   `connect-src ... ws://localhost:1420 http://localhost:1420`. Tauri adds a
   different policy as an HTML response header from `src-tauri/tauri.conf.json`.
@@ -512,6 +512,7 @@ confirmed against the audit.
   WebAssembly runs inside workers.
 - **Next step:** Make one policy authoritative, keep dev origins in `devCsp`,
   add the missing directives and evaluate `freezePrototype`. Phase 2, #168.
+- **Resolution:** Phase 2 removed the meta CSP from `index.html`, made `app.security.csp` the only production policy, kept the HMR origins in `devCsp`, and added `object-src`, `base-uri`, `frame-src` and `form-action`. `freezePrototype` was evaluated and kept off: pdf-lib assigns `PDFHeader.prototype.toString`, so the page throws under a frozen `Object.prototype`; the packaged WebKitGTK smoke test never left the boot screen. The value and reason are recorded in `security/policy.json`. `npm run check:security` compares the configuration with `security/policy.json`; `npm run test:csp` asserts the dev meta equals `devCsp`. See `docs/security-policy.md`.
 - **Related:** `docs/security-audit.md` §4, `index.html`,
   `src-tauri/tauri.conf.json`.
 
@@ -521,7 +522,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P2
 - **Area:** CSP / worker
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** PDF.js and Tesseract are started as same-origin URL workers.
   Tauri attaches the CSP header only to HTML assets, and Chromium does not apply
   a page's meta CSP to a same-origin URL worker (verified with a worker that
@@ -534,6 +535,7 @@ confirmed against the audit.
 - **Next step:** Give worker responses a policy (header on all assets or a
   `blob:` worker that inherits the document policy) and prove that OCR and
   scanned PDFs still work. Phase 2, #168.
+- **Resolution:** `src/pdf/pdfRenderer.ts` and `src/search/ocr.ts` now start their bundled workers from blob shims so the worker inherits the document policy. `npm run test:csp` starts the real Tesseract worker, imports a same-origin module from a blob worker and proves a remote fetch is blocked.
 - **Related:** `docs/security-audit.md` §4.3, `src/pdf/pdfRenderer.ts`,
   `src/search/ocr.ts`.
 
@@ -543,7 +545,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P2
 - **Area:** Tauri capabilities
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `src-tauri/capabilities/default.json` grants `core:default`,
   which expands to path, event, window, webview, app, image, resources, menu and
   tray defaults. The frontend uses only `api/core`, `api/window`, `api/webview`
@@ -557,6 +559,7 @@ confirmed against the audit.
 - **Next step:** Replace `core:default` with `core:event:default`, the six
   explicit window permissions and `dialog:default`; drop `allow-close`. Phase 2,
   #168.
+- **Resolution:** `src-tauri/capabilities/default.json` now grants `core:event:default`, six explicit window permissions and `dialog:allow-open`/`allow-save`. `core:window:allow-internal-toggle-maximize` is kept for the custom title bar double-click; `allow-close` is gone because the close flow calls `destroy()`. Every permission is justified in `security/policy.json` and checked by `npm run check:security`.
 - **Related:** `docs/security-audit.md` §3.1.
 
 #### F-031 — The write guard ignores the original path of a managed copy
@@ -677,7 +680,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** Tauri commands
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `smoke_test_dir` and `finish_smoke_test` are registered
   unconditionally; `finish_smoke_test` calls `app.exit(code)`.
 - **Problem:** A renderer script can read a path string and exit the app, a
@@ -686,6 +689,7 @@ confirmed against the audit.
 - **Next step:** Register the commands only when `--smoke-test` is supplied or
   behind a debug build, while keeping the packaged smoke test working. Phase 2,
   #168.
+- **Resolution:** The commands moved to `src-tauri/src/smoke.rs`, which is compiled with `#[cfg(debug_assertions)]` only; the frontend asks for the smoke directory only when the `__TAURI_DEBUG__` define is true. The CI smoke test builds with `--debug`, so it keeps working. The check script rejects an unconditional registration.
 - **Related:** `docs/security-audit.md` §3.2.
 
 #### F-038 — `style-src 'unsafe-inline'` is only needed by two declarations
@@ -694,7 +698,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** CSP / UI markup
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `index.html` has an inline `<style>` block for the boot fallback;
   `src/ui/statusBar.ts` builds a `style="color:..."` attribute in an `innerHTML`
   string.
@@ -704,6 +708,7 @@ confirmed against the audit.
   canonicalized, so there is no current injection.
 - **Next step:** Move the boot styles to an external CSS file, set the status-bar
   colour through the CSSOM and drop `'unsafe-inline'`. Phase 2, #168.
+- **Resolution:** The boot styles moved to `public/boot.css` and the status-bar layer colour is set through the CSSOM in `src/ui/statusBar.ts`. Production `style-src` is `'self'` only; the check script rejects an inline style attribute in `index.html` or `src/`.
 - **Related:** `docs/security-audit.md` §4.1 and §7.
 
 #### F-039 — Development-only npm advisory remains open
@@ -768,7 +773,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** diagnostics / error reporting
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `CommandError.detail` and `WriteError.detail` embed the full path
   and OS error; `src/io/platformError.ts` shows the detail as a technical line
   that can be copied.
@@ -778,6 +783,7 @@ confirmed against the audit.
 - **Next step:** Offer a sanitized copy action or sanitize the path in the
   dialog while keeping the on-screen detail. Phase 2, #168, or a small
   follow-up.
+- **Resolution:** `src/model/pathText.ts` holds the shared sanitizer. Error dialogs keep the raw detail on screen for troubleshooting but offer **Copy sanitized details**, which removes absolute paths and keeps a structured command code. `tests/errorDetails.test.ts` covers the sanitizer and the code-preserving copy form.
 - **Related:** `docs/security-audit.md` §7.
 
 ### F-043 — PDF export embeds a wall-clock time, so byte-identical output is not guaranteed

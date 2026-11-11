@@ -27,8 +27,9 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 8. `docs/architecture.md` and `docs/adr/` — source map, design choices and accepted architecture decisions.
 9. `docs/project-file.md` — the `.gridscalr` format and schema history.
 10. `docs/limitations.md` — known gaps that must not be regressed.
-11. `docs/releasing.md` — the manual release checklist.
-12. The relevant source and tests for the area being changed.
+11. `docs/security-policy.md` — the desktop CSP, capability and worker policy; change it together with `security/policy.json`.
+12. `docs/releasing.md` — the manual release checklist.
+13. The relevant source and tests for the area being changed.
 
 If a plan and the code disagree, stop and surface the conflict rather than silently choosing one.
 
@@ -192,6 +193,7 @@ Run the relevant checks from the repository root:
 npm run check:versions
 npm run check:file-budgets
 npm run check:modules
+npm run check:security
 npm run check:docs
 npm run format:check
 npm run lint
@@ -559,6 +561,12 @@ scripts/capture-docs.mjs   Playwright screenshot and theme-showcase capture into
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
 scripts/check-file-budgets.mjs blocking line budget for source files
 scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
+scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
+scripts/csp-regression.mjs  browser CSP, PDF worker and OCR worker regression
+security/policy.json       machine-checked CSP and capability justification
+docs/security-policy.md    desktop security policy and how to change it
+src-tauri/src/smoke.rs     debug-only packaged smoke-test commands
+src/model/pathText.ts      shared absolute-path sanitizer for diagnostics and error copies
 scripts/docs-fingerprint.mjs UI fingerprint for screenshot staleness checks
 scripts/build-site.mjs     builds site-dist from site/, icons, screenshots and release metadata
 scripts/check-site.mjs     link, asset, language parity, release and SEO checks for the built site
@@ -594,10 +602,12 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.
 - `tests/fuzz.test.ts` runs deterministic, seeded fuzzing for project JSON, package manifests, archive names and document paths.
-- The CI `desktop` job builds the Tauri shell on Ubuntu, Windows and macOS and runs the packaged app with `--smoke-test <dir>`. The app opens its bundled demo, saves to the directory, reopens it, checks the unsaved-changes prompt and exits 0/1 with `result.json`. Use the same flag locally against `src-tauri/target/debug/gridscalr` (prefix with `xvfb-run -a` on headless Linux).
+- The CI `desktop` job builds the Tauri shell on Ubuntu, Windows and macOS and runs the packaged app with `--smoke-test <dir>`. The app opens its bundled demo, loads the first PDF page through the PDF.js worker, runs the bundled OCR worker, saves to the directory, reopens it, checks the unsaved-changes prompt and exits 0/1 with `result.json`. Use the same flag locally against `src-tauri/target/debug/gridscalr` (prefix with `xvfb-run -a` on headless Linux).
 - `npm run test:canvas` runs pointer-level canvas regressions for draw, resize, rotate, text, hidden/locked items, crop and split view.
 - `npm run test:count` drives the count workflow through Project settings, custom type creation, placement, pieces per object, Markups count-type filtering, quantities and presets.
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
+- `npm run test:csp` opens the demo in the browser fallback, checks the single dev policy, starts the real Tesseract worker, and proves a blob worker inherits the policy and cannot fetch a remote origin.
+- `npm run check:security` compares the shipped CSP and capabilities with the reasoned record in `security/policy.json`, rejects a second page policy and inline styles, and verifies the debug-only smoke commands and worker bootstraps. See `docs/security-policy.md`.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits.
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
 - `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.

@@ -1,4 +1,5 @@
 import { totalPageCount } from "../../model/documents";
+import { sanitizePaths } from "../../model/pathText";
 import type { Project } from "../../model/types";
 
 export type LogLevel = "info" | "warn" | "error";
@@ -35,17 +36,9 @@ export interface DiagnosticsInput {
   log: LogEntry[];
 }
 
-// Absolute paths from either platform. URLs keep their slashes because the
-// leading character in front of "/" is ":" rather than whitespace or a quote.
-const PATH_PATTERNS: readonly RegExp[] = [
-  /\b[A-Za-z]:\\[^\s"'<>|]+/g,
-  /(?:^|[\s"'(=])\/(?:[^\s"'()=]+\/)+[^\s"'()=]*/g,
-];
-
 /** Diagnostics must never carry drawing names, labels or file paths. */
 export function sanitizeDiagnosticText(value: string, maxLength = 400): string {
-  let text = value.replace(/\s+/g, " ").trim();
-  for (const pattern of PATH_PATTERNS) text = text.replace(pattern, "<path>");
+  let text = sanitizePaths(value.replace(/\s+/g, " ").trim());
   if (text.length > maxLength) text = `${text.slice(0, maxLength - 1)}…`;
   return text;
 }

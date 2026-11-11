@@ -69,7 +69,14 @@ function stripTemplateExpressions(text) {
   return result;
 }
 
-function isCandidate(text) {
+/**
+ * Deliberately technical files are exempt as a whole: their prose is support
+ * text, not interface copy. The template scan already honours this list; apply
+ * the same rule to plain string literals so a refactor of those files cannot
+ * expose a false positive.
+ */
+function isCandidate(text, file) {
+  if (file && TEMPLATE_EXCLUDE_FILES.has(file)) return false;
   if (text.length < 4 || !text.includes(" ")) return false;
   if (!/^[A-ZÅÄÖ]/.test(text)) return false;
   if (text.includes("${") || text.includes("\\n")) return false;
@@ -154,7 +161,7 @@ async function collect(directory) {
     STRING_LITERAL.lastIndex = 0;
     while ((match = STRING_LITERAL.exec(source))) {
       const value = match[2];
-      if (!isCandidate(value)) continue;
+      if (!isCandidate(value, file)) continue;
       const line = source.slice(0, match.index).split("\n").length;
       hits.push({ file, value, line });
     }
