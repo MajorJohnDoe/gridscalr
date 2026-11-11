@@ -239,36 +239,38 @@ jobs:
             -C src-tauri/target/release gridscalr
           (cd "$release" && sha256sum * > SHA256SUMS-linux.txt)
 
-      - name: Smoke test the packaged app (Linux)
-        if: matrix.platform == 'Linux'
+      # The packaged smoke test runs in ci.yml against a **debug** build. The
+      # smoke commands are compiled only under `debug_assertions` (F-037), so a
+      # release binary ignores `--smoke-test` and opens a window that never
+      # closes: on 2026-11-11 that hung all three platforms for two hours during
+      # the 0.24.0 release. Release verification therefore checks the staged
+      # artifacts and checksums that the staging steps above produced.
+      - name: Verify the staged release artifacts (Linux and macOS)
+        if: matrix.platform != 'Windows'
         shell: bash
         run: |
           set -euo pipefail
-          directory="$RUNNER_TEMP/gridscalr-smoke"
-          xvfb-run -a src-tauri/target/release/gridscalr --smoke-test "$directory"
-          cat "$directory/result.json"
+          suffix="$(echo "${{ matrix.platform }}" | tr '[:upper:]' '[:lower:]')"
+          sums="release/SHA256SUMS-${suffix}.txt"
+          test -s "$sums" || { echo "::error::Missing $sums"; exit 1; }
+          artifacts=$(find release -maxdepth 1 -type f ! -name 'SHA256SUMS*' | wc -l)
+          echo "Staged ${artifacts} artifacts for ${{ matrix.platform }}"
+          test "$artifacts" -ge 2 || { echo "::error::Expected at least two artifacts"; exit 1; }
+          cat "$sums"
 
-      - name: Smoke test the packaged app (macOS)
-        if: matrix.platform == 'macOS'
-        shell: bash
-        run: |
-          set -euo pipefail
-          directory="$RUNNER_TEMP/gridscalr-smoke"
-          "src-tauri/target/universal-apple-darwin/release/bundle/macos/GridScalr.app/Contents/MacOS/gridscalr" \
-            --smoke-test "$directory"
-          cat "$directory/result.json"
-
-      - name: Smoke test the packaged app (Windows)
+      - name: Verify the staged release artifacts (Windows)
         if: matrix.platform == 'Windows'
         shell: pwsh
         run: |
-          $directory = Join-Path $env:RUNNER_TEMP "gridscalr-smoke"
-          $process = Start-Process -FilePath "src-tauri/target/release/gridscalr.exe" `
-            -ArgumentList "--smoke-test `"$directory`"" -Wait -PassThru
-          Get-Content (Join-Path $directory "result.json")
-          if ($process.ExitCode -ne 0) {
-            throw "Packaged smoke test failed with exit code $($process.ExitCode)"
+          $sums = "release/SHA256SUMS-windows.txt"
+          if (-not (Test-Path $sums)) { throw "Missing $sums" }
+          $artifacts = Get-ChildItem "release" -File | Where-Object { $_.Name -notlike "SHA256SUMS*" }
+          if ($artifacts.Count -lt 2) { throw "Expected at least two artifacts" }
+          foreach ($file in $artifacts) {
+            if ($file.Length -le 0) { throw "Empty artifact $($file.Name)" }
           }
+          Write-Host "Staged $($artifacts.Count) artifacts for Windows"
+          Get-Content $sums
 
       - uses: actions/upload-artifact@v7
         with:

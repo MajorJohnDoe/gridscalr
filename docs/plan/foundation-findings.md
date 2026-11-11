@@ -1467,6 +1467,7 @@ remains the scheduling home.
 | F-027 | fixed | Source replacement now clears undo/redo at the structural boundary so an older snapshot cannot restore a superseded source reference. |
 | F-067 | deferred | View-only blocks the context-bar layer picker because the active layer is persisted project data; an inspection-only layer focus would need session state. |
 | F-068 | accepted | The view-only banner is a visible shell change; screenshot recapture is deferred to the 0.24.0 documentation pass. |
+| F-074 | fixed | The release workflow no longer launches a release binary with the debug-only smoke flag; it verifies the staged artifacts and checksums instead. |
 
 
 ### F-011 — Template sheet fields still belong to a document, not a page
@@ -1569,3 +1570,27 @@ No entries yet.
   the recovery store; only the in-memory undo/redo history is discarded.
 - **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
   robustness §6 I7 and §7.4.
+
+### F-074 — The release workflow ran the debug-only smoke harness
+
+- **Date:** 2026-11-11
+- **Phase:** 14 — 0.24.0 release preparation
+- **Severity:** P1
+- **Area:** release workflow / desktop shell
+- **Status:** fixed — 0.24.0 release preparation
+- **Evidence:** `.github/workflows/release.yml` ran
+  `gridscalr --smoke-test <dir>` against the **release** binaries on all three
+  platforms. `src-tauri/src/lib.rs` declares `mod smoke` behind
+  `#[cfg(debug_assertions)]`, and `App.bindSmokeTest()` returns early unless
+  `__TAURI_DEBUG__` is set, so the release binary ignores the flag. It opens a
+  window and waits for a close that never comes.
+- **Problem:** The `v0.24.0` tag build hung in "Smoke test the packaged app" on
+  Linux, macOS and Windows for about two hours before the run was cancelled.
+  Phase 2 introduced this when it gated the smoke commands to debug builds
+  (F-037) without revisiting the release workflow, so no ordinary CI run could
+  see it: `ci.yml` builds `--debug` for its smoke test.
+- **Fix:** The release workflow no longer launches the application. It verifies
+  that the staging step produced the expected artifacts and a checksum file per
+  platform. The smoke harness stays in `ci.yml`, where the debug build supports
+  it, and the release notes list the artifacts rather than a GUI run.
+- **Related:** F-037, phase 2, `docs/releasing.md`.
