@@ -242,6 +242,7 @@ npm run docs:demo   # fixtures/demo-project.gridscalr
 | [Architecture decisions](docs/adr/README.md) | Accepted ADRs for modules, packaging, localization, release and performance. |
 | [Glossary](docs/glossary.md) | Canonical English and Swedish product terms. |
 | [Project files](docs/project-file.md) | The `.gridscalr` format, schema history and migration rules. |
+| [Multi-issue workflow](docs/plan/conductor-prompt.md) | Conductor and worker prompts for multi-phase, multi-issue work. |
 | [Known limitations](docs/limitations.md) | What the app deliberately does not do yet. |
 | [Releasing](docs/releasing.md) | The manual release checklist. |
 | [Roadmap](docs/roadmap.md) | Shipped milestones, foundation workstreams, the 1.0 quality gate and open decisions. |

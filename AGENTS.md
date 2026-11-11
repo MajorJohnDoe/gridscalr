@@ -249,6 +249,54 @@ Do not report a change as complete while CI is failing. If a workflow fails, ins
 gh run view <run-id> --repo MajorJohnDoe/gridscalr --log-failed
 ```
 
+## Multi-issue conductor workflow
+
+Use this workflow when a request spans more than two issues, includes a schema
+change, or is expected to take more than about one day. It keeps the conductor
+context small and makes every phase independently reviewable.
+
+The reusable prompts live in
+[`docs/plan/conductor-prompt.md`](plan/conductor-prompt.md).
+
+- **Epic and milestone.** A multi-issue effort gets one epic issue and one
+  release milestone. The epic lists the ordered phases, the issue for each
+  phase and the exit criteria.
+- **One phase = one issue.** Every phase states problem, scope, non-goals and
+  acceptance criteria. Foundation work records its module map in the issue
+  before production code is written.
+- **The conductor does not implement.** It coordinates, verifies and merges.
+  One fresh `general` subagent handles one phase. Never reuse a child session
+  for a different issue. A split phase is explicit, for example 10a/10b.
+- **One PR per phase.** The worker reads `AGENTS.md`, the plan and ADRs, the
+  phase issue and the relevant docs; creates a branch; implements; adds tests
+  and documentation; runs the full check list; pushes; opens a PR linked to the
+  issue; updates the handover; and returns only the structured result.
+- **Defensive review.** The conductor treats the worker report as a claim.
+  Before merging it verifies that the PR head SHA equals the reported commit,
+  every required check passes on that exact SHA, the PR targets `main` and is
+  mergeable, the file list matches the phase scope, and the acceptance criteria
+  are present. For schema, save, page, source or package changes it re-runs the
+  focused local test. If the head SHA changes, verification starts again. Merge
+  only after this pass.
+- **Schema change gate.** When a phase changes `SCHEMA_VERSION`, the worker must
+  add a deterministic migration from the previous schema, a committed fixture
+  for the previous schema, coverage for every older supported schema,
+  round-trip and determinism tests, and a test that invalid references are
+  reported rather than silently dropped. `docs/project-file.md`, `README.md`
+  and the schema line in this file are updated in the same change. The
+  migration tests must be present and green in the PR. An unsafe or untested
+  migration is a stop condition.
+- **Handover.** Update `docs/plan/<effort>-handover.md` after every phase with
+  the phase, issue, PR, commit, completed work, modules, decisions, findings,
+  checks and next phase. Update the epic checklist after each merge.
+- **Context policy.** Keep the conductor context to phase status, PR links,
+  short summaries and the handover file. Do not paste full diffs or full test
+  logs into the conductor context.
+- **Stop conditions.** Stop for an explicit user stop, a blocked worker, CI that
+  cannot be made green, an unsafe migration, a missing product decision, a P0
+  finding, or two runs touching the same branch or PR. Never start a phase with
+  uncommitted changes or failing CI.
+
 ## Versioning and releases
 
 App versions follow [Semantic Versioning](https://semver.org/). The app is still pre-1.0, so minor versions may contain planned Milestone features and patch versions are fixes.
