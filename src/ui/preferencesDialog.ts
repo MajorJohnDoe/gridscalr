@@ -21,7 +21,7 @@ import { store } from "../state/store";
 import {
   clearAllRecovery,
   getRecoverySummary,
-  openRecoveryChooser,
+  openRecoveryCenter,
   refreshRecoverySummary,
 } from "../features/sessionRecovery";
 import { currentThemePreference, setThemePreference, THEME_OPTIONS } from "../theme/theme";
@@ -239,10 +239,9 @@ function dataSection(): HTMLElement {
     t("preferences.data.reviewRecovery"),
   );
   reviewRecovery.type = "button";
-  reviewRecovery.disabled = !hasRecovery;
   reviewRecovery.addEventListener("click", () => {
     void (async () => {
-      await openRecoveryChooser();
+      await openRecoveryCenter();
       openPreferencesDialog();
     })();
   });

@@ -283,7 +283,7 @@ export class App {
         });
       },
       refresh: () => this.renderAll(),
-      openRecovery: () => void this.recovery.openChooser(),
+      openRecovery: () => void this.recovery.openCenter(),
       getRecoverySummary: () => this.recovery.summary(),
       openRecent: (entry) => void this.session.openRecent(entry),
       openDemoProject: () => void this.session.openDemoProjectFlow(),

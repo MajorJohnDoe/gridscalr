@@ -182,11 +182,11 @@ try {
     { project: destination, projectPath: null, savedAt: new Date().toISOString() },
   );
   await page.reload({ waitUntil: "domcontentloaded" });
-  await page.getByRole("button", { name: "Restore last session" }).waitFor();
-  await page.getByRole("button", { name: "Restore last session" }).click();
-  const recoveryDialog = page.getByRole("dialog", { name: "Recover work" });
+  await page.getByRole("button", { name: "Recovery center" }).waitFor();
+  await page.getByRole("button", { name: "Recovery center" }).click();
+  const recoveryDialog = page.getByRole("dialog", { name: "Recovery center" });
   await recoveryDialog.waitFor();
-  await recoveryDialog.getByRole("button", { name: "Restore", exact: true }).click();
+  await recoveryDialog.getByRole("button", { name: "Restore selected" }).click();
   await page.getByText("Destination page").first().waitFor();
   await waitForApp(page);
   await waitForToastsGone(page);

@@ -52,12 +52,14 @@ src/
   features/sessionRecovery/lease.ts pure lease model, stale boundary and classification
   features/sessionRecovery/leaseFiles.ts Rust lease command wrappers and ownership errors
   features/sessionRecovery/leaseSession.ts acquire, heartbeat, take-over and release lifecycle
-  features/sessionRecovery/controller.ts autosave loop, lease adoption, chooser and watcher orchestration
+  features/sessionRecovery/controller.ts autosave loop, lease adoption, recovery center and watcher orchestration
+  features/sessionRecovery/centerModel.ts recovery grouping per project and instance, sizes and base-version labels
+  features/sessionRecovery/centerUi.ts recovery center dialog with selective restore and delete
   features/sessionRecovery/autosavePreference.ts app-level autosave enabled, interval and session pause
   features/sessionRecovery/checkpoint.ts labelled structural-operation checkpoints
   features/sessionRecovery/watch.ts visible-window project file polling
   features/sessionRecovery/summary.ts synchronous recovery summary for the welcome screen and Preferences
-  features/sessionRecovery/ui.ts recovery chooser, lease dialog and non-blocking banners
+  features/sessionRecovery/ui.ts lease dialog and non-blocking session banners
   features/sessionRecovery/record.ts recovery record types, IDs and retention constants
   features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
   features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper

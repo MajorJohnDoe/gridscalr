@@ -76,20 +76,65 @@
   color: var(--text);
 }
 
-.recovery-list {
+.recovery-center {
+  gap: 10px;
+}
+
+.recovery-legend {
+  display: grid;
+  gap: 2px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  background: var(--surface-sunken);
+}
+
+.recovery-groups {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   max-height: 46vh;
   overflow: auto;
 }
 
-.recovery-group-title {
-  margin: 10px 0 2px;
-  font-size: 11px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
+.recovery-project {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+.recovery-project-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.recovery-project-title {
+  margin: 0;
+  font-size: 13px;
+}
+
+.recovery-project-path {
+  margin: 0;
   color: var(--muted);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.recovery-instance-title {
+  margin: 4px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+
+.recovery-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .recovery-row {
@@ -107,14 +152,64 @@
   background: var(--surface-sunken);
 }
 
+.recovery-row:has(input:checked) {
+  border-color: var(--accent);
+}
+
 .recovery-row-text {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 3px;
   min-width: 0;
+}
+
+.recovery-row-heading {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
 }
 
 .recovery-row-meta {
   color: var(--muted);
   font-size: 11px;
+}
+
+.recovery-badge {
+  padding: 1px 6px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 10px;
+  color: var(--muted);
+}
+
+.recovery-badge.is-current {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.recovery-badge.is-older,
+.recovery-badge.is-unknown {
+  border-color: var(--warning);
+  color: var(--warning);
+}
+
+.recovery-warning {
+  margin: 0;
+  padding: 8px 10px;
+  border-left: 3px solid var(--warning);
+  border-radius: 4px;
+  background: var(--surface-sunken);
+  color: var(--text);
+  font-size: 12px;
+}
+
+.recovery-empty {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 8px;
+  text-align: center;
 }

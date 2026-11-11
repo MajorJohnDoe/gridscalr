@@ -350,16 +350,17 @@ export class ProjectSession {
     }
   }
 
-  async openRecoveryChooser(): Promise<void> {
+  async openRecoveryCenter(): Promise<void> {
     if (!this.recovery) {
       toast(t("app.noRecovery"), "info");
       return;
     }
-    await this.recovery.openChooser();
+    await this.recovery.openCenter();
   }
 
   /** Restores one explicitly chosen record as unsaved work. */
   async restoreRecoveryRecord(record: RecoveryRecord): Promise<boolean> {
+    if (!(await this.confirmUnsavedChanges(t("sessionRecovery.restoreReplace")))) return false;
     let project: Project;
     try {
       project = parseProject(record.serialized);

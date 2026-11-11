@@ -10,7 +10,23 @@ export {
 export type { AutosaveState, AutosaveStatus } from "./autosavePreference";
 export type { SessionRecoveryHost, OpenDecision, OpenProjectInfo } from "./ports";
 export { recordStructuralCheckpoint } from "./checkpoint";
-export { openRecoveryChooser, setRecoveryChooserHandler } from "./chooser";
+export { openRecoveryCenter, setRecoveryCenterHandler } from "./chooser";
+export {
+  baseVersionLabelKey,
+  centerIsEmpty,
+  defaultCenterSelection,
+  findCenterEntry,
+  groupRecoveryEntries,
+  needsRestoreConfirmation,
+  serializedBytes,
+} from "./centerModel";
+export type {
+  RecoveryCenterAction,
+  RecoveryCenterChoice,
+  RecoveryInstanceGroup,
+  RecoveryProjectGroup,
+} from "./centerModel";
+export { openRecoveryCenter as showRecoveryCenter } from "./centerUi";
 export { showSessionBanner } from "./ui";
 export type { BannerAction, BannerOptions } from "./ui";
 export { getRecoverySummary, refreshRecoverySummary, subscribeRecoverySummary } from "./summary";

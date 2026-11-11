@@ -14,14 +14,17 @@ import {
   subscribeAutosaveState,
   type AutosaveState,
 } from "./autosavePreference";
-import { setRecoveryChooserHandler } from "./chooser";
+import { setRecoveryCenterHandler } from "./chooser";
 import { appVersion, instanceId } from "./instance";
 import { ProjectLeaseSession } from "./leaseSession";
 import type { OpenDecision, OpenProjectInfo, SessionRecoveryHost } from "./ports";
 import { collectRecoverableEntries } from "./recovery";
 import type { RecoverySummary } from "./record";
 import { getRecoverySummary, refreshRecoverySummary, subscribeRecoverySummary } from "./summary";
-import { recoveryChooser, showFileChangedBanner, showReadOnlyBanner } from "./ui";
+import { openRecoveryCenter } from "./centerUi";
+import { needsRestoreConfirmation } from "./centerModel";
+import { confirmDialog } from "../../ui/dialogs";
+import { showFileChangedBanner, showReadOnlyBanner } from "./ui";
 import { createProjectWatcher, type ProjectWatcher } from "./watch";
 
 const SKIP_REASONS = new Set(["cursor", "view", "selection", "page", "tool", "save"]);
@@ -70,7 +73,7 @@ export class SessionRecoveryController {
     this.unsubscribeAutosave = subscribeAutosaveState((state) =>
       this.onAutosavePreferenceChange(state),
     );
-    setRecoveryChooserHandler(() => this.openChooser());
+    setRecoveryCenterHandler(() => this.openCenter());
     void refreshRecoverySummary();
     this.scheduleAutosave();
   }
@@ -159,29 +162,61 @@ export class SessionRecoveryController {
     void refreshRecoverySummary();
   }
 
-  async openChooser(): Promise<void> {
-    const records = await listRecoveryRecords().catch((error) => {
-      logEvent("warn", `recovery list failed: ${describeError(error)}`);
-      return [];
-    });
-    const entries = await collectRecoverableEntries(records, {
-      desktop: this.host.desktop,
-      readStamp: this.host.readStamp,
-      pathExists: this.host.pathExists,
-    });
-    const choice = await recoveryChooser(entries);
-    if (choice.action === "cancel" || !choice.record) return;
-    if (choice.action === "discard") {
-      await deleteRecoveryRecord(choice.record.id);
+  async openCenter(): Promise<void> {
+    let selectedId: string | null = null;
+    for (;;) {
+      const records = await listRecoveryRecords().catch((error) => {
+        logEvent("warn", `recovery list failed: ${describeError(error)}`);
+        return [];
+      });
+      const entries = await collectRecoverableEntries(records, {
+        desktop: this.host.desktop,
+        readStamp: this.host.readStamp,
+        pathExists: this.host.pathExists,
+      });
+      const choice = await openRecoveryCenter(entries, { selectedId });
+      if (!choice.record || choice.action === "cancel") return;
+      const record = choice.record;
+      if (choice.action === "delete") {
+        const confirmed = await confirmDialog(
+          t("recoveryCenter.deleteTitle"),
+          t("recoveryCenter.deleteNote", { name: record.projectName }),
+          t("recoveryCenter.deleteSelected"),
+          { danger: true },
+        );
+        if (!confirmed) {
+          selectedId = record.id;
+          continue;
+        }
+        await deleteRecoveryRecord(record.id);
+        await refreshRecoverySummary();
+        const remaining = await listRecoveryRecords().catch(() => []);
+        if (remaining.some((candidate) => candidate.id === record.id)) {
+          this.host.notify(t("recoveryCenter.deleteFailed"), "warning");
+          return;
+        }
+        this.host.notify(t("sessionRecovery.discarded"), "success");
+        return;
+      }
+      const entry = entries.find((candidate) => candidate.record.id === record.id);
+      if (entry && needsRestoreConfirmation(entry.state)) {
+        const confirmed = await confirmDialog(
+          t("recoveryCenter.restoreTitle"),
+          t("recoveryCenter.restoreNote"),
+          t("recoveryCenter.restoreSelected"),
+        );
+        if (!confirmed) {
+          selectedId = record.id;
+          continue;
+        }
+      }
+      const restored = await this.host.onRestore(record);
+      if (!restored) return;
+      await deleteRecoveryRecord(record.id);
       await refreshRecoverySummary();
-      this.host.notify(t("sessionRecovery.discarded"), "success");
+      this.host.notify(t("sessionRecovery.restored"), "success");
       return;
     }
-    const restored = await this.host.onRestore(choice.record);
-    if (!restored) return;
-    await deleteRecoveryRecord(choice.record.id);
-    await refreshRecoverySummary();
-    this.host.notify(t("sessionRecovery.restored"), "success");
   }
 
   dispose(): void {
@@ -197,7 +232,7 @@ export class SessionRecoveryController {
     this.unsubscribeSummary = null;
     this.unsubscribeAutosave?.();
     this.unsubscribeAutosave = null;
-    setRecoveryChooserHandler(null);
+    setRecoveryCenterHandler(null);
   }
 
   private handleOwnershipLost(): void {
