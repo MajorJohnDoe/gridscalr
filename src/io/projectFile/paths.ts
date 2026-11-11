@@ -47,17 +47,27 @@ export function resolveRelativePath(
 
 /**
  * Every path that belongs to a source document. This includes both the stored
- * absolute path and the path resolved from the project's relative reference, so
+ * absolute path, the original drawing behind a managed copy, the path resolved
+ * from the project's relative reference and the managed-copy folder itself, so
  * an export can never overwrite a drawing even if it was located through the
- * portable fallback.
+ * portable fallback or reached the folder through a new file name.
  */
 export function sourceDocumentPaths(project: Project, projectPath: string | null = null): string[] {
   const paths = new Set<string>();
   for (const document of project.documents) {
     if (document.path) paths.add(document.path);
+    // F-031: a managed copy keeps its original drawing in `originalPath`. That
+    // file must never be a save or export target either.
+    if (document.originalPath) paths.add(document.originalPath);
     if (projectPath && document.relativePath) {
       const resolved = resolveRelativePath(projectPath, document.relativePath);
-      if (resolved) paths.add(resolved);
+      if (resolved) {
+        paths.add(resolved);
+        if (document.storage === "managed") {
+          const folder = resolved.replace(/[\\/][^\\/]*$/, "");
+          if (folder) paths.add(folder);
+        }
+      }
     }
   }
   return [...paths];

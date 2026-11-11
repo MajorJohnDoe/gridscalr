@@ -13,17 +13,24 @@ use tauri::ipc::Channel;
 use zip::write::SimpleFileOptions;
 use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
-use crate::commands::{
-    ensure_writable, replace_file, sync_directory, unique_sibling, CommandError,
-};
+use crate::commands::{replace_file, sync_directory, unique_sibling, CommandError};
+use crate::disk_space;
+use crate::path_guard::ensure_writable;
 
 pub const PACKAGE_FORMAT: &str = "gridscalr-package";
 pub const PACKAGE_FORMAT_VERSION: u32 = 1;
 pub const MAX_ENTRIES: usize = 4096;
-pub const MAX_ENTRY_BYTES: u64 = 4 * 1024 * 1024 * 1024;
-pub const MAX_TOTAL_BYTES: u64 = 16 * 1024 * 1024 * 1024;
+/// A single drawing inside a package. Deliberately generous for a scanned plan
+/// while staying far below a memory-exhausting size.
+pub const MAX_ENTRY_BYTES: u64 = 1024 * 1024 * 1024;
+/// The documented uncompressed total for one extraction. The previous 16 GiB
+/// limit could fill a laptop disk before any checksum ran (F-033).
+pub const MAX_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;
+/// The compressed `.gridscalr.zip` file itself.
+pub const MAX_PACKAGE_BYTES: u64 = 2 * 1024 * 1024 * 1024;
 pub const MAX_MANIFEST_BYTES: u64 = 2 * 1024 * 1024;
 const MAX_COMPRESSION_RATIO: u64 = 200;
+
 const CHUNK_BYTES: usize = 64 * 1024;
 const PROGRESS_INTERVAL: Duration = Duration::from_millis(60);
 
@@ -51,12 +58,26 @@ fn finish_job(job_id: &str) {
 #[serde(tag = "kind", rename_all = "camelCase")]
 pub enum PackageError {
     Cancelled,
-    MissingSource { files: Vec<MissingFile> },
-    ChecksumMismatch { files: Vec<ChecksumMismatch> },
-    DestinationExists { path: String },
+    MissingSource {
+        files: Vec<MissingFile>,
+    },
+    ChecksumMismatch {
+        files: Vec<ChecksumMismatch>,
+    },
+    DestinationExists {
+        path: String,
+    },
     SourceOverwrite,
-    InvalidPackage { message: String },
-    Io { message: String },
+    InsufficientSpace {
+        required_bytes: u64,
+        available_bytes: u64,
+    },
+    InvalidPackage {
+        message: String,
+    },
+    Io {
+        message: String,
+    },
 }
 
 #[derive(Debug, Serialize)]
@@ -210,6 +231,8 @@ pub struct InspectionResult {
     pub destination_path: String,
     pub destination_exists: bool,
     pub project_name: String,
+    /// Uncompressed size of the extracted package, shown before extraction.
+    pub uncompressed_bytes: u64,
 }
 
 #[derive(Debug, Serialize)]
@@ -373,10 +396,20 @@ pub fn validate_manifest(manifest: &PackageManifest) -> Result<(), PackageError>
         .iter()
         .chain(manifest.exports.iter())
         .chain(manifest.source_scans.iter());
+    let mut total = 0_u64;
     for file in all {
         if !names.insert(file.file.to_lowercase()) {
             return Err(PackageError::InvalidPackage {
                 message: format!("The package contains “{}” more than once.", file.file),
+            });
+        }
+        total = total.saturating_add(file.size_bytes);
+        if total > MAX_TOTAL_BYTES {
+            return Err(PackageError::InvalidPackage {
+                message: format!(
+                    "The package is larger than the {} MiB extraction limit.",
+                    MAX_TOTAL_BYTES / (1024 * 1024)
+                ),
             });
         }
     }
@@ -397,7 +430,10 @@ fn validate_entry_name(name: &str) -> Result<(), PackageError> {
             message: "The package contains an empty or too long file name.".to_string(),
         });
     }
-    if name.contains(['\\', '\0', ':']) || name.starts_with('/') {
+    if name.chars().any(|character| character.is_control())
+        || name.contains(['\\', '\0', ':'])
+        || name.starts_with('/')
+    {
         return Err(PackageError::InvalidPackage {
             message: format!("The package contains an unsafe file name: “{name}”."),
         });
@@ -1009,6 +1045,15 @@ struct ArchiveEntry {
 fn inspect_archive(
     path: &Path,
 ) -> Result<(PackageManifest, String, Vec<ArchiveEntry>), PackageError> {
+    let metadata = fs::metadata(path)?;
+    if metadata.len() > MAX_PACKAGE_BYTES {
+        return Err(PackageError::InvalidPackage {
+            message: format!(
+                "The package file is larger than the {} MiB limit.",
+                MAX_PACKAGE_BYTES / (1024 * 1024)
+            ),
+        });
+    }
     let file = File::open(path)?;
     let mut archive = ZipArchive::new(BufReader::new(file))?;
     if archive.len() > MAX_ENTRIES {
@@ -1137,7 +1182,7 @@ fn inspect_archive(
 }
 
 pub(crate) fn inspect_package(path: &Path) -> Result<InspectionResult, PackageError> {
-    let (manifest, manifest_json, _) = inspect_archive(path)?;
+    let (manifest, manifest_json, entries) = inspect_archive(path)?;
     let parent = path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -1150,6 +1195,7 @@ pub(crate) fn inspect_package(path: &Path) -> Result<InspectionResult, PackageEr
         destination_exists: destination.exists(),
         destination_path: path_string(&destination),
         project_name,
+        uncompressed_bytes: entries.iter().map(|entry| entry.size).sum(),
     })
 }
 
@@ -1159,6 +1205,19 @@ fn default_destination(package_path: &Path, manifest: &PackageManifest) -> PathB
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     parent.join(sanitize_folder(&project_stem(&manifest.project_file)))
+}
+
+/// Refuses an extraction that cannot fit in the destination volume. A missing
+/// free-space figure (an unusual file system) keeps the explicit byte cap.
+fn ensure_free_space(available: Option<u64>, total: u64) -> Result<(), PackageError> {
+    let required = disk_space::required_bytes(total);
+    match available {
+        Some(available) if available < required => Err(PackageError::InsufficientSpace {
+            required_bytes: required,
+            available_bytes: available,
+        }),
+        _ => Ok(()),
+    }
 }
 
 fn verify_existing_folder(
@@ -1308,6 +1367,8 @@ pub(crate) fn extract_package(
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent)?;
+    let total_bytes = entries.iter().map(|entry| entry.size).sum::<u64>();
+    ensure_free_space(disk_space::available_bytes(parent), total_bytes)?;
     let temp_name = format!(
         ".{}.extract-{}-{}",
         destination
@@ -1327,7 +1388,6 @@ pub(crate) fn extract_package(
         keep: false,
     };
 
-    let total_bytes = entries.iter().map(|entry| entry.size).sum::<u64>();
     let mut progress = Progress::new(channel, "Extracting package", total_bytes);
     let mut extracted_total = 0_u64;
     let result = (|| -> Result<(), PackageError> {
@@ -1335,6 +1395,9 @@ pub(crate) fn extract_package(
         let mut archive = ZipArchive::new(BufReader::new(file))?;
         for entry in &entries {
             check_cancelled(cancelled)?;
+            // Defence in depth: the name was validated during inspection, and
+            // it is validated again before a single byte is written.
+            validate_entry_name(&entry.name)?;
             let mut archive_entry = archive.by_name(&entry.name)?;
             if archive_entry.encrypted() || archive_entry.is_symlink() {
                 return Err(PackageError::InvalidPackage {
@@ -1681,6 +1744,27 @@ mod tests {
     }
 
     #[test]
+    fn package_creation_never_modifies_a_source_drawing() {
+        let directory = TestDir::new();
+        let source = directory.file("source/Plan.pdf");
+        let bytes = b"%PDF-1.4 source drawing";
+        write(&source, bytes);
+        let output = directory.file("Plan.gridscalr.zip");
+        let request = request(
+            &output,
+            &project_json("documents/Plan.pdf", ""),
+            vec![(&source, "documents/Plan.pdf", &sha(bytes))],
+        );
+        create(&request).expect("create package");
+        assert!(output.is_file());
+        assert_eq!(
+            fs::read(&source).expect("read source"),
+            bytes,
+            "a source drawing is never modified by packaging"
+        );
+    }
+
+    #[test]
     fn rejects_a_missing_source_file() {
         let directory = TestDir::new();
         let output = directory.file("Plan.gridscalr.zip");
@@ -1945,7 +2029,15 @@ mod tests {
     #[test]
     fn rejects_zip_slip_and_absolute_entry_names() {
         let directory = TestDir::new();
-        for (name, entry) in [("slip.zip", "../evil.txt"), ("absolute.zip", "/evil.txt")] {
+        for (name, entry) in [
+            ("slip.zip", "../evil.txt"),
+            ("absolute.zip", "/evil.txt"),
+            ("drive.zip", "C:/evil.txt"),
+            ("drive-relative.zip", "C:evil.txt"),
+            ("unc.zip", r"\\server\share\evil.txt"),
+            ("backslash-slip.zip", r"..\evil.txt"),
+            ("control.zip", "evil\u{1}.txt"),
+        ] {
             let path = directory.file(name);
             let file = File::create(&path).expect("create archive");
             let mut zip = ZipWriter::new(file);
@@ -1956,9 +2048,54 @@ mod tests {
             let error = inspect_package(&path).expect_err("unsafe name");
             assert!(
                 matches!(error, PackageError::InvalidPackage { .. }),
-                "{name}"
+                "{name}: {error:?}"
             );
         }
+    }
+
+    #[test]
+    fn rejects_a_manifest_that_exceeds_the_uncompressed_total() {
+        let entry = |index: usize| ManifestFile {
+            file: format!("documents/Plan-{index}.pdf"),
+            sha256: "0".repeat(64),
+            size_bytes: MAX_ENTRY_BYTES,
+            kind: "pdf".to_string(),
+        };
+        let manifest = PackageManifest {
+            format: PACKAGE_FORMAT.to_string(),
+            format_version: PACKAGE_FORMAT_VERSION,
+            created_at: "2026-11-01T10:00:00.000Z".to_string(),
+            app_version: "0.24.0".to_string(),
+            project_file: "Plan.gridscalr".to_string(),
+            project_sha256: "0".repeat(64),
+            project_schema: 25,
+            documents: (0..3).map(entry).collect(),
+            exports: Vec::new(),
+            source_scans: Vec::new(),
+        };
+        let error = validate_manifest(&manifest).expect_err("over the total limit");
+        assert!(
+            format!("{error:?}").contains("extraction limit"),
+            "{error:?}"
+        );
+    }
+
+    #[test]
+    fn refuses_extraction_when_the_destination_volume_is_too_small() {
+        let needed = disk_space::required_bytes(1024);
+        let error = ensure_free_space(Some(needed - 1), 1024).expect_err("no space");
+        assert!(
+            matches!(
+                error,
+                PackageError::InsufficientSpace {
+                    required_bytes,
+                    available_bytes
+                } if required_bytes == needed && available_bytes == needed - 1
+            ),
+            "{error:?}"
+        );
+        assert!(ensure_free_space(Some(needed), 1024).is_ok());
+        assert!(ensure_free_space(None, 1024).is_ok());
     }
 
     #[test]

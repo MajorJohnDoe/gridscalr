@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { saveBinaryFile, saveTextFile, writeTextFile } from "../src/io/platform";
+import { sourceDocumentPaths } from "../src/io/projectFile";
+import { createProject, defaultDocument } from "../src/model/layers";
 import {
   assertWritablePath,
   findProtectedPath,
+  isDriveRelativePath,
+  isPathInside,
   pathComparisonKey,
   sameFilePath,
 } from "../src/io/writeGuard";
@@ -66,5 +70,48 @@ describe("write guard", () => {
         forbiddenPaths: protectedPaths,
       }),
     ).rejects.toThrow(/will not overwrite a source drawing/i);
+  });
+
+  it("normalises a Windows verbatim path and UNC spelling", () => {
+    expect(sameFilePath(String.raw`\\?\C:\Drawings\Plan.pdf`, "c:/drawings/plan.pdf")).toBe(true);
+    expect(sameFilePath(String.raw`\\?\UNC\server\share\Plan.pdf`, "//SERVER/share/plan.pdf")).toBe(
+      true,
+    );
+  });
+
+  it("matches a folder entry as a protected root", () => {
+    expect(isPathInside("/proj/Level 01.drawings/export.pdf", "/proj/Level 01.drawings")).toBe(
+      true,
+    );
+    expect(isPathInside("/proj/Level 01.drawings", "/proj/Level 01.drawings")).toBe(true);
+    expect(isPathInside("/proj/Level 01/export.pdf", "/proj/Level 01.drawings")).toBe(false);
+    expect(findProtectedPath("/proj/Level 01.drawings/new.pdf", ["/proj/Level 01.drawings"])).toBe(
+      "/proj/Level 01.drawings",
+    );
+  });
+
+  it("protects the original drawing behind a managed copy", () => {
+    const project = createProject(defaultDocument("Plan.pdf", 1));
+    project.documents[0].storage = "managed";
+    project.documents[0].path = "/proj/Level 01.drawings/Plan-1234abcd.pdf";
+    project.documents[0].relativePath = "Level 01.drawings/Plan-1234abcd.pdf";
+    project.documents[0].originalPath = "/archive/Plan.pdf";
+
+    const paths = sourceDocumentPaths(project, "/proj/Level 01.gridscalr");
+    expect(paths).toContain("/archive/Plan.pdf");
+    expect(paths).toContain("/proj/Level 01.drawings");
+    expect(() => assertWritablePath("/archive/Plan.pdf", paths)).toThrow(/source drawing/i);
+    expect(() => assertWritablePath("/proj/Level 01.drawings/new-export.pdf", paths)).toThrow(
+      /source drawing/i,
+    );
+    expect(() => assertWritablePath("/proj/Level 01-markups.pdf", paths)).not.toThrow();
+  });
+
+  it("rejects a drive-relative target instead of assuming it is free", () => {
+    expect(isDriveRelativePath("C:Plan.pdf")).toBe(true);
+    expect(isDriveRelativePath("C:/Plan.pdf")).toBe(false);
+    expect(() => assertWritablePath("C:Plan.pdf", ["C:\\Drawings\\Plan.pdf"])).toThrow(
+      /drive-relative|ambiguous/i,
+    );
   });
 });

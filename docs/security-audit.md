@@ -8,6 +8,12 @@
 P3. Production changes are deferred to phases 2–5; this phase only records the
 threat model, evidence and proposed fixes.
 
+**Phase 3 update:** F-031, F-032, F-033, F-034 and F-041 are fixed in
+0.24.0 phase 3 ([#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)).
+F-036 (Windows path coverage) stays open in
+[#199](https://github.com/MajorJohnDoe/gridscalr/issues/199). The evidence
+below records the state at the time of the review.
+
 **Phase 2 update:** F-028, F-029, F-030, F-037, F-038 and F-042 are fixed in
 0.24.0 phase 2 ([#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)).
 The shipped policy and its machine-checked justification are in
@@ -579,7 +585,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-031 — The write guard ignores the original path of a managed copy
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 3 — `sourceDocumentPaths()` adds every non-empty `originalPath` and the managed-copy folder, and both guards reject a destination inside it.
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)
 - **Evidence:** `sourceDocumentPaths()` in `src/io/projectFile/paths.ts` adds
   `document.path` and the resolved `relativePath` only. A managed document keeps
@@ -602,7 +608,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-032 — No byte limit on project or file reads
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 3 — project reads are capped at 256 MB, source reads at 1 GiB and backup writes at 256 MB, with a structured `fileTooLarge` error; `source_find_by_hash` has a total-byte budget.
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)
 - **Evidence:** `read_text`, `read_binary` and `file_size` accept any path and
   read or hash the whole file. `parseProjectWithReport()` calls `JSON.parse()`
@@ -625,7 +631,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-033 — Package extraction can write 16 GiB without disclosure
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 3 — the uncompressed cap is 2 GiB (1 GiB per entry), the dialog shows the unpacked size and extraction checks free space with a 64 MiB reserve.
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)
 - **Evidence:** `MAX_TOTAL_BYTES = 16 GiB` and `MAX_ENTRY_BYTES = 4 GiB` in
   `src-tauri/src/package.rs`. `package_inspect` returns the manifest and
@@ -645,7 +651,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-034 — An untrusted project can reference any local path
 
 - **Severity:** P2
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 3 — opening a project with an out-of-folder reference shows a localized, dismissible banner with the existing copy/relink actions, and the project doctor lists the same warning.
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169), plus a documentation note
 - **Evidence:** `normalizeDocument()` accepts any non-empty `path` and
   `relativePath`. `resolveRelativePath()` resolves `..` by popping parts.
@@ -792,7 +798,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-041 — A crashed save leaves project data in a temporary sibling
 
 - **Severity:** P3
-- **Status:** open
+- **Status:** fixed in 0.24.0 phase 3 — the next save removes stale generated temporary siblings older than ten minutes, never one owned by the running process.
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)
 - **Evidence:** `atomic_write()` and `write_conditional()` create
   `.<name>.<pid>.<nanos>.<counter>.tmp` next to the target. The failure test

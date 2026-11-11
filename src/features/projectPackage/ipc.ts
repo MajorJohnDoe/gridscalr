@@ -41,6 +41,7 @@ export interface PackageInspection {
   destinationPath: string;
   destinationExists: boolean;
   projectName: string;
+  uncompressedBytes: number;
 }
 
 export interface PackageExtractResult {

@@ -2,9 +2,11 @@ import {
   projectDoctorDialog,
   runLoadReport,
   runProjectDoctor,
+  validateProject,
   type LoadReportOutcome,
   type ProjectIssue,
 } from "../features/projectIntegrity";
+import { outsideReferenceIssues } from "../features/sourceStorage";
 import { t } from "../i18n";
 import type { ProjectLoadReport } from "../io/projectFile";
 import { saveTextFile } from "../io/platform";
@@ -34,8 +36,13 @@ export async function openProjectDoctorFlow(
 ): Promise<void> {
   const project = store.project;
   if (!project) return;
+  const base = issues ?? validateProject(project);
   await runProjectDoctor(
-    { project, host: doctorOptions(host), issues },
+    {
+      project,
+      host: doctorOptions(host),
+      issues: [...base, ...outsideReferenceIssues(project, store.projectPath)],
+    },
     { dialog: projectDoctorDialog },
   );
 }

@@ -1,4 +1,5 @@
 import { serializeProject } from "../../io/projectFile";
+import { formatBytes } from "../../io/platform";
 import { describeError } from "../../io/platformError";
 import type { Project } from "../../model/types";
 import { t } from "../../i18n";
@@ -75,6 +76,7 @@ export type PackageFailure =
   | { kind: "checksumMismatch"; files: ChecksumMismatch[] }
   | { kind: "destinationExists"; path: string }
   | { kind: "sourceOverwrite" }
+  | { kind: "insufficientSpace"; requiredBytes: number; availableBytes: number }
   | { kind: "invalidPackage"; message: string }
   | { kind: "io"; message: string }
   | { kind: "unknown"; message: string };
@@ -447,6 +449,13 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
     if (kind === "sourceOverwrite") {
       return { kind: "sourceOverwrite" };
     }
+    if (kind === "insufficientSpace") {
+      return {
+        kind: "insufficientSpace",
+        requiredBytes: Number(value.requiredBytes ?? 0),
+        availableBytes: Number(value.availableBytes ?? 0),
+      };
+    }
     if (kind === "invalidPackage") {
       return {
         kind: "invalidPackage",
@@ -485,6 +494,11 @@ export function describePackageFailure(failure: PackageFailure): string {
       return t("package.describeDestinationExists", { path: failure.path });
     case "sourceOverwrite":
       return t("error.sourceOverwrite");
+    case "insufficientSpace":
+      return t("package.insufficientSpace", {
+        required: formatBytes(failure.requiredBytes),
+        available: formatBytes(failure.availableBytes),
+      });
     case "invalidPackage":
       return messageWithDetail(t("package.errorInvalid"), failure.message);
     case "io":

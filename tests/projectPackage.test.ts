@@ -272,6 +272,23 @@ describe("project package model", () => {
       kind: "unknown",
       message: "boom",
     });
+    expect(
+      normalizePackageFailure({
+        kind: "insufficientSpace",
+        requiredBytes: 1024,
+        availableBytes: 512,
+      }),
+    ).toEqual({ kind: "insufficientSpace", requiredBytes: 1024, availableBytes: 512 });
+  });
+
+  it("explains an extraction that does not fit on the destination volume", () => {
+    expect(
+      describePackageFailure({
+        kind: "insufficientSpace",
+        requiredBytes: 2 * 1024 * 1024,
+        availableBytes: 1024 * 1024,
+      }),
+    ).toContain("not enough free space");
   });
 
   it("localizes the package failure headline and keeps the technical detail", () => {

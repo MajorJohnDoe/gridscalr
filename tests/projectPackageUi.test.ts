@@ -60,6 +60,13 @@ describe("project package dialogs", () => {
     await expect(fresh).resolves.toBe("extract");
   });
 
+  it("shows the uncompressed size before extraction", async () => {
+    const pending = packageDestinationDialog("Plan", "/tmp/Plan", false, 5 * 1024 * 1024);
+    expect(document.body.textContent).toContain("Uncompressed size: 5.0 MB");
+    button("Extract here")?.click();
+    await expect(pending).resolves.toBe("extract");
+  });
+
   it("reports progress and resolves a completed job", async () => {
     const outcome = await runPackageJob(
       "Test package",

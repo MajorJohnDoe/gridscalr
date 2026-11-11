@@ -6,6 +6,7 @@ use serde::Serialize;
 use tauri::Manager;
 
 use crate::commands::{replace_file, unique_sibling, write_flushed};
+use crate::path_guard::MAX_PROJECT_BYTES;
 use crate::project_write::{modified_ms, WriteError};
 
 /// One rolling project backup. Backups live in app data, keyed by project ID,
@@ -101,6 +102,15 @@ pub fn save_project_backup(
     project_id: String,
     contents: String,
 ) -> Result<BackupEntry, WriteError> {
+    if contents.len() as u64 > MAX_PROJECT_BYTES {
+        return Err(WriteError::new(
+            "fileTooLarge",
+            format!(
+                "backup: {} bytes exceeds the {MAX_PROJECT_BYTES} byte project limit",
+                contents.len()
+            ),
+        ));
+    }
     let directory = backup_directory(&app, &project_id)?;
     let name = next_backup_name(&directory);
     let target = directory.join(&name);
