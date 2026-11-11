@@ -225,7 +225,7 @@ older files simply omit it; no schema bump is required.
     "sourceRevisionModifiedAt": "2026-11-10T09:30:00.000Z",
     "sourcePageId": "page_...",
     "importedAt": "2026-11-10T09:35:12.000Z",
-    "appVersion": "0.22.4"
+    "appVersion": "0.23.0"
   }
 }
 ```

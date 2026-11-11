@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.22.4** · Project-file schema: **25**
+Current version: **0.23.0** · Project-file schema: **25**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -75,17 +75,17 @@ These are not negotiable without an explicit decision:
 | 0.22.0 | Medium Gray default theme, Dark Gray/Dark Jade rename, expandable tool rail, Project settings categories and colour hardening | Complete | v23 |
 | 0.22.4 | Windows touchpad pinch-to-zoom | Complete | v23 |
 | Import pages | Import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo | Complete | v23 |
+| 0.23.0 | Foundation: conditional saves and backups, scoped recovery and leases, stable page IDs (schema 24), managed source copies (schema 25), integrity doctor, OCG/annotation export and robustness gates | Complete | v25 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
 ## Foundation workstreams
 
-These are the current priorities. They are capabilities, not release numbers.
-Each has an issue before implementation; larger ones have a plan or ADR. New
-foundation modules follow [ADR 0013](adr/0013-module-first-foundation.md):
-300-line target, 400-line hard limit, an `index.ts` public surface and no new
-legacy budget exceptions.
+All seven workstreams shipped in **0.23.0**. They remain the quality baseline for
+later work: each capability has a plan or ADR, and new foundation modules follow
+[ADR 0013](adr/0013-module-first-foundation.md) — 300-line target, 400-line hard
+limit, an `index.ts` public surface and no new legacy budget exceptions.
 
 ### 1. Save integrity and recovery
 
@@ -261,10 +261,12 @@ These are known gaps, not bugs. See [`limitations.md`](limitations.md) for the
 full list.
 
 - No cloud sync, accounts, collaboration or automatic updates.
-- Pages append by default and cannot be inserted or reordered until the explicit
-  page list ships in Phase 3. Deleting a page is an explicit structural action.
-- Markups are stored in the project, not as PDF annotations or optional-content
-  groups. The drawing PDF export flattens visible markups into page content.
+- Page insert, reorder, duplicate, delete and source replacement are explicit
+  structural actions. Imports append by default, but append-only is no longer a
+  model rule.
+- Markups are stored in the project. The flattened PDF remains the deterministic
+  export; opt-in optional-content layers and review-only annotations are
+  additive and never make the PDF the source of truth.
 - Images are embedded in the project file. External image assets are only worth
   adding if project size becomes a practical problem.
 - Ordinary PDFs are referenced or managed-copied, not base64-embedded in the
@@ -285,7 +287,7 @@ full list.
 
 | Decision | Current position |
 | --- | --- |
-| Concurrent project edits | Accepted direction in [ADR 0010](adr/0010-project-file-integrity.md). Implementation not started; current behaviour is last save wins. |
+| Concurrent project edits | Complete in 0.23.0: conditional writes, conflicted copies, scoped recovery, advisory leases and read-only open. See [ADR 0010](adr/0010-project-file-integrity.md). |
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
