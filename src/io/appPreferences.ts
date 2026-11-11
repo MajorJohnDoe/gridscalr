@@ -16,11 +16,21 @@ export type AutosaveIntervalSeconds = 15 | 30 | 60;
 
 export const AUTOSAVE_INTERVAL_OPTIONS: readonly AutosaveIntervalSeconds[] = [15, 30, 60];
 
+/** Rolling backups kept per project. Bounded in the UI and in the Rust command. */
+export const BACKUP_RETENTION_MIN = 2;
+export const BACKUP_RETENTION_MAX = 10;
+export const DEFAULT_BACKUP_RETENTION = 3;
+
 export interface AutosavePreference {
   /** Whether periodic recovery snapshots are written at all. */
   enabled: boolean;
   /** Maximum time between automatic snapshots after a change. */
   intervalSeconds: AutosaveIntervalSeconds;
+}
+
+export interface BackupPreference {
+  /** Number of rolling backups kept for one project after a successful save. */
+  retention: number;
 }
 
 export interface AppPreferences {
@@ -32,6 +42,8 @@ export interface AppPreferences {
   theme: ThemePreference;
   /** Periodic recovery snapshots. Project files are never saved automatically. */
   autosave: AutosavePreference;
+  /** Rolling backup retention applied on the next successful save. */
+  backups: BackupPreference;
 }
 
 const PREFERENCES_KEY = "gridscalr.preferences.v1";
@@ -41,6 +53,7 @@ export const DEFAULT_APP_PREFERENCES: AppPreferences = {
   csvFormat: "locale",
   theme: "medium-grey",
   autosave: { enabled: true, intervalSeconds: 15 },
+  backups: { retention: DEFAULT_BACKUP_RETENTION },
 };
 
 function isLanguage(value: unknown): value is LanguagePreference {
@@ -87,11 +100,33 @@ export function normalizeAutosavePreference(value: unknown): AutosavePreference 
   };
 }
 
+/** Retention is a whole number inside the documented range; anything else uses the default. */
+export function normalizeBackupPreference(value: unknown): BackupPreference {
+  const record = value && typeof value === "object" ? (value as Record<string, unknown>) : {};
+  const retention = record.retention;
+  return {
+    retention:
+      typeof retention === "number" &&
+      Number.isInteger(retention) &&
+      retention >= BACKUP_RETENTION_MIN &&
+      retention <= BACKUP_RETENTION_MAX
+        ? retention
+        : DEFAULT_APP_PREFERENCES.backups.retention,
+  };
+}
+
+function defaultPreferences(): AppPreferences {
+  return {
+    ...DEFAULT_APP_PREFERENCES,
+    autosave: { ...DEFAULT_APP_PREFERENCES.autosave },
+    backups: { ...DEFAULT_APP_PREFERENCES.backups },
+  };
+}
+
 export function loadAppPreferences(): AppPreferences {
   try {
     const raw = localStorage.getItem(PREFERENCES_KEY);
-    if (!raw)
-      return { ...DEFAULT_APP_PREFERENCES, autosave: { ...DEFAULT_APP_PREFERENCES.autosave } };
+    if (!raw) return defaultPreferences();
     const parsed = JSON.parse(raw) as Partial<AppPreferences>;
     return {
       language: isLanguage(parsed.language) ? parsed.language : DEFAULT_APP_PREFERENCES.language,
@@ -100,9 +135,10 @@ export function loadAppPreferences(): AppPreferences {
         : DEFAULT_APP_PREFERENCES.csvFormat,
       theme: normalizeTheme(parsed.theme),
       autosave: normalizeAutosavePreference(parsed.autosave),
+      backups: normalizeBackupPreference(parsed.backups),
     };
   } catch {
-    return { ...DEFAULT_APP_PREFERENCES, autosave: { ...DEFAULT_APP_PREFERENCES.autosave } };
+    return defaultPreferences();
   }
 }
 
@@ -122,5 +158,5 @@ export function resetAppPreferences(): AppPreferences {
   } catch {
     // Ignore storage failures.
   }
-  return { ...DEFAULT_APP_PREFERENCES, autosave: { ...DEFAULT_APP_PREFERENCES.autosave } };
+  return defaultPreferences();
 }

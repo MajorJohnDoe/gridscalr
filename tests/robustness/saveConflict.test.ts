@@ -111,9 +111,13 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
     },
     confirmValidationWarnings: async () => true,
     reportValidationErrors: async () => undefined,
-    chooseBackup: async () => null,
+    backupRetention: () => 3,
     listBackups: async () => [] as BackupEntry[],
     saveBackup: async () => undefined,
+    deleteBackup: async () => undefined,
+    deleteAllBackups: async () => undefined,
+    confirm: async () => true,
+    confirmDiscard: async () => true,
   };
 }
 

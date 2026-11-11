@@ -1,9 +1,8 @@
 import { formatDate } from "../../i18n/format";
 import { t } from "../../i18n";
 import { formatBytes } from "../../io/platform";
-import { el, option } from "../../ui/dom";
+import { el } from "../../ui/dom";
 import { showModal } from "../../ui/dialogs";
-import type { BackupEntry } from "./backup";
 import type { ConflictComparisonInfo } from "./compare";
 import type { ConflictAction, VersionSummary } from "./conflict";
 import type { ProjectFileStamp } from "./stamp";
@@ -213,31 +212,4 @@ function diffItemRow(item: DiffItem): HTMLElement {
     );
   }
   return row;
-}
-
-export function chooseBackupDialog(entries: readonly BackupEntry[]): Promise<string | null> {
-  const body = el("div", "form-stack");
-  body.append(el("p", "modal-message", t("saveIntegrity.restoreMessage")));
-  const select = el("select", "select");
-  for (const entry of entries) {
-    select.append(
-      option(
-        entry.path,
-        t("saveIntegrity.backupEntry", {
-          time: formatDate(entry.modifiedAt, { dateStyle: "medium", timeStyle: "short" }),
-          size: formatBytes(entry.sizeBytes),
-        }),
-        entry === entries[0],
-      ),
-    );
-  }
-  body.append(select);
-  return showModal({
-    title: t("saveIntegrity.restoreTitle"),
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: t("saveIntegrity.restore"), value: "restore", primary: true },
-    ],
-  }).then((value) => (value === "restore" ? select.value : null));
 }

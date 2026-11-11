@@ -144,7 +144,7 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.file.backupNow"), actions.backupProject, {
           disabled: !hasProject || !isTauri,
         }),
-        action(t("menu.file.restoreBackup"), actions.restoreProjectBackup, {
+        action(t("menu.file.backupManager"), actions.openBackupManager, {
           disabled: !hasProject || !isTauri,
         }),
         action(t("menu.file.projectDoctor"), actions.openProjectDoctor, {

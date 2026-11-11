@@ -190,7 +190,7 @@ export class App {
       saveProjectAs: () => void this.session.saveProject(true),
       saveProjectCopy: () => void this.session.saveProjectCopy(),
       backupProject: () => void this.session.backupNowFlow(),
-      restoreProjectBackup: () => void this.session.restoreBackupFlow(),
+      openBackupManager: () => void this.session.backupManagerFlow(),
       packageProject: () => void packageProjectFlow(createPackageHost(this.packageFlowHost())),
       openPackage: () => void openPackageFlow(createPackageHost(this.packageFlowHost())),
       exportAs: (kind) => void this.exportAs(kind),

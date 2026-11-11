@@ -34,6 +34,7 @@ import { loadPanelPreferences } from "./preferences";
 import { resetPanelLayout, setInspectorCollapsed, setSidebarCollapsed } from "./sidebar";
 import { categoryLayout, field, presetEditor, section } from "./settingsControls";
 import { autosaveSection } from "./settings/autosave";
+import { backupSection } from "./settings/backups";
 import { toast } from "./toast";
 
 function generalSection(): HTMLElement {
@@ -323,7 +324,7 @@ function dataSection(): HTMLElement {
 
   const actions = el("div", "settings-actions");
   actions.append(clearRecents);
-  wrap.append(autosaveSection(), recovery, recentBox, actions);
+  wrap.append(autosaveSection(), backupSection(), recovery, recentBox, actions);
   return wrap;
 }
 
