@@ -14,7 +14,6 @@ import {
   isNoOpSave,
   newestBackupNames,
   ProjectWriteConflictError,
-  restoreProjectBackup,
   saveProjectWithIntegrity,
   sameFileVersion,
   type BackupEntry,
@@ -49,7 +48,12 @@ interface FakeState {
   wrote: Array<{ path: string; contents: string; expected: string | null }>;
   loadedText: Array<{ text: string; path: string | null }>;
   loadedData: Array<{ project: Project; path: string | null; dirty: boolean }>;
-  backups: Array<{ projectId: string; contents: string }>;
+  backups: Array<{
+    projectId: string;
+    contents: string;
+    projectPath: string | null;
+    retention: number;
+  }>;
   notifications: string[];
   errors: string[];
   diskStamp: ProjectFileStamp | null;
@@ -112,17 +116,22 @@ function fakePorts(state: FakeState): SaveIntegrityPorts {
     reportValidationErrors: async () => {
       state.validationReports += 1;
     },
-    chooseBackup: async () => (state.backups.length ? "/backups/0.gridscalr" : null),
+    backupRetention: () => 3,
     listBackups: async () =>
       state.backups.map((entry, index) => ({
         path: `/backups/${index}.gridscalr`,
-        fileName: `/backups/${index}.gridscalr`,
+        fileName: `backup-${index}.gridscalr`,
         sizeBytes: entry.contents.length,
         modifiedAt: index,
+        projectPath: "/work/Test project.gridscalr",
       })) satisfies BackupEntry[],
-    saveBackup: async (projectId, contents) => {
-      state.backups.push({ projectId, contents });
+    saveBackup: async (projectId, contents, projectPath, retention) => {
+      state.backups.push({ projectId, contents, projectPath, retention });
     },
+    deleteBackup: async () => undefined,
+    deleteAllBackups: async () => undefined,
+    confirm: async () => true,
+    confirmDiscard: async () => true,
   };
 }
 
@@ -371,23 +380,6 @@ describe("backups", () => {
     expect(await backupProjectNow(ports)).toBe(true);
     expect(fake.backups).toHaveLength(1);
     expect(fake.backups[0].projectId).toBe(store.project.id);
-  });
-
-  it("restores a backup as an unsaved copy without changing the project path", async () => {
-    store.project = makeProject();
-    store.projectPath = "/work/Test project.gridscalr";
-    const fake = state();
-    const backupProject = makeProject();
-    backupProject.name = "Older backup";
-    fake.backups.push({ projectId: store.project.id, contents: serializeProject(backupProject) });
-    const ports = fakePorts(fake);
-
-    expect(await restoreProjectBackup(ports)).toBe(true);
-    expect(fake.loadedData).toHaveLength(1);
-    expect(fake.loadedData[0].path).toBeNull();
-    expect(fake.loadedData[0].dirty).toBe(true);
-    expect(fake.loadedData[0].project.name).toBe("Older backup");
-    expect(store.projectPath).toBe("/work/Test project.gridscalr");
   });
 });
 

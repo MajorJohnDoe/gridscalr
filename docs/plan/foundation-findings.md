@@ -1170,6 +1170,63 @@ confirmed against the audit.
   in a future store migration. Do not block phase 7 on it.
 - **Related:** #173, `src/features/sessionRecovery/instance.ts`.
 
+### F-061 — Backup origin path lives in an optional manifest
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 9 — backup manager
+- **Severity:** P3
+- **Area:** backup
+- **Status:** accepted
+- **Evidence:** `save_project_backup` writes `manifest.json` beside the rolling
+  files to record the project path each backup came from. The manifest is read
+  best-effort; a missing or corrupt file is treated as empty.
+- **Problem:** The list still shows every backup file from the folder, but a
+  file whose manifest entry is missing shows no origin path.
+- **Impact:** Time, size, restore and delete remain correct. Only the origin
+  path and the manager's moved-folder warning are unavailable until the next
+  save writes a fresh manifest.
+- **Next step:** None planned. Keeping the manifest as enrichment means a
+  corrupt metadata file can never hide or block a backup.
+- **Related:** #175, F-005, F-006.
+
+### F-062 — Delete-all can leave an unreferenced trash folder
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 9 — backup manager
+- **Severity:** P3
+- **Area:** backup
+- **Status:** accepted
+- **Evidence:** `delete_all_in()` renames the project folder to a unique
+  `.deleted` sibling before removing it. Renaming is the all-or-nothing step;
+  `remove_dir_all()` is then best effort.
+- **Problem:** If removal fails after the rename, the hidden trash folder stays
+  in the app-data `backups/` root. It is no longer listed for the project.
+- **Impact:** No backup is half-listed and no project data is affected. The
+  leftover folder only consumes disk space until it is removed manually.
+- **Next step:** If this is seen in practice, add a startup sweep for old
+  `.deleted` siblings, bounded like the existing stale-temporary cleanup.
+- **Related:** #175, F-041.
+
+### F-063 — Restore-as-copy still resolves relative links from the recorded path
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 9 — backup manager
+- **Severity:** P2
+- **Area:** backup / document loading
+- **Status:** deferred
+- **Evidence:** `restoreBackup()` passes `null` as the project path for
+  restore-as-copy, so `loadProjectData()` resolves relative drawing links only
+  from each document's stored absolute path. The manager now warns when the
+  selected backup came from another path.
+- **Problem:** This is the user-visible half of F-005. The warning makes the
+  limitation explicit but does not resolve the link.
+- **Impact:** A backup remains reliable while the drawings stay at their
+  recorded paths. After a folder move the user is asked to relink, as before.
+- **Next step:** Phase 10, [#176](https://github.com/MajorJohnDoe/gridscalr/issues/176),
+  separates the document-resolution base path from the save path. Do not
+  half-fix it in this phase.
+- **Related:** #175, #176, F-005.
+
 ## Triaged or deferred
 
 ### Phase 7 triage

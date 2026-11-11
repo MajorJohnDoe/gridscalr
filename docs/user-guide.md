@@ -672,7 +672,8 @@ Reports cover every page and every category, exclude hidden items and hidden lay
 - **File → Save as…** (`Ctrl/Cmd+Shift+S`) writes to a new path and keeps working there.
 - **File → Save a copy…** writes a backup copy without changing the open project or its saved state. The copy stores document links relative to its own folder, so it stays usable on its own. Use it before a risky edit or before moving a project.
 - **File → Back up now…** writes an on-demand backup in the local app data folder.
-- **File → Restore backup…** opens one of the stored backups as an unsaved copy. The current project file is not changed.
+- **File → Backup manager…** lists every backup for the open project with its time, size and the project path it was written from. **Restore as copy** is the default and opens the selected backup as unsaved work. **Replace open project** is offered only when the project is saved; it binds the backup to the current path after a separate confirmation, and nothing is written until you save. **Delete selected** and **Delete all** ask for confirmation and never touch the project file or a drawing.
+- Relative drawing links in a backup are resolved from the project path recorded with that backup. If the project folder moved, GridScalr asks you to pick the drawing after restoring; the link itself is not rewritten yet (see Limitations).
 
 A desktop save is conditional against the file version GridScalr loaded. If another program, a second window or a cloud client changed the project file on disk, GridScalr opens a conflict dialog instead of overwriting it:
 
@@ -682,7 +683,7 @@ A desktop save is conditional against the file version GridScalr loaded. If anot
 - **Overwrite** writes your version over the disk file. This is an explicit danger action.
 - **Cancel** keeps editing without writing.
 
-GridScalr also keeps up to three automatic rolling backups per project in the app data folder. They rotate on each successful save and are never added to recent files or package files. Restoring a backup opens it as an unsaved copy, so choose **File → Save as…** to keep it.
+GridScalr also keeps rolling backups per project in the app data folder. The number kept is a preference from 2 to 10 in **Preferences → Data** (default 3), and a new limit applies on the next successful save. Backups rotate on each successful save and are never added to recent files or package files. Restoring a backup opens it as an unsaved copy, so choose **File → Save as…** to keep it; **Replace open project** in the backup manager is the explicit alternative.
 
 After every desktop write, GridScalr reads the file back and verifies the bytes before it marks the project saved. If the file was deleted on disk, Save treats it as a conflict instead of recreating it silently. The browser fallback still downloads the project and cannot perform a conditional write.
 

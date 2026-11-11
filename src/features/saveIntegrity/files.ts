@@ -102,22 +102,43 @@ export async function readProjectFileText(path: string): Promise<string> {
 }
 
 /** Writes one rolling backup under the app data folder, keyed by project id. */
-export async function saveProjectBackup(projectId: string, contents: string): Promise<BackupEntry> {
-  const entry = record(await tauriInvoke<unknown>("save_project_backup", { projectId, contents }));
-  if (
-    !entry ||
-    typeof entry.path !== "string" ||
-    typeof entry.fileName !== "string" ||
-    typeof entry.sizeBytes !== "number" ||
-    typeof entry.modifiedAt !== "number"
-  ) {
+export async function saveProjectBackup(
+  projectId: string,
+  contents: string,
+  projectPath: string | null,
+  retention: number,
+): Promise<BackupEntry> {
+  const entry = record(
+    await tauriInvoke<unknown>("save_project_backup", {
+      projectId,
+      contents,
+      projectPath,
+      retention,
+    }),
+  );
+  const parsed = backupEntryFrom(entry);
+  if (!parsed) {
     throw new Error(t("saveIntegrity.backupFailed"));
   }
+  return parsed;
+}
+
+function backupEntryFrom(item: Record<string, unknown> | null): BackupEntry | null {
+  if (
+    !item ||
+    typeof item.path !== "string" ||
+    typeof item.fileName !== "string" ||
+    typeof item.sizeBytes !== "number" ||
+    typeof item.modifiedAt !== "number"
+  ) {
+    return null;
+  }
   return {
-    path: entry.path,
-    fileName: entry.fileName,
-    sizeBytes: entry.sizeBytes,
-    modifiedAt: entry.modifiedAt,
+    path: item.path,
+    fileName: item.fileName,
+    sizeBytes: item.sizeBytes,
+    modifiedAt: item.modifiedAt,
+    projectPath: typeof item.projectPath === "string" ? item.projectPath : null,
   };
 }
 
@@ -125,15 +146,18 @@ export async function listProjectBackups(projectId: string): Promise<BackupEntry
   const result = await tauriInvoke<unknown>("list_project_backups", { projectId });
   if (!Array.isArray(result)) return [];
   return result
-    .map((item) => record(item))
-    .filter((item): item is Record<string, unknown> => item !== null)
-    .map((item) => ({
-      path: String(item.path ?? ""),
-      fileName: String(item.fileName ?? ""),
-      sizeBytes: typeof item.sizeBytes === "number" ? item.sizeBytes : 0,
-      modifiedAt: typeof item.modifiedAt === "number" ? item.modifiedAt : 0,
-    }))
-    .filter((item) => Boolean(item.path));
+    .map((item) => backupEntryFrom(record(item)))
+    .filter((item): item is BackupEntry => item !== null);
+}
+
+/** Deletes one generated backup file from the project's app-data folder. */
+export async function deleteProjectBackup(projectId: string, fileName: string): Promise<void> {
+  await tauriInvoke<unknown>("delete_project_backup", { projectId, fileName });
+}
+
+/** Deletes every backup for one project. A failure leaves the set listed as before. */
+export async function deleteAllProjectBackups(projectId: string): Promise<void> {
+  await tauriInvoke<unknown>("delete_all_project_backups", { projectId });
 }
 
 export async function readBackupText(path: string): Promise<string> {

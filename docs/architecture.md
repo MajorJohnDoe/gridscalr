@@ -40,11 +40,14 @@ src/
   features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
   features/saveIntegrity/conflict.ts conflict classification and default action
   features/saveIntegrity/compare.ts read-only local-versus-disk comparison summary
-  features/saveIntegrity/backup.ts rolling-backup naming and rotation rules
-  features/saveIntegrity/controller.ts save, conflict, no-op, backup and restore orchestration
+  features/saveIntegrity/backup.ts rolling-backup naming, ordering and default retention
+  features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and confirmed delete flows
+  features/saveIntegrity/backupManagerModel.ts pure backup selection, replace availability and origin-warning rules
+  features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog
+  features/saveIntegrity/controller.ts save, conflict and no-op orchestration
   features/saveIntegrity/ports.ts platform and dialog adapters for the save controller
   features/saveIntegrity/files.ts conditional-write, stamp, read-back and backup IPC
-  features/saveIntegrity/ui.ts conflict, comparison and restore dialogs
+  features/saveIntegrity/ui.ts conflict and comparison dialogs
   features/sessionRecovery/index.ts public surface for scoped autosave, leases and recovery
   features/sessionRecovery/autosave.ts recovery snapshot API, pruning and legacy migration
   features/sessionRecovery/budget.ts pure retention rules: byte budget, usage totals and prune order
@@ -215,6 +218,7 @@ src/
   ui/settingsDialog.ts   settings dialog orchestrator
   ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
   ui/settings/autosave.ts Preferences → Data autosave controls
+  ui/settings/backups.ts Preferences → Data backup retention and manager entry
   source/sourceStatus.ts source drawing existence, size and checksum monitor
   features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
   app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
@@ -244,7 +248,7 @@ src-tauri/
   src/commands.rs        atomic text/binary replacement, canonical path checks, structured errors, reads, demo copy, smoke exit and commands
   src/project_write.rs   conditional project write, read-back hash stamp and file-stamp command
   src/project_lease.rs   advisory sidecar lease read/write/heartbeat/clear with owner checks
-  src/project_backup.rs  app-data backup directory, naming, rolling rotation and backup commands
+  src/project_backup.rs  app-data backup directory, origin metadata, rolling retention, list and delete commands
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state

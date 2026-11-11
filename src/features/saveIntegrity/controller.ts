@@ -14,14 +14,14 @@ import {
 } from "../../io/projectFile";
 import { assertWritablePath } from "../../io/writeGuard";
 import { store } from "../../state/store";
-import type { BackupEntry } from "./backup";
+import type { BackupPorts } from "./backupController";
 import { buildConflictComparison, type ConflictComparisonInfo } from "./compare";
 import { classifyConflict, type ConflictAction, type VersionSummary } from "./conflict";
 import { ProjectWriteConflictError } from "./files";
 import { conflictedCopyPath, isNoOpSave, type ProjectFileStamp } from "./stamp";
 import type { ConflictDialogInfo } from "./ui";
 
-export interface SaveIntegrityPorts {
+export interface SaveIntegrityPorts extends BackupPorts {
   desktop: boolean;
   chooseSavePath: (suggested: string) => Promise<string | null>;
   readStamp: (path: string) => Promise<ProjectFileStamp | null>;
@@ -47,9 +47,6 @@ export interface SaveIntegrityPorts {
   compare: (info: ConflictComparisonInfo) => Promise<void>;
   confirmValidationWarnings: (issues: readonly ProjectIssue[]) => Promise<boolean>;
   reportValidationErrors: (issues: readonly ProjectIssue[], project: Project) => Promise<void>;
-  chooseBackup: (entries: BackupEntry[]) => Promise<string | null>;
-  listBackups: (projectId: string) => Promise<BackupEntry[]>;
-  saveBackup: (projectId: string, contents: string) => Promise<void>;
 }
 
 function textSize(contents: string): number {
@@ -157,9 +154,10 @@ async function backupSafely(
   ports: SaveIntegrityPorts,
   projectId: string,
   contents: string,
+  projectPath: string | null,
 ): Promise<void> {
   try {
-    await ports.saveBackup(projectId, contents);
+    await ports.saveBackup(projectId, contents, projectPath, ports.backupRetention());
   } catch (error) {
     logEvent("warn", `automatic backup failed: ${describeError(error)}`);
   }
@@ -198,7 +196,7 @@ async function writeSuccessfully(
       } catch {
         // Recents are a convenience; the save is still complete.
       }
-      await backupSafely(ports, project.id, previousText ?? json);
+      await backupSafely(ports, project.id, previousText ?? json, path);
       ports.notify(t("app.projectSaved"), "success");
     }
     return true;
@@ -348,52 +346,6 @@ export async function saveProjectWithIntegrity(
   } catch (error) {
     logEvent("error", `save failed: ${describeError(error)}`);
     await ports.notifyError(t("app.couldNotSaveProject"), describeError(error));
-    return false;
-  }
-}
-
-export async function backupProjectNow(ports: SaveIntegrityPorts): Promise<boolean> {
-  const project = store.project;
-  if (!project) return false;
-  if (!ports.desktop) {
-    ports.notify(t("saveIntegrity.desktopOnly"), "info");
-    return false;
-  }
-  try {
-    await ports.saveBackup(project.id, serializeProject(project));
-    ports.notify(t("saveIntegrity.backupSaved"), "success");
-    return true;
-  } catch (error) {
-    logEvent("error", `manual backup failed: ${describeError(error)}`);
-    await ports.notifyError(t("saveIntegrity.backupFailed"), describeError(error));
-    return false;
-  }
-}
-
-export async function restoreProjectBackup(ports: SaveIntegrityPorts): Promise<boolean> {
-  const project = store.project;
-  if (!project) return false;
-  if (!ports.desktop) {
-    ports.notify(t("saveIntegrity.desktopOnly"), "info");
-    return false;
-  }
-  try {
-    const entries = await ports.listBackups(project.id);
-    if (!entries.length) {
-      ports.notify(t("saveIntegrity.noBackups"), "info");
-      return false;
-    }
-    const path = await ports.chooseBackup(entries);
-    if (!path) return false;
-    const restored = parseProject(await ports.readText(path));
-    // A backup opens as an unsaved copy so the current project file is never
-    // changed by restoring an older version.
-    const loaded = await ports.loadProjectData(restored, null, true);
-    if (loaded) ports.notify(t("saveIntegrity.backupRestored"), "success");
-    return loaded;
-  } catch (error) {
-    logEvent("error", `restore backup failed: ${describeError(error)}`);
-    await ports.notifyError(t("saveIntegrity.restoreFailed"), describeError(error));
     return false;
   }
 }

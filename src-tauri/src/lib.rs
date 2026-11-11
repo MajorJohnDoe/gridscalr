@@ -137,6 +137,8 @@ pub fn run() {
             project_lease::clear_project_lease,
             project_backup::save_project_backup,
             project_backup::list_project_backups,
+            project_backup::delete_project_backup,
+            project_backup::delete_all_project_backups,
             source_copy::source_copy_to_project,
             source_copy::source_file_hash,
             source_copy::source_find_by_hash,

@@ -266,7 +266,10 @@ be turned off, given a 15, 30 or 60 second interval, or paused for the session i
 **Preferences → Data**. In the desktop
 shell, `src-tauri/src/project_write.rs` owns conditional writes and file stamps,
 `src-tauri/src/project_lease.rs` owns the advisory sidecar lease, and
-`src-tauri/src/project_backup.rs` owns app-data backups. The
+`src-tauri/src/project_backup.rs` owns app-data backups with their origin
+metadata, retention and delete commands. The backup manager in
+`src/features/saveIntegrity/` lists, restores, replaces and deletes them; the
+kept count is a 2–10 preference applied on the next successful save. The
 `src/features/sessionRecovery/` module owns recovery records, the recovery center,
 read-only open and the external-change watcher. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator

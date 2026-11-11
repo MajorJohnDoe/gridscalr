@@ -528,6 +528,9 @@ src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
 src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+src/features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and delete
+src/features/saveIntegrity/backupManagerModel.ts pure backup selection and origin-warning rules
+src/features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog
 src/features/saveIntegrity/compare.ts read-only conflict comparison summary
 src/io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
 src/model/metadata.ts      optional report metadata and logo reference normalization

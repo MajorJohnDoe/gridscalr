@@ -36,8 +36,9 @@ import {
   backupProjectNow,
   computeFileStamp,
   createSaveIntegrityPorts,
-  restoreProjectBackup,
+  openBackupManagerFlow,
   saveProjectWithIntegrity,
+  setBackupManagerHandler,
 } from "../features/saveIntegrity";
 import type {
   SessionRecoveryController,
@@ -70,7 +71,9 @@ export class ProjectSession {
   private closeInProgress = false;
   private recovery: SessionRecoveryController | null = null;
 
-  constructor(private readonly host: ProjectSessionHost) {}
+  constructor(private readonly host: ProjectSessionHost) {
+    setBackupManagerHandler(() => this.backupManagerFlow());
+  }
 
   /** App wires the recovery controller after both objects exist. */
   attachRecovery(controller: SessionRecoveryController): void {
@@ -214,8 +217,8 @@ export class ProjectSession {
     return backupProjectNow(this.savePorts());
   }
 
-  async restoreBackupFlow(): Promise<boolean> {
-    return restoreProjectBackup(this.savePorts());
+  async backupManagerFlow(): Promise<boolean> {
+    return openBackupManagerFlow(this.savePorts());
   }
 
   private savePorts() {
@@ -224,6 +227,7 @@ export class ProjectSession {
       loadProjectData: (project, path, dirty) =>
         this.loadProjectDataWithStamp(project, path, dirty),
       openProjectDoctor: this.host.openProjectDoctor,
+      confirmDiscardChanges: (message) => this.confirmUnsavedChanges(message),
     });
   }
 

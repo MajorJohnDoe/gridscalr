@@ -7,25 +7,30 @@ import {
   pathExists,
   saveTextFile,
 } from "../../io/platform";
+import { loadAppPreferences } from "../../io/appPreferences";
 import type { ProjectIssue } from "../../model/integrity";
 import type { Project } from "../../model/types";
-import { messageDialog } from "../../ui/dialogs";
+import { confirmDialog, messageDialog } from "../../ui/dialogs";
 import { toast } from "../../ui/toast";
 import type { SaveIntegrityPorts } from "./controller";
 import {
   computeFileStamp,
+  deleteAllProjectBackups,
+  deleteProjectBackup,
   listProjectBackups,
   readProjectFileText,
   saveProjectBackup,
   writeProjectConditional,
 } from "./files";
-import { chooseBackupDialog, compareDialog, conflictDialog } from "./ui";
+import { compareDialog, conflictDialog } from "./ui";
 import { confirmProjectValidationWarnings } from "../projectIntegrity";
 
 export interface SaveIntegrityHost {
   loadProjectText: (text: string, path: string | null) => Promise<boolean>;
   loadProjectData: (project: Project, path: string | null, dirty: boolean) => Promise<boolean>;
   openProjectDoctor?: (issues?: readonly ProjectIssue[]) => Promise<void>;
+  /** The app's unsaved-changes guard, including its Save choice. */
+  confirmDiscardChanges?: (message: string) => Promise<boolean>;
 }
 
 function projectFilters(): { name: string; extensions: string[] }[] {
@@ -73,10 +78,15 @@ export function createSaveIntegrityPorts(host: SaveIntegrityHost): SaveIntegrity
         .join(", ");
       await messageDialog(t("projectIntegrity.saveBlocked.title"), summary, "warning");
     },
-    chooseBackup: chooseBackupDialog,
+    backupRetention: () => loadAppPreferences().backups.retention,
     listBackups: listProjectBackups,
-    saveBackup: async (projectId, contents) => {
-      await saveProjectBackup(projectId, contents);
+    saveBackup: async (projectId, contents, projectPath, retention) => {
+      await saveProjectBackup(projectId, contents, projectPath, retention);
     },
+    deleteBackup: deleteProjectBackup,
+    deleteAllBackups: deleteAllProjectBackups,
+    confirm: (title, message, confirmLabel, options) =>
+      confirmDialog(title, message, confirmLabel, options),
+    confirmDiscard: host.confirmDiscardChanges ?? (async () => false),
   };
 }
