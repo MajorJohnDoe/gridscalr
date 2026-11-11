@@ -1,5 +1,6 @@
 import { t } from "../../i18n";
 import type { Project } from "../../model/types";
+import { sameFilePath } from "../writeGuard";
 import { serializeProject } from "./serialize";
 
 export function suggestedProjectName(project: Project): string {
@@ -71,6 +72,39 @@ export function sourceDocumentPaths(project: Project, projectPath: string | null
     }
   }
   return [...paths];
+}
+
+/**
+ * The managed-copy folder of a project, `<project folder>/<stem>.drawings`.
+ * A verified copy is only ever written here.
+ */
+export function managedDrawingsFolder(projectPath: string | null): string | null {
+  if (!projectPath) return null;
+  const separator = projectPath.includes("\\") ? "\\" : "/";
+  const parts = projectPath.split(/[\\/]/);
+  const name = parts.pop() ?? "";
+  if (!name) return null;
+  const stem = name.replace(/\.gridscalr$/i, "");
+  const folder = parts.join(separator);
+  if (!folder) return projectPath.startsWith("/") ? `/${stem}.drawings` : null;
+  return `${folder}${separator}${stem}.drawings`;
+}
+
+/**
+ * Protected paths for the managed-copy command: every source document,
+ * including each managed copy and the original drawing behind it, minus the
+ * project's own drawings folder.
+ *
+ * That folder is the copy destination, so protecting it as a root refuses every
+ * copy once a project already holds one managed drawing. The Rust guard still
+ * refuses a destination that resolves outside the folder, and every existing
+ * document path stays individually protected.
+ */
+export function managedCopyProtectedPaths(project: Project, projectPath: string | null): string[] {
+  const folder = managedDrawingsFolder(projectPath);
+  return sourceDocumentPaths(project, projectPath).filter(
+    (path) => !folder || !sameFilePath(path, folder),
+  );
 }
 
 /** Recomputes every document's relative path for a new project location. */

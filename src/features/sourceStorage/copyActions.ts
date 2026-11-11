@@ -1,6 +1,6 @@
 import { t } from "../../i18n";
 import { describeError } from "../../io/platformError";
-import { sourceDocumentPaths } from "../../io/projectFile";
+import { managedCopyProtectedPaths } from "../../io/projectFile";
 import { store } from "../../state/store";
 import { confirmDialog, messageDialog } from "../../ui/dialogs";
 import { copySourceToProject, sourceFileHash } from "./files";
@@ -75,7 +75,7 @@ export async function copyDocumentIntoProject(
       sourcePath,
       projectPath,
       displayName: document.name,
-      protectedPaths: sourceDocumentPaths(project, projectPath),
+      protectedPaths: managedCopyProtectedPaths(project, projectPath),
     });
     if (!checksumMatches(info.sha256, copy.sha256)) {
       throw new Error(t("sourceStorage.copyVerifyFailed", { name: document.name }));
@@ -148,7 +148,7 @@ export async function consolidateDrawings(host: SourceStorageHost): Promise<void
         sourcePath: candidate.path,
         projectPath,
         displayName: candidate.name,
-        protectedPaths: sourceDocumentPaths(project, projectPath),
+        protectedPaths: managedCopyProtectedPaths(project, projectPath),
       });
       if (!checksumMatches(change.originalSha256, copy.sha256)) {
         throw new Error(t("sourceStorage.copyVerifyFailed", { name: candidate.name }));

@@ -50,6 +50,7 @@ full Vitest log.
 | `saveConflict.test.ts` | Two writers against one project path. A stale stamp conflicts, the default conflicted copy preserves both versions, overwrite requires an explicit choice, a failed write keeps the previous file and the in-memory project valid, a deleted target is not recreated, and a no-op save does not rewrite. |
 | `migrations.test.ts` | One committed fixture per schema 1–25. Each fixture uses that version's structure, migrates to schema 25, preserves its documents, pages, measurements, categories, assets and version-specific fields, produces deterministic page IDs, reports invalid references instead of dropping them, and proves schema 24 → 25 does not move source paths. |
 | `sourceStorage.test.ts` | Reference versus managed mode, managed-copy identity, consolidation leaving the original bytes untouched, a changed reference being reported and never auto-accepted, a managed drawing included once in a package, empty project save/load/import, and page identity through reorder, delete and source replacement. |
+| `adversarialInputs.test.ts` | The seeded path, archive, project and source-storage corpus described under [Adversarial path, archive and project corpus](#adversarial-path-archive-and-project-corpus): spelling variants, UNC, drive-relative and traversal names, case-variant duplicates, oversized and truncated input, managed-copy destinations, structured errors and the Rust guard inventory. |
 
 The Rust `project_write` tests prove the conditional write rejects a changed
 file, keeps the previous file when the replace step fails between the flushed
@@ -99,6 +100,59 @@ following). Add a seed or a focused regression case when a new parser branch is
 introduced. The Rust package tests cover archive-level traversal, symlinks,
 encrypted entries, duplicate names, entry-count limits, oversized entries,
 checksum mismatch and cancellation.
+
+### Adversarial path, archive and project corpus
+
+`tests/robustness/adversarialInputs.test.ts` is the file-safety corpus. It runs
+in the normal suite and in `npm run test:robustness`, takes about one second and
+uses the seeded generators in `tests/helpers/fuzz.ts`; no external dependency and
+no new runner. A failure names the seed and case, so it reproduces from the
+constants alone.
+
+| Seeded from | Covers |
+| --- | --- |
+| fixed corpus | Every spelling of a protected source: stored form, both separator directions, trailing separator, upper/lower case, the `\\?\` verbatim prefix and the verbatim UNC prefix. Each must be refused, and a sibling file must stay writable. |
+| `0x17101` | Every destination inside a `<project>.drawings` folder, including generated leaves and all their spellings. |
+| `0x17102` | Generated reference/managed document mixes: every document `path`, every managed copy and every `originalPath` is refused, the protected list has no duplicates or blank entries, and the copy command's own drawings folder is writable. |
+| `0x17201` | Package manifest entries generated from traversal, absolute, UNC, drive, backslash, control-character and oversized fragments. Accepted entries must be exactly one safe leaf inside their `documents/`, `exports/` or `source-scans/` prefix. |
+| `0x17202` | `documentArchivePaths()` for adversarial drawing names: one `documents/<leaf>` per archive entry, no separators, no traversal segment, no control character. |
+| `0x17301` | `portableProjectJson()`: no absolute path, no `originalPath` and no sender-relative path travels inside a package, and the packaged project re-validates. |
+| `0x17302` | `validatePackagedProjectJson()`: an accepted `relativePath` is a single `documents/<leaf>` link. |
+| `0x17401` | Save → load round trips of generated documents with adversarial `path`, `relativePath`, `originalPath`, `sha256` and storage mode: unique IDs, no dangling page references, no `validateProject()` error, and every parsed source path stayed protected. |
+
+The corpus asserts the invariants, not that parsing succeeds:
+
+- **No write escapes the roots the app owns.** Archive paths are one leaf under
+  `documents/`, the extracted project may only link to `documents/<leaf>`, and
+  the copy destination stays inside `<project>.drawings`.
+- **A source PDF/TIF is never modified.** Every spelling of a document path, a
+  managed copy and its `originalPath` is refused by the write guard; drive
+  relative targets are rejected instead of guessed.
+- **A managed copy is only written inside its drawings folder.** Every other
+  protected source is refused for the copy command and the folder itself stays
+  the only writable root.
+- **Rejected input is a structured error.** A rejected manifest or project is a
+  plain `Error` with a catalog message, never a `TypeError`, a stack-shaped
+  internal message or an empty description; `normalizePackageFailure()` and
+  `describeCommandError()` handle every structured and unstructured value
+  without throwing.
+- **Oversized and truncated input fails closed.** Truncated project JSON is
+  reported as an invalid file, and the frontend limits in `src/io/limits.ts` are
+  compared with the Rust `path_guard.rs` and `package.rs` constants so the two
+  boundaries cannot drift.
+
+The Rust-only boundary is covered by `cargo test`: symlink rejection during
+inspection and extraction, a symlinked drawings folder that resolves outside the
+project, traversal entry names, the per-entry and total size caps, and stale
+temporary cleanup. The corpus also asserts that those guard calls are still
+wired (`ensure_inside_root` for the drawings folder, `validate_entry_name` before
+both inspection and writing, `is_symlink()` in both loops, and the shared size
+constants), so deleting one fails a normal-suite test.
+
+Deliberately not covered: the frontend guard is textual (F-047), so a `..`
+spelling is resolved only by the canonicalising Rust guard; the browser fallback
+cannot compare file identities; and Windows junction and 8.3 behaviour cannot be
+executed on the Linux test host (F-036).
 
 ## Visual regression
 

@@ -122,11 +122,16 @@ function truncateToBytes(value: string, maxBytes: number): string {
   return output;
 }
 
+/** A control character, matching Rust `char::is_control()` (C0, DEL and C1). */
+function isControlCode(code: number): boolean {
+  return code < 32 || (code >= 127 && code <= 159);
+}
+
 /** Removes folder parts and characters that Windows or macOS reject. */
 export function safeArchiveBase(name: string, fallback = "Document"): string {
   const leaf = name.split(/[\\/]/).pop() ?? "";
   const printable = [...leaf]
-    .map((character) => (character.charCodeAt(0) < 32 ? "_" : character))
+    .map((character) => (isControlCode(character.codePointAt(0) ?? 0) ? "_" : character))
     .join("");
   let base = printable
     .replace(/[<>:"/\\|?*]/g, "_")
@@ -260,8 +265,7 @@ const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
 
 function hasControlCharacter(value: string): boolean {
   for (const character of value) {
-    const code = character.charCodeAt(0);
-    if (code < 32 || code === 127) return true;
+    if (isControlCode(character.codePointAt(0) ?? 0)) return true;
   }
   return false;
 }
@@ -410,6 +414,7 @@ export function validatePackagedProjectJson(json: string): void {
     if (entry.relativePath !== null && entry.relativePath !== undefined) {
       if (
         typeof entry.relativePath !== "string" ||
+        hasControlCharacter(entry.relativePath) ||
         !entry.relativePath.startsWith("documents/") ||
         entry.relativePath.includes("\\") ||
         entry.relativePath.split("/").some((part) => !part || part === "." || part === "..") ||
@@ -471,7 +476,7 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
   }
   return {
     kind: "unknown",
-    message: describeError(error),
+    message: describeError(error) || t("package.errorOperationFailed"),
   };
 }
 
