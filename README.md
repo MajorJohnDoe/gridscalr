@@ -89,8 +89,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   chrome and the canvas surround only; drawing content and PDF exports keep
   their colours.
 - Open a synchronized reference pane showing the same page, a saved revision or
-  a raw PDF drawing beside the primary canvas. Pan, zoom and page changes stay in
-  step.
+  a raw PDF drawing beside the primary canvas. Pan and zoom stay in step, and the
+  reference page either follows the primary page or is set independently.
 - Compare a saved revision in side-by-side or overlay mode, review changed,
   added and removed markups, hide the comparison panel while you work, and
   export a comparison PDF without touching either source drawing. A PDF drawing
@@ -111,6 +111,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Managed drawings are included once and
   sender paths are cleared. Reports and original TIF scans are opt-in.
+- Run inside one production Content Security Policy with a reduced Tauri
+  capability set, a shared canonical path guard, bounded project, drawing and
+  package reads, and a dependency advisory gate that blocks a new moderate
+  advisory unless it is reviewed and accepted with an expiry date.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, conditional saves that preserve both versions on a conflict,
   automatic rolling backups and **Save a copy** exports, autosave recovery,
@@ -119,10 +123,22 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   either file. **File → Conflicted copies…** lists the copies beside the project,
   opens one as its own project, compares it with the open project and deletes it
   after confirmation; discovery matches only the documented name, never follows
-  a link and never deletes automatically. The status bar shows saved/unsaved
-  state and source-file warnings,
-  and Project settings reports the project size, image and OCR contribution, and
-  source-drawing status.
+  a link and never deletes automatically.
+- Control recovery and safety from the shell. **Preferences → Data** turns
+  autosave on or off, sets a 15, 30 or 60 second interval, pauses it for the
+  session and sets how many rolling backups to keep (2–10). A **Recovery
+  center** lists every autosave and structural checkpoint with its time, size
+  and base-version state so one record can be restored or deleted, and the
+  store is bounded at 64 MiB per project and 256 MiB overall. **File → Backup
+  manager…** restores a backup as a copy or replaces the open project, after
+  locating any missing drawings, and deletes backups explicitly. A project that
+  is open in another window opens **View-only**, where every edit is blocked
+  until **Take over to edit** succeeds, and the saved/unsaved chip opens a
+  project status popover with the last save and backup, the autosave interval,
+  pending validation warnings, the recovery summary and the conflicted-copy
+  count. The status bar also shows saved/unsaved state and source-file
+  warnings, and Project settings reports the project size, image and OCR
+  contribution, and source-drawing status.
 
 Hidden items never render, hit-test or export. Locked items stay visible and
 exportable but cannot be moved, edited or deleted. Derived quantities are always
@@ -279,7 +295,10 @@ conflicted copy of the open project in its own folder, refusing a symbolic link
 and the project's own file; `src/features/conflictedCopies/` opens, compares and
 deletes them after confirmation. The
 `src/features/sessionRecovery/` module owns recovery records, the recovery center,
-view-only open, takeover and the external-change watcher. The
+view-only open, takeover and the external-change watcher; `src/features/viewOnly/`
+holds the inspection-tool rule and the view-only panel guard, and
+`src/features/statusOverview/` builds the save, backup, autosave and validation
+popover. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator
 surface, explicit repairs, the project doctor, load-report presentation and
 path-free diagnostics; `src/model/integrity.ts` holds the pure rules.

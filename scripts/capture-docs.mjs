@@ -163,6 +163,27 @@ const shots = [
     alt: "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
     description: "Task-oriented workflows sit beside the full user guide, shortcuts and About.",
   },
+  {
+    file: "preferences-data.png",
+    title: "Preferences — Data",
+    alt: "The GridScalr Preferences dialog on the Data category with autosave controls, rolling backup retention, the recovery center action and the recent-file list.",
+    description:
+      "Autosave, rolling backups and recovery records are app-level preferences stored on this computer, never in the project file.",
+  },
+  {
+    file: "recovery-center.png",
+    title: "Recovery center",
+    alt: "The GridScalr Recovery center listing stored autosaves and checkpoints with their time, size, project and base-version state.",
+    description:
+      "One dialog for every local autosave and structural checkpoint, with explicit restore and delete.",
+  },
+  {
+    file: "status-popover.png",
+    title: "Project status popover",
+    alt: "The GridScalr project status popover with the last save and backup state, autosave interval, validation warnings, the recovery record and the backup, recovery, doctor and conflicted-copy actions.",
+    description:
+      "The saved/unsaved chip opens a live summary with backup, recovery, doctor and conflicted-copy actions.",
+  },
 ];
 
 await mkdir(screenshotDir, { recursive: true });
@@ -489,6 +510,35 @@ try {
   await capture("images.png");
   await page.keyboard.press("Control+z");
   await waitForToastsGone(page);
+
+  await page.locator('.menu-trigger[data-menu="settings"]').click();
+  await page.getByRole("menuitem", { name: "Preferences…" }).click();
+  const preferencesDialog = page.getByRole("dialog", { name: "Preferences" });
+  await preferencesDialog.waitFor();
+  await preferencesDialog.getByRole("button", { name: "Data", exact: true }).click();
+  await page.waitForTimeout(250);
+  await capture("preferences-data.png");
+  await preferencesDialog.getByRole("button", { name: "Open recovery center…" }).click();
+  const recoveryCenter = page.getByRole("dialog", { name: "Recovery center" });
+  await recoveryCenter.waitFor();
+  await page.waitForTimeout(250);
+  await capture("recovery-center.png");
+  await page.keyboard.press("Escape");
+  await recoveryCenter.waitFor({ state: "detached" });
+  await preferencesDialog.waitFor();
+  await page.keyboard.press("Escape");
+  await preferencesDialog.waitFor({ state: "detached" });
+
+  const statusChip = page.getByRole("button", {
+    name: /Show save, backup and autosave status/,
+  });
+  await statusChip.click();
+  const statusPopover = page.locator(".status-popover");
+  await statusPopover.waitFor();
+  await page.waitForTimeout(250);
+  await capture("status-popover.png");
+  await page.keyboard.press("Escape");
+  await statusPopover.waitFor({ state: "detached" });
 
   await page.keyboard.press("F1");
   const helpDialog = page.getByRole("dialog");

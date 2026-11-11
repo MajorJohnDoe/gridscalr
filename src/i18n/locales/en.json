@@ -2534,7 +2534,7 @@
   "viewOnly.ocrDisabled": "View-only: OCR is disabled because it stores a page index in the project.",
   "status.readOnly": "View-only",
   "status.readOnlyTitle": "Editing is disabled. Pan, zoom, search, reference view, export, package and Save a copy still work.",
-  "preferences.data.recoverySummary": "Recovery data: {count} unsaved record(s) and {checkpoints} checkpoint(s). Latest: {name}, {time}.",
+  "preferences.data.recoverySummary": "Recovery data: {count, plural, one {# unsaved record} other {# unsaved records}} and {checkpoints, plural, one {# checkpoint} other {# checkpoints}}. Latest: {name}, {time}.",
   "preferences.data.recoveryNone": "No recovery data is stored.",
   "preferences.data.reviewRecovery": "Open recovery center…",
   "recoveryCenter.title": "Recovery center",

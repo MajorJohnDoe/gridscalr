@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-11T10:25:33.915Z",
-  "appVersion": "0.23.0",
-  "sourceFingerprint": "afea4b62d38e55ec1e78869a94680b9abda6c6cb78e913276897c6679e1fb3fc",
+  "generatedAt": "2026-11-11T17:05:26.989Z",
+  "appVersion": "0.24.0",
+  "sourceFingerprint": "a9ba8e2973624b61b0051e3fc6db711a16ed7853edbcaa3bc7b57047e2338283",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -139,6 +139,24 @@
       "title": "Workflows in the help dialog",
       "alt": "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
       "description": "Task-oriented workflows sit beside the full user guide, shortcuts and About."
+    },
+    {
+      "file": "preferences-data.png",
+      "title": "Preferences — Data",
+      "alt": "The GridScalr Preferences dialog on the Data category with autosave controls, rolling backup retention, the recovery center action and the recent-file list.",
+      "description": "Autosave, rolling backups and recovery records are app-level preferences stored on this computer, never in the project file."
+    },
+    {
+      "file": "recovery-center.png",
+      "title": "Recovery center",
+      "alt": "The GridScalr Recovery center listing stored autosaves and checkpoints with their time, size, project and base-version state.",
+      "description": "One dialog for every local autosave and structural checkpoint, with explicit restore and delete."
+    },
+    {
+      "file": "status-popover.png",
+      "title": "Project status popover",
+      "alt": "The GridScalr project status popover with the last save and backup state, autosave interval, validation warnings, the recovery record and the backup, recovery, doctor and conflicted-copy actions.",
+      "description": "The saved/unsaved chip opens a live summary with backup, recovery, doctor and conflicted-copy actions."
     }
   ]
 }
