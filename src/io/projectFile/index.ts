@@ -7,6 +7,8 @@ export {
   relativeDocumentPath,
   resolveRelativePath,
   sourceDocumentPaths,
+  managedDrawingsFolder,
+  managedCopyProtectedPaths,
   updateRelativeDocumentPaths,
   serializeProjectCopy,
 } from "./paths";

@@ -932,6 +932,84 @@ confirmed against the audit.
   before changing it.
 - **Related:** `docs/security-policy.md`, `.github/workflows/ci.yml`.
 
+### F-050 — The managed-copy command was refused once a project held a managed copy
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 5 — path, archive and project fuzzing
+- **Severity:** P2
+- **Area:** source storage / write guard
+- **Status:** fixed
+- **Evidence:** The adversarial corpus asked whether the app's own copy
+  destination stays writable. `copyDocumentIntoProject()` and
+  `consolidateDrawings()` pass `sourceDocumentPaths(project, projectPath)` as the
+  protected list. `sourceDocumentPaths()` adds `<project>.drawings` for every
+  managed document, and both guards treat a protected folder as a root:
+  `path_guard::ensure_writable` and `source_copy::ensure_destination_free` refuse
+  any destination inside it. The second copy in a project therefore failed with
+  `sourceOverwrite`, and so did a later **Copy drawing into project** after an
+  earlier **Consolidate drawings…**.
+- **Problem:** The folder that exists to receive a managed copy was also listed
+  as a folder that must never be written. The first copy worked because the
+  project had no managed document yet; every copy after it did not.
+- **Impact:** A normal, explicit source-storage workflow was broken after one
+  successful copy. Nothing was written and no source was harmed, so the failure
+  was visible and safe, but the feature stopped working.
+- **Resolution:** `managedCopyProtectedPaths()` in `src/io/projectFile/paths.ts`
+  removes only the project's own `<stem>.drawings` folder from the list handed to
+  the copy command. Every document path, every managed copy and every
+  `originalPath` stays protected, and the Rust guard still refuses a destination
+  that resolves outside the folder, so the copy cannot escape it. Both copy call
+  sites use the new helper; exports, saves, backups and packages still protect
+  the folder through `sourceDocumentPaths()`.
+- **Related:** F-031, `src/features/sourceStorage/copyActions.ts`,
+  `tests/robustness/adversarialInputs.test.ts`.
+
+### F-051 — Generated archive names kept DEL and C1 control characters
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 5 — path, archive and project fuzzing
+- **Severity:** P3
+- **Area:** project package
+- **Status:** fixed
+- **Evidence:** `safeArchiveBase()` replaced only characters below `0x20`. The
+  Rust entry guard rejects every `char::is_control()`, which also covers DEL
+  (`0x7f`) and the C1 range (`0x80`–`0x9f`). A drawing whose name contains one of
+  those characters produced an archive name that the package's own validator
+  refused, so creating the package failed with an unhelpful "unsafe file name"
+  error. `validatePackagedProjectJson()` had the same gap for a `documents/`
+  link.
+- **Problem:** Two name normalisers in the same feature disagreed about what a
+  control character is.
+- **Impact:** Package creation failed for an unusual file name. No escape and no
+  data loss; the failure happened before anything was written.
+- **Resolution:** One `isControlCode()` covering C0, DEL and C1 is used by
+  `safeArchiveBase()` and `hasControlCharacter()`, and
+  `validatePackagedProjectJson()` now rejects a control character in a relative
+  link, matching Rust `validate_archive_name`. The corpus asserts that every
+  accepted entry is a single safe leaf.
+- **Related:** `src/features/projectPackage/model.ts`,
+  `src-tauri/src/package.rs`.
+
+### F-052 — An empty failure value produced an empty package error message
+
+- **Date:** 2026-11-11
+- **Phase:** 0.24.0 phase 5 — path, archive and project fuzzing
+- **Severity:** P3
+- **Area:** project package / errors
+- **Status:** fixed
+- **Evidence:** `normalizePackageFailure()` falls back to `describeError()` for an
+  unrecognised value, and `describeError("")` returns an empty string. The
+  package dialog would then render an empty message instead of a failure.
+- **Problem:** The structured-error contract says every rejected operation
+  describes itself; the fallback could describe nothing.
+- **Impact:** A blank error dialog for an implausible thrown value. No security
+  or data effect.
+- **Resolution:** The fallback uses `package.errorOperationFailed` when
+  `describeError()` yields nothing. The corpus asserts that every normalised
+  failure has a kind and a non-empty description.
+- **Related:** `src/features/projectPackage/model.ts`,
+  `src/io/platformError.ts`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
