@@ -82,21 +82,20 @@ jobs:
 
       - name: Install Linux dependencies
         if: matrix.platform == 'Linux'
+        timeout-minutes: 12
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            file \
-            libayatana-appindicator3-dev \
-            libfuse2 \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            libxdo-dev \
-            patchelf \
-            wget \
-            xvfb
+          # Bounded retry: a mirror or DNS outage must not consume the build.
+          packages="build-essential curl file libayatana-appindicator3-dev libfuse2 librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev patchelf wget xvfb"
+          for attempt in 1 2 3; do
+            if timeout 300 sudo apt-get update \
+              && timeout 300 sudo apt-get install -y $packages; then
+              exit 0
+            fi
+            echo "::warning::System package install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::System package install failed after three attempts. This is a runner or mirror problem, not a code failure."
+          exit 1
 
       - run: npm ci
 

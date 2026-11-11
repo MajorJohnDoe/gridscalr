@@ -362,6 +362,8 @@ do not change the released version must not change the version shown on the site
 ## CI and build hosts
 
 - `.github/workflows/ci.yml` runs the dependency advisory gate, lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests. Its `desktop` job compiles the Tauri shell on Ubuntu, Windows and macOS, so platform-specific code is checked before a tag exists.
+- CI keeps one authoritative run per branch: the `concurrency` group with `cancel-in-progress` cancels a superseded run when a branch is rebased or re-pushed, so a phase cannot accumulate competing runs. Every job has a `timeout-minutes` cap.
+- The system-package and Playwright installation steps retry three times with a five-minute cap per attempt. A failure there is a **runner or mirror problem, not a code failure**: re-run the job, and if it repeats, record an environment finding instead of changing code to chase it. Changing application code to satisfy a broken package mirror has happened once and cost hours.
 - `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags. Its build jobs depend on the same dependency advisory gate.
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the `Release build` workflow for Windows and macOS artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.

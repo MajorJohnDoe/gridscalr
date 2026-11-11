@@ -8,10 +8,18 @@ on:
 permissions:
   contents: read
 
+# One authoritative run per branch or pull request. A rebase, a re-push or a
+# follow-up commit cancels the superseded run instead of queueing another six
+# jobs behind it. Without this a phase can accumulate four competing runs.
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   dependencies:
     name: Dependency advisory gate
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v7
 
@@ -37,6 +45,7 @@ jobs:
   frontend:
     name: Frontend tests and build
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -67,7 +76,21 @@ jobs:
           path: coverage/
           retention-days: 14
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
+      - name: Install Chromium for the browser suites
+        timeout-minutes: 15
+        run: |
+          # `--with-deps` calls apt. A mirror outage here took twelve minutes
+          # and failed a phase that had no code problem. Retry three times with
+          # a five minute cap per attempt and a clear error.
+          for attempt in 1 2 3; do
+            if timeout 300 npx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::Playwright install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::Playwright browser install failed after three attempts. This is a runner or mirror problem, not a code failure."
+          exit 1
       - run: npm run test:ui
       - run: npm run test:import
       - run: npm run test:canvas
@@ -86,6 +109,7 @@ jobs:
   rust:
     name: Rust format and check
     runs-on: ubuntu-24.04
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -98,20 +122,23 @@ jobs:
           workspaces: src-tauri
 
       - name: Install Linux dependencies
+        timeout-minutes: 12
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            file \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            libxdo-dev \
-            patchelf \
-            wget \
-            xvfb
+          # A mirror or DNS outage must fail fast and retry, not sit inside
+          # apt's own retry loop for twelve minutes. Three attempts, five
+          # minutes each. Treat a repeat as an environment finding, not a code
+          # failure: see AGENTS.md, "CI and build hosts".
+          packages="build-essential curl file libayatana-appindicator3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev patchelf wget xvfb"
+          for attempt in 1 2 3; do
+            if timeout 300 sudo apt-get update \
+              && timeout 300 sudo apt-get install -y $packages; then
+              exit 0
+            fi
+            echo "::warning::System package install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::System package install failed after three attempts. This is a runner or mirror problem, not a code failure."
+          exit 1
 
       - name: Check Rust formatting
         working-directory: src-tauri
@@ -132,6 +159,7 @@ jobs:
       matrix:
         os: [ubuntu-22.04, windows-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v7
 
@@ -148,20 +176,19 @@ jobs:
 
       - name: Install Linux dependencies
         if: matrix.os == 'ubuntu-22.04'
+        timeout-minutes: 12
         run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            build-essential \
-            curl \
-            file \
-            libayatana-appindicator3-dev \
-            librsvg2-dev \
-            libssl-dev \
-            libwebkit2gtk-4.1-dev \
-            libxdo-dev \
-            patchelf \
-            wget \
-            xvfb
+          packages="build-essential curl file libayatana-appindicator3-dev librsvg2-dev libssl-dev libwebkit2gtk-4.1-dev libxdo-dev patchelf wget xvfb"
+          for attempt in 1 2 3; do
+            if timeout 300 sudo apt-get update \
+              && timeout 300 sudo apt-get install -y $packages; then
+              exit 0
+            fi
+            echo "::warning::System package install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 15))
+          done
+          echo "::error::System package install failed after three attempts. This is a runner or mirror problem, not a code failure."
+          exit 1
 
       - run: npm ci
 

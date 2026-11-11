@@ -257,6 +257,34 @@ repeat the review.
 - Phase <N+1>, #<N+1>
 ```
 
+## Attempt, time and run budget
+
+A phase is a bounded piece of work, not an open-ended search. These limits
+exist because a worker left alone on a red build will keep re-pushing for hours
+instead of reporting what is wrong.
+
+- **Three cycles.** A worker gets at most three fix → push attempts on the same
+  phase. If CI is still failing after the third, stop and return
+  `STATUS: blocked` with the failing step name and the first error line. Do not
+  start a fourth cycle.
+- **Classify the failure before changing code.** If the failing step is a setup
+  step — `actions/checkout`, `setup-node`, `rust-toolchain`, an `apt-get` or
+  Playwright install, a cache restore, an artifact download — it is an
+  environment failure. Re-run the job once. If it repeats, record it as an
+  environment finding and stop. Never change application code to satisfy a
+  package mirror.
+- **One run at a time.** Before pushing a branch, check
+  `gh run list --head <branch> --limit 3`. A rebase or re-push cancels the older
+  run only because CI has a `concurrency` group; do not create a second run
+  deliberately to "see if it is flaky".
+- **Ninety minutes.** If a worker has been running for more than about ninety
+  minutes without a green build or a `blocked` report, the conductor stops
+  waiting, takes the phase over, reviews what is already pushed, and records the
+  timeout. Two hours on one phase means the loop is broken, not that the phase
+  is hard.
+- **Duplicate runs are cancelled.** The conductor cancels superseded runs rather
+  than letting six jobs queue behind a commit that will never be merged.
+
 ## Stop conditions
 
 - explicit user stop;
