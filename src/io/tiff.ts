@@ -1,7 +1,8 @@
 /**
- * Minimal TIFF reader for 1-bit scanned drawings. It parses the IFD structure
- * only; pixel data is never decoded, so a 126 megapixel sheet costs a few
- * hundred kilobytes of memory.
+ * Minimal TIFF IFD reader. It parses directories, tags, resolution, orientation
+ * and strip layout only; pixel data is decoded separately by `io/tiff/decode`.
+ * A 1-bit CCITT scan therefore costs a few hundred kilobytes of memory until
+ * its strips are passed through to PDF.
  */
 import { t } from "../i18n";
 
@@ -23,7 +24,10 @@ export interface TiffStrip {
 export interface TiffPage {
   width: number;
   height: number;
+  /** Bits of the first sample; kept for the 1-bit fax path. */
   bitsPerSample: number;
+  /** Bits for every sample, in file order. Usually all equal. */
+  bitsPerSamples: number[];
   samplesPerPixel: number;
   compression: number;
   photometric: number;
@@ -35,6 +39,9 @@ export interface TiffPage {
   dpiY: number;
   dpiKnown: boolean;
   tiled: boolean;
+  /** ExtraSamples values; 1 is premultiplied alpha and 2 is unassociated. */
+  extraSamples: number[];
+  sampleFormats: number[];
   strips: TiffStrip[];
 }
 
@@ -77,6 +84,11 @@ const TAG = {
   resolutionUnit: 296,
   predictor: 317,
   tileWidth: 322,
+  tileLength: 323,
+  tileOffsets: 324,
+  tileByteCounts: 325,
+  extraSamples: 338,
+  sampleFormat: 339,
 } as const;
 
 /** TIFF magic bytes `II*\0` or `MM\0*`. Extensions are not trusted. */
@@ -199,6 +211,8 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       const rawY = tags.get(TAG.yResolution)?.[0] ?? 0;
       const dpiX = rawX > 0 ? rawX * unitScale : 0;
       const dpiY = rawY > 0 ? rawY * unitScale : 0;
+      const samplesPerPixel = tags.get(TAG.samplesPerPixel)?.[0] ?? 1;
+      const bitsPerSamples = tags.get(TAG.bitsPerSample) ?? [1];
 
       const rowsPerStrip = Math.max(1, tags.get(TAG.rowsPerStrip)?.[0] ?? height);
       const stripOffsets = tags.get(TAG.stripOffsets) ?? [];
@@ -206,6 +220,7 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       if (stripOffsets.length !== stripByteCounts.length) {
         throw new TiffImportError(t("tiff.mismatchedStrips"));
       }
+      if (!stripOffsets.length) throw new TiffImportError(t("tiff.missingStrips"));
       const strips: TiffStrip[] = stripOffsets.map((stripOffset, index) => {
         const top = index * rowsPerStrip;
         return {
@@ -224,8 +239,9 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       pages.push({
         width,
         height,
-        bitsPerSample: tags.get(TAG.bitsPerSample)?.[0] ?? 1,
-        samplesPerPixel: tags.get(TAG.samplesPerPixel)?.[0] ?? 1,
+        bitsPerSample: bitsPerSamples[0] ?? 1,
+        bitsPerSamples,
+        samplesPerPixel,
         compression: tags.get(TAG.compression)?.[0] ?? 1,
         photometric: tags.get(TAG.photometric)?.[0] ?? 0,
         fillOrder: tags.get(TAG.fillOrder)?.[0] ?? 1,
@@ -235,7 +251,13 @@ export function readTiff(bytes: Uint8Array): TiffFile {
         dpiX: dpiX || 300,
         dpiY: dpiY || 300,
         dpiKnown: dpiX > 0 && dpiY > 0,
-        tiled: tags.has(TAG.tileWidth),
+        tiled:
+          tags.has(TAG.tileWidth) ||
+          tags.has(TAG.tileLength) ||
+          tags.has(TAG.tileOffsets) ||
+          tags.has(TAG.tileByteCounts),
+        extraSamples: tags.get(TAG.extraSamples) ?? [],
+        sampleFormats: tags.get(TAG.sampleFormat) ?? [],
         strips,
       });
     }

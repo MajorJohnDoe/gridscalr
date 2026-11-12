@@ -1954,3 +1954,81 @@ remains the scheduling home.
   Keep the nested structure test on the raw `/Order` tree either way.
 - **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
   `src/pdf/export/ocg.ts`, `tests/pdfExport.test.ts`.
+
+### F-089 — RGBA TIFF transparency is flattened over white
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
+- **Severity:** P3
+- **Area:** TIF import / raster decoding
+- **Status:** accepted — documented limitation
+- **Evidence:** `compositeOverWhite()` in `src/io/tiff/decode.ts` composites the
+  fourth sample onto white and emits `DeviceRGB`. A PDF image XObject has no
+  alpha channel unless a separate `/SMask` is written.
+- **Problem:** A greyscale or colour scan whose transparent areas are meant to
+  show a page background is rendered on white instead. For drawing scans, which
+  are opaque, the result is identical.
+- **Impact:** No data loss for ordinary scans; a transparent overlay loses its
+  alpha. The page never renders black, which was the AGENTS.md rule.
+- **Next step:** If a real RGBA drawing appears, write an `/SMask` with the alpha
+  sample and a `DeviceRGB` image, and test that the PDF viewer honours it.
+  Prefer that over adding a new file format.
+
+### F-090 — 16-bit TIFF samples are reduced to 8 bits
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
+- **Severity:** P3
+- **Area:** TIF import / raster decoding
+- **Status:** accepted — documented limitation
+- **Evidence:** `decodeStrip()` in `src/io/tiff/decode.ts` keeps the high byte of
+  every 16-bit sample so a page becomes an 8-bit PDF image.
+- **Problem:** A 16-bit greyscale or colour scan is displayed and exported with
+  8 bits per component. For line drawings and scanned plans this is visually
+  identical, but it is not a lossless copy of the source depth.
+- **Impact:** The source TIF is never modified and the raw checksum stays on the
+  document reference, so the original can be reopened elsewhere.
+- **Next step:** Only if a measured requirement appears, emit 16-bit PDF image
+  samples (big-endian) and keep the predictor in 16-bit sample space. The
+  current decoder already handles the predictor at that width.
+
+### F-091 — A decoded colour TIFF is stored as an embedded PDF and grows the project
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
+- **Severity:** P2
+- **Area:** TIF import / project file size
+- **Status:** open — needs a policy decision
+- **Evidence:** `createTiffDocumentRef()` base64-encodes the derived PDF into
+  `DocumentRef.embeddedPdf`. CCITT scans stay near the source size, but a colour
+  raster is Flate-compressed into one image per strip. A 25 megapixel RGB sheet
+  at 300 DPI can still produce tens of megabytes of base64 in the project JSON.
+- **Problem:** A project with several colour scans may approach the 256 MB
+  project limit, and every save rewrites that base64. The 256 MB decoded-raster
+  guard bounds memory during import, not the saved project size.
+- **Impact:** No corruption: the write is validated and a project that is too
+  large fails with the existing size message. The cost is disk size, save time
+  and a lower practical page count for colour sets.
+- **Next step:** Decide whether colour TIF sources should use reference storage
+  (keep the TIF and render it at open time), a downsampled image, or JPEG
+  compression for the derived PDF. Do not change the source-storage modes
+  without an ADR; this phase keeps the existing embedded-PDF shape.
+
+### F-092 — Horizontal differencing is refused below 8 bits
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
+- **Severity:** P3
+- **Area:** TIF import / raster decoding
+- **Status:** accepted — explicit rejection
+- **Evidence:** `assertDecodablePage()` rejects predictor 2 with 1-, 2- or
+  4-bit samples through `tiff.predictorBits`, and `undoHorizontalPredictor()`
+  implements 8- and 16-bit rows only.
+- **Problem:** libtiff can write horizontal differencing for packed 2- and
+  4-bit greyscale, so such a file is refused even though its uncompressed or
+  LZW counterpart would import.
+- **Impact:** The scan fails with an actionable message instead of producing a
+  wrong image. No partial or black page is written.
+- **Next step:** Add packed-sample predictor decoding if a real file appears;
+  unpack the row to samples, add the left neighbour modulo `2^bits`, repack.
+  Keep the 8/16-bit fast paths.
