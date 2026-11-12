@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.25.0** · Project-file schema: **26**
+Current version: **0.26.0** · Project-file schema: **26**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -78,6 +78,7 @@ These are not negotiable without an explicit decision:
 | 0.23.0 | Foundation: conditional saves and backups, scoped recovery and leases, stable page IDs (schema 24), managed source copies (schema 25), integrity doctor, OCG/annotation export and robustness gates | Complete | v25 |
 | 0.24.0 | File safety completed: security audit and CSP/capability hardening, path and package limits, dependency advisory gate, adversarial corpus, autosave preference, recovery center and byte budget, backup manager with relative-link restore, true view-only, status popover and conflicted-copy management | Complete | v25 |
 | 0.25.0 | Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on Pages, undoable reorder and insert, page status badges and filters, page context menu, one shared list interaction model, import provenance, doctor sources with managed-copy cleanup and repair preview, layer hierarchy with nested OCG export (schema 26), TIF **Replace source…** and extra codecs, preflight relink, Rust source budget and model-boundary gates | Complete | v26 |
+| 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).

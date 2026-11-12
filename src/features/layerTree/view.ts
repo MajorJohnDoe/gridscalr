@@ -188,3 +188,22 @@ export function layerSiblingIds(project: Pick<Project, "layers">, layerId: strin
   const siblings = parentId ? (hierarchy.childrenOfId.get(parentId) ?? []) : hierarchy.rootIds;
   return [...siblings].reverse();
 }
+
+/**
+ * Siblings as the panel shows them: the rendered rows of the same kind and
+ * parent, in display order. Hidden layers of another page must not sit between
+ * two visible rows, or a keyboard move could land nowhere on screen.
+ */
+export function layerRenderedSiblingIds(
+  project: Pick<Project, "layers">,
+  layerId: string,
+  renderedIds: readonly string[],
+): string[] {
+  const hierarchy = buildLayerHierarchy(project.layers);
+  const layer = hierarchy.byId.get(layerId);
+  if (!layer) return [];
+  const rendered = new Set(renderedIds);
+  return layerSiblingIds(project, layerId).filter(
+    (id) => rendered.has(id) && hierarchy.byId.get(id)?.kind === layer.kind,
+  );
+}

@@ -245,8 +245,8 @@ try {
   await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.waitForTimeout(500);
   await capture("operation-card.png");
-  await page.locator('.page-card[data-page="1"]').click();
   await page.getByRole("button", { name: "Pages", exact: true }).click();
+  await page.locator('.page-card[data-page="1"]').click();
   await page.waitForTimeout(300);
 
   await page.keyboard.press("Escape");

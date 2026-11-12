@@ -12,6 +12,7 @@ export {
   buildLayerTreeRows,
   layerAncestorRowIds,
   layerRowsWithChildren,
+  layerRenderedSiblingIds,
   layerSiblingIds,
 } from "./view";
 export type { LayerTreeRow, LayerTreeRowsOptions, LayerViewScope } from "./view";
