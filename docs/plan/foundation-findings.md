@@ -1845,3 +1845,27 @@ No entries yet.
   exact subfolders that layout defines and keep canonical path protection for
   the reference set. Do not replace this with a recursive walk of the folder.
 - **Related:** #189, F-017, `docs/limitations.md`, `src-tauri/src/source_cleanup.rs`.
+
+### F-085 — Repair availability comes from issue codes, not from a repair plan
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 9 — repair preview and filters in the project doctor
+- **Severity:** P3
+- **Area:** project integrity / project doctor
+- **Status:** accepted — the dialog blocks the no-op
+- **Evidence:** `availableRepairs()` in
+  `src/features/projectIntegrity/repairPlan.ts` maps validator codes to a repair
+  kind and does not see the project. A repairable code can therefore be offered
+  while its repair plans zero changes, for example `missingActiveLayer` when the
+  project has no layer that could become the fallback.
+- **Problem:** The repair checkbox stays selectable with a `0` count, and the
+  issue remains after the copy is saved. The dialog disables **Apply selected
+  repairs** while the plan is empty, so nothing false is written, but the
+  availability list itself is optimistic.
+- **Impact:** No data loss and no misleading preview: counts come from the plan
+  and the apply button refuses an empty plan. Only the offered control is noisy.
+- **Next step:** If this becomes confusing on real damaged files, pass the planned
+  change count into the dialog state and hide kinds with no planned changes.
+  Do not reintroduce a per-kind clone on every render just to compute it.
+- **Related:** #190, `src/features/projectIntegrity/repairPlan.ts`,
+  `src/features/projectIntegrity/repairUi.ts`.

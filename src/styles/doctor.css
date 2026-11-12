@@ -5,6 +5,98 @@
   gap: 4px;
 }
 
+.doctor-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  align-items: flex-end;
+}
+
+.doctor-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 0.92em;
+}
+
+.doctor-filter-label {
+  color: var(--text-muted);
+}
+
+.doctor-filter-select {
+  min-width: 130px;
+}
+
+.doctor-issue-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 180px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.doctor-repair-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctor-repair-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doctor-repair-row:hover {
+  border-color: var(--border);
+  background: var(--surface-sunken);
+}
+
+.doctor-repair-label.is-muted {
+  color: var(--text-muted);
+}
+
+.doctor-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctor-change-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 220px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.doctor-change-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 3px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.doctor-change-label {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.doctor-change-reason {
+  color: var(--text-muted);
+  font-size: 0.92em;
+}
+
 .doctor-source-row {
   display: flex;
   align-items: center;
