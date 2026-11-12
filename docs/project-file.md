@@ -274,6 +274,15 @@ shows a non-blocking banner with **Reload**, **Use current**, **Relink** and
 warns on a checksum mismatch. The checksum search helper looks only in the
 project folder and its drawings folder, never the whole file system.
 
+**File → Project doctor…** checks each source and reports it as available,
+missing or changed, with **Relink…** and **Copy into project** as explicit
+actions. A missing source is a warning and never blocks a save. The same
+section lists files in `<project>.drawings/` that no `DocumentRef` points at.
+Only the selected copies are deleted, only after confirmation, and the folder
+listing and reference set are re-checked immediately before each deletion.
+Referenced copies are protected by canonical path comparison, including a case
+variant or a nested relative path on a case-sensitive file system.
+
 ## Portable project packages
 
 A project can be packaged as a standard ZIP named `<project>.gridscalr.zip`. The

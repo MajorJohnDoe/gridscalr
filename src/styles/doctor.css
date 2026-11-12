@@ -1,0 +1,43 @@
+/* Project doctor: source availability and unused managed copies. */
+.doctor-source-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doctor-source-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 5px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.doctor-source-name {
+  flex: 1 1 220px;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.doctor-source-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.doctor-orphan-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.doctor-orphan-row:hover {
+  border-color: var(--border);
+  background: var(--surface-sunken);
+}

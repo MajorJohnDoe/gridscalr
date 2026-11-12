@@ -2,6 +2,8 @@ import { validateProject, type ProjectIssue } from "../../model/integrity";
 import type { Project } from "../../model/types";
 import type { LoadReportCount } from "../../io/projectFile/report";
 import { applyRepair, availableRepairs, type RepairKind } from "./repair";
+import type { DoctorSourceCleanupResult, DoctorSourceHost } from "./sourceAvailability";
+import type { DoctorSourceSnapshot } from "./sourceModel";
 import type { ProjectDoctorDialogResult } from "./ui";
 
 export interface DoctorLoadReport {
@@ -23,6 +25,8 @@ export interface ProjectDoctorOptions {
   loadReport?: DoctorLoadReport;
   /** Keep the "Open" action; only meaningful for a load report. */
   canOpen?: boolean;
+  /** Source availability and the explicit managed-copy cleanup. */
+  sources?: DoctorSourceHost;
 }
 
 export type ProjectDoctorAction = "close" | "saved" | "open" | "read-only";
@@ -41,6 +45,11 @@ export interface ProjectDoctorDialogState {
   canOpenReadOnly: boolean;
   loadReport?: DoctorLoadReport;
   notice?: { repair: RepairKind; changed: number };
+  sources?: DoctorSourceSnapshot;
+  sourceNotice?: DoctorSourceCleanupResult;
+  canChangeSources: boolean;
+  canRelinkSources: boolean;
+  canCopySources: boolean;
 }
 
 export interface ProjectDoctorDialogHost {
@@ -55,7 +64,13 @@ export async function runProjectDoctor(
   let project = options.project;
   let issues = [...(options.issues ?? validateProject(project))];
   let notice: { repair: RepairKind; changed: number } | undefined;
+  let sourceNotice: DoctorSourceCleanupResult | undefined;
+  let sources = options.sources ? await options.sources.load(project) : undefined;
+  // A repaired in-memory copy is not the open project, so source actions that
+  // mutate the open project would silently diverge from what is on screen.
+  let repairedCopy = false;
   for (;;) {
+    const canChangeSources = Boolean(options.sources?.canChange) && !repairedCopy;
     const action = await dialogHost.dialog({
       project,
       issues,
@@ -64,17 +79,39 @@ export async function runProjectDoctor(
       canOpenReadOnly: options.canOpenReadOnly ?? false,
       loadReport: options.loadReport,
       notice,
+      sources,
+      sourceNotice,
+      canChangeSources,
+      canRelinkSources: canChangeSources && Boolean(options.sources?.relink),
+      canCopySources: canChangeSources && Boolean(options.sources?.copyIntoProject),
     });
     if (action.kind === "repair") {
       const result = applyRepair(project, action.repair);
       project = result.project;
       issues = validateProject(project);
       notice = { repair: action.repair, changed: result.changed };
+      repairedCopy = true;
+      continue;
+    }
+    if (action.kind === "cleanup-sources") {
+      if (!options.sources || !canChangeSources) continue;
+      const confirmed = await options.sources.confirmCleanup(action.files);
+      if (confirmed) {
+        sourceNotice = await options.sources.delete(project, action.files);
+      }
+      sources = await options.sources.load(project);
+      continue;
+    }
+    if (action.kind === "source-action") {
+      if (!options.sources || !canChangeSources) continue;
+      if (action.action === "relink") await options.sources.relink?.(action.documentId);
+      else await options.sources.copyIntoProject?.(action.documentId);
+      sources = await options.sources.load(project);
       continue;
     }
     if (action.kind === "export") {
       await options.host.exportDiagnostics(
-        buildDoctorDiagnostics(project, issues, options.loadReport),
+        buildDoctorDiagnostics(project, issues, options.loadReport, sources),
       );
       continue;
     }
@@ -115,6 +152,7 @@ export async function runLoadReport(
     project: Project;
     report: DoctorLoadReport & { issues: readonly ProjectIssue[] };
     host: ProjectDoctorHost;
+    sources?: DoctorSourceHost;
   },
   dialogHost: ProjectDoctorDialogHost,
 ): Promise<LoadReportOutcome> {
@@ -130,6 +168,7 @@ export async function runLoadReport(
       canOpenReadOnly: true,
       canOpen: true,
       loadReport: options.report,
+      sources: options.sources,
     },
     dialogHost,
   );
@@ -158,6 +197,7 @@ export function buildDoctorDiagnostics(
   project: Project,
   issues: readonly ProjectIssue[],
   loadReport?: DoctorLoadReport,
+  sources?: DoctorSourceSnapshot,
 ): string {
   const counts = countBySeverity(issues);
   let items = 0;
@@ -171,6 +211,14 @@ export function buildDoctorDiagnostics(
       `${project.countTypes.length} count types, ${project.lineTypes.length} line types`,
     `issues: ${counts.errors} error(s), ${counts.warnings} warning(s)`,
   ];
+  if (sources) {
+    lines.push(
+      sources.checked
+        ? `sources: ${sources.missing} missing, ${sources.changed} changed, ` +
+            `${sources.managed.length} managed, ${sources.orphans.length} unused`
+        : `sources: not checked`,
+    );
+  }
   for (const issue of issues) {
     const entity = issue.entity
       ? ` · ${issue.entity.kind}${issue.entity.id ? `:${issue.entity.id}` : ""}`

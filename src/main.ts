@@ -10,6 +10,7 @@ import "./styles/rail.css";
 import "./styles/panels.css";
 import "./styles/reference.css";
 import "./styles/dialogs.css";
+import "./styles/doctor.css";
 import "./styles/projectImport.css";
 import "./styles/pageModel.css";
 import "./styles/markups.css";

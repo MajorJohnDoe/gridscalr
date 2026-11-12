@@ -154,6 +154,20 @@ fn relative_path(folder: &str, file: &str) -> String {
     format!("{folder}/{file}")
 }
 
+/// The one managed-copy folder for a project: `<project folder>/<stem>.drawings`.
+///
+/// Listing and deletion use this helper instead of rebuilding the name, so a
+/// file can only ever be removed from the folder the copy command writes to.
+/// The folder must resolve inside the project folder; a symlinked or junctioned
+/// drawings folder that escapes it is refused rather than followed.
+pub(crate) fn drawings_folder(project_path: &Path) -> Result<(PathBuf, String), CommandError> {
+    let folder = project_folder(project_path)?;
+    let drawings_name = format!("{}.drawings", project_stem(project_path));
+    let drawings_folder = folder.join(&drawings_name);
+    ensure_inside_root(&drawings_folder, &folder, "unsafePath")?;
+    Ok((drawings_folder, drawings_name))
+}
+
 fn copy_stream(source: &Path, destination: &Path) -> std::io::Result<()> {
     let mut input = File::open(source)?;
     let mut output = File::create(destination)?;
@@ -187,12 +201,7 @@ pub(crate) fn copy_to_project(
     let size_bytes = metadata.len();
 
     let project_path = Path::new(&request.project_path);
-    let folder = project_folder(project_path)?;
-    let drawings_name = format!("{}.drawings", project_stem(project_path));
-    let drawings_folder = folder.join(&drawings_name);
-    // A symlinked or junctioned drawings folder must not redirect the copy
-    // outside the project folder.
-    ensure_inside_root(&drawings_folder, &folder, "unsafePath")?;
+    let (drawings_folder, drawings_name) = drawings_folder(project_path)?;
     let file_name = format!(
         "{}-{}.pdf",
         safe_base(&request.display_name, "Drawing"),

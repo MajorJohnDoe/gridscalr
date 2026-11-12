@@ -71,8 +71,7 @@ describe("source file status", () => {
     vi.mocked(pathExists).mockResolvedValue(true);
     vi.mocked(fileSize).mockResolvedValue(100);
     sourceStatus.start();
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise((resolve) => setTimeout(resolve, 0));
     sourceStatus.stop();
     expect(sourceStatus.summary.statuses.length).toBe(1);
   });

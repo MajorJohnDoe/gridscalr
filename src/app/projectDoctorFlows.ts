@@ -1,4 +1,5 @@
 import {
+  createDoctorSourceHost,
   projectDoctorDialog,
   runLoadReport,
   runProjectDoctor,
@@ -16,6 +17,9 @@ import { toast } from "../ui/toast";
 
 export interface ProjectDoctorFlowHost {
   saveRepairedCopy: (project: Project) => Promise<boolean>;
+  /** The existing explicit source flows, absent when no project is open. */
+  relinkSource?: (documentId: string) => Promise<void>;
+  copySourceIntoProject?: (documentId: string) => Promise<boolean>;
 }
 
 async function exportDoctorDiagnostics(text: string): Promise<void> {
@@ -42,19 +46,34 @@ export async function openProjectDoctorFlow(
       project,
       host: doctorOptions(host),
       issues: [...base, ...outsideReferenceIssues(project, store.projectPath)],
+      sources: createDoctorSourceHost(() => store.projectPath, {
+        canChange: !store.readOnly,
+        relink: host.relinkSource,
+        copyIntoProject: host.copySourceIntoProject,
+      }),
     },
     { dialog: projectDoctorDialog },
   );
 }
 
-/** Shows the load report and doctor before a damaged project is opened. */
+/**
+ * Shows the load report and doctor before a damaged project is opened. The
+ * project is not open yet, so source availability is read-only: the existing
+ * source actions run against the open project and are not offered here.
+ */
 export function confirmProjectLoadReportFlow(
   host: ProjectDoctorFlowHost,
   report: ProjectLoadReport,
   project: Project,
+  projectPath: string | null,
 ): Promise<LoadReportOutcome> {
   return runLoadReport(
-    { project, report, host: doctorOptions(host) },
+    {
+      project,
+      report,
+      host: doctorOptions(host),
+      sources: createDoctorSourceHost(() => projectPath, { canChange: false }),
+    },
     { dialog: projectDoctorDialog },
   );
 }
