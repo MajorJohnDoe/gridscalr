@@ -4,7 +4,7 @@ import { readFileBytes } from "../io/platform";
 import { describeError } from "../io/platformError";
 import type { PageSize } from "../model/types";
 import { createProject } from "../model/layers";
-import { documentPageOrder, pageNumber } from "../model/pages";
+import { pageNumber } from "../model/pages";
 import { excludedSourcePages, includedLocalPages } from "../model/documents";
 import {
   commitProjectImport,
@@ -172,7 +172,6 @@ export async function importDroppedDrawing(
         pageMap: includedLocalPages(importedDocument),
       },
     ]);
-    renderer.setPageOrder(documentPageOrder(store.project ?? destination));
 
     const firstPageId = prepared.pageMap[0]?.newPageId;
     const firstPage = firstPageId

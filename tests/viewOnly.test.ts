@@ -74,8 +74,7 @@ function projectWithItems() {
 
 function pageHost(): PageFlowHost {
   return {
-    renderer: () => null,
-    thumbnails: () => null,
+    addDocumentToRenderer: vi.fn(),
     resetPageSizes: vi.fn(),
     enqueuePageSize: vi.fn(async () => undefined),
     fitPage: vi.fn(),
@@ -93,6 +92,7 @@ function sheetHost(): SheetFlowHost {
   return {
     renderer: () => null,
     thumbnails: () => null,
+    addDocumentToRenderer: vi.fn(),
     installDocuments: vi.fn(async () => undefined),
     enqueuePageSize: vi.fn(async () => undefined),
     resetPageSize: vi.fn(),

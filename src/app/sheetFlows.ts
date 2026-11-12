@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { PageSize, Project, SheetPaperSize, SheetTemplateRef } from "../model/types";
-import { documentPageOrder, pageNumber, pageRecordById } from "../model/pages";
+import { pageNumber, pageRecordById } from "../model/pages";
 import { createProject } from "../model/layers";
 import { normalizeProjectName } from "../model/projectName";
 import { currentLocale, t } from "../i18n";
@@ -33,6 +33,8 @@ import {
 export interface SheetFlowHost {
   renderer(): PdfRenderer | null;
   thumbnails(): PageThumbnailService | null;
+  /** Registers a new sheet document; the store derives its page order. */
+  addDocumentToRenderer(documentId: string, proxy: PDFDocumentProxy, pageMap: number[]): void;
   installDocuments(
     documents: PDFDocumentProxy[],
     project: Project,
@@ -164,8 +166,7 @@ export async function addSheetFlow(host: SheetFlowHost, choice: SheetSourceChoic
     t("sessionRecovery.checkpoint.addSheet", { name: documentRef.name }),
   );
   store.addDocument(documentRef);
-  renderer.addDocument(pdf, [1]);
-  renderer.setPageOrder(documentPageOrder(store.project ?? project));
+  host.addDocumentToRenderer(documentRef.id, pdf, [1]);
   store.setPage(startPage);
   await host.enqueuePageSize(startPage);
   host.fitPage();

@@ -13,6 +13,7 @@ import {
   pagesForDocument,
   replacementWarnings,
   sourceReplacementDialog,
+  type SourceReplacementResult,
 } from "../features/pageModel";
 import { pickDrawing } from "../io/platform";
 import { isTiff } from "../io/tiff";
@@ -29,6 +30,33 @@ export interface ReplacementFlowHost {
   fitPage(): void;
   invalidate(): void;
   renderAll(): void;
+}
+
+/**
+ * Swaps the renderer document for a replacement and publishes the structural
+ * project change. The store listener derives the new page order from the
+ * project, so notifying it is what keeps the canvas on the mapped pages; a
+ * silent mutation would keep rendering the old mapping.
+ */
+export function commitSourceReplacement(
+  applied: SourceReplacementResult,
+  renderer: PdfRenderer,
+  documentIndex: number,
+  proxy: PDFDocumentProxy,
+  newPageCount: number,
+): void {
+  // An older undo snapshot could restore a superseded document reference that
+  // no longer matches the renderer, so replacement stays a history boundary.
+  store.clearHistory();
+  const pageMap = Array.from({ length: newPageCount }, (_, index) => index + 1);
+  if (applied.updatedDocument && documentIndex >= 0) {
+    renderer.replaceDocument(documentIndex, proxy, pageMap);
+  } else {
+    renderer.addDocument(proxy, pageMap);
+  }
+  store.dirty = true;
+  store.revision += 1;
+  store.emit("project");
 }
 
 /**
@@ -167,25 +195,7 @@ export async function replaceSourceFlow(
       return;
     }
 
-    // Replacing a source is structural: an older undo snapshot could restore a
-    // superseded document reference that no longer matches the renderer.
-    store.clearHistory();
-    if (applied.updatedDocument && documentIndex >= 0) {
-      renderer.replaceDocument(
-        documentIndex,
-        proxy,
-        Array.from({ length: newPageCount }, (_, index) => index + 1),
-      );
-    } else {
-      renderer.addDocument(
-        proxy,
-        Array.from({ length: newPageCount }, (_, index) => index + 1),
-      );
-    }
-    const { documentPageOrder } = await import("../model/pages");
-    renderer.setPageOrder(documentPageOrder(project));
-    store.dirty = true;
-    store.revision += 1;
+    commitSourceReplacement(applied, renderer, documentIndex, proxy, newPageCount);
     host.thumbnails()?.clear();
     host.resetPageSizes();
     await host.enqueuePageSize(store.ui.page);

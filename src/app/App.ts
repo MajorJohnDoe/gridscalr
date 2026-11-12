@@ -41,13 +41,13 @@ import {
   reorderProjectPages,
   type PageActionHost,
 } from "../features/pageModel";
-import { RendererDocumentRegistry } from "./rendererDocuments";
-import type { ImportedRendererDocument } from "./rendererDocuments";
+import { RendererStoreSync } from "./rendererSync";
 import {
   deletePageFlow,
   duplicatePageFlow,
   goToPage as goToPageFlow,
   navigateToItem as navigateToItemFlow,
+  registerCreatedPageDocuments,
   resetProject as resetProjectFlow,
   type PageFlowHost,
 } from "./pageFlows";
@@ -141,9 +141,21 @@ export class App {
   private recovery: SessionRecoveryController;
   private sourceStorage: SourceStorageController;
   private actions: PanelActions;
-  private readonly documentRegistry = new RendererDocumentRegistry();
   private renderer: PdfRenderer | null = null;
   private thumbnails: PageThumbnailService | null = null;
+  private readonly rendererSync = new RendererStoreSync({
+    project: () => store.project,
+    renderer: () => this.renderer,
+    onPageOrderChanged: () => {
+      this.thumbnails?.clear();
+      this.resetPageSizes();
+    },
+    onDocumentsChanged: () => this.afterUndoDocumentChange(),
+    onSyncFailed: () => {
+      logEvent("error", "renderer document reconcile failed");
+      toast(t("projectImport.undoSyncFailed"), "warning");
+    },
+  });
   private pageSizes = new Map<number, PageSize>();
   private pageSizePromises = new Map<number, Promise<PageSize | undefined>>();
   private sizeQueue: SizeTask[] = [];
@@ -346,18 +358,10 @@ export class App {
         this.updateTitle();
         return;
       }
-      if (reason === "project") {
-        this.documentRegistry.sync(store.project);
-        this.search.close();
-      }
-      if (reason === "undo") {
-        const result = this.documentRegistry.reconcile(store.project, this.renderer);
-        if (result === "changed") this.afterUndoDocumentChange();
-        else if (result === "failed") {
-          logEvent("error", "renderer document reconcile failed");
-          toast(t("projectImport.undoSyncFailed"), "warning");
-        }
-      }
+      if (reason === "project") this.search.close();
+      // The store listener is the single place that derives the renderer page
+      // order and reconciles documents across undo and redo.
+      this.rendererSync.handle(reason);
       this.reference.onStoreChange(reason);
       this.renderAll();
     });
@@ -384,7 +388,7 @@ export class App {
   private async destroyRenderer(): Promise<void> {
     const renderer = this.renderer;
     const thumbnails = this.thumbnails;
-    this.documentRegistry.dispose(renderer);
+    this.rendererSync.dispose(renderer);
     this.renderer = null;
     this.thumbnails = null;
     thumbnails?.destroy();
@@ -398,8 +402,8 @@ export class App {
 
   private pageFlowHost(): PageFlowHost {
     return {
-      renderer: () => this.renderer,
-      thumbnails: () => this.thumbnails,
+      addDocumentToRenderer: (documentId, proxy, pageMap) =>
+        void this.rendererSync.addProjectDocument(documentId, proxy, pageMap),
       resetPageSizes: () => this.resetPageSizes(),
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
@@ -421,7 +425,7 @@ export class App {
       installDocuments: (documents, project, path, dirty) =>
         this.installDocuments(documents, project, path, dirty),
       addDocumentToRenderer: (documentId, document, pages) =>
-        this.documentRegistry.addProjectDocument(documentId, document, pages, this.renderer),
+        void this.rendererSync.addProjectDocument(documentId, document, pages),
       enqueuePageSize: (page) => this.enqueuePageSize(page),
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),
@@ -450,7 +454,7 @@ export class App {
       fitPage: () => this.canvas.fitPage(),
       invalidate: () => this.canvas.invalidate(),
       renderAll: () => this.renderAll(),
-      addImportedDocuments: (entries) => this.addImportedDocuments(entries),
+      addImportedDocuments: (entries) => void this.rendererSync.addImported(entries),
       closeSearch: () => this.search.close(),
     };
   }
@@ -459,6 +463,8 @@ export class App {
     return {
       renderer: () => this.renderer,
       thumbnails: () => this.thumbnails,
+      addDocumentToRenderer: (documentId, proxy, pageMap) =>
+        void this.rendererSync.addProjectDocument(documentId, proxy, pageMap),
       installDocuments: (documents, project, path, dirty) =>
         this.installDocuments(documents, project, path, dirty),
       enqueuePageSize: (page) => this.enqueuePageSize(page),
@@ -768,7 +774,7 @@ export class App {
   ): Promise<void> {
     const previous = this.renderer;
     const previousThumbnails = this.thumbnails;
-    this.documentRegistry.reset(project, previous);
+    this.rendererSync.reset(project, previous);
     const renderer = new PdfRenderer(
       documents,
       documentPageMaps(project.documents),
@@ -825,6 +831,12 @@ export class App {
       closeSearch: () => this.search.close(),
       closeReference: () => this.reference.close(false),
       afterStructuralChange: () => this.afterStructuralPageChange(),
+      registerCreatedDocuments: (known) =>
+        registerCreatedPageDocuments(
+          (documentId, proxy, pageMap) =>
+            void this.rendererSync.addProjectDocument(documentId, proxy, pageMap),
+          known,
+        ),
       installProject: async (project) => {
         project.settings.stampPresets = loadGlobalStampPresets();
         await this.installDocuments([], project, null, false);
@@ -838,11 +850,7 @@ export class App {
   }
 
   private afterStructuralPageChange(): void {
-    const project = store.project;
-    if (!project) return;
-    this.renderer?.setPageOrder(documentPageOrder(project));
-    this.thumbnails?.clear();
-    this.resetPageSizes();
+    // The store listener already derived the order and dropped stale previews.
     this.search.close();
     void this.reference.close(false);
     this.canvas.invalidate();
@@ -850,17 +858,7 @@ export class App {
     void this.enqueuePageSize(store.ui.page);
   }
 
-  private addImportedDocuments(entries: readonly ImportedRendererDocument[]): void {
-    const renderer = this.renderer;
-    const project = store.project;
-    if (!renderer || !project) return;
-    this.documentRegistry.addImported(entries, project, renderer);
-    this.thumbnails?.clear();
-    this.resetPageSizes();
-  }
-
   private afterUndoDocumentChange(): void {
-    if (store.project) this.renderer?.setPageOrder(documentPageOrder(store.project));
     this.search.close();
     void this.reference.close(false);
     this.reference.splitView.setOpen(false);

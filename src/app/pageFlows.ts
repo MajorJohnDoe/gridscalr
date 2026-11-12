@@ -1,8 +1,7 @@
-import { pageDisplayName, pageNumber, pageRecordById, documentPageOrder } from "../model/pages";
+import type { PDFDocumentProxy } from "pdfjs-dist";
+import { pageDisplayName, pageNumber, pageRecordById } from "../model/pages";
 import { findItem } from "../model/layers";
 import type { MarkupItem, PageId, PageSize } from "../model/types";
-import type { PdfRenderer } from "../pdf/pdfRenderer";
-import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
 import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import { openDocument } from "./documentImport";
@@ -12,9 +11,30 @@ import { duplicatePageDialog } from "../ui/duplicatePageDialog";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
 
+/**
+ * Loads renderer proxies for template documents a page action just created. A
+ * cloned sheet owns its own document record, so the renderer needs that
+ * document before the store-derived page order can point at it.
+ */
+export async function registerCreatedPageDocuments(
+  addDocument: (documentId: string, proxy: PDFDocumentProxy, pageMap: number[]) => void,
+  knownDocuments: ReadonlySet<string>,
+): Promise<void> {
+  const project = store.project;
+  if (!project) return;
+  for (const document of project.documents) {
+    if (knownDocuments.has(document.id) || document.kind !== "template" || !document.template) {
+      continue;
+    }
+    const bytes = await sheetBytes(document.template);
+    const proxy = await openDocument(bytes, document.name);
+    if (proxy) addDocument(document.id, proxy, [1]);
+  }
+}
+
 export interface PageFlowHost {
-  renderer(): PdfRenderer | null;
-  thumbnails(): PageThumbnailService | null;
+  /** Registers a document the page operation created; the store derives its order. */
+  addDocumentToRenderer(documentId: string, proxy: PDFDocumentProxy, pageMap: number[]): void;
   resetPageSizes(): void;
   enqueuePageSize(page: number): Promise<PageSize | undefined>;
   fitPage(): void;
@@ -25,15 +45,6 @@ export interface PageFlowHost {
   closeReference(): Promise<void>;
   closeSplitView(): void;
   destroyRenderer(): Promise<void>;
-}
-
-/** Keeps the renderer's display-page order in sync with the project page list. */
-export function syncRendererPageOrder(host: PageFlowHost): void {
-  const project = store.project;
-  if (!project) return;
-  host.renderer()?.setPageOrder(documentPageOrder(project));
-  host.thumbnails()?.clear();
-  host.resetPageSizes();
 }
 
 export async function goToPage(host: PageFlowHost, page: number, fit = true): Promise<void> {
@@ -98,16 +109,10 @@ export async function duplicatePageFlow(host: PageFlowHost, pageId: PageId): Pro
   }
   // A duplicated template sheet owns a cloned document. Load its proxy so the
   // renderer document list stays aligned with project.documents.
-  const renderer = host.renderer();
-  for (const document of project.documents) {
-    if (knownDocuments.has(document.id) || document.kind !== "template" || !document.template) {
-      continue;
-    }
-    const bytes = await sheetBytes(document.template);
-    const proxy = await openDocument(bytes, document.name);
-    if (proxy) renderer?.addDocument(proxy, [1]);
-  }
-  syncRendererPageOrder(host);
+  await registerCreatedPageDocuments(
+    (documentId, proxy, pageMap) => host.addDocumentToRenderer(documentId, proxy, pageMap),
+    knownDocuments,
+  );
   await host.enqueuePageSize(result.pageNumber);
   host.fitPage();
   host.invalidate();
@@ -143,7 +148,6 @@ export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promis
     toast(t("app.pageDeleteFailed"), "warning");
     return;
   }
-  syncRendererPageOrder(host);
   await host.enqueuePageSize(store.ui.page);
   host.fitPage();
   host.invalidate();

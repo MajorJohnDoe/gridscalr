@@ -21,6 +21,8 @@ export interface PageActionHost {
   closeSearch(): void;
   closeReference(): Promise<void>;
   afterStructuralChange(): void;
+  /** Loads renderer documents for any template document the action created. */
+  registerCreatedDocuments(knownDocuments: ReadonlySet<string>): Promise<void>;
   installProject(project: Project): Promise<void>;
   /** Detach one renderer document while project document indices still match. */
   detachDocument(documentId: string): void;
@@ -78,10 +80,14 @@ export async function insertProjectPage(
 ): Promise<void> {
   const project = store.project;
   if (!project) return;
+  const knownDocuments = new Set(project.documents.map((entry) => entry.id));
   await recordStructuralCheckpoint(
     t("sessionRecovery.checkpoint.insertPage", { page: pageNumber(project, pageId) }),
   );
   if (!store.insertPageRecord(pageId, index)) return;
+  // A template insert clones the sheet document; register it before the page
+  // size is resolved through the new order.
+  await host.registerCreatedDocuments(knownDocuments);
   host.afterStructuralChange();
   void host.enqueuePageSize(store.ui.page);
 }
@@ -91,7 +97,7 @@ export async function cleanupSupersededPages(
   documentId: string,
 ): Promise<void> {
   const project = store.project;
-  if (!project) return;
+  if (!project || store.readOnly) return;
   const document = project.documents.find((entry) => entry.id === documentId);
   if (!document?.superseded) return;
   const count = project.pages.filter((page) => page.documentId === documentId).length;
@@ -105,7 +111,16 @@ export async function cleanupSupersededPages(
   if (!confirmed) return;
   await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.deletePage", { page: count }));
   host.detachDocument(documentId);
-  removeDocumentAndPages(project, documentId);
+  // Mutate through the store so its listener derives the new renderer page
+  // order; a direct project mutation would leave the renderer on old indices.
+  let removed = 0;
+  store.mutate(
+    (next) => {
+      removed = removeDocumentAndPages(next, documentId);
+    },
+    "project",
+    { history: false },
+  );
   host.afterStructuralChange();
-  toast(t("replace.cleanupDone", { count }), "info");
+  toast(t("replace.cleanupDone", { count: removed }), "info");
 }

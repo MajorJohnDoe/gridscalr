@@ -2,7 +2,6 @@ import { t } from "../i18n";
 import { isTauri, readFileBytes } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { includedLocalPages } from "../model/documents";
-import { documentPageOrder } from "../model/pages";
 import type { PageSize } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
@@ -69,10 +68,11 @@ async function reloadSourceDocument(
   try {
     const proxy = await openDocument(await readFileBytes(document.path), document.name);
     if (!proxy) return false;
+    // Reloading a source keeps every page and its position; the store-derived
+    // page order is unchanged, so only the replaced document needs refreshing.
     host.renderer()?.replaceDocument(index, proxy, includedLocalPages(document));
     host.thumbnails()?.clear();
     host.resetPageSizes();
-    host.renderer()?.setPageOrder(documentPageOrder(project));
     void host.enqueuePageSize(store.ui.page);
     host.invalidate();
     host.renderAll();
