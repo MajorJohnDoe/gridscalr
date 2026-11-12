@@ -13,7 +13,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 5. Review **View → Quantities…**.
 6. Save the project with **File → Save**.
 
-The welcome screen also offers **Open drawing**, **Open project**, **Open demo project**, **Recovery center**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities.
+The welcome screen also offers **Open drawing**, **Open project**, **New project…**, **Open demo project**, **Recovery center**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities. **New project…** opens the same source chooser as **File → New project…**, including the **Empty project** start.
 
 **Open demo project** loads a bundled sample with one drawing, three sheets and finished measurements. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
 

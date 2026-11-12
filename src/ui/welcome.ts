@@ -58,7 +58,11 @@ export function renderWelcome(refs: ShellRefs, actions: PanelActions): void {
   openProject.type = "button";
   openProject.innerHTML = `${icon("file", 15)}<span>${t("welcome.openProject")}</span>`;
   openProject.addEventListener("click", actions.openProject);
-  actionsWrap.append(open, openProject);
+  const newProject = el("button", "btn", t("menu.file.newProject"));
+  newProject.type = "button";
+  newProject.innerHTML = `${icon("plus", 15)}<span>${t("menu.file.newProject")}</span>`;
+  newProject.addEventListener("click", actions.newProject);
+  actionsWrap.append(open, openProject, newProject);
 
   if (isTauri) {
     const demo = el("button", "btn", t("welcome.demo"));
