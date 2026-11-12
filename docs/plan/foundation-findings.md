@@ -2032,3 +2032,65 @@ remains the scheduling home.
 - **Next step:** Add packed-sample predictor decoding if a real file appears;
   unpack the row to samples, add the left neighbour modulo `2^bits`, repack.
   Keep the 8/16-bit fast paths.
+
+### F-093 — Tiled JPEG-in-TIFF needs a JPEG decoder
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12b — JPEG-in-TIFF and tiled layouts
+- **Severity:** P3
+- **Area:** TIF import / JPEG decoding
+- **Status:** accepted — explicit rejection
+- **Evidence:** `assertJpegPage()` in `src/io/tiff/jpeg.ts` rejects a tiled page
+  through `tiff.tiledJpegUnsupported`, while the tiled raster path in
+  `src/io/tiff/tiles.ts` composes uncompressed, PackBits, LZW and Deflate tiles.
+- **Problem:** A tiled JPEG TIFF stores one JPEG per tile, so composing the page
+  needs a JPEG decoder. Passthrough per tile is not correct: each tile is a
+  separate MCU grid and the PDF image must cover the whole page or band.
+- **Impact:** Tiled JPEG scans are refused with an actionable message instead
+  of rendering a partial or colour-shifted page. Stripped JPEG-in-TIFF and
+  tiled non-JPEG TIFF both import.
+- **Next step:** Only if a real tiled JPEG scan appears, add a bounded baseline
+  JPEG decoder, compose tiles into bands, and re-encode each band with a fixed
+  quality. That is a new codec family and needs its own issue and fixtures.
+
+### F-094 — Old-style JPEG is supported only through a complete interchange stream
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12b — JPEG-in-TIFF and tiled layouts
+- **Severity:** P3
+- **Area:** TIF import / JPEG decoding
+- **Status:** accepted — explicit rejection
+- **Evidence:** `pageRegions()` in `src/io/tiff/jpeg.ts` uses
+  `JPEGInterchangeFormat` (tag 513) when it holds a complete stream, or full
+  JPEG strips; otherwise it throws `tiff.jpegOldStyle`.
+- **Problem:** The TIFF 6.0 old-style JPEG variant can also store abbreviated
+  strips described by `JPEGQTables` (519), `JPEGDCTables` (520) and
+  `JPEGACTables` (521). Those table references are not composed.
+- **Impact:** A writer that emits only abbreviated old-style strips is refused
+  with a message that asks for a new-style JPEG TIFF. The source file is never
+  modified.
+- **Next step:** If a real file appears, read the three table offsets, build the
+  complete table set once, and join it to each strip like `JPEGTables`. Test it
+  with a committed old-style fixture.
+
+### F-095 — CMYK JPEG passthrough follows the stored sample convention
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 12b — JPEG-in-TIFF and tiled layouts
+- **Severity:** P3
+- **Area:** TIF import / colour
+- **Status:** accepted — documented decision
+- **Evidence:** `colorSpaceFor()` in `src/io/tiff/jpeg.ts` emits
+  `DeviceCMYK` with no decode array when the stream has no Adobe APP14 marker,
+  and the inverted `[1 0 1 0 1 0 1 0]` decode array when a plain Adobe CMYK
+  marker (transform 0) is present. YCCK (transform 1 or 2) is rejected.
+- **Problem:** The inversion convention is carried by the Adobe marker, not by
+  the TIFF photometric tag. A writer that stores inverted CMYK without an Adobe
+  marker cannot be told apart from a writer that stores plain CMYK.
+- **Impact:** The committed CMYK fixture (Pillow, no marker) renders with its
+  stored samples. A marker-carrying Adobe stream is inverted once. No re-encode
+  or colour conversion is attempted, so a wrong source convention stays a
+  source problem rather than a decoder guess.
+- **Next step:** If a user reports inverted CMYK output, capture that file and
+  decide whether to trust the photometric tag, the marker, or both, with a new
+  fixture. Do not add a heuristic without a sample.

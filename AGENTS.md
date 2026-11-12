@@ -570,9 +570,11 @@ src/io/projectFile/       schema normalization, migration, serialization, relati
 src/io/projectFile/report.ts load-report counts for dropped and repaired data
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
-src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
-src/io/tiffImport.ts       CCITT passthrough and decoded raster to PDF, document refs
-src/io/tiff/decode.ts      page validation, strip dispatch and PDF-ready samples
+src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip and tile layout
+src/io/tiffImport.ts       CCITT and JPEG passthrough, tiled and decoded raster to PDF
+src/io/tiff/decode.ts      page validation, strip/region dispatch and PDF-ready samples
+src/io/tiff/tiles.ts       tile grid composition into page bands with cropped edge tiles
+src/io/tiff/jpeg.ts        JPEG-in-TIFF validation, JPEGTables composition, DCTDecode mapping
 src/io/tiff/packbits.ts    PackBits strip decoding
 src/io/tiff/lzw.ts         TIFF LZW strip decoding
 src/io/tiff/deflate.ts     bounded Deflate strip decoding

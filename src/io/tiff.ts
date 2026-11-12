@@ -1,25 +1,20 @@
 /**
  * Minimal TIFF IFD reader. It parses directories, tags, resolution, orientation
- * and strip layout only; pixel data is decoded separately by `io/tiff/decode`.
- * A 1-bit CCITT scan therefore costs a few hundred kilobytes of memory until
- * its strips are passed through to PDF.
+ * and the strip or tile layout only; pixel data is decoded separately by
+ * `io/tiff/decode`, `io/tiff/tiles` and `io/tiff/jpeg`. A 1-bit CCITT scan
+ * therefore costs a few hundred kilobytes of memory until its strips are passed
+ * through to PDF.
  */
 import { t } from "../i18n";
+import { TiffImportError } from "./tiff/error";
+import { MAX_TIFF_TILES, TAG, readLayout, type TiffStrip, type TiffTile } from "./tiff/layout";
 
-export class TiffImportError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = "TiffImportError";
-  }
-}
+export { TiffImportError };
+export { MAX_TIFF_TILES };
+export type { TiffStrip, TiffTile };
 
-export interface TiffStrip {
-  offset: number;
-  byteCount: number;
-  /** Row index of the first row in the strip, counted from the top. */
-  top: number;
-  rows: number;
-}
+/** A JPEG table set is a small header; anything larger is not a table set. */
+export const MAX_JPEG_TABLES_BYTES = 64 * 1024;
 
 export interface TiffPage {
   width: number;
@@ -39,6 +34,13 @@ export interface TiffPage {
   dpiY: number;
   dpiKnown: boolean;
   tiled: boolean;
+  tileWidth: number;
+  tileHeight: number;
+  tiles: TiffTile[];
+  /** Shared `JPEGTables` bytes for new-style JPEG strips, or null. */
+  jpegTables: Uint8Array | null;
+  /** Old-style JPEG (compression 6) interchange stream, or null. */
+  jpegInterchange: { offset: number; length: number } | null;
   /** ExtraSamples values; 1 is premultiplied alpha and 2 is unassociated. */
   extraSamples: number[];
   sampleFormats: number[];
@@ -64,32 +66,6 @@ const TYPE_SIZES: Record<number, number> = {
   11: 4,
   12: 8,
 };
-
-const TAG = {
-  newSubfileType: 254,
-  imageWidth: 256,
-  imageLength: 257,
-  bitsPerSample: 258,
-  compression: 259,
-  photometric: 262,
-  fillOrder: 266,
-  stripOffsets: 273,
-  orientation: 274,
-  samplesPerPixel: 277,
-  rowsPerStrip: 278,
-  stripByteCounts: 279,
-  xResolution: 282,
-  yResolution: 283,
-  planarConfig: 284,
-  resolutionUnit: 296,
-  predictor: 317,
-  tileWidth: 322,
-  tileLength: 323,
-  tileOffsets: 324,
-  tileByteCounts: 325,
-  extraSamples: 338,
-  sampleFormat: 339,
-} as const;
 
 /** TIFF magic bytes `II*\0` or `MM\0*`. Extensions are not trusted. */
 export function isTiff(bytes: Uint8Array): boolean {
@@ -190,12 +166,22 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       throw new TiffImportError(t("tiff.damagedDirectory"));
     }
     const tags = new Map<number, number[]>();
+    let jpegTables: Uint8Array | null = null;
     for (let index = 0; index < count; index++) {
       const entry = offset + 2 + index * 12;
       const tag = reader.u16(entry);
       const type = reader.u16(entry + 2);
       const values = reader.u32(entry + 4);
       tags.set(tag, readTagValues(reader, bytes, entry, type, values));
+      if (tag === TAG.jpegTables && (type === 1 || type === 6 || type === 7)) {
+        if (values > MAX_JPEG_TABLES_BYTES) {
+          throw new TiffImportError(t("tiff.jpegTablesTooLarge"));
+        }
+        const base = values <= 4 ? entry + 8 : reader.u32(entry + 8);
+        if (base >= 0 && base + values <= bytes.length) {
+          jpegTables = bytes.slice(base, base + values);
+        }
+      }
     }
 
     // Bit 0 marks a reduced-resolution preview IFD. Those are never sheets.
@@ -213,28 +199,15 @@ export function readTiff(bytes: Uint8Array): TiffFile {
       const dpiY = rawY > 0 ? rawY * unitScale : 0;
       const samplesPerPixel = tags.get(TAG.samplesPerPixel)?.[0] ?? 1;
       const bitsPerSamples = tags.get(TAG.bitsPerSample) ?? [1];
+      const compression = tags.get(TAG.compression)?.[0] ?? 1;
+      const layout = readLayout(tags, width, height, bytes.length, compression);
 
-      const rowsPerStrip = Math.max(1, tags.get(TAG.rowsPerStrip)?.[0] ?? height);
-      const stripOffsets = tags.get(TAG.stripOffsets) ?? [];
-      const stripByteCounts = tags.get(TAG.stripByteCounts) ?? [];
-      if (stripOffsets.length !== stripByteCounts.length) {
-        throw new TiffImportError(t("tiff.mismatchedStrips"));
-      }
-      if (!stripOffsets.length) throw new TiffImportError(t("tiff.missingStrips"));
-      const strips: TiffStrip[] = stripOffsets.map((stripOffset, index) => {
-        const top = index * rowsPerStrip;
-        return {
-          offset: stripOffset,
-          byteCount: stripByteCounts[index],
-          top,
-          rows: Math.min(rowsPerStrip, height - top),
-        };
-      });
-      for (const strip of strips) {
-        if (strip.offset + strip.byteCount > bytes.length) {
-          throw new TiffImportError(t("tiff.stripOutside"));
-        }
-      }
+      const interchangeOffset = tags.get(TAG.jpegInterchangeFormat)?.[0] ?? 0;
+      const interchangeLength = tags.get(TAG.jpegInterchangeFormatLength)?.[0] ?? 0;
+      const jpegInterchange =
+        compression === 6 && tags.has(TAG.jpegInterchangeFormat) && interchangeLength > 0
+          ? { offset: interchangeOffset, length: interchangeLength }
+          : null;
 
       pages.push({
         width,
@@ -242,7 +215,7 @@ export function readTiff(bytes: Uint8Array): TiffFile {
         bitsPerSample: bitsPerSamples[0] ?? 1,
         bitsPerSamples,
         samplesPerPixel,
-        compression: tags.get(TAG.compression)?.[0] ?? 1,
+        compression,
         photometric: tags.get(TAG.photometric)?.[0] ?? 0,
         fillOrder: tags.get(TAG.fillOrder)?.[0] ?? 1,
         planarConfig: tags.get(TAG.planarConfig)?.[0] ?? 1,
@@ -251,14 +224,15 @@ export function readTiff(bytes: Uint8Array): TiffFile {
         dpiX: dpiX || 300,
         dpiY: dpiY || 300,
         dpiKnown: dpiX > 0 && dpiY > 0,
-        tiled:
-          tags.has(TAG.tileWidth) ||
-          tags.has(TAG.tileLength) ||
-          tags.has(TAG.tileOffsets) ||
-          tags.has(TAG.tileByteCounts),
+        tiled: layout.tiles.length > 0,
+        tileWidth: layout.tileWidth,
+        tileHeight: layout.tileHeight,
+        tiles: layout.tiles,
+        jpegTables,
+        jpegInterchange,
         extraSamples: tags.get(TAG.extraSamples) ?? [],
         sampleFormats: tags.get(TAG.sampleFormat) ?? [],
-        strips,
+        strips: layout.strips,
       });
     }
 
@@ -313,7 +287,7 @@ export function faxParameters(page: TiffPage): FaxParameters {
     throw new TiffImportError(t("tiff.only1Bit"));
   }
   if (page.tiled) {
-    throw new TiffImportError(t("tiff.tiledUnsupported"));
+    throw new TiffImportError(t("tiff.tiledFaxUnsupported"));
   }
   if (page.fillOrder !== 1) {
     throw new TiffImportError(t("tiff.fillOrder2"));

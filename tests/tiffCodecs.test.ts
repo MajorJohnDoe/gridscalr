@@ -323,24 +323,6 @@ function patchTagElement(bytes: Uint8Array, tag: number, index: number, value: n
 describe("TIFF unsupported variants", () => {
   it.each([
     {
-      title: "JPEG compression 6",
-      patches: [[259, { value: 6 }]] as [number, Parameters<typeof patchTag>[2]][],
-      message: () => t("tiff.jpegUnsupported"),
-    },
-    {
-      title: "JPEG compression 7",
-      patches: [[259, { value: 7 }]] as [number, Parameters<typeof patchTag>[2]][],
-      message: () => t("tiff.jpegUnsupported"),
-    },
-    {
-      title: "tiled layout",
-      patches: [[305, { tag: 322, type: 3, count: 1, value: 16 }]] as [
-        number,
-        Parameters<typeof patchTag>[2],
-      ][],
-      message: () => t("tiff.tiledUnsupported"),
-    },
-    {
       title: "planar channels",
       patches: [[284, { value: 2 }]] as [number, Parameters<typeof patchTag>[2]][],
       message: () => t("tiff.planarUnsupported"),
