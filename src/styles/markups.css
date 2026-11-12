@@ -120,8 +120,19 @@
   line-height: 1;
 }
 
-.markups-save-view:disabled {
+.markups-save-view:disabled,
+.markups-pin-view:disabled {
   opacity: 0.35;
+  cursor: default;
+}
+
+.markups-pin-view.is-pinned {
+  color: var(--amber);
+}
+
+.markups-collapse-all:disabled,
+.markups-expand-all:disabled {
+  opacity: 0.3;
   cursor: default;
 }
 

@@ -7,8 +7,11 @@ import {
   pageReorder,
   PAGE_REORDER_HINT_ID,
   PAGE_REORDER_KEYSHORTCUTS,
+  PAGE_SELECT_HINT_ID,
   pageReorderHint,
+  pageSelectHint,
 } from "../features/pageReorder";
+import { RowNavigator, dragHandle } from "../features/listInteraction";
 import {
   pageMenu,
   pageMenuHint,
@@ -35,6 +38,8 @@ interface PendingThumbnail {
 }
 
 let thumbnailObserver: IntersectionObserver | null = null;
+
+const pageNavigator = new RowNavigator(".page-card");
 
 /** Stops observing page cards when the Pages tab is no longer mounted. */
 export function disconnectPageThumbnails(): void {
@@ -124,6 +129,7 @@ function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
 
 export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   disconnectPageThumbnails();
+  pageNavigator.detach();
   refs.dockBody.querySelector(".page-list")?.remove();
   const project = store.project!;
   if (!project.pages.length) {
@@ -188,7 +194,9 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     );
     card.setAttribute(
       "aria-describedby",
-      reorderEnabled ? `${PAGE_MENU_HINT_ID} ${PAGE_REORDER_HINT_ID}` : PAGE_MENU_HINT_ID,
+      reorderEnabled
+        ? `${PAGE_MENU_HINT_ID} ${PAGE_REORDER_HINT_ID} ${PAGE_SELECT_HINT_ID}`
+        : `${PAGE_MENU_HINT_ID} ${PAGE_SELECT_HINT_ID}`,
     );
     pageReorder.decorateCard(card, pageId);
     const thumb = el("div", "page-thumb");
@@ -228,6 +236,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const badges = pageStatusBadgesNode(row.badges);
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
+    if (reorderEnabled) card.append(dragHandle(t("page.dragHandle")));
     pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
     card.setAttribute(
       "aria-label",
@@ -277,9 +286,10 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     reorder: (pageIds, insertionIndex) => actions.reorderPages(pageIds, insertionIndex),
     goToPage: (page) => actions.goToPage(page, true),
   });
-  list.append(pageReorderHint(), pageMenuHint());
+  list.append(pageReorderHint(), pageSelectHint(), pageMenuHint());
   refs.dockBody.append(list);
   pageReorder.bindList(list, refs.dockBody);
+  pageNavigator.bind(list);
   pageReorder.afterRender();
   if (visible.length > max) {
     const note = el(

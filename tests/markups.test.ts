@@ -1,7 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  collectGroupKeys,
   defaultMarkupsViewSettings,
   groupMarkupRows,
+  normalizePinnedViewIds,
+  orderViewsForPicker,
+  togglePinnedView,
   markupsGroupPresetFor,
   markupsSettingsEqual,
   normalizeMarkupsColumns,
@@ -159,5 +163,43 @@ describe("Markups views", () => {
       "Unassigned",
     ]);
     expect(groups[0].count).toBe(3);
+  });
+});
+
+describe("pinned Markups views", () => {
+  it("prunes unknown and duplicate favourite IDs without touching the project", () => {
+    const views = [view({ id: "view_1" }), view({ id: "view_2", name: "Second" })];
+    expect(normalizePinnedViewIds(["view_2", "gone", "view_2"], views)).toEqual(["view_2"]);
+    expect(normalizePinnedViewIds("nope", views)).toEqual([]);
+    expect(normalizePinnedViewIds(undefined, views)).toEqual([]);
+  });
+
+  it("toggles a favourite on and off", () => {
+    expect(togglePinnedView([], "view_1")).toEqual(["view_1"]);
+    expect(togglePinnedView(["view_1"], "view_1")).toEqual([]);
+  });
+
+  it("keeps favourites first in project order", () => {
+    const views = [
+      view({ id: "view_1" }),
+      view({ id: "view_2", name: "Second" }),
+      view({ id: "view_3", name: "Third" }),
+    ];
+    const picker = orderViewsForPicker(views, ["view_3", "view_1"]);
+    expect(picker.pinned.map((entry) => entry.id)).toEqual(["view_1", "view_3"]);
+    expect(picker.others.map((entry) => entry.id)).toEqual(["view_2"]);
+  });
+
+  it("collects every nested group key, including collapsed children", () => {
+    interface Row {
+      value: string;
+    }
+    const rows: Row[] = [{ value: "Building A" }, { value: "Building B" }];
+    const groups = groupMarkupRows(rows, ["building", "room"], (row) => row.value);
+    // A two-level group has one key per level; the key includes its parent path.
+    expect(collectGroupKeys(groups)).toHaveLength(4);
+    const keys = collectGroupKeys(groups);
+    expect(keys[0]).toContain("building:");
+    expect(keys[1]).toContain(keys[0]);
   });
 });

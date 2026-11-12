@@ -12,7 +12,8 @@
     "src/features/projectIntegrity": 400,
     "src/features/statusOverview": 400,
     "src/features/pageStatus": 400,
-    "src/features/pageMenu": 400
+    "src/features/pageMenu": 400,
+    "src/features/listInteraction": 400
   },
   "files": {
     "src/app/App.ts": 1094,
@@ -24,8 +25,8 @@
     "src/pdf/pdfExport.ts": 117,
     "src/state/store.ts": 993,
     "src/styles/dialogs.css": 1694,
-    "src/styles/markups.css": 1027,
-    "src/styles/panels.css": 1016,
+    "src/styles/markups.css": 1038,
+    "src/styles/panels.css": 1058,
     "src/styles/shell.css": 1810,
     "src/ui/dialogs.ts": 525,
     "src/ui/toolFlyouts.ts": 707

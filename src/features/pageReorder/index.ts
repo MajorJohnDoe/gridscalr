@@ -23,7 +23,13 @@ export type {
   PageSelectMode,
   RowSpan,
 } from "./model";
-export { documentRunHeader, PAGE_REORDER_HINT_ID, pageReorderHint } from "./ui";
+export {
+  documentRunHeader,
+  PAGE_REORDER_HINT_ID,
+  PAGE_SELECT_HINT_ID,
+  pageReorderHint,
+  pageSelectHint,
+} from "./ui";
 
 /** One controller per window; the Pages panel rebinds it on every render. */
 export const pageReorder = new PageReorderController();

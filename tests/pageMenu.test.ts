@@ -22,8 +22,11 @@ import {
   pageMenu,
   pageMenuItems,
   pageMovePositions,
+  pageMovePositionsForSelection,
   pageShortcutCommand,
+  moveTargets,
 } from "../src/features/pageMenu";
+import { pageReorder } from "../src/features/pageReorder";
 import { insertProjectPage, reorderPages, type PageActionHost } from "../src/features/pageModel";
 import { pageStatus } from "../src/features/pageStatus";
 import { clearAllRecovery, listRecoveryRecords } from "../src/features/sessionRecovery";
@@ -239,7 +242,7 @@ describe("page keyboard commands", () => {
       reorderPages: (pageIds, index) => void reorderPages(actionHost(), pageIds, index),
     });
     vi.mocked(showModal).mockResolvedValueOnce("move");
-    await movePageToPosition(actions, "page_1");
+    await movePageToPosition(actions, ["page_1"]);
     await flush();
     expect(ids()).toEqual(["page_2", "page_1", "page_3", "page_4", "page_5"]);
     expect(store.canUndo).toBe(true);
@@ -320,5 +323,61 @@ describe("page card menu", () => {
     store.readOnly = true;
     const items = pageMenuItems(store.project!, "page_3", fakeActions());
     expect(items.map((item) => item.label)).toEqual(["Go to page 3"]);
+  });
+});
+
+describe("multi-page move targets", () => {
+  function mountCards(project: Project): HTMLElement[] {
+    document.body.innerHTML = "";
+    const scroll = document.createElement("div");
+    const list = document.createElement("div");
+    list.className = "page-list";
+    scroll.append(list);
+    document.body.append(scroll);
+    const cards = project.pages.map((page, index) => {
+      const card = document.createElement("button");
+      card.className = "page-card";
+      card.dataset.pageId = page.id;
+      card.dataset.page = String(index + 1);
+      card.addEventListener("click", (event) => pageReorder.handleClick(event, page.id));
+      list.append(card);
+      return card;
+    });
+    pageReorder.reset();
+    pageReorder.setActions({ reorder: vi.fn(), goToPage: vi.fn() });
+    pageReorder.bindList(list, scroll);
+    for (const card of cards) pageReorder.decorateCard(card, card.dataset.pageId ?? "");
+    return cards;
+  }
+
+  it("offers only positions that change the block order", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const positions = pageMovePositionsForSelection(project, ["page_1", "page_2"]);
+    expect(positions.map((position) => position.index)).toEqual([3, 4, 5]);
+  });
+
+  it("moves the whole Pages-panel selection through one reorder action", async () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const cards = mountCards(project);
+    cards[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    cards[1].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    expect(moveTargets(store.project!, "page_1")).toEqual(["page_1", "page_2"]);
+    const actions = fakeActions();
+    vi.mocked(showModal).mockResolvedValueOnce("move");
+    await movePageToPosition(actions, ["page_1", "page_2"]);
+    expect(actions.reorderPages).toHaveBeenCalledWith(["page_1", "page_2"], 3);
+    pageReorder.reset();
+  });
+
+  it("falls back to the current page when it is not part of the selection", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const cards = mountCards(project);
+    cards[0].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    cards[1].dispatchEvent(new MouseEvent("click", { bubbles: true, ctrlKey: true }));
+    expect(moveTargets(store.project!, "page_4")).toEqual(["page_4"]);
+    pageReorder.reset();
   });
 });

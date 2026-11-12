@@ -54,16 +54,36 @@ In a **View-only** session, shortcuts that would change the project are ignored:
 | Lock / unlock selection | Context menu or Properties |
 | Hide / show selection | Context menu or Properties |
 
+## Workspace lists
+
+The Pages, Layers and Markups lists share one interaction model:
+
+- a row is focused with `Tab`, then moved through with `ArrowUp` / `ArrowDown`,
+  `Home` and `End`;
+- `Ctrl` / `Cmd` + click toggles a row in the selection and `Shift` + click
+  selects the range from the anchor;
+- `Shift+F10` or the Menu key opens the row menu, and `F2` renames where the
+  list supports inline rename;
+- a selected row is dragged by its grip handle, and a drop line shows where it
+  lands; `Alt` + `ArrowUp` / `ArrowDown` moves it without a pointer, `Alt` +
+  `Home` / `End` moves it to the start or end of its group. Each move is
+  announced to screen readers and is one undo step.
+
+The Markups table is sorted and grouped rather than user-ordered, so it follows
+the focus, selection, filter and collapse conventions but has no drag handle or
+drop line.
+
 ## Pages panel
 
 | Action | Shortcut |
 | --- | --- |
 | Open the page menu | `Shift+F10` or the Menu key |
+| Move focus between page cards | `ArrowUp` / `ArrowDown` / `Home` / `End` |
 | Select one page | Click, or `Shift` + click for a range |
 | Add or remove a page from the selection | `Ctrl` / `Cmd` + click |
 | Move the selected pages up / down | `Alt+Up` / `Alt+Down` |
 | Move the selected pages to the start / end | `Alt+Home` / `Alt+End` |
-| Move the selected pages with the mouse | Drag a selected card to the drop line |
+| Move the selected pages with the mouse | Drag a selected card or its grip to the drop line |
 | Insert a page before / after the current page | `Alt+PageUp` / `Alt+PageDown` |
 | Move the current page to another position | `Alt+Shift+M` |
 | Duplicate the current page with options | `Alt+Shift+D` |
@@ -76,7 +96,41 @@ cannot be undone.
 
 Dragging a card that is part of a multi-page selection moves the whole
 selection. A drop that crosses into another source document shows the document
-name on the drop line. Every drop writes one recovery checkpoint.
+name on the drop line. Every drop writes one recovery checkpoint. `Alt` +
+`Shift` + `M` moves the whole selection when the current page is part of it;
+duplicate and delete stay per page because both are structural.
+
+## Layers panel
+
+| Action | Shortcut |
+| --- | --- |
+| Open the layer menu | `Shift+F10` or the Menu key |
+| Move focus between layers | `ArrowUp` / `ArrowDown` / `Home` / `End` |
+| Rename the focused layer | `F2`, or double-click its name |
+| Make the focused layer the target layer | `Enter` or `Space` |
+| Move the layer up / down in its kind group | `Alt+Up` / `Alt+Down` |
+| Move the layer to the top / bottom of its group | `Alt+Home` / `Alt+End` |
+| Move the layer with the mouse | Drag the layer row or its grip to the drop line |
+| Add or remove an item from the selection | `Ctrl` / `Cmd` + click |
+| Select a range of items | `Shift` + click |
+
+Layer movement stays inside the layer's own kind group: drawing layers and
+measurement layers keep their separate stacks. A drop line shows the target
+position, and the move is one undo step. The search field narrows the list
+without changing the order; a filtered drag keeps the layers it did not show in
+their existing slots.
+
+## Markups panel
+
+| Action | Shortcut |
+| --- | --- |
+| Open the panel | `Ctrl+L` |
+| Move focus between rows | `ArrowUp` / `ArrowDown` / `Home` / `End` |
+| Select one row | Click, or `Shift` + click for a range |
+| Add or remove a row from the selection | `Ctrl` / `Cmd` + click |
+| Open the row menu | `Shift+F10` or the Menu key |
+| Rename the focused markup | `F2` |
+| Go to the focused markup | `Enter` or `Space` |
 
 ## View and navigation
 

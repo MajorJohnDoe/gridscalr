@@ -52,12 +52,19 @@ export interface PageMovePosition {
 }
 
 /**
- * Every position that actually changes the order for one page. The position the
- * page already occupies, and the position directly below it, are omitted
- * because a move there is a no-op.
+ * Every position that actually changes the order for one page or a whole
+ * selection. The position the block already occupies, and the position
+ * directly below it, are omitted because a move there is a no-op.
  */
 export function pageMovePositions(project: Project, pageId: PageId): PageMovePosition[] {
-  const selected = new Set([pageId]);
+  return pageMovePositionsForSelection(project, [pageId]);
+}
+
+export function pageMovePositionsForSelection(
+  project: Project,
+  pageIds: readonly PageId[],
+): PageMovePosition[] {
+  const selected = new Set(pageIds);
   const positions: PageMovePosition[] = [];
   for (let index = 0; index <= project.pages.length; index += 1) {
     if (!pageListOrderChanges(project.pages, selected, index)) continue;

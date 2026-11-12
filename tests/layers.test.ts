@@ -19,6 +19,7 @@ import {
   moveLayer,
   moveTargetLayers,
   normalizeLayerOrder,
+  reorderLayerGroup,
   removeItem,
   removeLayer,
   setLayerLockedGlobally,
@@ -245,5 +246,57 @@ describe("page-scoped layer state", () => {
     expect(created.id).not.toBe(current.id);
     expect(created.homePageId).toBe(pageIdFor(2));
     expect(layerVisibleOnPage(created, pageIdFor(2))).toBe(true);
+  });
+});
+
+describe("layer group order", () => {
+  const group = (project: ReturnType<typeof makeProject>, kind: "draw" | "measure") =>
+    layersForKind(project, kind).map((layer) => layer.id);
+
+  it("reorders one kind from a top-to-bottom rendered order", () => {
+    const project = makeProject();
+    const [first] = layersForKind(project, "draw");
+    const middle = addLayer(project, "draw");
+    const last = addLayer(project, "draw");
+    const measureBefore = group(project, "measure");
+    expect(group(project, "draw")).toEqual([first.id, middle.id, last.id]);
+    const changed = reorderLayerGroup(project, "draw", [first.id, last.id, middle.id]);
+    expect(changed).toBe(true);
+    expect(group(project, "draw")).toEqual([middle.id, last.id, first.id]);
+    expect(group(project, "measure")).toEqual(measureBefore);
+    // Draw layers stay before measurement layers in the project list.
+    expect(project.layers.map((layer) => layer.kind)).toEqual(
+      project.layers
+        .map((layer) => layer.kind)
+        .slice()
+        .sort((a) => (a === "draw" ? -1 : 1)),
+    );
+  });
+
+  it("returns false when the rendered order is already the paint order", () => {
+    const project = makeProject();
+    const rendered = group(project, "draw").slice().reverse();
+    expect(reorderLayerGroup(project, "draw", rendered)).toBe(false);
+    expect(reorderLayerGroup(project, "draw", ["missing", rendered[0]])).toBe(false);
+  });
+
+  it("keeps a layer the caller did not list in its slot", () => {
+    const project = makeProject();
+    const [bottom] = layersForKind(project, "draw");
+    const middle = addLayer(project, "draw");
+    const top = addLayer(project, "draw");
+    // Rendered order is top, middle, bottom; pretend `top` is filtered out.
+    reorderLayerGroup(project, "draw", [bottom.id, middle.id]);
+    expect(group(project, "draw")).toEqual([middle.id, bottom.id, top.id]);
+  });
+
+  it("still moves a layer one step with the existing command", () => {
+    const project = makeProject();
+    const [first] = layersForKind(project, "measure");
+    const second = addLayer(project, "measure");
+    expect(moveLayer(project, first.id, 1)).toBe(true);
+    expect(group(project, "measure")).toEqual([second.id, first.id]);
+    expect(moveLayer(project, first.id, -1)).toBe(true);
+    expect(group(project, "measure")).toEqual([first.id, second.id]);
   });
 });

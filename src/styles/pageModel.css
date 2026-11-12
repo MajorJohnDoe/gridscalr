@@ -146,6 +146,15 @@
   opacity: 0.55;
 }
 
+.page-card > .list-drag-handle {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  padding: 2px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bg-deep) 78%, transparent);
+}
+
 .page-card:focus-visible {
   outline: 2px solid var(--jade-bright);
   outline-offset: 1px;
@@ -204,7 +213,8 @@
   font-variant-numeric: tabular-nums;
 }
 
-.page-drop-line {
+.page-drop-line,
+.layer-drop-line {
   position: absolute;
   left: 7px;
   right: 7px;
@@ -216,7 +226,8 @@
   z-index: 3;
 }
 
-.page-drop-line[hidden] {
+.page-drop-line[hidden],
+.layer-drop-line[hidden] {
   display: none;
 }
 
@@ -224,7 +235,8 @@
   background: var(--status-warning);
 }
 
-.page-drop-label {
+.page-drop-label,
+.layer-drop-label {
   position: absolute;
   right: 0;
   bottom: 6px;
@@ -236,12 +248,15 @@
   white-space: nowrap;
 }
 
-.page-drop-label[hidden] {
+.page-drop-label[hidden],
+.layer-drop-label[hidden] {
   display: none;
 }
 
 .page-reorder-hint,
-.page-reorder-announcer {
+.layer-reorder-hint,
+.page-reorder-announcer,
+.layer-reorder-announcer {
   position: absolute;
   width: 1px;
   height: 1px;

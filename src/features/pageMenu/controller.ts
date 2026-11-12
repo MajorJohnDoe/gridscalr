@@ -6,6 +6,7 @@ import { showPopoverAt } from "../../ui/popover";
 import { pageMenuItems } from "./menu";
 import { pageShortcutCommand, pageShortcutReadsOnly } from "./model";
 import { insertPageNear, movePageToPosition } from "./operations";
+import { moveTargets } from "./targets";
 
 /** Pointer or card position the menu opens at. */
 export interface PageMenuPosition {
@@ -70,7 +71,7 @@ export class PageMenuController {
         void insertPageNear(actions, pageId, "after");
         break;
       case "movePage":
-        void movePageToPosition(actions, pageId);
+        void movePageToPosition(actions, moveTargets(project, pageId));
         break;
       case "duplicatePage":
         actions.duplicatePage(pageId);

@@ -1,4 +1,5 @@
 import { countTypeLabel } from "../../features/countTypes/model";
+import { RowNavigator, collapseAllKeys, expandAllKeys } from "../../features/listInteraction";
 import {
   ALL_SYMBOL_CATEGORIES,
   symbolCategoryLabel,
@@ -7,10 +8,12 @@ import { t } from "../../i18n";
 import {
   MARKUPS_GROUP_PRESETS,
   defaultMarkupsViewSettings,
+  collectGroupKeys,
   groupMarkupRows,
   markupsColumnLabel,
   markupsGroupPresetFor,
   markupsGroupPresetLabel,
+  orderViewsForPicker,
 } from "../../model/markups";
 import type { MarkupGroup } from "../../model/markups";
 import type { SymbolCategory } from "../../model/types";
@@ -38,11 +41,14 @@ import {
   saveCurrentView,
   saveViewAs,
   syncProject,
+  togglePinnedActiveView,
   updateViewControls,
 } from "./views";
 
 const MARKUPS_ROW_HEIGHT = 28;
 const MARKUPS_OVERSCAN = 8;
+
+const markupsNavigator = new RowNavigator("tr.markups-row");
 
 export function bindResizer(refs: ShellRefs): void {
   if (markupsState.resizerBound) return;
@@ -77,6 +83,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     markupsState.activeViewId = null;
     markupsState.settings = defaultMarkupsViewSettings();
     markupsState.viewDirty = false;
+    markupsState.pinnedViewIds = [];
     markupsState.collapsedGroups.clear();
   } else {
     syncProject(project);
@@ -106,8 +113,26 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   viewSelect.setAttribute("aria-label", t("markups.view"));
   viewSelect.title = t("markups.applyView");
   viewSelect.append(option("", t("markups.allMarkups"), !markupsState.activeViewId));
-  for (const view of project.markupsViews) {
-    viewSelect.append(option(view.id, view.name, view.id === markupsState.activeViewId));
+  const picker = orderViewsForPicker(project.markupsViews, markupsState.pinnedViewIds);
+  if (picker.pinned.length) {
+    const group = document.createElement("optgroup");
+    group.label = t("markups.pinnedViews");
+    for (const view of picker.pinned) {
+      group.append(option(view.id, view.name, view.id === markupsState.activeViewId));
+    }
+    viewSelect.append(group);
+  }
+  if (picker.others.length && picker.pinned.length) {
+    const group = document.createElement("optgroup");
+    group.label = t("markups.otherViews");
+    for (const view of picker.others) {
+      group.append(option(view.id, view.name, view.id === markupsState.activeViewId));
+    }
+    viewSelect.append(group);
+  } else {
+    for (const view of picker.others) {
+      viewSelect.append(option(view.id, view.name, view.id === markupsState.activeViewId));
+    }
   }
   viewSelect.value = markupsState.activeViewId ?? "";
   viewSelect.addEventListener("change", () => {
@@ -144,6 +169,13 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   markupsState.saveViewBtn.setAttribute("aria-label", t("markups.saveView"));
   markupsState.saveViewBtn.disabled = store.readOnly;
   markupsState.saveViewBtn.addEventListener("click", () => saveCurrentView(actions));
+
+  markupsState.pinViewBtn = el("button", "icon-btn markups-pin-view");
+  markupsState.pinViewBtn.type = "button";
+  markupsState.pinViewBtn.innerHTML = icon("star", 14);
+  markupsState.pinViewBtn.setAttribute("aria-pressed", "false");
+  markupsState.pinViewBtn.disabled = !markupsState.activeViewId;
+  markupsState.pinViewBtn.addEventListener("click", () => togglePinnedActiveView(actions));
 
   const more = el("button", "icon-btn");
   more.type = "button";
@@ -194,6 +226,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     viewSelect,
     markupsState.viewDirtyEl,
     markupsState.saveViewBtn,
+    markupsState.pinViewBtn,
     more,
     columns,
     exportCsv,
@@ -338,6 +371,27 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     refreshTable();
   });
 
+  let currentGroups: MarkupGroup<MarkupRow>[] = [];
+  const collapseAll = el("button", "icon-btn markups-collapse-all");
+  collapseAll.type = "button";
+  collapseAll.title = t("markups.collapseAll");
+  collapseAll.setAttribute("aria-label", t("markups.collapseAll"));
+  collapseAll.innerHTML = icon("chevronsUp", 14);
+  collapseAll.addEventListener("click", () => {
+    markupsState.collapsedGroups = collapseAllKeys(collectGroupKeys(currentGroups));
+    refreshTable();
+  });
+
+  const expandAll = el("button", "icon-btn markups-expand-all");
+  expandAll.type = "button";
+  expandAll.title = t("markups.expandAll");
+  expandAll.setAttribute("aria-label", t("markups.expandAll"));
+  expandAll.innerHTML = icon("chevronsDown", 14);
+  expandAll.addEventListener("click", () => {
+    markupsState.collapsedGroups = expandAllKeys();
+    refreshTable();
+  });
+
   const search = el("input", "input markups-search");
   search.type = "search";
   search.placeholder = t("markups.searchPlaceholder");
@@ -362,6 +416,8 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     categorySelect,
     countTypeSelect,
     groupSelect,
+    collapseAll,
+    expandAll,
     search,
     selectAll,
   );
@@ -371,6 +427,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   const table = el("table", "markups-table");
   wrap.append(table);
   panel.append(wrap);
+  markupsNavigator.bind(wrap);
 
   const foot = el("div", "markups-foot");
   const footLeft = el("span", "markups-foot-count", "");
@@ -513,13 +570,12 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     rows = filteredRows(currentProject);
     displayEntries = [];
     flatRows = [];
+    currentGroups = [];
     if (rows.length && markupsState.settings.groupBy.length) {
-      flattenGroups(
-        groupMarkupRows(rows, markupsState.settings.groupBy, (row, field) =>
-          groupValue(row, field, currentProject),
-        ),
-        0,
+      currentGroups = groupMarkupRows(rows, markupsState.settings.groupBy, (row, field) =>
+        groupValue(row, field, currentProject),
       );
+      flattenGroups(currentGroups, 0);
     } else {
       for (const row of rows) {
         displayEntries.push({ type: "row", row });
@@ -535,6 +591,11 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
       count: rows.length,
       selected: store.ui.selection.length,
     });
+    const grouped =
+      markupsState.settings.groupBy.length > 0 &&
+      displayEntries.some((entry) => entry.type === "group");
+    collapseAll.disabled = !grouped;
+    expandAll.disabled = !grouped;
     updateViewControls();
   }
 

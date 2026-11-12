@@ -3,7 +3,7 @@ import type { PageId } from "../../model/types";
 import type { PanelActions } from "../../ui/panels";
 import { toast } from "../../ui/toast";
 import { store } from "../../state/store";
-import { pageInsertTarget, pageMovePositions, type PageInsertDirection } from "./model";
+import { pageInsertTarget, pageMovePositionsForSelection, type PageInsertDirection } from "./model";
 import {
   insertPageDialog,
   insertPositionLabel,
@@ -39,20 +39,29 @@ export async function insertPageNear(
   actions.insertPage(pageId, confirmed.index);
 }
 
-/** Moves one page to a chosen position through the undoable reorder action. */
-export async function movePageToPosition(actions: PanelActions, pageId: PageId): Promise<void> {
+/**
+ * Moves one page or the whole Pages-panel selection to a chosen position
+ * through the undoable reorder action. One call is one undo step.
+ */
+export async function movePageToPosition(
+  actions: PanelActions,
+  pageIds: readonly PageId[],
+): Promise<void> {
   if (store.readOnly) return;
   const project = store.project;
-  if (!project) return;
-  const positions = pageMovePositions(project, pageId);
+  if (!project || !pageIds.length) return;
+  const positions = pageMovePositionsForSelection(project, pageIds);
   if (!positions.length) return;
   const index = await movePageDialog({
-    subtitle: pagePositionLabel(project, pageId),
+    subtitle:
+      pageIds.length > 1
+        ? t("page.selectionSubtitle", { count: pageIds.length })
+        : pagePositionLabel(project, pageIds[0]),
     positions,
   });
   if (index === null) return;
   const chosen = positions.find((position) => position.index === index);
   if (!chosen) return;
-  actions.reorderPages([pageId], chosen.index);
+  actions.reorderPages([...pageIds], chosen.index);
   toast(t("page.movedToast", { position: movePositionLabel(chosen) }), "info");
 }

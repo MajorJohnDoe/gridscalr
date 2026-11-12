@@ -452,6 +452,49 @@ export function reorderLayer(project: Project, layerId: string, beforeLayerId: s
   return true;
 }
 
+/**
+ * Replaces the order of one layer kind from a top-to-bottom rendered order.
+ * IDs that are not part of the kind are ignored, and layers the caller did not
+ * list keep their original slot, so reordering a page-scoped or filtered list
+ * never moves a layer it did not show. Returns false when nothing changed.
+ */
+export function reorderLayerGroup(
+  project: Project,
+  kind: LayerKind,
+  topToBottomIds: readonly string[],
+): boolean {
+  const group = layersForKind(project, kind);
+  if (!group.length) return false;
+  const byId = new Map(group.map((layer) => [layer.id, layer]));
+  const requested: string[] = [];
+  const seen = new Set<string>();
+  for (const id of topToBottomIds) {
+    if (!byId.has(id) || seen.has(id)) continue;
+    seen.add(id);
+    requested.push(id);
+  }
+  if (!requested.length) return false;
+  const rendered = [...group].reverse();
+  let cursor = 0;
+  for (let index = 0; index < rendered.length; index += 1) {
+    if (!seen.has(rendered[index].id)) continue;
+    const next = byId.get(requested[cursor]);
+    cursor += 1;
+    if (next) rendered[index] = next;
+  }
+  const paintOrder = rendered.reverse();
+  if (paintOrder.every((layer, index) => layer.id === group[index]?.id)) return false;
+  const others = project.layers.filter((layer) => layer.kind !== kind);
+  const draw = project.layers.some((layer) => layer.kind === "draw");
+  project.layers =
+    kind === "draw"
+      ? [...paintOrder, ...others]
+      : draw
+        ? [...others, ...paintOrder]
+        : [...paintOrder, ...others];
+  return true;
+}
+
 export function addItem(project: Project, layerId: string, item: MarkupItem): void {
   const layer = project.layers.find((l) => l.id === layerId);
   if (!layer) throw new Error(t("layers.targetMissing"));
