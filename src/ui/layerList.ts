@@ -1,8 +1,7 @@
-import { layerAppliesToPage } from "../model/layers";
 import { pageIdAt } from "../model/pages";
-import type { LayerKind, Project } from "../model/types";
+import type { LayerKind } from "../model/types";
 import { store } from "../state/store";
-import { el, escapeHtml } from "./dom";
+import { el } from "./dom";
 import { icon } from "./icons";
 import { RowNavigator } from "../features/listInteraction";
 import { layerAction } from "./layerAction";
@@ -125,19 +124,6 @@ function sectionFoot(kind: LayerKind, actions: PanelActions): HTMLElement {
   return foot;
 }
 
-function activeLayerNote(project: Project, pageId: string, refs: ShellRefs): void {
-  const active = project.layers.find((layer) => layer.id === project.activeLayerId);
-  if (!active) return;
-  const note = el("div", "empty-note small");
-  note.style.paddingTop = "4px";
-  const applies = layerAppliesToPage(active, pageId);
-  note.innerHTML = `${icon("info", 14)} ${t("layer.itemsCreatedIn", {
-    name: "<strong>" + escapeHtml(active.name) + "</strong>",
-    kind: t(active.kind === "measure" ? "layer.measurementLayer" : "layer.drawingLayer"),
-  })}${applies ? "" : t("layer.noItemsOnPageSuffix", { page: store.ui.page })}`;
-  refs.dockBody.append(note);
-}
-
 export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
   const project = store.project!;
   const pageId = pageIdAt(project, store.ui.page) ?? "";
@@ -184,7 +170,6 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     empty.append(el("div", "", t("layer.noLayersOnPage", { page: store.ui.page })));
     refs.dockBody.append(empty);
   }
-  activeLayerNote(project, pageId, refs);
 
   navigator.bind(refs.dockBody);
   layerTreeController.afterRender();
