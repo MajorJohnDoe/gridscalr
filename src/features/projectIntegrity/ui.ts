@@ -5,12 +5,16 @@ import { confirmDialog, showModal } from "../../ui/dialogs";
 import { el } from "../../ui/dom";
 import type { DoctorLoadReport } from "./doctor";
 import type { RepairKind } from "./repair";
+import type { DoctorSourceCleanupResult } from "./sourceAvailability";
+import type { DoctorSourceSnapshot } from "./sourceModel";
+import { addDoctorSources, type DoctorSourceRequest } from "./sourceUi";
 
 type MessageKey = Parameters<typeof t>[0];
 
 export type ProjectDoctorDialogResult =
   | { kind: "close" | "save" | "export" | "open" | "open-read-only" }
-  | { kind: "repair"; repair: RepairKind };
+  | { kind: "repair"; repair: RepairKind }
+  | DoctorSourceRequest;
 
 export interface ProjectDoctorDialogOptions {
   project: Project;
@@ -20,6 +24,11 @@ export interface ProjectDoctorDialogOptions {
   canOpenReadOnly: boolean;
   loadReport?: DoctorLoadReport;
   notice?: { repair: RepairKind; changed: number };
+  sources?: DoctorSourceSnapshot;
+  sourceNotice?: DoctorSourceCleanupResult;
+  canChangeSources?: boolean;
+  canRelinkSources?: boolean;
+  canCopySources?: boolean;
 }
 
 const ENTITY_KEYS: Record<string, MessageKey> = {
@@ -90,6 +99,11 @@ export async function projectDoctorDialog(
   const errors = options.issues.filter((entry) => entry.severity === "error");
   const warnings = options.issues.filter((entry) => entry.severity === "warning");
   let pending: ProjectDoctorDialogResult | null = null;
+  let closeDialog: () => void = () => undefined;
+  const request = (next: DoctorSourceRequest): void => {
+    pending = next;
+    closeDialog();
+  };
   const body = el("div", "form-stack");
   body.append(
     el(
@@ -127,6 +141,14 @@ export async function projectDoctorDialog(
       body.append(button);
     }
   }
+  addDoctorSources(body, {
+    snapshot: options.sources,
+    notice: options.sourceNotice,
+    canChange: options.canChangeSources ?? false,
+    canRelink: options.canRelinkSources ?? false,
+    canCopy: options.canCopySources ?? false,
+    request,
+  });
 
   const actions = [
     { label: t("common.cancel"), value: "cancel" },
@@ -165,6 +187,7 @@ export async function projectDoctorDialog(
     wide: true,
     actions,
     onMount: (modal, close) => {
+      closeDialog = close;
       for (const button of modal.querySelectorAll<HTMLButtonElement>("[data-repair]")) {
         button.addEventListener("click", () => {
           const repair = button.dataset.repair as RepairKind;

@@ -305,8 +305,9 @@ holds the inspection-tool rule and the view-only panel guard, and
 `src/features/statusOverview/` builds the save, backup, autosave and validation
 popover. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator
-surface, explicit repairs, the project doctor, load-report presentation and
-path-free diagnostics; `src/model/integrity.ts` holds the pure rules.
+surface, explicit repairs, the project doctor, source availability and explicit
+unused managed-copy cleanup, load-report presentation and path-free diagnostics;
+`src/model/integrity.ts` holds the pure rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a

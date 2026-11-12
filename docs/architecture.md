@@ -40,6 +40,10 @@ src/
   features/projectImport/ui.ts graphical source-page picker with lazy previews
   features/listInteraction/ shared list selection, drag, drop line, keyboard move, filter and collapse rules
   features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
+  features/projectIntegrity/ shared validator, doctor loop, load report, source availability and unused-copy cleanup
+  features/projectIntegrity/sourceModel.ts pure source snapshot and canonical referenced/orphan classification
+  features/projectIntegrity/sourceAvailability.ts source checks, doctor source actions and verified unused-copy deletion
+  features/projectIntegrity/sourceUi.ts localized doctor source rows, orphan selection and cleanup request
   features/pageReorder/ page-card drag, multi-selection, document drop plan and keyboard reorder
   features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
   features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
@@ -272,6 +276,7 @@ src-tauri/
   src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
+  src/source_cleanup.rs  managed-copy folder inventory and guarded single-file deletion
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions
   tauri.conf.json        undecorated Windows/Linux window drawn by ui/windowChrome.ts

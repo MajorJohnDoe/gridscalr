@@ -1822,3 +1822,26 @@ No entries yet.
   Do not infer a name from the document name: it is the drawing, not the project.
 - **Related:** #188, `src/features/importProvenance/`, `docs/project-file.md`,
   `docs/limitations.md`.
+
+### F-084 — Unused-copy cleanup only inventories the top level of the drawings folder
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 8 — source availability and managed-copy cleanup
+- **Severity:** P3
+- **Area:** source storage / project doctor
+- **Status:** accepted — a nested layout does not exist yet
+- **Evidence:** `src-tauri/src/source_cleanup.rs` reads `<project>.drawings/`
+  non-recursively and lists only regular `.pdf` files directly inside it.
+  `classifyManagedCopies()` in `src/features/projectIntegrity/sourceModel.ts`
+  protects a nested relative path if one is handed to it, but the listing never
+  produces one.
+- **Problem:** If a later change organises managed copies into subfolders, or a
+  user moves a copy into one, those files are invisible to the cleanup list and
+  cannot be deleted from the doctor.
+- **Impact:** No deletion risk and no project corruption; only disk usage. The
+  conservative listing is deliberate: a recursive walk could offer a file from
+  an unrelated folder for deletion.
+- **Next step:** If a nested managed-copy layout is introduced, list only the
+  exact subfolders that layout defines and keep canonical path protection for
+  the reference set. Do not replace this with a recursive walk of the folder.
+- **Related:** #189, F-017, `docs/limitations.md`, `src-tauri/src/source_cleanup.rs`.

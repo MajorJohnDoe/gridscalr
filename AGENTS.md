@@ -422,8 +422,12 @@ src/features/listInteraction/ shared list selection, drag controller, drop line,
 src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
-src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics
-src/features/projectIntegrity/ui.ts localized doctor, issue list and repair controls
+src/features/projectIntegrity/doctor.ts doctor loop, load-report decision, source section wiring and path-free diagnostics
+src/features/projectIntegrity/ui.ts localized doctor, issue list, repair controls and source section
+src/features/projectIntegrity/sourceModel.ts pure source-availability snapshot and referenced/orphan classification
+src/features/projectIntegrity/sourceAvailability.ts source checks, explicit source actions and unused managed-copy deletion
+src/features/projectIntegrity/sourceFiles.ts managed-copy listing and deletion IPC wrappers
+src/features/projectIntegrity/sourceUi.ts localized doctor source rows, orphan selection and cleanup request
 src/features/conflictedCopies/ strict discovery naming, delete guards, manager flow and dialog for conflicted copies
 src/features/statusOverview/ pure project-status model, one-read controller and the status popover
 src/features/viewOnly/ inspection-tool rule and the panel guard for a true view-only session
@@ -553,6 +557,7 @@ src/features/sourceStorage/  reference/managed source modes, managed copies, con
 src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage
 src/app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
 src-tauri/src/source_copy.rs verified managed copy, source hash and folder checksum search
+src-tauri/src/source_cleanup.rs managed-copy folder inventory and guarded single-file deletion
 src-tauri/src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
 src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts

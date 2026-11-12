@@ -259,6 +259,21 @@ and zero documents are valid, not corrupt.
   explicit repairs for duplicate IDs, dangling references and stale OCR. A
   repair changes an in-memory copy only; **Save repaired copy…** writes that copy
   to a new file. The source project is never repaired in place.
+- **Sources:** the doctor also checks every external drawing and reports it as
+  available, missing or changed, and separates reference drawings from managed
+  copies. A missing or changed source is a warning, never a save error.
+  **Relink…** opens the existing relink flow for that drawing, and **Copy into
+  project** stores an available reference as a managed copy. Source actions are
+  only offered while the project is open and writable; a load report checks
+  availability without changing anything. After an in-memory repair, save the
+  repaired copy first — source actions stay disabled until then so the repaired
+  copy and the open project cannot diverge.
+- **Unused managed copies:** the same section lists every file in the project's
+  drawings folder that no document references, with its size. Select the copies,
+  choose **Remove selected…**, review the full list and count, and confirm. The
+  listing and the reference set are checked again immediately before each
+  deletion, so a copy that is still referenced, or became referenced while the
+  dialog was open, is skipped. Nothing is deleted automatically.
 - **View-only:** choose **Open view-only** in a load report to inspect the
   damaged project without changing it. Use **Save a copy…** or **Save repaired
   copy…** to keep work.

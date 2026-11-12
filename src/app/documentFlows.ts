@@ -50,6 +50,7 @@ export interface DocumentFlowHost {
   confirmLoadReport: (
     report: ProjectLoadReport,
     project: Project,
+    projectPath: string | null,
   ) => Promise<{ decision: LoadReportDecision; project?: Project }>;
 }
 
@@ -163,7 +164,7 @@ export async function loadProjectText(
     report.repaired.some((entry) => entry.count > 0) ||
     report.issues.length > 0;
   if (reportHasContent) {
-    const outcome = await host.confirmLoadReport(report, project);
+    const outcome = await host.confirmLoadReport(report, project, projectPath);
     if (outcome.decision === "cancel") return false;
     chosen = outcome.project ?? project;
     readOnly = outcome.decision === "read-only";

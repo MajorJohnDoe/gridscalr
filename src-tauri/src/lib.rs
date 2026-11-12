@@ -8,6 +8,7 @@ mod project_lease;
 mod project_write;
 #[cfg(debug_assertions)]
 mod smoke;
+mod source_cleanup;
 mod source_copy;
 
 use std::sync::Mutex;
@@ -145,6 +146,8 @@ pub fn run() {
             source_copy::source_copy_to_project,
             source_copy::source_file_hash,
             source_copy::source_find_by_hash,
+            source_cleanup::source_list_managed_copies,
+            source_cleanup::source_delete_managed_copy,
             package::package_create,
             package::package_inspect,
             package::package_extract,

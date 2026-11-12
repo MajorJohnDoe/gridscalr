@@ -428,14 +428,16 @@ export class App {
       recommendSourceStorage: (path, name, kind) =>
         this.sourceStorage.recommendImport(path, name, kind),
       applySourceStorage: (documentId) => this.sourceStorage.applyImportChoice(documentId),
-      confirmLoadReport: (report, project) =>
-        confirmProjectLoadReportFlow(this.projectDoctorHost(), report, project),
+      confirmLoadReport: (report, project, projectPath) =>
+        confirmProjectLoadReportFlow(this.projectDoctorHost(), report, project, projectPath),
     };
   }
 
   private projectDoctorHost(): ProjectDoctorFlowHost {
     return {
       saveRepairedCopy: (project) => this.session.saveProjectCopyOf(project, "-repaired"),
+      relinkSource: (documentId) => this.sourceStorage.relink(documentId),
+      copySourceIntoProject: (documentId) => this.sourceStorage.copyIntoProject(documentId),
     };
   }
 

@@ -34,6 +34,68 @@ function resolvedDocumentPath(
   return null;
 }
 
+/**
+ * Existence, size and checksum for every external document in `project`.
+ *
+ * The project doctor reuses this check for a project that is not open yet, so
+ * it takes the project and its path explicitly instead of reading the store.
+ * `cache` is the monitor's per-path hash cache; a caller that checks once can
+ * leave it out. An embedded TIF page needs no external file and is skipped.
+ */
+export async function checkSourceStatuses(
+  project: Project,
+  projectPath: string | null,
+  cache?: Map<string, string>,
+): Promise<SourceFileStatus[]> {
+  const next: SourceFileStatus[] = [];
+  for (const document of project.documents) {
+    // Embedded TIF pages need no external file.
+    if (document.kind === "tiff" && document.embeddedPdf) continue;
+    const storage = document.storage === "managed" ? "managed" : "reference";
+    const path = resolvedDocumentPath(document, projectPath);
+    if (!path) continue;
+    if (!(await pathExists(path))) {
+      next.push({
+        documentId: document.id,
+        name: document.name,
+        path,
+        state: "missing",
+        storage,
+      });
+      continue;
+    }
+    const size = await fileSize(path);
+    let state: SourceFileState = "ok";
+    if (document.kind === "pdf" && document.sha256) {
+      const key = `${path}|${size ?? 0}|${document.sha256}`;
+      let hash = cache?.get(key);
+      if (!hash) {
+        try {
+          hash = await sha256Hex(await readFileBytes(path));
+          if (cache) {
+            if (cache.size > 256) cache.clear();
+            cache.set(key, hash);
+          }
+        } catch {
+          hash = undefined;
+        }
+      }
+      if (hash && hash.toLowerCase() !== document.sha256.toLowerCase()) state = "changed";
+      else if (!hash && size !== null && size !== document.sizeBytes) state = "changed";
+    } else if (document.sizeBytes && size !== null && size !== document.sizeBytes) {
+      state = "changed";
+    }
+    next.push({
+      documentId: document.id,
+      name: document.name,
+      path,
+      state,
+      storage,
+    });
+  }
+  return next;
+}
+
 class SourceStatusMonitor {
   private statuses: SourceFileStatus[] = [];
   private checkedAt: string | null = null;
@@ -94,51 +156,7 @@ class SourceStatusMonitor {
     this.checking = true;
     try {
       const projectPath = store.projectPath;
-      const next: SourceFileStatus[] = [];
-      for (const document of project.documents) {
-        // Embedded TIF pages need no external file.
-        if (document.kind === "tiff" && document.embeddedPdf) continue;
-        const storage = document.storage === "managed" ? "managed" : "reference";
-        const path = resolvedDocumentPath(document, projectPath);
-        if (!path) continue;
-        if (!(await pathExists(path))) {
-          next.push({
-            documentId: document.id,
-            name: document.name,
-            path,
-            state: "missing",
-            storage,
-          });
-          continue;
-        }
-        const size = await fileSize(path);
-        let state: SourceFileState = "ok";
-        if (document.kind === "pdf" && document.sha256) {
-          const key = `${path}|${size ?? 0}|${document.sha256}`;
-          let hash = this.hashCache.get(key);
-          if (!hash) {
-            try {
-              hash = await sha256Hex(await readFileBytes(path));
-              if (this.hashCache.size > 256) this.hashCache.clear();
-              this.hashCache.set(key, hash);
-            } catch {
-              hash = undefined;
-            }
-          }
-          if (hash && hash.toLowerCase() !== document.sha256.toLowerCase()) state = "changed";
-          else if (!hash && size !== null && size !== document.sizeBytes) state = "changed";
-        } else if (document.sizeBytes && size !== null && size !== document.sizeBytes) {
-          state = "changed";
-        }
-        next.push({
-          documentId: document.id,
-          name: document.name,
-          path,
-          state,
-          storage,
-        });
-      }
-      this.statuses = next;
+      this.statuses = await checkSourceStatuses(project, projectPath, this.hashCache);
       this.checkedAt = new Date().toISOString();
     } finally {
       this.checking = false;
