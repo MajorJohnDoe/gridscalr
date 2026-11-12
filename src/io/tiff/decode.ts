@@ -5,13 +5,21 @@ import { decodeLzw } from "./lzw";
 import { decodePackBits } from "./packbits";
 import { undoHorizontalPredictor } from "./predictor";
 
-/** One strip converted into PDF-ready samples. */
+/** One strip or one tile band converted into PDF-ready samples. */
 export interface DecodedStrip {
   data: Uint8Array;
   width: number;
   rows: number;
   bitsPerComponent: 1 | 8;
   colorSpace: "DeviceGray" | "DeviceRGB";
+}
+
+/** The PDF pixel shape a page's samples produce after photometric conversion. */
+export interface RasterShape {
+  bitsPerComponent: 1 | 8;
+  colorSpace: "DeviceGray" | "DeviceRGB";
+  /** Components in the output buffer: 1 for grey, 3 for RGB(A). */
+  components: number;
 }
 
 /**
@@ -50,15 +58,28 @@ function uniformBits(page: TiffPage): number {
 }
 
 /**
- * Rejects every page the raster pipeline cannot represent, before a strip is
- * decoded. Each reason names the tag value so the message is actionable.
+ * Output shape shared by the strip and tile paths. Bilevel greyscale stays
+ * packed; every wider depth is expanded to 8 bits per component.
+ */
+export function rasterShape(page: TiffPage): RasterShape {
+  if (uniformBits(page) === 1 && page.samplesPerPixel === 1) {
+    return { bitsPerComponent: 1, colorSpace: "DeviceGray", components: 1 };
+  }
+  const gray = page.samplesPerPixel === 1;
+  return {
+    bitsPerComponent: 8,
+    colorSpace: gray ? "DeviceGray" : "DeviceRGB",
+    components: gray ? 1 : 3,
+  };
+}
+
+/**
+ * Rejects every page the raster pipeline cannot represent, before a strip or
+ * tile is decoded. Each reason names the tag value so the message is
+ * actionable.
  */
 export function assertDecodablePage(page: TiffPage): void {
-  if (page.tiled) throw new TiffImportError(t("tiff.tiledUnsupported"));
   if (!SUPPORTED_COMPRESSIONS.has(page.compression)) {
-    if (page.compression === 6 || page.compression === 7) {
-      throw new TiffImportError(t("tiff.jpegUnsupported"));
-    }
     throw new TiffImportError(t("tiff.unsupportedCompression", { compression: page.compression }));
   }
   if (page.planarConfig !== 1) throw new TiffImportError(t("tiff.planarUnsupported"));
@@ -138,32 +159,37 @@ function reverseFillOrder(data: Uint8Array, rowBytes: number, rows: number): voi
   }
 }
 
-/** Decodes one strip into PDF-ready samples. Call `assertDecodablePage` first. */
-export function decodeStrip(
+/**
+ * Decodes one region (a strip or a tile) into PDF-ready samples.
+ * `width` is the region's row width: the page width for a strip and the tile
+ * width for a tile, because both the row stride and the predictor restart
+ * there. Call `assertDecodablePage` first.
+ */
+export function decodeRegion(
   page: TiffPage,
-  strip: TiffStrip,
-  bytes: Uint8Array,
+  input: Uint8Array,
+  width: number,
+  rows: number,
   littleEndian: boolean,
 ): DecodedStrip {
   const bits = uniformBits(page);
   const samples = page.samplesPerPixel;
-  const bytesPerRow = Math.ceil((page.width * bits * samples) / 8);
-  const expected = strip.rows * bytesPerRow;
+  const bytesPerRow = Math.ceil((width * bits * samples) / 8);
+  const expected = rows * bytesPerRow;
   if (expected <= 0) throw new TiffImportError(t("tiff.damagedDirectory"));
 
-  const input = bytes.subarray(strip.offset, strip.offset + strip.byteCount);
   const data = decodeCompressed(page, input, expected);
   if (page.predictor === 2) {
     undoHorizontalPredictor(data, {
-      width: page.width,
-      rows: strip.rows,
+      width,
+      rows,
       bitsPerSample: bits,
       samplesPerPixel: samples,
       littleEndian,
     });
   }
   if (page.fillOrder === 2 && bits < 8) {
-    reverseFillOrder(data, bytesPerRow, strip.rows);
+    reverseFillOrder(data, bytesPerRow, rows);
   }
 
   // Bilevel greyscale stays packed; PDF handles one bit per component directly.
@@ -173,15 +199,15 @@ export function decodeStrip(
     }
     return {
       data,
-      width: page.width,
-      rows: strip.rows,
+      width,
+      rows,
       bitsPerComponent: 1,
       colorSpace: "DeviceGray",
     };
   }
 
   const outputSamples = samples === 1 ? 1 : 3;
-  const out = new Uint8Array(page.width * strip.rows * outputSamples);
+  const out = new Uint8Array(width * rows * outputSamples);
   const scale = SCALE[bits];
   const highByte = (offset: number) => (littleEndian ? data[offset + 1] : data[offset]);
   const sampleAt = (base: number, index: number): number => {
@@ -195,16 +221,16 @@ export function decodeStrip(
   const premultiplied = (page.extraSamples[0] ?? 2) === 1;
 
   let write = 0;
-  for (let row = 0; row < strip.rows; row++) {
+  for (let row = 0; row < rows; row++) {
     const base = row * bytesPerRow;
     if (samples === 1) {
-      for (let x = 0; x < page.width; x++) {
+      for (let x = 0; x < width; x++) {
         const value = sampleAt(base, x);
         out[write++] = invert ? 255 - value : value;
       }
       continue;
     }
-    for (let x = 0; x < page.width; x++) {
+    for (let x = 0; x < width; x++) {
       const index = x * samples;
       const alpha = samples === 4 ? sampleAt(base, index + 3) : 255;
       for (let channel = 0; channel < 3; channel++) {
@@ -216,11 +242,27 @@ export function decodeStrip(
 
   return {
     data: out,
-    width: page.width,
-    rows: strip.rows,
+    width,
+    rows,
     bitsPerComponent: 8,
     colorSpace: samples === 1 ? "DeviceGray" : "DeviceRGB",
   };
+}
+
+/** Decodes one strip into PDF-ready samples. Call `assertDecodablePage` first. */
+export function decodeStrip(
+  page: TiffPage,
+  strip: TiffStrip,
+  bytes: Uint8Array,
+  littleEndian: boolean,
+): DecodedStrip {
+  return decodeRegion(
+    page,
+    bytes.subarray(strip.offset, strip.offset + strip.byteCount),
+    page.width,
+    strip.rows,
+    littleEndian,
+  );
 }
 
 /** Composites an alpha sample over white so a transparent scan stays readable. */

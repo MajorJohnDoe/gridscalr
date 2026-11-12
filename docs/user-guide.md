@@ -156,11 +156,12 @@ The portable executable and the AppImage do not register file types. Use the ins
 Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper size and scale. The format is detected from the file contents, not the extension.
 
 - 1-bit CCITT Group 3 or Group 4 scans are embedded losslessly, without re-encoding.
-- Stripped (non-tiled) greyscale and RGB(A) scans with no compression, PackBits, LZW or Deflate compression are decoded and embedded as a PDF image, including the horizontal predictor. 1, 2, 4, 8 and 16 bits per sample are accepted; 16-bit samples are reduced to 8 bits and RGBA transparency is flattened over white.
+- JPEG-in-TIFF scans (new-style compression 7 and old-style compression 6 with a complete JPEG stream) are embedded with their original JPEG data, never re-encoded. A shared **JPEGTables** set is joined to each strip first. Greyscale, YCbCr, RGB and CMYK JPEG scans are accepted; a CMYK stream keeps the sample convention recorded by its Adobe marker, and YCCK is rejected rather than guessed.
+- Stripped or tiled greyscale and RGB(A) scans with no compression, PackBits, LZW or Deflate compression are decoded and embedded as a PDF image, including the horizontal predictor. 1, 2, 4, 8 and 16 bits per sample are accepted; 16-bit samples are reduced to 8 bits and RGBA transparency is flattened over white. A tiled scan is composed tile by tile in the correct order, including cropped edge tiles, so the page dimensions and pixels match the source.
 - The page size comes from the scan's DPI tags. DPI gives the paper size, not the drawing scale, so calibrate against a known dimension as usual. If the scan has no resolution tags, 300 DPI is assumed and a warning is shown.
 - Multi-page TIFFs become several pages. Reduced-resolution preview images are skipped. Orientation tags 1, 3, 6, and 8 are honoured.
 - The converted PDF is embedded in the `.gridscalr` file, so the project keeps working even if the original scan is moved.
-- Limits: 400 megapixels per page, 200 MB per file and 256 MB of decoded colour data per page. Tiled TIFFs and JPEG-in-TIFF are not supported yet; palette, CMYK and YCbCr colour, planar channels and signed or floating-point samples are rejected with a message that names the reason.
+- Limits: 400 megapixels per page, 200 MB per file, 256 MB of decoded colour data per page and 65 536 tiles per page. Palette colour, JPEG 2000, tiled JPEG and tiled CCITT scans, per-strip old-style JPEG without a complete stream, YCCK colour, planar channels, signed or floating-point samples and oversized tile grids are rejected with a message that names the reason.
 
 ### Page thumbnails
 
@@ -937,7 +938,7 @@ Encrypted source PDFs cannot be flattened without their owner password. GridScal
 
 ### A TIF is rejected
 
-GridScalr reads stripped TIFFs with no compression, PackBits, LZW, Deflate, CCITT Group 3 or Group 4, in greyscale or RGB(A). Tiled TIFFs and JPEG-in-TIFF are not supported yet; palette, CMYK and YCbCr colour, planar channels, signed or floating-point samples, and unusually large colour pages are rejected. The message names the reason. Save the scan as a stripped LZW or Deflate TIFF, as a CCITT G4 TIFF, or as a PDF.
+GridScalr reads stripped or tiled TIFFs with no compression, PackBits, LZW, Deflate, CCITT Group 3 or Group 4, and JPEG-in-TIFF, in greyscale, RGB(A), YCbCr or CMYK. Palette colour, JPEG 2000, tiled JPEG, tiled CCITT, per-strip old-style JPEG without a complete stream, YCCK colour, planar channels, signed or floating-point samples, a tile grid over 65 536 tiles and unusually large colour pages are rejected. The message names the reason. Save the scan as a stripped or tiled LZW or Deflate TIFF, as a CCITT G4 TIFF, as a JPEG TIFF, or as a PDF.
 
 ### Recent files do not open in the browser
 

@@ -16,7 +16,6 @@ import {
   readTiff,
   rotationForOrientation,
   type TiffPage,
-  type TiffStrip,
 } from "./tiff";
 import {
   assertDecodablePage,
@@ -24,11 +23,14 @@ import {
   isFaxCompression,
   type DecodedStrip,
 } from "./tiff/decode";
+import { assertJpegPage, isJpegCompression, jpegImagesForPage, type JpegImage } from "./tiff/jpeg";
+import { decodeTiledPage } from "./tiff/tiles";
 import type { DocumentRef } from "../model/types";
 
 /** A single A0 sheet at 600 DPI is about 500 megapixels; larger files are rejected. */
 export const MAX_TIFF_PIXELS = 400_000_000;
 export const MAX_TIFF_FILE_BYTES = 200 * 1024 * 1024;
+const JPEG_2000_COMPRESSIONS = new Set([33005, 34712]);
 
 export interface TiffPageInfo {
   widthPt: number;
@@ -68,10 +70,14 @@ function assertWithinLimits(bytes: Uint8Array, pages: TiffPage[]): void {
 
 /**
  * Converts a TIFF into a PDF. 1-bit CCITT G3/G4 pages keep their compressed
- * strips byte-for-byte as `/CCITTFaxDecode` images. Other supported codecs
- * (none, PackBits, LZW, Deflate with horizontal differencing) are decoded into
- * `/FlateDecode` images per strip. Each TIFF strip becomes its own image
- * XObject, so a large sheet never needs the whole raster in memory at once.
+ * strips byte-for-byte as `/CCITTFaxDecode` images. JPEG-in-TIFF pages
+ * (compression 6/7) are embedded through `/DCTDecode` without re-encoding, with
+ * their shared `JPEGTables` composed into each strip when needed. Other
+ * supported codecs (none, PackBits, LZW, Deflate with horizontal
+ * differencing) are decoded into `/FlateDecode` images; a tiled page is
+ * composed into one image band per tile row. Each band or strip becomes its own
+ * image XObject, so a large sheet never needs the whole raster in memory at
+ * once.
  *
  * The output is deterministic: the same input bytes produce the same PDF bytes,
  * because no wall-clock value is written.
@@ -88,13 +94,16 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
   const infos: TiffPageInfo[] = [];
 
   for (const page of pages) {
+    if (JPEG_2000_COMPRESSIONS.has(page.compression)) {
+      throw new TiffImportError(t("tiff.jpeg2000"));
+    }
     const rotation = rotationForOrientation(page.orientation);
     const size = pageSizePt(page);
     const pdfPage = pdf.addPage([size.width, size.height]);
     if (rotation) pdfPage.setRotation(degrees(rotation));
 
     const scaleY = size.height / page.height;
-    const drawStrip = (strip: TiffStrip, name: string, ref: PDFRef) => {
+    const drawRegion = (region: { top: number; rows: number }, name: string, ref: PDFRef) => {
       const object = pdfPage.node.newXObject(name, ref);
       pdfPage.pushOperators(
         pushGraphicsState(),
@@ -102,9 +111,9 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
           size.width,
           0,
           0,
-          strip.rows * scaleY,
+          region.rows * scaleY,
           0,
-          (page.height - strip.top - strip.rows) * scaleY,
+          (page.height - region.top - region.rows) * scaleY,
         ),
         drawObject(object),
         popGraphicsState(),
@@ -134,14 +143,27 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
           },
         });
         const ref = pdf.context.register(stream);
-        drawStrip(strip, `Fax${index}`, ref);
+        drawRegion(strip, `Fax${index}`, ref);
+      });
+    } else if (isJpegCompression(page.compression)) {
+      assertJpegPage(page);
+      jpegImagesForPage(page, bytes).forEach((image, index) => {
+        const ref = pdf.context.register(jpegStream(pdf, image));
+        drawRegion({ top: image.top, rows: image.height }, `Jpeg${index}`, ref);
+      });
+    } else if (page.tiled) {
+      assertDecodablePage(page);
+      const bands = decodeTiledPage(page, bytes, littleEndian);
+      bands.forEach((band, index) => {
+        const ref = pdf.context.register(decodedStream(pdf, band.strip));
+        drawRegion({ top: band.top, rows: band.strip.rows }, `Tile${index}`, ref);
       });
     } else {
       assertDecodablePage(page);
       page.strips.forEach((strip, index) => {
         const decoded = decodeStrip(page, strip, bytes, littleEndian);
         const ref = pdf.context.register(decodedStream(pdf, decoded));
-        drawStrip(strip, `Img${index}`, ref);
+        drawRegion(strip, `Img${index}`, ref);
       });
     }
 
@@ -149,7 +171,7 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
       widthPt: size.width,
       heightPt: size.height,
       rotation,
-      strips: page.strips.length,
+      strips: page.tiles.length ? Math.ceil(page.height / page.tileHeight) : page.strips.length,
       pixels: page.width * page.height,
       dpiKnown: page.dpiKnown,
     });
@@ -162,6 +184,20 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
     pages: infos,
     dpi: [first.dpiX, first.dpiY],
   };
+}
+
+/** One JPEG strip or page as a passthrough `/DCTDecode` image XObject. */
+function jpegStream(pdf: PDFDocument, image: JpegImage) {
+  return pdf.context.stream(image.data, {
+    Type: "XObject",
+    Subtype: "Image",
+    Width: image.width,
+    Height: image.height,
+    BitsPerComponent: 8,
+    ColorSpace: image.colorSpace,
+    Filter: "DCTDecode",
+    ...(image.decode ? { Decode: [...image.decode] } : {}),
+  });
 }
 
 /** One decoded strip as a compressed PDF image XObject. */
