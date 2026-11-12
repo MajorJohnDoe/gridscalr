@@ -14,7 +14,8 @@
     "src/features/pageStatus": 400,
     "src/features/pageMenu": 400,
     "src/features/listInteraction": 400,
-    "src/features/importProvenance": 400
+    "src/features/importProvenance": 400,
+    "src/features/layerTree": 400
   },
   "files": {
     "src/app/App.ts": 1094,

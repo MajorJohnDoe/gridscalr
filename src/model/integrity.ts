@@ -1,4 +1,5 @@
 import { isMeasurementKind } from "./layers";
+import { layerHierarchyIssues } from "./layerHierarchy";
 import type { ImageAsset, MarkupItem, PageRecord, Project } from "./types";
 
 /**
@@ -247,6 +248,12 @@ export function validateProject(project: Project): ProjectIssue[] {
     if (layer.kind !== "measure" && layer.kind !== "draw") {
       issues.push(issue("error", "invalidLayerKind", { kind: "layer", id: layer.id }));
     }
+    if (
+      layer.parentId !== undefined &&
+      (typeof layer.parentId !== "string" || !layer.parentId.trim())
+    ) {
+      issues.push(issue("error", "invalidLayerParent", { kind: "layer", id: layer.id }));
+    }
     if (layer.homePageId && !pageIds.has(layer.homePageId)) {
       issues.push(issue("error", "missingLayerHomePage", { kind: "layer", id: layer.id }));
     }
@@ -298,6 +305,12 @@ export function validateProject(project: Project): ProjectIssue[] {
     if (active && active.kind !== "measure" && active.kind !== "draw") {
       issues.push(issue("error", "invalidActiveLayerKind", { kind: "layer", id: active.id }));
     }
+  }
+
+  // A hierarchy reference is reported and preserved. The validator never
+  // reparents or removes a layer to fix a missing parent or a cycle.
+  for (const hierarchyIssue of layerHierarchyIssues(project.layers)) {
+    issues.push(issue("error", hierarchyIssue.code, { kind: "layer", id: hierarchyIssue.layerId }));
   }
 
   for (const [key, asset] of Object.entries(project.assets)) {

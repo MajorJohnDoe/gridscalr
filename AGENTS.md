@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.24.0`.
 - Latest public release: `v0.23.0` (2026-11-11).
-- Current project-file schema: `25`.
+- Current project-file schema: `26`.
 - 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -39,6 +39,9 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Hidden items must not render, hit-test, or export.
 - Hidden layers behave like hidden items. Layer visibility/locking takes precedence over per-item flags.
 - Locked items stay visible and exportable but cannot be moved, edited, or deleted.
+- A layer may carry an optional `parentId` (schema 26). Effective visibility is the layer's own visibility AND every ancestor's on that page; effective locking is the layer's own locking OR any ancestor's. A hidden group must not render, hit-test or export; a locked group stays visible and exportable but cannot be edited.
+- Deleting a layer deletes its whole subtree after an explicit confirmation that names the child and item counts. A page deletion keeps a group while any descendant is still referenced, and never leaves a child pointing at a removed parent.
+- A layer hierarchy reference is reported, never silently dropped or reparented. A missing parent, a cycle and a cross-kind link are validator issues for the project doctor.
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
 - Page reorder and page insert must each be one undo step, preserving every
@@ -486,6 +489,7 @@ src/canvas/editors.ts      public CanvasEditorController surface
 src/canvas/editors/        controller facade, text/textbox sessions, label editor and shared helpers
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/integrity.ts     shared referential-integrity rules and round-trip shape comparison
+src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
 src/model/symbols/        symbol types, categories, sign artwork, catalogue, lookup and render plan
@@ -571,6 +575,7 @@ src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
 src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
+src/features/layerTree/    layer tree, effective state lookup, subtree deletion plan and page-removal keep rules
 src/features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and delete
 src/features/saveIntegrity/backupManagerModel.ts pure backup selection and origin-warning rules
 src/features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog
@@ -593,14 +598,14 @@ docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
-tests/robustness/          seeded page/save sequences, competing saves, the schema 1–25 migration corpus and source-storage gates
+tests/robustness/          seeded page/save sequences, competing saves, the schema 1–26 migration corpus and source-storage gates
 fixtures/legacy/           committed project fixtures for every supported schema
 fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
 scripts/plan-geometry.mjs  shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs   legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation demo project
-scripts/make-legacy-fixtures.mjs generator for the schema 1–25 migration corpus
+scripts/make-legacy-fixtures.mjs generator for the schema 1–26 migration corpus
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -649,8 +654,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
-- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–25 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
-- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–25. Regenerate schemas 1–22, `schema-23-full`, `schema-24-full` and `schema-25` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
+- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–26 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
+- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–26. Regenerate schemas 1–22, `schema-23-full` through `schema-26` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
 - `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.

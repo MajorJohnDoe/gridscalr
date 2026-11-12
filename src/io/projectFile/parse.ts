@@ -13,6 +13,7 @@ import { normalizeCategories } from "./categories";
 import { normalizeSettings } from "./settings";
 import { normalizeAssets } from "./assets";
 import { normalizeLayers } from "./layers";
+import { migrateLayerHierarchy } from "./layerHierarchy";
 import { normalizeLineTypes } from "./lineTypes";
 import { normalizeDocument } from "./documents";
 import { normalizeOcr } from "./ocr";
@@ -87,7 +88,13 @@ export function parseProjectWithReport(text: string): {
       ? [legacy]
       : [];
   const load = new LoadReportBuilder();
-  const reportDrop = (code: string, count = 1): void => load.drop(code, count);
+  // Normalizers report both dropped and repaired codes through one callback.
+  // A `repaired*` code is a deterministic fix, not lost data, so it must not
+  // inflate the dropped counts.
+  const reportDrop = (code: string, count = 1): void => {
+    if (code.startsWith("repaired")) load.repair(code, count);
+    else load.drop(code, count);
+  };
   // Schema 5 and earlier stored exactly one document. Migration wraps it in a list.
   const documents = rawDocuments.map((entry) => normalizeDocument(entry, reportDrop));
   // Schema 24 → 25: every document becomes an explicit reference. No file moves.
@@ -161,6 +168,7 @@ export function parseProjectWithReport(text: string): {
   );
   load.drop("droppedMarkupsView", droppedCount(arrayLength(raw.markupsViews), markupsViews.length));
   load.repair("repairedMarkupsViewId", duplicateIdCount(raw.markupsViews));
+  load.repair("repairedLayerParent", migrateLayerHierarchy(raw.layers, raw.schemaVersion));
   const migratedLayers = migrateLayers(raw.layers, migration);
   const layers = normalizeLayers(
     migratedLayers,

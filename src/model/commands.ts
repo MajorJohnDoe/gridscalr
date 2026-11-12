@@ -1,5 +1,5 @@
 import { canonicalColor } from "./color";
-import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
+import { buildLayerHierarchy, layerEffectiveState } from "./layerHierarchy";
 import { resolveSelection } from "./selection";
 import { translatePoints } from "./geometry";
 import type { ImageMode, InspectionStatus, Project, SelectionRef } from "./types";
@@ -37,8 +37,9 @@ export function setItemsVisible(
   visible: boolean,
 ): ItemCommandResult {
   const result = emptyResult();
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const entry of resolveSelection(project, refs)) {
-    if (visible && !layerVisibleOnPage(entry.layer, entry.item.pageId)) {
+    if (visible && !layerEffectiveState(hierarchy, entry.layer.id, entry.item.pageId)?.visible) {
       result.skippedLayerHidden += 1;
       continue;
     }
@@ -59,8 +60,9 @@ export function setItemsLocked(
   locked: boolean,
 ): ItemCommandResult {
   const result = emptyResult();
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const entry of resolveSelection(project, refs)) {
-    if (!locked && layerLockedOnPage(entry.layer, entry.item.pageId)) {
+    if (!locked && layerEffectiveState(hierarchy, entry.layer.id, entry.item.pageId)?.locked) {
       result.skippedLayerLocked += 1;
       continue;
     }

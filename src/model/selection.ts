@@ -1,4 +1,5 @@
-import { findItem, itemIsLocked } from "./layers";
+import { findItem } from "./layers";
+import { buildLayerHierarchy, layerEffectiveState } from "./layerHierarchy";
 import type { Layer, LayerKind, MarkupItem, PageId, Project, SelectionRef } from "./types";
 
 export interface ResolvedSelection {
@@ -27,6 +28,7 @@ export function uniqueSelectionRefs(refs: SelectionRef[]): SelectionRef[] {
 
 export function resolveSelection(project: Project, refs: SelectionRef[]): ResolvedSelection[] {
   const resolved: ResolvedSelection[] = [];
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const ref of uniqueSelectionRefs(refs)) {
     const found = findItem(project, ref.itemId);
     if (!found || found.layer.id !== ref.layerId) continue;
@@ -34,7 +36,9 @@ export function resolveSelection(project: Project, refs: SelectionRef[]): Resolv
       ref,
       layer: found.layer,
       item: found.item,
-      locked: itemIsLocked(found.item, found.layer),
+      locked:
+        found.item.locked === true ||
+        (layerEffectiveState(hierarchy, found.layer.id, found.item.pageId)?.locked ?? false),
     });
   }
   return resolved;

@@ -22,6 +22,7 @@ const FOUNDATION_FEATURES = [
   "src/features/pageMenu",
   "src/features/listInteraction",
   "src/features/importProvenance",
+  "src/features/layerTree",
 ];
 
 const errors = [];

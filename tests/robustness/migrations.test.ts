@@ -14,6 +14,7 @@ const FIXTURES: ReadonlyArray<{ version: number; file: string }> = [
   { version: 23, file: "schema-23-full.gridscalr" },
   { version: 24, file: "schema-24-full.gridscalr" },
   { version: 25, file: "schema-25.gridscalr" },
+  { version: 26, file: "schema-26.gridscalr" },
 ];
 
 function fixtureText(file: string): string {
@@ -153,6 +154,16 @@ function expectIntroducedFields(version: number, project: Project): void {
     expect(project.documents[0].originalPath).toContain("Legacy plan.pdf");
     expect(project.pages[0].provenance?.sourceProjectId).toBe("prj_source");
   }
+  if (version >= 26) {
+    const group = project.layers.find((layer) => layer.id === "layer_group")!;
+    const child = project.layers.find((layer) => layer.id === "layer_measure")!;
+    expect(group.parentId).toBeUndefined();
+    expect(child.parentId).toBe("layer_group");
+    expect(group.pageState).toEqual({ [project.pages[1].id]: { locked: true } });
+  } else {
+    // A pre-26 file has no hierarchy field at all.
+    expect(project.layers.every((layer) => layer.parentId === undefined)).toBe(true);
+  }
 }
 
 describe("migration corpus", () => {
@@ -160,7 +171,7 @@ describe("migration corpus", () => {
     expect(FIXTURES.map((entry) => entry.version)).toEqual(
       Array.from({ length: SCHEMA_VERSION }, (_, index) => index + 1),
     );
-    expect(SCHEMA_VERSION).toBe(25);
+    expect(SCHEMA_VERSION).toBe(26);
   });
 
   for (const { version, file } of FIXTURES) {
@@ -192,10 +203,16 @@ describe("migration corpus", () => {
       expect(
         second.layers.flatMap((layer) => layer.items.map((item) => [item.id, item.pageId])),
       ).toEqual(first.layers.flatMap((layer) => layer.items.map((item) => [item.id, item.pageId])));
+      expect(second.layers.map((layer) => [layer.id, layer.parentId])).toEqual(
+        first.layers.map((layer) => [layer.id, layer.parentId]),
+      );
 
-      // A serialized schema 25 project keeps the same page identity.
+      // A serialized current-schema project keeps the same page identity.
       const roundTrip = parseProjectWithReport(serializeProject(first)).project;
       expect(roundTrip.pages.map((page) => page.id)).toEqual(first.pages.map((page) => page.id));
+      expect(roundTrip.layers.map((layer) => [layer.id, layer.parentId])).toEqual(
+        first.layers.map((layer) => [layer.id, layer.parentId]),
+      );
     });
   }
 
@@ -213,7 +230,9 @@ describe("migration corpus", () => {
     for (const { version, file } of FIXTURES) {
       const raw = fixtureValue(file);
       const layers = raw.layers as Array<Record<string, unknown>>;
-      const measure = layers.find((layer) => layer.kind === "measure")!;
+      const measure = layers.find(
+        (layer) => layer.kind === "measure" && Array.isArray(layer.items) && layer.items.length,
+      )!;
       const items = measure.items as Array<Record<string, unknown>>;
       items[0][version >= 24 ? "pageId" : "page"] = "page_missing";
       measure[version >= 24 ? "homePageId" : "homePage"] = "page_missing";

@@ -1869,3 +1869,26 @@ No entries yet.
   Do not reintroduce a per-kind clone on every render just to compute it.
 - **Related:** #190, `src/features/projectIntegrity/repairPlan.ts`,
   `src/features/projectIntegrity/repairUi.ts`.
+
+### F-086 — Duplicating a group does not copy its subtree
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 10a — layer hierarchy model
+- **Severity:** P3
+- **Area:** layers / layer hierarchy
+- **Status:** accepted — schema 26 models the tree, phase 10b owns the UI
+- **Evidence:** `duplicateLayer()` in `src/model/layers.ts` copies one layer,
+  its `pageState` and its items, keeps the source `parentId`, and inserts the
+  copy directly after the source in `project.layers`. It never copies children.
+- **Problem:** With a hierarchy, duplicating a group produces an empty duplicate
+  sitting beside the original while the original keeps its children. In a tree
+  panel that reads as a broken copy, and a later drag of the copy cannot recover
+  the lost children.
+- **Impact:** No data loss: the source subtree is untouched and every ID stays
+  valid. The result is only surprising, and phase 10a has no UI that can create a
+  group, so no user can reach it yet.
+- **Next step:** In phase 10b decide whether **Duplicate** on a group copies the
+  whole subtree with fresh IDs, or is disabled for a parent. Cover it with a test
+  either way, and keep the duplicate a sibling of its source.
+- **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
+  `src/model/layers.ts`, `src/features/layerTree/model.ts`.
