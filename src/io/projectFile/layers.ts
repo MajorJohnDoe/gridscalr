@@ -87,6 +87,13 @@ export function normalizeLayers(
         report?.("droppedLayerHomePage");
       }
       if (homePageId) layer.homePageId = homePageId;
+      const rawParentId = (value as { parentId?: unknown }).parentId;
+      const parentId =
+        typeof rawParentId === "string" && rawParentId.trim() ? rawParentId.trim() : undefined;
+      if (rawParentId !== undefined && parentId !== rawParentId) report?.("repairedLayerParent");
+      // An unresolved parent is kept for the integrity validator and the doctor;
+      // it is never silently dropped or reparented.
+      if (parentId) layer.parentId = parentId;
       const pageState = normalizeLayerPageState(raw.pageState, pageIds, report);
       if (pageState) layer.pageState = pageState;
       if (Array.isArray(raw.items)) {

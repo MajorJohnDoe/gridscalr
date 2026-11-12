@@ -1,5 +1,6 @@
 import { makeId } from "./calibration";
 import { normalizeColor } from "./color";
+import { buildLayerHierarchy, layerDescendantIds, layerEffectiveState } from "./layerHierarchy";
 import { defaultProjectMetadata } from "./metadata";
 import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
@@ -208,7 +209,7 @@ export function activeLayer(project: Project): Layer | undefined {
   return project.layers.find((l) => l.id === project.activeLayerId);
 }
 
-export function layersForKind(project: Project, kind: LayerKind): Layer[] {
+export function layersForKind(project: Pick<Project, "layers">, kind: LayerKind): Layer[] {
   return project.layers.filter((l) => l.kind === kind);
 }
 
@@ -388,18 +389,35 @@ export function duplicateLayer(project: Project, layerId: string): Layer | undef
   return copy;
 }
 
-export function removeLayer(project: Project, layerId: string): boolean {
+/**
+ * Removes a layer and its whole subtree.
+ *
+ * A parent with children deletes its children and their items; a single-layer
+ * delete would leave children pointing at a missing parent. The caller confirms
+ * the cascade from `planLayerDeletion` before calling this. A flat project has
+ * no descendants, so its behaviour is unchanged.
+ */
+export function removeLayer(
+  project: Pick<Project, "layers" | "activeLayerId">,
+  layerId: string,
+): boolean {
   const layer = project.layers.find((l) => l.id === layerId);
   if (!layer) return false;
-  project.layers = project.layers.filter((l) => l.id !== layerId);
+  const subtree = new Set([
+    layerId,
+    ...layerDescendantIds(buildLayerHierarchy(project.layers), layerId),
+  ]);
+  project.layers = project.layers.filter((l) => !subtree.has(l.id));
   if (!layersForKind(project, layer.kind).length) {
     project.layers = normalizeLayerOrder([
       ...project.layers,
       createLayer(layer.kind, undefined, undefined, layer.homePageId),
     ]);
   }
-  const fallback = layersForKind(project, layer.kind)[0];
-  if (project.activeLayerId === layerId && fallback) project.activeLayerId = fallback.id;
+  if (subtree.has(project.activeLayerId)) {
+    const fallback = layersForKind(project, layer.kind)[0] ?? project.layers[0];
+    project.activeLayerId = fallback?.id ?? "";
+  }
   return true;
 }
 
@@ -556,6 +574,7 @@ export function moveItemsToLayer(
   const target = project.layers.find((layer) => layer.id === targetLayerId);
   if (!target) return result;
 
+  const hierarchy = buildLayerHierarchy(project.layers);
   const found = refs
     .map((ref) => ({ ref, match: findItem(project, ref.itemId) }))
     .filter((entry): entry is { ref: SelectionRef; match: { layer: Layer; item: MarkupItem } } =>
@@ -574,7 +593,10 @@ export function moveItemsToLayer(
   }
 
   for (const { ref, match } of found) {
-    if (itemIsLocked(match.item, match.layer) || layerLockedOnPage(target, match.item.pageId)) {
+    if (
+      itemIsLocked(match.item, match.layer) ||
+      (layerEffectiveState(hierarchy, target.id, match.item.pageId)?.locked ?? false)
+    ) {
       result.skipped++;
       continue;
     }

@@ -16,6 +16,7 @@ import type {
   PageState,
   Project,
 } from "../../model/types";
+import { layersAfterPageRemoval } from "../layerTree";
 
 /** Structural page operations. Every function mutates the project in place. */
 
@@ -203,10 +204,9 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
 
   const beforeLayers = project.layers.length;
   const fallbackPageId = project.pages[Math.min(index, project.pages.length - 1)]?.id ?? null;
-  project.layers = project.layers.filter((layer) => {
-    if (layerHasPageReference(layer)) return true;
-    return false;
-  });
+  // A group survives while any descendant is still referenced, so a page delete
+  // can never orphan a child layer or silently flatten a subtree.
+  project.layers = layersAfterPageRemoval(project.layers, layerHasPageReference);
   const removedLayers = beforeLayers - project.layers.length;
   // A layer that lost its home page but still has items keeps no home page.
   // Layers without any page reference are only kept while the project is empty.
@@ -290,7 +290,7 @@ export function duplicatePage(
 /** Removes empty layers left behind by page deletion. Explicit cleanup action. */
 export function cleanupEmptyLayers(project: Project): number {
   const before = project.layers.length;
-  project.layers = project.layers.filter((layer) => layerHasPageReference(layer));
+  project.layers = layersAfterPageRemoval(project.layers, layerHasPageReference);
   ensureLayerKinds(project, project.pages[0]?.id ?? null);
   if (!project.layers.some((layer) => layer.id === project.activeLayerId)) {
     project.activeLayerId = project.layers[0]?.id ?? "";

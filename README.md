@@ -311,11 +311,14 @@ surface, the repair planner with its filters and preview, the project doctor,
 source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
+`src/model/layerHierarchy.ts` holds the pure layer-tree, effective visibility
+and locking rules, and `src/features/layerTree/` exposes the tree, deletion plan
+and page-removal keep rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a
 source drawing. The `tests/robustness/` gate exercises seeded page and save
-sequences, competing writers, the committed `fixtures/legacy/` schema 1–25
+sequences, competing writers, the committed `fixtures/legacy/` schema 1–26
 corpus and source storage; run it alone with `npm run test:robustness`.
 
 The desktop shell enforces one production Content Security Policy as an HTML
@@ -363,7 +366,7 @@ Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 25 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 26 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
@@ -390,7 +393,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
 `npm run test:robustness` is the focused gate for page identity, competing
-saves, the schema 1–25 migration corpus and source storage; the normal test
+saves, the schema 1–26 migration corpus and source storage; the normal test
 suite includes the same files. See [docs/testing.md](docs/testing.md).
 
 Never attach real customer drawings to an issue or a pull request.

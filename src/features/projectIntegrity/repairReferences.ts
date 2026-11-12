@@ -1,4 +1,5 @@
 import { isMeasurementKind } from "../../model/layers";
+import { layerHierarchyIssues } from "../../model/layerHierarchy";
 import type { MarkupItem, PageRecord, Project } from "../../model/types";
 import type { RepairChanges } from "./repairPlan";
 
@@ -53,6 +54,14 @@ export function planDanglingReferences(project: Project, log: RepairChanges): vo
   const assetIds = new Set(Object.keys(project.assets));
   const categoryIds = new Set(project.categories.map((entry) => entry.id));
   const countTypeIds = new Set(project.countTypes.map((entry) => entry.id));
+  // A broken hierarchy link is cleared, never repaired by deleting a layer.
+  // The issue code is recorded so the preview and the saved copy agree.
+  const parentIssues = new Map<string, string>();
+  for (const hierarchyIssue of layerHierarchyIssues(project.layers)) {
+    if (!parentIssues.has(hierarchyIssue.layerId)) {
+      parentIssues.set(hierarchyIssue.layerId, hierarchyIssue.code);
+    }
+  }
 
   if (!categoryIds.has(project.settings.quantity.defaultCategoryId)) {
     const fallback = project.categories[0]?.id;
@@ -63,6 +72,17 @@ export function planDanglingReferences(project: Project, log: RepairChanges): vo
   }
 
   for (const layer of project.layers) {
+    const parentIssue = parentIssues.get(layer.id);
+    if (parentIssue) {
+      delete layer.parentId;
+      log.rewrite("layer", layer.id, parentIssue);
+    } else if (
+      layer.parentId !== undefined &&
+      (typeof layer.parentId !== "string" || !layer.parentId.trim())
+    ) {
+      delete layer.parentId;
+      log.rewrite("layer", layer.id, "invalidLayerParent");
+    }
     if (layer.homePageId && !pageIds.has(layer.homePageId)) {
       delete layer.homePageId;
       log.rewrite("layer", layer.id, "missingLayerHomePage");

@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.24.0** · Project-file schema: **25**
+Current version: **0.24.0** · Project-file schema: **26**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -203,7 +203,7 @@ Issue [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 
 Implemented in Phase 7 ([#159](https://github.com/MajorJohnDoe/gridscalr/issues/159)):
 `tests/robustness/` runs as `npm run test:robustness` and in the normal suite,
-and CI names the focused step. The migration corpus covers schema 1–25.
+and CI names the focused step. The migration corpus covers schema 1–26.
 
 Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
 [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61),
@@ -291,6 +291,7 @@ full list.
 | Concurrent project edits | Complete in 0.24.0: conditional writes, conflicted-copy management, autosave preference, recovery center and byte budget, backup manager, advisory leases, true view-only with explicit takeover and the project status popover. See [ADR 0010](adr/0010-project-file-integrity.md). |
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
+| Layer hierarchy | Model and migration complete in schema 26: optional `parentId`, tree order, visibility/lock inheritance, subtree deletion and page-removal keep rules. The Layers panel tree, inherited-state indicators and nested OCG export are phase 10b ([#193](https://github.com/MajorJohnDoe/gridscalr/issues/193)); see [ADR 0014](adr/0014-layer-hierarchy.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |

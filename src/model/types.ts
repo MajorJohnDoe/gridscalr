@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 25 as const;
+export const SCHEMA_VERSION = 26 as const;
 
 /**
  * How a source drawing is stored. `reference` points at the original file.
@@ -275,6 +275,11 @@ export interface Layer {
   pageState?: Record<PageId, LayerPageState>;
   /** The page where the layer was created. Keeps empty layers discoverable. */
   homePageId?: PageId;
+  /**
+   * Parent layer from schema 26. Absent means a root layer. A hierarchy groups
+   * layers and inherits visibility and locking; it never changes paint order.
+   */
+  parentId?: string;
 }
 
 export interface OcrWord {

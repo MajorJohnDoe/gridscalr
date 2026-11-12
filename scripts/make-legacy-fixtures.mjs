@@ -447,15 +447,33 @@ function layersFor(version) {
     color: "#e30613",
     items: measurementItems(version),
   };
+  // Schema 26 adds an optional parent layer. The fixture keeps a real group so
+  // the corpus proves that a persisted hierarchy survives the ladder.
+  const group =
+    version >= 26
+      ? {
+          id: "layer_group",
+          name: "Room measurements",
+          kind: "measure",
+          visible: true,
+          locked: false,
+          opacity: 1,
+          color: "#e30613",
+          items: [],
+        }
+      : null;
+  if (group) measure.parentId = group.id;
+  const layers = group ? [draw, group, measure] : [draw, measure];
   if (version >= 11) {
-    for (const layer of [draw, measure]) {
+    for (const layer of layers) {
       layer[version >= 24 ? "homePageId" : "homePage"] = pageRef(version, 1);
     }
     draw.pageState = {
       [pageRef(version, 2)]: { visible: false },
     };
+    if (group) group.pageState = { [pageRef(version, 2)]: { locked: true } };
   }
-  return [draw, measure];
+  return layers;
 }
 
 function settingsFor(version) {
@@ -638,5 +656,6 @@ for (let version = 1; version <= 22; version += 1) {
 write("schema-23-full.gridscalr", buildFixture(23, { rich: true }));
 write("schema-24-full.gridscalr", buildFixture(24, { rich: true }));
 write("schema-25.gridscalr", buildFixture(25, { rich: true }));
+write("schema-26.gridscalr", buildFixture(26, { rich: true }));
 
-console.log("Wrote schema 1-22, schema-23-full, schema-24-full and schema-25 fixtures.");
+console.log("Wrote schema 1-22, schema-23-full through schema-26 fixtures.");
