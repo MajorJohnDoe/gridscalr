@@ -22,6 +22,8 @@ Use this workflow when you need to document a site visit, mark a deviation, or g
 
 A calibrated page shows the scale in the status bar; hover the chip for the reference length and the exact mm per point.
 
+The page cards show a badge when the drawing on disk no longer matches the project, and the filter bar above them narrows the list to **Changed source**, **Superseded**, **OCR missing or stale** or **Scale locked** pages. Check it before a site visit so you do not annotate an outdated sheet.
+
 ### 2. Measure what the job needs
 
 Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units and snapping in **Project settings**. On a touch screen, use one finger to draw and two fingers to pan or pinch-zoom; a pen takes priority over palm touches. Long-press an item for its context menu.
@@ -80,6 +82,10 @@ If you need a page only for notes or sketches, add a blank A3 or A2 page with **
 
 New pages are appended after the existing pages by default. Existing page numbers and measurements do not move unless you reorder or delete a page.
 
+If a drawing arrives later, drop the PDF or TIF on the page cards. The usual page picker and import preflight appear, the insertion line shows where the pages will land, and the whole import is one undo step. Drag a card, or press `Alt` + arrows, to put the sheets in drawing order; **Insert page before…** / **Insert page after…** in the page menu name the target first, and reorder and insert are each one undo step. **Move page to position…** moves the whole page selection to a chosen position. The status filter above the cards narrows the list to **Changed source**, **Superseded**, **OCR missing or stale** or **Scale locked** pages, and every button shows how many pages match; clear it to **All** before dragging or dropping, because a filtered list cannot express a drop position.
+
+Check the badges before a review. A **Source changed** page means the file on disk no longer matches the checksum in the project; resolve it with **Reload source** or **Use current source**, or map a reissued set with **Replace source…**. A **Superseded source** page was not mapped to the new file and still needs review or removal.
+
 ### 2. Calibrate and lock the scales
 
 Calibrate a typical page, then use **Apply to all pages** when the whole set shares the same drawing scale. Apply copies the scale but not the lock and skips pages that are already locked.
@@ -99,6 +105,8 @@ Check the length and area units in **Project settings → Measurements → Units
 ![Selected floor area with category, room and deduction controls in Properties](screenshots/hero.png)
 
 Use **Shift**/`Ctrl`/`Cmd`-click or a marquee to select several measurements, then apply one category, room, area mode, count type or count quantity in a single undoable action. Expand a layer in the Layers tab to check every item it contains; click an item to jump to it on the plan.
+
+Nest layers into groups when a floor or discipline should hide and lock as a unit. Drag a layer onto the middle of another row of the same kind, or press `Alt` + `Right`; `Alt` + `Left` moves it back out. A hidden group hides and a locked group locks everything inside it, the inherited state is written on the row, and grouping never restacks the drawing. Deleting a group removes its whole subtree after a confirmation that names the nested layer and item counts.
 
 ### 4. Review quantities and order settings
 
@@ -223,10 +231,13 @@ Use this when a project fails to open cleanly, a save is blocked, or someone sen
 5. Choose **Save repaired copy…** and save the copy in a new file. The original is never repaired in place and is never overwritten by a normal save while it is invalid.
 6. Open the repaired copy, review the pages, quantities and source links, and use it for the next revision.
 
+The doctor's **Sources** section checks every external drawing and reports it as available, missing or changed, and separates reference drawings from managed copies. **Relink…** reopens the relink flow for one drawing and **Copy into project** stores an available reference as a managed copy. A missing or changed drawing is a warning, never a reason to refuse the save. The same section lists files in the project's drawings folder that no document references, with a size total; select them, choose **Remove selected…**, review the full list and confirm. A copy that is still referenced, or became referenced while the dialog was open, is never deleted. Source actions are disabled after an in-memory repair until you save the repaired copy.
+
 The doctor cannot prove that a drawing is the right revision, that a quantity is commercially correct, or that every external file still exists. It protects the project's internal references and prevents a silent loss of pages, items or settings; it does not invent missing data.
 
 ## Related reference
 
+- [Workspace lists](user-guide.md#workspace-lists)
 - [Measure](user-guide.md#measure)
 - [Draw and annotate](user-guide.md#draw-and-annotate)
 - [Quantities](user-guide.md#quantities)
