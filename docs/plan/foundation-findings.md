@@ -47,6 +47,26 @@ project contents.
 | `accepted` | Accepted as a known limitation or design choice |
 | `fixed` | Resolved; keep the entry as history |
 
+## 0.27.0 triage (2026-11-12)
+
+- Converted to [#240](https://github.com/MajorJohnDoe/gridscalr/issues/240):
+  F-044, F-045, F-046.
+- [#241](https://github.com/MajorJohnDoe/gridscalr/issues/241): F-017.
+- [#236](https://github.com/MajorJohnDoe/gridscalr/issues/236): F-088, with
+  F-084 and F-085.
+- [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238): F-091 and F-023.
+- [#239](https://github.com/MajorJohnDoe/gridscalr/issues/239): F-097, F-098,
+  F-100, F-101.
+- [#199](https://github.com/MajorJohnDoe/gridscalr/issues/199): F-036.
+  [#200](https://github.com/MajorJohnDoe/gridscalr/issues/200): F-035.
+- Deferred beyond 0.27.0: F-011 (schema 27 candidate), F-054, F-056, F-057,
+  F-065 and F-067.
+- F-075, F-076, F-079, F-080 and F-082 stay in
+  [#234](https://github.com/MajorJohnDoe/gridscalr/issues/234).
+
+The plan is [`0.27.md`](0.27.md); the epic is
+[#242](https://github.com/MajorJohnDoe/gridscalr/issues/242).
+
 ## Open findings
 
 ### F-001 — Model imports a feature module
@@ -316,7 +336,7 @@ project contents.
 - **Phase:** 4 — source storage
 - **Severity:** P2
 - **Area:** source storage
-- **Status:** deferred
+- **Status:** triaged #241
 - **Evidence:** `detachManagedCopy()` and page/document removal change the
   project only. `source_copy.rs` never deletes a drawing.
 - **Problem:** Detaching, deleting a page or replacing a source leaves the managed
@@ -416,7 +436,7 @@ project contents.
 - **Phase:** 6 — interoperability
 - **Severity:** P2
 - **Area:** PDF export / OCG
-- **Status:** deferred
+- **Status:** triaged #238
 - **Evidence:** `src/pdf/export/ocg.ts` creates one OCG per exported visible
   layer. Marked content is written only on pages where the layer is visible, but
   the reader toggles the group for the whole document.
@@ -650,7 +670,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P2
 - **Area:** release supply chain
-- **Status:** open
+- **Status:** triaged #200
 - **Evidence:** The workflows use `actions/checkout@v7`,
   `actions/upload-artifact@v7`, `Swatinem/rust-cache@v2`,
   `dtolnay/rust-toolchain@stable` and other major tags.
@@ -668,7 +688,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** tests / filesystem
-- **Status:** open
+- **Status:** triaged #199
 - **Evidence:** `cargo test --lib` runs only on Ubuntu. The Windows and macOS CI
   jobs build and smoke-test but do not run the Rust unit tests; the symlink and
   hard-link cases are `#[cfg(unix)]` or skipped by the filesystem.
@@ -837,7 +857,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** project package / disk
-- **Status:** open
+- **Status:** triaged #240
 - **Evidence:** `package_create` accepts a project JSON string, any number of
   `documents`/`exports`/`source_scans` sources and writes until the sources are
   exhausted. Phase 3 caps *extraction* at 2 GiB uncompressed and checks free
@@ -859,7 +879,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** source storage
-- **Status:** open
+- **Status:** triaged #240
 - **Evidence:** `copy_to_project` hashes and streams the source without a size
   limit, then verifies the copy. Phase 3 bounds *reads* at 1 GiB but the copy
   command is a separate path.
@@ -877,7 +897,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** atomic writes
-- **Status:** open
+- **Status:** triaged #240
 - **Evidence:** `clean_stale_temporaries()` is called by `atomic_write` and
   `write_conditional_with`. Opening a project never triggers it, and package
   extraction and backup temporary folders keep their own naming and cleanup.
@@ -1057,7 +1077,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 6 — autosave preference
 - **Severity:** P3
 - **Area:** status bar / preferences
-- **Status:** deferred
+- **Status:** deferred — 0.28/backlog
 - **Evidence:** The new status chip shows on/off/paused but has no menu. Every
   change goes through **Preferences → Data**.
 - **Problem:** A user who notices that autosave is off cannot pause or change it
@@ -1094,7 +1114,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 8 — recovery byte budget
 - **Severity:** P3
 - **Area:** recovery storage
-- **Status:** deferred
+- **Status:** deferred — 0.28/backlog
 - **Evidence:** `RECOVERY_BUDGET` in `src/features/sessionRecovery/budget.ts` is a
   fixed 64 MiB per project and 256 MiB total. Nothing calls
   `navigator.storage.estimate()`.
@@ -1175,7 +1195,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 7 — recovery center
 - **Severity:** P3
 - **Area:** session recovery / usability
-- **Status:** deferred
+- **Status:** deferred — 0.28/backlog
 - **Evidence:** `RecoveryRecord` stores `instanceId` and `appVersion`, but no
   host label or session start time. The center shows the first eight characters
   of the instance ID.
@@ -1270,7 +1290,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 10 — backup restore links
 - **Severity:** P3
 - **Area:** backup / document loading
-- **Status:** deferred
+- **Status:** deferred — 0.28/backlog
 - **Evidence:** `showRestoreLinkReport()` lists every unresolved drawing, and
   the confirm loop then calls `locateDrawing()` once per document.
 - **Problem:** When a whole drawings folder moved to a known new location, the
@@ -1308,7 +1328,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 11 — view-only mode
 - **Severity:** P3
 - **Area:** view-only / layers
-- **Status:** deferred
+- **Status:** deferred — 0.28/backlog
 - **Evidence:** `project.activeLayerId` is serialized project data, so the
   view-only store guard blocks `setActiveLayer()`. The context-bar layer picker
   is hidden in view-only and layer rows only expand.
@@ -1435,7 +1455,7 @@ confirmed against the audit.
 - **Phase:** 11 — TIF replacement and raw-byte provenance
 - **Severity:** P3
 - **Area:** source replacement / source storage
-- **Status:** deferred
+- **Status:** triaged #236
 - **Evidence:** `applySourceReplacement()` merges the picked `DocumentRef` over the
   old document. A picked file is always built as `storage: "reference"`, so a
   managed document loses its managed mode, while `originalPath` and
@@ -1501,7 +1521,7 @@ remains the scheduling home.
 - **Phase:** 3 — page list and document model
 - **Severity:** P2
 - **Area:** template sheets / page identity
-- **Status:** deferred
+- **Status:** deferred — schema 27 candidate, not planned for 0.27.0
 - **Evidence:** `DocumentRef.template.fields` stores title-block values. Page
   duplication and insertion clone the template document in
   `features/pageModel/pageList.ts` so the copies do not share field objects.
@@ -2046,7 +2066,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
 - **Severity:** P2
 - **Area:** TIF import / project file size
-- **Status:** open — needs a policy decision
+- **Status:** triaged #238
 - **Evidence:** `createTiffDocumentRef()` base64-encodes the derived PDF into
   `DocumentRef.embeddedPdf`. CCITT scans stay near the source size, but a colour
   raster is Flate-compressed into one image per strip. A 25 megapixel RGB sheet
@@ -2149,7 +2169,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 13 — Relink missing sources in import preflight
 - **Severity:** P3
 - **Area:** Project import / picker
-- **Status:** open
+- **Status:** triaged #237
 - **Evidence:** `projectImportDialog()` disables a page checkbox when
   `available` is false, and `ProjectImportSource.checkAvailability()` marks a
   PDF unavailable when no candidate path exists. The preflight relink added in
@@ -2173,7 +2193,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 14 — Rust source budget
 - **Severity:** P3
 - **Area:** tooling / Rust
-- **Status:** open
+- **Status:** triaged #239
 - **Evidence:** `npm run check:file-budgets` now scans `src-tauri/src`, but it
   compares line counts only. `npm run check:modules` covers foundation feature
   `index.ts` surfaces in `src` and does not inspect Rust.
@@ -2193,7 +2213,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 15 — model to feature boundary
 - **Severity:** P3
 - **Area:** architecture / tooling
-- **Status:** open
+- **Status:** triaged #239
 - **Evidence:** `scripts/check-module-boundaries.mjs` lists only the foundation
   feature directories. `src/features/schematics/` has no `index.ts`, and about
   twenty modules (canvas, UI, PDF export, report and app flows) import
@@ -2218,7 +2238,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 17 — documentation pass
 - **Severity:** P3
 - **Area:** tooling / documentation
-- **Status:** open
+- **Status:** triaged #239
 - **Evidence:** `scripts/check-docs.mjs` compares `shortcuts.tools` from
   `src/ui/shortcuts.json` with `docs/shortcuts.md`. The `actions` map, the page,
   layer and Markups key tables, the in-app shortcut reference and the README
@@ -2238,7 +2258,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 17 — documentation pass
 - **Severity:** P3
 - **Area:** tooling / documentation
-- **Status:** open
+- **Status:** triaged #239
 - **Evidence:** CI runs `npm run check:docs` but never `npm run docs:capture`.
   The 0.25.0 layer tree changed the accessible names of the layer disclosure
   buttons to include "nested layers", so the capture script's

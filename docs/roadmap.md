@@ -80,6 +80,11 @@ These are not negotiable without an explicit decision:
 | 0.25.0 | Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on Pages, undoable reorder and insert, page status badges and filters, page context menu, one shared list interaction model, import provenance, doctor sources with managed-copy cleanup and repair preview, layer hierarchy with nested OCG export (schema 26), TIF **Replace source…** and extra codecs, preflight relink, Rust source budget and model-boundary gates | Complete | v26 |
 | 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
 
+The next release, **0.27.0**, is planned in [`plan/0.27.md`](plan/0.27.md):
+output and read limits, explicit managed-copy cleanup, security test and gate
+hardening, and the colour-scan/OCG decision. Epic:
+[#242](https://github.com/MajorJohnDoe/gridscalr/issues/242).
+
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
