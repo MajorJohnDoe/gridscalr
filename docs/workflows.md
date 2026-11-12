@@ -203,7 +203,7 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 2. Save a copy before changing anything.
 3. Choose **File → Import pages from project…** and pick the other file.
 4. In the picker, select the corrected sheet. Check its page name and item count, then import it.
-5. Review the **Import preflight** counts, unreadable files and checksum warnings before choosing **Import pages**. Cancel leaves both projects untouched.
+5. Review the **Import preflight** counts and the **Source files** list. Relink a missing PDF with **Relink…**; the replacement's page count and SHA-256 checksum are verified. If a file differs, choose **Use anyway** for that file or relink the correct copy — **Import pages** stays disabled until every change is confirmed. The summary beside the button shows the current missing and changed state. Cancel leaves both projects and the source files untouched.
 6. If the old, incorrect version is still in the project, delete that page from the Pages tab. The other pages keep their stable IDs and measurements, so the corrected sheet takes the old position and the later displayed numbers move down by one.
 7. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
 8. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.

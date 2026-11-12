@@ -110,3 +110,66 @@
 .project-import .page-import-thumb.is-preview-missing .page-import-placeholder {
   color: var(--warning);
 }
+
+/* Import preflight source list and commit summary. */
+.preflight-counts {
+  display: grid;
+  gap: 2px;
+}
+
+.preflight-section-title {
+  margin: 6px 0 0;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.preflight-sources {
+  display: grid;
+  gap: 6px;
+}
+
+.preflight-document {
+  display: grid;
+  gap: 4px;
+  padding: 8px 10px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.preflight-document.is-missing,
+.preflight-document.is-changed {
+  border-color: var(--status-warning);
+}
+
+.preflight-document-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.preflight-status {
+  color: var(--text-muted);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+
+.preflight-status.is-missing {
+  color: var(--status-warning);
+}
+
+.preflight-document-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.preflight-summary {
+  max-width: 48ch;
+  margin-right: auto;
+  align-self: center;
+  color: var(--text-muted);
+  font-size: 12px;
+  line-height: 1.4;
+}

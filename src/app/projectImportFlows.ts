@@ -13,6 +13,8 @@ import type { ProjectImportGroupOption } from "../features/projectImport/ui";
 import { projectImportDialog } from "../features/projectImport/ui";
 import { buildImportPreflight } from "../features/projectImport/preflight";
 import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
+import type { ImportPreflightSnapshot } from "../features/projectImport/relink";
+import { buildImportSourceStates, emptyPreparedImport } from "../features/projectImport/relink";
 import type { ImportedRendererDocument } from "./rendererDocuments";
 import { t } from "../i18n";
 import { isTauri, pickProject } from "../io/platform";
@@ -152,24 +154,21 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
     return;
   }
 
-  if (!resolved.pages.length) {
-    loader.dispose(new Set());
-    await showWarnings(resolved);
-    return;
-  }
-
+  const selectedPages = selection;
   let prepared: PreparedProjectImport;
   let provenance: ImportProvenanceSource;
   try {
     provenance = await sourceProvenance(source, picked);
-    prepared = prepareProjectImport(
-      destination,
-      source,
-      resolved.pages,
-      resolved.overrides,
-      undefined,
-      provenance,
-    );
+    prepared = resolved.pages.length
+      ? prepareProjectImport(
+          destination,
+          source,
+          resolved.pages,
+          resolved.overrides,
+          undefined,
+          provenance,
+        )
+      : emptyPreparedImport();
   } catch (error) {
     loader.dispose(new Set());
     const message =
@@ -178,13 +177,61 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
     return;
   }
 
-  const preflight = buildImportPreflight({
-    prepared,
-    sourceName: source.name,
-    skipped: resolved.skipped,
-    warnings: resolved.warnings,
+  const describe = (): ImportPreflightSnapshot => ({
+    preflight: buildImportPreflight({
+      prepared,
+      sourceName: source.name,
+      skipped: resolved.skipped,
+      warnings: resolved.warnings,
+    }),
+    sources: buildImportSourceStates({
+      source,
+      selected: selectedPages,
+      skipped: resolved.skipped,
+      pageCounts: new Map(
+        resolved.documents.map((document) => [document.documentId, document.pageCount]),
+      ),
+      mismatches: resolved.mismatches,
+    }),
   });
-  if (!(await projectImportPreflightDialog(preflight))) {
+
+  /**
+   * Re-reads every selected page after a relink. Only the loader and the
+   * prepared import change; the open project stays untouched until commit.
+   */
+  const rebuild = async (): Promise<ImportPreflightSnapshot> => {
+    resolved = await loader.ensure(selectedPages);
+    if (!resolved.pages.length) {
+      prepared = emptyPreparedImport();
+      return describe();
+    }
+    try {
+      prepared = prepareProjectImport(
+        destination,
+        source,
+        resolved.pages,
+        resolved.overrides,
+        undefined,
+        provenance,
+      );
+    } catch (error) {
+      logEvent("error", `import relink prepare failed: ${errorMessage(error)}`);
+      prepared = emptyPreparedImport();
+    }
+    return describe();
+  };
+
+  const confirmed = await projectImportPreflightDialog(describe(), {
+    relink: async (documentId) => {
+      const located = await loader.locate(documentId);
+      return located ? rebuild() : null;
+    },
+    unrelink: async (documentId) => {
+      loader.unrelink(documentId);
+      return rebuild();
+    },
+  });
+  if (!confirmed) {
     loader.dispose(new Set());
     return;
   }

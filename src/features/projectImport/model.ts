@@ -63,6 +63,20 @@ export interface ImportDocumentOverride {
 
 export type ImportDocumentOverrides = ReadonlyMap<string, ImportDocumentOverride>;
 
+/**
+ * A source document that loaded but differs from the metadata stored in the
+ * source project. The import preflight requires an explicit confirmation before
+ * such a file can be imported.
+ */
+export interface ImportSourceMismatch {
+  documentId: string;
+  name: string;
+  checksum: boolean;
+  pageCount: boolean;
+  expectedPageCount: number;
+  actualPageCount: number;
+}
+
 export interface ImportPageMapEntry {
   sourcePage: number;
   newPage: number;
