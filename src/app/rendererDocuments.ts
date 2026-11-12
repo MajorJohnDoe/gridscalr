@@ -3,7 +3,6 @@ import { documentPageMaps } from "../model/documents";
 import { documentPageOrder, pageOrderSignature } from "../model/pages";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
-import { store } from "../state/store";
 
 export interface ImportedRendererDocument {
   id: string;
@@ -37,31 +36,34 @@ export class RendererDocumentRegistry {
     this.lastIds = project ? project.documents.map((document) => document.id) : [];
   }
 
-  /** Adds imported documents to the renderer and remembers their proxies. */
+  /**
+   * Adds imported documents to the renderer, remembers their proxies and
+   * derives the display page order. Returns whether that order changed.
+   */
   addImported(
     entries: readonly ImportedRendererDocument[],
     project: Project,
     renderer: PdfRenderer,
-  ): void {
+  ): boolean {
     for (const entry of entries) {
       renderer.addDocument(entry.proxy, entry.pageMap);
       this.cache.set(entry.id, { proxy: entry.proxy, pageMap: [...entry.pageMap] });
     }
     renderer.setPageMaps(documentPageMaps(project.documents));
     this.lastIds = project.documents.map((document) => document.id);
+    return this.syncPageOrder(project, renderer);
   }
 
-  /** Adds one document and then applies the project's explicit page order. */
+  /** Adds one document and derives the display page order from the project. */
   addProjectDocument(
+    project: Project | null,
     documentId: string,
     proxy: PDFDocumentProxy,
     pageMap: number[],
     renderer: PdfRenderer | null,
-  ): void {
-    const project = store.project;
-    if (!project || !renderer) return;
-    this.addImported([{ id: documentId, proxy, pageMap }], project, renderer);
-    renderer.setPageOrder(documentPageOrder(project));
+  ): boolean {
+    if (!project || !renderer) return false;
+    return this.addImported([{ id: documentId, proxy, pageMap }], project, renderer);
   }
 
   /**
@@ -69,9 +71,15 @@ export class RendererDocumentRegistry {
    * renderer already holds. A reorder or page-insert undo changes no document,
    * so this comparison is what keeps the canvas, thumbnails and page sizes
    * aligned with the restored page list.
+   *
+   * This is the single derivation point: the store listener calls it after
+   * every project change, and document registration calls it once the renderer
+   * holds the new document. An order that points past the renderer's document
+   * list is never applied; it is retried when the document is registered.
    */
   syncPageOrder(project: Project | null, renderer: PdfRenderer | null): boolean {
     if (!project || !renderer) return false;
+    if (renderer.documentCount !== project.documents.length) return false;
     const order = documentPageOrder(project);
     if (renderer.appliedPageOrder === pageOrderSignature(order)) return false;
     renderer.setPageOrder(order);

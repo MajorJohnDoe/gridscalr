@@ -406,6 +406,7 @@ src/app/projectImportFlows.ts project page import, preflight, provenance and his
 src/app/projectImportSource.ts source project document loading, previews and missing-file recovery
 src/app/projectDoctorFlows.ts project doctor and load-report wiring
 src/app/rendererDocuments.ts renderer/proxy cache that keeps import undo and redo instant
+src/app/rendererSync.ts    single store listener that derives renderer page order and document reconcile
 src/app/diagnosticsFlows.ts diagnostics text, copy and report flow
 src/i18n/locales/*.json    message catalogs; en.json is the source and fallback
 src/i18n/registry.ts       SUPPORTED_LOCALES descriptors, locale matching and pseudo-locale

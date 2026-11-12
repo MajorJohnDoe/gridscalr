@@ -80,6 +80,7 @@ function host(): PageActionHost {
     closeSearch: () => undefined,
     closeReference: async () => undefined,
     afterStructuralChange: () => undefined,
+    registerCreatedDocuments: async () => undefined,
     installProject: async () => undefined,
     detachDocument: () => undefined,
   };

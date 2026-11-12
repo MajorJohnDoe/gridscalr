@@ -23,7 +23,7 @@ import { describeError } from "../io/platformError";
 import { parseProject } from "../io/projectFile";
 import { sameFilePath } from "../io/writeGuard";
 import { includedLocalPages } from "../model/documents";
-import { documentPageOrder, pageNumber } from "../model/pages";
+import { pageNumber } from "../model/pages";
 import type { PageSize, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -277,7 +277,6 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
       importWarnings = commitProjectImport(project, prepared).warnings;
     }, "project");
     host.addImportedDocuments(entries);
-    renderer.setPageOrder(documentPageOrder(store.project ?? destination));
   } catch (error) {
     loader.dispose(new Set(entries.map((entry) => entry.proxy)));
     logEvent("error", `import project commit failed: ${errorMessage(error)}`);

@@ -1470,7 +1470,7 @@ remains the scheduling home.
 | F-009 | accepted | The lease is advisory by decision; the conditional write is the actual protection. |
 | F-010 | accepted | The metadata watcher is a banner optimisation; the conditional save still detects the hash change at write time. |
 | F-011 | deferred | Template fields remain document-owned by the Phase 3 decision; moving them into page state is a later schema change. |
-| F-012 | deferred | Manual renderer resynchronisation is covered by the structural paths; deriving it from the store is a follow-up refactor. |
+| F-012 | fixed | 0.25.0 phase 16 derives the renderer page order from the store listener, with a registration deferral for new documents and a development invariant. |
 | F-013 | fixed | 0.25.0 phase 11 extends **Replace source…** to TIF through the derived PDF and raw scan checksum, with the same mapping, superseded pages and warnings. |
 | F-014 | accepted | The fixed sibling `<project>.drawings/` folder is a documented storage choice and keeps packages simple. |
 | F-015 | accepted | Cloud/network detection only recommends a managed copy; it never blocks or rewrites a reference. |
@@ -1512,26 +1512,54 @@ remains the scheduling home.
 - **Related:** schema 23 template sheets, ADR
   [0011](../adr/0011-page-list-and-source-replacement.md).
 
+### F-099 — Document registration is still ordered after the store emit
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 16 — renderer page order
+- **Severity:** P3
+- **Area:** canvas / renderer
+- **Evidence:** `store.addDocument()` and the import and duplicate flows emit
+  `"project"` before the new PDF proxies are registered with the renderer.
+  `RendererDocumentRegistry.syncPageOrder()` therefore defers an order whose
+  document indices are not yet available and applies it from `addImported()`
+  after registration.
+- **Problem:** A future flow that adds a project document without calling the
+  registration helper leaves the renderer on the previous order. The deferral
+  keeps that mistake from throwing, so it is silent until the next structural
+  change.
+- **Impact:** No data loss; a stale visible page until the next structural
+  change. The regression suite covers the flows that exist today.
+- **Next step:** Decide whether document registration belongs in the store (one
+  call that adds the record and supplies the proxy) so the ordering constraint
+  disappears. Do not add a per-frame production comparison.
+- **Related:** F-012, ADR [0011](../adr/0011-page-list-and-source-replacement.md).
+
+## Fixed
+
 ### F-012 — Renderer page order is synchronized manually
 
 - **Date:** 2026-11-10
 - **Phase:** 3 — page list and document model
 - **Severity:** P2
 - **Area:** canvas / renderer
-- **Status:** deferred
-- **Evidence:** `PdfRenderer.setPageOrder()` must be called after insert,
+- **Status:** fixed
+- **Evidence:** `PdfRenderer.setPageOrder()` had to be called after insert,
   reorder, delete, import and source replacement. `App.afterStructuralPageChange`
-  centralizes most paths; `pageFlows` and import flows call it separately.
-- **Problem:** A future structural operation that forgets to resync the renderer
-  will render the previous page order while the project data is correct.
-- **Impact:** No data loss; the visible page can be stale until the next reload.
-- **Next step:** Derive the renderer order from the store subscription in one
-  place, or add a debug invariant that compares the renderer order with
-  `documentPageOrder(project)` after every structural change.
+  centralized most paths; `pageFlows` and import flows called it separately.
+- **Problem:** A future structural operation that forgot to resync the renderer
+  would render the previous page order while the project data was correct.
+- **Impact:** No data loss; the visible page could be stale until the next
+  reload.
+- **Resolution:** 0.25.0 phase 16 moves the derivation into one store listener
+  (`RendererStoreSync.handle`). `RendererDocumentRegistry.syncPageOrder()` applies
+  the order only when its signature changes and never before every referenced
+  document is registered; document registration derives the order itself. Every
+  scattered `setPageOrder()` call is gone except the initial constructor
+  argument. A development-only invariant reports a mismatch after each handled
+  change, and `tests/rendererPageOrder.test.ts` drives insert, reorder with
+  undo/redo, delete and source replacement through the real store.
 - **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
   §7.4.
-
-## Fixed
 
 ### F-004 — Conflict comparison is metadata-only
 

@@ -13,8 +13,7 @@ import { store } from "../src/state/store";
 
 function host(): PageFlowHost {
   return {
-    renderer: () => null,
-    thumbnails: () => null,
+    addDocumentToRenderer: vi.fn(),
     resetPageSizes: vi.fn(),
     enqueuePageSize: vi.fn(async () => undefined),
     fitPage: vi.fn(),

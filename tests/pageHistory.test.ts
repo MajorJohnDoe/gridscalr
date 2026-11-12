@@ -93,6 +93,7 @@ function actionHost(): PageActionHost {
     closeSearch: () => undefined,
     closeReference: async () => undefined,
     afterStructuralChange: () => undefined,
+    registerCreatedDocuments: async () => undefined,
     installProject: async () => undefined,
     detachDocument: () => undefined,
   };
@@ -100,8 +101,7 @@ function actionHost(): PageActionHost {
 
 function flowHost(): PageFlowHost {
   return {
-    renderer: () => null,
-    thumbnails: () => null,
+    addDocumentToRenderer: vi.fn(),
     resetPageSizes: vi.fn(),
     enqueuePageSize: vi.fn(async () => undefined),
     fitPage: vi.fn(),
