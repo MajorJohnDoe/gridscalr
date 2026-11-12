@@ -1,6 +1,6 @@
 import { makeId } from "../../model/calibration";
 import { pageRecordById } from "../../model/pages";
-import type { DocumentRef, PageId, Project } from "../../model/types";
+import type { DocumentRef, PageId, PageSize, Project } from "../../model/types";
 
 /**
  * Source replacement keeps page identity. Mapped pages move to the new document
@@ -74,6 +74,9 @@ export function applySourceReplacement(
       };
   if (everyMapped) {
     Object.assign(oldDocument, target);
+    // The mapping defines the new document's included pages; an old exclusion
+    // list refers to pages that no longer exist in this source.
+    delete oldDocument.excludedPages;
   } else {
     project.documents.push(target);
     const hasUnmatched = oldPageIds.some((pageId) => !mapped.has(pageId));
@@ -107,17 +110,30 @@ export function defaultReplacementMappings(
   }));
 }
 
+export type ReplacementWarningCode = "pageCount" | "pageSize" | "calibration" | "scaleLocked";
+
 export interface ReplacementWarningInput {
   oldPageCount: number;
   newPageCount: number;
   calibratedPages: number;
   scaleLockedPages: number;
+  /** Mapped pages whose size differs between the old and the new source. */
+  sizeChangedPages?: number;
+}
+
+/** True when two 1 pt page viewports differ beyond a rounding tolerance. */
+export function pageSizeChanged(oldSize: PageSize, newSize: PageSize, tolerance = 0.5): boolean {
+  return (
+    Math.abs(oldSize.width - newSize.width) > tolerance ||
+    Math.abs(oldSize.height - newSize.height) > tolerance
+  );
 }
 
 /** Reasons the replacement dialog must warn before applying. */
-export function replacementWarnings(input: ReplacementWarningInput): string[] {
-  const warnings: string[] = [];
+export function replacementWarnings(input: ReplacementWarningInput): ReplacementWarningCode[] {
+  const warnings: ReplacementWarningCode[] = [];
   if (input.oldPageCount !== input.newPageCount) warnings.push("pageCount");
+  if ((input.sizeChangedPages ?? 0) > 0) warnings.push("pageSize");
   if (input.calibratedPages > 0) warnings.push("calibration");
   if (input.scaleLockedPages > 0) warnings.push("scaleLocked");
   return warnings;

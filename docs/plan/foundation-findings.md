@@ -394,25 +394,6 @@ project contents.
 - **Related:** robustness §7.7, schema 25 optional fields,
   `src/features/importProvenance/`.
 
-### F-022 — Import revision hash is computed from decoded text
-
-- **Date:** 2026-11-10
-- **Phase:** 5 — integrity and project doctor
-- **Severity:** P3
-- **Area:** import provenance
-- **Status:** deferred
-- **Evidence:** `sourceProvenance()` in `src/app/projectImportFlows.ts` hashes the
-  UTF-8 encoding of the text returned by `pickProject()`. Size and mtime come
-  from the file metadata when Tauri provides it.
-- **Problem:** A BOM, newline normalization or a different read path could make
-  the provenance hash differ from a raw file hash computed elsewhere. It is still
-  deterministic for the same decoded content.
-- **Impact:** Provenance remains a useful revision identity inside GridScalr, but
-  it is not a byte-for-byte file hash for external verification.
-- **Next step:** Add a raw-byte file hash to `PickedProject` if provenance needs
-  to match package or backup checksums exactly.
-- **Related:** F-021, robustness §7.7.
-
 ### F-023 — OCG groups cannot express page-scoped layer visibility
 
 - **Date:** 2026-11-10
@@ -1428,6 +1409,28 @@ confirmed against the audit.
   row if list-time parsing proves cheap enough for large projects.
 - **Related:** #179.
 
+### F-088 — Replacing a managed-copy source leaves the old copy and original provenance
+
+- **Date:** 2026-11-12
+- **Phase:** 11 — TIF replacement and raw-byte provenance
+- **Severity:** P3
+- **Area:** source replacement / source storage
+- **Status:** deferred
+- **Evidence:** `applySourceReplacement()` merges the picked `DocumentRef` over the
+  old document. A picked file is always built as `storage: "reference"`, so a
+  managed document loses its managed mode, while `originalPath` and
+  `originalSha256` from the previous copy can remain. The old file in
+  `<project>.drawings/` is not removed.
+- **Problem:** A replacement of a managed-copy PDF or TIF can leave a stale
+  original-path provenance value and an unreferenced managed file.
+- **Impact:** No data loss and the new source is correct. The leftover copy is
+  reported by the project doctor's unreferenced-copy list, and the new document
+  points at the picked file as a reference.
+- **Next step:** Decide whether replacement should preserve managed storage by
+  copying the new source into the project, and clear `originalPath` /
+  `originalSha256` explicitly when it does not. Keep cleanup explicit.
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-017, #189.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
@@ -1452,7 +1455,7 @@ remains the scheduling home.
 | F-010 | accepted | The metadata watcher is a banner optimisation; the conditional save still detects the hash change at write time. |
 | F-011 | deferred | Template fields remain document-owned by the Phase 3 decision; moving them into page state is a later schema change. |
 | F-012 | deferred | Manual renderer resynchronisation is covered by the structural paths; deriving it from the store is a follow-up refactor. |
-| F-013 | deferred | TIF source replacement waits for the derived-PDF lifetime and checksum rules; the manual path is documented. |
+| F-013 | fixed | 0.25.0 phase 11 extends **Replace source…** to TIF through the derived PDF and raw scan checksum, with the same mapping, superseded pages and warnings. |
 | F-014 | accepted | The fixed sibling `<project>.drawings/` folder is a documented storage choice and keeps packages simple. |
 | F-015 | accepted | Cloud/network detection only recommends a managed copy; it never blocks or rewrites a reference. |
 | F-016 | accepted | Same-size source polling is a documented trade-off; open and explicit reload still hash the file. |
@@ -1461,7 +1464,7 @@ remains the scheduling home.
 | F-019 | accepted | The validator proves internal references; external source truth stays with the source-status checks and user review. |
 | F-020 | accepted | Duplicate-ID repair cannot attribute ambiguous references; keeping the first occurrence is the documented safe choice. |
 | F-021 | deferred | Provenance is preserved and validated; showing it in Properties or Markups is a presentation change, not an integrity gap. |
-| F-022 | deferred | A raw-byte hash needs a picker API change; the current provenance hash is deterministic for decoded content. |
+| F-022 | fixed | 0.25.0 phase 11 adds a raw-byte SHA-256 to the project picker and records it in provenance; older values stay as historical data. |
 | F-023 | deferred | Per-page OCG design is an interoperability trade-off; hidden content is still excluded and the flattened default is unchanged. |
 | F-024 | accepted | Review annotations are deliberately approximate and reader-dependent; they are not project data. |
 | F-025 | accepted | Conflict comparison is read-only and heuristic; a merge would need a common base and semantic IDs. |
@@ -1512,25 +1515,6 @@ remains the scheduling home.
 - **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
   §7.4.
 
-### F-013 — Replace source supports PDF documents only
-
-- **Date:** 2026-11-10
-- **Phase:** 3 — page list and document model
-- **Severity:** P3
-- **Area:** source replacement
-- **Status:** deferred
-- **Evidence:** `app/replacementFlows.ts` returns the localized **PDF only**
-  warning for TIF and template documents.
-- **Problem:** A reissued scan cannot be mapped in place. The user must add the
-  new TIF as a document and delete the old pages explicitly.
-- **Impact:** No data loss; the workflow is manual for scans.
-- **Next step:** Add TIF replacement once the derived-PDF lifetime and checksum
-  rules are covered, or document the manual path in the user guide.
-- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
-  schema 25 source storage.
-
-No entries yet.
-
 ## Fixed
 
 ### F-004 — Conflict comparison is metadata-only
@@ -1552,6 +1536,45 @@ No entries yet.
   conflict dialog shows a read-only summary. The metadata fallback remains for
   an unreadable disk file.
 - **Related:** robustness §7.8, Phase 6 interoperability.
+
+### F-013 — Replace source supports PDF documents only
+
+- **Date:** 2026-11-10
+- **Phase:** 3 — page list and document model
+- **Severity:** P3
+- **Area:** source replacement
+- **Status:** fixed — 0.25.0 phase 11 ([#191](https://github.com/MajorJohnDoe/gridscalr/issues/191))
+- **Evidence:** `app/replacementFlows.ts` returned the localized **PDF only**
+  warning for TIF and template documents.
+- **Problem:** A reissued scan could not be mapped in place. The user had to add
+  the new TIF as a document and delete the old pages explicitly.
+- **Impact:** No data loss; the workflow was manual for scans.
+- **Resolution:** **Replace source…** accepts a TIF as well as a PDF. The picked
+  scan is converted through the existing derived-PDF path, the document keeps the
+  raw TIF checksum, and the same page-identity mapping, superseded pages and
+  size/scale warnings apply. The page menu offers the action for a TIF source
+  while the PDF-only reload, relink and managed-copy actions stay hidden.
+- **Related:** ADR [0011](../adr/0011-page-list-and-source-replacement.md),
+  schema 26 source storage.
+
+### F-022 — Import revision hash is computed from decoded text
+
+- **Date:** 2026-11-10
+- **Phase:** 5 — integrity and project doctor
+- **Severity:** P3
+- **Area:** import provenance
+- **Status:** fixed — 0.25.0 phase 11 ([#191](https://github.com/MajorJohnDoe/gridscalr/issues/191))
+- **Evidence:** `sourceProvenance()` in `src/app/projectImportFlows.ts` hashed the
+  UTF-8 encoding of the text returned by `pickProject()`.
+- **Problem:** A BOM, newline normalization or a different read path could make
+  the provenance hash differ from a raw file hash computed elsewhere.
+- **Impact:** Provenance was a useful revision identity inside GridScalr, but not
+  a byte-for-byte file hash for external verification.
+- **Resolution:** `projectFileIdentity()` reads the project bytes once, decodes
+  the text and hashes the raw bytes; `PickedProject` carries that SHA-256 and the
+  byte size, and provenance records them. Packages, backups and provenance now
+  agree. Existing stored values are left untouched and documented as historical.
+- **Related:** F-021, robustness §7.7, `src/io/platform.ts`.
 
 ### F-027 — Source replacement did not clear undo history
 

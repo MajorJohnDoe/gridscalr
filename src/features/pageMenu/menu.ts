@@ -77,38 +77,42 @@ export function pageMenuItems(
       icon: "target",
       action: () => pageLocationDialog(project, pageId, page),
     },
-    ...(sourceDocument?.kind === "pdf"
+    ...(sourceDocument?.kind === "pdf" || sourceDocument?.kind === "tiff"
       ? [
-          ...(sourceDocument.storage === "managed"
+          ...(sourceDocument.kind === "pdf"
             ? [
+                ...(sourceDocument.storage === "managed"
+                  ? [
+                      {
+                        label: t("page.detachFromSource"),
+                        icon: "folder",
+                        action: () => actions.detachFromSource(record.documentId),
+                      },
+                    ]
+                  : [
+                      {
+                        label: t("page.useManagedCopy"),
+                        icon: "folder",
+                        action: () => actions.copyDrawingIntoProject(record.documentId),
+                      },
+                    ]),
                 {
-                  label: t("page.detachFromSource"),
+                  label: t("page.reloadSource"),
                   icon: "folder",
-                  action: () => actions.detachFromSource(record.documentId),
+                  action: () => actions.reloadSource(record.documentId),
+                },
+                {
+                  label: t("page.useCurrentSource"),
+                  icon: "folder",
+                  action: () => actions.useCurrentSource(record.documentId),
+                },
+                {
+                  label: t("page.relinkSource"),
+                  icon: "folder",
+                  action: () => actions.relinkSource(record.documentId),
                 },
               ]
-            : [
-                {
-                  label: t("page.useManagedCopy"),
-                  icon: "folder",
-                  action: () => actions.copyDrawingIntoProject(record.documentId),
-                },
-              ]),
-          {
-            label: t("page.reloadSource"),
-            icon: "folder",
-            action: () => actions.reloadSource(record.documentId),
-          },
-          {
-            label: t("page.useCurrentSource"),
-            icon: "folder",
-            action: () => actions.useCurrentSource(record.documentId),
-          },
-          {
-            label: t("page.relinkSource"),
-            icon: "folder",
-            action: () => actions.relinkSource(record.documentId),
-          },
+            : []),
           {
             label: t("page.replaceSource"),
             icon: "folder",

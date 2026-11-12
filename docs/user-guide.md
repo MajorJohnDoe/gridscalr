@@ -118,14 +118,14 @@ When you open a drawing from a UNC network path or a folder that looks like OneD
 
 A managed copy needs a saved project. If the project is new and unsaved, GridScalr asks you to save it first, then copies the drawing and saves the managed link. It never falls back to embedding a PDF in the project JSON.
 
-Use the right-click menu on a page card for the drawing actions:
+Use the right-click menu on a page card for the drawing actions. A PDF source offers the full set; a TIF source keeps its derived PDF inside the project, so it offers **Replace source…** only.
 
 - **Use managed copy** – copy this reference PDF into the project and switch the document to managed mode. Provenance is kept as the original path and checksum.
 - **Detach from source** – keep the managed copy but clear its link to the original path.
 - **Reload source** – re-read the current file and update the checksum. It refuses a changed page count and points to **Replace source…**.
 - **Use current source** – accept the current on-disk checksum without re-rendering the working drawing.
 - **Relink source…** – find a moved reference file. GridScalr verifies the page count, warns on a checksum mismatch, and searches the project folder and its drawings folder by checksum before asking you to pick a file.
-- **Replace source…** – map a new revision when pages were added, removed or moved.
+- **Replace source…** – map a new revision of a PDF or TIF when pages were added, removed or moved. A TIF replacement converts the new scan to its derived PDF and compares the raw TIF checksum, so the pages keep their identity.
 
 **File → Consolidate drawings…** copies every remaining referenced PDF into the project folder, checks each checksum, rewrites the paths and reports how many drawings were copied. It is one explicit action with a recovery checkpoint; originals are untouched. If any source changed or is missing, the project is not modified.
 
@@ -207,7 +207,7 @@ Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line
 
 ### Replace a source drawing
 
-Right-click a page card and choose **Replace source…** when a drawing is reissued with pages in a different order or with a sheet missing. Pick the new PDF, then map each project page to a page in the new file. Mapped pages keep their ID, markups and page settings. Pages without a mapping stay on the old source, marked **Superseded source**, until you review them and use **Remove superseded pages…**. Calibration and scale are kept; check them after replacing the source. The original files are never modified.
+Right-click a page card and choose **Replace source…** when a drawing is reissued with pages in a different order or with a sheet missing. Pick the new PDF or TIF, then map each project page to a page in the new file. A TIF is converted to its derived PDF before mapping and is checked against the raw TIF file, so a scanned revision follows the same rules as a PDF. The default mapping is the same page position; remap the rows when sheets swapped places. Mapped pages keep their ID, markups and page settings. Pages without a mapping stay on the old source, marked **Superseded source**, until you review them and use **Remove superseded pages…**. Calibration, page size and drawing scale warnings appear before you apply, and the values are kept; check them after replacing the source. The original files are never modified.
 
 ### Start with a blank project
 
@@ -230,7 +230,7 @@ The pages are appended after the existing pages by default. Existing page number
 - **Undo:** the whole import is one step. `Ctrl/Cmd+Z` removes the imported pages and their layers; `Ctrl/Cmd+Shift+Z` brings them back. The imported PDFs stay in memory until the project is closed or replaced, which is what makes redo immediate.
 - **Units and metadata:** the destination project keeps its units, metadata, settings, saved Markups views and count presets. Imported measurements keep their geometry and are displayed in the destination's units.
 - **Preflight:** before anything changes, GridScalr shows the pages, items, documents, categories, count types, line types and image assets that will be added, plus unreadable source files, skipped pages, checksum warnings and page-count changes. Choose **Cancel** to leave the project untouched.
-- **Provenance:** each imported page stores the source project ID, the source file's SHA-256, size and modification time, the source page ID, the import time and the GridScalr version. This is additive optional data in schema 25; older files load unchanged and are never given invented provenance. Select the page and open **Properties** to see a read-only **Imported page** section with the shortened source project ID, the short revision hash and size, the revision time, the source page and the import time. A normal page shows no provenance section, and a malformed record is omitted rather than displayed.
+- **Provenance:** each imported page stores the source project ID, the source file's SHA-256, size and modification time, the source page ID, the import time and the GridScalr version. The hash is computed over the raw `.gridscalr` bytes, so it matches the checksum shown for packages and backups. Pages imported by an older release keep their historical hash, which was computed from the decoded text; GridScalr does not rewrite it. Provenance is additive optional data in schema 25; older files load unchanged and are never given invented provenance. Select the page and open **Properties** to see a read-only **Imported page** section with the shortened source project ID, the short revision hash and size, the revision time, the source page and the import time. A normal page shows no provenance section, and a malformed record is omitted rather than displayed.
 - **Packages:** `.gridscalr.zip` cannot be imported directly. Extract the package first and choose the `.gridscalr` file inside it.
 
 The preview shows the sheet background, like the Pages panel; markups are not composited into the thumbnail. Use the page name and item count to identify the right card.

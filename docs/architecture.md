@@ -254,7 +254,7 @@ src/
   model/pages.ts         PageId, PageRecord and every page resolver
   model/openTarget.ts    PDF/TIF/project classification shared by window and Pages-panel drops
   features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
-  app/replacementFlows.ts file pick, previews, renderer swap and checkpoint
+  app/replacementFlows.ts PDF/TIF file pick, page-size and scale warnings, previews, renderer swap and checkpoint
   model/cloud.ts         revision-cloud bezier geometry
   model/annotations.ts   callout, stamp, delta, and cloud-label layout
   model/stamps.ts        stamp preset normalization and defaults

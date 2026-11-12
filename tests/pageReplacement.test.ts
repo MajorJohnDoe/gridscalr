@@ -144,7 +144,7 @@ describe("source replacement", () => {
     expect(project.pages.map((page) => page.id)).toEqual([pageIdFor(1)]);
   });
 
-  it("reports page-count, calibration and lock warnings", () => {
+  it("reports page-count, calibration, lock and page-size warnings", () => {
     expect(
       replacementWarnings({
         oldPageCount: 3,
@@ -159,7 +159,31 @@ describe("source replacement", () => {
         newPageCount: 2,
         calibratedPages: 0,
         scaleLockedPages: 0,
+        sizeChangedPages: 1,
+      }),
+    ).toEqual(["pageSize"]);
+    expect(
+      replacementWarnings({
+        oldPageCount: 2,
+        newPageCount: 2,
+        calibratedPages: 0,
+        scaleLockedPages: 0,
       }),
     ).toEqual([]);
+  });
+
+  it("clears source exclusions that no longer describe the replaced document", () => {
+    const project = makeProject();
+    project.documents[0].excludedPages = [3];
+    applySourceReplacement(project, {
+      documentId: project.documents[0].id,
+      newDocument: newSource(2),
+      mappings: [
+        { pageId: pageIdFor(1), newLocalPage: 1 },
+        { pageId: pageIdFor(2), newLocalPage: 2 },
+        { pageId: pageIdFor(3), newLocalPage: 2 },
+      ],
+    });
+    expect(project.documents[0].excludedPages).toBeUndefined();
   });
 });

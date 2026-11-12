@@ -15,7 +15,8 @@ import { buildImportPreflight } from "../features/projectImport/preflight";
 import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
 import type { ImportedRendererDocument } from "./rendererDocuments";
 import { t } from "../i18n";
-import { isTauri, pickProject, sha256Hex } from "../io/platform";
+import { isTauri, pickProject } from "../io/platform";
+import type { PickedProject } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { parseProject } from "../io/projectFile";
 import { sameFilePath } from "../io/writeGuard";
@@ -50,30 +51,27 @@ function errorMessage(error: unknown): string {
 
 /**
  * Captures the source project revision identity before the import mutates the
- * destination. Only the source file and its metadata are read.
+ * destination. The hash comes from the picker and covers the raw file bytes, so
+ * it can be compared with package and backup checksums. Only the source file and
+ * its metadata are read.
  */
 async function sourceProvenance(
   source: Project,
-  picked: { text: string; path: string | null },
+  picked: PickedProject,
 ): Promise<ImportProvenanceSource> {
-  const bytes = new TextEncoder().encode(picked.text);
-  let size = bytes.byteLength;
   let modifiedAt: string | null = null;
   if (isTauri && picked.path) {
     try {
       const metadata = await computeFileMetadata(picked.path);
-      if (metadata) {
-        size = metadata.sizeBytes;
-        modifiedAt = new Date(metadata.modifiedAt).toISOString();
-      }
+      if (metadata) modifiedAt = new Date(metadata.modifiedAt).toISOString();
     } catch {
       // The hash and size still identify the revision without metadata.
     }
   }
   return {
     sourceProjectId: source.id,
-    sourceRevisionSha256: await sha256Hex(bytes),
-    sourceRevisionSize: size,
+    sourceRevisionSha256: picked.sha256,
+    sourceRevisionSize: picked.sizeBytes,
     sourceRevisionModifiedAt: modifiedAt,
     appVersion: __APP_VERSION__,
   };

@@ -388,13 +388,15 @@ history rules (implemented in 0.25.0, see ADR 0011):
 
 #### Replace a source document
 
-A new revision PDF can swap pages, add a page or omit one. The project must keep
-the markup attached to the right page without inventing a revision DAG.
+A new revision drawing can swap pages, add a page or omit one. A TIF revision is
+converted to its derived PDF and compared by the same rules, and the document
+keeps the checksum of the raw scan. The project must keep the markup attached to
+the right page without inventing a revision DAG.
 
 Flow:
 
 1. Choose the document and **Replace source…**.
-2. Read the new PDF page count, checksum and page sizes.
+2. Read the new page count, checksum and page sizes.
 3. Show a mapping of old page → new page with previews.
 4. Default to the same page index; allow manual mapping when pages moved.
 5. Keep `PageId`, items and page state for mapped pages.

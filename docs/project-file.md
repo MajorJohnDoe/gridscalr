@@ -246,10 +246,13 @@ older files simply omit it; no schema bump is required.
 ```
 
 `sourceRevisionModifiedAt` is `null` when the platform did not provide a
-modification time. A partial or malformed provenance object is dropped as a
-whole and counted in the load report; the page itself is kept. Provenance is
-descriptive context for a page imported from another project, not a signature or
-a revision ancestry model.
+modification time. `sourceRevisionSha256` is computed over the raw project file
+bytes from 0.25.0 onward, so it matches the checksum used by packages and
+backups. Pages imported by an earlier release keep the historical value that was
+computed from the decoded text; loading and saving never rewrite it. A partial
+or malformed provenance object is dropped as a whole and counted in the load
+report; the page itself is kept. Provenance is descriptive context for a page
+imported from another project, not a signature or a revision ancestry model.
 
 The format stores the source project's stable ID, not its display name. The
 interface shows that ID shortened (for example `project_1a2b3c4d…`) together

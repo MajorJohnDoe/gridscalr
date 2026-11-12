@@ -18,10 +18,11 @@ export type {
 export {
   applySourceReplacement,
   defaultReplacementMappings,
+  pageSizeChanged,
   pagesForDocument,
   replacementWarnings,
 } from "./replacement";
-export type { PageRemap, SourceReplacementResult } from "./replacement";
+export type { PageRemap, ReplacementWarningCode, SourceReplacementResult } from "./replacement";
 export { importedLayerIdentity, importInsertionIndex, importedPageIds } from "./importMapping";
 export { sourceReplacementDialog } from "./ui";
 export type { ReplacementDialogInput, ReplacementDialogResult } from "./ui";
