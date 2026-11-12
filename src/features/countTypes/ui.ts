@@ -14,7 +14,7 @@ import {
   isBuiltInCountType,
   removeCountType,
   renameCountType,
-} from "./model";
+} from "../../model/countTypes";
 import { t } from "../../i18n";
 
 function iconButton(markup: string, label: string, onClick: () => void): HTMLButtonElement {

@@ -1,7 +1,7 @@
 import { textItemLayout } from "./text";
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import { railGeometry, railLegendY } from "./rail";
-import { symbolArtBounds, symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
+import { symbolArtBounds, symbolFor, symbolSizeOf } from "./symbols";
 import type { MarkupItem, Point } from "./types";
 
 export function distance(a: Point, b: Point): number {

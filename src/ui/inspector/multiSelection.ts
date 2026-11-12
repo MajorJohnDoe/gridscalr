@@ -1,4 +1,4 @@
-import { countQuantityOf, countTypeLabel } from "../../features/countTypes/model";
+import { countQuantityOf, countTypeLabel } from "../../model/countTypes";
 import {
   INSPECTION_STATUSES,
   inspectionStatusLabel,

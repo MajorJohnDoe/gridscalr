@@ -1,4 +1,4 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import {
   stroke,
   joinPaths,
@@ -8,7 +8,7 @@ import {
   smallCircle,
   schematicSymbol,
 } from "../primitives";
-import { roundedRectPathData } from "../../../../model/symbolPaths";
+import { roundedRectPathData } from "../../../symbolPaths";
 
 /**
  * heating symbols, split out of the schematic library by category.

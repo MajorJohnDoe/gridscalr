@@ -1,4 +1,4 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import {
   stroke,
   fill,
@@ -9,7 +9,7 @@ import {
   smallCircle,
   schematicSymbol,
 } from "../primitives";
-import { roundedRectPathData } from "../../../../model/symbolPaths";
+import { roundedRectPathData } from "../../../symbolPaths";
 
 /**
  * general symbols, split out of the schematic library by category.

@@ -13,7 +13,7 @@ import type {
   PageState,
   Project,
 } from "../../model/types";
-import { uniqueCountTypeName } from "../countTypes/model";
+import { uniqueCountTypeName } from "../../model/countTypes";
 
 export interface MergedReferences<T> {
   added: T[];

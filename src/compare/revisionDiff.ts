@@ -8,7 +8,7 @@ import {
 import { itemBounds, itemCenter, type Bounds } from "../model/geometry";
 import { itemKindLabel } from "../model/measure";
 import { pageCalibration } from "../model/calibration";
-import { countTypeLabel } from "../features/countTypes/model";
+import { countTypeLabel } from "../model/countTypes";
 import { inspectionStatusLabel } from "../model/symbols";
 import { formatScale } from "../model/units";
 import type { Layer, MarkupItem, Point, Project } from "../model/types";

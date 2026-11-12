@@ -55,8 +55,10 @@ project contents.
 - **Phase:** pre-foundation observation
 - **Severity:** P2
 - **Area:** architecture
-- **Status:** deferred
-- **Evidence:** `src/model/layers.ts` imports `features/countTypes/model`.
+- **Status:** fixed — 0.25.0 phase 15 ([#195](https://github.com/MajorJohnDoe/gridscalr/issues/195))
+- **Evidence:** `src/model/layers.ts` imported `features/countTypes/model`;
+  `src/model/{geometry,hitTest,snap}.ts` imported
+  `features/schematics/symbols/registry`.
 - **Problem:** A lower-layer model file depends on a feature module, the reverse
   of the dependency direction in ADR 0008. Shared defaults currently live inside
   the count-types feature.
@@ -66,8 +68,18 @@ project contents.
 - **Next step:** Decide whether the default count types belong in `src/model` or
   whether the feature must provide them through an explicit injection point.
   Handle this as a separate refactor, not inside Phase 1.
-- **Resolution:** Phase 7 removed the unused helper from `paths.ts` and its
-  re-export in `io/projectFile/index.ts`; no caller remained.
+- **Resolution:** Phase 15 moved the shared rules into the model and made the
+  feature import them. `src/model/countTypes.ts` now owns the built-in defaults,
+  normalization, lookup, management and presets; `src/features/countTypes/`
+  keeps only its dialog and gains an `index.ts` public surface. The pure
+  sign-plus-schematic catalogue and lookup moved to
+  `src/model/symbols/{catalog.ts,schematic/}`, and the schematics feature
+  registry re-exports them for its localized labels, search text and render
+  helpers. `tests/modelBoundary.test.ts` walks `src/model` and fails on any
+  import that resolves into `src/features`, with no allowlist, and an ESLint
+  `no-restricted-imports` pattern blocks the same import. The earlier "Phase 7
+  removed the unused helper from `paths.ts`" note was a different change and is
+  superseded.
 - **Related:** ADR [0008](../adr/0008-integration-module-boundaries.md), ADR
   [0013](../adr/0013-module-first-foundation.md), issue
   [#157](https://github.com/MajorJohnDoe/gridscalr/issues/157).
@@ -2142,3 +2154,28 @@ remains the scheduling home.
   maintenance, for example a `#[tauri::command]` inventory proving each command
   has its own module, or a reviewed clippy restriction lint. Do not add it
   silently inside a feature phase.
+
+### F-098 — The schematics feature is outside the foundation boundary check
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 15 — model to feature boundary
+- **Severity:** P3
+- **Area:** architecture / tooling
+- **Status:** open
+- **Evidence:** `scripts/check-module-boundaries.mjs` lists only the foundation
+  feature directories. `src/features/schematics/` has no `index.ts`, and about
+  twenty modules (canvas, UI, PDF export, report and app flows) import
+  `features/schematics/symbols/registry`, `model/fitDrawing`, `model/sheetTemplate`
+  or `ui/*Dialog` directly.
+- **Problem:** The pure symbol catalogue now lives in `src/model`, so the
+  reversed dependency is gone, but the schematics feature still has no single
+  public surface. A later change can rename or split its internals and break
+  callers without `npm run check:modules` noticing.
+- **Impact:** None today: the imports resolve and the feature is an upper layer.
+  It is a consistency gap with ADR 0013, not a cycle.
+- **Next step:** Give the schematics feature an `index.ts` surface, move the
+  operation-card and sheet-rendering call sites to it, then add the directory to
+  `FOUNDATION_FEATURES`. That is a refactor of its own because its modules are
+  imported by PDF export and the canvas painter; do not fold it into a feature
+  phase.
+- **Related:** ADR [0013](../adr/0013-module-first-foundation.md).

@@ -1,4 +1,4 @@
-import { countTypeLabel } from "../../features/countTypes/model";
+import { countTypeLabel } from "../../model/countTypes";
 import {
   PROVENANCE_COLUMN,
   PROVENANCE_COLUMN_WIDTH,

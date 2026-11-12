@@ -108,8 +108,11 @@ the short term and much more expensive later.
   adjust an existing legacy budget; it refuses a new oversized file.
 - `npm run check:modules` enforces the foundation feature `index.ts` and blocks
   imports into a foundation feature's internals.
-- `model` must not import `ui`, `app`, `canvas` or Tauri. `ui` must not contain
-  business rules. `io` must not contain UI or model decisions.
+- `model` must not import `ui`, `app`, `canvas`, Tauri or a feature module.
+  `ui` must not contain business rules. `io` must not contain UI or model
+  decisions. Shared defaults and pure catalogues live in `src/model`; ESLint and
+  `tests/modelBoundary.test.ts` enforce that model code never reaches into
+  `src/features`.
 - New Rust commands live in a separate Rust module instead of growing
   `src-tauri/src/commands.rs`. `npm run check:file-budgets` also scans
   `src-tauri/src`: new Rust files target 300 lines and must not exceed 400, and
@@ -410,7 +413,7 @@ src/i18n/types.generated.ts generated MessageKey and MessageCatalog from en.json
 src/i18n/format.ts         locale-aware number, date and localized-number formatting
 src/i18n/index.ts          catalog loading, ICU translation, language state and t()
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
-src/features/countTypes/model.ts count definitions, normalization, management and quantity helpers
+src/features/countTypes/index.ts public surface for the count-type management dialog
 src/features/countTypes/ui.ts count-type management dialog
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths
 src/features/projectPackage/controller.ts package and open-package flows
@@ -440,12 +443,8 @@ src/features/conflictedCopies/ strict discovery naming, delete guards, manager f
 src/features/statusOverview/ pure project-status model, one-read controller and the status popover
 src/features/viewOnly/ inspection-tool rule and the panel guard for a true view-only session
 src/features/sessionRecovery/ scoped autosave, byte-budgeted recovery store, recovery center, lease takeover and external-change watcher
-src/features/schematics/   operation-card templates, sheet fields, symbols, fit and dialogs
-src/features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
-src/features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
-src/features/schematics/symbols/library/ full schematic set split by category, aggregated in index.ts
-src/features/schematics/symbols/reference/ reference-aligned sensors, electrical and general symbols
-src/features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
+src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
+src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
 src/canvas/CanvasView.ts   pointer events, rendering orchestration, hit testing, inline editing, resize/rotate, PNG composition
@@ -493,11 +492,13 @@ src/canvas/crop.ts         export crop mode, overlay and toolbar
 src/canvas/editors.ts      public CanvasEditorController surface
 src/canvas/editors/        controller facade, text/textbox sessions, label editor and shared helpers
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
+src/model/countTypes.ts    built-in count types, normalization, lookup, management and presets
 src/model/integrity.ts     shared referential-integrity rules and round-trip shape comparison
 src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
-src/model/symbols/        symbol types, categories, sign artwork, catalogue, lookup and render plan
+src/model/symbols/        symbol types, categories, sign and schematic catalogues, lookup and render plan
+src/model/symbols/schematic/ stroke-only schematic symbol library, split by category
 src/model/symbols/signs/  one facility-sign artwork module per category prefix
 src/model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
 src/model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks

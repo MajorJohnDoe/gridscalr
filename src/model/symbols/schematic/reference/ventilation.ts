@@ -1,4 +1,4 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import {
   stroke,
   fill,

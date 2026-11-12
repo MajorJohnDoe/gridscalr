@@ -1,5 +1,5 @@
-import type { SymbolDefinition, SymbolPort } from "../../../model/symbols";
-import { roundedRectPathData } from "../../../model/symbolPaths";
+import type { SymbolDefinition, SymbolPort } from "../types";
+import { roundedRectPathData } from "../../symbolPaths";
 import {
   ductPorts,
   fill,

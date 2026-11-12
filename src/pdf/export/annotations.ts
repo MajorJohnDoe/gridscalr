@@ -1,7 +1,7 @@
 import { PDFArray, PDFDict, PDFHexString, PDFName, PDFNumber, type PDFPage } from "pdf-lib";
 import type { PageViewport } from "pdfjs-dist";
 import { itemBounds } from "../../model/geometry";
-import { countTypeLabel } from "../../features/countTypes/model";
+import { countTypeLabel } from "../../model/countTypes";
 import { itemKindLabel } from "../../model/measure";
 import { resolveItemColor } from "../../model/layers";
 import type { MarkupItem, Point, Project } from "../../model/types";

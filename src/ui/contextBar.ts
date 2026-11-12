@@ -1,6 +1,6 @@
 import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor, cloudFillLabel } from "../model/cloud";
-import { countTypeLabel } from "../features/countTypes/model";
+import { countTypeLabel } from "../model/countTypes";
 import {
   DEFAULT_DRAW_COLOR,
   layerAppliesToPage,

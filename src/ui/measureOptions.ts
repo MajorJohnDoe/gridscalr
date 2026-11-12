@@ -5,7 +5,7 @@ import {
   countTypeLabel,
   findCountPreset,
   removeCountPreset,
-} from "../features/countTypes/model";
+} from "../model/countTypes";
 import type { AreaMode, AreaShape, CountType } from "../model/types";
 import { store } from "../state/store";
 import { el, option } from "./dom";

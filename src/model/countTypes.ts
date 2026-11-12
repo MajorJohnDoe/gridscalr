@@ -1,8 +1,14 @@
-import { makeId } from "../../model/calibration";
-import { normalizeRoom } from "../../model/categories";
-import { countQuantityOf, COUNT_GLYPHS } from "../../model/countSymbols";
-import type { CountGlyph, CountPreset, CountType, CountTypeDef, Project } from "../../model/types";
-import { t } from "../../i18n";
+/**
+ * Count-type rules: the built-in defaults, project normalization, lookup and
+ * management. They live in the model because layer creation and project loading
+ * need the defaults and the labels; the count-type feature contributes only its
+ * management dialog. Model code must never import that feature.
+ */
+import { makeId } from "./calibration";
+import { normalizeRoom } from "./categories";
+import { countQuantityOf, COUNT_GLYPHS } from "./countSymbols";
+import type { CountGlyph, CountPreset, CountType, CountTypeDef, Project } from "./types";
+import { t } from "../i18n";
 
 export const COUNT_TYPE_NAME_MAX_LENGTH = 60;
 export const COUNT_TYPE_ID_MAX_LENGTH = 80;

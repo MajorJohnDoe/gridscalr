@@ -1,6 +1,6 @@
 import { itemScale, pageScale, scaleRatio } from "./calibration";
 import { areaPerimeter, areaShapeOf, areaValue } from "./area";
-import { countQuantityOf, countTypeLabel } from "../features/countTypes/model";
+import { countQuantityOf, countTypeLabel } from "./countTypes";
 import { symbolName } from "./symbols";
 import { angleValue, measurementValue, polylineLength, slopeDegrees, slopeValue } from "./geometry";
 import type { MarkupItem, Project, ScaleSnapshot } from "./types";

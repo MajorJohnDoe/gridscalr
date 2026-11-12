@@ -5,7 +5,7 @@ import type { LayerHierarchy } from "./layerHierarchy";
 import { defaultProjectMetadata } from "./metadata";
 import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
-import { defaultCountTypes } from "../features/countTypes/model";
+import { defaultCountTypes } from "./countTypes";
 import { defaultLineTypes } from "./lineTypes";
 import { SCHEMA_VERSION } from "./types";
 import { buildPageRecords } from "./pages";

@@ -19,7 +19,7 @@ import {
   removeCountPreset,
   removeCountType,
   renameCountType,
-} from "../src/features/countTypes/model";
+} from "../src/model/countTypes";
 import type { MarkupItem, Project } from "../src/model/types";
 
 const NOW = "2026-01-01T00:00:00.000Z";
