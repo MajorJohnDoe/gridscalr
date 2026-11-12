@@ -163,7 +163,21 @@ Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper
 
 ### Page thumbnails
 
-The **Pages** tab shows a preview of each sheet along with its page size, calibration state, and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing, not your markups.
+The **Pages** tab shows a preview of each sheet along with its page size, status badges and item count. Previews follow the sheet's aspect ratio, trim obvious white page margins, and show the source drawing, not your markups.
+
+### Page status badges and filters
+
+Every page card carries compact badges so a problem is visible without opening the sheet:
+
+- **Source changed** – the drawing file on disk no longer matches the checksum stored in the project. It appears after the app checks the source files, which happens on open, on window focus and every 30 seconds, and disappears after **Reload source** or **Use current source**. Until a check has run, no page claims its source changed.
+- **Superseded source** – the page still belongs to the old drawing after **Replace source…** because it was not mapped to a page in the new file.
+- **OCR missing** – a scanned TIF page with no stored OCR text yet. **OCR stale** – a stored OCR result that was made from a different source revision, for example after replacing the source drawing. Run **Search** (`Ctrl/Cmd+F`) and its OCR action to add or refresh the text.
+- **Scale locked**, **Calibrated**, **Blank**, **Sheet** and the item count describe the sheet itself.
+
+The filter bar at the top of the Pages panel narrows the list to **All**, **Changed source**, **Superseded**, **OCR missing or stale** or **Scale locked**, and each button shows how many pages match. The buttons work with the keyboard, the active filter is exposed as a pressed state, and every badge is a text label, so no state depends on colour alone.
+
+A filter is a view, not a change: it stays active while the panel re-renders and is never written to the project. Dragging a card and dropping a drawing on the panel are turned off while a filter hides pages, because the drop position would be ambiguous; **Go to page**, renaming, locations and the other page actions still work. Choose **All** to reorder or drop again. If a filter matches no page, the panel says so instead of showing an empty list.
+
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 

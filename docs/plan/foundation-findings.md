@@ -1618,6 +1618,10 @@ No entries yet.
   extends the rendered window around the target. Triage with the page status and
   filter work in #185 and the context-menu work in #186 rather than raising the
   fixed cap.
+- **Phase 4 note:** status filters now narrow the list before the cap, so a page
+  past position 400 becomes reachable when it matches the active filter. The cap
+  itself is unchanged and the panel still says when it is showing the first cards
+  of a longer list.
 - **Related:** robustness §7.4, ADR 0011, #185, #186.
 
 ### F-076 — A managed copy after a Pages-panel drop is a second history boundary
@@ -1676,3 +1680,27 @@ No entries yet.
   module-surface test that asserts each public alias is the expected function.
   Triage with the module-boundary gate work in #194/#195.
 - **Related:** ADR 0013, `scripts/check-module-boundaries.mjs`, #184.
+
+### F-078 — A scanned PDF page cannot be badged as missing OCR without reading it
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 4 — page status badges and filters
+- **Severity:** P3
+- **Area:** pages panel / OCR
+- **Status:** accepted — the badge is limited to states the project can prove
+- **Evidence:** `pageStatusBadges()` in `src/features/pageStatus/model.ts` emits
+  **OCR missing** only when the page's document is a TIF with no stored OCR.
+  Whether a PDF page is a scan is only known after `PdfTextIndex.page()` extracts
+  its text layer, which the search index does lazily and only for pages the user
+  searches or OCR runs on.
+- **Problem:** A scanned PDF page with no OCR yet shows no OCR badge. Detecting it
+  at render time would mean extracting the text layer of every rendered card,
+  which defeats the on-demand thumbnail and page-size design.
+- **Impact:** No false positives: a badge is only shown when the state is provable.
+  The gap is discoverability for scanned PDFs until Search has visited the page.
+- **Next step:** If the search index already knows a page's extracted text is
+  empty, persist that as a rebuildable per-page hint (in the same shape as the OCR
+  index) and let the badge read it. Triage with the search and OCR work, not with
+  the page list.
+- **Related:** #185, `src/search/ocr.ts`, `src/search/textIndex.ts`,
+  `docs/limitations.md`.

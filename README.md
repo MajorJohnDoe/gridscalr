@@ -49,6 +49,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   project with a thumbnail picker, a preflight report and page-scoped layers,
   keep optional source revision provenance, and undo the whole import as one
   step.
+- See the state of every sheet at a glance. Compact page badges flag a changed
+  source file, superseded pages, missing or stale OCR and a locked scale, and
+  the Pages panel filters on those states with a live count for each.
 - Validate every project before saving and after opening. A damaged file opens
   with a load report and a **Project doctor** that lists issues by severity and
   entity, offers view-only open, explicit duplicate-ID, dangling-reference and

@@ -5,6 +5,7 @@ export type { PageReorderActions } from "./controller";
 export {
   documentSegments,
   dragSet,
+  fullListInsertionIndex,
   insertionIndexAt,
   keyboardInsertion,
   moveOutcome,

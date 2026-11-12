@@ -416,6 +416,7 @@ src/features/projectImport/preflightUi.ts localized preflight dialog
 src/features/projectImport/ui.ts graphical source-page picker with lazy previews
 src/features/pageFileDrop/model.ts Pages-panel drop target classification and pointer rules
 src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and shared insertion line
+src/features/pageStatus/ pure page badges and status filters derived from project and source state
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics

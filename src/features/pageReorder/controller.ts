@@ -3,6 +3,7 @@ import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
 import {
   dragSet,
+  fullListInsertionIndex,
   insertionIndexAt,
   keyboardInsertion,
   moveOutcome,
@@ -194,9 +195,14 @@ export class PageReorderController {
       const rect = card.getBoundingClientRect();
       return { top: rect.top, bottom: rect.bottom };
     });
-    const insertionIndex = insertionIndexAt(spans, clientY);
-    this.indicator.show(list, cards, insertionIndex, null);
-    return insertionIndex;
+    const renderedIndex = insertionIndexAt(spans, clientY);
+    this.indicator.show(list, cards, renderedIndex, null);
+    // A status filter renders a subset of the pages, so the rendered index is
+    // translated back to a project insertion index before anything is inserted.
+    const visiblePages = cards
+      .map((card) => Number(card.dataset.page ?? 0))
+      .filter((page) => Number.isFinite(page) && page > 0);
+    return fullListInsertionIndex(visiblePages, renderedIndex, store.project?.pages.length ?? 0);
   }
 
   /** Hides the file-drop line without disturbing an internal card drag. */

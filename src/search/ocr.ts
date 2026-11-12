@@ -1,4 +1,5 @@
 import type { Worker } from "tesseract.js";
+import { ocrMatchesSource } from "../model/ocrStatus";
 import { documentForPageRecord, pageRecordAt } from "../model/pages";
 import type { OcrPage, OcrWord, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
@@ -144,11 +145,10 @@ export function ocrPageToText(ocr: OcrPage, page: number): PageText {
 
 /** True when stored OCR still belongs to the page's current source revision. */
 export function isOcrCurrent(project: Project, page: number, ocr: OcrPage | undefined): boolean {
-  if (!ocr) return false;
   const record = pageRecordAt(project, page);
   const document = documentForPageRecord(project, record);
   if (!document || !record) return false;
-  return ocr.documentSha256 === document.sha256 && ocr.sourcePage === record.localPage;
+  return ocrMatchesSource(ocr, document.sha256, record.localPage);
 }
 
 export async function disposeOcrWorker(): Promise<void> {
