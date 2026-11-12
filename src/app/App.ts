@@ -184,9 +184,13 @@ export class App {
         sourceStorage: () => this.sourceStorage,
       }),
     });
-    this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () =>
-      this.renderAll(),
-    );
+    // A summary refresh arrives after every autosave and every checkpoint. With a
+    // project open the shell already renders for the action that caused it; a
+    // whole-shell render here would replace the focused field every interval.
+    // The welcome screen still needs the update so its recovery button appears.
+    this.recovery = createSessionRecovery(this.session, this.refs.canvasArea, () => {
+      if (!store.project) this.renderAll();
+    });
     this.sourceStorage = createSourceStorageController({
       saveProject: () => this.session.saveProject(false),
       replaceSource: (documentId) => void replaceSourceFlow(this.replacementFlowHost(), documentId),
