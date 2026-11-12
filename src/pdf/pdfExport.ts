@@ -3,6 +3,7 @@ import { PDFDocument } from "pdf-lib";
 import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
 import { drawLegendPage } from "./export/legend";
+import { applyExportMetadata } from "./export/metadata";
 import { createOptionalContent } from "./export/ocg";
 import { optionalContentTree } from "./export/ocgTree";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
@@ -25,6 +26,7 @@ export async function exportProjectPdf(
   // Merge every source document into one working PDF so page numbers, crops and
   // labels keep referring to the same global page index as the canvas.
   const pdf = await PDFDocument.create();
+  applyExportMetadata(pdf, project);
   const sources = await Promise.all(
     project.documents.map(async (_, index) => {
       try {

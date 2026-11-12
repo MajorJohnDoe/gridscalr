@@ -808,7 +808,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit (found during the CI run)
 - **Severity:** P3
 - **Area:** PDF export / tests
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `src/pdf/pdfExport.ts` calls `PDFDocument.create()` with the
   pdf-lib default `updateMetadata: true`. pdf-lib writes
   `/ModificationDate (D:YYYYMMDDHHmmSSZ)` with second precision. The
@@ -821,11 +821,15 @@ confirmed against the audit.
   byte-for-byte reproducibility claim for exports is imprecise.
 - **Impact:** Test reliability only. The visual and measurement content is
   unchanged, and no security property depends on the timestamp.
-- **Next step:** Either create the PDF with `updateMetadata: false` and set a
-  project-derived timestamp, or compare the exports after normalising the
-  metadata date. Choose one and cover it with a deterministic test. Phase 5
-  (#171) is a reasonable home because it owns determinism and fuzz gates.
-- **Related:** `docs/security-audit.md` §13, `tests/pdfExport.test.ts`.
+- **Resolution:** `applyExportMetadata()` (`src/pdf/export/metadata.ts`) writes a
+  deterministic info block from the project's `updatedAt` (falling back to
+  `createdAt`, then the epoch) and a fixed producer/creator. Two exports of the
+  same project are byte-identical. A dedicated test asserts the stored dates and
+  reads the file back with `updateMetadata: false`, so inspecting the output no
+  longer stamps a fresh `ModDate`. Shipped on `main` after the 0.25.0 tag; the
+  next patch release carries it.
+- **Related:** `docs/security-audit.md` §13, `tests/pdfExport.test.ts`,
+  [#201](https://github.com/MajorJohnDoe/gridscalr/issues/201).
 
 ### F-044 — Package creation has no total output cap
 

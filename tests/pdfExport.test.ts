@@ -1187,6 +1187,23 @@ describe("nested optional-content export", () => {
     expect(onText.map((item) => item.text)).toEqual(offText.map((item) => item.text));
   });
 
+  it("stamps the project timestamp so two exports are byte-identical", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    project.createdAt = "2025-12-31T00:00:00.000Z";
+    project.updatedAt = "2026-01-02T03:04:05.000Z";
+
+    const bytes = await exportProjectPdf(project, renderer, exportOptions(project));
+    // Reading must not stamp a fresh ModDate into the loaded copy.
+    const doc = await PDFDocument.load(bytes, { updateMetadata: false });
+    expect(doc.getCreationDate()?.toISOString()).toBe("2026-01-02T03:04:05.000Z");
+    expect(doc.getModificationDate()?.toISOString()).toBe("2026-01-02T03:04:05.000Z");
+    expect(doc.getProducer()).toBe("GridScalr");
+
+    const again = await exportProjectPdf(project, renderer, exportOptions(project));
+    expect(Buffer.from(bytes).equals(Buffer.from(again))).toBe(true);
+  });
+
   it("drops a group that has no visible content", async () => {
     const renderer = await makeRenderer();
     const project = makeProject();
