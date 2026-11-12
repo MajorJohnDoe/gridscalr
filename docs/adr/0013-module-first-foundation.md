@@ -29,9 +29,10 @@ That is not sufficient for new work:
 - cross-feature deep imports are possible;
 - `check:file-budgets --update` can record a new oversized file;
 - Rust files are outside the budget check;
-- model code already imports a feature module in at least one place
-  (`src/model/layers.ts` → `features/countTypes/model`), which is the wrong
-  direction;
+- model code imported a feature module in several places
+  (`src/model/layers.ts` → `features/countTypes/model`, and the symbol lookup in
+  geometry, hit-testing and snapping), which was the wrong direction. Phase 15
+  moved those shared rules into `src/model`; this remains the rule for new code;
 - phase issues do not require a module map before implementation.
 
 The foundation work is the right time to stop repeating those patterns.
@@ -188,6 +189,9 @@ before the first production file is added.
   - every existing foundation feature directory has `index.ts`;
   - files outside a foundation feature import only its `index.ts`;
   - no foundation feature reaches into another foundation feature's internals.
+- `eslint.config.mjs` rejects every `src/features` import from `src/model/**`,
+  and `tests/modelBoundary.test.ts` walks the model tree and fails, naming the
+  file and specifier, when an import resolves into `src/features`.
 - `npm run lint` keeps the integration-module import boundaries.
 - `AGENTS.md` states the rule for contributors and agents.
 - Each phase issue carries its module map and acceptance criteria.
@@ -204,8 +208,10 @@ before the first production file is added.
   ownership.
 - The module-boundary check starts with the new foundation directories and can be
   extended to older features later.
-- The existing model-to-feature import remains technical debt; new code must not
-  repeat it.
+- Shared defaults and pure catalogues live in `src/model`: count-type rules in
+  `model/countTypes.ts` and the sign-plus-schematic symbol catalogue in
+  `model/symbols/`, each imported by its feature. Model code never imports a
+  feature; ESLint and `tests/modelBoundary.test.ts` enforce the direction.
 - Rust file growth is a review rule until a Rust budget check exists.
 
 ## Non-goals

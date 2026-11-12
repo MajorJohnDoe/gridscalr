@@ -1,4 +1,4 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import {
   stroke,
   fill,
@@ -10,7 +10,7 @@ import {
   schematicSymbol,
   inlinePorts,
 } from "../primitives";
-import { roundedRectPathData } from "../../../../model/symbolPaths";
+import { roundedRectPathData } from "../../../symbolPaths";
 import { pumpBody } from "./parts";
 
 /**

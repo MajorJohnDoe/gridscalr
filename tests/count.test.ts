@@ -15,7 +15,7 @@ import {
   COUNT_SYMBOL_RADIUS,
   countSymbol,
 } from "../src/model/countSymbols";
-import { countTypeLabel } from "../src/features/countTypes/model";
+import { countTypeLabel } from "../src/model/countTypes";
 import { itemLabel, itemMetrics } from "../src/model/measure";
 import { labelAnchorForPoints, measurementLabelParts } from "../src/model/label";
 import { layoutPageLabels, pageLabelSources } from "../src/model/labelLayout";

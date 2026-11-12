@@ -17,7 +17,7 @@ import {
 import { calloutLayout, cloudLabelLayout, deltaLayout, stampLayout } from "./annotations";
 import { railGeometry } from "./rail";
 import { parseSymbolPath, type SymbolCommand } from "./symbolPaths";
-import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
+import { symbolFor, symbolSizeOf } from "./symbols";
 import type { Layer, MarkupItem, PageId, Point, Project } from "./types";
 
 const symbolPolylineCache = new Map<string, Point[][]>();

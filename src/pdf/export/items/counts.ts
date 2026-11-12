@@ -1,7 +1,7 @@
 import type { RGB } from "pdf-lib";
 import { countSymbol } from "../../../model/countSymbols";
 import type { MarkupItem, Project } from "../../../model/types";
-import { countTypeGlyph } from "../../../features/countTypes/model";
+import { countTypeGlyph } from "../../../model/countTypes";
 import { clamp, drawPolyline, toPdfPoint } from "../geometry";
 import type { ItemContext } from "./context";
 

@@ -1,65 +1,36 @@
 import {
+  ALL_SYMBOLS as CATALOG_SYMBOLS,
   ALL_SYMBOL_CATEGORIES,
+  SCHEMATIC_SYMBOLS,
   SYMBOLS as SIGN_SYMBOLS,
   symbolCategoryLabel,
-  symbolFor as signSymbolFor,
-  symbolName as signSymbolName,
+  symbolFor,
   symbolRenderPlan as baseSymbolRenderPlan,
-  symbolSvgMarkup as baseSymbolSvgMarkup,
   symbolSearchText as baseSymbolSearchText,
+  symbolSvgMarkup as baseSymbolSvgMarkup,
   type SymbolDefinition,
   type SymbolRenderPlan,
   type SymbolStyle,
 } from "../../../model/symbols";
-import type { SymbolCategory, SymbolSet } from "../../../model/types";
+import type { SymbolCategory } from "../../../model/types";
 import { t, type MessageKey } from "../../../i18n";
-import { SCHEMATIC_SYMBOLS } from "./library";
 
+/**
+ * The live catalogue, lookup, set helpers and render plan live in
+ * `src/model/symbols` so model code can resolve a symbol without importing
+ * this feature. This module is the schematics feature's public surface: it
+ * re-exports the catalogue and keeps the localized labels and search text.
+ */
 export * from "../../../model/symbols";
-export { SIGN_SYMBOLS };
+export { SIGN_SYMBOLS, SCHEMATIC_SYMBOLS };
 
 /** Every built-in sign and schematic symbol, in library order. */
-export { SCHEMATIC_SYMBOLS };
-
-export const SYMBOLS: SymbolDefinition[] = [...SIGN_SYMBOLS, ...SCHEMATIC_SYMBOLS];
-export const ALL_SYMBOLS = SYMBOLS;
-
-const SYMBOL_MAP = new Map(SYMBOLS.map((symbol) => [symbol.id, symbol]));
-
-export const SIGN_SYMBOL_COUNT = SIGN_SYMBOLS.length;
-export const SCHEMATIC_SYMBOL_COUNT = SCHEMATIC_SYMBOLS.length;
-
-export function symbolsForSet(set: SymbolSet): SymbolDefinition[] {
-  return set === "schematic" ? SCHEMATIC_SYMBOLS : SIGN_SYMBOLS;
-}
-
-export function symbolSetOf(id: string | undefined): SymbolSet {
-  const symbol = id ? SYMBOL_MAP.get(id) : undefined;
-  return symbol?.set === "schematic" ? "schematic" : "sign";
-}
-
-/** True when the id belongs to the stroke-only schematic set. */
-export function isSchematicSymbol(id: string | undefined): boolean {
-  return symbolSetOf(id) === "schematic" && Boolean(id && SYMBOL_MAP.has(id));
-}
-
-export function symbolFor(id: string | undefined): SymbolDefinition {
-  const known = id ? SYMBOL_MAP.get(id) : undefined;
-  if (known) return known;
-  return signSymbolFor(id);
-}
-
-export function hasSymbol(id: string | undefined): boolean {
-  return Boolean(id && SYMBOL_MAP.has(id));
-}
+export const SYMBOLS: SymbolDefinition[] = CATALOG_SYMBOLS;
+export const ALL_SYMBOLS = CATALOG_SYMBOLS;
 
 export function symbolName(id: string | undefined): string {
   const symbol = symbolFor(id);
-  return symbol.id === "unknown" ? signSymbolName(id) : t(`symbol.${symbol.id}` as MessageKey);
-}
-
-export function symbolCategoryOf(id: string | undefined): SymbolCategory {
-  return symbolFor(id).category;
+  return symbol.id === "unknown" ? t("symbol.unknown") : t(`symbol.${symbol.id}` as MessageKey);
 }
 
 export function symbolCategoryLabelOf(category: SymbolCategory | undefined): string {

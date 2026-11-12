@@ -1,8 +1,8 @@
 import { translate, type MessageKey } from "../../../i18n";
-import type { SymbolArtShape, SymbolDefinition, SymbolPort } from "../../../model/symbols";
-import { SCHEMATIC_SYMBOL_SIZE } from "../../../model/symbols";
-import { circlePathData } from "../../../model/symbolPaths";
-import type { SchematicSymbolCategory } from "../../../model/types";
+import type { SymbolArtShape, SymbolDefinition, SymbolPort } from "../types";
+import { SCHEMATIC_SYMBOL_SIZE } from "../constants";
+import { circlePathData } from "../../symbolPaths";
+import type { SchematicSymbolCategory } from "../../types";
 
 /**
  * Shared drawing primitives for the stroke-only schematic set. Every path is

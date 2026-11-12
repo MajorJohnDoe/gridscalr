@@ -1,4 +1,4 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import { INSTRUMENT_SYMBOLS } from "./instrument";
 import { VALVE_SYMBOLS } from "./valve";
 import { CONTROL_SYMBOLS } from "./control";

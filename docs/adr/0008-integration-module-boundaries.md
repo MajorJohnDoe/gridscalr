@@ -71,7 +71,8 @@ model / io / state
 
 - `eslint.config.mjs` uses `@typescript-eslint/no-restricted-imports` for the
   import direction. The TypeScript-aware rule is required because it supports
-  `allowTypeImports`.
+  `allowTypeImports`. `src/model/**` additionally rejects every `src/features`
+  path, so a model file cannot depend on a feature module.
 - `max-lines` warns on files above the agreed budget, with a documented exception
   list for files that predate this ADR.
 - The exception list must shrink as #60 lands. New modules must not be added to it.

@@ -7,12 +7,10 @@ import {
   SYMBOL_CATEGORY_COLORS,
   SYMBOL_CATEGORY_LABELS,
 } from "./categories";
-import { SYMBOLS } from "./signCatalog";
+import { symbolById } from "./catalog";
 import { centerArt } from "./signArt";
 import { filled, stroked, SIGN_BADGE } from "./signArtHelpers";
 import type { SymbolDefinition } from "./types";
-
-const SYMBOL_MAP = new Map(SYMBOLS.map((symbol) => [symbol.id, symbol]));
 
 export const UNKNOWN_SYMBOL: SymbolDefinition = {
   id: "unknown",
@@ -33,11 +31,11 @@ export const UNKNOWN_SYMBOL: SymbolDefinition = {
 };
 
 export function symbolFor(id: string | undefined): SymbolDefinition {
-  return (id ? SYMBOL_MAP.get(id) : undefined) ?? UNKNOWN_SYMBOL;
+  return symbolById(id) ?? UNKNOWN_SYMBOL;
 }
 
 export function hasSymbol(id: string | undefined): boolean {
-  return Boolean(id && SYMBOL_MAP.has(id));
+  return Boolean(symbolById(id));
 }
 
 export function symbolName(id: string | undefined): string {

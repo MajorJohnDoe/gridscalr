@@ -23,6 +23,7 @@ const FOUNDATION_FEATURES = [
   "src/features/listInteraction",
   "src/features/importProvenance",
   "src/features/layerTree",
+  "src/features/countTypes",
 ];
 
 const errors = [];

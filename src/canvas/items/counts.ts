@@ -1,4 +1,4 @@
-import { countTypeGlyph } from "../../features/countTypes/model";
+import { countTypeGlyph } from "../../model/countTypes";
 import { countSymbol } from "../../model/countSymbols";
 import type { MarkupItem } from "../../model/types";
 import type { ItemRenderState } from "./context";

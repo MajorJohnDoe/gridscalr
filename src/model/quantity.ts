@@ -4,7 +4,7 @@ import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
 import { buildLayerHierarchy } from "./layerHierarchy";
 import { itemScaleForDisplay } from "./measure";
-import { countQuantityOf, countTypeFor } from "../features/countTypes/model";
+import { countQuantityOf, countTypeFor } from "./countTypes";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
 import { angleValue, measurementValue, polylineLength, slopeValue } from "./geometry";
 import { t } from "../i18n";

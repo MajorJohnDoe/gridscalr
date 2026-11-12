@@ -1,4 +1,4 @@
-import { countQuantityOf, countTypeLabel } from "../../features/countTypes/model";
+import { countQuantityOf, countTypeLabel } from "../../model/countTypes";
 import { t } from "../../i18n";
 import { allRooms, categoryForItem, normalizeRoom } from "../../model/categories";
 import { LABEL_MAX_SIZE, LABEL_MIN_SIZE, clampLabelSize } from "../../model/label";

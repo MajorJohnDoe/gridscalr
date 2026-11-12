@@ -1,4 +1,4 @@
-import { openCountTypesDialog } from "../../features/countTypes/ui";
+import { openCountTypesDialog } from "../../features/countTypes";
 import { t } from "../../i18n";
 import { store } from "../../state/store";
 import { el } from "../dom";

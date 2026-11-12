@@ -29,7 +29,7 @@ src/
   app/diagnosticsFlows.ts diagnostics text, copy and report flow
   app/recoveryHost.ts   session-recovery host wiring for autosave, leases and banners
   features/              feature modules; see docs/adr/0001-feature-modules.md
-  features/countTypes/model.ts count definitions, normalization, management and quantity helpers
+  features/countTypes/index.ts public surface for the count-type management dialog
   features/countTypes/ui.ts count-type management dialog
   features/projectPackage/model.ts package manifest validation, safe archive names and portable project paths
   features/projectPackage/controller.ts package creation and open-package flows, checksums and progress
@@ -88,12 +88,8 @@ src/
   features/sessionRecovery/summary.ts synchronous recovery summary for the welcome screen and Preferences
   features/sessionRecovery/ui.ts lease dialog and non-blocking session banners
   features/sessionRecovery/record.ts recovery record types, IDs and retention constants
-  features/schematics/ operation-card templates, sheet fields, schematic symbols, fit and dialogs
-  features/schematics/symbols/primitives.ts shared stroke-only drawing geometry, ports and catalogue entry helper
-  features/schematics/symbols/firstBatch.ts first ten reviewed stroke-only ventilation symbols
-  features/schematics/symbols/library/ full schematic set split by category, aggregated in index.ts
-  features/schematics/symbols/reference/ reference-aligned sensors, electrical and general symbols
-  features/schematics/symbols/registry.ts aggregate sign/schematic lookup and set helpers
+  features/schematics/ operation-card templates, sheet fields, schematic symbol catalogue surface, fit and dialogs
+  features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers
   features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
   features/schematics/ui/lineTypeDialog.ts project media-class editor
   features/launch/model.ts OS launch path classification for projects and drawings
@@ -159,9 +155,11 @@ src/
   canvas/editors/textResize.ts cloud and callout resize handle
   canvas/editors/labels.ts measurement-label editing
   model/                 project types, geometry, radius/diameter/arc/angle/slope/volume measurement math, quick-area shapes, snap, text layout, labels, units, calibration, layers, metrics, quantities, selection, clipboard, revision-cloud geometry, annotation layouts, stamp presets
+  model/countTypes.ts    built-in count types, project normalization, lookup, management and presets
   model/commands.ts      shared item visibility, locking, deletion, movement and style commands
   model/markups.ts       saved Markups views, columns, filters and grouping rules
-  model/symbols/         symbol types, categories, sign artwork, catalogue, lookup and render plan
+  model/symbols/         symbol types, categories, sign and schematic catalogues, lookup and render plan
+  model/symbols/schematic/ stroke-only schematic symbol library, split by category
   model/symbols/signs/   one facility-sign artwork module per category prefix
   model/symbolTag.ts     free-text symbol tag offsets shared by canvas and PDF
   model/richText.ts      rich text runs, wrapping, selection formatting and fallbacks
@@ -291,7 +289,7 @@ docs/user-guide.md       in-app user guide and workflow reference
 docs/workflows.md        role-based guides for operations and property management
 docs/shortcuts.md        in-app keyboard reference
 docs/screenshots/        versioned screenshots and capture manifest
-tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry and autosave
+tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry, autosave and the model-to-feature boundary scan
 tests/robustness/        seeded page/save sequences, competing saves, the schema 1–26 migration corpus and source-storage gates
 fixtures/legacy/         committed project fixtures for every supported schema; generate with scripts/make-legacy-fixtures.mjs
 scripts/plan-geometry.mjs shared geometry for the industrial sample set

@@ -1,5 +1,5 @@
 import { rgb, type PDFDocument, type PDFFont, type PDFPage, type RGB } from "pdf-lib";
-import { countQuantityOf, countTypeLabel } from "../../features/countTypes/model";
+import { countQuantityOf, countTypeLabel } from "../../model/countTypes";
 import { countSymbol } from "../../model/countSymbols";
 import { formatPageList } from "../../model/export";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";

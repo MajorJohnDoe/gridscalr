@@ -13,6 +13,9 @@ const integrationMessage =
 const canvasMessage =
   "Canvas helpers must not import CanvasView. Keep the shared logic in a canvas helper or src/model; see ADR 0008.";
 
+const modelFeatureMessage =
+  "Model code must not import a feature module. Keep shared rules in src/model; see ADR 0013.";
+
 /** Files that predate the 700-line budget. This list must shrink, never grow. */
 const LEGACY_LARGE_FILES = [
   "src/app/App.ts",
@@ -100,6 +103,21 @@ export default tseslint.config(
           patterns: [
             { group: ["**/app/App"], message: integrationMessage },
             { group: ["**/canvas/CanvasView"], message: canvasMessage },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/model/**/*.ts"],
+    rules: {
+      "@typescript-eslint/no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            { group: ["**/app/App"], message: integrationMessage },
+            { group: ["**/canvas/CanvasView"], message: integrationMessage },
+            { group: ["**/features", "**/features/**"], message: modelFeatureMessage },
           ],
         },
       ],

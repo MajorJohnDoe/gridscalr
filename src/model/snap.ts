@@ -14,7 +14,7 @@ import type { MarkupItem, PageId, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
 import { buildLayerHierarchy } from "./layerHierarchy";
 import { railGeometry } from "./rail";
-import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
+import { symbolFor, symbolSizeOf } from "./symbols";
 
 export type SnapKind = "endpoint" | "midpoint" | "intersection" | "segment";
 

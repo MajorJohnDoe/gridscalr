@@ -1,4 +1,4 @@
-import { normalizeCountPresets, normalizeCountTypes } from "../../features/countTypes/model";
+import { normalizeCountPresets, normalizeCountTypes } from "../../model/countTypes";
 import { t } from "../../i18n";
 import { makeId } from "../../model/calibration";
 import { totalPageCount } from "../../model/documents";

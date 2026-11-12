@@ -27,6 +27,9 @@ flattened drawing, optional-content groups (including pdf.js group resolution),
 review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
 covers conditional writes, conflicted copies, backups and the read-only
 **Compare with disk version** summary, including unreadable disk data.
+`tests/modelBoundary.test.ts` walks `src/model` and fails, naming the file and
+specifier, when an import resolves into `src/features`; it has no allowlist, and
+`eslint.config.mjs` blocks the same import.
 
 ## File budgets
 

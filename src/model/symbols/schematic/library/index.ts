@@ -1,8 +1,9 @@
-import type { SymbolDefinition } from "../../../../model/symbols";
+import type { SymbolDefinition } from "../../types";
 import { FIRST_VENTILATION_SYMBOLS } from "../firstBatch";
 import { REFERENCE_SYMBOLS } from "../reference";
 import { INSTRUMENT_SYMBOLS } from "./instrument";
 import { VALVE_SYMBOLS } from "./valve";
+import { VALVE_ANGLE_SYMBOLS } from "./valveAngle";
 import { PUMP_SYMBOLS } from "./pump";
 import { EXCHANGER_SYMBOLS } from "./exchanger";
 import { VENTILATION_SYMBOLS } from "./ventilation";
@@ -21,6 +22,7 @@ import { GENERAL_SYMBOLS } from "./general";
 export const SCHEMATIC_LIBRARY_SYMBOLS: SymbolDefinition[] = [
   ...INSTRUMENT_SYMBOLS,
   ...VALVE_SYMBOLS,
+  ...VALVE_ANGLE_SYMBOLS,
   ...PUMP_SYMBOLS,
   ...EXCHANGER_SYMBOLS,
   ...VENTILATION_SYMBOLS,
