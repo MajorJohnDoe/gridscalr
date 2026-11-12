@@ -11,7 +11,8 @@
     "src/features/sourceStorage": 400,
     "src/features/projectIntegrity": 400,
     "src/features/statusOverview": 400,
-    "src/features/pageStatus": 400
+    "src/features/pageStatus": 400,
+    "src/features/pageMenu": 400
   },
   "files": {
     "src/app/App.ts": 1094,

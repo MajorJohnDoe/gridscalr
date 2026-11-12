@@ -71,8 +71,78 @@ function toggleSubmenu(parent: HTMLElement, submenu: HTMLElement): void {
   submenu.style.top = `${Math.max(8, top)}px`;
 }
 
+function visibleMenuItems(root: HTMLElement): HTMLButtonElement[] {
+  return [...root.querySelectorAll<HTMLButtonElement>(".popover-item:not(:disabled)")].filter(
+    (button) => {
+      // A nested menu keeps its items in the DOM while it is closed.
+      let node: HTMLElement | null = button.parentElement;
+      while (node && node !== root) {
+        if (node.hidden) return false;
+        node = node.parentElement;
+      }
+      return true;
+    },
+  );
+}
+
+function focusItem(items: readonly HTMLButtonElement[], index: number): void {
+  if (!items.length) return;
+  const clamped = (index + items.length) % items.length;
+  items[clamped].focus({ preventScroll: true });
+}
+
+/** Arrow, Home/End and submenu keys for an open menu. */
+function handleMenuKeys(popover: HTMLElement, event: KeyboardEvent): void {
+  if (event.key === "Tab") return;
+  const items = visibleMenuItems(popover);
+  if (!items.length) return;
+  const current =
+    document.activeElement instanceof HTMLButtonElement ? document.activeElement : null;
+  const index = current ? items.indexOf(current) : -1;
+  switch (event.key) {
+    case "ArrowDown":
+      event.preventDefault();
+      focusItem(items, index + 1);
+      return;
+    case "ArrowUp":
+      event.preventDefault();
+      focusItem(items, index < 0 ? items.length - 1 : index - 1);
+      return;
+    case "Home":
+      event.preventDefault();
+      focusItem(items, 0);
+      return;
+    case "End":
+      event.preventDefault();
+      focusItem(items, items.length - 1);
+      return;
+    case "ArrowRight": {
+      const submenu = current?.parentElement?.querySelector<HTMLElement>(".popover-submenu");
+      if (!current || !submenu) return;
+      event.preventDefault();
+      if (submenu.hidden) toggleSubmenu(current, submenu);
+      focusItem(visibleMenuItems(submenu), 0);
+      return;
+    }
+    case "ArrowLeft": {
+      const submenu = current?.closest<HTMLElement>(".popover-submenu");
+      const parent = submenu?.parentElement?.querySelector<HTMLButtonElement>(".popover-item");
+      if (!submenu || !parent) return;
+      event.preventDefault();
+      submenu.hidden = true;
+      parent.setAttribute("aria-expanded", "false");
+      parent.focus({ preventScroll: true });
+      return;
+    }
+    default:
+      return;
+  }
+}
+
 function mountPopover(popover: HTMLElement, left: number, top: number): void {
   document.querySelectorAll(".popover").forEach((node) => node.remove());
+  const previousFocus =
+    document.activeElement instanceof HTMLElement ? document.activeElement : null;
   document.body.append(popover);
   const width = popover.offsetWidth;
   const height = popover.offsetHeight;
@@ -93,6 +163,12 @@ function mountPopover(popover: HTMLElement, left: number, top: number): void {
     event.stopPropagation();
     close();
   };
+  const restoreFocus = () => {
+    if (!previousFocus?.isConnected) return;
+    // An action may have opened a dialog that has already taken focus.
+    if (document.activeElement && document.activeElement !== document.body) return;
+    previousFocus.focus({ preventScroll: true });
+  };
   const close = () => {
     if (closed) return;
     closed = true;
@@ -100,11 +176,17 @@ function mountPopover(popover: HTMLElement, left: number, top: number): void {
     document.removeEventListener("mousedown", onMouseDown);
     document.removeEventListener("keydown", onKey);
     popover.remove();
+    // Let a chosen action mount its dialog before deciding where focus belongs.
+    window.setTimeout(restoreFocus, 0);
   };
   // Escape is safe to handle immediately. A mouse click is armed on the next
   // turn so the click that opened the popover does not close it again.
   document.addEventListener("keydown", onKey);
   popover.addEventListener("click", close);
+  popover.addEventListener("keydown", (event) => handleMenuKeys(popover, event));
+  // The menu is keyboard operable as soon as it opens; the first item owns focus
+  // so arrow keys and Enter work without an extra Tab.
+  focusItem(visibleMenuItems(popover), 0);
   armTimer = window.setTimeout(() => {
     if (!closed) document.addEventListener("mousedown", onMouseDown);
   }, 0);

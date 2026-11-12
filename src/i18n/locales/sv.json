@@ -2754,5 +2754,21 @@
   "projectImport.preflight.checksum": "Kontrollsummevarning för: {names}.",
   "projectImport.preflight.pageCount": "{name} har nu {actual} sidor i stället för {expected}.",
   "projectImport.preflight.importWarnings": "{count} ytterligare varning(ar) visas efter importen.",
-  "projectImport.preflight.import": "Importera sidor"
+  "projectImport.preflight.import": "Importera sidor",
+  "page.insertPositionBefore": "före sidan {page}",
+  "page.insertPositionAfter": "efter sidan {page}",
+  "page.positionNamed": "{position} — {name}",
+  "page.insertMenu": "Infoga {position}",
+  "page.insertTitle": "Infoga sida",
+  "page.insertMessage": "En ny sidpost för det här bladet infogas {position}. Ångra tar bort den igen.",
+  "page.insertConfirm": "Infoga sida",
+  "page.moveToPosition": "Flytta sidan till position…",
+  "page.moveTitle": "Flytta sida",
+  "page.moveMessage": "Välj vilken position sidan ska ha. Flytten är ett ångringssteg.",
+  "page.moveTarget": "Målposition",
+  "page.moveBeforePage": "före sidan {page}",
+  "page.moveToEnd": "i slutet av projektet",
+  "page.moveConfirm": "Flytta",
+  "page.movedToast": "Flyttad {position}.",
+  "page.menuHint": "Shift+F10 eller Menytangenten öppnar sidmenyn."
 }

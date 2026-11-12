@@ -42,6 +42,7 @@ src/
   features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
   features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
   features/pageStatus/ pure page badges and status filters derived from project and source state
+  features/pageMenu/ page card menu, insert/move targets and page keyboard commands
   features/saveIntegrity/index.ts public surface for conditional saves and backups
   features/saveIntegrity/stamp.ts runtime file stamp, version comparison and conflicted-copy names
   features/saveIntegrity/conflict.ts conflict classification and default action

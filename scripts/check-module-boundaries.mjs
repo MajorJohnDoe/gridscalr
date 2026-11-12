@@ -19,6 +19,7 @@ const FOUNDATION_FEATURES = [
   "src/features/pageReorder",
   "src/features/pageFileDrop",
   "src/features/pageStatus",
+  "src/features/pageMenu",
 ];
 
 const errors = [];

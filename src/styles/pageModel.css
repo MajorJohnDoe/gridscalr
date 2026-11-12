@@ -146,6 +146,11 @@
   opacity: 0.55;
 }
 
+.page-card:focus-visible {
+  outline: 2px solid var(--jade-bright);
+  outline-offset: 1px;
+}
+
 .page-card.is-selected {
   border-color: var(--jade);
   background: color-mix(in srgb, var(--jade) 14%, var(--bg-deep));

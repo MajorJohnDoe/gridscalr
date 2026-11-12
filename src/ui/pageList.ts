@@ -1,7 +1,6 @@
-import { pageBuilding, pageDisplayName, pageFloor, pageLocationLabel } from "../model/pages";
-import type { PageId, PageSize, Project } from "../model/types";
+import { pageDisplayName, pageLocationLabel } from "../model/pages";
+import type { PageId, PageSize } from "../model/types";
 import { store } from "../state/store";
-import { isBlankSheet, templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import {
   documentRunHeader,
   documentSegments,
@@ -11,6 +10,12 @@ import {
   pageReorderHint,
 } from "../features/pageReorder";
 import {
+  pageMenu,
+  pageMenuHint,
+  PAGE_MENU_HINT_ID,
+  PAGE_MENU_KEYSHORTCUTS,
+} from "../features/pageMenu";
+import {
   pageStatus,
   pageStatusAriaText,
   pageStatusBadgesNode,
@@ -18,7 +23,6 @@ import {
   pageStatusFilterBar,
 } from "../features/pageStatus";
 import { el } from "./dom";
-import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -87,80 +91,6 @@ function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void
   input.addEventListener("blur", () => finish(true));
   input.addEventListener("click", (event) => event.stopPropagation());
   input.addEventListener("dblclick", (event) => event.stopPropagation());
-}
-
-function locationValues(project: Project, field: "building" | "floor"): string[] {
-  const values = new Set<string>();
-  for (const record of project.pages) {
-    const value = field === "building" ? record.state.building?.trim() : record.state.floor?.trim();
-    if (value) values.add(value);
-  }
-  return [...values].sort((a, b) => a.localeCompare(b));
-}
-
-function pageLocationDialog(project: Project, pageId: PageId, page: number): void {
-  const body = el("div", "form-stack");
-  body.append(el("p", "modal-message", t("page.locationNote")));
-
-  const buildingField = el("label", "field");
-  buildingField.append(el("span", "field-label", t("page.building")));
-  const building = el("input", "input");
-  building.type = "text";
-  building.maxLength = 80;
-  building.value = pageBuilding(project, pageId) ?? "";
-  building.placeholder = t("page.buildingPlaceholder");
-  const buildingList = el("datalist");
-  buildingList.id = `page-building-options-${page}`;
-  for (const value of locationValues(project, "building")) {
-    const item = el("option");
-    item.value = value;
-    buildingList.append(item);
-  }
-  building.setAttribute("list", buildingList.id);
-  buildingField.append(building, buildingList);
-
-  const floorField = el("label", "field");
-  floorField.append(el("span", "field-label", t("page.floor")));
-  const floor = el("input", "input");
-  floor.type = "text";
-  floor.maxLength = 80;
-  floor.value = pageFloor(project, pageId) ?? "";
-  floor.placeholder = t("page.floorPlaceholder");
-  const floorList = el("datalist");
-  floorList.id = `page-floor-options-${page}`;
-  for (const value of locationValues(project, "floor")) {
-    const item = el("option");
-    item.value = value;
-    floorList.append(item);
-  }
-  floor.setAttribute("list", floorList.id);
-  floorField.append(floor, floorList);
-
-  body.append(buildingField, floorField);
-  const locationName = pageDisplayName(project, pageId);
-  void showModal({
-    title: t("page.location"),
-    subtitle: locationName
-      ? t("page.locationSubtitle", { page, name: locationName })
-      : t("page.titleFallback", { page }),
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: t("common.apply"), value: "apply", primary: true },
-    ],
-  }).then((value) => {
-    if (value !== "apply") return;
-    const nextBuilding = building.value.replace(/\s+/g, " ").trim().slice(0, 80);
-    const nextFloor = floor.value.replace(/\s+/g, " ").trim().slice(0, 80);
-    store.mutate((current) => {
-      const record = current.pages.find((entry) => entry.id === pageId);
-      if (!record) return;
-      if (nextBuilding) record.state.building = nextBuilding;
-      else delete record.state.building;
-      if (nextFloor) record.state.floor = nextFloor;
-      else delete record.state.floor;
-    }, "change");
-  });
 }
 
 export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSize): void {
@@ -250,10 +180,16 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     card.dataset.page = String(page);
     card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
-    if (reorderEnabled) {
-      card.setAttribute("aria-keyshortcuts", PAGE_REORDER_KEYSHORTCUTS);
-      card.setAttribute("aria-describedby", PAGE_REORDER_HINT_ID);
-    }
+    card.setAttribute(
+      "aria-keyshortcuts",
+      reorderEnabled
+        ? `${PAGE_MENU_KEYSHORTCUTS} ${PAGE_REORDER_KEYSHORTCUTS}`
+        : PAGE_MENU_KEYSHORTCUTS,
+    );
+    card.setAttribute(
+      "aria-describedby",
+      reorderEnabled ? `${PAGE_MENU_HINT_ID} ${PAGE_REORDER_HINT_ID}` : PAGE_MENU_HINT_ID,
+    );
     pageReorder.decorateCard(card, pageId);
     const thumb = el("div", "page-thumb");
     const size = actions.getPageSize(page);
@@ -269,8 +205,6 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const cached = actions.getPageThumbnail(page);
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
-    const sheetDocument = templateDocumentForPage(project, page);
-    const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
     const pageName = pageDisplayName(project, pageId);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
     title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
@@ -318,125 +252,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       card.addEventListener("dragend", () => pageReorder.handleDragEnd());
       card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
     }
-    card.addEventListener("contextmenu", (event) => {
-      event.preventDefault();
-      const goToItem = {
-        label: t("page.goTo", { page }),
-        icon: "pages",
-        action: () => actions.goToPage(page, true),
-      };
-      if (store.readOnly) {
-        showPopoverAt(event.clientX, event.clientY, [goToItem]);
-        return;
-      }
-      showPopoverAt(event.clientX, event.clientY, [
-        goToItem,
-        {
-          label: t("page.renameEllipsis"),
-          icon: "text",
-          action: () => {
-            void textDialog(
-              t("page.rename"),
-              t("page.titleFallback", { page }),
-              pageDisplayName(project, pageId) ?? "",
-              t("page.name"),
-            ).then((value) => {
-              if (value !== null) store.renamePage(pageId, value);
-            });
-          },
-        },
-        ...(sheetDocument && !isBlankSheet(sheetDocument)
-          ? [
-              {
-                label: t("page.editSheetFields"),
-                icon: "text",
-                action: () => actions.editSheetFields(page),
-              },
-              { separator: true as const },
-            ]
-          : []),
-        {
-          label: t("page.setLocation"),
-          icon: "target",
-          action: () => pageLocationDialog(project, pageId, page),
-        },
-        ...(sourceDocument?.kind === "pdf"
-          ? [
-              ...(sourceDocument.storage === "managed"
-                ? [
-                    {
-                      label: t("page.detachFromSource"),
-                      icon: "folder",
-                      action: () => actions.detachFromSource(record.documentId),
-                    },
-                  ]
-                : [
-                    {
-                      label: t("page.useManagedCopy"),
-                      icon: "folder",
-                      action: () => actions.copyDrawingIntoProject(record.documentId),
-                    },
-                  ]),
-              {
-                label: t("page.reloadSource"),
-                icon: "folder",
-                action: () => actions.reloadSource(record.documentId),
-              },
-              {
-                label: t("page.useCurrentSource"),
-                icon: "folder",
-                action: () => actions.useCurrentSource(record.documentId),
-              },
-              {
-                label: t("page.relinkSource"),
-                icon: "folder",
-                action: () => actions.relinkSource(record.documentId),
-              },
-              {
-                label: t("page.replaceSource"),
-                icon: "folder",
-                action: () => actions.replaceSource(record.documentId),
-              },
-            ]
-          : []),
-        ...(sourceDocument?.superseded
-          ? [
-              {
-                label: t("page.cleanupSuperseded"),
-                icon: "trash",
-                danger: true,
-                action: () => actions.cleanupSuperseded(record.documentId),
-              },
-            ]
-          : []),
-        ...(sheetDocument
-          ? []
-          : [
-              {
-                label: t("page.insertBefore"),
-                icon: "plus",
-                action: () => actions.insertPage(pageId, page - 1),
-              },
-              {
-                label: t("page.insertAfter"),
-                icon: "plus",
-                action: () => actions.insertPage(pageId, page),
-              },
-            ]),
-        {
-          label: t("page.duplicate"),
-          icon: "copy",
-          action: () => actions.duplicatePage(pageId),
-        },
-        { separator: true },
-        {
-          label: t("page.delete"),
-          icon: "trash",
-          danger: true,
-          action: () => actions.deletePage(pageId),
-        },
-      ]);
-    });
+    pageMenu.bindCard(card, pageId, actions);
     list.append(card);
   }
   list.addEventListener("contextmenu", (event) => {
@@ -461,7 +277,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     reorder: (pageIds, insertionIndex) => actions.reorderPages(pageIds, insertionIndex),
     goToPage: (page) => actions.goToPage(page, true),
   });
-  list.append(pageReorderHint());
+  list.append(pageReorderHint(), pageMenuHint());
   refs.dockBody.append(list);
   pageReorder.bindList(list, refs.dockBody);
   pageReorder.afterRender();

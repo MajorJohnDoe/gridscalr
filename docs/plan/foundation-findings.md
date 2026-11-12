@@ -1704,3 +1704,27 @@ No entries yet.
   the page list.
 - **Related:** #185, `src/search/ocr.ts`, `src/search/textIndex.ts`,
   `docs/limitations.md`.
+
+### F-079 — Page keyboard commands cannot target the Pages-panel multi-selection
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 5 — page context menu and keyboard operations
+- **Severity:** P3
+- **Area:** pages panel / keyboard
+- **Status:** accepted — the current page is unambiguous, the multi-selection is not
+- **Evidence:** `PageMenuController.handleKey()` resolves the command target with
+  `currentPageId(project, store.ui.page)`. The Pages-panel multi-selection lives
+  in `PageReorderController.selection` and is deliberately session-only UI state;
+  the store keeps the page order and the visible page, not the selected cards.
+- **Problem:** `Alt+Shift+M`, `Alt+Shift+D` and `Alt+Shift+Delete` act on the page
+  on screen. A user who selected five cards with `Ctrl`-click and presses a page
+  shortcut edits only the current page. Dragging the same selection moves all
+  five, so mouse and keyboard differ for the multi-selection case.
+- **Impact:** No wrong page is edited: the command names and targets the current
+  page, and the page menu is per card. The gap is only that a multi-selection has
+  no keyboard equivalent for duplicate or delete, which neither action supported
+  before this phase.
+- **Next step:** Move the page selection into shared page-list state and let the
+  page menu and shortcuts read it. Phase 6 (#187) unifies the Page, Layer and
+  Markups list interactions and is the natural place for that decision.
+- **Related:** #186, #187, ADR 0011, `src/features/pageReorder/controller.ts`.

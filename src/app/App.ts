@@ -96,6 +96,7 @@ import { store } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
 import { isEditingTool } from "../features/viewOnly";
+import { pageMenu } from "../features/pageMenu";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
@@ -668,6 +669,10 @@ export class App {
       }
     }
 
+    // Page navigation and page commands share one handler so the documented
+    // shortcut list, the Pages panel menu and the keyboard cannot drift apart.
+    if (pageMenu.handleKey(event, this.actions)) return;
+
     if (event.altKey) return;
 
     if (event.key === "F1") {
@@ -722,17 +727,6 @@ export class App {
       event.preventDefault();
       if (store.readOnly) return;
       if (!this.canvas.removeLastPoint()) this.canvas.deleteSelection();
-      return;
-    }
-
-    if (event.key === "PageDown") {
-      event.preventDefault();
-      void goToPageFlow(this.pageFlowHost(), store.ui.page + 1, true);
-      return;
-    }
-    if (event.key === "PageUp") {
-      event.preventDefault();
-      void goToPageFlow(this.pageFlowHost(), store.ui.page - 1, true);
       return;
     }
 
