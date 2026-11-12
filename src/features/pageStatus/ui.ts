@@ -80,6 +80,8 @@ export function pageStatusAriaText(badges: readonly PageStatusBadge[]): string {
 export interface PageStatusFilterBarInput {
   active: PageStatusFilter;
   counts: Record<PageStatusFilter, number>;
+  /** Hides problem filters with no matching pages; "all" always stays. */
+  omitEmpty?: boolean;
   /** Called with the chosen filter; the host re-renders the panel. */
   onSelect: (filter: PageStatusFilter) => void;
 }
@@ -94,6 +96,7 @@ export function pageStatusFilterBar(input: PageStatusFilterBarInput): HTMLElemen
   bar.setAttribute("aria-label", t("page.statusFilterGroup"));
   for (const filter of PAGE_STATUS_FILTERS) {
     const count = input.counts[filter] ?? 0;
+    if (input.omitEmpty && filter !== "all" && filter !== input.active && count === 0) continue;
     const label = pageStatusFilterLabel(filter);
     const button = el("button", "page-status-filter");
     button.type = "button";

@@ -1,5 +1,6 @@
 import { t } from "../../i18n";
 import { el } from "../../ui/dom";
+import { icon } from "../../ui/icons";
 
 /**
  * DOM pieces for page reordering: the document run header, the screen-reader
@@ -33,7 +34,10 @@ export function documentRunHeader(name: string, count: number): HTMLElement {
   header.setAttribute("role", "heading");
   header.setAttribute("aria-level", "3");
   header.setAttribute("aria-label", t("page.documentRunAria", { name, count }));
+  const kind = el("span", "page-document-icon");
+  kind.innerHTML = icon("file", 12);
   header.append(
+    kind,
     el("span", "page-document-name", name),
     el("span", "page-document-count", t("page.documentRunCount", { count })),
   );

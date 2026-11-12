@@ -8,6 +8,8 @@ export interface PopoverItem {
   danger?: boolean;
   disabled?: boolean;
   separator?: boolean;
+  /** Renders a check mark and the pressed state for a toggle item. */
+  checked?: boolean;
   /** Nested menu opened to the side of the parent item. */
   children?: PopoverItem[];
 }
@@ -22,8 +24,14 @@ function buildPopover(items: PopoverItem[]): HTMLElement {
     const btn = el("button", `popover-item${item.danger ? " is-danger" : ""}`);
     btn.type = "button";
     btn.disabled = item.disabled ?? false;
+    if (item.checked !== undefined) btn.setAttribute("aria-pressed", String(item.checked));
     if (item.icon) btn.innerHTML = icon(item.icon, 14);
     btn.append(el("span", "", item.label ?? ""));
+    if (item.checked) {
+      const mark = el("span", "popover-check");
+      mark.innerHTML = icon("check", 13);
+      btn.append(mark);
+    }
 
     if (item.children?.length) {
       const submenu = buildPopover(item.children);

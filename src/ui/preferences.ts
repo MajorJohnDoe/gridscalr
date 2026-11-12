@@ -6,6 +6,12 @@ export interface PanelPreferences {
   rightCollapsed: boolean;
   rightWidth: number;
   railExpanded: boolean;
+  /** Pages panel view: group rows by source document. */
+  pagesGrouped: boolean;
+  /** Pages panel view: show the source name on each flat card. */
+  pagesShowSource: boolean;
+  /** Pages panel view: page numbers on the thumbnails. */
+  pagesShowNumbers: boolean;
 }
 
 export const DEFAULT_PANELS: PanelPreferences = {
@@ -14,6 +20,9 @@ export const DEFAULT_PANELS: PanelPreferences = {
   rightCollapsed: false,
   rightWidth: 304,
   railExpanded: false,
+  pagesGrouped: false,
+  pagesShowSource: true,
+  pagesShowNumbers: true,
 };
 
 export const PANEL_LIMITS = {
@@ -46,6 +55,9 @@ export function loadPanelPreferences(): PanelPreferences {
         PANEL_LIMITS.rightMax,
       ),
       railExpanded: parsed.railExpanded === true,
+      pagesGrouped: parsed.pagesGrouped === true,
+      pagesShowSource: parsed.pagesShowSource !== false,
+      pagesShowNumbers: parsed.pagesShowNumbers !== false,
     };
   } catch {
     return { ...DEFAULT_PANELS };

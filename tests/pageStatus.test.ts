@@ -413,6 +413,32 @@ describe("page status accessibility and labels", () => {
     expect(bar.textContent).toContain("Clear the status filter");
   });
 
+  it("can hide problem filters that match no page", () => {
+    const bar = pageStatusFilterBar({
+      active: "all",
+      counts: { all: 4, changedSource: 0, superseded: 1, missingOcr: 0, lockedScale: 2 },
+      omitEmpty: true,
+      onSelect: () => undefined,
+    });
+    const filters = [...bar.querySelectorAll<HTMLButtonElement>("button")].map(
+      (button) => button.dataset.filter,
+    );
+    expect(filters).toEqual(["all", "superseded", "lockedScale"]);
+  });
+
+  it("keeps an active empty filter visible so it can be cleared", () => {
+    const bar = pageStatusFilterBar({
+      active: "missingOcr",
+      counts: { all: 4, changedSource: 0, superseded: 0, missingOcr: 0, lockedScale: 0 },
+      omitEmpty: true,
+      onSelect: () => undefined,
+    });
+    const filters = [...bar.querySelectorAll<HTMLButtonElement>("button")].map(
+      (button) => button.dataset.filter,
+    );
+    expect(filters).toEqual(["all", "missingOcr"]);
+  });
+
   it("passes the chosen filter back to the panel", () => {
     const chosen: string[] = [];
     const bar = pageStatusFilterBar({

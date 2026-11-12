@@ -19,6 +19,7 @@ import {
   PAGE_MENU_KEYSHORTCUTS,
 } from "../features/pageMenu";
 import {
+  PAGE_STATUS_FILTERS,
   pageStatus,
   pageStatusAriaText,
   pageStatusBadgesNode,
@@ -26,6 +27,9 @@ import {
   pageStatusFilterBar,
 } from "../features/pageStatus";
 import { el } from "./dom";
+import { icon } from "./icons";
+import { loadPanelPreferences } from "./preferences";
+import { bindPagesTabMenu } from "./pagesTabMenu";
 import { showPopoverAt } from "./popover";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
@@ -34,7 +38,6 @@ import { t } from "../i18n";
 interface PendingThumbnail {
   page: number;
   image: HTMLImageElement;
-  placeholder: HTMLElement;
 }
 
 let thumbnailObserver: IntersectionObserver | null = null;
@@ -64,7 +67,6 @@ function applyThumbShape(thumb: HTMLElement, size: PageSize | undefined): void {
 function applyThumbnail(pending: PendingThumbnail, url: string): void {
   pending.image.src = url;
   pending.image.hidden = false;
-  pending.placeholder.hidden = true;
 }
 
 function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void {
@@ -103,7 +105,8 @@ export function updatePageSizeLabel(refs: ShellRefs, page: number, size: PageSiz
   if (!card) return;
   const label = card.querySelector<HTMLElement>(".page-size");
   if (label)
-    label.textContent = t("page.sizePoints", {
+    label.textContent = t("page.cardMeta", {
+      page,
       width: Math.round(size.width),
       height: Math.round(size.height),
     });
@@ -127,7 +130,18 @@ function renderEmptyPages(refs: ShellRefs, actions: PanelActions): void {
   refs.dockBody.append(empty);
 }
 
+let boundTab: HTMLElement | null = null;
+
+/** One context-menu binding per dock tab; the panel re-renders many times. */
+function bindTabMenu(refs: ShellRefs, actions: PanelActions): void {
+  const tab = refs.dockTabs.find((entry) => entry.dataset.tab === "pages") ?? null;
+  if (!tab || tab === boundTab) return;
+  boundTab = tab;
+  bindPagesTabMenu(tab, actions.refresh);
+}
+
 export function renderPages(refs: ShellRefs, actions: PanelActions): void {
+  bindTabMenu(refs, actions);
   disconnectPageThumbnails();
   pageNavigator.detach();
   refs.dockBody.querySelector(".page-list")?.remove();
@@ -139,18 +153,27 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   const rows = pageStatus.rows(project);
   const filter = pageStatus.activeFilter;
   refs.dockBody.querySelector(".page-status-filters")?.remove();
-  const filterBar = pageStatusFilterBar({
-    active: filter,
-    counts: pageStatus.counts(rows),
-    onSelect: (next) => {
-      if (pageStatus.setFilter(next)) actions.refresh();
-    },
-  });
-  refs.dockBody.append(filterBar);
-  if (pageStatus.takeFocusRequest()) {
-    filterBar
-      .querySelector<HTMLButtonElement>(`.page-status-filter[data-filter="${filter}"]`)
-      ?.focus({ preventScroll: true });
+  const counts = pageStatus.counts(rows);
+  const hasProblemFilter = PAGE_STATUS_FILTERS.some(
+    (entry) => entry !== "all" && (counts[entry] ?? 0) > 0,
+  );
+  const focusRequest = pageStatus.takeFocusRequest();
+  // With nothing to filter, the chip row is noise rather than a control.
+  if (hasProblemFilter || filter !== "all") {
+    const filterBar = pageStatusFilterBar({
+      active: filter,
+      counts,
+      omitEmpty: true,
+      onSelect: (next) => {
+        if (pageStatus.setFilter(next)) actions.refresh();
+      },
+    });
+    refs.dockBody.append(filterBar);
+    if (focusRequest) {
+      filterBar
+        .querySelector<HTMLButtonElement>(`.page-status-filter[data-filter="${filter}"]`)
+        ?.focus({ preventScroll: true });
+    }
   }
   const visible = pageStatus.visibleFrom(rows);
   if (!visible.length) {
@@ -164,8 +187,9 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   // a filter hides pages. Viewing, renaming and page actions still work.
   const reorderEnabled = !store.readOnly && filter === "all";
   const shown = visible.slice(0, max);
+  const prefs = loadPanelPreferences();
   const runs = new Map<number, { documentId: string | null; count: number }>();
-  if (project.documents.length > 1) {
+  if (prefs.pagesGrouped && project.documents.length > 1) {
     const entries = shown.map((row) => ({ id: row.pageId, documentId: row.documentId }));
     for (const segment of documentSegments(entries)) runs.set(segment.start, segment);
   }
@@ -202,16 +226,16 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     const thumb = el("div", "page-thumb");
     const size = actions.getPageSize(page);
     applyThumbShape(thumb, size);
-    const thumbNumber = el("span", "page-thumb-placeholder", String(page));
     const image = el("img", "page-thumb-image");
     image.alt = "";
     image.draggable = false;
     image.decoding = "async";
     image.setAttribute("aria-hidden", "true");
     image.hidden = true;
-    thumb.append(thumbNumber, image);
+    thumb.append(image);
+    if (prefs.pagesShowNumbers) thumb.append(el("span", "page-thumb-number", String(page)));
     const cached = actions.getPageThumbnail(page);
-    if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
+    if (cached) applyThumbnail({ page, image }, cached);
     const info = el("div", "page-info");
     const pageName = pageDisplayName(project, pageId);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
@@ -229,15 +253,30 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       info.append(locationNode);
     }
     const sizeText = size
-      ? t("page.sizePoints", { width: Math.round(size.width), height: Math.round(size.height) })
+      ? t("page.cardMeta", {
+          page,
+          width: Math.round(size.width),
+          height: Math.round(size.height),
+        })
       : t("page.loadingSize");
-    const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
+    const sizeNode = el("div", "page-size", sizeText);
     info.append(sizeNode);
+    if (!prefs.pagesGrouped && prefs.pagesShowSource && project.documents.length > 1) {
+      const document = project.documents.find((entry) => entry.id === row.documentId);
+      if (document) {
+        const source = el("div", "page-source");
+        const sourceIcon = el("span", "page-source-icon");
+        sourceIcon.innerHTML = icon("file", 11);
+        source.append(sourceIcon, el("span", "page-source-name", document.name));
+        source.title = document.name;
+        info.append(source);
+      }
+    }
     const badges = pageStatusBadgesNode(row.badges);
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
     if (reorderEnabled) card.append(dragHandle(t("page.dragHandle")));
-    pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
+    pendingThumbnails.set(card, { page, image });
     card.setAttribute(
       "aria-label",
       t("page.cardAria", {
