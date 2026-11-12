@@ -1145,6 +1145,8 @@ export type MessageKey =
   | "layer.deleteAction"
   | "layer.addMeasure"
   | "layer.addDrawing"
+  | "layer.addMeasureTitle"
+  | "layer.addDrawingTitle"
   | "layer.deduction"
   | "layer.hidden"
   | "layer.locked"

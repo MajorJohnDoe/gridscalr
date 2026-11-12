@@ -313,30 +313,6 @@
 
 /* ---------- Layers ---------- */
 
-.layer-group-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 9px 12px 5px;
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
-  color: var(--muted-2);
-  font-weight: 650;
-}
-
-.layer-group-title .count {
-  color: var(--muted-2);
-  background: var(--bg-deep);
-  border-radius: 9px;
-  padding: 0 6px;
-  font-size: 11px;
-}
-
-.layer-group {
-  position: relative;
-}
-
 .layer-row {
   display: flex;
   align-items: center;
@@ -354,9 +330,13 @@
   background: var(--panel-hover);
 }
 
-.layer-row.is-active {
+.layer-row.is-selected {
   background: var(--jade-dim);
-  border-color: rgba(53, 194, 161, 0.24);
+  border-color: rgba(53, 194, 161, 0.3);
+}
+
+.layer-row.is-selected .layer-name {
+  color: var(--text-strong);
 }
 
 .layer-row.is-hidden {
@@ -422,10 +402,6 @@
   flex-wrap: wrap;
 }
 
-.layer-toolbar .layer-scope {
-  flex: 0 0 auto;
-}
-
 .layer-search {
   flex: 1 1 120px;
   min-width: 96px;
@@ -445,11 +421,32 @@
 }
 
 .layer-color {
-  width: 9px;
-  height: 9px;
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border: 0;
   border-radius: 3px;
   flex: 0 0 auto;
+  padding: 0;
+  cursor: pointer;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+.layer-color:hover {
+  box-shadow: 0 0 0 1px var(--jade-bright);
+}
+
+.layer-color.is-disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.layer-color-input {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .layer-name {
@@ -531,7 +528,7 @@
 }
 
 .layer-row:hover .layer-menu-btn,
-.layer-row.is-active .layer-menu-btn {
+.layer-row.is-selected .layer-menu-btn {
   opacity: 1;
 }
 
@@ -622,25 +619,6 @@
 
 .layer-item-row.is-locked .layer-item-flag {
   color: var(--amber);
-}
-
-.layer-add-row {
-  display: flex;
-  gap: 6px;
-  padding: 8px 10px 12px;
-}
-
-.layer-add-row .btn {
-  flex: 1;
-  justify-content: center;
-  border-style: dashed;
-  color: var(--muted);
-  background: transparent;
-}
-
-.layer-add-row .btn:hover {
-  color: var(--jade-bright);
-  border-color: rgba(53, 194, 161, 0.4);
 }
 
 /* ---------- Pages ---------- */

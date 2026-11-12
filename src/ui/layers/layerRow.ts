@@ -1,11 +1,8 @@
 import { t } from "../../i18n";
-import { dragHandle } from "../../features/listInteraction";
 import type { LayerTreeRow } from "../../features/layerTree";
 import {
   defaultColorForLayer,
-  setLayerLockedGlobally,
   setLayerLockedOnPage,
-  setLayerVisibleGlobally,
   setLayerVisibleOnPage,
 } from "../../model/layers";
 import type { Layer, Project } from "../../model/types";
@@ -16,7 +13,7 @@ import { icon } from "../icons";
 import { layerAction } from "../layerAction";
 import type { PanelActions } from "../panels";
 import { toast } from "../toast";
-import { scopeItemsFor } from "./filter";
+import { matchingItems, scopeItemsFor } from "./filter";
 import { showLayerMenu, showLayerMenuAt } from "./menu";
 import { layerTreeController } from "./reorder";
 import { buildLayerItems } from "./rows";
@@ -25,7 +22,8 @@ import { layerView, toggleLayerExpanded } from "./state";
 /**
  * One row of the Layers panel tree: indent, expand/collapse control, inherited
  * hidden and locked indicators, and the per-layer actions. Rendering only; the
- * rules live in the layer tree feature and the model.
+ * rules live in the layer tree feature and the model. The whole row is the drag
+ * surface, including the colour swatch, so a layer can be grabbed anywhere.
  */
 
 export const LAYER_ORDER_HINT_ID = "layer-order-hint";
@@ -104,15 +102,8 @@ function inheritedChips(project: Project, row: LayerTreeRow): HTMLElement[] {
   return chips;
 }
 
-function disclosureLabel(
-  row: LayerTreeRow,
-  expanded: boolean,
-  itemCount: number,
-  page: number,
-): string {
-  if (!row.hasChildren && itemCount === 0) {
-    return layerView.scope === "page" ? t("layer.noItemsOnPage", { page }) : t("layer.noItems");
-  }
+function disclosureLabel(row: LayerTreeRow, expanded: boolean, itemCount: number): string {
+  if (!row.hasChildren && itemCount === 0) return t("layer.noItemsOnPage", { page: store.ui.page });
   return t(expanded ? "layer.collapseRow" : "layer.expandRow", {
     name: row.layer.name,
     children: row.descendantCount,
@@ -129,8 +120,11 @@ export function renderLayerRow(
 ): void {
   const page = store.ui.page;
   const layer = treeRow.layer;
-  const scopeItems = scopeItemsFor(layer, layerView.scope, pageId);
-  const expanded = layerView.expanded.has(layer.id);
+  const pageItems = scopeItemsFor(layer, "page", pageId);
+  const searchHits = matchingItems(layer, pageId, layerView.query);
+  const searching = Boolean(layerView.query.trim());
+  const items = searching && searchHits.length ? searchHits : pageItems;
+  const expanded = layerView.expanded.has(layer.id) || (searching && searchHits.length > 0);
   const row = el("div", "layer-row");
   row.dataset.layerId = layer.id;
   row.dataset.layerKind = layer.kind;
@@ -142,19 +136,18 @@ export function renderLayerRow(
   row.classList.toggle("is-inherited-hidden", Boolean(treeRow.inheritedHiddenBy));
   row.classList.toggle("is-inherited-locked", Boolean(treeRow.inheritedLockedBy));
   row.classList.toggle("is-group", treeRow.hasChildren);
-  row.classList.toggle("is-page-scoped", layerView.scope === "page");
   row.draggable = !store.readOnly;
   row.setAttribute("aria-keyshortcuts", LAYER_KEYSHORTCUTS);
   row.setAttribute("aria-describedby", `${LAYER_ORDER_HINT_ID} ${LAYER_MENU_HINT_ID}`);
   if (treeRow.hasChildren) row.setAttribute("aria-expanded", String(expanded));
 
   const panelId = `layer-items-${layer.id}`;
-  const label = disclosureLabel(treeRow, expanded, scopeItems.length, page);
+  const label = disclosureLabel(treeRow, expanded, items.length);
   const disclosure = el("button", "layer-disclosure");
   disclosure.type = "button";
-  disclosure.disabled = !treeRow.hasChildren && scopeItems.length === 0;
+  disclosure.disabled = !treeRow.hasChildren && items.length === 0;
   disclosure.setAttribute("aria-expanded", String(expanded));
-  if (scopeItems.length) disclosure.setAttribute("aria-controls", panelId);
+  if (items.length) disclosure.setAttribute("aria-controls", panelId);
   disclosure.setAttribute("aria-label", label);
   disclosure.title = label;
   disclosure.innerHTML = icon(expanded ? "chevronDown" : "chevronRight", 12);
@@ -165,17 +158,35 @@ export function renderLayerRow(
     actions.refresh();
   });
 
-  const grip = dragHandle(t("layer.dragReorder"));
-
-  const color = el("input", "layer-color");
-  color.type = "color";
-  color.disabled = store.readOnly || treeRow.locked;
   const fallbackColor = defaultColorForLayer(layer.kind);
-  setColorInput(color, layer.color, fallbackColor);
+  const colorInput = el("input", "layer-color-input");
+  colorInput.type = "color";
+  colorInput.tabIndex = -1;
+  colorInput.setAttribute("aria-hidden", "true");
+  const colorValue = setColorInput(colorInput, layer.color, fallbackColor);
+  const color = el("span", "layer-color");
+  color.setAttribute("role", "button");
+  color.tabIndex = 0;
+  color.style.background = colorValue;
   color.title = t("layer.colour");
-  color.addEventListener("click", (event) => event.stopPropagation());
-  color.addEventListener("change", () => {
-    const next = colorInputValue(color, fallbackColor);
+  color.setAttribute("aria-label", t("layer.colour"));
+  const colorDisabled = store.readOnly || treeRow.locked;
+  color.classList.toggle("is-disabled", colorDisabled);
+  color.tabIndex = colorDisabled ? -1 : 0;
+  const openColor = (event: Event) => {
+    event.stopPropagation();
+    if (colorDisabled) return;
+    colorInput.click();
+  };
+  color.addEventListener("click", openColor);
+  color.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    event.preventDefault();
+    openColor(event);
+  });
+  colorInput.addEventListener("change", () => {
+    const next = colorInputValue(colorInput, fallbackColor);
+    color.style.background = next;
     store.mutate((current) => {
       const target = current.layers.find((l) => l.id === layer.id);
       if (!target) return;
@@ -187,21 +198,15 @@ export function renderLayerRow(
   const name = el("span", "layer-name", layer.name);
   name.title = t("layer.renameTitle", { name: layer.name });
 
-  const count = el("span", "layer-count", String(scopeItems.length));
-  count.title =
-    layerView.scope === "page"
-      ? t("layer.itemsOnPage", { count: scopeItems.length, page })
-      : t("layer.itemsTotal", { count: scopeItems.length });
+  const count = el("span", "layer-count", String(pageItems.length));
+  count.title = t("layer.itemsOnPage", { count: pageItems.length, page });
 
   const actionsWrap = el("div", "layer-actions");
   const eye = layerAction(
     treeRow.visible ? "eye" : "eyeOff",
-    treeRow.visible ? t("layer.hide") : t("layer.show"),
+    treeRow.visible ? t("layer.show") : t("layer.hide"),
   );
-  eye.title =
-    layerView.scope === "page"
-      ? t(treeRow.visible ? "layer.hideOnPage" : "layer.showOnPage", { page })
-      : t(treeRow.visible ? "layer.hideAll" : "layer.showAll");
+  eye.title = t(treeRow.visible ? "layer.hideOnPage" : "layer.showOnPage", { page });
   if (treeRow.inheritedHiddenBy) {
     const reason = t("layer.inheritedHiddenTitle", {
       name: layer.name,
@@ -216,22 +221,14 @@ export function renderLayerRow(
     event.stopPropagation();
     store.mutate((current) => {
       const target = current.layers.find((l) => l.id === layer.id);
-      if (!target) return;
-      if (layerView.scope === "page") {
-        setLayerVisibleOnPage(target, pageId, !layerOwnVisible(target, pageId));
-      } else {
-        setLayerVisibleGlobally(target, !target.visible);
-      }
+      if (target) setLayerVisibleOnPage(target, pageId, !layerOwnVisible(target, pageId));
     }, "layers");
   });
   const lock = layerAction(
     treeRow.locked ? "lock" : "unlock",
     treeRow.locked ? t("layer.unlock") : t("layer.lock"),
   );
-  lock.title =
-    layerView.scope === "page"
-      ? t(treeRow.locked ? "layer.unlockOnPage" : "layer.lockOnPage", { page })
-      : t(treeRow.locked ? "layer.unlockAll" : "layer.lockAll");
+  lock.title = t(treeRow.locked ? "layer.unlockOnPage" : "layer.lockOnPage", { page });
   if (treeRow.inheritedLockedBy) {
     const reason = t("layer.inheritedLockedTitle", {
       name: layer.name,
@@ -246,12 +243,7 @@ export function renderLayerRow(
     event.stopPropagation();
     store.mutate((current) => {
       const target = current.layers.find((l) => l.id === layer.id);
-      if (!target) return;
-      if (layerView.scope === "page") {
-        setLayerLockedOnPage(target, pageId, !layerOwnLocked(target, pageId));
-      } else {
-        setLayerLockedGlobally(target, !target.locked);
-      }
+      if (target) setLayerLockedOnPage(target, pageId, !layerOwnLocked(target, pageId));
     }, "layers");
   });
   const menu = layerAction("markups", t("layer.actions"), "layer-menu-btn");
@@ -271,7 +263,7 @@ export function renderLayerRow(
     groupCount.title = t("layer.groupChildren", { count: treeRow.descendantCount });
     content.append(groupCount);
   }
-  row.append(disclosure, grip, color);
+  row.append(disclosure, color, colorInput);
   if (treeRow.hasChildren) {
     const folder = el("span", "layer-group-icon");
     folder.innerHTML = icon("folder", 12);
@@ -291,15 +283,13 @@ export function renderLayerRow(
             name: layer.name,
             group: layerNameOf(project, treeRow.inheritedHiddenBy),
           })
-        : layerView.scope === "page"
-          ? t("layer.hiddenOnPage", { page })
-          : t("layer.hiddenEdit"),
+        : t("layer.hiddenOnPage", { page }),
       "warning",
     );
   };
   row.addEventListener("click", (event) => {
     const target = event.target as HTMLElement | null;
-    if (target?.closest("button, input, select")) return;
+    if (target?.closest("button, input, select, [role='button']")) return;
     const now = Date.now();
     const doubleClick =
       layerView.lastClick?.id === layer.id && now - layerView.lastClick.time < 400;
@@ -318,8 +308,8 @@ export function renderLayerRow(
     if (layerTreeController.handleClick(event, layer.id)) {
       activate();
     } else {
-      // A range or Ctrl click only changes the selection: repaint so the bulk
-      // bar appears or disappears, and keep focus on the row that was clicked.
+      // A range or Ctrl click only changes the selection; repaint so the
+      // selected rows and the context menu state follow the new range.
       layerView.focusLayerId = layer.id;
       actions.refresh();
     }
@@ -357,7 +347,7 @@ export function renderLayerRow(
     }
   });
   group.append(row);
-  if (expanded && scopeItems.length) {
-    group.append(buildLayerItems(project, layer, actions, scopeItems));
+  if (expanded && items.length) {
+    group.append(buildLayerItems(project, layer, actions, items));
   }
 }

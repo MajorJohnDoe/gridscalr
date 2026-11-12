@@ -15,13 +15,23 @@ import {
   moveLayerOutOfGroup,
   type LayerTreeRow,
 } from "../../features/layerTree";
+import {
+  deleteSelectedLayers,
+  selectedLayers,
+  selectedLayersLocked,
+  selectedLayersVisible,
+  setSelectedLayersLocked,
+  setSelectedLayersVisible,
+} from "./bulk";
 import { visibleLayerRows, scopeItemsFor } from "./filter";
+import { layerTreeController } from "./reorder";
 import { layerView, toggleLayerExpanded } from "./state";
 
 /**
  * Layer row menu. Items are rebuilt from project data on every open, so the
- * counts and the disabled states describe the current page scope, search and
- * hierarchy.
+ * counts and the disabled states describe the current page, search and
+ * hierarchy. While several rows are selected, the menu acts on the whole
+ * selection instead of the row that was right-clicked.
  */
 export function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   const project = store.project;
@@ -29,7 +39,7 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
   if (!project || !layer) return [];
   const page = store.ui.page;
   const pageId = pageIdAt(project, page) ?? "";
-  const scopeItems = scopeItemsFor(layer, layerView.scope, pageId);
+  const scopeItems = scopeItemsFor(layer, "page", pageId);
   const hierarchy = buildLayerHierarchy(project.layers);
   const lockedHere = layerLockedOnPage(layer, pageId, hierarchy);
   const group = project.layers.filter((entry) => entry.kind === layer.kind);
@@ -48,9 +58,7 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
             children: row?.descendantCount ?? 0,
             items: scopeItems.length,
           })
-        : layerView.scope === "page"
-          ? t("layer.noItemsOnPage", { page })
-          : t("layer.noItems"),
+        : t("layer.noItemsOnPage", { page }),
       icon: expanded ? "chevronDown" : "chevronRight",
       disabled: !canExpand,
       action: () => {
@@ -123,35 +131,25 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
     },
     { separator: true },
     {
-      label:
-        layerView.scope === "page"
-          ? t("layer.clearItemsOnPage", { count: scopeItems.length, page })
-          : t("layer.clearLayerCount", { count: layer.items.length }),
+      label: t("layer.clearItemsOnPage", { count: scopeItems.length, page }),
       icon: "trash",
       danger: true,
       disabled: scopeItems.length === 0 || lockedHere,
       action: () => {
         void confirmDialog(
           t("layer.clear"),
-          layerView.scope === "page"
-            ? t("layer.removeItemsOnPage", {
-                count: scopeItems.length,
-                page,
-                name: layer.name,
-              })
-            : t("layer.removeItems", { count: layer.items.length, name: layer.name }),
+          t("layer.removeItemsOnPage", {
+            count: scopeItems.length,
+            page,
+            name: layer.name,
+          }),
           t("layer.clearAction"),
           { danger: true },
         ).then((confirmed) => {
           if (!confirmed) return;
           store.mutate((current) => {
             const target = current.layers.find((entry) => entry.id === layerId);
-            if (!target) return;
-            if (layerView.scope === "page") {
-              target.items = target.items.filter((item) => item.pageId !== pageId);
-            } else {
-              target.items = [];
-            }
+            if (target) target.items = target.items.filter((item) => item.pageId !== pageId);
           }, "layers");
         });
       },
@@ -188,8 +186,42 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
   return store.readOnly ? items.slice(0, 1) : items;
 }
 
+/** Menu for a multi-selection: visibility, locking and deletion act on all rows. */
+function bulkMenuItems(actions: PanelActions): PopoverItem[] {
+  const count = selectedLayers().length;
+  const allVisible = selectedLayersVisible();
+  const allLocked = selectedLayersLocked();
+  return [
+    { label: t("layer.selectedCount", { count }), disabled: true },
+    { separator: true },
+    {
+      label: allVisible ? t("layer.bulkHide") : t("layer.bulkShow"),
+      icon: allVisible ? "eyeOff" : "eye",
+      action: () => setSelectedLayersVisible(!allVisible),
+    },
+    {
+      label: allLocked ? t("layer.bulkUnlock") : t("layer.bulkLock"),
+      icon: allLocked ? "unlock" : "lock",
+      action: () => setSelectedLayersLocked(!allLocked),
+    },
+    { separator: true },
+    {
+      label: t("layer.bulkDelete"),
+      icon: "trash",
+      danger: true,
+      action: () => deleteSelectedLayers(actions),
+    },
+  ];
+}
+
+function menuItemsFor(layerId: string, actions: PanelActions): PopoverItem[] {
+  const selected = layerTreeController.selectionIds();
+  if (selected.length > 1 && selected.includes(layerId)) return bulkMenuItems(actions);
+  return layerMenuItems(layerId, actions);
+}
+
 export function showLayerMenu(anchor: HTMLElement, layerId: string, actions: PanelActions): void {
-  showPopover(anchor, layerMenuItems(layerId, actions));
+  showPopover(anchor, menuItemsFor(layerId, actions));
 }
 
 export function showLayerMenuAt(
@@ -198,5 +230,5 @@ export function showLayerMenuAt(
   layerId: string,
   actions: PanelActions,
 ): void {
-  showPopoverAt(x, y, layerMenuItems(layerId, actions));
+  showPopoverAt(x, y, menuItemsFor(layerId, actions));
 }

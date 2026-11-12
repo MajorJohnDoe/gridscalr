@@ -26,7 +26,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
 - **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
-- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab is a tree with a **This page / All pages** scope switch, a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab shows the open page's layers in separate drawing and measurement sections, with a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
@@ -237,7 +237,7 @@ Use **File → Import pages from project…**, or right-click the empty area bel
 
 The pages are appended after the existing pages by default. Existing page numbers do not move unless you reorder or delete a page. The source project is read-only and is never changed.
 
-- **Each imported page gets its own layers.** New page-scoped layers use the source layer names, colours, opacity, visibility and lock state. Items are never merged into layers that already exist on another page. If you switch the Layers list to **All pages**, layers with the same name from different pages are shown separately.
+- **Each imported page gets its own layers.** New page-scoped layers use the source layer names, colours, opacity, visibility and lock state. Items are never merged into layers that already exist on another page. Layers with the same name from different pages stay separate objects and appear when their page is opened.
 - **Copied page data:** page name, building and floor, calibration and scale lock, OCR text, and every item on the page. Operation-card title-block fields are copied exactly.
 - **Merged project data:** only the categories, count types, line types and embedded images that the imported items actually use. Matching categories are reused by name; conflicting names keep the destination project's settings.
 - **Missing PDFs:** a page whose PDF cannot be found is greyed out in the picker. Use **Locate…** there, or **Relink…** on the import preflight. A selected page that still cannot be read during the import is skipped and listed in a warning.
@@ -595,26 +595,25 @@ Built-in symbols are original vector interpretations inspired by common Swedish 
 
 ## Layers
 
-Open the **Layers** tab in the left panel. The **This page / All pages** switch controls the scope.
+Open the **Layers** tab in the left panel. The panel always shows the layers of the open page: a layer created on that page or used by at least one item on it. A layer that only exists on another page appears when that page is opened.
 
-- **This page** lists layers created on the current page or used by at least one item on it.
-- **All pages** lists every layer and edits the project-wide defaults.
-- **Eye** shows or hides a layer. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
-- **Lock** prevents moving, editing, and deleting its items. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
-- Click the colour swatch to change the layer colour.
+- Drawing layers and measurement layers each have their own section with a header, a count and an action strip at the bottom.
+- **Eye** shows or hides a layer on the current page.
+- **Lock** prevents moving, editing, and deleting its items on the current page.
+- Click the colour swatch to change the layer colour. Press and drag anywhere on the row, including the swatch, folder icon or name, to move the layer.
 - Double-click anywhere on a layer row, or press `F2` on the focused row, to rename it inline.
-- Drag a layer row or its grip within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step among its siblings and `Alt` + `Home` / `End` moves it to the first or last sibling; each move is announced and is one undo step.
-- Use the search field to filter by layer name, item label, kind or room. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots. A search keeps the group path of every match open.
+- Drag a layer row within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step among its siblings and `Alt` + `Home` / `End` moves it to the first or last sibling; each move is announced and is one undo step.
+- Use the search field to filter by layer name, item label, kind or room. A matching item is revealed inside its layer, which expands automatically and lists only the matching items. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots. A search keeps the group path of every match open.
 - Use the expand-all and collapse-all buttons beside the search field to open or close every layer and group at once.
-- Use the chevron to expand a layer and list its items on the current page, or every item in **All pages** scope, newest first. The same chevron opens and closes a group's nested layers. `ArrowRight` and `ArrowLeft` do the same from the keyboard.
-- `Ctrl`/`Cmd`-click, `Shift`-click or plain click selects whole layer rows. With two or more selected, a bar above the list hides, shows, locks, unlocks or deletes all of them as one undo step.
+- Use the chevron to expand a layer and list its items on the current page, newest first. The same chevron opens and closes a group's nested layers. `ArrowRight` and `ArrowLeft` do the same from the keyboard.
+- `Ctrl`/`Cmd`-click, `Shift`-click or plain click selects whole layer rows, and every selected row is tinted. Right-click one of several selected rows for **Hide selected**, **Show selected**, **Lock selected**, **Unlock selected** and **Delete selected**; the action applies to the whole selection as one undo step.
 - Click **Duplicate** in the layer menu to copy a layer. A group is copied with its whole subtree, including every nested layer and item, and the copy gets fresh layer and item IDs.
 - Deleting a group deletes its whole subtree. The confirmation names the number of nested layers and items first, so a folder can never disappear with unexplained content.
 - Click an item to jump to its page and select it. `Ctrl`/`Cmd`-click adds it to the current selection and `Shift`-click selects the range between the last clicked item and the current one, so Properties and the right-click menu can edit several items at once.
 - `Shift+F10` or the Menu key opens the layer menu from the focused row. `Enter` or `Space` makes the focused layer the target layer.
 - Pages, Layers and Markups share the same focus, selection, drag and keyboard conventions. The shared model is described in **Keyboard shortcuts** and **Architecture**.
 - Right-click a layer for layer actions, or right-click an item for copy, cut, duplicate, visibility, lock, move and delete.
-- Use **+ Measure layer** or **+ Drawing layer** to add layers on the current page.
+- Use the **+** button at the bottom of the drawing-layer section to add a drawing layer on the current page, and the **+** in the measurement-layer section to add a measurement layer. The **trash** button beside it deletes the selected layers, including a whole multi-selection.
 - Move the selected item to another layer from Properties or the right-click menu.
 
 ![Page-scoped measurement layers expanded with the current page's areas, lengths and counts](screenshots/layers.png)
@@ -632,7 +631,7 @@ A group is an ordinary layer that other layers are nested under. There is no sep
 - Grouping does not restack layers. The group orders the Layers panel and the exported optional-content structure, but paint order is unchanged, so nesting a layer never moves it in front of or behind another layer on the drawing.
 - **Visibility and locking are inherited.** A hidden group hides every nested layer, and a locked group locks them. An inherited state is written on the row as **Hidden by “Group”** or **Locked by “Group”**, with the full reason in the tooltip, and the eye and lock buttons for that row are disabled until the group itself changes. A nested layer can still hide or lock itself on top of that.
 - A group may hold items of its own as well as nested layers. Deleting a group removes both.
-- Groups keep their page scope independent of their nested layers. A layer created on page 1 can sit under a group created on page 3, and a group hidden only on page 2 hides its nested layers only on that page. The **This page** scope keeps a group visible whenever any of its nested layers has content on that page.
+- Groups keep their page scope independent of their nested layers. A layer created on page 1 can sit under a group created on page 3, and a group hidden only on page 2 hides its nested layers only on that page. Because the panel shows only the open page's layers, a group appears whenever any of its nested layers has content on that page.
 
 Measurement layers and drawing layers stay separate. The **Layer** picker in the context bar shows which layer receives new items. If the active layer is hidden or locked on the current page, the picker shows a warning. Choosing a tool automatically switches to a visible, unlocked layer of the matching kind; if none exists, a new layer is created on the current page.
 

@@ -1143,6 +1143,8 @@
   "layer.deleteAction": "Ta bort",
   "layer.addMeasure": "+ Mätlager",
   "layer.addDrawing": "+ Ritlager",
+  "layer.addMeasureTitle": "Nytt mätlager",
+  "layer.addDrawingTitle": "Nytt ritlager",
   "layer.deduction": "Avdrag",
   "layer.hidden": "Dold",
   "layer.locked": "Låst",

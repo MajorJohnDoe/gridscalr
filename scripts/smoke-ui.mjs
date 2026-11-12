@@ -1323,8 +1323,6 @@ try {
 
   await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.getByText(/No layers on Page 4 yet/).waitFor();
-  await page.getByRole("button", { name: "All pages", exact: true }).click();
-  await page.locator(".layer-row").first().waitFor();
 
   // OCR: append an image-only page, run local OCR and search the result.
   const pngDataUrl = await page.evaluate(() => {

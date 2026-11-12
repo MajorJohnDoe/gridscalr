@@ -1,10 +1,64 @@
 /*
- * Layers panel tree: indentation per depth, group rows, inherited-state chips
- * and the multi-selection bulk bar. See ADR 0014.
+ * Layers panel tree: per-kind sections, indentation per depth, group rows and
+ * inherited-state chips. See ADR 0014.
  */
 
 .layer-tree {
   position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding-bottom: 6px;
+}
+
+.layer-section {
+  display: flex;
+  flex-direction: column;
+}
+
+.layer-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 12px 3px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.8px;
+  color: var(--muted-2);
+  font-weight: 650;
+}
+
+.layer-section-head .count {
+  min-width: 18px;
+  text-align: center;
+  color: var(--muted);
+  background: var(--bg-deep);
+  border-radius: 9px;
+  padding: 0 6px;
+  font-size: 10.5px;
+  letter-spacing: 0;
+}
+
+.layer-section-rows {
+  display: flex;
+  flex-direction: column;
+}
+
+.layer-section-foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1px;
+  height: 24px;
+  margin: 3px 6px 0;
+  padding: 0 3px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.layer-section-foot .layer-action {
+  width: 22px;
+  height: 22px;
+  align-self: center;
 }
 
 .layer-row.is-group .layer-name {
@@ -66,25 +120,4 @@
 
 .layer-row.is-inherited-hidden .layer-name {
   font-style: italic;
-}
-
-.layer-bulk-bar {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  margin: 0 6px 6px;
-  padding: 4px 8px;
-  border: 1px solid var(--border-soft);
-  border-radius: 6px;
-  background: var(--bg-deep);
-}
-
-.layer-bulk-count {
-  flex: 1;
-  min-width: 0;
-  font-size: 11px;
-  color: var(--muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }

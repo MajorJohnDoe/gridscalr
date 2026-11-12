@@ -1143,6 +1143,8 @@
   "layer.deleteAction": "Delete",
   "layer.addMeasure": "+ Measure layer",
   "layer.addDrawing": "+ Drawing layer",
+  "layer.addMeasureTitle": "New measurement layer",
+  "layer.addDrawingTitle": "New drawing layer",
   "layer.deduction": "Deduction",
   "layer.hidden": "Hidden",
   "layer.locked": "Locked",

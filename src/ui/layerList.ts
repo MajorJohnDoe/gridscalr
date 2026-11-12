@@ -6,7 +6,7 @@ import { el, escapeHtml } from "./dom";
 import { icon } from "./icons";
 import { RowNavigator } from "../features/listInteraction";
 import { layerAction } from "./layerAction";
-import { renderLayerBulkBar } from "./layers/bulk";
+import { deleteSelectedLayers, selectedLayers } from "./layers/bulk";
 import { scopeItemsFor, visibleLayerRows } from "./layers/filter";
 import { LAYER_MENU_HINT_ID, LAYER_ORDER_HINT_ID, renderLayerRow } from "./layers/layerRow";
 import { bindLayerTree, layerTreeController } from "./layers/reorder";
@@ -15,7 +15,6 @@ import {
   expandAllLayers,
   layerView,
   setLayerQuery,
-  setLayerScope,
   takeLayerFocus,
 } from "./layers/state";
 import type { PanelActions } from "./panels";
@@ -23,10 +22,13 @@ import type { ShellRefs } from "./shell";
 import { t } from "../i18n";
 
 /**
- * Layers panel wiring. The scope switch, the search field, the expansion
- * controls, the bulk bar and the rows are rendered here; the tree rows, the
- * inherited-state rules, the drag and keyboard nesting and the bulk actions
- * live in `src/features/layerTree/` and `./layers/`.
+ * Layers panel wiring. The search field, the expansion controls, the per-kind
+ * sections and the rows are rendered here; the tree rows, the inherited-state
+ * rules, the drag and keyboard nesting and the bulk actions live in
+ * `src/features/layerTree/` and `./layers/`.
+ *
+ * The panel always shows the layers of the open page. A layer that only exists
+ * on another page stays in the project and appears when that page is opened.
  */
 
 export { layerAction };
@@ -44,43 +46,8 @@ function layerHints(): HTMLElement[] {
   return [order, menu, tree];
 }
 
-function scopeButton(label: string, active: boolean, title: string): HTMLButtonElement {
-  const button = el("button", "layer-scope-btn", label);
-  button.type = "button";
-  button.setAttribute("aria-pressed", String(active));
-  button.classList.toggle("is-active", active);
-  button.title = title;
-  return button;
-}
-
 function layerToolbar(refs: ShellRefs, actions: PanelActions, expandable: string[]): void {
-  const page = store.ui.page;
   const toolbar = el("div", "layer-toolbar");
-
-  const scope = el("div", "layer-scope");
-  scope.setAttribute("role", "group");
-  scope.setAttribute("aria-label", t("layer.scope"));
-  const pageButton = scopeButton(
-    t("layer.thisPage"),
-    layerView.scope === "page",
-    t("layer.showOnPageTitle", { page }),
-  );
-  pageButton.dataset.scope = "page";
-  pageButton.addEventListener("click", () => {
-    setLayerScope("page");
-    actions.refresh();
-  });
-  const allButton = scopeButton(
-    t("layer.allPages"),
-    layerView.scope === "all",
-    t("layer.allPagesHelp"),
-  );
-  allButton.dataset.scope = "all";
-  allButton.addEventListener("click", () => {
-    setLayerScope("all");
-    actions.refresh();
-  });
-  scope.append(pageButton, allButton);
 
   const search = el("input", "input layer-search");
   search.type = "search";
@@ -106,30 +73,30 @@ function layerToolbar(refs: ShellRefs, actions: PanelActions, expandable: string
   const controls = el("div", "layer-toolbar-controls");
   controls.append(collapse, expand);
 
-  toolbar.append(scope, search, controls);
+  toolbar.append(search, controls);
   refs.dockBody.append(toolbar);
   refs.dockBody.append(...layerHints());
 }
 
-function addLayerRow(refs: ShellRefs): void {
-  const page = store.ui.page;
-  const addRow = el("div", "layer-add-row");
-  const addMeasure = el("button", "btn btn-small", t("layer.addMeasure"));
-  addMeasure.type = "button";
-  addMeasure.title = t("layer.createOnPage", { page });
-  addMeasure.disabled = store.readOnly;
-  addMeasure.addEventListener("click", () => {
-    store.createLayer("measure");
+function sectionFoot(kind: LayerKind, actions: PanelActions): HTMLElement {
+  const foot = el("div", "layer-section-foot");
+
+  const add = layerAction(
+    "plus",
+    t(kind === "draw" ? "layer.addDrawingTitle" : "layer.addMeasureTitle"),
+    "layer-section-add",
+  );
+  add.disabled = store.readOnly;
+  add.addEventListener("click", () => {
+    store.createLayer(kind);
   });
-  const addDraw = el("button", "btn btn-small", t("layer.addDrawing"));
-  addDraw.type = "button";
-  addDraw.title = t("layer.createOnPage", { page });
-  addDraw.disabled = store.readOnly;
-  addDraw.addEventListener("click", () => {
-    store.createLayer("draw");
-  });
-  addRow.append(addMeasure, addDraw);
-  refs.dockBody.append(addRow);
+
+  const remove = layerAction("trash", t("layer.bulkDelete"), "layer-section-delete");
+  remove.disabled = store.readOnly || selectedLayers().length === 0;
+  remove.addEventListener("click", () => deleteSelectedLayers(actions));
+
+  foot.append(add, remove);
+  return foot;
 }
 
 function activeLayerNote(project: Project, pageId: string, refs: ShellRefs): void {
@@ -137,7 +104,7 @@ function activeLayerNote(project: Project, pageId: string, refs: ShellRefs): voi
   if (!active) return;
   const note = el("div", "empty-note small");
   note.style.paddingTop = "4px";
-  const applies = layerView.scope === "all" || layerAppliesToPage(active, pageId);
+  const applies = layerAppliesToPage(active, pageId);
   note.innerHTML = `${icon("info", 14)} ${t("layer.itemsCreatedIn", {
     name: "<strong>" + escapeHtml(active.name) + "</strong>",
     kind: t(active.kind === "measure" ? "layer.measurementLayer" : "layer.drawingLayer"),
@@ -155,41 +122,41 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
 
   const rows = visibleLayerRows(project, pageId);
   const expandable = rows
-    .filter(
-      (row) => row.hasChildren || scopeItemsFor(row.layer, layerView.scope, pageId).length > 0,
-    )
+    .filter((row) => row.hasChildren || scopeItemsFor(row.layer, "page", pageId).length > 0)
     .map((row) => row.id);
   layerToolbar(refs, actions, expandable);
-  renderLayerBulkBar(refs, actions);
 
   let visibleLayerCount = 0;
   const tree = el("div", "layer-tree");
+  const searching = Boolean(layerView.query.trim());
   for (const group of groups) {
     const kindRows = rows.filter((row) => row.layer.kind === group.kind);
     visibleLayerCount += kindRows.length;
-    const groupNode = el("div", "layer-group");
-    groupNode.dataset.layerKind = group.kind;
-    const header = el("div", "layer-group-title");
-    const label = el("span", "", group.title);
+    // While a search is active, an empty section is only noise.
+    if (searching && kindRows.length === 0) continue;
+    const section = el("section", "layer-section");
+    section.dataset.layerKind = group.kind;
+    const header = el("div", "layer-section-head");
+    const label = el("span", "layer-section-title", group.title);
     label.title = group.note;
     header.append(label, el("span", "count", String(kindRows.length)));
-    groupNode.append(header);
-    for (const row of kindRows) renderLayerRow(project, row, pageId, groupNode, actions);
-    tree.append(groupNode);
+    section.append(header);
+    const body = el("div", "layer-section-rows");
+    for (const row of kindRows) renderLayerRow(project, row, pageId, body, actions);
+    section.append(body, sectionFoot(group.kind, actions));
+    tree.append(section);
   }
   refs.dockBody.append(tree);
   bindLayerTree(tree, refs.dockBody, actions.refresh);
 
-  const query = layerView.query.trim();
-  if (query && visibleLayerCount === 0) {
+  if (searching && visibleLayerCount === 0) {
     refs.dockBody.append(el("p", "empty-note small layer-empty", t("layer.noMatches")));
-  } else if (!query && layerView.scope === "page" && visibleLayerCount === 0) {
+  } else if (!searching && visibleLayerCount === 0) {
     const empty = el("div", "empty-note small layer-empty");
     empty.innerHTML = icon("layers", 22);
     empty.append(el("div", "", t("layer.noLayersOnPage", { page: store.ui.page })));
     refs.dockBody.append(empty);
   }
-  addLayerRow(refs);
   activeLayerNote(project, pageId, refs);
 
   navigator.bind(refs.dockBody);
@@ -201,11 +168,6 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
       search.focus({ preventScroll: true });
       search.setSelectionRange(search.value.length, search.value.length);
     }
-  }
-  if (focus.scope) {
-    refs.dockBody
-      .querySelector<HTMLButtonElement>(`.layer-scope-btn[data-scope="${focus.scope}"]`)
-      ?.focus({ preventScroll: true });
   }
   if (focus.layerId) {
     refs.dockBody
