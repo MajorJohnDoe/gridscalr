@@ -78,7 +78,7 @@ project contents.
 - **Phase:** pre-foundation observation
 - **Severity:** P2
 - **Area:** tooling / Rust
-- **Status:** deferred
+- **Status:** fixed — 0.25.0 phase 14 ([#194](https://github.com/MajorJohnDoe/gridscalr/issues/194))
 - **Evidence:** `src-tauri/src/package.rs` is about 2,150 lines and
   `src-tauri/src/commands.rs` about 540; `check:file-budgets` scans only `src/`.
 - **Problem:** The frontend has a blocking file budget, but large Rust modules
@@ -86,9 +86,13 @@ project contents.
   could grow the same files.
 - **Impact:** Rust modules can become the next set of large, hard-to-review
   files even while the frontend stays within budget.
-- **Next step:** Add a small Rust source budget check or extend the existing
-  budget script to `src-tauri/src`, with an explicit legacy exception list.
-  Until then, keep new Rust commands in separate modules.
+- **Resolution:** `npm run check:file-budgets` now scans `src-tauri/src` with a
+  400-line default and reviewed `{ "max", "reason" }` exceptions for
+  `commands.rs`, `package.rs`, `project_write.rs` and `source_copy.rs`.
+  `--update` raises an existing exception but refuses a new oversized Rust file
+  and prunes stale exceptions.
+- **Next step:** A Rust module-boundary check beyond line counts is recorded as
+  F-097.
 - **Related:** ADR [0013](../adr/0013-module-first-foundation.md).
 
 ### F-003 — Unused page remap helper
@@ -1445,7 +1449,7 @@ remains the scheduling home.
 | Finding | Decision | Rationale |
 | --- | --- | --- |
 | F-001 | deferred | Moving default count types out of the feature module is a separate model refactor; the current direction is documented and not a data-integrity risk. |
-| F-002 | deferred | New Rust commands already live in separate modules; a Rust line-budget gate is tooling work for after the foundation freeze. |
+| F-002 | fixed | 0.25.0 phase 14 (#194) extends `check:file-budgets` to `src-tauri/src` with a 400-line default, reviewed Rust exceptions and a refusal to record a new oversized file. |
 | F-003 | fixed | The unused `remapPageItems()` helper was removed in Phase 7; no production or test caller existed. |
 | F-005 | fixed | 0.24.0 phase 10 resolves a restored backup's relative drawing links from the recorded origin and then from the open project's folder, reports what cannot be resolved, and requires an explicit relink instead of a stale absolute path. |
 | F-006 | accepted | Backups are a local convenience keyed by project ID, not a portable archive; that is documented in `docs/limitations.md`. |
@@ -2118,3 +2122,23 @@ remains the scheduling home.
   missing document and defer the file to the preflight. That changes the
   picker's "select only available pages" rule and needs its own UI test and a
   user-guide update; do not change it as part of a relink fix.
+
+### F-097 — The Rust budget gates file size, not module boundaries
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 14 — Rust source budget
+- **Severity:** P3
+- **Area:** tooling / Rust
+- **Status:** open
+- **Evidence:** `npm run check:file-budgets` now scans `src-tauri/src`, but it
+  compares line counts only. `npm run check:modules` covers foundation feature
+  `index.ts` surfaces in `src` and does not inspect Rust.
+- **Problem:** A 399-line Rust module can still mix unrelated commands, and
+  nothing mechanically proves that a new Tauri command lives in its own module
+  rather than in an existing one that happens to be under budget.
+- **Impact:** Size growth is blocked; module separation stays a review rule
+  supported by `AGENTS.md` and the phase issue template.
+- **Next step:** Decide whether a Rust module-boundary check is worth the
+  maintenance, for example a `#[tauri::command]` inventory proving each command
+  has its own module, or a reviewed clippy restriction lint. Do not add it
+  silently inside a feature phase.

@@ -14,7 +14,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
-| `npm run check:file-budgets` | Blocking line budgets for source files and the new foundation feature directories. |
+| `npm run check:file-budgets` | Blocking line budgets for frontend and Rust source files, with reviewed exceptions for legacy modules. |
 | `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
@@ -27,6 +27,39 @@ flattened drawing, optional-content groups (including pdf.js group resolution),
 review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
 covers conditional writes, conflicted copies, backups and the read-only
 **Compare with disk version** summary, including unreadable disk data.
+
+## File budgets
+
+`npm run check:file-budgets` scans two independent scopes from one
+`file-budgets.json` and fails on any file above its budget:
+
+- the frontend: every `.ts` and `.css` file under `src`, default 700 lines, with
+  tighter directory limits and per-file caps for legacy modules;
+- the Rust shell: every `.rs` file under `src-tauri/src`, default 400 lines,
+  target 300. `*_tests.rs` modules count because they belong to the same module
+  surface. `target/`, `node_modules/`, `dist/` and generated files such as
+  `src/i18n/types.generated.ts` are not counted.
+
+New files must stay within the target and may never be added to an exception
+list. An existing legacy module may keep a per-file exception, which is a cap:
+the file may shrink but grows only through a reviewed change. Rust exceptions
+must use the object form `{ "max": 2289, "reason": "…" }` so the review reason
+is recorded next to the limit; a missing or too-short reason fails the check.
+The committed Rust exceptions are `commands.rs`, `package.rs`,
+`project_write.rs` and `source_copy.rs`.
+
+`npm run check:file-budgets -- --update` raises an existing exception to the
+current line count and prunes an exception whose file no longer exists (a stale
+exception also fails a normal run). It refuses to create a new exception for a
+file that is over budget, so a new Rust command must live in its own module
+rather than growing `commands.rs` or `package.rs`. See ADR
+[0013](adr/0013-module-first-foundation.md).
+
+`tests/fileBudgetRules.test.ts` proves the pure rules in
+`scripts/file-budget-rules.mjs`: a file within budget passes, a new oversized
+file fails, `--update` may raise an existing exception, `--update` refuses a
+new oversized file, a removed exception is stale, and every Rust exception
+records a reason.
 
 ## Dependency gate
 
