@@ -241,7 +241,7 @@ try {
 
   await page.keyboard.press("Escape");
   await openMarkupsItem(page, "item_cloud_dock", "draw");
-  await page.getByRole("button", { name: "Layers" }).click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.waitForTimeout(200);
   await capture("markups.png");
 

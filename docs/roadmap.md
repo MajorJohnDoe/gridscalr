@@ -77,6 +77,7 @@ These are not negotiable without an explicit decision:
 | Import pages | Import pages from another project with thumbnails, partial imports, page-scoped layers and one-step undo | Complete | v23 |
 | 0.23.0 | Foundation: conditional saves and backups, scoped recovery and leases, stable page IDs (schema 24), managed source copies (schema 25), integrity doctor, OCG/annotation export and robustness gates | Complete | v25 |
 | 0.24.0 | File safety completed: security audit and CSP/capability hardening, path and package limits, dependency advisory gate, adversarial corpus, autosave preference, recovery center and byte budget, backup manager with relative-link restore, true view-only, status popover and conflicted-copy management | Complete | v25 |
+| 0.25.0 | Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on Pages, undoable reorder and insert, page status badges and filters, page context menu, one shared list interaction model, import provenance, doctor sources with managed-copy cleanup and repair preview, layer hierarchy with nested OCG export (schema 26), TIF **Replace source…** and extra codecs, preflight relink, Rust source budget and model-boundary gates | Implemented; release not cut | v26 |
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
@@ -241,8 +242,6 @@ the problem, scope, non-goals and acceptance criteria in the issue.
 - Code signing and macOS notarization — [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56).
 - Full Swedish user guide, workflows and additional languages —
   [#57](https://github.com/MajorJohnDoe/gridscalr/issues/57).
-- Broader TIF decoding for LZW/Deflate, greyscale, colour and JPEG-in-TIFF scans —
-  [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58).
 - Project templates for recurring properties and portfolios.
 - Facility symbol quantities in the procurement report.
 - Snap directly to PDF vector geometry as a separate spike.
@@ -291,13 +290,13 @@ full list.
 | Concurrent project edits | Complete in 0.24.0: conditional writes, conflicted-copy management, autosave preference, recovery center and byte budget, backup manager, advisory leases, true view-only with explicit takeover and the project status popover. See [ADR 0010](adr/0010-project-file-integrity.md). |
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
-| Layer hierarchy | Model and migration complete in schema 26: optional `parentId`, tree order, visibility/lock inheritance, subtree deletion and page-removal keep rules. The Layers panel tree, inherited-state indicators and nested OCG export are phase 10b ([#193](https://github.com/MajorJohnDoe/gridscalr/issues/193)); see [ADR 0014](adr/0014-layer-hierarchy.md). |
+| Layer hierarchy | Complete in schema 26: optional `parentId`, tree order, visibility/lock inheritance, subtree deletion and page-removal keep rules, the Layers panel tree with inherited-state indicators and subtree duplication, and nested optional-content headings in the PDF export. Grouping never restacks a drawing. See [ADR 0014](adr/0014-layer-hierarchy.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |
 | Full Swedish help | UI is complete; the full guide/workflows translation is not scheduled. |
 | External image assets | Deferred until embedded project files become too large in practice. |
-| TIF codecs beyond CCITT G3/G4 | Deferred; would need a decoding fallback. Tracked in [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58). |
+| TIF codecs beyond CCITT G3/G4 | Shipped in 0.25.0: no compression, PackBits, LZW and Deflate with predictor 2, JPEG-in-TIFF and stripped or tiled layouts. Palette colour, JPEG 2000, tiled JPEG, tiled CCITT, per-strip old-style JPEG without a complete stream and YCCK stay rejected with a reason. [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58) is complete. |
 | Revision comparison scope | Shipped with visual overlay, side-by-side and a markup diff. Semantic PDF vector diff is a separate spike. |
 | OCR engine | Bundled Tesseract.js with English and Swedish models. Additional languages require new traineddata assets and license review. |
 | PDF vector geometry snapping | A candidate spike, not scheduled. |

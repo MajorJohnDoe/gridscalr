@@ -41,17 +41,21 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 
 - Open PDF plans locally with PDF.js, or scanned TIF drawings: lossless
   CCITT G3/G4 and JPEG-in-TIFF passthrough plus greyscale and colour PackBits,
-  LZW, Deflate and tiled scans.
+  LZW, Deflate and tiled scans, and **Replace source…** for a reissued scan with
+  the same page mapping as a PDF.
 - Open a project by double-clicking `.gridscalr` in Explorer or Finder in the
   installed builds, hand a drawing to an already running window, and keep the
   window size, position and maximised state between sessions.
 - Keep several sheets in one project. Every new drawing appends pages after the
-  existing ones, so a set of plans shares one takeoff. Import pages from another
-  project with a thumbnail picker, a preflight report and page-scoped layers,
-  keep optional source revision provenance, inspect it in Properties or the
-  Markups table, and undo the whole import as one
-  step. Reorder, insert, move, duplicate and delete pages from the page menu or
-  the keyboard, with the target position named before an insert.
+  existing ones by default, and a PDF or TIF dropped on the Pages panel lands at
+  the drop line through the same page picker and preflight as one undo step.
+  Import pages from another project with a thumbnail picker, a preflight report
+  that relinks a moved source and verifies its page count and SHA-256, and
+  page-scoped layers; keep optional source revision provenance, inspect it in
+  Properties or the Markups table, and undo the whole import as one step.
+  Reorder, insert, move, duplicate and delete pages from the page menu or the
+  keyboard, with the target position named before an insert. A reorder, an
+  insert and a drop are each one undo step.
 - See the state of every sheet at a glance. Compact page badges flag a changed
   source file, superseded pages, missing or stale OCR and a locked scale, and
   the Pages panel filters on those states with a live count for each.
@@ -60,7 +64,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   entity, filters them by severity, entity kind or repair availability, previews
   the duplicate renames and dangling references a repair would change, applies
   only the repair kinds you select, offers view-only open, saves a repaired copy
-  and exports path-free diagnostics.
+  and exports path-free diagnostics. The same dialog checks every source drawing
+  as available, missing or changed with explicit relink and copy actions, and
+  lists unused files in the project drawings folder so they can be removed after
+  confirmation.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
@@ -86,7 +93,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   visibility and locks, multi-select, bulk edits and a docked Markups table with
   saved views, filters and grouping. Nest layers into groups that inherit
   visibility and locking, collapse the tree, duplicate a group with its whole
-  subtree and keep the hierarchy in the optional-content PDF export.
+  subtree and keep the hierarchy in the optional-content PDF export. The Pages,
+  Layers and Markups lists share one focus, selection, drag, filter and collapse
+  model, with every keyboard move announced and applied as one undo step.
 - Review gross, deduction, net, waste and order quantities per category,
   room and page, then export a CSV, an Excel workbook or a print-friendly PDF
   report. Add optional facility, client, project number, revision, author and
@@ -153,6 +162,40 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 Hidden items never render, hit-test or export. Locked items stay visible and
 exportable but cannot be moved, edited or deleted. Derived quantities are always
 calculated from item data.
+
+## Keyboard shortcuts
+
+The most used keys; the full list is in
+[Shortcuts](docs/shortcuts.md) and **Help → Keyboard shortcuts** (`?`). On macOS,
+use `Cmd` wherever `Ctrl` is shown.
+
+| Action | Shortcut |
+| --- | --- |
+| Select / pan / calibrate | `V` / `H` / `K` |
+| Length / area / count | `L` / `A` / `C` |
+| Symbol library | `B` |
+| Undo / redo | `Ctrl+Z` / `Ctrl+Shift+Z` |
+| Fit page / actual size | `Ctrl+0` / `Ctrl+1` |
+| Save / save as | `Ctrl+S` / `Ctrl+Shift+S` |
+| Markups list | `Ctrl+L` |
+| Quantities | `Ctrl+Alt+Q` |
+
+The **Pages**, **Layers** and **Markups** lists share one interaction model:
+
+| Action | Shortcut |
+| --- | --- |
+| Focus and move through rows | `Tab`, then `ArrowUp` / `ArrowDown` / `Home` / `End` |
+| Add a row to the selection or select a range | `Ctrl` / `Cmd` + click, `Shift` + click |
+| Open the row menu | `Shift+F10` or the Menu key |
+| Rename the focused row | `F2` |
+| Move a page or layer among its siblings | `Alt+Up` / `Alt+Down` |
+| Move it to the first / last sibling | `Alt+Home` / `Alt+End` |
+| Nest a layer under the layer above / move it out of its group | `Alt+Right` / `Alt+Left` |
+| Open or close the focused group | `ArrowRight` / `ArrowLeft` |
+| Insert a page before / after the current page | `Alt+PageUp` / `Alt+PageDown` |
+| Move the current page to another position | `Alt+Shift+M` |
+| Duplicate the current page | `Alt+Shift+D` |
+| Delete the current page | `Alt+Shift+Delete` |
 
 ## Screenshots
 

@@ -2207,3 +2207,44 @@ remains the scheduling home.
   imported by PDF export and the canvas painter; do not fold it into a feature
   phase.
 - **Related:** ADR [0013](../adr/0013-module-first-foundation.md).
+
+### F-100 — The docs gate checks tool shortcuts only, not the action or workspace key tables
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 17 — documentation pass
+- **Severity:** P3
+- **Area:** tooling / documentation
+- **Status:** open
+- **Evidence:** `scripts/check-docs.mjs` compares `shortcuts.tools` from
+  `src/ui/shortcuts.json` with `docs/shortcuts.md`. The `actions` map, the page,
+  layer and Markups key tables, the in-app shortcut reference and the README
+  shortcut table are not compared with the data file.
+- **Problem:** A renamed or removed action key can leave the documentation
+  describing a shortcut that no longer exists, and `check:docs` still passes.
+- **Impact:** Documentation drift is caught only by review. The 0.25.0 pass
+  checked the page, layer and list keys by hand.
+- **Next step:** Extend the gate to read `shortcuts.actions` and a documented
+  list-row expectation, or generate the shortcut tables from `shortcuts.json`.
+  Generating the tables needs a stable grouping and a decision about the README
+  copy before it can be automated.
+
+### F-101 — The screenshot capture script is not exercised until a docs pass
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 17 — documentation pass
+- **Severity:** P3
+- **Area:** tooling / documentation
+- **Status:** open
+- **Evidence:** CI runs `npm run check:docs` but never `npm run docs:capture`.
+  The 0.25.0 layer tree changed the accessible names of the layer disclosure
+  buttons to include "nested layers", so the capture script's
+  `getByRole("button", { name: "Layers" })` locator became ambiguous and the
+  capture failed until it was made exact.
+- **Problem:** A UI change can break the screenshot capture weeks before the next
+  documentation pass, and the failure is discovered only when someone needs the
+  screenshots.
+- **Impact:** The fix was two characters, but the same class of breakage can
+  require a real rewrite of a capture step under release pressure.
+- **Next step:** Decide whether to run `docs:capture` (or a screenshot dry run
+  that writes to a temporary folder) in CI on a label or a scheduled job. It is a
+  browser and font dependency that the current gate deliberately avoids.
