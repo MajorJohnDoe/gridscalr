@@ -6,7 +6,14 @@ import { el, escapeHtml } from "./dom";
 import { icon } from "./icons";
 import { RowNavigator } from "../features/listInteraction";
 import { layerAction } from "./layerAction";
-import { deleteSelectedLayers, selectedLayers } from "./layers/bulk";
+import {
+  deleteSelectedLayers,
+  selectedLayers,
+  selectedLayersLocked,
+  selectedLayersVisible,
+  setSelectedLayersLocked,
+  setSelectedLayersVisible,
+} from "./layers/bulk";
 import { scopeItemsFor, visibleLayerRows } from "./layers/filter";
 import { LAYER_MENU_HINT_ID, LAYER_ORDER_HINT_ID, renderLayerRow } from "./layers/layerRow";
 import { bindLayerTree, layerTreeController } from "./layers/reorder";
@@ -80,6 +87,25 @@ function layerToolbar(refs: ShellRefs, actions: PanelActions, expandable: string
 
 function sectionFoot(kind: LayerKind, actions: PanelActions): HTMLElement {
   const foot = el("div", "layer-section-foot");
+  const hasSelection = selectedLayers().length > 0;
+
+  const allVisible = hasSelection && selectedLayersVisible();
+  const visibility = layerAction(
+    allVisible ? "eyeOff" : "eye",
+    allVisible ? t("layer.bulkHide") : t("layer.bulkShow"),
+    "layer-section-bulk",
+  );
+  visibility.disabled = store.readOnly || !hasSelection;
+  visibility.addEventListener("click", () => setSelectedLayersVisible(!allVisible));
+
+  const allLocked = hasSelection && selectedLayersLocked();
+  const lock = layerAction(
+    allLocked ? "unlock" : "lock",
+    allLocked ? t("layer.bulkUnlock") : t("layer.bulkLock"),
+    "layer-section-bulk",
+  );
+  lock.disabled = store.readOnly || !hasSelection;
+  lock.addEventListener("click", () => setSelectedLayersLocked(!allLocked));
 
   const add = layerAction(
     "plus",
@@ -92,10 +118,10 @@ function sectionFoot(kind: LayerKind, actions: PanelActions): HTMLElement {
   });
 
   const remove = layerAction("trash", t("layer.bulkDelete"), "layer-section-delete");
-  remove.disabled = store.readOnly || selectedLayers().length === 0;
+  remove.disabled = store.readOnly || !hasSelection;
   remove.addEventListener("click", () => deleteSelectedLayers(actions));
 
-  foot.append(add, remove);
+  foot.append(visibility, lock, add, remove);
   return foot;
 }
 
@@ -136,6 +162,7 @@ export function renderLayers(refs: ShellRefs, actions: PanelActions): void {
     if (searching && kindRows.length === 0) continue;
     const section = el("section", "layer-section");
     section.dataset.layerKind = group.kind;
+    section.classList.toggle("is-empty", kindRows.length === 0);
     const header = el("div", "layer-section-head");
     const label = el("span", "layer-section-title", group.title);
     label.title = group.note;

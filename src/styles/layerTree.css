@@ -42,6 +42,15 @@
 .layer-section-rows {
   display: flex;
   flex-direction: column;
+  margin: 0 7px;
+  background: #2e3031ad;
+  border-radius: 6px 6px 0 0;
+}
+
+/* A section without rows keeps the footer as one rounded strip. */
+.layer-section.is-empty .layer-section-foot {
+  margin-top: 3px;
+  border-radius: 6px;
 }
 
 .layer-section-foot {
@@ -49,16 +58,22 @@
   justify-content: flex-end;
   gap: 1px;
   height: 24px;
-  margin: 3px 6px 0;
+  margin: 0 7px;
   padding: 0 3px;
-  border-radius: 6px;
-  background: rgba(255, 255, 255, 0.045);
+  border-radius: 0 0 6px 6px;
+  background: rgb(255 255 255 / 10%);
 }
 
 .layer-section-foot .layer-action {
   width: 22px;
   height: 22px;
   align-self: center;
+}
+
+.layer-section-bulk svg,
+.layer-section-delete svg {
+  width: 18px;
+  height: 18px;
 }
 
 .layer-row.is-group .layer-name {
