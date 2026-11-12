@@ -1,6 +1,7 @@
 import { t } from "../i18n";
+import type { PDFDocumentProxy } from "pdfjs-dist";
 import { pageNumber, pageRecordById } from "../model/pages";
-import type { PageSize } from "../model/types";
+import type { PageSize, Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import type { PageThumbnailService } from "../pdf/thumbnails";
 import { store } from "../state/store";
@@ -8,10 +9,13 @@ import { recordStructuralCheckpoint } from "../features/sessionRecovery";
 import {
   applySourceReplacement,
   defaultReplacementMappings,
+  pageSizeChanged,
   pagesForDocument,
+  replacementWarnings,
   sourceReplacementDialog,
 } from "../features/pageModel";
 import { pickDrawing } from "../io/platform";
+import { isTiff } from "../io/tiff";
 import { describeError } from "../io/platformError";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
@@ -27,6 +31,41 @@ export interface ReplacementFlowHost {
   renderAll(): void;
 }
 
+/**
+ * Counts mapped pages whose size differs between the loaded source and the
+ * picked revision. Only page viewports are read; no page is rendered.
+ */
+async function countChangedPageSizes(
+  renderer: PdfRenderer,
+  documentIndex: number,
+  project: Project,
+  pageIds: readonly string[],
+  newProxy: PDFDocumentProxy,
+  mappings: readonly { pageId: string; newLocalPage: number }[],
+): Promise<number> {
+  const oldProxy = renderer.documents[documentIndex];
+  if (!oldProxy) return 0;
+  const mapped = new Map(mappings.map((mapping) => [mapping.pageId, mapping.newLocalPage]));
+  let changed = 0;
+  for (const pageId of pageIds) {
+    const record = pageRecordById(project, pageId);
+    const newLocalPage = mapped.get(pageId);
+    if (!record || !newLocalPage) continue;
+    try {
+      const [oldPage, newPage] = await Promise.all([
+        oldProxy.getPage(record.localPage),
+        newProxy.getPage(newLocalPage),
+      ]);
+      if (pageSizeChanged(oldPage.getViewport({ scale: 1 }), newPage.getViewport({ scale: 1 }))) {
+        changed += 1;
+      }
+    } catch {
+      // An unreadable page is reported by the mapping dialog itself.
+    }
+  }
+  return changed;
+}
+
 /** **Replace source…** flow for one document. Source files are never written. */
 export async function replaceSourceFlow(
   host: ReplacementFlowHost,
@@ -37,16 +76,22 @@ export async function replaceSourceFlow(
   if (!project || !renderer || store.readOnly) return;
   const document = project.documents.find((entry) => entry.id === documentId);
   if (!document) return;
-  if (document.kind !== "pdf") {
-    toast(t("replace.pdfOnly"), "warning");
+  if (document.kind !== "pdf" && document.kind !== "tiff") {
+    toast(t("replace.unsupportedKind"), "warning");
     return;
   }
   const oldPageIds = pagesForDocument(project, documentId);
   if (!oldPageIds.length) return;
+  const documentIndex = project.documents.findIndex((entry) => entry.id === documentId);
 
   try {
     const picked = await pickDrawing();
     if (!picked) return;
+    const pickedIsTiff = isTiff(picked.bytes);
+    if (pickedIsTiff !== (document.kind === "tiff")) {
+      toast(t("replace.sameKind"), "warning");
+      return;
+    }
     const imported = await createImportedDocument(picked.bytes, picked.name, picked.path);
     if (!imported) return;
     const proxy = await openDocument(imported.pdfBytes, picked.name);
@@ -78,12 +123,28 @@ export async function replaceSourceFlow(
         scaleLocked: record.state.scaleLocked === true,
       };
     });
+    const defaultMappings = defaultReplacementMappings(project, documentId, newPageCount);
+    const warnings = replacementWarnings({
+      oldPageCount: oldPageIds.length,
+      newPageCount,
+      calibratedPages: rows.filter((row) => row.calibrated).length,
+      scaleLockedPages: rows.filter((row) => row.scaleLocked).length,
+      sizeChangedPages: await countChangedPageSizes(
+        renderer,
+        documentIndex,
+        project,
+        oldPageIds,
+        proxy,
+        defaultMappings,
+      ),
+    });
     const result = await sourceReplacementDialog({
       documentName: document.name,
       newFileName: picked.name,
       newPageCount,
       rows,
-      defaultMappings: defaultReplacementMappings(project, documentId, newPageCount),
+      defaultMappings,
+      warnings,
       requestThumbnail,
     });
     temporaryRenderer.cancel();
@@ -109,7 +170,6 @@ export async function replaceSourceFlow(
     // Replacing a source is structural: an older undo snapshot could restore a
     // superseded document reference that no longer matches the renderer.
     store.clearHistory();
-    const documentIndex = project.documents.findIndex((entry) => entry.id === documentId);
     if (applied.updatedDocument && documentIndex >= 0) {
       renderer.replaceDocument(
         documentIndex,

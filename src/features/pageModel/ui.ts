@@ -2,7 +2,7 @@ import { t } from "../../i18n";
 import { el } from "../../ui/dom";
 import { showModal } from "../../ui/dialogs";
 import type { PageId } from "../../model/types";
-import type { PageRemap } from "./replacement";
+import { replacementWarnings, type PageRemap, type ReplacementWarningCode } from "./replacement";
 
 export interface ReplacementPageRow {
   pageId: PageId;
@@ -20,11 +20,33 @@ export interface ReplacementDialogInput {
   newPageCount: number;
   rows: readonly ReplacementPageRow[];
   defaultMappings: readonly PageRemap[];
+  /** Warning codes from `replacementWarnings`; rendered as localized notes. */
+  warnings?: readonly ReplacementWarningCode[];
   requestThumbnail?: (page: number) => Promise<string | null>;
 }
 
 export interface ReplacementDialogResult {
   mappings: PageRemap[];
+}
+
+function warningText(code: ReplacementWarningCode, input: ReplacementDialogInput): string {
+  switch (code) {
+    case "pageCount":
+      return t("replace.warningPageCount", {
+        old: input.rows.length,
+        new: input.newPageCount,
+      });
+    case "pageSize":
+      return t("replace.warningPageSize");
+    case "calibration":
+      return t("replace.warningCalibration", {
+        count: input.rows.filter((row) => row.calibrated).length,
+      });
+    case "scaleLocked":
+      return t("replace.warningScaleLocked", {
+        count: input.rows.filter((row) => row.scaleLocked).length,
+      });
+  }
 }
 
 /**
@@ -111,6 +133,17 @@ export async function sourceReplacementDialog(
     list.append(line);
   }
   body.append(list);
+  const warnings =
+    input.warnings ??
+    replacementWarnings({
+      oldPageCount: input.rows.length,
+      newPageCount: input.newPageCount,
+      calibratedPages: input.rows.filter((row) => row.calibrated).length,
+      scaleLockedPages: input.rows.filter((row) => row.scaleLocked).length,
+    });
+  for (const warning of warnings) {
+    body.append(el("p", "export-note replace-warning", warningText(warning, input)));
+  }
   body.append(el("p", "export-note", t("replace.warning")));
 
   const result = await showModal({

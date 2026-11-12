@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createHash } from "node:crypto";
 import {
   addRecent,
   basename,
@@ -6,6 +7,8 @@ import {
   formatBytes,
   getRecent,
   joinPath,
+  projectFileIdentity,
+  sha256Hex,
 } from "../src/io/platform";
 import type { RecentEntry } from "../src/model/types";
 
@@ -59,6 +62,20 @@ describe("path helpers", () => {
     expect(formatBytes(1536)).toBe("1.5 KB");
     expect(formatBytes(1024 * 1024)).toBe("1.0 MB");
     expect(formatBytes(2.5 * 1024 * 1024)).toBe("2.5 MB");
+  });
+});
+
+describe("project file identity", () => {
+  it("hashes the raw project bytes and decodes the same file", async () => {
+    const text = '{"schemaVersion":26,"name":"Plan"}';
+    const bytes = new TextEncoder().encode(`\uFEFF${text}`);
+    const identity = await projectFileIdentity(bytes);
+    expect(identity.text).toBe(text);
+    expect(identity.sizeBytes).toBe(bytes.byteLength);
+    expect(identity.sha256).toBe(createHash("sha256").update(bytes).digest("hex"));
+    expect(identity.sha256).toBe(await sha256Hex(bytes));
+    // Hashing the decoded text would lose the BOM and produce a different value.
+    expect(identity.sha256).not.toBe(await sha256Hex(new TextEncoder().encode(identity.text)));
   });
 });
 

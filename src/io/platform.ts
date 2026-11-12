@@ -110,6 +110,25 @@ export interface PickedProject {
   name: string;
   path: string | null;
   text: string;
+  /** SHA-256 over the raw project file bytes, for import provenance. */
+  sha256: string;
+  /** Raw project file size in bytes. */
+  sizeBytes: number;
+}
+
+/**
+ * Decodes a project file and fingerprints the exact bytes that were read.
+ * Provenance uses this raw hash so it matches package and backup checksums;
+ * hashing the decoded text would change with a BOM or a different read path.
+ */
+export async function projectFileIdentity(
+  bytes: Uint8Array,
+): Promise<{ text: string; sha256: string; sizeBytes: number }> {
+  return {
+    text: new TextDecoder().decode(bytes),
+    sha256: await sha256Hex(bytes),
+    sizeBytes: bytes.byteLength,
+  };
 }
 
 export async function pickImage(): Promise<File | null> {
@@ -138,15 +157,20 @@ export async function pickProject(): Promise<PickedProject | null> {
       filters: [{ name: t("platform.projectFilter"), extensions: ["gridscalr", "json"] }],
     });
     if (!path || Array.isArray(path)) return null;
-    const text = await readFileText(path);
-    return { name: path.split(/[\\/]/).pop() ?? "Project.gridscalr", path, text };
+    const bytes = await readFileBytes(path);
+    return {
+      name: path.split(/[\\/]/).pop() ?? "Project.gridscalr",
+      path,
+      ...(await projectFileIdentity(bytes)),
+    };
   }
   const file = await browserFilePicker(".gridscalr,.json,application/json");
   if (!file) return null;
   if (file.size > MAX_PROJECT_BYTES) {
     throw new Error(t("platform.projectTooLarge", { size: formatBytes(MAX_PROJECT_BYTES) }));
   }
-  return { name: file.name, path: null, text: await file.text() };
+  const bytes = new Uint8Array(await file.arrayBuffer());
+  return { name: file.name, path: null, ...(await projectFileIdentity(bytes)) };
 }
 
 export async function readFileBytes(path: string): Promise<Uint8Array> {
