@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import type { ImportDocumentOverride } from "../features/projectImport/model";
+import type { ImportDocumentOverride, ImportSourceMismatch } from "../features/projectImport/model";
 import { base64ToBytes } from "../io/base64";
 import { isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { resolveRelativePath } from "../io/projectFile";
@@ -7,7 +7,7 @@ import { documentStartPage, includedLocalPages } from "../model/documents";
 import type { DocumentRef, Project } from "../model/types";
 import { renderPagePreview } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
-import { confirmChecksumMismatch, hashBytes, openDocument } from "./documentImport";
+import { hashBytes, openDocument } from "./documentImport";
 import { sheetBytes } from "./sheetFlows";
 
 export type SourceImportWarning =
@@ -31,6 +31,8 @@ export interface SourceSelection {
   overrides: Map<string, ImportDocumentOverride>;
   skipped: number[];
   warnings: SourceImportWarning[];
+  /** Files that loaded but differ from the source project's saved metadata. */
+  mismatches: ImportSourceMismatch[];
 }
 
 interface SourcePageRef {
@@ -126,21 +128,19 @@ export class ProjectImportSource {
   async locate(documentId: string): Promise<boolean> {
     const document = this.documents.get(documentId);
     if (!document || document.kind !== "pdf") return false;
-    const picked = await pickPdf();
+    let picked;
+    try {
+      picked = await pickPdf();
+    } catch {
+      return false;
+    }
     if (!picked) return false;
     this.located.set(documentId, {
       bytes: picked.bytes,
       name: picked.name,
       path: picked.path,
     });
-    const previous = this.proxies.get(documentId);
-    if (previous) void previous.loadingTask.destroy().catch(() => undefined);
-    this.proxies.delete(documentId);
-    this.services.get(documentId)?.destroy();
-    this.services.delete(documentId);
-    this.hashes.delete(documentId);
-    this.sizes.delete(documentId);
-    this.availability.set(documentId, true);
+    this.forgetLoaded(documentId);
     const proxy = await this.load(documentId);
     if (!proxy) {
       this.availability.set(documentId, false);
@@ -150,14 +150,28 @@ export class ProjectImportSource {
   }
 
   /**
+   * Drops a replacement file picked in this session and returns the document to
+   * the path recorded in the source project. Only in-memory state changes.
+   */
+  unrelink(documentId: string): void {
+    if (!this.located.delete(documentId)) return;
+    this.forgetLoaded(documentId);
+    this.resolvedPaths.delete(documentId);
+    this.availability.delete(documentId);
+  }
+
+  /**
    * Loads every selected document, verifies PDF checksums and drops pages that
-   * cannot be read. The caller imports the returned pages only.
+   * cannot be read. The caller imports the returned pages only. A changed
+   * checksum is reported, never silently accepted: the preflight dialog decides
+   * whether the replacement may be used.
    */
   async ensure(pages: readonly number[]): Promise<SourceSelection> {
     const selected = [...new Set(pages)].sort((a, b) => a - b);
     const byDocument = new Map<string, number[]>();
     const skipped: number[] = [];
     const warnings: SourceImportWarning[] = [];
+    const mismatches: ImportSourceMismatch[] = [];
     for (const page of selected) {
       const ref = this.pageRefs.get(page);
       if (!ref) {
@@ -192,19 +206,13 @@ export class ProjectImportSource {
       let sha256 = document.sha256;
       const path = this.resolvedPaths.get(documentId) ?? document.path;
       let sizeBytes = this.sizes.get(documentId) ?? document.sizeBytes;
+      let checksumChanged = false;
 
       if (document.kind === "pdf") {
         const hash = this.hashes.get(documentId) ?? "";
-        if (hash && document.sha256 && hash !== document.sha256) {
-          const accepted = await confirmChecksumMismatch(document, hash);
-          if (!accepted) {
-            for (const page of documentPages) {
-              skipped.push(page);
-              warnings.push({ code: "skippedPage", page, documentName: document.name });
-            }
-            warnings.push({ code: "checksum", documentName: document.name });
-            continue;
-          }
+        checksumChanged = Boolean(hash) && Boolean(document.sha256) && hash !== document.sha256;
+        if (checksumChanged) {
+          // The index describes the previous bytes, so it is not carried over.
           dropOcr = true;
           warnings.push({ code: "checksum", documentName: document.name });
         }
@@ -219,6 +227,16 @@ export class ProjectImportSource {
           documentName: document.name,
           expected: document.pageCount,
           actual: proxy.numPages,
+        });
+      }
+      if (checksumChanged || proxy.numPages !== document.pageCount) {
+        mismatches.push({
+          documentId,
+          name: document.name,
+          checksum: checksumChanged,
+          pageCount: proxy.numPages !== document.pageCount,
+          expectedPageCount: document.pageCount,
+          actualPageCount: proxy.numPages,
         });
       }
 
@@ -261,6 +279,7 @@ export class ProjectImportSource {
       overrides,
       skipped: [...new Set(skipped)],
       warnings,
+      mismatches,
     };
   }
 
@@ -275,6 +294,19 @@ export class ProjectImportSource {
     this.proxies.clear();
     this.loading.clear();
     this.located.clear();
+  }
+
+  /** Destroys the cached proxy, previews and hash for one document. */
+  private forgetLoaded(documentId: string): void {
+    const previous = this.proxies.get(documentId);
+    if (previous) void previous.loadingTask.destroy().catch(() => undefined);
+    this.proxies.delete(documentId);
+    this.loading.delete(documentId);
+    this.services.get(documentId)?.destroy();
+    this.services.delete(documentId);
+    this.hashes.delete(documentId);
+    this.sizes.delete(documentId);
+    this.availability.set(documentId, true);
   }
 
   private async load(documentId: string): Promise<PDFDocumentProxy | null> {

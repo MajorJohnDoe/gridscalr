@@ -2094,3 +2094,27 @@ remains the scheduling home.
 - **Next step:** If a user reports inverted CMYK output, capture that file and
   decide whether to trust the photometric tag, the marker, or both, with a new
   fixture. Do not add a heuristic without a sample.
+
+### F-096 — The import picker hides missing-source pages before the preflight can offer a relink
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 13 — Relink missing sources in import preflight
+- **Severity:** P3
+- **Area:** Project import / picker
+- **Status:** open
+- **Evidence:** `projectImportDialog()` disables a page checkbox when
+  `available` is false, and `ProjectImportSource.checkAvailability()` marks a
+  PDF unavailable when no candidate path exists. The preflight relink added in
+  this phase therefore only appears when a file becomes unreadable between the
+  picker check and `ensure()`, or when every page is skipped by the loader.
+- **Problem:** A source project whose PDF was moved cannot put its pages into
+  the selection at all, so the user never reaches the preflight that now offers
+  **Relink…**. The picker's own **Locate…** button is the only path for that
+  case.
+- **Impact:** No data is lost and the existing picker locate still works. The
+  preflight relink is a second safety net rather than the primary recovery
+  path, which is narrower than the phase description suggests.
+- **Next step:** Decide whether the picker should allow selecting pages from a
+  missing document and defer the file to the preflight. That changes the
+  picker's "select only available pages" rule and needs its own UI test and a
+  user-guide update; do not change it as part of a relink fix.

@@ -415,7 +415,8 @@ src/features/projectPackage/ipc.ts package command wrappers
 src/features/projectImport/model.ts source-page inspection, import planning and commit
 src/features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
 src/features/projectImport/preflight.ts import counts, missing files and checksum warnings
-src/features/projectImport/preflightUi.ts localized preflight dialog
+src/features/projectImport/relink.ts per-document preflight state, relink blocking rules and snapshot summary
+src/features/projectImport/preflightUi.ts localized preflight dialog with source relink and explicit mismatch confirmation
 src/features/projectImport/ui.ts graphical source-page picker with lazy previews
 src/features/pageFileDrop/model.ts Pages-panel drop target classification and pointer rules
 src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and shared insertion line
