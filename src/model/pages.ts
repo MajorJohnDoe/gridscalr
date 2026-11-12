@@ -258,6 +258,15 @@ export function documentPageOrder(project: PageListProject): DocumentPageOrderEn
 }
 
 /**
+ * Stable signature of a renderer display order. Undo and redo compare it before
+ * reapplying an order, so an ordinary edit never cancels the page renders.
+ */
+export function pageOrderSignature(order: readonly DocumentPageOrderEntry[] | null): string {
+  if (!order) return "";
+  return order.map((entry) => `${entry.documentIndex}:${entry.localPage}`).join(",");
+}
+
+/**
  * Page order after every selected page is moved as one contiguous block.
  * `insertionIndex` is a 0-based index in the current list: the block is placed
  * before the record that currently sits at that index. The input is never

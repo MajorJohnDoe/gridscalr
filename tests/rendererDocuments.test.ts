@@ -3,6 +3,11 @@ import { describe, expect, it, vi } from "vitest";
 import { withTestPageIds } from "./helpers/pages";
 import { RendererDocumentRegistry } from "../src/app/rendererDocuments";
 import { createProject, defaultDocument } from "../src/model/layers";
+import {
+  documentPageOrder,
+  pageOrderSignature,
+  type DocumentPageOrderEntry,
+} from "../src/model/pages";
 import type { DocumentRef, Project } from "../src/model/types";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 
@@ -26,6 +31,18 @@ function projectWith(documents: DocumentRef[]): Project {
   return project;
 }
 
+/** One document with an explicit page order, for order-only history steps. */
+function projectWithPages(documents: DocumentRef[], locals: number[]): Project {
+  const project = projectWith(documents);
+  project.pages = locals.map((localPage, index) => ({
+    id: `page_${index + 1}`,
+    documentId: documents[0].id,
+    localPage,
+    state: {},
+  }));
+  return project;
+}
+
 function fakeProxy(id: string): PDFDocumentProxy {
   return {
     id,
@@ -36,10 +53,13 @@ function fakeProxy(id: string): PDFDocumentProxy {
 interface FakeRenderer {
   documents: PDFDocumentProxy[];
   pageMaps: number[][];
+  pageOrder: DocumentPageOrderEntry[] | null;
+  readonly appliedPageOrder: string;
   readonly documentCount: number;
   addDocument(document: PDFDocumentProxy, pageMap?: number[]): void;
   detachDocument(index: number): { document: PDFDocumentProxy; pageMap: number[] } | null;
   setPageMaps(maps: number[][]): void;
+  setPageOrder(order: DocumentPageOrderEntry[] | null): void;
 }
 
 function asRenderer(renderer: FakeRenderer): PdfRenderer {
@@ -48,9 +68,16 @@ function asRenderer(renderer: FakeRenderer): PdfRenderer {
 
 function fakeRenderer(documents: PDFDocumentProxy[] = []): FakeRenderer {
   const pageMaps: number[][] = documents.map(() => [1]);
+  let pageOrder: DocumentPageOrderEntry[] | null = null;
   return {
     documents,
     pageMaps,
+    get pageOrder() {
+      return pageOrder;
+    },
+    get appliedPageOrder() {
+      return pageOrderSignature(pageOrder);
+    },
     get documentCount() {
       return documents.length;
     },
@@ -66,6 +93,9 @@ function fakeRenderer(documents: PDFDocumentProxy[] = []): FakeRenderer {
     },
     setPageMaps(maps: number[][]) {
       pageMaps.splice(0, pageMaps.length, ...maps.map((map) => [...map]));
+    },
+    setPageOrder(order: DocumentPageOrderEntry[] | null) {
+      pageOrder = order;
     },
   } as unknown as FakeRenderer;
 }
@@ -115,7 +145,23 @@ describe("renderer document registry", () => {
     const project = projectWith([documentRef("a")]);
     const renderer = fakeRenderer([fakeProxy("a")]);
     registry.reset(project);
+    renderer.setPageOrder(documentPageOrder(project));
     expect(registry.reconcile(project, asRenderer(renderer))).toBe("unchanged");
+  });
+
+  it("reapplies the page order when an undo changes no document", () => {
+    const registry = new RendererDocumentRegistry();
+    const a = documentRef("a", 3);
+    const before = projectWithPages([a], [1, 2, 3]);
+    const after = projectWithPages([a], [3, 1, 2]);
+    const renderer = fakeRenderer([fakeProxy("a")]);
+    registry.reset(before);
+    renderer.setPageOrder(documentPageOrder(before));
+
+    expect(registry.reconcile(after, asRenderer(renderer))).toBe("changed");
+    expect(renderer.pageOrder).toEqual(documentPageOrder(after));
+    expect(registry.reconcile(before, asRenderer(renderer))).toBe("changed");
+    expect(renderer.pageOrder).toEqual(documentPageOrder(before));
   });
 
   it("fails when a redo proxy is no longer cached", () => {

@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import { documentPageMaps } from "../model/documents";
-import { documentPageOrder } from "../model/pages";
+import { documentPageOrder, pageOrderSignature } from "../model/pages";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
@@ -65,14 +65,32 @@ export class RendererDocumentRegistry {
   }
 
   /**
+   * Applies the project's display page order when it differs from the order the
+   * renderer already holds. A reorder or page-insert undo changes no document,
+   * so this comparison is what keeps the canvas, thumbnails and page sizes
+   * aligned with the restored page list.
+   */
+  syncPageOrder(project: Project | null, renderer: PdfRenderer | null): boolean {
+    if (!project || !renderer) return false;
+    const order = documentPageOrder(project);
+    if (renderer.appliedPageOrder === pageOrderSignature(order)) return false;
+    renderer.setPageOrder(order);
+    return true;
+  }
+
+  /**
    * Reconciles a document suffix change after undo or redo. Only appends and
-   * removals at the end are handled; anything else needs a full reload.
+   * removals at the end are handled; anything else needs a full reload. A page
+   * order change without a document change is reported as "changed" so the app
+   * clears thumbnails and page sizes.
    */
   reconcile(project: Project | null, renderer: PdfRenderer | null): ReconcileResult {
     if (!project || !renderer) return "unchanged";
     const nextIds = project.documents.map((document) => document.id);
     const previousIds = this.lastIds;
-    if (sameIds(previousIds, nextIds)) return "unchanged";
+    if (sameIds(previousIds, nextIds)) {
+      return this.syncPageOrder(project, renderer) ? "changed" : "unchanged";
+    }
 
     if (isPrefix(nextIds, previousIds)) {
       if (renderer.documentCount !== previousIds.length) return "failed";
@@ -99,6 +117,7 @@ export class RendererDocumentRegistry {
 
     renderer.setPageMaps(documentPageMaps(project.documents));
     this.lastIds = nextIds;
+    this.syncPageOrder(project, renderer);
     return "changed";
   }
 

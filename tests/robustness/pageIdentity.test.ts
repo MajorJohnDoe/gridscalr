@@ -269,8 +269,17 @@ describe("stateful page identity sequences", () => {
           expect(itemCount(store.project!)).toBe(beforeItemCount);
           expect(store.project!.layers.length).toBe(beforeLayerCount);
           expectSamePageRecords(beforePages, store.project!);
-          expect(store.canUndo, "insert is structural").toBe(false);
-          expect(store.canRedo).toBe(false);
+          expect(store.canUndo, "one insert is one undo step").toBe(true);
+
+          const insertedOrder = store.project!.pages.map((entry) => entry.id);
+          store.undo();
+          expect(store.project!.pages.map((entry) => entry.id)).toEqual(
+            beforePages.map((entry) => entry.id),
+          );
+          expect(store.project!.pages.some((entry) => entry.id === created)).toBe(false);
+          store.redo();
+          expect(store.project!.pages.map((entry) => entry.id)).toEqual(insertedOrder);
+          expect(store.project!.pages.some((entry) => entry.id === created)).toBe(true);
         }
       } else if (operation === "move") {
         if (store.project!.pages.length > 1) {
@@ -283,8 +292,15 @@ describe("stateful page identity sequences", () => {
             expect(itemCount(store.project!)).toBe(beforeItemCount);
             expect(store.project!.layers.length).toBe(beforeLayerCount);
             expectSamePageRecords(beforePages, store.project!);
-            expect(store.canUndo, "reorder is structural").toBe(false);
-            expect(store.canRedo).toBe(false);
+            expect(store.canUndo, "one reorder is one undo step").toBe(true);
+
+            const movedOrder = store.project!.pages.map((entry) => entry.id);
+            store.undo();
+            expect(store.project!.pages.map((entry) => entry.id)).toEqual(
+              beforePages.map((entry) => entry.id),
+            );
+            store.redo();
+            expect(store.project!.pages.map((entry) => entry.id)).toEqual(movedOrder);
           }
         }
       } else if (operation === "duplicate") {
@@ -467,7 +483,34 @@ describe("stateful page identity sequences", () => {
       ),
     ).toBe(true);
     expect(store.insertPageRecord(store.project!.pages[0].id, 0)).not.toBeNull();
-    expect(store.canUndo).toBe(false);
+    expect(store.canUndo, "an insert is undoable and still checkpointed").toBe(true);
+  });
+
+  it("restores page order and page state through structural undo and redo", () => {
+    store.setProject(baseProject(), PATH, false);
+    const project = store.project!;
+    const beforeOrder = project.pages.map((page) => page.id);
+    const beforeState = new Map(project.pages.map((page) => [page.id, { ...page.state }]));
+    const beforeItems = itemPageMap(project);
+
+    expect(store.reorderPage("page_1", 4)).toBe(true);
+    const movedOrder = store.project!.pages.map((page) => page.id);
+    expect(movedOrder).not.toEqual(beforeOrder);
+    expectInvariants(store.project!);
+
+    store.undo();
+    expect(store.project!.pages.map((page) => page.id)).toEqual(beforeOrder);
+    for (const page of store.project!.pages) {
+      expect(page.state).toEqual(beforeState.get(page.id));
+    }
+    expect(itemPageMap(store.project!)).toEqual(beforeItems);
+    expectInvariants(store.project!);
+
+    store.redo();
+    expect(store.project!.pages.map((page) => page.id)).toEqual(movedOrder);
+    const afterState = new Map(store.project!.pages.map((page) => [page.id, { ...page.state }]));
+    for (const [id, state] of beforeState) expect(afterState.get(id)).toEqual(state);
+    expectInvariants(store.project!);
   });
 
   it("rejects a mutated project with a broken page reference", () => {

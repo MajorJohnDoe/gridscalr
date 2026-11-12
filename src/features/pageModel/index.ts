@@ -28,9 +28,9 @@ export type { ReplacementDialogInput, ReplacementDialogResult } from "./ui";
 export {
   cleanupSupersededPages,
   createEmptyProject,
-  insertPage as insertProjectPage,
-  reorderPage as reorderProjectPage,
+  insertProjectPage,
   reorderPages,
   reorderPages as reorderProjectPages,
+  reorderProjectPage,
 } from "./appActions";
 export type { PageActionHost } from "./appActions";
