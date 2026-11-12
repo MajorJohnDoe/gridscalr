@@ -15,6 +15,7 @@
 | [0011](0011-page-list-and-source-replacement.md) | Explicit page order and source replacement | Accepted | 2026-11-10 |
 | [0012](0012-source-storage-modes.md) | Source storage modes | Accepted | 2026-11-10 |
 | [0013](0013-module-first-foundation.md) | Module-first foundation work | Accepted | 2026-11-10 |
+| [0014](0014-layer-hierarchy.md) | Layer hierarchy | Accepted | 2026-11-12 |
 
 An ADR records a decision that affects the project structure, format or release
 process. Add a new ADR rather than silently changing an accepted one. A superseded
