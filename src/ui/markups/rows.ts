@@ -8,6 +8,11 @@ import {
   symbolName,
 } from "../../features/schematics/symbols/registry";
 import { t } from "../../i18n";
+import {
+  matchesFilterText,
+  normalizeFilterQuery,
+  selectionAfterClick,
+} from "../../features/listInteraction";
 import { categoryForItem } from "../../model/categories";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
 import { formatTimestamp, timestampValue } from "../../model/dates";
@@ -37,6 +42,7 @@ import type {
   MarkupsColumnId,
   MarkupsGroupField,
   Project,
+  SelectionRef,
 } from "../../model/types";
 import { store } from "../../state/store";
 import { el, option } from "../dom";
@@ -53,7 +59,7 @@ export interface MarkupRow {
 }
 
 export function filteredRows(project: Project): MarkupRow[] {
-  const query = markupsState.settings.search.trim().toLocaleLowerCase();
+  const query = normalizeFilterQuery(markupsState.settings.search);
   const rows: MarkupRow[] = [];
   for (const layer of project.layers) {
     for (const item of layer.items) {
@@ -94,9 +100,8 @@ export function filteredRows(project: Project): MarkupRow[] {
       if (query) {
         const created = formatTimestamp(item.createdAt);
         const modified = formatTimestamp(item.updatedAt);
-        const haystack =
-          `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(project, item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`.toLocaleLowerCase();
-        if (!haystack.includes(query)) continue;
+        const haystack = `${itemLabel(item, project)} ${itemKindLabel(item.kind)} ${layer.name} ${item.text ?? ""} ${item.room ?? ""} ${category?.name ?? ""} ${item.kind === "count" ? countTypeLabel(project, item.countType) : ""} ${item.kind === "symbol" ? `${symbolName(item.symbolId)} ${symbolCategoryLabel(symbolCategory)} ${inspectionStatusLabel(item.status)}` : ""} ${item.kind === "area" && item.areaMode === "subtract" ? "deduct deduction" : ""} ${created} ${modified} ${item.createdAt ?? ""} ${item.updatedAt ?? ""}`;
+        if (!matchesFilterText(haystack, query)) continue;
       }
       rows.push({ item, layer });
     }
@@ -242,6 +247,11 @@ export function beginMarkupRename(label: HTMLElement, itemId: string, fallback: 
   input.addEventListener("dblclick", (event) => event.stopPropagation());
 }
 
+function keyToRef(key: string): SelectionRef {
+  const [layerId, itemId] = key.split("\u0000");
+  return { layerId, itemId };
+}
+
 export function markupRowElement(
   row: MarkupRow,
   columns: MarkupsColumnId[],
@@ -266,6 +276,7 @@ export function markupRowElement(
   tr.dataset.itemId = item.id;
   tr.dataset.layerId = layer.id;
   tr.tabIndex = 0;
+  tr.setAttribute("aria-keyshortcuts", "Shift+F10");
   tr.classList.toggle("is-selected", store.isSelected(ref));
   tr.setAttribute("aria-selected", String(store.isSelected(ref)));
   tr.classList.toggle("is-hidden", hidden);
@@ -456,27 +467,32 @@ export function markupRowElement(
     const target = event.target as HTMLElement | null;
     if (target?.closest("button, select, input, textarea")) return;
     if (event.shiftKey) {
-      const source = rowOrder.length
-        ? rowOrder.map((entry) => ({ layerId: entry.layer.id, itemId: entry.item.id }))
+      const entries = rowOrder.length
+        ? rowOrder.map((entry) => ({
+            id: selectionKey({ layerId: entry.layer.id, itemId: entry.item.id }),
+            ref: { layerId: entry.layer.id, itemId: entry.item.id },
+          }))
         : Array.from(
             (tr.closest("tbody") ?? document).querySelectorAll<HTMLElement>("tr.markups-row"),
-          ).map((row) => ({
-            layerId: row.dataset.layerId ?? "",
-            itemId: row.dataset.itemId ?? "",
-          }));
-      const rows = source;
-      const anchor = markupsState.rangeAnchor ?? ref;
-      const start = rows.findIndex((entry) => selectionKey(entry) === selectionKey(anchor));
-      const end = rows.findIndex((entry) => selectionKey(entry) === selectionKey(ref));
+          ).flatMap((row) => {
+            const layerId = row.dataset.layerId;
+            const itemId = row.dataset.itemId;
+            if (!layerId || !itemId) return [];
+            return [{ id: selectionKey({ layerId, itemId }), ref: { layerId, itemId } }];
+          });
+      const anchor = markupsState.rangeAnchor;
+      const next = selectionAfterClick(
+        entries,
+        store.ui.selection.map((entry) => selectionKey(entry)),
+        anchor ? selectionKey(anchor) : null,
+        selectionKey(ref),
+        "range",
+      );
       if (pageNumber(project, item.pageId) !== store.ui.page) {
         actions.goToPage(pageNumber(project, item.pageId), false);
       }
-      if (start >= 0 && end >= 0) {
-        const [from, to] = start <= end ? [start, end] : [end, start];
-        store.setSelectionMany(rows.slice(from, to + 1));
-      } else {
-        store.toggleSelection(ref);
-      }
+      store.setSelectionMany(next.ids.map(keyToRef));
+      markupsState.rangeAnchor = ref;
       return;
     }
     if (event.ctrlKey || event.metaKey) {
@@ -511,6 +527,12 @@ export function markupRowElement(
       event.preventDefault();
       event.stopPropagation();
       beginMarkupRename(label, item.id, labelText);
+    } else if (event.key === "ContextMenu" || (event.shiftKey && event.key === "F10")) {
+      event.preventDefault();
+      if (!store.isSelected(ref)) store.setSelection(ref);
+      markupsState.rangeAnchor = ref;
+      const rect = tr.getBoundingClientRect();
+      showSelectionMenuAt(rect.left + 24, rect.top + Math.min(rect.height, 28), actions);
     }
   });
   return tr;

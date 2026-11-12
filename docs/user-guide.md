@@ -26,7 +26,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
 - **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
 - **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
-- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted. The Layers tab has a **This page / All pages** scope switch. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
+- **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted. The Layers tab has a **This page / All pages** scope switch, a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
@@ -197,7 +197,7 @@ The copy is appended at the end with a new stable page ID and references the sam
 
 ### Reorder, insert and delete pages
 
-Drag a page card and drop it on the line between two cards to change the project page order. The panel scrolls while a card is held near its top or bottom edge. `Ctrl/Cmd` + click adds pages to the selection and `Shift` + click selects a range, so dragging any selected card moves the whole selection as one block. Pages from another source document are grouped under a document heading, and a drop that crosses into another document names that document on the drop line. `Alt` + `Up` / `Down` moves the selection one position and `Alt` + `Home` / `End` moves it to the ends; the result is announced to screen readers. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet, and every drop writes one recovery checkpoint. A reorder is also one undo step: **Undo** restores the previous page order and keeps the sheet that was on screen in view.
+Drag a page card, or the grip in its corner, and drop it on the line between two cards to change the project page order. The panel scrolls while a card is held near its top or bottom edge. `Ctrl/Cmd` + click adds pages to the selection and `Shift` + click selects a range, so dragging any selected card moves the whole selection as one block. Pages from another source document are grouped under a document heading, and a drop that crosses into another document names that document on the drop line. `Alt` + `Up` / `Down` moves the selection one position and `Alt` + `Home` / `End` moves it to the ends; the result is announced to screen readers. `ArrowUp` / `ArrowDown` / `Home` / `End` move focus between cards without changing the selection. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet, and every drop writes one recovery checkpoint. A reorder is also one undo step: **Undo** restores the previous page order and keeps the sheet that was on screen in view.
 
 The page menu offers the rest of the workflow, and each action is also on the keyboard when a page card or the canvas has focus. **Insert page** names the target first, for example **before page 3 — Sheet A-101**, and asks before it adds another record for the same source sheet; `Alt` + `PageUp` / `PageDown` inserts before or after the current page. **Move page to position…** (`Alt` + `Shift` + `M`) lists every position that actually changes the order and moves the page there as one undo step. **Duplicate page…** (`Alt` + `Shift` + `D`) opens the duplicate options. **Delete page…** (`Alt` + `Shift` + `Delete`) asks for confirmation. Page numbers in the title row, Markups and reports follow the current order. Deleting a page stays an explicit, confirmed action and cannot be undone.
 
@@ -566,10 +566,14 @@ Open the **Layers** tab in the left panel. The **This page / All pages** switch 
 - **Eye** shows or hides a layer. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
 - **Lock** prevents moving, editing, and deleting its items. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
 - Click the colour swatch to change the layer colour.
-- Double-click anywhere on a layer row to rename it inline.
-- Drag layers within their group to reorder them.
+- Double-click anywhere on a layer row, or press `F2` on the focused row, to rename it inline.
+- Drag a layer row or its grip within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step and `Alt` + `Home` / `End` moves it to the top or bottom of its kind group; each move is announced and is one undo step.
+- Use the search field to filter by layer name, item label, kind or room. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots.
+- Use the expand-all and collapse-all buttons beside the search field to open or close every layer at once.
 - Use the chevron to expand a layer and list the items on the current page, or every item in **All pages** scope, newest first.
-- Click an item to jump to its page and select it. `Shift`/`Ctrl`/`Cmd`-click adds it to the current selection.
+- Click an item to jump to its page and select it. `Ctrl`/`Cmd`-click adds it to the current selection and `Shift`-click selects the range between the last clicked item and the current one, so Properties and the right-click menu can edit several items at once.
+- `Shift+F10` or the Menu key opens the layer menu from the focused row. `Enter` or `Space` makes the focused layer the target layer.
+- Pages, Layers and Markups share the same focus, selection, drag and keyboard conventions. The shared model is described in **Keyboard shortcuts** and **Architecture**.
 - Right-click a layer for layer actions, or right-click an item for copy, cut, duplicate, visibility, lock, move and delete.
 - Use **+ Measure layer** or **+ Drawing layer** to add layers on the current page.
 - Move the selected item to another layer from Properties or the right-click menu.
@@ -617,10 +621,11 @@ Open **View → Markups list…**, click the **Markups** button at the bottom of
 
 - Filter by **All pages** or **Current page**, measurements/drawings/symbols/counts, measurement or symbol category, count type, or the search field. The search also matches **Created** and **Modified** dates.
 - Use **Columns** to show or hide table columns, including **Count type**, **Status**, **Created** and **Modified**. Name is always visible.
-- Use **Group by** to create collapsible groups by category, room, count type, page, layer, or **Building → Floor → Room**. **Count schedule** groups counts by type and room. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group.
+- Use **Group by** to create collapsible groups by category, room, count type, page, layer, or **Building → Floor → Room**. **Count schedule** groups counts by type and room. Building and floor come from **Pages → right-click → Set location…**. Symbols group by their symbol category in the Category group. The expand-all and collapse-all buttons above the table open or close every group at once.
+- The Markups table is sorted and grouped rather than user-ordered, so it follows the shared focus, selection, filter and collapse conventions but has no drag handle or drop line.
 - Click a sortable column heading to sort, click again to reverse, and a third time to return to the default page/layer/name order.
-- Click a row to go to its page and select the markup.
-- Double-click a name or use the rename button to edit the label inline.
+- Click a row to go to its page and select the markup. `ArrowUp` / `ArrowDown` / `Home` / `End` move focus between rows, `Shift`+click selects a range, and `Shift+F10` or the Menu key opens the row menu.
+- Double-click a name, press `F2`, or use the rename button to edit the label inline.
 - Change the layer from the row picker, change symbol status from its status picker, and use the eye and lock controls for per-item visibility and locking. When several rows are selected, these cell edits apply to the whole selection.
 - Right-click a row or the selection for copy, cut, duplicate, hide/show, lock/unlock, move to layer, set category, set room, set status, and delete. Right-clicking an unselected row selects it first.
 - **Select all** selects every row matching the current filter. **Export CSV** writes the Markups CSV for the whole project, not only the visible view, and includes both timestamps.
@@ -631,7 +636,7 @@ Open **View → Markups list…**, click the **Markups** button at the bottom of
 A view stores the visible columns, page/type/category/count-type filters, search text, grouping and sort order. Views belong to the project, so a colleague who opens the same `.gridscalr` file gets the same set-up.
 
 - Start from **All markups**, configure the table, then choose **More view options → Save as new view…**.
-- Choose the view from the **Markups view** selector to apply it.
+- Choose the view from the **Markups view** selector to apply it. Favourite views appear first under **Favourite views**; pin or unpin the active view with the star button. Favourites are a local convenience for this machine and are not written to the project file, so they do not travel with a `.gridscalr` package.
 - After changing a saved view, the amber dot marks unsaved changes. Click the check button to update the view.
 - **More view options → Manage views…** renames or removes saved views. Removing the active view returns the table to All markups.
 - Applying another view while there are unsaved changes asks before discarding them.

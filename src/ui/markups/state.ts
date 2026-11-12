@@ -3,6 +3,7 @@ import type { MarkupsColumnId, SelectionRef } from "../../model/types";
 
 const PREFS_KEY = "gridscalr.ui.markups.v1";
 const ACTIVE_VIEW_KEY = "gridscalr.ui.markups.active-view.v1";
+const PINNED_VIEW_KEY = "gridscalr.ui.markups.pinned-views.v1";
 export const DEFAULT_HEIGHT = 320;
 const MIN_HEIGHT = 140;
 
@@ -63,6 +64,32 @@ function activeViewStorageKey(projectId: string): string {
   return `${ACTIVE_VIEW_KEY}.${projectId}`;
 }
 
+function pinnedViewStorageKey(projectId: string): string {
+  return `${PINNED_VIEW_KEY}.${projectId}`;
+}
+
+function loadStringList(key: string): string[] {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === "string")
+      : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveStringList(key: string, values: readonly string[]): void {
+  try {
+    if (values.length) localStorage.setItem(key, JSON.stringify(values));
+    else localStorage.removeItem(key);
+  } catch {
+    // Favourite views are a local convenience; saved views live in the project.
+  }
+}
+
 function loadActiveViewId(projectId: string): string | null {
   try {
     return localStorage.getItem(activeViewStorageKey(projectId));
@@ -88,11 +115,13 @@ export const markupsState = {
   resizerBound: false,
   currentProjectId: null as string | null,
   activeViewId: null as string | null,
+  pinnedViewIds: [] as string[],
   settings: defaultMarkupsViewSettings() as MarkupsViewSettings,
   viewDirty: false,
   collapsedGroups: new Set<string>(),
   viewDirtyEl: null as HTMLElement | null,
   saveViewBtn: null as HTMLButtonElement | null,
+  pinViewBtn: null as HTMLButtonElement | null,
 };
 
 export function isMarkupsOpen(): boolean {
@@ -106,6 +135,15 @@ export function setMarkupsOpen(open: boolean): void {
 
 export function toggleMarkupsPanel(): void {
   setMarkupsOpen(!markupsState.open);
+}
+
+export function loadPinnedViewIds(projectId: string): string[] {
+  return loadStringList(pinnedViewStorageKey(projectId));
+}
+
+export function savePinnedViewIds(projectId: string | null, ids: readonly string[]): void {
+  if (!projectId) return;
+  saveStringList(pinnedViewStorageKey(projectId), ids);
 }
 
 export { loadActiveViewId, saveActiveViewId, clampHeight, savePreferences };

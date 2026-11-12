@@ -503,6 +503,115 @@ try {
     "applying a saved view should restore its page filter",
   );
 
+  // Favourite views are local, appear first and survive a re-render.
+  await markupsPanel.getByRole("button", { name: "Pin this view as a favourite" }).click();
+  await page.waitForTimeout(150);
+  assert.equal(
+    await markupsPanel.getByRole("button", { name: "Remove this view from favourites" }).count(),
+    1,
+    "pinning the active view should expose the unpin action",
+  );
+  assert.equal(
+    await markupsPanel.locator('optgroup[label="Favourite views"]').count(),
+    1,
+    "a favourite view should appear in the picker's favourite group",
+  );
+  assert.ok(
+    await page.evaluate((viewId) => {
+      const key = Object.keys(localStorage).find((name) =>
+        name.startsWith("gridscalr.ui.markups.pinned-views.v1."),
+      );
+      return Boolean(key && localStorage.getItem(key)?.includes(viewId));
+    }, savedView.id),
+    "the favourite should be stored locally, not in the project",
+  );
+  assert.equal(
+    await page.evaluate(
+      (viewId) =>
+        window.__gridscalr.store.project.markupsViews.find((view) => view.id === viewId)?.favourite,
+      savedView.id,
+    ),
+    undefined,
+    "pinning must not change the saved view or the project file",
+  );
+
+  // Collapse-all and expand-all drive every grouping level.
+  await markupsPanel.getByLabel("Group markups").selectOption("category");
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await markupsPanel.locator("tbody tr.markups-group-row").count()) > 0,
+    "grouping by category should render group rows",
+  );
+  await markupsPanel.getByRole("button", { name: "Collapse all groups" }).click();
+  await page.waitForTimeout(150);
+  assert.equal(
+    await markupsPanel.locator("tbody tr.markups-row").count(),
+    0,
+    "collapsing every group should hide all rows",
+  );
+  await markupsPanel.getByRole("button", { name: "Expand all groups" }).click();
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await markupsPanel.locator("tbody tr.markups-row").count()) > 0,
+    "expanding every group should bring the rows back",
+  );
+
+  // Layers: search, expand-all and a keyboard move inside the kind group.
+  await page.locator('.dock-tab[data-tab="layers"]').click();
+  const layerRows = page.locator(".layer-row");
+  await layerRows.first().waitFor();
+  const layerCount = await layerRows.count();
+  await page.getByLabel("Filter layers").fill("QA radiator");
+  await page.waitForTimeout(150);
+  const filteredLayers = await layerRows.count();
+  assert.ok(
+    filteredLayers >= 1 && filteredLayers < layerCount,
+    `the layer filter should narrow the list (${layerCount} -> ${filteredLayers})`,
+  );
+  await page.getByLabel("Filter layers").fill("");
+  await page.waitForTimeout(150);
+  assert.equal(await layerRows.count(), layerCount, "clearing the filter should restore the list");
+
+  await page.getByRole("button", { name: "Expand all", exact: true }).click();
+  await page.waitForTimeout(150);
+  assert.ok(
+    (await page.locator(".layer-items").count()) > 0,
+    "expand all should open layer item lists",
+  );
+  await page.getByRole("button", { name: "Collapse all", exact: true }).click();
+  await page.waitForTimeout(150);
+  assert.equal(
+    await page.locator(".layer-items").count(),
+    0,
+    "collapse all should close layer item lists",
+  );
+
+  // A second layer in the same kind group makes the keyboard move observable.
+  await page.getByRole("button", { name: "+ Measure layer" }).click();
+  await page.waitForTimeout(200);
+  const measureRows = page.locator('.layer-row[data-layer-kind="measure"]');
+  assert.equal(await measureRows.count(), 2, "the demo should now have two measurement layers");
+  const measureIdsBefore = await measureRows.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.layerId),
+  );
+  await measureRows.first().focus();
+  const focusedLayer = await measureRows.first().getAttribute("data-layer-id");
+  await page.keyboard.press("Alt+ArrowDown");
+  await page.waitForTimeout(250);
+  const measureIdsAfter = await measureRows.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.layerId),
+  );
+  assert.deepEqual(
+    measureIdsAfter.slice(0, 2),
+    [measureIdsBefore[1], measureIdsBefore[0]],
+    "Alt+ArrowDown should move the focused layer one step down inside its group",
+  );
+  assert.equal(
+    await page.evaluate(() => document.activeElement?.dataset.layerId),
+    focusedLayer,
+    "the moved layer should keep keyboard focus after the re-render",
+  );
+
   await page.locator('.dock-tab[data-tab="pages"]').click();
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();

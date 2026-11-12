@@ -38,7 +38,8 @@ src/
   features/projectImport/model.ts source-page inspection, import planning and commit
   features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
   features/projectImport/ui.ts graphical source-page picker with lazy previews
-  features/pageReorder/ page-card drag, multi-selection, drop line and keyboard reorder
+  features/listInteraction/ shared list selection, drag, drop line, keyboard move, filter and collapse rules
+  features/pageReorder/ page-card drag, multi-selection, document drop plan and keyboard reorder
   features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
   features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
   features/pageStatus/ pure page badges and status filters derived from project and source state
@@ -206,7 +207,10 @@ src/
   ui/contextBar.ts       tool-specific context bar and target layer controls
   ui/inspector.ts        Properties header, active-layer and selection sections
   ui/markupsPanel.ts     Markups public surface
-  ui/markups/            Markups state, views, rows and panel
+  ui/markups/            Markups state, view favourites, grouping, rows and virtualised panel
+  ui/layerList.ts        Layers panel orchestration, toolbar and rows
+  ui/layers/             layer filter, row builder, menu, view state and drag reorder wiring
+  ui/layerAction.ts      shared row icon button for Layers and Markups
   ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
   ui/measureOptions.ts   category, room, count type and area options popover
@@ -315,6 +319,7 @@ Key design choices:
 - **One scene or one session, two viewports.** The primary canvas follows the store's viewport. In same-page mode the reference pane reuses the same renderer and scene with a read-only canvas; in revision or drawing mode it uses the reference session's renderer and either its project scene or a projectless PDF scene. Both modes centre the read-only viewport on the primary pane, so pan, zoom and page changes stay synchronized without a second editing path.
 - **Reference lifecycle is one controller.** `src/app/referenceController.ts` owns the reference canvas, split view, toolbar, session, diff and comparison panel. `App.ts` only binds menus and delegates; the primary project, undo history and source files are never replaced by a reference.
 - **Features are modules.** New user-facing features live under `src/features/<feature>/` with pure model code, UI, renderer and controller separated. `App.ts` and `CanvasView.ts` stay integration points; see [`adr/0001-feature-modules.md`](adr/0001-feature-modules.md).
+- **The workspace lists share one interaction model.** `src/features/listInteraction/` owns the pure selection range, block move, insertion, filter and collapse rules plus the generic drag controller, drop line, live region and row focus navigator. Pages, Layers and Markups all use it, while each list keeps its own semantics: Pages move through the undoable `reorderPages` action and page IDs, Layers move within their kind groups through `reorderLayerGroup`, and Markups is a sorted and grouped virtualised table, so it follows focus, selection, filter and collapse conventions but deliberately has no drag handle or drop line. Layer filtering keeps unlisted layers in their existing slots. Markups view favourites are stored locally per project because pinning is a per-machine preference and does not justify a schema change.
 - **Derived exports share one row model.** Quantity and markup tables are built once in `src/report/rows.ts` and serialized to CSV and XLSX from the same cells. The workbook never stores a second copy of the takeoff.
 - **Search stays local.** PDF.js text items are converted to page-space rectangles and indexed in memory when the search panel opens. OCR runs only when requested, using bundled Tesseract English/Swedish models and local worker/WASM assets. OCR words and bounding boxes are stored as rebuildable page data so reopening a project does not repeat the work; the PDF text index itself is discarded with the project.
 - **Comparison is session-only.** A reference revision opens its project and drawings in its own renderer; a raw PDF drawing opens as a projectless read-only scene. Matching uses item ids first, then geometry, then the nearest same-kind item inside a move tolerance. The current store, undo history and source drawings are never replaced by the reference. A drawing reference has no markup diff, so the panel and comparison PDF keep the visuals and summary only.
@@ -333,8 +338,8 @@ Key design choices:
 
 ## Planned foundation work
 
-The data-integrity work is accepted but not implemented. The source map above
-describes the current schema 23 code.
+The data-integrity work is accepted and progressively implemented. The source
+map above describes the current schema 25 code.
 
 - [ADR 0010](adr/0010-project-file-integrity.md): conditional project writes,
   conflict copies, scoped autosave and advisory lock leases.

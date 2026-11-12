@@ -340,3 +340,56 @@ function buildGroups<T>(
     };
   });
 }
+
+/**
+ * Favourite Markups views are a local view preference, not project data, so
+ * they never change the schema. Stored IDs are pruned against the views that
+ * still exist; the picker then keeps project order, so two machines that pin
+ * the same views show the same list.
+ */
+export function normalizePinnedViewIds(value: unknown, views: readonly MarkupsView[]): string[] {
+  if (!Array.isArray(value)) return [];
+  const known = new Set(views.map((view) => view.id));
+  const seen = new Set<string>();
+  const ids: string[] = [];
+  for (const entry of value) {
+    if (typeof entry !== "string" || !known.has(entry) || seen.has(entry)) continue;
+    seen.add(entry);
+    ids.push(entry);
+  }
+  return ids;
+}
+
+export function togglePinnedView(pinned: readonly string[], viewId: string): string[] {
+  return pinned.includes(viewId) ? pinned.filter((id) => id !== viewId) : [...pinned, viewId];
+}
+
+export interface MarkupsViewPickerOrder {
+  pinned: MarkupsView[];
+  others: MarkupsView[];
+}
+
+/** Splits the project's views into favourites first, then the rest. */
+export function orderViewsForPicker(
+  views: readonly MarkupsView[],
+  pinnedIds: readonly string[],
+): MarkupsViewPickerOrder {
+  const pinned = new Set(pinnedIds);
+  return {
+    pinned: views.filter((view) => pinned.has(view.id)),
+    others: views.filter((view) => !pinned.has(view.id)),
+  };
+}
+
+/** Every group key in a hierarchy, including collapsed children. */
+export function collectGroupKeys<T>(groups: readonly MarkupGroup<T>[]): string[] {
+  const keys: string[] = [];
+  const walk = (list: readonly MarkupGroup<T>[]): void => {
+    for (const group of list) {
+      keys.push(group.key);
+      if (group.children.length) walk(group.children);
+    }
+  };
+  walk(groups);
+  return keys;
+}

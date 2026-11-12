@@ -21,7 +21,10 @@
 - Relink by checksum searches only the project folder and its `<project>.drawings/` folder, never the whole file system. A drawing outside those folders must be picked manually.
 - The source-status poll hashes a PDF once per path, size and stored checksum. A change that keeps the same byte size between polls is only detected after the app restarts or the file is reloaded; reopening the project runs a full checksum check.
 - Reload and Relink refuse a drawing whose page count changed and point to **Replace source…** instead. The page mapping is never guessed.
-- Drag-and-drop page reorder is enabled for every page, but the UI does not yet guide a cross-document reorder with a separate confirmation step. The data model supports it. Reordering and inserting pages are one undo step each; deleting and duplicating pages remain explicit structural actions that cannot be undone.
+- Drag-and-drop page reorder is enabled for every page, but the UI does not yet guide a cross-document reorder with a separate confirmation step. The data model supports it. Reordering and inserting pages are one undo step each; deleting and duplicating pages remain explicit structural actions that cannot be undone. The Pages-panel multi-selection drives reorder and **Move page to position…**, but duplicate and delete still act on the current page (F-080).
+- Pages, Layers and Markups share focus, selection, filter and collapse conventions, but only Pages and Layers have a user-defined order. The Markups table is sorted and grouped, so it has no drag handle or drop line.
+- Layer drag and keyboard movement stay inside one kind group. A filtered layer list keeps the layers it does not show in their existing slots; the search narrows what can be picked, not the saved order.
+- Markups view favourites (the star button) are stored locally per project and machine, not in the project file. Saved views, their filters and their order travel with the `.gridscalr` file; favourites do not (F-081).
 - Form fields and embedded PDF annotations are not editable.
 - Measurements use the active page's scale; a manual scale or reference calibration can be applied to all pages with the same drawing scale.
 - Snapping targets markup endpoints, midpoints, intersections and I/O rail rows. Snapping directly to the PDF drawing's vector geometry is a separate future feature.

@@ -1728,3 +1728,72 @@ No entries yet.
   page menu and shortcuts read it. Phase 6 (#187) unifies the Page, Layer and
   Markups list interactions and is the natural place for that decision.
 - **Related:** #186, #187, ADR 0011, `src/features/pageReorder/controller.ts`.
+
+### F-080 — Bulk duplicate and delete still act on one page
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
+- **Severity:** P3
+- **Area:** pages panel / structural edits
+- **Status:** accepted — bulk structural page actions are deferred
+- **Evidence:** `PageMenuController.handleKey()` now moves the whole Pages-panel
+  selection through `moveTargets()`, but `Alt+Shift+D` and `Alt+Shift+Delete`
+  still pass the current `PageId` to `actions.duplicatePage` and
+  `actions.deletePage`. Both flows own a confirmation and a recovery checkpoint
+  and delete/duplicate are explicit, non-undoable structural boundaries
+  (ADR 0011).
+- **Problem:** A user who selected several cards can move them together with the
+  keyboard but cannot duplicate or delete them together. Mouse and keyboard are
+  aligned for reorder only.
+- **Impact:** No data is lost or mis-targeted: duplicate and delete name and act
+  on the current page. The gap is convenience, not correctness.
+- **Next step:** Add an explicit bulk duplicate/delete operation with one
+  confirmation, one checkpoint and per-page ID cascades, plus invariant tests for
+  items, layer page state, layer membership and the visible page. Do not fold it
+  into the existing single-page flows without those tests.
+- **Related:** #187, F-079, ADR 0011, `src/app/pageFlows.ts`,
+  `src/features/pageModel/pageList.ts`.
+
+### F-081 — Markups view favourites are local to one machine
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
+- **Severity:** P4
+- **Area:** Markups views / storage
+- **Status:** accepted — schema 25 stays unchanged in this phase
+- **Evidence:** `src/ui/markups/state.ts` stores pinned view IDs in
+  `localStorage` under `gridscalr.ui.markups.pinned-views.v1.<projectId>`.
+  `normalizePinnedViewIds()` drops IDs whose view no longer exists, and the
+  project file is never written when a view is pinned.
+- **Problem:** A favourite does not travel with a `.gridscalr` package or to
+  another machine, unlike the saved view itself, which is project data.
+- **Impact:** Pinning is a per-user convenience with no effect on the saved view,
+  its filters or the table order. Two machines that pin the same views show the
+  same list because the picker follows project order.
+- **Next step:** If favourites should travel, add an optional `favourite` flag to
+  `MarkupsView` in a schema-26 change with a deterministic migration and
+  round-trip tests. Until then, keep the local store and document the difference.
+- **Related:** #187, schema 25, `src/model/markups.ts`,
+  `docs/project-file.md`.
+
+### F-082 — Layer rows have no list or tree semantics
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
+- **Severity:** P3
+- **Area:** layers panel / accessibility
+- **Status:** accepted — focusable rows are an improvement, roles are still flat
+- **Evidence:** `src/ui/layerList.ts` renders `.layer-group` containers with
+  visible kind headings, `.layer-row` elements with `tabIndex = 0` and an item
+  list below each expanded layer. No `role="tree"`, `role="treeitem"`,
+  `aria-level` or `aria-setsize` is set, so assistive technology hears a sequence
+  of buttons and inputs rather than a hierarchy.
+- **Problem:** The keyboard and focus model now matches the other lists, but the
+  layer/item hierarchy is not announced as a hierarchy. The later layer-folder
+  work (#193) will deepen it.
+- **Impact:** All controls remain reachable and labelled, and disclosure buttons
+  expose `aria-expanded`. The gap is structural semantics, not operability.
+- **Next step:** Give the Layers panel a tree model (group → layer → item) with
+  roving focus when #193 adds nested layer folders, rather than adding partial
+  tree roles now and replacing them.
+- **Related:** #187, #193, `src/ui/layerList.ts`, `src/ui/layers/rows.ts`.

@@ -6,7 +6,9 @@ import {
   markupsColumnLabel,
   markupsSettingsEqual,
   normalizeMarkupsColumns,
+  normalizePinnedViewIds,
   settingsForView,
+  togglePinnedView,
   uniqueMarkupsViewName,
   viewFromSettings,
 } from "../../model/markups";
@@ -14,13 +16,24 @@ import type { MarkupsColumnId, MarkupsView, Project } from "../../model/types";
 import { store } from "../../state/store";
 import { showModal, textDialog } from "../dialogs";
 import { el } from "../dom";
+import { icon } from "../icons";
 import type { PanelActions } from "../panels";
-import { loadActiveViewId, markupsState, saveActiveViewId } from "./state";
+import {
+  loadActiveViewId,
+  loadPinnedViewIds,
+  markupsState,
+  saveActiveViewId,
+  savePinnedViewIds,
+} from "./state";
 
 export function syncProject(project: Project): void {
   if (project.id !== markupsState.currentProjectId) {
     markupsState.currentProjectId = project.id;
     markupsState.collapsedGroups.clear();
+    markupsState.pinnedViewIds = normalizePinnedViewIds(
+      loadPinnedViewIds(project.id),
+      project.markupsViews,
+    );
     const stored = loadActiveViewId(project.id);
     const view = stored ? project.markupsViews.find((entry) => entry.id === stored) : undefined;
     if (view) {
@@ -49,6 +62,12 @@ export function syncProject(project: Project): void {
     if (!markupsSettingsEqual(markupsState.settings, storedSettings))
       markupsState.settings = storedSettings;
   }
+  // A view removed from the project also loses its local favourite mark.
+  const pinned = normalizePinnedViewIds(markupsState.pinnedViewIds, project.markupsViews);
+  if (pinned.length !== markupsState.pinnedViewIds.length) {
+    markupsState.pinnedViewIds = pinned;
+    savePinnedViewIds(project.id, pinned);
+  }
   if (
     markupsState.settings.categoryId &&
     !project.categories.some((entry) => entry.id === markupsState.settings.categoryId)
@@ -68,7 +87,23 @@ export function markViewDirty(): void {
   updateViewControls();
 }
 
+export function activeViewPinned(): boolean {
+  return Boolean(
+    markupsState.activeViewId && markupsState.pinnedViewIds.includes(markupsState.activeViewId),
+  );
+}
+
+export function togglePinnedActiveView(actions: PanelActions): void {
+  const project = store.project;
+  const viewId = markupsState.activeViewId;
+  if (!project || !viewId) return;
+  markupsState.pinnedViewIds = togglePinnedView(markupsState.pinnedViewIds, viewId);
+  savePinnedViewIds(project.id, markupsState.pinnedViewIds);
+  actions.refresh();
+}
+
 export function updateViewControls(): void {
+  updatePinButton();
   if (markupsState.viewDirtyEl)
     markupsState.viewDirtyEl.hidden = !(markupsState.viewDirty && markupsState.activeViewId);
   if (markupsState.saveViewBtn) {
@@ -78,6 +113,19 @@ export function updateViewControls(): void {
       ? t("markups.saveCurrent")
       : t("markups.saveAsView");
   }
+}
+
+function updatePinButton(): void {
+  const button = markupsState.pinViewBtn;
+  if (!button) return;
+  const active = Boolean(markupsState.activeViewId);
+  const pinned = activeViewPinned();
+  button.disabled = !active;
+  button.setAttribute("aria-pressed", String(pinned));
+  button.classList.toggle("is-pinned", pinned);
+  button.innerHTML = icon(pinned ? "starFilled" : "star", 14);
+  button.title = pinned ? t("markups.unpinView") : t("markups.pinView");
+  button.setAttribute("aria-label", button.title);
 }
 
 export function applyView(viewId: string | null, actions: PanelActions): void {

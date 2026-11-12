@@ -7,6 +7,7 @@ import type { PanelActions } from "../../ui/panels";
 import type { PopoverItem } from "../../ui/popover";
 import { isBlankSheet, templateDocumentForPage } from "../schematics/model/sheetDocument";
 import { pageInsertTarget, pageMovePositions } from "./model";
+import { moveTargets } from "./targets";
 import { insertPageNear, movePageToPosition } from "./operations";
 import { insertPositionLabel, pageLocationDialog } from "./ui";
 
@@ -29,6 +30,7 @@ export function pageMenuItems(
   const record = project.pages[page - 1];
   if (!record) return [goTo];
   if (store.readOnly) return [goTo];
+  const targets = moveTargets(project, pageId);
 
   const sheetDocument = templateDocumentForPage(project, page);
   const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
@@ -126,10 +128,13 @@ export function pageMenuItems(
       : []),
     ...insertItems,
     {
-      label: t("page.moveToPosition"),
+      label:
+        targets.length > 1
+          ? t("page.moveSelectionToPosition", { count: targets.length })
+          : t("page.moveToPosition"),
       icon: "cursorMove",
-      disabled: pageMovePositions(project, pageId).length === 0,
-      action: () => void movePageToPosition(actions, pageId),
+      disabled: pageMovePositions(project, targets[0]).length === 0,
+      action: () => void movePageToPosition(actions, targets),
     },
     {
       label: t("page.duplicate"),

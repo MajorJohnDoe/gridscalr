@@ -10,10 +10,20 @@ import { el } from "../../ui/dom";
 /** Stable id so every page card can describe the reorder keys. */
 export const PAGE_REORDER_HINT_ID = "page-reorder-hint";
 
+/** Stable id for the multi-selection hint referenced by every card. */
+export const PAGE_SELECT_HINT_ID = "page-select-hint";
+
 /** Visually hidden hint referenced by `aria-describedby` on every card. */
 export function pageReorderHint(): HTMLElement {
   const hint = el("p", "page-reorder-hint", t("page.reorderHint"));
   hint.id = PAGE_REORDER_HINT_ID;
+  return hint;
+}
+
+/** Visually hidden hint that explains Ctrl and Shift selection. */
+export function pageSelectHint(): HTMLElement {
+  const hint = el("p", "page-reorder-hint", t("page.selectHint"));
+  hint.id = PAGE_SELECT_HINT_ID;
   return hint;
 }
 
