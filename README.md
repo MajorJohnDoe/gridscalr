@@ -47,7 +47,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Keep several sheets in one project. Every new drawing appends pages after the
   existing ones, so a set of plans shares one takeoff. Import pages from another
   project with a thumbnail picker, a preflight report and page-scoped layers,
-  keep optional source revision provenance, and undo the whole import as one
+  keep optional source revision provenance, inspect it in Properties or the
+  Markups table, and undo the whole import as one
   step. Reorder, insert, move, duplicate and delete pages from the page menu or
   the keyboard, with the target position named before an insert.
 - See the state of every sheet at a glance. Compact page badges flag a changed

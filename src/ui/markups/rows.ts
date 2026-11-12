@@ -1,5 +1,11 @@
 import { countTypeLabel } from "../../features/countTypes/model";
 import {
+  PROVENANCE_COLUMN,
+  markupsProvenanceCell,
+  type MarkupsDisplayColumn,
+  type ProvenanceSummary,
+} from "../../features/importProvenance";
+import {
   INSPECTION_STATUSES,
   inspectionStatusColor,
   inspectionStatusLabel,
@@ -254,11 +260,13 @@ function keyToRef(key: string): SelectionRef {
 
 export function markupRowElement(
   row: MarkupRow,
-  columns: MarkupsColumnId[],
+  columns: MarkupsDisplayColumn[],
   actions: PanelActions,
   refreshRows: () => void,
   /** Every rendered row in display order; the table itself is virtualised. */
   rowOrder: MarkupRow[] = [],
+  /** Valid provenance for the visible pages, built once per table render. */
+  provenance: ReadonlyMap<string, ProvenanceSummary> = new Map(),
 ): HTMLTableRowElement {
   const project = store.project!;
   const { item, layer } = row;
@@ -284,7 +292,7 @@ export function markupRowElement(
   tr.classList.toggle("is-deduction", deduction);
 
   const label = el("span", "markups-item-label", labelText);
-  const cells = new Map<MarkupsColumnId, HTMLTableCellElement>();
+  const cells = new Map<MarkupsDisplayColumn, HTMLTableCellElement>();
 
   const nameCell = el("td", "markups-name-cell");
   const nameWrap = el("div", "markups-name");
@@ -456,6 +464,8 @@ export function markupRowElement(
   });
   lockedCell.append(lock);
   cells.set("locked", lockedCell);
+
+  cells.set(PROVENANCE_COLUMN, markupsProvenanceCell(provenance.get(item.pageId) ?? null));
 
   for (const column of columns) {
     const cell = cells.get(column);

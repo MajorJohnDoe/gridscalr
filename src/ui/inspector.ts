@@ -9,6 +9,7 @@ import {
 } from "../model/layers";
 import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
+import { pageProvenanceSection } from "../features/importProvenance";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
@@ -61,6 +62,8 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   layerSection.classList.add("active-layer-section");
   const selection = selectionSection(project, actions);
   selection.classList.add("selection-section");
+  const currentPageId = pageIdAt(project, store.ui.page);
+  const provenance = currentPageId ? pageProvenanceSection(project, currentPageId) : null;
   if (store.readOnly) {
     refs.inspector.append(viewOnlyPanelNote());
     disableEditingControls(layerSection, true);
@@ -73,6 +76,9 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   } else {
     refs.inspector.append(layerSection, selection);
   }
+  // Imported pages carry a read-only source record; normal pages render no
+  // section and no empty heading.
+  if (provenance) refs.inspector.append(provenance);
 }
 
 function activeLayerSection(

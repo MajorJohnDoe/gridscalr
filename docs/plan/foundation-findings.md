@@ -378,19 +378,21 @@ project contents.
 - **Phase:** 5 — integrity and project doctor
 - **Severity:** P2
 - **Area:** import provenance
-- **Status:** deferred
-- **Evidence:** `PageRecord.provenance` is written by
-  `prepareProjectImport()` and documented in `docs/project-file.md`, but no panel
-  or report displays it.
-- **Problem:** A user cannot see which source project revision a page came from
-  without inspecting the JSON. The data is useful for support and later merge
-  decisions but currently invisible.
-- **Impact:** Provenance is still preserved and validated; only its presentation
-  is missing.
-- **Next step:** Add a read-only source line to Properties or the Markups detail
-  for imported pages, and include it in diagnostics only when it contains no
-  paths or personal data.
-- **Related:** robustness §7.7, schema 25 optional fields.
+- **Status:** fixed — 0.25.0 phase 7 ([#188](https://github.com/MajorJohnDoe/gridscalr/issues/188))
+- **Evidence:** `PageRecord.provenance` was written by `prepareProjectImport()`
+  and documented in `docs/project-file.md`, but no panel or report displayed it.
+- **Problem:** A user could not see which source project revision a page came
+  from without inspecting the JSON. The data is useful for support and later
+  merge decisions but was invisible.
+- **Impact:** Provenance was preserved and validated; only its presentation was
+  missing.
+- **Resolution:** Properties shows a read-only **Imported page** section for the
+  current page, and the Markups table adds a compact **Imported** column only
+  when a visible row has provenance. Both render shortened identifiers, the
+  short revision hash, the revision time, the source page and the import time.
+  Malformed records are omitted, and diagnostics stay path-free.
+- **Related:** robustness §7.7, schema 25 optional fields,
+  `src/features/importProvenance/`.
 
 ### F-022 — Import revision hash is computed from decoded text
 
@@ -1797,3 +1799,26 @@ No entries yet.
   roving focus when #193 adds nested layer folders, rather than adding partial
   tree roles now and replacing them.
 - **Related:** #187, #193, `src/ui/layerList.ts`, `src/ui/layers/rows.ts`.
+
+### F-083 — Import provenance stores the source project ID, not its name
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 7 — import provenance in Properties and Markups
+- **Severity:** P3
+- **Area:** import provenance
+- **Status:** deferred — schema 25 stays unchanged in this phase
+- **Evidence:** `PageProvenance.sourceProjectId` is written from `source.id` in
+  `src/app/projectImportFlows.ts` (`project_<uuid>`). The source project's
+  `Project.name` is shown in the import picker and preflight but is not stored
+  with the page.
+- **Problem:** Properties and Markups can show a shortened stable identifier but
+  not the human-readable source project name that the phase issue asked for.
+- **Impact:** The revision, source page and import time remain unambiguous, and
+  the identifier is stable across renames. A user must compare the ID with the
+  source file, not the name.
+- **Next step:** Decide whether to add an optional `sourceProjectName` to
+  `PageRecord.provenance` (an additive field with normalization and
+  round-trip tests) or wait for the schema-26 phase ([#193](https://github.com/MajorJohnDoe/gridscalr/issues/193)).
+  Do not infer a name from the document name: it is the drawing, not the project.
+- **Related:** #188, `src/features/importProvenance/`, `docs/project-file.md`,
+  `docs/limitations.md`.

@@ -419,6 +419,7 @@ src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and s
 src/features/pageStatus/ pure page badges and status filters derived from project and source state
 src/features/pageMenu/ page card menu, insert and move targets, page keyboard commands
 src/features/listInteraction/ shared list selection, drag controller, drop line, keyboard move, filter and collapse rules
+src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision and path-free diagnostics

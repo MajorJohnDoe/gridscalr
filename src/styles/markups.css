@@ -426,6 +426,19 @@
   font-variant-numeric: tabular-nums;
 }
 
+.markups-provenance {
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.markups-provenance-head {
+  color: var(--muted);
+  cursor: help;
+}
+
 .markups-flag-cell {
   text-align: center;
 }

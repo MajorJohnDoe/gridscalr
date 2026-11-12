@@ -39,6 +39,7 @@ src/
   features/projectImport/merge.ts category, count-type, line-type, asset and document merge helpers
   features/projectImport/ui.ts graphical source-page picker with lazy previews
   features/listInteraction/ shared list selection, drag, drop line, keyboard move, filter and collapse rules
+  features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
   features/pageReorder/ page-card drag, multi-selection, document drop plan and keyboard reorder
   features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
   features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners, shared drop line and rejection messages
