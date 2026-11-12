@@ -111,7 +111,11 @@ the short term and much more expensive later.
 - `model` must not import `ui`, `app`, `canvas` or Tauri. `ui` must not contain
   business rules. `io` must not contain UI or model decisions.
 - New Rust commands live in a separate Rust module instead of growing
-  `src-tauri/src/commands.rs`.
+  `src-tauri/src/commands.rs`. `npm run check:file-budgets` also scans
+  `src-tauri/src`: new Rust files target 300 lines and must not exceed 400, and
+  an existing oversized module stays only as a reviewed `{ "max", "reason" }`
+  exception in `file-budgets.json`. `--update` refuses a new oversized Rust
+  file, so a command cannot be parked in a large module.
 - Each foundation phase issue records its module map before production code is
   added. A new responsibility gets a new file, not a larger existing one.
 - Fix an in-scope problem immediately. Record a larger or out-of-scope finding in
@@ -621,7 +625,8 @@ scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
 scripts/capture-docs.mjs   Playwright screenshot and theme-showcase capture into docs/screenshots
 scripts/check-docs.mjs     documentation link, image, anchor and schema checks
-scripts/check-file-budgets.mjs blocking line budget for source files
+scripts/check-file-budgets.mjs blocking line budget for frontend and Rust source files
+scripts/file-budget-rules.mjs pure budget scope, exception and --update rules
 scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
 scripts/check-dependencies.mjs dependency and advisory gate runner
@@ -653,7 +658,7 @@ When adding a language, add `src/i18n/locales/<id>.json` and one entry in `src/i
 - The gate does not scan Rust (`src-tauri`), the `index.html` boot fallback, or literal branches inside ternaries such as `cond ? "A" : "B"`; review those manually.
 - A language change must relabel the open interface without a restart. Add new static chrome to `relabelShell()`/`relabelMenuBar()` or render it from `t()` on every update, and keep `document.documentElement.lang` in sync.
 
-New logic goes in a module. `App.ts`, `CanvasView.ts` and `itemRenderer.ts` are wiring and dispatch points; `npm run check:file-budgets` blocks growth and is ratcheted down with every extraction. See ADR 0008 and `docs/plan/0.20-refactor.md`.
+New logic goes in a module. `App.ts`, `CanvasView.ts` and `itemRenderer.ts` are wiring and dispatch points; `npm run check:file-budgets` blocks growth in the frontend and the Rust shell and is ratcheted down with every extraction. See ADR 0008 and `docs/plan/0.20-refactor.md`.
 
 When adding a project field, update `src/model/types.ts`, the normalizer in `src/io/projectFile/`, serialization/migration tests, and `README.md`.
 
