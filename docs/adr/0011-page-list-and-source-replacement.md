@@ -78,6 +78,30 @@ Rules:
 10. Append-only remains the default import behaviour, but it is no longer a
     model law.
 
+### Structural history
+
+Page order and page membership carry different risk, so they get different
+history rules.
+
+1. **Reorder and insert are undoable.** They move or add page records that point
+   at existing source pages, keep every `PageId` and every page's state, and are
+   exactly one undo step per drag or insert. Undo restores the exact record
+   order; redo restores the changed order. A drop that changes nothing adds no
+   history entry.
+2. **Delete, duplicate, document import and source replacement stay explicit.**
+   They add or remove items, documents or source references. They clear the undo
+   and redo stacks and write a recovery checkpoint first, so an undo can never
+   silently recreate a removed page or restore a previous source path.
+3. **Undoability does not replace the checkpoint.** Undo is session state; a
+   checkpoint survives a crash. A reorder or insert writes its checkpoint and
+   still adds its one history step.
+4. **The visible page follows its `PageId`.** After undo or redo the canvas stays
+   on the same page while that page exists; when it is gone, the display
+   position is clamped. Display numbers are never stored references.
+5. **Duplicate stays explicit in 0.25.0.** It copies items, scale and name and
+   can clone a template sheet document, so making it undoable is a separate
+   decision with its own invariant tests.
+
 ### Source replacement
 
 A new source document may have the same pages in a different order, an added
@@ -133,6 +157,8 @@ previous schema.
 - Migration and round-trip tests for schema 23 → 24.
 - Stateful tests over insert, delete, duplicate, reorder, source replacement and
   undo/redo.
+- One reorder, one insert and one bulk item action are each one undo step, with
+  page IDs and page state unchanged after undo and redo.
 - Invariant checks for every item `pageId`, layer `homePageId` and page-state
   key.
 - Empty-project tests for save, load, canvas, reports and import.

@@ -406,7 +406,13 @@ describe("multi-page move through the store", () => {
     const measure = current.layers.find((layer) => layer.kind === "measure")!;
     expect(measure.pageState).toEqual({ page_1: { visible: false }, page_3: { locked: true } });
     expect(current.pages[4].state).toMatchObject({ name: "Third sheet", scaleLocked: true });
-    expect(store.canUndo).toBe(false);
+    expect(store.canUndo).toBe(true);
+
+    store.undo();
+    expect(ids(store.project!)).toEqual(["page_1", "page_2", "page_3", "page_4", "page_5"]);
+    expect(pageNumber(store.project!, "page_2")).toBe(2);
+    store.redo();
+    expect(ids(store.project!)).toEqual(["page_1", "page_4", "page_5", "page_2", "page_3"]);
   });
 
   it("writes exactly one structural checkpoint per drop", async () => {

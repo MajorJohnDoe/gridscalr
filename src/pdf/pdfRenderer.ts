@@ -5,7 +5,7 @@ import {
   type PDFPageProxy,
 } from "pdfjs-dist";
 import workerUrl from "pdfjs-dist/build/pdf.worker.min.mjs?url";
-import type { DocumentPageOrderEntry } from "../model/pages";
+import { pageOrderSignature, type DocumentPageOrderEntry } from "../model/pages";
 import type { PageSize, Point } from "../model/types";
 import { contentBoundsFromPixels } from "./thumbnails";
 import { t } from "../i18n";
@@ -107,6 +107,8 @@ export class PdfRenderer {
   private pageMaps: number[][];
   /** Explicit project page order. When set, display pages follow this list. */
   private pageOrder: DocumentPageOrderEntry[] | null;
+  /** Signature of the applied order, compared before an undo re-applies it. */
+  private orderKey: string;
 
   constructor(
     public readonly documents: PDFDocumentProxy[],
@@ -114,6 +116,7 @@ export class PdfRenderer {
     pageOrder?: DocumentPageOrderEntry[] | null,
   ) {
     this.pageOrder = pageOrder ?? null;
+    this.orderKey = pageOrderSignature(this.pageOrder);
     this.pageMaps = documents.map((document, index) => {
       const requested = pageMaps?.[index];
       if (!requested) return Array.from({ length: document.numPages }, (_, page) => page + 1);
@@ -149,6 +152,12 @@ export class PdfRenderer {
     for (const page of new Set(this.pages.values())) page.cleanup();
     this.pages.clear();
     this.pageOrder = pageOrder;
+    this.orderKey = pageOrderSignature(pageOrder);
+  }
+
+  /** Signature of the applied display order. Undo uses it to skip a no-op. */
+  get appliedPageOrder(): string {
+    return this.orderKey;
   }
 
   /** Replaces the included source pages after a document change. */

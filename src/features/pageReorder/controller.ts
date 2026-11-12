@@ -22,7 +22,7 @@ import { DropIndicator, LiveRegion } from "./ui";
  * Page drag and keyboard reorder state for the Pages panel. The controller owns
  * the selection, the drop plan and the drop indicator; it never renders cards
  * and it never writes the project itself. A drop calls one host action so the
- * move stays one structural checkpoint.
+ * move stays one checkpoint and one undo step.
  */
 
 const KEY_COMMANDS: Record<string, PageMoveCommand> = {
@@ -33,7 +33,7 @@ const KEY_COMMANDS: Record<string, PageMoveCommand> = {
 };
 
 export interface PageReorderActions {
-  /** Applies one structural checkpoint and moves the pages. */
+  /** Applies one checkpoint and moves the pages as one undo step. */
   reorder: (pageIds: readonly PageId[], insertionIndex: number) => void;
   goToPage: (page: number) => void;
 }

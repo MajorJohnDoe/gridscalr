@@ -404,8 +404,10 @@ export class Store {
   }
 
   /**
-   * Clears undo and redo at a structural boundary. A snapshot from before the
-   * boundary cannot describe the new page or source structure.
+   * Clears undo and redo at an explicit structural boundary such as a page
+   * delete, a duplicate, a document import or a source-storage change. A
+   * snapshot from before the boundary cannot describe the new page or source
+   * structure. Page reorder and page insert are undoable and never call this.
    */
   clearHistory(): void {
     this.undoStack = [];
@@ -414,9 +416,10 @@ export class Store {
   }
 
   /**
-   * Deletes one page and remaps measurements on later pages. Structural like
-   * importing a document: the source files are untouched and the operation is
-   * not added to the undo stack.
+   * Deletes one page together with its items, its layer page state and any
+   * layer that only pointed at it. Deleting stays an explicit, checkpointed
+   * boundary rather than an undo step, so a history restore can never silently
+   * bring back a page the user removed.
    */
   deletePage(pageId: PageId): DeletePageSummary | null {
     if (!this.project || this.readOnly) return null;
@@ -435,11 +438,19 @@ export class Store {
     return result;
   }
 
-  /** Structural page reorder. Display numbers change; no stored reference moves. */
-  reorderPage(pageId: PageId, targetIndex: number): boolean {
+  /**
+   * Applies one undoable page-list change. The before-snapshot is only pushed
+   * when the change actually happened, so a drop that changes nothing adds no
+   * empty undo step. Deleting, duplicating or replacing pages is a different,
+   * explicit boundary that clears history instead.
+   */
+  private mutatePageList(change: (project: Project) => boolean): boolean {
     if (!this.project || this.readOnly) return false;
-    if (!movePageRecord(this.project, pageId, targetIndex)) return false;
-    this.clearHistory();
+    const before = this.snapshot();
+    if (!before) return false;
+    if (!change(this.project)) return false;
+    pushHistory(this.undoStack, before);
+    this.redoStack = [];
     this.dirty = true;
     this.revision += 1;
     this.emit("project");
@@ -447,31 +458,41 @@ export class Store {
   }
 
   /**
-   * Structural multi-page reorder. The whole selection moves as one block to
-   * `insertionIndex`; one call is one structural action and one undo boundary.
+   * Page reorder. Display numbers change; every `PageId`, item and page-state
+   * key stays attached to its page. Rearranging existing records is reversible
+   * from a snapshot, so one drag is exactly one undo step.
    */
-  reorderPages(pageIds: readonly PageId[], insertionIndex: number): boolean {
-    if (!this.project || this.readOnly) return false;
-    if (!movePagesRecord(this.project, pageIds, insertionIndex)) return false;
-    this.clearHistory();
-    this.dirty = true;
-    this.revision += 1;
-    this.emit("project");
-    return true;
+  reorderPage(pageId: PageId, targetIndex: number): boolean {
+    return this.mutatePageList((project) => movePageRecord(project, pageId, targetIndex));
   }
 
-  /** Inserts a new page record for an existing document page at an index. */
+  /**
+   * Multi-page reorder. The whole selection moves as one block to
+   * `insertionIndex`; one call is one undo step, regardless of page count.
+   */
+  reorderPages(pageIds: readonly PageId[], insertionIndex: number): boolean {
+    return this.mutatePageList((project) => movePagesRecord(project, pageIds, insertionIndex));
+  }
+
+  /**
+   * Inserts a new page record for an existing document page at an index. The
+   * record keeps its own `PageId` and page state, so undo removes exactly that
+   * page and redo restores it with the same identity.
+   */
   insertPageRecord(pageId: PageId, index: number): PageId | null {
     if (!this.project || this.readOnly) return null;
     const source = pageRecordById(this.project, pageId);
     if (!source) return null;
+    const before = this.snapshot();
+    if (!before) return null;
     const record = insertPageRecord(this.project, {
       documentId: source.documentId,
       localPage: source.localPage,
       index,
     });
     if (!record) return null;
-    this.clearHistory();
+    pushHistory(this.undoStack, before);
+    this.redoStack = [];
     this.ui.page = pageNumber(this.project, record.id);
     this.ui.selection = [];
     this.ui.hover = null;
@@ -920,9 +941,10 @@ export class Store {
     if (this.readOnly) return;
     const previous = this.undoStack.pop();
     if (!previous || !this.project) return;
+    const visiblePageId = currentPageId(this.project, this.ui.page);
     pushHistory(this.redoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(previous);
-    this.afterHistoryRestore();
+    this.afterHistoryRestore(visiblePageId);
     this.emit("undo");
   }
 
@@ -930,17 +952,28 @@ export class Store {
     if (this.readOnly) return;
     const next = this.redoStack.pop();
     if (!next || !this.project) return;
+    const visiblePageId = currentPageId(this.project, this.ui.page);
     pushHistory(this.undoStack, this.snapshot() ?? JSON.stringify(this.project));
     this.project = this.restoreSnapshot(next);
-    this.afterHistoryRestore();
+    this.afterHistoryRestore(visiblePageId);
     this.emit("undo");
   }
 
-  private afterHistoryRestore(): void {
+  /**
+   * Restores view state after undo or redo. The visible page follows its
+   * `PageId` while that page still exists, so undoing a reorder or a page
+   * insert keeps the same drawing on screen. When the page is gone, the display
+   * position is clamped instead. Display numbers are never stored references.
+   */
+  private afterHistoryRestore(visiblePageId: PageId | null): void {
     if (!this.project) return;
     this.revision += 1;
     this.dirty = true;
-    this.ui.page = Math.max(1, Math.min(Math.max(1, this.project.pages.length), this.ui.page));
+    const followed = visiblePageId ? pageNumber(this.project, visiblePageId) : 0;
+    this.ui.page =
+      followed > 0
+        ? followed
+        : Math.max(1, Math.min(Math.max(1, this.project.pages.length), this.ui.page));
     this.ui.selection = this.ui.selection.filter((ref) => {
       const found = findItem(this.project!, ref.itemId);
       return Boolean(found && found.layer.id === ref.layerId);

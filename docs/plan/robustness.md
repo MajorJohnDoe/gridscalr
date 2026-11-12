@@ -365,6 +365,27 @@ A project with zero pages is valid for schema 24 and later:
 Append remains the default for import because it gives stable, predictable page
 numbers. It is no longer a model law.
 
+#### Structural history
+
+Page order and page membership carry different risk, so they get different
+history rules (implemented in 0.25.0, see ADR 0011):
+
+- **Reorder and insert are one undo step each.** They rearrange or add records
+  that point at existing source pages. Undo restores the exact `PageId` order and
+  every page's `state`; redo reapplies the change. A drop that changes nothing
+  writes no history entry.
+- **Delete, duplicate, document import and source replacement stay explicit
+  boundaries.** They clear the undo and redo stacks and write a recovery
+  checkpoint before they run.
+- **Undoability does not replace the checkpoint.** Undo is session state; a
+  checkpoint survives a crash. Reorder and insert still write their checkpoint.
+- **The visible page follows its `PageId`.** Undo and redo keep the same drawing
+  on screen while that page exists and clamp the display position when it does
+  not. Display numbers are never references.
+- **Renderer resync is part of the step.** After undo or redo the renderer's
+  display order is reapplied only when the order signature changed, so the
+  canvas, thumbnails and page sizes follow the restored page list.
+
 #### Replace a source document
 
 A new revision PDF can swap pages, add a page or omit one. The project must keep

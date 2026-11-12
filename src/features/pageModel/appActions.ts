@@ -34,7 +34,7 @@ export async function createEmptyProject(host: PageActionHost): Promise<void> {
   toast(t("app.blankProjectOpened"), "success");
 }
 
-export async function reorderPage(
+export async function reorderProjectPage(
   host: PageActionHost,
   pageId: PageId,
   targetIndex: number,
@@ -51,8 +51,8 @@ export async function reorderPage(
 
 /**
  * Moves the current page selection as one block. A drop is one structural
- * action, so it writes exactly one recovery checkpoint regardless of how many
- * pages it moves.
+ * action, so it writes exactly one recovery checkpoint and one undo step
+ * regardless of how many pages it moves.
  */
 export async function reorderPages(
   host: PageActionHost,
@@ -71,7 +71,7 @@ export async function reorderPages(
   return true;
 }
 
-export async function insertPage(
+export async function insertProjectPage(
   host: PageActionHost,
   pageId: PageId,
   index: number,

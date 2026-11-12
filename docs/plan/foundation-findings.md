@@ -1643,3 +1643,36 @@ No entries yet.
   provide an explicit “Remove imported pages and copy” action, when source
   storage and history are revisited in phase 11 (#191).
 - **Related:** ADR 0012, phase 2 #183, phase 11 #191, `docs/limitations.md`.
+
+### F-077 — An aliased re-export can resolve to the wrong function under Vitest
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 3 — undoable page reorder and insert
+- **Severity:** P3
+- **Area:** feature module surface / test tooling
+- **Status:** accepted — the phase 3 collision is removed, the general rule is not enforced yet
+- **Evidence:** `src/features/pageModel/index.ts` exported `insertPage` from
+  `./pageList` and `insertPage as insertProjectPage` from `./appActions`. In a
+  Vitest test, a named import of `insertPage as insertProjectPage` from
+  `../src/features/pageModel` resolved to the **pageList** function (arity 2),
+  while `import * as pageModel` exposed the correct `appActions` function
+  (arity 3) and a direct import from `./appActions` was also correct. The esbuild
+  transform of `index.ts` is correct (`insertPage2 as insertProjectPage`), so the
+  production build is not implicated; the module runner is.
+- **Problem:** A test that imports an aliased re-export whose original name is
+  also exported from another module in the same index can silently exercise a
+  different function with a compatible-looking signature. The first run of
+  `tests/pageHistory.test.ts` called the model function with an app-action host
+  and failed with a confusing `undefined` project.
+- **Impact:** A false green or a misleading red is possible for any feature index
+  that aliases a same-named export. No user-facing effect was found: the Pages
+  context-menu insert action resolves correctly in the esbuild output.
+- **Fix in scope:** `appActions.ts` now exports `insertProjectPage` and
+  `reorderProjectPage` directly, so the index re-exports them without an alias.
+  `tests/pageHistory.test.ts` calls the public name.
+- **Next step:** audit the other `src/features/*/index.ts` alias re-exports
+  (`reorderPages as reorderProjectPages`, `openRecoveryCenter as
+  showRecoveryCenter`) and either rename the source functions or add a
+  module-surface test that asserts each public alias is the expected function.
+  Triage with the module-boundary gate work in #194/#195.
+- **Related:** ADR 0013, `scripts/check-module-boundaries.mjs`, #184.

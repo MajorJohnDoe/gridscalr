@@ -41,6 +41,9 @@ If a plan and the code disagree, stop and surface the conflict rather than silen
 - Locked items stay visible and exportable but cannot be moved, edited, or deleted.
 - Measurement layers and drawing layers stay separate. Layers are `measure` or `draw`.
 - One bulk action must be one undo step.
+- Page reorder and page insert must each be one undo step, preserving every
+  `PageId` and page state. Page delete, page duplicate, document import and
+  source replacement stay explicit, non-undoable and checkpointed.
 - Project files must remain backward compatible. Every schema change needs migration tests for the current and previous version.
 - Pages have stable IDs from schema 24 onward. `Project.pages` is the ordered page list; page numbers are display data. Every new persistent page reference uses `PageId`.
 - Imports append by default. Insert, reorder, duplicate, delete and source replacement are explicit, tested operations that cascade by page ID.
