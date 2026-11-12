@@ -5,6 +5,7 @@ import { withTestPageIds } from "./helpers/pages";
 import {
   dragSet,
   documentSegments,
+  fullListInsertionIndex,
   insertionIndexAt,
   keyboardInsertion,
   moveOutcome,
@@ -153,6 +154,21 @@ describe("page order math", () => {
     const keyboardOrder = pageListAfterMove(pages, selected, keyboardIndex!).map((page) => page.id);
     expect(keyboardOrder).toEqual(mouseOrder);
     expect(keyboardOrder).toEqual(["a", "d", "b", "c"]);
+  });
+
+  it("maps a rendered insertion index back to the full page list", () => {
+    // Without a filter the rendered order is the project order.
+    expect(fullListInsertionIndex([1, 2, 3, 4], 0, 4)).toBe(0);
+    expect(fullListInsertionIndex([1, 2, 3, 4], 2, 4)).toBe(2);
+    expect(fullListInsertionIndex([1, 2, 3, 4], 4, 4)).toBe(4);
+
+    // A status filter renders a subset: the drop lands next to the visible card.
+    expect(fullListInsertionIndex([2, 5, 9], 0, 10)).toBe(1);
+    expect(fullListInsertionIndex([2, 5, 9], 1, 10)).toBe(4);
+    expect(fullListInsertionIndex([2, 5, 9], 2, 10)).toBe(8);
+    // Dropping below the last visible card appends to the project.
+    expect(fullListInsertionIndex([2, 5, 9], 3, 10)).toBe(10);
+    expect(fullListInsertionIndex([], 0, 7)).toBe(7);
   });
 });
 

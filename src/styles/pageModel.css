@@ -59,8 +59,87 @@
 }
 
 .page-badge.is-superseded {
-  background: color-mix(in srgb, var(--accent-warning) 20%, transparent);
+  background: color-mix(in srgb, var(--status-warning) 22%, transparent);
   color: var(--text-primary);
+}
+
+/* ---------- Page status badges and filters ---------- */
+
+.page-badges {
+  flex-wrap: wrap;
+}
+
+.page-badge.is-source-changed,
+.page-badge.is-ocr-stale {
+  background: color-mix(in srgb, var(--status-warning) 22%, transparent);
+  color: var(--text-primary);
+}
+
+.page-badge.is-ocr-missing {
+  background: color-mix(in srgb, var(--status-warning) 13%, transparent);
+  color: var(--text-primary);
+}
+
+.page-badge.is-scale-locked {
+  background: color-mix(in srgb, var(--jade-bright) 18%, transparent);
+  color: var(--text-primary);
+}
+
+.page-status-filters {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 7px 8px;
+  border-bottom: 1px solid var(--border-soft);
+  background: var(--panel);
+}
+
+.page-status-filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 2px 7px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  background: var(--bg-deep);
+  color: var(--muted);
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.page-status-filter:hover {
+  border-color: var(--border);
+  color: var(--text);
+}
+
+.page-status-filter.is-active {
+  border-color: var(--jade);
+  background: var(--jade-dim);
+  color: var(--text-primary);
+}
+
+.page-status-filter:focus-visible {
+  outline: 2px solid var(--jade-bright);
+  outline-offset: 1px;
+}
+
+.page-status-filter-count {
+  font-variant-numeric: tabular-nums;
+  opacity: 0.75;
+}
+
+.page-status-filter-note {
+  flex: 1 0 100%;
+  margin: 2px 0 0;
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+.page-status-empty {
+  padding: 12px 8px;
 }
 
 .page-card.is-dragging {
@@ -68,8 +147,8 @@
 }
 
 .page-card.is-selected {
-  border-color: var(--accent-primary);
-  background: color-mix(in srgb, var(--accent-primary) 14%, var(--bg-deep));
+  border-color: var(--jade);
+  background: color-mix(in srgb, var(--jade) 14%, var(--bg-deep));
 }
 
 .page-card.is-selected::before {
@@ -80,7 +159,7 @@
   bottom: 6px;
   width: 3px;
   border-radius: 2px;
-  background: var(--accent-primary);
+  background: var(--jade);
 }
 
 /* ---------- Page drag, document runs and keyboard hint ---------- */
@@ -126,7 +205,7 @@
   right: 7px;
   height: 3px;
   border-radius: 2px;
-  background: var(--accent-primary);
+  background: var(--jade);
   box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
   pointer-events: none;
   z-index: 3;
@@ -137,7 +216,7 @@
 }
 
 .page-drop-line.is-cross-document {
-  background: var(--accent-warning);
+  background: var(--status-warning);
 }
 
 .page-drop-label {
@@ -146,7 +225,7 @@
   bottom: 6px;
   padding: 2px 7px;
   border-radius: 8px;
-  background: var(--accent-warning);
+  background: var(--status-warning);
   color: #10161a;
   font-size: 11px;
   white-space: nowrap;

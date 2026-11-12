@@ -10,6 +10,13 @@ import {
   PAGE_REORDER_KEYSHORTCUTS,
   pageReorderHint,
 } from "../features/pageReorder";
+import {
+  pageStatus,
+  pageStatusAriaText,
+  pageStatusBadgesNode,
+  pageStatusEmptyNote,
+  pageStatusFilterBar,
+} from "../features/pageStatus";
 import { el } from "./dom";
 import { showModal, textDialog } from "./dialogs";
 import { showPopoverAt } from "./popover";
@@ -193,29 +200,57 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     renderEmptyPages(refs, actions);
     return;
   }
+  const rows = pageStatus.rows(project);
+  const filter = pageStatus.activeFilter;
+  refs.dockBody.querySelector(".page-status-filters")?.remove();
+  const filterBar = pageStatusFilterBar({
+    active: filter,
+    counts: pageStatus.counts(rows),
+    onSelect: (next) => {
+      if (pageStatus.setFilter(next)) actions.refresh();
+    },
+  });
+  refs.dockBody.append(filterBar);
+  if (pageStatus.takeFocusRequest()) {
+    filterBar
+      .querySelector<HTMLButtonElement>(`.page-status-filter[data-filter="${filter}"]`)
+      ?.focus({ preventScroll: true });
+  }
+  const visible = pageStatus.visibleFrom(rows);
+  if (!visible.length) {
+    pageReorder.detach();
+    refs.dockBody.append(pageStatusEmptyNote());
+    return;
+  }
   const list = el("div", "page-list");
-  const total = project.pages.length;
-  const max = Math.min(total, 400);
+  const max = Math.min(visible.length, 400);
+  // Reordering maps a drop position in the rendered list, so it stays off while
+  // a filter hides pages. Viewing, renaming and page actions still work.
+  const reorderEnabled = !store.readOnly && filter === "all";
+  const shown = visible.slice(0, max);
   const runs = new Map<number, { documentId: string | null; count: number }>();
   if (project.documents.length > 1) {
-    for (const segment of documentSegments(project.pages)) runs.set(segment.start, segment);
+    const entries = shown.map((row) => ({ id: row.pageId, documentId: row.documentId }));
+    for (const segment of documentSegments(entries)) runs.set(segment.start, segment);
   }
   const pendingThumbnails = new Map<Element, PendingThumbnail>();
-  for (let page = 1; page <= max; page++) {
+  for (let index = 0; index < shown.length; index++) {
+    const row = shown[index];
+    const page = row.page;
     const record = project.pages[page - 1];
     const pageId = record.id;
-    const run = runs.get(page - 1);
+    const run = runs.get(index);
     if (run) {
       const document = project.documents.find((entry) => entry.id === run.documentId);
       list.append(documentRunHeader(document?.name ?? "", run.count));
     }
     const card = el("button", "page-card");
     card.type = "button";
-    card.draggable = !store.readOnly;
+    card.draggable = reorderEnabled;
     card.dataset.page = String(page);
     card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
-    if (!store.readOnly) {
+    if (reorderEnabled) {
       card.setAttribute("aria-keyshortcuts", PAGE_REORDER_KEYSHORTCUTS);
       card.setAttribute("aria-describedby", PAGE_REORDER_HINT_ID);
     }
@@ -235,6 +270,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     if (cached) applyThumbnail({ page, image, placeholder: thumbNumber }, cached);
     const info = el("div", "page-info");
     const sheetDocument = templateDocumentForPage(project, page);
+    const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
     const pageName = pageDisplayName(project, pageId);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
     title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
@@ -255,32 +291,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       : t("page.loadingSize");
     const sizeNode = el("div", "page-size", pageName ? `p.${page} · ${sizeText}` : sizeText);
     info.append(sizeNode);
-    const badges = el("div", "page-badges");
-    if (record.documentId && sheetDocument) {
-      badges.append(
-        el(
-          "span",
-          "page-badge",
-          t(isBlankSheet(sheetDocument) ? "page.blankBadge" : "page.sheetBadge"),
-        ),
-      );
-    }
-    if (record.state.calibration) {
-      badges.append(el("span", "page-badge is-calibrated", t("page.calibrated")));
-    }
-    if (record.state.scaleLocked) {
-      badges.append(el("span", "page-badge", t("page.scaleLocked")));
-    }
-    const sourceDocument = project.documents.find((entry) => entry.id === record.documentId);
-    if (sourceDocument?.superseded) {
-      badges.append(el("span", "page-badge is-superseded", t("page.supersededBadge")));
-    }
-    const itemCount = project.layers.reduce(
-      (count, layer) => count + layer.items.filter((item) => item.pageId === pageId).length,
-      0,
-    );
-    if (itemCount)
-      badges.append(el("span", "page-badge", t("page.itemCount", { count: itemCount })));
+    const badges = pageStatusBadgesNode(row.badges);
     if (badges.childElementCount) info.append(badges);
     card.append(thumb, info);
     pendingThumbnails.set(card, { page, image, placeholder: thumbNumber });
@@ -294,14 +305,19 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         size: size
           ? t("page.sizeAria", { width: Math.round(size.width), height: Math.round(size.height) })
           : "",
+        status: pageStatusAriaText(row.badges),
       }),
     );
     card.addEventListener("click", (event) => {
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
-    card.addEventListener("dragstart", (event) => pageReorder.handleDragStart(event, pageId, card));
-    card.addEventListener("dragend", () => pageReorder.handleDragEnd());
-    card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
+    if (reorderEnabled) {
+      card.addEventListener("dragstart", (event) =>
+        pageReorder.handleDragStart(event, pageId, card),
+      );
+      card.addEventListener("dragend", () => pageReorder.handleDragEnd());
+      card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
+    }
     card.addEventListener("contextmenu", (event) => {
       event.preventDefault();
       const goToItem = {
@@ -449,8 +465,12 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   refs.dockBody.append(list);
   pageReorder.bindList(list, refs.dockBody);
   pageReorder.afterRender();
-  if (total > max) {
-    const note = el("div", "empty-note small", t("page.showingFirst", { shown: max, total }));
+  if (visible.length > max) {
+    const note = el(
+      "div",
+      "empty-note small",
+      t("page.showingFirst", { shown: max, total: visible.length }),
+    );
     refs.dockBody.append(note);
   }
   observeThumbnails(refs, actions, pendingThumbnails);

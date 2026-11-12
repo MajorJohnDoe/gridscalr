@@ -204,6 +204,25 @@ export function insertionIndexAt(spans: readonly RowSpan[], clientY: number): nu
   return spans.length;
 }
 
+/**
+ * Maps an insertion index in the rendered card order to the project page list.
+ * The two are identical without a filter; when a status filter hides cards the
+ * rendered index is not a project index, so the visible page numbers decide
+ * where a dropped drawing lands. Dropping below the last visible card appends.
+ */
+export function fullListInsertionIndex(
+  visiblePages: readonly number[],
+  insertionIndex: number,
+  totalPages: number,
+): number {
+  const total = Math.max(0, Math.round(totalPages));
+  if (!visiblePages.length) return total;
+  const clamped = Math.max(0, Math.min(visiblePages.length, Math.round(insertionIndex)));
+  if (clamped >= visiblePages.length) return total;
+  const page = Math.round(visiblePages[clamped]);
+  return Math.max(0, Math.min(total, page - 1));
+}
+
 export interface PageOrderOutcome {
   /** 0-based index of the first moved page after the change. */
   startIndex: number;
