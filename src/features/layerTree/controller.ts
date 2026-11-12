@@ -227,13 +227,22 @@ export class LayerTreeController {
     return { mode: "below", targetId: siblings[index + 1] };
   }
 
+  /**
+   * Siblings as the panel shows them: the rendered rows of the same kind and
+   * parent, top to bottom. Hidden layers of another page must not sit between
+   * two visible rows, or a keyboard move could land nowhere on screen.
+   */
   private siblingIds(layerId: string): string[] {
     const project = this.options.project();
     if (!project) return [];
     const hierarchy = buildLayerHierarchy(project.layers);
+    const layer = hierarchy.byId.get(layerId);
+    if (!layer) return [];
     const parentId = hierarchy.parentOfId.get(layerId) ?? null;
-    const siblings = parentId ? (hierarchy.childrenOfId.get(parentId) ?? []) : hierarchy.rootIds;
-    return [...siblings].reverse();
+    return this.renderedIds().filter((id) => {
+      const sibling = hierarchy.byId.get(id);
+      return sibling?.kind === layer.kind && (hierarchy.parentOfId.get(id) ?? null) === parentId;
+    });
   }
 
   private nestIntoPreviousSibling(event: KeyboardEvent, id: string): void {

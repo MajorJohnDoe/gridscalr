@@ -31,7 +31,7 @@ try {
 
   const project = await openDemoProject(page, { base: vite.base });
   assert.equal(project.name, "Northgate Logistics Hub - Takeoff");
-  assert.equal(await page.locator(".page-card").count(), 3, "expected three page cards");
+  assert.equal(await page.locator(".page-card").count(), 4, "expected four page cards");
 
   const autosave = await page.evaluate(async () => {
     const legacy = localStorage.getItem("gridscalr.autosave.v1");
@@ -587,7 +587,7 @@ try {
   );
 
   // A second layer in the same kind group makes the keyboard move observable.
-  await page.getByRole("button", { name: "+ Measure layer" }).click();
+  await page.getByRole("button", { name: "New measurement layer" }).click();
   await page.waitForTimeout(200);
   const measureRows = page.locator('.layer-row[data-layer-kind="measure"]');
   assert.equal(await measureRows.count(), 2, "the demo should now have two measurement layers");
@@ -894,7 +894,7 @@ try {
     .getByRole("button", { name: "Data" })
     .click();
   assert.ok(
-    (await preferencesDialog.innerText()).includes("Recovery data"),
+    await preferencesDialog.locator(".settings-section h3", { hasText: "Recovery data" }).count(),
     "Preferences should show the recovery data summary",
   );
   assert.ok(
@@ -1302,6 +1302,9 @@ try {
     "renaming a page should update its card",
   );
 
+  const documentsBeforeDuplicate = await page.evaluate(
+    () => window.__gridscalr.store.project.documents.length,
+  );
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Duplicate page…" }).click();
   const duplicatePage = page.getByRole("dialog");
@@ -1309,20 +1312,20 @@ try {
   await duplicatePage.getByRole("button", { name: "Duplicate page" }).click();
   await duplicatePage.waitFor({ state: "detached" });
   await page.waitForTimeout(300);
-  assert.equal(await page.locator(".page-card").count(), 4, "duplicating should add one page");
+  assert.equal(await page.locator(".page-card").count(), 5, "duplicating should add one page");
   assert.equal(
-    await page.locator('.page-card[data-page="4"] .page-title').textContent(),
+    await page.locator('.page-card[data-page="5"] .page-title').textContent(),
     "Ground floor copy",
     "the duplicate should copy the page name",
   );
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.project.documents.length),
-    1,
+    documentsBeforeDuplicate,
     "the duplicate reuses the same source document",
   );
 
   await page.getByRole("button", { name: "Layers", exact: true }).click();
-  await page.getByText(/No layers on Page 4 yet/).waitFor();
+  await page.getByText(/No layers on Page 5 yet/).waitFor();
 
   // OCR: append an image-only page, run local OCR and search the result.
   const pngDataUrl = await page.evaluate(() => {
@@ -1348,14 +1351,19 @@ try {
   ocrPage.drawImage(ocrImage, { x: 0, y: 0, width: 600, height: 350 });
   const ocrPath = join(tmpdir(), `gridscalr-ocr-${Date.now()}.pdf`);
   await writeFile(ocrPath, await ocrPdf.save());
+  const documentCountBeforeOcr = await page.evaluate(
+    () => window.__gridscalr.store.project.documents.length,
+  );
   await page.getByRole("menuitem", { name: "File" }).click();
   const ocrChooserPromise = page.waitForEvent("filechooser");
   await page.getByRole("menuitem", { name: "Open drawing…" }).click();
   const ocrChooser = await ocrChooserPromise;
   await ocrChooser.setFiles(ocrPath);
-  await page.waitForFunction(() => window.__gridscalr.store.project?.documents.length === 2, null, {
-    timeout: 15000,
-  });
+  await page.waitForFunction(
+    (count) => window.__gridscalr.store.project?.documents.length === count,
+    documentCountBeforeOcr + 1,
+    { timeout: 15000 },
+  );
   await page.waitForTimeout(300);
   await page.keyboard.press("Control+Shift+f");
   await searchPanel.waitFor();

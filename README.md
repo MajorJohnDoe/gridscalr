@@ -294,8 +294,9 @@ ground-floor warehouse and office plan at 1:100, a mezzanine at 1:50 and a site
 plan at 1:400, with a 10.00 m calibration dimension on page 1.
 
 `fixtures/demo-project.gridscalr` is a calibrated takeoff with categories, rooms,
-deductions and drawing annotations. Open it in the desktop app to explore every
-panel with realistic sample data. Regenerate the sample set with:
+deductions and drawing annotations, plus a fourth page that is an operation card
+sheet (driftkort) with 146 schematic symbols, lines and texts. Open it in the
+desktop app to explore every panel with realistic sample data. Regenerate the sample set with:
 
 ```bash
 npm run fixture     # fixtures/industrial-plan.pdf

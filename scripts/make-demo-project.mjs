@@ -7,6 +7,9 @@ const here = dirname(fileURLToPath(import.meta.url));
 const output = resolve(here, "..", "fixtures", "demo-project.gridscalr");
 const pdfPath = resolve(here, "..", "fixtures", "industrial-plan.pdf");
 const pdfStat = await stat(pdfPath);
+const card = JSON.parse(
+  await readFile(resolve(here, "..", "fixtures", "demo-driftkort.json"), "utf8"),
+);
 const now = "2026-10-26T09:00:00.000Z";
 
 // Keep the fixture on the current schema instead of freezing it at the version
@@ -287,6 +290,7 @@ const project = {
       pageCount: 3,
       sizeBytes: pdfStat.size,
     },
+    card.document,
   ],
   settings: {
     lengthUnit: "m",
@@ -373,6 +377,7 @@ const project = {
         },
       },
     },
+    card.page,
   ],
   markupsViews: [
     {
@@ -433,6 +438,7 @@ const project = {
       color: "#4cc9f0",
       items: measureItems,
     },
+    ...card.layers,
   ],
   activeLayerId: "layer_measurements",
   createdAt: now,

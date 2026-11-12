@@ -22,6 +22,7 @@ const screenshots = [
   "calibration.png",
   "markups.png",
   "layers.png",
+  "operation-card.png",
   "quantities.png",
   "count-types.png",
   "count-schedule.png",

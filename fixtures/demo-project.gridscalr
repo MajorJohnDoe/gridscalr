@@ -12,6 +12,32 @@
       "sha256": "",
       "pageCount": 3,
       "sizeBytes": 77387
+    },
+    {
+      "id": "doc_demo_card",
+      "kind": "template",
+      "name": "Driftkort LB01",
+      "path": null,
+      "relativePath": null,
+      "sha256": "",
+      "pageCount": 1,
+      "sizeBytes": 0,
+      "template": {
+        "id": "gridscalr.operation-card.frame",
+        "version": 1,
+        "paper": "A3",
+        "fields": {
+          "project.name": "LB01\n",
+          "title.page": "1",
+          "title.date": "2026-11-04",
+          "title.handledBy": "Automationsgruppen",
+          "title.card": "",
+          "title.system": "",
+          "sheet.details": "\n",
+          "project.logo": ""
+        }
+      },
+      "storage": "reference"
     }
   ],
   "settings": {
@@ -140,6 +166,14 @@
           "pointsPerMeter": 7.08661417,
           "createdAt": "2026-10-26T09:00:00.000Z"
         }
+      }
+    },
+    {
+      "id": "page_demo_4",
+      "documentId": "doc_demo_card",
+      "localPage": 1,
+      "state": {
+        "name": "LB01"
       }
     }
   ],
@@ -953,6 +987,3461 @@
           "areaShape": "rectangle"
         }
       ]
+    },
+    {
+      "id": "layer_card_agg",
+      "name": "Aggregat",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "homePageId": "page_demo_4",
+      "items": [
+        {
+          "id": "item_card_01001",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 565.6283634180119,
+              "y": 333.86641020165985
+            }
+          ],
+          "color": "#2a8c82",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.plate-heat-exchanger",
+          "symbolSize": 201.65521296873717,
+          "tag": "VVX",
+          "tagOffset": {
+            "x": -29,
+            "y": -87
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01002",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 811.3794011534511,
+              "y": 175.98030179337948
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "LB01",
+          "fontSize": 10,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01003",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 1001.3432447854594,
+              "y": 512.4436791812811
+            },
+            {
+              "x": 1148.21126700591,
+              "y": 512.4436791812811
+            },
+            {
+              "x": 1148.5175324633465,
+              "y": 599.4767832746483
+            },
+            {
+              "x": 1001.5923419271589,
+              "y": 599.197322510988
+            },
+            {
+              "x": 1001.6593943715336,
+              "y": 511.5042441002916
+            }
+          ],
+          "color": "#050505",
+          "strokeWidth": 1,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01004",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 1117.7763484726172,
+              "y": 494.4343095912087
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "VS01",
+          "fontSize": 12.346461060382365,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01005",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 348.34762165140285,
+              "y": 236.6086415682485
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.duct-sensor",
+          "symbolSize": 40,
+          "tag": "GP01",
+          "tagOffset": {
+            "x": 0,
+            "y": -22
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01006",
+          "pageId": "page_demo_4",
+          "kind": "rect",
+          "points": [
+            {
+              "x": 301.48075191530285,
+              "y": 189.20307948326612
+            },
+            {
+              "x": 851.2432147178206,
+              "y": 441.2068716513856
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 1,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01007",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 365.84762165140285,
+              "y": 247.8586415682485
+            },
+            {
+              "x": 374.0700283837781,
+              "y": 247.8586415682485
+            },
+            {
+              "x": 374.0700283837781,
+              "y": 281.31284606033427
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01008",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 330.84762165140285,
+              "y": 247.8586415682485
+            },
+            {
+              "x": 322.8690368951165,
+              "y": 247.8586415682485
+            },
+            {
+              "x": 322.8690368951165,
+              "y": 281.1460675864298
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01009",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 775.6611338837776,
+              "y": 236.5660752793804
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.duct-sensor",
+          "symbolSize": 40,
+          "tag": "GP23",
+          "tagOffset": {
+            "x": 0,
+            "y": -22
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01010",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 793.1611338837776,
+              "y": 247.81607527938039
+            },
+            {
+              "x": 801.3835406161528,
+              "y": 247.81607527938039
+            },
+            {
+              "x": 801.3835406161528,
+              "y": 281.27027977146537
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01011",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 758.1611338837776,
+              "y": 247.81607527938039
+            },
+            {
+              "x": 750.1825491274913,
+              "y": 247.81607527938039
+            },
+            {
+              "x": 750.1825491274913,
+              "y": 281.1035012975609
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01012",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 706.0704645496264,
+              "y": 373.2563877074768
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 40,
+          "tag": "GT11",
+          "tagOffset": {
+            "x": 0,
+            "y": -24
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01013",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 244.33149212184847,
+              "y": 373.78233402138693
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 40,
+          "tag": "GF02",
+          "tagOffset": {
+            "x": 0,
+            "y": -24
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01014",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 906.9843947849454,
+              "y": 444.86355758139354
+            },
+            {
+              "x": 906.9498901497336,
+              "y": 449.9410429003595
+            },
+            {
+              "x": 906.9498901497336,
+              "y": 454.7370846277682
+            }
+          ],
+          "color": "#f93c1a",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01015",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.2961821392855,
+              "y": 444.0942152627118
+            },
+            {
+              "x": 876.2961821392855,
+              "y": 466.5317768069831
+            },
+            {
+              "x": 876.2961821392855,
+              "y": 492.5503341051334
+            }
+          ],
+          "color": "#f77408",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01016",
+          "pageId": "page_demo_4",
+          "kind": "rail",
+          "points": [
+            {
+              "x": 39.52979748768857,
+              "y": 614.5232138624812
+            },
+            {
+              "x": 1149.6135412003266,
+              "y": 678.5800437152714
+            }
+          ],
+          "color": "#4a4a4a",
+          "strokeWidth": 0.6,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "rows": [
+            {
+              "id": "plc",
+              "label": "Modbus"
+            },
+            {
+              "id": "di",
+              "label": "DI",
+              "legend": "Digital Ingång"
+            },
+            {
+              "id": "ai",
+              "label": "AI",
+              "legend": "Analog Ingång"
+            },
+            {
+              "id": "du",
+              "label": "DU",
+              "legend": "Digital Utgång"
+            },
+            {
+              "id": "au",
+              "label": "AU",
+              "legend": "Analog Utgång"
+            }
+          ],
+          "rowSpacing": 14.173228346456694,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01017",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 938.9554133806499,
+              "y": 376.73566796244734
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GT12",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01018",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 938.9554133806499,
+              "y": 376.73566796244734
+            },
+            {
+              "x": 929.520450098971,
+              "y": 376.73566796244734
+            },
+            {
+              "x": 929.7907202745178,
+              "y": 613.7627301720622
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01019",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 780.3602411979318,
+              "y": 407.57037895346696
+            },
+            {
+              "x": 780.3602411979318,
+              "y": 671.1825885295448
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01020",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 706.0704645496264,
+              "y": 373.2563877074768
+            },
+            {
+              "x": 716.2403902087373,
+              "y": 373.2563877074768
+            },
+            {
+              "x": 716.4899187046814,
+              "y": 614.5232138624812
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01021",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 775.6611338837776,
+              "y": 236.5660752793804
+            },
+            {
+              "x": 739.0825943499942,
+              "y": 236.5660752793804
+            },
+            {
+              "x": 739.0825943499942,
+              "y": 614.5232138624812
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01022",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 348.34762165140285,
+              "y": 236.6086415682485
+            },
+            {
+              "x": 383.8634950307232,
+              "y": 236.6086415682485
+            },
+            {
+              "x": 383.86349503072324,
+              "y": 614.5232138624812
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01023",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 929.862088519489,
+              "y": 614.5647166028004
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01024",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 716.5655039235199,
+              "y": 614.5501064368557
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01025",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 780.5154436276823,
+              "y": 614.2972415242747
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01026",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 244.33149212184847,
+              "y": 373.78233402138693
+            },
+            {
+              "x": 223.7543530466366,
+              "y": 373.77768478432563
+            },
+            {
+              "x": 223.9667454139736,
+              "y": 614.5232138624812
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01027",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 191.17816892236567,
+              "y": 408.01968813613365
+            },
+            {
+              "x": 191.1781689223657,
+              "y": 671.0670344780897
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01028",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 739.0484205846275,
+              "y": 614.6659348085344
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01029",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 383.83278857153255,
+              "y": 614.3801331302753
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01030",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 191.28198508264813,
+              "y": 670.8124641977744
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01031",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 224.01999889077646,
+              "y": 614.5308113619412
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01032",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 179.75295512479417,
+              "y": 250.80848793135496
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.actuator-close",
+          "symbolSize": 40,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01033",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 465.5449652372425,
+              "y": 250.80848793135496
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.actuator-close",
+          "symbolSize": 40,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01034",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 877.3388714337506,
+              "y": 250.1045667241814
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.actuator-close",
+          "symbolSize": 40,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01035",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 854.1094715970244,
+              "y": 109.3203252894778
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.actuator-close",
+          "symbolSize": 40,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01036",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 649.3017397875808,
+              "y": 303.63591794741893
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.actuator-close",
+          "symbolSize": 40,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01037",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 465.5449652372425,
+              "y": 250.80848793135496
+            },
+            {
+              "x": 507.07631646048003,
+              "y": 250.80848793135496
+            },
+            {
+              "x": 507.07631646048003,
+              "y": 614.5131982439177
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01038",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 179.75295512479417,
+              "y": 250.80848793135496
+            },
+            {
+              "x": 166.61684490984592,
+              "y": 250.80848793135496
+            },
+            {
+              "x": 166.61684490984595,
+              "y": 670.78477998122
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01039",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 649.3017397875808,
+              "y": 303.63591794741893
+            },
+            {
+              "x": 631.6703701301927,
+              "y": 303.63591794741893
+            },
+            {
+              "x": 631.6703701301927,
+              "y": 671.5219962507142
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01040",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 877.3388714337506,
+              "y": 250.1045667241814
+            },
+            {
+              "x": 860.4447624615862,
+              "y": 250.1045667241814
+            },
+            {
+              "x": 860.4447624615862,
+              "y": 670.9832660855138
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01041",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 854.1094715970244,
+              "y": 109.3203252894778
+            },
+            {
+              "x": 837.2153626248601,
+              "y": 109.3203252894778
+            },
+            {
+              "x": 837.2153626248601,
+              "y": 670.9832707259438
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01042",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 507.07631646048003,
+              "y": 614.5131982439177
+            },
+            {
+              "x": 507.00526975316484,
+              "y": 671.2161272483079
+            }
+          ],
+          "color": "#474747",
+          "strokeWidth": 0.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01043",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 507.2408091396952,
+              "y": 614.7056399569648
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01044",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 507.06598054467145,
+              "y": 671.0687140155445
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01045",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 780.5073935065631,
+              "y": 670.8270940567589
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01046",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 191.2739349615288,
+              "y": 614.6000683708604
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01047",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 631.6458693072326,
+              "y": 671.0650827714926
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01048",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 630.9273379341145,
+              "y": 614.5493329062406
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01049",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 860.4741932541247,
+              "y": 614.5566664816811
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01050",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 837.2839352602888,
+              "y": 614.5486163605618
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01051",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 837.2758851391694,
+              "y": 671.078468893046
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01052",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 860.4661431330054,
+              "y": 670.9197405402608
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01053",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 166.63274154320692,
+              "y": 614.4252397758366
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01054",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 166.62469142208758,
+              "y": 671.1218707822253
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01055",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 964.6608228050408,
+              "y": 376.40079948049527
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GF13",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01056",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 964.6608228050408,
+              "y": 376.40079948049527
+            },
+            {
+              "x": 955.2258595233618,
+              "y": 376.40079948049527
+            },
+            {
+              "x": 955.4961296989086,
+              "y": 613.4278616901106
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01057",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 955.5814744522232,
+              "y": 614.4689266384372
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01058",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1000.6452892977247,
+              "y": 270.53427843073194
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GF22",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01059",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 1000.6452892977247,
+              "y": 270.53427843073194
+            },
+            {
+              "x": 991.2103260160458,
+              "y": 270.53427843073194
+            },
+            {
+              "x": 991.2103260160458,
+              "y": 614.3887792284643
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01060",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 974.9398798733339,
+              "y": 270.869146912684
+            },
+            {
+              "x": 983.8356600516696,
+              "y": 270.869146912684
+            },
+            {
+              "x": 983.8356600516696,
+              "y": 614.3882948213547
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01061",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 974.9398798733339,
+              "y": 270.869146912684
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GT21",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01062",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 983.8986139343508,
+              "y": 614.4543164724926
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01063",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 991.2713654244936,
+              "y": 614.4397063065478
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01064",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 146.82220447429904,
+              "y": 271.2715391159556
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GT02",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01065",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 146.82220447429904,
+              "y": 271.2715391159556
+            },
+            {
+              "x": 137.38724119262005,
+              "y": 271.2715391159556
+            },
+            {
+              "x": 137.38724119262005,
+              "y": 615.1260399136879
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01066",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 137.40394232106252,
+              "y": 614.2504111808129
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01067",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 876.2766496722629,
+              "y": 500.39634486113334
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.control-valve",
+          "symbolSize": 30.259774260469015,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01068",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 907.0783516385845,
+              "y": 463.64237426663504
+            }
+          ],
+          "color": "#1f6fb2",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.circulation-pump",
+          "symbolSize": 30.624377438342737,
+          "tag": "CP30",
+          "tagOffset": {
+            "x": 3,
+            "y": -16
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01069",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 892.2668520683297,
+              "y": 482.9207812315579
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.check-valve",
+          "symbolSize": 21.22629729973076,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01070",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 886.3767196372391,
+              "y": 482.9207812315579
+            },
+            {
+              "x": 877.7360801267708,
+              "y": 482.9207812315579
+            }
+          ],
+          "color": "#f77408",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01071",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 907.0028221803644,
+              "y": 472.62271890474403
+            },
+            {
+              "x": 907.0028221803644,
+              "y": 524.4347056609263
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01072",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 898.1503231441221,
+              "y": 482.9207812315579
+            },
+            {
+              "x": 906.2328914472856,
+              "y": 482.9207812315579
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01073",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.2766496722629,
+              "y": 508.23264997991623
+            },
+            {
+              "x": 876.2766496722629,
+              "y": 524.4754686290057
+            }
+          ],
+          "color": "#f77408",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01074",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.2766496722629,
+              "y": 524.4754686290057
+            },
+            {
+              "x": 887.8905622553904,
+              "y": 524.4754686290057
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01075",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 891.6772308615125,
+              "y": 524.5765305777511
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.shutoff-valve",
+          "symbolSize": 12.350538635828164,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01076",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 895.6910531478297,
+              "y": 524.4608584630611
+            },
+            {
+              "x": 907.1416243717437,
+              "y": 524.4608584630611
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01077",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 906.9421736546773,
+              "y": 438.65905042596916
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.valve",
+          "symbolSize": 22.808390637725353,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01078",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 876.4063329198467,
+              "y": 438.34071569915864
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.shutoff-valve",
+          "symbolSize": 22.459749117593084,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01079",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 907.0239930457918,
+              "y": 427.55127767144734
+            },
+            {
+              "x": 907.0239930457918,
+              "y": 429.53780862854336
+            },
+            {
+              "x": 907.0239930457918,
+              "y": 432.3909291223409
+            }
+          ],
+          "color": "#f93c1a",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01080",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.300121041622,
+              "y": 427.30196802716716
+            },
+            {
+              "x": 876.300121041622,
+              "y": 429.2884989842632
+            },
+            {
+              "x": 876.300121041622,
+              "y": 432.1416194780607
+            }
+          ],
+          "color": "#f77408",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01081",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.2729085763912,
+              "y": 524.6190763620358
+            },
+            {
+              "x": 876.2729085763912,
+              "y": 541.4574287436495
+            }
+          ],
+          "color": "#f77408",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01082",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 907.0254420110747,
+              "y": 525.2539045834397
+            },
+            {
+              "x": 907.0254420110747,
+              "y": 541.4967232325292
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01083",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 876.3003705897387,
+              "y": 547.6060525840608
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.shutoff-valve",
+          "symbolSize": 22.459749117593084,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01084",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 907.0772387720785,
+              "y": 547.6627902842847
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.valve",
+          "symbolSize": 22.808390637725353,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01085",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 907.0139593865505,
+              "y": 553.8650488967256
+            },
+            {
+              "x": 907.0139593865505,
+              "y": 559.5147469694131
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01086",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 907.0139593865505,
+              "y": 559.5147469694131
+            },
+            {
+              "x": 964.90315129487,
+              "y": 559.5147469694131
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01087",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.3003705897387,
+              "y": 553.6845151692037
+            },
+            {
+              "x": 876.3003705897387,
+              "y": 574.9777690352464
+            }
+          ],
+          "color": "#ff9214",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01088",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 876.3003705897387,
+              "y": 574.9777690352464
+            },
+            {
+              "x": 1040.4403887723731,
+              "y": 574.9777690352464
+            }
+          ],
+          "color": "#ff9214",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01089",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1011.8350412415512,
+              "y": 559.5147469694131
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01090",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1011.8350412415512,
+              "y": 574.9777690352464
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01091",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 907.0028221803644,
+              "y": 503.7372560695106
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 270,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01092",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 876.2961821392855,
+              "y": 460.25511762083846
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 90,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01093",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 893.5882389387187,
+              "y": 575.0008699430902
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 0,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01094",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 914.7344459981703,
+              "y": 463.64237426663504
+            },
+            {
+              "x": 917.917512575409,
+              "y": 463.64237426663504
+            },
+            {
+              "x": 917.917512575409,
+              "y": 671.4149515173942
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01095",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 865.6222930669882,
+              "y": 501.6896399329372
+            },
+            {
+              "x": 865.6222930669882,
+              "y": 671.5215266659155
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01096",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 865.6602135300622,
+              "y": 670.9030210850644
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01097",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 865.5371514248196,
+              "y": 614.5246971054954
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01098",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 917.9473584422943,
+              "y": 614.2952923502071
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01099",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 917.8242963370519,
+              "y": 671.1718906696132
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.connection-dot",
+          "symbolSize": 23.382730572720174,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01100",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 882.6879809194465,
+              "y": 339.5974583861031
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "GT80",
+          "fontSize": 9.149505647805293,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01101",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 929.4487958786412,
+              "y": 271.1893020554022
+            }
+          ],
+          "color": "#8a4fbf",
+          "strokeWidth": 0.75,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.sensor",
+          "symbolSize": 29.577377417145698,
+          "tag": "GP24",
+          "tagOffset": {
+            "x": -9,
+            "y": -19
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01102",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 929.4487958786412,
+              "y": 271.1893020554022
+            },
+            {
+              "x": 920.0138325969623,
+              "y": 271.1893020554022
+            },
+            {
+              "x": 920.0138325969623,
+              "y": 615.0438028531347
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 0.25,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineStyle": "dashed",
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01103",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 970.7131860724296,
+              "y": 559.3612184452905
+            }
+          ],
+          "color": "#c0392b",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.shutoff-valve",
+          "symbolSize": 22.459749117593084,
+          "tag": "AV64",
+          "tagOffset": {
+            "x": 5,
+            "y": 13
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_01104",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 976.1291982526467,
+              "y": 559.4448143906909
+            },
+            {
+              "x": 1040.5291876460942,
+              "y": 559.4448143906909
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 2,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "layer_card_supply",
+      "name": "Uteluft -> tilluft",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "homePageId": "page_demo_4",
+      "items": [
+        {
+          "id": "item_card_02001",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 212.11686554633118,
+              "y": 283.48365528129693
+            },
+            {
+              "x": 329.73264984198795,
+              "y": 283.48365528129693
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02002",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 367.11293547537224,
+              "y": 283.4756051601776
+            },
+            {
+              "x": 458.83568341427815,
+              "y": 283.4756051601776
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02003",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 499.8342047325872,
+              "y": 283.43980358620905
+            },
+            {
+              "x": 538.6381483766518,
+              "y": 283.43980358620905
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02004",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 664.0145023797462,
+              "y": 288.6567236654162
+            },
+            {
+              "x": 664.0145023797462,
+              "y": 317.66283309207023
+            }
+          ],
+          "color": "#52bdff",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02005",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 664.023893606287,
+              "y": 357.52818326682853
+            },
+            {
+              "x": 664.023893606287,
+              "y": 386.53429269348254
+            }
+          ],
+          "color": "#52bdff",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02006",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 37.218723880047605,
+              "y": 283.5093380768904
+            },
+            {
+              "x": 171.8768352916017,
+              "y": 283.5093380768904
+            }
+          ],
+          "color": "#4cc9f0",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02007",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 664.0614835412592,
+              "y": 277.5094953057248
+            },
+            {
+              "x": 664.0614835412592,
+              "y": 215.75674526115435
+            },
+            {
+              "x": 446.2376132463015,
+              "y": 215.75674526115435
+            },
+            {
+              "x": 446.2376132463015,
+              "y": 279.86091026227166
+            }
+          ],
+          "color": "#52bdff",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02008",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 412.00094208777324,
+              "y": 283.5381815522452
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02009",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 191.60364473995816,
+              "y": 283.7254147285847
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.damper",
+          "symbolSize": 65.61409422484394,
+          "tag": "ST01",
+          "tagOffset": {
+            "x": 1,
+            "y": -30
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02010",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 348.0531435183098,
+              "y": 283.4824532443002
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 0,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.filter",
+          "symbolSize": 61.789349493739984,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02011",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 479.1612469433805,
+              "y": 283.660499512228
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 90,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.damper",
+          "symbolSize": 65.61409422484394,
+          "tag": "ST02",
+          "tagOffset": {
+            "x": -28,
+            "y": 0
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02012",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 62.65867430909337,
+              "y": 283.26394094181796
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow-thick",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02013",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 45.12131873814692,
+              "y": 264.3407113263158
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Outdoor air",
+          "fontSize": 12,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02014",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 664.017336765322,
+              "y": 337.306090406616
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 90,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.damper",
+          "symbolSize": 65.61409422484394,
+          "tag": "ST03",
+          "tagOffset": {
+            "x": -27,
+            "y": -4
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02015",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 592.534508666303,
+              "y": 388.84459959530676
+            },
+            {
+              "x": 758.8012994635692,
+              "y": 388.84459959530676
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02016",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 724.6793186081164,
+              "y": 388.84459959530676
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02017",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 780.1008383828083,
+              "y": 388.7821516098017
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 0,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.fan",
+          "symbolSize": 72.16426630001648,
+          "tag": "TF",
+          "tagOffset": {
+            "x": 6,
+            "y": -29
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02018",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 801.3527816367625,
+              "y": 388.84431622784524
+            },
+            {
+              "x": 872.648517507797,
+              "y": 388.84431622784524
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02019",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 891.9980168227123,
+              "y": 388.8701912252173
+            }
+          ],
+          "color": "#d97706",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.heating-coil",
+          "symbolSize": 92.90154903859639,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02020",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 911.0214009589376,
+              "y": 388.8362661067258
+            },
+            {
+              "x": 1154.2940527147703,
+              "y": 388.8362661067259
+            }
+          ],
+          "color": "#f70808",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02021",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 1094.9704321088705,
+              "y": 367.4374198843608
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Supply air",
+          "fontSize": 12,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_02022",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1128.5577461751968,
+              "y": 388.8362661067259
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow-thick",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "layer_card_exhaust",
+      "name": "Frånluft - > avluft",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "homePageId": "page_demo_4",
+      "items": [
+        {
+          "id": "item_card_03001",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 191.79089875944499,
+              "y": 389.35035900857764
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.fan",
+          "symbolSize": 72.16426630001648,
+          "tag": "FF01",
+          "tagOffset": {
+            "x": -5,
+            "y": 28
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03002",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 1153.835216026284,
+              "y": 283.0980681074774
+            },
+            {
+              "x": 910.7015441546976,
+              "y": 283.0980681074774
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03003",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 776.0269150629458,
+              "y": 283.2923425222422
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.filter",
+          "symbolSize": 61.789349493739984,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03004",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 212.46299074020237,
+              "y": 389.2819537903174
+            },
+            {
+              "x": 539.4433314911453,
+              "y": 389.2819537903174
+            }
+          ],
+          "color": "#d1851a",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03005",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 36.0136111548253,
+              "y": 389.2718045020396
+            },
+            {
+              "x": 170.89523597925393,
+              "y": 389.2718045020396
+            }
+          ],
+          "color": "#d1851a",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03006",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 890.1743909285746,
+              "y": 283.16774551679686
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "rotation": 90,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.damper",
+          "symbolSize": 65.61409422484394,
+          "tag": "ST04",
+          "tagOffset": {
+            "x": -28,
+            "y": -1
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03007",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 870.6697793262546,
+              "y": 283.0938226286129
+            },
+            {
+              "x": 794.9394828657192,
+              "y": 283.0938226286129
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03008",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 723.8220102840947,
+              "y": 283.1309609886626
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 178.96746614685867,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03009",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 757.2652830930774,
+              "y": 283.10158938227073
+            },
+            {
+              "x": 591.7926974680252,
+              "y": 283.10158938227073
+            }
+          ],
+          "color": "#f2a93b",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03010",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 1093.4093456626301,
+              "y": 263.39439510485767
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Extract air",
+          "fontSize": 12,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03011",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 1127.100027148267,
+              "y": 283.0980681074774
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow-thick",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03012",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 427.96998468448083,
+              "y": 389.02810382526724
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 178.96746614685867,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03013",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 63.239994443873805,
+              "y": 389.2718045020396
+            }
+          ],
+          "color": "#334155",
+          "strokeWidth": 1.5,
+          "rotation": 180,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.flow-arrow-thick",
+          "symbolSize": 24,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_03014",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 48.39549153346134,
+              "y": 366.809627893503
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Exhaust air",
+          "fontSize": 12,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "layer_card_bypass",
+      "name": "Bypass - brand",
+      "kind": "draw",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f2a93b",
+      "homePageId": "page_demo_4",
+      "items": [
+        {
+          "id": "item_card_04001",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 888.8478912702304,
+              "y": 142.62010781105693
+            },
+            {
+              "x": 947.1825104826521,
+              "y": 142.62010781105693
+            },
+            {
+              "x": 947.1825104826521,
+              "y": 281.03568249395244
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_04002",
+          "pageId": "page_demo_4",
+          "kind": "symbol",
+          "points": [
+            {
+              "x": 867.9406291021664,
+              "y": 143.02795854524203
+            }
+          ],
+          "color": "#2d7dd2",
+          "strokeWidth": 1.5,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "symbolId": "schematic.damper",
+          "symbolSize": 65.61409422484394,
+          "tag": "ST05",
+          "tagOffset": {
+            "x": 1,
+            "y": -29
+          },
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_04003",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 267.93533119341663,
+              "y": 275.5740849327408
+            },
+            {
+              "x": 267.93533119341663,
+              "y": 142.06489929491022
+            },
+            {
+              "x": 847.2358414054106,
+              "y": 142.6543015051008
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_04004",
+          "pageId": "page_demo_4",
+          "kind": "polyline",
+          "points": [
+            {
+              "x": 267.89802389373085,
+              "y": 290.7500568318149
+            },
+            {
+              "x": 267.89802389373085,
+              "y": 386.09099773023365
+            }
+          ],
+          "color": "#14181b",
+          "strokeWidth": 4,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "lineTypeId": "supply",
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_04005",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 892.3636794564558,
+              "y": 126.7391567692834
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Bypass",
+          "fontSize": 10,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        },
+        {
+          "id": "item_card_04006",
+          "pageId": "page_demo_4",
+          "kind": "text",
+          "points": [
+            {
+              "x": 634.2247143757291,
+              "y": 202.38881505115307
+            }
+          ],
+          "color": "#000000",
+          "strokeWidth": 2,
+          "text": "Bypass",
+          "fontSize": 10,
+          "visible": true,
+          "locked": false,
+          "scale": null,
+          "createdAt": "2026-10-26T09:00:00.000Z",
+          "updatedAt": "2026-10-26T09:00:00.000Z"
+        }
+      ]
+    },
+    {
+      "id": "layer_card_measure",
+      "name": "Mätningar",
+      "kind": "measure",
+      "visible": true,
+      "locked": false,
+      "opacity": 1,
+      "color": "#f70808",
+      "homePageId": "page_demo_4",
+      "items": []
     }
   ],
   "activeLayerId": "layer_measurements",

@@ -15,7 +15,7 @@ This guide follows the current interface. For a printable shortcut list, open **
 
 The welcome screen also offers **Open drawing**, **Open project**, **New project…**, **Open demo project**, **Recovery center**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities. **New project…** opens the same source chooser as **File → New project…**, including the **Empty project** start.
 
-**Open demo project** loads a bundled sample with one drawing, three sheets and finished measurements. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
+**Open demo project** loads a bundled sample with one drawing, three calibrated drawing sheets, a fourth operation card sheet (driftkort) with schematic symbols, and finished measurements. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
 
 The demo requires the desktop app. The browser fallback offers open, restore and recent files only.
 
@@ -102,6 +102,8 @@ An operation card sheet is a page created from a built-in template instead of a 
 - **Export:** fields are drawn into the PDF even when every layer is hidden. The exported text is searchable. Hiding layers never hides the title block or table.
 - **Not to scale:** template sheets show **Sheet · not to scale** in the status bar and do not need calibration.
 - **Paper:** choose A3 or A2 when the sheet is created, or change it under **Edit sheet fields → Paper**. The title block keeps its physical size; the drawing area grows on A2 and the data table gains rows. Field values are kept, including table cells in rows that are currently hidden on a smaller sheet.
+
+![A3 operation card sheet with schematic symbols, drawing layers and the title block filled in](screenshots/operation-card.png)
 
 ### Blank pages
 

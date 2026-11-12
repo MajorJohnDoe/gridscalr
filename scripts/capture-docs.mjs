@@ -83,6 +83,13 @@ const shots = [
       "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
   },
   {
+    file: "operation-card.png",
+    title: "Operation card sheet",
+    alt: "GridScalr showing an A3 operation card sheet with schematic symbols for heat exchanger, fans, valves and dampers, the drawing layers and the sheet title block.",
+    description:
+      "Draw operation cards with the schematic symbol library, sheet templates and page-scoped layers.",
+  },
+  {
     file: "quantities.png",
     title: "Quantities",
     alt: "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
@@ -233,6 +240,14 @@ try {
     await capture(`theme-${theme}.png`);
   }
   await selectTheme("medium-grey");
+
+  await page.locator('.page-card[data-page="4"]').click();
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
+  await page.waitForTimeout(500);
+  await capture("operation-card.png");
+  await page.locator('.page-card[data-page="1"]').click();
+  await page.getByRole("button", { name: "Pages", exact: true }).click();
+  await page.waitForTimeout(300);
 
   await page.keyboard.press("Escape");
   await page.keyboard.press("l");

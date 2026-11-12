@@ -153,8 +153,12 @@ export function renderTopbar(refs: ShellRefs, _actions: PanelActions): void {
     refs.projectName.textContent = project?.name ?? "";
   }
   refs.projectName.title = t("shell.renameHint");
+  const currentPage = project?.pages[store.ui.page - 1];
+  const pageDocument = currentPage
+    ? project?.documents.find((document) => document.id === currentPage.documentId)
+    : undefined;
   refs.docName.textContent = project
-    ? (primaryDocument(project.documents)?.name ?? t("shell.noDrawing"))
+    ? (pageDocument?.name ?? primaryDocument(project.documents)?.name ?? t("shell.noDrawing"))
     : t("shell.noDrawing");
   const pageName = project ? pageDisplayName(project, pageIdAt(project, store.ui.page)) : undefined;
   refs.docMeta.textContent = project

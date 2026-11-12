@@ -63,7 +63,7 @@ try {
   // Opening the demo renders the first PDF page through the PDF.js worker.
   const canvases = await page.locator(".canvas-host canvas").count();
   assert.ok(canvases > 0, "the canvas should be mounted after opening the demo");
-  assert.equal(await page.locator(".page-card").count(), 3, "expected three page cards");
+  assert.equal(await page.locator(".page-card").count(), 4, "expected four page cards");
 
   const workerPolicy = await page.evaluate(async () => {
     const probe = await import("/dev/securityProbe.ts");
