@@ -787,7 +787,7 @@ try {
 
   await page.getByRole("button", { name: "Layers" }).click();
   const measureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
-  await measureLayer.getByRole("button", { name: /Expand Measurements/ }).click();
+  await measureLayer.getByRole("button", { name: /Expand .?Measurements/ }).click();
   const layerItems = page.locator(".layer-items .layer-item-row");
   await layerItems.first().waitFor();
   assert.ok(

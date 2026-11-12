@@ -216,8 +216,8 @@ src/
   ui/inspector.ts        Properties header, active-layer and selection sections
   ui/markupsPanel.ts     Markups public surface
   ui/markups/            Markups state, view favourites, grouping, rows and virtualised panel
-  ui/layerList.ts        Layers panel orchestration, toolbar and rows
-  ui/layers/             layer filter, row builder, menu, view state and drag reorder wiring
+  ui/layerList.ts        Layers panel wiring: toolbar, expansion controls, bulk bar and row loop
+  ui/layers/             layer filter and tree rows, layer row builder, bulk actions, row menu, view state and tree-move wiring
   ui/layerAction.ts      shared row icon button for Layers and Markups
   ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
@@ -269,7 +269,7 @@ src/
   io/projectFile/sourceStorage.ts schema 24 → 25 reference/managed storage migration
   io/projectFile/layerHierarchy.ts schema 25 → 26 layer parent migration and old-parent rejection
   model/layerHierarchy.ts pure parent links, tree order, effective visibility/lock and page-removal keep rules
-  features/layerTree/ layer tree, effective state lookup, subtree deletion plan and page-removal keep rules
+  features/layerTree/ layer tree view rows, inherited state, drag/keyboard nesting, subtree duplicate and delete plan, page-removal keep rules
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export

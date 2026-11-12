@@ -15,9 +15,9 @@ import {
   isMeasurementKind,
   itemIsLocked,
   itemIsVisible,
-  layerLockedOnPage,
   layerVisibleOnPage,
 } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { deleteItems, translateItems } from "../model/commands";
 
 import { focusViewTransform, isCancellation, pointInBox } from "./geometry";
@@ -942,12 +942,14 @@ export class CanvasView {
     const project = store.project;
     if (!project) return null;
     const layouts = this.pageLabelLayouts();
+    const hierarchy = buildLayerHierarchy(project.layers);
     for (let l = project.layers.length - 1; l >= 0; l--) {
       const layer = project.layers[l];
-      if (!layerVisibleOnPage(layer, this.viewPageId ?? "") || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, this.viewPageId ?? "", hierarchy) || layer.opacity <= 0)
+        continue;
       for (let i = layer.items.length - 1; i >= 0; i--) {
         const item = layer.items[i];
-        if (item.pageId !== this.viewPageId || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== this.viewPageId || !itemIsVisible(item, layer, hierarchy)) continue;
         if (!isMeasurementKind(item.kind)) continue;
         const layout = layouts.get(item.id);
         if (!layout) continue;
@@ -984,8 +986,9 @@ export class CanvasView {
     if (this.editingDisabled) return;
     const project = store.project;
     if (!project) return;
+    // hitTest already excludes hidden and locked layers, an inherited lock included.
     const hit = hitTest(project, this.viewPageId ?? "", page, 7 / this.viewZoom);
-    if (hit?.item.kind === "text" && !layerLockedOnPage(hit.layer, this.viewPageId ?? "")) {
+    if (hit?.item.kind === "text") {
       store.setSelection({ layerId: hit.layer.id, itemId: hit.item.id });
       this.editors.startTextEdit(hit.item, hit.layer);
     } else {

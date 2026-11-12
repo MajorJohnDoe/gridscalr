@@ -17,11 +17,16 @@ import { t } from "../../i18n";
  * marked-content operators are written with its low-level objects.
  *
  * The flattened page content is unchanged; the groups only let a compatible
- * reader toggle the marked content that is already there.
+ * reader toggle the marked content that is already there. A layer hierarchy is
+ * written as nested heading dictionaries in `/OCProperties /D /Order`, so a
+ * group layer becomes a collapsible folder containing its child groups and its
+ * own content. A group with no visible content is never emitted. See ADR 0014.
  */
 export interface OptionalContentLayer {
   id: string;
   name: string;
+  /** Nested layers, in tree order. */
+  children?: readonly OptionalContentLayer[];
 }
 
 interface LayerGroup {
@@ -43,16 +48,30 @@ export interface OptionalContentWriter {
 const TAG = PDFName.of("OC");
 const KEY_PREFIX = "GSOCG";
 
+function flattenLayers(
+  layers: readonly OptionalContentLayer[],
+  into: OptionalContentLayer[] = [],
+): OptionalContentLayer[] {
+  for (const layer of layers) {
+    into.push(layer);
+    if (layer.children?.length) flattenLayers(layer.children, into);
+  }
+  return into;
+}
+
 /**
  * Creates one OCG per supplied layer. Only layers that actually draw visible
  * content are marked and written, so a hidden or empty layer never becomes an
- * empty group in the reader.
+ * empty group in the reader. `layers` is the visible hierarchy: roots first and
+ * each layer's children nested under it.
  */
 export function createOptionalContent(
   pdf: PDFDocument,
   layers: readonly OptionalContentLayer[],
 ): OptionalContentWriter {
   const context = pdf.context;
+  const flat = flattenLayers(layers);
+  const byId = new Map(flat.map((layer) => [layer.id, layer]));
   const groups = new Map<string, LayerGroup>();
   const used = new Set<string>();
   const pageProperties = new WeakMap<PDFPage, PDFDict>();
@@ -86,9 +105,33 @@ export function createOptionalContent(
     return properties;
   };
 
+  /** Nested `/Order` entries, or an empty array when nothing is visible. */
+  const orderFor = (nodes: readonly OptionalContentLayer[]): PDFArray => {
+    const order = PDFArray.withContext(context);
+    for (const node of nodes) {
+      const own = used.has(node.id) ? groups.get(node.id) : undefined;
+      const children = node.children ?? [];
+      if (!children.length) {
+        if (own) order.push(own.ref);
+        continue;
+      }
+      const childOrder = orderFor(children);
+      if (!own && !childOrder.size()) continue;
+      // The group's own content sits first inside its folder.
+      const inside = PDFArray.withContext(context);
+      if (own) inside.push(own.ref);
+      for (const entry of childOrder.asArray()) inside.push(entry);
+      const heading = PDFDict.withContext(context);
+      heading.set(PDFName.of("Name"), PDFHexString.fromText(node.name));
+      heading.set(PDFName.of("Order"), inside);
+      order.push(context.register(heading));
+    }
+    return order;
+  };
+
   return {
     begin(page, layerId) {
-      const layer = layers.find((entry) => entry.id === layerId);
+      const layer = byId.get(layerId);
       if (!layer) return false;
       const group = groupFor(layer);
       propertiesFor(page).set(group.key, group.ref);
@@ -103,13 +146,14 @@ export function createOptionalContent(
     },
     finalize() {
       if (!groups.size) return;
-      const refs = [...groups.values()].map((group) => group.ref);
-      const order = PDFArray.withContext(context);
+      const refs = [...groups.entries()]
+        .filter(([id]) => used.has(id))
+        .map(([, group]) => group.ref);
+      const order = orderFor(layers);
       const on = PDFArray.withContext(context);
       const ocgs = PDFArray.withContext(context);
       for (const ref of refs) {
         ocgs.push(ref);
-        order.push(ref);
         on.push(ref);
       }
       const defaults = PDFDict.withContext(context);

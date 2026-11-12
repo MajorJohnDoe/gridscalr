@@ -1,5 +1,6 @@
 import { pageIdAt } from "./pages";
 import { layerVisibleOnPage } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import type { PageSize, Project } from "./types";
 import { t } from "../i18n";
 
@@ -47,13 +48,14 @@ export function defaultDrawingExportOptions(
   const pageCount = project.pages.length;
   const page = Math.max(1, Math.min(Math.max(1, pageCount), Math.round(currentPage)));
   const pages = Array.from({ length: pageCount }, (_, index) => index + 1);
+  const hierarchy = buildLayerHierarchy(project.layers);
   return {
     pages: pageCount ? [page] : [],
     layerIds: project.layers
       .filter((layer) =>
         pages.some((candidate) => {
           const pageId = pageIdAt(project, candidate);
-          return pageId ? layerVisibleOnPage(layer, pageId) : false;
+          return pageId ? layerVisibleOnPage(layer, pageId, hierarchy) : false;
         }),
       )
       .map((layer) => layer.id),

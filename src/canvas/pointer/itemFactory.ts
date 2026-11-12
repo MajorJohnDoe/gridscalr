@@ -11,6 +11,7 @@ import {
   layerLockedOnPage,
   layerVisibleOnPage,
 } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { defaultRailRows, RAIL_ROW_SPACING } from "../../model/rail";
 import { DEFAULT_MEASUREMENT_STROKE_WIDTH } from "../../model/style";
 import { stampStatusColor } from "../../model/stamps";
@@ -56,11 +57,15 @@ export function createItemInStore(
   const active = project.layers.find(
     (layer) => layer.id === project.activeLayerId && layer.kind === layerKind,
   );
-  if (active && (!layerVisibleOnPage(active, pageId) || layerLockedOnPage(active, pageId))) {
+  const hierarchy = buildLayerHierarchy(project.layers);
+  if (
+    active &&
+    (!layerVisibleOnPage(active, pageId, hierarchy) || layerLockedOnPage(active, pageId, hierarchy))
+  ) {
     toast(
       t("canvas.layerUnavailable", {
         name: active.name,
-        state: layerLockedOnPage(active, pageId)
+        state: layerLockedOnPage(active, pageId, hierarchy)
           ? t("canvas.stateLocked")
           : t("canvas.stateHidden"),
       }),

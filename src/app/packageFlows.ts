@@ -3,6 +3,7 @@ import type { Project } from "../model/types";
 import { parseProject } from "../io/projectFile";
 import { readFileText } from "../io/platform";
 import { layerVisibleOnPage } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { store } from "../state/store";
 import type { PackageHost } from "../features/projectPackage";
@@ -46,11 +47,12 @@ async function createPackageDrawingPdf(
   const renderer = host.renderer();
   if (!renderer) throw new Error(t("app.sourcePdfMissing"));
   const pages = Array.from({ length: project.pages.length }, (_, index) => index + 1);
+  const hierarchy = buildLayerHierarchy(project.layers);
   const layerIds = project.layers
     .filter((layer) =>
       pages.some((page) => {
         const pageId = pageIdAt(project, page);
-        return pageId ? layerVisibleOnPage(layer, pageId) : false;
+        return pageId ? layerVisibleOnPage(layer, pageId, hierarchy) : false;
       }),
     )
     .map((layer) => layer.id);

@@ -589,10 +589,13 @@ Open the **Layers** tab in the left panel. The **This page / All pages** switch 
 - **Lock** prevents moving, editing, and deleting its items. In **This page** scope this applies only to the active page; in **All pages** it changes the default and clears page overrides.
 - Click the colour swatch to change the layer colour.
 - Double-click anywhere on a layer row, or press `F2` on the focused row, to rename it inline.
-- Drag a layer row or its grip within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step and `Alt` + `Home` / `End` moves it to the top or bottom of its kind group; each move is announced and is one undo step.
-- Use the search field to filter by layer name, item label, kind or room. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots.
-- Use the expand-all and collapse-all buttons beside the search field to open or close every layer at once.
-- Use the chevron to expand a layer and list the items on the current page, or every item in **All pages** scope, newest first.
+- Drag a layer row or its grip within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step among its siblings and `Alt` + `Home` / `End` moves it to the first or last sibling; each move is announced and is one undo step.
+- Use the search field to filter by layer name, item label, kind or room. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots. A search keeps the group path of every match open.
+- Use the expand-all and collapse-all buttons beside the search field to open or close every layer and group at once.
+- Use the chevron to expand a layer and list its items on the current page, or every item in **All pages** scope, newest first. The same chevron opens and closes a group's nested layers. `ArrowRight` and `ArrowLeft` do the same from the keyboard.
+- `Ctrl`/`Cmd`-click, `Shift`-click or plain click selects whole layer rows. With two or more selected, a bar above the list hides, shows, locks, unlocks or deletes all of them as one undo step.
+- Click **Duplicate** in the layer menu to copy a layer. A group is copied with its whole subtree, including every nested layer and item, and the copy gets fresh layer and item IDs.
+- Deleting a group deletes its whole subtree. The confirmation names the number of nested layers and items first, so a folder can never disappear with unexplained content.
 - Click an item to jump to its page and select it. `Ctrl`/`Cmd`-click adds it to the current selection and `Shift`-click selects the range between the last clicked item and the current one, so Properties and the right-click menu can edit several items at once.
 - `Shift+F10` or the Menu key opens the layer menu from the focused row. `Enter` or `Space` makes the focused layer the target layer.
 - Pages, Layers and Markups share the same focus, selection, drag and keyboard conventions. The shared model is described in **Keyboard shortcuts** and **Architecture**.
@@ -604,9 +607,22 @@ Open the **Layers** tab in the left panel. The **This page / All pages** switch 
 
 A page with no layers shows **No layers on Page N yet** with the create-layer buttons. Layers keep their name, colour and order across pages; only visibility, lock and the item list are page-scoped. Page-scoped visibility is used by hit-testing, snapping, quantities, Markups CSV and every PDF export.
 
+### Layer groups
+
+A group is an ordinary layer that other layers are nested under. There is no separate folder object and no second layer list.
+
+- Drag a layer onto the middle of another layer row to nest it there, or press `Alt` + `Right` to nest the focused layer under the layer above it. A drop line shows where a row will land and the target group is highlighted while the pointer is over it.
+- Press `Alt` + `Left`, or use **Move out of group** in the layer menu, to move a layer back out of its group.
+- Nesting stays inside one kind: drawing layers group with drawing layers and measurement layers with measurement layers. Dropping a drawing layer onto a measurement layer is refused with a message, and a layer can never be nested inside itself or one of its own nested layers.
+- Nested layers are indented and show a folder icon with a count of everything inside. Collapse the group to hide its nested rows; the items of a collapsed group are hidden too.
+- Grouping does not restack layers. The group orders the Layers panel and the exported optional-content structure, but paint order is unchanged, so nesting a layer never moves it in front of or behind another layer on the drawing.
+- **Visibility and locking are inherited.** A hidden group hides every nested layer, and a locked group locks them. An inherited state is written on the row as **Hidden by “Group”** or **Locked by “Group”**, with the full reason in the tooltip, and the eye and lock buttons for that row are disabled until the group itself changes. A nested layer can still hide or lock itself on top of that.
+- A group may hold items of its own as well as nested layers. Deleting a group removes both.
+- Groups keep their page scope independent of their nested layers. A layer created on page 1 can sit under a group created on page 3, and a group hidden only on page 2 hides its nested layers only on that page. The **This page** scope keeps a group visible whenever any of its nested layers has content on that page.
+
 Measurement layers and drawing layers stay separate. The **Layer** picker in the context bar shows which layer receives new items. If the active layer is hidden or locked on the current page, the picker shows a warning. Choosing a tool automatically switches to a visible, unlocked layer of the matching kind; if none exists, a new layer is created on the current page.
 
-Hidden items do not render, hit-test, or export. Locked items stay visible and exportable but cannot be moved, edited, or deleted.
+Hidden items do not render, hit-test, or export. Locked items stay visible and exportable but cannot be moved, edited, or deleted. The same rules apply to a hidden or locked group and everything nested in it.
 
 ## Select and edit
 
@@ -825,7 +841,7 @@ Packages are not encrypted and are not cryptographically signed; the checksums d
 
   **Legend** adds a separate A4 page at the end of the export.
 
-  **Optional layers (OCG)** is off by default. When enabled, every exported visible layer becomes a real PDF optional-content group that compatible readers can toggle. The flattened drawing is unchanged. A layer hidden on a page is wrapped only where it is visible, but a reader toggles the group for the whole file, so switching it off hides that layer on every page of the export. Hidden layers and hidden items are never exported, with or without OCG.
+  **Optional layers (OCG)** is off by default. When enabled, every exported visible layer becomes a real PDF optional-content group that compatible readers can toggle. The flattened drawing is unchanged. A layer hidden on a page is wrapped only where it is visible, but a reader toggles the group for the whole file, so switching it off hides that layer on every page of the export. A layer group is written as a nested heading in the reader's layer list, with its own content first and its nested layers inside it; a hidden group or hidden ancestor removes its whole subtree from the export, and a group with nothing visible is never written. Hidden layers and hidden items are never exported, with or without OCG.
 
   **Review annotations** is off by default. When enabled, visible items also get standard PDF annotations (`Square`, `Circle`, `Line`, `PolyLine`, `Polygon` or a `Text` sticky note) with a rectangle, colour, contents and the author **GridScalr**. They are a review artifact for other PDF readers, not an editable GridScalr project: GridScalr does not attach appearance streams, does not encode item data for round-tripping, does not replace or hide the flattened artwork and cannot import annotations edited elsewhere. Locked items are annotated and hidden items are not.
 - **View as PNG** – exports the rendered page and markup layers at the current view.

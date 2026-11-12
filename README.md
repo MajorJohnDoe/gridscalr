@@ -83,7 +83,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   and fit an overflowing schematic drawing back inside the sheet area.
 - Organise everything in separate measurement and drawing layers with per-item
   visibility and locks, multi-select, bulk edits and a docked Markups table with
-  saved views, filters and grouping.
+  saved views, filters and grouping. Nest layers into groups that inherit
+  visibility and locking, collapse the tree, duplicate a group with its whole
+  subtree and keep the hierarchy in the optional-content PDF export.
 - Review gross, deduction, net, waste and order quantities per category,
   room and page, then export a CSV, an Excel workbook or a print-friendly PDF
   report. Add optional facility, client, project number, revision, author and
@@ -312,8 +314,9 @@ source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
 `src/model/layerHierarchy.ts` holds the pure layer-tree, effective visibility
-and locking rules, and `src/features/layerTree/` exposes the tree, deletion plan
-and page-removal keep rules.
+and locking rules, and `src/features/layerTree/` exposes the panel tree rows,
+inherited-state reasons, drag and keyboard nesting, subtree duplication and the
+deletion and page-removal rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a

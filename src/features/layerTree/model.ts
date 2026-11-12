@@ -5,6 +5,7 @@ import {
   layerIdsKeptAfterPageRemoval,
   layerTreeDepth,
   type LayerEffectiveState,
+  type LayerHierarchy,
   type LayerHierarchyIssue,
 } from "../../model/layerHierarchy";
 import { removeLayer } from "../../model/layers";
@@ -65,6 +66,31 @@ export function layerTreeState(
   pageId: PageId,
 ): LayerEffectiveState | null {
   return layerEffectiveState(buildLayerHierarchy(project.layers), layerId, pageId);
+}
+
+/**
+ * Panel display order: depth-first with every parent before its children and
+ * siblings top to bottom.
+ *
+ * `project.layers` is bottom to top (paint order), which is why the flat Layers
+ * panel reverses it. Reversing a depth-first walk would put children above their
+ * parent, so this walks the tree and reverses the sibling list at every level.
+ * For a flat project the result is exactly the reversed array the panel already
+ * showed.
+ */
+export function layerTreeDisplayOrder(
+  project: LayerTreeProject,
+  hierarchy: LayerHierarchy = buildLayerHierarchy(project.layers),
+): string[] {
+  const order: string[] = [];
+  const visit = (id: string): void => {
+    order.push(id);
+    const children = hierarchy.childrenOfId.get(id) ?? [];
+    for (let index = children.length - 1; index >= 0; index -= 1) visit(children[index]);
+  };
+  const roots = [...hierarchy.rootIds];
+  for (let index = roots.length - 1; index >= 0; index -= 1) visit(roots[index]);
+  return order;
 }
 
 /** Root-first descendant count for a layer. */

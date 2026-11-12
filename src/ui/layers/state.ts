@@ -18,6 +18,8 @@ export const layerView = {
   /** One-shot flags so a re-render can restore focus to the control used. */
   focusSearch: false,
   focusScope: null as LayerScope | null,
+  /** Row to focus after a re-render, for a tree disclosure or a move. */
+  focusLayerId: null as string | null,
   /** Last plain click, used for the inline-rename double click. */
   lastClick: null as { id: string; time: number } | null,
 };
@@ -52,9 +54,22 @@ export function expandAllLayers(ids: Iterable<string>): void {
   layerView.expanded = new Set(ids);
 }
 
-export function takeLayerFocus(): { search: boolean; scope: LayerScope | null } {
-  const focus = { search: layerView.focusSearch, scope: layerView.focusScope };
+export function focusLayer(layerId: string): void {
+  layerView.focusLayerId = layerId;
+}
+
+export function takeLayerFocus(): {
+  search: boolean;
+  scope: LayerScope | null;
+  layerId: string | null;
+} {
+  const focus = {
+    search: layerView.focusSearch,
+    scope: layerView.focusScope,
+    layerId: layerView.focusLayerId,
+  };
   layerView.focusSearch = false;
   layerView.focusScope = null;
+  layerView.focusLayerId = null;
   return focus;
 }

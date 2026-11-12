@@ -1,4 +1,5 @@
 import { itemIsVisible } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { itemKindLabel, itemMetrics } from "../model/measure";
 import {
   inspectionStatusLabel,
@@ -159,9 +160,10 @@ function markupRow(project: Project, item: MarkupItem, layerName: string): Repor
 /** Visible markups on visible layers, shared by the markup CSV and XLSX exports. */
 export function markupTable(project: Project): ReportTable {
   const rows: ReportTable = [localizedHeader(MARKUP_COLUMN_KEYS)];
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const layer of project.layers) {
     for (const item of layer.items) {
-      if (!itemIsVisible(item, layer)) continue;
+      if (!itemIsVisible(item, layer, hierarchy)) continue;
       rows.push(markupRow(project, item, layer.name));
     }
   }

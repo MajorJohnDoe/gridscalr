@@ -7,6 +7,7 @@ import { pickImage } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { store } from "../state/store";
 import { layerLockedOnPage, layerVisibleOnPage } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
 
@@ -77,20 +78,21 @@ function imageTargetLayer(): Layer | null {
   if (!project) return null;
   const pageId = pageIdAt(project, store.ui.page);
   if (!pageId) return null;
+  const hierarchy = buildLayerHierarchy(project.layers);
   const active = project.layers.find((layer) => layer.id === project.activeLayerId);
   if (
     active &&
     active.kind === "draw" &&
-    layerVisibleOnPage(active, pageId) &&
-    !layerLockedOnPage(active, pageId)
+    layerVisibleOnPage(active, pageId, hierarchy) &&
+    !layerLockedOnPage(active, pageId, hierarchy)
   ) {
     return active;
   }
   const candidate = project.layers.find(
     (layer) =>
       layer.kind === "draw" &&
-      layerVisibleOnPage(layer, pageId) &&
-      !layerLockedOnPage(layer, pageId),
+      layerVisibleOnPage(layer, pageId, hierarchy) &&
+      !layerLockedOnPage(layer, pageId, hierarchy),
   );
   if (candidate) {
     store.setActiveLayer(candidate.id);

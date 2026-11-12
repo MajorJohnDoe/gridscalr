@@ -1,5 +1,6 @@
 import { distanceToAreaShape, areaShapeOf, ellipseOutline, pointInAreaShape } from "./area";
 import { layerLockedOnPage, layerVisibleOnPage } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import {
   arcPolyline,
   distanceToPolyline,
@@ -339,15 +340,19 @@ export function hitTest(
   // Background images render below every markup. Remember the first one as a
   // fallback so overlapping markups keep their visual priority for selection.
   let backgroundHit: HitResult | null = null;
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (let l = project.layers.length - 1; l >= 0; l--) {
     const layer = project.layers[l];
-    if (!options.includeHidden && !layerVisibleOnPage(layer, pageId)) continue;
-    if (!options.includeLocked && layerLockedOnPage(layer, pageId)) continue;
+    if (!options.includeHidden && !layerVisibleOnPage(layer, pageId, hierarchy)) continue;
+    if (!options.includeLocked && layerLockedOnPage(layer, pageId, hierarchy)) continue;
     for (let i = layer.items.length - 1; i >= 0; i--) {
       const item = layer.items[i];
       if (item.pageId !== pageId) continue;
       if (!options.includeHidden && item.visible === false) continue;
-      if (!options.includeLocked && (item.locked === true || layerLockedOnPage(layer, pageId)))
+      if (
+        !options.includeLocked &&
+        (item.locked === true || layerLockedOnPage(layer, pageId, hierarchy))
+      )
         continue;
       const hit = hitItem(item, point, tolerance);
       if (hit) {

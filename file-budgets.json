@@ -19,11 +19,11 @@
   },
   "files": {
     "src/app/App.ts": 1094,
-    "src/canvas/CanvasView.ts": 1513,
+    "src/canvas/CanvasView.ts": 1516,
     "src/canvas/editors.ts": 2,
     "src/canvas/itemRenderer.ts": 15,
     "src/features/schematics/model/sheetTemplate.ts": 714,
-    "src/model/labelLayout.ts": 810,
+    "src/model/labelLayout.ts": 812,
     "src/pdf/pdfExport.ts": 117,
     "src/state/store.ts": 993,
     "src/styles/dialogs.css": 1694,

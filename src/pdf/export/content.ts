@@ -3,7 +3,8 @@ import type { PageViewport } from "pdfjs-dist";
 import { isReferenceCalibration, pageCalibration } from "../../model/calibration";
 import { CALIBRATION_LABEL_ID, type LabelLayout } from "../../model/labelLayout";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
-import type { Layer, PageId, Project } from "../../model/types";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
+import type { Layer, MarkupItem, PageId, Project } from "../../model/types";
 import { t } from "../../i18n";
 import { templateDocumentForPage } from "../../features/schematics/model/sheetDocument";
 import {
@@ -38,16 +39,24 @@ export interface PageContentOptions {
 export function drawPageContent(options: PageContentOptions): void {
   const { page, pageNumber, viewport, project, pageId, layerIds, fonts, labels, images, ocg } =
     options;
+  const hierarchy = buildLayerHierarchy(project.layers);
 
   const drawLayer = (layer: Layer, background: boolean): void => {
-    const marked = ocg?.begin(page, layer.id) ?? false;
+    const drawable: MarkupItem[] = [];
     for (const item of layer.items) {
-      if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
+      if (item.pageId !== pageId || !itemIsVisible(item, layer, hierarchy)) continue;
       if (background) {
         if (item.kind !== "image" || item.image?.mode === "annotation") continue;
       } else if (item.kind === "image" && item.image?.mode !== "annotation") {
         continue;
       }
+      drawable.push(item);
+    }
+    // An empty layer gets no optional-content group, so a reader never shows a
+    // folder that contains nothing. See ADR 0014.
+    if (!drawable.length) return;
+    const marked = ocg?.begin(page, layer.id) ?? false;
+    for (const item of drawable) {
       drawItem(page, viewport, project, item, layer.opacity, fonts, labels, images);
       if (options.includeAnnotations) addReviewAnnotation(page, viewport, project, item);
     }
@@ -56,7 +65,11 @@ export function drawPageContent(options: PageContentOptions): void {
 
   // Background images sit above the source page and below every markup.
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !layerIds.has(layer.id))
+    if (
+      !layerVisibleOnPage(layer, pageId, hierarchy) ||
+      layer.opacity <= 0 ||
+      !layerIds.has(layer.id)
+    )
       continue;
     drawLayer(layer, true);
   }
@@ -72,7 +85,11 @@ export function drawPageContent(options: PageContentOptions): void {
   }
 
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0 || !layerIds.has(layer.id))
+    if (
+      !layerVisibleOnPage(layer, pageId, hierarchy) ||
+      layer.opacity <= 0 ||
+      !layerIds.has(layer.id)
+    )
       continue;
     drawLayer(layer, false);
   }
