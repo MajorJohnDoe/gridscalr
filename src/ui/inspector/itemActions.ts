@@ -5,6 +5,7 @@ import {
   moveItemToLayer,
   moveTargetLayers,
 } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { store } from "../../state/store";
 import { el, option } from "../dom";
 import { icon } from "../icons";
@@ -12,6 +13,7 @@ import type { InspectorContext } from "./context";
 
 export function appendItemActions(section: HTMLElement, context: InspectorContext): void {
   const { project, item, layer, actions, locked, hidden } = context;
+  const hierarchy = buildLayerHierarchy(project.layers);
   const layerField = el("label", "field");
   layerField.append(el("span", "field-label", t("inspector.moveToLayer")));
   const layerSelect = el("select", "select");
@@ -32,15 +34,15 @@ export function appendItemActions(section: HTMLElement, context: InspectorContex
   const visibilityRow = el("div", "field-row");
   const visibleToggle = el("button", `toggle${!hidden ? " is-on" : ""}`);
   visibleToggle.type = "button";
-  const layerShown = layerVisibleOnPage(layer, item.pageId);
+  const layerShown = layerVisibleOnPage(layer, item.pageId, hierarchy);
   visibleToggle.disabled = !layerShown;
   visibleToggle.title = layerShown ? t("inspector.showHideMarkup") : t("inspector.showLayerFirst");
   visibleToggle.innerHTML = `${icon(hidden ? "eyeOff" : "eye", 13)}<span>${hidden ? t("common.hidden") : t("common.visible")}</span>`;
   visibleToggle.addEventListener("click", () => actions.setSelectionVisible(hidden));
   const lockToggle = el("button", `toggle${locked ? " is-on" : ""}`);
   lockToggle.type = "button";
-  lockToggle.disabled = layerLockedOnPage(layer, item.pageId);
-  lockToggle.title = layerLockedOnPage(layer, item.pageId)
+  lockToggle.disabled = layerLockedOnPage(layer, item.pageId, hierarchy);
+  lockToggle.title = layerLockedOnPage(layer, item.pageId, hierarchy)
     ? t("inspector.unlockLayerFirst")
     : t("inspector.lockUnlockMarkup");
   lockToggle.innerHTML = `${icon(locked ? "lock" : "unlock", 13)}<span>${locked ? t("layer.locked") : t("common.unlocked")}</span>`;

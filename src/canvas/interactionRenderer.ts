@@ -10,6 +10,7 @@ import {
   radiusCircle,
 } from "../model/geometry";
 import { findItem, isMeasurementKind, itemIsVisible, layerVisibleOnPage } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { resolveSelection } from "../model/selection";
 import { selectionBounds } from "../model/transform";
 import type { MarkupItem, Point } from "../model/types";
@@ -69,9 +70,11 @@ export function drawInteraction(
     }
     ctx.restore();
   }
+  const hierarchy = buildLayerHierarchy(store.project.layers);
   const selected = resolveSelection(store.project, store.ui.selection).filter(
     (entry) =>
-      layerVisibleOnPage(entry.layer, entry.item.pageId) && itemIsVisible(entry.item, entry.layer),
+      layerVisibleOnPage(entry.layer, entry.item.pageId, hierarchy) &&
+      itemIsVisible(entry.item, entry.layer, hierarchy),
   );
 
   if (selected.length) {

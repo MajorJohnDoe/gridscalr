@@ -13,6 +13,7 @@ import "./styles/dialogs.css";
 import "./styles/doctor.css";
 import "./styles/projectImport.css";
 import "./styles/pageModel.css";
+import "./styles/layerTree.css";
 import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";

@@ -195,16 +195,10 @@ export interface LayerEffectiveState {
   lockedBy: string | null;
 }
 
-/**
- * Effective visibility and locking on one page.
- *
- * Visible = own state AND every ancestor. Locked = own state OR any ancestor.
- * With no hierarchy the walk is the layer itself, so flat behaviour is identical.
- */
-export function layerEffectiveState(
+function resolveEffectiveState(
   hierarchy: LayerHierarchy,
   layerId: string,
-  pageId: PageId,
+  stateOf: (layer: Layer) => { visible: boolean; locked: boolean },
 ): LayerEffectiveState | null {
   const layer = hierarchy.byId.get(layerId);
   if (!layer) return null;
@@ -217,16 +211,68 @@ export function layerEffectiveState(
   let hiddenBy: string | null = null;
   let lockedBy: string | null = null;
   for (const entry of chain) {
-    if (visible && !ownVisible(entry, pageId)) {
+    const state = stateOf(entry);
+    if (visible && !state.visible) {
       visible = false;
       hiddenBy = entry.id;
     }
-    if (!locked && ownLocked(entry, pageId)) {
+    if (!locked && state.locked) {
       locked = true;
       lockedBy = entry.id;
     }
   }
   return { visible, locked, hiddenBy, lockedBy };
+}
+
+/**
+ * Effective visibility and locking on one page.
+ *
+ * Visible = own state AND every ancestor. Locked = own state OR any ancestor.
+ * With no hierarchy the walk is the layer itself, so flat behaviour is identical.
+ */
+export function layerEffectiveState(
+  hierarchy: LayerHierarchy,
+  layerId: string,
+  pageId: PageId,
+): LayerEffectiveState | null {
+  return resolveEffectiveState(hierarchy, layerId, (layer) => ({
+    visible: ownVisible(layer, pageId),
+    locked: ownLocked(layer, pageId),
+  }));
+}
+
+/** Effective state from the project-wide defaults, ignoring page overrides. */
+export function layerGlobalEffectiveState(
+  hierarchy: LayerHierarchy,
+  layerId: string,
+): LayerEffectiveState | null {
+  return resolveEffectiveState(hierarchy, layerId, (layer) => ({
+    visible: layer.visible,
+    locked: layer.locked,
+  }));
+}
+
+/**
+ * Whether a layer may become the parent of another layer.
+ *
+ * A group is an ordinary layer other layers point at, so any layer of the same
+ * kind can be a parent. Cross-kind nesting is invalid because draw layers paint
+ * below measure layers, and a layer cannot be nested under itself or one of its
+ * own descendants.
+ */
+export function canNestLayerUnder(
+  hierarchy: LayerHierarchy,
+  layerId: string,
+  parentId: string,
+): "ok" | "self" | "kind" | "cycle" | "unknown" {
+  const layer = hierarchy.byId.get(layerId);
+  const parent = hierarchy.byId.get(parentId);
+  if (!layer || !parent) return "unknown";
+  if (layerId === parentId) return "self";
+  if (layer.kind !== parent.kind) return "kind";
+  const chain = [parentId, ...layerAncestorIds(hierarchy, parentId)];
+  if (chain.includes(layerId)) return "cycle";
+  return "ok";
 }
 
 /**

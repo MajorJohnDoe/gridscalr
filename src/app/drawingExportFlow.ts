@@ -1,6 +1,7 @@
 import type { CanvasView } from "../canvas/CanvasView";
 import { defaultDrawingExportOptions, type DrawingExportOptions } from "../model/export";
 import { layerVisibleOnPage } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { pageIdAt } from "../model/pages";
 import type { Project } from "../model/types";
 import { store } from "../state/store";
@@ -17,6 +18,7 @@ export async function chooseDrawingExport(
   for (;;) {
     const pageCount = project.pages.length;
     const pageNumbers = Array.from({ length: pageCount }, (_, index) => index + 1);
+    const hierarchy = buildLayerHierarchy(project.layers);
     const result = await drawingExportDialog({
       currentPage: store.ui.page,
       pageCount,
@@ -26,7 +28,7 @@ export async function chooseDrawingExport(
         kind: layer.kind,
         visible: pageNumbers.some((page) => {
           const pageId = pageIdAt(project, page);
-          return pageId ? layerVisibleOnPage(layer, pageId) : false;
+          return pageId ? layerVisibleOnPage(layer, pageId, hierarchy) : false;
         }),
         color: layer.color,
       })),

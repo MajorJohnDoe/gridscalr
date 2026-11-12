@@ -23,6 +23,7 @@ import {
 } from "../model/layers";
 import { resolveSelection } from "../model/selection";
 import type { AreaMode, CountType, ImageMode, SelectionRef } from "../model/types";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { store } from "../state/store";
 import { toast } from "../ui/toast";
 
@@ -149,8 +150,9 @@ export function setSelectionVisible(visible: boolean): void {
   const project = store.project;
   if (!project || !store.ui.selection.length) return;
   const resolved = resolveSelection(project, store.ui.selection);
+  const hierarchy = buildLayerHierarchy(project.layers);
   const targetable = visible
-    ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId))
+    ? resolved.filter((entry) => layerVisibleOnPage(entry.layer, entry.item.pageId, hierarchy))
     : resolved;
   if (!targetable.length) {
     toast(t("app.layerHiddenShow"), "warning");
@@ -175,9 +177,10 @@ export function setSelectionLocked(locked: boolean): void {
   const project = store.project;
   if (!project || !store.ui.selection.length) return;
   const resolved = resolveSelection(project, store.ui.selection);
+  const hierarchy = buildLayerHierarchy(project.layers);
   const targetable = locked
     ? resolved
-    : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.pageId));
+    : resolved.filter((entry) => !layerLockedOnPage(entry.layer, entry.item.pageId, hierarchy));
   if (!targetable.length) {
     toast(t("app.layerLockedUnlock"), "warning");
     return;

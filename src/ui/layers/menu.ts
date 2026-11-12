@@ -1,18 +1,27 @@
 import { t } from "../../i18n";
 import { selectionKind } from "../../model/selection";
-import { duplicateLayer, layerLockedOnPage, moveLayer, removeLayer } from "../../model/layers";
+import { duplicateLayer, layerLockedOnPage, moveLayer } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { pageIdAt } from "../../model/pages";
 import { store } from "../../state/store";
 import { confirmDialog, textDialog } from "../dialogs";
 import type { PanelActions } from "../panels";
 import type { PopoverItem } from "../popover";
 import { showPopover, showPopoverAt } from "../popover";
-import { scopeItemsFor } from "./filter";
+import {
+  deleteLayerSubtree,
+  duplicateLayerSubtree,
+  layerSubtreeSize,
+  moveLayerOutOfGroup,
+  type LayerTreeRow,
+} from "../../features/layerTree";
+import { visibleLayerRows, scopeItemsFor } from "./filter";
 import { layerView, toggleLayerExpanded } from "./state";
 
 /**
  * Layer row menu. Items are rebuilt from project data on every open, so the
- * counts and the disabled states describe the current page scope and search.
+ * counts and the disabled states describe the current page scope, search and
+ * hierarchy.
  */
 export function layerMenuItems(layerId: string, actions: PanelActions): PopoverItem[] {
   const project = store.project;
@@ -21,21 +30,29 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
   const page = store.ui.page;
   const pageId = pageIdAt(project, page) ?? "";
   const scopeItems = scopeItemsFor(layer, layerView.scope, pageId);
-  const lockedHere = layerLockedOnPage(layer, pageId);
+  const hierarchy = buildLayerHierarchy(project.layers);
+  const lockedHere = layerLockedOnPage(layer, pageId, hierarchy);
   const group = project.layers.filter((entry) => entry.kind === layer.kind);
   const index = group.findIndex((entry) => entry.id === layerId);
   const expanded = layerView.expanded.has(layerId);
+  const row: LayerTreeRow | undefined = visibleLayerRows(project, pageId).find(
+    (entry) => entry.id === layerId,
+  );
+  const parentId = hierarchy.parentOfId.get(layerId) ?? null;
+  const canExpand = Boolean(row?.hasChildren) || scopeItems.length > 0;
   const items: PopoverItem[] = [
     {
-      label: scopeItems.length
-        ? expanded
-          ? t("layer.collapseLayer", { name: layer.name, count: scopeItems.length })
-          : t("layer.expandLayer", { name: layer.name, count: scopeItems.length })
+      label: canExpand
+        ? t(expanded ? "layer.collapseRow" : "layer.expandRow", {
+            name: layer.name,
+            children: row?.descendantCount ?? 0,
+            items: scopeItems.length,
+          })
         : layerView.scope === "page"
           ? t("layer.noItemsOnPage", { page })
           : t("layer.noItems"),
       icon: expanded ? "chevronDown" : "chevronRight",
-      disabled: scopeItems.length === 0,
+      disabled: !canExpand,
       action: () => {
         toggleLayerExpanded(layerId);
         actions.refresh();
@@ -61,9 +78,18 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
       },
     },
     {
-      label: t("layer.duplicate"),
+      label:
+        (row?.descendantCount ?? 0) > 0
+          ? t("layer.duplicateSubtree", { count: row?.descendantCount ?? 0 })
+          : t("layer.duplicate"),
       icon: "copy",
-      action: () => store.mutate((current) => duplicateLayer(current, layerId), "layers"),
+      action: () => {
+        store.mutate((current) => {
+          const size = layerSubtreeSize(current, layerId);
+          if (size.layers > 1) duplicateLayerSubtree(current, layerId);
+          else duplicateLayer(current, layerId);
+        }, "layers");
+      },
     },
     {
       label: t("layer.moveSelection", { count: store.ui.selection.length }),
@@ -85,6 +111,15 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
       icon: "down",
       disabled: index < 0 || index >= group.length - 1,
       action: () => store.mutate((current) => moveLayer(current, layerId, -1), "layers"),
+    },
+    {
+      label: t("layer.moveOutOfGroup"),
+      icon: "chevronLeft",
+      disabled: !parentId || lockedHere,
+      action: () => {
+        store.mutate((current) => moveLayerOutOfGroup(current, layerId), "layers");
+        actions.refresh();
+      },
     },
     { separator: true },
     {
@@ -126,16 +161,25 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
       icon: "trash",
       danger: true,
       action: () => {
-        void confirmDialog(
-          t("layer.delete"),
-          layer.items.length
-            ? t("layer.deleteWithItems", { name: layer.name, count: layer.items.length })
-            : t("layer.deleteEmpty", { name: layer.name }),
-          t("layer.deleteAction"),
-          { danger: true },
-        ).then((confirmed) => {
+        const plan = layerSubtreeSize(project, layerId);
+        const children = plan.layers - 1;
+        const message =
+          children > 0
+            ? t("layer.deleteSubtree", {
+                name: layer.name,
+                children,
+                items: plan.items,
+              })
+            : plan.items
+              ? t("layer.deleteWithItems", { name: layer.name, count: plan.items })
+              : t("layer.deleteEmpty", { name: layer.name });
+        void confirmDialog(t("layer.delete"), message, t("layer.deleteAction"), {
+          danger: true,
+        }).then((confirmed) => {
           if (!confirmed) return;
-          store.mutate((current) => removeLayer(current, layerId), "layers");
+          store.mutate((current) => {
+            deleteLayerSubtree(current, layerId);
+          }, "layers");
           actions.refresh();
         });
       },

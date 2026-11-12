@@ -7,6 +7,8 @@ import {
   setLayerLockedOnPage,
   setLayerVisibleOnPage,
 } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
+import { layerSubtreeSize } from "../features/layerTree";
 import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
 import { pageProvenanceSection } from "../features/importProvenance";
@@ -161,8 +163,9 @@ function activeLayerSection(
   const toggles = el("div", "field-row");
   const page = store.ui.page;
   const pageId = pageIdAt(project, page) ?? "";
-  const activeVisible = layerVisibleOnPage(active, pageId);
-  const activeLocked = layerLockedOnPage(active, pageId);
+  const hierarchy = buildLayerHierarchy(project.layers);
+  const activeVisible = layerVisibleOnPage(active, pageId, hierarchy);
+  const activeLocked = layerLockedOnPage(active, pageId, hierarchy);
   const visible = el("button", `toggle${activeVisible ? " is-on" : ""}`);
   visible.type = "button";
   visible.title = t("inspector.visibilityOnPage", { page });
@@ -186,25 +189,33 @@ function activeLayerSection(
   toggles.append(visible, locked);
   section.append(toggles);
 
+  // A group deletes its whole subtree, so the button and the confirmation name
+  // everything that will be removed, not only the layer's own items.
+  const subtree = layerSubtreeSize(project, active.id);
   const deleteLayerBtn = el(
     "button",
     "btn btn-small btn-ghost",
-    t("inspector.deleteLayerCount", { count: active.items.length }),
+    t("inspector.deleteLayerCount", { count: subtree.items }),
   );
   deleteLayerBtn.type = "button";
   deleteLayerBtn.style.marginTop = "8px";
   deleteLayerBtn.addEventListener("click", () => {
-    void confirmDialog(
-      t("inspector.deleteLayerTitle"),
-      active.items.length
-        ? t("inspector.deleteLayerWithItems", {
+    const message =
+      subtree.layers > 1
+        ? t("layer.deleteSubtree", {
             name: active.name,
-            count: active.items.length,
+            children: subtree.layers - 1,
+            items: subtree.items,
           })
-        : t("inspector.deleteLayerEmpty", { name: active.name }),
-      t("common.delete"),
-      { danger: true },
-    ).then((confirmed) => {
+        : subtree.items
+          ? t("inspector.deleteLayerWithItems", {
+              name: active.name,
+              count: subtree.items,
+            })
+          : t("inspector.deleteLayerEmpty", { name: active.name });
+    void confirmDialog(t("inspector.deleteLayerTitle"), message, t("common.delete"), {
+      danger: true,
+    }).then((confirmed) => {
       if (confirmed) store.mutate((project) => removeLayer(project, active.id), "layers");
       actions.refresh();
     });

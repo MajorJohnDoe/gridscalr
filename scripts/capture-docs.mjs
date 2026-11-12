@@ -248,10 +248,10 @@ try {
   await page.evaluate(() => window.__gridscalr.store.clearSelection());
   await page.keyboard.press("a");
   const measureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
-  await measureLayer.getByRole("button", { name: /Expand Measurements/ }).click();
+  await measureLayer.getByRole("button", { name: /Expand .?Measurements/ }).click();
   await page.waitForTimeout(200);
   await capture("layers.png");
-  await measureLayer.getByRole("button", { name: /Collapse Measurements/ }).click();
+  await measureLayer.getByRole("button", { name: /Collapse .?Measurements/ }).click();
   await page.keyboard.press("v");
 
   await page.keyboard.press("Control+Alt+q");

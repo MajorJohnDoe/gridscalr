@@ -1,6 +1,7 @@
 import { expandRect } from "../../model/geometry";
 import { itemIntersectsBounds } from "../../model/hitTest";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import type { Point } from "../../model/types";
 import type { PageId } from "../../model/types";
 import { store } from "../../state/store";
@@ -116,10 +117,12 @@ export class NavigationGesture {
     const refs = marquee.additive ? [...store.ui.selection] : [];
     const min = { x: rect.x, y: rect.y };
     const max = { x: rect.x + rect.width, y: rect.y + rect.height };
+    const hierarchy = buildLayerHierarchy(store.project.layers);
     for (const layer of store.project.layers) {
-      if (!layerVisibleOnPage(layer, this.context.viewPageId() ?? "")) continue;
+      if (!layerVisibleOnPage(layer, this.context.viewPageId() ?? "", hierarchy)) continue;
       for (const item of layer.items) {
-        if (item.pageId !== this.context.viewPageId() || !itemIsVisible(item, layer)) continue;
+        if (item.pageId !== this.context.viewPageId() || !itemIsVisible(item, layer, hierarchy))
+          continue;
         if (itemIntersectsBounds(item, min, max)) {
           refs.push({ layerId: layer.id, itemId: item.id });
         }

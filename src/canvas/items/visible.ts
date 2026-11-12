@@ -2,6 +2,7 @@ import { itemBounds, type Bounds } from "../../model/geometry";
 import { imageModeOf } from "../../model/images";
 import type { LabelLayout } from "../../model/labelLayout";
 import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { symbolTagPosition, SYMBOL_TAG_FONT_SIZE } from "../../model/symbolTag";
 import type { MarkupItem, PageId, Project } from "../../model/types";
 import type { ItemRenderContext } from "./context";
@@ -51,12 +52,13 @@ export function drawVisibleItems(
   visible: Bounds,
   background: boolean,
 ): void {
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0) continue;
+    if (!layerVisibleOnPage(layer, pageId, hierarchy) || layer.opacity <= 0) continue;
     ctx.save();
     ctx.globalAlpha = layer.opacity;
     for (const item of layer.items) {
-      if (item.pageId !== pageId || !itemIsVisible(item, layer)) continue;
+      if (item.pageId !== pageId || !itemIsVisible(item, layer, hierarchy)) continue;
       const isBackground = item.kind === "image" && imageModeOf(item) === "background";
       if (isBackground !== background) continue;
       if (!boundsIntersect(itemRenderBounds(item, labels.get(item.id)), visible)) continue;

@@ -66,8 +66,10 @@ The Pages, Layers and Markups lists share one interaction model:
   list supports inline rename;
 - a selected row is dragged by its grip handle, and a drop line shows where it
   lands; `Alt` + `ArrowUp` / `ArrowDown` moves it without a pointer, `Alt` +
-  `Home` / `End` moves it to the start or end of its group. Each move is
-  announced to screen readers and is one undo step.
+  `Home` / `End` moves it to the start or end of its siblings. The Layers panel
+  adds a tree: drop on the middle of a row to nest, and use `Alt` + `ArrowRight`
+  / `Alt` + `ArrowLeft` to nest the focused layer or move it out of its group.
+  Each move is announced to screen readers and is one undo step.
 
 The Markups table is sorted and grouped rather than user-ordered, so it follows
 the focus, selection, filter and collapse conventions but has no drag handle or
@@ -108,17 +110,24 @@ duplicate and delete stay per page because both are structural.
 | Move focus between layers | `ArrowUp` / `ArrowDown` / `Home` / `End` |
 | Rename the focused layer | `F2`, or double-click its name |
 | Make the focused layer the target layer | `Enter` or `Space` |
-| Move the layer up / down in its kind group | `Alt+Up` / `Alt+Down` |
-| Move the layer to the top / bottom of its group | `Alt+Home` / `Alt+End` |
-| Move the layer with the mouse | Drag the layer row or its grip to the drop line |
+| Open or close the focused group | `ArrowRight` / `ArrowLeft` |
+| Move the layer up / down among its siblings | `Alt+Up` / `Alt+Down` |
+| Move the layer to the first / last sibling | `Alt+Home` / `Alt+End` |
+| Nest the focused layer under the layer above it | `Alt+Right` |
+| Move the focused layer out of its group | `Alt+Left` |
+| Move the layer with the mouse | Drag the layer row or its grip to the drop line; drop on the middle of a row to nest |
+| Select a whole layer row | Click, `Ctrl` / `Cmd` + click or `Shift` + click |
 | Add or remove an item from the selection | `Ctrl` / `Cmd` + click |
 | Select a range of items | `Shift` + click |
 
 Layer movement stays inside the layer's own kind group: drawing layers and
-measurement layers keep their separate stacks. A drop line shows the target
-position, and the move is one undo step. The search field narrows the list
-without changing the order; a filtered drag keeps the layers it did not show in
-their existing slots.
+measurement layers keep their separate stacks, and a drawing layer can never
+become the parent of a measurement layer. A drop line shows where the row lands;
+dropping on the middle of another row of the same kind nests it there and shows
+the target group highlighted. Nesting and moving are each one undo step. The
+search field narrows the list without changing the order; a filtered drag keeps
+the layers it did not show in their existing slots, and a search opens the
+ancestor path of every hit.
 
 ## Markups panel
 

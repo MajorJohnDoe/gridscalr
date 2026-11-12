@@ -1,6 +1,7 @@
 import { t, translate, type MessageKey } from "../i18n";
 import { isReferenceCalibration, pageCalibration } from "./calibration";
 import { layerVisibleOnPage, resolveItemColor } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import { areaOutline, areaShapeOf } from "./area";
 import { countSymbolBounds } from "./countSymbols";
 import {
@@ -178,8 +179,9 @@ export function pageLabelSources(
   const includeCalibration = options.includeCalibration ?? project.settings.showCalibration;
 
   if (includeLabels) {
+    const hierarchy = buildLayerHierarchy(project.layers);
     for (const layer of project.layers) {
-      if (!layerVisibleOnPage(layer, pageId) || layer.opacity <= 0) continue;
+      if (!layerVisibleOnPage(layer, pageId, hierarchy) || layer.opacity <= 0) continue;
       if (options.layerIds && !options.layerIds.has(layer.id)) continue;
       for (const item of layer.items) {
         if (item.pageId !== pageId || item.visible === false) continue;

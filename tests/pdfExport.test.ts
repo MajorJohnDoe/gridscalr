@@ -1004,3 +1004,204 @@ describe("review-only PDF annotations", () => {
     expect(onText.map((item) => item.text)).toEqual(offText.map((item) => item.text));
   });
 });
+
+interface OptionalContentNode {
+  /** Set for a leaf OCG entry. */
+  name: string | null;
+  /** Set for a nested heading dictionary. */
+  headingName: string | null;
+  order: OptionalContentNode[];
+}
+
+/** Reads `/OCProperties /D /Order` as a tree, keeping nested headings. */
+async function optionalContentTree(bytes: Uint8Array): Promise<OptionalContentNode[]> {
+  const doc = await PDFDocument.load(bytes);
+  const properties = doc.catalog.lookupMaybe(PDFName.of("OCProperties"), PDFDict);
+  if (!properties) return [];
+  const defaults = properties.lookupMaybe(PDFName.of("D"), PDFDict);
+  const order = defaults?.lookupMaybe(PDFName.of("Order"), PDFArray);
+  if (!order) return [];
+
+  const decode = (value: unknown): string =>
+    value instanceof PDFHexString ? value.decodeText() : String(value ?? "");
+  const readArray = (array: PDFArray): OptionalContentNode[] =>
+    array.asArray().map((entry) => {
+      const dict = doc.context.lookup(entry, PDFDict);
+      const nested = dict.get(PDFName.of("Order"));
+      if (nested instanceof PDFArray) {
+        return {
+          name: null,
+          headingName: decode(dict.get(PDFName.of("Name"))),
+          order: readArray(nested),
+        };
+      }
+      return {
+        name: decode(dict.get(PDFName.of("Name"))),
+        headingName: null,
+        order: [],
+      };
+    });
+  return readArray(order);
+}
+
+function addMeasureLayer(project: Project, id: string, name: string): Project["layers"][number] {
+  const layer = {
+    id,
+    name,
+    kind: "measure" as const,
+    visible: true,
+    locked: false,
+    opacity: 1,
+    color: "#e30613",
+    items: [],
+  };
+  project.layers.push(layer);
+  return layer;
+}
+
+describe("nested optional-content export", () => {
+  it("nests a group's child layers inside a heading in tree order", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const draw = project.layers.find((layer) => layer.kind === "draw")!;
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    draw.name = "Markups";
+    measure.name = "Measurements";
+    const detail = addMeasureLayer(project, "layer_detail", "Detail symbols");
+    measure.items.push();
+    measure.items.push(
+      makeItem({
+        id: "item_detail",
+        kind: "count",
+        countType: "door",
+        points: [{ x: 60, y: 40 }],
+        categoryId: project.settings.quantity.defaultCategoryId,
+      }),
+    );
+    detail.items.push(
+      makeItem({
+        id: "item_detail_2",
+        kind: "count",
+        countType: "window",
+        points: [{ x: 80, y: 40 }],
+        categoryId: project.settings.quantity.defaultCategoryId,
+      }),
+    );
+    detail.parentId = measure.id;
+
+    const bytes = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    const tree = await optionalContentTree(bytes);
+    expect(tree.map((node) => node.headingName ?? node.name)).toEqual(["Markups", "Measurements"]);
+    // The group layer keeps its own group and nests the child under a heading.
+    expect(tree[1].headingName).toBe("Measurements");
+    expect(tree[1].order.map((node) => node.name)).toEqual(["Measurements", "Detail symbols"]);
+
+    // The plain OCG list still carries every group exactly once.
+    expect(await optionalContentNames(bytes)).toEqual([
+      "Markups",
+      "Measurements",
+      "Detail symbols",
+    ]);
+
+    // pdf.js resolves the same leaf groups from the catalog.
+    const task = pdfjs.getDocument({ data: bytes.slice() });
+    const document = await task.promise;
+    const config = await document.getOptionalContentConfig();
+    const groupNames = [...config].map(([, group]) => group.name);
+    expect(groupNames).toEqual(["Markups", "Measurements", "Detail symbols"]);
+    await task.destroy();
+  });
+
+  it("excludes a visible child when its group is hidden", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    measure.name = "Hidden group";
+    const child = addMeasureLayer(project, "layer_child", "Visible child");
+    child.parentId = measure.id;
+    measure.visible = false;
+
+    const tree = await optionalContentTree(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeOcg: true,
+      }),
+    );
+    expect(tree.map((node) => node.name)).toEqual(["Markups"]);
+    expect(tree.some((node) => node.headingName === "Hidden group")).toBe(false);
+
+    // The hidden group also keeps its child's items out of the flattened page.
+    measure.visible = true;
+    const shown = await textItems(
+      await exportProjectPdf(project, renderer, exportOptions(project)),
+      1,
+    );
+    expect(shown.some((item) => item.text.includes("Wall"))).toBe(true);
+    measure.visible = false;
+    const hidden = await textItems(
+      await exportProjectPdf(project, renderer, exportOptions(project)),
+      1,
+    );
+    expect(hidden.some((item) => item.text.includes("Wall"))).toBe(false);
+    expect(hidden.length).toBeLessThan(shown.length);
+  });
+
+  it("keeps the hierarchy out of the flattened default and stays deterministic", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const measure = project.layers.find((layer) => layer.kind === "measure")!;
+    const child = addMeasureLayer(project, "layer_child", "Child");
+    child.parentId = measure.id;
+
+    const off = await exportProjectPdf(project, renderer, exportOptions(project));
+    const offAgain = await exportProjectPdf(project, renderer, exportOptions(project));
+    expect(Buffer.from(off).equals(Buffer.from(offAgain))).toBe(true);
+    const offDoc = await PDFDocument.load(off);
+    expect(offDoc.catalog.get(PDFName.of("OCProperties"))).toBeUndefined();
+
+    // The hierarchy changes neither the flattened default nor its bytes.
+    const flat = withTestPageIds(createProject(defaultDocument("Export.pdf", 2)));
+    flat.pages[0].state = project.pages[0].state;
+    const flatDraw = flat.layers.find((layer) => layer.kind === "draw")!;
+    const flatMeasure = flat.layers.find((layer) => layer.kind === "measure")!;
+    flatDraw.items = project.layers.find((layer) => layer.kind === "draw")!.items;
+    flatMeasure.items = project.layers.find((layer) => layer.kind === "measure")!.items;
+    const flatOff = await exportProjectPdf(flat, renderer, exportOptions(flat));
+    expect(Buffer.from(flatOff).equals(Buffer.from(off))).toBe(true);
+
+    const on = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    const onAgain = await exportProjectPdf(project, renderer, {
+      ...exportOptions(project),
+      includeOcg: true,
+    });
+    expect(Buffer.from(on).equals(Buffer.from(onAgain))).toBe(true);
+    // The flattened artwork is identical; only the marked-content markers differ.
+    const onText = await textItems(on, 1);
+    const offText = await textItems(off, 1);
+    expect(onText.map((item) => item.text)).toEqual(offText.map((item) => item.text));
+  });
+
+  it("drops a group that has no visible content", async () => {
+    const renderer = await makeRenderer();
+    const project = makeProject();
+    const empty = addMeasureLayer(project, "layer_empty", "Empty group");
+    const hidden = addMeasureLayer(project, "layer_hidden_child", "Hidden child");
+    hidden.parentId = empty.id;
+    hidden.visible = false;
+
+    const tree = await optionalContentTree(
+      await exportProjectPdf(project, renderer, {
+        ...exportOptions(project),
+        includeOcg: true,
+      }),
+    );
+    expect(tree.map((node) => node.headingName ?? node.name)).toEqual(["Markups", "Measurements"]);
+    expect(tree.some((node) => node.headingName === "Empty group")).toBe(false);
+  });
+});

@@ -8,6 +8,7 @@ import {
   layerLockedOnPage,
   layerVisibleOnPage,
 } from "../model/layers";
+import { buildLayerHierarchy } from "../model/layerHierarchy";
 import { stampStatusColor } from "../model/stamps";
 import { STROKE_WIDTH_OPTIONS } from "../model/style";
 import {
@@ -93,8 +94,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   if (activeLayer) {
     const page = store.ui.page;
     const pageId = pageIdAt(project, page) ?? "";
-    const activeVisible = layerVisibleOnPage(activeLayer, pageId);
-    const activeLocked = layerLockedOnPage(activeLayer, pageId);
+    const hierarchy = buildLayerHierarchy(project.layers);
+    const activeVisible = layerVisibleOnPage(activeLayer, pageId, hierarchy);
+    const activeLocked = layerLockedOnPage(activeLayer, pageId, hierarchy);
     layerTarget.classList.toggle(
       "is-warning",
       Boolean(targetKind && (!activeVisible || activeLocked)),
@@ -131,12 +133,12 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
       if (
         targetKind &&
         next &&
-        (!layerVisibleOnPage(next, pageId) || layerLockedOnPage(next, pageId))
+        (!layerVisibleOnPage(next, pageId, hierarchy) || layerLockedOnPage(next, pageId, hierarchy))
       ) {
         toast(
           t("context.targetUnavailable", {
             name: next.name,
-            state: layerLockedOnPage(next, pageId)
+            state: layerLockedOnPage(next, pageId, hierarchy)
               ? t("context.stateLocked")
               : t("context.stateHidden"),
           }),

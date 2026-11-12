@@ -98,7 +98,7 @@ async function prepareStage(page, base) {
   await page.getByRole("button", { name: "Layers", exact: true }).click();
   await page.waitForTimeout(150);
   const measureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
-  const expand = measureLayer.getByRole("button", { name: /Expand Measurements/ });
+  const expand = measureLayer.getByRole("button", { name: /Expand .?Measurements/ });
   if ((await expand.count()) > 0) await expand.click();
   await page.waitForTimeout(150);
 

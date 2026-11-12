@@ -12,6 +12,7 @@ import {
 } from "./geometry";
 import type { MarkupItem, PageId, Point, Project } from "./types";
 import { layerVisibleOnPage } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import { railGeometry } from "./rail";
 import { symbolFor, symbolSizeOf } from "../features/schematics/symbols/registry";
 
@@ -240,8 +241,9 @@ export function collectSnapCandidates(project: Project, pageId: PageId): SnapCan
   const seen = new Map<string, SnapCandidate>();
   const segments: Segment[] = [];
 
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const layer of project.layers) {
-    if (!layerVisibleOnPage(layer, pageId)) continue;
+    if (!layerVisibleOnPage(layer, pageId, hierarchy)) continue;
     for (const item of layer.items) {
       if (item.pageId !== pageId || item.visible === false) continue;
 

@@ -20,6 +20,7 @@ import {
   selectionAfterClick,
 } from "../../features/listInteraction";
 import { categoryForItem } from "../../model/categories";
+import { buildLayerHierarchy, type LayerHierarchy } from "../../model/layerHierarchy";
 import { setItemsLocked, setItemsStatus, setItemsVisible } from "../../model/commands";
 import { formatTimestamp, timestampValue } from "../../model/dates";
 import {
@@ -119,8 +120,9 @@ export function filteredRows(project: Project): MarkupRow[] {
 export function compareRows(a: MarkupRow, b: MarkupRow, project: Project): number {
   const sort = markupsState.settings.sort;
   if (sort) {
-    const left = sortValue(a, sort.column, project);
-    const right = sortValue(b, sort.column, project);
+    const hierarchy = buildLayerHierarchy(project.layers);
+    const left = sortValue(a, sort.column, project, hierarchy);
+    const right = sortValue(b, sort.column, project, hierarchy);
     let result: number;
     if (typeof left === "number" && typeof right === "number") result = left - right;
     else result = String(left).localeCompare(String(right), undefined, { numeric: true });
@@ -139,6 +141,7 @@ export function sortValue(
   row: MarkupRow,
   column: MarkupsColumnId,
   project: Project,
+  hierarchy?: LayerHierarchy,
 ): string | number {
   const category = isMeasurementKind(row.item.kind)
     ? categoryForItem(project, row.item)
@@ -173,9 +176,9 @@ export function sortValue(
     case "modified":
       return timestampValue(row.item.updatedAt);
     case "visible":
-      return itemIsVisible(row.item, row.layer) ? 0 : 1;
+      return itemIsVisible(row.item, row.layer, hierarchy) ? 0 : 1;
     case "locked":
-      return itemIsLocked(row.item, row.layer) ? 0 : 1;
+      return itemIsLocked(row.item, row.layer, hierarchy) ? 0 : 1;
   }
 }
 
@@ -269,16 +272,17 @@ export function markupRowElement(
   provenance: ReadonlyMap<string, ProvenanceSummary> = new Map(),
 ): HTMLTableRowElement {
   const project = store.project!;
+  const hierarchy = buildLayerHierarchy(project.layers);
   const { item, layer } = row;
   const ref = { layerId: layer.id, itemId: item.id };
   const labelText = itemLabel(item, project);
   const category = isMeasurementKind(item.kind) ? categoryForItem(project, item) : undefined;
   const metrics = itemMetrics(item, project);
   const deduction = item.kind === "area" && item.areaMode === "subtract";
-  const hidden = !itemIsVisible(item, layer);
-  const locked = itemIsLocked(item, layer);
-  const layerShown = layerVisibleOnPage(layer, item.pageId);
-  const layerLocked = layerLockedOnPage(layer, item.pageId);
+  const hidden = !itemIsVisible(item, layer, hierarchy);
+  const locked = itemIsLocked(item, layer, hierarchy);
+  const layerShown = layerVisibleOnPage(layer, item.pageId, hierarchy);
+  const layerLocked = layerLockedOnPage(layer, item.pageId, hierarchy);
 
   const tr = el("tr", "markups-row");
   tr.dataset.itemId = item.id;
@@ -328,7 +332,7 @@ export function markupRowElement(
   layerSelect.title = t("markups.moveLayer");
   for (const candidate of moveTargetLayers(project, layer.kind, [item.pageId])) {
     const candidateOption = option(candidate.id, candidate.name, candidate.id === layer.id);
-    if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.pageId)) {
+    if (candidate.id !== layer.id && layerLockedOnPage(candidate, item.pageId, hierarchy)) {
       candidateOption.disabled = true;
     }
     layerSelect.append(candidateOption);

@@ -1784,7 +1784,7 @@ No entries yet.
 - **Phase:** 0.25.0 phase 6 — unify Page, Layer and Markups list interactions
 - **Severity:** P3
 - **Area:** layers panel / accessibility
-- **Status:** accepted — focusable rows are an improvement, roles are still flat
+- **Status:** partly resolved in 10b — depth and expansion are exposed, full tree roles are deferred
 - **Evidence:** `src/ui/layerList.ts` renders `.layer-group` containers with
   visible kind headings, `.layer-row` elements with `tabIndex = 0` and an item
   list below each expanded layer. No `role="tree"`, `role="treeitem"`,
@@ -1795,10 +1795,21 @@ No entries yet.
   work (#193) will deepen it.
 - **Impact:** All controls remain reachable and labelled, and disclosure buttons
   expose `aria-expanded`. The gap is structural semantics, not operability.
-- **Next step:** Give the Layers panel a tree model (group → layer → item) with
-  roving focus when #193 adds nested layer folders, rather than adding partial
-  tree roles now and replacing them.
-- **Related:** #187, #193, `src/ui/layerList.ts`, `src/ui/layers/rows.ts`.
+- **10b update:** the panel now renders a real tree. Each row carries
+  `data-layer-depth`, the visible indent, `aria-expanded` on a group and an
+  accessible disclosure label that names the nested-layer and item counts; an
+  inherited hidden or locked state is a visible text chip whose title names the
+  ancestor, and the eye and lock buttons repeat that reason as their accessible
+  name. `role="tree"` / `role="treeitem"`, `aria-level`, `aria-setsize` and a
+  roving tabindex are still not set: every row keeps `tabIndex = 0` so `Tab`
+  reaches each row, which is not the ARIA tree pattern. Adding the roles without
+  the roving focus model would be a half-step, so it is deferred.
+- **Next step:** Give the Layers panel the ARIA tree pattern in one change —
+  `role="tree"`/`treeitem`, `aria-level`, `aria-setsize`/`aria-posinset` and a
+  roving tabindex with `Home`/`End`/`ArrowLeft`/`ArrowRight` following the same
+  rules as the existing row keys.
+- **Related:** #187, #193, `src/ui/layerList.ts`, `src/ui/layers/layerRow.ts`,
+  `src/ui/layers/rows.ts`.
 
 ### F-083 — Import provenance stores the source project ID, not its name
 
@@ -1876,7 +1887,7 @@ No entries yet.
 - **Phase:** 0.25.0 phase 10a — layer hierarchy model
 - **Severity:** P3
 - **Area:** layers / layer hierarchy
-- **Status:** accepted — schema 26 models the tree, phase 10b owns the UI
+- **Status:** resolved in 10b — `duplicateLayerSubtree()` copies the subtree
 - **Evidence:** `duplicateLayer()` in `src/model/layers.ts` copies one layer,
   its `pageState` and its items, keeps the source `parentId`, and inserts the
   copy directly after the source in `project.layers`. It never copies children.
@@ -1887,8 +1898,36 @@ No entries yet.
 - **Impact:** No data loss: the source subtree is untouched and every ID stays
   valid. The result is only surprising, and phase 10a has no UI that can create a
   group, so no user can reach it yet.
-- **Next step:** In phase 10b decide whether **Duplicate** on a group copies the
-  whole subtree with fresh IDs, or is disabled for a parent. Cover it with a test
-  either way, and keep the duplicate a sibling of its source.
+- **Resolution:** phase 10b adds `duplicateLayerSubtree()` in
+  `src/features/layerTree/operations.ts`. A layer without children still uses
+  `duplicateLayer()`; a group copies every descendant, mints one fresh layer ID
+  per copied layer and one fresh item ID per copied item, remaps the parent links
+  inside the copy so nothing points at the source, inserts the copies directly
+  after the source subtree and makes the copied root the active layer. The menu
+  names the nested count and `tests/layerTreeOperations.test.ts` covers the IDs,
+  the links, the item copies and the source subtree.
 - **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
-  `src/model/layers.ts`, `src/features/layerTree/model.ts`.
+  `src/model/layers.ts`, `src/features/layerTree/operations.ts`.
+
+### F-087 — pdf.js reads named optional-content groups from the array form only
+
+- **Date:** 2026-11-12
+- **Phase:** 0.25.0 phase 10b — Layers panel tree and nested OCG export
+- **Severity:** P3
+- **Area:** PDF export / optional content
+- **Status:** accepted — documented limitation
+- **Evidence:** Nested groups are written as heading dictionaries with `/Name`
+  and a nested `/Order` in `/OCProperties /D /Order`, per ADR 0014 and ISO
+  32000. pdf.js `parseNestedOrder` in `pdf.worker.mjs` only accepts an array
+  whose first element is the group name, so a dictionary heading is skipped and
+  the groups it contains are shown flat. Acrobat and most desktop readers read
+  the dictionary form.
+- **Problem:** In Firefox's built-in viewer the groups are all present and
+  toggleable, but they are not nested with their parent group's heading.
+- **Impact:** No content, toggle or determinism difference; only the presentation
+  of the layer list in pdf.js-based viewers.
+- **Next step:** Decide whether to emit the array form instead of, or in addition
+  to, the heading dictionary when a reader-compatibility audit is paid for.
+  Keep the nested structure test on the raw `/Order` tree either way.
+- **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
+  `src/pdf/export/ocg.ts`, `tests/pdfExport.test.ts`.

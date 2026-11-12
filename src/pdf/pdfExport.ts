@@ -4,12 +4,12 @@ import { embedFonts } from "./export/fonts";
 import { embedImages } from "./export/images";
 import { drawLegendPage } from "./export/legend";
 import { createOptionalContent } from "./export/ocg";
+import { optionalContentTree } from "./export/ocgTree";
 import { normalizeCrop, normalizeExportPages } from "./export/options";
 import { applyCrop } from "./export/page";
 import { drawPageContent } from "./export/content";
 import { pageIdAt } from "../model/pages";
 import type { DrawingExportOptions } from "../model/export";
-import { layerVisibleOnPage } from "../model/layers";
 import { layoutPageLabels, pageLabelSources } from "../model/labelLayout";
 import type { Project } from "../model/types";
 import type { PdfRenderer } from "./pdfRenderer";
@@ -53,18 +53,7 @@ export async function exportProjectPdf(
   const crop = normalizeCrop(options?.crop);
   const images = await embedImages(pdf, project, selectedPages, selectedLayers);
   const ocg = options?.includeOcg
-    ? createOptionalContent(
-        pdf,
-        project.layers.filter(
-          (layer) =>
-            selectedLayers.has(layer.id) &&
-            layer.opacity > 0 &&
-            selectedPages.some((pageNumber) => {
-              const pageId = pageIdAt(project, pageNumber);
-              return pageId ? layerVisibleOnPage(layer, pageId) : false;
-            }),
-        ),
-      )
+    ? createOptionalContent(pdf, optionalContentTree(project, selectedLayers, selectedPages))
     : null;
 
   for (const pageNumber of selectedPages) {

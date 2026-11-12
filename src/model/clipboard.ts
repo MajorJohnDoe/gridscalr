@@ -8,6 +8,7 @@ import {
   layerVisibleOnPage,
 } from "./layers";
 import { resolveSelection } from "./selection";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import type { Layer, MarkupItem, PageId, Project, SelectionRef } from "./types";
 
 export interface ClipboardItem {
@@ -65,29 +66,20 @@ function targetLayerFor(
   pageId: PageId,
 ): Layer {
   const kind = layerKindForItem(item.kind);
+  const hierarchy = buildLayerHierarchy(project.layers);
+  const usable = (layer: Layer): boolean =>
+    layer.kind === kind &&
+    layerVisibleOnPage(layer, pageId, hierarchy) &&
+    !layerLockedOnPage(layer, pageId, hierarchy);
   const source = project.layers.find((layer) => layer.id === sourceLayerId);
-  if (
-    source &&
-    source.kind === kind &&
-    layerVisibleOnPage(source, pageId) &&
-    !layerLockedOnPage(source, pageId)
-  ) {
-    return source;
-  }
+  if (source && usable(source)) return source;
 
   const active = project.layers.find(
-    (layer) =>
-      layer.id === project.activeLayerId &&
-      layer.kind === kind &&
-      layerVisibleOnPage(layer, pageId) &&
-      !layerLockedOnPage(layer, pageId),
+    (layer) => layer.id === project.activeLayerId && usable(layer),
   );
   if (active) return active;
 
-  const editable = project.layers.find(
-    (layer) =>
-      layer.kind === kind && layerVisibleOnPage(layer, pageId) && !layerLockedOnPage(layer, pageId),
-  );
+  const editable = project.layers.find(usable);
   if (editable) {
     project.activeLayerId = editable.id;
     return editable;

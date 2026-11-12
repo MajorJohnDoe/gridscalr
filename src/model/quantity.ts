@@ -2,6 +2,7 @@ import { categoryForItem, normalizeRoom } from "./categories";
 import { pageBuilding, pageDisplayName, pageFloor, pageNumber } from "./pages";
 import { areaShapeOf, areaValue } from "./area";
 import { itemIsVisible } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import { itemScaleForDisplay } from "./measure";
 import { countQuantityOf, countTypeFor } from "../features/countTypes/model";
 import { areaInUnit, lengthInUnit, unitLabel, volumeInUnit, volumeUnitLabel } from "./units";
@@ -236,6 +237,7 @@ function forEachMeasuredItem(
 ): { hiddenExcluded: number; uncalibratedExcluded: number } {
   let hiddenExcluded = 0;
   let uncalibratedExcluded = 0;
+  const hierarchy = buildLayerHierarchy(project.layers);
   const lengthUnit = project.settings.lengthUnit;
   const areaUnit = project.settings.areaUnit;
   const roomFilter = (normalizeRoom(filters.room ?? "") ?? "").toLowerCase();
@@ -255,7 +257,7 @@ function forEachMeasuredItem(
       if (filters.layerIds && !filters.layerIds.includes(layer.id)) continue;
       if (filters.categoryId && category.id !== filters.categoryId) continue;
       if (roomFilter && !room.toLowerCase().includes(roomFilter)) continue;
-      if (filters.includeHidden !== true && !itemIsVisible(item, layer)) {
+      if (filters.includeHidden !== true && !itemIsVisible(item, layer, hierarchy)) {
         hiddenExcluded += 1;
         continue;
       }

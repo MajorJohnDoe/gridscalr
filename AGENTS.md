@@ -535,8 +535,8 @@ src/ui/inspector/         selection summary, measurement, image, symbol, drawing
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
 src/ui/markupsPanel.ts     Markups public surface
 src/ui/markups/            Markups state, view favourites, grouping, rows and virtualised panel
-src/ui/layerList.ts        Layers panel orchestration, toolbar and rows
-src/ui/layers/             layer filter, row builder, menu, view state and drag reorder wiring
+src/ui/layerList.ts        Layers panel wiring: toolbar, expansion controls, bulk bar and row loop
+src/ui/layers/             layer filter and tree rows, layer row builder, bulk actions, menu, view state and tree-move wiring
 src/ui/layerAction.ts      shared row icon button for Layers and Markups
 src/ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
 src/ui/duplicatePageDialog.ts page name, scale and markup duplication options
@@ -575,7 +575,7 @@ src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
 src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
-src/features/layerTree/    layer tree, effective state lookup, subtree deletion plan and page-removal keep rules
+src/features/layerTree/    layer tree rows, inherited state, drag/keyboard nesting, subtree duplicate, deletion plan and page-removal keep rules
 src/features/saveIntegrity/backupController.ts backup listing, restore-as-copy, explicit replace and delete
 src/features/saveIntegrity/backupManagerModel.ts pure backup selection and origin-warning rules
 src/features/saveIntegrity/backupManagerUi.ts backup history, restore, replace and delete dialog

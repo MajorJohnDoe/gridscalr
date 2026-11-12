@@ -1,6 +1,7 @@
 import { makeId } from "./calibration";
 import { normalizeColor } from "./color";
 import { buildLayerHierarchy, layerDescendantIds, layerEffectiveState } from "./layerHierarchy";
+import type { LayerHierarchy } from "./layerHierarchy";
 import { defaultProjectMetadata } from "./metadata";
 import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
@@ -217,12 +218,34 @@ export function layerPageState(layer: Layer, pageId: PageId): LayerPageState | u
   return layer.pageState?.[pageId];
 }
 
-export function layerVisibleOnPage(layer: Layer, pageId: PageId): boolean {
-  return layerPageState(layer, pageId)?.visible ?? layer.visible;
+/**
+ * Visibility of one layer on one page.
+ *
+ * Without a hierarchy this is the layer's own page override, which is exactly
+ * the flat behaviour. With a hierarchy the result also includes every ancestor,
+ * so a hidden group hides its whole subtree in render, hit-test and export paths
+ * that pass the hierarchy they already built. See ADR 0014.
+ */
+export function layerVisibleOnPage(
+  layer: Layer,
+  pageId: PageId,
+  hierarchy?: LayerHierarchy,
+): boolean {
+  if (!hierarchy) return layerPageState(layer, pageId)?.visible ?? layer.visible;
+  return layerEffectiveState(hierarchy, layer.id, pageId)?.visible ?? false;
 }
 
-export function layerLockedOnPage(layer: Layer, pageId: PageId): boolean {
-  return layerPageState(layer, pageId)?.locked ?? layer.locked;
+/**
+ * Locking of one layer on one page, including every locked ancestor when a
+ * hierarchy is supplied. Locked layers stay visible and exportable.
+ */
+export function layerLockedOnPage(
+  layer: Layer,
+  pageId: PageId,
+  hierarchy?: LayerHierarchy,
+): boolean {
+  if (!hierarchy) return layerPageState(layer, pageId)?.locked ?? layer.locked;
+  return layerEffectiveState(hierarchy, layer.id, pageId)?.locked ?? false;
 }
 
 /** True when a layer is either created on the page or has items on it. */
@@ -290,13 +313,17 @@ export function setLayerLockedGlobally(layer: Layer, locked: boolean): void {
   clearPageOverride(layer, "locked");
 }
 
-export function itemIsVisible(item: MarkupItem, layer?: Layer): boolean {
-  if (layer && !layerVisibleOnPage(layer, item.pageId)) return false;
+export function itemIsVisible(
+  item: MarkupItem,
+  layer?: Layer,
+  hierarchy?: LayerHierarchy,
+): boolean {
+  if (layer && !layerVisibleOnPage(layer, item.pageId, hierarchy)) return false;
   return item.visible !== false;
 }
 
-export function itemIsLocked(item: MarkupItem, layer?: Layer): boolean {
-  if (layer && layerLockedOnPage(layer, item.pageId)) return true;
+export function itemIsLocked(item: MarkupItem, layer?: Layer, hierarchy?: LayerHierarchy): boolean {
+  if (layer && layerLockedOnPage(layer, item.pageId, hierarchy)) return true;
   return item.locked === true;
 }
 
@@ -313,10 +340,13 @@ function availableLayerName(project: Project, kind: LayerKind): string {
 /** Returns a layer that can receive new items of the requested kind. */
 export function ensureActiveLayer(project: Project, kind: LayerKind, pageId?: PageId): Layer {
   const current = project.layers.find((l) => l.id === project.activeLayerId && l.kind === kind);
+  const hierarchy = buildLayerHierarchy(project.layers);
   const currentEditable = current
     ? pageId === undefined
-      ? current.visible && !current.locked
-      : layerVisibleOnPage(current, pageId) && !layerLockedOnPage(current, pageId)
+      ? layerVisibleOnPage(current, pageId ?? "", hierarchy) &&
+        !layerLockedOnPage(current, pageId ?? "", hierarchy)
+      : layerVisibleOnPage(current, pageId, hierarchy) &&
+        !layerLockedOnPage(current, pageId, hierarchy)
     : false;
   if (current && currentEditable) return current;
 
@@ -324,8 +354,10 @@ export function ensureActiveLayer(project: Project, kind: LayerKind, pageId?: Pa
     (layer) =>
       (pageId === undefined || layerAppliesToPage(layer, pageId)) &&
       (pageId === undefined
-        ? layer.visible && !layer.locked
-        : layerVisibleOnPage(layer, pageId) && !layerLockedOnPage(layer, pageId)),
+        ? layerVisibleOnPage(layer, pageId ?? "", hierarchy) &&
+          !layerLockedOnPage(layer, pageId ?? "", hierarchy)
+        : layerVisibleOnPage(layer, pageId, hierarchy) &&
+          !layerLockedOnPage(layer, pageId, hierarchy)),
   );
   if (editable) {
     project.activeLayerId = editable.id;
@@ -341,8 +373,9 @@ export function ensureActiveLayer(project: Project, kind: LayerKind, pageId?: Pa
 /** Colour of the layer that will receive a new measurement on this page. */
 export function measurementLayerColor(project: Project, pageId: PageId): string {
   const layers = project.layers.filter((layer) => layer.kind === "measure");
+  const hierarchy = buildLayerHierarchy(project.layers);
   const editable = (layer: Layer) =>
-    layerVisibleOnPage(layer, pageId) && !layerLockedOnPage(layer, pageId);
+    layerVisibleOnPage(layer, pageId, hierarchy) && !layerLockedOnPage(layer, pageId, hierarchy);
   const target =
     layers.find((layer) => layer.id === project.activeLayerId && editable(layer)) ??
     layers.find(editable);

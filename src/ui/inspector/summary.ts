@@ -12,6 +12,7 @@ import {
   imageModeOf,
 } from "../../model/images";
 import { layerLockedOnPage } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { itemKindLabel, itemNeedsPageScale, itemScaleWarning } from "../../model/measure";
 import { el } from "../dom";
 import { icon } from "../icons";
@@ -20,6 +21,7 @@ import { pageNumber } from "../../model/pages";
 
 export function appendSummary(section: HTMLElement, context: InspectorContext): void {
   const { project, item, layer, locked, hidden, metrics } = context;
+  const hierarchy = buildLayerHierarchy(project.layers);
   const card = el("div", "selection-card");
   const type = el("div", "selection-type");
   const swatch = el("span", "swatch");
@@ -84,7 +86,7 @@ export function appendSummary(section: HTMLElement, context: InspectorContext): 
       el(
         "div",
         "empty-note small",
-        layerLockedOnPage(layer, item.pageId)
+        layerLockedOnPage(layer, item.pageId, hierarchy)
           ? t("inspector.lockedOnPageMessage", {
               name: layer.name,
               page: pageNumber(project, item.pageId),

@@ -1,5 +1,6 @@
 import { itemSelectionBounds, type Bounds } from "./geometry";
 import { itemIsLocked, itemIsVisible, layerLockedOnPage, layerVisibleOnPage } from "./layers";
+import { buildLayerHierarchy } from "./layerHierarchy";
 import { resolveSelection } from "./selection";
 import { clampSymbolSize } from "./symbols";
 import { clampTextSize } from "./text";
@@ -86,12 +87,13 @@ export function scaleSelection(
   anchor: Point,
 ): number {
   let scaled = 0;
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const { layer, item } of resolveSelection(project, refs)) {
     if (
-      itemIsLocked(item, layer) ||
-      !itemIsVisible(item, layer) ||
-      !layerVisibleOnPage(layer, item.pageId) ||
-      layerLockedOnPage(layer, item.pageId)
+      itemIsLocked(item, layer, hierarchy) ||
+      !itemIsVisible(item, layer, hierarchy) ||
+      !layerVisibleOnPage(layer, item.pageId, hierarchy) ||
+      layerLockedOnPage(layer, item.pageId, hierarchy)
     ) {
       continue;
     }

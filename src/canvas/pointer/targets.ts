@@ -17,6 +17,7 @@ import {
   itemIsVisible,
   layerLockedOnPage,
 } from "../../model/layers";
+import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { resolveSelection } from "../../model/selection";
 import { selectionBounds } from "../../model/transform";
 import type { MarkupItem, PageId, Point, SelectionRef } from "../../model/types";
@@ -150,11 +151,12 @@ function beginGroupScale(
   context: SelectionContext,
 ): void {
   const items: Array<{ ref: SelectionRef; item: MarkupItem }> = [];
+  const hierarchy = buildLayerHierarchy(project.layers);
   for (const entry of resolveSelection(project, store.ui.selection)) {
     if (
       entry.locked ||
-      !itemIsVisible(entry.item, entry.layer) ||
-      layerLockedOnPage(entry.layer, entry.item.pageId)
+      !itemIsVisible(entry.item, entry.layer, hierarchy) ||
+      layerLockedOnPage(entry.layer, entry.item.pageId, hierarchy)
     ) {
       continue;
     }
