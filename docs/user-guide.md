@@ -38,13 +38,13 @@ On a touch screen or laptop touchpad, use **two fingers** to pan and pinch to zo
 
 ## Workspace lists
 
-The **Pages**, **Layers** and **Markups** lists share one interaction model, so the same hands work in all three.
+The **Pages**, **Layers** and **Markups** lists share one interaction model, so the same habits work in all three.
 
 - `Tab` focuses a row, then `ArrowUp` / `ArrowDown`, `Home` and `End` move through it. Plain `Left` / `Right` collapse or expand the focused tree row.
 - Click selects a row, `Ctrl`/`Cmd` + click adds or removes one, and `Shift` + click selects the range from the anchor.
 - `Shift+F10` or the Menu key opens the row menu and returns focus to the row when it closes. `F2` renames where the list supports inline rename.
 - Pages and Layers are user-ordered. Drag a selected row by its grip handle and a drop line shows where it lands, or use `Alt` + arrows. Every move is announced to screen readers and is one undo step.
-- Columns that filter, such as the Layers search or the Pages status filter, only narrow what is shown; they never change the saved order.
+- A filter — the Layers search, the Pages status filter or a Markups column filter — only narrows what is shown; it never changes the saved order.
 
 The Markups table is sorted and grouped rather than user-ordered, so it follows the focus, selection, filter and collapse conventions but has no drag handle or drop line. The complete key list is in **Help → Keyboard shortcuts**.
 
