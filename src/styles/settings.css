@@ -1,0 +1,225 @@
+/*
+ * Settings and preferences dialogs: the category pane, its always-visible
+ * scrollbar, section cards and the shared badges and list rows.
+ */
+
+.dialog-scroll {
+  position: relative;
+  display: flex;
+  min-height: 0;
+}
+
+.dialog-pane {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 16px;
+  scrollbar-width: none;
+}
+
+.dialog-pane::-webkit-scrollbar {
+  display: none;
+}
+
+.dialog-pane > * {
+  flex: 0 0 auto;
+}
+
+.dialog-scrollbar {
+  position: absolute;
+  top: 0;
+  right: 2px;
+  bottom: 0;
+  width: 9px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s;
+}
+
+.dialog-scroll.is-scrollable .dialog-scrollbar {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dialog-scrollbar-thumb {
+  position: absolute;
+  top: 0;
+  left: 1px;
+  right: 1px;
+  min-height: 28px;
+  border-radius: 5px;
+  background: var(--scrollbar-hover, #5e666d);
+  cursor: grab;
+}
+
+.dialog-scrollbar-thumb:hover {
+  background: var(--muted-2);
+}
+
+.dialog-scrollbar-thumb:active {
+  cursor: grabbing;
+}
+
+.settings-intro {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-intro h3 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 13px;
+  font-weight: 650;
+}
+
+.settings-intro p {
+  margin: 0;
+}
+
+.settings-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 0 12px 12px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  overflow: hidden;
+}
+
+.settings-section h3 {
+  margin: 0 -12px;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border-soft);
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.settings-note {
+  margin: -2px 0 0;
+  color: var(--muted-2);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.settings-subtitle {
+  margin: 12px 0 2px;
+  color: var(--muted-2);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.settings-field {
+  flex: 1;
+}
+
+.settings-range {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.settings-range input[type="range"] {
+  flex: 1;
+  accent-color: var(--jade);
+}
+
+.settings-range-value {
+  width: 48px;
+  color: var(--text);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.settings-scale-value {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.settings-subhead {
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.3px;
+}
+
+.settings-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.settings-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 9px;
+  background: var(--bg-deep);
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.settings-badge.is-warning {
+  background: rgba(229, 165, 75, 0.14);
+  color: var(--amber);
+}
+
+.settings-badge:empty {
+  display: none;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid var(--border-soft);
+}
+
+.settings-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.settings-list-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings-list-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.settings-list-kind {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+  font-size: 11px;
+}

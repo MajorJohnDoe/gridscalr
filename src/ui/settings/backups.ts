@@ -8,14 +8,12 @@ import { openBackupManagerDialog } from "../../features/saveIntegrity";
 import { t } from "../../i18n";
 import { store } from "../../state/store";
 import { el } from "../dom";
-import { field } from "../settingsControls";
+import { field, section } from "../settingsControls";
 import { toast } from "../toast";
 
 /** Preferences → Data controls for rolling backups and their retention. */
 export function backupSection(): HTMLElement {
-  const wrap = el("div", "backup-preferences");
-  wrap.append(el("h4", "settings-subtitle", t("preferences.data.backupTitle")));
-  wrap.append(el("p", "settings-note", t("preferences.data.backupNote")));
+  const wrap = section(t("preferences.data.backupTitle"), t("preferences.data.backupNote"));
 
   const select = el("select", "select");
   select.setAttribute("aria-label", t("preferences.data.backupRetention"));
@@ -38,7 +36,7 @@ export function backupSection(): HTMLElement {
   wrap.append(el("p", "settings-note", t("preferences.data.backupRetentionNote")));
 
   const actions = el("div", "settings-actions");
-  const manage = el("button", "btn btn-small btn-ghost", t("preferences.data.openBackups"));
+  const manage = el("button", "btn btn-small", t("preferences.data.openBackups"));
   manage.type = "button";
   manage.disabled = !store.project;
   manage.title = store.project

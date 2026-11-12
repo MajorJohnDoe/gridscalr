@@ -109,7 +109,7 @@ function workspaceSection(): HTMLElement {
   );
 
   const actions = el("div", "settings-actions");
-  const expand = el("button", "btn btn-small btn-ghost", t("preferences.workspace.expand"));
+  const expand = el("button", "btn btn-small", t("preferences.workspace.expand"));
   expand.type = "button";
   expand.addEventListener("click", () => {
     setSidebarCollapsed(false);
@@ -117,7 +117,7 @@ function workspaceSection(): HTMLElement {
     openPreferencesDialog();
     toast(t("preferences.workspace.expanded"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", t("preferences.workspace.reset"));
+  const reset = el("button", "btn btn-small", t("preferences.workspace.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetPanelLayout();
@@ -158,7 +158,7 @@ function layersSection(): HTMLElement {
   draw.input.addEventListener("change", save);
 
   const actions = el("div", "settings-actions");
-  const signalRed = el("button", "btn btn-small btn-ghost", t("preferences.layers.signalRed"));
+  const signalRed = el("button", "btn btn-small", t("preferences.layers.signalRed"));
   signalRed.type = "button";
   signalRed.addEventListener("click", () => {
     setColorInput(measure.input, "#f70808", "#f70808");
@@ -166,7 +166,7 @@ function layersSection(): HTMLElement {
     save();
     toast(t("preferences.layers.signalRedDone"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", t("preferences.layers.reset"));
+  const reset = el("button", "btn btn-small", t("preferences.layers.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     colors = resetLayerColorDefaults();
@@ -191,7 +191,7 @@ function stampsSection(): HTMLElement {
   );
 
   const actions = el("div", "settings-actions");
-  const fromProject = el("button", "btn btn-small btn-ghost", t("preferences.stamps.fromProject"));
+  const fromProject = el("button", "btn btn-small", t("preferences.stamps.fromProject"));
   fromProject.type = "button";
   fromProject.disabled = !store.project;
   fromProject.title = store.project
@@ -204,7 +204,7 @@ function stampsSection(): HTMLElement {
     openPreferencesDialog();
     toast(t("preferences.stamps.updated"), "success");
   });
-  const reset = el("button", "btn btn-small btn-ghost", t("preferences.stamps.reset"));
+  const reset = el("button", "btn btn-small", t("preferences.stamps.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetGlobalStampPresets();
@@ -216,29 +216,44 @@ function stampsSection(): HTMLElement {
   return wrap;
 }
 
-function dataSection(): HTMLElement {
-  const wrap = section(t("preferences.data.title"), t("preferences.data.note"));
-
+function recoveryCard(): HTMLElement {
+  const wrap = section(t("preferences.data.recoveryTitle"));
   const summary = getRecoverySummary();
   const hasRecovery = summary.count + summary.checkpoints > 0;
-  const recovery = el("div", "settings-actions");
-  const recoveryText = el(
-    "p",
-    "settings-note",
-    summary.latest
-      ? t("preferences.data.recoverySummary", {
-          count: summary.count,
-          checkpoints: summary.checkpoints,
-          name: summary.latest.projectName,
-          time: new Date(summary.latest.savedAt).toLocaleString(),
-        })
-      : t("preferences.data.recoveryNone"),
-  );
-  const reviewRecovery = el(
-    "button",
-    "btn btn-small btn-ghost",
-    t("preferences.data.reviewRecovery"),
-  );
+  if (hasRecovery) {
+    const status = el("div", "settings-status");
+    if (summary.count) {
+      status.append(
+        el("span", "settings-badge", t("preferences.data.unsavedCount", { count: summary.count })),
+      );
+    }
+    if (summary.checkpoints) {
+      status.append(
+        el(
+          "span",
+          "settings-badge",
+          t("preferences.data.checkpointCount", { count: summary.checkpoints }),
+        ),
+      );
+    }
+    wrap.append(status);
+    if (summary.latest) {
+      wrap.append(
+        el(
+          "p",
+          "settings-note",
+          t("preferences.data.latest", {
+            name: summary.latest.projectName,
+            time: new Date(summary.latest.savedAt).toLocaleString(),
+          }),
+        ),
+      );
+    }
+  } else {
+    wrap.append(el("p", "settings-note", t("preferences.data.recoveryNone")));
+  }
+
+  const reviewRecovery = el("button", "btn btn-small", t("preferences.data.reviewRecovery"));
   reviewRecovery.type = "button";
   reviewRecovery.addEventListener("click", () => {
     void (async () => {
@@ -248,7 +263,7 @@ function dataSection(): HTMLElement {
   });
   const clearRecovery = el(
     "button",
-    "btn btn-small btn-ghost",
+    "btn btn-small btn-danger",
     t("preferences.data.clearRecovery"),
   );
   clearRecovery.type = "button";
@@ -268,43 +283,48 @@ function dataSection(): HTMLElement {
       toast(t("preferences.data.recoveryCleared"), "success");
     })();
   });
-  recovery.append(recoveryText, reviewRecovery, clearRecovery);
+  const actions = el("div", "settings-actions");
+  actions.append(reviewRecovery, clearRecovery);
+  wrap.append(actions);
+  return wrap;
+}
 
+function recentCard(): HTMLElement {
+  const wrap = section(t("preferences.data.recentTitle"));
   const recent = getRecent();
-  const recentBox = el("div", "preferences-recents");
-  recentBox.append(
-    el(
-      "p",
-      "settings-note",
-      recent.length ? t("preferences.data.recentNote") : t("preferences.data.recentEmpty"),
-    ),
-  );
-  for (const entry of recent) {
-    const row = el("div", "field-row preferences-recent-row");
-    const label = el("span", "settings-note");
-    label.textContent = t("preferences.data.recentEntry", {
-      name: entry.name,
-      kind:
+  if (!recent.length) {
+    wrap.append(el("p", "settings-note", t("preferences.data.recentEmpty")));
+  } else {
+    const list = el("div", "settings-list");
+    for (const entry of recent) {
+      const row = el("div", "settings-list-row");
+      const name = el("span", "settings-list-name", entry.name);
+      name.title = entry.name;
+      const missing = el("span", "settings-badge is-warning", "");
+      const kind = el(
+        "span",
+        "settings-list-kind",
         entry.kind === "pdf"
           ? t("preferences.data.kindDrawing")
           : t("preferences.data.kindProject"),
-    });
-    const missing = el("span", "settings-note is-warning-text", "");
-    const remove = el("button", "btn btn-small btn-ghost", t("preferences.data.remove"));
-    remove.type = "button";
-    remove.addEventListener("click", () => {
-      removeRecent(entry.path, entry.kind);
-      openPreferencesDialog();
-    });
-    row.append(label, missing, remove);
-    recentBox.append(row);
-    if (isTauri) {
-      void pathExists(entry.path).then((exists) => {
-        if (!exists && missing.isConnected) missing.textContent = t("preferences.data.missing");
+      );
+      const remove = el("button", "btn btn-small", t("preferences.data.remove"));
+      remove.type = "button";
+      remove.addEventListener("click", () => {
+        removeRecent(entry.path, entry.kind);
+        openPreferencesDialog();
       });
+      row.append(name, missing, kind, remove);
+      list.append(row);
+      if (isTauri) {
+        void pathExists(entry.path).then((exists) => {
+          if (!exists && missing.isConnected) missing.textContent = t("preferences.data.missing");
+        });
+      }
     }
+    wrap.append(list);
   }
-  const clearRecents = el("button", "btn btn-small btn-ghost", t("preferences.data.clearRecent"));
+  const clearRecents = el("button", "btn btn-small", t("preferences.data.clearRecent"));
   clearRecents.type = "button";
   clearRecents.disabled = recent.length === 0;
   clearRecents.addEventListener("click", () => {
@@ -321,11 +341,19 @@ function dataSection(): HTMLElement {
       toast(t("preferences.data.recentCleared"), "success");
     })();
   });
-
   const actions = el("div", "settings-actions");
   actions.append(clearRecents);
-  wrap.append(autosaveSection(), backupSection(), recovery, recentBox, actions);
+  wrap.append(actions);
   return wrap;
+}
+
+function dataSection(): HTMLElement[] {
+  const intro = el("div", "settings-intro");
+  intro.append(
+    el("h3", "", t("preferences.data.title")),
+    el("p", "settings-note", t("preferences.data.note")),
+  );
+  return [intro, autosaveSection(), backupSection(), recoveryCard(), recentCard()];
 }
 
 export function openPreferencesDialog(): void {

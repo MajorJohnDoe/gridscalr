@@ -1294,9 +1294,11 @@
 .dialog-columns {
   display: grid;
   grid-template-columns: 170px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr);
   gap: 18px;
   min-height: min(48vh, 420px);
   max-height: min(68vh, 640px);
+  overflow: hidden;
 }
 
 .dialog-nav {
@@ -1328,73 +1330,10 @@
   color: var(--text-strong);
 }
 
-.dialog-pane {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-  overflow-y: auto;
-  padding-right: 4px;
-}
+/* Sections keep their natural height; the pane scrolls instead of squeezing them. */
 
-.settings-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding-bottom: 15px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.settings-section:last-child {
-  border-bottom: 0;
-  padding-bottom: 0;
-}
-
-.settings-section h3 {
-  margin: 0;
-  color: var(--text-strong);
-  font-size: 12px;
-  font-weight: 650;
-}
-
-.settings-note {
-  margin: -2px 0 0;
-  color: var(--muted-2);
-  font-size: 11.5px;
-  line-height: 1.5;
-}
-
-.settings-subtitle {
-  margin: 12px 0 2px;
-  color: var(--muted-2);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.settings-field {
-  flex: 1;
-}
-
-.settings-range {
-  display: flex;
-  align-items: center;
-  gap: 9px;
-}
-
-.settings-range input[type="range"] {
-  flex: 1;
-  accent-color: var(--jade);
-}
-
-.settings-range-value {
-  width: 48px;
-  color: var(--text);
-  font-size: 11px;
-  font-variant-numeric: tabular-nums;
-  text-align: right;
-}
+/* Always-visible scrollbar, drawn by the app so it does not depend on the
+   platform's overlay scrollbars. A long category never looks finished. */
 
 @media (max-width: 700px) {
   .dialog-columns {
@@ -1409,10 +1348,6 @@
     border-right: 0;
     border-bottom: 1px solid var(--border-soft);
     overflow-x: auto;
-  }
-
-  .dialog-pane {
-    overflow-y: visible;
   }
 }
 
@@ -1558,13 +1493,6 @@
   padding-top: 2px;
 }
 
-.settings-scale-value {
-  margin: 0;
-  color: var(--text);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-
 .context-bar::-webkit-scrollbar {
   height: 4px;
 }
@@ -1588,19 +1516,6 @@
     padding: 0;
     justify-content: center;
   }
-}
-
-.settings-subhead {
-  color: var(--text);
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.3px;
-}
-
-.settings-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
 }
 
 .stamp-preset-editor {

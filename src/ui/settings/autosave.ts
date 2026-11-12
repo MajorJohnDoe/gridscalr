@@ -7,12 +7,11 @@ import {
 } from "../../features/sessionRecovery";
 import { t } from "../../i18n";
 import { el } from "../dom";
-import { checkRow, field } from "../settingsControls";
+import { checkRow, field, section } from "../settingsControls";
 
 /** Preferences → Data controls for app-level recovery autosave. */
 export function autosaveSection(): HTMLElement {
-  const wrap = el("div", "autosave-preferences");
-  wrap.append(el("h4", "settings-subtitle", t("preferences.data.autosaveTitle")));
+  const wrap = section(t("preferences.data.autosaveTitle"));
   const state = autosaveState();
 
   const enabled = checkRow(t("preferences.data.autosaveEnabled"), state.enabled, (checked) => {

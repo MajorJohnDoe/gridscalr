@@ -80,7 +80,7 @@ export function metadataSection(onRefresh: () => void): HTMLElement {
   });
   logoActions.append(chooseLogo);
   if (currentLogo) {
-    const removeLogo = el("button", "btn btn-small btn-ghost", t("settings.removeLogo"));
+    const removeLogo = el("button", "btn btn-small", t("settings.removeLogo"));
     removeLogo.type = "button";
     removeLogo.addEventListener("click", () => {
       store.mutate((next) => {

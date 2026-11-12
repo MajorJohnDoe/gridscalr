@@ -19,7 +19,7 @@ export function stampsSection(onRefresh: () => void): HTMLElement {
     t("settings.newPreset"),
   );
 
-  const loadDefaults = el("button", "btn btn-small btn-ghost", t("settings.loadDefaults"));
+  const loadDefaults = el("button", "btn btn-small", t("settings.loadDefaults"));
   loadDefaults.type = "button";
   loadDefaults.addEventListener("click", () => {
     const next = loadGlobalStampPresets();

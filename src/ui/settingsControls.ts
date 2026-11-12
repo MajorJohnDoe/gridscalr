@@ -26,11 +26,60 @@ export function categoryLayout(
   const body = el("div", "dialog-columns");
   const nav = el("nav", "dialog-nav");
   nav.setAttribute("aria-label", ariaLabel);
+  const scroll = el("div", "dialog-scroll");
   const content = el("div", "dialog-pane");
-  body.append(nav, content);
+  const bar = el("div", "dialog-scrollbar");
+  const thumb = el("div", "dialog-scrollbar-thumb");
+  bar.append(thumb);
+  scroll.append(content, bar);
+  body.append(nav, scroll);
 
   const buttons = new Map<string, HTMLButtonElement>();
   let currentId = initialId ?? categories[0]?.id ?? "";
+
+  /** Paints the always-visible scrollbar beside the content pane. */
+  const syncScrollbar = () => {
+    const view = content.clientHeight;
+    const total = content.scrollHeight;
+    const scrollable = total > view + 1;
+    scroll.classList.toggle("is-scrollable", scrollable);
+    if (!scrollable) return;
+    const track = bar.clientHeight;
+    const height = Math.max(28, Math.round((view / total) * track));
+    const maxTop = Math.max(0, track - height);
+    const maxScroll = total - view;
+    const top = maxScroll > 0 ? (content.scrollTop / maxScroll) * maxTop : 0;
+    thumb.style.height = `${height}px`;
+    thumb.style.transform = `translateY(${top}px)`;
+  };
+  content.addEventListener("scroll", syncScrollbar);
+  new ResizeObserver(syncScrollbar).observe(content);
+
+  let drag: { y: number; scrollTop: number } | null = null;
+  thumb.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    thumb.setPointerCapture(event.pointerId);
+    drag = { y: event.clientY, scrollTop: content.scrollTop };
+  });
+  thumb.addEventListener("pointermove", (event) => {
+    if (!drag) return;
+    const track = bar.clientHeight - thumb.offsetHeight;
+    const maxScroll = content.scrollHeight - content.clientHeight;
+    if (track <= 0) return;
+    content.scrollTop = drag.scrollTop + ((event.clientY - drag.y) / track) * maxScroll;
+  });
+  const endDrag = () => {
+    drag = null;
+  };
+  thumb.addEventListener("pointerup", endDrag);
+  thumb.addEventListener("pointercancel", endDrag);
+  bar.addEventListener("pointerdown", (event) => {
+    if (event.target === thumb) return;
+    const rect = bar.getBoundingClientRect();
+    const ratio = (event.clientY - rect.top) / rect.height;
+    content.scrollTop =
+      ratio * (content.scrollHeight - content.clientHeight) - content.clientHeight / 2;
+  });
 
   const select = (id: string) => {
     currentId = id;
@@ -43,6 +92,7 @@ export function categoryLayout(
     const category = categories.find((entry) => entry.id === id) ?? categories[0];
     const rendered = category ? category.render() : [];
     content.replaceChildren(...(Array.isArray(rendered) ? rendered : [rendered]));
+    requestAnimationFrame(syncScrollbar);
   };
 
   for (const category of categories) {
