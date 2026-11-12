@@ -255,10 +255,17 @@ and zero documents are valid, not corrupt.
 - **Load report:** when an opened project contains dropped, repaired or invalid
   data, the load report names it instead of filtering it silently.
 - **Project doctor:** open it from **File → Project doctor…**, or from a blocked
-  save or a load report. It lists issues by severity and entity, and offers
-  explicit repairs for duplicate IDs, dangling references and stale OCR. A
-  repair changes an in-memory copy only; **Save repaired copy…** writes that copy
-  to a new file. The source project is never repaired in place.
+  save or a load report. It lists issues by severity and entity. Filter the list
+  by severity, entity kind or repair availability; a filter only narrows the
+  list — it never changes which repairs are available — and **Select all shown
+  repairs** adds only the repairs for the filtered issues. Each repair shows how
+  many changes it would make, and the preview lists the concrete duplicate
+  renames (`from → to`) and the dangling references it would remove, with
+  before and after error and warning counts. Tick the repairs you want and
+  choose **Apply selected repairs**; only those kinds are applied. A repair
+  changes an in-memory copy only; **Save repaired copy…** writes that copy to a
+  new file. Cancelling writes nothing and leaves the open project unchanged. The
+  source project is never repaired in place.
 - **Sources:** the doctor also checks every external drawing and reports it as
   available, missing or changed, and separates reference drawings from managed
   copies. A missing or changed source is a warning, never a save error.

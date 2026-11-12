@@ -4,7 +4,10 @@ import type { Project } from "../../model/types";
 import { confirmDialog, showModal } from "../../ui/dialogs";
 import { el } from "../../ui/dom";
 import type { DoctorLoadReport } from "./doctor";
-import type { RepairKind } from "./repair";
+import { issueMessage, repairLabel } from "./issueText";
+import type { DoctorIssueFilter } from "./repairFilter";
+import type { RepairKind } from "./repairPlan";
+import { addRepairSection, type DoctorRepairRequest } from "./repairUi";
 import type { DoctorSourceCleanupResult } from "./sourceAvailability";
 import type { DoctorSourceSnapshot } from "./sourceModel";
 import { addDoctorSources, type DoctorSourceRequest } from "./sourceUi";
@@ -13,7 +16,7 @@ type MessageKey = Parameters<typeof t>[0];
 
 export type ProjectDoctorDialogResult =
   | { kind: "close" | "save" | "export" | "open" | "open-read-only" }
-  | { kind: "repair"; repair: RepairKind }
+  | DoctorRepairRequest
   | DoctorSourceRequest;
 
 export interface ProjectDoctorDialogOptions {
@@ -23,43 +26,13 @@ export interface ProjectDoctorDialogOptions {
   canOpen: boolean;
   canOpenReadOnly: boolean;
   loadReport?: DoctorLoadReport;
-  notice?: { repair: RepairKind; changed: number };
+  notice?: { repairs: readonly RepairKind[]; changed: number };
+  filter?: DoctorIssueFilter;
   sources?: DoctorSourceSnapshot;
   sourceNotice?: DoctorSourceCleanupResult;
   canChangeSources?: boolean;
   canRelinkSources?: boolean;
   canCopySources?: boolean;
-}
-
-const ENTITY_KEYS: Record<string, MessageKey> = {
-  project: "projectIntegrity.entity.project",
-  document: "projectIntegrity.entity.document",
-  page: "projectIntegrity.entity.page",
-  layer: "projectIntegrity.entity.layer",
-  item: "projectIntegrity.entity.item",
-  asset: "projectIntegrity.entity.asset",
-  category: "projectIntegrity.entity.category",
-  countType: "projectIntegrity.entity.countType",
-  lineType: "projectIntegrity.entity.lineType",
-  countPreset: "projectIntegrity.entity.countPreset",
-  markupsView: "projectIntegrity.entity.markupsView",
-  settings: "projectIntegrity.entity.settings",
-};
-
-const REPAIR_KEYS: Record<RepairKind, MessageKey> = {
-  duplicateIds: "projectIntegrity.repair.duplicateIds",
-  danglingReferences: "projectIntegrity.repair.danglingReferences",
-  staleOcr: "projectIntegrity.repair.staleOcr",
-};
-
-function issueMessage(issue: ProjectIssue): string {
-  const message = t(`projectIntegrity.issue.${issue.code}` as MessageKey);
-  if (!issue.entity) return message;
-  const kind = ENTITY_KEYS[issue.entity.kind]
-    ? t(ENTITY_KEYS[issue.entity.kind])
-    : issue.entity.kind;
-  const id = issue.entity.id ? `:${issue.entity.id}` : "";
-  return t("projectIntegrity.issue.entity", { message, kind, id });
 }
 
 function totalItems(project: Project): number {
@@ -100,7 +73,7 @@ export async function projectDoctorDialog(
   const warnings = options.issues.filter((entry) => entry.severity === "warning");
   let pending: ProjectDoctorDialogResult | null = null;
   let closeDialog: () => void = () => undefined;
-  const request = (next: DoctorSourceRequest): void => {
+  const request = (next: DoctorRepairRequest | DoctorSourceRequest): void => {
     pending = next;
     closeDialog();
   };
@@ -121,25 +94,26 @@ export async function projectDoctorDialog(
   if (options.notice) {
     addLine(
       body,
-      t("projectIntegrity.doctor.repaired", {
+      t("projectIntegrity.repair.applied", {
         count: options.notice.changed,
-        repair: t(REPAIR_KEYS[options.notice.repair]),
+        repairs: options.notice.repairs.map(repairLabel).join(", "),
       }),
     );
   }
   if (!options.issues.length) {
     addLine(body, t("projectIntegrity.doctor.clean"));
   }
-  addIssueGroup(body, t("projectIntegrity.severity.error"), errors);
-  addIssueGroup(body, t("projectIntegrity.severity.warning"), warnings);
   if (options.repairs.length) {
-    body.append(el("h3", "settings-subtitle", t("projectIntegrity.repair.title")));
-    for (const repair of options.repairs) {
-      const button = el("button", "btn btn-small", t(REPAIR_KEYS[repair]));
-      button.type = "button";
-      button.dataset.repair = repair;
-      body.append(button);
-    }
+    addRepairSection(body, {
+      project: options.project,
+      issues: options.issues,
+      repairs: options.repairs,
+      filter: options.filter,
+      request,
+    });
+  } else {
+    addIssueGroup(body, t("projectIntegrity.severity.error"), errors);
+    addIssueGroup(body, t("projectIntegrity.severity.warning"), warnings);
   }
   addDoctorSources(body, {
     snapshot: options.sources,
@@ -186,15 +160,8 @@ export async function projectDoctorDialog(
     body,
     wide: true,
     actions,
-    onMount: (modal, close) => {
+    onMount: (_modal, close) => {
       closeDialog = close;
-      for (const button of modal.querySelectorAll<HTMLButtonElement>("[data-repair]")) {
-        button.addEventListener("click", () => {
-          const repair = button.dataset.repair as RepairKind;
-          pending = { kind: "repair", repair };
-          close();
-        });
-      }
     },
   });
   if (pending) return pending;

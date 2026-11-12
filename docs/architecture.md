@@ -41,6 +41,9 @@ src/
   features/listInteraction/ shared list selection, drag, drop line, keyboard move, filter and collapse rules
   features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
   features/projectIntegrity/ shared validator, doctor loop, load report, source availability and unused-copy cleanup
+  features/projectIntegrity/repairPlan.ts repair planner: the concrete change plan the preview and the copy share
+  features/projectIntegrity/repairFilter.ts pure severity, entity-kind and repair-availability filters
+  features/projectIntegrity/repairUi.ts localized repair filters, selection and before/after preview
   features/projectIntegrity/sourceModel.ts pure source snapshot and canonical referenced/orphan classification
   features/projectIntegrity/sourceAvailability.ts source checks, doctor source actions and verified unused-copy deletion
   features/projectIntegrity/sourceUi.ts localized doctor source rows, orphan selection and cleanup request

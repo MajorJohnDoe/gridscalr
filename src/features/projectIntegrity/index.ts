@@ -8,11 +8,32 @@ export type {
 export {
   applyRepair,
   availableRepairs,
+  planRepair,
   repairDanglingReferences,
   repairDuplicateIds,
+  repairForCode,
   repairStaleOcr,
+  REPAIR_ORDER,
 } from "./repair";
-export type { RepairKind, RepairResult } from "./repair";
+export type {
+  RepairAction,
+  RepairChange,
+  RepairKind,
+  RepairPlan,
+  RepairResult,
+  RepairRun,
+  RepairScope,
+} from "./repair";
+export {
+  DEFAULT_DOCTOR_FILTER,
+  countDoctorIssues,
+  doctorFilterKinds,
+  doctorShownRepairs,
+  filterDoctorIssues,
+  isDefaultDoctorFilter,
+  issueScope,
+} from "./repairFilter";
+export type { DoctorIssueFilter, DoctorRepairFilter, DoctorSeverityFilter } from "./repairFilter";
 export { buildDoctorDiagnostics, runLoadReport, runProjectDoctor } from "./doctor";
 export type {
   DoctorLoadReport,
@@ -26,6 +47,8 @@ export type {
 } from "./doctor";
 export { confirmProjectValidationWarnings, projectDoctorDialog } from "./ui";
 export type { ProjectDoctorDialogOptions, ProjectDoctorDialogResult } from "./ui";
+export { addRepairSection } from "./repairUi";
+export type { DoctorRepairRequest, DoctorRepairSectionOptions } from "./repairUi";
 export {
   confirmUnusedDrawings,
   createDoctorSourceHost,

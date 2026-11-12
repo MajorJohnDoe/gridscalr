@@ -56,8 +56,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   the Pages panel filters on those states with a live count for each.
 - Validate every project before saving and after opening. A damaged file opens
   with a load report and a **Project doctor** that lists issues by severity and
-  entity, offers view-only open, explicit duplicate-ID, dangling-reference and
-  stale-OCR repairs, saves a repaired copy and exports path-free diagnostics.
+  entity, filters them by severity, entity kind or repair availability, previews
+  the duplicate renames and dangling references a repair would change, applies
+  only the repair kinds you select, offers view-only open, saves a repaired copy
+  and exports path-free diagnostics.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
@@ -305,7 +307,8 @@ holds the inspection-tool rule and the view-only panel guard, and
 `src/features/statusOverview/` builds the save, backup, autosave and validation
 popover. The
 `src/features/projectIntegrity/` module owns the shared pre-save/load validator
-surface, explicit repairs, the project doctor, source availability and explicit
+surface, the repair planner with its filters and preview, the project doctor,
+source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
 `src/pdf/export/ocg.ts` writes optional-content groups, `src/pdf/export/annotations.ts`

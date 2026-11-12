@@ -1,7 +1,9 @@
 import { validateProject, type ProjectIssue } from "../../model/integrity";
+import { sanitizePaths } from "../../model/pathText";
 import type { Project } from "../../model/types";
 import type { LoadReportCount } from "../../io/projectFile/report";
-import { applyRepair, availableRepairs, type RepairKind } from "./repair";
+import { countDoctorIssues, type DoctorIssueFilter } from "./repairFilter";
+import { availableRepairs, planRepair, type RepairKind } from "./repairPlan";
 import type { DoctorSourceCleanupResult, DoctorSourceHost } from "./sourceAvailability";
 import type { DoctorSourceSnapshot } from "./sourceModel";
 import type { ProjectDoctorDialogResult } from "./ui";
@@ -44,7 +46,9 @@ export interface ProjectDoctorDialogState {
   canOpen: boolean;
   canOpenReadOnly: boolean;
   loadReport?: DoctorLoadReport;
-  notice?: { repair: RepairKind; changed: number };
+  notice?: { repairs: readonly RepairKind[]; changed: number };
+  /** The issue filter is kept across an in-dialog repair so the list does not reset. */
+  filter?: DoctorIssueFilter;
   sources?: DoctorSourceSnapshot;
   sourceNotice?: DoctorSourceCleanupResult;
   canChangeSources: boolean;
@@ -63,7 +67,8 @@ export async function runProjectDoctor(
 ): Promise<ProjectDoctorOutcome> {
   let project = options.project;
   let issues = [...(options.issues ?? validateProject(project))];
-  let notice: { repair: RepairKind; changed: number } | undefined;
+  let notice: { repairs: readonly RepairKind[]; changed: number } | undefined;
+  let filter: DoctorIssueFilter | undefined;
   let sourceNotice: DoctorSourceCleanupResult | undefined;
   let sources = options.sources ? await options.sources.load(project) : undefined;
   // A repaired in-memory copy is not the open project, so source actions that
@@ -79,6 +84,7 @@ export async function runProjectDoctor(
       canOpenReadOnly: options.canOpenReadOnly ?? false,
       loadReport: options.loadReport,
       notice,
+      filter,
       sources,
       sourceNotice,
       canChangeSources,
@@ -86,10 +92,13 @@ export async function runProjectDoctor(
       canCopySources: canChangeSources && Boolean(options.sources?.copyIntoProject),
     });
     if (action.kind === "repair") {
-      const result = applyRepair(project, action.repair);
-      project = result.project;
+      const kinds = availableRepairs(issues).filter((kind) => action.repairs.includes(kind));
+      if (!kinds.length) continue;
+      const run = planRepair(project, kinds);
+      project = run.project;
       issues = validateProject(project);
-      notice = { repair: action.repair, changed: result.changed };
+      notice = { repairs: run.plan.kinds, changed: run.plan.changes.length };
+      filter = action.filter;
       repairedCopy = true;
       continue;
     }
@@ -179,16 +188,6 @@ export async function runLoadReport(
   return { decision: "cancel" };
 }
 
-function countBySeverity(issues: readonly ProjectIssue[]): { errors: number; warnings: number } {
-  let errors = 0;
-  let warnings = 0;
-  for (const issue of issues) {
-    if (issue.severity === "error") errors += 1;
-    else warnings += 1;
-  }
-  return { errors, warnings };
-}
-
 /**
  * Diagnostics for the doctor. It contains issue codes, entity kinds and counts
  * only: no drawing names, labels, project metadata or file paths.
@@ -199,7 +198,7 @@ export function buildDoctorDiagnostics(
   loadReport?: DoctorLoadReport,
   sources?: DoctorSourceSnapshot,
 ): string {
-  const counts = countBySeverity(issues);
+  const counts = countDoctorIssues(issues);
   let items = 0;
   for (const layer of project.layers) items += layer.items.length;
   const lines = [
@@ -234,5 +233,5 @@ export function buildDoctorDiagnostics(
       lines.push(`- repaired ${entry.code}: ${entry.count}`);
     }
   }
-  return `${lines.join("\n")}\n`;
+  return `${sanitizePaths(lines.join("\n"))}\n`;
 }

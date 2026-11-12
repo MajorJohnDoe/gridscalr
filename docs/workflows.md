@@ -219,7 +219,7 @@ Use this when a project fails to open cleanly, a save is blocked, or someone sen
 1. Read the **Load report** or **Project doctor** issue list. It names each problem by severity and entity and does not hide dropped data.
 2. Choose **Open view-only** when you only need to inspect or export the original. Editing is disabled; **Save a copy…** keeps a copy.
 3. Choose **Export diagnostics…** when the file must go to support. The text contains issue codes and counts only, never drawing content, labels or paths.
-4. Apply the explicit repairs you need: duplicate IDs, dangling references or stale OCR. Nothing is written yet.
+4. Filter the issue list by severity, entity kind or repair availability when the report is long. The filters only narrow the list; **Select all shown repairs** adds the repairs for the filtered issues only. Review the preview — it lists the duplicate renames and dangling references a repair would change, with before and after counts — tick the repair kinds you need and choose **Apply selected repairs**. Nothing is written yet.
 5. Choose **Save repaired copy…** and save the copy in a new file. The original is never repaired in place and is never overwritten by a normal save while it is invalid.
 6. Open the repaired copy, review the pages, quantities and source links, and use it for the next revision.
 
