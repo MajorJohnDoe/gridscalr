@@ -1,4 +1,12 @@
 import { countTypeLabel } from "../../features/countTypes/model";
+import {
+  PROVENANCE_COLUMN,
+  PROVENANCE_COLUMN_WIDTH,
+  provenanceByPage,
+  withProvenanceColumn,
+  type MarkupsDisplayColumn,
+  type ProvenanceSummary,
+} from "../../features/importProvenance";
 import { RowNavigator, collapseAllKeys, expandAllKeys } from "../../features/listInteraction";
 import {
   ALL_SYMBOL_CATEGORIES,
@@ -442,6 +450,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
   let windowFrame = 0;
   let renderedStart = -1;
   let renderedEnd = -1;
+  // The provenance column is derived per render, never written to a saved view.
+  let displayColumns: MarkupsDisplayColumn[] = [...markupsState.settings.columns];
+  let provenance: ReadonlyMap<string, ProvenanceSummary> = new Map();
 
   function flattenGroups(groups: MarkupGroup<MarkupRow>[], level: number): void {
     for (const group of groups) {
@@ -462,7 +473,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     if (height <= 0) return;
     const row = el("tr", "markups-spacer");
     const cell = el("td");
-    cell.colSpan = markupsState.settings.columns.length;
+    cell.colSpan = displayColumns.length;
     cell.style.height = `${height}px`;
     cell.style.padding = "0";
     cell.style.border = "0";
@@ -475,7 +486,7 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     const scrollTop = wrap.scrollTop;
     const scrollLeft = wrap.scrollLeft;
     clear(tbody);
-    const columns = markupsState.settings.columns;
+    const columns = displayColumns;
     if (!displayEntries.length) {
       const emptyRow = el("tr", "markups-empty");
       const cell = el("td");
@@ -503,7 +514,9 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
       if (entry.type === "group") {
         tbody.append(groupRowElement(entry.group, entry.level, columns.length, refreshTable));
       } else {
-        tbody.append(markupRowElement(entry.row, columns, actions, refreshTable, flatRows));
+        tbody.append(
+          markupRowElement(entry.row, columns, actions, refreshTable, flatRows, provenance),
+        );
       }
     }
     appendSpacer(tbody, (displayEntries.length - end) * MARKUPS_ROW_HEIGHT);
@@ -523,11 +536,18 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
 
   function refreshTable(): void {
     clear(table);
-    const columns = markupsState.settings.columns;
+    const currentProject = project!;
+    rows = filteredRows(currentProject);
+    provenance = provenanceByPage(currentProject);
+    const showProvenance = rows.some((row) => provenance.has(row.item.pageId));
+    displayColumns = withProvenanceColumn(markupsState.settings.columns, showProvenance);
+    const columns = displayColumns;
     const colgroup = el("colgroup");
     for (const column of columns) {
       const col = el("col");
-      col.style.width = `${COLUMN_WIDTHS[column]}%`;
+      col.style.width = `${
+        column === PROVENANCE_COLUMN ? PROVENANCE_COLUMN_WIDTH : COLUMN_WIDTHS[column]
+      }%`;
       colgroup.append(col);
     }
     const thead = el("thead");
@@ -536,6 +556,13 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
       const th = el("th");
       th.scope = "col";
       th.dataset.column = column;
+      if (column === PROVENANCE_COLUMN) {
+        const heading = el("span", "markups-provenance-head", t("markups.provenanceColumn"));
+        heading.title = t("markups.provenanceColumnTitle");
+        th.append(heading);
+        headerRow.append(th);
+        continue;
+      }
       const sorted =
         markupsState.settings.sort?.column === column ? markupsState.settings.sort.direction : null;
       th.setAttribute(
@@ -566,8 +593,6 @@ export function renderMarkupsPanel(refs: ShellRefs, actions: PanelActions): void
     thead.append(headerRow);
 
     tbody = el("tbody");
-    const currentProject = project!;
-    rows = filteredRows(currentProject);
     displayEntries = [];
     flatRows = [];
     currentGroups = [];

@@ -238,6 +238,14 @@ whole and counted in the load report; the page itself is kept. Provenance is
 descriptive context for a page imported from another project, not a signature or
 a revision ancestry model.
 
+The format stores the source project's stable ID, not its display name. The
+interface shows that ID shortened (for example `project_1a2b3c4d…`) together
+with the short revision hash, revision size and time, source page and import
+time. It never renders a file path, and a malformed record is omitted even when
+in-memory data bypasses the loader. Diagnostics stay path-free because they list
+issue codes and entity kinds only; provenance identifiers and hashes are not
+included.
+
 ## Source storage modes
 
 `DocumentRef.storage` is explicit:

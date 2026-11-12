@@ -59,6 +59,47 @@
   color: var(--muted-2);
 }
 
+/* Read-only source record for a page imported from another project. */
+.provenance-list {
+  margin: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.provenance-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.provenance-row dt {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+}
+
+.provenance-row dd {
+  margin: 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  text-align: right;
+}
+
+.provenance-value {
+  color: var(--text);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+
+.provenance-note {
+  color: var(--muted);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
 .section-head {
   display: flex;
   align-items: center;
