@@ -2756,6 +2756,22 @@ export type MessageKey =
   | "projectImport.preflight.checksum"
   | "projectImport.preflight.pageCount"
   | "projectImport.preflight.importWarnings"
-  | "projectImport.preflight.import";
+  | "projectImport.preflight.import"
+  | "page.insertPositionBefore"
+  | "page.insertPositionAfter"
+  | "page.positionNamed"
+  | "page.insertMenu"
+  | "page.insertTitle"
+  | "page.insertMessage"
+  | "page.insertConfirm"
+  | "page.moveToPosition"
+  | "page.moveTitle"
+  | "page.moveMessage"
+  | "page.moveTarget"
+  | "page.moveBeforePage"
+  | "page.moveToEnd"
+  | "page.moveConfirm"
+  | "page.movedToast"
+  | "page.menuHint";
 
 export type MessageCatalog = Record<MessageKey, string>;

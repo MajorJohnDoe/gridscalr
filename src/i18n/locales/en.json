@@ -2754,5 +2754,21 @@
   "projectImport.preflight.checksum": "Checksum warning for: {names}.",
   "projectImport.preflight.pageCount": "{name} now has {actual} pages instead of {expected}.",
   "projectImport.preflight.importWarnings": "{count} additional warning(s) will be shown after the import.",
-  "projectImport.preflight.import": "Import pages"
+  "projectImport.preflight.import": "Import pages",
+  "page.insertPositionBefore": "before page {page}",
+  "page.insertPositionAfter": "after page {page}",
+  "page.positionNamed": "{position} — {name}",
+  "page.insertMenu": "Insert {position}",
+  "page.insertTitle": "Insert page",
+  "page.insertMessage": "A new page record for this sheet is inserted {position}. Undo removes it again.",
+  "page.insertConfirm": "Insert page",
+  "page.moveToPosition": "Move page to position…",
+  "page.moveTitle": "Move page",
+  "page.moveMessage": "Choose the position the page should take. The move is one undo step.",
+  "page.moveTarget": "Target position",
+  "page.moveBeforePage": "before page {page}",
+  "page.moveToEnd": "at the end of the project",
+  "page.moveConfirm": "Move",
+  "page.movedToast": "Moved {position}.",
+  "page.menuHint": "Shift+F10 or the Menu key opens the page menu."
 }

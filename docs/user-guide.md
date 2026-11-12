@@ -176,18 +176,18 @@ Every page card carries compact badges so a problem is visible without opening t
 
 The filter bar at the top of the Pages panel narrows the list to **All**, **Changed source**, **Superseded**, **OCR missing or stale** or **Scale locked**, and each button shows how many pages match. The buttons work with the keyboard, the active filter is exposed as a pressed state, and every badge is a text label, so no state depends on colour alone.
 
-A filter is a view, not a change: it stays active while the panel re-renders and is never written to the project. Dragging a card and dropping a drawing on the panel are turned off while a filter hides pages, because the drop position would be ambiguous; **Go to page**, renaming, locations and the other page actions still work. Choose **All** to reorder or drop again. If a filter matches no page, the panel says so instead of showing an empty list.
+A filter is a view, not a change: it stays active while the panel re-renders and is never written to the project. Dragging a card and dropping a drawing on the panel are turned off while a filter hides pages, because the drop position would be ambiguous; **Go to page**, renaming, locations and the other page actions still work. The page menu, **Insert page**, **Move page to position…**, **Duplicate page…** and **Delete page…** keep working because they resolve the page by its stable ID rather than by the visible card position. Choose **All** to reorder or drop again. If a filter matches no page, the panel says so instead of showing an empty list.
 
 
 Previews are produced on demand: only the cards near the visible part of the list are rendered, one page at a time, and the result is cached for the session. Opening a project with many pages therefore does not rasterise every sheet up front. A very large scanned TIF can still take a moment the first time its preview is built; the page itself is unaffected. Clearing the project or deleting a page discards the cached previews.
 
-Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Insert page**, the drawing-source actions from **Drawing sources and managed copies**, **Replace source…**, **Duplicate page…**, and **Delete page…**.
+Right-click an empty spot below the page cards to open **Add pages…**. The menu does not appear on a page card, which has its own menu with **Go to page**, **Rename page…**, **Set location…**, **Insert page**, **Move page to position…**, the drawing-source actions from **Drawing sources and managed copies**, **Replace source…**, **Duplicate page…**, and **Delete page…**. Press `Shift+F10` or the Menu key on a focused page card to open the same menu without a pointer.
 
 Double-click a page name to rename it inline. Named pages show their title in the card and in the title row; unnamed pages keep the automatic **Page N** label. **Set location…** adds an optional building and floor to the sheet. These labels are used by Markups grouping and follow a duplicated page, but they do not affect measurements, quantities or exports.
 
 ### Duplicate a page
 
-Right-click a page card and choose **Duplicate page…**. Choose whether to copy:
+Right-click a page card and choose **Duplicate page…**, or press `Alt` + `Shift` + `D`. Choose whether to copy:
 
 - **Page name** – the name is editable before duplicating.
 - **Page scale** – keeps the calibration and scale lock.
@@ -197,11 +197,13 @@ The copy is appended at the end with a new stable page ID and references the sam
 
 ### Reorder, insert and delete pages
 
-Drag a page card and drop it on the line between two cards to change the project page order. The panel scrolls while a card is held near its top or bottom edge. `Ctrl/Cmd` + click adds pages to the selection and `Shift` + click selects a range, so dragging any selected card moves the whole selection as one block. Pages from another source document are grouped under a document heading, and a drop that crosses into another document names that document on the drop line. `Alt` + `Up` / `Down` moves the selection one position and `Alt` + `Home` / `End` moves it to the ends; the result is announced to screen readers. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet, and every drop writes one recovery checkpoint. A reorder is also one undo step: **Undo** restores the previous page order and keeps the sheet that was on screen in view. Right-click a card for **Insert page before…** or **Insert page after…** to add another record for the same source sheet at that position; an insert is one undo step and **Undo** removes exactly that page. Page numbers in the title row, Markups and reports follow the current order. Deleting a page stays an explicit, confirmed action and cannot be undone.
+Drag a page card and drop it on the line between two cards to change the project page order. The panel scrolls while a card is held near its top or bottom edge. `Ctrl/Cmd` + click adds pages to the selection and `Shift` + click selects a range, so dragging any selected card moves the whole selection as one block. Pages from another source document are grouped under a document heading, and a drop that crosses into another document names that document on the drop line. `Alt` + `Up` / `Down` moves the selection one position and `Alt` + `Home` / `End` moves it to the ends; the result is announced to screen readers. Every page keeps its stable ID, so items, layer page state and page settings stay with the sheet, and every drop writes one recovery checkpoint. A reorder is also one undo step: **Undo** restores the previous page order and keeps the sheet that was on screen in view.
+
+The page menu offers the rest of the workflow, and each action is also on the keyboard when a page card or the canvas has focus. **Insert page** names the target first, for example **before page 3 — Sheet A-101**, and asks before it adds another record for the same source sheet; `Alt` + `PageUp` / `PageDown` inserts before or after the current page. **Move page to position…** (`Alt` + `Shift` + `M`) lists every position that actually changes the order and moves the page there as one undo step. **Duplicate page…** (`Alt` + `Shift` + `D`) opens the duplicate options. **Delete page…** (`Alt` + `Shift` + `Delete`) asks for confirmation. Page numbers in the title row, Markups and reports follow the current order. Deleting a page stays an explicit, confirmed action and cannot be undone.
 
 Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line shows where the pages will land; dropping below the last card appends. The usual page picker and import preflight appear before anything changes, and the whole import is one undo step. Dropping a `.gridscalr` project here does not open or replace the current project; use **File → Import pages from project…** instead.
 
-**Delete page…** removes that page record, its items and its layer page state. Later pages are not renumbered in the saved file; only their displayed numbers change. Deleting is structural and cannot be undone. A project may have no pages at all.
+**Delete page…** removes that page record, its items and its layer page state. `Alt` + `Shift` + `Delete` opens the same confirmation. Later pages are not renumbered in the saved file; only their displayed numbers change. Deleting is structural and cannot be undone. A project may have no pages at all.
 
 ### Replace a source drawing
 

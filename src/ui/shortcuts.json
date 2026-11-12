@@ -55,6 +55,13 @@
     "quantities": "Ctrl+Alt+Q",
     "settings": "Ctrl+,",
     "userGuide": "F1",
-    "shortcuts": "?"
+    "shortcuts": "?",
+    "previousPage": "PageUp",
+    "nextPage": "PageDown",
+    "insertBefore": "Alt+PageUp",
+    "insertAfter": "Alt+PageDown",
+    "movePage": "Alt+Shift+M",
+    "duplicatePage": "Alt+Shift+D",
+    "deletePage": "Alt+Shift+Delete"
   }
 }

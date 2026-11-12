@@ -48,7 +48,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   existing ones, so a set of plans shares one takeoff. Import pages from another
   project with a thumbnail picker, a preflight report and page-scoped layers,
   keep optional source revision provenance, and undo the whole import as one
-  step.
+  step. Reorder, insert, move, duplicate and delete pages from the page menu or
+  the keyboard, with the target position named before an insert.
 - See the state of every sheet at a glance. Compact page badges flag a changed
   source file, superseded pages, missing or stale OCR and a locked scale, and
   the Pages panel filters on those states with a live count for each.

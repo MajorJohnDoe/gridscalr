@@ -58,12 +58,21 @@ In a **View-only** session, shortcuts that would change the project are ignored:
 
 | Action | Shortcut |
 | --- | --- |
+| Open the page menu | `Shift+F10` or the Menu key |
 | Select one page | Click, or `Shift` + click for a range |
 | Add or remove a page from the selection | `Ctrl` / `Cmd` + click |
 | Move the selected pages up / down | `Alt+Up` / `Alt+Down` |
 | Move the selected pages to the start / end | `Alt+Home` / `Alt+End` |
 | Move the selected pages with the mouse | Drag a selected card to the drop line |
+| Insert a page before / after the current page | `Alt+PageUp` / `Alt+PageDown` |
+| Move the current page to another position | `Alt+Shift+M` |
+| Duplicate the current page with options | `Alt+Shift+D` |
+| Delete the current page | `Alt+Shift+Delete` |
 | Rename a page | Double-click the page title |
+
+The page menu and the page shortcuts act on the current page. Inserting and
+moving are one undo step each; duplicating and deleting are confirmed and
+cannot be undone.
 
 Dragging a card that is part of a multi-page selection moves the whole
 selection. A drop that crosses into another source document shows the document
