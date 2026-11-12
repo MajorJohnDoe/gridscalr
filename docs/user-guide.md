@@ -156,10 +156,11 @@ The portable executable and the AppImage do not register file types. Use the ins
 Scanned drawings in **TIF/TIFF** are imported as real pages with their own paper size and scale. The format is detected from the file contents, not the extension.
 
 - 1-bit CCITT Group 3 or Group 4 scans are embedded losslessly, without re-encoding.
+- Stripped (non-tiled) greyscale and RGB(A) scans with no compression, PackBits, LZW or Deflate compression are decoded and embedded as a PDF image, including the horizontal predictor. 1, 2, 4, 8 and 16 bits per sample are accepted; 16-bit samples are reduced to 8 bits and RGBA transparency is flattened over white.
 - The page size comes from the scan's DPI tags. DPI gives the paper size, not the drawing scale, so calibrate against a known dimension as usual. If the scan has no resolution tags, 300 DPI is assumed and a warning is shown.
 - Multi-page TIFFs become several pages. Reduced-resolution preview images are skipped. Orientation tags 1, 3, 6, and 8 are honoured.
 - The converted PDF is embedded in the `.gridscalr` file, so the project keeps working even if the original scan is moved.
-- Limits: 400 megapixels per page and 200 MB per file. Other compressions (LZW, Deflate, JPEG-in-TIFF), tiled TIFFs, and colour or greyscale scans are rejected with a message.
+- Limits: 400 megapixels per page, 200 MB per file and 256 MB of decoded colour data per page. Tiled TIFFs and JPEG-in-TIFF are not supported yet; palette, CMYK and YCbCr colour, planar channels and signed or floating-point samples are rejected with a message that names the reason.
 
 ### Page thumbnails
 
@@ -936,7 +937,7 @@ Encrypted source PDFs cannot be flattened without their owner password. GridScal
 
 ### A TIF is rejected
 
-Only 1-bit CCITT Group 3/4 scans are supported. Re-scan colour, greyscale, LZW/Deflate, tiled, or JPEG-in-TIFF images as a supported bilevel TIFF or as a PDF.
+GridScalr reads stripped TIFFs with no compression, PackBits, LZW, Deflate, CCITT Group 3 or Group 4, in greyscale or RGB(A). Tiled TIFFs and JPEG-in-TIFF are not supported yet; palette, CMYK and YCbCr colour, planar channels, signed or floating-point samples, and unusually large colour pages are rejected. The message names the reason. Save the scan as a stripped LZW or Deflate TIFF, as a CCITT G4 TIFF, or as a PDF.
 
 ### Recent files do not open in the browser
 

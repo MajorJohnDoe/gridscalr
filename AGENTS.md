@@ -571,7 +571,12 @@ src/io/projectFile/report.ts load-report counts for dropped and repaired data
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
 src/io/tiff.ts             TIFF IFD parsing, DPI, orientation, strip layout
-src/io/tiffImport.ts       lossless CCITT G3/G4 to PDF, embedded document refs
+src/io/tiffImport.ts       CCITT passthrough and decoded raster to PDF, document refs
+src/io/tiff/decode.ts      page validation, strip dispatch and PDF-ready samples
+src/io/tiff/packbits.ts    PackBits strip decoding
+src/io/tiff/lzw.ts         TIFF LZW strip decoding
+src/io/tiff/deflate.ts     bounded Deflate strip decoding
+src/io/tiff/predictor.ts   horizontal differencing (predictor 2)
 src/model/documents.ts     source-document page math, included-page lists and import maps
 src/model/pages.ts         PageId, PageRecord and every page resolver
 src/features/pageModel/    page insert/reorder/delete/duplicate, source replacement and import mapping
@@ -600,7 +605,7 @@ docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
 tests/robustness/          seeded page/save sequences, competing saves, the schema 1–26 migration corpus and source-storage gates
 fixtures/legacy/           committed project fixtures for every supported schema
-fixtures/tiff/             small G4/LZW TIFF fixtures for the reader tests
+fixtures/tiff/             small G4/LZW/PackBits/Deflate and colour TIFF fixtures for the reader and codec tests
 scripts/plan-geometry.mjs  shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs   legacy A4 sample generator

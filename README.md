@@ -39,8 +39,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 
 ## What it does
 
-- Open PDF plans locally with PDF.js, or scanned TIF drawings with lossless
-  CCITT G3/G4 import.
+- Open PDF plans locally with PDF.js, or scanned TIF drawings: lossless
+  CCITT G3/G4 passthrough plus greyscale and colour PackBits, LZW and Deflate.
 - Open a project by double-clicking `.gridscalr` in Explorer or Finder in the
   installed builds, hand a drawing to an already running window, and keep the
   window size, position and maximised state between sessions.

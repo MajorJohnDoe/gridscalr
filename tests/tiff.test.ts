@@ -152,8 +152,10 @@ describe("TIFF to PDF", () => {
     expect(conversion.pages[0].strips).toBe(6);
   });
 
-  it("rejects non-fax compressions with a clear message", async () => {
-    await expect(tiffToPdf(await fixture("lzw.tif"))).rejects.toThrow(/compression 5/i);
+  it("converts a 1-bit LZW scan through the raster path", async () => {
+    const conversion = await tiffToPdf(await fixture("lzw.tif"));
+    expect(conversion.pages).toHaveLength(1);
+    expect(conversion.pages[0].widthPt).toBeCloseTo((64 / 200) * 72, 2);
   });
 
   it("embeds the derived PDF in the document reference", async () => {
