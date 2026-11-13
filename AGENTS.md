@@ -570,6 +570,8 @@ src/features/sourceStorage/  reference/managed source modes, managed copies, con
 src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage
 src/app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
 src-tauri/src/source_copy.rs verified managed copy, source hash and folder checksum search
+src-tauri/src/package_limits.rs package output cap and destination free-space check before a write
+src-tauri/src/temp_cleanup.rs stale temporary naming, age/process guard and the post-load cleanup command
 src-tauri/src/source_cleanup.rs managed-copy folder inventory and guarded single-file deletion
 src-tauri/src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
 src/help/markdown.ts       safe Markdown renderer for bundled help

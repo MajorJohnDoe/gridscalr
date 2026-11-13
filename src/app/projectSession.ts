@@ -34,6 +34,7 @@ import { classifyOpenTarget } from "./openTarget";
 import { classifyLaunchPath, firstLaunchPath } from "../features/launch/model";
 import {
   backupProjectNow,
+  cleanProjectTemporaries,
   computeFileStamp,
   createSaveIntegrityPorts,
   openBackupManagerFlow,
@@ -277,9 +278,28 @@ export class ProjectSession {
       this.recovery?.abortOpen();
       return false;
     }
+    await this.cleanStaleTemporaries(path);
     await this.captureStamp(path);
     await this.recovery?.afterOpen(path, project.id, decision.readOnly);
     return true;
+  }
+
+  /**
+   * A crash can leave a flushed save sibling or a package staging folder next
+   * to the project. Opening the project is the first moment the app knows the
+   * folder, so the guarded cleanup runs here instead of waiting for a save
+   * (F-046). A cleanup failure never affects the loaded project.
+   */
+  private async cleanStaleTemporaries(path: string | null): Promise<void> {
+    if (!path || !isTauri) return;
+    try {
+      const removed = await cleanProjectTemporaries(path);
+      if (removed > 0) {
+        logEvent("info", `removed ${removed} stale temporary entries beside the project`);
+      }
+    } catch (error) {
+      logEvent("warn", `stale temporary cleanup failed: ${describeError(error)}`);
+    }
   }
 
   private async captureStamp(path: string | null): Promise<void> {
@@ -314,6 +334,7 @@ export class ProjectSession {
       return false;
     }
     const loadReportReadOnly = store.readOnly;
+    await this.cleanStaleTemporaries(path);
     await this.captureStamp(path);
     await this.recovery?.afterOpen(path, parsed?.id ?? "", decision.readOnly || loadReportReadOnly);
     return true;

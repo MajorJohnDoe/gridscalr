@@ -101,6 +101,21 @@ export async function readProjectFileText(path: string): Promise<string> {
   return readFileText(path);
 }
 
+/**
+ * Removes stale app-created temporaries after a project loads: flushed save
+ * siblings next to the project, staging folders from a crashed package
+ * extraction and stale managed-copy siblings (F-046). The Rust command only
+ * touches its own generated names, only entries older than the documented age,
+ * and never a file owned by the running process, so a source drawing or a
+ * project file can never match.
+ */
+export async function cleanProjectTemporaries(path: string): Promise<number> {
+  const removed = await tauriInvoke<unknown>("clean_project_temporaries", {
+    projectPath: path,
+  });
+  return typeof removed === "number" ? removed : 0;
+}
+
 /** Writes one rolling backup under the app data folder, keyed by project id. */
 export async function saveProjectBackup(
   projectId: string,

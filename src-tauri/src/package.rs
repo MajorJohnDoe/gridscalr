@@ -15,7 +15,9 @@ use zip::{CompressionMethod, ZipArchive, ZipWriter};
 
 use crate::commands::{replace_file, sync_directory, unique_sibling, CommandError};
 use crate::disk_space;
+use crate::package_limits::{ensure_output_fits, OutputLimitError};
 use crate::path_guard::ensure_writable;
+use crate::temp_cleanup::clean_extraction_temporaries;
 
 pub const PACKAGE_FORMAT: &str = "gridscalr-package";
 pub const PACKAGE_FORMAT_VERSION: u32 = 1;
@@ -55,7 +57,11 @@ fn finish_job(job_id: &str) {
 }
 
 #[derive(Debug, Serialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
+#[serde(
+    tag = "kind",
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase"
+)]
 pub enum PackageError {
     Cancelled,
     MissingSource {
@@ -71,6 +77,11 @@ pub enum PackageError {
     InsufficientSpace {
         required_bytes: u64,
         available_bytes: u64,
+    },
+    /// The content is larger than any extraction accepts (F-044).
+    TooLarge {
+        required_bytes: u64,
+        max_bytes: u64,
     },
     InvalidPackage {
         message: String,
@@ -129,6 +140,27 @@ impl From<CommandError> for PackageError {
             PackageError::Io {
                 message: format!("{}: {}", error.code, error.detail),
             }
+        }
+    }
+}
+
+impl From<OutputLimitError> for PackageError {
+    fn from(error: OutputLimitError) -> Self {
+        match error {
+            OutputLimitError::TooLarge {
+                required_bytes,
+                max_bytes,
+            } => PackageError::TooLarge {
+                required_bytes,
+                max_bytes,
+            },
+            OutputLimitError::InsufficientSpace {
+                required_bytes,
+                available_bytes,
+            } => PackageError::InsufficientSpace {
+                required_bytes,
+                available_bytes,
+            },
         }
     }
 }
@@ -624,10 +656,30 @@ fn hash_bytes(data: &[u8]) -> String {
     hex_digest(&hasher.finalize())
 }
 
+/// Probe for the free space of the volume that will hold an output. A function
+/// pointer keeps the pre-write limit testable without a nearly full disk.
+type SpaceProbe = fn(&Path) -> Option<u64>;
+
 pub(crate) fn create_package(
     request: &PackageRequest,
     channel: Option<Channel<PackageProgress>>,
     cancelled: &AtomicBool,
+) -> Result<CreateResult, PackageError> {
+    create_package_with(
+        request,
+        channel,
+        cancelled,
+        MAX_TOTAL_BYTES,
+        disk_space::available_bytes_at,
+    )
+}
+
+fn create_package_with(
+    request: &PackageRequest,
+    channel: Option<Channel<PackageProgress>>,
+    cancelled: &AtomicBool,
+    max_bytes: u64,
+    space: SpaceProbe,
 ) -> Result<CreateResult, PackageError> {
     check_cancelled(cancelled)?;
     ensure_writable(&request.output_path, &request.protected_paths)?;
@@ -743,11 +795,6 @@ pub(crate) fn create_package(
         + readme.len() as u64
         + source_sizes.iter().sum::<u64>()
         + addition_sizes.iter().sum::<u64>();
-    if content_bytes > MAX_TOTAL_BYTES {
-        return Err(PackageError::InvalidPackage {
-            message: "The project is too large for a GridScalr package.".to_string(),
-        });
-    }
     let total_bytes = content_bytes.saturating_add(4096);
 
     let output = Path::new(&request.output_path);
@@ -755,6 +802,10 @@ pub(crate) fn create_package(
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
+    // Both checks run before the temporary file exists: an output that no
+    // extraction would accept, or that cannot fit the destination volume, must
+    // not write a package and then fail part-way through (F-044).
+    ensure_output_fits(content_bytes, max_bytes, space(parent))?;
     fs::create_dir_all(parent)?;
     let temp = unique_sibling(output, "tmp");
     let file = File::create(&temp)?;
@@ -1369,6 +1420,10 @@ pub(crate) fn extract_package(
     fs::create_dir_all(parent)?;
     let total_bytes = entries.iter().map(|entry| entry.size).sum::<u64>();
     ensure_free_space(disk_space::available_bytes(parent), total_bytes)?;
+    // A crashed or cancelled earlier extraction can leave its staging folder
+    // behind; opening a package removes the stale ones under the same age and
+    // process guard as a save sibling (F-046).
+    clean_extraction_temporaries(parent);
     let temp_name = format!(
         ".{}.extract-{}-{}",
         destination
@@ -2096,6 +2151,104 @@ mod tests {
         );
         assert!(ensure_free_space(Some(needed), 1024).is_ok());
         assert!(ensure_free_space(None, 1024).is_ok());
+    }
+
+    #[test]
+    fn refuses_a_package_over_the_cap_before_writing_anything() {
+        let directory = TestDir::new();
+        let source = directory.file("source/Plan.pdf");
+        write(&source, b"%PDF-1.4 plan");
+        let output = directory.file("Plan.gridscalr.zip");
+        let request = request(
+            &output,
+            &project_json("documents/Plan.pdf", ""),
+            vec![(&source, "documents/Plan.pdf", "")],
+        );
+
+        let error = create_package_with(&request, None, &AtomicBool::new(false), 16, |_| {
+            Some(u64::MAX)
+        })
+        .expect_err("over the cap");
+        match error {
+            PackageError::TooLarge {
+                required_bytes,
+                max_bytes,
+            } => {
+                assert_eq!(max_bytes, 16);
+                assert!(
+                    required_bytes > max_bytes,
+                    "the reported size must exceed the cap"
+                );
+            }
+            other => panic!("unexpected error: {other:?}"),
+        }
+        assert!(!output.exists(), "an over-cap package writes no file");
+        let leftovers: Vec<String> = fs::read_dir(directory.path())
+            .expect("read directory")
+            .map(|entry| {
+                entry
+                    .expect("entry")
+                    .file_name()
+                    .to_string_lossy()
+                    .to_string()
+            })
+            .filter(|name| name.contains(".tmp"))
+            .collect();
+        assert!(leftovers.is_empty(), "{leftovers:?}");
+    }
+
+    #[test]
+    fn refuses_a_package_when_the_destination_volume_is_too_small() {
+        let directory = TestDir::new();
+        let source = directory.file("source/Plan.pdf");
+        write(&source, b"%PDF-1.4 plan");
+        let output = directory.file("Plan.gridscalr.zip");
+        let request = request(
+            &output,
+            &project_json("documents/Plan.pdf", ""),
+            vec![(&source, "documents/Plan.pdf", "")],
+        );
+
+        let error = create_package_with(
+            &request,
+            None,
+            &AtomicBool::new(false),
+            MAX_TOTAL_BYTES,
+            |_| Some(0),
+        )
+        .expect_err("no free space");
+        assert!(
+            matches!(
+                error,
+                PackageError::InsufficientSpace {
+                    required_bytes,
+                    available_bytes: 0
+                } if required_bytes > 0
+            ),
+            "{error:?}"
+        );
+        assert!(!output.exists(), "a full destination writes no file");
+    }
+
+    #[test]
+    fn serializes_package_limits_with_camel_case_fields() {
+        let space = serde_json::to_value(PackageError::InsufficientSpace {
+            required_bytes: 5,
+            available_bytes: 1,
+        })
+        .expect("serialize space error");
+        assert_eq!(space["kind"], "insufficientSpace");
+        assert_eq!(space["requiredBytes"], 5);
+        assert_eq!(space["availableBytes"], 1);
+
+        let size = serde_json::to_value(PackageError::TooLarge {
+            required_bytes: 9,
+            max_bytes: 3,
+        })
+        .expect("serialize size error");
+        assert_eq!(size["kind"], "tooLarge");
+        assert_eq!(size["requiredBytes"], 9);
+        assert_eq!(size["maxBytes"], 3);
     }
 
     #[test]

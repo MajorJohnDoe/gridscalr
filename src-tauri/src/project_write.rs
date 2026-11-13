@@ -7,7 +7,7 @@ use serde::Serialize;
 use sha2::{Digest, Sha256};
 
 use crate::commands::{replace_file, sync_directory, unique_sibling, write_flushed, CommandError};
-use crate::path_guard::{clean_stale_temporaries, ensure_writable, MAX_PROJECT_BYTES};
+use crate::path_guard::{ensure_writable, MAX_PROJECT_BYTES};
 
 /// The expected on-disk state of a project file. The hash is authoritative;
 /// size and mtime let the UI describe the disk version without reading it.
@@ -178,7 +178,7 @@ where
         ));
     }
     // A crashed earlier save may have left flushed temporary siblings behind.
-    clean_stale_temporaries(path);
+    crate::temp_cleanup::clean_stale_temporaries(path);
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {
         let _ = fs::remove_file(&temp);

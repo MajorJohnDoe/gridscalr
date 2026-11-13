@@ -35,6 +35,23 @@ describe("project package dialogs", () => {
     });
   });
 
+  it("shows the expected package size and updates it with the options", async () => {
+    const pending = packageOptionsDialog(2, 1, true, (options) =>
+      options.includeSourceScans ? 3 * 1024 * 1024 : 2 * 1024 * 1024,
+    );
+    expect(document.body.textContent).toContain("Expected uncompressed size: 2.0 MB");
+    const scans = document.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')[2];
+    scans.checked = true;
+    scans.dispatchEvent(new Event("change"));
+    expect(document.body.textContent).toContain("Expected uncompressed size: 3.0 MB");
+    button("Create package")?.click();
+    await expect(pending).resolves.toEqual({
+      includeQuantityExports: false,
+      includeDrawingPdf: false,
+      includeSourceScans: true,
+    });
+  });
+
   it("disables package creation in the browser fallback", async () => {
     const pending = packageOptionsDialog(1, 0, false);
     expect(button("Create package")?.disabled).toBe(true);

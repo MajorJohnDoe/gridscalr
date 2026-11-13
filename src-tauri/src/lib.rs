@@ -2,6 +2,7 @@ mod commands;
 mod conflicted_copy;
 mod disk_space;
 mod package;
+mod package_limits;
 mod path_guard;
 mod project_backup;
 mod project_lease;
@@ -10,6 +11,7 @@ mod project_write;
 mod smoke;
 mod source_cleanup;
 mod source_copy;
+mod temp_cleanup;
 
 use std::sync::Mutex;
 
@@ -146,6 +148,7 @@ pub fn run() {
             source_copy::source_copy_to_project,
             source_copy::source_file_hash,
             source_copy::source_find_by_hash,
+            temp_cleanup::clean_project_temporaries,
             source_cleanup::source_list_managed_copies,
             source_cleanup::source_delete_managed_copy,
             package::package_create,
