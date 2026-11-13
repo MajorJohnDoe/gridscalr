@@ -756,6 +756,8 @@
   "package.destinationExists": "Mappen finns redan. Öppna den uppackade kopian eller ersätt mappen med en ny uppackning.",
   "package.destinationIntro": "”{name}” packas upp i den här mappen:",
   "package.uncompressedSize": "Uppackad storlek: {size}. GridScalr kontrollerar ledigt utrymme före uppackningen.",
+  "package.expectedSize": "Förväntad uppackad storlek: {size}. Valfria exporter tillkommer. GridScalr kontrollerar paketgränsen och ledigt utrymme innan paketet skrivs.",
+  "package.tooLarge": "Projektet är för stort för ett projektpaket. Innehållet är {required}, men ett paket är begränsat till {limit}. Ta bort eller dela upp refererade ritningar och försök igen.",
   "package.insufficientSpace": "Det finns inte tillräckligt med ledigt utrymme för paketet. Det behövs {required} och endast {available} är tillgängligt. Välj en annan mapp eller frigör utrymme.",
   "package.chooseAnother": "Välj en annan mapp…",
   "package.replaceFolder": "Ersätt mappen",

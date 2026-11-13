@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
 import { withTestPageIds } from "./helpers/pages";
 import { createProject, defaultDocument } from "../src/model/layers";
 import type { DocumentRef, Project } from "../src/model/types";
@@ -7,6 +8,8 @@ import {
   DEFAULT_PACKAGE_OPTIONS,
   describePackageFailure,
   documentArchivePaths,
+  estimatePackageBytes,
+  MAX_PACKAGE_TOTAL_BYTES,
   normalizePackageFailure,
   parsePackageManifest,
   portableProjectJson,
@@ -289,6 +292,42 @@ describe("project package model", () => {
         availableBytes: 1024 * 1024,
       }),
     ).toContain("not enough free space");
+  });
+
+  it("refuses and explains a package over the uncompressed limit", () => {
+    expect(
+      normalizePackageFailure({
+        kind: "tooLarge",
+        requiredBytes: 4096,
+        maxBytes: 2048,
+      }),
+    ).toEqual({ kind: "tooLarge", requiredBytes: 4096, maxBytes: 2048 });
+    const message = describePackageFailure({
+      kind: "tooLarge",
+      requiredBytes: 3 * 1024 * 1024,
+      maxBytes: 2 * 1024 * 1024,
+    });
+    expect(message).toContain("too large for a project package");
+    expect(message).toContain("3.0 MB");
+    expect(message).toContain("2.0 MB");
+  });
+
+  it("estimates the known package size from the project and its sources", () => {
+    const project = projectWithDocuments();
+    const withScans = estimatePackageBytes(project, {
+      ...DEFAULT_PACKAGE_OPTIONS,
+      includeSourceScans: true,
+    });
+    const withoutScans = estimatePackageBytes(project, DEFAULT_PACKAGE_OPTIONS);
+    expect(withoutScans).toBeGreaterThan(1200 + 800);
+    expect(withScans).toBe(withoutScans + 700);
+    expect(withScans).toBeLessThan(MAX_PACKAGE_TOTAL_BYTES);
+  });
+
+  it("keeps the documented package limit in step with the Rust command", () => {
+    const source = readFileSync(new URL("../src-tauri/src/package.rs", import.meta.url), "utf8");
+    expect(source).toContain("MAX_TOTAL_BYTES: u64 = 2 * 1024 * 1024 * 1024;");
+    expect(MAX_PACKAGE_TOTAL_BYTES).toBe(2 * 1024 * 1024 * 1024);
   });
 
   it("localizes the package failure headline and keeps the technical detail", () => {

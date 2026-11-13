@@ -134,7 +134,7 @@ A managed copy needs a saved project. If the project is new and unsaved, GridSca
 
 Use the right-click menu on a page card for the drawing actions. A PDF source offers the full set; a TIF source keeps its derived PDF inside the project, so it offers **Replace source…** only.
 
-- **Use managed copy** – copy this reference PDF into the project and switch the document to managed mode. Provenance is kept as the original path and checksum.
+- **Use managed copy** – copy this reference PDF into the project and switch the document to managed mode. Provenance is kept as the original path and checksum. A drawing above the 1 GiB source limit is refused before anything is copied, with a localized message.
 - **Detach from source** – keep the managed copy but clear its link to the original path.
 - **Reload source** – re-read the current file and update the checksum. It refuses a changed page count and points to **Replace source…**.
 - **Use current source** – accept the current on-disk checksum without re-rendering the working drawing.
@@ -837,6 +837,7 @@ While a desktop project is open, GridScalr checks the project file stamp every f
 - Quantity CSV, Excel and PDF reports and a flattened drawing PDF are optional and off by default. Select them in the package dialog when the recipient needs the output.
 - `manifest.json` records the package format version, app version, creation time, project schema, project checksum, and the size and SHA-256 of every included file. The manifest version is independent of the project schema.
 - If a referenced drawing is missing, packaging stops and lists the missing files. If a drawing no longer matches the checksum stored in the project, choose **Cancel** and relink, or **Use current drawings** to update only the copy inside the package. The open project is never changed.
+- The dialog shows the expected uncompressed size while you choose the optional exports. GridScalr refuses a package larger than the 2 GiB uncompressed limit, and a destination without room for the package plus a 64 MiB reserve, before it writes anything.
 - The output file is subject to the same source-drawing guard as every other export.
 
 **File → Open package…** verifies the manifest and every checksum before a fresh extraction opens the project. The package is extracted to `<package folder>/<project name>/`. If that folder exists, open the existing extraction (including any edits made there) or replace it with a fresh one; you can also choose another folder. Cancel removes temporary files and leaves the package untouched. The extracted copy can be edited; the package file itself is not modified.

@@ -33,6 +33,7 @@ export function packageOptionsDialog(
   documentCount: number,
   tifCount: number,
   desktop: boolean,
+  estimateBytes?: (options: PackageOptions) => number,
 ): Promise<PackageOptions | null> {
   const body = el("div", "form-stack");
   body.append(el("p", "modal-message", t("package.optionsIntro", { count: documentCount })));
@@ -55,6 +56,30 @@ export function packageOptionsDialog(
   );
   body.append(quantity.row, drawing.row, scans.row);
 
+  const selected = (): PackageOptions => ({
+    includeQuantityExports: quantity.input.checked,
+    includeDrawingPdf: drawing.input.checked,
+    includeSourceScans: scans.input.checked,
+  });
+
+  // The expected uncompressed size is known before anything is written, so the
+  // user sees it here instead of discovering an over-limit package later (F-044).
+  let sizeLine: HTMLElement | null = null;
+  if (estimateBytes) {
+    sizeLine = el("p", "modal-message package-estimated-size", "");
+    const updateSize = () => {
+      if (!sizeLine) return;
+      sizeLine.textContent = t("package.expectedSize", {
+        size: formatBytes(estimateBytes(selected())),
+      });
+    };
+    body.append(sizeLine);
+    for (const input of [quantity.input, drawing.input, scans.input]) {
+      input.addEventListener("change", updateSize);
+    }
+    updateSize();
+  }
+
   if (!desktop) {
     body.append(el("p", "form-error", desktopOnlyMessage()));
   }
@@ -75,15 +100,7 @@ export function packageOptionsDialog(
         button.disabled = true;
       }
     },
-  }).then((value) =>
-    value === "create"
-      ? {
-          includeQuantityExports: quantity.input.checked,
-          includeDrawingPdf: drawing.input.checked,
-          includeSourceScans: scans.input.checked,
-        }
-      : null,
-  );
+  }).then((value) => (value === "create" ? selected() : null));
 }
 
 export type PackageDestinationChoice = "extract" | "replace" | "reuse" | "choose";

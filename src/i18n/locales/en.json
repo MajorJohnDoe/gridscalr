@@ -756,6 +756,8 @@
   "package.destinationExists": "The folder already exists. Open the extracted copy or replace the folder with a fresh extraction.",
   "package.destinationIntro": "“{name}” will be extracted to this folder:",
   "package.uncompressedSize": "Uncompressed size: {size}. GridScalr checks free space before extracting.",
+  "package.expectedSize": "Expected uncompressed size: {size}. Optional exports add to it. GridScalr checks the package limit and free space before writing.",
+  "package.tooLarge": "This project is too large for a project package. Its content is {required}, but a package is limited to {limit}. Remove or split referenced drawings and try again.",
   "package.insufficientSpace": "There is not enough free space for this package. It needs {required} and only {available} is available. Choose another folder or free some space.",
   "package.chooseAnother": "Choose another folder…",
   "package.replaceFolder": "Replace folder",

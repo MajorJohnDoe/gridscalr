@@ -65,6 +65,22 @@ pub(crate) fn available_bytes(_directory: &Path) -> Option<u64> {
     None
 }
 
+/// Free space of the volume that will hold `path`, walking up to the nearest
+/// existing folder first. A destination folder may not exist yet when a package
+/// is written, and the probe must still see the volume it will live on.
+pub(crate) fn available_bytes_at(path: &Path) -> Option<u64> {
+    let mut current = path.to_path_buf();
+    loop {
+        if current.is_dir() {
+            return available_bytes(&current);
+        }
+        match current.parent() {
+            Some(parent) if !parent.as_os_str().is_empty() => current = parent.to_path_buf(),
+            _ => return None,
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -85,5 +101,15 @@ mod tests {
             assert!(bytes > 0);
         }
         assert_eq!(available_bytes(Path::new("")), None);
+    }
+
+    #[test]
+    fn probes_the_nearest_existing_folder_for_a_missing_destination() {
+        let directory = std::env::temp_dir();
+        let missing = directory.join("gridscalr-not-created-yet");
+        let direct = available_bytes(&directory);
+        let walked = available_bytes_at(&missing);
+        assert_eq!(direct.is_some(), walked.is_some());
+        assert_eq!(available_bytes_at(Path::new("")), None);
     }
 }

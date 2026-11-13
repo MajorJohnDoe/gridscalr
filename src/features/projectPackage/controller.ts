@@ -32,6 +32,8 @@ import {
   desktopOnlyMessage,
   describePackageFailure,
   documentArchivePaths,
+  estimatePackageBytes,
+  MAX_PACKAGE_TOTAL_BYTES,
   normalizePackageFailure,
   parsePackageManifest,
   portableProjectJson,
@@ -225,8 +227,27 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
     return;
   }
 
-  const options = await packageOptionsDialog(project.documents.length, tifCount(project), true);
+  const options = await packageOptionsDialog(
+    project.documents.length,
+    tifCount(project),
+    true,
+    (selection) => estimatePackageBytes(project, selection),
+  );
   if (!options) return;
+
+  const knownBytes = estimatePackageBytes(project, options);
+  if (knownBytes > MAX_PACKAGE_TOTAL_BYTES) {
+    await messageDialog(
+      t("package.couldNotCreate"),
+      describePackageFailure({
+        kind: "tooLarge",
+        requiredBytes: knownBytes,
+        maxBytes: MAX_PACKAGE_TOTAL_BYTES,
+      }),
+      "warning",
+    );
+    return;
+  }
 
   const suggested = suggestedPackageFileName(project);
   const chosenPath = await chooseSavePath(suggested, packageFilters());
@@ -413,5 +434,7 @@ export async function openPackageFlow(host: PackageHost): Promise<void> {
 
 /** Opens the package options dialog for docs capture in the browser fallback. */
 export function showPackageDialogPreview(project: Project): void {
-  void packageOptionsDialog(project.documents.length, tifCount(project), false);
+  void packageOptionsDialog(project.documents.length, tifCount(project), false, (selection) =>
+    estimatePackageBytes(project, selection),
+  );
 }

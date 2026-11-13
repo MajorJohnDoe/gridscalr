@@ -7,6 +7,15 @@ import { documentSourceKey } from "../sourceStorage";
 
 export const PACKAGE_FORMAT = "gridscalr-package";
 export const PACKAGE_FORMAT_VERSION = 1;
+/**
+ * The uncompressed content cap of one package. Mirrors `MAX_TOTAL_BYTES` in
+ * `src-tauri/src/package.rs`: creating a package that no extraction accepts is
+ * refused before the dialog writes anything (F-044). A unit test keeps the two
+ * values together.
+ */
+export const MAX_PACKAGE_TOTAL_BYTES = 2 * 1024 * 1024 * 1024;
+/** `README.txt` and the archive headers are small but never zero. */
+const PACKAGE_OVERHEAD_BYTES = 4096;
 export function desktopOnlyMessage(): string {
   return t("package.desktopOnly");
 }
@@ -77,6 +86,7 @@ export type PackageFailure =
   | { kind: "destinationExists"; path: string }
   | { kind: "sourceOverwrite" }
   | { kind: "insufficientSpace"; requiredBytes: number; availableBytes: number }
+  | { kind: "tooLarge"; requiredBytes: number; maxBytes: number }
   | { kind: "invalidPackage"; message: string }
   | { kind: "io"; message: string }
   | { kind: "unknown"; message: string };
@@ -261,8 +271,30 @@ export function portableProjectJson(
   return serializeProject(copy);
 }
 
-const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
+/**
+ * Upper bound of the package content that is known before the optional exports
+ * are generated: the packaged project file, one copy per physical source and a
+ * small allowance for the README and archive headers. The package dialog shows
+ * it, and the controller refuses a known-too-large package before it asks for a
+ * path (F-044). Generated PDFs, workbooks and reports are not included.
+ */
+export function estimatePackageBytes(project: Project, options: PackageOptions): number {
+  const projectBytes = byteLength(portableProjectJson(project, documentArchivePaths(project)));
+  const seen = new Set<string>();
+  let sourceBytes = 0;
+  for (const document of project.documents) {
+    const included =
+      document.kind === "pdf" || (document.kind === "tiff" && options.includeSourceScans);
+    if (!included) continue;
+    const key = documentSourceKey(document);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    sourceBytes += document.sizeBytes ?? 0;
+  }
+  return projectBytes + sourceBytes + PACKAGE_OVERHEAD_BYTES;
+}
 
+const SHA256_PATTERN = /^[0-9a-f]{64}$/i;
 function hasControlCharacter(value: string): boolean {
   for (const character of value) {
     if (isControlCode(character.codePointAt(0) ?? 0)) return true;
@@ -461,6 +493,13 @@ export function normalizePackageFailure(error: unknown): PackageFailure {
         availableBytes: Number(value.availableBytes ?? 0),
       };
     }
+    if (kind === "tooLarge") {
+      return {
+        kind: "tooLarge",
+        requiredBytes: Number(value.requiredBytes ?? 0),
+        maxBytes: Number(value.maxBytes ?? 0),
+      };
+    }
     if (kind === "invalidPackage") {
       return {
         kind: "invalidPackage",
@@ -503,6 +542,11 @@ export function describePackageFailure(failure: PackageFailure): string {
       return t("package.insufficientSpace", {
         required: formatBytes(failure.requiredBytes),
         available: formatBytes(failure.availableBytes),
+      });
+    case "tooLarge":
+      return t("package.tooLarge", {
+        required: formatBytes(failure.requiredBytes),
+        limit: formatBytes(failure.maxBytes),
       });
     case "invalidPackage":
       return messageWithDetail(t("package.errorInvalid"), failure.message);

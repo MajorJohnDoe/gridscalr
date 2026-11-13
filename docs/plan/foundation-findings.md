@@ -857,7 +857,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** project package / disk
-- **Status:** triaged #240
+- **Status:** fixed (0.27.0 phase 1, #240)
 - **Evidence:** `package_create` accepts a project JSON string, any number of
   `documents`/`exports`/`source_scans` sources and writes until the sources are
   exhausted. Phase 3 caps *extraction* at 2 GiB uncompressed and checks free
@@ -868,10 +868,20 @@ confirmed against the audit.
 - **Impact:** A failed write is cleaned up by the existing temporary-file rename
   and cancellation paths, so no partial package is left. Disk space can still be
   consumed while the write runs.
-- **Next step:** Mirror `disk_space::available_bytes` and the extraction cap in
-  `create_package`, and show the expected size in the package options dialog.
-  Schedule with the package work in 0.25.0 or as a small follow-up.
-- **Related:** `src-tauri/src/package.rs`, F-033.
+- **Resolution:** `package_limits::ensure_output_fits()` runs before the
+  temporary file exists and refuses an over-cap content total with the new
+  `PackageError::TooLarge` and a destination volume without the size plus the
+  64 MiB reserve with `InsufficientSpace`. Both map to localized messages
+  (`package.tooLarge`, `package.insufficientSpace`). `disk_space::available_bytes_at()`
+  probes the nearest existing folder, so a not-yet-created destination folder
+  still sees its volume. The package options dialog shows the expected
+  uncompressed size and updates it as the optional exports change; the controller
+  refuses a known-too-large package before it asks for a path. The check also
+  exposed that `PackageError` serialized its `required_bytes`/`available_bytes`
+  fields in snake_case, so the extraction free-space dialog always showed 0 and 0;
+  `rename_all_fields = "camelCase"` fixes it and a test pins both limit variants.
+- **Related:** `src-tauri/src/package.rs`, `src-tauri/src/package_limits.rs`,
+  `src-tauri/src/disk_space.rs`, F-033.
 
 ### F-045 — A managed copy has no source-size cap
 
@@ -879,7 +889,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** source storage
-- **Status:** triaged #240
+- **Status:** fixed (0.27.0 phase 1, #240)
 - **Evidence:** `copy_to_project` hashes and streams the source without a size
   limit, then verifies the copy. Phase 3 bounds *reads* at 1 GiB but the copy
   command is a separate path.
@@ -887,8 +897,11 @@ confirmed against the audit.
   and doubles the disk use of the drawing without a warning.
 - **Impact:** Disk use and time only; the checksum verification still proves the
   copy matches the source.
-- **Next step:** Apply `MAX_SOURCE_BYTES` to the managed-copy source and report a
-  localized `fileTooLarge` before streaming. Small follow-up.
+- **Resolution:** `copy_to_project` checks the source metadata against
+  `MAX_SOURCE_BYTES` before it hashes or streams anything and returns the shared
+  `fileTooLarge` code, which the UI already localizes. The check runs before the
+  drawings folder is created, so a refused copy leaves no folder and the source
+  stays untouched.
 - **Related:** `src-tauri/src/source_copy.rs`, `src-tauri/src/path_guard.rs`.
 
 ### F-046 — Stale temporary cleanup runs only on save
@@ -897,7 +910,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 3 — path and package hardening
 - **Severity:** P3
 - **Area:** atomic writes
-- **Status:** triaged #240
+- **Status:** fixed (0.27.0 phase 1, #240)
 - **Evidence:** `clean_stale_temporaries()` is called by `atomic_write` and
   `write_conditional_with`. Opening a project never triggers it, and package
   extraction and backup temporary folders keep their own naming and cleanup.
@@ -905,9 +918,15 @@ confirmed against the audit.
   copy beside the project until the next save.
 - **Impact:** Local disk use and a project-data artifact in a shared folder. The
   project file itself stays readable and the cleanup is conservative.
-- **Next step:** Call the same helper after a project loads and extend it to the
-  package extraction temporary folder. Small follow-up.
-- **Related:** F-041, `docs/limitations.md`.
+- **Resolution:** The cleanup moved to `temp_cleanup.rs`, which owns the naming
+  patterns and one age/process guard for every entry point. Opening a project now
+  runs the new `clean_project_temporaries` command after a successful load: it
+  removes flushed save siblings next to the project and stale
+  `.<name>.extract-<pid>-<stamp>` staging folders in the same folder. Extraction
+  also cleans the destination folder before it creates a new staging folder. A
+  `.<name>.previous-<pid>-<stamp>` folder is never removed because it holds the
+  folder the user replaced.
+- **Related:** F-041, `docs/limitations.md`, `src-tauri/src/temp_cleanup.rs`.
 
 ### F-047 — The browser fallback guard is textual only
 
@@ -2345,3 +2364,46 @@ remains the scheduling home.
 - **Next step:** Decide whether to run `docs:capture` (or a screenshot dry run
   that writes to a temporary folder) in CI on a label or a scheduled job. It is a
   browser and font dependency that the current gate deliberately avoids.
+
+### F-105 — Cleanup does not cover the lease and backup trash suffixes
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 1 — write caps and temporary cleanup
+- **Severity:** P3
+- **Area:** atomic writes / temporary files
+- **Status:** deferred
+- **Evidence:** `temp_cleanup::FILE_TEMP_SUFFIXES` covers the `.tmp` and `.copy`
+  siblings generated by `atomic_write`, `write_conditional_with`, package creation
+  and `copy_to_project`. `project_lease` writes `.<name>.lock-tmp` and
+  `project_backup` writes `.<name>.deleted` trash siblings through the same
+  `unique_sibling` helper, and neither family is cleaned after a project load.
+- **Problem:** A crash during a lease write or a backup delete can leave a small
+  file behind that no cleanup pass removes. It is not project data and it is not
+  in the project folder for the lease, so the impact is limited to a few bytes in
+  the app-data folder.
+- **Impact:** Disk use only, and only after a crash. A `.lock-tmp` cannot be
+  mistaken for the lease because the reader only accepts the exact sidecar name.
+- **Next step:** Add the two suffixes to `FILE_TEMP_SUFFIXES` once the app-data
+  folder is cleaned from one place, or call `clean_stale_temporaries` from the
+  lease and backup write paths. Either change needs the same age/process guard and
+  a test per family.
+
+### F-106 — A replaced extraction keeps its previous folder until the user removes it
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 1 — write caps and temporary cleanup
+- **Severity:** P3
+- **Area:** project package / disk
+- **Status:** accepted
+- **Evidence:** `extract_package` renames an existing destination to
+  `.<name>.previous-<pid>-<stamp>`, extracts into a staging folder and deletes the
+  previous folder only when the staging rename succeeds. A crash between the two
+  renames leaves a stale previous folder; the cleanup deliberately never removes
+  it because it holds the folder the user replaced.
+- **Problem:** Repeated crashes during a replace can accumulate full project
+  copies next to a project, and nothing reports them.
+- **Impact:** Disk use only. The folder is a normal extracted project and can be
+  opened by hand; it is never mistaken for the live folder.
+- **Next step:** Report such folders in the project doctor's source section
+  together with the unused managed-copy cleanup (phase 2, #241), where the user
+  already confirms an explicit removal. Do not delete them automatically.

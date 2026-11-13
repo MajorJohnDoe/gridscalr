@@ -8,8 +8,7 @@ use serde::Serialize;
 use tauri::ipc::Response;
 
 use crate::path_guard::{
-    clean_stale_temporaries, ensure_writable, read_limited, read_text_limited, MAX_PROJECT_BYTES,
-    MAX_SOURCE_BYTES,
+    ensure_writable, read_limited, read_text_limited, MAX_PROJECT_BYTES, MAX_SOURCE_BYTES,
 };
 
 /// A user-facing command failure. The frontend maps `code` to a catalog message
@@ -50,7 +49,7 @@ fn atomic_write(path: &Path, data: &[u8]) -> Result<(), CommandError> {
     // A crashed earlier save may have left a flushed temporary sibling behind.
     // Cleaning it here keeps project data out of the folder without ever
     // touching a file a live writer may still own (F-041).
-    clean_stale_temporaries(path);
+    crate::temp_cleanup::clean_stale_temporaries(path);
 
     let temp = unique_sibling(path, "tmp");
     if let Err(error) = write_flushed(&temp, data) {

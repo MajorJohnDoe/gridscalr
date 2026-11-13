@@ -10,6 +10,7 @@ export type { BackupPorts, LocatedDrawing } from "./backupController";
 export { createSaveIntegrityPorts } from "./ports";
 export type { SaveIntegrityHost } from "./ports";
 export {
+  cleanProjectTemporaries,
   computeFileMetadata,
   computeFileStamp,
   listProjectBackups,

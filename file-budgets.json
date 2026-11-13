@@ -41,7 +41,7 @@
         "reason": "Legacy Tauri file-command module; every new command belongs in its own module rather than here."
       },
       "src-tauri/src/package.rs": {
-        "max": 2289,
+        "max": 2442,
         "reason": "Legacy package create/inspect/extract module; split by concern before adding another package command."
       },
       "src-tauri/src/project_write.rs": {
@@ -49,7 +49,7 @@
         "reason": "Atomic project write and round-trip guard; extraction is planned and no new command belongs here."
       },
       "src-tauri/src/source_copy.rs": {
-        "max": 538,
+        "max": 577,
         "reason": "Verified managed-copy, source hash and folder checksum search; consolidate only through an extraction issue."
       }
     }

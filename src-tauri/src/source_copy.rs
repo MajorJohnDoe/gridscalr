@@ -7,8 +7,10 @@ use sha2::{Digest, Sha256};
 
 use crate::commands::{replace_file, unique_sibling, CommandError};
 use crate::path_guard::{
-    clean_stale_temporaries, ensure_inside_root, ensure_writable, is_inside, MAX_HASH_SCAN_BYTES,
+    ensure_inside_root, ensure_writable, is_inside, too_large, MAX_HASH_SCAN_BYTES,
+    MAX_SOURCE_BYTES,
 };
+use crate::temp_cleanup::clean_stale_temporaries;
 
 /// Copies one reference drawing into the project's sibling drawings folder.
 ///
@@ -188,12 +190,25 @@ fn copy_stream(source: &Path, destination: &Path) -> std::io::Result<()> {
 pub(crate) fn copy_to_project(
     request: &SourceCopyRequest,
 ) -> Result<ManagedCopyInfo, CommandError> {
+    copy_to_project_limited(request, MAX_SOURCE_BYTES)
+}
+
+/// The size check runs before the source is hashed or streamed: a managed copy
+/// doubles the disk use of a drawing, so a source above the documented read cap
+/// is refused with a structured `fileTooLarge` instead of copied (F-045).
+fn copy_to_project_limited(
+    request: &SourceCopyRequest,
+    max_bytes: u64,
+) -> Result<ManagedCopyInfo, CommandError> {
     let source = Path::new(&request.source_path);
     let metadata = fs::metadata(source).map_err(|error| {
         CommandError::new("readFailed", format!("{}: {error}", source.display()))
     })?;
     if !metadata.is_file() {
         return Err(CommandError::new("notAFile", source.display().to_string()));
+    }
+    if metadata.len() > max_bytes {
+        return Err(too_large(source, metadata.len(), max_bytes));
     }
     let sha256 = hash_file(source).map_err(|error| {
         CommandError::new("readFailed", format!("{}: {error}", source.display()))
@@ -454,6 +469,30 @@ mod tests {
         assert_eq!(fs::read(&source).expect("read source"), before);
         assert_eq!(fs::read(&info.destination_path).expect("read copy"), before);
         assert_eq!(info.relative_path, expected);
+    }
+
+    #[test]
+    fn refuses_a_source_over_the_copy_cap_before_streaming_it() {
+        let dir = TestDir::new();
+        let bytes = b"%PDF-1.4 source drawing";
+        let source = dir.file("Plan.pdf", bytes);
+        let copy = request(&dir, &source, "Plan.pdf");
+
+        let error = copy_to_project_limited(&copy, 8).expect_err("over the copy cap");
+        assert_eq!(error.code, "fileTooLarge");
+        assert!(
+            !dir.0.join("Level 01.drawings").exists(),
+            "nothing is created before the size check"
+        );
+        assert_eq!(
+            fs::read(&source).expect("read source"),
+            bytes,
+            "the source drawing is never modified"
+        );
+        // The documented limit is the one the command uses, so the same fixture
+        // succeeds without the test cap.
+        copy_to_project(&copy).expect("within the documented cap");
+        assert!(dir.0.join("Level 01.drawings").is_dir());
     }
 
     #[test]

@@ -280,7 +280,9 @@ src-tauri/
   src/project_backup.rs  app-data backup directory, origin metadata, rolling retention, list and delete commands
   src/conflicted_copy.rs strict conflicted-copy discovery and single-file delete guards
   src/package.rs         streaming ZIP package create/inspect/extract, manifest and checksum validation
+  src/package_limits.rs  package output cap and destination free-space check before a write
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
+  src/temp_cleanup.rs    stale temporary naming, age/process guard and post-load cleanup command
   src/source_cleanup.rs  managed-copy folder inventory and guarded single-file deletion
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions

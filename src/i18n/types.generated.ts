@@ -758,6 +758,8 @@ export type MessageKey =
   | "package.destinationExists"
   | "package.destinationIntro"
   | "package.uncompressedSize"
+  | "package.expectedSize"
+  | "package.tooLarge"
   | "package.insufficientSpace"
   | "package.chooseAnother"
   | "package.replaceFolder"

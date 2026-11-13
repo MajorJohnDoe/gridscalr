@@ -15,7 +15,6 @@
 use std::fs::{self, File};
 use std::io::Read;
 use std::path::{Component, Path, PathBuf};
-use std::time::{Duration, SystemTime};
 
 use crate::commands::CommandError;
 
@@ -29,12 +28,6 @@ pub(crate) const MAX_SOURCE_BYTES: u64 = 1024 * 1024 * 1024;
 
 /// Total bytes hashed by one `source_find_by_hash` search.
 pub(crate) const MAX_HASH_SCAN_BYTES: u64 = 2 * 1024 * 1024 * 1024;
-
-/// A temporary sibling younger than this may still belong to a live writer.
-pub(crate) const STALE_TEMP_AGE: Duration = Duration::from_secs(10 * 60);
-
-/// Suffixes this module generates next to a destination.
-const TEMP_SUFFIXES: [&str; 2] = ["tmp", "copy"];
 
 fn is_usable(path: &Path) -> bool {
     let text = path.to_string_lossy();
@@ -187,7 +180,7 @@ fn is_protected_root(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
-fn too_large(path: &Path, size: u64, max: u64) -> CommandError {
+pub(crate) fn too_large(path: &Path, size: u64, max: u64) -> CommandError {
     CommandError::new(
         "fileTooLarge",
         format!(
@@ -289,77 +282,6 @@ pub(crate) fn ensure_inside_root(
         code,
         format!("{} resolves outside {}", path.display(), root.display()),
     ))
-}
-
-/// Removes stale atomic-write siblings left by a crashed save.
-///
-/// Only names that exactly match the generated pattern are considered, only
-/// files older than `min_age` are removed, and a sibling carrying this
-/// process's own id is always kept because it may still be in flight.
-pub(crate) fn clean_stale_temporaries(path: &Path) -> usize {
-    clean_stale_temporaries_at(path, STALE_TEMP_AGE, SystemTime::now())
-}
-
-pub(crate) fn clean_stale_temporaries_at(path: &Path, min_age: Duration, now: SystemTime) -> usize {
-    let Some(name) = path.file_name() else {
-        return 0;
-    };
-    let parent = match path.parent() {
-        Some(parent) if !parent.as_os_str().is_empty() => parent.to_path_buf(),
-        _ => PathBuf::from("."),
-    };
-    let prefix = format!(".{}.", name.to_string_lossy());
-    let Ok(entries) = fs::read_dir(&parent) else {
-        return 0;
-    };
-    let mut removed = 0;
-    for entry in entries.flatten() {
-        let entry_name = entry.file_name().to_string_lossy().to_string();
-        let Some((pid, created)) = generated_temp_stamp(&entry_name, &prefix) else {
-            continue;
-        };
-        if pid == std::process::id() {
-            continue;
-        }
-        let Ok(metadata) = entry.metadata() else {
-            continue;
-        };
-        if !metadata.is_file() {
-            continue;
-        }
-        let created = SystemTime::UNIX_EPOCH
-            .checked_add(Duration::from_nanos(created as u64))
-            .unwrap_or(SystemTime::UNIX_EPOCH);
-        let age = now.duration_since(created).unwrap_or_default();
-        if age < min_age {
-            continue;
-        }
-        if fs::remove_file(entry.path()).is_ok() {
-            removed += 1;
-        }
-    }
-    removed
-}
-
-/// Returns `(pid, generated_nanos)` for an exact generated temporary name. The
-/// timestamp is part of the name, so the age check does not depend on a
-/// mutable file-system modification time.
-fn generated_temp_stamp(name: &str, prefix: &str) -> Option<(u32, u128)> {
-    let rest = name.strip_prefix(prefix)?;
-    let rest = TEMP_SUFFIXES
-        .iter()
-        .find_map(|suffix| rest.strip_suffix(&format!(".{suffix}")))?;
-    let parts: Vec<&str> = rest.split('.').collect();
-    if parts.len() != 3 {
-        return None;
-    }
-    if !parts
-        .iter()
-        .all(|part| !part.is_empty() && part.chars().all(|character| character.is_ascii_digit()))
-    {
-        return None;
-    }
-    Some((parts[0].parse().ok()?, parts[1].parse().ok()?))
 }
 
 #[cfg(test)]
