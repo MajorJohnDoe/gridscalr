@@ -697,7 +697,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** tests / filesystem
-- **Status:** triaged #199
+- **Status:** fixed — 0.27.0 phase 4 ([#199](https://github.com/MajorJohnDoe/gridscalr/issues/199))
 - **Evidence:** `cargo test --lib` runs only on Ubuntu. The Windows and macOS CI
   jobs build and smoke-test but do not run the Rust unit tests; the symlink and
   hard-link cases are `#[cfg(unix)]` or skipped by the filesystem.
@@ -707,7 +707,16 @@ confirmed against the audit.
 - **Impact:** A regression in the source write guard could ship undetected.
 - **Next step:** Run the save and package Rust test modules on Windows and add
   Windows-only junction and trailing-dot tests. Phase 3, #169.
-- **Related:** `docs/security-audit.md` §5.1.
+- **Resolution:** The `desktop` matrix job runs `cargo test --lib` on Ubuntu,
+  Windows and macOS before it builds the shell.
+  `src-tauri/src/path_guard_windows_tests.rs` (Windows-only) covers a junction
+  escape, a trailing-dot and trailing-space alias, drive-relative rejection, UNC
+  spellings, a real case-insensitive volume and a verbatim-prefix comparison
+  that fails if the canonicalization branch is removed. Two existing assertions
+  that compared a native path with a `/`-separated literal were changed to
+  compare path components, because they only held on Linux. 8.3 short names and
+  alternate data streams stay untested and are named in `docs/testing.md`.
+- **Related:** `docs/security-audit.md` §5.1, `docs/testing.md`.
 
 #### F-037 — Test-only IPC commands are shipped in release builds
 
@@ -2480,3 +2489,27 @@ remains the scheduling home.
   packaging, consolidation and cap to the original scan first, then make
   `preservesManagedStorage()` kind-aware. Do not add a second managed folder.
 - **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-088, F-084.
+
+### F-109 — A UNC spelling and a drive-rooted spelling share one comparison key
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 4 — Windows Rust path tests
+- **Severity:** P3
+- **Area:** filesystem / write guard
+- **Status:** accepted
+- **Evidence:** `comparison_key()` replaces every backslash with `/` and
+  collapses repeated slashes. A protected `\\server\share\Plan.pdf` and a
+  Windows drive-rooted `\server\share\Plan.pdf` therefore both produce
+  `/server/share/plan.pdf`, and the write guard treats them as one file. The
+  Windows-only test `compares_unc_spellings_by_server_and_share` pins the key
+  shape.
+- **Problem:** Two distinct files can compare equal. The guard then asks for
+  another destination name.
+- **Impact:** A refusal only. The two spellings are treated as one protected
+  source, so the safe direction is kept; a user who really wants to write to the
+  drive-rooted path picks a different name or renames the source. No path is
+  ever written by the collision.
+- **Next step:** If a support report shows the refusal, give the UNC key a
+  distinct prefix (for example `unc://`) instead of stripping the double slash.
+  Do not change the key without the Windows matrix run, since every existing
+  protected-path test depends on it.

@@ -89,9 +89,8 @@ fn lists_only_regular_pdf_files_directly_in_the_drawings_folder() {
     assert_eq!(entries.len(), 1);
     assert_eq!(entries[0].file_name, "Plan-aaaaaaaa.pdf");
     assert_eq!(entries[0].size_bytes, 12);
-    assert!(entries[0]
-        .path
-        .ends_with("Level 01.drawings/Plan-aaaaaaaa.pdf"));
+    assert!(Path::new(&entries[0].path)
+        .ends_with(Path::new("Level 01.drawings").join("Plan-aaaaaaaa.pdf")));
 }
 
 #[test]

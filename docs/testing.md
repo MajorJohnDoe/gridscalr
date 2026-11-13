@@ -19,7 +19,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
-| `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
+| `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. Runs on the Ubuntu `rust` job and on all three `desktop` matrix entries, Windows and macOS included. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |
 
 `tests/pdfExport.test.ts` inspects the produced PDF bytes and objects for the
@@ -178,6 +178,34 @@ and the rename, or a process kill at every possible instruction. Those remain
 documented limitations; the tests prove the application-level compare-and-swap
 and the readable previous file.
 
+### Rust tests on every desktop platform
+
+The `rust` job runs `cargo fmt --check`, `cargo check` and `cargo test --lib` on
+Ubuntu for fast feedback. The `desktop` job repeats `cargo test --lib` on
+Ubuntu, Windows and macOS before it builds the shell, and its Windows and macOS
+entries then run the packaged `--smoke-test`. The path guard encodes Windows and
+macOS file-system rules, so it has to be exercised on those platforms rather
+than inferred from a POSIX run.
+
+`src-tauri/src/path_guard_windows_tests.rs` is compiled on Windows only (the
+module is skipped elsewhere, so it may not depend on a POSIX path) and adds the
+cases a Linux host cannot express. Every case works in its own
+`std::env::temp_dir()` folder named with the process id and a counter, so a
+parallel run and a rerun cannot collide:
+
+| Case | Asserts |
+| --- | --- |
+| Verbatim prefix | `fs::canonicalize` returns a `\\?\` path and its `comparison_key()` equals the plain spelling of the same file, so a protected source stays protected. Deleting the verbatim-prefix branch in `comparison_key()` fails this test on every Windows run. |
+| Case-insensitive volume | The `PLAN.PDF` spelling of an existing `Plan.pdf` is refused by the write guard. A case-sensitive NTFS folder, which stores two files, falls back to asserting the case-folded comparison key. |
+| Trailing dot and space | `Plan.pdf.` and `Plan.pdf `, which Win32 resolves to `Plan.pdf` when it opens the file, are refused as the protected source. |
+| Drive-relative | `C:Plan.pdf` and `C:Drawings\Plan.pdf` are rejected as `invalidPath`; a rooted `C:\…` spelling still reaches the normal source comparison. |
+| UNC prefix | `\\server\share` and `//SERVER/Share` produce one case-folded key, and the `\\?\UNC\…` spelling equals the plain one. |
+| Junction | A drawings folder created with `mklink /J` that points outside the project is refused by `ensure_inside_root()` and by the write guard. When the host cannot create the junction the test asserts that `mklink` recorded a reason, prints it and returns; the verbatim-prefix case above always covers canonicalization on Windows. |
+
+Two existing Rust assertions compared a native path with a `/`-separated
+literal, which only held on Linux. They now compare whole path components, so
+the Windows and macOS entries test the same behavior as the Linux one.
+
 ## Fuzzing
 
 `tests/fuzz.test.ts` uses a deterministic, seeded PRNG with no external
@@ -247,8 +275,9 @@ constants), so deleting one fails a normal-suite test.
 
 Deliberately not covered: the frontend guard is textual (F-047), so a `..`
 spelling is resolved only by the canonicalising Rust guard; the browser fallback
-cannot compare file identities; and Windows junction and 8.3 behaviour cannot be
-executed on the Linux test host (F-036).
+cannot compare file identities; and Windows 8.3 short-name aliases and alternate
+data streams are not exercised (F-036 covered the junction and verbatim-prefix
+cases in 0.27.0 phase 4, #199).
 
 ## Visual regression
 

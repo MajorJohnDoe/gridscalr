@@ -191,3 +191,11 @@ fn bounded_reads_accept_the_limit_and_reject_one_byte_more() {
     assert_eq!(error.code, "fileTooLarge");
     assert!(read_text_limited(&file, 10).is_ok());
 }
+
+/// Windows-only cases: drive-relative spellings, UNC prefixes, a real
+/// case-insensitive volume, trailing-dot aliases, verbatim-prefix
+/// canonicalization and a junction escape (F-036, #199). The module is skipped
+/// on every other host, so it may not depend on a POSIX path.
+#[cfg(windows)]
+#[path = "path_guard_windows_tests.rs"]
+mod windows;
