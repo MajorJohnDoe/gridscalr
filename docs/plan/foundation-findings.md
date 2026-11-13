@@ -55,7 +55,13 @@ project contents.
 - [#236](https://github.com/MajorJohnDoe/gridscalr/issues/236): F-088, with
   F-084 and F-085. All three are fixed or closed by 0.27.0 phase 3; F-108
   records the TIF part.
-- [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238): F-091 and F-023.
+- [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238): F-091, F-023
+  and F-087, with F-089, F-090 and F-092–F-095. 0.27.0 phase 7 records the
+  colour-scan budget and defers the storage change to
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256); F-023 is closed
+  as an accepted trade-off, F-087's fix is deferred to
+  [#257](https://github.com/MajorJohnDoe/gridscalr/issues/257), and the decoder
+  limits stay accepted and documented in the limitations and user guide.
 - [#239](https://github.com/MajorJohnDoe/gridscalr/issues/239): F-097, F-098,
   F-100, F-101 — all four fixed by 0.27.0 phase 6; F-112 records the remaining
   unbound workspace-list codes.
@@ -446,7 +452,7 @@ The plan is [`0.27.md`](0.27.md); the epic is
 - **Phase:** 6 — interoperability
 - **Severity:** P2
 - **Area:** PDF export / OCG
-- **Status:** triaged #238
+- **Status:** accepted — one group per layer, documented trade-off (0.27.0 phase 7)
 - **Evidence:** `src/pdf/export/ocg.ts` creates one OCG per exported visible
   layer. Marked content is written only on pages where the layer is visible, but
   the reader toggles the group for the whole document.
@@ -455,9 +461,13 @@ The plan is [`0.27.md`](0.27.md); the epic is
   exported page where it was visible.
 - **Impact:** The flattened default is unchanged and hidden content never
   exports. Only the optional reader-side toggle is coarser than the canvas rule.
-- **Next step:** Decide whether per-page OCGs (`Layer — Page 3`) or one group
-  per layer with per-page marked content and a documented trade-off is the right
-  long-term model. Keep hidden layers excluded either way.
+- **Resolution (0.27.0 phase 7):** ADR
+  [0016](../adr/0016-optional-content-export-shape.md) keeps one group per layer
+  and accepts the document-wide toggle. Per-page groups were rejected because
+  they multiply the reader's layer list by the page count (a 40-page export with
+  15 layers becomes 600 entries) and cannot express the layer hierarchy that
+  schema 26 added. `docs/limitations.md` and the drawing-export section of the
+  user guide state the trade-off.
 - **Related:** robustness §7.8, `docs/limitations.md`.
 
 ### F-024 — Review annotations have approximate geometry and reader-dependent appearance
@@ -2139,20 +2149,24 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 10b — Layers panel tree and nested OCG export
 - **Severity:** P3
 - **Area:** PDF export / optional content
-- **Status:** accepted — documented limitation
+- **Status:** triaged #257 — interoperability defect confirmed, fix deferred
 - **Evidence:** Nested groups are written as heading dictionaries with `/Name`
   and a nested `/Order` in `/OCProperties /D /Order`, per ADR 0014 and ISO
   32000. pdf.js `parseNestedOrder` in `pdf.worker.mjs` only accepts an array
   whose first element is the group name, so a dictionary heading is skipped and
   the groups it contains are shown flat. Acrobat and most desktop readers read
-  the dictionary form.
+  the dictionary form; the array form is what ISO 32000-1 Table 101 defines.
 - **Problem:** In Firefox's built-in viewer the groups are all present and
   toggleable, but they are not nested with their parent group's heading.
 - **Impact:** No content, toggle or determinism difference; only the presentation
   of the layer list in pdf.js-based viewers.
-- **Next step:** Decide whether to emit the array form instead of, or in addition
-  to, the heading dictionary when a reader-compatibility audit is paid for.
-  Keep the nested structure test on the raw `/Order` tree either way.
+- **Resolution (0.27.0 phase 7):** ADR
+  [0016](../adr/0016-optional-content-export-shape.md) decides the defect is
+  ours and the ISO array form is the target. The change is deferred to
+  [#257](https://github.com/MajorJohnDoe/gridscalr/issues/257) because the array
+  form makes the heading non-selectable, so a group layer that also owns items
+  needs a name rule for its own content, and because the form must be verified
+  in Acrobat as well as Firefox before it is switched.
 - **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
   `src/pdf/export/ocg.ts`, `tests/pdfExport.test.ts`.
 
@@ -2174,6 +2188,10 @@ remains the scheduling home.
 - **Next step:** If a real RGBA drawing appears, write an `/SMask` with the alpha
   sample and a `DeviceRGB` image, and test that the PDF viewer honours it.
   Prefer that over adding a new file format.
+- **Resolution (0.27.0 phase 7):** accepted and stated in `docs/limitations.md`
+  and the **TIF drawings** section of the user guide, together with the other
+  decode limits. ADR [0015](../adr/0015-colour-scan-storage.md) keeps the flat
+  image shape, so the `/SMask` work stays deferred until a real file appears.
 
 ### F-090 — 16-bit TIFF samples are reduced to 8 bits
 
@@ -2192,6 +2210,9 @@ remains the scheduling home.
 - **Next step:** Only if a measured requirement appears, emit 16-bit PDF image
   samples (big-endian) and keep the predictor in 16-bit sample space. The
   current decoder already handles the predictor at that width.
+- **Resolution (0.27.0 phase 7):** accepted and documented in
+  `docs/limitations.md` and the **TIF drawings** section of the user guide. The
+  source TIF keeps its full depth, so nothing is lost on disk.
 
 ### F-091 — A decoded colour TIFF is stored as an embedded PDF and grows the project
 
@@ -2199,7 +2220,8 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
 - **Severity:** P2
 - **Area:** TIF import / project file size
-- **Status:** triaged #238
+- **Status:** deferred — decision recorded in 0.27.0 phase 7, storage change in
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
 - **Evidence:** `createTiffDocumentRef()` base64-encodes the derived PDF into
   `DocumentRef.embeddedPdf`. CCITT scans stay near the source size, but a colour
   raster is Flate-compressed into one image per strip. A 25 megapixel RGB sheet
@@ -2210,10 +2232,17 @@ remains the scheduling home.
 - **Impact:** No corruption: the write is validated and a project that is too
   large fails with the existing size message. The cost is disk size, save time
   and a lower practical page count for colour sets.
-- **Next step:** Decide whether colour TIF sources should use reference storage
-  (keep the TIF and render it at open time), a downsampled image, or JPEG
-  compression for the derived PDF. Do not change the source-storage modes
-  without an ADR; this phase keeps the existing embedded-PDF shape.
+- **Resolution (0.27.0 phase 7):** ADR
+  [0015](../adr/0015-colour-scan-storage.md) keeps the embedded derived PDF and
+  records a measured budget: a 25 MP line-art sheet stores 7.2 MiB of base64 and
+  a full A1 at 300 DPI stores 20.1 MiB, so the accepted limit is 8 MiB per 25 MP
+  colour page and 160 MiB per project (twenty 25 MP sheets or eight A1 sheets).
+  The target design is a reference TIF plus a rebuildable derived-PDF cache,
+  which needs schema 27 and is tracked as
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256). A downsampled
+  raster, a JPEG re-encode and a managed TIF copy were rejected with reasons.
+- **Related:** ADR [0015](../adr/0015-colour-scan-storage.md), F-108,
+  `docs/limitations.md`, `tests/tiffStoragePolicy.test.ts`.
 
 ### F-092 — Horizontal differencing is refused below 8 bits
 
@@ -2233,6 +2262,9 @@ remains the scheduling home.
 - **Next step:** Add packed-sample predictor decoding if a real file appears;
   unpack the row to samples, add the left neighbour modulo `2^bits`, repack.
   Keep the 8/16-bit fast paths.
+- **Resolution (0.27.0 phase 7):** accepted and stated in `docs/limitations.md`
+  and under **A TIF is rejected** in the user guide, so the refusal is no longer
+  only implied by "with the horizontal predictor".
 
 ### F-093 — Tiled JPEG-in-TIFF needs a JPEG decoder
 
@@ -2253,6 +2285,9 @@ remains the scheduling home.
 - **Next step:** Only if a real tiled JPEG scan appears, add a bounded baseline
   JPEG decoder, compose tiles into bands, and re-encode each band with a fixed
   quality. That is a new codec family and needs its own issue and fixtures.
+- **Resolution (0.27.0 phase 7):** accepted and documented in
+  `docs/limitations.md` and under **A TIF is rejected** in the user guide. A new
+  codec family stays out of scope for 0.27.0.
 
 ### F-094 — Old-style JPEG is supported only through a complete interchange stream
 
@@ -2273,6 +2308,9 @@ remains the scheduling home.
 - **Next step:** If a real file appears, read the three table offsets, build the
   complete table set once, and join it to each strip like `JPEGTables`. Test it
   with a committed old-style fixture.
+- **Resolution (0.27.0 phase 7):** accepted and documented in
+  `docs/limitations.md` and under **A TIF is rejected** in the user guide; the
+  requirement for a complete interchange stream is now named explicitly.
 
 ### F-095 — CMYK JPEG passthrough follows the stored sample convention
 
@@ -2295,6 +2333,10 @@ remains the scheduling home.
 - **Next step:** If a user reports inverted CMYK output, capture that file and
   decide whether to trust the photometric tag, the marker, or both, with a new
   fixture. Do not add a heuristic without a sample.
+- **Resolution (0.27.0 phase 7):** accepted as a documented decision in
+  `docs/limitations.md` and the **TIF drawings** section of the user guide: a
+  stream without a marker is not inverted, a marker-carrying stream is inverted
+  once, and YCCK is refused. No heuristic was added.
 
 ### F-096 — The import picker hides missing-source pages before the preflight can offer a relink
 

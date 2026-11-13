@@ -30,6 +30,12 @@ flattened drawing, optional-content groups (including pdf.js group resolution),
 review annotation dictionaries and their off paths. `tests/saveIntegrity.test.ts`
 covers conditional writes, conflicted copies, backups and the read-only
 **Compare with disk version** summary, including unreadable disk data.
+`tests/tiffStoragePolicy.test.ts` pins the TIF storage decision from
+[ADR 0015](adr/0015-colour-scan-storage.md): every CCITT strip stays
+byte-for-byte identical to the source with no raster growth, a decoded colour
+page stays `/FlateDecode` rather than a JPEG re-encode, and the derived PDF is
+embedded as base64. A change to the storage mode must update that test and the
+ADR together.
 `tests/modelBoundary.test.ts` walks `src/model` and fails, naming the file and
 specifier, when an import resolves into `src/features`; it has no allowlist, and
 `eslint.config.mjs` blocks the same import.
