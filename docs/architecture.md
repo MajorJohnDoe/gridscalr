@@ -46,7 +46,7 @@ src/
   features/projectIntegrity/repairFilter.ts pure severity, entity-kind and repair-availability filters
   features/projectIntegrity/repairUi.ts localized repair filters, selection and before/after preview
   features/projectIntegrity/sourceModel.ts pure source snapshot and canonical referenced/orphan classification
-  features/projectIntegrity/sourceAvailability.ts source checks, doctor source actions and verified unused-copy deletion
+  features/projectIntegrity/sourceAvailability.ts source checks, doctor source actions and verified unused-copy removal
   features/projectIntegrity/sourceUi.ts localized doctor source rows, orphan selection and cleanup request
   features/pageReorder/ page-card drag, multi-selection, document drop plan and keyboard reorder
   features/pageFileDrop/model.ts Pages-panel file-drop target classification and pointer rules
@@ -283,7 +283,7 @@ src-tauri/
   src/package_limits.rs  package output cap and destination free-space check before a write
   src/source_copy.rs     verified managed drawing copy, source hash and folder checksum search
   src/temp_cleanup.rs    stale temporary naming, age/process guard and post-load cleanup command
-  src/source_cleanup.rs  managed-copy folder inventory and guarded single-file deletion
+  src/source_cleanup.rs  managed-copy folder inventory and guarded removal to the OS trash or a timestamped folder
   src/lib.rs             Tauri command registration, OS launch queue, smoke-test mode, single instance and window state
   capabilities/          desktop permissions
   tauri.conf.json        undecorated Windows/Linux window drawn by ui/windowChrome.ts

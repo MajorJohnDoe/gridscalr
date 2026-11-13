@@ -22,6 +22,7 @@ import {
   confirmUnusedDrawings,
   deleteUnusedDrawings,
   loadDoctorSources,
+  type DoctorSourceCleanupResult,
 } from "../src/features/projectIntegrity/sourceAvailability";
 import type * as Platform from "../src/io/platform";
 import type { ManagedCopyEntry } from "../src/features/projectIntegrity/sourceFiles";
@@ -31,7 +32,7 @@ const mocks = vi.hoisted(() => ({
   pathExists: vi.fn(),
   fileSize: vi.fn(),
   listManagedCopies: vi.fn(),
-  deleteManagedCopy: vi.fn(),
+  removeManagedCopies: vi.fn(),
   confirmDialog: vi.fn(),
 }));
 
@@ -49,7 +50,7 @@ vi.mock("../src/io/platform", async (importOriginal) => {
 
 vi.mock("../src/features/projectIntegrity/sourceFiles", () => ({
   listManagedCopies: mocks.listManagedCopies,
-  deleteManagedCopy: mocks.deleteManagedCopy,
+  removeManagedCopies: mocks.removeManagedCopies,
 }));
 
 vi.mock("../src/ui/dialogs", () => ({
@@ -99,7 +100,12 @@ beforeEach(() => {
   mocks.pathExists.mockResolvedValue(true);
   mocks.fileSize.mockResolvedValue(100);
   mocks.listManagedCopies.mockResolvedValue([]);
-  mocks.deleteManagedCopy.mockResolvedValue(undefined);
+  mocks.removeManagedCopies.mockResolvedValue({
+    removed: [],
+    skipped: [],
+    failed: [],
+    folder: null,
+  });
 });
 
 describe("doctor source availability", () => {
@@ -182,7 +188,7 @@ describe("doctor source availability", () => {
 });
 
 describe("unused managed-copy cleanup", () => {
-  it("lists the full set and count in the confirmation and does nothing when cancelled", async () => {
+  it("lists the full set, the total and the trash policy in the confirmation", async () => {
     mocks.confirmDialog.mockResolvedValue(false);
     const files = [entry("One-aaaaaaaa.pdf"), entry("Two-bbbbbbbb.pdf", 2048)];
 
@@ -194,27 +200,35 @@ describe("unused managed-copy cleanup", () => {
     expect(message).toContain("2");
     expect(message).toContain("One-aaaaaaaa.pdf");
     expect(message).toContain("Two-bbbbbbbb.pdf");
-    expect(action).toBe("Delete drawings");
+    expect(message).toContain("operating system trash");
+    expect(message).not.toContain("cannot be undone");
+    expect(action).toBe("Remove drawings");
     expect(options).toEqual({ danger: true });
-    expect(mocks.deleteManagedCopy).not.toHaveBeenCalled();
+    expect(mocks.removeManagedCopies).not.toHaveBeenCalled();
   });
 
-  it("never deletes a referenced copy and skips one that becomes referenced", async () => {
+  it("removes only the selected copies and never a referenced one", async () => {
     const referenced = entry("Referenced-aaaaaaaa.pdf");
     const orphan = entry("Unused-bbbbbbbb.pdf");
     const project = projectWith([
       sourceDocument("Plan.pdf", referenced.path, { storage: "managed" }),
     ]);
     mocks.listManagedCopies.mockResolvedValue([referenced, orphan]);
+    mocks.removeManagedCopies.mockResolvedValue({
+      removed: [{ fileName: orphan.fileName, destination: "trash" }],
+      skipped: [],
+      failed: [],
+      folder: null,
+    });
 
     const result = await deleteUnusedDrawings(project, [referenced, orphan], PROJECT_PATH);
 
-    expect(result).toEqual({ removed: 1, skipped: 1, failed: 0 });
-    expect(mocks.deleteManagedCopy).toHaveBeenCalledTimes(1);
-    expect(mocks.deleteManagedCopy).toHaveBeenCalledWith(PROJECT_PATH, orphan.fileName);
+    expect(result).toEqual({ removed: 1, skipped: 1, failed: 0, trashed: 1, folder: null });
+    expect(mocks.removeManagedCopies).toHaveBeenCalledTimes(1);
+    expect(mocks.removeManagedCopies).toHaveBeenCalledWith(PROJECT_PATH, [orphan.fileName]);
   });
 
-  it("re-verifies the listing and the reference set immediately before deleting", async () => {
+  it("skips a copy that became referenced before the removal", async () => {
     const orphan = entry("Unused-bbbbbbbb.pdf");
     const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
     // The file is still listed, but the current project now points at it.
@@ -224,34 +238,77 @@ describe("unused managed-copy cleanup", () => {
 
     const result = await deleteUnusedDrawings(project, [orphan], PROJECT_PATH);
 
-    expect(result).toEqual({ removed: 0, skipped: 1, failed: 0 });
-    expect(mocks.deleteManagedCopy).not.toHaveBeenCalled();
+    expect(result).toEqual({ removed: 0, skipped: 1, failed: 0, trashed: 0, folder: null });
+    expect(mocks.removeManagedCopies).not.toHaveBeenCalled();
   });
 
-  it("counts a failed deletion and still removes the next selected copy", async () => {
+  it("skips a copy that vanished from the folder before the removal", async () => {
+    const orphan = entry("Unused-bbbbbbbb.pdf");
+    const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
+    mocks.listManagedCopies.mockResolvedValue([]);
+
+    const result = await deleteUnusedDrawings(project, [orphan], PROJECT_PATH);
+
+    expect(result).toEqual({ removed: 0, skipped: 1, failed: 0, trashed: 0, folder: null });
+    expect(mocks.removeManagedCopies).not.toHaveBeenCalled();
+  });
+
+  it("reports a failed move without retrying or removing another copy", async () => {
     const first = entry("First-aaaaaaaa.pdf");
     const second = entry("Second-bbbbbbbb.pdf");
     const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
     mocks.listManagedCopies.mockResolvedValue([first, second]);
-    mocks.deleteManagedCopy.mockImplementation(async (_path: string, name: string) => {
-      if (name === first.fileName) throw new Error("locked");
+    mocks.removeManagedCopies.mockResolvedValue({
+      removed: [{ fileName: first.fileName, destination: "trash" }],
+      skipped: [],
+      failed: [second.fileName],
+      folder: null,
     });
 
     const result = await deleteUnusedDrawings(project, [first, second], PROJECT_PATH);
 
-    expect(result).toEqual({ removed: 1, skipped: 0, failed: 1 });
-    expect(mocks.deleteManagedCopy).toHaveBeenCalledTimes(2);
+    expect(result).toEqual({ removed: 1, skipped: 0, failed: 1, trashed: 1, folder: null });
+    expect(mocks.removeManagedCopies).toHaveBeenCalledTimes(1);
   });
 
-  it("does not delete when the drawings folder cannot be listed", async () => {
+  it("reports the fallback folder when the operating system trash is unavailable", async () => {
+    const orphan = entry("Unused-bbbbbbbb.pdf");
+    const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
+    mocks.listManagedCopies.mockResolvedValue([orphan]);
+    mocks.removeManagedCopies.mockResolvedValue({
+      removed: [{ fileName: orphan.fileName, destination: "folder" }],
+      skipped: [],
+      failed: [],
+      folder: "/work/.Level 01.gridscalr.1.2.0.removed",
+    });
+
+    const result = await deleteUnusedDrawings(project, [orphan], PROJECT_PATH);
+
+    expect(result.removed).toBe(1);
+    expect(result.trashed).toBe(0);
+    expect(result.folder).toBe("/work/.Level 01.gridscalr.1.2.0.removed");
+  });
+
+  it("counts the whole request as failed when the removal command fails", async () => {
+    const orphan = entry("Unused-bbbbbbbb.pdf");
+    const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
+    mocks.listManagedCopies.mockResolvedValue([orphan]);
+    mocks.removeManagedCopies.mockRejectedValue(new Error("denied"));
+
+    const result = await deleteUnusedDrawings(project, [orphan], PROJECT_PATH);
+
+    expect(result).toEqual({ removed: 0, skipped: 0, failed: 1, trashed: 0, folder: null });
+  });
+
+  it("does not remove anything when the drawings folder cannot be listed", async () => {
     const orphan = entry("Unused-bbbbbbbb.pdf");
     const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
     mocks.listManagedCopies.mockRejectedValue(new Error("denied"));
 
     const result = await deleteUnusedDrawings(project, [orphan], PROJECT_PATH);
 
-    expect(result).toEqual({ removed: 0, skipped: 0, failed: 1 });
-    expect(mocks.deleteManagedCopy).not.toHaveBeenCalled();
+    expect(result).toEqual({ removed: 0, skipped: 0, failed: 1, trashed: 0, folder: null });
+    expect(mocks.removeManagedCopies).not.toHaveBeenCalled();
   });
 });
 
@@ -281,7 +338,13 @@ describe("doctor source section", () => {
           canChange: true,
           load: async () => sources,
           confirmCleanup: async () => false,
-          delete: async () => ({ removed: 0, skipped: 0, failed: 0 }),
+          delete: async () => ({
+            removed: 0,
+            skipped: 0,
+            failed: 0,
+            trashed: 0,
+            folder: null,
+          }),
         },
       },
       {
@@ -296,6 +359,91 @@ describe("doctor source section", () => {
     expect(saveRepairedCopy).toHaveBeenCalledTimes(1);
     expect(seen[0].sources?.missing).toBe(1);
     expect(seen[0].sources?.statuses[0].state).toBe("missing");
+  });
+
+  it("moves nothing when the explicit confirmation is cancelled", async () => {
+    const orphan = entry("Unused-bbbbbbbb.pdf");
+    const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
+    const sources = buildSourceSnapshot({
+      checked: true,
+      managed: [orphan],
+      orphans: [orphan],
+    });
+    const confirmCleanup = vi.fn().mockResolvedValue(false);
+    const remove = vi.fn();
+    let opens = 0;
+
+    const outcome = await runProjectDoctor(
+      {
+        project,
+        host: { saveRepairedCopy: async () => true, exportDiagnostics: async () => undefined },
+        sources: {
+          canChange: true,
+          load: async () => sources,
+          confirmCleanup,
+          delete: remove,
+        },
+      },
+      {
+        dialog: async () => {
+          opens += 1;
+          return opens === 1
+            ? { kind: "cleanup-sources" as const, files: [orphan] }
+            : { kind: "close" as const };
+        },
+      },
+    );
+
+    expect(confirmCleanup).toHaveBeenCalledWith([orphan]);
+    expect(remove).not.toHaveBeenCalled();
+    expect(outcome.action).toBe("close");
+  });
+
+  it("moves the confirmed set and reloads the section", async () => {
+    const orphan = entry("Unused-bbbbbbbb.pdf");
+    const project = projectWith([sourceDocument("Plan.pdf", "/drawings/plan.pdf")]);
+    const sources = buildSourceSnapshot({
+      checked: true,
+      managed: [orphan],
+      orphans: [orphan],
+    });
+    const notice = {
+      removed: 1,
+      skipped: 0,
+      failed: 0,
+      trashed: 0,
+      folder: "/work/.Level 01.gridscalr.1.2.0.removed",
+    };
+    const remove = vi.fn().mockResolvedValue(notice);
+    const load = vi.fn().mockResolvedValue(sources);
+    const seen: ProjectDoctorDialogState[] = [];
+    let opens = 0;
+
+    await runProjectDoctor(
+      {
+        project,
+        host: { saveRepairedCopy: async () => true, exportDiagnostics: async () => undefined },
+        sources: {
+          canChange: true,
+          load,
+          confirmCleanup: async () => true,
+          delete: remove,
+        },
+      },
+      {
+        dialog: async (state) => {
+          seen.push(state);
+          opens += 1;
+          return opens === 1
+            ? { kind: "cleanup-sources" as const, files: [orphan] }
+            : { kind: "close" as const };
+        },
+      },
+    );
+
+    expect(remove).toHaveBeenCalledWith(project, [orphan]);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(seen[1].sourceNotice).toEqual(notice);
   });
 
   it("writes source counts without paths or drawing names to diagnostics", () => {
@@ -325,6 +473,23 @@ describe("doctor source section", () => {
 });
 
 describe("doctor source section rendering", () => {
+  function renderSnapshot(
+    snapshot: DoctorSourceSnapshot,
+    options: { canChange?: boolean; notice?: DoctorSourceCleanupResult } = {},
+  ): { body: HTMLElement; requests: DoctorSourceRequest[] } {
+    const requests: DoctorSourceRequest[] = [];
+    const body = document.createElement("div");
+    addDoctorSources(body, {
+      snapshot,
+      notice: options.notice,
+      canChange: options.canChange ?? true,
+      canRelink: true,
+      canCopy: true,
+      request: (request) => requests.push(request),
+    });
+    return { body, requests };
+  }
+
   function render(canChange: boolean): {
     body: HTMLElement;
     requests: DoctorSourceRequest[];
@@ -352,29 +517,22 @@ describe("doctor source section rendering", () => {
       managed: [referenced, ...orphans],
       orphans,
     });
-    const requests: DoctorSourceRequest[] = [];
-    const body = document.createElement("div");
-    addDoctorSources(body, {
-      snapshot,
-      canChange,
-      canRelink: true,
-      canCopy: true,
-      request: (request) => requests.push(request),
-    });
-    return { body, requests };
+    return renderSnapshot(snapshot, { canChange });
   }
 
-  it("shows the state rows and submits only the selected unused copies", () => {
+  it("shows the file sizes, the total and submits only the selected copies", () => {
     const { body, requests } = render(true);
 
     expect(body.textContent).toContain("Sources");
     expect(body.textContent).toContain("Plan.pdf — reference, missing");
     expect(body.textContent).toContain("Upper.pdf — reference, available");
+    expect(body.textContent).toContain("Unused-bbbbbbbb.pdf (100 B)");
+    expect(body.textContent).toContain("2 unused file(s)");
     const boxes = body.querySelectorAll<HTMLInputElement>("input[data-orphan-index]");
     expect(boxes).toHaveLength(2);
     boxes[0].checked = false;
     const remove = [...body.querySelectorAll("button")].find((button) =>
-      (button.textContent ?? "").includes("Remove selected"),
+      (button.textContent ?? "").includes("Remove unused drawings"),
     );
     expect(remove).toBeDefined();
     remove?.click();
@@ -390,10 +548,40 @@ describe("doctor source section rendering", () => {
     const { body, requests } = render(false);
 
     const remove = [...body.querySelectorAll("button")].find((button) =>
-      (button.textContent ?? "").includes("Remove selected"),
+      (button.textContent ?? "").includes("Remove unused drawings"),
     ) as HTMLButtonElement | undefined;
     expect(remove?.disabled).toBe(true);
     remove?.click();
     expect(requests).toEqual([]);
+  });
+
+  it("disables the action when the project has no unused managed copies", () => {
+    const snapshot = buildSourceSnapshot({ checked: true, managed: [], orphans: [] });
+    const { body, requests } = renderSnapshot(snapshot);
+
+    expect(body.textContent).toContain("No unused managed copies.");
+    const remove = [...body.querySelectorAll("button")].find((button) =>
+      (button.textContent ?? "").includes("Remove unused drawings"),
+    ) as HTMLButtonElement | undefined;
+    expect(remove?.disabled).toBe(true);
+    remove?.click();
+    expect(requests).toEqual([]);
+  });
+
+  it("reports the trash count and the fallback folder after a removal", () => {
+    const snapshot = buildSourceSnapshot({ checked: true, managed: [], orphans: [] });
+    const { body } = renderSnapshot(snapshot, {
+      notice: {
+        removed: 3,
+        skipped: 1,
+        failed: 0,
+        trashed: 2,
+        folder: "/work/.Level 01.gridscalr.1.2.0.removed",
+      },
+    });
+
+    expect(body.textContent).toContain("Removed 3, skipped 1, failed 0.");
+    expect(body.textContent).toContain("Moved to the operating system trash: 2.");
+    expect(body.textContent).toContain("/work/.Level 01.gridscalr.1.2.0.removed");
   });
 });

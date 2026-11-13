@@ -336,7 +336,7 @@ The plan is [`0.27.md`](0.27.md); the epic is
 - **Phase:** 4 — source storage
 - **Severity:** P2
 - **Area:** source storage
-- **Status:** triaged #241
+- **Status:** fixed (0.27.0 phase 2, #241)
 - **Evidence:** `detachManagedCopy()` and page/document removal change the
   project only. `source_copy.rs` never deletes a drawing.
 - **Problem:** Detaching, deleting a page or replacing a source leaves the managed
@@ -345,10 +345,18 @@ The plan is [`0.27.md`](0.27.md); the epic is
 - **Impact:** No data loss and no project corruption; only disk usage grows. A
   package includes only referenced documents, so unreferenced copies do not
   travel.
-- **Next step:** Add an explicit **Remove unused drawings** action that lists
-  unreferenced files and moves them to the trash only after confirmation. Never
-  delete a file automatically.
-- **Related:** robustness §7.9, `docs/limitations.md`.
+- **Resolution:** The project doctor's source section lists every unreferenced
+  managed file with its size and the total and offers one explicit **Remove unused
+  drawings…** action. The reference set and the folder listing are re-read
+  immediately before the removal, so a file that became referenced or vanished is
+  skipped. The Rust command (`source_remove_managed_copies`) re-reads the folder
+  once more and never hard-deletes: it moves each file to the operating system
+  trash when available and otherwise into one timestamped `.removed` folder
+  beside the project, whose path the doctor reports. The action is disabled for a
+  read-only project and when the folder holds no unused copy. Nothing is removed
+  on save or on a timer.
+- **Related:** robustness §7.9, `docs/limitations.md`,
+  `src-tauri/src/source_cleanup.rs`.
 
 ### F-018 — Consolidation failure can leave unreferenced copies
 
@@ -2405,5 +2413,26 @@ remains the scheduling home.
 - **Impact:** Disk use only. The folder is a normal extracted project and can be
   opened by hand; it is never mistaken for the live folder.
 - **Next step:** Report such folders in the project doctor's source section
-  together with the unused managed-copy cleanup (phase 2, #241), where the user
-  already confirms an explicit removal. Do not delete them automatically.
+  inside a dedicated extraction-folder section. Phase 2 (#241) does not cover
+  them: the unused-drawings action inventories only regular PDF files directly in
+  `<project>.drawings/`. Do not delete them automatically.
+
+### F-107 — A removal fallback folder is reported once and then forgotten
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 2 — unused managed drawings
+- **Severity:** P3
+- **Area:** source storage / disk
+- **Status:** accepted
+- **Evidence:** `remove_managed_copies_with` moves a file into one
+  `.<project>.<pid>.<stamp>.<counter>.removed` folder beside the project when the
+  operating system trash is unavailable. The doctor reports that absolute path in
+  the post-removal notice, but no listing or later view mentions the folder again.
+- **Problem:** A user who dismisses the notice can forget the folder, so removed
+  drawings stay on disk until the folder is found and deleted by hand.
+- **Impact:** Disk use only. The files are intact and can be restored by moving
+  them back; nothing references the folder, `clean_project_temporaries` ignores it
+  and a package never includes it.
+- **Next step:** List existing `.removed` folders in the doctor's source section
+  with their size and an explicit delete action, or offer to purge a folder that
+  is older than a stated age. Do not delete one automatically.

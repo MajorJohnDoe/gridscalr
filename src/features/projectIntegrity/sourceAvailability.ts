@@ -4,7 +4,7 @@ import { pathComparisonKey } from "../../io/writeGuard";
 import type { Project } from "../../model/types";
 import { checkSourceStatuses } from "../../source/sourceStatus";
 import { confirmDialog } from "../../ui/dialogs";
-import { deleteManagedCopy, listManagedCopies, type ManagedCopyEntry } from "./sourceFiles";
+import { listManagedCopies, removeManagedCopies, type ManagedCopyEntry } from "./sourceFiles";
 import {
   buildSourceSnapshot,
   classifyManagedCopies,
@@ -17,6 +17,10 @@ export interface DoctorSourceCleanupResult {
   removed: number;
   skipped: number;
   failed: number;
+  /** How many removed copies went to the operating system trash. */
+  trashed: number;
+  /** The fallback folder, set only when the OS trash was unavailable. */
+  folder: string | null;
 }
 
 /**
@@ -89,17 +93,24 @@ export async function confirmUnusedDrawings(
 }
 
 /**
- * Re-verifies immediately before deleting. The folder is listed again and the
+ * Re-verifies immediately before moving. The folder is listed again and the
  * referenced set is rebuilt from the current project, so a copy that is now
- * referenced, or a file that vanished, is skipped instead of deleted. A failed
- * deletion is counted and never retried automatically.
+ * referenced, or a file that vanished, is skipped instead of moved. The Rust
+ * command re-reads the folder again inside the removal call. A failed move is
+ * counted and never retried automatically.
  */
 export async function deleteUnusedDrawings(
   project: Project,
   entries: readonly ManagedCopyEntry[],
   projectPath: string | null,
 ): Promise<DoctorSourceCleanupResult> {
-  const result: DoctorSourceCleanupResult = { removed: 0, skipped: 0, failed: 0 };
+  const result: DoctorSourceCleanupResult = {
+    removed: 0,
+    skipped: 0,
+    failed: 0,
+    trashed: 0,
+    folder: null,
+  };
   const unique = [
     ...new Map(entries.map((entry) => [pathComparisonKey(entry.path), entry])).values(),
   ];
@@ -115,25 +126,29 @@ export async function deleteUnusedDrawings(
     return result;
   }
   const current = new Map(listing.map((entry) => [pathComparisonKey(entry.path), entry]));
+  // The reference set comes from the open project at this exact moment, so a
+  // document added or relinked while the confirmation was open protects its
+  // copy here.
+  const references = referencedSourceKeys(project, projectPath);
+  const selected: string[] = [];
   for (const entry of unique) {
     const fresh = current.get(pathComparisonKey(entry.path));
-    if (!fresh) {
+    if (!fresh || references.has(pathComparisonKey(fresh.path))) {
       result.skipped += 1;
       continue;
     }
-    // Rebuild the reference set immediately before each delete. The project is
-    // the open one for this flow, so a document added or relinked while the
-    // confirmation was open protects its copy here.
-    if (referencedSourceKeys(project, projectPath).has(pathComparisonKey(fresh.path))) {
-      result.skipped += 1;
-      continue;
-    }
-    try {
-      await deleteManagedCopy(projectPath, fresh.fileName);
-      result.removed += 1;
-    } catch {
-      result.failed += 1;
-    }
+    selected.push(fresh.fileName);
+  }
+  if (!selected.length) return result;
+  try {
+    const removal = await removeManagedCopies(projectPath, selected);
+    result.removed = removal.removed.length;
+    result.trashed = removal.removed.filter((entry) => entry.destination === "trash").length;
+    result.folder = removal.folder;
+    result.skipped += removal.skipped.length;
+    result.failed += removal.failed.length;
+  } catch {
+    result.failed += selected.length;
   }
   return result;
 }

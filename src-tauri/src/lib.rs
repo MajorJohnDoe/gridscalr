@@ -150,7 +150,7 @@ pub fn run() {
             source_copy::source_find_by_hash,
             temp_cleanup::clean_project_temporaries,
             source_cleanup::source_list_managed_copies,
-            source_cleanup::source_delete_managed_copy,
+            source_cleanup::source_remove_managed_copies,
             package::package_create,
             package::package_inspect,
             package::package_extract,
