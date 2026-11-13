@@ -50,11 +50,20 @@ fn canonicalizes_to_a_verbatim_prefix_and_compares_it_as_the_plain_path() {
         canonical_text.starts_with(r"\\?\"),
         "Windows canonicalize must produce a verbatim prefix: {canonical_text}"
     );
-    // The guard compares an unresolved spelling against a canonical one, so the
-    // `\\?\` prefix has to be stripped. Removing that branch in
+    // The guard compares a canonical path with a spelling that carries no
+    // prefix, so the `\\?\` prefix has to be stripped. Removing that branch in
     // `comparison_key()` fails this assertion on every Windows run.
-    assert_eq!(comparison_key(&canonical), comparison_key(&file));
-    assert_eq!(comparison_key(&resolved_path(&file)), comparison_key(&file));
+    assert_eq!(
+        comparison_key(&canonical),
+        comparison_key(Path::new(&canonical_text[4..]))
+    );
+    // Resolving the spelling from the process environment reaches the same
+    // key. A temporary folder named with an 8.3 short name (`RUNNER~1`) also
+    // proves the canonical prefix is expanded, not compared textually.
+    assert_eq!(
+        comparison_key(&resolved_path(&file)),
+        comparison_key(&canonical)
+    );
 
     let error = ensure_writable(&text(&canonical), &[text(&file)]).expect_err("same file");
     assert_eq!(error.code, "sourceOverwrite");

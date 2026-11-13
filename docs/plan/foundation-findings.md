@@ -2513,3 +2513,34 @@ remains the scheduling home.
   distinct prefix (for example `unc://`) instead of stripping the double slash.
   Do not change the key without the Windows matrix run, since every existing
   protected-path test depends on it.
+
+### F-110 — A `..` spelling behind a symlinked root slipped past the write guard
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 4 — Windows Rust path tests
+- **Severity:** P2
+- **Area:** filesystem / write guard
+- **Status:** fixed
+- **Evidence:** The macOS `desktop` entry ran the Rust suite for the first time
+  and `path_guard::tests::rejects_a_traversal_spelling_of_a_protected_source`
+  failed on `main`'s guard. `resolved_path()` canonicalized the full path, then
+  walked the parents one component at a time; a path such as
+  `<dir>/other/../drawings/Plan.pdf` cannot be opened as one path because
+  `other` does not exist, and the walk stopped at the `..` component
+  (`file_name()` is `None`), so the fallback returned a purely lexical path
+  while the protected source was canonical. On Linux the temporary folder needs
+  no symlink resolution, so both spellings accidentally matched.
+- **Problem:** An alternate spelling of a protected source was not refused when
+  the path prefix had to be resolved through a symlink (`/var` on macOS). The
+  documented guarantee — "both sides are resolved to an absolute path, every
+  existing prefix is canonicalized" — did not hold for that spelling.
+- **Impact:** A write through a `..` spelling could have reached a source
+  drawing. The usual save path comes from an operating-system dialog and is
+  unaffected, so exposure was limited to a supplied path.
+- **Resolution:** `resolved_path()` resolves `.` and `..` before the file system
+  is asked and then canonicalizes the result, keeping the existing-prefix
+  walk-up for a target that does not exist yet. The existing Unix hard-link and
+  `same_file` identity checks are unchanged.
+  `rejects_a_traversal_spelling_that_crosses_a_symbolic_link` builds a symlinked
+  root and fails without the fix, so the case is now guarded on every Unix host.
+- **Related:** F-036, `docs/testing.md`.

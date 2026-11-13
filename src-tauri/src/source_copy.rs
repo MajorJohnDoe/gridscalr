@@ -563,7 +563,7 @@ mod tests {
         let found = find_by_hash(&source.parent().unwrap(), &info.sha256)
             .expect("search")
             .expect("found");
-        assert_eq!(found.path, info.path);
+        assert_eq!(Path::new(&found.path), Path::new(&info.path));
         assert!(find_by_hash(&source.parent().unwrap(), &"0".repeat(64))
             .expect("search")
             .is_none());

@@ -195,16 +195,27 @@ parallel run and a rerun cannot collide:
 
 | Case | Asserts |
 | --- | --- |
-| Verbatim prefix | `fs::canonicalize` returns a `\\?\` path and its `comparison_key()` equals the plain spelling of the same file, so a protected source stays protected. Deleting the verbatim-prefix branch in `comparison_key()` fails this test on every Windows run. |
+| Verbatim prefix | `fs::canonicalize` returns a `\\?\` path whose `comparison_key()` equals the same path without the prefix, and `resolved_path()` reaches that key from the spelling built out of `%TEMP%` (an 8.3 short name such as `RUNNER~1`, which the canonical prefix expands). Deleting the verbatim-prefix branch in `comparison_key()` fails this test on every Windows run. |
 | Case-insensitive volume | The `PLAN.PDF` spelling of an existing `Plan.pdf` is refused by the write guard. A case-sensitive NTFS folder, which stores two files, falls back to asserting the case-folded comparison key. |
 | Trailing dot and space | `Plan.pdf.` and `Plan.pdf `, which Win32 resolves to `Plan.pdf` when it opens the file, are refused as the protected source. |
 | Drive-relative | `C:Plan.pdf` and `C:Drawings\Plan.pdf` are rejected as `invalidPath`; a rooted `C:\…` spelling still reaches the normal source comparison. |
 | UNC prefix | `\\server\share` and `//SERVER/Share` produce one case-folded key, and the `\\?\UNC\…` spelling equals the plain one. |
 | Junction | A drawings folder created with `mklink /J` that points outside the project is refused by `ensure_inside_root()` and by the write guard. When the host cannot create the junction the test asserts that `mklink` recorded a reason, prints it and returns; the verbatim-prefix case above always covers canonicalization on Windows. |
 
-Two existing Rust assertions compared a native path with a `/`-separated
-literal, which only held on Linux. They now compare whole path components, so
-the Windows and macOS entries test the same behavior as the Linux one.
+Running the suite on the other two platforms found three Linux-only assumptions,
+all fixed here:
+
+- `source_copy.rs` and `source_cleanup_tests.rs` compared a native path with a
+  `/`-separated literal. They now compare whole path components.
+- A protected source spelled with a `..` component was only refused when the
+  process directory needed no symlink resolution. The macOS temporary folder is
+  behind `/var` → `/private/var`, so `resolved_path()` skipped the canonical
+  prefix for that spelling and the guard allowed the write. `resolved_path()`
+  now resolves `.` and `..` before the file system is asked, and
+  `rejects_a_traversal_spelling_that_crosses_a_symbolic_link` builds the
+  symlinked root itself so the case is covered on every Unix host.
+- A `source_copy` assertion compared two spellings of one path as strings; it
+  now compares them as paths.
 
 ## Fuzzing
 

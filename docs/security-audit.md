@@ -303,8 +303,9 @@ original drawing behind a managed copy) is not protected (F-031). All Rust tests
 run on Linux only at the time of the review; Windows junction, UNC,
 trailing-dot, 8.3 and alternate-data-stream behaviour is built but not executed
 in CI (F-036). 0.27.0 phase 4 closed the junction, UNC, trailing-dot and
-verbatim-prefix part on Windows; 8.3 short names and alternate data streams stay
-untested.
+verbatim-prefix part on Windows and fixed a `..` spelling that the guard let
+through when the root needed symlink resolution (F-110); 8.3 short-name aliases
+and alternate data streams stay untested.
 
 ### 5.2 Atomic writes and temporary files
 
