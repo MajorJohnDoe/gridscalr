@@ -197,7 +197,7 @@ src/
   report/markupCsv.ts    visible markup CSV serialization
   ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, dialogs, status bar
   styles/tokens.css      theme token contract and semantic aliases
-  styles/themes/         default jade, light-green, grey and navy palettes plus chrome overrides
+  styles/themes/         medium grey default, light green, dark grey, jade and navy palettes plus chrome overrides
   theme/theme.ts         theme preference resolution, application and System-mode watching
   public/boot-theme.js   CSP-safe pre-paint theme bootstrap
   styles/base.css        reset, typography and shared utilities
@@ -212,6 +212,8 @@ src/
   styles/status.css      status, storage and welcome details
   styles/responsive.css  laptop widths and high OS scaling
   ui/contextBar.ts       tool-specific context bar and target layer controls
+  ui/editSafeRender.ts   shell render scheduling: background deferral, focus restore and render coalescing
+  ui/editFieldSnapshot.ts focused-field snapshot, rebuild match and value/caret/scroll restore
   ui/inspector.ts        Properties header, active-layer and selection sections
   ui/markupsPanel.ts     Markups public surface
   ui/markups/            Markups state, view favourites, grouping, rows and virtualised panel
@@ -243,7 +245,7 @@ src/
   ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
   ui/settings/autosave.ts Preferences → Data autosave controls
   ui/settings/backups.ts Preferences → Data backup retention and manager entry
-  source/sourceStatus.ts source drawing existence, size and checksum monitor
+  source/sourceStatus.ts source drawing existence, size and checksum monitor with notify-on-change status sets
   features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
   features/statusOverview/ project status summary model and popover for save, backup, autosave, validation and recovery
   app/sourceStorageHost.ts source-storage controller wiring and renderer replacement

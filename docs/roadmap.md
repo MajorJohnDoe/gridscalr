@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.26.0** · Project-file schema: **26**
+Current version: **0.27.0** · Project-file schema: **26**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -79,11 +79,15 @@ These are not negotiable without an explicit decision:
 | 0.24.0 | File safety completed: security audit and CSP/capability hardening, path and package limits, dependency advisory gate, adversarial corpus, autosave preference, recovery center and byte budget, backup manager with relative-link restore, true view-only, status popover and conflicted-copy management | Complete | v25 |
 | 0.25.0 | Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on Pages, undoable reorder and insert, page status badges and filters, page context menu, one shared list interaction model, import provenance, doctor sources with managed-copy cleanup and repair preview, layer hierarchy with nested OCG export (schema 26), TIF **Replace source…** and extra codecs, preflight relink, Rust source budget and model-boundary gates | Complete | v26 |
 | 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
+| 0.27.0 | Limits and lifecycle: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions and the docs/capture/Rust module gates, edit-safe shell rendering, a source check that no longer emits a save, themed Layers surfaces, and the colour-scan/OCG decisions | Complete | v26 |
 
-The next release, **0.27.0**, is planned in [`plan/0.27.md`](plan/0.27.md):
-output and read limits, explicit managed-copy cleanup, security test and gate
-hardening, and the colour-scan/OCG decision. Epic:
-[#242](https://github.com/MajorJohnDoe/gridscalr/issues/242).
+**0.27.0** ships this work; its scope, decisions and follow-ups are recorded in
+[`plan/0.27.md`](plan/0.27.md), [`plan/0.27-handover.md`](plan/0.27-handover.md),
+[ADR 0015](adr/0015-colour-scan-storage.md) and
+[ADR 0016](adr/0016-optional-content-export-shape.md). The colour-scan cache
+([#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)) and the OCG array
+form ([#257](https://github.com/MajorJohnDoe/gridscalr/issues/257)) are planned
+follow-ups, not shipped work.
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).

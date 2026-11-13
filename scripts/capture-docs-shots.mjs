@@ -64,6 +64,13 @@ export const shots = [
       "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
   },
   {
+    file: "layers-light-green.png",
+    title: "Layers in the light theme",
+    alt: "GridScalr Layers panel in the Light Green theme with the drawing layer section, the expanded measurement layer section and its footer actions on a light inset surface.",
+    description:
+      "Layer sections follow every palette; the light theme uses its own inset instead of a dark surface.",
+  },
+  {
     file: "operation-card.png",
     title: "Operation card sheet",
     alt: "GridScalr showing an A3 operation card sheet with schematic symbols for heat exchanger, fans, valves and dampers, the drawing layers and the sheet title block.",

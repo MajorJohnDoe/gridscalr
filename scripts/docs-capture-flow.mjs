@@ -54,6 +54,16 @@ export async function captureDocumentation(page, { outputDir, base }) {
     await selectTheme(theme);
     await capture(`theme-${theme}.png`);
   }
+  // The Light Green Layers surfaces are the phase 10 change; show the expanded
+  // measurement section in the palette that used to keep the dark inset.
+  await selectTheme("light-green");
+  await page.getByRole("button", { name: "Layers", exact: true }).click();
+  const lightMeasureLayer = page.locator(".layer-row").filter({ hasText: "Measurements" }).first();
+  await lightMeasureLayer.getByRole("button", { name: /Expand .?Measurements/ }).click();
+  await page.waitForTimeout(250);
+  await capture("layers-light-green.png");
+  await lightMeasureLayer.getByRole("button", { name: /Collapse .?Measurements/ }).click();
+  await page.getByRole("button", { name: "Pages", exact: true }).click();
   await selectTheme("medium-grey");
 
   await page.locator('.page-card[data-page="4"]').click();

@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-12T21:08:20.250Z",
-  "appVersion": "0.26.0",
-  "sourceFingerprint": "eb31885c32793ee43a2e78509d91b752b752920dcad1c14d53099e97ac488ca2",
+  "generatedAt": "2026-11-13T16:30:29.912Z",
+  "appVersion": "0.27.0",
+  "sourceFingerprint": "2566d5273bdfb780203597ebe45add68e4ff519b7f876ef155e84639ba1e5233",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -67,6 +67,12 @@
       "title": "Expanded layer items",
       "alt": "GridScalr Layers panel with page-scoped layers, a measurement layer expanded to show items on the current page, and the Add/Deduct switch in the context bar.",
       "description": "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas."
+    },
+    {
+      "file": "layers-light-green.png",
+      "title": "Layers in the light theme",
+      "alt": "GridScalr Layers panel in the Light Green theme with the drawing layer section, the expanded measurement layer section and its footer actions on a light inset surface.",
+      "description": "Layer sections follow every palette; the light theme uses its own inset instead of a dark surface."
     },
     {
       "file": "operation-card.png",

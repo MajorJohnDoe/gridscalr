@@ -125,15 +125,19 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   drawing or with **Consolidate drawings…**. A managed copy protects a shared or
   cloud-synced source from being changed or moved underneath the takeoff, and a
   source-changed banner offers explicit Reload, Use current, Relink and Copy
-  into project actions.
+  into project actions. Replacing a managed source keeps managed mode, and the
+  copy it supersedes is left on disk for the project doctor's explicit
+  **Remove unused drawings…** action.
 - Share a project and its drawings as one portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Managed drawings are included once and
   sender paths are cleared. Reports and original TIF scans are opt-in.
 - Run inside one production Content Security Policy with a reduced Tauri
   capability set, a shared canonical path guard, bounded project, drawing and
-  package reads, and a dependency advisory gate that blocks a new moderate
-  advisory unless it is reviewed and accepted with an expiry date.
+  package reads and writes — the package dialog shows the expected size and
+  creation is refused over the 2 GiB uncompressed cap or without free space for
+  the package plus a reserve — and a dependency advisory gate that blocks a new
+  moderate advisory unless it is reviewed and accepted with an expiry date.
 - Pan and zoom with the mouse, wheel, touchpad pinch or two-finger touch; one finger keeps drawing and selecting on a touchscreen.
 - Undo/redo, conditional saves that preserve both versions on a conflict,
   automatic rolling backups and **Save a copy** exports, autosave recovery,

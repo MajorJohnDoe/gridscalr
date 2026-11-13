@@ -627,6 +627,12 @@ Open the **Layers** tab in the left panel. The panel always shows the layers of 
 
 ![Page-scoped measurement layers expanded with the current page's areas, lengths and counts](screenshots/layers.png)
 
+The two sections follow the active theme. In the light theme the rows and the
+action strip use the palette's own inset surface, and Medium Grey keeps the
+surface it has always had.
+
+![The Layers panel in the Light Green theme with the expanded measurement layer section](screenshots/layers-light-green.png)
+
 A page with no layers shows **No layers on Page N yet** with the create-layer buttons. Layers keep their name, colour and order across pages; only visibility, lock and the item list are page-scoped. Page-scoped visibility is used by hit-testing, snapping, quantities, Markups CSV and every PDF export.
 
 ### Layer groups
@@ -780,7 +786,7 @@ GridScalr also keeps rolling backups per project in the app data folder. The num
 
 After every desktop write, GridScalr reads the file back and verifies the bytes before it marks the project saved. If the file was deleted on disk, Save treats it as a conflict instead of recreating it silently. The browser fallback still downloads the project and cannot perform a conditional write.
 
-Saving is atomic. GridScalr writes and flushes a temporary file next to the project and then replaces the project file in one rename. If writing or replacing fails, the previous file is left unchanged and the error message says so. A crash during a save therefore leaves either the old project or the new one, never neither. An interrupted save can leave a hidden `.tmp` file next to the project; the project file itself is intact, and the leftover can be deleted.
+Saving is atomic. GridScalr writes and flushes a temporary file next to the project and then replaces the project file in one rename. If writing or replacing fails, the previous file is left unchanged and the error message says so. A crash during a save therefore leaves either the old project or the new one, never neither. An interrupted save can leave a hidden `.tmp` file next to the project; the project file itself is intact. GridScalr removes such stale save files, and stale package-extraction folders from the same folder, after the next successful project load. A temporary file that a live process still owns is left alone, and a `.previous-` folder that holds a replaced version is never removed.
 
 The source PDF or TIF is never overwritten. Every save and export resolves real paths, including symlinks and junctions, before comparing the destination with the source documents. A protected file is refused even when it is reached through another spelling or a link, including a second PDF or TIF in a multi-document project.
 
