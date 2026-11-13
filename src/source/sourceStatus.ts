@@ -23,6 +23,19 @@ export interface SourceStatusSummary {
 
 const POLL_MS = 30_000;
 
+/** The status set that subscribers care about, ignoring `checkedAt` and names. */
+function sameStatusSet(a: readonly SourceFileStatus[], b: readonly SourceFileStatus[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((entry, index) => {
+    const other = b[index];
+    return (
+      entry.documentId === other.documentId &&
+      entry.state === other.state &&
+      entry.storage === other.storage
+    );
+  });
+}
+
 function resolvedDocumentPath(
   document: Project["documents"][number],
   projectPath: string | null,
@@ -148,27 +161,34 @@ class SourceStatusMonitor {
     if (this.checking) return;
     const project = store.project;
     if (!project) {
-      this.statuses = [];
       this.checkedAt = null;
-      this.notify();
+      this.replaceStatuses([]);
       return;
     }
     this.checking = true;
     try {
       const projectPath = store.projectPath;
-      this.statuses = await checkSourceStatuses(project, projectPath, this.hashCache);
+      const statuses = await checkSourceStatuses(project, projectPath, this.hashCache);
       this.checkedAt = new Date().toISOString();
+      this.replaceStatuses(statuses);
     } finally {
       this.checking = false;
-      this.notify();
     }
+  }
+
+  /**
+   * Store only the new status set and notify only when it differs. `checkedAt`
+   * is still updated on every successful check so a reader sees the last check
+   * time, but a poll that found the same sources must not reach the UI at all.
+   */
+  private replaceStatuses(statuses: SourceFileStatus[]): void {
+    if (sameStatusSet(this.statuses, statuses)) return;
+    this.statuses = statuses;
+    this.notify();
   }
 
   private notify(): void {
     for (const listener of this.listeners) listener();
-    // The status bar and Project settings both read this snapshot, and a store
-    // pass also refreshes the document line and the persistent warning chips.
-    if (store.project) store.emit("save");
   }
 }
 
