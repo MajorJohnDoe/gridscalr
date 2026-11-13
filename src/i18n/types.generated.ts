@@ -2742,6 +2742,7 @@ export type MessageKey =
   | "replace.apply"
   | "replace.unsupportedKind"
   | "replace.sameKind"
+  | "replace.managedCopyRequired"
   | "replace.failed"
   | "replace.done"
   | "replace.cleanupTitle"

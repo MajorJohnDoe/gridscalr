@@ -139,7 +139,7 @@ Use the right-click menu on a page card for the drawing actions. A PDF source of
 - **Reload source** – re-read the current file and update the checksum. It refuses a changed page count and points to **Replace source…**.
 - **Use current source** – accept the current on-disk checksum without re-rendering the working drawing.
 - **Relink source…** – find a moved reference file. GridScalr verifies the page count, warns on a checksum mismatch, and searches the project folder and its drawings folder by checksum before asking you to pick a file.
-- **Replace source…** – map a new revision of a PDF or TIF when pages were added, removed or moved. A TIF replacement converts the new scan to its derived PDF and compares the raw TIF checksum, so the pages keep their identity.
+- **Replace source…** – map a new revision of a PDF or TIF when pages were added, removed or moved. A TIF replacement converts the new scan to its derived PDF and compares the raw TIF checksum, so the pages keep their identity. When the replaced PDF is a managed copy, GridScalr copies the new revision into the project folder as well, so the document stays a managed copy and its provenance points at the new pick. The previous copy is left on disk and appears under unused managed copies in the project doctor until you remove it.
 
 **File → Consolidate drawings…** copies every remaining referenced PDF into the project folder, checks each checksum, rewrites the paths and reports how many drawings were copied. It is one explicit action with a recovery checkpoint; originals are untouched. If any source changed or is missing, the project is not modified.
 
@@ -224,6 +224,8 @@ Drop a PDF or TIF drawing on the page cards to add its pages. The insertion line
 ### Replace a source drawing
 
 Right-click a page card and choose **Replace source…** when a drawing is reissued with pages in a different order or with a sheet missing. Pick the new PDF or TIF, then map each project page to a page in the new file. A TIF is converted to its derived PDF before mapping and is checked against the raw TIF file, so a scanned revision follows the same rules as a PDF. The default mapping is the same page position; remap the rows when sheets swapped places. Mapped pages keep their ID, markups and page settings. Pages without a mapping stay on the old source, marked **Superseded source**, until you review them and use **Remove superseded pages…**. Calibration, page size and drawing scale warnings appear before you apply, and the values are kept; check them after replacing the source. The original files are never modified.
+
+Replacing a managed copy keeps managed mode: the new PDF is copied into `<project>.drawings/` and verified before the project changes, and the document's original path and checksum are replaced with the new pick's. The old managed file is not deleted. It is now unreferenced and is listed by the project doctor's unused managed copies so you can remove it explicitly. If the new PDF cannot be copied, the replacement is cancelled and the document keeps its previous source. A TIF replacement stays a reference because its derived PDF is embedded in the project.
 
 ### Start with a blank project
 

@@ -171,6 +171,27 @@ describe("doctor source availability", () => {
     expect(orphans.map((copy) => copy.fileName)).toEqual(["Unused-bbbbbbbb.pdf"]);
   });
 
+  it("lists the replaced managed copy as unused and protects the new copy", () => {
+    const folder = "/work/Level 01.drawings/";
+    const project = projectWith([
+      sourceDocument("Revision B.pdf", `${folder}Revision B-bbbbbbbb.pdf`, {
+        storage: "managed",
+        relativePath: "Level 01.drawings/Revision B-bbbbbbbb.pdf",
+        originalPath: "/home/ana/Shared/Revision B.pdf",
+        originalSha256: "c".repeat(64),
+      }),
+    ]);
+    const entries = [entry("Old-aaaaaaaa.pdf"), entry("Revision B-bbbbbbbb.pdf")];
+
+    const { referenced, orphans } = classifyManagedCopies(
+      entries,
+      referencedSourceKeys(project, PROJECT_PATH),
+    );
+
+    expect(referenced.map((copy) => copy.fileName)).toEqual(["Revision B-bbbbbbbb.pdf"]);
+    expect(orphans.map((copy) => copy.fileName)).toEqual(["Old-aaaaaaaa.pdf"]);
+  });
+
   it("counts managed copies and orphans in one snapshot", async () => {
     const referenced = entry("Plan-aaaaaaaa.pdf");
     const project = projectWith([

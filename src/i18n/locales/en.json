@@ -2740,6 +2740,7 @@
   "replace.apply": "Replace source",
   "replace.unsupportedKind": "Only PDF and TIF source documents can be replaced.",
   "replace.sameKind": "Pick a PDF for a PDF source or a TIF for a TIF source. The replacement must be the same kind of drawing.",
+  "replace.managedCopyRequired": "This drawing is stored as a managed copy. Save the project before replacing its source so the new drawing can be copied into the project folder.",
   "replace.failed": "Could not replace the source drawing.",
   "replace.done": "{mapped} page(s) mapped. {superseded} page(s) kept on the superseded source.",
   "replace.cleanupTitle": "Remove superseded pages",

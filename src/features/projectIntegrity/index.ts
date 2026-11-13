@@ -9,6 +9,7 @@ export {
   applyRepair,
   availableRepairs,
   planRepair,
+  plannedRepairs,
   repairDanglingReferences,
   repairDuplicateIds,
   repairForCode,
@@ -17,6 +18,7 @@ export {
 } from "./repair";
 export type {
   RepairAction,
+  RepairAvailability,
   RepairChange,
   RepairKind,
   RepairPlan,

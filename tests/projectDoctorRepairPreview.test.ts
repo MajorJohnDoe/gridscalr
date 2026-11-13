@@ -15,6 +15,7 @@ import {
   doctorShownRepairs,
   filterDoctorIssues,
   planRepair,
+  plannedRepairs,
   repairForCode,
   runProjectDoctor,
   type DoctorRepairRequest,
@@ -115,6 +116,19 @@ describe("repair plan", () => {
       expect(applyRepair(project, kind).changed).toBe(previewCount);
     }
     expect(run.plan.changes.length).toBeGreaterThan(0);
+  });
+
+  it("offers only repairs that plan at least one change", () => {
+    const project = withTestPageIds(createProject(defaultDocument("Plan.pdf", 1)));
+    project.layers = [];
+    project.activeLayerId = "layer_missing";
+    const issues = validateProject(project);
+
+    expect(issues.map((entry) => entry.code)).toContain("missingActiveLayer");
+    // The code is repairable, but no layer exists that could become active, so
+    // the validator-code list is optimistic and the plan is not.
+    expect(availableRepairs(issues)).toEqual(["danglingReferences"]);
+    expect(plannedRepairs(project, issues)).toEqual([]);
   });
 
   it("names concrete duplicate renames and removals that the copy really made", () => {

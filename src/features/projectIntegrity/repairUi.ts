@@ -100,13 +100,11 @@ export function addRepairSection(body: HTMLElement, options: DoctorRepairSection
   const state = {
     filter: options.filter ?? DEFAULT_DOCTOR_FILTER,
     selected: new Set<RepairKind>(options.repairs),
+    // The doctor offers only kinds whose repair plans at least one change, so
+    // this count is the same plan that the availability decision used.
     run: planRepair(options.project, options.repairs),
   };
-  // A per-kind count is what that repair would change on its own, independent
-  // of the filters and of the other checkboxes.
-  const standalone = new Map(
-    options.repairs.map((kind) => [kind, planRepair(options.project, [kind]).plan.changes.length]),
-  );
+  const counts = state.run.plan.counts;
 
   body.append(el("h3", "settings-subtitle", t("projectIntegrity.repair.title")));
   body.append(el("p", "settings-note", t("projectIntegrity.repair.intro")));
@@ -172,7 +170,7 @@ export function addRepairSection(body: HTMLElement, options: DoctorRepairSection
     box.type = "checkbox";
     box.checked = true;
     box.dataset.repairKind = repair;
-    const count = standalone.get(repair) ?? 0;
+    const count = counts[repair] ?? 0;
     const text = el(
       "span",
       "doctor-repair-label",
@@ -198,9 +196,12 @@ export function addRepairSection(body: HTMLElement, options: DoctorRepairSection
   selectAll.dataset.action = "select-all-repairs";
   selectAll.addEventListener("click", () => {
     for (const repair of doctorShownRepairs(options.issues, state.filter)) {
-      state.selected.add(repair);
+      // A repairable code can point at a repair the planner cannot change
+      // anything for; only an offered kind can enter the selection.
       const box = inputs.get(repair);
-      if (box) box.checked = true;
+      if (!box) continue;
+      state.selected.add(repair);
+      box.checked = true;
     }
     recalculate();
   });

@@ -172,6 +172,114 @@ describe("source replacement", () => {
     ).toEqual([]);
   });
 
+  it("clears managed provenance when the replacement result is a reference", () => {
+    const project = makeProject();
+    const old = project.documents[0];
+    old.storage = "managed";
+    old.path = "/work/Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.relativePath = "Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.originalPath = "/home/ana/OneDrive/Old.pdf";
+    old.originalSha256 = "old_original_hash";
+
+    const result = applySourceReplacement(project, {
+      documentId: old.id,
+      newDocument: newSource(3),
+      mappings: defaultReplacementMappings(project, old.id, 3),
+    });
+
+    expect(result?.updatedDocument).toBe(true);
+    expect(old.storage).toBe("reference");
+    expect(old.originalPath).toBeNull();
+    expect(old.originalSha256).toBeUndefined();
+    expect(old.relativePath).toBeNull();
+    // The previous copy's absolute path must not survive in a saved project.
+    expect(serializeProject(project)).not.toContain("OneDrive");
+    expect(serializeProject(project)).not.toContain("Old-aaaaaaaa");
+  });
+
+  it("keeps a managed replacement managed over a reference document", () => {
+    const project = makeProject();
+    const old = project.documents[0];
+    expect(old.storage).toBe("reference");
+    const managed = {
+      ...newSource(3),
+      storage: "managed" as const,
+      path: "/work/Level 01.drawings/New-bbbbbbbb.pdf",
+      relativePath: "Level 01.drawings/New-bbbbbbbb.pdf",
+      originalPath: "/home/ana/Shared/New.pdf",
+      originalSha256: "new_original_hash",
+    };
+
+    applySourceReplacement(project, {
+      documentId: old.id,
+      newDocument: managed,
+      mappings: defaultReplacementMappings(project, old.id, 3),
+    });
+
+    expect(old.storage).toBe("managed");
+    expect(old.path).toBe("/work/Level 01.drawings/New-bbbbbbbb.pdf");
+    expect(old.relativePath).toBe("Level 01.drawings/New-bbbbbbbb.pdf");
+    expect(old.originalPath).toBe("/home/ana/Shared/New.pdf");
+    expect(old.originalSha256).toBe("new_original_hash");
+  });
+
+  it("replaces managed provenance with the new copy instead of merging it", () => {
+    const project = makeProject();
+    const old = project.documents[0];
+    old.storage = "managed";
+    old.path = "/work/Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.relativePath = "Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.originalPath = "/home/ana/OneDrive/Old.pdf";
+    old.originalSha256 = "old_original_hash";
+    const managed = {
+      ...newSource(3),
+      storage: "managed" as const,
+      path: "/work/Level 01.drawings/New-bbbbbbbb.pdf",
+      relativePath: "Level 01.drawings/New-bbbbbbbb.pdf",
+      originalPath: "/home/ana/Shared/New.pdf",
+      originalSha256: "new_original_hash",
+    };
+
+    applySourceReplacement(project, {
+      documentId: old.id,
+      newDocument: managed,
+      mappings: defaultReplacementMappings(project, old.id, 3),
+    });
+
+    expect(old.storage).toBe("managed");
+    expect(old.path).toBe("/work/Level 01.drawings/New-bbbbbbbb.pdf");
+    expect(old.originalPath).toBe("/home/ana/Shared/New.pdf");
+    expect(old.originalSha256).toBe("new_original_hash");
+    expect(serializeProject(project)).not.toContain("OneDrive");
+  });
+
+  it("does not copy stale managed provenance onto a new split document", () => {
+    const project = makeProject();
+    const old = project.documents[0];
+    old.storage = "managed";
+    old.path = "/work/Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.relativePath = "Level 01.drawings/Old-aaaaaaaa.pdf";
+    old.originalPath = "/home/ana/OneDrive/Old.pdf";
+    old.originalSha256 = "old_original_hash";
+
+    applySourceReplacement(project, {
+      documentId: old.id,
+      newDocument: newSource(2),
+      mappings: [
+        { pageId: pageIdFor(1), newLocalPage: 1 },
+        { pageId: pageIdFor(3), newLocalPage: 2 },
+      ],
+    });
+
+    const created = project.documents.find((entry) => entry.id === "doc_new")!;
+    expect(created.storage).toBe("reference");
+    expect(created.originalPath).toBeNull();
+    expect(created.originalSha256).toBeUndefined();
+    // The superseded document still owns its managed copy.
+    expect(old.storage).toBe("managed");
+    expect(old.originalPath).toBe("/home/ana/OneDrive/Old.pdf");
+  });
+
   it("clears source exclusions that no longer describe the replaced document", () => {
     const project = makeProject();
     project.documents[0].excludedPages = [3];

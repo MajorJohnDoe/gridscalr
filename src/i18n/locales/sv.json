@@ -2740,6 +2740,7 @@
   "replace.apply": "Byt källa",
   "replace.unsupportedKind": "Bara PDF- och TIF-källor kan bytas.",
   "replace.sameKind": "Välj en PDF för en PDF-källa eller en TIF för en TIF-källa. Ersättningen måste vara samma slags ritning.",
+  "replace.managedCopyRequired": "Den här ritningen lagras som en hanterad kopia. Spara projektet innan du byter källan, så att den nya ritningen kan kopieras in i projektmappen.",
   "replace.failed": "Kunde inte byta källritning.",
   "replace.done": "{mapped} sida/sidor kopplade. {superseded} sida/sidor ligger kvar på den ersatta källan.",
   "replace.cleanupTitle": "Ta bort ersatta sidor",

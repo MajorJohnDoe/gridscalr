@@ -175,7 +175,7 @@ export function repairForCode(code: string): RepairKind | null {
   return REPAIR_BY_CODE[code] ?? null;
 }
 
-/** Repairs that can actually change something for the current issue list. */
+/** Repairs whose issue codes are repairable. This does not read the project. */
 export function availableRepairs(issues: readonly ProjectIssue[]): RepairKind[] {
   const found = new Set<RepairKind>();
   for (const issue of issues) {
@@ -183,4 +183,31 @@ export function availableRepairs(issues: readonly ProjectIssue[]): RepairKind[] 
     if (repair) found.add(repair);
   }
   return REPAIR_ORDER.filter((kind) => found.has(kind));
+}
+
+export interface RepairAvailability {
+  kind: RepairKind;
+  /** Concrete changes this kind contributes to the combined plan. */
+  changes: number;
+}
+
+/**
+ * Repairs that the planner can actually change something for.
+ *
+ * Repair availability comes from the same single plan the preview and the
+ * repaired copy use, not from validator codes alone: `missingActiveLayer` is a
+ * repairable code, but when the project has no layer that could become the
+ * fallback its repair plans zero changes. The project is cloned once here, so
+ * the dialog never computes a plan per kind just to know what to offer.
+ */
+export function plannedRepairs(
+  project: Project,
+  issues: readonly ProjectIssue[],
+): RepairAvailability[] {
+  const kinds = availableRepairs(issues);
+  if (!kinds.length) return [];
+  const run = planRepair(project, kinds);
+  return kinds
+    .map((kind) => ({ kind, changes: run.plan.counts[kind] ?? 0 }))
+    .filter((entry) => entry.changes > 0);
 }
