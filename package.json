@@ -59,6 +59,7 @@
     "check:modules": "node scripts/check-module-boundaries.mjs",
     "check:security": "node scripts/check-security-policy.mjs",
     "check:dependencies": "node scripts/check-dependencies.mjs",
+    "check:actions": "node scripts/check-action-pins.mjs",
     "check:docs": "node scripts/check-docs.mjs",
     "site:build": "node scripts/build-site.mjs",
     "site:check": "node scripts/check-site.mjs",

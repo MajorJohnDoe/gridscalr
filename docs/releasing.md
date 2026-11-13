@@ -40,6 +40,7 @@ interface and confirm that every theme is still visible and correctly named.
 
 ```bash
 npm run check:versions
+npm run check:actions
 npm run check:dependencies
 npm run check:docs
 npm run format:check
@@ -207,6 +208,92 @@ to a missing asset.
    Both language pairs should load, the language switch should work, the version
    should match the release, and every download button should open a published
    asset.
+
+## Pinned GitHub Actions
+
+Every remote `uses:` reference in `.github/workflows/` is a full 40-character
+commit SHA with the release in a trailing comment:
+
+```yaml
+- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+```
+
+A tag or branch is a lookup that can be repointed, and the release workflow
+builds the Windows, macOS and Linux artifacts, so a moved tag would change what
+runs in the build that produces them. A short SHA is rejected for the same
+reason. A local action (`./…`) needs no pin, and a container action must be
+pinned by `@sha256:` digest.
+
+`npm run check:actions` enforces this and runs in CI. It also fails when one
+action release is pinned to two different SHAs, which is how a copy-pasted pin
+drifts out of date, and when a pinned line has no `# <version>` comment.
+
+The pins are not updated automatically: there is no Dependabot or Renovate rule
+for workflows. Review them before a release and when a security advisory names an
+action.
+
+### Bump a pin
+
+1. Pick the release you want. Prefer the newest patch of the major the workflow
+   already uses; the pin check does not upgrade anything for you.
+
+   ```bash
+   gh api repos/actions/checkout/releases/latest --jq .tag_name
+   ```
+
+2. Resolve the tag to the commit it points at. Annotated tags resolve to a tag
+   object, so ask a second time when the type is `tag`:
+
+   ```bash
+   gh api repos/actions/checkout/git/ref/tags/v7 --jq '.object.sha + " " + .object.type'
+   # type "commit" -> that SHA is the pin
+   # type "tag"    -> resolve the tag object to its commit
+   gh api repos/actions/checkout/git/tags/<tag-object-sha> --jq .object.sha
+   ```
+
+   Never type a SHA from memory or copy it from a blog post. Confirm the commit
+   is on the action's default branch, otherwise it can be garbage-collected and
+   the workflow fails later with a confusing checkout error:
+
+   ```bash
+   gh api repos/actions/checkout/compare/main...<sha> --jq .status
+   ```
+
+   `behind` or `identical` means the commit is contained in the default branch;
+   `ahead` or `diverged` means it is not, and the pin can be garbage-collected.
+
+3. Replace the SHA in every workflow that uses it and update the `# <version>`
+   comment. Grep first so no file is missed:
+
+   ```bash
+   grep -rn "actions/checkout@" .github/workflows
+   ```
+
+4. Run the check, then read the diff before committing:
+
+   ```bash
+   npm run check:actions
+   git diff .github/workflows
+   ```
+
+5. Commit with the reason, for example
+   `chore: bump the checkout pin to v7.0.1`.
+
+### The `dtolnay/rust-toolchain` exception
+
+This action selects a toolchain from its ref name and publishes no per-release
+tags beyond `v1`, so it is pinned to a commit on its `master` branch with the
+toolchain named explicitly:
+
+```yaml
+- uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master 2026-10-16
+  with:
+    toolchain: stable
+```
+
+Keep the `with: toolchain:` input when bumping the SHA: the ref no longer carries
+the toolchain name, and the action has no default for a pinned commit. Resolve
+the new pin from `master` and keep the comment format `# master <date>`.
 
 ## Notes
 

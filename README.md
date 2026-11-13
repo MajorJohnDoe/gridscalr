@@ -379,7 +379,9 @@ permission changes without that record; `npm run test:csp` verifies the policy i
 a browser. `npm run check:dependencies` audits the npm and Rust lock files on
 every pull request and before a release build, and fails on a new advisory at or
 above moderate unless it is accepted in a reviewed allowlist with a reason and
-an expiry date.
+an expiry date. Every GitHub Actions reference in `.github/workflows` is pinned
+to a commit SHA with its release in a comment, and `npm run check:actions`
+rejects a tag, a branch or a short SHA.
 
 See [SECURITY.md](SECURITY.md) for the threat model and the private reporting
 channel.

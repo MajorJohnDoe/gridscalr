@@ -1,13 +1,15 @@
 # Desktop security policy
 
 **Scope:** the WebView Content Security Policy, the Tauri capability list, the
-bundled worker boundary and the npm/Rust advisory gate for the desktop shell.
+bundled worker boundary, the npm/Rust advisory gate and the pinned GitHub
+Actions for the desktop shell.
 **Machine-checked records:** [`../security/policy.json`](../security/policy.json)
 for the CSP and capabilities, and
 [`../security/dependency-allowlist.json`](../security/dependency-allowlist.json)
 for dependency exceptions.
-**Checks:** `npm run check:security` and `npm run check:dependencies` (both also
-run in CI and in the pre-commit list).
+**Checks:** `npm run check:security`, `npm run check:actions` and
+`npm run check:dependencies` (all three also run in CI and in the pre-commit
+list).
 **Browser regression:** `npm run test:csp`.
 **Related:** [`security-audit.md`](security-audit.md) findings F-028, F-029,
 F-030, F-037, F-038, F-039, F-040 and F-042, and
@@ -216,6 +218,20 @@ apply.
   channel.
 - Every entry is due for review on 2027-02-11. The gate fails after that date
   until the list is renewed or the advisories are fixed.
+
+## Pinned GitHub Actions
+
+Every remote `uses:` reference in `.github/workflows/` is a full 40-character
+commit SHA with its release in a trailing comment; a tag or branch can be
+repointed, and the release workflow builds the artifacts users install.
+`npm run check:actions` enforces the pin, the version comment and one SHA per
+action release on every pull request. Local actions (`./…`) are exempt and a
+container action must use a `@sha256:` digest.
+
+The pins do not update themselves. The bump procedure and the
+`dtolnay/rust-toolchain` exception are documented in
+[`releasing.md`](releasing.md#pinned-github-actions); the remaining staleness
+risk is F-111 in [`plan/foundation-findings.md`](plan/foundation-findings.md).
 
 ## Test-only commands
 

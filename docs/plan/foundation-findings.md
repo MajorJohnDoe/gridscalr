@@ -679,7 +679,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P2
 - **Area:** release supply chain
-- **Status:** triaged #200
+- **Status:** fixed — 0.27.0 phase 5 ([#200](https://github.com/MajorJohnDoe/gridscalr/issues/200))
 - **Evidence:** The workflows use `actions/checkout@v7`,
   `actions/upload-artifact@v7`, `Swatinem/rust-cache@v2`,
   `dtolnay/rust-toolchain@stable` and other major tags.
@@ -687,8 +687,13 @@ confirmed against the audit.
   produces the release artifacts. Tokens are read-only but the artifacts are the
   target, and the builds are unsigned.
 - **Impact:** A tampered release is hard for a user to detect.
-- **Next step:** Pin every third-party action to a commit SHA with a version
-  comment and let Dependabot update the pins. Phase 4, #170.
+- **Fix:** every remote `uses:` reference is a full 40-character commit SHA with
+  its release in a trailing comment; `npm run check:actions` rejects a tag,
+  branch, short SHA or a missing comment and runs in the local gate and CI.
+  `dtolnay/rust-toolchain` is pinned to a `master` commit and names
+  `toolchain: stable` explicitly. The pins stay manual; no Dependabot or Renovate
+  rule was added (non-goal of #200), and the bump procedure is in
+  `docs/releasing.md`.
 - **Related:** `docs/security-audit.md` §8.3.
 
 #### F-036 — Windows path guarantees are built but not tested on Windows
@@ -2544,3 +2549,31 @@ remains the scheduling home.
   `rejects_a_traversal_spelling_that_crosses_a_symbolic_link` builds a symlinked
   root and fails without the fix, so the case is now guarded on every Unix host.
 - **Related:** F-036, `docs/testing.md`.
+
+### F-111 — A private-action pin does not update itself, and one is three majors old
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 5 — pinned actions
+- **Severity:** P3
+- **Area:** release supply chain
+- **Status:** deferred
+- **Evidence:** Pinning to a commit SHA fixed the tag-repointing risk (F-035), but
+  nothing proposes a newer pin: the issue explicitly excludes Renovate and
+  Dependabot, so a stale SHA stays until someone reads the workflow. The first
+  audit already shows drift — `.github/workflows/release.yml` pins
+  `actions/download-artifact@634f93cb…` (v5.0.0), whose `action.yml` runs
+  `node20`, while the current release is v8.0.2 on `node24`. Every other pin is
+  the newest patch of the major the workflow already used.
+- **Problem:** A pinned action never receives a security fix by itself, and a
+  major that runs a retired Node runtime starts warning and eventually fails the
+  job. The missing version comment would have made this invisible; the pin check
+  now requires one.
+- **Impact:** No immediate failure. When GitHub retires `node20` for actions the
+  checksums job fails at checkout, which is loud and blocks a release build
+  rather than corrupting one.
+- **Next step:** A separate issue should refresh `download-artifact` to the
+  current major (check the v6/v7 breaking changes to artifact naming and
+  `pattern`) and then decide between a scheduled version-review checklist item
+  and a Dependabot `github-actions` rule. Do not add automation inside a pin-only
+  phase.
+- **Related:** F-035, `docs/releasing.md` (Pinned GitHub Actions).

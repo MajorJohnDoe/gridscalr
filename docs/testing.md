@@ -17,6 +17,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run check:file-budgets` | Blocking line budgets for frontend and Rust source files, with reviewed exceptions for legacy modules. |
 | `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
+| `npm run check:actions` | Every remote `uses:` reference in `.github/workflows` is a 40-character commit SHA with a `# <version>` comment, and one action release never carries two SHAs. |
 | `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. Runs on the Ubuntu `rust` job and on all three `desktop` matrix entries, Windows and macOS included. |
