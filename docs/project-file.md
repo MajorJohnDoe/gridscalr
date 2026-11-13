@@ -8,6 +8,13 @@ embedded: each document is either a path reference or an explicit managed copy
 inside the project folder. A TIF's converted PDF is embedded, because the scan
 cannot be read directly at render time.
 
+That derived PDF is the one place where base64 bytes can dominate the file. A
+1-bit CCITT scan stays near its source size, but a decoded colour sheet adds
+several megabytes per page and every save rewrites them. Schema 26 keeps that
+shape; [ADR 0015](adr/0015-colour-scan-storage.md) records the accepted size
+budget and the deferred reference-plus-cache design that would remove the bytes
+from the JSON.
+
 Schema 25 implements the source storage modes described in
 [ADR 0012](adr/0012-source-storage-modes.md) on top of the explicit page list
 from schema 24 ([ADR 0011](adr/0011-page-list-and-source-replacement.md)). Schema
