@@ -3,9 +3,10 @@ import { t } from "../i18n";
 import { clear, el } from "./dom";
 import { icon } from "./icons";
 import { renderLayers } from "./layerList";
-import { renderPages, disconnectPageThumbnails } from "./pageList";
+import { renderPages, disconnectPageThumbnails, refreshPageStatusBadges } from "./pageList";
 import { renderSymbolLibrary } from "./symbolLibrary";
 import type { PanelActions } from "./panels";
+import { updateStatus } from "./statusBar";
 import {
   clearPanelPreferences,
   DEFAULT_PANELS,
@@ -154,4 +155,16 @@ export function renderSidebar(refs: ShellRefs, actions: PanelActions): void {
       renderSymbolLibrary(refs, actions);
       break;
   }
+}
+
+/**
+ * Refresh only the surfaces that read the source-status summary.
+ *
+ * A source check is not a project change, so it must not run the shell render
+ * or emit a store event. The status chip is keyed and only rebuilds when the
+ * summary changed; the Pages badges are patched in place.
+ */
+export function refreshSourceStatusPanels(refs: ShellRefs, actions: PanelActions): void {
+  updateStatus(refs, actions);
+  if (store.project && store.ui.leftTab === "pages") refreshPageStatusBadges(refs, actions);
 }

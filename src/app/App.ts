@@ -93,6 +93,7 @@ import { pasteFromClipboard } from "./clipboardPaste";
 import { installPageZoomGuard } from "./pageZoomGuard";
 import { describeError } from "../io/platformError";
 import { store, type ChangeReason } from "../state/store";
+import { sourceStatus } from "../source/sourceStatus";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
 import { isEditingTool } from "../features/viewOnly";
@@ -108,7 +109,7 @@ import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
-import { toggleInspector, toggleSidebar } from "../ui/sidebar";
+import { refreshSourceStatusPanels, toggleInspector, toggleSidebar } from "../ui/sidebar";
 import { ReferenceController } from "./referenceController";
 import {
   openPackageFlow,
@@ -162,6 +163,7 @@ export class App {
   private sizeActive = 0;
   private sizeEpoch = 0;
   private unsubscribe: () => void;
+  private unsubscribeSourceStatus: (() => void) | null = null;
   private disposed = false;
   private windowControls: WindowControls | null = null;
   private removePageZoomGuard: (() => void) | null = null;
@@ -368,6 +370,13 @@ export class App {
       this.rendererSync.handle(reason);
       this.reference.onStoreChange(reason);
       this.renderAll(reason);
+    });
+
+    // A source check never changes the project. Keep its one UI subscription
+    // separate from the store listener so it refreshes only the status chips and
+    // the Pages badges, and only when the monitor's status set changed.
+    this.unsubscribeSourceStatus = sourceStatus.subscribe(() => {
+      if (!this.disposed) refreshSourceStatusPanels(this.refs, this.actions);
     });
 
     this.bind();
@@ -918,12 +927,6 @@ export class App {
     }
   }
 
-  /**
-   * Writes a backup copy without changing the open project's path or its saved
-   * state. Document links in the copy are relative to the copy's folder so the
-   * backup stays usable if the original project is moved or replaced.
-   */
-
   /** Opens the package options dialog for documentation screenshots. */
   openPackageDialogForDocs(): void {
     if (!store.project) return;
@@ -941,12 +944,6 @@ export class App {
       chooseDrawingExport: (target) => chooseDrawingExport(this.canvas, target),
     });
   }
-
-  /**
-   * Copies the bundled demo into the app data folder and opens it from there,
-   * so the demo can be measured, edited and saved without touching the
-   * installation directory or the bundled fixture.
-   */
 
   /**
    * Packaged smoke test used by CI on all three platforms. The app runs the
@@ -1046,7 +1043,6 @@ export class App {
     store.markSaved(path);
   }
 
-  /** Version, platform and anonymised project statistics for a bug report. */
   /**
    * Consumes files handed over by the operating system: start arguments, a
    * Finder open event, or a second launch that the single-instance callback
@@ -1069,6 +1065,7 @@ export class App {
     this.sourceStorage.dispose();
     this.recovery.dispose();
     this.unsubscribe();
+    this.unsubscribeSourceStatus?.();
     window.removeEventListener(LANGUAGE_CHANGED_EVENT, this.onLanguageChanged);
     window.removeEventListener("keydown", this.onKeyDown);
     window.removeEventListener("keyup", this.onKeyUp);

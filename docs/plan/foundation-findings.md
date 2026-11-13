@@ -1477,18 +1477,19 @@ confirmed against the audit.
 - **Phase:** 0.27.0 phase 8 — edit-safe shell rendering
 - **Severity:** P3
 - **Area:** shell / source status
-- **Status:** accepted
+- **Status:** fixed by #243
 - **Evidence:** `requestShellRender()` defers a `"save"` render while an editable
   field inside the shell has focus and repaints on the field's `blur`. The
   source chips and page badges read the source summary during that render.
 - **Problem:** A source that turns missing or changed during a check is not shown
   in the chips and badges until the user leaves the field they are typing in.
-- **Impact:** The warning is delayed, never lost, and the panel the user is
-  editing stays intact. The project-dirty state and the save path are unaffected.
-- **Next step:** None for 0.27.0. Phase 9 (#243) removes the synthetic store
-  event and refreshes only the chips and badges, which can then update without a
-  whole-shell render at all.
-- **Related:** #243, `src/ui/editSafeRender.ts`.
+- **Impact:** The warning was delayed, never lost, and the panel the user was
+  editing stayed intact. The project-dirty state and the save path were
+  unaffected.
+- **Next step:** Done in phase 9. The monitor no longer emits a store event; one
+  subscription refreshes only the status chips and the mounted Pages badges, so
+  the warning appears immediately and no whole-shell render is requested.
+- **Related:** #243, `src/source/sourceStatus.ts`, `src/ui/sidebar.ts`.
 
 ### F-103 — Focus restore depends on the rebuilt field keeping a stable key
 
@@ -1555,7 +1556,7 @@ remains the scheduling home.
 | F-067 | deferred | View-only blocks the context-bar layer picker because the active layer is persisted project data; an inspection-only layer focus would need session state. |
 | F-068 | accepted | The view-only banner is a visible shell change; screenshot recapture is deferred to the 0.24.0 documentation pass. |
 | F-074 | fixed | The release workflow no longer launches a release binary with the debug-only smoke flag; it verifies the staged artifacts and checksums instead. |
-| F-102 | accepted | A background render waits for the focused field to blur; the chips and page badges refresh then, and phase 9 removes the synthetic render entirely. |
+| F-102 | fixed #243 | A background source check no longer renders the shell; only the status chips and page badges refresh, and only when the status set changed. |
 | F-103 | deferred | A rebuilt field without an id or `data-role` keeps focus but not the caret; add stable keys when Properties is next touched. |
 
 

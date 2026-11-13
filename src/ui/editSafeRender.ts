@@ -14,8 +14,8 @@ import {
  * whole-shell render therefore goes through this scheduler, which knows about
  * the edit in progress:
  *
- * - a background refresh (the source-status poll emits `"save"`) waits for the
- *   focused field to lose focus instead of removing it;
+ * - a background refresh (a save or read-only change emits `"save"`) waits for
+ *   the focused field to lose focus instead of removing it;
  * - an immediate render runs one tick later, once the event that asked for it
  *   has finished, and restores the field through `editFieldSnapshot.ts`;
  * - a render requested from inside a running render is queued and runs after

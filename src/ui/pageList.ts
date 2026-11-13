@@ -25,6 +25,8 @@ import {
   pageStatusBadgesNode,
   pageStatusEmptyNote,
   pageStatusFilterBar,
+  type PageStatusFilter,
+  type PageStatusRow,
 } from "../features/pageStatus";
 import { el } from "./dom";
 import { icon } from "./icons";
@@ -67,6 +69,24 @@ function applyThumbShape(thumb: HTMLElement, size: PageSize | undefined): void {
 function applyThumbnail(pending: PendingThumbnail, url: string): void {
   pending.image.src = url;
   pending.image.hidden = false;
+}
+
+function pageCardAria(
+  row: PageStatusRow,
+  pageName: string | null | undefined,
+  location: string | null | undefined,
+  size: PageSize | undefined,
+): string {
+  return t("page.cardAria", {
+    name: pageName
+      ? t("page.namedPageAria", { name: pageName, page: row.page })
+      : t("page.titleFallback", { page: row.page }),
+    location: location ? t("page.locationAria", { location }) : "",
+    size: size
+      ? t("page.sizeAria", { width: Math.round(size.width), height: Math.round(size.height) })
+      : "",
+    status: pageStatusAriaText(row.badges),
+  });
 }
 
 function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void {
@@ -140,6 +160,22 @@ function bindTabMenu(refs: ShellRefs, actions: PanelActions): void {
   bindPagesTabMenu(tab, actions.refresh);
 }
 
+/** The Pages status filter row, shared by a full panel render and a badge refresh. */
+function pageStatusFilterBarFor(
+  actions: PanelActions,
+  filter: PageStatusFilter,
+  counts: Record<PageStatusFilter, number>,
+): HTMLElement {
+  return pageStatusFilterBar({
+    active: filter,
+    counts,
+    omitEmpty: true,
+    onSelect: (next) => {
+      if (pageStatus.setFilter(next)) actions.refresh();
+    },
+  });
+}
+
 export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   bindTabMenu(refs, actions);
   disconnectPageThumbnails();
@@ -160,14 +196,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
   const focusRequest = pageStatus.takeFocusRequest();
   // With nothing to filter, the chip row is noise rather than a control.
   if (hasProblemFilter || filter !== "all") {
-    const filterBar = pageStatusFilterBar({
-      active: filter,
-      counts,
-      omitEmpty: true,
-      onSelect: (next) => {
-        if (pageStatus.setFilter(next)) actions.refresh();
-      },
-    });
+    const filterBar = pageStatusFilterBarFor(actions, filter, counts);
     refs.dockBody.append(filterBar);
     if (focusRequest) {
       filterBar
@@ -277,19 +306,7 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     card.append(thumb, info);
     if (reorderEnabled) card.append(dragHandle(t("page.dragHandle")));
     pendingThumbnails.set(card, { page, image });
-    card.setAttribute(
-      "aria-label",
-      t("page.cardAria", {
-        name: pageName
-          ? t("page.namedPageAria", { name: pageName, page })
-          : t("page.titleFallback", { page }),
-        location: location ? t("page.locationAria", { location }) : "",
-        size: size
-          ? t("page.sizeAria", { width: Math.round(size.width), height: Math.round(size.height) })
-          : "",
-        status: pageStatusAriaText(row.badges),
-      }),
-    );
+    card.setAttribute("aria-label", pageCardAria(row, pageName, location, size));
     card.addEventListener("click", (event) => {
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
@@ -339,6 +356,67 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     refs.dockBody.append(note);
   }
   observeThumbnails(refs, actions, pendingThumbnails);
+}
+
+/**
+ * Refresh only the parts of the mounted Pages panel that derive from the
+ * source-status summary. The project has not changed, so the cards keep their
+ * thumbnails, listeners and any rename field that is open; only the badge rows,
+ * the filter counts and the accessible names are updated.
+ *
+ * A non-default filter can change which pages match, so that case rebuilds the
+ * panel instead of patching it. It is still a panel render, not a shell render.
+ */
+export function refreshPageStatusBadges(refs: ShellRefs, actions: PanelActions): void {
+  const project = store.project;
+  if (!project) return;
+  if (pageStatus.activeFilter !== "all") {
+    renderPages(refs, actions);
+    return;
+  }
+  const list = refs.dockBody.querySelector<HTMLElement>(".page-list");
+  if (!list) return;
+  const rows = pageStatus.rows(project);
+  syncPageStatusFilters(refs, actions, rows);
+  const byId = new Map(rows.map((row) => [row.pageId, row]));
+  for (const card of list.querySelectorAll<HTMLElement>(".page-card[data-page-id]")) {
+    const row = byId.get(card.dataset.pageId ?? "");
+    if (!row) continue;
+    const existing = card.querySelector<HTMLElement>(".page-badges");
+    const next = pageStatusBadgesNode(row.badges);
+    if (next.childElementCount) {
+      if (existing) existing.replaceWith(next);
+      else card.querySelector(".page-info")?.append(next);
+    } else {
+      existing?.remove();
+    }
+    const pageName = pageDisplayName(project, row.pageId);
+    const location = pageLocationLabel(project, row.pageId);
+    card.setAttribute(
+      "aria-label",
+      pageCardAria(row, pageName, location, actions.getPageSize(row.page)),
+    );
+  }
+}
+
+function syncPageStatusFilters(
+  refs: ShellRefs,
+  actions: PanelActions,
+  rows: readonly PageStatusRow[],
+): void {
+  const filter = pageStatus.activeFilter;
+  const counts = pageStatus.counts(rows);
+  const hasProblemFilter = PAGE_STATUS_FILTERS.some(
+    (entry) => entry !== "all" && (counts[entry] ?? 0) > 0,
+  );
+  const existing = refs.dockBody.querySelector<HTMLElement>(".page-status-filters");
+  if (!hasProblemFilter && filter === "all") {
+    existing?.remove();
+    return;
+  }
+  const bar = pageStatusFilterBarFor(actions, filter, counts);
+  if (existing) existing.replaceWith(bar);
+  else refs.dockBody.querySelector(".page-list")?.before(bar);
 }
 
 /**
