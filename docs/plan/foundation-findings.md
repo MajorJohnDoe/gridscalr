@@ -697,7 +697,7 @@ confirmed against the audit.
 - **Phase:** 0.24.0 phase 1 — security audit
 - **Severity:** P3
 - **Area:** tests / filesystem
-- **Status:** triaged #199
+- **Status:** fixed — 0.27.0 phase 4 ([#199](https://github.com/MajorJohnDoe/gridscalr/issues/199))
 - **Evidence:** `cargo test --lib` runs only on Ubuntu. The Windows and macOS CI
   jobs build and smoke-test but do not run the Rust unit tests; the symlink and
   hard-link cases are `#[cfg(unix)]` or skipped by the filesystem.
@@ -707,7 +707,16 @@ confirmed against the audit.
 - **Impact:** A regression in the source write guard could ship undetected.
 - **Next step:** Run the save and package Rust test modules on Windows and add
   Windows-only junction and trailing-dot tests. Phase 3, #169.
-- **Related:** `docs/security-audit.md` §5.1.
+- **Resolution:** The `desktop` matrix job runs `cargo test --lib` on Ubuntu,
+  Windows and macOS before it builds the shell.
+  `src-tauri/src/path_guard_windows_tests.rs` (Windows-only) covers a junction
+  escape, a trailing-dot and trailing-space alias, drive-relative rejection, UNC
+  spellings, a real case-insensitive volume and a verbatim-prefix comparison
+  that fails if the canonicalization branch is removed. Two existing assertions
+  that compared a native path with a `/`-separated literal were changed to
+  compare path components, because they only held on Linux. 8.3 short names and
+  alternate data streams stay untested and are named in `docs/testing.md`.
+- **Related:** `docs/security-audit.md` §5.1, `docs/testing.md`.
 
 #### F-037 — Test-only IPC commands are shipped in release builds
 
@@ -2480,3 +2489,58 @@ remains the scheduling home.
   packaging, consolidation and cap to the original scan first, then make
   `preservesManagedStorage()` kind-aware. Do not add a second managed folder.
 - **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-088, F-084.
+
+### F-109 — A UNC spelling and a drive-rooted spelling share one comparison key
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 4 — Windows Rust path tests
+- **Severity:** P3
+- **Area:** filesystem / write guard
+- **Status:** accepted
+- **Evidence:** `comparison_key()` replaces every backslash with `/` and
+  collapses repeated slashes. A protected `\\server\share\Plan.pdf` and a
+  Windows drive-rooted `\server\share\Plan.pdf` therefore both produce
+  `/server/share/plan.pdf`, and the write guard treats them as one file. The
+  Windows-only test `compares_unc_spellings_by_server_and_share` pins the key
+  shape.
+- **Problem:** Two distinct files can compare equal. The guard then asks for
+  another destination name.
+- **Impact:** A refusal only. The two spellings are treated as one protected
+  source, so the safe direction is kept; a user who really wants to write to the
+  drive-rooted path picks a different name or renames the source. No path is
+  ever written by the collision.
+- **Next step:** If a support report shows the refusal, give the UNC key a
+  distinct prefix (for example `unc://`) instead of stripping the double slash.
+  Do not change the key without the Windows matrix run, since every existing
+  protected-path test depends on it.
+
+### F-110 — A `..` spelling behind a symlinked root slipped past the write guard
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 4 — Windows Rust path tests
+- **Severity:** P2
+- **Area:** filesystem / write guard
+- **Status:** fixed
+- **Evidence:** The macOS `desktop` entry ran the Rust suite for the first time
+  and `path_guard::tests::rejects_a_traversal_spelling_of_a_protected_source`
+  failed on `main`'s guard. `resolved_path()` canonicalized the full path, then
+  walked the parents one component at a time; a path such as
+  `<dir>/other/../drawings/Plan.pdf` cannot be opened as one path because
+  `other` does not exist, and the walk stopped at the `..` component
+  (`file_name()` is `None`), so the fallback returned a purely lexical path
+  while the protected source was canonical. On Linux the temporary folder needs
+  no symlink resolution, so both spellings accidentally matched.
+- **Problem:** An alternate spelling of a protected source was not refused when
+  the path prefix had to be resolved through a symlink (`/var` on macOS). The
+  documented guarantee — "both sides are resolved to an absolute path, every
+  existing prefix is canonicalized" — did not hold for that spelling.
+- **Impact:** A write through a `..` spelling could have reached a source
+  drawing. The usual save path comes from an operating-system dialog and is
+  unaffected, so exposure was limited to a supplied path.
+- **Resolution:** `resolved_path()` resolves `.` and `..` before the file system
+  is asked and then canonicalizes the result, keeping the existing-prefix
+  walk-up for a target that does not exist yet. The existing Unix hard-link and
+  `same_file` identity checks are unchanged.
+  `rejects_a_traversal_spelling_that_crosses_a_symbolic_link` builds a symlinked
+  root and fails without the fix, so the case is now guarded on every Unix host.
+- **Related:** F-036, `docs/testing.md`.

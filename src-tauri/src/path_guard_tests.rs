@@ -144,6 +144,28 @@ fn rejects_a_traversal_spelling_of_a_protected_source() {
     assert!(ensure_writable(&text(&alternate), &[text(&source)]).is_err());
 }
 
+/// The temporary folder is behind a symbolic link on macOS (`/var` is
+/// `/private/var`), so the plain traversal test above cannot see a guard that
+/// only normalises the spelling lexically. This one builds the link itself, so
+/// the case is covered on every Unix host.
+#[cfg(unix)]
+#[test]
+fn rejects_a_traversal_spelling_that_crosses_a_symbolic_link() {
+    use std::os::unix::fs::symlink;
+
+    let directory = TestDir::new();
+    let real = directory.path().join("real");
+    fs::create_dir_all(real.join("drawings")).expect("create real folder");
+    fs::write(real.join("drawings/Plan.pdf"), b"source").expect("write source");
+    let link = directory.path().join("link");
+    symlink(&real, &link).expect("create symlink");
+
+    let source = link.join("drawings/Plan.pdf");
+    let alternate = link.join("other/../drawings/./Plan.pdf");
+    let error = ensure_writable(&text(&alternate), &[text(&source)]).expect_err("traversal");
+    assert_eq!(error.code, "sourceOverwrite");
+}
+
 #[cfg(unix)]
 #[test]
 fn rejects_a_managed_folder_that_is_a_symlink_outside_the_project() {
@@ -191,3 +213,11 @@ fn bounded_reads_accept_the_limit_and_reject_one_byte_more() {
     assert_eq!(error.code, "fileTooLarge");
     assert!(read_text_limited(&file, 10).is_ok());
 }
+
+/// Windows-only cases: drive-relative spellings, UNC prefixes, a real
+/// case-insensitive volume, trailing-dot aliases, verbatim-prefix
+/// canonicalization and a junction escape (F-036, #199). The module is skipped
+/// on every other host, so it may not depend on a POSIX path.
+#[cfg(windows)]
+#[path = "path_guard_windows_tests.rs"]
+mod windows;

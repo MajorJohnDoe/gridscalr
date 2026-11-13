@@ -79,6 +79,12 @@ fn normalized_path(path: &Path) -> PathBuf {
 /// and keeps the missing tail so a not-yet-created save target still compares
 /// against its real parent folder. A relative path is anchored to the current
 /// directory, so two spellings of one file always produce the same key.
+///
+/// `.` and `..` are resolved before the file system is asked. Without that, an
+/// alternate spelling whose prefix cannot be opened as one path — the usual
+/// case, because the component before `..` need not exist — would skip the
+/// canonical prefix entirely and stop matching the plain spelling. macOS also
+/// makes the difference visible: `/var` is a symlink to `/private/var`.
 pub(crate) fn resolved_path(path: &Path) -> PathBuf {
     let path = normalized_path(path);
     let absolute = if path.is_absolute() || has_unc_prefix(&path) {
@@ -89,6 +95,7 @@ pub(crate) fn resolved_path(path: &Path) -> PathBuf {
             Err(_) => path.to_path_buf(),
         }
     };
+    let absolute = lexical_path(&absolute);
     if let Ok(resolved) = fs::canonicalize(&absolute) {
         return resolved;
     }
@@ -112,7 +119,7 @@ pub(crate) fn resolved_path(path: &Path) -> PathBuf {
             return result;
         }
     }
-    lexical_path(&absolute)
+    absolute
 }
 
 fn lexical_path(path: &Path) -> PathBuf {

@@ -10,9 +10,14 @@ threat model, evidence and proposed fixes.
 
 **Phase 3 update:** F-031, F-032, F-033, F-034 and F-041 are fixed in
 0.24.0 phase 3 ([#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)).
-F-036 (Windows path coverage) stays open in
-[#199](https://github.com/MajorJohnDoe/gridscalr/issues/199). The evidence
-below records the state at the time of the review.
+
+**0.27.0 phase 4 update:** F-036 (Windows path coverage) is fixed in
+[#199](https://github.com/MajorJohnDoe/gridscalr/issues/199). The `desktop`
+matrix job now runs `cargo test --lib` on Ubuntu, Windows and macOS, and
+`src-tauri/src/path_guard_windows_tests.rs` covers the verbatim prefix, a real
+case-insensitive volume, a trailing dot or space, drive-relative spellings, UNC
+spellings and a junction escape. The evidence below records the state at the
+time of the review.
 
 **Phase 2 update:** F-028, F-029, F-030, F-037, F-038 and F-042 are fixed in
 0.24.0 phase 2 ([#168](https://github.com/MajorJohnDoe/gridscalr/issues/168)).
@@ -295,8 +300,12 @@ characters, and the text/CSV/binary write paths.
 **Gaps:** the protected-path list is built by the frontend from
 `DocumentRef.path` and `relativePath` only. `DocumentRef.originalPath` (the
 original drawing behind a managed copy) is not protected (F-031). All Rust tests
-run on Linux only; Windows junction, UNC, trailing-dot, 8.3 and alternate-data-
-stream behaviour is built but not executed in CI (F-036).
+run on Linux only at the time of the review; Windows junction, UNC,
+trailing-dot, 8.3 and alternate-data-stream behaviour is built but not executed
+in CI (F-036). 0.27.0 phase 4 closed the junction, UNC, trailing-dot and
+verbatim-prefix part on Windows and fixed a `..` spelling that the guard let
+through when the root needed symlink resolution (F-110); 8.3 short-name aliases
+and alternate data streams stay untested.
 
 ### 5.2 Atomic writes and temporary files
 
@@ -710,7 +719,7 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-036 — Windows path guarantees are built but not tested on Windows
 
 - **Severity:** P3
-- **Status:** open
+- **Status:** fixed — 0.27.0 phase 4 ([#199](https://github.com/MajorJohnDoe/gridscalr/issues/199))
 - **Owner:** phase 3, [#169](https://github.com/MajorJohnDoe/gridscalr/issues/169)
 - **Evidence:** `cargo test --lib` runs only in the Ubuntu `rust` job. The
   Windows and macOS `desktop` jobs build and smoke-test the packaged app but do
@@ -726,6 +735,13 @@ the static and runtime expectation is proposed for phase 4/5.
   test modules only.
 - **Acceptance criteria:** the Windows CI job runs the relevant Rust tests; at
   least one Windows-only test covers a junction and a trailing-dot alias.
+- **Resolution:** `cargo test --lib` runs on every `desktop` matrix entry, and
+  `src-tauri/src/path_guard_windows_tests.rs` adds a junction escape, a
+  trailing-dot/space alias of a protected source, drive-relative rejection, UNC
+  spellings, a real case-insensitive comparison and a verbatim-prefix case that
+  fails if the canonicalization branch is removed. A host that cannot create a
+  junction records the `mklink` reason instead of passing silently. The matrix
+  coverage is recorded in [`testing.md`](testing.md).
 
 ### F-037 — Test-only IPC commands are shipped in release builds
 
@@ -876,7 +892,7 @@ the static and runtime expectation is proposed for phase 4/5.
 
 | Mitigation | Evidence | Tested |
 | --- | --- | --- |
-| Source write guard (canonical, symlink, hard link, case, UNC prefix) | `commands.rs`, `writeGuard.ts` | Rust tests, `tests/writeGuard.test.ts` (Linux only, F-036) |
+| Source write guard (canonical, symlink, hard link, case, UNC prefix) | `commands.rs`, `path_guard.rs`, `writeGuard.ts` | Rust tests on Ubuntu, Windows and macOS, `tests/writeGuard.test.ts` (F-036 fixed) |
 | Conditional save, conflict and read-back | `project_write.rs`, `saveIntegrity/controller.ts` | Rust tests, `tests/robustness/saveConflict.test.ts` |
 | Crash between flush and rename keeps the previous file | `project_write.rs` injected replace | Rust test |
 | Source drawing is never written by packaging or consolidation | `source_copy.rs`, `copyActions.ts` | Rust tests, `tests/robustness/sourceStorage.test.ts` |
@@ -904,7 +920,7 @@ The conductor creates these after review. Existing phases keep their scope.
 | Clean stale atomic-write temporary siblings (F-041) | Project data left beside the project after a crash | `bug`, `tech-debt` |
 | Sanitize copied error details (F-042) | Path disclosure in support screenshots | `enhancement` |
 | Make PDF export byte-deterministic and deflake its test (F-043) | The phase 1 CI run hit a wall-clock flake; the export claims determinism | `tests`, `tech-debt` |
-| Run the Rust test suite on Windows and add Windows path tests (F-036) | The path guarantee is Windows-relevant and untested there | `tests`, `tech-debt` |
+| Run the Rust test suite on Windows and add Windows path tests (F-036) | The path guarantee is Windows-relevant and untested there — done in [#199](https://github.com/MajorJohnDoe/gridscalr/issues/199) | `tests`, `tech-debt` |
 
 The remaining findings map to existing phases 2–5 and do not need a new issue.
 

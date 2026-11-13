@@ -464,7 +464,7 @@ mod tests {
         let sha = hash_file(&source).expect("hash source");
         let info = copy_to_project(&request(&dir, &source, "Plan.pdf")).expect("copy");
         let expected = format!("Level 01.drawings/Plan-{}.pdf", &sha[..8]);
-        assert!(info.destination_path.ends_with(&expected));
+        assert!(Path::new(&info.destination_path).ends_with(&expected));
         assert_eq!(info.size_bytes, before.len() as u64);
         assert_eq!(fs::read(&source).expect("read source"), before);
         assert_eq!(fs::read(&info.destination_path).expect("read copy"), before);
@@ -563,7 +563,7 @@ mod tests {
         let found = find_by_hash(&source.parent().unwrap(), &info.sha256)
             .expect("search")
             .expect("found");
-        assert_eq!(found.path, info.path);
+        assert_eq!(Path::new(&found.path), Path::new(&info.path));
         assert!(find_by_hash(&source.parent().unwrap(), &"0".repeat(64))
             .expect("search")
             .is_none());

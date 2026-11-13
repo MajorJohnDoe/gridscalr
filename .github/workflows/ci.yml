@@ -203,6 +203,17 @@ jobs:
 
       - run: npm ci
 
+      # The path guard is Windows- and macOS-relevant: drive-relative
+      # spellings, UNC prefixes, a case-insensitive volume, trailing-dot
+      # aliases, verbatim prefixes and junctions only exist there. Run the Rust
+      # unit tests on every matrix entry so a regression fails before a tag
+      # (F-036, #199). The Windows-only cases live in
+      # src-tauri/src/path_guard_windows_tests.rs.
+      - name: Run Rust unit tests
+        working-directory: src-tauri
+        shell: bash
+        run: cargo test --lib
+
       - name: Build the desktop shell
         run: npm run tauri build -- --debug --no-bundle
 
