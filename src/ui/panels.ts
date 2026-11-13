@@ -1,7 +1,7 @@
 import { primaryDocument } from "../model/documents";
 import { pageDisplayName, pageIdAt } from "../model/pages";
 import type { AreaMode, CountType, ImageMode, PageId, PageSize, RecentEntry } from "../model/types";
-import { store, type ToolId } from "../state/store";
+import { store, type ChangeReason, type ToolId } from "../state/store";
 import type { RecoverySummary } from "../features/sessionRecovery";
 import type { ShellRefs } from "./shell";
 import { renderSidebar, setInspectorCollapsed } from "./sidebar";
@@ -21,6 +21,7 @@ import {
 } from "./toolDefs";
 import { t } from "../i18n";
 import { isEditingTool } from "../features/viewOnly";
+import { requestShellRender } from "./editSafeRender";
 
 export interface PanelActions {
   openPdf: () => void;
@@ -134,7 +135,21 @@ export function requestMarkupRename(refs: ShellRefs): void {
   });
 }
 
-export function renderChrome(refs: ShellRefs, actions: PanelActions): void {
+/**
+ * Repaint the whole shell. Every caller goes through the edit-safe scheduler so
+ * a rebuild cannot remove the field the user is typing in; see
+ * `editSafeRender.ts` for the background deferral, focus restore and render
+ * coalescing rules.
+ */
+export function renderChrome(
+  refs: ShellRefs,
+  actions: PanelActions,
+  reason: ChangeReason = "change",
+): void {
+  requestShellRender(refs.root, reason, () => paintChrome(refs, actions));
+}
+
+function paintChrome(refs: ShellRefs, actions: PanelActions): void {
   renderTopbar(refs, actions);
   renderToolRail(refs);
   renderSidebar(refs, actions);

@@ -780,10 +780,79 @@ try {
   await page.getByRole("dialog").waitFor({ state: "detached" });
   assert.equal((await itemById(volumeId)).depth, 3.2);
 
+  // 13. The 30 s source check must not interrupt an edit in Properties.
+  await selectItem(volumeId);
+  const labelInput = page.locator("#selection-label-input");
+  await labelInput.waitFor();
+  await labelInput.click();
+  await page.keyboard.press("Control+a");
+  await page.keyboard.type("AHU-01");
+  const readLabelField = () =>
+    page.evaluate(() => {
+      const input = document.getElementById("selection-label-input");
+      return {
+        focused: document.activeElement === input,
+        value: input?.value ?? null,
+        start: input?.selectionStart ?? null,
+        end: input?.selectionEnd ?? null,
+        marked: input?.dataset.regressionMarker === "keep",
+      };
+    });
+  // The marker proves whether the shell replaced the field or left it alone.
+  await page.evaluate(() => {
+    const input = document.getElementById("selection-label-input");
+    input.dataset.regressionMarker = "keep";
+    input.setSelectionRange(3, 3);
+  });
+  await page.evaluate(() => window.__gridscalr.store.emit("save"));
+  await page.waitForTimeout(150);
+  const afterBackgroundRender = await readLabelField();
+  assert.equal(afterBackgroundRender.focused, true, "a background save must not move focus");
+  assert.equal(
+    afterBackgroundRender.value,
+    "AHU-01",
+    "a background save must not change the value",
+  );
+  assert.equal(afterBackgroundRender.start, 3, "a background save must not reset the caret");
+  assert.equal(afterBackgroundRender.end, 3, "a background save must not reset the caret");
+  assert.equal(
+    afterBackgroundRender.marked,
+    true,
+    "a background save must not replace the focused field",
+  );
+
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(200);
+  const afterEnter = await readLabelField();
+  assert.equal(afterEnter.focused, true, "Enter must keep focus in the Properties field");
+  assert.equal(afterEnter.value, "AHU-01", "Enter must keep the typed value");
+  assert.equal(afterEnter.start, 3, "Enter must keep the caret");
+  assert.equal(afterEnter.end, 3, "Enter must keep the caret");
+  assert.equal(
+    await page.evaluate((id) => {
+      for (const layer of window.__gridscalr.store.project.layers) {
+        const item = layer.items.find((entry) => entry.id === id);
+        if (item) return item.label ?? null;
+      }
+      return null;
+    }, volumeId),
+    "AHU-01",
+    "Enter must commit the label",
+  );
+
+  // Leaving the field releases the deferred background render without errors.
+  await page.keyboard.press("Tab");
+  await page.waitForTimeout(200);
+  assert.equal(
+    (await readLabelField()).value,
+    "AHU-01",
+    "the deferred render must keep the committed label",
+  );
+
   await waitForApp(page);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(
-    "Canvas regression passed: length, area, radius, diameter, arc, angle, slope, volume, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
+    "Canvas regression passed: edit-safe Properties render, length, area, radius, diameter, arc, angle, slope, volume, deduction, dashed lines, label dragging, label connection/reset, resize, rotate, stamp and symbol resize, text, label/callout editing, hidden/locked, crop and split view.",
   );
 } finally {
   await page?.close();
