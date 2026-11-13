@@ -102,6 +102,24 @@ function flush(): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, 20));
 }
 
+/**
+ * Waits for an assertion to pass. A structural action writes a recovery
+ * checkpoint before it mutates the store, so a fixed sleep races the IndexedDB
+ * write on a loaded coverage worker.
+ */
+async function waitFor(check: () => void, timeout = 3000): Promise<void> {
+  const deadline = Date.now() + timeout;
+  for (;;) {
+    try {
+      check();
+      return;
+    } catch (error) {
+      if (Date.now() >= deadline) throw error;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+}
+
 beforeEach(async () => {
   store.project = null;
   store.projectPath = null;
@@ -222,9 +240,8 @@ describe("page keyboard commands", () => {
       insertPage: (pageId, index) => void insertProjectPage(actionHost(), pageId, index),
     });
     await insertPageNear(actions, "page_2", "after");
-    await flush();
+    await waitFor(() => expect(ids()).toHaveLength(6));
     expect(vi.mocked(showModal)).toHaveBeenCalled();
-    expect(ids()).toHaveLength(6);
     const inserted = ids()[2];
     expect(before).not.toContain(inserted);
     expect(store.canUndo).toBe(true);
@@ -243,8 +260,7 @@ describe("page keyboard commands", () => {
     });
     vi.mocked(showModal).mockResolvedValueOnce("move");
     await movePageToPosition(actions, ["page_1"]);
-    await flush();
-    expect(ids()).toEqual(["page_2", "page_1", "page_3", "page_4", "page_5"]);
+    await waitFor(() => expect(ids()).toEqual(["page_2", "page_1", "page_3", "page_4", "page_5"]));
     expect(store.canUndo).toBe(true);
     store.undo();
     expect(ids()).toEqual(before);
@@ -256,9 +272,8 @@ describe("page keyboard commands", () => {
       deletePage: (pageId) => void deletePageFlow(flowHost(), pageId),
     });
     pageMenu.handleKey(keyEvent({ key: "Delete", altKey: true, shiftKey: true }), actions);
-    await flush();
+    await waitFor(() => expect(ids()).toEqual(["page_2", "page_3", "page_4", "page_5"]));
     expect(confirmDialog).toHaveBeenCalled();
-    expect(ids()).toEqual(["page_2", "page_3", "page_4", "page_5"]);
     expect(store.canUndo).toBe(false);
     const records = await listRecoveryRecords();
     expect(records.some((record) => record.kind === "checkpoint")).toBe(true);
