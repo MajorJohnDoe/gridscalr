@@ -212,6 +212,7 @@ npm run check:versions
 npm run check:file-budgets
 npm run check:modules
 npm run check:security
+npm run check:actions
 npm run check:dependencies
 npm run check:docs
 npm run format:check
@@ -635,6 +636,7 @@ scripts/check-file-budgets.mjs blocking line budget for frontend and Rust source
 scripts/file-budget-rules.mjs pure budget scope, exception and --update rules
 scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
+scripts/check-action-pins.mjs 40-character SHA pins for every workflow `uses:` reference
 scripts/check-dependencies.mjs dependency and advisory gate runner
 scripts/dependency-gate.mjs pure audit parsing, allowlist and threshold rules
 scripts/check-versions.mjs   app-version agreement across the four version fields
@@ -685,6 +687,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
 - `npm run test:csp` opens the demo in the browser fallback, checks the single dev policy, starts the real Tesseract worker, and proves a blob worker inherits the policy and cannot fetch a remote origin.
 - `npm run check:security` compares the shipped CSP and capabilities with the reasoned record in `security/policy.json`, rejects a second page policy and inline styles, and verifies the debug-only smoke commands and worker bootstraps. See `docs/security-policy.md`.
+- `npm run check:actions` requires every remote `uses:` reference in `.github/workflows` to be a full 40-character commit SHA with a `# <version>` comment, so a moved tag cannot change the release build. `tests/actionPins.test.ts` proves the tag, branch, short-SHA and missing-comment failures. The bump procedure is in `docs/releasing.md`.
 - `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits. It runs on the Ubuntu `rust` job and on every `desktop` matrix entry; `src-tauri/src/path_guard_windows_tests.rs` adds the Windows-only cases (verbatim prefix, case-insensitive volume, trailing dot, drive-relative, UNC, junction).
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.

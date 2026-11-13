@@ -502,10 +502,13 @@ MPL-2.0 crates.
 
 Every workflow uses `permissions:` with `contents: read` (Pages additionally
 needs `pages: write` and `id-token: write`). No `pull_request_target` and no
-secret is passed to a build. Actions are referenced by mutable major tags
-(`actions/checkout@v7`, `upload-artifact@v7`, `Swatinem/rust-cache@v2`,
-`dtolnay/rust-toolchain@stable`), not commit SHAs, so a moved tag would run new
-code in the release build (F-035).
+secret is passed to a build. Every remote `uses:` reference is pinned to a full
+40-character commit SHA with its release in a trailing comment, for example
+`actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1`.
+`npm run check:actions` rejects a tag, branch, short SHA or a pin without a
+version comment, so a moved tag cannot change the release build (F-035, fixed in
+0.27.0). The pins are updated by hand with the procedure in
+[`releasing.md`](releasing.md#pinned-github-actions).
 
 ### 8.4 Network expectations
 
@@ -698,9 +701,8 @@ the static and runtime expectation is proposed for phase 4/5.
 ### F-035 — GitHub Actions are referenced by mutable tags
 
 - **Severity:** P2
-- **Status:** open
-- **Owner:** phase 4, [#170](https://github.com/MajorJohnDoe/gridscalr/issues/170)
-- **Evidence:** `.github/workflows/ci.yml`, `release.yml` and `pages.yml` use
+- **Status:** fixed in 0.27.0 phase 5 ([#200](https://github.com/MajorJohnDoe/gridscalr/issues/200))
+- **Evidence:** `.github/workflows/ci.yml`, `release.yml` and `pages.yml` used
   `actions/checkout@v7`, `actions/setup-node@v7`, `actions/upload-artifact@v7`,
   `actions/download-artifact@v5`, `actions/configure-pages@v6`,
   `actions/upload-pages-artifact@v5`, `actions/deploy-pages@v5`,
@@ -709,12 +711,14 @@ the static and runtime expectation is proposed for phase 4/5.
   produces the Windows, macOS and Linux release artifacts. Tokens are
   read-only, but the artifacts themselves are the target. The builds are
   unsigned, so a tampered artifact is hard for a user to detect.
-- **Proposed fix:** Pin every action to a full commit SHA with the version in a
-  comment, and let Dependabot update the pins. Keep `dtolnay/rust-toolchain`
-  intentionally tracked or pin its stable toolchain explicitly.
-- **Acceptance criteria:** no workflow uses a mutable tag for a third-party
-  action; Dependabot covers the pinned actions; the release workflow still
-  produces all artifacts and the merged checksum file.
+- **Fix:** every remote `uses:` reference is a full 40-character commit SHA with
+  its release in a trailing comment. `npm run check:actions` fails on a tag,
+  branch, short SHA or a missing comment and runs in CI.
+  `dtolnay/rust-toolchain` is pinned to a `master` commit and names
+  `toolchain: stable` explicitly. The bump procedure is in
+  [`releasing.md`](releasing.md#pinned-github-actions).
+- **Residual:** the pins are not updated automatically; there is no Dependabot
+  or Renovate rule for workflows, so a stale pin is a manual review item.
 
 ### F-036 — Windows path guarantees are built but not tested on Windows
 
