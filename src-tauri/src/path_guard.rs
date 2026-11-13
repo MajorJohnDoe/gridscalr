@@ -143,13 +143,6 @@ fn lexical_path(path: &Path) -> PathBuf {
 pub(crate) fn comparison_key(path: &Path) -> String {
     let mut text = path.to_string_lossy().replace('\\', "/");
     let lower = text.to_ascii_lowercase();
-    text = if lower.starts_with("//?/unc/") {
-        format!("//{}", &text[8..])
-    } else if lower.starts_with("//?/") {
-        text[4..].to_string()
-    } else {
-        text
-    };
     let mut key = String::with_capacity(text.len());
     let mut previous_slash = false;
     for character in text.chars() {
