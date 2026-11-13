@@ -3,7 +3,7 @@ import { sanitizePaths } from "../../model/pathText";
 import type { Project } from "../../model/types";
 import type { LoadReportCount } from "../../io/projectFile/report";
 import { countDoctorIssues, type DoctorIssueFilter } from "./repairFilter";
-import { availableRepairs, planRepair, type RepairKind } from "./repairPlan";
+import { planRepair, plannedRepairs, type RepairKind } from "./repairPlan";
 import type { DoctorSourceCleanupResult, DoctorSourceHost } from "./sourceAvailability";
 import type { DoctorSourceSnapshot } from "./sourceModel";
 import type { ProjectDoctorDialogResult } from "./ui";
@@ -76,10 +76,13 @@ export async function runProjectDoctor(
   let repairedCopy = false;
   for (;;) {
     const canChangeSources = Boolean(options.sources?.canChange) && !repairedCopy;
+    // Offered repairs come from the planner, so a repairable code whose repair
+    // would change nothing is not presented as available (F-085).
+    const offered = plannedRepairs(project, issues);
     const action = await dialogHost.dialog({
       project,
       issues,
-      repairs: availableRepairs(issues),
+      repairs: offered.map((entry) => entry.kind),
       canOpen: options.canOpen ?? false,
       canOpenReadOnly: options.canOpenReadOnly ?? false,
       loadReport: options.loadReport,
@@ -92,7 +95,9 @@ export async function runProjectDoctor(
       canCopySources: canChangeSources && Boolean(options.sources?.copyIntoProject),
     });
     if (action.kind === "repair") {
-      const kinds = availableRepairs(issues).filter((kind) => action.repairs.includes(kind));
+      const kinds = offered
+        .map((entry) => entry.kind)
+        .filter((kind) => action.repairs.includes(kind));
       if (!kinds.length) continue;
       const run = planRepair(project, kinds);
       project = run.project;

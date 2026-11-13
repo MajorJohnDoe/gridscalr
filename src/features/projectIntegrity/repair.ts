@@ -9,11 +9,13 @@ export {
   applyRepair,
   availableRepairs,
   planRepair,
+  plannedRepairs,
   repairForCode,
   REPAIR_ORDER,
 } from "./repairPlan";
 export type {
   RepairAction,
+  RepairAvailability,
   RepairChange,
   RepairKind,
   RepairPlan,

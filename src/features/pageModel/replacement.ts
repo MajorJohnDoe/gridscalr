@@ -5,6 +5,11 @@ import type { DocumentRef, PageId, PageSize, Project } from "../../model/types";
 /**
  * Source replacement keeps page identity. Mapped pages move to the new document
  * while unmapped pages stay on the old reference marked `superseded`.
+ *
+ * Replacement does not remove the old managed file. When the replaced document
+ * is a managed copy the flow copies the new source into the project so the
+ * result stays managed; the previous copy becomes unreferenced and is offered
+ * by the project doctor's explicit cleanup.
  */
 
 export interface PageRemap {
@@ -35,6 +40,34 @@ export function pagesForDocument(project: Project, documentId: string): PageId[]
 }
 
 /**
+ * One replacement document value for both the in-place and the new-record
+ * branch.
+ *
+ * Storage mode and provenance describe the file the replacement points at, not
+ * the file it replaces. A reference result therefore clears the old managed
+ * copy's `originalPath`/`originalSha256` instead of inheriting them, and a
+ * managed result carries the new pick's own provenance. The flow copies a
+ * managed replacement into the project; this function never touches a file.
+ */
+function replacementDocument(
+  oldDocument: DocumentRef | null,
+  newDocument: DocumentRef,
+  id: string,
+): DocumentRef {
+  const managed = newDocument.storage === "managed";
+  return {
+    ...(oldDocument ?? {}),
+    ...newDocument,
+    id,
+    copiedFrom: oldDocument?.copiedFrom,
+    superseded: undefined,
+    storage: managed ? "managed" : "reference",
+    originalPath: managed ? (newDocument.originalPath ?? null) : null,
+    originalSha256: managed ? newDocument.originalSha256 : undefined,
+  };
+}
+
+/**
  * Applies a replacement mapping. When every page of the old document is mapped
  * the existing reference is updated; otherwise a new DocumentRef is added and
  * the old one is kept as superseded for the remaining pages.
@@ -60,18 +93,8 @@ export function applySourceReplacement(
   const everyMapped = oldPageIds.every((pageId) => mapped.has(pageId));
 
   const target: DocumentRef = everyMapped
-    ? {
-        ...oldDocument,
-        ...options.newDocument,
-        id: oldDocument.id,
-        copiedFrom: oldDocument.copiedFrom,
-        superseded: undefined,
-      }
-    : {
-        ...options.newDocument,
-        id: options.newDocument.id || makeId("doc"),
-        superseded: undefined,
-      };
+    ? replacementDocument(oldDocument, options.newDocument, oldDocument.id)
+    : replacementDocument(null, options.newDocument, options.newDocument.id || makeId("doc"));
   if (everyMapped) {
     Object.assign(oldDocument, target);
     // The mapping defines the new document's included pages; an old exclusion

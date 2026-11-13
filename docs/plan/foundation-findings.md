@@ -53,7 +53,8 @@ project contents.
   F-044, F-045, F-046.
 - [#241](https://github.com/MajorJohnDoe/gridscalr/issues/241): F-017.
 - [#236](https://github.com/MajorJohnDoe/gridscalr/issues/236): F-088, with
-  F-084 and F-085.
+  F-084 and F-085. All three are fixed or closed by 0.27.0 phase 3; F-108
+  records the TIF part.
 - [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238): F-091 and F-023.
 - [#239](https://github.com/MajorJohnDoe/gridscalr/issues/239): F-097, F-098,
   F-100, F-101.
@@ -1482,21 +1483,29 @@ confirmed against the audit.
 - **Phase:** 11 — TIF replacement and raw-byte provenance
 - **Severity:** P3
 - **Area:** source replacement / source storage
-- **Status:** triaged #236
-- **Evidence:** `applySourceReplacement()` merges the picked `DocumentRef` over the
-  old document. A picked file is always built as `storage: "reference"`, so a
-  managed document loses its managed mode, while `originalPath` and
-  `originalSha256` from the previous copy can remain. The old file in
-  `<project>.drawings/` is not removed.
-- **Problem:** A replacement of a managed-copy PDF or TIF can leave a stale
+- **Status:** fixed by 0.27.0 phase 3 (#236)
+- **Evidence:** `applySourceReplacement()` merged the picked `DocumentRef` over
+  the old document. A picked file is always built as `storage: "reference"`, so a
+  managed document lost its managed mode, while `originalPath` and
+  `originalSha256` from the previous copy could remain. The old file in
+  `<project>.drawings/` was never removed.
+- **Problem:** A replacement of a managed-copy PDF or TIF could leave a stale
   original-path provenance value and an unreferenced managed file.
-- **Impact:** No data loss and the new source is correct. The leftover copy is
-  reported by the project doctor's unreferenced-copy list, and the new document
-  points at the picked file as a reference.
-- **Next step:** Decide whether replacement should preserve managed storage by
-  copying the new source into the project, and clear `originalPath` /
-  `originalSha256` explicitly when it does not. Keep cleanup explicit.
-- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-017, #189.
+- **Decision:** Replacement preserves managed storage. A managed PDF's new pick
+  is copied into `<project>.drawings/` and checksum-verified before any project
+  field changes (`prepareReplacementDocument`), and a failed copy aborts the
+  replacement instead of degrading the document. `applySourceReplacement()` now
+  derives `storage` and the provenance fields explicitly, so a reference result
+  clears the previous managed provenance instead of inheriting it. The old
+  managed file is never deleted; it becomes an unreferenced copy for the doctor.
+  A TIF replacement stays a reference (see F-108).
+- **Verification:** `tests/pageReplacement.test.ts` (reference→managed,
+  managed→reference, managed→managed and a split-document case),
+  `tests/robustness/sourceStorage.test.ts` (copy, reference pass-through, failed
+  copy, checksum mismatch) and `tests/projectDoctorSources.test.ts` (old copy
+  listed as unused, new copy protected).
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-017, F-108,
+  #189.
 
 ### F-102 — A background source check waits for the focused field to lose focus
 
@@ -2031,7 +2040,7 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 8 — source availability and managed-copy cleanup
 - **Severity:** P3
 - **Area:** source storage / project doctor
-- **Status:** accepted — a nested layout does not exist yet
+- **Status:** closed by 0.27.0 phase 3 (#236) — no recursion by design
 - **Evidence:** `src-tauri/src/source_cleanup.rs` reads `<project>.drawings/`
   non-recursively and lists only regular `.pdf` files directly inside it.
   `classifyManagedCopies()` in `src/features/projectIntegrity/sourceModel.ts`
@@ -2040,12 +2049,14 @@ remains the scheduling home.
 - **Problem:** If a later change organises managed copies into subfolders, or a
   user moves a copy into one, those files are invisible to the cleanup list and
   cannot be deleted from the doctor.
-- **Impact:** No deletion risk and no project corruption; only disk usage. The
-  conservative listing is deliberate: a recursive walk could offer a file from
-  an unrelated folder for deletion.
-- **Next step:** If a nested managed-copy layout is introduced, list only the
-  exact subfolders that layout defines and keep canonical path protection for
-  the reference set. Do not replace this with a recursive walk of the folder.
+- **Decision:** Keep the non-recursive listing. The flat folder is the fixed
+  contract (`drawings_folder()` in `source_copy.rs`, ADR 0012 rule 3); nothing in
+  the app writes a subfolder, and a recursive walk could offer a file the user
+  placed there for another purpose for removal. `list_managed_copies_in()` and
+  its test `lists_only_regular_pdf_files_directly_in_the_drawings_folder` pin the
+  behavior, and `docs/limitations.md` states the limit. A future nested layout
+  must list only its own exact subfolders and keep canonical path protection;
+  it must not replace this with a recursive walk.
 - **Related:** #189, F-017, `docs/limitations.md`, `src-tauri/src/source_cleanup.rs`.
 
 ### F-085 — Repair availability comes from issue codes, not from a repair plan
@@ -2054,21 +2065,28 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 9 — repair preview and filters in the project doctor
 - **Severity:** P3
 - **Area:** project integrity / project doctor
-- **Status:** accepted — the dialog blocks the no-op
+- **Status:** fixed by 0.27.0 phase 3 (#236)
 - **Evidence:** `availableRepairs()` in
   `src/features/projectIntegrity/repairPlan.ts` maps validator codes to a repair
-  kind and does not see the project. A repairable code can therefore be offered
+  kind and does not see the project. A repairable code could therefore be offered
   while its repair plans zero changes, for example `missingActiveLayer` when the
   project has no layer that could become the fallback.
-- **Problem:** The repair checkbox stays selectable with a `0` count, and the
-  issue remains after the copy is saved. The dialog disables **Apply selected
-  repairs** while the plan is empty, so nothing false is written, but the
-  availability list itself is optimistic.
-- **Impact:** No data loss and no misleading preview: counts come from the plan
-  and the apply button refuses an empty plan. Only the offered control is noisy.
-- **Next step:** If this becomes confusing on real damaged files, pass the planned
-  change count into the dialog state and hide kinds with no planned changes.
-  Do not reintroduce a per-kind clone on every render just to compute it.
+- **Problem:** The repair checkbox stayed selectable with a `0` count, and the
+  issue remained after the copy was saved. The dialog disabled **Apply selected
+  repairs** while the plan was empty, so nothing false was written, but the
+  availability list itself was optimistic.
+- **Decision:** Availability now reads the plan. `plannedRepairs()` builds the
+  combined plan for the repairable kinds once and offers only kinds that
+  contribute at least one change; the doctor loop uses that list for both the
+  dialog and the applied subset. The repair section reads its per-kind counts
+  from the same combined plan, so the previous per-kind `planRepair()` clones
+  (one per offered kind) are gone. `availableRepairs()` remains the pure
+  code-to-kind mapping and is used by the "repairable" issue filter, which
+  describes the code and not the plan. Apply still refuses an empty plan.
+- **Verification:** `tests/projectDoctorRepairPreview.test.ts` — a project with a
+  `missingActiveLayer` issue and no layer to fall back to offers no repair;
+  `tests/projectDoctor.test.ts` — the dialog is asked for its repairs and applies
+  a subset.
 - **Related:** #190, `src/features/projectIntegrity/repairPlan.ts`,
   `src/features/projectIntegrity/repairUi.ts`.
 
@@ -2436,3 +2454,29 @@ remains the scheduling home.
 - **Next step:** List existing `.removed` folders in the doctor's source section
   with their size and an explicit delete action, or offer to purge a folder that
   is older than a stated age. Do not delete one automatically.
+
+### F-108 — A TIF replacement does not keep managed storage
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 3 — managed-copy replacement hygiene
+- **Severity:** P3
+- **Area:** source replacement / source storage
+- **Status:** accepted
+- **Evidence:** `preservesManagedStorage()` in
+  `src/features/sourceStorage/replacementCopy.ts` is true only for a `pdf`
+  document. A TIF document carries its derived PDF in `embeddedPdf`, its `path`
+  is provenance for the original scan, and the managed-copy inventory, the
+  consolidation candidates and the package source list all handle regular PDFs
+  only.
+- **Problem:** A TIF document with `storage: "managed"` — which the app cannot
+  create today, because **Use managed copy** and **Consolidate drawings…** refuse
+  a non-PDF — would fall back to a reference on replacement. Copying the `.tif`
+  instead would put a file in `<project>.drawings/` that the cleanup list cannot
+  see or remove.
+- **Impact:** None for a project created by the app. A hand-edited or externally
+  produced project with a managed TIF gets a corrected reference and a cleared
+  `originalPath`, so no stale provenance remains.
+- **Next step:** If managed TIF becomes a real mode, extend the inventory,
+  packaging, consolidation and cap to the original scan first, then make
+  `preservesManagedStorage()` kind-aware. Do not add a second managed folder.
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-088, F-084.

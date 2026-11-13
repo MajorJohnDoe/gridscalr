@@ -278,6 +278,14 @@ copy's checksum remains authoritative. A managed copy requires a saved project
 path, because the folder is derived from the project file. GridScalr prompts to
 save first instead of falling back to an embedded PDF.
 
+Replacing the source keeps the document's storage mode. A managed PDF is copied
+into `<project>.drawings/` and verified before the project changes, and
+`originalPath`/`originalSha256` then describe the new pick. A reference result
+clears any previous managed provenance instead of inheriting it, and the
+previous managed file is never deleted by the replacement: it becomes an
+unreferenced copy for the project doctor. A TIF replacement stays a reference
+because its derived PDF is embedded in the project.
+
 The import dialog recommends **Copy drawing into project** when the picked path
 looks like a UNC network share or a well-known cloud-client folder. The
 heuristic is documented in `docs/limitations.md`; it is advisory and the user can

@@ -15,6 +15,7 @@ import {
   sourceReplacementDialog,
   type SourceReplacementResult,
 } from "../features/pageModel";
+import { prepareReplacementDocument, preservesManagedStorage } from "../features/sourceStorage";
 import { pickDrawing } from "../io/platform";
 import { isTiff } from "../io/tiff";
 import { describeError } from "../io/platformError";
@@ -181,12 +182,36 @@ export async function replaceSourceFlow(
       return;
     }
 
+    // A managed source stays managed: copy the pick into the project before
+    // anything changes. A failed copy aborts the replacement rather than
+    // silently turning the document into a reference to the picked file.
+    let newDocument = imported.documentRef;
+    if (preservesManagedStorage(document)) {
+      if (!store.projectPath || !picked.path) {
+        await proxy.loadingTask.destroy().catch(() => undefined);
+        await messageDialog(t("replace.failed"), t("replace.managedCopyRequired"), "warning");
+        return;
+      }
+      const prepared = await prepareReplacementDocument({
+        project,
+        projectPath: store.projectPath,
+        oldDocument: document,
+        newDocument: imported.documentRef,
+        sourcePath: picked.path,
+      });
+      if (!prepared) {
+        await proxy.loadingTask.destroy().catch(() => undefined);
+        return;
+      }
+      newDocument = prepared;
+    }
+
     await recordStructuralCheckpoint(
       t("sessionRecovery.checkpoint.replaceSource", { name: document.name }),
     );
     const applied = applySourceReplacement(project, {
       documentId,
-      newDocument: imported.documentRef,
+      newDocument,
       mappings: result.mappings,
     });
     if (!applied) {

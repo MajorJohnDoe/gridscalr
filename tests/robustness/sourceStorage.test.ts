@@ -14,6 +14,8 @@ import {
   documentSourceKey,
   documentStorage,
   isManagedDocument,
+  prepareReplacementDocument,
+  preservesManagedStorage,
   sourceChangeActions,
 } from "../../src/features/sourceStorage";
 import type { SourceStorageHost } from "../../src/features/sourceStorage";
@@ -348,6 +350,139 @@ describe("source storage robustness", () => {
       const item = project.layers.flatMap((layer) => layer.items).find((entry) => entry.id === id);
       if (item && pageId !== "page_2") expect(item.pageId).toBe(pageId);
     }
+  });
+
+  it("keeps managed storage by copying a replacement into the project", async () => {
+    const directory = temporaryDirectory();
+    const sourcePath = path.join(directory, "Revision B.pdf");
+    const sourceBytes = Buffer.from("%PDF-1.4 revision b");
+    writeFileSync(sourcePath, sourceBytes);
+    const project = withTestPageIds(createProject(defaultDocument("Old.pdf", 1)));
+    const projectPath = path.join(directory, "Level 01.gridscalr");
+    const oldDocument: DocumentRef = {
+      ...project.documents[0],
+      storage: "managed",
+      path: path.join(directory, "Level 01.drawings", "Old-aaaaaaaa.pdf"),
+      relativePath: "Level 01.drawings/Old-aaaaaaaa.pdf",
+      originalPath: "/home/ana/OneDrive/Old.pdf",
+      originalSha256: "1".repeat(64),
+    };
+    project.documents[0] = oldDocument;
+    const newDocument: DocumentRef = {
+      ...referenceDocument("Revision B.pdf", 1),
+      path: sourcePath,
+      sha256: hash(sourceBytes),
+      sizeBytes: sourceBytes.length,
+    };
+    const destinationPath = path.join(directory, "Level 01.drawings", "Revision B-bbbbbbbb.pdf");
+    mocks.copySourceToProject.mockResolvedValue({
+      destinationPath,
+      relativePath: "Level 01.drawings/Revision B-bbbbbbbb.pdf",
+      sha256: hash(sourceBytes),
+      sizeBytes: sourceBytes.length,
+    });
+
+    expect(preservesManagedStorage(oldDocument)).toBe(true);
+    const prepared = await prepareReplacementDocument({
+      project,
+      projectPath,
+      oldDocument,
+      newDocument,
+      sourcePath,
+    });
+
+    expect(mocks.copySourceToProject).toHaveBeenCalledTimes(1);
+    expect(prepared?.storage).toBe("managed");
+    expect(prepared?.path).toBe(destinationPath);
+    expect(prepared?.relativePath).toBe("Level 01.drawings/Revision B-bbbbbbbb.pdf");
+    expect(prepared?.sha256).toBe(hash(sourceBytes));
+    expect(prepared?.originalPath).toBe(sourcePath);
+    expect(prepared?.originalSha256).toBe(hash(sourceBytes));
+    // The old file is never removed or rewritten by the preparation.
+    expect(oldDocument.path).toContain("Old-aaaaaaaa.pdf");
+    expect(readFileSync(sourcePath)).toEqual(sourceBytes);
+  });
+
+  it("returns a reference replacement unchanged without copying", async () => {
+    const directory = temporaryDirectory();
+    const sourcePath = path.join(directory, "Revision B.pdf");
+    writeFileSync(sourcePath, Buffer.from("%PDF-1.4 revision b"));
+    const project = withTestPageIds(createProject(defaultDocument("Old.pdf", 1)));
+    const oldDocument = project.documents[0];
+    const newDocument = referenceDocument("Revision B.pdf", 1);
+
+    expect(preservesManagedStorage(oldDocument)).toBe(false);
+    const prepared = await prepareReplacementDocument({
+      project,
+      projectPath: path.join(directory, "Level 01.gridscalr"),
+      oldDocument,
+      newDocument,
+      sourcePath,
+    });
+
+    expect(prepared).toBe(newDocument);
+    expect(mocks.copySourceToProject).not.toHaveBeenCalled();
+    expect(mocks.messageDialog).not.toHaveBeenCalled();
+  });
+
+  it("aborts a managed replacement when the copy fails", async () => {
+    const directory = temporaryDirectory();
+    const sourcePath = path.join(directory, "Revision B.pdf");
+    writeFileSync(sourcePath, Buffer.from("%PDF-1.4 revision b"));
+    const project = withTestPageIds(createProject(defaultDocument("Old.pdf", 1)));
+    const oldDocument: DocumentRef = {
+      ...project.documents[0],
+      storage: "managed",
+      path: path.join(directory, "Level 01.drawings", "Old-aaaaaaaa.pdf"),
+      relativePath: "Level 01.drawings/Old-aaaaaaaa.pdf",
+    };
+    const newDocument = referenceDocument("Revision B.pdf", 1);
+    mocks.copySourceToProject.mockRejectedValue(new Error("disk full"));
+
+    expect(
+      await prepareReplacementDocument({
+        project,
+        projectPath: path.join(directory, "Level 01.gridscalr"),
+        oldDocument,
+        newDocument,
+        sourcePath,
+      }),
+    ).toBeNull();
+    expect(mocks.messageDialog).toHaveBeenCalledTimes(1);
+    // Nothing about the old document changed on a failed copy.
+    expect(oldDocument.storage).toBe("managed");
+    expect(oldDocument.path).toContain("Old-aaaaaaaa.pdf");
+    expect(readFileSync(sourcePath)).toEqual(Buffer.from("%PDF-1.4 revision b"));
+  });
+
+  it("refuses a managed replacement whose copied checksum does not match", async () => {
+    const directory = temporaryDirectory();
+    const sourcePath = path.join(directory, "Revision B.pdf");
+    writeFileSync(sourcePath, Buffer.from("%PDF-1.4 revision b"));
+    const project = withTestPageIds(createProject(defaultDocument("Old.pdf", 1)));
+    const oldDocument: DocumentRef = {
+      ...project.documents[0],
+      storage: "managed",
+      path: path.join(directory, "Level 01.drawings", "Old-aaaaaaaa.pdf"),
+      relativePath: "Level 01.drawings/Old-aaaaaaaa.pdf",
+    };
+    mocks.copySourceToProject.mockResolvedValue({
+      destinationPath: path.join(directory, "Level 01.drawings", "Wrong-cccccccc.pdf"),
+      relativePath: "Level 01.drawings/Wrong-cccccccc.pdf",
+      sha256: "0".repeat(64),
+      sizeBytes: 10,
+    });
+
+    expect(
+      await prepareReplacementDocument({
+        project,
+        projectPath: path.join(directory, "Level 01.gridscalr"),
+        oldDocument,
+        newDocument: referenceDocument("Revision B.pdf", 1),
+        sourcePath,
+      }),
+    ).toBeNull();
+    expect(mocks.messageDialog).toHaveBeenCalledTimes(1);
   });
 
   it("detaches a managed copy without changing its identity or bytes", () => {

@@ -24,6 +24,8 @@ export {
 export type { SourceChangeAction } from "./relink";
 export { sourceFileHash } from "./files";
 export type { SourceFileInfo } from "./files";
+export { prepareReplacementDocument, preservesManagedStorage } from "./replacementCopy";
+export type { ReplacementCopyRequest } from "./replacementCopy";
 export { describeOutsideReferences, outsideProjectReferences } from "./outsideReferences";
 export { outsideReferenceIssues } from "./outsideReferences";
 export type { OutsideReference } from "./outsideReferences";
