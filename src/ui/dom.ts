@@ -10,7 +10,10 @@ export function el<K extends keyof HTMLElementTagNameMap>(
 }
 
 export function clear(node: HTMLElement): void {
-  while (node.firstChild) node.removeChild(node.firstChild);
+  // One atomic mutation instead of a loop: a `change` handler fired by removing
+  // the focused field can request a nested render, and a loop would then be
+  // holding a child that the nested render already moved.
+  node.replaceChildren();
 }
 
 export function escapeHtml(value: string): string {
@@ -72,6 +75,6 @@ export function isEditableTarget(target: EventTarget | null): boolean {
     target.tagName === "INPUT" ||
     target.tagName === "TEXTAREA" ||
     target.tagName === "SELECT" ||
-    target.isContentEditable
+    target.isContentEditable === true
   );
 }

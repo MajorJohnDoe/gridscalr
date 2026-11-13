@@ -1471,6 +1471,48 @@ confirmed against the audit.
   `originalSha256` explicitly when it does not. Keep cleanup explicit.
 - **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-017, #189.
 
+### F-102 — A background source check waits for the focused field to lose focus
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 8 — edit-safe shell rendering
+- **Severity:** P3
+- **Area:** shell / source status
+- **Status:** accepted
+- **Evidence:** `requestShellRender()` defers a `"save"` render while an editable
+  field inside the shell has focus and repaints on the field's `blur`. The
+  source chips and page badges read the source summary during that render.
+- **Problem:** A source that turns missing or changed during a check is not shown
+  in the chips and badges until the user leaves the field they are typing in.
+- **Impact:** The warning is delayed, never lost, and the panel the user is
+  editing stays intact. The project-dirty state and the save path are unaffected.
+- **Next step:** None for 0.27.0. Phase 9 (#243) removes the synthetic store
+  event and refreshes only the chips and badges, which can then update without a
+  whole-shell render at all.
+- **Related:** #243, `src/ui/editSafeRender.ts`.
+
+### F-103 — Focus restore depends on the rebuilt field keeping a stable key
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 8 — edit-safe shell rendering
+- **Severity:** P3
+- **Area:** shell / focus handling
+- **Status:** deferred
+- **Evidence:** `restoreField()` matches the rebuilt field by `id`, then
+  `data-role`, then by its structural path and tag/type. Only an id or role match
+  also restores the typed value and caret; a structural match restores focus
+  alone.
+- **Problem:** A Properties-style field without an id, a `data-role` or a name is
+  rebuilt in the same place but its caret and any uncommitted text are not
+  written back. Today only `#selection-label-input` (id plus `data-role`) and the
+  symbol tag field are covered by a stable key.
+- **Impact:** Focus survives every immediate render, but a field without a stable
+  key can lose the caret. No user data is lost because the value is committed by
+  the same `change` that requested the render.
+- **Next step:** Add a `data-role` to the remaining shell inputs the next time the
+  Properties content is touched, or generalise the match to the field's label
+  text. Do not restore a value on a structural match alone.
+- **Related:** F-102, `src/ui/editFieldSnapshot.ts`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
@@ -1513,6 +1555,8 @@ remains the scheduling home.
 | F-067 | deferred | View-only blocks the context-bar layer picker because the active layer is persisted project data; an inspection-only layer focus would need session state. |
 | F-068 | accepted | The view-only banner is a visible shell change; screenshot recapture is deferred to the 0.24.0 documentation pass. |
 | F-074 | fixed | The release workflow no longer launches a release binary with the debug-only smoke flag; it verifies the staged artifacts and checksums instead. |
+| F-102 | accepted | A background render waits for the focused field to blur; the chips and page badges refresh then, and phase 9 removes the synthetic render entirely. |
+| F-103 | deferred | A rebuilt field without an id or `data-role` keeps focus but not the caret; add stable keys when Properties is next touched. |
 
 
 ### F-011 — Template sheet fields still belong to a document, not a page

@@ -535,6 +535,8 @@ src/styles/reference.css   reference page navigation and follow-primary control
 src/styles/status.css      status, storage and welcome details
 src/styles/responsive.css  laptop widths and high OS scaling
 src/ui/contextBar.ts       tool-specific context bar and target layer controls
+src/ui/editSafeRender.ts   shell render scheduling: background deferral, focus restore and render coalescing
+src/ui/editFieldSnapshot.ts focused-field snapshot, rebuild match and value/caret/scroll restore
 src/ui/inspector.ts        Properties header, active-layer and selection sections
 src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts selection Properties dispatcher

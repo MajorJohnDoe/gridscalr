@@ -92,7 +92,7 @@ import {
 import { pasteFromClipboard } from "./clipboardPaste";
 import { installPageZoomGuard } from "./pageZoomGuard";
 import { describeError } from "../io/platformError";
-import { store } from "../state/store";
+import { store, type ChangeReason } from "../state/store";
 import { isEditableTarget } from "../ui/dom";
 import { TOOL_KEYS } from "../ui/shortcuts";
 import { isEditingTool } from "../features/viewOnly";
@@ -100,7 +100,7 @@ import { pageMenu } from "../features/pageMenu";
 import { renderChrome, renderTopbar, requestMarkupRename, type PanelActions } from "../ui/panels";
 import { showSelectionMenuAt } from "../ui/selectionMenu";
 import { updateStatus, resetStatusBar } from "../ui/statusBar";
-import { createShell, relabelShell, type ShellRefs } from "../ui/shell";
+import { createShell, disposeShellRender, relabelShell, type ShellRefs } from "../ui/shell";
 import { openHelp } from "../ui/helpDialog";
 import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { updatePageSizeLabel } from "../ui/pageList";
@@ -367,7 +367,7 @@ export class App {
       // order and reconciles documents across undo and redo.
       this.rendererSync.handle(reason);
       this.reference.onStoreChange(reason);
-      this.renderAll();
+      this.renderAll(reason);
     });
 
     this.bind();
@@ -501,8 +501,8 @@ export class App {
     this.reference.view.invalidate();
   };
 
-  private renderAll(): void {
-    renderChrome(this.refs, this.actions);
+  private renderAll(reason: ChangeReason = "change"): void {
+    renderChrome(this.refs, this.actions, reason);
     this.updateTitle();
   }
 
@@ -1065,6 +1065,7 @@ export class App {
 
   dispose(): void {
     this.disposed = true;
+    disposeShellRender(this.refs.root);
     this.sourceStorage.dispose();
     this.recovery.dispose();
     this.unsubscribe();

@@ -525,3 +525,9 @@ function setupResizer(
     handle.addEventListener("pointerup", onUp, { once: true });
   });
 }
+
+/**
+ * The shell owns the edit-safe render state for its root. Re-exported here so
+ * the app teardown has one shell entry point instead of a second import.
+ */
+export { disposeShellRender } from "./editSafeRender";
