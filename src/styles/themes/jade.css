@@ -37,6 +37,8 @@
   --chrome-rail: linear-gradient(180deg, #1b2125 0%, #171c20 100%);
   --surface-tab: #1b2125;
   --surface-sunken: #1a2024;
+  --surface-inset: #14191c;
+  --surface-inset-foot: rgb(255 255 255 / 6%);
   --statusbar-bg: #111619;
   --glass-panel: rgba(24, 30, 34, 0.96);
   --glass-cropbar: rgba(20, 26, 29, 0.94);

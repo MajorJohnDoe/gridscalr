@@ -24,6 +24,9 @@
   --surface-raised: var(--panel-raised);
   --surface-sunken: var(--bg-deep);
   --surface-tab: var(--panel);
+  /* Inset list surfaces (Layers/Mätlager sections): body plus its action strip. */
+  --surface-inset: var(--surface-sunken);
+  --surface-inset-foot: var(--hover-soft);
   --text-primary: var(--text);
   --text-muted: var(--muted);
   --text-subtle: var(--muted-2);

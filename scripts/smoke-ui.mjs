@@ -19,6 +19,43 @@ const pageErrors = [];
 let browser;
 let vite;
 
+function rgbChannels(value) {
+  const match = /^rgba?\(([^)]+)\)$/.exec(value);
+  assert.ok(match, `expected a computed rgb colour, got ${value}`);
+  return match[1]
+    .split(/[\s,/]+/)
+    .filter(Boolean)
+    .slice(0, 3)
+    .map(Number);
+}
+
+function contrastRatio(foreground, background) {
+  const channel = (value) => (value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4);
+  const luminance = (value) => {
+    const [r, g, b] = rgbChannels(value).map((part) => part / 255);
+    return 0.2126 * channel(r) + 0.7152 * channel(g) + 0.0722 * channel(b);
+  };
+  const first = luminance(foreground);
+  const second = luminance(background);
+  return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
+}
+
+function readLayerSurfaces(page) {
+  return page.evaluate(() => {
+    const rows = document.querySelector(".layer-section-rows");
+    const foot = document.querySelector(".layer-section-foot");
+    const name = document.querySelector(".layer-section-rows .layer-name");
+    const dock = document.querySelector(".left-dock");
+    if (!rows || !foot || !name || !dock) return null;
+    return {
+      rows: getComputedStyle(rows).backgroundColor,
+      foot: getComputedStyle(foot).backgroundColor,
+      text: getComputedStyle(name).color,
+      panel: getComputedStyle(dock).backgroundColor,
+    };
+  });
+}
+
 try {
   vite = await startVite({ port });
   browser = await launchBrowser();
@@ -868,12 +905,65 @@ try {
     "light-green",
     "the light theme should apply without a restart",
   );
-  await themeSelect.selectOption("system");
+  const lightSurfaces = await readLayerSurfaces(page);
+  assert.ok(lightSurfaces, "the Layers sections should render their inset surfaces");
   assert.equal(
-    await page.evaluate(() => document.documentElement.dataset.theme),
-    "medium-grey",
-    "System should follow the dark Chromium preference",
+    lightSurfaces.rows,
+    "rgb(241, 245, 250)",
+    "Light Green layer rows should use the palette inset",
   );
+  assert.equal(
+    lightSurfaces.foot,
+    "rgb(230, 237, 245)",
+    "Light Green should keep a footer strip distinct from the white panel",
+  );
+  assert.notEqual(lightSurfaces.rows, lightSurfaces.panel, "the rows should read as an inset");
+  assert.notEqual(lightSurfaces.foot, lightSurfaces.panel, "the footer should leave the panel");
+  const lightContrast = contrastRatio(lightSurfaces.text, lightSurfaces.rows);
+  assert.ok(
+    lightContrast >= 4.5,
+    `layer names should stay legible on the Light Green inset (${lightContrast.toFixed(2)}:1)`,
+  );
+
+  // System follows the OS appearance; the light palette must use the same surfaces.
+  await page.emulateMedia({ colorScheme: "light" });
+  await themeSelect.selectOption("system");
+  await page.waitForFunction(() => document.documentElement.dataset.theme === "light-green");
+  assert.deepEqual(
+    await readLayerSurfaces(page),
+    lightSurfaces,
+    "System with a light OS should match the Light Green surfaces",
+  );
+
+  await page.emulateMedia({ colorScheme: "dark" });
+  await page.waitForFunction(() => document.documentElement.dataset.theme === "medium-grey");
+  const darkSurfaces = await readLayerSurfaces(page);
+  assert.equal(
+    darkSurfaces.rows,
+    "rgba(46, 48, 49, 0.68)",
+    "Medium Grey layer rows must keep the 0.26.0 surface",
+  );
+  assert.equal(
+    darkSurfaces.foot,
+    "rgba(255, 255, 255, 0.1)",
+    "Medium Grey footer must keep the 0.26.0 surface",
+  );
+  assert.notEqual(darkSurfaces.rows, darkSurfaces.panel, "the rows should read as an inset");
+  assert.notEqual(darkSurfaces.foot, darkSurfaces.panel, "the footer should leave the panel");
+
+  // Every other palette keeps a readable row surface and a footer strip that
+  // stays distinct from both the rows and the panel behind them.
+  for (const theme of ["dark-grey", "jade", "navy"]) {
+    await themeSelect.selectOption(theme);
+    const surfaces = await readLayerSurfaces(page);
+    assert.ok(surfaces, `${theme}: the Layers sections should render their inset surfaces`);
+    assert.notEqual(surfaces.rows, surfaces.panel, `${theme}: rows should read as an inset`);
+    assert.notEqual(surfaces.foot, surfaces.panel, `${theme}: the footer should leave the panel`);
+    assert.notEqual(surfaces.foot, surfaces.rows, `${theme}: the footer should be its own strip`);
+    const ratio = contrastRatio(surfaces.text, surfaces.rows);
+    assert.ok(ratio >= 4.5, `${theme}: layer names should stay legible (${ratio.toFixed(2)}:1)`);
+  }
+
   await themeSelect.selectOption("medium-grey");
   await preferencesDialog
     .getByRole("navigation", { name: "Preference categories" })
