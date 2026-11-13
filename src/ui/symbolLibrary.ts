@@ -12,7 +12,7 @@ import {
   symbolSvgMarkup,
   symbolsForSet,
   type SymbolDefinition,
-} from "../features/schematics/symbols/registry";
+} from "../features/schematics";
 import { store, type ToolId } from "../state/store";
 import { el } from "./dom";
 import { icon } from "./icons";

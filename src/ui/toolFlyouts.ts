@@ -140,9 +140,7 @@ function renderLineOptions(panel: HTMLElement, render: () => void, toolId: strin
     edit.type = "button";
     edit.addEventListener("click", () => {
       closeToolFlyout();
-      void import("../features/schematics/ui/lineTypeDialog").then((module) =>
-        module.openLineTypeDialog(),
-      );
+      void import("../features/schematics").then((module) => module.openLineTypeDialog());
     });
     panel.append(edit);
   }

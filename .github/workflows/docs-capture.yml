@@ -1,0 +1,78 @@
+name: Docs capture dry run
+
+# F-101: `check:docs` validates the committed screenshots and their manifest,
+# but nothing exercised the capture script between documentation passes. A
+# renamed panel or a changed accessible name then broke `npm run docs:capture`
+# weeks later, under release pressure. This workflow runs the same steps and the
+# same locators and writes the images to a temporary folder, so a broken locator
+# fails here instead of during a release.
+#
+# It is deliberately not part of every pull request: it needs Chromium and takes
+# minutes. It runs weekly, on a pull request labelled `docs-capture`, or on
+# demand. The full capture and the committed screenshots stay a documentation
+# pass (`docs/testing.md`).
+
+on:
+  schedule:
+    - cron: "0 4 * * 1"
+  workflow_dispatch:
+  pull_request:
+    types: [labeled]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: docs-capture-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  dry-run:
+    name: Screenshot dry run
+    if: github.event_name != 'pull_request' || github.event.label.name == 'docs-capture'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Install Chromium for the capture
+        timeout-minutes: 18
+        run: |
+          # Same retry policy as ci.yml: an unreachable package mirror or DNS
+          # outage is a runner problem, not a code failure. Try the shared
+          # libraries when apt works, then fall back to the browser alone.
+          for attempt in 1 2 3; do
+            if timeout 300 npx playwright install --with-deps chromium; then
+              exit 0
+            fi
+            echo "::warning::Playwright install with system packages failed (attempt ${attempt})"
+            sleep $((attempt * 10))
+          done
+          echo "::warning::Falling back to the browser alone; apt appears unreachable on this runner."
+          for attempt in 1 2 3; do
+            if timeout 240 npx playwright install chromium; then
+              exit 0
+            fi
+            echo "::warning::Browser-only install attempt ${attempt} failed; retrying"
+            sleep $((attempt * 10))
+          done
+          echo "::error::Playwright browser install failed after all attempts."
+          exit 1
+
+      - name: Run the screenshot dry run
+        run: npm run test:docs-capture
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: failure()
+        with:
+          name: docs-capture-dry-run
+          path: ${{ runner.temp }}/gridscalr-docs-capture-*
+          if-no-files-found: ignore
+          retention-days: 7

@@ -57,20 +57,18 @@ import {
   type SnapResult,
 } from "../model/snap";
 import { TEXT_FONT_STACK } from "../model/text";
-import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
 import {
-  resolveSheetLabels,
   SHEET_FIELD,
-  sheetTemplateFor,
-} from "../features/schematics/model/sheetTemplate";
-import {
+  SHEET_FONT_STACK,
   layoutFieldLines,
   measureSheetText,
-  SHEET_FONT_STACK,
-} from "../features/schematics/render/sheetText";
+  openRailDialog,
+  resolveSheetLabels,
+  sheetTemplateFor,
+  templateDocumentForPage,
+} from "../features/schematics";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
-import { openRailDialog } from "../features/schematics/ui/railDialog";
 import { formatNumber } from "../model/units";
 import { cropRectForView, type PdfRenderer, type RenderResult } from "../pdf/pdfRenderer";
 import { store } from "../state/store";

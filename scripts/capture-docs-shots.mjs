@@ -1,0 +1,175 @@
+/** Screenshot title, alt text and description for the manifest and the docs. */
+export const shots = [
+  {
+    file: "hero.png",
+    title: "Measurement takeoff",
+    alt: "GridScalr showing a calibrated industrial floor plan with warehouse, office and workshop measurements and the Properties panel.",
+    description:
+      "A calibrated industrial takeoff with rectangle areas, counts, a deduction and drawing annotations.",
+  },
+  {
+    file: "theme-medium-grey.png",
+    title: "Default (medium gray) theme",
+    alt: "GridScalr with the medium gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "The default neutral mid-gray theme with the jade accent.",
+  },
+  {
+    file: "theme-light-green.png",
+    title: "Light theme",
+    alt: "GridScalr with the light interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "A cool light theme with white panels for bright rooms.",
+  },
+  {
+    file: "theme-dark-grey.png",
+    title: "Dark Gray theme",
+    alt: "GridScalr with the dark gray interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Low-chroma dark chrome with the jade accent.",
+  },
+  {
+    file: "theme-jade.png",
+    title: "Dark Jade theme",
+    alt: "GridScalr with the original dark jade interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "The original dark palette with the jade accent.",
+  },
+  {
+    file: "theme-navy.png",
+    title: "Navy theme",
+    alt: "GridScalr with the navy interface theme, a calibrated industrial floor plan and the Properties panel.",
+    description: "Blue-shifted dark chrome with the jade accent.",
+  },
+  {
+    file: "measure.png",
+    title: "Measure and annotate",
+    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
+    description: "Measurement and drawing tools share one canvas but stay on separate layer types.",
+  },
+  {
+    file: "calibration.png",
+    title: "Calibration",
+    alt: "The GridScalr Edit calibration dialog for page 1, showing a 10 m reference length, a unit selector, and the option to update existing measurements while the calibration line stays visible on the plan.",
+    description:
+      "Calibrate a page against a known dimension or enter a printed scale, then lock it against accidental changes.",
+  },
+  {
+    file: "markups.png",
+    title: "Markups and layers",
+    alt: "GridScalr Layers panel with a revision cloud around a loading dock, a callout at the entrance and an inspected stamp.",
+    description: "Revision clouds, callouts and status stamps live on drawing layers.",
+  },
+  {
+    file: "layers.png",
+    title: "Expanded layer items",
+    alt: "GridScalr Layers panel with page-scoped layers, a measurement layer expanded to show items on the current page, and the Add/Deduct switch in the context bar.",
+    description:
+      "Expand a layer to inspect every item, select it on the plan and choose additive or deduction areas.",
+  },
+  {
+    file: "operation-card.png",
+    title: "Operation card sheet",
+    alt: "GridScalr showing an A3 operation card sheet with schematic symbols for heat exchanger, fans, valves and dampers, the drawing layers and the sheet title block.",
+    description:
+      "Draw operation cards with the schematic symbol library, sheet templates and page-scoped layers.",
+  },
+  {
+    file: "quantities.png",
+    title: "Quantities",
+    alt: "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
+    description: "Live quantities with deductions, waste and rounding for procurement.",
+  },
+  {
+    file: "count-types.png",
+    title: "Count types",
+    alt: "The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form.",
+    description:
+      "Name the objects you count and choose the vector glyph used on the plan and in exports.",
+  },
+  {
+    file: "count-schedule.png",
+    title: "Count schedule",
+    alt: "The GridScalr Markups table grouped by count type with the Count type column visible and count rows for doors, windows and fixtures.",
+    description:
+      "Group the Markups table by count type to review a door, window or fixture schedule without custom columns.",
+  },
+  {
+    file: "markups-list.png",
+    title: "Markups list",
+    alt: "The GridScalr Markups panel with a saved Room review view, building, floor and room groups, and the Name, Type, Page, Layer, Value, Category and Room columns.",
+    description:
+      "A docked, project-wide list with saved views, configurable columns, grouping, filters, and row navigation.",
+  },
+  {
+    file: "symbols.png",
+    title: "Symbol library",
+    alt: "The GridScalr symbol library opened from the tool rail, with searchable fire, evacuation, HVAC, electrical, building and waste symbols, a selected extinguisher on the plan and Markups grouped by symbol category and status.",
+    description:
+      "Place vector facility symbols with category colours, rotation and inspection status, then review them in the Markups list.",
+  },
+  {
+    file: "images.png",
+    title: "Embedded images",
+    alt: "The GridScalr plan with an embedded inspection photo of a loading dock selected, showing image handles and the Properties panel with image mode, opacity and rotation controls.",
+    description:
+      "Embed PNG or JPEG photos in a project, place them above the PDF or below markups, and adjust size, rotation and opacity.",
+  },
+  {
+    file: "export.png",
+    title: "Drawing export",
+    alt: "The GridScalr Drawing PDF export dialog with page range, crop area, layer selection, labels and legend options.",
+    description:
+      "Export visible markups as a flattened drawing PDF without modifying the source drawing.",
+  },
+  {
+    file: "package.png",
+    title: "Project package",
+    alt: "The GridScalr Package project dialog with optional quantity exports, drawing PDF and original TIF scans switched off, and a note that packages require the desktop app in the browser fallback.",
+    description:
+      "Package the project and its drawings as a standard ZIP with a manifest and checksums; reports and original scans stay opt-in.",
+  },
+  {
+    file: "split-view.png",
+    title: "Reference view",
+    alt: "GridScalr with a primary editable canvas and a read-only reference pane showing the same calibrated floor plan at the same pan and zoom, with a source selector for Same page, Revision and Drawing.",
+    description:
+      "A read-only reference pane follows the primary canvas while keeping edits, selection and undo in one place. Switch its source between the same page, a saved revision or a raw PDF drawing.",
+  },
+  {
+    file: "compare.png",
+    title: "Revision or drawing comparison",
+    alt: "GridScalr comparing the current takeoff with a reference revision in overlay mode, with a differences panel showing changed, added and removed items.",
+    description:
+      "Load a reference revision without merging it, switch between side-by-side and overlay, and export a comparison PDF. A raw PDF drawing reference keeps the visuals and export without a markup diff.",
+  },
+  {
+    file: "search.png",
+    title: "Full-text search",
+    alt: "GridScalr search panel with a text query, page results and a highlighted match on the drawing.",
+    description: "Search the PDF text layer across every page and jump to a highlighted result.",
+  },
+  {
+    file: "workflows-help.png",
+    title: "Workflows in the help dialog",
+    alt: "The GridScalr Help dialog open on the Workflows tab with guides for operations technicians and technical property managers.",
+    description: "Task-oriented workflows sit beside the full user guide, shortcuts and About.",
+  },
+  {
+    file: "preferences-data.png",
+    title: "Preferences — Data",
+    alt: "The GridScalr Preferences dialog on the Data category with autosave controls, rolling backup retention, the recovery center action and the recent-file list.",
+    description:
+      "Autosave, rolling backups and recovery records are app-level preferences stored on this computer, never in the project file.",
+  },
+  {
+    file: "recovery-center.png",
+    title: "Recovery center",
+    alt: "The GridScalr Recovery center listing stored autosaves and checkpoints with their time, size, project and base-version state.",
+    description:
+      "One dialog for every local autosave and structural checkpoint, with explicit restore and delete.",
+  },
+  {
+    file: "status-popover.png",
+    title: "Project status popover",
+    alt: "The GridScalr project status popover with the last save and backup state, autosave interval, validation warnings, the recovery record and the backup, recovery, doctor and conflicted-copy actions.",
+    description:
+      "The saved/unsaved chip opens a live summary with backup, recovery, doctor and conflicted-copy actions.",
+  },
+];

@@ -7,10 +7,7 @@ import {
   setPageScaleLocked,
 } from "../model/calibration";
 import { pageIdAt, pageNumber } from "../model/pages";
-import {
-  canFitDrawingToArea,
-  fitDrawingToArea as fitDrawing,
-} from "../features/schematics/model/fitDrawing";
+import { canFitDrawingToArea, fitDrawingToArea as fitDrawing } from "../features/schematics";
 import { store } from "../state/store";
 import { confirmDialog, manualScaleDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";

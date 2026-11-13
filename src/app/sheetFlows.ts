@@ -15,20 +15,16 @@ import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import {
   DEFAULT_SHEET_TEMPLATE_ID,
-  resolveSheetLabels,
-  sheetTemplateFor,
-  type SheetLabels,
-} from "../features/schematics/model/sheetTemplate";
-import { buildStaticSheetPdf } from "../features/schematics/render/sheetPdf";
-import {
+  buildStaticSheetPdf,
+  chooseProjectSource,
   createTemplateDocument,
   prefillSheetFields,
+  resolveSheetLabels,
+  sheetTemplateFor,
   templateSheetCount,
-} from "../features/schematics/model/sheetDocument";
-import {
-  chooseProjectSource,
+  type SheetLabels,
   type SheetSourceChoice,
-} from "../features/schematics/ui/sheetSourceDialog";
+} from "../features/schematics";
 
 export interface SheetFlowHost {
   renderer(): PdfRenderer | null;

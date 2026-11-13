@@ -5,7 +5,7 @@ import { store } from "../../state/store";
 import { textDialog } from "../../ui/dialogs";
 import type { PanelActions } from "../../ui/panels";
 import type { PopoverItem } from "../../ui/popover";
-import { isBlankSheet, templateDocumentForPage } from "../schematics/model/sheetDocument";
+import { isBlankSheet, templateDocumentForPage } from "../schematics";
 import { pageInsertTarget, pageMovePositions } from "./model";
 import { moveTargets } from "./targets";
 import { insertPageNear, movePageToPosition } from "./operations";

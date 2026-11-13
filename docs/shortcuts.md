@@ -146,7 +146,7 @@ ancestor path of every hit.
 | Action | Shortcut |
 | --- | --- |
 | Pan temporarily | Hold `Space` and drag |
-| Zoom | `Ctrl` + mouse wheel, touchpad pinch, `Ctrl` + `+` / `-` |
+| Zoom | `Ctrl` + mouse wheel, touchpad pinch, `Ctrl++` / `Ctrl+-` |
 | Fit page | `Ctrl+0` |
 | Actual size | `Ctrl+1` |
 | Previous / next page | `PageUp` / `PageDown` |

@@ -1,0 +1,42 @@
+{
+  "$comment": "Reviewed Tauri command caps per Rust module (F-097). A new module may carry at most defaultMax commands; a module above it needs an entry here with a reason. Raise a cap only after deciding the module still owns one concern. Enforced by npm run check:modules; the rules live in scripts/rust-module-rules.mjs.",
+  "defaultMax": 2,
+  "files": {
+    "src-tauri/src/commands.rs": {
+      "max": 7,
+      "reason": "Legacy Tauri file dialogs plus project open/save commands; split by concern before adding another."
+    },
+    "src-tauri/src/package.rs": {
+      "max": 4,
+      "reason": "Legacy package create/inspect/extract commands; split the module before adding a package command."
+    },
+    "src-tauri/src/project_backup.rs": {
+      "max": 4,
+      "reason": "Backup list, restore, replace and delete share one atomic backup path; splitting is a separate refactor."
+    },
+    "src-tauri/src/project_lease.rs": {
+      "max": 4,
+      "reason": "Acquire, release, heartbeat and inspect are one advisory-lock protocol and belong together."
+    },
+    "src-tauri/src/project_write.rs": {
+      "max": 3,
+      "reason": "Conditional write, metadata and round-trip check; an extraction is planned and no new command belongs here."
+    },
+    "src-tauri/src/source_copy.rs": {
+      "max": 3,
+      "reason": "Verified managed copy, source hash and folder checksum search; consolidate only through an extraction issue."
+    },
+    "src-tauri/src/conflicted_copy.rs": {
+      "max": 2,
+      "reason": "Conflicted-copy list and delete share one strict name parser and single-file delete guard."
+    },
+    "src-tauri/src/smoke.rs": {
+      "max": 2,
+      "reason": "Debug-only packaged smoke-test helpers share one result directory and exit path."
+    },
+    "src-tauri/src/source_cleanup.rs": {
+      "max": 2,
+      "reason": "Managed-copy inventory and batch removal share the same fresh reference check."
+    }
+  }
+}

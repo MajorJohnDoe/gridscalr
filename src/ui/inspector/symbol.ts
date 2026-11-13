@@ -3,7 +3,7 @@ import {
   inspectionStatusColor,
   inspectionStatusLabel,
   symbolTagPrefix,
-} from "../../features/schematics/symbols/registry";
+} from "../../features/schematics";
 import { t } from "../../i18n";
 import { setItemsStatus } from "../../model/commands";
 import { findItem } from "../../model/layers";

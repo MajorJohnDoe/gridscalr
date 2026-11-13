@@ -121,9 +121,7 @@ import { loadLayerColorDefaults } from "../io/layerDefaults";
 import { logEvent } from "../features/diagnostics/log";
 import { writeProjectConditional } from "../features/saveIntegrity";
 import type { SessionRecoveryController } from "../features/sessionRecovery";
-import { openSheetFieldsDialog } from "../features/schematics/ui/sheetFieldsDialog";
-import { openRailDialog } from "../features/schematics/ui/railDialog";
-import { openLineTypeDialog } from "../features/schematics/ui/lineTypeDialog";
+import { openLineTypeDialog, openRailDialog, openSheetFieldsDialog } from "../features/schematics";
 import { LANGUAGE_CHANGED_EVENT, t } from "../i18n";
 
 interface SizeTask {

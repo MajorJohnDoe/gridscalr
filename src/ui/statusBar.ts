@@ -14,7 +14,7 @@ import {
   formatScaleRatio,
 } from "../model/units";
 import type { Project } from "../model/types";
-import { templateDocumentForPage } from "../features/schematics/model/sheetDocument";
+import { templateDocumentForPage } from "../features/schematics";
 import { listProjectBackups } from "../features/saveIntegrity";
 import { countConflictedCopies } from "../features/conflictedCopies";
 import {

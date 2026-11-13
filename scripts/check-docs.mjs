@@ -1,5 +1,7 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { docsSourceFingerprint } from "./docs-fingerprint.mjs";
+import { DOC_ROWS, UNBOUND_CODES } from "./shortcut-catalogue.mjs";
+import { checkShortcutDocumentation } from "./shortcut-docs.mjs";
 import { dirname, extname, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -139,15 +141,14 @@ for (const match of toolDefs.matchAll(/label:\s*"([^"]+)"/g)) {
 
 const shortcuts = JSON.parse(await readFile(resolve(root, "src", "ui", "shortcuts.json"), "utf8"));
 const shortcutDoc = await readFile(resolve(root, "docs", "shortcuts.md"), "utf8");
-const toolShortcuts = Object.values(shortcuts.tools);
-if (new Set(toolShortcuts.map((key) => key.toLowerCase())).size !== toolShortcuts.length) {
-  errors.push("src/ui/shortcuts.json: tool shortcuts must be unique");
-}
-for (const [tool, key] of Object.entries(shortcuts.tools)) {
-  if (!shortcutDoc.includes(`\`${key}\``)) {
-    errors.push(`docs/shortcuts.md: missing shortcut ${key} for tool ${tool}`);
-  }
-}
+const shortcutCheck = checkShortcutDocumentation({
+  shortcuts,
+  shortcutsDoc: shortcutDoc,
+  readme,
+  rows: DOC_ROWS,
+  unbound: UNBOUND_CODES,
+});
+errors.push(...shortcutCheck.problems);
 
 const menuDescription = /Menu bar[^\n]*File[^\n]*Edit[^\n]*View[^\n]*Settings[^\n]*Help/i;
 if (!menuDescription.test(readme) && !menuDescription.test(guide)) {

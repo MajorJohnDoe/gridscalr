@@ -4,7 +4,7 @@ import { findItem, itemIsLocked } from "../../model/layers";
 import { clampTextSize } from "../../model/text";
 import { scaleItemAround } from "../../model/transform";
 import type { MarkupItem, Point } from "../../model/types";
-import { SYMBOL_SIZE, clampSymbolSize } from "../../features/schematics/symbols/registry";
+import { SYMBOL_SIZE, clampSymbolSize } from "../../features/schematics";
 import { store } from "../../state/store";
 import type { DragState } from "./pointerState";
 

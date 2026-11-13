@@ -1,7 +1,7 @@
 import { documentForPageRecord } from "../../model/pages";
 import { ocrMatchesSource } from "../../model/ocrStatus";
 import type { DocumentKind, PageId, Project } from "../../model/types";
-import { isBlankSheet } from "../schematics/model/sheetDocument";
+import { isBlankSheet } from "../schematics";
 
 /**
  * Pure page-status derivation for the Pages panel.

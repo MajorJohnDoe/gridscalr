@@ -6,12 +6,12 @@ import { itemIsVisible, layerVisibleOnPage } from "../../model/layers";
 import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import type { Layer, MarkupItem, PageId, Project } from "../../model/types";
 import { t } from "../../i18n";
-import { templateDocumentForPage } from "../../features/schematics/model/sheetDocument";
 import {
+  drawSheetFields,
   resolveSheetLabels,
   sheetTemplateFor,
-} from "../../features/schematics/model/sheetTemplate";
-import { drawSheetFields } from "../../features/schematics/render/sheetPdf";
+  templateDocumentForPage,
+} from "../../features/schematics";
 import { addReviewAnnotation } from "./annotations";
 import { drawItem } from "./items/dispatch";
 import { drawLabel } from "./labels";

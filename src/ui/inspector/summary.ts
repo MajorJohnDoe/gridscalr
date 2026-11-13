@@ -2,7 +2,7 @@ import {
   inspectionStatusLabel,
   symbolCategoryLabel,
   symbolCategoryOf,
-} from "../../features/schematics/symbols/registry";
+} from "../../features/schematics";
 import { t } from "../../i18n";
 import { formatBytes } from "../../io/platform";
 import {
