@@ -8,7 +8,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm test -- --run` | Model, I/O, project-file, source-storage, report, PDF, geometry and package logic in Node, including `tests/robustness/`. |
 | `npm run test:robustness` | The robustness gate only: seeded page and save sequences, concurrent and crash-safe writes, the schema 1–26 migration corpus, source storage and empty projects. |
 | `npm run test:coverage` | The same suite with V8 coverage and the CI thresholds. |
-| `npm run test:ui` | Playwright smoke flow through the browser fallback: open, measure, help, save and package menu state. |
+| `npm run test:ui` | Playwright smoke flow through the browser fallback: open, measure, help, save, package menu state, and themed Layers inset surfaces (Light Green, System-light, Medium Grey and each dark palette). |
 | `npm run test:import` | Playwright import flow: thumbnail picker, page-scoped layers, undo, redo and source-file immutability. |
 | `npm run test:canvas` | Pointer-level canvas gestures: draw, resize, rotate, text, locks, crop and split view. |
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
@@ -17,7 +17,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run check:file-budgets` | Blocking line budgets for frontend and Rust source files, with reviewed exceptions for legacy modules. |
 | `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
-| `npm run check:themes` | Theme token completeness and WCAG AA contrast checks for the five palettes. |
+| `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. |
 | `npm run bench:history` / `npm run bench:large` | Synthetic undo/history timing and the large-project reference benchmark documented in `docs/limitations.md`. |

@@ -1514,6 +1514,33 @@ confirmed against the audit.
   text. Do not restore a value on a structural match alone.
 - **Related:** F-102, `src/ui/editFieldSnapshot.ts`.
 
+### F-104 — Component CSS still carries palette literals that only `chrome.css` masks
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 10 — themed Layers surfaces
+- **Severity:** P3
+- **Area:** styles / theme contract
+- **Status:** deferred
+- **Evidence:** After the Layers section moved to `--surface-inset`, a scan of
+  `src/styles/*.css` for hard-coded colours still finds jade-palette values such
+  as `#1a2024`, `#14191c` and `rgba(24, 30, 34, 0.97)` in `markups.css`, and
+  `#1b2125` in `shell.css`. Each one is currently overridden by a later
+  `src/styles/themes/chrome.css` rule that reads a token.
+- **Problem:** The local declaration is dead style that still looks
+  authoritative. Deleting or reordering a chrome override silently pins the jade
+  palette into the surface again, which is the same class of bug #245 fixed for
+  the Layers sections.
+- **Impact:** None visible today: `chrome.css` loads last and every checked
+  selector resolves through a token in all five palettes. The risk is a future
+  regression that review cannot see, because the literal looks intentional.
+- **Next step:** When `chrome.css` is next touched, delete the overridden local
+  backgrounds or replace them with the same token, then add a CSS scan that fails
+  on a palette literal in component styles. That scan needs an agreed allowlist
+  for decorative colours (canvas, status dots, brand marks) first, so it is a
+  separate tooling issue rather than part of a styling fix.
+- **Related:** #245, `src/styles/markups.css`, `src/styles/shell.css`,
+  `src/styles/themes/chrome.css`.
+
 ## Triaged or deferred
 
 ### Phase 7 triage
@@ -1558,6 +1585,7 @@ remains the scheduling home.
 | F-074 | fixed | The release workflow no longer launches a release binary with the debug-only smoke flag; it verifies the staged artifacts and checksums instead. |
 | F-102 | fixed #243 | A background source check no longer renders the shell; only the status chips and page badges refresh, and only when the status set changed. |
 | F-103 | deferred | A rebuilt field without an id or `data-role` keeps focus but not the caret; add stable keys when Properties is next touched. |
+| F-104 | deferred | Component CSS still carries jade-palette literals that only a later `chrome.css` override masks; clean them up with a CSS scan when that file is next touched. |
 
 
 ### F-011 — Template sheet fields still belong to a document, not a page
