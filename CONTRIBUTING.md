@@ -48,6 +48,7 @@ Run the same checks as CI from the repository root:
 
 ```bash
 npm run check:versions
+npm run check:actions
 npm run check:docs
 npm run format:check
 npm run lint
