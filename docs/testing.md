@@ -15,7 +15,9 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
 | `npm run check:file-budgets` | Blocking line budgets for frontend and Rust source files, with reviewed exceptions for legacy modules. |
-| `npm run check:modules` | Foundation feature `index.ts` surfaces and deep-import boundaries from ADR 0013. |
+| `npm run check:modules` | Foundation feature `index.ts` surfaces, deep-import boundaries from ADR 0013, and the Rust command cap and module wiring in `rust-commands.json`. |
+| `npm run check:docs` | Links, anchors, images, tool coverage, schema references, screenshot freshness, and the shortcut tables in `docs/shortcuts.md` and `README.md` against `src/ui/shortcuts.json`. |
+| `npm run test:docs-capture` | The documentation screenshot steps and locators, written to a temporary folder instead of `docs/screenshots/`. Runs in `docs-capture.yml` weekly, on demand and on a `docs-capture` label. |
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:actions` | Every remote `uses:` reference in `.github/workflows` is a 40-character commit SHA with a `# <version>` comment, and one action release never carries two SHAs. |
 | `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
@@ -31,6 +33,57 @@ covers conditional writes, conflicted copies, backups and the read-only
 `tests/modelBoundary.test.ts` walks `src/model` and fails, naming the file and
 specifier, when an import resolves into `src/features`; it has no allowlist, and
 `eslint.config.mjs` blocks the same import.
+
+## Module boundaries and the Rust command cap
+
+`npm run check:modules` owns two boundaries. The frontend half is ADR 0013:
+every foundation feature has an `index.ts`, files outside a foundation feature
+import only that surface, and a feature never reaches into another feature's
+internals. The Rust half is the command cap from F-097:
+
+- `rust-commands.json` sets `defaultMax` to 2 and records a reviewed
+  `{ "max", "reason" }` count for each module above it. A module that gains a
+  command over its cap fails, and so does an exception whose file no longer
+  exists.
+- every `.rs` file in `src-tauri/src` must be declared by another module, either
+  as `mod <name>;` or through `#[path = "<name>.rs"]`, so an orphaned or renamed
+  module cannot sit unreachable.
+
+The cap is a boundary, not a cohesion proof: raising it needs a reason that says
+why the module still owns one concern. `scripts/rust-module-rules.mjs` holds the
+rules and `tests/rustModuleRules.test.ts` proves the default cap, a reviewed
+exception, a too-short reason, a stale exception, an undeclared module, and the
+shipped tree itself.
+
+## Documentation gates
+
+`npm run check:docs` runs the documentation half of the tooling gates. Besides
+links, anchors, images and the schema reference it pins the shortcut tables
+(F-100):
+
+- `scripts/shortcut-catalogue.mjs` lists every documented shortcut row, the
+  table it belongs to and the `tools`/`actions` keys it must quote.
+  `src/ui/shortcuts.json` is the single source for the bindings.
+- A renamed binding, a row added to one document and not the catalogue, a row
+  removed from a document, a binding no table documents, a duplicate row and a
+  code a cell quotes that is no longer a current binding all fail.
+- The Pages, Layers and Markups keys and the `Ctrl+Y` redo alias live in code
+  rather than in `shortcuts.json`, so they are listed as unbound codes and their
+  documented text is pinned instead of the binding (F-112).
+
+`tests/shortcutDocs.test.ts` proves each of those failures and checks the shipped
+`docs/shortcuts.md` and `README.md` against `src/ui/shortcuts.json`.
+
+The screenshots have a second, cheaper gate than a full recapture.
+`npm run test:docs-capture` runs the same ordered steps and the same locators as
+`npm run docs:capture`, but writes the PNGs to a temporary folder and leaves
+`docs/screenshots/` and its manifest untouched. A renamed panel, a changed
+accessible name or a removed dialog fails the run with the locator that broke,
+which is the case that broke the 0.25.0 documentation pass (F-101).
+`.github/workflows/docs-capture.yml` runs it weekly, on demand and on a pull
+request labelled `docs-capture`; it is deliberately not part of every pull
+request because it needs Chromium and takes minutes. The full capture and the
+review of the changed images remain a documentation pass.
 
 ## File budgets
 

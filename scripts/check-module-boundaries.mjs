@@ -1,6 +1,12 @@
 import { readFile, readdir, stat } from "node:fs/promises";
 import { dirname, relative, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  countCommands,
+  declaredModules,
+  evaluateRustModules,
+  formatRustProblems,
+} from "./rust-module-rules.mjs";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
@@ -24,9 +30,10 @@ const FOUNDATION_FEATURES = [
   "src/features/importProvenance",
   "src/features/layerTree",
   "src/features/countTypes",
+  "src/features/schematics",
 ];
 
-const errors = [];
+const frontendErrors = [];
 
 async function exists(path) {
   try {
@@ -72,7 +79,7 @@ for (const feature of FOUNDATION_FEATURES) {
   if (!(await exists(resolve(root, feature)))) continue;
   existingFeatures.push(feature);
   if (!(await exists(resolve(root, feature, "index.ts")))) {
-    errors.push(`${feature}: foundation feature is missing its public index.ts`);
+    frontendErrors.push(`${feature}: foundation feature is missing its public index.ts`);
   }
 }
 
@@ -90,25 +97,52 @@ for (const file of files) {
     if (file.startsWith(`${feature}/`)) continue;
     if (isIndex(resolved, feature)) {
       if (file.startsWith("src/model/") || file.startsWith("src/io/")) {
-        errors.push(
+        frontendErrors.push(
           `${file}: lower layer must not import ${feature}; keep shared rules in src/model`,
         );
       }
       continue;
     }
-    errors.push(
+    frontendErrors.push(
       `${file}: import ${specifier} reaches into ${feature}; import the public ${feature} surface instead`,
     );
   }
 }
 
+/**
+ * The Rust half (F-097): the frontend rules cannot see a Tauri module that
+ * accumulated unrelated commands, because it is still inside its line budget.
+ * The command cap and the module wiring live in rust-commands.json and
+ * scripts/rust-module-rules.mjs.
+ */
+const rustRoot = resolve(root, "src-tauri", "src");
+const rustFiles = (await readdir(rustRoot, { withFileTypes: true }))
+  .filter((entry) => entry.isFile() && entry.name.endsWith(".rs"))
+  .map((entry) => entry.name)
+  .sort();
+const rustTexts = [];
+const rustEntries = [];
+for (const name of rustFiles) {
+  const text = await readFile(resolve(rustRoot, name), "utf8");
+  rustTexts.push(text);
+  rustEntries.push({ file: `src-tauri/src/${name}`, commands: countCommands(text) });
+}
+const commandConfig = JSON.parse(await readFile(resolve(root, "rust-commands.json"), "utf8"));
+const rust = evaluateRustModules({
+  config: commandConfig,
+  entries: rustEntries,
+  declared: declaredModules(rustTexts),
+});
+
+const errors = [...frontendErrors, ...formatRustProblems(rust)];
+
 if (errors.length) {
   console.error("Module boundary check failed:");
-  for (const error of errors) console.error(`- ${error}`);
-  console.error("See docs/adr/0013-module-first-foundation.md.");
+  for (const error of errors) console.error(error.startsWith("- ") ? error : `- ${error}`);
+  console.error("See docs/adr/0013-module-first-foundation.md and rust-commands.json.");
   process.exit(1);
 }
 
 console.log(
-  `Module boundary check passed: ${existingFeatures.length} foundation feature(s) checked, ${files.length} source files scanned.`,
+  `Module boundary check passed: ${existingFeatures.length} foundation feature(s), ${files.length} source files scanned; ${rustFiles.length} Rust modules, ${rust.total} Tauri commands within their reviewed caps.`,
 );

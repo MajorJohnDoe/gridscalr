@@ -25,7 +25,7 @@ import {
   symbolShapeStrokeWidth,
   symbolSizeOf,
   type SymbolRenderShape,
-} from "../../../features/schematics/symbols/registry";
+} from "../../../features/schematics";
 import { resolveItemColor } from "../../../model/layers";
 import { parseSymbolPath, transformSymbolCommands } from "../../../model/symbolPaths";
 import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../../../model/symbolTag";

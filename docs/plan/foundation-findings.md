@@ -57,7 +57,8 @@ project contents.
   records the TIF part.
 - [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238): F-091 and F-023.
 - [#239](https://github.com/MajorJohnDoe/gridscalr/issues/239): F-097, F-098,
-  F-100, F-101.
+  F-100, F-101 — all four fixed by 0.27.0 phase 6; F-112 records the remaining
+  unbound workspace-list codes.
 - [#199](https://github.com/MajorJohnDoe/gridscalr/issues/199): F-036.
   [#200](https://github.com/MajorJohnDoe/gridscalr/issues/200): F-035.
 - Deferred beyond 0.27.0: F-011 (schema 27 candidate), F-054, F-056, F-057,
@@ -2325,19 +2326,28 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 14 — Rust source budget
 - **Severity:** P3
 - **Area:** tooling / Rust
-- **Status:** triaged #239
-- **Evidence:** `npm run check:file-budgets` now scans `src-tauri/src`, but it
-  compares line counts only. `npm run check:modules` covers foundation feature
-  `index.ts` surfaces in `src` and does not inspect Rust.
-- **Problem:** A 399-line Rust module can still mix unrelated commands, and
-  nothing mechanically proves that a new Tauri command lives in its own module
-  rather than in an existing one that happens to be under budget.
-- **Impact:** Size growth is blocked; module separation stays a review rule
-  supported by `AGENTS.md` and the phase issue template.
-- **Next step:** Decide whether a Rust module-boundary check is worth the
-  maintenance, for example a `#[tauri::command]` inventory proving each command
-  has its own module, or a reviewed clippy restriction lint. Do not add it
-  silently inside a feature phase.
+- **Status:** fixed — 0.27.0 phase 6 ([#239](https://github.com/MajorJohnDoe/gridscalr/issues/239))
+- **Evidence:** `npm run check:file-budgets` scans `src-tauri/src` but compares
+  line counts only, and `npm run check:modules` covered frontend features only.
+- **Problem:** A 399-line Rust module could still mix unrelated commands, and
+  nothing mechanically proved that a new Tauri command lived in its own module
+  rather than in an existing one that happened to be under budget.
+- **Decision (0.27.0 phase 6):** enforce a **command cap per module** instead of
+  a full cohesion or clippy-restriction check. `rust-commands.json` allows two
+  `#[tauri::command]` functions per module by default and records a reviewed
+  `{ "max", "reason" }` count for the nine modules above it. `check:modules`
+  also fails a `.rs` file that no other module declares. The cap is mechanical,
+  needs no per-command inventory, and its maintenance cost is one config entry
+  each time an existing module legitimately gains a command. It does not prove
+  cohesion — that stays a review rule supported by `AGENTS.md` — but it stops
+  the specific failure in the finding.
+- **Why not a clippy restriction:** a lint would have to name modules and
+  commands, and the shell's command surface is plain functions in Rust modules;
+  the JSON cap says the same thing with a clearer failure message and no
+  toolchain dependency.
+- **Impact:** A new command needs its own module or a reviewed cap raise. The
+  rules live in `scripts/rust-module-rules.mjs`, are covered by
+  `tests/rustModuleRules.test.ts`, and are described in `AGENTS.md`.
 
 ### F-098 — The schematics feature is outside the foundation boundary check
 
@@ -2345,23 +2355,24 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 15 — model to feature boundary
 - **Severity:** P3
 - **Area:** architecture / tooling
-- **Status:** triaged #239
-- **Evidence:** `scripts/check-module-boundaries.mjs` lists only the foundation
-  feature directories. `src/features/schematics/` has no `index.ts`, and about
-  twenty modules (canvas, UI, PDF export, report and app flows) import
-  `features/schematics/symbols/registry`, `model/fitDrawing`, `model/sheetTemplate`
-  or `ui/*Dialog` directly.
-- **Problem:** The pure symbol catalogue now lives in `src/model`, so the
-  reversed dependency is gone, but the schematics feature still has no single
-  public surface. A later change can rename or split its internals and break
-  callers without `npm run check:modules` noticing.
-- **Impact:** None today: the imports resolve and the feature is an upper layer.
-  It is a consistency gap with ADR 0013, not a cycle.
-- **Next step:** Give the schematics feature an `index.ts` surface, move the
-  operation-card and sheet-rendering call sites to it, then add the directory to
-  `FOUNDATION_FEATURES`. That is a refactor of its own because its modules are
-  imported by PDF export and the canvas painter; do not fold it into a feature
-  phase.
+- **Status:** fixed — 0.27.0 phase 6 ([#239](https://github.com/MajorJohnDoe/gridscalr/issues/239))
+- **Evidence:** `scripts/check-module-boundaries.mjs` listed only the foundation
+  feature directories. `src/features/schematics/` had no `index.ts`, and
+  twenty-two modules (canvas, UI, PDF export, report, page status/menu and app
+  flows) imported `features/schematics/symbols/registry`,
+  `model/fitDrawing`, `model/sheetTemplate`, `render/*` or `ui/*Dialog` directly.
+- **Problem:** The pure symbol catalogue already lived in `src/model`, so the
+  reversed dependency was gone, but the feature had no single public surface. A
+  later rename or split could break callers without `npm run check:modules`
+  noticing.
+- **Fix:** `src/features/schematics/index.ts` re-exports the sheet templates,
+  sheet document helpers, sheet rendering, symbol registry and the four dialogs;
+  every call site outside the feature now imports that surface, and the
+  directory is in `FOUNDATION_FEATURES`. `tests/` and `dev/sheetLab.ts` keep
+  their deep imports because they target the module under test, and the gate
+  scans `src` only.
+- **Impact:** A rename of a schematics internal now fails `check:modules` with
+  the offending file and specifier unless the index is updated.
 - **Related:** ADR [0013](../adr/0013-module-first-foundation.md).
 
 ### F-100 — The docs gate checks tool shortcuts only, not the action or workspace key tables
@@ -2370,19 +2381,23 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 17 — documentation pass
 - **Severity:** P3
 - **Area:** tooling / documentation
-- **Status:** triaged #239
-- **Evidence:** `scripts/check-docs.mjs` compares `shortcuts.tools` from
-  `src/ui/shortcuts.json` with `docs/shortcuts.md`. The `actions` map, the page,
-  layer and Markups key tables, the in-app shortcut reference and the README
-  shortcut table are not compared with the data file.
-- **Problem:** A renamed or removed action key can leave the documentation
-  describing a shortcut that no longer exists, and `check:docs` still passes.
-- **Impact:** Documentation drift is caught only by review. The 0.25.0 pass
-  checked the page, layer and list keys by hand.
-- **Next step:** Extend the gate to read `shortcuts.actions` and a documented
-  list-row expectation, or generate the shortcut tables from `shortcuts.json`.
-  Generating the tables needs a stable grouping and a decision about the README
-  copy before it can be automated.
+- **Status:** fixed — 0.27.0 phase 6 ([#239](https://github.com/MajorJohnDoe/gridscalr/issues/239))
+- **Evidence:** `scripts/check-docs.mjs` compared `shortcuts.tools` with
+  `docs/shortcuts.md` only. The `actions` map, the page, layer and Markups key
+  tables and the README shortcut tables were not compared with the data file.
+- **Problem:** A renamed or removed action key left the documentation describing
+  a shortcut that no longer exists, and `check:docs` still passed.
+- **Fix:** `scripts/shortcut-catalogue.mjs` lists all 97 documented rows with the
+  bindings they must quote, and `scripts/shortcut-docs.mjs` pins both directions:
+  every `tools`/`actions` key must appear in a row, every row must be
+  catalogued, and every code a cell quotes must be a current binding or a
+  declared workspace-list code. `docs/shortcuts.md` and both README tables are
+  covered, and the zoom row now quotes `Ctrl++` / `Ctrl+-` instead of the split
+  modifier notation so its bindings are checkable.
+- **Impact:** A renamed shortcut or a changed row now fails `check:docs` with
+  the document, the row and the expected code. The tables are pinned rather than
+  generated: generating them needs a stable grouping and a decision about the
+  README copy, which is larger than the gate was worth.
 
 ### F-101 — The screenshot capture script is not exercised until a docs pass
 
@@ -2390,20 +2405,21 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 17 — documentation pass
 - **Severity:** P3
 - **Area:** tooling / documentation
-- **Status:** triaged #239
-- **Evidence:** CI runs `npm run check:docs` but never `npm run docs:capture`.
-  The 0.25.0 layer tree changed the accessible names of the layer disclosure
-  buttons to include "nested layers", so the capture script's
+- **Status:** fixed — 0.27.0 phase 6 ([#239](https://github.com/MajorJohnDoe/gridscalr/issues/239))
+- **Evidence:** CI ran `npm run check:docs` but never `npm run docs:capture`. The
+  0.25.0 layer tree changed the accessible names of the layer disclosure buttons
+  to include "nested layers", so the capture script's
   `getByRole("button", { name: "Layers" })` locator became ambiguous and the
   capture failed until it was made exact.
-- **Problem:** A UI change can break the screenshot capture weeks before the next
-  documentation pass, and the failure is discovered only when someone needs the
-  screenshots.
-- **Impact:** The fix was two characters, but the same class of breakage can
-  require a real rewrite of a capture step under release pressure.
-- **Next step:** Decide whether to run `docs:capture` (or a screenshot dry run
-  that writes to a temporary folder) in CI on a label or a scheduled job. It is a
-  browser and font dependency that the current gate deliberately avoids.
+- **Problem:** A UI change could break the screenshot capture weeks before the
+  next documentation pass, and the failure was discovered only when someone
+  needed the screenshots.
+- **Fix:** the capture steps moved into `scripts/docs-capture-flow.mjs`, and
+  `npm run test:docs-capture` runs them against a temporary output folder
+  without writing `docs/screenshots/` or its manifest. A broken locator fails
+  the run and names the step. `.github/workflows/docs-capture.yml` runs it
+  weekly, on demand and on a pull request labelled `docs-capture`, so it is
+  opt-in and never on every pull request.
 
 ### F-105 — Cleanup does not cover the lease and backup trash suffixes
 
@@ -2577,3 +2593,29 @@ remains the scheduling home.
   and a Dependabot `github-actions` rule. Do not add automation inside a pin-only
   phase.
 - **Related:** F-035, `docs/releasing.md` (Pinned GitHub Actions).
+
+### F-112 — The workspace list keys live in code, not in shortcuts.json
+
+- **Date:** 2026-11-13
+- **Phase:** 0.27.0 phase 6 — tooling gates
+- **Severity:** P3
+- **Area:** tooling / documentation
+- **Status:** deferred
+- **Evidence:** `src/ui/shortcuts.json` carries the `tools` and `actions` maps
+  only. The Pages, Layers and Markups keys (`Shift+F10`, `Alt` + arrow keys,
+  `Alt` + `Home`/`End`, `Alt` + `Left`/`Right`, `F2`, `Enter`/`Space`) are
+  implemented in `src/features/listInteraction`, and `Ctrl+Y` is a second redo
+  alias hard-coded in `src/app/App.ts`. The new shortcut gate (`check:docs`)
+  therefore lists them as unbound codes and pins their **documented text**
+  rather than the binding.
+- **Problem:** Changing a list key in code does not fail the gate; only a change
+  that also edits the document is caught. The unbound list is a manual
+  allow-list, so a stale code can hide there.
+- **Impact:** Low. The list keys change rarely, and the rows they appear in are
+  still pinned: removing one, renaming it or quoting an unknown code fails.
+- **Next step:** Move the list-interaction bindings (and the `Ctrl+Y` alias) into
+  `src/ui/shortcuts.json` as a third map, render the list rows from it, and
+  remove the entries from `UNBOUND_CODES`. That touches the controller and the
+  help content, so it is its own tooling issue rather than part of #239.
+- **Related:** F-100, `scripts/shortcut-catalogue.mjs`, `docs/testing.md`
+  (Documentation gates).

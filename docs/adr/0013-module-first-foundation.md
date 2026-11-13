@@ -188,7 +188,11 @@ before the first production file is added.
 - `npm run check:modules` verifies that:
   - every existing foundation feature directory has `index.ts`;
   - files outside a foundation feature import only its `index.ts`;
-  - no foundation feature reaches into another foundation feature's internals.
+  - no foundation feature reaches into another foundation feature's internals;
+  - the Rust shell keeps its command boundary: `rust-commands.json` caps how
+    many `#[tauri::command]` functions a module may carry (2 by default, with a
+    reviewed cap and reason above it), and every `.rs` file in
+    `src-tauri/src` is declared by another module (F-097).
 - `eslint.config.mjs` rejects every `src/features` import from `src/model/**`,
   and `tests/modelBoundary.test.ts` walks the model tree and fails, naming the
   file and specifier, when an import resolves into `src/features`.

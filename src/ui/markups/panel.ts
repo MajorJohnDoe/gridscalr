@@ -8,10 +8,7 @@ import {
   type ProvenanceSummary,
 } from "../../features/importProvenance";
 import { RowNavigator, collapseAllKeys, expandAllKeys } from "../../features/listInteraction";
-import {
-  ALL_SYMBOL_CATEGORIES,
-  symbolCategoryLabel,
-} from "../../features/schematics/symbols/registry";
+import { ALL_SYMBOL_CATEGORIES, symbolCategoryLabel } from "../../features/schematics";
 import { t } from "../../i18n";
 import {
   MARKUPS_GROUP_PRESETS,

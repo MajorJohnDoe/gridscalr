@@ -27,7 +27,7 @@ import {
   symbolCategoryColor,
   symbolCategoryOf,
   symbolDefaultSize,
-} from "../../features/schematics/symbols/registry";
+} from "../../features/schematics";
 import { store } from "../../state/store";
 import { t } from "../../i18n";
 import { toast } from "../../ui/toast";

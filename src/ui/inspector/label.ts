@@ -1,4 +1,4 @@
-import { symbolName } from "../../features/schematics/symbols/registry";
+import { symbolName } from "../../features/schematics";
 import { t } from "../../i18n";
 import { findItem } from "../../model/layers";
 import { store } from "../../state/store";

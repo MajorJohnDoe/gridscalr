@@ -21,7 +21,7 @@ import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import { resolveSelection } from "../../model/selection";
 import { selectionBounds } from "../../model/transform";
 import type { MarkupItem, PageId, Point, SelectionRef } from "../../model/types";
-import { symbolSizeOf } from "../../features/schematics/symbols/registry";
+import { symbolSizeOf } from "../../features/schematics";
 import { store } from "../../state/store";
 import {
   averagePoints,

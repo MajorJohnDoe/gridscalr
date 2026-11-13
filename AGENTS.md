@@ -107,7 +107,8 @@ the short term and much more expensive later.
   `file-budgets.json` exception. `npm run check:file-budgets -- --update` may
   adjust an existing legacy budget; it refuses a new oversized file.
 - `npm run check:modules` enforces the foundation feature `index.ts` and blocks
-  imports into a foundation feature's internals.
+  imports into a foundation feature's internals. It also enforces the Rust
+  command cap described below.
 - `model` must not import `ui`, `app`, `canvas`, Tauri or a feature module.
   `ui` must not contain business rules. `io` must not contain UI or model
   decisions. Shared defaults and pure catalogues live in `src/model`; ESLint and
@@ -119,6 +120,16 @@ the short term and much more expensive later.
   an existing oversized module stays only as a reviewed `{ "max", "reason" }`
   exception in `file-budgets.json`. `--update` refuses a new oversized Rust
   file, so a command cannot be parked in a large module.
+- **Rust module boundaries are enforced by a command cap, not by a file-size
+  check alone** (F-097, 0.27.0 phase 6). `rust-commands.json` records a reviewed
+  `{ "max", "reason" }` command count for every module above `defaultMax` (2),
+  and `npm run check:modules` fails when a module exceeds it, when an exception
+  is stale, or when a `.rs` file in `src-tauri/src` is declared by no other
+  module. A new command therefore needs its own module or a reviewed cap raise;
+  a 399-line module cannot quietly accumulate unrelated commands. The cap is a
+  boundary, not a cohesion proof: a reviewed cap raise must state why the
+  module still owns one concern. `scripts/rust-module-rules.mjs` holds the
+  rules and `tests/rustModuleRules.test.ts` proves them.
 - Each foundation phase issue records its module map before production code is
   added. A new responsibility gets a new file, not a larger existing one.
 - Fix an in-scope problem immediately. Record a larger or out-of-scope finding in
@@ -133,7 +144,7 @@ Docs are maintained deliberately, not on every commit. Split the work in two.
 
 **Same commit as the change (cheap, keeps the docs from being plainly wrong):**
 
-- Update `docs/shortcuts.md` and the README shortcut table whenever a keyboard shortcut is added, removed, or changed.
+- Update `docs/shortcuts.md` and the README shortcut table whenever a keyboard shortcut is added, removed, or changed. `npm run check:docs` pins both tables and the `actions`/`tools` maps in `src/ui/shortcuts.json` against `scripts/shortcut-catalogue.mjs`, so a renamed binding or a changed row fails until the catalogue and the documents agree (F-100). Update the catalogue when you add, rename or remove a documented row.
 - Update `README.md` when navigation, menus, panels, exports, or the architecture map change.
 - Fix any existing instruction that a change makes outright wrong, such as a menu path or panel name that moved.
 - Keep `Help → About` accurate. The version is read from `package.json` and the schema version from `SCHEMA_VERSION`; do not hardcode either in help content.
@@ -233,6 +244,9 @@ Add what the change actually affects:
 - rendered or interaction changes: `npm run test:visual`, and the matching
   browser suite (`test:ui`, `test:import`, `test:canvas`, `test:count`,
   `test:touch`, `test:csp`);
+- a change to a panel, dialog or control name that the documentation
+  screenshots depend on: `npm run test:docs-capture` (the same capture steps
+  and locators, written to a temporary folder);
 - desktop shell changes: `npm run tauri build -- --no-bundle` once, before the
   push rather than after every intermediate fix;
 - a captured screen changed: `npm run docs:capture`.
@@ -242,6 +256,13 @@ Add what the change actually affects:
 `desktop` job on Ubuntu, Windows and macOS. Because CI runs all of it on the PR
 head, running the same heavyweight suites locally on every commit duplicates
 work without adding a guarantee.
+
+`.github/workflows/docs-capture.yml` runs the screenshot dry run
+(`npm run test:docs-capture`) weekly, on demand, and on a pull request labelled
+`docs-capture`. It writes the images to a temporary folder and never touches
+`docs/screenshots/`, so a renamed panel or accessible name fails there instead of
+during a documentation pass (F-101). It is not part of every pull request
+because it needs Chromium and takes minutes; the label is the opt-in.
 
 A docs-only change does not need the full build, but it must not leave broken
 links or contradictory instructions.
@@ -378,6 +399,7 @@ do not change the released version must not change the version shown on the site
 - `.github/workflows/ci.yml` runs the dependency advisory gate, lint, frontend tests/build and Rust formatting, checking and unit tests on pushes and pull requests. Its `desktop` job runs `cargo test --lib` and compiles the Tauri shell on Ubuntu, Windows and macOS, so platform-specific code and the Windows path guard are checked before a tag exists.
 - CI keeps one authoritative run per branch: the `concurrency` group with `cancel-in-progress` cancels a superseded run when a branch is rebased or re-pushed, so a phase cannot accumulate competing runs. Every job has a `timeout-minutes` cap.
 - The system-package and Playwright installation steps retry three times with a five-minute cap per attempt. A failure there is a **runner or mirror problem, not a code failure**: re-run the job, and if it repeats, record an environment finding instead of changing code to chase it. Changing application code to satisfy a broken package mirror has happened once and cost hours.
+- `.github/workflows/docs-capture.yml` runs the documentation screenshot dry run (`npm run test:docs-capture`) weekly, on demand and on a pull request labelled `docs-capture`. It writes the images to a temporary folder and never rewrites `docs/screenshots/`, so a renamed panel or accessible name breaks a labelled or scheduled run instead of the next documentation pass. It is not part of every pull request.
 - `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags. Its build jobs depend on the same dependency advisory gate.
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the `Release build` workflow for Windows and macOS artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
@@ -446,6 +468,7 @@ src/features/statusOverview/ pure project-status model, one-read controller and 
 src/features/viewOnly/ inspection-tool rule and the panel guard for a true view-only session
 src/features/sessionRecovery/ scoped autosave, byte-budgeted recovery store, recovery center, lease takeover and external-change watcher
 src/features/schematics/   operation-card templates, sheet fields, symbol catalogue surface, fit and dialogs
+src/features/schematics/index.ts public surface for sheet templates, rendering, symbols and dialogs
 src/features/schematics/symbols/registry.ts localized symbol labels, search text and render-plan wrappers
 src/features/schematics/model/fitDrawing.ts drawing-area bounds, overflow warning and fit action
 src/features/schematics/ui/lineTypeDialog.ts project media-class editor
@@ -630,11 +653,17 @@ scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and sav
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
-scripts/capture-docs.mjs   Playwright screenshot and theme-showcase capture into docs/screenshots
-scripts/check-docs.mjs     documentation link, image, anchor and schema checks
+scripts/capture-docs.mjs   capture runner: docs/screenshots, or a temp folder for the dry run
+scripts/capture-docs-shots.mjs screenshot title, alt text and description catalogue
+scripts/docs-capture-flow.mjs the ordered screenshot steps and every UI locator they need
+scripts/docs-capture-photo.mjs synthetic inspection photo for the embedded-image screenshot
+scripts/check-docs.mjs     documentation link, image, anchor, schema and shortcut-table checks
+scripts/shortcut-catalogue.mjs documented shortcut rows and the codes a table may quote
+scripts/shortcut-docs.mjs  pure shortcut-table rules for docs/shortcuts.md and README.md
 scripts/check-file-budgets.mjs blocking line budget for frontend and Rust source files
 scripts/file-budget-rules.mjs pure budget scope, exception and --update rules
-scripts/check-module-boundaries.mjs foundation feature index and deep-import guard
+scripts/check-module-boundaries.mjs foundation feature index, deep-import and Rust command-cap guard
+scripts/rust-module-rules.mjs pure Rust command cap and module-declaration rules
 scripts/check-security-policy.mjs CSP, capability, worker and smoke-command policy guard
 scripts/check-action-pins.mjs 40-character SHA pins for every workflow `uses:` reference
 scripts/check-dependencies.mjs dependency and advisory gate runner
@@ -687,6 +716,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement in Chromium.
 - `npm run test:csp` opens the demo in the browser fallback, checks the single dev policy, starts the real Tesseract worker, and proves a blob worker inherits the policy and cannot fetch a remote origin.
 - `npm run check:security` compares the shipped CSP and capabilities with the reasoned record in `security/policy.json`, rejects a second page policy and inline styles, and verifies the debug-only smoke commands and worker bootstraps. See `docs/security-policy.md`.
+- `npm run check:modules` enforces the foundation feature `index.ts` surfaces and the Rust command cap in `rust-commands.json`; `tests/rustModuleRules.test.ts` proves the cap, the stale exception and the undeclared-module cases.
 - `npm run check:actions` requires every remote `uses:` reference in `.github/workflows` to be a full 40-character commit SHA with a `# <version>` comment, so a moved tag cannot change the release build. `tests/actionPins.test.ts` proves the tag, branch, short-SHA and missing-comment failures. The bump procedure is in `docs/releasing.md`.
 - `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits. It runs on the Ubuntu `rust` job and on every `desktop` matrix entry; `src-tauri/src/path_guard_windows_tests.rs` adds the Windows-only cases (verbatim prefix, case-insensitive volume, trailing dot, drive-relative, UNC, junction).
@@ -697,10 +727,10 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run check:themes` checks that every palette defines the full token contract and meets the WCAG AA contrast targets for text and controls.
 - `npm run theme:preview` captures the light and navy design previews under `docs/theme-preview/`; `public/boot-theme.js` applies the stored theme before first paint without an inline script.
 - `npm run i18n:types` regenerates `src/i18n/types.generated.ts`; `npm run i18n:report` prints per-locale key coverage.
-- `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references and screenshot freshness. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
+- `npm run check:docs` validates documentation links, anchors, images, tool coverage, schema references, screenshot freshness, and the shortcut tables. It compares the `tools` and `actions` maps in `src/ui/shortcuts.json` with `docs/shortcuts.md` and both README shortcut tables through `scripts/shortcut-catalogue.mjs`, so a renamed binding, a changed row or a stale documented code fails. `tests/shortcutDocs.test.ts` proves each failure. Set `GRIDSCALR_DOCS_STRICT=1` to turn stale screenshots into an error.
 - `npm run docs:demo` regenerates `fixtures/demo-project.gridscalr`.
 - `npx playwright install chromium` installs the browser once for `test:ui` and `docs:capture`.
-- `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change.
+- `npm run docs:capture` regenerates `docs/screenshots/` and its manifest with Playwright. Run it after a visible UI change. `npm run test:docs-capture` runs the same steps into a temporary folder and fails on a broken locator without touching the committed screenshots; CI runs it weekly, on demand and on a `docs-capture` label.
 - `npm run site:build` copies `site/`, the app icon, all selected screenshots and `docs/social-preview.png` into `site-dist/`, injects `site/release.json`, and generates `sitemap.xml` and `robots.txt`; `npm run site:check` validates all four pages, release metadata, links and structured data. Preview it with `python3 -m http.server -d site-dist 8080`.
 - `npm run fixture` regenerates `fixtures/industrial-plan.pdf` from `scripts/make-industrial-fixture.mjs`.
 - The industrial sample has three A3 landscape pages: ground floor at 1:100, mezzanine at 1:50, and site plan at 1:400. Page 1 contains a 10.00 m calibration dimension.

@@ -5,7 +5,7 @@ import {
   symbolRenderPlan,
   symbolShapeStrokeWidth,
   symbolSizeOf,
-} from "../../features/schematics/symbols/registry";
+} from "../../features/schematics";
 import { itemCenter, itemRotation, rotatePoint } from "../../model/geometry";
 import { SYMBOL_TAG_FONT_SIZE, symbolTagPosition } from "../../model/symbolTag";
 import type { MarkupItem } from "../../model/types";

@@ -12,7 +12,7 @@ import {
   symbolCategoryLabel,
   symbolCategoryOf,
   symbolName,
-} from "../../features/schematics/symbols/registry";
+} from "../../features/schematics";
 import { t } from "../../i18n";
 import {
   matchesFilterText,

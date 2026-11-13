@@ -45,6 +45,7 @@
     "test:count": "node scripts/count-workflow.mjs",
     "test:touch": "node scripts/touch-regression.mjs",
     "test:csp": "node scripts/csp-regression.mjs",
+    "test:docs-capture": "node scripts/capture-docs.mjs --dry-run",
     "format": "prettier --write \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"dev/**/*.{ts,css,html}\" vite.config.ts eslint.config.mjs",
     "format:check": "prettier --check \"src/**/*.{ts,css}\" \"tests/**/*.ts\" \"scripts/**/*.mjs\" \"dev/**/*.{ts,css,html}\" vite.config.ts eslint.config.mjs",
     "lint": "eslint src tests dev vite.config.ts",

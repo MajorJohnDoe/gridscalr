@@ -21,7 +21,8 @@ import {
   symbolFor,
   symbolName,
   symbolSvgMarkup,
-} from "../features/schematics/symbols/registry";
+  drawingOverflowsArea,
+} from "../features/schematics";
 import type { LayerKind, Project } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { pageIdAt } from "../model/pages";
@@ -37,7 +38,6 @@ import { TOOL_BY_ID, familyForTool } from "./toolDefs";
 import { hasToolVariants, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 import { t } from "../i18n";
-import { drawingOverflowsArea } from "../features/schematics/model/fitDrawing";
 
 export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   clear(refs.contextBar);

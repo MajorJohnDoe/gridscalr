@@ -23,10 +23,7 @@ import {
 import { assertWritablePath } from "../io/writeGuard";
 import { describeError } from "../io/platformError";
 import { logEvent } from "../features/diagnostics/log";
-import {
-  chooseProjectSource,
-  type SheetSourceChoice,
-} from "../features/schematics/ui/sheetSourceDialog";
+import { chooseProjectSource, type SheetSourceChoice } from "../features/schematics";
 import { messageDialog, unsavedChangesDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { store } from "../state/store";

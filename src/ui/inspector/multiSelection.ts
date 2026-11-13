@@ -1,8 +1,5 @@
 import { countQuantityOf, countTypeLabel } from "../../model/countTypes";
-import {
-  INSPECTION_STATUSES,
-  inspectionStatusLabel,
-} from "../../features/schematics/symbols/registry";
+import { INSPECTION_STATUSES, inspectionStatusLabel } from "../../features/schematics";
 import { t } from "../../i18n";
 import { allRooms, categoryForItem } from "../../model/categories";
 import { setItemsStatus } from "../../model/commands";
