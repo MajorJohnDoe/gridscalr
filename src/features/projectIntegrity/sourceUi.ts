@@ -77,8 +77,17 @@ function addOrphans(
   request: (request: DoctorSourceRequest) => void,
 ): void {
   body.append(el("h4", "settings-subtitle", t("projectIntegrity.sources.unused.title")));
+  // The action is always rendered so a read-only project or an empty folder
+  // shows why it is unavailable instead of silently hiding it.
+  const remove = el(
+    "button",
+    "btn btn-small btn-danger",
+    t("projectIntegrity.sources.unused.remove"),
+  );
+  remove.type = "button";
+  remove.disabled = !canChange || snapshot.orphans.length === 0;
   if (!snapshot.orphans.length) {
-    body.append(el("p", "settings-note", t("projectIntegrity.sources.unused.empty")));
+    body.append(el("p", "settings-note", t("projectIntegrity.sources.unused.empty")), remove);
     return;
   }
   body.append(
@@ -110,13 +119,6 @@ function addOrphans(
     row.append(box, text);
     list.append(row);
   });
-  const remove = el(
-    "button",
-    "btn btn-small btn-danger",
-    t("projectIntegrity.sources.unused.remove"),
-  );
-  remove.type = "button";
-  remove.disabled = !canChange;
   remove.addEventListener("click", () => {
     const selected: ManagedCopyEntry[] = [];
     for (const box of list.querySelectorAll<HTMLInputElement>("input[data-orphan-index]")) {
@@ -180,6 +182,24 @@ export function addDoctorSources(
         }),
       ),
     );
+    if (options.notice.trashed) {
+      body.append(
+        el(
+          "p",
+          "settings-note",
+          t("projectIntegrity.sources.cleanupTrash", { count: options.notice.trashed }),
+        ),
+      );
+    }
+    if (options.notice.folder) {
+      body.append(
+        el(
+          "p",
+          "settings-note",
+          t("projectIntegrity.sources.cleanupFolder", { path: options.notice.folder }),
+        ),
+      );
+    }
   }
   if (!snapshot.statuses.length) {
     body.append(el("p", "settings-note", t("projectIntegrity.sources.none")));

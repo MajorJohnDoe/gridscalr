@@ -292,11 +292,16 @@ and zero documents are valid, not corrupt.
   repaired copy first — source actions stay disabled until then so the repaired
   copy and the open project cannot diverge.
 - **Unused managed copies:** the same section lists every file in the project's
-  drawings folder that no document references, with its size. Select the copies,
-  choose **Remove selected…**, review the full list and count, and confirm. The
-  listing and the reference set are checked again immediately before each
-  deletion, so a copy that is still referenced, or became referenced while the
-  dialog was open, is skipped. Nothing is deleted automatically.
+  drawings folder that no document references, with its size and the total.
+  Select the copies, choose **Remove unused drawings…**, review the full list and
+  count, and confirm. The listing and the reference set are checked again
+  immediately before the removal, so a copy that is still referenced, or became
+  referenced while the dialog was open, is skipped. Nothing is removed
+  automatically. A removed copy goes to the operating system trash when that is
+  available; otherwise it is moved into one timestamped `.removed` folder beside
+  the project, and the doctor reports that path so you can restore or delete the
+  files yourself. The action is disabled for a read-only project and when the
+  folder holds no unused copy.
 - **View-only:** choose **Open view-only** in a load report to inspect the
   damaged project without changing it. Use **Save a copy…** or **Save repaired
   copy…** to keep work.

@@ -24,7 +24,7 @@ TIF drawings. Contributions are accepted under the MIT License.
 
 ## Development setup
 
-Requirements: Node.js 22.12 or newer, npm 10 or newer, Rust 1.77.2 or newer and
+Requirements: Node.js 22.12 or newer, npm 10 or newer, Rust 1.87.0 or newer and
 the [Tauri 2 prerequisites](https://v2.tauri.app/start/prerequisites/) for your
 platform.
 

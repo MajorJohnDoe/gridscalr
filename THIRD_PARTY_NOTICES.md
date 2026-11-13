@@ -23,6 +23,7 @@ the upstream notices with it.
 | `zip` | `src-tauri/Cargo.toml` | MIT | https://github.com/zip-rs/zip2 |
 | `sha2` | `src-tauri/Cargo.toml` | MIT OR Apache-2.0 | https://github.com/RustCrypto/hashes |
 | `same-file` | `src-tauri/Cargo.toml` | MIT OR Unlicense | https://github.com/BurntSushi/same-file |
+| `trash` | `src-tauri/Cargo.toml` | MIT | https://github.com/ArturKovacs/trash |
 | Rust crate dependencies | `src-tauri/Cargo.lock` | MIT / Apache-2.0 (per crate) | https://crates.io |
 
 PDF.js is Apache-2.0. Its `LICENSE` file is part of the `pdfjs-dist` package and

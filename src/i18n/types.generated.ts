@@ -2799,6 +2799,8 @@ export type MessageKey =
   | "projectIntegrity.sources.cleanupMessage"
   | "projectIntegrity.sources.cleanupAction"
   | "projectIntegrity.sources.cleanupDone"
+  | "projectIntegrity.sources.cleanupTrash"
+  | "projectIntegrity.sources.cleanupFolder"
   | "projectIntegrity.issue.entity"
   | "projectIntegrity.entity.project"
   | "projectIntegrity.entity.document"

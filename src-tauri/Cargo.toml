@@ -7,7 +7,7 @@ license = "MIT"
 repository = "https://github.com/MajorJohnDoe/gridscalr"
 homepage = "https://github.com/MajorJohnDoe/gridscalr#readme"
 edition = "2021"
-rust-version = "1.77.2"
+rust-version = "1.87.0"
 
 [lib]
 name = "gridscalr_lib"
@@ -23,6 +23,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 base64 = "0.23"
 same-file = "1"
+trash = "5.3"
 zip = { version = "9", default-features = false, features = ["deflate"] }
 sha2 = "0.11"
 tauri-plugin-window-state = "2"

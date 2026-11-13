@@ -66,8 +66,8 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   only the repair kinds you select, offers view-only open, saves a repaired copy
   and exports path-free diagnostics. The same dialog checks every source drawing
   as available, missing or changed with explicit relink and copy actions, and
-  lists unused files in the project drawings folder so they can be removed after
-  confirmation.
+  lists unused files in the project drawings folder so they can be moved to the
+  operating system trash or a timestamped folder after confirmation.
 - Calibrate each page against a known dimension, enter a printed 1:N scale, apply
   it to all pages, and lock a page scale against changes.
 - Measure multi-segment lengths, radius, diameter, three-point arcs, angles,
@@ -247,7 +247,7 @@ release documentation pass, so they always show the current interface.
 
 - Node.js 22.12 or newer (tested with Node 24)
 - npm 10 or newer
-- Rust 1.77.2 or newer
+- Rust 1.87.0 or newer
 - [Tauri 2 platform prerequisites](https://v2.tauri.app/start/prerequisites/)
 
 On Debian or Ubuntu:
