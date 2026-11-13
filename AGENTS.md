@@ -788,6 +788,35 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.
 
+## Agent skills
+
+Agent procedures live in `.opencode/skills/`, one directory per skill. OpenCode
+advertises their descriptions and loads the body on demand; `.opencode/skills/README.md`
+lists them and records how they differ from upstream.
+
+**`AGENTS.md` is authoritative.** A skill never outranks it, and a skill never
+introduces a second work process alongside the conductor workflow. When a skill
+and this file disagree, this file wins and the skill gets fixed.
+
+| Skill | Reach for it when |
+| --- | --- |
+| `codebase-design` | Designing a module interface, placing a seam, judging depth |
+| `improve-codebase-architecture` | Surveying deepening candidates before choosing a phase |
+| `code-review` | Reviewing a branch or PR along Standards and Spec axes |
+| `diagnosing-bugs` | A hard bug or regression, where the feedback loop is the work |
+| `writing-for-agents` | Editing `AGENTS.md`, a skill, or any doc reached by a pointer |
+| `grilling` | Stress-testing a design or settling a product decision |
+| `retro` | Improving the agent environment after a session |
+| `tdd` | Building a feature or fixing a bug test-first |
+| `prototype` | Answering a UI or state-model question with throwaway code |
+| `research` | Delegating reading to a background agent, with citations |
+
+Adapted from [`mattpocock/skills`](https://github.com/mattpocock/skills) at
+commit `5863806` (MIT). They are documentation, not code: no `check:*` gate
+covers them, so keep them accurate by hand and update the README table when you
+add or remove one. A rule that can be made mechanical belongs in a `check:*`
+command instead, not in a skill and not in this file.
+
 ## Start-of-session checklist
 
 1. Read `AGENTS.md`, `README.md`, `docs/user-guide.md`, `docs/workflows.md`, `docs/shortcuts.md`, and the relevant plan.
