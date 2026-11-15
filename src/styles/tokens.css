@@ -34,6 +34,8 @@
   --accent: var(--jade);
   --accent-strong: var(--jade-bright);
   --accent-soft: var(--jade-dim);
+  /* Text and icons drawn on an accent-filled control, never on a panel. */
+  --text-on-accent: var(--on-accent, #071512);
   --status-danger: var(--danger);
   --status-warning: var(--warning);
   --status-success: var(--jade);

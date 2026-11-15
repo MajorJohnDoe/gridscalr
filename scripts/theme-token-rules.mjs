@@ -21,6 +21,7 @@ export const REQUIRED = [
   "--muted",
   "--jade",
   "--jade-bright",
+  "--on-accent",
   "--danger",
   "--warning",
   "--border",
@@ -36,14 +37,34 @@ export const REQUIRED = [
   "--chrome-rail",
 ];
 
-/** Solid-hex foreground/background pairs and the minimum contrast ratio. */
+/**
+ * Solid-hex foreground/background pairs and the minimum contrast ratio.
+ *
+ * These are the text-on-surface pairs the components actually use, not only the
+ * two base surfaces. The accessibility gate (F-116) found the Light Green
+ * palette below 4.5:1 on tinted cards, inset list surfaces, the status bar and
+ * the tab strip while the base pairs passed, so each real text surface is
+ * pinned here as a token contract.
+ */
 const PAIRS = [
   ["--text", "--bg", 4.5],
   ["--text-strong", "--bg", 4.5],
   ["--text", "--panel", 4.5],
   ["--muted", "--bg", 4.5],
+  ["--muted", "--bg-deep", 4.5],
+  ["--muted-2", "--panel", 4.5],
+  ["--muted-2", "--bg-deep", 4.5],
+  ["--muted-2", "--statusbar-bg", 4.5],
+  ["--muted-2", "--surface-tab", 4.5],
+  ["--jade", "--panel", 4.5],
   ["--jade-bright", "--bg", 3],
+  ["--jade-bright", "--bg-deep", 4.5],
+  ["--on-accent", "--jade", 4.5],
+  ["--on-accent", "--jade-bright", 4.5],
+  ["--cyan", "--statusbar-bg", 4.5],
+  ["--amber", "--panel", 4.5],
   ["--warning", "--bg", 3],
+  ["--warning", "--bg-deep", 4.5],
   ["--danger", "--bg", 3],
 ];
 

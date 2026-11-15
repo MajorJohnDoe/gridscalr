@@ -4,11 +4,13 @@ import { describe, expect, it } from "vitest";
 import {
   A11Y_FAIL_IMPACTS,
   A11Y_SURFACES,
+  A11Y_THEMES,
   TOUCH_TARGET_EMULATION,
   TOUCH_TARGET_MIN_PX,
   UI_SCALE_BASE_VIEWPORT,
   UI_SCALE_MIN_CANVAS_PX,
   UI_SCALE_REGIONS,
+  a11ySurfaceChecks,
   classifyViolations,
   formatTouchTargetFailure,
   formatViolation,
@@ -86,6 +88,38 @@ describe("accessibility gate rules", () => {
       "help",
     ]);
   });
+
+  it("runs the shell and dialogs in every shipped palette", () => {
+    expect(A11Y_THEMES.map((theme) => theme.id)).toEqual([
+      "medium-grey",
+      "light-green",
+      "dark-grey",
+      "jade",
+      "navy",
+    ]);
+    expect(A11Y_THEMES.find((theme) => theme.id === "light-green")?.label).toBe("Light Green");
+  });
+
+  it("checks every theme and surface pair exactly once", () => {
+    const checks = a11ySurfaceChecks();
+    expect(checks).toHaveLength(A11Y_THEMES.length * A11Y_SURFACES.length);
+    expect(new Set(checks.map((check) => check.key)).size).toBe(checks.length);
+    expect(checks[0]).toEqual({
+      key: "medium-grey:shell",
+      theme: "medium-grey",
+      themeLabel: "Medium Gray",
+      surface: "shell",
+      surfaceLabel: "Main shell",
+    });
+    expect(checks.at(-1)?.key).toBe("navy:help");
+  });
+
+  it("lets a test narrow the theme list without changing the surfaces", () => {
+    const checks = a11ySurfaceChecks([{ id: "light-green", label: "Light Green" }]);
+    expect(checks.map((check) => check.key)).toEqual(
+      A11Y_SURFACES.map((surface) => `light-green:${surface.id}`),
+    );
+  });
 });
 
 describe("touch-target rules", () => {
@@ -137,6 +171,13 @@ describe("documentation agreement", () => {
     for (const surface of A11Y_SURFACES) {
       expect(testing).toContain(surface.label);
     }
+  });
+
+  it("records the palette coverage of the accessibility gate", () => {
+    for (const theme of A11Y_THEMES) {
+      expect(testing).toContain(theme.label);
+    }
+    expect(testing).toContain(`${A11Y_THEMES.length} palettes`);
   });
 
   it("records the gate commands, the 24 px minimum and the UI scales", () => {
