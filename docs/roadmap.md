@@ -316,6 +316,7 @@ full list.
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |
+| Linux GTK advisory | Accepted, not fixed. `glib 0.18.5` (`RUSTSEC-2024-0429`) is Linux-only and pinned by `tauri 2.12.5`'s `gtk 0.18`; it is not on the Windows or macOS code path. The allowlist expiry is 2027-02-15 and the clearing path is the Tauri 3 / GTK4 migration in [#270](https://github.com/MajorJohnDoe/gridscalr/issues/270); [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21) stays open until it lands. |
 | Full Swedish help | UI is complete; the full guide/workflows translation is not scheduled. |
 | External image assets | Deferred until embedded project files become too large in practice. |
 | TIF codecs beyond CCITT G3/G4 | Shipped in 0.25.0: no compression, PackBits, LZW and Deflate with predictor 2, JPEG-in-TIFF and stripped or tiled layouts. Palette colour, JPEG 2000, tiled JPEG, tiled CCITT, per-strip old-style JPEG without a complete stream and YCCK stay rejected with a reason. [#58](https://github.com/MajorJohnDoe/gridscalr/issues/58) is complete. |
@@ -347,7 +348,7 @@ The next planned splits are sequenced in
 - Lazy-load the PDF.js renderer so the welcome screen and project shell do not parse the PDF runtime before a drawing is opened.
 - Replace full-snapshot history for large projects.
 - Audit Tauri capabilities, CSP and dependency surface — [#62](https://github.com/MajorJohnDoe/gridscalr/issues/62).
-- Revisit the GTK/glib generation with a future Tauri upgrade so the Linux advisory can be cleared; tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
+- Clear the Linux `glib 0.18.5` advisory (`RUSTSEC-2024-0429`) with the Tauri 3 / GTK4 migration — [#270](https://github.com/MajorJohnDoe/gridscalr/issues/270). The 0.28.0 position is recorded: no Tauri 2.x release moves off `gtk 0.18`, `cargo update -p glib` cannot reach 0.20, the advisory is Linux-only, and the dependency gate accepts it until 2027-02-15; [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21) stays open until the upgrade lands.
 - Further splits of `CanvasView.ts`, `labelLayout.ts`, `sheetTemplate.ts` or the symbol libraries are opportunistic only if those files grow again.
 
 ## Project operations

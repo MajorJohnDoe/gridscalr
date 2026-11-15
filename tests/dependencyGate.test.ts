@@ -78,8 +78,18 @@ function entry(overrides: Partial<AllowlistEntry> = {}): AllowlistEntry {
   };
 }
 
-function gate(npmReport: unknown, cargoReport: unknown, allowlist: Allowlist = emptyAllowlist()) {
-  return evaluateGate({ npmReport, cargoReport, allowlist, now: NOW });
+function gate(
+  npmReport: unknown,
+  cargoReport: unknown,
+  allowlist: Allowlist = emptyAllowlist(),
+  now: Date = NOW,
+) {
+  return evaluateGate({ npmReport, cargoReport, allowlist, now });
+}
+
+/** The committed allowlist is checked against its own review date, not a frozen clock. */
+function committedReviewDate(allowlist: Allowlist) {
+  return new Date(`${allowlist.reviewed}T12:00:00Z`);
 }
 
 describe("dependency gate parsing", () => {
@@ -256,11 +266,16 @@ describe("dependency gate allowlist", () => {
     expect(errors.join(" ")).toMatch(/reviewBy/);
   });
 
+  it("fails a reviewed date in the future", () => {
+    const errors = validateAllowlist({ reviewed: "2026-11-12", entries: [] }, NOW);
+    expect(errors.join(" ")).toMatch(/is in the future/);
+  });
+
   it("validates the committed allowlist", () => {
     const allowlist = JSON.parse(
       readFileSync(resolve(__dirname, "../security/dependency-allowlist.json"), "utf8"),
     ) as Allowlist;
-    expect(validateAllowlist(allowlist, NOW)).toEqual([]);
+    expect(validateAllowlist(allowlist, committedReviewDate(allowlist))).toEqual([]);
     expect(allowlist.entries.length).toBeLessThanOrEqual(8);
   });
 
@@ -280,7 +295,7 @@ describe("dependency gate allowlist", () => {
         ],
       },
     };
-    const result = gate(emptyNpmReport(), report, allowlist);
+    const result = gate(emptyNpmReport(), report, allowlist, committedReviewDate(allowlist));
     expect(result.ok).toBe(true);
     expect(result.accepted).toHaveLength(5);
   });
