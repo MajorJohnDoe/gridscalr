@@ -98,4 +98,30 @@ describe("layers inset surfaces", () => {
       "light-green: missing --surface-inset-foot",
     );
   });
+
+  it("checks the subtle text tokens against the surfaces they are drawn on", () => {
+    // F-116: the old Light Green values passed the base pairs and failed on the
+    // inset, tab and status-bar surfaces. The contract now pins those pairs.
+    const css = readCss("src/styles/themes/light-green.css")
+      .replace(/(--muted-2:\s*)#[0-9a-f]{6};/i, "$1#76859a;")
+      .replace(/(--muted:\s*)#[0-9a-f]{6};/i, "$1#5a6a7c;");
+    const issues = checkThemeTokens("light-green", css);
+    expect(issues).toContain("light-green: --muted-2 on --bg-deep is 3.04:1 (needs 4.5:1)");
+    expect(issues).toContain("light-green: --muted on --bg-deep is 4.49:1 (needs 4.5:1)");
+  });
+
+  it("defines a readable accent text colour in every palette", () => {
+    for (const theme of THEMES) {
+      const tokens = parseTokens(readCss(`src/styles/themes/${theme}.css`));
+      expect(tokens.has("--on-accent"), `${theme}: --on-accent`).toBe(true);
+    }
+    // The light palette needs light text on the darker accent fill; the dark
+    // palettes keep their shipped near-black on the bright accent.
+    expect(parseTokens(readCss("src/styles/themes/light-green.css")).get("--on-accent")).toBe(
+      "#ffffff",
+    );
+    expect(parseTokens(readCss("src/styles/themes/medium-grey.css")).get("--on-accent")).toBe(
+      "#071512",
+    );
+  });
 });

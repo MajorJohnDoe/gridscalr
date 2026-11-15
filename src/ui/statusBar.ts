@@ -217,10 +217,15 @@ export function updateStatus(refs: ShellRefs, actions: PanelActions): void {
     refs.statusLayer.textContent = "";
     return;
   }
-  // The layer colour is applied through the CSSOM. An inline `style` attribute
+  // A drawing colour is a swatch, not a text colour: some palettes are light and
+  // a dark status bar let any layer colour read. The name keeps the primary text
+  // colour so it stays legible on every palette (F-116).
+  // The swatch colour is applied through the CSSOM. An inline `style` attribute
   // would force `style-src 'unsafe-inline'` on the application policy (F-038).
-  const layerValue = el("span", "status-value", active.name);
-  layerValue.style.color = active.color;
+  const swatch = el("span", "status-dot status-layer-dot");
+  swatch.style.background = active.color;
+  const layerValue = el("span", "status-value status-layer-value");
+  layerValue.append(swatch, document.createTextNode(active.name));
   refs.statusLayer.replaceChildren(
     el("span", "status-label", t("status.layer")),
     document.createTextNode(" "),

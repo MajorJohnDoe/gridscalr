@@ -2816,28 +2816,48 @@ remains the scheduling home.
 - **Phase:** 0.28.0 phase 5 — accessibility and performance gates
 - **Severity:** P2
 - **Area:** Themes / accessibility
-- **Status:** open — recorded by the new accessibility gate; fix in a palette pass
+- **Status:** fixed — 0.28.0 phase 5 follow-up ([#267](https://github.com/MajorJohnDoe/gridscalr/issues/267))
 - **Evidence:** Running the same axe check against
   `document.documentElement.dataset.theme = "light-green"` reports 21 serious
   `color-contrast` nodes on the shell. Examples: `.page-location` at 4.0–4.3:1
   (`#0a7f68` on the tinted card), `.field-label`, `.section-head h2`,
   `.status-label` and `.page-total` at 3.2–3.75:1 (`--muted-2` `#76859a` on
-  white or `#e9eef4`), `.status-value` at 1.64:1 (`--cyan` `#4cc9f0` on
-  `#e9eef4`), and several chips at 4.49:1 (`--muted` `#5a6a7c`). Medium Gray,
-  Dark Gray, Jade and Navy report no violations.
-- **Problem:** `check:themes` validates the documented token contract and its
-  own contrast pairs, but not every component usage. `--muted-2`, `--jade` and
-  `--cyan` are legible on the dark palettes and below 4.5:1 on the light
-  palette, and the shell uses them for labels, meta rows and status values.
-- **Impact:** The default Medium Gray palette passes the new gate. A user on
-  System-light or Light Green sees low-contrast metadata and status text. No
-  data or interaction is lost, and the automated gate is not weakened to hide
-  it: it runs the default palette and this finding records the gap.
-- **Next step:** Darken `--muted-2`, `--muted`, `--jade`/`--jade-bright` and
-  `--cyan` in `src/styles/themes/light-green.css` until the shell reaches
-  4.5:1, then add the Light Green palette as a second accessibility surface in
-  `scripts/accessibility-rules.mjs` so it stays fixed. Recheck the design tokens
-  in `check:themes` and refresh the theme screenshots. Track it as its own
-  palette issue rather than folding it into the gate phase.
+  white or `#e9eef4`), `.status-value` at 1.64:1 (`#4cc9f0` on `#e9eef4`), and
+  several chips at 4.49:1 (`--muted` `#5a6a7c`). The Quantities dialog added 21
+  more nodes (`--muted-2` `#76859a` on `#e2e8ef` at 3.04:1) and the Help dialog
+  one (`code` at 4.0:1). Medium Gray, Dark Gray, Jade and Navy reported no
+  violations.
+- **Problem:** `check:themes` validated the documented token contract and its
+  own contrast pairs, but not every component usage. `--muted-2`, `--jade`/
+  `--jade-bright`, `--amber` and `--warning` were legible on the dark palettes
+  and below 4.5:1 on the light palette, and the shell uses them for labels, meta
+  rows, quantity rows and status chips. The `.status-value` node was a different
+  cause: the status bar painted the active layer's drawing colour as text, which
+  works on a dark bar and fails on the light one.
+- **Impact:** The default Medium Gray palette passed the gate. A user on
+  System-light or Light Green saw low-contrast metadata, quantity rows and
+  status text. No data or interaction was lost, and the automated gate was not
+  weakened to hide it: it ran the default palette and this finding recorded the
+  gap.
+- **Resolution (0.28.0 phase 5 follow-up):** the Light Green palette is darkened
+  on the tokens that are read as text — `--muted` 4.49 → 5.53, `--muted-2` 3.04
+  → 4.88, `--jade` → 5.16 on the panel, `--jade-bright` 4.00 → 5.30,
+  `--amber` 3.87 → 5.14, `--warning` 4.50 → 5.06, `--cyan` → 5.14 — all measured
+  on the darkest surface each token is drawn on. The status bar now shows the
+  active layer colour as a ringed swatch with the layer name in `--text`
+  (1.64 → 12.94:1). A new `--on-accent` token supplies the text on an
+  accent-filled button, because darkening `--jade` made the old hard-coded
+  `#071512` fall to 3.61:1; Light Green uses white there (5.16:1) and the four
+  dark palettes keep their shipped near-black. `check:themes` now pins those
+  text-on-surface pairs, so a token that drops below 4.5:1 fails there as well.
+- **Gate:** `npm run test:a11y` analyses 5 palettes × 6 surfaces (30 checks) and
+  reports zero serious/critical violations; a theme that stops running fails the
+  matrix assertion. Medium Gray, Dark Gray, Jade and Navy are otherwise
+  unchanged. The changed Light Green surfaces are listed in the phase handover
+  for the documentation capture pass.
 - **Related:** [#55](https://github.com/MajorJohnDoe/gridscalr/issues/55),
-  `docs/testing.md` (automated accessibility check), `tests/accessibilityGate.test.ts`.
+  [#267](https://github.com/MajorJohnDoe/gridscalr/issues/267),
+  `docs/testing.md` (automated accessibility check),
+  `src/styles/themes/light-green.css`, `scripts/accessibility-rules.mjs`,
+  `scripts/theme-token-rules.mjs`, `tests/accessibilityGate.test.ts`,
+  `tests/theme.test.ts`.

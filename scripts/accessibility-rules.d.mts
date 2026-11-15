@@ -1,5 +1,10 @@
 export declare const A11Y_FAIL_IMPACTS: readonly string[];
 export declare const A11Y_SURFACES: ReadonlyArray<{ id: string; label: string }>;
+export declare const A11Y_THEMES: ReadonlyArray<{ id: string; label: string }>;
+export declare function a11ySurfaceChecks(
+  themes?: ReadonlyArray<{ id: string; label: string }>,
+  surfaces?: ReadonlyArray<{ id: string; label: string }>,
+): A11ySurfaceCheck[];
 export declare const TOUCH_TARGET_MIN_PX: number;
 export declare const TOUCH_TARGET_EMULATION: string;
 export declare const UI_SCALE_BASE_VIEWPORT: { width: number; height: number };
@@ -10,6 +15,14 @@ export declare const UI_SCALE_MIN_CANVAS_PX: number;
 export interface ViolationNode {
   target: string;
   summary: string;
+}
+
+export interface A11ySurfaceCheck {
+  key: string;
+  theme: string;
+  themeLabel: string;
+  surface: string;
+  surfaceLabel: string;
 }
 
 export interface ViolationSummary {

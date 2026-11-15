@@ -251,7 +251,7 @@ html[data-platform="macos"] .topbar {
 .btn-primary {
   background: var(--jade);
   border-color: var(--jade);
-  color: #071512;
+  color: var(--text-on-accent);
 }
 
 .btn-primary:hover {
@@ -1509,7 +1509,7 @@ html[data-platform="macos"] .topbar {
 }
 
 .inline-strip-button.is-primary {
-  color: #07110f;
+  color: var(--text-on-accent);
   background: var(--jade);
   border-color: var(--jade);
   font-weight: 650;
@@ -1517,7 +1517,7 @@ html[data-platform="macos"] .topbar {
 
 .inline-strip-button.is-primary:hover {
   background: var(--jade-bright);
-  color: #07110f;
+  color: var(--text-on-accent);
 }
 
 .inline-strip-button.is-quiet {

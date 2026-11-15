@@ -4,6 +4,22 @@
   color: var(--warning);
 }
 
+/*
+ * The active layer keeps its colour as a swatch next to the name. A drawing
+ * colour is chosen against the canvas, not against the status bar, so using it
+ * as text fails contrast on a light palette (F-116).
+ */
+.status-layer-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.status-layer-dot {
+  flex: 0 0 auto;
+  box-shadow: 0 0 0 1px var(--border);
+}
+
 .preferences-recents {
   display: flex;
   flex-direction: column;

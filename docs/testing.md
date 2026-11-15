@@ -380,18 +380,21 @@ checklist in [`releasing.md`](releasing.md).
 A **serious** or **critical** axe violation fails the run. Moderate, minor and
 best-practice findings are printed with their target and are not hidden: there is
 no allowlist, so a new serious rule fails immediately. The script also asserts
-that each dialog receives focus when it opens and that the run raises no page
-errors. `tests/accessibilityGate.test.ts` proves the impact split, the
-no-allowlist rule and the documented surface list.
+that each dialog receives focus when it opens, that every palette/surface pair
+ran, and that the run raises no page errors.
+
+Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
+and **Navy** — runs the same six surfaces, so the gate records 30 palette/surface
+checks. The palette is chosen through **Settings → Preferences…**, which is
+itself one of the checked surfaces. A contrast regression in any palette fails the
+run, and `check:themes` pins the same text-on-surface pairs at the token level.
 
 The freehand canvas has no DOM model for axe to inspect. It is covered by the
 manual checklist below, not by this gate; full screen-reader support for freehand
 drawing is an explicit non-goal for 1.0.
 
-The gate runs the default Medium Gray palette. The Light Green palette still has
-a known text-contrast gap on the shell chrome (F-116 in
-[`plan/foundation-findings.md`](plan/foundation-findings.md)); when it is fixed,
-add it as a second surface here so a regression fails.
+`tests/accessibilityGate.test.ts` proves the impact split, the no-allowlist rule,
+the documented surface list and the theme × surface matrix.
 
 ### Touch-target check
 

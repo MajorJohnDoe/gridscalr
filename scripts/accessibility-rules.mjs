@@ -19,6 +19,35 @@ export const A11Y_SURFACES = [
 ];
 
 /**
+ * Every shipped palette is analysed, not only the default. The shell and the
+ * dialogs read the same semantic tokens in each palette, so a contrast
+ * regression in one palette fails the gate instead of becoming a note (F-116).
+ */
+export const A11Y_THEMES = [
+  { id: "medium-grey", label: "Medium Gray" },
+  { id: "light-green", label: "Light Green" },
+  { id: "dark-grey", label: "Dark Gray" },
+  { id: "jade", label: "Jade" },
+  { id: "navy", label: "Navy" },
+];
+
+/**
+ * The theme × surface matrix. The gate records a result for every entry, so a
+ * theme or surface that silently stops running fails the run.
+ */
+export function a11ySurfaceChecks(themes = A11Y_THEMES, surfaces = A11Y_SURFACES) {
+  return themes.flatMap((theme) =>
+    surfaces.map((surface) => ({
+      key: `${theme.id}:${surface.id}`,
+      theme: theme.id,
+      themeLabel: theme.label,
+      surface: surface.id,
+      surfaceLabel: surface.label,
+    })),
+  );
+}
+
+/**
  * WCAG 2.2 AA, Success Criterion 2.5.8 Target Size (Minimum): 24 by 24 CSS
  * pixels. The app is desktop-dense by default; a `(pointer: coarse)` rule
  * raises every control to this size on touch hardware only.
