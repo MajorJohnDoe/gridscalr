@@ -42,7 +42,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Open PDF plans locally with PDF.js, or scanned TIF drawings: lossless
   CCITT G3/G4 and JPEG-in-TIFF passthrough plus greyscale and colour PackBits,
   LZW, Deflate and tiled scans, and **Replace source…** for a reissued scan with
-  the same page mapping as a PDF.
+  the same page mapping as a PDF. A colour scan's derived PDF is a rebuildable
+  cache beside the project (schema 27), so the project file stays small and a
+  missing cache is rebuilt from the scan; one enforced budget warns before the
+  256 MB project limit.
 - Open a project by double-clicking `.gridscalr` in Explorer or Finder in the
   installed builds, hand a drawing to an already running window, and keep the
   window size, position and maximised state between sessions.
@@ -131,7 +134,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
 - Share a project and its drawings as one portable `.gridscalr.zip` with a
   versioned manifest, relative links and SHA-256 checksums, then open the package
   on another machine without relinking. Managed drawings are included once and
-  sender paths are cleared. Reports and original TIF scans are opt-in.
+  sender paths are cleared. A colour scan travels as its derived cache or as its
+  original scan, never both, and the manifest states which form it carries.
+  Reports and original TIF scans are opt-in.
 - Run inside one production Content Security Policy with a reduced Tauri
   capability set, a shared canonical path guard, bounded project, drawing and
   package reads and writes — the package dialog shows the expected size and

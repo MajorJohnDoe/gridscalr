@@ -175,6 +175,7 @@ describe("TIFF to PDF", () => {
       format: "tiff",
       dpi: [200, 200],
       originalName: "Plan.tif",
+      passthrough: true,
     });
   });
 

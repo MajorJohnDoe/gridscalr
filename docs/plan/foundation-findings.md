@@ -2228,8 +2228,8 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 12a — TIF decoding beyond CCITT G3/G4
 - **Severity:** P2
 - **Area:** TIF import / project file size
-- **Status:** deferred — decision recorded in 0.27.0 phase 7, storage change in
-  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+- **Status:** fixed — schema 27 marker in 0.28.0 phase 3, cache lifecycle in
+  phase 4 of [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
 - **Evidence:** `createTiffDocumentRef()` base64-encodes the derived PDF into
   `DocumentRef.embeddedPdf`. CCITT scans stay near the source size, but a colour
   raster is Flate-compressed into one image per strip. A 25 megapixel RGB sheet
@@ -2249,8 +2249,19 @@ remains the scheduling home.
   which needs schema 27 and is tracked as
   [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256). A downsampled
   raster, a JPEG re-encode and a managed TIF copy were rejected with reasons.
+- **Resolution (0.28.0 phase 4):** a saved colour project no longer carries the
+  derived PDF in its JSON. The derived bytes are a rebuildable cache in
+  `<project>.derived/`, keyed by the scan SHA-256, the converter version and the
+  page count, and the project stores a `derivedPdf` marker. The measured
+  reference project of six A2-class colour sheets went from 79.19 MiB of JSON to
+  0.01 MiB, with 59.39 MiB held once on disk
+  (`GRIDSCALR_DERIVED_BENCH=1 npx vitest run tests/derivedPdfBudget.test.ts`).
+  The enforced budget is a warning at 160 MiB of derived cache per project; the
+  only hard stop remains the 256 MB project limit. CCITT passthrough is
+  unchanged and acquires no cache entry.
 - **Related:** ADR [0015](../adr/0015-colour-scan-storage.md), F-108,
-  `docs/limitations.md`, `tests/tiffStoragePolicy.test.ts`.
+  `docs/limitations.md`, `tests/tiffStoragePolicy.test.ts`,
+  `tests/derivedPdfCache.test.ts`, `tests/derivedPdfBudget.test.ts`.
 
 ### F-092 — Horizontal differencing is refused below 8 bits
 
@@ -2571,7 +2582,12 @@ remains the scheduling home.
 - **Next step:** If managed TIF becomes a real mode, extend the inventory,
   packaging, consolidation and cap to the original scan first, then make
   `preservesManagedStorage()` kind-aware. Do not add a second managed folder.
-- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-088, F-084.
+- **Phase 4 note (2026-11-15):** schema 27 does not change this. The derived-PDF
+  cache is an artifact beside the project, not a managed source; a TIF
+  replacement still stores a reference and the cache is rebuilt from the new
+  scan. Managed TIF remains unimplemented by decision.
+- **Related:** ADR [0012](../adr/0012-source-storage-modes.md), F-088, F-084,
+  ADR [0015](../adr/0015-colour-scan-storage.md).
 
 ### F-109 — A UNC spelling and a drive-rooted spelling share one comparison key
 
@@ -2688,7 +2704,8 @@ remains the scheduling home.
 - **Phase:** 0.28.0 phase 2 — import preflight relink (F-096)
 - **Severity:** P3
 - **Area:** Project import / TIF documents
-- **Status:** deferred — tracked by [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+- **Status:** fixed — decided and implemented in phase 4 of
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
 - **Evidence:** `ProjectImportSource.checkAvailability()` marks a TIF available
   only when `document.embeddedPdf` is present, `preflightUi.sourceRow()` offers
   **Relink…** only for `state.kind === "pdf"`, and `ProjectImportSource.locate()`
@@ -2716,6 +2733,45 @@ remains the scheduling home.
   validates it, but changes nothing in the picker or preflight: the import path
   still embeds the derived PDF, so no app-produced project reaches the state.
   The gap stays open until phase 4 ships the cache and decides the recovery.
+- **Resolution (0.28.0 phase 4):** the state is now reachable and handled. A TIF
+  page is available to the import picker when its derived PDF is embedded, its
+  cache file exists beside the project, or its original scan is reachable so the
+  cache can be rebuilt on demand (`ProjectImportSource.checkAvailability`,
+  `loadDocument`). Opening the project rebuilds a missing cache silently. Only
+  "no cache and no scan" stays unavailable in the picker, and that project also
+  cannot open until the scan is located: the open path shows one dialog with
+  **Locate the scan…**, validating the located TIF against the document's
+  SHA-256. A TIF relink in the picker is therefore not needed: the picker only
+  ever sees a project whose cache the open path has already resolved.
+
+### F-115 — Save a copy does not carry the derived-PDF cache
+
+- **Date:** 2026-11-15
+- **Phase:** 0.28.0 phase 4 — derived-PDF cache lifecycle
+- **Severity:** P3
+- **Area:** project file / TIF documents
+- **Status:** accepted — documented limitation
+- **Evidence:** `serializeProjectCopy()` in `src/io/projectFile/paths.ts` rewrites
+  each document's `relativePath` for the copy's folder but leaves
+  `derivedPdf.relativePath` as it is. `saveProjectCopyOf()` in
+  `src/app/projectSession.ts` writes the copy without materializing a cache for
+  that folder. The regular save path does copy or rebuild the cache before it
+  serializes.
+- **Problem:** A colour scan's cache marker in a saved copy names the original
+  project's `<project>.derived/` folder. Opening the copy elsewhere rebuilds from
+  the scan when the scan is reachable and otherwise shows the locate dialog. The
+  copy is never corrupt, but it is not self-contained without its scan.
+- **Impact:** A copy made beside the original usually still resolves the old
+  folder path only if the copy sits in the same folder under a different name —
+  and then the cache folder name no longer matches the copy's stem, so the
+  rebuild path runs. Page content is never lost: the original project and its
+  cache are untouched.
+- **Next step:** Have `serializeProjectCopy` take the cache decision the save
+  path takes (copy the cache into the destination stem's folder, or rebuild from
+  a reachable scan) once **Save a copy** and the doctor's repaired copy share an
+  async pre-serialization hook. Do not make a copy depend on a source scan when a
+  cache copy is cheap. **Share project package…** is the supported self-contained
+  path until then.
 
 ### F-114 — A schema 27 cache marker is validated but not resolved until the cache lifecycle
 
@@ -2723,8 +2779,8 @@ remains the scheduling home.
 - **Phase:** 0.28.0 phase 3 — schema 27 derived-PDF cache marker
 - **Severity:** P3
 - **Area:** Project file / TIF documents
-- **Status:** deferred — closed by the cache lifecycle in phase 4 of
-  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+- **Status:** fixed — the cache lifecycle in phase 4 of
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256) resolves the marker
 - **Evidence:** Schema 27 accepts a TIF document whose derived PDF is named by a
   `derivedPdf` marker instead of `embeddedPdf`, and `validateProject()` treats a
   current marker as a valid document. The rendering paths still read only
@@ -2743,5 +2799,13 @@ remains the scheduling home.
   the key is stale and the TIF is reachable, and shows one localized message
   when neither the cache nor the scan is available. Do not ship a marker writer
   without that resolution path.
+- **Resolution (0.28.0 phase 4):** `loadDerivedPdfBytes()` resolves every
+  rendering path that reads a TIF document: the main loader, the reference pane
+  and revision comparison, and the project import source. Order: embedded bytes,
+  a current cache, a silent rebuild from the scan, then a cache whose converter
+  version moved on with an unchanged source hash and page count. The main loader
+  is the only path that can ask the user to locate a scan, and it does so once
+  before anything renders, so no path draws a blank or black page.
 - **Related:** [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256),
-  ADR [0015](../adr/0015-colour-scan-storage.md), F-113, F-091.
+  ADR [0015](../adr/0015-colour-scan-storage.md), F-113, F-091,
+  `tests/derivedPdfCache.test.ts`.

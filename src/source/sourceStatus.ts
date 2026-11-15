@@ -62,8 +62,11 @@ export async function checkSourceStatuses(
 ): Promise<SourceFileStatus[]> {
   const next: SourceFileStatus[] = [];
   for (const document of project.documents) {
-    // Embedded TIF pages need no external file.
-    if (document.kind === "tiff" && document.embeddedPdf) continue;
+    // A TIF page needs no external file for its page content: the derived PDF
+    // is embedded or lives in the project's own cache folder. The scan stays
+    // optional provenance for a rebuild, so a missing scan is not a missing
+    // source and is not reported as one.
+    if (document.kind === "tiff" && (document.embeddedPdf || document.derivedPdf)) continue;
     const storage = document.storage === "managed" ? "managed" : "reference";
     const path = resolvedDocumentPath(document, projectPath);
     if (!path) continue;

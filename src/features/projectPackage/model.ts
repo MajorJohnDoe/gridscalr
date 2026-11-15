@@ -4,6 +4,7 @@ import { describeError } from "../../io/platformError";
 import type { Project } from "../../model/types";
 import { t } from "../../i18n";
 import { documentSourceKey } from "../sourceStorage";
+import { DERIVED_CACHE_ARCHIVE_PREFIX } from "../derivedPdfCache";
 
 export const PACKAGE_FORMAT = "gridscalr-package";
 export const PACKAGE_FORMAT_VERSION = 1;
@@ -38,6 +39,8 @@ export interface PackageManifest {
   documents: PackageManifestFile[];
   exports: PackageManifestFile[];
   sourceScans: PackageManifestFile[];
+  /** Rebuilt PDF caches carried instead of a colour scan's original bytes. */
+  derivedCaches: PackageManifestFile[];
 }
 
 export interface PackageOptions {
@@ -229,6 +232,31 @@ export function sourceScanArchivePaths(project: Project): Map<string, string> {
   return paths;
 }
 
+/** Maps each cache-backed TIF document id to its cache path inside the package. */
+export function derivedCacheArchivePaths(project: Project): Map<string, string> {
+  const used = new Set<string>();
+  const paths = new Map<string, string>();
+  const bySource = new Map<string, string>();
+  for (const document of project.documents) {
+    if (document.kind !== "tiff" || !document.derivedPdf) continue;
+    const sourceKey = documentSourceKey(document);
+    const existing = bySource.get(sourceKey);
+    if (existing) {
+      paths.set(document.id, existing);
+      continue;
+    }
+    const archivePath = `${DERIVED_CACHE_ARCHIVE_PREFIX}${uniqueArchiveName(
+      document.name,
+      ".pdf",
+      used,
+      "Scan",
+    )}`;
+    bySource.set(sourceKey, archivePath);
+    paths.set(document.id, archivePath);
+  }
+  return paths;
+}
+
 function projectBaseName(project: Project): string {
   return safeArchiveBase(project.name.replace(/\.gridscalr$/i, "") || "Project", "Project");
 }
@@ -250,6 +278,7 @@ export function portableProjectJson(
   project: Project,
   documentPaths: Map<string, string>,
   overrides: DocumentChecksumOverrides = {},
+  cachePaths: Map<string, string> = new Map(),
 ): string {
   const copy = structuredClone(project);
   for (const document of copy.documents) {
@@ -266,6 +295,12 @@ export function portableProjectJson(
       }
     } else {
       document.relativePath = null;
+      // A cache-backed scan travels as its derived cache, at the archive path
+      // the manifest lists under `derivedCaches`. The scan is not carried too.
+      if (document.derivedPdf) {
+        const archive = cachePaths.get(document.id);
+        if (archive) document.derivedPdf.relativePath = archive;
+      }
     }
   }
   return serializeProject(copy);
@@ -283,8 +318,13 @@ export function estimatePackageBytes(project: Project, options: PackageOptions):
   const seen = new Set<string>();
   let sourceBytes = 0;
   for (const document of project.documents) {
+    // A cache-backed scan always ships as its derived cache, whose size is
+    // close to the scan it was built from; the manifest carries the exact size.
+    const cacheBacked = document.kind === "tiff" && Boolean(document.derivedPdf);
     const included =
-      document.kind === "pdf" || (document.kind === "tiff" && options.includeSourceScans);
+      document.kind === "pdf" ||
+      cacheBacked ||
+      (document.kind === "tiff" && options.includeSourceScans);
     if (!included) continue;
     const key = documentSourceKey(document);
     if (seen.has(key)) continue;
@@ -390,9 +430,14 @@ export function validatePackageManifest(value: unknown): PackageManifest {
     if (scan.kind !== "tiff")
       manifestFailure(`The header has an invalid source scan: ${scan.file}.`);
   }
+  const derivedCaches = readManifestFiles(raw.derivedCaches, DERIVED_CACHE_ARCHIVE_PREFIX);
+  for (const cache of derivedCaches) {
+    if (cache.kind !== "derived")
+      manifestFailure(`The header has an invalid derived cache: ${cache.file}.`);
+  }
 
   const names = new Set<string>();
-  for (const entry of [...documents, ...exportsList, ...sourceScans]) {
+  for (const entry of [...documents, ...exportsList, ...sourceScans, ...derivedCaches]) {
     const key = entry.file.toLowerCase();
     if (names.has(key)) manifestFailure(`The header lists ${entry.file} more than once.`);
     names.add(key);
@@ -416,6 +461,7 @@ export function validatePackageManifest(value: unknown): PackageManifest {
     documents,
     exports: exportsList,
     sourceScans,
+    derivedCaches,
   };
 }
 
@@ -451,6 +497,19 @@ export function validatePackagedProjectJson(json: string): void {
         entry.relativePath.includes("\\") ||
         entry.relativePath.split("/").some((part) => !part || part === "." || part === "..") ||
         entry.relativePath.slice("documents/".length).includes("/")
+      ) {
+        throw new Error(t("package.errorOutsideDocuments"));
+      }
+    }
+    const derived = (document as { derivedPdf?: { relativePath?: unknown } }).derivedPdf;
+    if (derived && derived.relativePath !== null && derived.relativePath !== undefined) {
+      if (
+        typeof derived.relativePath !== "string" ||
+        hasControlCharacter(derived.relativePath) ||
+        !derived.relativePath.startsWith(DERIVED_CACHE_ARCHIVE_PREFIX) ||
+        derived.relativePath.includes("\\") ||
+        derived.relativePath.split("/").some((part) => !part || part === "." || part === "..") ||
+        derived.relativePath.slice(DERIVED_CACHE_ARCHIVE_PREFIX.length).includes("/")
       ) {
         throw new Error(t("package.errorOutsideDocuments"));
       }

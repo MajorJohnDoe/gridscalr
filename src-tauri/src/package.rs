@@ -190,6 +190,8 @@ pub struct PackageManifest {
     pub exports: Vec<ManifestFile>,
     #[serde(default)]
     pub source_scans: Vec<ManifestFile>,
+    #[serde(default)]
+    pub derived_caches: Vec<ManifestFile>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -223,6 +225,8 @@ pub struct PackageRequest {
     pub documents: Vec<PackageSource>,
     pub exports: Vec<PackageData>,
     pub source_scans: Vec<PackageSource>,
+    #[serde(default)]
+    pub derived_caches: Vec<PackageSource>,
     #[serde(default)]
     pub protected_paths: Vec<String>,
 }
@@ -421,13 +425,22 @@ pub fn validate_manifest(manifest: &PackageManifest) -> Result<(), PackageError>
             });
         }
     }
+    for file in &manifest.derived_caches {
+        validate_manifest_file(file, "derived/")?;
+        if file.kind != "derived" {
+            return Err(PackageError::InvalidPackage {
+                message: format!("“{}” is not a derived-PDF cache.", file.file),
+            });
+        }
+    }
 
     let mut names = HashSet::new();
     let all = manifest
         .documents
         .iter()
         .chain(manifest.exports.iter())
-        .chain(manifest.source_scans.iter());
+        .chain(manifest.source_scans.iter())
+        .chain(manifest.derived_caches.iter());
     let mut total = 0_u64;
     for file in all {
         if !names.insert(file.file.to_lowercase()) {
@@ -591,6 +604,10 @@ fn readme_text(manifest: &PackageManifest) -> String {
          documents/         referenced PDF drawings\r\n\
          exports/           optional reports and drawing exports\r\n\
          source-scans/      optional original TIF scans\r\n\
+         derived/           rebuilt PDF caches for colour scans\r\n\
+         \r\n\
+         A TIF scan is carried either as its derived PDF cache (derived/) or as\r\n\
+         its original scan (source-scans/), never both.\r\n\
          \r\n\
          Checksums detect corruption and accidental changes. This package is not\r\n\
          encrypted and is not cryptographically signed.\r\n",
@@ -734,6 +751,22 @@ fn create_package_with(
             });
         }
     }
+    for cache in &request.derived_caches {
+        validate_archive_name(&cache.archive_path, Some("derived/"))?;
+        if cache.kind != "derived" {
+            return Err(PackageError::InvalidPackage {
+                message: format!("“{}” is not a derived-PDF cache.", cache.archive_path),
+            });
+        }
+        if !used_names.insert(cache.archive_path.to_lowercase()) {
+            return Err(PackageError::InvalidPackage {
+                message: format!(
+                    "The package would contain “{}” more than once.",
+                    cache.archive_path
+                ),
+            });
+        }
+    }
     for scan in &request.source_scans {
         validate_archive_name(&scan.archive_path, Some("source-scans/"))?;
         if scan.kind != "tiff" {
@@ -754,7 +787,12 @@ fn create_package_with(
 
     let mut missing = Vec::new();
     let mut source_sizes = Vec::new();
-    for source in request.documents.iter().chain(request.source_scans.iter()) {
+    for source in request
+        .documents
+        .iter()
+        .chain(request.source_scans.iter())
+        .chain(request.derived_caches.iter())
+    {
         match fs::metadata(&source.source_path) {
             Ok(metadata) if metadata.is_file() => source_sizes.push(metadata.len()),
             _ => missing.push(MissingFile {
@@ -784,6 +822,7 @@ fn create_package_with(
         documents: Vec::new(),
         exports: Vec::new(),
         source_scans: Vec::new(),
+        derived_caches: Vec::new(),
     };
     let readme = readme_text(&manifest);
     let addition_sizes: Vec<u64> = request
@@ -885,6 +924,29 @@ fn create_package_with(
             return Err(PackageError::ChecksumMismatch { files: mismatches });
         }
 
+        for cache in &request.derived_caches {
+            let entry = write_source(
+                &mut zip,
+                cache,
+                CompressionMethod::Stored,
+                &mut progress,
+                cancelled,
+            )?;
+            if !cache.expected_sha256.is_empty() && cache.expected_sha256 != entry.sha256 {
+                mismatches.push(ChecksumMismatch {
+                    file: entry.file.clone(),
+                    name: display_name(&cache.source_path),
+                    expected: cache.expected_sha256.clone(),
+                    actual: entry.sha256.clone(),
+                    size_bytes: entry.size_bytes,
+                });
+            }
+            manifest.derived_caches.push(entry);
+        }
+        if !mismatches.is_empty() {
+            return Err(PackageError::ChecksumMismatch { files: mismatches });
+        }
+
         let written_total = request.project_json.len() as u64
             + readme.len() as u64
             + manifest
@@ -892,6 +954,7 @@ fn create_package_with(
                 .iter()
                 .chain(manifest.exports.iter())
                 .chain(manifest.source_scans.iter())
+                .chain(manifest.derived_caches.iter())
                 .map(|file| file.size_bytes)
                 .sum::<u64>();
         if written_total > MAX_TOTAL_BYTES {
@@ -1212,6 +1275,7 @@ fn inspect_archive(
         .iter()
         .chain(manifest.exports.iter())
         .chain(manifest.source_scans.iter())
+        .chain(manifest.derived_caches.iter())
     {
         expected.insert(file.file.to_lowercase());
     }
@@ -1503,6 +1567,7 @@ pub(crate) fn extract_package(
                     .iter()
                     .chain(manifest.exports.iter())
                     .chain(manifest.source_scans.iter())
+                    .chain(manifest.derived_caches.iter())
                     .find(|file| file.file == entry.name)
                     .ok_or_else(|| PackageError::InvalidPackage {
                         message: format!(
@@ -1717,12 +1782,60 @@ mod tests {
             documents,
             exports: Vec::new(),
             source_scans: Vec::new(),
+            derived_caches: Vec::new(),
             protected_paths: Vec::new(),
         }
     }
 
     fn create(request: &PackageRequest) -> Result<CreateResult, PackageError> {
         create_package(request, None, &AtomicBool::new(false))
+    }
+
+    #[test]
+    fn carries_a_derived_cache_and_states_its_form() {
+        let directory = TestDir::new();
+        let cache = directory.file("cache/level.derived/aaaa-v1-p1.pdf");
+        write(&cache, b"%PDF-1.7 derived scan");
+        let source = directory.file("source/Plan.pdf");
+        write(&source, b"%PDF-1.4 plan");
+        let output = directory.file("Plan.gridscalr.zip");
+        let mut request = request(
+            &output,
+            &project_json("documents/Plan.pdf", ""),
+            vec![(&source, "documents/Plan.pdf", &sha(b"%PDF-1.4 plan"))],
+        );
+        request.derived_caches = vec![PackageSource {
+            source_path: path_string(&cache),
+            archive_path: "derived/Plan.pdf".to_string(),
+            kind: "derived".to_string(),
+            expected_sha256: sha(b"%PDF-1.7 derived scan"),
+        }];
+
+        let created = create(&request).expect("create package");
+        assert_eq!(created.manifest.derived_caches.len(), 1);
+        assert_eq!(created.manifest.derived_caches[0].file, "derived/Plan.pdf");
+        assert_eq!(created.manifest.derived_caches[0].kind, "derived");
+        assert!(created.manifest.source_scans.is_empty());
+
+        let extraction = extract_package(
+            &ExtractRequest {
+                job_id: "extract-derived".to_string(),
+                package_path: created.output_path.clone(),
+                destination_path: path_string(&directory.file("extracted")),
+                mode: "new".to_string(),
+            },
+            None,
+            &AtomicBool::new(false),
+        )
+        .expect("extract");
+        assert!(Path::new(&extraction.extracted_to)
+            .join("derived/Plan.pdf")
+            .is_file());
+        assert_eq!(
+            extraction.manifest.derived_caches.len(),
+            1,
+            "the extracted manifest keeps the form it carried"
+        );
     }
 
     #[test]
@@ -2127,6 +2240,7 @@ mod tests {
             documents: (0..3).map(entry).collect(),
             exports: Vec::new(),
             source_scans: Vec::new(),
+            derived_caches: Vec::new(),
         };
         let error = validate_manifest(&manifest).expect_err("over the total limit");
         assert!(
@@ -2338,6 +2452,7 @@ mod tests {
             }],
             exports: Vec::new(),
             source_scans: Vec::new(),
+            derived_caches: Vec::new(),
         };
         validate_manifest(&manifest).expect("valid manifest");
 
@@ -2373,6 +2488,7 @@ mod tests {
             documents: Vec::new(),
             exports: Vec::new(),
             source_scans: Vec::new(),
+            derived_caches: Vec::new(),
         };
         let manifest_json = serde_json::to_string_pretty(&manifest).expect("manifest");
         let path = directory.file("extra.zip");

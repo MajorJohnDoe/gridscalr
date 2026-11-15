@@ -40,7 +40,12 @@ export function normalizeDocument(rawValue: unknown, report?: (code: string) => 
   const rawDoc = (
     typeof rawValue === "object" && rawValue !== null ? rawValue : {}
   ) as Partial<DocumentRef> & {
-    source?: { format?: unknown; dpi?: unknown; originalName?: unknown };
+    source?: {
+      format?: unknown;
+      dpi?: unknown;
+      originalName?: unknown;
+      passthrough?: unknown;
+    };
   };
   const kind = rawDoc.kind === "tiff" ? "tiff" : rawDoc.kind === "template" ? "template" : "pdf";
   const document: DocumentRef = {
@@ -143,6 +148,7 @@ export function normalizeDocument(rawValue: unknown, report?: (code: string) => 
         typeof rawDoc.source?.originalName === "string" && rawDoc.source.originalName
           ? rawDoc.source.originalName
           : document.name,
+      ...(rawDoc.source?.passthrough === true ? { passthrough: true } : {}),
     };
   }
   normalizeStorageFields(document, rawDoc);

@@ -12,6 +12,12 @@ import {
   updateRelativeDocumentPaths,
 } from "../../io/projectFile";
 import { assertWritablePath } from "../../io/writeGuard";
+import { MAX_PROJECT_BYTES } from "../../io/limits";
+import {
+  evaluateDerivedCacheBudget,
+  materializeProjectDerivedCaches,
+  notifyDerivedCacheBudget,
+} from "../derivedPdfCache";
 import { store } from "../../state/store";
 import type { BackupPorts } from "./backupController";
 import {
@@ -168,7 +174,18 @@ async function writeSuccessfully(
   }
   try {
     updateRelativeDocumentPaths(project, path);
+    // The derived-PDF cache is written before serialization so the saved JSON
+    // names a cache instead of carrying a colour scan as base64. A cache that
+    // cannot be written keeps the embedded bytes: the save stays lossless.
+    const cache = await materializeProjectDerivedCaches(project, path, store.projectPath);
     const json = serializeProject(project);
+    notifyDerivedCacheBudget(
+      evaluateDerivedCacheBudget({
+        cacheBytes: cache.cacheBytes,
+        projectBytes: new TextEncoder().encode(json).byteLength,
+        projectLimitBytes: MAX_PROJECT_BYTES,
+      }),
+    );
     if (!(await validateBeforeWrite(project, ports, json))) {
       restoreRelativePaths(project, previousPaths);
       return false;

@@ -9,6 +9,7 @@ import {
   pickProjectPackage,
 } from "../../io/platform";
 import { resolveRelativePath, sourceDocumentPaths } from "../../io/projectFile";
+import { derivedCachePath } from "../derivedPdfCache";
 import { assertWritablePath } from "../../io/writeGuard";
 import { describeError } from "../../io/platformError";
 import type { DocumentRef, Project } from "../../model/types";
@@ -31,6 +32,7 @@ import {
 import {
   desktopOnlyMessage,
   describePackageFailure,
+  derivedCacheArchivePaths,
   documentArchivePaths,
   estimatePackageBytes,
   MAX_PACKAGE_TOTAL_BYTES,
@@ -71,6 +73,17 @@ function newJobId(): string {
 
 function tifCount(project: Project): number {
   return project.documents.filter((document) => document.kind === "tiff").length;
+}
+
+/** Absolute cache file paths for every cache-backed scan in the project. */
+function cacheSourcePaths(project: Project, projectPath: string | null): Map<string, string> {
+  const paths = new Map<string, string>();
+  for (const document of project.documents) {
+    if (document.kind !== "tiff" || !document.derivedPdf) continue;
+    const path = derivedCachePath(document, projectPath);
+    if (path) paths.set(document.id, path);
+  }
+  return paths;
 }
 
 function sourcePathFor(document: DocumentRef, projectPath: string | null): string | null {
@@ -144,7 +157,18 @@ async function missingSources(
   const missing: { name: string; path: string }[] = [];
   for (const document of project.documents) {
     if (document.kind === "template") continue;
-    if (document.kind === "tiff" && !includeScans) continue;
+    if (document.kind === "tiff") {
+      // A cache-backed scan travels as its derived cache; its original scan is
+      // never included too, so only the cache has to exist.
+      if (document.derivedPdf) {
+        const cache = derivedCachePath(document, projectPath);
+        if (!cache || !(await pathExists(cache))) {
+          missing.push({ name: document.name, path: cache ?? document.name });
+        }
+        continue;
+      }
+      if (!includeScans) continue;
+    }
     const path = sourcePathFor(document, projectPath);
     if (!path || !(await pathExists(path))) {
       missing.push({ name: document.name, path: path ?? document.name });
@@ -179,12 +203,38 @@ function prepareScans(
   const scans: PackageSourceRequest[] = [];
   for (const document of project.documents) {
     if (document.kind !== "tiff") continue;
+    // Never carry the cache and the original scan for the same document.
+    if (document.derivedPdf) continue;
     const archivePath = scanPaths.get(document.id);
     const path = sourcePathFor(document, projectPath);
     if (!archivePath || !path) continue;
     scans.push(sourceRequest({ ...document, path }, archivePath, "tiff", overrides));
   }
   return scans;
+}
+
+/** One archive entry per derived cache, keyed by the document that names it. */
+function prepareDerivedCaches(
+  project: Project,
+  cachePaths: Map<string, string>,
+  sourcePaths: Map<string, string>,
+): PackageSourceRequest[] {
+  const caches: PackageSourceRequest[] = [];
+  for (const document of project.documents) {
+    if (document.kind !== "tiff" || !document.derivedPdf) continue;
+    const archivePath = cachePaths.get(document.id);
+    const sourcePath = sourcePaths.get(document.id);
+    if (!archivePath || !sourcePath) continue;
+    caches.push({
+      sourcePath,
+      archivePath,
+      kind: "derived",
+      // The marker does not store a cache checksum: the cache is derived, and a
+      // rebuild produces fresh bytes. The manifest records the written hash.
+      expectedSha256: "",
+    });
+  }
+  return caches;
 }
 
 /** One archive entry per physical source, even with several document records. */
@@ -276,11 +326,13 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
   const scanPaths = options.includeSourceScans
     ? sourceScanArchivePaths(project)
     : new Map<string, string>();
+  const cacheArchivePaths = derivedCacheArchivePaths(project);
+  const cachePaths = cacheSourcePaths(project, store.projectPath);
   const overrides: DocumentChecksumOverrides = {};
   let preparedExports: PackageDataRequest[] | null = null;
 
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const projectJson = portableProjectJson(project, documentPaths, overrides);
+    const projectJson = portableProjectJson(project, documentPaths, overrides, cacheArchivePaths);
     const request = {
       jobId: newJobId(),
       outputPath,
@@ -295,6 +347,9 @@ export async function packageProjectFlow(host: PackageHost): Promise<void> {
       exports: [] as PackageDataRequest[],
       sourceScans: uniqueSourceRequests(
         prepareScans(project, scanPaths, overrides, store.projectPath),
+      ),
+      derivedCaches: uniqueSourceRequests(
+        prepareDerivedCaches(project, cacheArchivePaths, cachePaths),
       ),
       protectedPaths: protectedPathsFor(project),
     };

@@ -96,6 +96,7 @@ function validManifest(): PackageManifest {
     ],
     exports: [],
     sourceScans: [],
+    derivedCaches: [],
   };
 }
 

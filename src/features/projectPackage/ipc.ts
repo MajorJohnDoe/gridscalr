@@ -4,7 +4,7 @@ import type { PackageManifest, PackageProgress } from "./model";
 export interface PackageSourceRequest {
   sourcePath: string;
   archivePath: string;
-  kind: "pdf" | "tiff";
+  kind: "pdf" | "tiff" | "derived";
   expectedSha256: string;
 }
 
@@ -25,6 +25,8 @@ export interface PackageCreateRequest {
   documents: PackageSourceRequest[];
   exports: PackageDataRequest[];
   sourceScans: PackageSourceRequest[];
+  /** One derived-PDF cache per colour scan, or that scan, never both. */
+  derivedCaches: PackageSourceRequest[];
   protectedPaths: string[];
 }
 

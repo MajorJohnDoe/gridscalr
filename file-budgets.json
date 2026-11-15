@@ -41,7 +41,7 @@
         "reason": "Legacy Tauri file-command module; every new command belongs in its own module rather than here."
       },
       "src-tauri/src/package.rs": {
-        "max": 2442,
+        "max": 2558,
         "reason": "Legacy package create/inspect/extract module; split by concern before adding another package command."
       },
       "src-tauri/src/project_write.rs": {

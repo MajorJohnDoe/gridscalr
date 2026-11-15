@@ -45,6 +45,12 @@ export interface TiffConversion {
   bytes: Uint8Array;
   pages: TiffPageInfo[];
   dpi: [number, number];
+  /**
+   * True when every page kept its compressed source strips (CCITT G3/G4 or
+   * JPEG-in-TIFF). A passthrough PDF is about the size of the scan and stays
+   * embedded instead of acquiring a derived-PDF cache entry.
+   */
+  passthrough: boolean;
 }
 
 function assertWithinLimits(bytes: Uint8Array, pages: TiffPage[]): void {
@@ -92,6 +98,7 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
   pdf.setCreationDate(new Date(0));
   pdf.setModificationDate(new Date(0));
   const infos: TiffPageInfo[] = [];
+  let passthrough = true;
 
   for (const page of pages) {
     if (JPEG_2000_COMPRESSIONS.has(page.compression)) {
@@ -152,6 +159,7 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
         drawRegion({ top: image.top, rows: image.height }, `Jpeg${index}`, ref);
       });
     } else if (page.tiled) {
+      passthrough = false;
       assertDecodablePage(page);
       const bands = decodeTiledPage(page, bytes, littleEndian);
       bands.forEach((band, index) => {
@@ -159,6 +167,7 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
         drawRegion({ top: band.top, rows: band.strip.rows }, `Tile${index}`, ref);
       });
     } else {
+      passthrough = false;
       assertDecodablePage(page);
       page.strips.forEach((strip, index) => {
         const decoded = decodeStrip(page, strip, bytes, littleEndian);
@@ -183,6 +192,7 @@ export async function tiffToPdf(bytes: Uint8Array): Promise<TiffConversion> {
     bytes: saved instanceof Uint8Array ? saved : new Uint8Array(saved),
     pages: infos,
     dpi: [first.dpiX, first.dpiY],
+    passthrough,
   };
 }
 
@@ -237,6 +247,7 @@ export function createTiffDocumentRef(input: TiffDocumentInput): DocumentRef {
       format: "tiff",
       dpi: input.conversion.dpi,
       originalName: input.name,
+      ...(input.conversion.passthrough ? { passthrough: true } : {}),
     },
   };
 }
