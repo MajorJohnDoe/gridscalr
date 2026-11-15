@@ -1,7 +1,7 @@
 # ADR 0016: Optional-content export shape
 
-- Status: Accepted (decision); the `/Order` form change is deferred to a follow-up issue
-- Date: 2026-11-13
+- Status: Implemented (0.28.0 phase 1, [#257](https://github.com/MajorJohnDoe/gridscalr/issues/257)); Acrobat and PDF-XChange verification pending maintainer review
+- Date: 2026-11-13 (decided), 2026-11-15 (array form implemented)
 - Deciders: GridScalr maintainer
 - Supersedes: none
 - Related: [0014](0014-layer-hierarchy.md), [0015](0015-colour-scan-storage.md)
@@ -37,8 +37,8 @@ arrays inside it:
 [ (Group) 12 0 R [ (Child) 13 0 R ] ]
 ```
 
-The writer instead emits an Acrobat-style heading dictionary with `/Name` and a
-nested `/Order`:
+0.25.0 wrote an Acrobat-style heading dictionary with `/Name` and a nested
+`/Order`:
 
 ```text
 [ << /Name (Group) /Order [ 12 0 R 13 0 R ] >> ]
@@ -49,61 +49,106 @@ which is Firefox's built-in viewer, only implements the array form. Its
 `parseNestedOrder` in `pdf.worker.mjs` returns `null` for a dictionary entry, so
 the heading is dropped and the groups inside it are appended to a nameless
 fallback list — present and toggleable, but flat. The groups, their `/ON` state
-and the marked content are correct; only the reader's list structure is lost.
+and the marked content were correct; only the reader's list structure was lost.
 
-The PDF we write is therefore a reader extension, and the interoperability defect
-is ours: the standard form nests in both pdf.js and Acrobat.
+The PDF we wrote was therefore a reader extension, and the interoperability
+defect was ours. 0.28.0 writes the standard form.
 
 ## Decision
 
 1. **Keep one OCG per layer with per-page marked content.** The coarser toggle
    is accepted and documented. Per-page groups are rejected for the reasons
    above. F-023 is closed as an accepted trade-off, not a defect.
-2. **Emit the ISO array form for nesting.** The heading-dictionary form is not
-   the format we will ship long term; the array form is the one every
-   spec-compliant reader implements, including the one the app itself uses to
-   render PDFs.
-3. **The change is not made in 0.27.0.** It is a small writer change, but it
-   carries a product decision and a verification cost that do not belong in a
-   documentation phase:
-   - In the array form the heading is a non-selectable name, not a group. A
-     group layer that also owns items therefore needs its own content as a
-     selectable OCG **inside** the heading, which duplicates the layer name
-     unless the follow-up decides to name the heading differently, or to keep
-     the group's own content outside the heading. That is a visible choice in
-     every reader's layer list and needs a sample in front of a user.
-   - Acrobat is the reader that motivated the dictionary form. Replacing it must
-     be verified in Acrobat, PDF-XChange, Chrome and Firefox on the same export
-     before the form is switched, and CI cannot do that.
-   - The current commit is a documentation decision; changing the artifact in
-     the same commit would leave the release notes describing two export
-     behaviours at once.
-   The follow-up issue tracks the writer change, the name rule for a group with
-   its own content, and the reader verification:
-   [#257](https://github.com/MajorJohnDoe/gridscalr/issues/257).
+2. **Emit the ISO array form for nesting.** `orderFor()` writes an inline
+   `PDFArray` whose first element is the folder name as a string, followed by
+   the group's own OCG (when it has one) and its child entries in tree order.
+   The heading-dictionary form is no longer written.
+3. **A group layer that owns items repeats its layer name on its own OCG.**
+   The array form makes the heading a non-selectable name, not a group, so the
+   group's content needs a selectable OCG inside it. The folder and that OCG
+   both carry the layer's project name:
+
+   ```text
+   [ (Measurements) 12 0 R [ (Detail symbols) 13 0 R ] ]
+   ^ folder label    ^ selectable OCG for the layer's own items
+   ```
+
+   A group that only groups layers has no OCG of its own and becomes a heading
+   with children only.
+
+   Rejected alternatives:
+
+   - **Rename the heading** (for example `Measurements (group)`). It avoids the
+     repeated name, but invents a label that is not stored in the project, needs
+     a translated string for every locale, and makes the folder name differ from
+     the layer the user sees in GridScalr. The heading is not selectable anyway,
+     so the extra word only decorates a structural entry.
+   - **Keep the group's own content outside the heading**, as a sibling before
+     it. That reads as two top-level entries for one project layer, separates the
+     group's own items from its folder, and breaks the "own content first, then
+     children" rule the hierarchy otherwise follows.
+
+   The repeated name is the only option that keeps one OCG per project layer,
+   one `/ON` bit per layer, no invented text and the group's content inside its
+   own folder. The cost is visible: a group with items shows a folder and a
+   selectable entry of the same name, and the selectable entry toggles only that
+   layer's own items, not its children. This is documented in the user guide.
 4. The flattened drawing export stays the deterministic default. The OCG option
    stays opt-in. Hidden groups continue to remove their whole subtree, and a
    group with nothing visible is still never written.
 
+## Verification
+
+The array form is a standard structure, but reader behaviour is the reason the
+change exists, so the form is verified against the parser the app itself uses
+rather than only by inspecting bytes:
+
+- `tests/pdfExport.test.ts` asserts that every `/Order` entry is either an OCG
+  reference or an inline array whose first element is a string — no heading
+  dictionary at any depth.
+- The same export is parsed by the real pdf.js worker parser, and
+  `parseNestedOrder`'s output is asserted in its own `{ name, order }` shape:
+  `["Markups", { name: "Measurements", order: ["Measurements", "Detail symbols"] }]`,
+  with no nameless fallback entry.
+- Chrome/PDFium is exercised headlessly over the committed sample export where
+  the environment allows a browser run.
+
+Reader results for this phase:
+
+| Reader | Result |
+| --- | --- |
+| pdf.js worker (Firefox engine) | Nesting preserved; no nameless fallback list. Asserted in `tests/pdfExport.test.ts`. |
+| Chrome (PDFium) | Pending maintainer verification against the sample export. |
+| Acrobat | Pending maintainer verification against the sample export. |
+| PDF-XChange | Pending maintainer verification against the sample export. |
+
+CI cannot run Acrobat or PDF-XChange. The sample export path is recorded in the
+phase pull request; the desktop reader result is not claimed until it is checked.
+
 ## Consequences
 
-- Until the follow-up lands, Firefox and other pdf.js viewers list nested
-  groups flat. This is written in `docs/limitations.md` and the user guide so a
-  user does not read it as a missing layer.
-- A future change to the array form keeps the same `/ON` state and marked
-  content, so stored exports are not invalidated; only the reader's list
-  structure changes.
-- Tests that assert the raw `/Order` tree must keep asserting the tree, not the
-  serialized form, so the form change updates one expectation instead of the
-  nesting coverage.
+- pdf.js and Firefox's built-in viewer now nest a group under its folder label
+  instead of listing the groups flat.
+- Exports written by 0.25.0–0.27.0 keep the heading-dictionary form and remain
+  flat in pdf.js. Those are released artifacts, not project data; there is no
+  migration and no reason to rewrite them.
+- A group layer with its own items shows the folder label and a selectable entry
+  of the same name in every reader. The selectable entry toggles that layer's own
+  content; the children keep their own entries.
+- The same OCGs, the same `/ON` state and the same marked content are written.
+  Only `/Order` changes shape, so a stored export is not invalidated and the
+  flattened default is untouched.
+- Tests that assert the raw `/Order` tree keep asserting the tree, and one added
+  assertion covers the serialized form, so a future form change updates one
+  expectation instead of the nesting coverage.
 
 ## Enforcement
 
 - `tests/pdfExport.test.ts` asserts the nested `/Order` tree, that a group's own
   content precedes its children, that an empty group is never written and that a
   hidden ancestor removes the subtree.
-- The follow-up must add an assertion on the serialized `/Order` entry type
-  (array versus dictionary) and a pdf.js-shaped nesting fixture.
+- The same file asserts the serialized `/Order` entry type (array versus
+  dictionary) and the pdf.js `parseNestedOrder` shape.
 - `docs/limitations.md` and `docs/user-guide.md` describe the shipped reader
   behaviour.
 

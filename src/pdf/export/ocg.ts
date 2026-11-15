@@ -18,9 +18,12 @@ import { t } from "../../i18n";
  *
  * The flattened page content is unchanged; the groups only let a compatible
  * reader toggle the marked content that is already there. A layer hierarchy is
- * written as nested heading dictionaries in `/OCProperties /D /Order`, so a
- * group layer becomes a collapsible folder containing its child groups and its
- * own content. A group with no visible content is never emitted. See ADR 0014.
+ * written in the ISO 32000-1 Table 101 array form in `/OCProperties /D /Order`:
+ * a nested array whose first element is the folder name, followed by the
+ * group's own OCG and its child entries. The folder name is not selectable, so
+ * a group that owns items repeats its layer name on the selectable OCG inside
+ * it; a group that only groups layers has no OCG of its own. A group with no
+ * visible content is never emitted. See ADR 0014 and ADR 0016.
  */
 export interface OptionalContentLayer {
   id: string;
@@ -117,14 +120,14 @@ export function createOptionalContent(
       }
       const childOrder = orderFor(children);
       if (!own && !childOrder.size()) continue;
-      // The group's own content sits first inside its folder.
-      const inside = PDFArray.withContext(context);
-      if (own) inside.push(own.ref);
-      for (const entry of childOrder.asArray()) inside.push(entry);
-      const heading = PDFDict.withContext(context);
-      heading.set(PDFName.of("Name"), PDFHexString.fromText(node.name));
-      heading.set(PDFName.of("Order"), inside);
-      order.push(context.register(heading));
+      // ISO 32000-1 Table 101: [ (Name) own 12 0 R [ (Child) 13 0 R ] ]. The
+      // leading name is the non-selectable folder label; a group's own content
+      // follows it as the selectable OCG with the same layer name.
+      const heading = PDFArray.withContext(context);
+      heading.push(PDFHexString.fromText(node.name));
+      if (own) heading.push(own.ref);
+      for (const entry of childOrder.asArray()) heading.push(entry);
+      order.push(heading);
     }
     return order;
   };

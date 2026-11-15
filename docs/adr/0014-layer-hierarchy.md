@@ -202,9 +202,9 @@ flat in `/OCProperties /D /Order`. With a hierarchy the intent is:
 
 - keep one OCG per layer that actually draws visible content, so the flattened
   page content and the deterministic default export are unchanged;
-- express the visible hierarchy in `/OCProperties /D /Order` with nested
-  heading dictionaries (`/Name` plus a nested `/Order`) for group layers, in
-  tree order;
+- express the visible hierarchy in `/OCProperties /D /Order` in tree order, with
+  group layers written in the ISO 32000-1 array form (ADR
+  [0016](0016-optional-content-export-shape.md));
 - never emit a group that has no visible content;
 - keep the flattened PDF as the default and the OCG option opt-in, as today.
 
