@@ -118,11 +118,13 @@ The macOS job builds `universal-apple-darwin`, so one DMG runs on Intel and
 Apple Silicon. Linux packages are built on Ubuntu 22.04 and the AppImage is a
 portable x86_64 build. No artifact is code-signed or notarized.
 
-Each platform job also runs the packaged app with `--smoke-test <dir>`: the app
-opens its bundled demo, saves, reopens, checks the unsaved-changes prompt and
-writes `result.json` before exiting with code 0 or 1. A failing smoke test fails
-the build before any artifact is uploaded. Native dialogs and menu clicks are
-covered by the manual install checks in step 7, not by the smoke test.
+The release job does **not** launch the packaged app. The smoke commands are
+compiled into debug builds only, so a release binary ignores `--smoke-test` and
+opens a window that never closes (F-037, F-074). The launch proof for the shell
+stays the packaged smoke test in `ci.yml`, which runs the debug build on macOS on
+every pull request. The release job proves the artifacts instead: the macOS job
+mounts and inspects the DMG (section 4a) and the `checksums` job proves the
+merged checksum file covers every artifact (section 5).
 
 Download the artifacts:
 
@@ -130,12 +132,59 @@ Download the artifacts:
 gh run download <run-id> --repo MajorJohnDoe/gridscalr
 ```
 
+## 4a. Automated macOS artifact verification
+
+There is no Mac hardware and no signing identity, so the macOS job proves what
+the runner can prove from the artifacts it just built. The step
+`Verify the macOS disk image and app bundle` runs
+`node scripts/verify-macos-bundle.mjs --release release`; the decisions live in
+`scripts/release-artifact-rules.mjs` and are unit-tested in
+`tests/releaseArtifactCheck.test.ts`.
+
+It fails the job unless all of this holds:
+
+- both staged names exist: `GridScalr_<version>_universal.dmg` and
+  `GridScalr_<version>_universal.app.zip`;
+- `SHA256SUMS-macos.txt` lists exactly those two files, with the SHA-256
+  recomputed from their bytes;
+- `hdiutil attach` mounts the DMG at a temporary mount point and the image
+  contains `GridScalr.app` with `Contents/MacOS/gridscalr`. The image carries the
+  MIT license as its license agreement (`bundle.licenseFile` in
+  `src-tauri/tauri.conf.json`), so the step answers that prompt on stdin — the
+  same thing `yes | hdiutil attach` does — and `-noverify` skips the checksum
+  pass because the SHA-256 check covers the file;
+- `lipo -info` on that executable reports both `x86_64` and `arm64`;
+- `CFBundleShortVersionString` equals the `package.json` version and
+  `CFBundleIdentifier` is `com.gridscalr.desktop`;
+- the `.app.zip`, extracted with `ditto -x -k`, passes the same bundle,
+  architecture, identity and version checks.
+
+The image is detached in a cleanup block even when a check fails, and every
+failure is an `::error::` annotated log line, so a thin binary, a renamed or
+missing bundle, a stale version or an incomplete checksum file stops the job
+before the artifact is uploaded. A broken bundle cannot reach a release.
+
+The check proves the artifact on GitHub's macOS runner. It does **not** prove a
+physical install: Gatekeeper acceptance through **System Settings → Privacy &
+Security**, dragging the app to Applications, a Finder double-click and the
+`.gridscalr` association on macOS are unverified. That gap is recorded in
+[`limitations.md`](limitations.md); never describe the macOS artifact as
+hardware-tested.
+
 ## 5. Checksums
 
 Each platform job writes `SHA256SUMS-windows.txt`, `SHA256SUMS-macos.txt` or
 `SHA256SUMS-linux.txt` covering exactly its own files. The checksum job merges
 them into one `SHA256SUMS.txt` that is published with the release, so a user can
 verify any download from the same file.
+
+Before the merged file is uploaded, the `checksums` job runs
+`node scripts/verify-release-checksums.mjs --sums SHA256SUMS.txt --artifacts
+artifacts` against the downloaded artifacts. Every line must match a downloaded
+file's SHA-256, every downloaded file must have exactly one line, and the DMG
+and `.app.zip` names must be present. A merge that drops a platform, renames an
+artifact or carries a stale hash fails the run, so the published checksum file
+cannot silently miss a file.
 
 Download the `gridscalr-checksums` artifact and confirm that the merged file
 lists every file from the other three artifacts. To verify:
@@ -177,16 +226,21 @@ gh release create "v$VERSION" \
 Mark the newest release as latest (`gh release edit "v$VERSION" --latest`) if an
 older tag was published afterwards.
 
-## 7. Verify a clean install on all three platforms
+## 7. Verify a clean install (Windows and Linux; macOS is unverified)
 
 - **Windows 10/11:** run the NSIS installer, confirm SmartScreen explains the
   unsigned build, then check that the Start menu entry, `.gridscalr` association
   and uninstall work. Also run the portable executable once.
-- **macOS (Intel and Apple Silicon if available):** open the DMG, drag
-  GridScalr to Applications, and approve the unsigned app through **System
-  Settings → Privacy & Security → Open Anyway**. Confirm that Finder opens a
-  `.gridscalr` project and that the app is universal (`file` or **About This
-  Mac** on an Apple Silicon machine).
+- **macOS:** **unverified on hardware.** No Mac is available, so the physical
+  install is a known gap: CI mounts the DMG, proves the bundle is universal,
+  matches the version and verifies the hashes (section 4a), but Gatekeeper
+  acceptance, the drag to Applications and a Finder launch of a `.gridscalr` are
+  not tested. If a Mac becomes available, open the DMG, drag GridScalr to
+  Applications, approve the unsigned app through **System Settings → Privacy &
+  Security → Open Anyway**, confirm Finder opens a `.gridscalr` project and
+  confirm the binary is universal (`file` or **About This Mac** on Apple
+  Silicon), then record the result here. Do not mark the release as
+  hardware-tested before that.
 - **Linux x86_64:** install the `.deb` with `sudo apt install
   ./GridScalr_<version>_amd64.deb`, run the AppImage after `chmod +x`, and
   unpack the tarball. Confirm that the desktop entry passes the file to

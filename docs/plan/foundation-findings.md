@@ -1647,6 +1647,7 @@ remains the scheduling home.
 | F-102 | fixed #243 | A background source check no longer renders the shell; only the status chips and page badges refresh, and only when the status set changed. |
 | F-103 | deferred | A rebuilt field without an id or `data-role` keeps focus but not the caret; add stable keys when Properties is next touched. |
 | F-104 | deferred | Component CSS still carries jade-palette literals that only a later `chrome.css` override masks; clean them up with a CSS scan when that file is next touched. |
+| F-117 | accepted | The macOS release artifact is proven structurally, not launched: the debug-only smoke harness (F-037) cannot run a release binary (F-074), so a bounded release-safe launch flag is the only way to add one, and the physical install stays unverified.
 
 
 ### F-011 — Template sheet fields still belong to a document, not a page
@@ -2861,3 +2862,37 @@ remains the scheduling home.
   `src/styles/themes/light-green.css`, `scripts/accessibility-rules.mjs`,
   `scripts/theme-token-rules.mjs`, `tests/accessibilityGate.test.ts`,
   `tests/theme.test.ts`.
+
+### F-117 — The macOS release artifact has no launch proof
+
+- **Date:** 2026-11-15
+- **Phase:** 0.28.0 phase 6 — automated macOS artifact verification
+- **Severity:** P3
+- **Area:** Release workflow / macOS artifact
+- **Status:** accepted — documented limitation
+- **Evidence:** `.github/workflows/release.yml` stages the DMG and `.app.zip`,
+  mounts the image and inspects the bundle (`scripts/verify-macos-bundle.mjs`),
+  but never launches the packaged binary. The `--smoke-test` harness is compiled
+  under `#[cfg(debug_assertions)]` (F-037) and `ci.yml` runs it against a debug
+  build on macOS. The v0.24.0 release attempt showed that a release binary
+  ignores the flag and opens a window that never closes (F-074).
+- **Problem:** Phase 6 of [#74](https://github.com/MajorJohnDoe/gridscalr/issues/74)
+  asked to keep the packaged `--smoke-test` run as the macOS launch proof. That
+  run no longer exists and cannot be restored by a workflow change: a release
+  binary has no bounded CLI path that exits, so "launching" it in CI means
+  opening a GUI process and killing it on a timeout.
+- **Impact:** CI proves that the DMG mounts, the bundle is universal, the version
+  and identity match and both hashes are in the merged file, but a
+  release-profile runtime failure (a missing dylib the release bundle resolves
+  differently, or a quarantine/Gatekeeper rejection) reaches a user before it is
+  seen. The debug packaged smoke test on macOS covers the same shell code on
+  every pull request, not the release profile. Nothing is claimed as
+  hardware-tested.
+- **Next step:** If a launch proof is wanted, add a release-safe CLI flag that
+  initializes the app and exits with a status, and call it from the macOS job.
+  Do not reintroduce an unbounded `--smoke-test` launch in a release job. A
+  physical install stays unverified because there is no Mac in the project; see
+  `docs/limitations.md`.
+- **Related:** [#74](https://github.com/MajorJohnDoe/gridscalr/issues/74), F-037,
+  F-074, `docs/releasing.md`, `docs/limitations.md`,
+  `scripts/verify-macos-bundle.mjs`.
