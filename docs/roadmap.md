@@ -5,7 +5,7 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.27.0** · Project-file schema: **26**
+Current version: **0.28.0** · Project-file schema: **27, frozen for 1.0**
 
 1.0 is a **quality gate**, not a target date. Work is organised by foundation
 workstreams so the product can release many versions while the base becomes
@@ -80,22 +80,28 @@ These are not negotiable without an explicit decision:
 | 0.25.0 | Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on Pages, undoable reorder and insert, page status badges and filters, page context menu, one shared list interaction model, import provenance, doctor sources with managed-copy cleanup and repair preview, layer hierarchy with nested OCG export (schema 26), TIF **Replace source…** and extra codecs, preflight relink, Rust source budget and model-boundary gates | Complete | v26 |
 | 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
 | 0.27.0 | Limits and lifecycle: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions and the docs/capture/Rust module gates, edit-safe shell rendering, a source check that no longer emits a save, themed Layers surfaces, and the colour-scan/OCG decisions | Complete | v26 |
+| 0.28.0 | Release candidate for 1.0: schema 27 colour-scan derived-PDF cache, ISO nested OCG `/Order`, import preflight relink from the picker, accessibility/touch-target/UI-scale/performance gates in CI, Light Green contrast fix, automated macOS artifact verification and the accepted `glib` position | Complete | v27 |
 
 **0.27.0** ships this work; its scope, decisions and follow-ups are recorded in
 [`plan/0.27.md`](plan/0.27.md), [`plan/0.27-handover.md`](plan/0.27-handover.md),
 [ADR 0015](adr/0015-colour-scan-storage.md) and
-[ADR 0016](adr/0016-optional-content-export-shape.md). The colour-scan cache
-([#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)) and the OCG array
-form ([#257](https://github.com/MajorJohnDoe/gridscalr/issues/257)) are planned
-follow-ups, not shipped work.
+[ADR 0016](adr/0016-optional-content-export-shape.md).
 
-**0.28.0** is planned as the schema-freeze release candidate: schema 27 makes the
-colour-scan derived PDF a rebuildable cache, the OCG array form and the preflight
-relink close the two shipped interoperability bugs, and the remaining 1.0 gates
-become CI checks. There is no Mac hardware and no signing identity, so the macOS
-artifact is verified in CI and the unsigned physical install is recorded as a
-known gap. See [`plan/0.28.md`](plan/0.28.md) and epic
+**0.28.0** is the release candidate for 1.0.0. Schema 27 makes the colour-scan
+derived PDF a rebuildable cache beside the project, the ISO array form fixes
+optional-content nesting in Firefox and pdf.js, and the preflight **Relink…** is
+reachable from the import picker. The accessibility, touch-target, UI-scale and
+performance gates now run in CI, and the macOS artifact is verified
+automatically. There is no Mac hardware and no signing identity, so the physical
+install is unverified and the builds stay unsigned. 1.0.0 follows only after this
+release has been tested in real use. See [`plan/0.28.md`](plan/0.28.md),
+[`plan/0.28-handover.md`](plan/0.28-handover.md) and epic
 [#261](https://github.com/MajorJohnDoe/gridscalr/issues/261).
+
+**Schema freeze:** schema 27 is the last change before 1.0. The migration ladder,
+the compatibility promise and the committed corpus end at 27. A later format
+change is a schema 28 and a deliberate unfreeze with its own migration and
+fixture, not a routine bump.
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).

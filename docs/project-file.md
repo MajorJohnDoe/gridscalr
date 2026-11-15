@@ -24,6 +24,14 @@ from schema 24 ([ADR 0011](adr/0011-page-list-and-source-replacement.md)). Schem
 PDF optional and adds the derived-PDF cache marker. This document describes
 schema 27.
 
+**Schema freeze.** Schema 27 is the last project-file schema change before 1.0.
+The migration ladder, the backward-compatibility promise and the committed
+`schema 1–27` corpus end at 27. A future format change is a schema 28 and a
+deliberate unfreeze: it needs its own migration from 27, a committed fixture, the
+round-trip and determinism tests, and a recorded decision, rather than a routine
+bump alongside a feature. Bumping `schemaVersion` because the app version changed
+remains forbidden.
+
 Drawing PDFs, optional-content layer groups and review annotations are export
 artifacts. They are generated on demand, are not stored in the project and are
 never read back. Interoperability export options therefore do not change the

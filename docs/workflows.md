@@ -22,6 +22,8 @@ Use this workflow when you need to document a site visit, mark a deviation, or g
 
 A calibrated page shows the scale in the status bar; hover the chip for the reference length and the exact mm per point.
 
+A scanned colour TIF is converted once into a derived PDF in the sibling `<project>.derived/` folder, so the project file carries only a small cache marker. Keep that folder beside the project when you copy or move it: a missing cache is rebuilt silently from the original scan, and if the scan is gone too the open dialog offers **Locate the scan…** with the expected path. A scan that does not match the project's checksum is refused.
+
 The page cards show a badge when the drawing on disk no longer matches the project, and the filter bar above them narrows the list to **Changed source**, **Superseded**, **OCR missing or stale** or **Scale locked** pages. Check it before a site visit so you do not annotate an outdated sheet.
 
 ### 2. Measure what the job needs
@@ -55,7 +57,7 @@ Right-click or long-press the Cloud, Callout, Stamp and Arrow tools to choose va
 1. Choose **File → Export → Drawing PDF…**.
 2. Select the current page, all pages or a page range.
 3. Choose whole pages or a selected crop area.
-4. Include the visible layers, labels, calibration line and, when useful, a legend. For a recipient who reviews in another PDF reader, optionally enable **Optional layers (OCG)** or **Review annotations**. Both are off by default, keep the flattened drawing intact, and annotations are a review artifact rather than an editable project.
+4. Include the visible layers, labels, calibration line and, when useful, a legend. For a recipient who reviews in another PDF reader, optionally enable **Optional layers (OCG)** or **Review annotations**. Both are off by default, keep the flattened drawing intact, and annotations are a review artifact rather than an editable project. With OCG enabled, a layer group is written in the standard nested form that Firefox and pdf.js read, so it nests under its folder in the reader's layer list; a group that also holds items repeats its name on a selectable entry for its own content.
 5. Save the file under a new name.
 
 ![Drawing export with pages, layers, labels and legend options](screenshots/export.png)
