@@ -8,9 +8,11 @@ import {
   PDFHexString,
   PDFName,
   PDFRawStream,
+  PDFRef,
   decodePDFRawStream,
   degrees,
 } from "pdf-lib";
+import type { PDFObject } from "pdf-lib";
 import { exportProjectPdf, pdfCropBoxForViewport } from "../src/pdf/pdfExport";
 import type { PdfRenderer } from "../src/pdf/pdfRenderer";
 import { createCalibration } from "../src/model/calibration";
@@ -841,6 +843,7 @@ describe("optional OCG layer export", () => {
     });
     const names = await optionalContentNames(bytes);
     expect(names).toEqual(["Markups", "Measurements"]);
+    await expectIsoOrderForm(bytes);
 
     const doc = await PDFDocument.load(bytes);
     expect(doc.catalog.get(PDFName.of("OCProperties"))).toBeTruthy();
@@ -855,6 +858,7 @@ describe("optional OCG layer export", () => {
     const config = await document.getOptionalContentConfig();
     const groupNames = [...config].map(([, group]) => group.name);
     expect(groupNames).toEqual(["Markups", "Measurements"]);
+    expect(pdfJsOrderShape(config)).toEqual(["Markups", "Measurements"]);
     await task.destroy();
   });
 
@@ -1006,14 +1010,14 @@ describe("review-only PDF annotations", () => {
 });
 
 interface OptionalContentNode {
-  /** Set for a leaf OCG entry. */
-  name: string | null;
-  /** Set for a nested heading dictionary. */
-  headingName: string | null;
+  /** Layer name for a selectable OCG entry, or the folder label for a heading. */
+  name: string;
+  /** True for the non-selectable heading of a nested ISO array. */
+  heading: boolean;
   order: OptionalContentNode[];
 }
 
-/** Reads `/OCProperties /D /Order` as a tree, keeping nested headings. */
+/** Reads `/OCProperties /D /Order` as a tree in the ISO array form. */
 async function optionalContentTree(bytes: Uint8Array): Promise<OptionalContentNode[]> {
   const doc = await PDFDocument.load(bytes);
   const properties = doc.catalog.lookupMaybe(PDFName.of("OCProperties"), PDFDict);
@@ -1024,24 +1028,71 @@ async function optionalContentTree(bytes: Uint8Array): Promise<OptionalContentNo
 
   const decode = (value: unknown): string =>
     value instanceof PDFHexString ? value.decodeText() : String(value ?? "");
-  const readArray = (array: PDFArray): OptionalContentNode[] =>
-    array.asArray().map((entry) => {
-      const dict = doc.context.lookup(entry, PDFDict);
-      const nested = dict.get(PDFName.of("Order"));
-      if (nested instanceof PDFArray) {
+  const readEntries = (entries: readonly PDFObject[]): OptionalContentNode[] =>
+    entries.map((entry) => {
+      if (entry instanceof PDFArray) {
+        const [label, ...rest] = entry.asArray();
         return {
-          name: null,
-          headingName: decode(dict.get(PDFName.of("Name"))),
-          order: readArray(nested),
+          name: decode(doc.context.lookup(label)),
+          heading: true,
+          order: readEntries(rest),
         };
       }
+      const dict = doc.context.lookup(entry, PDFDict);
       return {
         name: decode(dict.get(PDFName.of("Name"))),
-        headingName: null,
+        heading: false,
         order: [],
       };
     });
-  return readArray(order);
+  return readEntries(order.asArray());
+}
+
+/**
+ * Asserts the serialized `/Order` is the ISO 32000-1 Table 101 array form: a
+ * leaf is an OCG reference and a nesting entry is an inline array whose first
+ * element is a name string, never the Acrobat heading dictionary (F-087).
+ */
+async function expectIsoOrderForm(bytes: Uint8Array): Promise<void> {
+  const doc = await PDFDocument.load(bytes);
+  const properties = doc.catalog.lookupMaybe(PDFName.of("OCProperties"), PDFDict);
+  const defaults = properties?.lookupMaybe(PDFName.of("D"), PDFDict);
+  const order = defaults?.lookupMaybe(PDFName.of("Order"), PDFArray);
+  expect(order).toBeInstanceOf(PDFArray);
+
+  const walk = (entries: readonly PDFObject[]): void => {
+    for (const entry of entries) {
+      // A dictionary heading is the form pdf.js drops.
+      expect(entry).not.toBeInstanceOf(PDFDict);
+      if (entry instanceof PDFArray) {
+        const items = entry.asArray();
+        expect(items[0]).toBeInstanceOf(PDFHexString);
+        expect(items.length).toBeGreaterThan(1);
+        walk(items.slice(1));
+        continue;
+      }
+      expect(entry).toBeInstanceOf(PDFRef);
+      const dict = doc.context.lookup(entry, PDFDict);
+      expect(String(dict.get(PDFName.of("Type")))).toBe("/OCG");
+    }
+  };
+  walk(order!.asArray());
+}
+
+/** pdf.js `parseNestedOrder` shape: a ref becomes a group name, a nesting entry a named node. */
+type PdfJsOrderNode = string | { name: string | null; order: PdfJsOrderNode[] };
+
+function pdfJsOrderShape(config: {
+  getOrder(): unknown;
+  getGroup(id: string): { name?: string } | null;
+}): PdfJsOrderNode[] {
+  const resolve = (entries: readonly unknown[]): PdfJsOrderNode[] =>
+    entries.map((entry) => {
+      if (typeof entry === "string") return config.getGroup(entry)?.name ?? entry;
+      const node = entry as { name: string | null; order: readonly unknown[] };
+      return { name: node.name, order: resolve(node.order) };
+    });
+  return resolve((config.getOrder() ?? []) as readonly unknown[]);
 }
 
 function addMeasureLayer(project: Project, id: string, name: string): Project["layers"][number] {
@@ -1094,10 +1145,14 @@ describe("nested optional-content export", () => {
       includeOcg: true,
     });
     const tree = await optionalContentTree(bytes);
-    expect(tree.map((node) => node.headingName ?? node.name)).toEqual(["Markups", "Measurements"]);
-    // The group layer keeps its own group and nests the child under a heading.
-    expect(tree[1].headingName).toBe("Measurements");
+    expect(tree.map((node) => node.name)).toEqual(["Markups", "Measurements"]);
+    // The group layer is a non-selectable heading that repeats its layer name on
+    // the selectable OCG carrying the group's own content (ADR 0016).
+    expect(tree[1].heading).toBe(true);
+    expect(tree[1].name).toBe("Measurements");
     expect(tree[1].order.map((node) => node.name)).toEqual(["Measurements", "Detail symbols"]);
+    expect(tree[1].order.map((node) => node.heading)).toEqual([false, false]);
+    await expectIsoOrderForm(bytes);
 
     // The plain OCG list still carries every group exactly once.
     expect(await optionalContentNames(bytes)).toEqual([
@@ -1106,12 +1161,17 @@ describe("nested optional-content export", () => {
       "Detail symbols",
     ]);
 
-    // pdf.js resolves the same leaf groups from the catalog.
+    // pdf.js resolves the same leaf groups from the catalog, and its
+    // parseNestedOrder output keeps the same nesting instead of a flat fallback.
     const task = pdfjs.getDocument({ data: bytes.slice() });
     const document = await task.promise;
     const config = await document.getOptionalContentConfig();
     const groupNames = [...config].map(([, group]) => group.name);
     expect(groupNames).toEqual(["Markups", "Measurements", "Detail symbols"]);
+    expect(pdfJsOrderShape(config)).toEqual([
+      "Markups",
+      { name: "Measurements", order: ["Measurements", "Detail symbols"] },
+    ]);
     await task.destroy();
   });
 
@@ -1131,7 +1191,7 @@ describe("nested optional-content export", () => {
       }),
     );
     expect(tree.map((node) => node.name)).toEqual(["Markups"]);
-    expect(tree.some((node) => node.headingName === "Hidden group")).toBe(false);
+    expect(tree.some((node) => node.heading && node.name === "Hidden group")).toBe(false);
 
     // The hidden group also keeps its child's items out of the flattened page.
     measure.visible = true;
@@ -1218,7 +1278,7 @@ describe("nested optional-content export", () => {
         includeOcg: true,
       }),
     );
-    expect(tree.map((node) => node.headingName ?? node.name)).toEqual(["Markups", "Measurements"]);
-    expect(tree.some((node) => node.headingName === "Empty group")).toBe(false);
+    expect(tree.map((node) => node.name)).toEqual(["Markups", "Measurements"]);
+    expect(tree.some((node) => node.heading && node.name === "Empty group")).toBe(false);
   });
 });

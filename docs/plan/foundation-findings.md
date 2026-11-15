@@ -2149,7 +2149,8 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 10b — Layers panel tree and nested OCG export
 - **Severity:** P3
 - **Area:** PDF export / optional content
-- **Status:** triaged #257 — interoperability defect confirmed, fix deferred
+- **Status:** fixed by 0.28.0 phase 1
+  ([#257](https://github.com/MajorJohnDoe/gridscalr/issues/257))
 - **Evidence:** Nested groups are written as heading dictionaries with `/Name`
   and a nested `/Order` in `/OCProperties /D /Order`, per ADR 0014 and ISO
   32000. pdf.js `parseNestedOrder` in `pdf.worker.mjs` only accepts an array
@@ -2167,6 +2168,13 @@ remains the scheduling home.
   form makes the heading non-selectable, so a group layer that also owns items
   needs a name rule for its own content, and because the form must be verified
   in Acrobat as well as Firefox before it is switched.
+- **Resolution (0.28.0 phase 1):** `orderFor()` in `src/pdf/export/ocg.ts`
+  writes the ISO 32000-1 Table 101 array form and ADR 0016 records the name
+  rule: a group that owns items repeats its layer name on the selectable OCG
+  inside the folder. The pdf.js worker parser now returns the nested order
+  instead of a nameless fallback list; `tests/pdfExport.test.ts` asserts the
+  serialized form and the parser output. Acrobat and PDF-XChange verification
+  is pending maintainer review of the phase sample export.
 - **Related:** #193, ADR [0014](../adr/0014-layer-hierarchy.md),
   `src/pdf/export/ocg.ts`, `tests/pdfExport.test.ts`.
 
