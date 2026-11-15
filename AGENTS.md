@@ -402,7 +402,7 @@ do not change the released version must not change the version shown on the site
 - CI keeps one authoritative run per branch: the `concurrency` group with `cancel-in-progress` cancels a superseded run when a branch is rebased or re-pushed, so a phase cannot accumulate competing runs. Every job has a `timeout-minutes` cap.
 - The system-package and Playwright installation steps retry three times with a five-minute cap per attempt. A failure there is a **runner or mirror problem, not a code failure**: re-run the job, and if it repeats, record an environment finding instead of changing code to chase it. Changing application code to satisfy a broken package mirror has happened once and cost hours.
 - `.github/workflows/docs-capture.yml` runs the documentation screenshot dry run (`npm run test:docs-capture`) weekly, on demand and on a pull request labelled `docs-capture`. It writes the images to a temporary folder and never rewrites `docs/screenshots/`, so a renamed panel or accessible name breaks a labelled or scheduled run instead of the next documentation pass. It is not part of every pull request.
-- `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags. Its build jobs depend on the same dependency advisory gate.
+- `.github/workflows/release.yml` builds the Windows `.exe`, NSIS installer and MSI; the universal macOS DMG and `.app.zip`; and the Linux AppImage, `.deb` and `.tar.gz`, then merges the per-platform checksums. It runs on manual dispatch or `v*` tags. Its build jobs depend on the same dependency advisory gate. The macOS job mounts the DMG, proves the bundle is universal, matches the version and verifies both hashes (`scripts/verify-macos-bundle.mjs`), and the `checksums` job verifies the merged `SHA256SUMS.txt` against every downloaded artifact (`scripts/verify-release-checksums.mjs`). The release job never launches a packaged binary: the smoke commands are debug-only (F-037, F-074).
 - The Linux build host produces a Linux binary, not a Windows `.exe`. Use the `Release build` workflow for Windows and macOS artifacts.
 - GitHub CLI is available in the development environment. Authentication is stored outside the repository; never copy tokens into committed files.
 - If GitHub rejects a push because the OAuth token lacks a scope, refresh it with `gh auth refresh -h github.com -s workflow` when adding or changing workflow files.
@@ -683,6 +683,9 @@ scripts/check-action-pins.mjs 40-character SHA pins for every workflow `uses:` r
 scripts/check-dependencies.mjs dependency and advisory gate runner
 scripts/dependency-gate.mjs pure audit parsing, allowlist and threshold rules
 scripts/check-versions.mjs   app-version agreement across the four version fields
+scripts/verify-macos-bundle.mjs macOS release job: DMG mount, universal binary, bundle identity and hashes
+scripts/verify-release-checksums.mjs merged SHA256SUMS.txt check against every downloaded artifact
+scripts/release-artifact-rules.mjs pure lipo, Info.plist, bundle and checksum rules for the release artifacts
 scripts/csp-regression.mjs  browser CSP, PDF worker and OCR worker regression
 security/policy.json       machine-checked CSP and capability justification
 security/dependency-allowlist.json reviewed npm and Rust advisory exceptions with reasons and expiry

@@ -228,6 +228,17 @@ jobs:
           cp "$bundle"/dmg/*.dmg "$release"/
           (cd "$release" && shasum -a 256 * > SHA256SUMS-macos.txt)
 
+      # The release binary cannot run the debug-only smoke harness (F-037,
+      # F-074), so this job proves the artifact instead of launching it: the DMG
+      # mounts, GridScalr.app and its executable are present, `lipo -info`
+      # reports x86_64 and arm64, the Info.plist version and identifier match the
+      # source, and SHA256SUMS-macos.txt covers both staged files. The portable
+      # .app.zip is inspected the same way. See docs/releasing.md section 4a.
+      - name: Verify the macOS disk image and app bundle
+        if: matrix.platform == 'macOS'
+        shell: bash
+        run: node scripts/verify-macos-bundle.mjs --release release
+
       - name: Stage Linux files and checksums
         if: matrix.platform == 'Linux'
         shell: bash
@@ -247,7 +258,8 @@ jobs:
       # release binary ignores `--smoke-test` and opens a window that never
       # closes: on 2026-11-11 that hung all three platforms for two hours during
       # the 0.24.0 release. Release verification therefore checks the staged
-      # artifacts and checksums that the staging steps above produced.
+      # artifacts and checksums that the staging steps above produced, and the
+      # macOS job additionally mounts the DMG and inspects the bundle.
       - name: Verify the staged release artifacts (Linux and macOS)
         if: matrix.platform != 'Windows'
         shell: bash
@@ -287,6 +299,12 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22
+
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
         with:
           pattern: gridscalr-*
@@ -298,6 +316,14 @@ jobs:
           find artifacts -name "SHA256SUMS-*.txt" -print0             | sort -z             | xargs -0 cat > SHA256SUMS.txt
           test -s SHA256SUMS.txt
           cat SHA256SUMS.txt
+
+      # The merge above is a `cat` of three files. This step proves the result
+      # against the artifacts themselves: every line matches a downloaded file's
+      # SHA-256, every downloaded file has a line, and both macOS names are
+      # present. A dropped, duplicated or stale line fails the run before the
+      # checksums artifact is uploaded.
+      - name: Verify the merged checksums against the downloaded artifacts
+        run: node scripts/verify-release-checksums.mjs --sums SHA256SUMS.txt --artifacts artifacts
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:

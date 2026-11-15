@@ -423,6 +423,13 @@ The DMG is universal, so the same download runs on Intel and Apple Silicon.
 Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 `shasum -a 256` before opening it.
 
+The macOS artifact is built and checked on CI's macOS runner: the job mounts the
+DMG, proves the binary is universal, matches the bundle version to the release
+and verifies both checksums. The unsigned app has not been installed on Apple
+hardware, so the Gatekeeper path above is documented from the platform's
+behaviour rather than verified on a Mac. Treat a physical macOS install as
+unverified until that changes.
+
 ## Project status
 
 GridScalr is pre-1.0 and uses schema 27 for project files. Schema changes are

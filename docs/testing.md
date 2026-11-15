@@ -24,6 +24,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:docs-capture` | The documentation screenshot steps and locators, written to a temporary folder instead of `docs/screenshots/`. Runs in `docs-capture.yml` weekly, on demand and on a `docs-capture` label. |
 | `npm run check:dependencies` | `npm audit` and `cargo audit` against the reviewed allowlist in `security/dependency-allowlist.json`; fails on a new moderate-or-higher advisory, an expired entry or a stale entry. |
 | `npm run check:actions` | Every remote `uses:` reference in `.github/workflows` is a 40-character commit SHA with a `# <version>` comment, and one action release never carries two SHAs. |
+| `npx vitest run tests/releaseArtifactCheck.test.ts` | The release-artifact rules: universal versus thin `lipo` output, bundle identity, `Info.plist` version, checksum listings, and the release workflow wiring that runs them. |
 | `npm run check:themes` | Theme token completeness (including the Layers inset surfaces) and WCAG AA contrast checks for the five palettes. |
 | `npm run theme:preview` | Captures the light and navy design previews from `docs/theme-preview/`. |
 | `cargo test --manifest-path src-tauri/Cargo.toml --lib` | Atomic saves, verified managed source copies, package create/inspect/extract, manifest limits, checksums, cancellation, ZIP traversal and symlinks. Runs on the Ubuntu `rust` job and on all three `desktop` matrix entries, Windows and macOS included. |
@@ -463,6 +464,31 @@ The 2 GB desktop working set is not measurable from the browser fallback. It
 stays a manual check on the packaged app and is recorded in the release pull
 request. `tests/performanceBudget.test.ts` pins the numbers in this section to the
 table in `limitations.md`.
+
+### Release artifact verification
+
+The `Release build` workflow verifies the artifacts it produces, because the
+release binary cannot run the debug-only smoke harness (F-037, F-074):
+
+- `scripts/verify-macos-bundle.mjs` runs on the macOS runner after staging. It
+  mounts the DMG with `hdiutil attach`, inspects `GridScalr.app` and
+  `Contents/MacOS/gridscalr`, requires `lipo -info` to report `x86_64` and
+  `arm64`, matches `CFBundleShortVersionString` to `package.json`, checks
+  `SHA256SUMS-macos.txt` against both staged files, repeats the bundle checks on
+  the extracted `.app.zip`, and detaches the image even when a check fails.
+- `scripts/verify-release-checksums.mjs` runs in the `checksums` job. It
+  recomputes every downloaded artifact's SHA-256 and requires the merged
+  `SHA256SUMS.txt` to list each file once with the matching hash, including the
+  DMG and `.app.zip`.
+
+Both CLIs are thin wrappers over `scripts/release-artifact-rules.mjs`, so the
+decisions are testable without macOS: `tests/releaseArtifactCheck.test.ts`
+proves that a thin binary, a missing bundle, a wrong bundle identity, a stale
+version, a missing macOS artifact, a wrong hash and an unlisted file are all
+rejected, and that the release workflow keeps the two checks and never runs
+`--smoke-test` against a release binary. The tool calls themselves only run in
+the release workflow. A physical macOS install stays unverified; see
+[`limitations.md`](limitations.md).
 
 ### Manual accessibility checklist (canvas and keyboard)
 
