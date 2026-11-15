@@ -34,7 +34,7 @@
   padding: 12px;
 }
 
-.inspector-section h3 {
+.inspector-section h2 {
   margin: 0 0 9px;
   font-size: 11px;
   text-transform: uppercase;
@@ -51,11 +51,11 @@
   background: linear-gradient(180deg, rgba(53, 194, 161, 0.075), transparent 72%);
 }
 
-.inspector-section.selection-section h3 {
+.inspector-section.selection-section h2 {
   color: var(--jade-bright);
 }
 
-.inspector-section.active-layer-section h3 {
+.inspector-section.active-layer-section h2 {
   color: var(--muted-2);
 }
 
@@ -107,7 +107,7 @@
   margin-bottom: 9px;
 }
 
-.section-head h3 {
+.section-head h2 {
   margin: 0;
 }
 
@@ -720,7 +720,9 @@
 
 .page-size {
   font-size: 11px;
-  color: var(--muted-2);
+  /* The card is tinted when active, so the subtle muted token falls below 4.5:1.
+     Mixing toward the primary text keeps the meta row legible on every surface. */
+  color: color-mix(in srgb, var(--text) 70%, var(--muted-2));
   font-variant-numeric: tabular-nums;
   margin-top: 2px;
   overflow: hidden;
@@ -738,13 +740,13 @@
   font-size: 11px;
   padding: 1px 5px;
   border-radius: 7px;
-  background: var(--panel-hover);
-  color: var(--muted);
+  background: var(--hover-soft);
+  color: color-mix(in srgb, var(--text) 65%, var(--muted));
 }
 
 .page-badge.is-calibrated {
   background: rgba(53, 194, 161, 0.13);
-  color: var(--jade-bright);
+  color: color-mix(in srgb, var(--jade-bright) 75%, var(--text));
 }
 
 /* ---------- Markups ---------- */

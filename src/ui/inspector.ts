@@ -89,7 +89,7 @@ function activeLayerSection(
 ): HTMLElement {
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", t("inspector.activeLayer")));
+  head.append(el("h2", "", t("inspector.activeLayer")));
   const active = project.layers.find((l) => l.id === project.activeLayerId);
   section.append(head);
   if (!active) {

@@ -21,7 +21,6 @@ import {
 import {
   PAGE_STATUS_FILTERS,
   pageStatus,
-  pageStatusAriaText,
   pageStatusBadgesNode,
   pageStatusEmptyNote,
   pageStatusFilterBar,
@@ -71,22 +70,23 @@ function applyThumbnail(pending: PendingThumbnail, url: string): void {
   pending.image.hidden = false;
 }
 
-function pageCardAria(
-  row: PageStatusRow,
-  pageName: string | null | undefined,
-  location: string | null | undefined,
-  size: PageSize | undefined,
-): string {
-  return t("page.cardAria", {
-    name: pageName
-      ? t("page.namedPageAria", { name: pageName, page: row.page })
-      : t("page.titleFallback", { page: row.page }),
-    location: location ? t("page.locationAria", { location }) : "",
-    size: size
-      ? t("page.sizeAria", { width: Math.round(size.width), height: Math.round(size.height) })
-      : "",
-    status: pageStatusAriaText(row.badges),
-  });
+/**
+ * Names the card from the text it shows. A separate `aria-label` cannot include
+ * the visible page number, size, source and status labels, which breaks WCAG
+ * 2.5.3 Label in Name (axe `label-content-name-mismatch`); `aria-labelledby`
+ * keeps the accessible name and the visible text in step.
+ */
+function refreshPageCardName(card: HTMLElement): void {
+  const ids = [...card.querySelectorAll<HTMLElement>("[data-page-label]")]
+    .map((node) => node.id)
+    .filter(Boolean);
+  if (ids.length) card.setAttribute("aria-labelledby", ids.join(" "));
+  else card.removeAttribute("aria-labelledby");
+}
+
+function pageCardLabel(node: HTMLElement, pageId: PageId, suffix: string): void {
+  node.id = `page-card-${pageId}-${suffix}`;
+  node.setAttribute("data-page-label", "");
 }
 
 function beginPageRename(title: HTMLElement, pageId: PageId, page: number): void {
@@ -262,24 +262,34 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     image.setAttribute("aria-hidden", "true");
     image.hidden = true;
     thumb.append(image);
-    if (prefs.pagesShowNumbers) thumb.append(el("span", "page-thumb-number", String(page)));
+    if (prefs.pagesShowNumbers) {
+      const number = el("span", "page-thumb-number");
+      // The corner number repeats the page number already in `.page-size`. It is
+      // drawn with CSS content so it adds no text node that would split the
+      // card's accessible name (WCAG 2.5.3, axe label-content-name-mismatch).
+      number.dataset.page = String(page);
+      number.setAttribute("aria-hidden", "true");
+      thumb.append(number);
+    }
     const cached = actions.getPageThumbnail(page);
     if (cached) applyThumbnail({ page, image }, cached);
     const info = el("div", "page-info");
     const pageName = pageDisplayName(project, pageId);
     const title = el("div", "page-title", pageName ?? t("page.titleFallback", { page }));
+    pageCardLabel(title, pageId, "title");
     title.title = pageName ? `${pageName} — double-click to rename` : t("page.doubleClickRename");
     title.addEventListener("dblclick", (event) => {
       event.preventDefault();
       event.stopPropagation();
       beginPageRename(title, pageId, page);
     });
-    info.append(title);
+    info.append(title, document.createTextNode(" "));
     const location = pageLocationLabel(project, pageId);
     if (location) {
       const locationNode = el("div", "page-location", location);
+      pageCardLabel(locationNode, pageId, "location");
       locationNode.title = location;
-      info.append(locationNode);
+      info.append(locationNode, document.createTextNode(" "));
     }
     const sizeText = size
       ? t("page.cardMeta", {
@@ -289,24 +299,29 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
         })
       : t("page.loadingSize");
     const sizeNode = el("div", "page-size", sizeText);
-    info.append(sizeNode);
+    pageCardLabel(sizeNode, pageId, "size");
+    info.append(sizeNode, document.createTextNode(" "));
     if (!prefs.pagesGrouped && prefs.pagesShowSource && project.documents.length > 1) {
-      const document = project.documents.find((entry) => entry.id === row.documentId);
-      if (document) {
+      const sourceDocument = project.documents.find((entry) => entry.id === row.documentId);
+      if (sourceDocument) {
         const source = el("div", "page-source");
+        pageCardLabel(source, pageId, "source");
         const sourceIcon = el("span", "page-source-icon");
         sourceIcon.innerHTML = icon("file", 11);
-        source.append(sourceIcon, el("span", "page-source-name", document.name));
-        source.title = document.name;
-        info.append(source);
+        source.append(sourceIcon, el("span", "page-source-name", sourceDocument.name));
+        source.title = sourceDocument.name;
+        info.append(source, document.createTextNode(" "));
       }
     }
     const badges = pageStatusBadgesNode(row.badges);
-    if (badges.childElementCount) info.append(badges);
+    if (badges.childElementCount) {
+      pageCardLabel(badges, pageId, "status");
+      info.append(badges, document.createTextNode(" "));
+    }
     card.append(thumb, info);
     if (reorderEnabled) card.append(dragHandle(t("page.dragHandle")));
     pendingThumbnails.set(card, { page, image });
-    card.setAttribute("aria-label", pageCardAria(row, pageName, location, size));
+    refreshPageCardName(card);
     card.addEventListener("click", (event) => {
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
@@ -387,15 +402,11 @@ export function refreshPageStatusBadges(refs: ShellRefs, actions: PanelActions):
     if (next.childElementCount) {
       if (existing) existing.replaceWith(next);
       else card.querySelector(".page-info")?.append(next);
+      pageCardLabel(next, card.dataset.pageId as PageId, "status");
     } else {
       existing?.remove();
     }
-    const pageName = pageDisplayName(project, row.pageId);
-    const location = pageLocationLabel(project, row.pageId);
-    card.setAttribute(
-      "aria-label",
-      pageCardAria(row, pageName, location, actions.getPageSize(row.page)),
-    );
+    refreshPageCardName(card);
   }
 }
 

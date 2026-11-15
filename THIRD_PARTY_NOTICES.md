@@ -53,6 +53,7 @@ The font files are not modified. Their license texts are included in the
 ## Development-only dependencies
 
 Vitest, Playwright, Prettier, TypeScript, Vite and the Tauri CLI are development
-dependencies. They are not part of the distributed application, but their
-licenses still apply to the repository. See `package.json` and
-`package-lock.json`.
+dependencies. `@axe-core/playwright` and `axe-core`, used by the automated
+accessibility gate, are MPL-2.0. None of them are part of the distributed
+application, but their licenses still apply to the repository. See
+`package.json` and `package-lock.json`.

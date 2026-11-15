@@ -237,7 +237,8 @@ no date and no version-numbered path. The umbrella tracking issue is
 1. Windows, macOS and Linux artifacts are built, checksummed and installable.
 2. English and Swedish UI, reports and export formats are complete.
 3. A project can be packaged, sent and opened by another person.
-4. Large projects meet the documented performance budgets.
+4. Large projects meet the documented performance budgets, checked in CI by
+   `npm run check:performance` and recorded in the release pull request.
 5. Saving, recovery, diagnostics and project metadata are production-ready.
 6. Concurrent editing and source-storage behaviour are documented and tested.
 7. Packaged desktop smoke tests pass on all platforms.
@@ -246,6 +247,9 @@ no date and no version-numbered path. The umbrella tracking issue is
    complete.
 10. The Tauri capability, CSP and path-handling review is complete.
 11. Coverage, fuzzing and visual regression gates are part of CI.
+12. The accessibility, touch-target and UI-scale gates run in CI, the manual
+    canvas and keyboard checklist is complete for the release, and the baseline
+    results are recorded in the release pull request.
 
 Related: [#53](https://github.com/MajorJohnDoe/gridscalr/issues/53),
 [#54](https://github.com/MajorJohnDoe/gridscalr/issues/54),

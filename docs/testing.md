@@ -13,6 +13,10 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:canvas` | Pointer-level canvas gestures: draw, resize, rotate, text, locks, crop and split view. |
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
+| `npm run test:a11y` | Automated axe check of the shell and five dialogs; serious and critical violations fail. |
+| `npm run test:touch-targets` | Every visible control on the shell, Layers, Markups and the main dialogs is at least 24 × 24 CSS px with an emulated coarse pointer. |
+| `npm run test:ui-scale` | The shell, menus and dialogs stay usable at 100 %, 150 % and 200 % UI scale. |
+| `npm run check:performance` | The deterministic reference project against the budgets in [`limitations.md`](limitations.md). |
 | `npm run test:visual` | Browser and dialog pixel comparison against the committed documentation screenshots. |
 | `npm run check:file-budgets` | Blocking line budgets for frontend and Rust source files, with reviewed exceptions for legacy modules. |
 | `npm run check:modules` | Foundation feature `index.ts` surfaces, deep-import boundaries from ADR 0013, and the Rust command cap and module wiring in `rust-commands.json`. |
@@ -349,6 +353,133 @@ spelling is resolved only by the canonicalising Rust guard; the browser fallback
 cannot compare file identities; and Windows 8.3 short-name aliases and alternate
 data streams are not exercised (F-036 covered the junction and verbatim-prefix
 cases in 0.27.0 phase 4, #199).
+
+## Accessibility, touch-target, UI-scale and performance gates
+
+These four gates turn the 1.0 quality items that used to be manual review into
+CI steps. They run in the `frontend` job of `.github/workflows/ci.yml`, after
+Chromium is installed, and each one is a separate named step so a failure is
+visible without reading the full log. Their baseline results are recorded in the
+release pull request and the release notes; they are part of the release
+checklist in [`releasing.md`](releasing.md).
+
+### Automated accessibility check
+
+`npm run test:a11y` opens the demo project in the browser fallback, injects
+`axe-core` through `@axe-core/playwright` and analyses six surfaces:
+
+| Surface | What is opened |
+| --- | --- |
+| Main shell | The shell with the demo project, without a dialog |
+| Project settings dialog | `Ctrl/Cmd+,` |
+| Preferences dialog | **Settings → Preferences…** |
+| Quantities dialog | `Ctrl/Cmd+Alt+Q` |
+| Drawing export dialog | **File → Export → Drawing PDF…** |
+| Help dialog | `F1` |
+
+A **serious** or **critical** axe violation fails the run. Moderate, minor and
+best-practice findings are printed with their target and are not hidden: there is
+no allowlist, so a new serious rule fails immediately. The script also asserts
+that each dialog receives focus when it opens and that the run raises no page
+errors. `tests/accessibilityGate.test.ts` proves the impact split, the
+no-allowlist rule and the documented surface list.
+
+The freehand canvas has no DOM model for axe to inspect. It is covered by the
+manual checklist below, not by this gate; full screen-reader support for freehand
+drawing is an explicit non-goal for 1.0.
+
+The gate runs the default Medium Gray palette. The Light Green palette still has
+a known text-contrast gap on the shell chrome (F-116 in
+[`plan/foundation-findings.md`](plan/foundation-findings.md)); when it is fixed,
+add it as a second surface here so a regression fails.
+
+### Touch-target check
+
+`npm run test:touch-targets` creates a Playwright Chromium context with
+`hasTouch: true`. That is the stable way to make the browser report
+`(pointer: coarse)`; the script asserts that the media query matches and measures
+the layout the real CSS produces instead of overriding `matchMedia`.
+
+Every visible control on the shell, the expanded Layers panel, the Markups panel
+and the Project settings, Preferences and Quantities dialogs must measure at
+least **24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
+
+- a checkbox or radio is measured through its wrapping label, because the label
+  is the clickable target;
+- the layer colour swatch is measured as the button it exposes, not the
+  `aria-hidden` colour input behind it;
+- the coarse-pointer rules live in `src/styles/responsive.css`. The mouse layout
+  is deliberately denser and is unchanged, so the visual baselines do not move.
+
+A failure prints the surface, control, measured size and the minimum. Raise the
+control in the `(pointer: coarse)` block; do not lower
+`TOUCH_TARGET_MIN_PX` in `scripts/accessibility-rules.mjs`.
+
+### UI-scale check
+
+`npm run test:ui-scale` emulates OS scaling as the CSS viewport a 1920 × 1080
+window leaves at each scale:
+
+| OS scale | CSS viewport | What is asserted |
+| --- | --- | --- |
+| 100 % | 1920 × 1080 | No shell overflow, menus and dialogs inside the window, canvas at least 240 px |
+| 150 % | 1280 × 720 | The same |
+| 200 % | 960 × 540 | The same, including the File menu and its Export submenu |
+
+At each scale the check asserts that the document does not scroll horizontally,
+the top bar, context bar, Pages/Layers panel, Properties panel and status bar do
+not clip their content, the canvas keeps at least 240 CSS px, every menu item
+stays inside the window, and the Project settings and Help dialogs open entirely
+inside the viewport. A menu that is taller than the window scrolls inside its
+panel (`max-height: calc(100vh - 16px)`), which keeps its last item reachable at
+200 %.
+
+Fractional device scaling, mixed-DPI monitors and real OS text scaling are not
+observable in the browser fallback; they stay in the manual review list below.
+
+### Performance budget check
+
+`npm run check:performance` runs the large-project harness against the budgets in
+[`limitations.md`](limitations.md):
+
+```bash
+GRIDSCALR_PERF_PROFILE=reference npm run check:performance   # 150 pages, 15 000 items
+npm run check:performance                                    # CI profile: 40 pages, 4 000 items
+```
+
+Both profiles use the same absolute budgets: p95 edit latency under 100 ms,
+project open under 10 s, autosave under 2 s, page switch under 100 ms and UI
+freeze (Markups open) under 2 s. The CI profile is a quarter of the reference
+project so the step stays under a minute; it still exercises the same store,
+history, serialization and virtualised panel paths. Autosave is measured end to
+end against the stored recovery record, so the 900 ms debounce and the IndexedDB
+write are both included. A missing measurement fails: an unmeasured budget is not
+a passed budget.
+
+The 2 GB desktop working set is not measurable from the browser fallback. It
+stays a manual check on the packaged app and is recorded in the release pull
+request. `tests/performanceBudget.test.ts` pins the numbers in this section to the
+table in `limitations.md`.
+
+### Manual accessibility checklist (canvas and keyboard)
+
+Run this by hand on the desktop build for a release candidate, ideally once with
+a screen reader enabled, and record the result in the release pull request.
+Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
+
+| Area | Check |
+| --- | --- |
+| Keyboard reaches the chrome | `Alt` or `F10` opens the menu bar, arrow keys move between menus and items, `Escape` closes without losing focus. Every top-bar button, tool-rail button, dock tab and status-bar control is reachable with `Tab` in a sensible order. |
+| Focus is always visible | The focus ring is visible on the menu bar, tool rail, dock tabs, page cards, layer rows, Markups rows, inspector fields, status chips and dialog buttons in all five themes. Zooming the canvas does not hide the ring. |
+| Dialog focus contract | A dialog moves focus inside on open, `Tab` and `Shift+Tab` stay inside it, `Escape` closes it and focus returns to the control that opened it. The safe action is focused by default where one exists (for example **Save** in the unsaved-changes prompt). |
+| Shortcuts do not trap typing | Shortcuts fire on the canvas and in the Markups and Layers lists, but typing in a text field, the inline editor, a rename field or a number input never triggers a tool or command. `Delete` and `Ctrl/Cmd+Z` act on the focused list. |
+| Canvas landmarks | The canvas exposes a name and role, the reference pane and the split divider are announced, and the split divider is keyboard-adjustable. A screen reader can find the canvas and its page context even though it cannot describe freehand geometry. |
+| Draft and selection feedback | The draft preview, snap indicator, selection outline, resize/rotate handles and marquee are visible against both light and dark drawings and are not conveyed by colour alone. Selection and hover states survive at 200 % zoom. |
+| Hidden and locked items | Hidden items and layers cannot be selected with the keyboard, the hit test or the marquee, and locked items stay visible but refuse move, edit and delete. Hidden and locked layer rows announce their state. |
+| Text and labels | Measurement labels, callout text, stamp text and layer names stay legible at the smallest allowed zoom and at 200 % UI scale; user-chosen item colours are allowed to fall below 4.5:1 because they are drawing content, but the label plate keeps its own contrast. |
+| Touch and pen | Long-press opens the item menu, two-finger pan and pinch zoom work on both canvases, a pen hit suppresses a following palm touch, and every control meets the 24 × 24 target from the automated check. |
+| Canvas non-goals | Freehand geometry, measurement values and drawing content are not announced node by node. The status bar position and the Markups table are the accessible readouts; do not file the lack of a geometry screen reader as a bug. |
+
 
 ## Visual regression
 

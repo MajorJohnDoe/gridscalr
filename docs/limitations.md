@@ -94,6 +94,9 @@
 - The language selector covers the interface, reports and export headings. A low-level filesystem failure shows a localized message and keeps the operating system's technical detail as a separate line.
 - The static boot fallback in `index.html` is English until the selected catalog loads; it is replaced before the app starts, and startup failures after that point use the active language.
 - Diagnostics and the local event log are stored on the computer only. There is no telemetry, crash reporting or upload, and the log keeps the last 80 entries with paths, drawing names and labels removed. Startup failures before the log is available are shown on the boot screen instead.
+- **Accessibility is gated, not certified.** `npm run test:a11y` runs axe against the shell and the Project settings, Preferences, Quantities, Drawing export and Help dialogs, and CI fails on a serious or critical violation. The gate runs the default Medium Gray palette; the Light Green palette has a known text-contrast gap recorded as F-116 in [`plan/foundation-findings.md`](plan/foundation-findings.md). The freehand canvas has no DOM model to inspect: geometry, measurement values and drawing content are not announced node by node to a screen reader, and WCAG certification is not claimed. The manual canvas and keyboard checklist in [`testing.md`](testing.md) covers the interaction the automated gate cannot see.
+- **Touch targets use the WCAG 2.2 AA minimum.** With a coarse pointer, every visible control on the shell, the Layers and Markups panels and the main dialogs is at least **24 × 24 CSS px** (`npm run test:touch-targets`). The mouse layout stays denser on purpose, so the target grows only under `(pointer: coarse)`; a very dense panel can still be slower to hit than a purpose-built tablet layout. Pen precision is better than the minimum and is not separately asserted.
+- **UI scale is verified at 100, 150 and 200 % as a CSS viewport**, never on real fractional OS scaling. `npm run test:ui-scale` checks 1920 × 1080, 1280 × 720 and 960 × 540 CSS px: no shell overflow, menus and dialogs inside the window, a canvas of at least 240 px and a scrollable long menu. Mixed-DPI monitors, OS text scaling and device-pixel rounding stay in the manual release review.
 - The Linux GTK stack currently resolves `glib 0.18.5`, which has a medium-severity soundness advisory fixed in `glib 0.20.0`. GridScalr cannot upgrade it independently because Tauri's GTK 0.18 dependencies pin that generation. The Windows artifacts do not use this code path; the dependency gate accepts it with a written reason and a quarterly review until a future Tauri/GTK upgrade. Tracked in [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21).
 
 ## Large-project performance
@@ -105,9 +108,15 @@ not duplicated in the benchmark; the Rust package tests exercise the streaming
 1 GB path separately. Override the shape with `GRIDSCALR_BENCH_PAGES`,
 `GRIDSCALR_BENCH_ITEMS` and `GRIDSCALR_BENCH_IMAGES`.
 
-The budgets below are measured on the development machine with Chromium 1248,
-Node 24 and the browser fallback. Run the benchmark on each release platform
-before a release candidate; a regression beyond a budget blocks the release.
+The budgets below are measured with Chromium, Node 24 and the browser fallback.
+`npm run check:performance` runs them in CI on a 40-page, 4 000-item budget
+profile and fails on a breach;
+`GRIDSCALR_PERF_PROFILE=reference npm run check:performance` runs the full
+150-page reference project. A missing measurement fails: an unmeasured budget is
+not a passed budget. Run the full profile on each release platform before a
+release candidate; a regression beyond a budget blocks the release. The memory
+row stays a manual desktop check, because the browser fallback cannot report a
+working set.
 
 | Measure | Budget | Notes |
 | --- | --- | --- |

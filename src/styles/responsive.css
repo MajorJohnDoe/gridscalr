@@ -76,3 +76,45 @@
     max-width: 140px;
   }
 }
+
+/*
+ * Coarse pointers (touch screens and pen-first devices) get the WCAG 2.2 AA
+ * target-size minimum of 24 × 24 CSS px on every control. The mouse layout is
+ * deliberately denser, so the rule stays inside this media query and does not
+ * change the desktop portrait.
+ */
+@media (pointer: coarse) {
+  .icon-btn,
+  .dock-collapse,
+  .dock-restore,
+  .inspector-tab,
+  .zoom-readout,
+  .status-chip,
+  .page-input,
+  .color-pick,
+  .layer-action,
+  .layer-disclosure,
+  .layer-color,
+  .markups-sort-button,
+  .modal-close {
+    min-width: 24px;
+    min-height: 24px;
+  }
+
+  select,
+  textarea,
+  input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]) {
+    min-height: 24px;
+  }
+
+  input[type="checkbox"],
+  input[type="radio"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  label:has(> input[type="checkbox"]),
+  label:has(> input[type="radio"]) {
+    min-height: 24px;
+  }
+}

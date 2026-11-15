@@ -241,9 +241,11 @@ Add what the change actually affects:
 - save, lease or recovery changes: `tests/robustness/`;
 - Rust changes: `cargo fmt --check`, `cargo check` and
   `cargo test --lib`;
-- rendered or interaction changes: `npm run test:visual`, and the matching
+- rendered or interaction changes: `npm run test:visual`, the matching
   browser suite (`test:ui`, `test:import`, `test:canvas`, `test:count`,
-  `test:touch`, `test:csp`);
+  `test:touch`, `test:csp`), and the accessibility, touch-target and UI-scale
+  gates (`test:a11y`, `test:touch-targets`, `test:ui-scale`);
+- performance-sensitive changes: `npm run check:performance`;
 - a change to a panel, dialog or control name that the documentation
   screenshots depend on: `npm run test:docs-capture` (the same capture steps
   and locators, written to a temporary folder);
@@ -656,6 +658,14 @@ scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
 scripts/benchmark-history.mjs synthetic undo/history benchmark
+scripts/benchmark-large-project.mjs reference-project benchmark CLI (prints measurements)
+scripts/bench-large-run.mjs reusable large-project benchmark runner and profile shape
+scripts/performance-budget-rules.mjs pure reference-project budgets, profiles and pass/fail rules
+scripts/check-performance-budget.mjs CI budget gate over the reference project
+scripts/accessibility-rules.mjs pure axe impact, touch-target and UI-scale gate rules
+scripts/accessibility-check.mjs axe gate for the shell and five dialogs
+scripts/touch-target-check.mjs coarse-pointer 24 × 24 control gate
+scripts/ui-scale-check.mjs 100/150/200 % shell, menu and dialog layout gate
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
 scripts/capture-docs.mjs   capture runner: docs/screenshots, or a temp folder for the dry run
 scripts/capture-docs-shots.mjs screenshot title, alt text and description catalogue
@@ -725,6 +735,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits. It runs on the Ubuntu `rust` job and on every `desktop` matrix entry; `src-tauri/src/path_guard_windows_tests.rs` adds the Windows-only cases (verbatim prefix, case-insensitive volume, trailing dot, drive-relative, UNC, junction).
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
+- `npm run test:a11y` runs the axe gate against the shell and the Project settings, Preferences, Quantities, Drawing export and Help dialogs; serious and critical violations fail with no allowlist. `npm run test:touch-targets` asserts every visible control is at least 24 × 24 CSS px with an emulated coarse pointer, and `npm run test:ui-scale` checks the shell, menus and dialogs at 100, 150 and 200 % UI scale. The manual canvas and keyboard checklist is in `docs/testing.md`.
+- `npm run check:performance` runs the large-project harness against the budgets in `docs/limitations.md`; the CI profile is 40 pages and 4 000 items, `GRIDSCALR_PERF_PROFILE=reference` is the documented 150-page project. A missing measurement fails. `scripts/performance-budget-rules.mjs` holds the numbers and `tests/performanceBudget.test.ts` pins them to the table.
 - `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.
 - `npm run check:i18n` validates catalog keys, duplicate keys, placeholders and ICU syntax, compares generated message types, and scans every `src` directory except `src/i18n` for hard-coded UI text, including single-word properties, `el()`/`option()` text and template literals. The baseline is empty; keep it that way. Use `npm run check:i18n -- --update` only when retiring a deliberate migration entry.

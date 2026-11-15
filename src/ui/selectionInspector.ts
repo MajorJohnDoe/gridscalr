@@ -25,7 +25,7 @@ export function selectionSection(
 
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", t("inspector.selectionHeader")));
+  head.append(el("h2", "", t("inspector.selectionHeader")));
   if (refs.length) head.append(el("span", "status-chip is-selected", t("inspector.selectedChip")));
   section.append(head);
   const selection = refs[0] ?? null;
