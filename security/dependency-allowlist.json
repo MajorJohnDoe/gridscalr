@@ -1,15 +1,15 @@
 {
   "$comment": "Reviewed exceptions for npm run check:dependencies. Every entry needs an advisory ID, a stated reason, reviewedAt, a reviewBy date and an optional tracking issue. An expired entry, a stale entry that no longer matches an advisory, or an entry without a reason fails the gate. Read docs/security-policy.md before changing this file. The list is reviewed quarterly; reviewBy is the hard expiry.",
-  "reviewed": "2026-11-11",
+  "reviewed": "2026-11-15",
   "entries": [
     {
       "ecosystem": "cargo",
       "package": "glib",
       "advisory": "RUSTSEC-2024-0429",
       "kind": "unsound",
-      "reason": "glib 0.18.5 has an unsoundness advisory fixed in 0.20.0. Tauri's GTK 0.18 generation pins glib 0.18.x and the app never calls the affected VariantStrIter impls directly. Linux-only; the Windows and macOS artifacts do not link it. Revisit with the Tauri/gtk-rs 0.20 upgrade.",
-      "reviewedAt": "2026-11-11",
-      "reviewBy": "2027-02-11",
+      "reason": "glib 0.18.5 has an unsoundness advisory fixed in 0.20.0. It is reached only on Linux, through gtk 0.18.2: tauri 2.12.5 declares gtk 0.18 for Linux and gtk 0.18.2 requires glib ^0.18, so `cargo update -p glib --precise 0.20.0` cannot resolve and `cargo update -p glib` locks nothing (both verified 2026-11-15). Every Tauri 2.x release and tauri 3.0.0-alpha.6 still declare gtk 0.18 for the GTK3 path; only the optional gtk4 0.11 path reaches glib 0.22. glib has no 0.18 patch release newer than 0.18.5. The app never calls the affected VariantStrIter impls and the Windows and macOS artifacts do not link glib. Clearing it needs the Tauri 3 / gtk4 migration in #270.",
+      "reviewedAt": "2026-11-15",
+      "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
     },
     {
@@ -18,8 +18,8 @@
       "advisory": "RUSTSEC-2024-0370",
       "kind": "unmaintained",
       "reason": "Build-time only through glib-macros and gtk. The crate is unmaintained but has no known vulnerability and is not linked into the shipped binary. Removing it needs the same Tauri/gtk-rs upgrade as glib.",
-      "reviewedAt": "2026-11-11",
-      "reviewBy": "2027-02-11",
+      "reviewedAt": "2026-11-15",
+      "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
     },
     {
@@ -28,8 +28,8 @@
       "advisory": "RUSTSEC-2026-0370",
       "kind": "unmaintained",
       "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
-      "reviewedAt": "2026-11-11",
-      "reviewBy": "2027-02-11",
+      "reviewedAt": "2026-11-15",
+      "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
     },
     {
@@ -38,8 +38,8 @@
       "advisory": "RUSTSEC-2026-0371",
       "kind": "unmaintained",
       "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
-      "reviewedAt": "2026-11-11",
-      "reviewBy": "2027-02-11",
+      "reviewedAt": "2026-11-15",
+      "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
     },
     {
@@ -48,8 +48,8 @@
       "advisory": "RUSTSEC-2026-0372",
       "kind": "unmaintained",
       "reason": "Reached only through tauri-plugin-single-instance -> zbus 5 on Linux. Unmaintained but no known vulnerability; the single-instance channel is local and advisory. Removing it needs a Tauri/zbus upgrade.",
-      "reviewedAt": "2026-11-11",
-      "reviewBy": "2027-02-11",
+      "reviewedAt": "2026-11-15",
+      "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
     }
   ]

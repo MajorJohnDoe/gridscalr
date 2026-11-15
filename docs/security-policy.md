@@ -204,19 +204,29 @@ not a clean result. Re-run the job, or supply cached reports with
 `--npm-report` and `--cargo-report`; the same threshold and allowlist rules
 apply.
 
-### Current position (2026-11-11)
+### Current position (2026-11-15)
 
 - `minimatch` (GHSA-g3hv-75wg-m249) is fixed by a scoped `overrides` entry in
   `package.json`. It was a development-only glob denial of service through
   ESLint and typescript-eslint; the npm audit is now clean.
-- `glib 0.18.5` (RUSTSEC-2024-0429) is accepted until Tauri moves off the GTK
-  0.18 generation. It is tracked by [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21)
-  and is Linux-only.
+- `glib 0.18.5` (RUSTSEC-2024-0429) is **accepted, not fixed**, and the
+  acceptance has an expiry. It is Linux-only and not on the Windows or macOS
+  code path: `glib` arrives through `gtk 0.18.2` for the Linux window and tray.
+  It cannot be cleared inside the current Tauri generation — `tauri 2.12.5`
+  declares `gtk = "0.18"`, `gtk 0.18.2` requires `glib ^0.18`, `glib` has no
+  0.18 patch release newer than 0.18.5, and `tauri 3.0.0-alpha.6` still declares
+  `gtk 0.18` for its GTK3 path. This was re-verified with `cargo tree`,
+  `cargo update -p glib --dry-run` and `cargo update -p glib --precise 0.20.0
+  --dry-run` on 2026-11-15. The clearing path is the Tauri 3 / GTK4 migration
+  in [#270](https://github.com/MajorJohnDoe/gridscalr/issues/270); the advisory
+  is tracked by [#21](https://github.com/MajorJohnDoe/gridscalr/issues/21) and
+  Dependabot alert [#1](https://github.com/MajorJohnDoe/gridscalr/security/dependabot/1),
+  which stays open rather than dismissed.
 - The four unmaintained crates `proc-macro-error`, `zvariant`, `zbus_names` and
   `zvariant_derive` are accepted with the same review date. They have no known
   vulnerability and arrive through the GTK build and the Linux single-instance
   channel.
-- Every entry is due for review on 2027-02-11. The gate fails after that date
+- Every entry is due for review on 2027-02-15. The gate fails after that date
   until the list is renewed or the advisories are fixed.
 
 ## Pinned GitHub Actions
