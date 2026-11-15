@@ -107,6 +107,25 @@
   filter: grayscale(1);
 }
 
+/* A moved PDF stays selectable and reaches the preflight relink. */
+.project-import-tile.is-missing-source {
+  cursor: pointer;
+}
+
+.project-import-tile.is-missing-source .page-import-thumb {
+  border-style: dashed;
+}
+
+.project-import-page-missing {
+  color: var(--status-warning);
+  font-size: 10.5px;
+  line-height: 1.25;
+}
+
+.project-import-missing-note {
+  color: var(--status-warning);
+}
+
 .project-import .page-import-thumb.is-preview-missing .page-import-placeholder {
   color: var(--warning);
 }

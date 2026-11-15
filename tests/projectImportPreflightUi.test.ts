@@ -11,6 +11,7 @@ import { projectImportPreflightDialog } from "../src/features/projectImport/pref
 import type { ImportPreflightRelinkHost } from "../src/features/projectImport/preflightUi";
 import type { ImportPreflightSnapshot } from "../src/features/projectImport/relink";
 import { buildImportSourceStates, emptyPreparedImport } from "../src/features/projectImport/relink";
+import { createTemplateDocument } from "../src/features/schematics/model/sheetDocument";
 import { createProject, defaultDocument } from "../src/model/layers";
 import type { Project } from "../src/model/types";
 import { withTestPageIds } from "./helpers/pages";
@@ -107,7 +108,7 @@ function footerButton(labelPart: string): HTMLButtonElement | undefined {
   );
 }
 
-function action(kind: "relink" | "unrelink" | "confirm"): HTMLButtonElement | undefined {
+function action(kind: "relink" | "unrelink" | "confirm" | "skip"): HTMLButtonElement | undefined {
   return (
     document.querySelector<HTMLButtonElement>(`.preflight-action[data-action="${kind}"]`) ??
     undefined
@@ -116,6 +117,33 @@ function action(kind: "relink" | "unrelink" | "confirm"): HTMLButtonElement | un
 
 function summary(): string {
   return document.querySelector(".preflight-summary")?.textContent ?? "";
+}
+
+/**
+ * A source with a missing PDF plus an always-available operation card, so the
+ * selection holds both an importable page and pages whose file is missing.
+ */
+function mixedSnapshot(destination: Project, source: Project): ImportPreflightSnapshot {
+  const pdf = source.documents[0];
+  return {
+    preflight: buildImportPreflight({
+      prepared: prepareProjectImport(destination, source, [4]),
+      sourceName: source.name,
+      skipped: [1, 2, 3],
+      warnings: [1, 2, 3].map((page) => ({
+        code: "skippedPage",
+        page,
+        documentName: pdf.name,
+      })),
+    }),
+    sources: buildImportSourceStates({
+      source,
+      selected: [1, 2, 3, 4],
+      skipped: [1, 2, 3],
+      pageCounts: new Map([[source.documents[1].id, 1]]),
+      mismatches: [],
+    }),
+  };
 }
 
 afterEach(() => {
@@ -176,6 +204,48 @@ describe("import preflight relink dialog", () => {
     await expect(result).resolves.toBe(false);
     expect(JSON.stringify(destination)).toBe(before);
     expect(document.body.textContent).not.toContain("/drawings/Plan.pdf");
+  });
+
+  it("requires a relink or an explicit skip for pages of a missing source", async () => {
+    const destination = destinationProject();
+    const pdf = defaultDocument("Plan.pdf", 3);
+    pdf.sha256 = "hash_plan";
+    const source = withTestPageIds(createProject(pdf));
+    source.name = "Source";
+    const card = createTemplateDocument("gridscalr.operation-card.frame", "A3", "Operation card");
+    source.documents.push(card);
+    source.pages.push({ id: "page_4", documentId: card.id, localPage: 1, state: { name: "Card" } });
+    const destinationBefore = JSON.stringify(destination);
+    const sourceBefore = JSON.stringify(source);
+
+    const result = projectImportPreflightDialog(mixedSnapshot(destination, source));
+    await nextFrame();
+
+    expect(document.body.textContent).toContain("File missing");
+    expect(summary()).toContain("needs a relink or an explicit skip");
+    expect(footerButton("Import")?.disabled).toBe(true);
+
+    // The skip is explicit and reversible.
+    action("skip")?.click();
+    await flush();
+    expect(document.body.textContent).toContain("Pages will be skipped");
+    expect(summary()).toContain("source file missing");
+    expect(summary()).toContain("3 selected pages will be skipped");
+    expect(footerButton("Import")?.disabled).toBe(false);
+
+    action("skip")?.click();
+    await flush();
+    expect(document.body.textContent).toContain("File missing");
+    expect(summary()).toContain("needs a relink or an explicit skip");
+    expect(footerButton("Import")?.disabled).toBe(true);
+
+    action("skip")?.click();
+    await flush();
+    footerButton("Import")?.click();
+    await expect(result).resolves.toBe(true);
+    // The dialog only reports a decision; filtering happened before it opened.
+    expect(JSON.stringify(destination)).toBe(destinationBefore);
+    expect(JSON.stringify(source)).toBe(sourceBefore);
   });
 
   it("blocks a checksum mismatch until the changed file is accepted", async () => {

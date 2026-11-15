@@ -91,29 +91,47 @@ export function unconfirmedSources(
   );
 }
 
+/** A missing source the user has neither relinked nor explicitly agreed to skip. */
+export function pendingMissingSources(
+  sources: readonly ImportSourceState[],
+  acceptedSkips: ReadonlySet<string>,
+): ImportSourceState[] {
+  return sources.filter((state) => state.missing && !acceptedSkips.has(state.documentId));
+}
+
 export interface ImportPreflightSummary {
   pages: number;
   missingDocuments: number;
   /** Selected pages that will be skipped because their source is missing. */
   skippedPages: number;
   unconfirmedDocuments: number;
-  /** No page can be imported, or a changed source is still unconfirmed. */
+  /** Missing sources whose pages are neither relinked nor explicitly skipped. */
+  pendingMissingDocuments: number;
+  /** No page can be imported, a changed source is unconfirmed, or a missing source awaits a decision. */
   blocked: boolean;
 }
 
+/**
+ * `acceptedSkips` names the missing sources whose selected pages the user has
+ * explicitly agreed to drop. A missing source is never skipped silently: until
+ * it is relinked or accepted, the import stays blocked.
+ */
 export function summarizeImportPreflight(
   snapshot: ImportPreflightSnapshot,
   confirmed: ReadonlySet<string>,
+  acceptedSkips: ReadonlySet<string> = new Set(),
 ): ImportPreflightSummary {
   const missingDocuments = snapshot.sources.filter((state) => state.missing).length;
   const unconfirmedDocuments = unconfirmedSources(snapshot.sources, confirmed).length;
+  const pendingMissingDocuments = pendingMissingSources(snapshot.sources, acceptedSkips).length;
   const pages = snapshot.preflight.pages;
   return {
     pages,
     missingDocuments,
     skippedPages: snapshot.preflight.skippedPages.length,
     unconfirmedDocuments,
-    blocked: pages === 0 || unconfirmedDocuments > 0,
+    pendingMissingDocuments,
+    blocked: pages === 0 || unconfirmedDocuments > 0 || pendingMissingDocuments > 0,
   };
 }
 

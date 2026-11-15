@@ -242,6 +242,67 @@ describe("import preflight relink state", () => {
     expect(summarizeImportPreflight(changed, new Set([document.id])).blocked).toBe(false);
   });
 
+  it("blocks a missing source until it is relinked or explicitly skipped", () => {
+    const missing: ImportPreflightSnapshot = {
+      preflight: {
+        sourceName: "Source",
+        documents: 2,
+        pages: 1,
+        items: 4,
+        categories: 0,
+        countTypes: 0,
+        lineTypes: 0,
+        assets: 0,
+        missingDocuments: ["Plan.pdf"],
+        skippedPages: [1, 2],
+        checksumDocuments: [],
+        pageCountChanges: [],
+        warnings: [],
+      },
+      sources: [
+        {
+          documentId: "doc_pdf",
+          name: "Plan.pdf",
+          kind: "pdf",
+          selectedPages: 2,
+          importablePages: 0,
+          expectedPageCount: 2,
+          actualPageCount: null,
+          missing: true,
+          checksumChanged: false,
+          pageCountChanged: false,
+        },
+        {
+          documentId: "doc_card",
+          name: "Operation card",
+          kind: "template",
+          selectedPages: 1,
+          importablePages: 1,
+          expectedPageCount: 1,
+          actualPageCount: 1,
+          missing: false,
+          checksumChanged: false,
+          pageCountChanged: false,
+        },
+      ],
+    };
+
+    const pending = summarizeImportPreflight(missing, new Set());
+    expect(pending).toMatchObject({
+      pages: 1,
+      missingDocuments: 1,
+      pendingMissingDocuments: 1,
+      blocked: true,
+    });
+    // An explicit skip unblocks the import; the pages are still reported.
+    expect(summarizeImportPreflight(missing, new Set(), new Set(["doc_pdf"]))).toMatchObject({
+      missingDocuments: 1,
+      pendingMissingDocuments: 0,
+      skippedPages: 2,
+      blocked: false,
+    });
+  });
+
   it("leaves both projects untouched until the commit runs", () => {
     const destination = destinationProject();
     const source = sourceProject();

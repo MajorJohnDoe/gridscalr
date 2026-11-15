@@ -2352,23 +2352,35 @@ remains the scheduling home.
 - **Phase:** 0.25.0 phase 13 — Relink missing sources in import preflight
 - **Severity:** P3
 - **Area:** Project import / picker
-- **Status:** triaged #237
-- **Evidence:** `projectImportDialog()` disables a page checkbox when
+- **Status:** fixed — 0.28.0 phase 2 ([#237](https://github.com/MajorJohnDoe/gridscalr/issues/237))
+- **Evidence:** `projectImportDialog()` disabled a page checkbox when
   `available` is false, and `ProjectImportSource.checkAvailability()` marks a
   PDF unavailable when no candidate path exists. The preflight relink added in
-  this phase therefore only appears when a file becomes unreadable between the
+  this phase therefore only appeared when a file becomes unreadable between the
   picker check and `ensure()`, or when every page is skipped by the loader.
-- **Problem:** A source project whose PDF was moved cannot put its pages into
-  the selection at all, so the user never reaches the preflight that now offers
-  **Relink…**. The picker's own **Locate…** button is the only path for that
+- **Problem:** A source project whose PDF was moved could not put its pages into
+  the selection at all, so the user never reached the preflight that offers
+  **Relink…**. The picker's own **Locate…** button was the only path for that
   case.
 - **Impact:** No data is lost and the existing picker locate still works. The
-  preflight relink is a second safety net rather than the primary recovery
+  preflight relink was a second safety net rather than the primary recovery
   path, which is narrower than the phase description suggests.
-- **Next step:** Decide whether the picker should allow selecting pages from a
-  missing document and defer the file to the preflight. That changes the
-  picker's "select only available pages" rule and needs its own UI test and a
-  user-guide update; do not change it as part of a relink fix.
+- **Decision (0.28.0 phase 2):** the picker allows the selection. A page whose
+  referenced PDF is missing stays selectable and is marked **File missing** with
+  no preview and no thumbnail request; the file is deferred to the preflight.
+  The preflight now requires either **Relink…** or an explicit **Skip these
+  pages** for that document before **Import pages** enables, so a missing page is
+  never dropped silently. A TIF without its embedded PDF keeps the disabled
+  state, because it has no relink path (see F-113).
+- **Evidence of the fix:** `src/features/projectImport/ui.ts` keeps the tile
+  selectable when `group.canLocate` is true and handles **Select all**,
+  `preflightUi.ts` adds the per-document skip state, and `relink.ts`
+  `summarizeImportPreflight()` blocks while a missing source is pending.
+  `tests/projectImportUi.test.ts` covers the selection and the second selection
+  rule, `tests/projectImportPreflightUi.test.ts` covers the relink-or-skip gate,
+  and `scripts/project-import-ui.mjs` recovers a moved PDF end to end and proves
+  Cancel and both project files stay untouched.
+- **Next step:** none for this finding. F-113 tracks the TIF case.
 
 ### F-097 — The Rust budget gates file size, not module boundaries
 
@@ -2669,3 +2681,34 @@ remains the scheduling home.
   help content, so it is its own tooling issue rather than part of #239.
 - **Related:** F-100, `scripts/shortcut-catalogue.mjs`, `docs/testing.md`
   (Documentation gates).
+
+### F-113 — A TIF without its embedded PDF has no import recovery path
+
+- **Date:** 2026-11-15
+- **Phase:** 0.28.0 phase 2 — import preflight relink (F-096)
+- **Severity:** P3
+- **Area:** Project import / TIF documents
+- **Status:** deferred — tracked by [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+- **Evidence:** `ProjectImportSource.checkAvailability()` marks a TIF available
+  only when `document.embeddedPdf` is present, `preflightUi.sourceRow()` offers
+  **Relink…** only for `state.kind === "pdf"`, and `ProjectImportSource.locate()`
+  returns false for every non-PDF kind. The picker therefore keeps a TIF without
+  its embedded PDF disabled, because selecting it could only end in skipped
+  pages with no recovery.
+- **Problem:** The new picker rule in F-096 selects a missing page only when its
+  document has a recovery path. A TIF whose derived PDF is absent has none, so
+  the import path for such a project is "open the project and repair the
+  document first". After schema 27, which makes `embeddedPdf` optional for a
+  colour scan with a derived cache, a legitimately saved project can reach that
+  state.
+- **Impact:** Low today: only a hand-edited or truncated project loses a TIF's
+  embedded PDF. Once phase 4 ships the derived-PDF cache, a missing scan plus a
+  missing cache becomes a documentable, reachable state, and the import picker
+  will still hide those pages.
+- **Next step:** Phase 4 decides the picker and preflight behaviour for a TIF
+  whose scan and cache are both missing, reusing this phase's explicit skip gate
+  and adding a TIF relink (a `pickTif` counterpart of `pickPdf`) only if a
+  replacement scan is a supported recovery. Do not widen the picker rule before
+  that path exists.
+- **Related:** F-096, `docs/plan/0.28.md` phases 3–4,
+  `src/features/projectImport/ui.ts` (`canLocate`).
