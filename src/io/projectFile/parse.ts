@@ -16,6 +16,7 @@ import { normalizeLayers } from "./layers";
 import { migrateLayerHierarchy } from "./layerHierarchy";
 import { normalizeLineTypes } from "./lineTypes";
 import { normalizeDocument } from "./documents";
+import { assertDerivedPdfSource, migrateDerivedPdf } from "./derivedPdf";
 import { normalizeOcr } from "./ocr";
 import { migrateLayers, migratePages } from "./pages";
 import { migrateSourceStorage } from "./sourceStorage";
@@ -99,6 +100,10 @@ export function parseProjectWithReport(text: string): {
   const documents = rawDocuments.map((entry) => normalizeDocument(entry, reportDrop));
   // Schema 24 → 25: every document becomes an explicit reference. No file moves.
   migrateSourceStorage(documents, raw.schemaVersion);
+  // Schema 26 → 27: a TIF keeps its embedded PDF and gains no marker. A marker
+  // in older data is ignored, because the version it names did not exist yet.
+  load.repair("repairedDerivedPdf", migrateDerivedPdf(documents, raw.schemaVersion));
+  assertDerivedPdfSource(documents);
   const seen = new Set<string>();
   for (const document of documents) {
     if (seen.has(document.id)) {

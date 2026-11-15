@@ -420,7 +420,7 @@ Verify the `.dmg` or `.app.zip` against `SHA256SUMS.txt` with
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 26 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 27 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
@@ -447,7 +447,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
 `npm run test:robustness` is the focused gate for page identity, competing
-saves, the schema 1–26 migration corpus and source storage; the normal test
+saves, the schema 1–27 migration corpus and source storage; the normal test
 suite includes the same files. See [docs/testing.md](docs/testing.md).
 
 Never attach real customer drawings to an issue or a pull request.

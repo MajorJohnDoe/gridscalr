@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 26 as const;
+export const SCHEMA_VERSION = 27 as const;
 
 /**
  * How a source drawing is stored. `reference` points at the original file.
@@ -390,6 +390,25 @@ export interface SheetTemplateRef {
   fields: Record<string, string>;
 }
 
+/**
+ * Schema 27: the rebuildable derived-PDF cache for a TIF document.
+ *
+ * A cache is an artifact, never a source of truth. It is valid only while its
+ * key — the source TIF checksum, the converter version and the page count —
+ * still matches the document; a mismatch means "rebuild", never "trust it".
+ * A TIF document carries either this marker or `embeddedPdf`, never both.
+ */
+export interface DerivedPdfCacheRef {
+  /** SHA-256 of the source TIF the derived PDF was built from. */
+  sourceSha256: string;
+  /** Converter version that produced the derived PDF. */
+  converterVersion: number;
+  /** Page count of the derived PDF held by the cache. */
+  pageCount: number;
+  /** Cache file path, relative to the project folder. */
+  relativePath: string;
+}
+
 /** Provenance for a document that GridScalr derived itself, such as a converted TIF. */
 export interface DocumentSourceInfo {
   format: "tiff";
@@ -412,8 +431,14 @@ export interface DocumentRef {
   /** 1-based source pages explicitly removed from the project. */
   excludedPages?: number[];
   sizeBytes: number;
-  /** Only for kind "tiff": base64 encoded PDF derived from the TIFF. */
+  /**
+   * Only for kind "tiff": base64 encoded PDF derived from the TIFF. Optional
+   * from schema 27, where a `derivedPdf` cache may hold the derived PDF
+   * instead. A document keeps its embedded bytes until a cache is built.
+   */
   embeddedPdf?: string;
+  /** Only for kind "tiff" and schema 27 onward: the rebuildable cache marker. */
+  derivedPdf?: DerivedPdfCacheRef;
   /** Only for kind "tiff". */
   source?: DocumentSourceInfo;
   /** Only for kind "template". */

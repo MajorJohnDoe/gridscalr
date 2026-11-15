@@ -222,7 +222,7 @@ Issue [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 
 Implemented in Phase 7 ([#159](https://github.com/MajorJohnDoe/gridscalr/issues/159)):
 `tests/robustness/` runs as `npm run test:robustness` and in the normal suite,
-and CI names the focused step. The migration corpus covers schema 1–26.
+and CI names the focused step. The migration corpus covers schema 1–27.
 
 Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
 [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61),

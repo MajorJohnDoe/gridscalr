@@ -10,7 +10,7 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.27.0`.
 - Latest public release: `v0.27.0` (2026-11-13).
-- Current project-file schema: `26`.
+- Current project-file schema: `27`.
 - 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
@@ -519,6 +519,7 @@ src/canvas/editors/        controller facade, text/textbox sessions, label edito
 src/model/                 types, geometry, labels, units, calibration, layers, images, metrics, selection, clipboard
 src/model/countTypes.ts    built-in count types, normalization, lookup, management and presets
 src/model/integrity.ts     shared referential-integrity rules and round-trip shape comparison
+src/model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
 src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
@@ -602,6 +603,7 @@ src/help/markdown.ts       safe Markdown renderer for bundled help
 src/help/content.ts        raw imports of the user guide, workflows and shortcuts
 src/help/images.ts         bundled screenshot URLs for the help dialog
 src/io/projectFile/       schema normalization, migration, serialization, relative paths
+src/io/projectFile/derivedPdf.ts schema 26 → 27 TIF derived-PDF marker, untrusted pre-27 markers and the renderable-source check
 src/io/projectFile/report.ts load-report counts for dropped and repaired data
 src/io/writeGuard.ts       source-path protection shared by all saves and exports
 src/io/imageIngest.ts      PNG/JPEG validation, downscaling, embedded data URLs
@@ -640,14 +642,14 @@ docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
-tests/robustness/          seeded page/save sequences, competing saves, the schema 1–26 migration corpus and source-storage gates
+tests/robustness/          seeded page/save sequences, competing saves, the schema 1–27 migration corpus and source-storage gates
 fixtures/legacy/           committed project fixtures for every supported schema
 fixtures/tiff/             small G4/LZW/PackBits/Deflate and colour TIFF fixtures for the reader and codec tests
 scripts/plan-geometry.mjs  shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs   legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation demo project
-scripts/make-legacy-fixtures.mjs generator for the schema 1–26 migration corpus
+scripts/make-legacy-fixtures.mjs generator for the schema 1–27 migration corpus
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -704,8 +706,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
-- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–26 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
-- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–26. Regenerate schemas 1–22, `schema-23-full` through `schema-26` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
+- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–27 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
+- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–27. Regenerate schemas 1–22, `schema-23-full` through `schema-27` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
 - `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.

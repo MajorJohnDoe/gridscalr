@@ -1,6 +1,7 @@
 # ADR 0015: Colour-scan TIF storage and size budget
 
-- Status: Accepted (decision); implementation deferred to a follow-up issue
+- Status: Accepted (decision); schema 27 format implemented, cache lifecycle in
+  the follow-up issue
 - Date: 2026-11-13
 - Deciders: GridScalr maintainer
 - Supersedes: none
@@ -112,6 +113,18 @@ declared schema-neutral. The follow-up issue must deliver, together:
 Until then the budget above is the documented answer, and the user guide names
 the practical consequence: a large colour set is one project per building or
 floor.
+
+### Implementation status
+
+Schema 27 (0.28.0 phase 3) lands the format half of this decision:
+`DocumentRef.embeddedPdf` becomes optional for a TIF document, and an explicit
+`derivedPdf` marker records the source TIF checksum, the converter version, the
+derived page count and the cache path. The migration from schema 26 adds
+nothing — every TIF keeps its embedded bytes byte for byte — and
+`tests/derivedPdf.test.ts` pins the marker shape and the key rule. The cache
+lifecycle, the packaging rule and the enforced budget are phase 4 of the same
+issue; until they land, the budget above remains the operating limit and a
+document whose cache has not been built keeps its embedded PDF.
 
 ## Consequences
 

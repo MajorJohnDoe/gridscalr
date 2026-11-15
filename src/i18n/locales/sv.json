@@ -2189,7 +2189,7 @@
   "tiff.predictorBits": "Horisontell differens kräver 8- eller 16-bitars samplar, men TIFF-filen har {bits}-bitars samplar.",
   "tiff.corruptData": "Den komprimerade bilddatan i TIFF-filen är skadad eller trunkerad (komprimering {compression}).",
   "tiff.decodedTooLarge": "Sidan {width} × {height} kräver mer än {megabytes} MB avkodad bilddata. Spara en mindre kopia av skanningen.",
-  "projectFile.missingEmbeddedPdf": "Ett TIF-dokument i projektet saknar sin inbäddade PDF.",
+  "projectFile.missingEmbeddedPdf": "Ett TIF-dokument i projektet saknar en härledd PDF.",
   "projectFile.invalidJson": "Filen är inte giltig JSON.",
   "projectFile.emptyOrInvalid": "Projektfilen är tom eller ogiltig.",
   "projectFile.noSchema": "Projektfilen saknar schemaversion.",
@@ -2827,6 +2827,11 @@
   "projectIntegrity.issue.duplicateMarkupsViewId": "Två markeringvyer har samma ID.",
   "projectIntegrity.issue.invalidDocumentPageCount": "Ett dokument har ett ogiltigt sidantal.",
   "projectIntegrity.issue.invalidDocumentStorage": "Ett dokument har ett okänt lagringsläge.",
+  "projectIntegrity.issue.tiffDocumentWithoutDerivedPdf": "Ett TIF-dokument saknar en härledd PDF.",
+  "projectIntegrity.issue.invalidDerivedPdfCache":
+    "Ett TIF-dokument har en ogiltig cache-markering för sin härledda PDF.",
+  "projectIntegrity.issue.derivedPdfCacheStale":
+    "Cache-markeringen för ett TIF-dokuments härledda PDF matchar inte källan och byggs om.",
   "projectIntegrity.issue.managedSourceMissingRelativePath": "En hanterad källa saknar relativ sökväg.",
   "projectIntegrity.issue.invalidOriginalSourceHash": "En hanterad källa har en ogiltig originalkontrollsumma.",
   "projectIntegrity.issue.outsideProjectReference": "Ett dokument refererar en ritning utanför projektmappen.",

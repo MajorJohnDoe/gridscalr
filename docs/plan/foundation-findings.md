@@ -2712,3 +2712,36 @@ remains the scheduling home.
   that path exists.
 - **Related:** F-096, `docs/plan/0.28.md` phases 3–4,
   `src/features/projectImport/ui.ts` (`canLocate`).
+- **Phase 3 note (2026-11-15):** schema 27 defines the `derivedPdf` marker and
+  validates it, but changes nothing in the picker or preflight: the import path
+  still embeds the derived PDF, so no app-produced project reaches the state.
+  The gap stays open until phase 4 ships the cache and decides the recovery.
+
+### F-114 — A schema 27 cache marker is validated but not resolved until the cache lifecycle
+
+- **Date:** 2026-11-15
+- **Phase:** 0.28.0 phase 3 — schema 27 derived-PDF cache marker
+- **Severity:** P3
+- **Area:** Project file / TIF documents
+- **Status:** deferred — closed by the cache lifecycle in phase 4 of
+  [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+- **Evidence:** Schema 27 accepts a TIF document whose derived PDF is named by a
+  `derivedPdf` marker instead of `embeddedPdf`, and `validateProject()` treats a
+  current marker as a valid document. The rendering paths still read only
+  `embeddedPdf` (`src/app/documentFlows.ts`, `src/compare/referenceSession.ts`,
+  `src/source/sourceStatus.ts`, `src/features/saveIntegrity/restoreLinks.ts`),
+  so a marker-only document renders no page content.
+- **Problem:** The format can describe a document that the current renderer
+  cannot draw. Nothing in phase 3 writes such a document — the import path still
+  embeds the derived PDF and the schema 26 → 27 migration adds no marker — but a
+  hand-edited project or a phase-4 save can reach the state.
+- **Impact:** No project produced by 0.27.0 or by phase 3 loses content. The gap
+  is a blank page with no message for a project an app version never wrote, and
+  it is the exact failure mode phase 4 must replace with a rebuild or an
+  actionable message.
+- **Next step:** Phase 4 resolves the cache before a page renders, rebuilds when
+  the key is stale and the TIF is reachable, and shows one localized message
+  when neither the cache nor the scan is available. Do not ship a marker writer
+  without that resolution path.
+- **Related:** [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256),
+  ADR [0015](../adr/0015-colour-scan-storage.md), F-113, F-091.

@@ -15,6 +15,7 @@ const FIXTURES: ReadonlyArray<{ version: number; file: string }> = [
   { version: 24, file: "schema-24-full.gridscalr" },
   { version: 25, file: "schema-25.gridscalr" },
   { version: 26, file: "schema-26.gridscalr" },
+  { version: 27, file: "schema-27.gridscalr" },
 ];
 
 function fixtureText(file: string): string {
@@ -71,9 +72,21 @@ function expectIntroducedFields(version: number, project: Project): void {
   }
   if (version >= 6) {
     expect(project.documents.map((document) => document.kind)).toContain("tiff");
-    expect(project.documents.find((document) => document.kind === "tiff")?.embeddedPdf).toBe(
-      "JVBERi0xLjQK",
-    );
+    const scan = project.documents.find((document) => document.kind === "tiff")!;
+    if (version >= 27) {
+      // Schema 27 makes the embedded PDF optional: the fixture keeps a cache
+      // marker and no base64 derived bytes.
+      expect(scan.embeddedPdf).toBeUndefined();
+      expect(scan.derivedPdf).toEqual({
+        sourceSha256: "b".repeat(64),
+        converterVersion: 1,
+        pageCount: 1,
+        relativePath: "schema-27.drawings/derived/derived-scan-bbbbbbbb.pdf",
+      });
+    } else {
+      expect(scan.embeddedPdf).toBe("JVBERi0xLjQK");
+      expect(scan.derivedPdf).toBeUndefined();
+    }
   }
   if (version >= 7) {
     expect(project.documents[0].excludedPages).toEqual([3]);
@@ -171,7 +184,7 @@ describe("migration corpus", () => {
     expect(FIXTURES.map((entry) => entry.version)).toEqual(
       Array.from({ length: SCHEMA_VERSION }, (_, index) => index + 1),
     );
-    expect(SCHEMA_VERSION).toBe(26);
+    expect(SCHEMA_VERSION).toBe(27);
   });
 
   for (const { version, file } of FIXTURES) {
@@ -275,5 +288,15 @@ describe("migration corpus", () => {
     expect(project.documents[0].relativePath).toBe("Legacy plan.pdf");
     expect(project.documents[1].path).toBe("/legacy/schema-24/Legacy scan.tif");
     expect(project.documents[1].relativePath).toBe("Legacy scan.tif");
+  });
+
+  it("keeps every schema 26 TIF embedded PDF through the schema 27 migration", () => {
+    const { project, report } = parseProjectWithReport(fixtureText("schema-26.gridscalr"));
+    expect(report.migratedFrom).toBe(26);
+    const scan = project.documents.find((document) => document.kind === "tiff")!;
+    expect(scan.embeddedPdf).toBe("JVBERi0xLjQK");
+    expect(scan.derivedPdf).toBeUndefined();
+    expect(report.repaired.some((entry) => entry.code === "repairedDerivedPdf")).toBe(false);
+    expect(errorCodes(project)).toEqual([]);
   });
 });

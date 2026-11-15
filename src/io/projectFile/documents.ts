@@ -1,6 +1,7 @@
 import { t } from "../../i18n";
 import { makeId } from "../../model/calibration";
 import type { DocumentRef } from "../../model/types";
+import { normalizeDerivedPdf } from "./derivedPdf";
 
 export function normalizeSheetFields(rawValue: unknown): Record<string, string> {
   if (typeof rawValue !== "object" || rawValue === null) return {};
@@ -122,10 +123,16 @@ export function normalizeDocument(rawValue: unknown, report?: (code: string) => 
     }
   }
   if (kind === "tiff") {
-    if (typeof rawDoc.embeddedPdf !== "string" || !rawDoc.embeddedPdf) {
-      throw new Error(t("projectFile.missingEmbeddedPdf"));
+    // Schema 27 makes the embedded PDF optional: a document may hold a cache
+    // marker instead. The embedded bytes stay the shipped form and win when
+    // both are present, so an old project keeps rendering from its own data.
+    const derivedPdf = normalizeDerivedPdf(rawDoc.derivedPdf, report);
+    if (typeof rawDoc.embeddedPdf === "string" && rawDoc.embeddedPdf) {
+      document.embeddedPdf = rawDoc.embeddedPdf;
+      if (derivedPdf) report?.("repairedDerivedPdf");
+    } else if (derivedPdf) {
+      document.derivedPdf = derivedPdf;
     }
-    document.embeddedPdf = rawDoc.embeddedPdf;
     const dpi = Array.isArray(rawDoc.source?.dpi) ? rawDoc.source.dpi : [];
     const x = typeof dpi[0] === "number" && dpi[0] > 0 ? dpi[0] : 300;
     const y = typeof dpi[1] === "number" && dpi[1] > 0 ? dpi[1] : x;

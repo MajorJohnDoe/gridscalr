@@ -1,4 +1,5 @@
 import { isMeasurementKind } from "./layers";
+import { derivedPdfCacheIsCurrent, isDerivedPdfCacheRef } from "./derivedPdf";
 import { layerHierarchyIssues } from "./layerHierarchy";
 import type { ImageAsset, MarkupItem, PageRecord, Project } from "./types";
 
@@ -171,6 +172,31 @@ export function validateProject(project: Project): ProjectIssue[] {
       issues.push(
         issue("warning", "invalidOriginalSourceHash", { kind: "document", id: document.id }),
       );
+    }
+    if (document.kind === "tiff") {
+      // A cache marker is a promise about a file, never a source of truth. A
+      // stale or malformed marker is reported and then rebuilt; it is never
+      // dropped here and never trusted.
+      if (!document.embeddedPdf && !document.derivedPdf) {
+        issues.push(
+          issue("error", "tiffDocumentWithoutDerivedPdf", { kind: "document", id: document.id }),
+        );
+      }
+      if (document.derivedPdf && !isDerivedPdfCacheRef(document.derivedPdf)) {
+        issues.push(
+          issue("warning", "invalidDerivedPdfCache", { kind: "document", id: document.id }),
+        );
+      } else if (
+        document.derivedPdf &&
+        !derivedPdfCacheIsCurrent(document.derivedPdf, {
+          sourceSha256: document.sha256,
+          pageCount: document.pageCount,
+        })
+      ) {
+        issues.push(
+          issue("warning", "derivedPdfCacheStale", { kind: "document", id: document.id }),
+        );
+      }
     }
     for (const excluded of document.excludedPages ?? []) {
       if (!Number.isInteger(excluded) || excluded < 1 || excluded > document.pageCount) {
