@@ -2809,3 +2809,35 @@ remains the scheduling home.
 - **Related:** [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256),
   ADR [0015](../adr/0015-colour-scan-storage.md), F-113, F-091,
   `tests/derivedPdfCache.test.ts`.
+
+### F-116 — The Light Green palette fails text contrast on the shell chrome
+
+- **Date:** 2026-11-15
+- **Phase:** 0.28.0 phase 5 — accessibility and performance gates
+- **Severity:** P2
+- **Area:** Themes / accessibility
+- **Status:** open — recorded by the new accessibility gate; fix in a palette pass
+- **Evidence:** Running the same axe check against
+  `document.documentElement.dataset.theme = "light-green"` reports 21 serious
+  `color-contrast` nodes on the shell. Examples: `.page-location` at 4.0–4.3:1
+  (`#0a7f68` on the tinted card), `.field-label`, `.section-head h2`,
+  `.status-label` and `.page-total` at 3.2–3.75:1 (`--muted-2` `#76859a` on
+  white or `#e9eef4`), `.status-value` at 1.64:1 (`--cyan` `#4cc9f0` on
+  `#e9eef4`), and several chips at 4.49:1 (`--muted` `#5a6a7c`). Medium Gray,
+  Dark Gray, Jade and Navy report no violations.
+- **Problem:** `check:themes` validates the documented token contract and its
+  own contrast pairs, but not every component usage. `--muted-2`, `--jade` and
+  `--cyan` are legible on the dark palettes and below 4.5:1 on the light
+  palette, and the shell uses them for labels, meta rows and status values.
+- **Impact:** The default Medium Gray palette passes the new gate. A user on
+  System-light or Light Green sees low-contrast metadata and status text. No
+  data or interaction is lost, and the automated gate is not weakened to hide
+  it: it runs the default palette and this finding records the gap.
+- **Next step:** Darken `--muted-2`, `--muted`, `--jade`/`--jade-bright` and
+  `--cyan` in `src/styles/themes/light-green.css` until the shell reaches
+  4.5:1, then add the Light Green palette as a second accessibility surface in
+  `scripts/accessibility-rules.mjs` so it stays fixed. Recheck the design tokens
+  in `check:themes` and refresh the theme screenshots. Track it as its own
+  palette issue rather than folding it into the gate phase.
+- **Related:** [#55](https://github.com/MajorJohnDoe/gridscalr/issues/55),
+  `docs/testing.md` (automated accessibility check), `tests/accessibilityGate.test.ts`.

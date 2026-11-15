@@ -31,7 +31,7 @@ export function multiSelectionSection(
 ): HTMLElement {
   const section = el("section", "inspector-section");
   const head = el("div", "section-head");
-  head.append(el("h3", "", t("inspector.selectionHeader")));
+  head.append(el("h2", "", t("inspector.selectionHeader")));
   head.append(el("span", "status-chip", t("inspector.selectedCount", { count: refs.length })));
   section.append(head);
 

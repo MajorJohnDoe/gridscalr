@@ -49,11 +49,37 @@ npm run check:i18n
 npx tsc --noEmit
 npm test -- --run
 npm run build
+npm run test:a11y
+npm run test:touch-targets
+npm run test:ui-scale
+GRIDSCALR_PERF_PROFILE=reference npm run check:performance
 cargo fmt --manifest-path src-tauri/Cargo.toml --check
 cargo check --manifest-path src-tauri/Cargo.toml
 npm run site:build
 npm run site:check
 ```
+
+The accessibility, touch-target, UI-scale and performance commands need the
+browser installed (`npx playwright install chromium`). CI runs the same four
+gates on every pull request. Before the tag, complete the manual canvas and
+keyboard checklist in [`testing.md`](testing.md#manual-accessibility-checklist-canvas-and-keyboard)
+on the desktop build and record the result.
+
+## 3a. Record the accessibility and performance baseline
+
+The release pull request and the release notes record the baseline the gates
+produced, so a number is never claimed without a run behind it:
+
+- the six accessibility surfaces and the count of serious/critical and
+  lower-impact findings;
+- the number of controls measured by the touch-target check;
+- the three UI scales and the smallest canvas width;
+- every performance row from the reference profile, with the profile shape and
+  the measured serialized project size.
+
+A lower-impact accessibility finding that is deferred needs an entry in
+[`plan/foundation-findings.md`](plan/foundation-findings.md) with severity and
+next step. Do not add an allowlist or lower a threshold to make a release pass.
 
 `npm run check:dependencies` runs `npm audit` and `cargo audit` against
 `security/dependency-allowlist.json`. A new unaccepted advisory at or above

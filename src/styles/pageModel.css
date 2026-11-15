@@ -301,12 +301,18 @@
   pointer-events: none;
 }
 
+/* Drawn from the data attribute so the duplicate number adds no text node to
+   the card's accessible name; the size row already names the page. */
+.page-thumb-number::before {
+  content: attr(data-page);
+}
+
 .page-source {
   display: flex;
   align-items: center;
   gap: 4px;
   margin-top: 2px;
-  color: var(--muted-2);
+  color: color-mix(in srgb, var(--text) 70%, var(--muted-2));
   font-size: 10.5px;
   min-width: 0;
 }

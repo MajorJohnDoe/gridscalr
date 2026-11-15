@@ -116,6 +116,10 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const identity = el("div", "doc-identity");
   const projectName = el("span", "project-name", t("shell.noProject"));
+  // The open project is the workspace's top-level heading. A role keeps the
+  // visual styling of the title row while giving the page a level-one heading.
+  projectName.setAttribute("role", "heading");
+  projectName.setAttribute("aria-level", "1");
   // Opt out of the title-row drag region: double-clicking the name renames it.
   projectName.setAttribute("data-tauri-drag-region", "false");
   projectName.title = t("shell.renameHint");
@@ -133,9 +137,9 @@ export function createShell(root: HTMLElement): ShellRefs {
 
   const workspace = el("div", "workspace");
   const toolRail = el("aside", "tool-rail");
+  // A landmark, not a toolbar: the rail is a plain set of buttons with no
+  // roving arrow-key model, and `role="toolbar"` is not allowed on `aside`.
   toolRail.setAttribute("aria-label", t("shell.toolsAria"));
-  toolRail.setAttribute("role", "toolbar");
-  toolRail.setAttribute("aria-orientation", "vertical");
   const railToggle = el("button", "tool-rail-toggle") as HTMLButtonElement;
   railToggle.type = "button";
   railToggle.setAttribute("aria-controls", "tool-rail-tools");

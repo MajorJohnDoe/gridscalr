@@ -53,7 +53,21 @@ function mountedPageCard(pageId: string) {
   card.dataset.pageId = pageId;
   const info = document.createElement("div");
   info.className = "page-info";
+  // The card is named from its visible parts; a status badge is appended and
+  // referenced by aria-labelledby, so the fixture needs the same label nodes.
+  const title = document.createElement("div");
+  title.className = "page-title";
+  title.id = `page-card-${pageId}-title`;
+  title.setAttribute("data-page-label", "");
+  title.textContent = "Ground floor";
+  const size = document.createElement("div");
+  size.className = "page-size";
+  size.id = `page-card-${pageId}-size`;
+  size.setAttribute("data-page-label", "");
+  size.textContent = "Page 1";
+  info.append(title, document.createTextNode(" "), size, document.createTextNode(" "));
   card.append(info);
+  card.setAttribute("aria-labelledby", `${title.id} ${size.id}`);
   list.append(card);
   dockBody.append(list);
   return { dockBody, card };
@@ -195,7 +209,12 @@ describe("source file status", () => {
 
     expect(refs.statusSources.textContent).toContain("source changed");
     expect(card.querySelector(".page-badge")?.getAttribute("data-badge")).toBe("sourceChanged");
-    expect(card.getAttribute("aria-label")).toContain("Source changed");
+    const labelledBy = (card.getAttribute("aria-labelledby") ?? "").split(" ").filter(Boolean);
+    expect(labelledBy).toHaveLength(3);
+    const accessibleName = [...card.querySelectorAll("[data-page-label]")]
+      .map((node) => node.textContent ?? "")
+      .join(" ");
+    expect(accessibleName).toContain("Source changed");
     unsubscribe();
   });
 });

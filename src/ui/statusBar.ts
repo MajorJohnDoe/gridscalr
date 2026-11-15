@@ -248,22 +248,20 @@ function scaleChip(project: Project, actions: PanelActions): HTMLElement {
   );
   button.type = "button";
   button.innerHTML = `<span class="status-dot"></span>`;
-  button.append(
-    document.createTextNode(
-      calibration
-        ? `${locked ? t("status.scaleLocked") : t("status.calibrated")} · ${formatScaleRatio(
-            scaleRatio(pageScale(project, pageId)),
-          )}`
-        : t("status.noScale"),
-    ),
-  );
+  const scaleLabel = calibration
+    ? `${locked ? t("status.scaleLocked") : t("status.calibrated")} · ${formatScaleRatio(
+        scaleRatio(pageScale(project, pageId)),
+      )}`
+    : t("status.noScale");
+  button.append(document.createTextNode(scaleLabel));
   const caret = el("span", "status-chip-caret");
   caret.innerHTML = icon("chevronRight", 10);
   button.append(caret);
   button.title = scaleTooltip(project, pageId);
+  // The visible label is part of the accessible name (WCAG 2.5.3 Label in Name).
   button.setAttribute(
     "aria-label",
-    `${calibration ? t("status.pageScale") : t("status.noPageScale")} ${t(
+    `${calibration ? t("status.pageScale") : t("status.noPageScale")} ${scaleLabel}. ${t(
       "status.openScaleOptions",
     )}`,
   );
