@@ -1224,6 +1224,11 @@ describe("nested optional-content export", () => {
 
     // The hierarchy changes neither the flattened default nor its bytes.
     const flat = withTestPageIds(createProject(defaultDocument("Export.pdf", 2)));
+    // The export stamps the project timestamp into the PDF info block. `flat`
+    // is created after the awaits above, so without this it can land in the
+    // next second and differ by metadata alone on a slow CI runner.
+    flat.createdAt = project.createdAt;
+    flat.updatedAt = project.updatedAt;
     flat.pages[0].state = project.pages[0].state;
     const flatDraw = flat.layers.find((layer) => layer.kind === "draw")!;
     const flatMeasure = flat.layers.find((layer) => layer.kind === "measure")!;
