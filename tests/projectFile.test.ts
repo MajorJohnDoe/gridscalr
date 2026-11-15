@@ -1574,7 +1574,7 @@ describe("project files", () => {
     ]);
   });
 
-  it("rejects a TIF document without its embedded PDF", () => {
+  it("rejects a TIF document without a derived PDF", () => {
     const project = makeProject();
     const raw = JSON.parse(serializeProject(project));
     raw.documents = [
@@ -1589,7 +1589,7 @@ describe("project files", () => {
         sizeBytes: 0,
       },
     ];
-    expect(() => parseProject(JSON.stringify(raw))).toThrow(/missing its embedded PDF/i);
+    expect(() => parseProject(JSON.stringify(raw))).toThrow(/no derived PDF/i);
   });
 
   it("drops page state beyond the last page", () => {

@@ -63,6 +63,19 @@ function scanDocument(version) {
     embeddedPdf: "JVBERi0xLjQK",
     source: { format: "tiff", dpi: [400, 400], originalName: "Legacy scan.tif" },
   };
+  if (version >= 27) {
+    // Schema 27 makes the embedded PDF optional. The fixture names a
+    // rebuildable cache instead and stores no base64 bytes. The exact cache
+    // folder is decided by the cache lifecycle; the format only requires a path
+    // relative to the project.
+    delete document.embeddedPdf;
+    document.derivedPdf = {
+      sourceSha256: SCAN_SHA,
+      converterVersion: 1,
+      pageCount: 1,
+      relativePath: `schema-${version}.drawings/derived/derived-scan-bbbbbbbb.pdf`,
+    };
+  }
   if (version >= 11) document.copiedFrom = { documentId: "doc_main", page: 1 };
   return document;
 }
@@ -657,5 +670,6 @@ write("schema-23-full.gridscalr", buildFixture(23, { rich: true }));
 write("schema-24-full.gridscalr", buildFixture(24, { rich: true }));
 write("schema-25.gridscalr", buildFixture(25, { rich: true }));
 write("schema-26.gridscalr", buildFixture(26, { rich: true }));
+write("schema-27.gridscalr", buildFixture(27, { rich: true }));
 
-console.log("Wrote schema 1-22, schema-23-full through schema-26 fixtures.");
+console.log("Wrote schema 1-22, schema-23-full through schema-27 fixtures.");

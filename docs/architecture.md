@@ -269,6 +269,8 @@ src/
   io/projectFile/pages.ts schema 23 → 24 page migration and page normalization
   io/projectFile/sourceStorage.ts schema 24 → 25 reference/managed storage migration
   io/projectFile/layerHierarchy.ts schema 25 → 26 layer parent migration and old-parent rejection
+  io/projectFile/derivedPdf.ts schema 26 → 27 TIF derived-PDF marker, untrusted pre-27 markers and the renderable-source check
+  model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
   model/layerHierarchy.ts pure parent links, tree order, effective visibility/lock and page-removal keep rules
   features/layerTree/ layer tree view rows, inherited state, drag/keyboard nesting, subtree duplicate and delete plan, page-removal keep rules
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
@@ -295,13 +297,13 @@ docs/workflows.md        role-based guides for operations and property managemen
 docs/shortcuts.md        in-app keyboard reference
 docs/screenshots/        versioned screenshots and capture manifest
 tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry, autosave and the model-to-feature boundary scan
-tests/robustness/        seeded page/save sequences, competing saves, the schema 1–26 migration corpus and source-storage gates
+tests/robustness/        seeded page/save sequences, competing saves, the schema 1–27 migration corpus and source-storage gates
 fixtures/legacy/         committed project fixtures for every supported schema; generate with scripts/make-legacy-fixtures.mjs
 scripts/plan-geometry.mjs shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation project
-scripts/make-legacy-fixtures.mjs generator for the schema 1–26 migration corpus
+scripts/make-legacy-fixtures.mjs generator for the schema 1–27 migration corpus
 scripts/ui-harness.mjs shared Playwright server and demo-project helpers
 scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -359,7 +361,7 @@ Key design choices:
 ## Planned foundation work
 
 The data-integrity work is accepted and progressively implemented. The source
-map above describes the current schema 26 code.
+map above describes the current schema 27 code.
 
 - [ADR 0010](adr/0010-project-file-integrity.md): conditional project writes,
   conflict copies, scoped autosave and advisory lock leases.
