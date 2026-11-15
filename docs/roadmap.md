@@ -89,6 +89,14 @@ These are not negotiable without an explicit decision:
 form ([#257](https://github.com/MajorJohnDoe/gridscalr/issues/257)) are planned
 follow-ups, not shipped work.
 
+**0.28.0** is planned as the schema-freeze release candidate: schema 27 makes the
+colour-scan derived PDF a rebuildable cache, the OCG array form and the preflight
+relink close the two shipped interoperability bugs, and the remaining 1.0 gates
+become CI checks. There is no Mac hardware and no signing identity, so the macOS
+artifact is verified in CI and the unsigned physical install is recorded as a
+known gap. See [`plan/0.28.md`](plan/0.28.md) and epic
+[#261](https://github.com/MajorJohnDoe/gridscalr/issues/261).
+
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
 
