@@ -130,6 +130,43 @@ function destinationFixture() {
   };
 }
 
+/** A project whose PDF has moved: its file path no longer resolves. */
+function missingSourceFixture() {
+  return {
+    schemaVersion: 23,
+    id: "project_missing_source",
+    name: "Missing source",
+    documents: [
+      {
+        id: "doc_moved_plan",
+        kind: "pdf",
+        name: "Moved plan.pdf",
+        path: "/nonexistent/moved-plan.pdf",
+        relativePath: null,
+        sha256: "",
+        pageCount: 3,
+        sizeBytes: 0,
+      },
+    ],
+    categories: [],
+    countTypes: [],
+    countPresets: [],
+    lineTypes: [],
+    assets: {},
+    pages: {
+      1: { name: "Moved plan 1" },
+      2: { name: "Moved plan 2" },
+      3: { name: "Moved plan 3" },
+    },
+    markupsViews: [],
+    layers: [
+      drawLayer("layer_missing_draw", [textItem("missing_text", 1, "Moved note")]),
+      measureLayer("layer_missing_measure", []),
+    ],
+    activeLayerId: "layer_missing_draw",
+  };
+}
+
 function sourceFixture() {
   return {
     schemaVersion: 23,
@@ -159,11 +196,14 @@ try {
   directory = await mkdtemp(join(tmpdir(), "gridscalr-import-"));
   const destinationPath = join(directory, "destination.gridscalr");
   const sourcePath = join(directory, "source.gridscalr");
+  const missingPath = join(directory, "moved-source.gridscalr");
   const destination = destinationFixture();
   const source = sourceFixture();
   await writeFile(destinationPath, JSON.stringify(destination, null, 2));
   await writeFile(sourcePath, JSON.stringify(source, null, 2));
+  await writeFile(missingPath, JSON.stringify(missingSourceFixture(), null, 2));
   const sourceBefore = await readFile(sourcePath, "utf8");
+  const missingBefore = await readFile(missingPath, "utf8");
 
   vite = await startVite({ port });
   browser = await launchBrowser();
@@ -346,7 +386,95 @@ try {
   assert.equal(afterDropRedo.documents, 3);
   assert.equal(afterDropRedo.pages, 5);
 
+  // A source project whose PDF was moved recovers through the picker and the
+  // preflight Relink…, without editing the source project first. The picker
+  // keeps the pages selectable and marks them unavailable; the preflight owns
+  // the relink because no page can be imported without it.
+  async function openMissingSourcePicker() {
+    await page.getByRole("menuitem", { name: "File" }).click();
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByRole("menuitem", { name: /Import pages from project/ }).click();
+    await (await chooser).setFiles(missingPath);
+    const dialog = page.getByRole("dialog", { name: "Import pages from project" });
+    await dialog.waitFor();
+    return dialog;
+  }
+
+  async function checkMovedPdfPicker() {
+    const dialog = await openMissingSourcePicker();
+    const tile = dialog.locator('.project-import-tile[data-page="1"]');
+    assert.equal(await tile.locator("input").isDisabled(), false);
+    assert.match(await tile.innerText(), /File missing/);
+    assert.match(await tile.innerText(), /Relink or skip these pages in the preflight/);
+    await dialog.getByRole("button", { name: "Select all" }).click();
+    assert.match(
+      await dialog.locator(".project-import-missing-note").innerText(),
+      /relink the file or skip those pages/,
+    );
+    await dialog.getByRole("button", { name: /Import 3 pages/ }).click();
+    await dialog.waitFor({ state: "detached" });
+    const preflight = page.getByRole("dialog", { name: "Import preflight" });
+    await preflight.waitFor();
+    return preflight;
+  }
+
+  // Cancel from the preflight after selecting the moved pages changes nothing.
+  const cancelledPreflight = await checkMovedPdfPicker();
+  await cancelledPreflight.getByRole("button", { name: "Cancel" }).click();
+  await cancelledPreflight.waitFor({ state: "detached" });
+  assert.equal(await page.locator(".page-card").count(), 5);
+  assert.equal(await readFile(missingPath, "utf8"), missingBefore);
+
+  const missingPreflight = await checkMovedPdfPicker();
+  assert.match(
+    await missingPreflight.locator(".preflight-summary").innerText(),
+    /No selected page can be imported/,
+  );
+  assert.equal(
+    await missingPreflight.getByRole("button", { name: "Import pages", exact: true }).isDisabled(),
+    true,
+  );
+  // Every selected page belongs to the moved file, so skipping cannot help.
+  assert.equal(await missingPreflight.locator('.preflight-action[data-action="skip"]').count(), 0);
+  const relinkChooser = page.waitForEvent("filechooser");
+  await missingPreflight.getByRole("button", { name: /Relink/ }).click();
+  await (await relinkChooser).setFiles(join(repoRoot, "fixtures", "industrial-plan.pdf"));
+  await missingPreflight.getByText("Verified").waitFor();
+  assert.match(
+    await missingPreflight.locator(".preflight-summary").innerText(),
+    /3 pages ready to import/,
+  );
+  await missingPreflight.getByRole("button", { name: "Import pages", exact: true }).click();
+  await missingPreflight.waitFor({ state: "detached" });
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 8);
+  await waitForToastsGone(page);
+
+  const recovered = await page.evaluate(() => {
+    const project = window.__gridscalr.store.project;
+    return {
+      documents: project.documents.length,
+      pages: project.pages.length,
+      names: project.pages.slice(-3).map((record) => record.state.name),
+      firstImportedItems: project.layers.reduce(
+        (sum, layer) =>
+          sum + layer.items.filter((item) => item.pageId === project.pages[5]?.id).length,
+        0,
+      ),
+    };
+  });
+  assert.equal(recovered.documents, 4);
+  assert.equal(recovered.pages, 8);
+  assert.deepEqual(recovered.names, ["Moved plan 1", "Moved plan 2", "Moved plan 3"]);
+  assert.equal(recovered.firstImportedItems, 1);
+
+  // The recovery import stays one undo step.
+  await page.keyboard.press("Control+z");
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 5);
+  await page.keyboard.press("Control+Shift+z");
+  await page.waitForFunction(() => document.querySelectorAll(".page-card").length === 8);
+
   assert.equal(await readFile(sourcePath, "utf8"), sourceBefore);
+  assert.equal(await readFile(missingPath, "utf8"), missingBefore);
   assert.deepEqual(pageErrors, [], `page errors: ${pageErrors.join("; ")}`);
   console.log(`Project import UI passed: ${repoRoot}`);
 } finally {

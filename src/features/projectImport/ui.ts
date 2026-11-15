@@ -17,7 +17,10 @@ export interface ProjectImportGroupOption {
   documentName: string;
   documentKind: DocumentKind;
   pageCount: number;
-  /** True for referenced PDFs, which can be located when the file is missing. */
+  /**
+   * True for referenced PDFs: a missing file can be located in the picker and
+   * relinked in the import preflight, so its pages stay selectable.
+   */
   canLocate: boolean;
   pages: ProjectImportPageOption[];
 }
@@ -39,6 +42,9 @@ interface Tile {
   placeholder: HTMLElement;
   thumb: HTMLElement;
   page: ProjectImportPageOption;
+  /** A page from a missing but relinkable file can still be selected. */
+  selectable: boolean;
+  missingHint: HTMLElement | null;
   loading: boolean;
 }
 
@@ -84,11 +90,19 @@ export async function projectImportDialog(
 
   const total = options.groups.reduce((sum, group) => sum + group.pages.length, 0);
 
+  const missingNote = el(
+    "p",
+    "export-note project-import-missing-note",
+    t("projectImport.missingSelected"),
+  );
+  missingNote.hidden = true;
+
   const sync = () => {
-    const available = [...tiles.values()].filter((tile) => tile.page.available).length;
+    const selectable = [...tiles.values()].filter((tile) => tile.selectable).length;
     summary.textContent = t("projectImport.summary", { selected: selected.size, total });
-    selectAll.disabled = available === 0 || selected.size >= available;
+    selectAll.disabled = selectable === 0 || selected.size >= selectable;
     clearAll.disabled = selected.size === 0;
+    missingNote.hidden = ![...selected].some((page) => !tiles.get(page)?.page.available);
     if (primary) {
       primary.disabled = selected.size === 0;
       primary.textContent =
@@ -124,11 +138,16 @@ export async function projectImportDialog(
       const tile = tiles.get(page.page);
       if (!tile) continue;
       tile.check.disabled = false;
-      tile.element.classList.remove("is-unavailable");
+      tile.selectable = true;
+      tile.element.classList.remove("is-unavailable", "is-missing-source");
+      tile.check.removeAttribute("aria-describedby");
       tile.image.hidden = true;
       tile.image.removeAttribute("src");
       tile.placeholder.hidden = false;
+      tile.placeholder.textContent = t("projectImport.loading");
       tile.thumb.classList.remove("is-preview-missing");
+      tile.missingHint?.remove();
+      tile.missingHint = null;
       tile.loading = false;
     }
     if (view.locate) view.locate.hidden = true;
@@ -190,14 +209,18 @@ export async function projectImportDialog(
     grid.setAttribute("role", "group");
     grid.setAttribute("aria-label", group.documentName);
     for (const page of group.pages) {
-      const tile = el(
-        "label",
-        `page-import-tile project-import-tile${page.available ? "" : " is-unavailable"}`,
-      ) as HTMLLabelElement;
+      // A moved PDF stays selectable: the preflight offers Relink… for it. Only
+      // a document with no recovery path (a TIF without its embedded PDF) stays
+      // disabled, because nothing could ever load it.
+      const selectable = page.available || group.canLocate;
+      const classes = ["page-import-tile", "project-import-tile"];
+      if (!page.available) classes.push("is-unavailable");
+      if (!page.available && selectable) classes.push("is-missing-source");
+      const tile = el("label", classes.join(" ")) as HTMLLabelElement;
       tile.dataset.page = String(page.page);
       const check = el("input", "page-import-check") as HTMLInputElement;
       check.type = "checkbox";
-      check.disabled = !page.available;
+      check.disabled = !selectable;
       check.setAttribute(
         "aria-label",
         page.name
@@ -206,6 +229,12 @@ export async function projectImportDialog(
       );
       const thumb = el("div", "page-import-thumb");
       const placeholder = el("span", "page-import-placeholder", t("projectImport.loading"));
+      if (!page.available) {
+        placeholder.textContent = selectable
+          ? t("projectImport.missingSource")
+          : t("projectImport.previewMissing");
+        thumb.classList.add("is-preview-missing");
+      }
       const image = el("img", "page-import-image");
       image.alt = "";
       image.draggable = false;
@@ -228,6 +257,17 @@ export async function projectImportDialog(
           .join(" · "),
       );
       caption.append(name, details);
+      let missingHint: HTMLElement | null = null;
+      if (!page.available && selectable) {
+        missingHint = el(
+          "span",
+          "project-import-page-missing",
+          t("projectImport.missingSourceHint"),
+        );
+        missingHint.id = `project-import-missing-${page.page}`;
+        check.setAttribute("aria-describedby", missingHint.id);
+        caption.append(missingHint);
+      }
       tile.append(check, thumb, caption);
 
       check.addEventListener("change", () => {
@@ -245,6 +285,8 @@ export async function projectImportDialog(
         placeholder,
         thumb,
         page,
+        selectable,
+        missingHint,
         loading: false,
       });
     }
@@ -254,11 +296,11 @@ export async function projectImportDialog(
   }
 
   const note = el("p", "export-note", t("projectImport.note", { page: options.destinationPage }));
-  body.append(note);
+  body.append(note, missingNote);
 
   selectAll.addEventListener("click", () => {
     for (const tile of tiles.values()) {
-      if (!tile.page.available) continue;
+      if (!tile.selectable) continue;
       selected.add(tile.page.page);
       tile.check.checked = true;
       tile.element.classList.add("is-selected");

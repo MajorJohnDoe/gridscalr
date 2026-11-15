@@ -20,8 +20,12 @@ function countRow(label: string, count: number): HTMLElement {
   return row;
 }
 
-function statusLabel(state: ImportSourceState, confirmed: boolean): string {
-  if (state.missing) return t("projectImport.preflight.statusSourceMissing");
+function statusLabel(state: ImportSourceState, confirmed: boolean, skipped: boolean): string {
+  if (state.missing) {
+    return skipped
+      ? t("projectImport.preflight.statusSkipped")
+      : t("projectImport.preflight.statusSourceMissing");
+  }
   if (confirmed) return t("projectImport.preflight.statusConfirmed");
   if (state.checksumChanged && state.pageCountChanged) {
     return t("projectImport.preflight.statusChanged");
@@ -47,6 +51,8 @@ export async function projectImportPreflightDialog(
   let modal: HTMLElement | null = null;
   const confirmed = new Set<string>();
   const relinked = new Set<string>();
+  /** Missing sources whose selected pages the user agreed to drop. */
+  const acceptedSkips = new Set<string>();
 
   const counts = el("div", "preflight-counts");
   const sources = el("div", "preflight-sources");
@@ -96,12 +102,16 @@ export async function projectImportPreflightDialog(
   };
 
   const updateFooter = (): void => {
-    const info = summarizeImportPreflight(current, confirmed);
+    const info = summarizeImportPreflight(current, confirmed, acceptedSkips);
     if (info.pages === 0) {
       summary.textContent = t("projectImport.preflight.summaryNothing");
     } else if (info.unconfirmedDocuments) {
       summary.textContent = t("projectImport.preflight.summaryBlocked", {
         count: info.unconfirmedDocuments,
+      });
+    } else if (info.pendingMissingDocuments) {
+      summary.textContent = t("projectImport.preflight.summaryMissingPending", {
+        documents: info.pendingMissingDocuments,
       });
     } else if (info.missingDocuments) {
       summary.textContent = t("projectImport.preflight.summaryMissing", {
@@ -135,6 +145,12 @@ export async function projectImportPreflightDialog(
     target?.focus();
   };
 
+  const focusAction = (documentId: string, kind: "skip"): void => {
+    const target =
+      modal?.querySelector<HTMLButtonElement>(`[data-focus="${documentId}:${kind}"]`) ?? primary;
+    target?.focus();
+  };
+
   const runAction = async (
     documentId: string,
     kind: "relink" | "unrelink",
@@ -147,6 +163,7 @@ export async function projectImportPreflightDialog(
       if (next) {
         current = next;
         confirmed.delete(documentId);
+        acceptedSkips.delete(documentId);
         if (kind === "relink") relinked.add(documentId);
         else relinked.delete(documentId);
         renderCounts();
@@ -162,7 +179,7 @@ export async function projectImportPreflightDialog(
   const actionButton = (
     label: string,
     documentId: string,
-    kind: "relink" | "unrelink" | "confirm",
+    kind: "relink" | "unrelink" | "confirm" | "skip",
     onClick: () => void,
   ): HTMLButtonElement => {
     const button = el("button", "btn btn-small btn-ghost preflight-action", label);
@@ -176,6 +193,7 @@ export async function projectImportPreflightDialog(
 
   const sourceRow = (state: ImportSourceState): HTMLElement => {
     const accepted = confirmed.has(state.documentId);
+    const skipped = acceptedSkips.has(state.documentId);
     const row = el("div", "preflight-document");
     row.dataset.document = state.documentId;
     row.classList.toggle("is-missing", state.missing);
@@ -187,7 +205,7 @@ export async function projectImportPreflightDialog(
       el(
         "span",
         `preflight-status${state.missing ? " is-missing" : ""}`,
-        statusLabel(state, accepted),
+        statusLabel(state, accepted, skipped),
       ),
     );
     row.append(head);
@@ -234,6 +252,27 @@ export async function projectImportPreflightDialog(
         );
       }
     }
+    // A missing source is never skipped silently: its selected pages can be
+    // committed only after a relink or an explicit skip. Skipping only matters
+    // while another document still contributes an importable page.
+    if (state.missing && current.preflight.pages > 0) {
+      actions.append(
+        actionButton(
+          skipped
+            ? t("projectImport.preflight.unskipMissing")
+            : t("projectImport.preflight.skipMissing"),
+          state.documentId,
+          "skip",
+          () => {
+            if (acceptedSkips.has(state.documentId)) acceptedSkips.delete(state.documentId);
+            else acceptedSkips.add(state.documentId);
+            renderSources();
+            updateFooter();
+            focusAction(state.documentId, "skip");
+          },
+        ),
+      );
+    }
     if (sourceNeedsConfirmation(state) && !accepted) {
       actions.append(
         actionButton(
@@ -276,7 +315,8 @@ export async function projectImportPreflightDialog(
       { label: t("projectImport.preflight.import"), value: "import", primary: true },
     ],
     onValidate: () => {
-      const info = summarizeImportPreflight(current, confirmed);
+      const info = summarizeImportPreflight(current, confirmed, acceptedSkips);
+      if (info.pendingMissingDocuments) return t("projectImport.preflight.skipHint");
       return info.blocked ? t("projectImport.preflight.blockedHint") : null;
     },
     onMount: (mount) => {
