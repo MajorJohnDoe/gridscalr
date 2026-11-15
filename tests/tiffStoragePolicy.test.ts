@@ -5,19 +5,29 @@ import { PDFDict, PDFDocument, PDFName, type PDFRawStream } from "pdf-lib";
 import { base64ToBytes } from "../src/io/base64";
 import { readTiff } from "../src/io/tiff";
 import { createTiffDocumentRef, tiffToPdf } from "../src/io/tiffImport";
+import {
+  DERIVED_PDF_CONVERTER_VERSION,
+  derivedPdfCacheIsCurrent,
+  isDerivedPdfCacheRef,
+} from "../src/model/derivedPdf";
 
 /*
- * Pins the shipped TIF storage decision in ADR 0015:
+ * Pins the TIF storage decision in ADR 0015 after the schema 27 cache:
  *
  *   - CCITT G3/G4 pages are a byte-for-byte passthrough and must stay one;
- *   - a decoded (colour or greyscale) page is a derived PDF embedded as base64
- *     in `DocumentRef.embeddedPdf`, and the derived PDF is deterministic.
+ *   - a decoded (colour or greyscale) page is a derived PDF that the save path
+ *     moves out of the project JSON into the rebuildable derived-PDF cache;
+ *     the importer still holds the bytes in memory until it can write one, and
+ *     the derived PDF itself is deterministic.
  *
- * A future reference-plus-cache storage mode changes the second fact and must
- * update this file and the ADR together. The first fact is not negotiable.
+ * The cache is an artifact keyed by the scan's checksum, the converter version
+ * and the page count. Deleting it costs a rebuild, never data, and the bytes it
+ * holds are the same Flate images measured here. The first fact is not
+ * negotiable: a passthrough page never acquires a cache entry.
  */
 
 const fixtures = path.resolve(__dirname, "../fixtures/tiff");
+const SHA = "a".repeat(64);
 
 async function fixture(name: string): Promise<Uint8Array> {
   return new Uint8Array(await readFile(path.join(fixtures, name)));
@@ -71,6 +81,8 @@ describe("TIF storage policy (ADR 0015)", () => {
     // The derived PDF is the source strips plus PDF structure, not a re-encode.
     // A decoded 1-bit raster for this page would be 24 KiB on its own.
     expect(conversion.bytes.length).toBeLessThan(sourceStripBytes + 4096);
+    // A passthrough page never acquires a derived-PDF cache entry.
+    expect(conversion.passthrough).toBe(true);
   });
 
   it("embeds a decoded colour page as Flate images, never as JPEG", async () => {
@@ -84,7 +96,8 @@ describe("TIF storage policy (ADR 0015)", () => {
       expect(dictName(entry.stream, "Filter")).not.toBe("/DCTDecode");
     }
 
-    // The derived PDF is what the project stores, base64 encoded.
+    // The importer builds the same derived PDF in memory; a saved project stores
+    // it once as a cache marker instead of base64 (see tests/derivedPdfCache).
     const document = createTiffDocumentRef({
       name: "Colour plan.tif",
       path: "/plans/Colour plan.tif",
@@ -96,6 +109,22 @@ describe("TIF storage policy (ADR 0015)", () => {
     const embedded = base64ToBytes(document.embeddedPdf!);
     expect(Buffer.from(embedded).equals(Buffer.from(conversion.bytes))).toBe(true);
     expect(document.storage).toBe("reference");
+    // A cache marker is the shipped storage form for the same document, and it
+    // is only valid while the key matches the scan it was built from.
+    const marker = {
+      sourceSha256: SHA,
+      converterVersion: DERIVED_PDF_CONVERTER_VERSION,
+      pageCount: conversion.pages.length,
+      relativePath: "Plan.derived/abcdefghijklmnop-v1-p1.pdf",
+    };
+    expect(conversion.passthrough).toBe(false);
+    expect(isDerivedPdfCacheRef(marker)).toBe(true);
+    expect(
+      derivedPdfCacheIsCurrent(marker, {
+        sourceSha256: SHA,
+        pageCount: conversion.pages.length,
+      }),
+    ).toBe(true);
   });
 
   it("derives identical bytes for the same colour source", async () => {

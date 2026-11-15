@@ -1,5 +1,6 @@
 mod commands;
 mod conflicted_copy;
+mod derived_cache;
 mod disk_space;
 mod package;
 mod package_limits;
@@ -148,6 +149,7 @@ pub fn run() {
             source_copy::source_copy_to_project,
             source_copy::source_file_hash,
             source_copy::source_find_by_hash,
+            derived_cache::derived_cache_write,
             temp_cleanup::clean_project_temporaries,
             source_cleanup::source_list_managed_copies,
             source_cleanup::source_remove_managed_copies,

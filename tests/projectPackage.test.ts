@@ -7,6 +7,7 @@ import { createTemplateDocument } from "../src/features/schematics/model/sheetDo
 import {
   DEFAULT_PACKAGE_OPTIONS,
   describePackageFailure,
+  derivedCacheArchivePaths,
   documentArchivePaths,
   estimatePackageBytes,
   MAX_PACKAGE_TOTAL_BYTES,
@@ -77,6 +78,7 @@ function validManifest(): PackageManifest {
     ],
     exports: [],
     sourceScans: [],
+    derivedCaches: [],
   };
 }
 
@@ -346,6 +348,55 @@ describe("project package model", () => {
     expect(describePackageFailure({ kind: "invalidPackage", message: "" })).toBe(
       "The package is invalid.",
     );
+  });
+
+  it("carries a cache-backed scan as its derived cache, never both forms", () => {
+    const project = projectWithDocuments();
+    const scan = project.documents[2];
+    scan.embeddedPdf = undefined;
+    scan.derivedPdf = {
+      sourceSha256: scan.sha256,
+      converterVersion: 1,
+      pageCount: 1,
+      relativePath: "Level 01.derived/cccccccccccccccc-v1-p1.pdf",
+    };
+    const caches = derivedCacheArchivePaths(project);
+    expect(caches.get(scan.id)).toBe("derived/Site plan.pdf");
+    expect(caches.has(project.documents[0].id)).toBe(false);
+
+    const json = portableProjectJson(project, documentArchivePaths(project), {}, caches);
+    const stored = JSON.parse(json).documents.find((entry: DocumentRef) => entry.id === scan.id);
+    expect(stored.path).toBeNull();
+    expect(stored.relativePath).toBeNull();
+    expect(stored.embeddedPdf).toBeUndefined();
+    expect(stored.derivedPdf.relativePath).toBe("derived/Site plan.pdf");
+    expect(stored.derivedPdf.sourceSha256).toBe(scan.sha256);
+
+    // The estimate counts the cache even when original scans are not requested.
+    const estimated = estimatePackageBytes(project, DEFAULT_PACKAGE_OPTIONS);
+    expect(estimated).toBeGreaterThan(1200 + 800 + 700);
+  });
+
+  it("accepts a derived cache section and rejects a mislabelled one", () => {
+    const manifest = validManifest();
+    const cache = {
+      file: "derived/Site plan.pdf",
+      sha256: "e".repeat(64),
+      sizeBytes: 512,
+      kind: "derived",
+    };
+    expect(validatePackageManifest({ ...manifest, derivedCaches: [cache] }).derivedCaches).toEqual([
+      cache,
+    ]);
+    expect(() =>
+      validatePackageManifest({ ...manifest, derivedCaches: [{ ...cache, kind: "pdf" }] }),
+    ).toThrow();
+    expect(() =>
+      validatePackageManifest({
+        ...manifest,
+        derivedCaches: [{ ...cache, file: "documents/Site plan.pdf" }],
+      }),
+    ).toThrow();
   });
 
   it("assigns a fresh suffix when a name is already used", () => {

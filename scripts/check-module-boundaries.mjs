@@ -30,6 +30,7 @@ const FOUNDATION_FEATURES = [
   "src/features/importProvenance",
   "src/features/layerTree",
   "src/features/countTypes",
+  "src/features/derivedPdfCache",
   "src/features/schematics",
 ];
 

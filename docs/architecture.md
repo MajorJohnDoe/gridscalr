@@ -247,6 +247,7 @@ src/
   ui/settings/backups.ts Preferences → Data backup retention and manager entry
   source/sourceStatus.ts source drawing existence, size and checksum monitor with notify-on-change status sets
   features/sourceStorage/ reference/managed modes, managed copies, consolidation and relinking
+  features/derivedPdfCache/ rebuildable TIF derived-PDF cache: build, reuse, rebuild, missing-scan path and budget
   features/statusOverview/ project status summary model and popover for save, backup, autosave, validation and recovery
   app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
   ui/preferencesDialog.ts local workspace, layer-colour and app stamp preferences
@@ -270,6 +271,7 @@ src/
   io/projectFile/sourceStorage.ts schema 24 → 25 reference/managed storage migration
   io/projectFile/layerHierarchy.ts schema 25 → 26 layer parent migration and old-parent rejection
   io/projectFile/derivedPdf.ts schema 26 → 27 TIF derived-PDF marker, untrusted pre-27 markers and the renderable-source check
+  src-tauri/src/derived_cache.rs verified derived-PDF cache write in `<project>.derived/`
   model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
   model/layerHierarchy.ts pure parent links, tree order, effective visibility/lock and page-removal keep rules
   features/layerTree/ layer tree view rows, inherited state, drag/keyboard nesting, subtree duplicate and delete plan, page-removal keep rules

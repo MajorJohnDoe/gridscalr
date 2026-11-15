@@ -520,6 +520,7 @@ src/model/                 types, geometry, labels, units, calibration, layers, 
 src/model/countTypes.ts    built-in count types, normalization, lookup, management and presets
 src/model/integrity.ts     shared referential-integrity rules and round-trip shape comparison
 src/model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
+src/features/derivedPdfCache/ cache lifecycle: build on import/save, reuse or rebuild on open, the missing-scan path, the budget warning and the package rule
 src/model/layerHierarchy.ts pure layer parent links, tree order, effective visibility/lock and page-removal keep rules
 src/model/commands.ts      shared item commands for visibility, locks, deletion, movement and style
 src/model/markups.ts       saved Markups views, columns and grouping helpers
@@ -595,6 +596,7 @@ src/features/sourceStorage/  reference/managed source modes, managed copies, con
 src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage
 src/app/sourceStorageHost.ts source-storage controller wiring and renderer replacement
 src-tauri/src/source_copy.rs verified managed copy, source hash and folder checksum search
+src-tauri/src/derived_cache.rs verified derived-PDF cache write in `<project>.derived/`
 src-tauri/src/package_limits.rs package output cap and destination free-space check before a write
 src-tauri/src/temp_cleanup.rs stale temporary naming, age/process guard and the post-load cleanup command
 src-tauri/src/source_cleanup.rs managed-copy folder inventory and guarded single-file deletion

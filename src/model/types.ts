@@ -415,6 +415,12 @@ export interface DocumentSourceInfo {
   /** X and Y resolution in dots per inch, as read from the TIFF. */
   dpi: [number, number];
   originalName: string;
+  /**
+   * True when every page kept its compressed source strips (CCITT G3/G4 or
+   * JPEG-in-TIFF). Such a derived PDF is about the size of the scan itself, so
+   * it stays embedded and never acquires a cache entry (ADR 0015).
+   */
+  passthrough?: boolean;
 }
 
 export interface DocumentRef {

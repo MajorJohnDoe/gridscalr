@@ -1,6 +1,6 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
 import type { ImportDocumentOverride, ImportSourceMismatch } from "../features/projectImport/model";
-import { base64ToBytes } from "../io/base64";
+import { derivedCachePath, loadDerivedPdfBytes, scanCandidates } from "../features/derivedPdfCache";
 import { isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { resolveRelativePath } from "../io/projectFile";
 import { documentStartPage, includedLocalPages } from "../model/documents";
@@ -93,7 +93,23 @@ export class ProjectImportSource {
         continue;
       }
       if (document.kind === "tiff") {
-        this.availability.set(document.id, Boolean(document.embeddedPdf));
+        // A schema 27 document may hold its derived PDF in the cache instead of
+        // `embeddedPdf`. It is available when the cache is on disk or when a
+        // reachable scan can rebuild it; only "neither" stays disabled (F-113).
+        let available = Boolean(document.embeddedPdf);
+        if (!available && document.derivedPdf) {
+          const cache = derivedCachePath(document, this.sourcePath);
+          available = Boolean(cache && (await pathExists(cache)));
+          if (!available) {
+            for (const candidate of scanCandidates(document, this.sourcePath)) {
+              if (await pathExists(candidate)) {
+                available = true;
+                break;
+              }
+            }
+          }
+        }
+        this.availability.set(document.id, available);
         continue;
       }
       let available = false;
@@ -337,12 +353,9 @@ export class ProjectImportSource {
       }
       path = null;
     } else if (document.kind === "tiff") {
-      if (!document.embeddedPdf) return null;
-      try {
-        bytes = base64ToBytes(document.embeddedPdf);
-      } catch {
-        return null;
-      }
+      const resolved = await loadDerivedPdfBytes(document, this.sourcePath);
+      if (!resolved) return null;
+      bytes = resolved.bytes;
     } else {
       const located = this.located.get(documentId);
       if (located) {

@@ -70,6 +70,13 @@ export function sourceDocumentPaths(project: Project, projectPath: string | null
         }
       }
     }
+    // A derived-PDF cache is an artifact, but it is still project data that no
+    // save or export may replace: it is the only copy of a scan's page bytes
+    // when the original TIF is gone.
+    if (projectPath && document.derivedPdf) {
+      const cached = resolveRelativePath(projectPath, document.derivedPdf.relativePath);
+      if (cached) paths.add(cached);
+    }
   }
   return [...paths];
 }

@@ -1,8 +1,8 @@
 # ADR 0015: Colour-scan TIF storage and size budget
 
-- Status: Accepted (decision); schema 27 format implemented, cache lifecycle in
-  the follow-up issue
-- Date: 2026-11-13
+- Status: Accepted — implemented. Schema 27 format in 0.28.0 phase 3, cache
+  lifecycle, packaging and the enforced budget in phase 4
+- Date: 2026-11-13 (decision), 2026-11-15 (lifecycle implemented)
 - Deciders: GridScalr maintainer
 - Supersedes: none
 - Related: [0012](0012-source-storage-modes.md), [0010](0010-project-file-integrity.md), [0005](0005-large-project-performance.md)
@@ -10,8 +10,8 @@
 ## Context
 
 A TIF is not a drawing format GridScalr can render directly. Import converts the
-scan into a derived PDF and stores that PDF as base64 in
-`DocumentRef.embeddedPdf`; the project then works without the original file
+scan into a derived PDF; before schema 27 that PDF was stored as base64 in
+`DocumentRef.embeddedPdf`, so the project worked without the original file
 (`src/io/tiffImport.ts`, schema 6 onward). ADR 0012 keeps that as the one allowed
 embedded-document exception because the PDF is a GridScalr-derived artifact, not
 a user PDF.
@@ -24,8 +24,9 @@ scan:
 - a decoded page is expanded to one byte per component, then Flate-compressed as
   one image per strip;
 - base64 inflates the stored bytes by 4/3;
-- every save rewrites the whole string, every undo snapshot keeps a copy of the
-  serialized project, and the recovery store keeps a snapshot plus checkpoints;
+- before schema 27 every save rewrote the whole string, every undo snapshot kept
+  a copy of the serialized project, and the recovery store kept a snapshot plus
+  checkpoints;
 - the project has a hard 256 MB limit and a 48-million-character undo-history
   budget that shrinks history as a snapshot grows.
 
@@ -55,114 +56,154 @@ real limit for colour: the 256 MiB decoded-raster guard bites first, at about
 199 MiB) is just inside it. Second, that worst row can exceed the 256 MB project
 limit on its own, which is why this is a decision rather than a note.
 
+### Measured before/after
+
+`tests/derivedPdfBudget.test.ts` builds a reference project of six A2-class
+colour sheets (4960 × 3508 px, 300 DPI, deterministic line art with scan grain),
+converts each through the real `tiffToPdf`, and serializes the project both ways.
+Run it with `GRIDSCALR_DERIVED_BENCH=1 npx vitest run tests/derivedPdfBudget.test.ts`:
+
+| Project form | Project JSON | Derived PDFs on disk |
+| --- | --- | --- |
+| Embedded (`embeddedPdf`, 0.27.0) | **79.19 MiB** | — |
+| Schema 27 cache (`derivedPdf` marker) | **0.01 MiB** | 59.39 MiB in `<project>.derived/` |
+
+The derived bytes are carried exactly once instead of once per save, autosave,
+undo snapshot and recovery record. The saving per write is the whole 79 MiB of
+base64; the JSON still grows with pages, items, images and OCR, which is what the
+remaining budget is for.
+
 ## Decision
 
-**0.27.0 keeps the embedded derived PDF and adds a written size budget. The
-storage change is deferred, with schema 27 as its vehicle.**
+**A TIF's derived PDF is a rebuildable cache beside the project, never base64 in
+the project JSON.**
 
-1. A colour or greyscale TIF page keeps the current shape: one derived PDF, one
-   image XObject per strip, base64 in `DocumentRef.embeddedPdf`.
+1. A colour or greyscale TIF page keeps today's conversion: one derived PDF, one
+   image XObject per strip. The PDF is no longer stored in `embeddedPdf` once a
+   cache exists.
 2. CCITT G3/G4 passthrough is unchanged and stays byte-for-byte: the compressed
    strips are copied into `/CCITTFaxDecode` streams with no decode and no
-   re-encode. Nothing in this budget applies to a bilevel fax sheet.
-3. The accepted **size budget** is:
-   - **8 MiB of project JSON per 25 MP colour page** (about A2 at 250 DPI;
-     measured at 7.2 MiB), so a full A1 colour sheet at 300 DPI counts as about
-     two and a half units at its measured 20.1 MiB;
-   - **160 MiB of embedded derived PDFs per project** — twenty 25 MP sheets, or
-     eight A1-at-300-DPI sheets, about 63 % of the 256 MB project limit, leaving
-     at least 96 MiB for pages, items, images, OCR and saved views;
-   - a photographic or otherwise poorly compressible sheet counts as several
-     units; above the budget the user splits the takeoff into one project per
-     building or floor rather than fighting the file.
-4. The budget is a documented operating limit, **not a new refusal**. The only
-   hard stops remain the existing 256 MB project limit and the save-time size
-   check with its localized message. No new field, no new storage mode and no
-   schema change are introduced in 0.27.0.
-5. The target design is **reference TIF plus a rebuildable derived-PDF cache**,
-   not a larger embedded blob, a downsampled raster or a JPEG re-encode. It needs
-   schema 27 and is tracked as
-   [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256).
+   re-encode. A document whose every page is a passthrough (CCITT G3/G4 or
+   JPEG-in-TIFF) is about the size of the scan, so it stays embedded and never
+   acquires a cache entry.
+3. The cache lives in `<project folder>/<project stem>.derived/`, beside the
+   project the way a managed copy lives in `<project stem>.drawings/`. The file
+   name is the key: `<sourceSha256 first 16>-v<converterVersion>-p<pageCount>.pdf`.
+   Two documents that share one scan share one cache file.
+4. The project stores a `derivedPdf` marker instead of the bytes: source TIF
+   SHA-256, converter version, page count and the cache path relative to the
+   project folder. A TIF document carries the marker or `embeddedPdf`, never
+   both.
+5. **The key decides reuse, and a mismatch is always a rebuild.** A cache is
+   reused only when the source hash, the converter version and the page count
+   all match the document. The one exception is a converter-version change with
+   an unchanged source hash and page count: the drawing revision is identical, so
+   a present cache still opens when the scan is gone, and a reachable scan still
+   rebuilds it first.
+6. The lifecycle is: build on import into a saved project and on save for an
+   embedded document whose scan is reachable, reuse on open, rebuild silently
+   from the scan when the cache is missing or stale, and show one actionable
+   **Locate the scan…** path when neither is available. A located scan must match
+   the document checksum. The project is not opened on a blank page.
+7. A cache is only written from bytes the current converter produced. Bytes
+   inherited from an older release stay embedded rather than being stamped with
+   a converter version that did not produce them (the phase 3 decision).
+8. **Packaging carries one form per scan, never both.** A cache-backed scan ships
+   its derived cache under `derived/` and its original scan is not included; an
+   embedded document may still include its original scan under `source-scans/`.
+   The manifest lists the cache under `derivedCaches` with `kind: "derived"`, so
+   the form is stated, not implied.
+9. The accepted operating budget becomes an **enforced warning**:
+
+   - **160 MiB of derived cache per project** — twenty 25 MP sheets, or eight A1
+     sheets at 300 DPI;
+   - the combined project JSON plus derived cache is checked against the
+     existing **256 MB project limit**, which stays the only hard stop.
+
+   At or above the cache budget the app warns once per changed state with the
+   measured sizes and the practical advice (one project per building or floor).
+   It never refuses a save that fits the project limit and never deletes a page
+   to fit the budget.
+10. The cache is an artifact, not a source of truth. Deleting the `.derived`
+    folder costs a rebuild from the scan, never data. GridScalr does not delete a
+    cache automatically, and no code path writes, moves or deletes a source TIF
+    or an ordinary PDF.
 
 ### Why the target design is a cache, not a re-encode
 
 | Option | Verdict |
 | --- | --- |
-| Keep the TIF as the source and rebuild the derived PDF into a local cache keyed by TIF SHA-256 and converter version | **Target.** Removes the bytes from the project JSON, so save, autosave, undo and recovery stop paying for them. Needs schema 27 (optional `embeddedPdf` plus a cache marker), a cache-invalidation and "cache missing" recovery path, a packaging rule, and a decision for a TIF that has moved. |
+| Keep the TIF as the source and rebuild the derived PDF into a local cache keyed by TIF SHA-256 and converter version | **Shipped.** Removes the bytes from the project JSON, so save, autosave, undo and recovery stop paying for them. |
 | Downsample the decoded raster (for example cap at 200 DPI or 12 MP) | **Rejected as a default.** Line work, small text and hatch patterns are exactly what a takeoff measures and an OCR pass reads; a silent resolution cap trades correctness for size, and the loss is invisible in a thumbnail. |
 | Re-encode the derived image as JPEG (`/DCTDecode`) | **Rejected.** It needs a JPEG encoder that the app does not ship (a new codec family in the other direction), it is lossy on line art and OCR, and the bytes would still live in the JSON and be rewritten on every save. It buys a factor, not a fix. |
-| Extend managed storage to a `.tif` copy | **Not available yet.** Managed copies are PDF-only (`copy_to_project`, the drawings inventory and packaging, F-108). Copying a TIF would create a file the cleanup cannot see. A managed TIF protects portability, not project size. |
+| Extend managed storage to a `.tif` copy | **Not available.** Managed copies are PDF-only (`copy_to_project`, the drawings inventory and packaging, F-108). Copying a TIF would create a file the cleanup cannot see. A managed TIF protects portability, not project size. |
 
-### Deferred work and its gate
+### Failure modes and their answers
 
-The cache design is deferred because it needs a schema change, and 0.27.0 is
-declared schema-neutral. The follow-up issue must deliver, together:
-
-- schema 27 with optional `embeddedPdf` for a TIF document and a documented
-  invalidation rule (TIF SHA-256, converter version, page count);
-- the cache location and lifecycle: created on import, reused on open, rebuilt
-  when missing and the TIF is reachable, and a localized "re-render the scan"
-  path when the TIF is gone;
-- package behaviour: a package includes either the cache or the original scan,
-  never both, and the manifest says which;
-- focused tests for the migration, a missing cache, a moved TIF and an unchanged
-  CCITT passthrough;
-- a measured before/after on the reference project and an updated budget in this
-  ADR and `docs/limitations.md`.
-
-Until then the budget above is the documented answer, and the user guide names
-the practical consequence: a large colour set is one project per building or
-floor.
-
-### Implementation status
-
-Schema 27 (0.28.0 phase 3) lands the format half of this decision:
-`DocumentRef.embeddedPdf` becomes optional for a TIF document, and an explicit
-`derivedPdf` marker records the source TIF checksum, the converter version, the
-derived page count and the cache path. The migration from schema 26 adds
-nothing — every TIF keeps its embedded bytes byte for byte — and
-`tests/derivedPdf.test.ts` pins the marker shape and the key rule. The cache
-lifecycle, the packaging rule and the enforced budget are phase 4 of the same
-issue; until they land, the budget above remains the operating limit and a
-document whose cache has not been built keeps its embedded PDF.
+| Situation | Behaviour |
+| --- | --- |
+| Cache missing, scan reachable and checksum matches | Rebuild silently and continue. No dialog. |
+| Cache missing, scan moved | Rebuild from the stored path or the project-relative path; otherwise ask once. |
+| Cache missing, scan gone | One dialog naming the document and the expected path, with **Locate the scan…** and Cancel. The project is not opened with a blank page. |
+| Located scan is a different revision | Refused with a message: re-rendering another revision would change what the project measures. |
+| Cache stale by converter version, scan gone | The present cache opens, because the source hash and page count still match the same drawing revision. |
+| Cache write fails during save | The embedded bytes stay in the project. The save stays lossless; the doctor reports the marker on the next open. |
+| `.derived` folder deleted | Every cache-backed page rebuilds from its scan on the next open. |
 
 ## Consequences
 
-- 0.27.0 ships no schema change, no new storage mode and no change to a scanned
-  TIF or its derived PDF.
-- A colour project is still bounded by the 256 MB project limit, and its save
-  time and undo depth degrade as it approaches that limit. That is written down
-  instead of being discovered.
-- A future cache removes the bytes from the JSON and makes the budget obsolete;
-  it also adds a failure mode the app must explain (cache missing, scan moved),
-  which is why it is not rushed into a documentation phase.
-- The embedded derived PDF remains the reason a TIF project opens without the
-  original scan. A cache design must keep that promise when the TIF is present
-  and degrade explicitly when it is not.
+- A colour project's project JSON no longer grows with its decoded raster, so the
+  project file, every save, every autosave snapshot, the undo history and the
+  recovery store stop carrying it. The 0.27.0 "8 MiB per 25 MP page" budget no
+  longer describes the project file; it describes the cache on disk.
+- The disk still holds the derived bytes. `<project>.derived/` must travel with
+  the project folder, like `<project>.drawings/`; a package includes it.
+- A cache that is stale for any reason other than the converter version is
+  rebuilt, never trusted, so a wrong revision can never be rendered.
+- The app gains a real failure mode to explain (cache missing, scan moved). It is
+  a dialog with one action, not a thrown error, and it costs a rebuild.
+- A TIF replacement still stores a reference; the cache is derived from the new
+  scan and never becomes a managed source (F-108 unchanged).
 
 ## Enforcement
 
+- `tests/derivedPdf.test.ts` pins the marker shape, the key rule, the schema
+  26 → 27 migration and the doctor codes.
+- `tests/derivedPdfCache.test.ts` pins the lifecycle: reuse, silent rebuild,
+  missing-cache-and-scan, checksum mismatch, the converter-only fallback and the
+  save-time materialization that keeps embedded bytes when the scan is gone.
+- `tests/derivedPdfBudget.test.ts` measures the before/after JSON size and fails
+  if a cache-backed project still carries the derived bytes.
 - `tests/tiffStoragePolicy.test.ts` pins the shipped shape: CCITT strips are
   byte-for-byte identical to the source, no `/DCTDecode` re-encode is introduced,
-  a decoded colour page is one `/FlateDecode` image per strip, and the document
-  reference embeds the derived PDF as base64. A future change to the storage
-  mode must update the test and this ADR together.
+  a decoded colour page is one `/FlateDecode` image per strip, and the cache
+  marker is the storage form.
 - `tests/tiffCodecs.test.ts` keeps the per-strip CCITT comparison and the
   decoded-raster checksum checks.
-- `docs/limitations.md` and `docs/user-guide.md` carry the budget and the
-  explicit decode limits (F-089, F-090, F-092–F-095).
+- `src-tauri/src/derived_cache_tests.rs` pins the cache write: folder beside the
+  project, verified bytes, a source path never written, a symlinked folder
+  refused, and the key in the file name.
+- `tests/projectPackage.test.ts` and the Rust package tests pin "cache or scan,
+  never both" and the `derivedCaches` manifest section.
+- `docs/limitations.md` and `docs/user-guide.md` carry the enforced budget and
+  the recovery path.
 
 ## Non-goals
 
-- Implementing the cache, schema 27 or a managed TIF copy in 0.27.0.
+- Downsampling the decoded raster or a JPEG re-encode (see above).
+- A managed-copy mode for `.tif` (F-108).
 - New decoders (tiled JPEG, old-style abbreviated JPEG, packed-sample
   predictor, 16-bit output, `/SMask` alpha).
 - Changing a source scan. It is only ever read.
+- Automatic deletion of an unused cache folder. Deferring it costs disk space
+  only; a wrong delete would cost a scan.
 
 ## Related
 
-- Findings F-091 (this decision), F-089, F-090, F-092–F-095, F-108.
-- [`docs/project-file.md`](../project-file.md) — the embedded derived PDF.
+- Findings F-091 (this decision, fixed by schema 27 and the cache lifecycle),
+  F-089, F-090, F-092–F-095, F-108, F-113, F-114.
+- [`docs/project-file.md`](../project-file.md) — the derived-PDF marker.
 - [`docs/limitations.md`](../limitations.md) — the shipped limits.
-- Issue [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238),
-  follow-up [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256).
+- Issue [#238](https://github.com/MajorJohnDoe/gridscalr/issues/238) (0.27.0
+  decision), [#256](https://github.com/MajorJohnDoe/gridscalr/issues/256)
+  (schema 27 and the cache lifecycle).

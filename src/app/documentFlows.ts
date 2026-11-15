@@ -1,10 +1,14 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { base64ToBytes } from "../io/base64";
 import { addRecent, basename, isTauri, pathExists, pickPdf, readFileBytes } from "../io/platform";
 import { describeError } from "../io/platformError";
 import { parseProjectWithReport, resolveRelativePath } from "../io/projectFile";
 import type { ProjectLoadReport } from "../io/projectFile";
 import type { LoadReportDecision } from "../features/projectIntegrity";
+import {
+  loadDerivedPdfBytes,
+  promptLocateMissingScan,
+  storeDerivedPdfCache,
+} from "../features/derivedPdfCache";
 import { loadGlobalStampPresets } from "../io/stampDefaults";
 import { createProject } from "../model/layers";
 import { excludedSourcePages, totalPageCount } from "../model/documents";
@@ -121,6 +125,9 @@ export async function loadNewPdf(
   documentRef.pageCount = pdf.numPages;
   documentRef.excludedPages = excludedSourcePages(pdf.numPages, pages);
   if (documentRef.kind === "tiff") documentRef.relativePath = null;
+  // The project already has a folder, so the import stores a colour scan's
+  // raster once in the cache beside it instead of base64 inside the JSON.
+  await storeDerivedPdfCache(documentRef, store.projectPath, pdfBytes);
   await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.addPages", { name }));
   store.addDocument(documentRef);
   host.addDocumentToRenderer(documentRef.id, pdf, pages);
@@ -233,9 +240,22 @@ export async function loadProjectData(
     let bytes: Uint8Array | null = null;
     let pdfPath = documentRef.path;
 
-    if (documentRef.kind === "tiff" && documentRef.embeddedPdf) {
-      bytes = base64ToBytes(documentRef.embeddedPdf);
-      pdfPath = null;
+    if (documentRef.kind === "tiff") {
+      // A cache-backed scan is resolved before any page renders: embedded bytes
+      // first, then the current cache, then a silent rebuild from the scan.
+      // Only "no cache and no scan" reaches the user, with one recovery action.
+      const resolved = await loadDerivedPdfBytes(documentRef, projectPath);
+      if (resolved) {
+        bytes = resolved.bytes;
+        pdfPath = null;
+      } else if (await promptLocateMissingScan(documentRef, projectPath)) {
+        const retry = await loadDerivedPdfBytes(documentRef, projectPath);
+        if (retry) {
+          bytes = retry.bytes;
+          pdfPath = null;
+        }
+      }
+      if (!bytes) return false;
     } else if (isTauri) {
       const candidates: string[] = [];
       if (documentRef.path) candidates.push(documentRef.path);

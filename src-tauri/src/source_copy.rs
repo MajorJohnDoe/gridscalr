@@ -68,7 +68,7 @@ fn hash_file(path: &Path) -> std::io::Result<String> {
     Ok(text)
 }
 
-fn is_sha256(value: &str) -> bool {
+pub(crate) fn is_sha256(value: &str) -> bool {
     value.len() == 64 && value.chars().all(|character| character.is_ascii_hexdigit())
 }
 
@@ -125,7 +125,7 @@ fn safe_base(display_name: &str, fallback: &str) -> String {
     base.chars().take(80).collect::<String>().trim().to_string()
 }
 
-fn project_folder(project_path: &Path) -> Result<PathBuf, CommandError> {
+pub(crate) fn project_folder(project_path: &Path) -> Result<PathBuf, CommandError> {
     project_path
         .parent()
         .filter(|parent| !parent.as_os_str().is_empty())
@@ -138,7 +138,7 @@ fn project_folder(project_path: &Path) -> Result<PathBuf, CommandError> {
         })
 }
 
-fn project_stem(project_path: &Path) -> String {
+pub(crate) fn project_stem(project_path: &Path) -> String {
     let name = project_path
         .file_name()
         .map(|name| name.to_string_lossy().to_string())

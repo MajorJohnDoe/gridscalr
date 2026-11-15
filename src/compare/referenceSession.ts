@@ -1,5 +1,5 @@
 import type { PDFDocumentProxy } from "pdfjs-dist";
-import { base64ToBytes } from "../io/base64";
+import { loadDerivedPdfBytes } from "../features/derivedPdfCache";
 import { readFileBytes, pathExists, sha256Hex } from "../io/platform";
 import { parseProject, resolveRelativePath, sourceDocumentPaths } from "../io/projectFile";
 import { documentPageMaps, totalPageCount } from "../model/documents";
@@ -94,8 +94,12 @@ export async function openReferenceSession(
       }
 
       let bytes: Uint8Array | null = null;
-      if (document.kind === "tiff" && document.embeddedPdf) {
-        bytes = base64ToBytes(document.embeddedPdf);
+      if (document.kind === "tiff") {
+        // A cache-backed scan is resolved the same way the main loader does it,
+        // so the reference pane and the revision comparison never show a blank
+        // page where the primary canvas shows the drawing.
+        const resolved = await loadDerivedPdfBytes(document, projectPath);
+        bytes = resolved?.bytes ?? null;
       } else {
         for (const candidate of referenceSourceCandidates(document, projectPath)) {
           if (!(await pathExists(candidate))) continue;
