@@ -889,13 +889,18 @@ numbers are in `docs/limitations.md`.
 
 ## Phase 7 — harden and document Drift Slice 1
 
-- **Issue:** [#292](https://github.com/MajorJohnDoe/gridscalr/issues/292)
-- **PR:** [#294](https://github.com/MajorJohnDoe/gridscalr/pull/294)
-- **Branch:** `docs/slice-1-hardening`
-- **Implementation head:** `86e775ac68bdb2288c95fc4489f540c2006fac54`
+- **Issue:** [#292](https://github.com/MajorJohnDoe/gridscalr/issues/292) (closed by the merge)
+- **PR:** [#294](https://github.com/MajorJohnDoe/gridscalr/pull/294) (squash merged)
+- **Branch:** `docs/slice-1-hardening` (deleted after merge)
+- **Verified head SHA:** `78efccfe8fa4cba189c7aaee80e13140e58cc9d8`
   (`2392c24` focus fix, `ef677cc` gate seed data, `86e775a` documentation,
-  release notes and screenshots)
-- **Status:** PR open against `main`; not merged.
+  release notes and screenshots, `78efccf` handover)
+- **Merge commit:** `9e995ec832ebcb7eb67250862333f9df664d411c`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43941627387](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43941627387)
+  and the **Pages** run [43941627377](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43941627377)
+  are green on the merge commit. No app-version bump, no tag, no release and no
+  `site/release.json` change.
 
 ### Completed work
 
@@ -968,14 +973,44 @@ Local gate green: `check:versions`, `check:file-budgets` (603 files),
 `check:performance` (CI profile, all budgets pass). CI is authoritative on the
 PR head; the handover commit moves the head after this record.
 
-### Conductor verification: pending
+### Conductor verification
 
-The conductor has not yet verified the PR head SHA, the check runs, the file
-list against the phase scope, or the merge state. No merge has been performed
-and auto-merge is not enabled.
+- PR [#294](https://github.com/MajorJohnDoe/gridscalr/pull/294) head
+  `78efccfe8fa4cba189c7aaee80e13140e58cc9d8` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/schedulesUi.test.ts
+  tests/accessibilityGate.test.ts tests/schema28.test.ts`: 3 files, 38 tests
+  passed, and `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` passed with 256
+  links, 50 images and 35 screenshots and no stale-screenshot warning.
+- Scope matched the phase: documentation, screenshots, release notes, tooling
+  and two small in-scope fixes. `src/ui/inspector.ts` and
+  `src/features/schedules/ui/panel.ts` only carry the F-127 focus restoration
+  found by the keyboard walkthrough. No version file, Tauri config, Cargo
+  manifest or `site/` file changed.
+- The screenshot set grew from 27 to 35 images, including the eight new Slice 1
+  surfaces; the manifest, alt text and descriptions pass the strict check.
+- `docs/release-notes/0.29.0.md` is a draft that states schema 28, the 27 → 28
+  path and the known limits; the roadmap marks Drift Slice 1 complete on schema
+  28 with links to every phase.
+- Squash merged as `9e995ec832ebcb7eb67250862333f9df664d411c`; `main` CI and the
+  Pages deployment are green on that commit.
 
 ### Slice 1 status
 
-Drift Slice 1 is complete in the 0.29.0 development line and ready for
-conductor verification; no release has been tagged or published, and the app
-version and schema version remain unchanged.
+Drift Slice 1 is **complete and merged** in the 0.29.0 development line: schema
+28 foundation, custom fields, spaces, the schedule engine and Summary tab,
+placed tables with PDF output, the CSV round-trip, and the hardening and
+documentation pass. Phases #273, #275, #278, #281, #284, #287 and #292 are all
+closed by their merges.
+
+No release has been tagged or published. The app version stays `0.28.0`, the
+schema stays 28, and the `0.29.0` release notes are a draft. A release requires
+the product owner's explicit approval, including the version bump, the
+documentation pass confirmation and the landing-site update.
+
+Open product decisions recorded, not implemented: F-118 (page import does not
+merge the schema 28 registers, preflight warning still open), F-124 (no
+summary-card visibility editor) and F-125 (the right dock is narrow for wide
+schedules). F-119 … F-133 are in `docs/plan/foundation-findings.md` and the
+user-facing gaps are in `docs/limitations.md`.
