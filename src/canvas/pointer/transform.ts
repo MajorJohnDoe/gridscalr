@@ -141,7 +141,8 @@ function applyResize(drag: DragState, item: MarkupItem, page: Point, shiftKey: b
     item.kind === "rect" ||
     item.kind === "textbox" ||
     item.kind === "ellipse" ||
-    item.kind === "image"
+    item.kind === "image" ||
+    item.kind === "schedule"
   ) {
     item.points = [
       { x: scaled.min.x + shiftX, y: scaled.min.y + shiftY },
@@ -172,6 +173,7 @@ function applyRotation(drag: DragState, item: MarkupItem, page: Point, shiftKey:
     item.kind === "rect" ||
     item.kind === "ellipse" ||
     item.kind === "image" ||
+    item.kind === "schedule" ||
     item.kind === "symbol"
   ) {
     item.rotation = normalizeDegrees((drag.startRotation ?? 0) + delta);

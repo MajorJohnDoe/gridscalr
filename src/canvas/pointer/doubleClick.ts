@@ -26,6 +26,7 @@ export interface DoubleClickContext {
   startTextEdit(item: MarkupItem, layer: Layer): void;
   startTextBoxEdit(item: MarkupItem, layer: Layer): void;
   editRail(item: MarkupItem): void;
+  editSchedule(item: MarkupItem): void;
   startCloudTextEdit(item: MarkupItem, layer: Layer): void;
   startCalloutTextEdit(item: MarkupItem, layer: Layer): void;
   editItemText(item: MarkupItem): Promise<void> | void;
@@ -82,6 +83,10 @@ export function handleDoubleClick(screen: Point, context: DoubleClickContext): v
   }
   if (hit.item.kind === "rail") {
     context.editRail(hit.item);
+    return;
+  }
+  if (hit.item.kind === "schedule") {
+    context.editSchedule(hit.item);
     return;
   }
   if (hit.item.kind === "cloud") {

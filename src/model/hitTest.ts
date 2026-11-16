@@ -297,6 +297,14 @@ function hitItem(
       : null;
   }
 
+  if (item.kind === "schedule") {
+    if (item.points.length < 2) return null;
+    const rect = expandRect(item.points[0], item.points[1]);
+    return pointInRect(localPoint, rect)
+      ? { distance: 0, vertexIndex: -1, segmentIndex: -1 }
+      : null;
+  }
+
   if (item.kind === "text") {
     const bounds = itemLocalBounds(item);
     if (
@@ -481,8 +489,7 @@ function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean }
       return item.highlightShape === "stroke"
         ? { points: item.points.map(toPage), closed: false }
         : null;
-    case "rect":
-    case "schedule": {
+    case "rect": {
       if (item.fillColor) return null;
       const first = item.points[0];
       if (!first) return null;
@@ -506,6 +513,7 @@ function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean }
     case "pen":
     case "radius":
     case "rail":
+    case "schedule":
     case "stamp":
     case "symbol":
     case "text":

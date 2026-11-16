@@ -484,3 +484,23 @@
     grid-template-columns: minmax(0, 1fr);
   }
 }
+
+/* ---------- Placed table ---------- */
+
+.schedules-placement {
+  gap: 10px;
+}
+
+.schedules-placement .field-hint {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.schedules-inspector-name {
+  font-weight: 600;
+  padding: 2px 0 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

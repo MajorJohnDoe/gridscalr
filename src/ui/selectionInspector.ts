@@ -13,6 +13,7 @@ import { appendMeasurement } from "./inspector/measurement";
 import { multiSelectionSection } from "./inspector/multiSelection";
 import { appendStyle } from "./inspector/style";
 import { appendSummary } from "./inspector/summary";
+import { appendSchedule } from "./inspector/schedule";
 import { appendSymbol } from "./inspector/symbol";
 import { appendFieldsSection } from "../features/fields";
 import type { InspectorContext } from "./inspector/context";
@@ -58,6 +59,7 @@ export function selectionSection(
   appendLabel(section, context);
   appendFieldsSection(section, { project, item, locked: context.locked });
   appendSymbol(section, context);
+  appendSchedule(section, context);
   appendDrawing(section, context);
   appendStyle(section, context);
   appendItemActions(section, context);

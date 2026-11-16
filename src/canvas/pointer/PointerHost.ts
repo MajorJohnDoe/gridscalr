@@ -82,6 +82,7 @@ export interface PointerHost {
   startTextEdit(item: MarkupItem, layer: Layer): void;
   startTextBoxEdit(item: MarkupItem, layer: Layer): void;
   editRail(item: MarkupItem): void;
+  editSchedule(item: MarkupItem): void;
   startCloudTextEdit(item: MarkupItem, layer: Layer): void;
   startCalloutTextEdit(item: MarkupItem, layer: Layer): void;
   editItemText(item: MarkupItem): Promise<void> | void;

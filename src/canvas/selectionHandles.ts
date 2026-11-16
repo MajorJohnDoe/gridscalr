@@ -149,7 +149,9 @@ export function selectionHandles(item: MarkupItem, toScreen: ToScreen): Handle[]
   }
   const rotation = itemRotation(item);
   const roles: BoxHandleRole[] =
-    item.kind === "text" ? ["nw", "ne", "se", "sw"] : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    item.kind === "text" || item.kind === "schedule"
+      ? ["nw", "ne", "se", "sw"]
+      : ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
   const handles: Handle[] = roles.map((role) => {
     const local = handleLocalPoint(bounds, role);
     const point = toScreen(rotatePoint(local, center, rotation));

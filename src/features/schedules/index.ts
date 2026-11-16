@@ -5,11 +5,16 @@
  * table.
  */
 export * from "./model";
+export * from "./layout";
+export * from "./placement";
 export {
   clearSummaryFilters,
   isSummaryOpen,
+  openPlacementDialog,
+  openRowRangeDialog,
   openScheduleBuilder,
   openSummaryRolesDialog,
+  placementMeasure,
   renderSummaryPanel,
   SCHEDULE_ROW_HEIGHT,
   setSummaryFilter,
@@ -22,6 +27,6 @@ export {
   tableWindow,
   toggleSummary,
 } from "./ui";
-export type { SummaryPanelFilters, SummaryPanelHost, SummaryRoleFocus } from "./ui";
+export type { PlacementHost, SummaryPanelFilters, SummaryPanelHost, SummaryRoleFocus } from "./ui";
 export { cachedSummary, clearSummaryCache, computeSummary, summaryCacheKey } from "./summary";
 export type { SummaryCardValue, SummaryModel, SummaryTable, SummaryTableRow } from "./summary";

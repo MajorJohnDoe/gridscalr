@@ -5,6 +5,7 @@ import {
   clearScheduleCache,
   computeSummary,
   createKeyCache,
+  layoutForItem,
   tableWindow,
 } from "../src/features/schedules";
 import {
@@ -132,6 +133,41 @@ describe("schedule and summary budgets", () => {
     expect(summaryMs).toBeLessThan(strict ? 100 : 1500);
     expect(scheduleMs).toBeLessThan(strict ? 250 : 3000);
     expect(cacheHitMs).toBeLessThan(10);
+  });
+
+  it("lays out a placed table window from a large schedule", () => {
+    const project = buildProject();
+    clearScheduleCache();
+    const result = cachedSchedule(303, project, definition());
+    const item: MarkupItem = {
+      id: "item_sched_perf",
+      pageId: pageIdFor(1),
+      kind: "schedule",
+      points: [
+        { x: 24, y: 24 },
+        { x: 424, y: 260 },
+      ],
+      color: "#1a2024",
+      strokeWidth: 1,
+      scheduleId: "sched_perf",
+      rowStart: 0,
+      rowLimit: 25,
+      showHeader: true,
+      showTotals: true,
+      createdAt: NOW,
+      updatedAt: NOW,
+    };
+    const measure = (text: string, size: number) => text.length * size * 0.5;
+    const start = performance.now();
+    const layout = layoutForItem(result, item, measure);
+    const layoutMs = performance.now() - start;
+    console.log(
+      `placed table: ${layoutMs.toFixed(1)} ms layout for a ${result.rowCount}-row schedule, ` +
+        `${layout.visibleRows} drawn row(s), overflow ${layout.overflowReason ?? "none"}`,
+    );
+    expect(layout.visibleRows).toBeLessThanOrEqual(25);
+    expect(layout.overflow).toBe(true);
+    expect(layoutMs).toBeLessThan(strict ? 50 : 1000);
   });
 
   it("virtualises a 1 000-row window to a bounded slice", () => {
