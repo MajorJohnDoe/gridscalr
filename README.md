@@ -84,6 +84,12 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   sets that fill their defaults in one action. Typed inputs validate inline, a
   stored value that no longer matches is reported instead of reinterpreted, and
   a field's type cannot change while it holds values.
+- Keep a register of buildings, floors, rooms and zones under **View → Spaces…**.
+  A room's area is derived from the visible area measurements linked to it, add
+  minus subtract, so it is never a second copy of the drawing; a manual value is
+  used only while nothing is linked. Create rooms from the room names already on
+  measurements, fill space-scoped fields in the space form, and delete a space
+  without deleting its measurements.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision

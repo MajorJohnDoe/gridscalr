@@ -2,10 +2,11 @@
  * Public surface of the custom-fields feature. The rules live in the pure
  * model files; other modules import only this index so the internals can move.
  */
-export { fieldsSettingsSection, openFieldsDialog, appendFieldsSection } from "./ui";
-export type { FieldsSectionOptions } from "./ui";
+export { fieldsSettingsSection, openFieldsDialog, appendFieldsSection, valueControl } from "./ui";
+export type { FieldsSectionOptions, ValueControlOptions } from "./ui";
 export {
   applicableFields,
+  applicableSpaceFields,
   applyFieldSet,
   coerceFieldInput,
   createField,
@@ -18,6 +19,7 @@ export {
   emptyFieldSetDraft,
   enumOptionValueCount,
   fieldAppliesToItem,
+  fieldAppliesToSpace,
   fieldDraftFor,
   fieldSetDefaultCount,
   fieldSetDraftFor,

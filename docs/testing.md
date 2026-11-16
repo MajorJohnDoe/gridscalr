@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses eight surfaces:
+`axe-core` through `@axe-core/playwright` and analyses nine surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -376,6 +376,7 @@ checklist in [`releasing.md`](releasing.md).
 | Preferences dialog | **Settings → Preferences…** |
 | Quantities dialog | `Ctrl/Cmd+Alt+Q` |
 | Drawing export dialog | **File → Export → Drawing PDF…** |
+| Spaces register dialog | **View → Spaces…** |
 | Help dialog | `F1` |
 | Custom fields dialog | **Project settings → Fields → Manage fields…** |
 | Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
@@ -387,7 +388,7 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same eight surfaces, so the gate records 40 palette/surface
+and **Navy** — runs the same nine surfaces, so the gate records 45 palette/surface
 checks. The palette is chosen through **Settings → Preferences…**, which is
 itself one of the checked surfaces. A contrast regression in any palette fails the
 run, and `check:themes` pins the same text-on-surface pairs at the token level.
@@ -407,8 +408,9 @@ the documented surface list and the theme × surface matrix.
 the layout the real CSS produces instead of overriding `matchMedia`.
 
 Every visible control on the shell, the expanded Layers panel, the Markups panel,
-the Project settings, Preferences and Quantities dialogs, and the Custom fields
-dialog and inspector section must measure at least **24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
+the Project settings, Preferences and Quantities dialogs, and the Custom fields,
+Spaces register and Custom fields inspector sections must measure at least
+**24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
 
 - a checkbox or radio is measured through its wrapping label, because the label
   is the clickable target;
@@ -435,8 +437,8 @@ window leaves at each scale:
 At each scale the check asserts that the document does not scroll horizontally,
 the top bar, context bar, Pages/Layers panel, Properties panel and status bar do
 not clip their content, the canvas keeps at least 240 CSS px, every menu item
-stays inside the window, and the Project settings, Custom fields and Help dialogs
-open entirely inside the viewport. A menu that is taller than the window scrolls inside its
+stays inside the window, and the Project settings, Custom fields, Spaces and Help
+dialogs open entirely inside the viewport. A menu that is taller than the window scrolls inside its
 panel (`max-height: calc(100vh - 16px)`), which keeps its last item reachable at
 200 %.
 

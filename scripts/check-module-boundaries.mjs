@@ -33,6 +33,7 @@ const FOUNDATION_FEATURES = [
   "src/features/derivedPdfCache",
   "src/features/schematics",
   "src/features/fields",
+  "src/features/spaces",
 ];
 
 const frontendErrors = [];

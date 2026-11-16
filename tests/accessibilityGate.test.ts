@@ -85,6 +85,7 @@ describe("accessibility gate rules", () => {
       "preferences",
       "quantities",
       "drawing-export",
+      "spaces",
       "help",
       "fields",
       "fields-inspector",

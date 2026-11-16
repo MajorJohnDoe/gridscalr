@@ -2903,7 +2903,7 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 1 — schema 28 foundation
 - **Severity:** P3
 - **Area:** Project page import / schema 28 references
-- **Status:** open — deferred to the custom-field, space and schedule phases
+- **Status:** open — split by phase; the space half is answered in Phase 3 below, the field and schedule halves stay open
 - **Evidence:** `src/features/projectImport/merge.ts` merges categories, count types,
   line types, image assets and documents. It does not merge custom-field
   definitions, field sets, spaces or schedules, and `cloneImportedItem` copies a
@@ -2921,6 +2921,18 @@ remains the scheduling home.
   whether page import should merge the referenced registers, remap the ids, or
   drop the references with an explicit preflight warning. A schedule placement
   belongs with the schedule-import decision in Phase 4/5.
+- **Phase 3 decision — spaces are not merged by page import:** the import keeps
+  the source `spaceId` unchanged and does not create or remap spaces. Copying a
+  space on every page import would create a register as a side effect of
+  importing pages, which contradicts the explicit room-creation rule, and an id
+  from another project can never resolve in the destination. The register now
+  shows the destination spaces only, so the imported link is invisible until the
+  validator or the doctor reports it. The remaining gap is the **preflight
+  warning**: it still does not name a dangling `spaceId` before the commit.
+  That belongs to `src/features/projectImport/preflight.ts`, which is outside
+  this phase's module map, so it is left open rather than half-implemented. A
+  later import phase should add the count and offer "clear the space link on
+  import"; remapping is a product decision, not a default.
 - **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
   `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.
 
@@ -2975,3 +2987,47 @@ remains the scheduling home.
   category, count-type and field managers together.
 - **Related:** `src/ui/dialogs.ts`, `src/ui/settingsDialog.ts`,
   `src/features/fields/ui/fieldDialog.ts`, `docs/limitations.md`.
+
+### F-121 — The space register is a modal, so measuring and linking cannot interleave
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 3 — spaces
+- **Severity:** P3
+- **Area:** Spaces register / selection-driven link action
+- **Status:** open — deliberate for this phase
+- **Evidence:** `src/features/spaces/ui/dialog.ts` opens the register through
+  `showModal`, and the link and unlink actions read `store.ui.selection` when
+  the dialog renders. A modal blocks the canvas, so the selection cannot change
+  while the register is open.
+- **Problem:** The documented flow is "select area measurements, then link them
+  from a space row". That works, but a user who opens the register first has to
+  close it, select and reopen. A dock panel with a live selection count would
+  remove the round trip.
+- **Impact:** A navigation cost, not data loss. Nothing is linked without an
+  explicit action, and the hint under the buttons names the current selection
+  count.
+- **Next step:** If the register becomes a dock panel in a later slice, keep the
+  same model functions and move only the view; do not add a second link path.
+- **Related:** `src/features/spaces/ui/dialog.ts`,
+  `src/features/spaces/ui/list.ts`, `docs/user-guide.md` "Rooms and spaces".
+
+### F-122 — A space subtree has no bulk move or delete in the register
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 3 — spaces
+- **Severity:** P3
+- **Area:** Spaces register / hierarchy editing
+- **Status:** open — deferred to a hierarchy UX decision
+- **Evidence:** `deleteSpace()` refuses a space that still has children and
+  returns the child count; the register then shows the count and offers no
+  action. Moving a space means editing its parent one row at a time.
+- **Problem:** Reorganising a building that was created flat (for example after
+  **Create rooms from the room text**) is a row-by-row job, and a subtree cannot
+  be deleted after a confirmation naming the whole subtree.
+- **Impact:** Slow but safe. Refusing the delete is what prevents a silent
+  reparent, which the product rules forbid.
+- **Next step:** Decide whether the register gets an explicit subtree delete
+  ("delete this floor and its 12 rooms") and a drag or picker-based bulk move.
+  Both are hierarchy operations for a later phase, not a schema change.
+- **Related:** `src/features/spaces/model/mutations.ts`,
+  `src/features/spaces/ui/list.ts`, `docs/limitations.md`.

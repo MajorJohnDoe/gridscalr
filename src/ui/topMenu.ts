@@ -298,6 +298,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           shortcut: APP_SHORTCUTS.quantities,
           disabled: !hasProject,
         }),
+        action(t("menu.view.spaces"), actions.openSpaces, {
+          disabled: !hasProject,
+        }),
       ],
     },
     {

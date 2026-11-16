@@ -32,6 +32,11 @@ stable identifier in the project file; only the displayed text is translated.
 | facility | fastighet | The property or facility named on a report. |
 | client | kund | The organisation receiving the report. |
 | report logo | rapportlogotyp | Optional image embedded in the project and shown on the report. |
+| custom field | anpassat fält | A project-defined typed value on a measurement or a space. |
+| space | utrymme | A building, floor, room or zone in the space register. |
+| space register | utrymmesregister | The space tree opened from **View → Spaces…** (`Utrymmen…`). |
+| measured area | mätt area | A space area derived from its linked area measurements; never stored. |
+| manual area | manuell area | The explicit `areaM2`, used only while no measurement is linked. |
 
 ## Rules
 

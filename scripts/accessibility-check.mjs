@@ -14,7 +14,9 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openSpacesRegister,
   seedCustomField,
+  seedSpaces,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -22,7 +24,7 @@ import {
 /**
  * Automated accessibility gate for the application shell and its dialogs.
  *
- * Every shipped palette runs the shell, the six dialogs and the custom-fields
+ * Every shipped palette runs the shell, the dialogs and the custom-fields
  * inspector section, so a contrast regression in one palette fails the run
  * instead of hiding behind the default (F-116). Serious and critical axe
  * violations fail; moderate, minor and best-practice findings are printed with
@@ -91,6 +93,7 @@ try {
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openDemoProject(page, { base: vite.base });
   await seedCustomField(page);
+  await seedSpaces(page);
 
   for (const theme of A11Y_THEMES) {
     // Preferences is also where the palette is chosen, so it is the first
@@ -143,6 +146,14 @@ try {
     await analyze(page, checkFor(theme, "help"), ".modal");
     await page.keyboard.press("Escape");
     await help.waitFor({ state: "detached" });
+
+    // Space register, reached through the View menu.
+    const spaces = await openSpacesRegister(page);
+    const spacesCheck = checkFor(theme, "spaces");
+    await expectFocusInside(page, ".modal", spacesCheck);
+    await analyze(page, spacesCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await spaces.waitFor({ state: "detached" });
 
     // Custom fields editor, reached through Project settings → Fields.
     const fields = await openCustomFieldsDialog(page);

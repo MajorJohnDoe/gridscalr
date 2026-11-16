@@ -445,6 +445,12 @@ src/features/fields/index.ts public surface for custom fields, typed values and 
 src/features/fields/model.ts pure custom-field rules, value coercion, deletion and field-set application
 src/features/fields/ui.ts Project settings → Fält section, the field editor entry and the inspector Fält section
 src/features/fields/ui/ field editor, field list, field sets, applies-to and typed value control
+src/features/spaces/ index.ts, model/ and ui/ public surface, register dialog, derived room area, measurement links and room-from-text creation
+src/features/spaces/model/area.ts derived area from visible linked area measurements (add minus subtract, m²)
+src/features/spaces/model/tree.ts space tree order, subtree ids, reparent rules and sibling moves
+src/features/spaces/model/mutations.ts create, update, delete, link and unlink as caller-owned undo steps
+src/features/spaces/ui/ register dialog, space editor with space-scope fields, rows with area badge and inline delete confirmation
+src/styles/spaces.css  space register rows, area badges and warnings
 src/styles/fields.css     custom field list, typed value and field-set styles
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths
 src/features/projectPackage/controller.ts package and open-package flows

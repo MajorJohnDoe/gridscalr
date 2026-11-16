@@ -11,7 +11,9 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openSpacesRegister,
   seedCustomField,
+  seedSpaces,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -90,6 +92,7 @@ try {
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openDemoProject(page, { base: vite.base });
   await seedCustomField(page);
+  await seedSpaces(page);
 
   const coarse = await page.evaluate(() => ({
     pointer: matchMedia("(pointer: coarse)").matches,
@@ -135,6 +138,11 @@ try {
   await page.keyboard.press("Escape");
   await fieldsDialog.waitFor({ state: "detached" });
   await closeReopenedSettings(page);
+
+  const spacesDialog = await openSpacesRegister(page);
+  await collect("spaces", ".modal");
+  await page.keyboard.press("Escape");
+  await spacesDialog.waitFor({ state: "detached" });
 
   await openMarkupsItem(page, "item_floor_living");
   await collect("fields-inspector", ".selection-section");
