@@ -9,7 +9,9 @@ import {
   launchBrowser,
   openCustomFieldsDialog,
   openDemoProject,
+  openSpacesRegister,
   seedCustomField,
+  seedSpaces,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -157,6 +159,7 @@ try {
     page.on("pageerror", (error) => pageErrors.push(error.message));
     await openDemoProject(page, { base: vite.base });
     await seedCustomField(page);
+    await seedSpaces(page);
     const shell = await readShell(page, viewport.label);
     await assertMenusFit(page, viewport.label);
     const settings = await assertDialogFits(
@@ -172,6 +175,12 @@ try {
       "Custom fields",
     );
     await closeReopenedSettings(page);
+    const spaces = await assertDialogFits(
+      page,
+      `${viewport.label} Spaces`,
+      () => openSpacesRegister(page),
+      "Spaces",
+    );
     const help = await assertDialogFits(page, `${viewport.label} Help`, () =>
       page.keyboard.press("F1"),
     );
@@ -182,6 +191,7 @@ try {
       canvas: shell.canvas?.width,
       settings: `${settings.left},${settings.top}–${settings.right},${settings.bottom}`,
       fields: `${fields.left},${fields.top}–${fields.right},${fields.bottom}`,
+      spaces: `${spaces.left},${spaces.top}–${spaces.right},${spaces.bottom}`,
       help: `${help.left},${help.top}–${help.right},${help.bottom}`,
     });
     await page.close();
@@ -190,7 +200,7 @@ try {
     console.log(
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
         `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
-        `Help ${result.help}, no overflow.`,
+        `Spaces ${result.spaces}, Help ${result.help}, no overflow.`,
     );
   }
   console.log(

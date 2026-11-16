@@ -9,6 +9,7 @@ import type {
   FieldScope,
   MarkupItem,
   Project,
+  Space,
 } from "../../../model/types";
 
 /**
@@ -79,6 +80,26 @@ export function applicableFields(
   item: MarkupItem,
 ): FieldDefinition[] {
   return fieldsForScope(project, "measurement").filter((field) => fieldAppliesToItem(field, item));
+}
+
+/**
+ * Strict `appliesTo` rule for a space: a configured space kind that the space
+ * does not have excludes the field.
+ */
+export function fieldAppliesToSpace(field: FieldDefinition, space: Pick<Space, "kind">): boolean {
+  if (field.scope !== "space") return false;
+  const applies = field.appliesTo;
+  if (!applies) return true;
+  if (applies.spaceKinds?.length && !applies.spaceKinds.includes(space.kind)) return false;
+  return true;
+}
+
+/** Space fields shown for one space, in saved order. */
+export function applicableSpaceFields(
+  project: Pick<Project, "fieldDefinitions">,
+  space: Pick<Space, "kind">,
+): FieldDefinition[] {
+  return fieldsForScope(project, "space").filter((field) => fieldAppliesToSpace(field, space));
 }
 
 function hasValue(value: CustomValue | undefined): boolean {

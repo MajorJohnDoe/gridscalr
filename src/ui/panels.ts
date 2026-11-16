@@ -55,6 +55,7 @@ export interface PanelActions {
   isSplitViewOpen: () => boolean;
   hasReferenceSession: () => boolean;
   openQuantities: () => void;
+  openSpaces: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;
   openManualScale: () => void;

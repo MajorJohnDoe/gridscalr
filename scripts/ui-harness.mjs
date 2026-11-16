@@ -207,6 +207,62 @@ export async function seedCustomField(page) {
 }
 
 /**
+ * Opens the space register from the View menu and returns the dialog.
+ */
+export async function openSpacesRegister(page) {
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Spaces…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Spaces" });
+  await dialog.waitFor();
+  return dialog;
+}
+
+/**
+ * Seeds a small space register (building → floor → two rooms) and links the
+ * demo's first area measurement to the first room, so the register, the area
+ * badge and the accessibility gates have content to inspect.
+ */
+export async function seedSpaces(page) {
+  await page.evaluate(() => {
+    const store = window.__gridscalr?.store;
+    if (!store?.project) return;
+    store.mutate((project) => {
+      if (project.spaces.length) return;
+      const now = new Date().toISOString();
+      const space = (id, kind, name, extra) => ({
+        id,
+        kind,
+        name,
+        areaMode: "measured",
+        createdAt: now,
+        updatedAt: now,
+        ...extra,
+      });
+      const building = space("space_harness_building", "building", "Main building", {});
+      const floor = space("space_harness_floor", "floor", "Ground floor", {
+        parentId: building.id,
+      });
+      const kitchen = space("space_harness_kitchen", "room", "Kitchen", {
+        parentId: floor.id,
+        number: "101",
+      });
+      const storage = space("space_harness_storage", "room", "Storage", {
+        parentId: floor.id,
+        number: "102",
+        areaMode: "manual",
+        areaM2: 12.5,
+      });
+      project.spaces.push(building, floor, kitchen, storage);
+      const item = project.layers
+        .flatMap((layer) => layer.items)
+        .find((entry) => entry.kind === "area");
+      if (item) item.spaceId = kitchen.id;
+    }, "change");
+  });
+  await settlePage(page);
+}
+
+/**
  * Closes Project settings after the field editor, which reopens it on the
  * Fields category. Tolerates no dialog, so it is safe after a direct close.
  */
