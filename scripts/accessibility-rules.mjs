@@ -16,6 +16,8 @@ export const A11Y_SURFACES = [
   { id: "quantities", label: "Quantities dialog" },
   { id: "drawing-export", label: "Drawing export dialog" },
   { id: "help", label: "Help dialog" },
+  { id: "fields", label: "Custom fields dialog" },
+  { id: "fields-inspector", label: "Custom fields inspector section" },
 ];
 
 /**

@@ -1,0 +1,106 @@
+/* ---------- Custom fields ---------- */
+
+.field-list,
+.field-set-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-row-main {
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.field-row-name {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.field-form {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.field-form-title {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.field-form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.field-value-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.field-value-row .input,
+.field-value-row .select {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field-unit {
+  flex: 0 0 auto;
+  color: var(--muted-2);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.field-value-clear[hidden] {
+  display: none;
+}
+
+.check-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.form-problems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.form-problems[hidden] {
+  display: none;
+}
+
+.field-option-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field-option-row .input {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.field-required {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.field-set-apply {
+  padding-top: 8px;
+  border-top: 1px dashed var(--border-soft);
+}
+
+.field-sets .field-form {
+  margin-top: 4px;
+}

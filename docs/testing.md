@@ -13,7 +13,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:canvas` | Pointer-level canvas gestures: draw, resize, rotate, text, locks, crop and split view. |
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
-| `npm run test:a11y` | Automated axe check of the shell and five dialogs; serious and critical violations fail. |
+| `npm run test:a11y` | Automated axe check of the shell, six dialogs and the custom-fields inspector section; serious and critical violations fail. |
 | `npm run test:touch-targets` | Every visible control on the shell, Layers, Markups and the main dialogs is at least 24 × 24 CSS px with an emulated coarse pointer. |
 | `npm run test:ui-scale` | The shell, menus and dialogs stay usable at 100 %, 150 % and 200 % UI scale. |
 | `npm run check:performance` | The deterministic reference project against the budgets in [`limitations.md`](limitations.md). |
@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses six surfaces:
+`axe-core` through `@axe-core/playwright` and analyses eight surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -377,6 +377,8 @@ checklist in [`releasing.md`](releasing.md).
 | Quantities dialog | `Ctrl/Cmd+Alt+Q` |
 | Drawing export dialog | **File → Export → Drawing PDF…** |
 | Help dialog | `F1` |
+| Custom fields dialog | **Project settings → Fields → Manage fields…** |
+| Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
 
 A **serious** or **critical** axe violation fails the run. Moderate, minor and
 best-practice findings are printed with their target and are not hidden: there is
@@ -385,7 +387,7 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same six surfaces, so the gate records 30 palette/surface
+and **Navy** — runs the same eight surfaces, so the gate records 40 palette/surface
 checks. The palette is chosen through **Settings → Preferences…**, which is
 itself one of the checked surfaces. A contrast regression in any palette fails the
 run, and `check:themes` pins the same text-on-surface pairs at the token level.
@@ -404,9 +406,9 @@ the documented surface list and the theme × surface matrix.
 `(pointer: coarse)`; the script asserts that the media query matches and measures
 the layout the real CSS produces instead of overriding `matchMedia`.
 
-Every visible control on the shell, the expanded Layers panel, the Markups panel
-and the Project settings, Preferences and Quantities dialogs must measure at
-least **24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
+Every visible control on the shell, the expanded Layers panel, the Markups panel,
+the Project settings, Preferences and Quantities dialogs, and the Custom fields
+dialog and inspector section must measure at least **24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
 
 - a checkbox or radio is measured through its wrapping label, because the label
   is the clickable target;
@@ -433,8 +435,8 @@ window leaves at each scale:
 At each scale the check asserts that the document does not scroll horizontally,
 the top bar, context bar, Pages/Layers panel, Properties panel and status bar do
 not clip their content, the canvas keeps at least 240 CSS px, every menu item
-stays inside the window, and the Project settings and Help dialogs open entirely
-inside the viewport. A menu that is taller than the window scrolls inside its
+stays inside the window, and the Project settings, Custom fields and Help dialogs
+open entirely inside the viewport. A menu that is taller than the window scrolls inside its
 panel (`max-height: calc(100vh - 16px)`), which keeps its last item reachable at
 200 %.
 

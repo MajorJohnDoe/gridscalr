@@ -441,6 +441,11 @@ src/i18n/index.ts          catalog loading, ICU translation, language state and 
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
 src/features/countTypes/index.ts public surface for the count-type management dialog
 src/features/countTypes/ui.ts count-type management dialog
+src/features/fields/index.ts public surface for custom fields, typed values and field sets
+src/features/fields/model.ts pure custom-field rules, value coercion, deletion and field-set application
+src/features/fields/ui.ts Project settings → Fält section, the field editor entry and the inspector Fält section
+src/features/fields/ui/ field editor, field list, field sets, applies-to and typed value control
+src/styles/fields.css     custom field list, typed value and field-set styles
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths
 src/features/projectPackage/controller.ts package and open-package flows
 src/features/projectPackage/ui.ts package dialogs and progress UI
@@ -663,7 +668,7 @@ scripts/bench-large-run.mjs reusable large-project benchmark runner and profile 
 scripts/performance-budget-rules.mjs pure reference-project budgets, profiles and pass/fail rules
 scripts/check-performance-budget.mjs CI budget gate over the reference project
 scripts/accessibility-rules.mjs pure axe impact, touch-target and UI-scale gate rules
-scripts/accessibility-check.mjs axe gate for the shell and five dialogs
+scripts/accessibility-check.mjs axe gate for the shell, six dialogs and the custom-fields inspector section
 scripts/touch-target-check.mjs coarse-pointer 24 × 24 control gate
 scripts/ui-scale-check.mjs 100/150/200 % shell, menu and dialog layout gate
 scripts/symbol-catalog.mjs generated standalone schematic symbol review catalogue
@@ -738,7 +743,7 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - `npm run check:dependencies` runs `npm audit` and `cargo audit` and applies the reviewed `security/dependency-allowlist.json`; it fails on a new moderate-or-higher advisory, an expired or stale entry and an unreadable audit report, and writes its summary and reports to CI. `tests/dependencyGate.test.ts` proves the threshold, acceptance, expiry and fail-closed rules with synthetic reports.
 - `cargo test --manifest-path src-tauri/Cargo.toml --lib` covers atomic saves and project-package create/inspect/extract, manifest checks, checksums, cancellation and ZIP limits. It runs on the Ubuntu `rust` job and on every `desktop` matrix entry; `src-tauri/src/path_guard_windows_tests.rs` adds the Windows-only cases (verbatim prefix, case-insensitive volume, trailing dot, drive-relative, UNC, junction).
 - `npm run bench:history` runs the synthetic undo/history benchmark. Use `GRIDSCALR_BENCH_ITEMS=5000` for a larger project.
-- `npm run test:a11y` runs the axe gate against the shell and the Project settings, Preferences, Quantities, Drawing export and Help dialogs; serious and critical violations fail with no allowlist. `npm run test:touch-targets` asserts every visible control is at least 24 × 24 CSS px with an emulated coarse pointer, and `npm run test:ui-scale` checks the shell, menus and dialogs at 100, 150 and 200 % UI scale. The manual canvas and keyboard checklist is in `docs/testing.md`.
+- `npm run test:a11y` runs the axe gate against the shell, the Project settings, Preferences, Quantities, Drawing export, Help and Custom fields dialogs and the custom-fields inspector section; serious and critical violations fail with no allowlist. `npm run test:touch-targets` asserts every visible control is at least 24 × 24 CSS px with an emulated coarse pointer, and `npm run test:ui-scale` checks the shell, menus and dialogs at 100, 150 and 200 % UI scale. The manual canvas and keyboard checklist is in `docs/testing.md`.
 - `npm run check:performance` runs the large-project harness against the budgets in `docs/limitations.md`; the CI profile is 40 pages and 4 000 items, `GRIDSCALR_PERF_PROFILE=reference` is the documented 150-page project. A missing measurement fails. `scripts/performance-budget-rules.mjs` holds the numbers and `tests/performanceBudget.test.ts` pins them to the table.
 - `npm run bench:large` builds the documented 150-page, 15,000-item reference project and reports mutation, serialization, page-switch and autosave timings. Budgets live in `docs/limitations.md`.
 - `npm run format:check` verifies Prettier formatting for source, tests and scripts. Use `npm run format` to apply it.

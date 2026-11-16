@@ -2923,3 +2923,55 @@ remains the scheduling home.
   belongs with the schedule-import decision in Phase 4/5.
 - **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
   `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.
+
+### F-119 — The empty field editor offers no field template
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 2 — custom fields
+- **Severity:** P3
+- **Area:** Project settings → Fields / empty state
+- **Status:** open — deferred to a later usability pass
+- **Evidence:** `src/features/fields/ui/fieldDialog.ts` and
+  `src/features/fields/ui/inspector.ts` explain what a field is and open the
+  editor, but `docs/plan/drift-slice-1.md` §6.6 also asks the empty state to
+  offer a template. No template (for example a fire-class/condition/component
+  set) is created by an action.
+- **Problem:** A new project starts with no fields, and the user has to invent
+  keys and types. A template would make the first custom field one click away,
+  but it also introduces a product decision about which fields are standard and
+  whether they are localized, so it does not belong in the field-model phase.
+- **Impact:** No data is at risk. The first field takes more decisions than it
+  should, and the plan's empty-state paragraph is only partially implemented.
+- **Next step:** Decide in a later slice whether GridScalr ships a named field
+  template, whether it is added to the project as ordinary fields, and how its
+  labels follow the interface language. Do not add automatic fields on
+  migration.
+- **Related:** `docs/plan/drift-slice-1.md` §6.5–§6.6,
+  `src/features/fields/ui/fieldDialog.ts`.
+
+### F-120 — Opening the field editor closes Project settings
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 2 — custom fields
+- **Severity:** P3
+- **Area:** Project settings dialog / modal stacking
+- **Status:** open — platform behaviour, not a field-editor bug
+- **Evidence:** `openFieldsDialog()` uses `showModal`, which calls
+  `closeActiveModal()` before mounting. Opening **Manage fields…** from
+  **Project settings → Fields** therefore closes the settings dialog, exactly as
+  **Manage count types…** already does; the `onRefresh` callback cannot repaint a
+  closed dialog.
+- **Problem:** The settings dialog disappears while the manager is open, so
+  the user loses the surrounding context. Closing the field editor reopens
+  Project settings on the Fields category, exactly like **Manage count types…**,
+  so the flow recovers; a manager stacked over settings would still be better.
+  The field edits themselves apply immediately and the inspector updates behind
+  the dialog.
+- **Impact:** A small navigation cost, not data loss. Fixing it means a modal
+  stack or a manager that does not close its host, which affects every manager
+  dialog and is larger than this phase.
+- **Next step:** If nested managers become common, add an explicit modal stack
+  or a "reopen settings on this category" host parameter and migrate the
+  category, count-type and field managers together.
+- **Related:** `src/ui/dialogs.ts`, `src/ui/settingsDialog.ts`,
+  `src/features/fields/ui/fieldDialog.ts`, `docs/limitations.md`.

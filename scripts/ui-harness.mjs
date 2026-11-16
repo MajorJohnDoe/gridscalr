@@ -176,6 +176,65 @@ export async function openMarkupsItem(page, itemId, kind = "all") {
 }
 
 /**
+ * Seeds one measurement-scope text field with a default value, so the field
+ * editor, the inspector section and the accessibility gates have content to
+ * inspect. It goes through the store, exactly like the editor does.
+ */
+export async function seedCustomField(page) {
+  await page.evaluate(() => {
+    const store = window.__gridscalr?.store;
+    if (!store?.project) return;
+    store.mutate((project) => {
+      if (project.fieldDefinitions.some((field) => field.key === "fireClass")) return;
+      project.fieldDefinitions.push({
+        id: "field_harness",
+        key: "fireClass",
+        label: "Fire class",
+        type: "text",
+        scope: "measurement",
+        order: 0,
+        defaultValue: "EI30",
+      });
+      project.fieldSets.push({
+        id: "fset_harness",
+        name: "Fire data",
+        scope: "measurement",
+        fieldIds: ["field_harness"],
+      });
+    }, "change");
+  });
+  await settlePage(page);
+}
+
+/**
+ * Closes Project settings after the field editor, which reopens it on the
+ * Fields category. Tolerates no dialog, so it is safe after a direct close.
+ */
+export async function closeReopenedSettings(page) {
+  const settings = page.getByRole("dialog", { name: "Project settings" });
+  try {
+    await settings.waitFor({ state: "visible", timeout: 3000 });
+  } catch {
+    return false;
+  }
+  await page.keyboard.press("Escape");
+  await settings.waitFor({ state: "detached" });
+  return true;
+}
+
+/** Opens Project settings → Fields → Manage fields and returns the dialog. */
+export async function openCustomFieldsDialog(page) {
+  await page.keyboard.press("Control+,");
+  const settings = page.getByRole("dialog", { name: "Project settings" });
+  await settings.waitFor();
+  await settings.getByRole("button", { name: "Fields", exact: true }).click();
+  await settings.getByRole("button", { name: /Manage fields/ }).click();
+  const dialog = page.getByRole("dialog", { name: "Custom fields" });
+  await dialog.waitFor();
+  return dialog;
+}
+
+/**
  * Builds a session reference project from the demo takeoff. The reference PDF
  * is embedded as a TIF-style document so the browser fallback can compare it
  * without native file paths.

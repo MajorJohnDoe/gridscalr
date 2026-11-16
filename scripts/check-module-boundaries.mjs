@@ -32,6 +32,7 @@ const FOUNDATION_FEATURES = [
   "src/features/countTypes",
   "src/features/derivedPdfCache",
   "src/features/schematics",
+  "src/features/fields",
 ];
 
 const frontendErrors = [];

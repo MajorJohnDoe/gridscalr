@@ -14,6 +14,7 @@ import { multiSelectionSection } from "./inspector/multiSelection";
 import { appendStyle } from "./inspector/style";
 import { appendSummary } from "./inspector/summary";
 import { appendSymbol } from "./inspector/symbol";
+import { appendFieldsSection } from "../features/fields";
 import type { InspectorContext } from "./inspector/context";
 
 export function selectionSection(
@@ -55,6 +56,7 @@ export function selectionSection(
   appendMeasurement(section, context);
   appendImage(section, context);
   appendLabel(section, context);
+  appendFieldsSection(section, { project, item, locked: context.locked });
   appendSymbol(section, context);
   appendDrawing(section, context);
   appendStyle(section, context);

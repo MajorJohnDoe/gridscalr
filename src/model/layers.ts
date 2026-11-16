@@ -101,7 +101,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   summary: defaultSummarySettings(),
 };
 
-const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set([
+const MEASUREMENT_KINDS: readonly ItemKind[] = [
   "length",
   "area",
   "count",
@@ -111,7 +111,12 @@ const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set([
   "angle",
   "slope",
   "volume",
-]);
+];
+
+/** Measurement item kinds in rail order; used by the field applies-to editor. */
+export const MEASUREMENT_ITEM_KINDS: readonly ItemKind[] = MEASUREMENT_KINDS;
+
+const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set(MEASUREMENT_KINDS);
 
 export function isMeasurementKind(kind: ItemKind): boolean {
   return MEASURE_KINDS.has(kind);

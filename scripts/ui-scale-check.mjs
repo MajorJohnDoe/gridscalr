@@ -4,7 +4,15 @@ import {
   UI_SCALE_REGIONS,
   uiScaleViewports,
 } from "./accessibility-rules.mjs";
-import { launchBrowser, openDemoProject, settlePage, startVite } from "./ui-harness.mjs";
+import {
+  closeReopenedSettings,
+  launchBrowser,
+  openCustomFieldsDialog,
+  openDemoProject,
+  seedCustomField,
+  settlePage,
+  startVite,
+} from "./ui-harness.mjs";
 
 /**
  * UI-scale check.
@@ -148,6 +156,7 @@ try {
     const pageErrors = [];
     page.on("pageerror", (error) => pageErrors.push(error.message));
     await openDemoProject(page, { base: vite.base });
+    await seedCustomField(page);
     const shell = await readShell(page, viewport.label);
     await assertMenusFit(page, viewport.label);
     const settings = await assertDialogFits(
@@ -156,6 +165,13 @@ try {
       () => page.keyboard.press("Control+,"),
       "Project settings",
     );
+    const fields = await assertDialogFits(
+      page,
+      `${viewport.label} Custom fields`,
+      () => openCustomFieldsDialog(page),
+      "Custom fields",
+    );
+    await closeReopenedSettings(page);
     const help = await assertDialogFits(page, `${viewport.label} Help`, () =>
       page.keyboard.press("F1"),
     );
@@ -165,6 +181,7 @@ try {
       viewport: `${viewport.width}×${viewport.height}`,
       canvas: shell.canvas?.width,
       settings: `${settings.left},${settings.top}–${settings.right},${settings.bottom}`,
+      fields: `${fields.left},${fields.top}–${fields.right},${fields.bottom}`,
       help: `${help.left},${help.top}–${help.right},${help.bottom}`,
     });
     await page.close();
@@ -172,7 +189,8 @@ try {
   for (const result of results) {
     console.log(
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
-        `Project settings ${result.settings}, Help ${result.help}, no overflow.`,
+        `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
+        `Help ${result.help}, no overflow.`,
     );
   }
   console.log(
