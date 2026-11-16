@@ -244,9 +244,11 @@ editor are the surface the space register will mirror for `space` scope.
 ## Phase 3 — spaces
 
 - **Issue:** [#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
-- **PR:** filled in below once opened
+- **PR:** [#280](https://github.com/MajorJohnDoe/gridscalr/pull/280)
 - **Branch:** `feat/spaces`
-- **Implementation head SHA:** filled in below
+- **Implementation head SHA:** `f73d204f981182574109d756cfc74ffa589495db`
+  (`5fe286f` feature, `f73d204` docs; the handover commit follows on the same
+  branch)
 - **Status:** open, awaiting conductor verification. The conductor records the
   final merge commit.
 
