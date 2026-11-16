@@ -45,5 +45,24 @@ export function displaySection(): HTMLElement {
   });
   range.append(input, readout);
   wrap.append(snapField);
+
+  const summary = section(t("settings.summaryCardsTitle"), t("settings.summaryCardsNote"));
+  for (const card of [
+    { id: "rooms" as const, label: t("settings.summaryCardRooms") },
+    { id: "area" as const, label: t("settings.summaryCardArea") },
+    { id: "wallLength" as const, label: t("settings.summaryCardWallLength") },
+    { id: "doors" as const, label: t("settings.summaryCardDoors") },
+  ]) {
+    const visible = project.settings.summary.cards.find((entry) => entry.id === card.id)?.visible;
+    summary.append(
+      checkRow(card.label, visible !== false, (checked) => {
+        store.mutate((current) => {
+          const target = current.settings.summary.cards.find((entry) => entry.id === card.id);
+          if (target) target.visible = checked;
+        }, "change");
+      }),
+    );
+  }
+  wrap.append(summary);
   return wrap;
 }

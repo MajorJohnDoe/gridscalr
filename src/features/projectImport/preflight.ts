@@ -1,4 +1,6 @@
 import type { ImportWarning, PreparedProjectImport } from "./model";
+import { emptyImportUnresolvedCounts } from "./unresolved";
+import type { ImportUnresolvedCounts } from "./unresolved";
 
 export type PreflightSourceWarning =
   | { code: "skippedPage"; page: number; documentName: string }
@@ -10,6 +12,8 @@ export interface ImportPreflightInput {
   sourceName: string;
   skipped: readonly number[];
   warnings: readonly PreflightSourceWarning[];
+  /** Copied schema 28 references that do not resolve in the destination. */
+  unresolved?: ImportUnresolvedCounts;
 }
 
 export interface ImportPageCountChange {
@@ -34,6 +38,8 @@ export interface ImportPreflight {
   pageCountChanges: ImportPageCountChange[];
   /** Non-blocking warnings prepared by the import itself. */
   warnings: readonly ImportWarning[];
+  /** Unresolvable room, schedule and custom-field references on the copies. */
+  unresolved: ImportUnresolvedCounts;
 }
 
 /**
@@ -71,5 +77,6 @@ export function buildImportPreflight(input: ImportPreflightInput): ImportPreflig
     checksumDocuments: [...checksum],
     pageCountChanges: pageCounts,
     warnings: input.prepared.warnings,
+    unresolved: input.unresolved ?? emptyImportUnresolvedCounts(),
   };
 }

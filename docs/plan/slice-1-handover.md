@@ -1014,3 +1014,90 @@ merge the schema 28 registers, preflight warning still open), F-124 (no
 summary-card visibility editor) and F-125 (the right dock is narrow for wide
 schedules). F-119 … F-133 are in `docs/plan/foundation-findings.md` and the
 user-facing gaps are in `docs/limitations.md`.
+
+## Closeout — release blockers
+
+- **Issue:** [#296](https://github.com/MajorJohnDoe/gridscalr/issues/296)
+- **PR:** [#297](https://github.com/MajorJohnDoe/gridscalr/pull/297) (open, not merged)
+- **Branch:** `fix/slice-1-release-blockers`
+- **Implementation head SHA:** `2724b19` (`73c0107` summary cards,
+  `b453a3d` demo property example, `2724b19` import preflight); the handover
+  commit moves the PR head after this record.
+- **Status:** implemented and verified locally. No merge, no auto-merge, no app
+  version bump, no schema change, no tag/release and no `site/release.json`
+  change.
+
+### Completed work
+
+- **F-124** — **Project settings → Display → Summary cards** has one checkbox
+  per card (`rooms`, `area`, `wallLength`, `doors`). It writes
+  `settings.summary.cards[].visible` through `store.mutate`, so each change is one
+  undo step, and the Summary panel hides or restores the card from the stored
+  setting. Both catalogs are localized and
+  `tests/summaryCardsSettings.test.ts` drives the checkbox, the panel and the
+  undo step.
+- **F-133** — `scripts/make-demo-project.mjs` now writes a deterministic,
+  language-neutral property example: building → ground floor → rooms 101 Office
+  (manual area) and 102 Warehouse (area derived from the linked warehouse-floor
+  measurement), a Fire class field with a Fire data field set, and a Quantity
+  schedule. All ids are fixed and `npm run docs:demo` reproduces the fixture byte
+  for byte. The browser seeds reuse the demo registers and only add the summary
+  roles, the space schedule and the placed table the demo does not carry.
+- **F-118** — `src/features/projectImport/unresolved.ts` counts copied items
+  whose `spaceId` or `scheduleId` does not resolve and custom values with no
+  destination measurement field. The preflight names those counts before the
+  commit. **Clear unresolved links** is off by default; when on the commit
+  clears the room link, removes a placement whose schedule is missing, drops the
+  unknown custom values and reports the cleared counts after the import. No
+  register is merged or remapped, and the source project and file are never
+  modified.
+
+### Decisions
+
+- A placement with an unresolvable schedule is kept by default and renders the
+  existing placeholder. The opt-in clear removes the placement item, because a
+  table without a definition cannot be repaired in place; the preflight text says
+  so and F-134 records the trade-off.
+- The preflight dialog returns an explicit decision object
+  (`{ confirmed, clearUnresolved }`) so the clear choice survives a relink in the
+  same dialog and cannot be enabled by Cancel.
+- The demo data is project data, not interface text: the field label, room names
+  and schedule name are plain English values and the ids are stable.
+- `tests/visual/hero.png` is updated because the demo now has a field definition
+  and field set, so the selected measurement shows the Fields section. The other
+  three visual baselines are pixel-identical. All 35 documentation screenshots
+  were recaptured from the new demo; the changed images are the ones the register
+  data and the Fields section actually affect.
+- `docs/screenshots/manifest.json` records the new source fingerprint.
+
+### Findings
+
+- F-124 closed — the card visibility editor shipped and the limitation sentence
+  is removed.
+- F-133 closed — the bundled demo ships the property example and the tests
+  assert it.
+- F-118 closed for the preflight scope. The merge/remap decision stays open for a
+  later import phase.
+- F-134 recorded: the opt-in clear removes a placed table rather than keeping its
+  box for later relinking. Accepted and stated in the preflight text.
+
+### Checks
+
+Local gate green on the implementation head: `check:versions`,
+`check:file-budgets` (604 files), `check:modules` (20 foundation features),
+`check:security`, `check:actions`, `check:dependencies` (5 accepted cargo
+advisories, 0 unaccepted), `GRIDSCALR_DOCS_STRICT=1 check:docs` (256 links,
+50 images, 35 screenshots), `format:check`, `lint`, `check:i18n` (3500 keys),
+`check:themes`, `npx tsc --noEmit`, `npm test -- --run` (172 files, 1715 tests),
+`test:robustness` (5 files, 104 tests), `test:ui`, `test:import`,
+`test:visual` (hero baseline updated; three unchanged), `test:a11y` (5 palettes ×
+15 surfaces, 75 checks), `test:touch-targets` (526 controls, 15 surfaces),
+`test:ui-scale` (100/150/200 %), `test:canvas`, `test:docs-capture` (35
+screenshots, committed folder untouched), `npm run docs:capture` (35 screenshots)
+and `npm run build`. CI is authoritative on the PR head.
+
+### Conductor verification: pending
+
+The conductor has not yet re-checked the head SHA, the required checks, the file
+list against the issue scope or the focused import/settings tests. Merge only
+after that pass and after the handover commit head matches the PR head.

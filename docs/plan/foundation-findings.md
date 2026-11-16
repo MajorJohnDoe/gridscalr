@@ -2903,7 +2903,7 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 1 — schema 28 foundation
 - **Severity:** P3
 - **Area:** Project page import / schema 28 references
-- **Status:** open — split by phase; the space half is answered in Phase 3 below, the schedule half in Phase 4 and the CSV scope in Phase 6; the field half and the preflight warning stay open
+- **Status:** closed for the preflight scope (2026-11-16). The register merge/remap decision stays open for a later import phase.
 - **Evidence:** `src/features/projectImport/merge.ts` merges categories, count types,
   line types, image assets and documents. It does not merge custom-field
   definitions, field sets, spaces or schedules, and `cloneImportedItem` copies a
@@ -2951,8 +2951,23 @@ remains the scheduling home.
   the CSV, so an import cannot leave a new dangling `spaceId` or `scheduleId`.
   The page-import preflight warning is unchanged and still belongs to
   `src/features/projectImport/preflight.ts`.
+- **Closeout — preflight warning and opt-in clear (2026-11-16):**
+  `src/features/projectImport/unresolved.ts` counts the copied items whose
+  `spaceId` or `scheduleId` has no destination entity and the copied custom
+  values whose field has no destination definition. `buildImportPreflight()`
+  exposes those counts and the dialog names the effect before the commit.
+  **Clear unresolved links** is off by default; when on,
+  `commitProjectImport()` clears the dangling room link, removes a placement
+  whose schedule is missing and drops the unknown custom values, then reports
+  the cleared counts after the import. The source project and source file are
+  never modified, and nothing is merged or remapped. Tests cover the counts, the
+  option off, clearing each reference kind, a destination entity with the same
+  id, and the unchanged source. The open decision is now only whether a later
+  import phase should merge or remap the registers.
 - **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
-  `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.
+  `src/features/projectImport/model.ts`,
+  `src/features/projectImport/unresolved.ts`, `tests/projectImport.test.ts`,
+  `tests/projectImportPreflightUi.test.ts`.
 
 ### F-119 — The empty field editor offers no field template
 
@@ -3081,7 +3096,7 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
 - **Severity:** P3
 - **Area:** Summary tab / `settings.summary`
-- **Status:** open — deferred to a settings pass
+- **Status:** fixed (2026-11-16)
 - **Evidence:** `src/features/schedules/summary.ts` reads
   `project.settings.summary.cards`; the panel hides a card with
   `visible: false`. No control writes that setting, so a project created with
@@ -3091,11 +3106,16 @@ remains the scheduling home.
   card visibility in schema 28 without a settings section.
 - **Impact:** No wrong number; only a missing configuration affordance. Every
   new project defaults to all four visible.
-- **Next step:** Add a **Summary cards** section to Project settings → Display
-  with four checkboxes and one undo step per change, then remove the limitation
-  sentence. The model already has `defaultSummarySettings()` and the normalizer.
+- **Resolution:** `src/ui/settings/display.ts` adds **Summary cards** to
+  Project settings → Display with one checkbox per card. Each change writes
+  `settings.summary.cards[].visible` through `store.mutate`, so it is one undo
+  step, and the Summary panel hides or restores the card from the same stored
+  setting. The limitation sentence is removed and the user guide names the
+  editor. `tests/summaryCardsSettings.test.ts` drives the checkbox, checks the
+  panel and proves the undo step.
 - **Related:** `src/model/summary.ts`, `src/io/projectFile/summary.ts`,
-  `src/features/schedules/summary.ts`, `docs/limitations.md`.
+  `src/features/schedules/summary.ts`, `src/ui/settings/display.ts`,
+  `tests/summaryCardsSettings.test.ts`, `docs/limitations.md`.
 
 ### F-125 — The Summary tab inherits the right dock width, so a wide schedule scrolls sideways
 
@@ -3280,8 +3300,8 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 7 — hardening and documentation
 - **Severity:** P3
 - **Area:** Demo project / documentation screenshots
-- **Status:** open — deliberate for this phase; screenshots seed sample data
-- **Evidence:** `scripts/make-demo-project.mjs` writes empty `fieldDefinitions`,
+- **Status:** fixed (2026-11-16)
+- **Evidence:** `scripts/make-demo-project.mjs` wrote empty `fieldDefinitions`,
   `fieldSets`, `spaces` and `schedules` arrays. The Phase 7 capture flow uses
   `seedCustomField()`, `seedSpaces()` and `seedSchedules()` from
   `scripts/ui-harness.mjs` to capture the new surfaces with content, and the same
@@ -3293,10 +3313,42 @@ remains the scheduling home.
 - **Impact:** No product or data risk. The documentation screenshots are real
   captures of the shipped UI, but the demo project itself does not demonstrate
   fields, spaces or schedules.
-- **Next step:** Decide whether the demo should ship a small property-data set
-  (for example two rooms, a fire-class field and one room schedule). Adding it is
-  a fixture change with test updates, not a schema change. Keep the demo
-  language-neutral.
+- **Resolution:** the demo ships a deterministic, language-neutral property
+  example with stable ids: a building and ground floor, rooms **101 Office**
+  (manual area) and **102 Warehouse** (area derived from the linked warehouse
+  floor measurement), a **Fire class** field with a **Fire data** field set, and
+  a **Quantity schedule**. `npm run docs:demo` reproduces the fixture byte for
+  byte. The browser seeds reuse the demo registers and only add the summary
+  roles, the space schedule and the placed table the demo does not carry.
+  `tests/demoProject.test.ts` asserts the rooms, the linked area, the field and
+  the schedule, and that the Summary area card is not empty. Screenshots were
+  recaptured from the demo instead of seeded register data.
 - **Related:** `scripts/make-demo-project.mjs`, `scripts/ui-harness.mjs`,
   `scripts/docs-capture-flow.mjs`, `fixtures/demo-project.gridscalr`,
-  `docs/screenshots/manifest.json`.
+  `tests/demoProject.test.ts`, `docs/screenshots/manifest.json`.
+
+### F-134 — Clearing an unresolved placement removes the table box, not only the link
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1 closeout — release blockers
+- **Severity:** P3
+- **Area:** Project page import / schedule placement
+- **Status:** accepted — documented in the preflight text
+- **Evidence:** `clearUnresolvedImportReferences()` in
+  `src/features/projectImport/unresolved.ts` removes a `schedule` item whose
+  `scheduleId` has no destination schedule. Keeping the item with no id would
+  leave a placement the validator still reports, because a placed table cannot
+  resolve its schedule later.
+- **Problem:** The opt-in clear drops the table's page, position and size along
+  with the broken reference. The user cannot keep the empty box to relink after
+  the import, and a later schedule with the same id would not restore it.
+- **Impact:** Only the explicit **Clear unresolved links** action is affected; it
+  is off by default and the preflight text says placed tables with a missing
+  schedule are removed. No source data is lost, and the source project is never
+  changed.
+- **Next step:** If keeping a placement box matters, a later import phase could
+  store a table item with no schedule id and teach the doctor and renderer to
+  offer a relink. That belongs with the register merge/remap decision, not with
+  this closeout.
+- **Related:** F-118, `src/features/projectImport/unresolved.ts`,
+  `docs/limitations.md`.

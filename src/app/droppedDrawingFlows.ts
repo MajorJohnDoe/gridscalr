@@ -130,12 +130,11 @@ export async function importDroppedDrawing(
       skipped: [],
       warnings: [],
     });
-    if (
-      !(await projectImportPreflightDialog({
-        preflight,
-        sources: [],
-      }))
-    ) {
+    const decision = await projectImportPreflightDialog({
+      preflight,
+      sources: [],
+    });
+    if (!decision.confirmed) {
       await pdf.loadingTask.destroy();
       return;
     }
