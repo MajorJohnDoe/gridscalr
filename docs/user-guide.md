@@ -29,7 +29,8 @@ GridScalr uses a compact, drawing-first layout.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab shows the open page's layers in separate drawing and measurement sections, with a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – the active layer and the selected item, with **Properties** and **Project settings** buttons in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
+- **Properties** – the active layer and the selected item, with **Properties**, **Summary** and **Project settings** tabs in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
+- **Summary tab** – **View → Summary** (`Ctrl+Alt+S`) shows four KPI cards and a live table in the right dock. Choose the built-in category summary or a saved schedule, narrow it with the page, category and space chips, and open **New schedule…** to build one. See [Summary and schedules](#summary-and-schedules).
 - **Status bar** – the clickable page scale, the project status chip that opens the save, backup, autosave, validation and recovery summary, cursor position with its unit, source-drawing warnings, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
@@ -446,7 +447,7 @@ In **Properties**, the **Fields** section lists the fields that apply to the sel
 
 A field's type can change only while it has no stored values, and an enum option that is in use cannot be removed. Create a new field when existing data must keep its type.
 
-Field values are not yet shown in the Markups table or exported to CSV or XLSX; schedules and CSV mapping arrive in later Drift Slice 1 phases. See [Known limitations](limitations.md).
+Field values are not yet shown in the Markups table or exported to CSV or XLSX. Custom fields appear as columns in schedules (**View → Summary**, then **New schedule…**); CSV mapping arrives in a later Drift Slice 1 phase. See [Known limitations](limitations.md).
 
 ### Snapping
 
@@ -494,7 +495,54 @@ A duplicate room number under the same parent is a warning, not an error. Deleti
 
 ### Space custom fields
 
-Fields created with the **Space** scope in **Settings → Project settings… → Fields** appear in the space form. Values are saved with the space in one undo step. Field sets, schedules and the summary panel for spaces arrive in later Drift Slice 1 phases; see [Known limitations](limitations.md).
+Fields created with the **Space** scope in **Settings → Project settings… → Fields** appear in the space form. Values are saved with the space in one undo step.
+
+## Summary and schedules
+
+**View → Summary** (`Ctrl+Alt+S`) opens the **Summary** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live: nothing is written until you save a schedule.
+
+### KPI cards
+
+The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
+
+- **Rooms** counts the spaces of type Room. **Area** sums their derived areas; a room without a usable area is named in the card note and is not counted as zero.
+- **Walls** sums the visible length measurements whose category has the summary role **Wall**. **Doors** sums the pieces per object for count items whose count type has the summary role **Door**.
+- Roles are explicit and are never inferred from a name. A missing role shows 0 with a **Configure** action instead of a wrong number.
+- **Summary roles…** sets the role on every category and count type. **Configure** on the Rooms or Area card opens the space register.
+- Hidden items and layers are excluded from every card and table; locked items are included. Wall measurements without a page scale are named in the card note.
+
+Which cards are shown comes from the project's summary settings. Every new project starts with all four visible, and there is no settings editor for the card visibility yet.
+
+### Live table
+
+Below the cards, the picker chooses **Summary by category**, a built-in table of the visible measurements, or one of the project's schedules.
+
+- **Summary by category** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area.
+- A stored schedule shows its own columns, grouping, sorting and totals.
+- The **Page**, **Category** and **Space** chips narrow the table on top of the schedule's own filters. **Clear filters** restores the full table.
+- Selecting a row reveals the measurement on the drawing. A space row opens the first visible linked measurement, or the space's page when nothing is linked.
+- The table is virtualised: a schedule with thousands of rows scrolls without rendering every row.
+
+### Create a schedule
+
+**New schedule…** opens the builder:
+
+1. **Name** the schedule and choose the **Source**: measurements or spaces.
+2. **Rows** is **One row per item** or **Grouped**. Grouped shows one row per group with subtotals and is read-only for the later CSV export; items mode is the round-trip mode.
+3. **Columns** lists the built-in fields and the custom fields for the source. Add a column, hide or show it, give it your own header label, and drag the grip or use the arrow buttons to reorder. A custom column keeps the typed value, for example the option label of a choice field.
+4. **Group by** picks one field. **Sort** adds one or more fields with ascending or descending direction. **Totals** adds a sum, count, average, minimum or maximum for a field.
+5. **Filters** narrow by page, category, count type, item kind and space, and by a custom field with equals, contains, is empty or is not empty. The custom value uses the field's own typed control, so an invalid number, date or option is reported before it is stored.
+6. The **Preview** shows the first 20 displayed rows and the real totals over every filtered row.
+
+**Save** writes the definition in one undo step. **Duplicate** creates a copy from the current draft, and **Delete** asks inline; a schedule that is placed on a drawing is not deleted until its placed table is removed.
+
+A column, group, sort or total that no longer resolves stays visible as **Unknown field** in the builder and the panel reports it instead of hiding the column. A filter that points at a deleted page, category, count type or space is reported the same way. A filter that does not apply to the space source is named as inapplicable and ignored.
+
+### Totals and units
+
+A total is computed from the filtered rows and never stored. **Count** counts rows rather than adding field values. A sum, average, minimum or maximum only uses numeric cells; an empty value is skipped. If the contributing rows do not share one unit, the table marks the total as mixed instead of presenting a comparable sum. A deduction area contributes a negative value.
+
+Placing a schedule on a drawing, CSV import/export and PDF table output are not part of this phase; the schedule is read in the Summary tab and the inspector. See [Known limitations](limitations.md).
 
 ## Draw and annotate
 

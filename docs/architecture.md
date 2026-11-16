@@ -294,6 +294,19 @@ src/
   features/spaces/ui/dialog.ts register dialog, selection-driven link action and measurement reveal
   features/spaces/ui/form.ts space editor with space-scope custom fields
   features/spaces/ui/list.ts register rows with area badge, warning and inline delete confirmation
+  features/schedules/index.ts public surface for the schedule engine, summary cards and the Summary tab
+  features/schedules/model/fields.ts built-in and custom `<field>` references, column resolution and default columns
+  features/schedules/model/filters.ts visibility-first item and space filters, including typed custom filters
+  features/schedules/model/compute.ts filter, map, stable sort, group, subtotal, total and preview limit
+  features/schedules/model/definition.ts draft rules, create/update/duplicate/delete and inline problems
+  features/schedules/model/roles.ts explicit category and count-type summary roles
+  features/schedules/sources/measurements.ts measurement rows from visible items with the existing quantity rules
+  features/schedules/sources/spaces.ts space rows reusing the derived area from features/spaces
+  features/schedules/summary.ts four KPI cards from summaryRole and the built-in category table
+  features/schedules/ui/panel.ts right-dock Summary tab with cards, chips, picker and empty state
+  features/schedules/ui/builder.ts schedule builder with a live 20-row preview and one-undo save
+  features/schedules/ui/panelTable.ts virtualised live table and the pure row window
+  app/summaryFlow.ts     Ctrl+Alt+S and the View → Summary action
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export
