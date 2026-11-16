@@ -1,4 +1,4 @@
-import { isSummaryOpen, setSummaryOpen } from "../features/schedules";
+import { importScheduleCsvFlow, isSummaryOpen, setSummaryOpen } from "../features/schedules";
 import { store } from "../state/store";
 import { setInspectorCollapsed } from "../ui/sidebar";
 
@@ -21,4 +21,9 @@ export function summaryShortcut(event: KeyboardEvent, refresh: () => void): bool
   event.preventDefault();
   toggleSummaryFlow(refresh);
   return true;
+}
+
+/** Opens the schedule CSV import flow and repaints the Summary after an apply. */
+export function importScheduleCsv(scheduleId: string, refresh: () => void): void {
+  void importScheduleCsvFlow(scheduleId, { refresh });
 }

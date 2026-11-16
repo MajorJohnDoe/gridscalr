@@ -1,5 +1,5 @@
 import type { RecentEntry } from "../model/types";
-import { MAX_PROJECT_BYTES, MAX_SOURCE_BYTES } from "./limits";
+import { MAX_PROJECT_BYTES, MAX_SCHEDULE_CSV_BYTES, MAX_SOURCE_BYTES } from "./limits";
 import { sha256Fallback } from "./sha256";
 import { assertWritablePath } from "./writeGuard";
 import { t } from "../i18n";
@@ -171,6 +171,44 @@ export async function pickProject(): Promise<PickedProject | null> {
   }
   const bytes = new Uint8Array(await file.arrayBuffer());
   return { name: file.name, path: null, ...(await projectFileIdentity(bytes)) };
+}
+
+export interface PickedCsv {
+  name: string;
+  path: string | null;
+  bytes: Uint8Array;
+}
+
+/**
+ * Picks one schedule CSV. The 10 MB bound is checked against the file size
+ * before the bytes are read, so an oversized file is refused with a clear
+ * message instead of being buffered.
+ */
+export async function pickCsv(): Promise<PickedCsv | null> {
+  if (isTauri) {
+    const { open } = await import("@tauri-apps/plugin-dialog");
+    const path = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: t("platform.csvFilter"), extensions: ["csv"] }],
+    });
+    if (!path || Array.isArray(path)) return null;
+    const size = await fileSize(path);
+    if (size !== null && size > MAX_SCHEDULE_CSV_BYTES) {
+      throw new Error(t("platform.csvTooLarge", { size: formatBytes(MAX_SCHEDULE_CSV_BYTES) }));
+    }
+    const bytes = await readFileBytes(path);
+    if (bytes.byteLength > MAX_SCHEDULE_CSV_BYTES) {
+      throw new Error(t("platform.csvTooLarge", { size: formatBytes(MAX_SCHEDULE_CSV_BYTES) }));
+    }
+    return { name: path.split(/[\\/]/).pop() ?? "schedule.csv", path, bytes };
+  }
+  const file = await browserFilePicker("text/csv,.csv");
+  if (!file) return null;
+  if (file.size > MAX_SCHEDULE_CSV_BYTES) {
+    throw new Error(t("platform.csvTooLarge", { size: formatBytes(MAX_SCHEDULE_CSV_BYTES) }));
+  }
+  return { name: file.name, path: null, bytes: new Uint8Array(await file.arrayBuffer()) };
 }
 
 export async function readFileBytes(path: string): Promise<Uint8Array> {

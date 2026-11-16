@@ -2903,7 +2903,7 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 1 — schema 28 foundation
 - **Severity:** P3
 - **Area:** Project page import / schema 28 references
-- **Status:** open — split by phase; the space half is answered in Phase 3 below and the schedule half in Phase 4; the field half and the preflight warning stay open
+- **Status:** open — split by phase; the space half is answered in Phase 3 below, the schedule half in Phase 4 and the CSV scope in Phase 6; the field half and the preflight warning stay open
 - **Evidence:** `src/features/projectImport/merge.ts` merges categories, count types,
   line types, image assets and documents. It does not merge custom-field
   definitions, field sets, spaces or schedules, and `cloneImportedItem` copies a
@@ -2944,6 +2944,13 @@ remains the scheduling home.
   deletion clean their filter lists. The remaining gap is still the **preflight
   warning**, which belongs to `src/features/projectImport/preflight.ts` and stays
   open rather than half-implemented outside this phase.
+- **Phase 6 decision — CSV import does not touch the gap:** `src/features/schedules/csv/`
+  reads and writes only existing measurements and spaces by stable ID. It never
+  creates, merges or remaps a field definition, field set, space or schedule, and
+  it does not import a page. Reference columns such as `space` are read-only in
+  the CSV, so an import cannot leave a new dangling `spaceId` or `scheduleId`.
+  The page-import preflight warning is unchanged and still belongs to
+  `src/features/projectImport/preflight.ts`.
 - **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
   `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.
 
@@ -3196,3 +3203,73 @@ remains the scheduling home.
 - **Related:** `src/features/schedules/layout.ts`,
   `src/features/schedules/ui/placement.ts`, `src/ui/inspector/schedule.ts`,
   `src/pdf/export/items/schedule.ts`.
+
+### F-130 — Schedule CSV import cannot change reference or derived columns
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 6 — CSV round-trip
+- **Severity:** P2
+- **Area:** Schedule CSV / references
+- **Status:** open — deliberate for this phase
+- **Evidence:** `src/features/schedules/csv/headers.ts` allows import only for
+  `label`, `room` and `tag` on measurements and `name`, `number`, `floor`,
+  `usage` and `status` on spaces, plus custom fields. `page`, `layer`,
+  `category`, `space`, `countType`, symbol `status`, `value`, `unit`, `area`,
+  `areaSource`, `parent`, `created` and `modified` are mapped but marked
+  read-only and named in the dry-run report.
+- **Problem:** The CSV shows display labels for references, not stable IDs. An
+  Excel user can edit the Category or Space cell and the change is reported as a
+  read-only column, not applied. Importing by label would be ambiguous after a
+  rename and could attach a row to the wrong entity.
+- **Impact:** The round-trip is safe and predictable, but not every visible
+  column is editable. The user must change references in the inspector or the
+  space form. The dry run names the read-only columns instead of ignoring them.
+- **Next step:** If bulk reference edits become a workflow, add hidden stable-ID
+  columns (for example `Category ID`) or a documented `key:id` reference syntax,
+  validate the target in the same scope, and keep the label column read-only.
+  Do not guess by label.
+- **Related:** `src/features/schedules/csv/headers.ts`,
+  `src/features/schedules/csv/row.ts`, `docs/limitations.md`.
+
+### F-131 — A renamed custom option label makes an older CSV value invalid
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 6 — CSV round-trip
+- **Severity:** P3
+- **Area:** Schedule CSV / custom fields
+- **Status:** open — accepted exact-match rule
+- **Evidence:** `parseCustomCsvValue()` accepts an exact option id or an
+  unambiguous exact option label. `customValueText()` exports labels, so a CSV
+  written before an option label was renamed contains the old label.
+- **Problem:** Re-importing that file reports `unknownOption` for the row and
+  applies nothing, because matching the old label by similarity would be a
+  guess. Option ids are stable but are not shown in the spreadsheet.
+- **Impact:** No wrong value is stored. The user can re-export the schedule or
+  type the current label or stable id. The dry run names the field, value and
+  reason.
+- **Next step:** If renamed options become common, add an optional id column for
+  choice fields or accept a documented `id` value in the same cell. Do not add
+  fuzzy label matching.
+- **Related:** `src/features/schedules/csv/values.ts`,
+  `src/features/fields/model/fieldRules.ts`, `docs/limitations.md`.
+
+### F-132 — Schedule CSV import never creates rows or entities
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 6 — CSV round-trip
+- **Severity:** P3
+- **Area:** Schedule CSV / product scope
+- **Status:** accepted for this slice
+- **Evidence:** `buildScheduleCsvImport()` rejects an ID that is not in the
+  current schedule result as `unknownId`. `applyScheduleCsvImport()` updates
+  only existing items and spaces. The plan and the issue both exclude creation.
+- **Problem:** A user who adds a row in Excel gets an unknown-ID rejection rather
+  than a new measurement or space. Creating measurements from tabular data would
+  need geometry, page scale and layer decisions that the CSV does not carry.
+- **Impact:** Explicit and safe; the user adds the measurement in the drawing and
+  then imports its values. The dry run says the import updates existing rows
+  only.
+- **Next step:** A later slice can design a create mode with a page, layer and
+  geometry contract. Keep it a separate, explicitly confirmed action.
+- **Related:** `src/features/schedules/csv/plan.ts`,
+  `src/features/schedules/csv/apply.ts`, `docs/limitations.md`.

@@ -358,6 +358,39 @@ export async function openSchedulePlacementDialog(page) {
 }
 
 /**
+ * Opens the schedule CSV import dialog through the real file picker with one
+ * changed label. The dry run has a changed row, a preview row and an enabled
+ * apply action, so the accessibility, touch-target and UI-scale gates inspect
+ * the full dialog rather than a blocked empty state.
+ */
+export async function openScheduleCsvImport(page) {
+  const summary = await openSummaryTab(page);
+  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  const itemId = await page.evaluate(() => {
+    const project = window.__gridscalr?.store.project;
+    if (!project) return "";
+    for (const layer of project.layers) {
+      const item = layer.items.find((entry) => entry.kind === "length" || entry.kind === "area");
+      if (item) return item.id;
+    }
+    return "";
+  });
+  if (!itemId) throw new Error("the demo project has no measurement for the CSV import");
+  const csv = `ID;Typ;Label [label]\r\n${itemId};item;Imported label\r\n`;
+  const chooserPromise = page.waitForEvent("filechooser");
+  await summary.getByRole("button", { name: "Import CSV…" }).click();
+  const chooser = await chooserPromise;
+  await chooser.setFiles({
+    name: "schedule.csv",
+    mimeType: "text/csv",
+    buffer: Buffer.from(csv, "utf8"),
+  });
+  const dialog = page.getByRole("dialog", { name: "Import schedule CSV" });
+  await dialog.waitFor();
+  return dialog;
+}
+
+/**
  * Selects the seeded placed table and shows Properties, so the placed-table
  * inspector section is inspectable after the Summary tab is closed.
  */

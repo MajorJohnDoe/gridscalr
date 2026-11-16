@@ -93,6 +93,7 @@ describe("accessibility gate rules", () => {
       "schedule-placement",
       "schedule-inspector",
       "schedule-builder",
+      "schedule-csv",
       "schedule-roles",
     ]);
   });

@@ -13,7 +13,7 @@ import {
 import { isTauri, pathExists, readFileText, writeTextFile } from "../io/platform";
 import { PdfRenderer } from "../pdf/pdfRenderer";
 import { PageThumbnailService } from "../pdf/thumbnails";
-import { exportProject, type ExportKind } from "./exportFlows";
+import { exportProject, exportScheduleCsvFlow, type ExportKind } from "./exportFlows";
 import { chooseDrawingExport } from "./drawingExportFlow";
 import { beginProjectRename } from "./projectNameEditor";
 import { copyDiagnosticsFlow, reportProblemFlow } from "./diagnosticsFlows";
@@ -107,7 +107,7 @@ import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSpacesDialog } from "../features/spaces";
-import { summaryShortcut, toggleSummaryFlow } from "./summaryFlow";
+import { importScheduleCsv, summaryShortcut, toggleSummaryFlow } from "./summaryFlow";
 import { updateWindowTitle } from "./windowTitle";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
@@ -254,6 +254,8 @@ export class App {
       openSearch: () => this.search.open(),
       openQuantities: () => openQuantitiesDialog(this.actions),
       toggleSummary: () => toggleSummaryFlow(this.actions.refresh),
+      exportScheduleCsv: (scheduleId) => void exportScheduleCsvFlow(scheduleId),
+      importScheduleCsv: (scheduleId) => importScheduleCsv(scheduleId, this.actions.refresh),
       // The register reveals a linked measurement through the same navigation
       // the Markups list uses.
       openSpaces: () => void openSpacesDialog({ revealItem: this.actions.navigateToItem }),

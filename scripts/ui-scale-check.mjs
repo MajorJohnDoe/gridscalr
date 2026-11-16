@@ -11,6 +11,7 @@ import {
   openDemoProject,
   openPlacedTableInspector,
   openScheduleBuilder,
+  openScheduleCsvImport,
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
@@ -198,6 +199,12 @@ try {
       },
       "New schedule",
     );
+    const csv = await assertDialogFits(
+      page,
+      `${viewport.label} Schedule CSV import`,
+      () => openScheduleCsvImport(page),
+      "Import schedule CSV",
+    );
     await openSummaryTab(page);
     const summaryShell = await readShell(page, `${viewport.label} Summary tab`);
     const placement = await assertDialogFits(
@@ -236,6 +243,7 @@ try {
       spaces: `${spaces.left},${spaces.top}–${spaces.right},${spaces.bottom}`,
       help: `${help.left},${help.top}–${help.right},${help.bottom}`,
       builder: `${builder.left},${builder.top}–${builder.right},${builder.bottom}`,
+      csv: `${csv.left},${csv.top}–${csv.right},${csv.bottom}`,
       placement: `${placement.left},${placement.top}–${placement.right},${placement.bottom}`,
       inspector: `${inspector.right},${inspector.bottom}`,
       summaryCanvas: summaryShell.canvas?.width ?? 0,
@@ -246,8 +254,8 @@ try {
     console.log(
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
         `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
-        `Spaces ${result.spaces}, Help ${result.help}, Place schedule ${result.placement}, ` +
-        `no overflow.`,
+        `Spaces ${result.spaces}, Help ${result.help}, Schedule CSV ${result.csv}, ` +
+        `Place schedule ${result.placement}, no overflow.`,
     );
   }
   console.log(

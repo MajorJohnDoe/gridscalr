@@ -37,6 +37,10 @@ export interface SummaryPanelHost {
   pageSize?: (page: number) => PageSize | undefined;
   /** Repaints the shell after a panel-level change. */
   refresh?: () => void;
+  /** Exports the selected schedule as CSV. */
+  exportScheduleCsv?: (scheduleId: string) => void;
+  /** Opens the CSV import flow for the selected schedule. */
+  importScheduleCsv?: (scheduleId: string) => void;
 }
 
 function extraFilter(): ScheduleFilter | undefined {
@@ -213,7 +217,25 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
     "click",
     () => void openSummaryRolesDialog("walls").then(() => reschedule(host)),
   );
-  head.append(picker, add, edit, place, roles);
+  const exportCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.export"));
+  exportCsv.type = "button";
+  exportCsv.title = t("schedulesCsv.exportHint");
+  exportCsv.disabled = !schedule || !host.exportScheduleCsv;
+  exportCsv.addEventListener("click", () => {
+    if (schedule) host.exportScheduleCsv?.(schedule.id);
+  });
+  const importCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.import"));
+  importCsv.type = "button";
+  importCsv.title =
+    schedule && schedule.rowMode !== "items"
+      ? t("schedulesCsv.importReadOnly")
+      : t("schedulesCsv.importHint");
+  importCsv.disabled =
+    !schedule || store.readOnly || schedule.rowMode !== "items" || !host.importScheduleCsv;
+  importCsv.addEventListener("click", () => {
+    if (schedule) host.importScheduleCsv?.(schedule.id);
+  });
+  head.append(picker, add, edit, place, roles, exportCsv, importCsv);
   root.append(head);
 
   const filters = summaryPanelFilters();

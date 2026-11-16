@@ -95,6 +95,8 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
           openSpaces: actions.openSpaces,
           pageSize: actions.getPageSize,
           refresh: actions.refresh,
+          exportScheduleCsv: actions.exportScheduleCsv,
+          importScheduleCsv: actions.importScheduleCsv,
         },
         previousScroll,
       ),

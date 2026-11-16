@@ -13,3 +13,10 @@ export const MAX_SOURCE_BYTES = 1024 * 1024 * 1024;
 
 /** Uncompressed total of one `.gridscalr.zip` extraction (Rust `package.rs`). */
 export const MAX_PACKAGE_TOTAL_BYTES = 2 * 1024 * 1024 * 1024;
+
+/**
+ * One schedule CSV file. Checked before decoding so an oversized file is refused
+ * with a clear message instead of being buffered. The row limit lives with the
+ * schedule CSV model because it is a semantic bound, not an I/O bound.
+ */
+export const MAX_SCHEDULE_CSV_BYTES = 10 * 1024 * 1024;
