@@ -11,9 +11,11 @@ import { displaySection } from "./settings/display";
 import { quantitiesSection } from "./settings/quantities";
 import { countTypesSection } from "./settings/countTypes";
 import { stampsSection } from "./settings/stamps";
+import { fieldsSettingsSection } from "../features/fields";
 import { categoryLayout } from "./settingsControls";
 
-type SettingsCategory = "project" | "report" | "measurements" | "display" | "quantities" | "stamps";
+type SettingsCategory =
+  "project" | "report" | "measurements" | "display" | "quantities" | "fields" | "stamps";
 
 export function openSettingsDialog(initialCategory: SettingsCategory = "project"): void {
   if (!store.project) return;
@@ -48,6 +50,11 @@ export function openSettingsDialog(initialCategory: SettingsCategory = "project"
           quantitiesSection(() => openSettingsDialog("quantities")),
           countTypesSection(() => openSettingsDialog("quantities")),
         ],
+      },
+      {
+        id: "fields",
+        label: t("settings.navFields"),
+        render: () => [fieldsSettingsSection(() => openSettingsDialog("fields"))],
       },
       {
         id: "stamps",
