@@ -721,3 +721,148 @@ Phase 6 — [CSV round-trip for schedules #287](https://github.com/MajorJohnDoe/
 an `ID` column, locale delimiter and BOM, formula-injection escaping, a dry-run
 conflict report, one undo step and the large-file budget. No schema change is
 expected.
+
+## Phase 6 — CSV round-trip
+
+- **Issue:** [#287](https://github.com/MajorJohnDoe/gridscalr/issues/287)
+- **PR:** [#291](https://github.com/MajorJohnDoe/gridscalr/pull/291)
+- **Branch:** `feat/schedule-csv`
+- **Implementation head:** `a56c9fd7d7d3449a027cc1bbcad1886c025872de`
+  (`dfaccb1` feature and gates, `a56c9fd` documentation)
+- **Status:** open, awaiting conductor verification. No schema change
+  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release. This
+  section is committed after the PR was opened; the PR branch remains the one
+  under review.
+
+### Completed work
+
+- `src/features/schedules/csv.ts` and `csv/` provide a pure round-trip: locale
+  dialect, comma/semicolon/tab delimiter detection, BOM handling, an RFC 4180
+  parser, `Label [key]` header mapping by key then label, typed value
+  validation, a dry-run conflict plan and a apply step.
+- Export writes `ID`, `Typ` (`item`/`space`) and every visible schedule column,
+  uses the app-locale delimiter and a UTF-8 BOM, keeps numeric cells numeric and
+  guards text starting with `=`, `+`, `-`, `@`, tab or CR with a leading
+  apostrophe. A literal leading apostrophe that looks like a guard is escaped
+  too. A grouped schedule exports one row per group with subtotals and
+  `importable: false`.
+- Import maps by bracketed key first and column label second, so a renamed label
+  or a switched interface language does not mis-map a value. It validates stable
+  IDs, `item`/`space` against the schedule source, duplicate IDs, extra cells,
+  custom numbers, dates, booleans, exact enum ids or unambiguous labels and
+  multi-enum tokens. A row with any invalid value is rejected and applies
+  nothing.
+- The dry run reports changed rows with before/after values, unchanged rows,
+  unknown fields, duplicate headers, unknown IDs, duplicate IDs, wrong types,
+  invalid values, read-only columns, malformed rows and schedule rows absent
+  from the file. The dialog renders every value with `textContent`.
+- Apply is one `store.mutate` call, so a multi-row import is one undo step. It
+  updates existing measurements (`label`, `room`, `tag`) and spaces (`name`,
+  `number`, `floor`, `usage`, `status`) plus custom values. It never creates an
+  entity. The project revision captured when the dialog opens is checked before
+  writing, so a change made while the preview is open refuses the apply.
+- Bounds: UTF-8 only through a fatal decoder with BOM preservation, 10 MB
+  (`MAX_SCHEDULE_CSV_BYTES` in `src/io/limits.ts`) checked before decoding and
+  20 000 data rows (`MAX_SCHEDULE_CSV_ROWS`) checked before any value is mapped.
+  `pickCsv()` checks the size before reading the file in the browser and in
+  Tauri.
+- The Summary header gains **Export CSV…** and **Import CSV…**. Export is
+  available in a view-only session; import is disabled in view-only and for a
+  grouped schedule. `src/app/exportFlows.ts` writes the file with the existing
+  source-path write guard; `src/app/summaryFlow.ts` opens the feature import
+  flow.
+- The a11y, touch-target and UI-scale gates gain the CSV import dialog. The
+  harness opens it through the real browser file picker with one changed label,
+  so the gates inspect a populated preview and an enabled apply action.
+- i18n keys in both catalogs, generated types, `src/styles/schedules.css`, and
+  the documentation in `README.md`, `docs/user-guide.md`, `docs/limitations.md`,
+  `docs/security-policy.md`, `docs/testing.md` and
+  `docs/plan/foundation-findings.md`.
+
+### Modules
+
+- `src/features/schedules/csv.ts`, `csvUi.ts`, `csv/types.ts`, `text.ts`,
+  `headers.ts`, `values.ts`, `row.ts`, `plan.ts`, `export.ts`, `apply.ts`
+- `src/features/schedules/ui/csvImport.ts`, `ui/csvReport.ts`, `ui/panel.ts`
+- `src/app/exportFlows.ts`, `src/app/summaryFlow.ts`, `src/app/App.ts` (two
+  action lines), `src/ui/panels.ts`, `src/ui/inspector.ts`
+- `src/io/limits.ts`, `src/io/platform.ts`
+- `src/styles/schedules.css`, both i18n catalogs and generated types
+- `tests/schedulesCsv.test.ts`, `schedulesCsvUi.test.ts`,
+  `schedulesCsvPerformance.test.ts`, `tests/accessibilityGate.test.ts`
+- `scripts/accessibility-{rules,check}.mjs`, `touch-target-check.mjs`,
+  `ui-scale-check.mjs`, `ui-harness.mjs`
+- `docs/user-guide.md`, `docs/limitations.md`, `docs/security-policy.md`,
+  `docs/testing.md`, `README.md`, `docs/plan/foundation-findings.md`
+
+### Decisions
+
+- `store.mutate` already provides the one-call, one-history-step batch, so
+  `src/state/store.ts` is unchanged. The import dialog calls it once.
+- Importable built-in columns are deliberately narrow: measurement `label`,
+  `room`, `tag` and space `name`, `number`, `floor`, `usage`, `status`. Reference
+  and derived columns are exported but read-only, named in the dry run, because
+  their CSV cells are display labels and importing by label is ambiguous after a
+  rename (F-130).
+- A custom enum value is exported as its label and accepted by exact option id
+  or an unambiguous exact label. A multi-enum is exported as labels separated by
+  semicolons, because the table's comma-separated form collides with the English
+  delimiter. Renaming an option label can invalidate an older file (F-131).
+- A yes/no value accepts `true`/`false`, `yes`/`no`, `ja`/`nej`, `1`/`0`. A
+  decimal comma is accepted only when the delimiter is not a comma, so `1,234`
+  in a comma file stays ambiguous and is rejected instead of silently becoming
+  `1.234`.
+- A row with any invalid cell is rejected as a whole; valid cells in the same
+  row are not applied. The dialog states this and the rejected count.
+- The import reports read-only columns instead of silently ignoring edits to
+  them. It never creates rows (F-132).
+- The apply refuses a stale preview by comparing the store revision. This is a
+  small data-integrity safeguard rather than a second confirmation.
+- The export writes a schedule with its own definition only, not the Summary
+  panel's page/category/space chips, so the file is a stable schedule artifact
+  and not a view snapshot.
+- The four visual baselines are unchanged: the new surface is a dialog, not one
+  of the captured screens. Screenshot recapture stays deferred to Phase 7.
+- No XLSX schedule export or import, no formula or calculated field and no
+  creation of measurements, spaces, fields or schedules.
+
+### Findings
+
+- F-130: reference and derived columns cannot be changed through CSV.
+- F-131: a renamed custom option label makes an older CSV value invalid.
+- F-132: CSV import never creates rows or entities.
+- F-118 is unchanged: the CSV imports into existing measurements and spaces by
+  stable ID, and reference columns are read-only, so it cannot create a dangling
+  `spaceId` or `scheduleId`. The page-import preflight warning stays open.
+
+### Checks
+
+Local gate green on the implementation head: `check:versions`,
+`check:file-budgets` (603 files, no new exception), `check:modules`
+(20 foundation features), `check:security`, `check:actions`,
+`check:dependencies` (5 accepted cargo advisories, no unaccepted finding),
+`check:docs` (only the expected stale-screenshot warning), `format:check`,
+`lint`, `check:i18n` (3486 keys), `check:themes`, `npx tsc --noEmit`,
+`npm test -- --run` (171 files, 1707 tests), `test:robustness` (5 files,
+104 tests), `test:ui`, `test:import`, `test:visual` (4 baselines unchanged),
+`test:a11y` (5 palettes × 15 surfaces, 75 checks, no serious/critical),
+`test:touch-targets` (526 controls, 15 surfaces), `test:ui-scale`
+(100/150/200 %, CSV dialog 720/720/720 px wide and inside each viewport) and
+`test:docs-capture` (27 screenshots, `docs/screenshots/` untouched).
+
+Measured on the development container with the 10 000-item, five-column
+synthetic project (`tests/schedulesCsvPerformance.test.ts`): export 209.2 ms and
+import plan 188.7 ms against the 1 500 ms documented target. The test asserts a
+looser 6 000 ms CI ceiling and the target under `GRIDSCALR_PERF_STRICT=1`. The
+numbers are in `docs/limitations.md`.
+
+### Conductor verification
+
+Conductor verification: pending.
+
+### Next phase
+
+Phase 7 — hardening and documentation: the performance benchmark and budget,
+accessibility/touch-target/UI-scale pass, visual regression and screenshots, the
+user guide and workflow pass, limitations, shortcuts, README, release notes and
+roadmap. No new features.
