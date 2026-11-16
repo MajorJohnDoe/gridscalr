@@ -191,20 +191,35 @@ export async function seedCustomField(page) {
     if (!store?.project) return;
     store.mutate((project) => {
       if (project.fieldDefinitions.some((field) => field.key === "fireClass")) return;
-      project.fieldDefinitions.push({
-        id: "field_harness",
-        key: "fireClass",
-        label: "Fire class",
-        type: "text",
-        scope: "measurement",
-        order: 0,
-        defaultValue: "EI30",
-      });
+      project.fieldDefinitions.push(
+        {
+          id: "field_harness",
+          key: "fireClass",
+          label: "Fire class",
+          type: "text",
+          scope: "measurement",
+          order: 0,
+          defaultValue: "EI30",
+        },
+        {
+          id: "field_harness_condition",
+          key: "condition",
+          label: "Condition",
+          type: "enum",
+          scope: "measurement",
+          order: 1,
+          options: [
+            { id: "good", label: "Good" },
+            { id: "repair", label: "Needs repair" },
+          ],
+          defaultValue: "good",
+        },
+      );
       project.fieldSets.push({
         id: "fset_harness",
         name: "Fire data",
         scope: "measurement",
-        fieldIds: ["field_harness"],
+        fieldIds: ["field_harness", "field_harness_condition"],
       });
     }, "change");
   });
@@ -307,8 +322,8 @@ export async function seedSchedules(page) {
           source: "spaces",
           rowMode: "items",
           columns: [
-            { id: "col_1", field: "number", visible: true },
-            { id: "col_2", field: "name", visible: true },
+            { id: "col_1", field: "name", visible: true },
+            { id: "col_2", field: "number", visible: true },
             { id: "col_3", field: "area", visible: true, format: "unit" },
           ],
           filters: {},
@@ -325,8 +340,8 @@ export async function seedSchedules(page) {
           pageId: page.id,
           kind: "schedule",
           points: [
-            { x: 40, y: 40 },
-            { x: 400, y: 210 },
+            { x: 520, y: 380 },
+            { x: 880, y: 550 },
           ],
           color: draw.color,
           strokeWidth: 1,
