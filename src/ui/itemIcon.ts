@@ -40,6 +40,8 @@ export function markupIcon(kind: MarkupItem["kind"]): string {
       return "polyline";
     case "rail":
       return "rail";
+    case "schedule":
+      return "schedule";
     case "image":
       return "image";
     case "cloud":

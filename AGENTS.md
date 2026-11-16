@@ -10,8 +10,8 @@ Persistent working instructions for agents and maintainers of GridScalr. Read th
 - Repository: `https://github.com/MajorJohnDoe/gridscalr` (public).
 - Current app version: `0.28.0`.
 - Latest public release: `v0.28.0` (2026-11-15).
-- Current project-file schema: `27`.
-- 1.0 is a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
+- Current project-file schema: `28` (development; 1.0 is deferred).
+- 1.0 is deferred and remains a quality gate, not a schedule: Windows, macOS and Linux artifacts; English and Swedish UI; portable `.gridscalr.zip` packages; tested large-project performance; production-ready save, recovery and source handling. See `docs/roadmap.md` and `docs/adr/`.
 - Milestones 1–5 are complete. Milestone 2A added categories, rooms, the count tool, deduction areas, the quantities panel, and measurement bulk edits. Milestone 2B added waste, rounding, order quantities, and quantity CSV/PDF reports. Milestone 3A added quick areas, manual scale, per-page scale locks, and markup snapping. Milestone 3B added the drawing export dialog with page ranges, crop areas, layer selection, labels, calibration, and a legend. Milestone 4 added embedded PNG/JPEG images, background and annotation modes, image handles, opacity, rotation, and image-aware PDF export. Milestone 5 added scanned TIF import as lossless CCITT G3/G4 pages, multiple source documents per project, append-only page numbering, and schema v6.
 - `App.ts` and `CanvasView.ts` are integration points, not implementation sites. New user-facing features live under `src/features/<feature>/`; see `docs/adr/0001-feature-modules.md`. A pull request that adds more than roughly 50–100 lines of new business logic to either integration file must justify it or extract a module.
 
@@ -646,14 +646,14 @@ docs/workflows.md          role-based workflows for site work and procurement
 docs/shortcuts.md          in-app shortcut reference
 docs/screenshots/          versioned screenshots and capture manifest
 tests/                     model, project-file, hit-test, selection, TIFF, PDF, Markdown, help image, demo project, canvas geometry and autosave tests
-tests/robustness/          seeded page/save sequences, competing saves, the schema 1–27 migration corpus and source-storage gates
+tests/robustness/          seeded page/save sequences, competing saves, the schema 1–28 migration corpus and source-storage gates
 fixtures/legacy/           committed project fixtures for every supported schema
 fixtures/tiff/             small G4/LZW/PackBits/Deflate and colour TIFF fixtures for the reader and codec tests
 scripts/plan-geometry.mjs  shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs   legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation demo project
-scripts/make-legacy-fixtures.mjs generator for the schema 1–27 migration corpus
+scripts/make-legacy-fixtures.mjs generator for the schema 1–28 migration corpus
 scripts/ui-harness.mjs     shared Playwright server, demo project and UI helpers
 scripts/smoke-ui.mjs       Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -721,8 +721,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 ## Testing and fixtures
 
 - `npm test -- --run` runs the Vitest suite, including viewport math, revision matching, text search, OCR conversion, XLSX package generation and project-package manifest, checksum and path rules.
-- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–27 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
-- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–27. Regenerate schemas 1–22, `schema-23-full` through `schema-27` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
+- `npm run test:robustness` runs only `tests/robustness/`: seeded page-identity sequences, competing saves, the schema 1–28 migration corpus and source-storage gates. The normal suite includes these files; CI runs the focused command as a named step.
+- `fixtures/legacy/` is the committed migration corpus, one fixture per schema 1–28. Regenerate schemas 1–22, `schema-23-full` through `schema-28` with `node scripts/make-legacy-fixtures.mjs`; keep the original `schema-23.gridscalr` and `schema-24.gridscalr` for the focused migration tests.
 - `npm run test:ui` runs the Playwright smoke test against the browser fallback, including the desktop-only package menu state.
 - `npm run test:import` drives the project page import through the browser fallback: thumbnail picker, page-scoped layers, undo, redo and source-file immutability.
 - `npm run test:visual` compares four stable shell and dialog screens against the committed baselines in `tests/visual/` using the bundled Liberation Sans font; failures write actual and diff images to `visual-regression-failures/`. See `docs/testing.md` for tolerance, baseline updates and the manual visual checklist.
@@ -803,7 +803,8 @@ When adding a layer or item operation, put lock and visibility semantics in `src
 - **0.25.0:** complete (released 2026-11-12) — Pages and workspace: page drag-and-drop and keyboard reorder, PDF/TIF drop on the Pages panel, undoable reorder and insert, page status badges and filters, the page context menu, one shared Pages/Layers/Markups interaction model, import provenance, doctor source availability with explicit managed-copy cleanup and a repair preview, layer hierarchy in schema 26 with the Layers panel tree and nested optional-content export, TIF **Replace source…** with raw-byte provenance hashes, extra TIF codecs, relink in the import preflight, and the Rust source-budget and model-boundary gates. See `docs/release-notes/0.25.0.md` and `docs/plan/0.25-handover.md`.
 - **0.26.0:** complete (released 2026-11-12) — Panels and demo: page-scoped Layers sections with per-section add/bulk actions and visible selection, drag anywhere including the colour swatch, search that reveals matching items, a flat Pages list with source lines, page numbers, a **Mall** badge and tab view options (group by source, source line, page numbers), Preferences section cards with an always-visible scrollbar, the autosave focus fix, deterministic PDF export metadata, and an operation card demo page. Schema stays 26; see `docs/release-notes/0.26.0.md`.
 - **0.27.0:** complete (released 2026-11-13) — Limits, lifecycle and tooling safety: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions with `check:actions`, shortcut-table and docs-capture gates, the Rust command cap and the schematics `index.ts`, edit-safe shell rendering, a source check that no longer emits a synthetic save, themed Layers/Mätlager surfaces with Medium Grey unchanged, and ADR 0015/0016 for colour-scan storage and OCG shape. Schema stays 26; see `docs/release-notes/0.27.0.md`.
-- **0.28.0:** complete (released 2026-11-15) — the release candidate for 1.0.0: schema 27 stores a colour TIF scan as a reference with a rebuildable `<project>.derived/` cache (measured 79.19 MiB → 0.01 MiB project JSON, 59.39 MiB cache, 160 MiB warning budget), the OCG export writes the ISO nested-array form, the import preflight **Relink…** is reachable from the picker, the accessibility/touch-target/UI-scale/performance gates run in CI, Light Green contrast is fixed, the macOS artifact is verified automatically in CI, and `glib 0.18.5` is accepted until 2027-02-15 pending the Tauri 3/GTK4 migration. Schema 27 is frozen; see `docs/release-notes/0.28.0.md` and `docs/plan/0.28-handover.md`.
+- **0.28.0:** complete (released 2026-11-15) — the release candidate for 1.0.0: schema 27 stores a colour TIF scan as a reference with a rebuildable `<project>.derived/` cache (measured 79.19 MiB → 0.01 MiB project JSON, 59.39 MiB cache, 160 MiB warning budget), the OCG export writes the ISO nested-array form, the import preflight **Relink…** is reachable from the picker, the accessibility/touch-target/UI-scale/performance gates run in CI, Light Green contrast is fixed, the macOS artifact is verified automatically in CI, and `glib 0.18.5` is accepted until 2027-02-15 pending the Tauri 3/GTK4 migration. Schema 27 was the 0.28 release candidate, not a permanent freeze: 1.0 is deferred and schema 28 is the current development schema. See `docs/release-notes/0.28.0.md` and `docs/plan/0.28-handover.md`.
+- **Drift Slice 1, phase 1:** schema 28 foundation — custom field definitions and field sets, spaces, schedules, schedule placements, `summaryRole` on categories and count types, and summary settings. Migration 27 → 28, normalizers, integrity rules, doctor and load-report codes, the schema 1–28 corpus and `fixtures/legacy/schema-28.gridscalr`. No UI, CSV, table rendering or app-version bump; see `docs/plan/slice-1-handover.md`.
 
 Update the status in `docs/roadmap.md` when a milestone is completed. The current
 focus is the foundation workstreams in `docs/roadmap.md`, not a 1.0 date.

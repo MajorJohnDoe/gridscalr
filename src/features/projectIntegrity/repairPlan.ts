@@ -34,6 +34,11 @@ export type RepairScope =
   | "lineType"
   | "countPreset"
   | "markupsView"
+  | "field"
+  | "fieldSet"
+  | "space"
+  | "schedule"
+  | "scheduleColumn"
   | "settings"
   | "ocr";
 
@@ -142,6 +147,11 @@ const REPAIR_BY_CODE: Record<string, RepairKind> = {
   duplicateLineTypeId: "duplicateIds",
   duplicateCountPresetId: "duplicateIds",
   duplicateMarkupsViewId: "duplicateIds",
+  duplicateFieldDefinitionId: "duplicateIds",
+  duplicateFieldSetId: "duplicateIds",
+  duplicateSpaceId: "duplicateIds",
+  duplicateScheduleId: "duplicateIds",
+  duplicateScheduleColumn: "duplicateIds",
   missingPageDocument: "danglingReferences",
   pageLocalPageOutOfRange: "danglingReferences",
   missingLayerHomePage: "danglingReferences",
@@ -166,6 +176,27 @@ const REPAIR_BY_CODE: Record<string, RepairKind> = {
   invalidExcludedPage: "danglingReferences",
   missingCopiedFromDocument: "danglingReferences",
   invalidCopiedFromPage: "danglingReferences",
+  missingSpaceParent: "danglingReferences",
+  spaceParentCycle: "danglingReferences",
+  missingSpacePage: "danglingReferences",
+  missingItemSpace: "danglingReferences",
+  missingSchedulePlacement: "danglingReferences",
+  missingCustomField: "danglingReferences",
+  invalidCustomValue: "danglingReferences",
+  missingFieldSetField: "danglingReferences",
+  missingFieldAppliesToCategory: "danglingReferences",
+  missingFieldAppliesToCountType: "danglingReferences",
+  missingScheduleFilterPage: "danglingReferences",
+  missingScheduleFilterCategory: "danglingReferences",
+  missingScheduleFilterCountType: "danglingReferences",
+  missingScheduleFilterSpace: "danglingReferences",
+  missingScheduleFilterField: "danglingReferences",
+  invalidScheduleFilterValue: "danglingReferences",
+  invalidScheduleRowRange: "danglingReferences",
+  unexpectedScheduleFields: "danglingReferences",
+  unexpectedSpaceArea: "danglingReferences",
+  invalidCategorySummaryRole: "danglingReferences",
+  invalidCountTypeSummaryRole: "danglingReferences",
   ocrDocumentMismatch: "staleOcr",
   ocrSourcePageMismatch: "staleOcr",
 };

@@ -28,6 +28,11 @@ const ENTITY_KEYS: Partial<Record<string, MessageKey>> = {
   lineType: "projectIntegrity.entity.lineType",
   countPreset: "projectIntegrity.entity.countPreset",
   markupsView: "projectIntegrity.entity.markupsView",
+  field: "projectIntegrity.entity.field",
+  fieldSet: "projectIntegrity.entity.fieldSet",
+  space: "projectIntegrity.entity.space",
+  schedule: "projectIntegrity.entity.schedule",
+  scheduleColumn: "projectIntegrity.entity.scheduleColumn",
   settings: "projectIntegrity.entity.settings",
 };
 

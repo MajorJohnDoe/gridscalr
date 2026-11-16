@@ -83,6 +83,9 @@ export function drawItem(
       });
       break;
     }
+    case "schedule":
+      // Schema 28 stores placements; the PDF table renderer is a later phase.
+      break;
   }
 
   const label = labels.get(item.id);

@@ -7,6 +7,7 @@ import { DEFAULT_STAMP_PRESETS, defaultStampPresets } from "./stamps";
 import { createDefaultCategories, createDefaultQuantitySettings } from "./categories";
 import { defaultCountTypes } from "./countTypes";
 import { defaultLineTypes } from "./lineTypes";
+import { defaultSummarySettings } from "./summary";
 import { SCHEMA_VERSION } from "./types";
 import { buildPageRecords } from "./pages";
 import { includedLocalPages as includedLocalPagesFor } from "./documents";
@@ -97,6 +98,7 @@ export const DEFAULT_SETTINGS: ProjectSettings = {
   // Replaced by createProject and the project normalizer, which know the
   // project's category ids.
   quantity: { defaultCategoryId: "", wastePercent: 0, roundingStep: 0 },
+  summary: defaultSummarySettings(),
 };
 
 const MEASURE_KINDS: ReadonlySet<ItemKind> = new Set([
@@ -183,11 +185,16 @@ export function createProject(document?: DocumentRef | null, layers?: Layer[]): 
       compactAreaLabels: true,
       stampPresets: defaultStampPresets(),
       quantity: createDefaultQuantitySettings(categories),
+      summary: defaultSummarySettings(),
     },
     categories,
     countTypes: defaultCountTypes(),
     countPresets: [],
     lineTypes: defaultLineTypes(),
+    fieldDefinitions: [],
+    fieldSets: [],
+    spaces: [],
+    schedules: [],
     assets: {},
     pages,
     markupsViews: [],

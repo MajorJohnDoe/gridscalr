@@ -10,10 +10,12 @@ import type {
   QuantitySettings,
 } from "../../model/types";
 import { LENGTH_UNITS, AREA_UNITS } from "./shared";
+import { normalizeSummarySettings } from "./summary";
 
 export function normalizeSettings(
   value: Partial<ProjectSettings> | undefined,
   categories: Category[],
+  report?: (code: string) => void,
 ): ProjectSettings {
   const rawQuantity = (value?.quantity ?? {}) as Partial<QuantitySettings>;
   const ids = new Set(categories.map((category) => category.id));
@@ -50,5 +52,6 @@ export function normalizeSettings(
           ? Math.max(0, rawQuantity.roundingStep)
           : fallbackQuantity.roundingStep,
     },
+    summary: normalizeSummarySettings(value?.summary, report),
   };
 }

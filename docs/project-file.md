@@ -21,16 +21,17 @@ Schema 25 implements the source storage modes described in
 from schema 24 ([ADR 0011](adr/0011-page-list-and-source-replacement.md)). Schema
 26 adds the optional layer hierarchy described in
 [ADR 0014](adr/0014-layer-hierarchy.md). Schema 27 makes a TIF document's derived
-PDF optional and adds the derived-PDF cache marker. This document describes
-schema 27.
+PDF optional and adds the derived-PDF cache marker. Schema 28 starts the drift
+data foundation: custom fields, field sets, spaces, schedules, schedule
+placements and summary settings. This document describes schema 28.
 
-**Schema freeze.** Schema 27 is the last project-file schema change before 1.0.
-The migration ladder, the backward-compatibility promise and the committed
-`schema 1–27` corpus end at 27. A future format change is a schema 28 and a
-deliberate unfreeze: it needs its own migration from 27, a committed fixture, the
-round-trip and determinism tests, and a recorded decision, rather than a routine
-bump alongside a feature. Bumping `schemaVersion` because the app version changed
-remains forbidden.
+**Schema status.** 1.0 is deferred and remains a quality gate, not a date.
+Schema 27 is no longer frozen for 1.0; schema 28 is the current development
+schema. The migration ladder, the backward-compatibility promise and the
+committed `schema 1–28` corpus end at 28. A future format change needs its own
+migration, a committed fixture, round-trip and determinism tests, and a recorded
+decision. Bumping `schemaVersion` because the app version changed remains
+forbidden.
 
 Drawing PDFs, optional-content layer groups and review annotations are export
 artifacts. They are generated on demand, are not stored in the project and are
@@ -39,7 +40,7 @@ schema.
 
 Schema version 2 added optional per-item `visible` and `locked` flags. Schema version 3 added project categories, category/room fields on measurements, area add/subtract, count items, and quantity settings. Schema version 4 added quick-area shapes, manual 1:N scales, per-page scale locks, and the snap distance setting. Schema version 5 added embedded image assets and image items. Schema version 6 replaces the single `document` reference with a `documents` array and adds embedded PDFs for TIF documents.
 
-Version 1–5 projects load normally and are migrated to schema 27: the old `document` entry becomes the first element of `documents`, numeric page references are converted to stable page IDs, and every document becomes an explicit reference. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Schema 13 adds vector facility symbols with a stable `symbolId`, category-derived colour, rotation, and optional inspection status. Schema 14 adds the optional `symbolSize` on facility symbols; a missing value renders the 24 pt default. Schema 15 adds the optional measurement `labelSize` override and the project `labelSize` and `compactAreaLabels` settings; missing values use a 6 pt label and the full `Perimeter` wording. Schema 16 adds the optional area `labelFit` position, which keeps the label inside the area and fits its size to the available space. Schema 17 adds optional per-page OCR data (`ocr`) with words, bounding boxes, language and engine metadata, and the source document checksum/page used to invalidate stale OCR. Schema 18 adds the radius, diameter and three-point arc measurement kinds; they use the existing points and scale fields. Schema 19 adds angle, slope and volume measurement kinds; volumes store an optional `depth` in the project length unit and use the existing polygon points. Schema 20 adds ordered project count types (`countTypes`) with a stable id, label and one of the built-in glyphs, plus an optional `countQuantity` on count items. Schema 21 adds reusable Count tool presets (`countPresets`) and count-type columns, filters and grouping in saved Markups views. Schema 22 adds optional procurement metadata (`metadata`) for facility, client, project number, revision, author, report date, report title and notes, plus an optional report-logo reference (`reportLogoAssetId`) to an embedded project image asset. Missing metadata migrates to empty values and a missing or invalid logo reference is dropped. Schema 23 adds template sheet documents (`kind: "template"`) with a stable template id and version, a paper size (`A3` or `A2`) and a string map of title-block or table field values. `sheet.details` stores the optional multi-line system/equipment block; field values may contain explicit newlines. A template document has no source file, exactly one page and an empty checksum. Missing or invalid template metadata falls back to the built-in drawing frame; unknown field ids are preserved. Schema 23 also adds project line types (`lineTypes`) for schematic media classes, and the `polyline` and `rail` item kinds. Polylines store an optional `lineTypeId` and dashed style; rails store editable `rows`, row spacing and badge/legend toggles. Text boxes may carry an optional `runs` array of formatted ranges (`text`, `bold`, `italic`, `underline`, `size`, `color`); `text` remains the plain-text fallback, so older boxes open unchanged and the schema version does not change. Symbols may also carry an optional free-text `tag` and a `tagOffset`; neither is numbered automatically. Missing count types migrate to the five built-in definitions, missing quantities mean one piece, unknown item ids fall back to `other`, and built-in types cannot be deleted. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Schema 24 replaces numeric page identity with an ordered `pages` array of `PageRecord` objects. Each record has a stable `id`, a `documentId`, a 1-based source-local `localPage` and a `state` object that holds the calibration, scale lock, name, building, floor and OCR data that used to live in the numeric `pages` map. Items store `pageId` instead of `page`; layers store `homePageId` and key `pageState` by page ID. Page numbers are derived from array order and are never stored. A project may have zero pages and zero documents; empty is valid. `DocumentRef.superseded` marks a source whose remaining pages were not mapped during **Replace source…**. Migration from schema 23 builds the page list in document order from `documents` and `excludedPages`, assigns deterministic IDs, moves each numeric page state into the matching record, and reports invalid numeric references instead of silently remapping them. Old page state beyond the last included page is reported and not kept. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load. Unknown symbol ids are preserved and render as a safe fallback; invalid statuses are dropped. Schema 25 adds an explicit source storage mode. Each document may carry `storage: "reference" | "managed"`, plus optional `originalPath` and `originalSha256` provenance for a managed copy. A managed copy is stored in the sibling folder `<project>.drawings/<safe-name>-<hash8>.pdf` and referenced through `relativePath`; `path` is the current session's resolved absolute path. Migration from schema 24 sets `storage: "reference"` on every document and does not copy, move or rewrite any source file. The TIF embedded-PDF exception is unchanged. Schema 26 adds an optional `parentId` on a layer. A layer without `parentId` is a root; a layer that other layers point at acts as a group and may hold its own items. Sibling order is the order of the `layers` array, so there is no second order field, and paint order stays array order. Effective visibility is the layer's own visibility **and** every ancestor's visibility on that page; effective locking is the layer's own locking **or** any ancestor's locking. A hidden group hides its subtree; a locked group locks its subtree. A parent and its children must share `kind`. Deleting a layer deletes its subtree after confirmation, and a page deletion keeps a group while any descendant is still referenced. Migration from schema 25 adds nothing: every existing layer becomes a root, every layer, item, page and document ID is preserved, and no ID is generated. An unresolved `parentId` is reported as `missingLayerParent`, a loop as `layerParentCycle` and a cross-kind link as `layerParentKindMismatch`; the stored value is preserved for the project doctor rather than silently dropped or reparented. Schema 27 makes `DocumentRef.embeddedPdf` optional for a TIF document and adds an explicit `derivedPdf` cache marker. The marker records the source TIF SHA-256, the converter version that produced the derived PDF, the page count of the derived PDF and the cache file path relative to the project folder. A TIF document carries either the embedded bytes or the marker, never both; when a file contains both, the embedded bytes win and the marker is reported and removed. A cache is an artifact, never a source of truth: it may be reused only while the source hash, converter version and page count all still match the document, and any mismatch is a rebuild. Migration from schema 26 adds nothing: every TIF keeps its embedded PDF byte for byte, every document, page, layer and item ID is preserved, and the rendered result is unchanged. A marker found in pre-27 data is ignored and counted in the load report, and a TIF document with neither form keeps the existing hard error instead of opening a page with no content. A missing marker, an invalid marker and a stale key are reported by the project doctor as `tiffDocumentWithoutDerivedPdf`, `invalidDerivedPdfCache` and `derivedPdfCacheStale`. The cache itself lives in the sibling folder `<project stem>.derived/` and its file name is the key: `<sourceSha256 first 16>-v<converterVersion>-p<pageCount>.pdf`. GridScalr builds it when a scan is imported into a saved project and when an embedded document is saved with a reachable scan, reuses it on open only while the key matches, and rebuilds it silently from the scan on a mismatch or a missing file. A located scan must match the document's SHA-256. When neither the cache nor the scan can be found, one dialog offers **Locate the scan…** and the project is not opened on a blank page. A document whose cache cannot be written keeps its embedded PDF, so a save is never lossy. `DocumentSourceInfo.passthrough` records that every page kept its compressed source strips (CCITT G3/G4 or JPEG-in-TIFF): such a derived PDF is about the size of the scan, so it stays embedded and never acquires a cache entry.
+Version 1–5 projects load normally and are migrated to schema 28: the old `document` entry becomes the first element of `documents`, numeric page references are converted to stable page IDs, and every document becomes an explicit reference. Version 6 projects keep each document's pages in order. Schema 7 adds optional removed-page lists (`excludedPages`) so individual pages can be deleted without rewriting the source files. Schema 8 adds project stamp presets, cloud scallop/box sizing, and the cloud, callout, stamp, revision-delta, and area-highlight markup kinds. Schema 9 adds optional manual measurement-label offsets, label connection points, and dashed length measurements. Schema 10 adds the optional `smartLengthUnits` setting; missing values default to on. Schema 11 adds page names, page-scoped layer visibility and lock overrides, layer home pages, and copied-page document references. Schema 12 adds optional page building/floor labels and project-stored Markups views with column, filter, grouping and sort settings. Schema 13 adds vector facility symbols with a stable `symbolId`, category-derived colour, rotation, and optional inspection status. Schema 14 adds the optional `symbolSize` on facility symbols; a missing value renders the 24 pt default. Schema 15 adds the optional measurement `labelSize` override and the project `labelSize` and `compactAreaLabels` settings; missing values use a 6 pt label and the full `Perimeter` wording. Schema 16 adds the optional area `labelFit` position, which keeps the label inside the area and fits its size to the available space. Schema 17 adds optional per-page OCR data (`ocr`) with words, bounding boxes, language and engine metadata, and the source document checksum/page used to invalidate stale OCR. Schema 18 adds the radius, diameter and three-point arc measurement kinds; they use the existing points and scale fields. Schema 19 adds angle, slope and volume measurement kinds; volumes store an optional `depth` in the project length unit and use the existing polygon points. Schema 20 adds ordered project count types (`countTypes`) with a stable id, label and one of the built-in glyphs, plus an optional `countQuantity` on count items. Schema 21 adds reusable Count tool presets (`countPresets`) and count-type columns, filters and grouping in saved Markups views. Schema 22 adds optional procurement metadata (`metadata`) for facility, client, project number, revision, author, report date, report title and notes, plus an optional report-logo reference (`reportLogoAssetId`) to an embedded project image asset. Missing metadata migrates to empty values and a missing or invalid logo reference is dropped. Schema 23 adds template sheet documents (`kind: "template"`) with a stable template id and version, a paper size (`A3` or `A2`) and a string map of title-block or table field values. `sheet.details` stores the optional multi-line system/equipment block; field values may contain explicit newlines. A template document has no source file, exactly one page and an empty checksum. Missing or invalid template metadata falls back to the built-in drawing frame; unknown field ids are preserved. Schema 23 also adds project line types (`lineTypes`) for schematic media classes, and the `polyline` and `rail` item kinds. Polylines store an optional `lineTypeId` and dashed style; rails store editable `rows`, row spacing and badge/legend toggles. Text boxes may carry an optional `runs` array of formatted ranges (`text`, `bold`, `italic`, `underline`, `size`, `color`); `text` remains the plain-text fallback, so older boxes open unchanged and the schema version does not change. Symbols may also carry an optional free-text `tag` and a `tagOffset`; neither is numbered automatically. Missing count types migrate to the five built-in definitions, missing quantities mean one piece, unknown item ids fall back to `other`, and built-in types cannot be deleted. Text, callout, and cloud items also store optional `textBold`, `textUnderline`, and `textAlign` fields; missing values mean regular weight, no underline, and the kind's default alignment. Schema 24 replaces numeric page identity with an ordered `pages` array of `PageRecord` objects. Each record has a stable `id`, a `documentId`, a 1-based source-local `localPage` and a `state` object that holds the calibration, scale lock, name, building, floor and OCR data that used to live in the numeric `pages` map. Items store `pageId` instead of `page`; layers store `homePageId` and key `pageState` by page ID. Page numbers are derived from array order and are never stored. A project may have zero pages and zero documents; empty is valid. `DocumentRef.superseded` marks a source whose remaining pages were not mapped during **Replace source…**. Migration from schema 23 builds the page list in document order from `documents` and `excludedPages`, assigns deterministic IDs, moves each numeric page state into the matching record, and reports invalid numeric references instead of silently remapping them. Old page state beyond the last included page is reported and not kept. Measurements are assigned to the `Other` category when needed, areas default to `add` and `polygon`, and missing quantity and snap settings get safe defaults. Reference calibrations without `source` become `reference`; invalid manual scales and locks without a scale are dropped. Quick rectangle/ellipse data with extra points is trimmed to the two defining points, and unknown shapes fall back to polygon. A category may omit `wastePercent` and `roundingStep` to inherit the project defaults. Image items without a valid embedded asset or a valid two-corner geometry are dropped; old projects start with an empty `assets` map. Saved Markups views with missing categories or unknown columns are repaired on load. Unknown symbol ids are preserved and render as a safe fallback; invalid statuses are dropped. Schema 25 adds an explicit source storage mode. Each document may carry `storage: "reference" | "managed"`, plus optional `originalPath` and `originalSha256` provenance for a managed copy. A managed copy is stored in the sibling folder `<project>.drawings/<safe-name>-<hash8>.pdf` and referenced through `relativePath`; `path` is the current session's resolved absolute path. Migration from schema 24 sets `storage: "reference"` on every document and does not copy, move or rewrite any source file. The TIF embedded-PDF exception is unchanged. Schema 26 adds an optional `parentId` on a layer. A layer without `parentId` is a root; a layer that other layers point at acts as a group and may hold its own items. Sibling order is the order of the `layers` array, so there is no second order field, and paint order stays array order. Effective visibility is the layer's own visibility **and** every ancestor's visibility on that page; effective locking is the layer's own locking **or** any ancestor's locking. A hidden group hides its subtree; a locked group locks its subtree. A parent and its children must share `kind`. Deleting a layer deletes its subtree after confirmation, and a page deletion keeps a group while any descendant is still referenced. Migration from schema 25 adds nothing: every existing layer becomes a root, every layer, item, page and document ID is preserved, and no ID is generated. An unresolved `parentId` is reported as `missingLayerParent`, a loop as `layerParentCycle` and a cross-kind link as `layerParentKindMismatch`; the stored value is preserved for the project doctor rather than silently dropped or reparented. Schema 27 makes `DocumentRef.embeddedPdf` optional for a TIF document and adds an explicit `derivedPdf` cache marker. The marker records the source TIF SHA-256, the converter version that produced the derived PDF, the page count of the derived PDF and the cache file path relative to the project folder. A TIF document carries either the embedded bytes or the marker, never both; when a file contains both, the embedded bytes win and the marker is reported and removed. A cache is an artifact, never a source of truth: it may be reused only while the source hash, converter version and page count all still match the document, and any mismatch is a rebuild. Migration from schema 26 adds nothing: every TIF keeps its embedded PDF byte for byte, every document, page, layer and item ID is preserved, and the rendered result is unchanged. A marker found in pre-27 data is ignored and counted in the load report, and a TIF document with neither form keeps the existing hard error instead of opening a page with no content. A missing marker, an invalid marker and a stale key are reported by the project doctor as `tiffDocumentWithoutDerivedPdf`, `invalidDerivedPdfCache` and `derivedPdfCacheStale`. The cache itself lives in the sibling folder `<project stem>.derived/` and its file name is the key: `<sourceSha256 first 16>-v<converterVersion>-p<pageCount>.pdf`. GridScalr builds it when a scan is imported into a saved project and when an embedded document is saved with a reachable scan, reuses it on open only while the key matches, and rebuilds it silently from the scan on a mismatch or a missing file. A located scan must match the document's SHA-256. When neither the cache nor the scan can be found, one dialog offers **Locate the scan…** and the project is not opened on a blank page. A document whose cache cannot be written keeps its embedded PDF, so a save is never lossy. `DocumentSourceInfo.passthrough` records that every page kept its compressed source strips (CCITT G3/G4 or JPEG-in-TIFF): such a derived PDF is about the size of the scan, so it stays embedded and never acquires a cache entry. Schema 28 adds the data foundation: ordered `fieldDefinitions` with a stable id, immutable per-scope `key`, type, scope, options, validation and display order; `fieldSets` as named subsets of those fields; `spaces` as a building/floor/room/zone register with an optional `parentId`, room number, name, floor, usage, status, `areaMode` and an optional manual `areaM2`; `schedules` as live table definitions over measurements or spaces with columns, filters, grouping, sorting and totals; and `settings.summary` with the four summary cards. A measurement may carry an optional `spaceId` (area measurements only) and a `custom` object keyed by field id. A drawing item of kind `schedule` stores `scheduleId`, an optional `rowStart`, `rowLimit`, `showHeader` and `showTotals`; its rows are computed from the schedule when it is drawn. Migration from schema 27 adds the empty arrays and the default summary cards and does nothing else: existing `room` strings stay untouched, no space is created from them, no category or count type receives a `summaryRole`, and no item receives `spaceId` or `custom`. Fields that only schema 28 defines are ignored in a pre-28 file because the version they name did not exist yet.
 
 A TIF document with a derived-PDF cache marker instead of embedded bytes:
 
@@ -66,7 +67,7 @@ A TIF document with a derived-PDF cache marker instead of embedded bytes:
 
 ```json
 {
-  "schemaVersion": 27,
+  "schemaVersion": 28,
   "name": "Level 01",
   "documents": [
     {
@@ -107,6 +108,14 @@ A TIF document with a derived-PDF cache marker instead of embedded bytes:
       "defaultCategoryId": "cat_...",
       "wastePercent": 0,
       "roundingStep": 0
+    },
+    "summary": {
+      "cards": [
+        { "id": "rooms", "visible": true },
+        { "id": "area", "visible": true },
+        { "id": "wallLength", "visible": true },
+        { "id": "doors", "visible": true }
+      ]
     }
   },
   "categories": [
@@ -125,6 +134,64 @@ A TIF document with a derived-PDF cache marker instead of embedded bytes:
       "categoryId": "cat_...",
       "room": "Floor 1",
       "quantity": 2
+    }
+  ],
+  "fieldDefinitions": [
+    {
+      "id": "field_fire",
+      "key": "fire_class",
+      "label": "Fire class",
+      "type": "enum",
+      "scope": "measurement",
+      "options": [
+        { "id": "EI30", "label": "EI 30" },
+        { "id": "EI60", "label": "EI 60" }
+      ],
+      "order": 0
+    },
+    {
+      "id": "field_condition",
+      "key": "condition",
+      "label": "Condition",
+      "type": "number",
+      "scope": "space",
+      "order": 0,
+      "validation": { "min": 1, "max": 5 }
+    }
+  ],
+  "fieldSets": [
+    { "id": "fset_fire", "name": "Fire", "scope": "measurement", "fieldIds": ["field_fire"] }
+  ],
+  "spaces": [
+    {
+      "id": "space_room",
+      "kind": "room",
+      "name": "Office 101",
+      "number": "101",
+      "floor": "1",
+      "areaMode": "measured",
+      "pageId": "page_1",
+      "custom": { "field_condition": 3 },
+      "createdAt": "2026-11-16T09:00:00.000Z",
+      "updatedAt": "2026-11-16T09:00:00.000Z"
+    }
+  ],
+  "schedules": [
+    {
+      "id": "sched_rooms",
+      "name": "Rooms",
+      "source": "spaces",
+      "rowMode": "items",
+      "columns": [
+        { "id": "col_number", "field": "number", "visible": true },
+        { "id": "col_area", "field": "area", "format": "unit", "visible": true }
+      ],
+      "filters": {},
+      "groupBy": "floor",
+      "sort": [{ "field": "number", "direction": "asc" }],
+      "totals": [{ "field": "area", "op": "sum" }],
+      "createdAt": "2026-11-16T09:00:00.000Z",
+      "updatedAt": "2026-11-16T09:00:00.000Z"
     }
   ],
   "assets": {
@@ -236,7 +303,7 @@ Two companion stores sit outside the project JSON and are never part of a packag
 - `<project>.gridscalr.lock` is an advisory sidecar lease with app instance, project ID, open time, heartbeat, project hash, coarse host label and app version. It is not project data. Deleting it never changes the project; a stale or corrupt lock is ignored and can be cleared explicitly.
 - Recovery snapshots and structural checkpoints live in the local browser/desktop recovery store (IndexedDB, with a small localStorage fallback), scoped by project ID and app instance. They store a serialized project plus the base file SHA-256, but they are never written into the `.gridscalr` file, a package or a report.
 
-Neither store changes `schemaVersion`; the current schema remains 27.
+Neither store changes `schemaVersion`; the current schema remains 28.
 
 Before a save or export, both the frontend guard and the Rust layer compare the destination with every source document path. The protected set contains each document's stored `path`, its resolved `relativePath`, the non-empty `originalPath` of a managed copy and the managed-copy folder itself. The Rust side resolves real paths, including symlinks and junctions, anchors relative spellings to the current directory, strips the Windows `\\?\` verbatim prefix, compares case-insensitively and compares file identities when the destination exists. A destination inside the managed-copy folder is refused even under a new file name. A drive-relative spelling such as `C:Plan.pdf` is rejected as ambiguous rather than assumed safe. Reading a project is capped at 256 MB, so an oversized file fails with a structured error and the open project stays untouched.
 
@@ -259,12 +326,34 @@ reference: documents, pages, layers, items, assets, categories, count types,
 line types, page state, page ranges, count presets, Markups views, the active
 layer, the report logo, `excludedPages`, `copiedFrom`, OCR source revision,
 derived-PDF cache markers, asset MIME/data agreement, and image and text-box
-geometry. Errors block the
-save; warnings are shown for acceptance. After serialisation, GridScalr parses
-the text back and compares entity counts before writing. The same conditional,
-verified write is used after the round trip. Autosave recovery is not blocked by
-validation, but an invalid project is not written over a project file by a
-normal save. This applies to the browser download fallback too.
+geometry. From schema 28 it also checks custom-field ids and per-scope keys,
+enum options and default values, field-set membership, space parents and cycles,
+space page links and manual/measured area consistency, duplicate sibling room
+numbers (a warning), measurement `spaceId` links, schedule ids, columns, filters,
+grouping, sorting and totals, schedule placements, custom values and the four
+summary cards. Errors block the save; warnings are shown for acceptance. After
+serialisation, GridScalr parses the text back and compares entity counts before
+writing; the shape includes field definitions, field sets, spaces, schedules and
+custom values. The same conditional, verified write is used after the round trip.
+Autosave recovery is not blocked by validation, but an invalid project is not
+written over a project file by a normal save. This applies to the browser
+download fallback too.
+
+The schema 28 load report adds `droppedFieldDefinition`, `repairedFieldId`,
+`droppedFieldSet`, `droppedFieldOption`, `droppedFieldSetField`,
+`repairedFieldSetField`, `droppedSpace`, `repairedSpaceId`, `repairedSpacePage`,
+`repairedSpaceArea`, `droppedSchedule`, `repairedScheduleId`,
+`droppedScheduleColumn`, `repairedScheduleColumn`, `droppedScheduleFilter`,
+`droppedScheduleSort`, `droppedScheduleTotal`, `droppedSchedulePlacement`,
+`repairedScheduleRowRange`, `droppedCustomValue`, `repairedCustomValue`,
+`droppedSummaryCard`, `repairedSummaryCard`, `droppedCategorySummaryRole`,
+`droppedCountTypeSummaryRole` and `droppedItemSpace`. Dangling space parents,
+item spaces and schedule placements are kept and reported by the doctor rather
+than silently dropped.
+Unknown or mistyped custom values are dropped with a code because no other
+rendering is safe. The doctor renames duplicate ids and clears only deterministic
+dangling links, unknown custom keys and invalid filter references; it never
+invents an area, a space, a summary role or a schedule row.
 
 From schema 25, a page record may carry optional provenance. It is additive and
 older files simply omit it; no schema bump is required.

@@ -39,9 +39,9 @@ describe("schema 25 → 26 layer hierarchy migration", () => {
   it("keeps every schema 25 layer as a root with unchanged identity", () => {
     const raw = rawFixture(SCHEMA_25);
     const { project, report } = parseProjectWithReport(SCHEMA_25);
-    expect(SCHEMA_VERSION).toBe(27);
+    expect(SCHEMA_VERSION).toBe(28);
     expect(report.migratedFrom).toBe(25);
-    expect(project.schemaVersion).toBe(27);
+    expect(project.schemaVersion).toBe(28);
     expect(project.layers.map((layer) => layer.id)).toEqual(
       rawLayers(raw).map((layer) => layer.id),
     );
@@ -56,7 +56,7 @@ describe("schema 25 → 26 layer hierarchy migration", () => {
     const raw = rawFixture(SCHEMA_26);
     const { project, report } = parseProjectWithReport(SCHEMA_26);
     expect(report.migratedFrom).toBe(26);
-    expect(project.schemaVersion).toBe(27);
+    expect(project.schemaVersion).toBe(28);
     expect(layerById(project, "layer_group")?.parentId).toBeUndefined();
     expect(layerById(project, "layer_measure")?.parentId).toBe("layer_group");
     expect(layerById(project, "layer_group")?.pageState).toEqual({

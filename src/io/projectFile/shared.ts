@@ -36,11 +36,25 @@ export const ITEM_KINDS: ReadonlySet<ItemKind> = new Set([
   "textbox",
   "polyline",
   "rail",
+  "schedule",
 ]);
 
 export const LENGTH_UNITS = new Set<LengthUnit>(["mm", "cm", "m", "in", "ft", "yd"]);
 
 export const AREA_UNITS = new Set<AreaUnit>(["mm2", "cm2", "m2", "in2", "ft2", "yd2"]);
+
+/** Deterministic unique id with a numeric suffix, never a random component. */
+export function uniqueId(base: string, used: Set<string>): string {
+  if (!used.has(base)) {
+    used.add(base);
+    return base;
+  }
+  let suffix = 2;
+  while (used.has(`${base}_${suffix}`)) suffix += 1;
+  const id = `${base}_${suffix}`;
+  used.add(id);
+  return id;
+}
 
 export function isPoint(value: unknown): value is Point {
   return (

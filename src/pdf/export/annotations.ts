@@ -77,6 +77,7 @@ function annotationShape(viewport: PageViewport, item: MarkupItem): AnnotationSh
     case "image":
     case "count":
     case "symbol":
+    case "schedule":
       return { kind: "square", vertices: [] };
     case "ellipse":
       return { kind: "circle", vertices: [] };

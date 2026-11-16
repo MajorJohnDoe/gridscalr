@@ -375,7 +375,7 @@ deletion and page-removal rules.
 writes review-only annotation dictionaries, and `src/features/saveIntegrity/compare.ts`
 builds the read-only conflict comparison. None of them writes project data or a
 source drawing. The `tests/robustness/` gate exercises seeded page and save
-sequences, competing writers, the committed `fixtures/legacy/` schema 1–26
+sequences, competing writers, the committed `fixtures/legacy/` schema 1–28
 corpus and source storage; run it alone with `npm run test:robustness`.
 
 The desktop shell enforces one production Content Security Policy as an HTML
@@ -432,13 +432,13 @@ unverified until that changes.
 
 ## Project status
 
-GridScalr is pre-1.0 and uses schema 27 for project files. Schema changes are
+GridScalr is pre-1.0 and uses schema 28 for project files. Schema changes are
 migrated automatically when an older project is opened. Interfaces can still
 change between minor versions. The
 [roadmap](docs/roadmap.md) lists what is done and what is
 deliberately deferred.
 
-1.0 is a quality gate, not a schedule. It covers Windows, macOS and Linux
+1.0 is deferred and remains a quality gate, not a schedule. It covers Windows, macOS and Linux
 artifacts, English and Swedish UI, portable `.gridscalr.zip` project packages,
 tested large-project performance, and production-ready save, recovery and source
 handling. Architecture decisions are recorded in [docs/adr](docs/adr/README.md).
@@ -459,7 +459,7 @@ cargo check --manifest-path src-tauri/Cargo.toml
 ```
 
 `npm run test:robustness` is the focused gate for page identity, competing
-saves, the schema 1–27 migration corpus and source storage; the normal test
+saves, the schema 1–28 migration corpus and source storage; the normal test
 suite includes the same files. See [docs/testing.md](docs/testing.md).
 
 Never attach real customer drawings to an issue or a pull request.

@@ -308,8 +308,20 @@ const project = {
       wastePercent: 10,
       roundingStep: 0.5,
     },
+    summary: {
+      cards: [
+        { id: "rooms", visible: true },
+        { id: "area", visible: true },
+        { id: "wallLength", visible: true },
+        { id: "doors", visible: true },
+      ],
+    },
   },
   categories,
+  fieldDefinitions: [],
+  fieldSets: [],
+  spaces: [],
+  schedules: [],
   assets: {},
   metadata: {
     facility: "Northgate Logistics Hub",
