@@ -9,10 +9,10 @@ tag or release is part of this phase.
 ## Phase 1 — schema 28 foundation
 
 - **Issue:** [#273](https://github.com/MajorJohnDoe/gridscalr/issues/273)
-- **PR:** pending
+- **PR:** [#274](https://github.com/MajorJohnDoe/gridscalr/pull/274)
 - **Branch:** `feat/schema-28-foundation`
-- **Commit:** pending
-- **Status:** implementation complete; local gate green, PR and CI verification pending
+- **Commit:** `cf7b294` (implementation); handover commit follows
+- **Status:** PR open; local gate green, CI verification pending on the PR head
 
 ### Completed work
 
