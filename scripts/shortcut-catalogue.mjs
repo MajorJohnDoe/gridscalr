@@ -123,6 +123,7 @@ export const DOC_ROWS = [
   ["shortcuts", "View and navigation", "Toggle reference view", ["splitView"]],
   ["shortcuts", "View and navigation", "Search drawing text", ["searchText"]],
   ["shortcuts", "View and navigation", "Open Quantities", ["quantities"]],
+  ["shortcuts", "View and navigation", "Open Summary", ["summary"]],
 
   // Project and file.
   ["shortcuts", "Project and file", "New project", ["newProject"]],
@@ -151,6 +152,7 @@ export const DOC_ROWS = [
   ["readme", "README", "Save / save as", ["save", "saveAs"]],
   ["readme", "README", "Markups list", ["markups"]],
   ["readme", "README", "Quantities", ["quantities"]],
+  ["readme", "README", "Summary", ["summary"]],
 
   // README list-interaction table (the Pages, Layers and Markups model).
   ["readme", "README", "Focus and move through rows", []],

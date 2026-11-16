@@ -89,6 +89,9 @@ describe("accessibility gate rules", () => {
       "help",
       "fields",
       "fields-inspector",
+      "summary",
+      "schedule-builder",
+      "schedule-roles",
     ]);
   });
 
@@ -114,7 +117,7 @@ describe("accessibility gate rules", () => {
       surface: "shell",
       surfaceLabel: "Main shell",
     });
-    expect(checks.at(-1)?.key).toBe("navy:fields-inspector");
+    expect(checks.at(-1)?.key).toBe("navy:schedule-roles");
   });
 
   it("lets a test narrow the theme list without changing the surfaces", () => {

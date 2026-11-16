@@ -263,6 +263,88 @@ export async function seedSpaces(page) {
 }
 
 /**
+ * Seeds a measurement and a space schedule plus explicit summary roles, so the
+ * summary cards, the live table, the builder and the role dialog all have
+ * content to inspect in the browser gates.
+ */
+export async function seedSchedules(page) {
+  await page.evaluate(() => {
+    const store = window.__gridscalr?.store;
+    if (!store?.project) return;
+    store.mutate((project) => {
+      const now = new Date().toISOString();
+      const wall = project.categories.find((category) => category.name === "Wall");
+      if (wall) wall.summaryRole = "wall";
+      const door = project.countTypes?.find((type) => type.id === "door");
+      if (door) door.summaryRole = "door";
+      if (project.schedules.length) return;
+      project.schedules.push(
+        {
+          id: "sched_harness_measure",
+          name: "Wall schedule",
+          source: "measurements",
+          rowMode: "items",
+          columns: [
+            { id: "col_1", field: "label", visible: true },
+            { id: "col_2", field: "category", visible: true },
+            { id: "col_3", field: "value", visible: true, format: "unit" },
+            { id: "col_4", field: "unit", visible: true },
+          ],
+          filters: {},
+          groupBy: "category",
+          totals: [{ field: "value", op: "sum" }],
+          createdAt: now,
+          updatedAt: now,
+        },
+        {
+          id: "sched_harness_spaces",
+          name: "Room schedule",
+          source: "spaces",
+          rowMode: "items",
+          columns: [
+            { id: "col_1", field: "number", visible: true },
+            { id: "col_2", field: "name", visible: true },
+            { id: "col_3", field: "area", visible: true, format: "unit" },
+          ],
+          filters: {},
+          totals: [{ field: "area", op: "sum" }],
+          createdAt: now,
+          updatedAt: now,
+        },
+      );
+    }, "change");
+  });
+  await settlePage(page);
+}
+
+/**
+ * Opens the Schedule builder from the Summary tab and returns the dialog.
+ */
+export async function openScheduleBuilder(page) {
+  const summary = page.locator(".schedules-panel");
+  if (!(await summary.isVisible())) {
+    await page.keyboard.press("Control+Alt+s");
+    await summary.waitFor({ state: "visible" });
+  }
+  await summary.getByRole("button", { name: "New schedule…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New schedule" });
+  await dialog.waitFor();
+  return dialog;
+}
+
+/**
+ * Opens the Summary tab through the documented shortcut and returns the panel.
+ */
+export async function openSummaryTab(page) {
+  const panel = page.locator(".schedules-panel");
+  if (!(await panel.isVisible())) {
+    await page.keyboard.press("Control+Alt+s");
+    await panel.waitFor({ state: "visible" });
+  }
+  return panel;
+}
+
+/**
  * Closes Project settings after the field editor, which reopens it on the
  * Fields category. Tolerates no dialog, so it is safe after a direct close.
  */

@@ -12,6 +12,7 @@ import "./styles/reference.css";
 import "./styles/dialogs.css";
 import "./styles/fields.css";
 import "./styles/spaces.css";
+import "./styles/schedules.css";
 import "./styles/settings.css";
 import "./styles/doctor.css";
 import "./styles/projectImport.css";

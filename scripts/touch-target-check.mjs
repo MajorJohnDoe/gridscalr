@@ -11,8 +11,11 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openScheduleBuilder,
   openSpacesRegister,
+  openSummaryTab,
   seedCustomField,
+  seedSchedules,
   seedSpaces,
   settlePage,
   startVite,
@@ -93,6 +96,7 @@ try {
   await openDemoProject(page, { base: vite.base });
   await seedCustomField(page);
   await seedSpaces(page);
+  await seedSchedules(page);
 
   const coarse = await page.evaluate(() => ({
     pointer: matchMedia("(pointer: coarse)").matches,
@@ -146,6 +150,21 @@ try {
 
   await openMarkupsItem(page, "item_floor_living");
   await collect("fields-inspector", ".selection-section");
+
+  const summary = await openSummaryTab(page);
+  await collect("summary", ".schedules-panel");
+  const builder = await openScheduleBuilder(page);
+  await collect("schedule-builder", ".modal");
+  await page.keyboard.press("Escape");
+  await builder.waitFor({ state: "detached" });
+  await summary.getByRole("button", { name: "Summary roles…" }).click();
+  const roles = page.getByRole("dialog", { name: "Summary roles" });
+  await roles.waitFor();
+  await collect("schedule-roles", ".modal");
+  await page.keyboard.press("Escape");
+  await roles.waitFor({ state: "detached" });
+  await page.keyboard.press("Control+Alt+s");
+  await page.locator(".schedules-panel").waitFor({ state: "detached" });
 
   await page.getByRole("menuitem", { name: "Settings" }).click();
   await page.getByRole("menuitem", { name: "Preferences…" }).click();

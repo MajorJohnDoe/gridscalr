@@ -12,6 +12,7 @@ import { layerSubtreeSize } from "../features/layerTree";
 import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
 import { pageProvenanceSection } from "../features/importProvenance";
+import { isSummaryOpen, renderSummaryPanel, setSummaryOpen } from "../features/schedules";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
@@ -26,13 +27,37 @@ import { t } from "../i18n";
 import { disableEditingControls, viewOnlyPanelNote } from "../features/viewOnly";
 
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
+  const previousScroll =
+    refs.inspector.querySelector<HTMLElement>(".schedules-table-wrap")?.scrollTop ?? 0;
   clear(refs.inspector);
   const header = el("div", "inspector-header");
   const tabs = el("div", "inspector-tabs");
-  const propertiesTab = el("button", "inspector-tab is-active", t("shell.properties"));
+  const summaryMode = isSummaryOpen() && Boolean(store.project);
+  const propertiesTab = el(
+    "button",
+    `inspector-tab${summaryMode ? "" : " is-active"}`,
+    t("shell.properties"),
+  );
   propertiesTab.type = "button";
-  propertiesTab.setAttribute("aria-pressed", "true");
+  propertiesTab.setAttribute("aria-pressed", String(!summaryMode));
   propertiesTab.title = t("inspector.layerSelectionProps");
+  propertiesTab.addEventListener("click", () => {
+    setSummaryOpen(false);
+    actions.refresh();
+  });
+  const summaryTab = el(
+    "button",
+    `inspector-tab${summaryMode ? " is-active" : ""}`,
+    t("schedules.title"),
+  );
+  summaryTab.type = "button";
+  summaryTab.setAttribute("aria-pressed", String(summaryMode));
+  summaryTab.title = t("schedules.tabTitle");
+  summaryTab.disabled = !store.project;
+  summaryTab.addEventListener("click", () => {
+    setSummaryOpen(true);
+    actions.refresh();
+  });
   const settingsTab = el("button", "inspector-tab", t("inspector.projectSettings"));
   settingsTab.type = "button";
   settingsTab.setAttribute("aria-pressed", "false");
@@ -41,7 +66,7 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
     : t("inspector.settingsTitle");
   settingsTab.disabled = !store.project || store.readOnly;
   settingsTab.addEventListener("click", () => openSettingsDialog());
-  tabs.append(propertiesTab, settingsTab);
+  tabs.append(propertiesTab, summaryTab, settingsTab);
   const headerActions = el("span", "inspector-header-actions");
   const collapse = el("button", "icon-btn inspector-settings");
   collapse.type = "button";
@@ -59,6 +84,23 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
     refs.inspector.append(note);
     return;
   }
+
+  if (isSummaryOpen()) {
+    refs.inspector.setAttribute("aria-label", t("schedules.title"));
+    refs.inspector.append(
+      renderSummaryPanel(
+        {
+          navigateToItem: actions.navigateToItem,
+          goToPage: (page) => actions.goToPage(page, true),
+          openSpaces: actions.openSpaces,
+          refresh: actions.refresh,
+        },
+        previousScroll,
+      ),
+    );
+    return;
+  }
+  refs.inspector.setAttribute("aria-label", t("shell.properties"));
 
   const layerSection = activeLayerSection(project, actions);
   layerSection.classList.add("active-layer-section");

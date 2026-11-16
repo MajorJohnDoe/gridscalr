@@ -14,8 +14,11 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openScheduleBuilder,
   openSpacesRegister,
+  openSummaryTab,
   seedCustomField,
+  seedSchedules,
   seedSpaces,
   settlePage,
   startVite,
@@ -94,6 +97,7 @@ try {
   await openDemoProject(page, { base: vite.base });
   await seedCustomField(page);
   await seedSpaces(page);
+  await seedSchedules(page);
 
   for (const theme of A11Y_THEMES) {
     // Preferences is also where the palette is chosen, so it is the first
@@ -173,6 +177,28 @@ try {
       (await page.locator(".selection-section").textContent())?.includes("Fire class"),
       "the selected measurement should show the seeded custom field",
     );
+
+    // The right-dock Summary tab, the schedule builder it opens and the
+    // summary-role dialog behind a Configure action.
+    const summary = await openSummaryTab(page);
+    await analyze(page, checkFor(theme, "summary"), ".schedules-panel");
+    await summary.getByRole("button", { name: "Summary roles…" }).click();
+    const roles = page.getByRole("dialog", { name: "Summary roles" });
+    await roles.waitFor();
+    const rolesCheck = checkFor(theme, "schedule-roles");
+    await expectFocusInside(page, ".modal", rolesCheck);
+    await analyze(page, rolesCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await roles.waitFor({ state: "detached" });
+
+    const builder = await openScheduleBuilder(page);
+    const builderCheck = checkFor(theme, "schedule-builder");
+    await expectFocusInside(page, ".modal", builderCheck);
+    await analyze(page, builderCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await builder.waitFor({ state: "detached" });
+    await page.keyboard.press("Control+Alt+s");
+    await page.locator(".schedules-panel").waitFor({ state: "detached" });
   }
 
   assert.deepEqual(pageErrors, [], "the accessibility run should not raise page errors");
