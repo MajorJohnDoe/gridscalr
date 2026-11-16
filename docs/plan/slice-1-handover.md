@@ -1009,23 +1009,32 @@ schema stays 28, and the `0.29.0` release notes are a draft. A release requires
 the product owner's explicit approval, including the version bump, the
 documentation pass confirmation and the landing-site update.
 
-Open product decisions recorded, not implemented: F-118 (page import does not
-merge the schema 28 registers, preflight warning still open), F-124 (no
-summary-card visibility editor) and F-125 (the right dock is narrow for wide
-schedules). F-119 … F-133 are in `docs/plan/foundation-findings.md` and the
-user-facing gaps are in `docs/limitations.md`.
+Open product decisions recorded, not implemented: F-125 (the right dock is narrow
+for wide schedules) and the later import-phase choice between merging and
+remapping the schema 28 registers. F-118's preflight warning and F-124's card
+editor shipped in the closeout below, and F-133's demo data now ships in the
+bundled project.
+
+### Release readiness
+
+With the closeout merged, no known P0–P2 issue and no open release-blocking P3
+remains in Slice 1. The version, tag, GitHub release and `site/release.json`
+update are deliberately still pending the product owner's explicit approval.
 
 ## Closeout — release blockers
 
-- **Issue:** [#296](https://github.com/MajorJohnDoe/gridscalr/issues/296)
-- **PR:** [#297](https://github.com/MajorJohnDoe/gridscalr/pull/297) (open, not merged)
-- **Branch:** `fix/slice-1-release-blockers`
-- **Implementation head SHA:** `2724b19` (`73c0107` summary cards,
-  `b453a3d` demo property example, `2724b19` import preflight); the handover
-  commit moves the PR head after this record.
-- **Status:** implemented and verified locally. No merge, no auto-merge, no app
-  version bump, no schema change, no tag/release and no `site/release.json`
-  change.
+- **Issue:** [#296](https://github.com/MajorJohnDoe/gridscalr/issues/296) (closed by the merge)
+- **PR:** [#297](https://github.com/MajorJohnDoe/gridscalr/pull/297) (squash merged)
+- **Branch:** `fix/slice-1-release-blockers` (deleted after merge)
+- **Verified head SHA:** `fa43a0e192aa898b1948e967d1c372c265cf3afd`
+  (`73c0107` summary cards, `b453a3d` demo property example, `2724b19` import
+  preflight, `fa43a0e` documentation)
+- **Merge commit:** `374f39a8a54814981e8e4b9b32cc6ea1750c0dbb`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43952411198](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43952411198)
+  and the **Pages** run [43952411170](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43952411170)
+  are green on the merge commit. No app version bump, no schema change, no tag,
+  no release and no `site/release.json` change.
 
 ### Completed work
 
@@ -1096,8 +1105,26 @@ advisories, 0 unaccepted), `GRIDSCALR_DOCS_STRICT=1 check:docs` (256 links,
 screenshots, committed folder untouched), `npm run docs:capture` (35 screenshots)
 and `npm run build`. CI is authoritative on the PR head.
 
-### Conductor verification: pending
+### Conductor verification
 
-The conductor has not yet re-checked the head SHA, the required checks, the file
-list against the issue scope or the focused import/settings tests. Merge only
-after that pass and after the handover commit head matches the PR head.
+- PR [#297](https://github.com/MajorJohnDoe/gridscalr/pull/297) head
+  `fa43a0e192aa898b1948e967d1c372c265cf3afd` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/summaryCardsSettings.test.ts
+  tests/demoProject.test.ts tests/projectImport.test.ts
+  tests/projectImportUi.test.ts`: 4 files, 30 tests passed. `check:modules` and
+  `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` are green (256 links, 50 images,
+  35 screenshots).
+- F-118 stayed at the agreed scope: `unresolvedImportReferences()` only counts
+  and `clearUnresolved` defaults to `false`; `commitProjectImport` clears or
+  removes references only when the option is on. No register merge or id remap
+  exists in the diff.
+- F-124 writes through one `store.mutate` per checkbox, so each visibility
+  change is one undo step; all four cards are covered and localized.
+- F-133's regenerated `fixtures/demo-project.gridscalr` is byte-identical when
+  `npm run docs:demo` is re-run, and the fixture now carries four spaces, one
+  field, one field set and one schedule. The only changed visual baseline is
+  `tests/visual/hero.png`, which is the intended inspector/demo change.
+- Squash merged as `374f39a8a54814981e8e4b9b32cc6ea1750c0dbb`; `main` CI and the
+  Pages deployment are green on that commit.
