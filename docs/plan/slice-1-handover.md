@@ -210,8 +210,7 @@ stale-screenshot warning; recapture is deferred to Phase 7.
 
 ### Next phase
 
-Phase 3 — [spaces #278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
-(issue number to be confirmed by the conductor): `src/features/spaces/` model,
-register panel, area derivation and the measurement-to-space action. The
-measurement `custom` values and the field editor are the surface the space
-register will mirror for `space` scope.
+Phase 3 — spaces (the Phase 3 issue is opened by the conductor):
+`src/features/spaces/` model, register panel, area derivation and the
+measurement-to-space action. The measurement `custom` values and the field
+editor are the surface the space register will mirror for `space` scope.
