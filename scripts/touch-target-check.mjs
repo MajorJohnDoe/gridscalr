@@ -5,7 +5,16 @@ import {
   formatTouchTargetFailure,
   touchTargetFailures,
 } from "./accessibility-rules.mjs";
-import { launchBrowser, openDemoProject, settlePage, startVite } from "./ui-harness.mjs";
+import {
+  closeReopenedSettings,
+  launchBrowser,
+  openCustomFieldsDialog,
+  openDemoProject,
+  openMarkupsItem,
+  seedCustomField,
+  settlePage,
+  startVite,
+} from "./ui-harness.mjs";
 
 /**
  * Touch-target gate for coarse pointers.
@@ -80,6 +89,7 @@ try {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openDemoProject(page, { base: vite.base });
+  await seedCustomField(page);
 
   const coarse = await page.evaluate(() => ({
     pointer: matchMedia("(pointer: coarse)").matches,
@@ -119,6 +129,15 @@ try {
   await collect("project-settings", ".modal");
   await page.keyboard.press("Escape");
   await projectSettings.waitFor({ state: "detached" });
+
+  const fieldsDialog = await openCustomFieldsDialog(page);
+  await collect("fields", ".modal");
+  await page.keyboard.press("Escape");
+  await fieldsDialog.waitFor({ state: "detached" });
+  await closeReopenedSettings(page);
+
+  await openMarkupsItem(page, "item_floor_living");
+  await collect("fields-inspector", ".selection-section");
 
   await page.getByRole("menuitem", { name: "Settings" }).click();
   await page.getByRole("menuitem", { name: "Preferences…" }).click();

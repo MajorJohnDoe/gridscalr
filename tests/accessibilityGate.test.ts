@@ -86,6 +86,8 @@ describe("accessibility gate rules", () => {
       "quantities",
       "drawing-export",
       "help",
+      "fields",
+      "fields-inspector",
     ]);
   });
 
@@ -111,7 +113,7 @@ describe("accessibility gate rules", () => {
       surface: "shell",
       surfaceLabel: "Main shell",
     });
-    expect(checks.at(-1)?.key).toBe("navy:help");
+    expect(checks.at(-1)?.key).toBe("navy:fields-inspector");
   });
 
   it("lets a test narrow the theme list without changing the surfaces", () => {

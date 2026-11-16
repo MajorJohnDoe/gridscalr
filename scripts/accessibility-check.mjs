@@ -8,16 +8,25 @@ import {
   classifyViolations,
   formatViolation,
 } from "./accessibility-rules.mjs";
-import { launchBrowser, openDemoProject, settlePage, startVite } from "./ui-harness.mjs";
+import {
+  closeReopenedSettings,
+  launchBrowser,
+  openCustomFieldsDialog,
+  openDemoProject,
+  openMarkupsItem,
+  seedCustomField,
+  settlePage,
+  startVite,
+} from "./ui-harness.mjs";
 
 /**
  * Automated accessibility gate for the application shell and its dialogs.
  *
- * Every shipped palette runs the shell and the five dialogs, so a contrast
- * regression in one palette fails the run instead of hiding behind the default
- * (F-116). Serious and critical axe violations fail; moderate, minor and
- * best-practice findings are printed with their targets so they stay visible.
- * There is no allowlist.
+ * Every shipped palette runs the shell, the six dialogs and the custom-fields
+ * inspector section, so a contrast regression in one palette fails the run
+ * instead of hiding behind the default (F-116). Serious and critical axe
+ * violations fail; moderate, minor and best-practice findings are printed with
+ * their targets so they stay visible. There is no allowlist.
  *
  * The freehand canvas has no DOM model to inspect, so it is covered by the
  * manual checklist in `docs/testing.md`, not by this script.
@@ -81,6 +90,7 @@ try {
   const pageErrors = [];
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openDemoProject(page, { base: vite.base });
+  await seedCustomField(page);
 
   for (const theme of A11Y_THEMES) {
     // Preferences is also where the palette is chosen, so it is the first
@@ -133,6 +143,25 @@ try {
     await analyze(page, checkFor(theme, "help"), ".modal");
     await page.keyboard.press("Escape");
     await help.waitFor({ state: "detached" });
+
+    // Custom fields editor, reached through Project settings → Fields.
+    const fields = await openCustomFieldsDialog(page);
+    const fieldsCheck = checkFor(theme, "fields");
+    await expectFocusInside(page, ".modal", fieldsCheck);
+    await analyze(page, fieldsCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await fields.waitFor({ state: "detached" });
+    await closeReopenedSettings(page);
+
+    // The same field rendered in Properties for the selected measurement.
+    // Escape closes a modal and clears the canvas selection, so the item is
+    // selected here rather than before the loop.
+    await openMarkupsItem(page, "item_floor_living");
+    await analyze(page, checkFor(theme, "fields-inspector"), ".selection-section");
+    assert.ok(
+      (await page.locator(".selection-section").textContent())?.includes("Fire class"),
+      "the selected measurement should show the seeded custom field",
+    );
   }
 
   assert.deepEqual(pageErrors, [], "the accessibility run should not raise page errors");
