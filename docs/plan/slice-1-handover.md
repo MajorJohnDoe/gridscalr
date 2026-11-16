@@ -554,3 +554,143 @@ schedule item rendering, a shared `layoutScheduleTable`, hit-test, move, resize
 and rotate, row range and continuation, PDF table output, page
 delete/duplicate and the placement cascade on schedule deletion. No schema
 change is expected, because schema 28 already stores the placement fields.
+
+## Phase 5 — placement on the sheet
+
+- **Issue:** [#284](https://github.com/MajorJohnDoe/gridscalr/issues/284)
+- **PR:** [#286](https://github.com/MajorJohnDoe/gridscalr/pull/286)
+- **Branch:** `feat/schedule-placement`
+- **Implementation head:** `68ab759ddc118df21f0f66c77ba0212d1857f68e`
+- **Status:** open, awaiting conductor verification. No schema change
+  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release, no CSV or
+  XLSX work.
+
+### Completed work
+
+- `layoutScheduleTable()` is the single table layout for canvas and PDF. Text
+  measurement is injected, so the screen uses `canvas.measureText` and the
+  export uses the embedded font metrics. The output has header cells, row cells,
+  group and subtotal rows, the grand total row, grid lines, an overflow reason
+  (`range` or `box`) and the next continuation row.
+- Long cell text is ellipsized, the font shrinks only to 4.5 pt, and rows that
+  still do not fit are not drawn; they are reported as an overflow instead of
+  clipped silently. There is no automatic pagination.
+- `src/features/schedules/placement.ts` creates, updates, deletes and continues
+  a placement, normalizes the row range, counts and cascades placements and
+  picks a visible, unlocked draw layer. The active draw layer wins; a
+  measurement layer is never used, and a new draw layer gets the localized
+  **Schedules** / **Scheman** name.
+- `src/canvas/items/schedule.ts` draws the live table from the cached schedule
+  result, only for the visible row range. A missing schedule is a dashed
+  placeholder with a localized message.
+- Pointer integration reuses the existing gesture code: hit-test inside the box,
+  marquee selection, move, four corner handles, in-place rotation, double-click
+  to open the builder, and the context menu entries **Edit schedule…**,
+  **Change row range…**, **Continue on a new table** and the existing delete.
+- `src/ui/inspector/schedule.ts` shows the schedule name, row range, header and
+  total switches, the edit/range actions, a missing-schedule warning and the
+  overflow continuation.
+- **Place on drawing…** in the Summary header opens a dialog with page, width in
+  mm, all rows or first row/count, header and totals. It selects the new
+  placement and goes to its page. The button is disabled without a selected
+  schedule or in view-only.
+- `src/pdf/export/items/schedule.ts` draws the same table as vector text and
+  lines, honouring the exporter's page range, crop, layer selection, hidden
+  items, hidden layers and locked items.
+- Deleting a schedule with placements now names the placement count and removes
+  the schedule plus every placement in one undo step.
+- The a11y, touch-target and UI-scale gates cover the Place schedule dialog and
+  the placed-table inspector section. `tests/schedulesPerformance.test.ts` adds
+  the placed-table layout measurement.
+- i18n keys in both catalogs, generated types, README, user guide, limitations
+  and testing docs updated.
+
+### Modules
+
+- `src/features/schedules/layout.ts`, `layoutText.ts`, `layoutCells.ts`,
+  `placement.ts`, `index.ts`
+- `src/features/schedules/ui/placement.ts`, `ui.ts`, `ui/panel.ts`,
+  `ui/builder.ts`
+- `src/canvas/items/schedule.ts`, `items/dispatch.ts`
+- `src/canvas/pointer/PointerHost.ts`, `contexts.ts`, `doubleClick.ts`,
+  `transform.ts`
+- `src/canvas/selectionHandles.ts`, `src/model/hitTest.ts`
+- `src/pdf/export/items/schedule.ts`, `items/dispatch.ts`
+- `src/ui/inspector/schedule.ts`, `ui/selectionMenu.ts`,
+  `ui/selectionInspector.ts`, `ui/inspector.ts`
+- `src/styles/schedules.css`, i18n catalogs, `src/i18n/types.generated.ts`
+- `tests/schedulePlacement.test.ts`, `schedulePlacementPdf.test.ts`,
+  `schedulePlacementUi.test.ts`, `schedulesPerformance.test.ts`,
+  `accessibilityGate.test.ts`
+- `scripts/accessibility-{rules,check}.mjs`, `touch-target-check.mjs`,
+  `ui-scale-check.mjs`, `ui-harness.mjs`
+- `docs/user-guide.md`, `docs/limitations.md`, `docs/testing.md`, `README.md`,
+  `docs/plan/foundation-findings.md`
+
+### Decisions
+
+- A placed table stays an ordinary drawing item. It stores the schedule id, the
+  box and the row range; content is computed at render time and never copied.
+- Canvas and PDF consume one layout function. The measured text differs by font
+  (browser versus embedded Liberation), so a borderline ellipsis can break at a
+  different character; the structure and overflow are shared (F-129).
+- The row range counts data rows. A grouped schedule renders one row per group
+  with its subtotal; a group subtotal covers the whole group even when the range
+  shows part of it, and the grand total always covers the whole filtered set.
+- Overflow is explicit: the inspector warns, and **Continue on a new table**
+  creates a second placement below with the same width, columns and totals. No
+  paginator, no repeated header and no automatic reflow (F-128).
+- Placement layer selection prefers the active draw layer, then the first
+  visible unlocked draw layer, then creates a localized draw layer. A placement
+  can never be created on a measurement layer.
+- The confirmation for schedule deletion names the placement count; the
+  placements and the schedule are removed inside one `store.mutate` call, so one
+  undo restores both.
+- The PDF table is flattened vector text and lines in the deterministic default.
+  The optional OCG/annotation export keeps its existing rules.
+- Visual baselines are unchanged; the new surfaces are dialogs and an inspector
+  section, not one of the four captured screens.
+
+### Findings
+
+- F-128: a placed table has no automatic pagination or repeated header.
+- F-129: the inspector overflow warning uses a slightly different text metric
+  than the export.
+- F-118 extended: project page import still does not merge schedule definitions,
+  so an imported placement can reference a schedule that exists only in the
+  source project. The validator reports it and the doctor can remove it; the
+  preflight warning stays open. The risk is now real because a table can be
+  placed.
+
+### Checks
+
+Local gate green on the implementation head: `check:versions`,
+`check:file-budgets` (591 files), `check:modules` (20 foundation features),
+`check:security`, `check:actions`, `check:dependencies`, `check:docs` (only the
+expected stale-screenshot warning), `format:check`, `lint`, `check:i18n`
+(3426 keys), `check:themes`, `npx tsc --noEmit`, `npm test -- --run`
+(168 files, 1676 tests), `test:ui`, `test:canvas`, `test:visual` (4 baselines
+unchanged), `test:a11y` (5 palettes × 14 surfaces, 70 checks, no
+serious/critical), `test:touch-targets` (521 controls, 14 surfaces),
+`test:ui-scale` (100/150/200 %) and `test:docs-capture` (27 screenshots,
+`docs/screenshots/` untouched). `check:performance` passed.
+
+Measured on the development container: a placed table lays out its visible
+window in about 1.6 ms against a 10 000-row source and draws 25 rows; the
+existing 15 000-item summary and 10 000-row schedule budgets are unchanged
+(about 19.9 ms and 195.2 ms cold). The placed-table test asserts a looser CI
+ceiling and the documented targets under `GRIDSCALR_PERF_STRICT=1`.
+
+### Conductor verification: pending
+
+The conductor still needs to confirm the PR head SHA, every check on that exact
+SHA, the base branch and merge state, the file list against the phase module
+map, the acceptance criteria, and the focused local tests for the placement and
+page invariants. Nothing below should be treated as verified until that pass.
+
+### Next phase
+
+Phase 6 — CSV round-trip: `src/features/schedules/csv.ts` and `csvUi.ts`,
+stable `Label [key]` headers with an `ID` column, locale delimiter and BOM,
+formula-injection escaping, a dry-run conflict report, one undo step and the
+large-file budget. No schema change is expected.
