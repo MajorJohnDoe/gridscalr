@@ -392,15 +392,18 @@ schema change is expected.
 
 ## Phase 4 — schedule engine and summary
 
-- **Issue:** [#281](https://github.com/MajorJohnDoe/gridscalr/issues/281)
-- **PR:** [#283](https://github.com/MajorJohnDoe/gridscalr/pull/283) — open, awaiting conductor verification
-- **Branch:** `feat/schedules`
-- **Implementation head:** `34b3f7711b572af2d2b6bdd228f9a84d97b7c377`
+- **Issue:** [#281](https://github.com/MajorJohnDoe/gridscalr/issues/281) (closed by the merge)
+- **PR:** [#283](https://github.com/MajorJohnDoe/gridscalr/pull/283) (squash merged)
+- **Branch:** `feat/schedules` (deleted after merge)
+- **Verified head SHA:** `0e57c04781fcdcd0d0535c0e5b8a92e3c83f72f3`
   (`6a0e820` feature, `4ddfd80` documentation, `42be802` filter cleanup,
-  `34b3f77` findings; the handover commit follows and is the PR head)
-- **Status:** open, awaiting conductor verification. No schema change
-  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release, no
-  placement, CSV, XLSX or PDF table output.
+  `34b3f77` findings, `0e57c04` handover)
+- **Merge commit:** `0d24df5adb202bf0574bdd2ced6b6689efa19f2e`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43897681426](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43897681426)
+  is green on the merge commit. No schema change (`SCHEMA_VERSION` stays 28), no
+  app-version bump, no tag or release, no placement, CSV, XLSX or PDF table
+  output.
 
 ### Completed work
 
@@ -517,22 +520,37 @@ grouping, sorting and a total about 192 ms (target 250 ms), cached read about
 asserts a looser hard ceiling for CI and the documented targets under
 `GRIDSCALR_PERF_STRICT=1`. The numbers are also in `docs/limitations.md`.
 
-### Conductor verification: pending
+### Conductor verification
 
-- Verify the PR head SHA, all six checks on that exact SHA, the base `main` and
-  the merge state.
-- Re-run `npx vitest run tests/schedules.test.ts tests/schedulesUi.test.ts
-  tests/schedulesPerformance.test.ts tests/schema28.test.ts` and
-  `npm run check:modules`.
-- Confirm the scope: no `SCHEMA_VERSION` change, no version bump, no placement,
-  CSV/XLSX or PDF table output, no card-visibility editor.
-- Review the four visual baselines: the only intended change is the third
-  inspector tab.
-- Check that `docs/plan/foundation-findings.md` has F-123 … F-127 and the F-118
-  Phase 4 decision.
+- PR [#283](https://github.com/MajorJohnDoe/gridscalr/pull/283) head
+  `0e57c04781fcdcd0d0535c0e5b8a92e3c83f72f3` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/schedules.test.ts
+  tests/schedulesUi.test.ts tests/schedulesPerformance.test.ts
+  tests/spaces.test.ts tests/schema28.test.ts`: 5 files, 74 tests passed.
+  `check:modules` is green (20 foundation features) and `check:docs` passes.
+- Scope matched the issue: no canvas, PDF, report, CSV or XLSX file changed, so
+  no placement or table output shipped. `SCHEMA_VERSION` stays 28 and no app
+  version was bumped.
+- `Ctrl+Alt+S` is in `src/ui/shortcuts.json`, `docs/shortcuts.md`, both README
+  tables and `scripts/shortcut-catalogue.mjs`; `check:docs` passes.
+- Page, category and count-type deletion now clean the matching schedule filter
+  entries, so a deletion cannot silently empty a saved schedule.
+- The four visual baselines changed only where the third inspector tab appears;
+  the worker re-ran `test:visual` green on the head.
+- Measured on the synthetic 15 000-item project: summary cold 17.4 ms
+  (target 100 ms) and a 10 000-row grouped, sorted, totalled schedule 191.9 ms
+  (target 250 ms); the 1 000-row table renders at most 26 rows plus overscan.
+- F-123 … F-127 are recorded and the F-118 Phase 4 decision keeps the import
+  merge open, with the risk unchanged because no table can be placed yet.
+- Squash merged as `0d24df5adb202bf0574bdd2ced6b6689efa19f2e`; `main` CI is green
+  on that commit.
 
 ### Next phase
 
-Phase 5 — placement on the sheet: schedule item rendering, hit-test, move and
-resize, row range and continuation, PDF table output, page delete/duplicate and
-the placement cascade on schedule deletion.
+Phase 5 — [place schedules on the drawing #284](https://github.com/MajorJohnDoe/gridscalr/issues/284):
+schedule item rendering, a shared `layoutScheduleTable`, hit-test, move, resize
+and rotate, row range and continuation, PDF table output, page
+delete/duplicate and the placement cascade on schedule deletion. No schema
+change is expected, because schema 28 already stores the placement fields.
