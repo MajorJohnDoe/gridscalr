@@ -125,13 +125,18 @@ field-set application. No schema change is expected.
 
 ## Phase 2 — custom fields
 
-- **Issue:** [#275](https://github.com/MajorJohnDoe/gridscalr/issues/275)
-- **PR:** [#277](https://github.com/MajorJohnDoe/gridscalr/pull/277)
-- **Branch:** `feat/custom-fields`
-- **Implementation head:** `f2f2e7f` (`ae8b8bb` model and editor, `16b7208`
-  gates, `f2f2e7f` docs; this handover follows as a docs commit)
-- **Status:** open, awaiting conductor verification. No schema change, no app
-  version bump, no tag or release.
+- **Issue:** [#275](https://github.com/MajorJohnDoe/gridscalr/issues/275) (closed by the merge)
+- **PR:** [#277](https://github.com/MajorJohnDoe/gridscalr/pull/277) (squash merged)
+- **Branch:** `feat/custom-fields` (deleted after merge)
+- **Verified head SHA:** `093a1ada9345927feedee09a8915d32169b8b0f6`
+  (`ae8b8bb` model and editor, `16b7208` gates, `f2f2e7f` docs, `2e2c75d`
+  handover, `093a1ad` link fix)
+- **Merge commit:** `d745ffb036f1fc6ad183304d06f09f932abbf835`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43874381080](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43874381080)
+  is green on the merge commit (dependency advisory gate, frontend tests and
+  build, Rust format and check, and the desktop shell job on Ubuntu, Windows and
+  macOS). No schema change, no app version bump, no tag or release.
 
 ### Completed work
 
@@ -208,9 +213,30 @@ Local gate green: `check:versions`, `check:file-budgets`, `check:modules`,
 untouched), plus `test:ui`. `check:docs` reports only the expected
 stale-screenshot warning; recapture is deferred to Phase 7.
 
+### Conductor verification
+
+- PR [#277](https://github.com/MajorJohnDoe/gridscalr/pull/277) head
+  `093a1ada9345927feedee09a8915d32169b8b0f6` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/fields.test.ts tests/fieldsUi.test.ts
+  tests/accessibilityGate.test.ts tests/schema28.test.ts`: 4 files, 66 tests
+  passed. `check:modules`, `check:file-budgets` and `npx tsc --noEmit` are green.
+- Scope matched the issue: no `schemaVersion` change (`SCHEMA_VERSION` stays 28),
+  no version bump, no Markups/CSV/PDF output, no space register. Wiring stayed in
+  `src/ui/settingsDialog.ts` and `src/ui/selectionInspector.ts`, plus a CSS
+  import in `src/main.ts` and a read-only `MEASUREMENT_ITEM_KINDS` export from
+  `src/model/layers.ts`.
+- Gates were extended, not relaxed: the a11y surface list gains the Custom fields
+  dialog and inspector section, `src/features/fields` joined the foundation
+  feature list and the 400-line directory budget, and touch-target/UI-scale
+  collect the new surfaces.
+- Squash merged as `d745ffb036f1fc6ad183304d06f09f932abbf835`; `main` CI is green
+  on that commit.
+
 ### Next phase
 
-Phase 3 — spaces (the Phase 3 issue is opened by the conductor):
+Phase 3 — [spaces #278](https://github.com/MajorJohnDoe/gridscalr/issues/278):
 `src/features/spaces/` model, register panel, area derivation and the
 measurement-to-space action. The measurement `custom` values and the field
 editor are the surface the space register will mirror for `space` scope.
