@@ -246,9 +246,11 @@ editor are the surface the space register will mirror for `space` scope.
 - **Issue:** [#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
 - **PR:** [#280](https://github.com/MajorJohnDoe/gridscalr/pull/280)
 - **Branch:** `feat/spaces`
-- **Implementation head SHA:** `f73d204f981182574109d756cfc74ffa589495db`
-  (`5fe286f` feature, `f73d204` docs; the handover commit follows on the same
-  branch)
+- **Implementation head SHA:** `d0f53a3db06fb0551de01c34b2524e6bc394619e`
+  (`5fe286f` feature, `f73d204` documentation, `5590c71` handover, `d0f53a3`
+  glossary); the handover update itself is the last commit on the branch. CI run
+  [43882088554](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43882088554)
+  is green on `d0f53a3` and the pull request reports `CLEAN`.
 - **Status:** open, awaiting conductor verification. The conductor records the
   final merge commit.
 
@@ -347,7 +349,9 @@ Local gate green: `check:versions`, `check:file-budgets`, `check:modules`,
 surfaces), `test:touch-targets` (427 controls, 9 surfaces), `test:ui-scale`,
 `test:docs-capture` (27 screenshots, `docs/screenshots/` untouched) and
 `test:ui`. `check:docs` reports only the expected stale-screenshot warning;
-recapture is deferred to Phase 7.
+recapture is deferred to Phase 7. All six PR checks passed on `d0f53a3`
+(dependency advisory gate, frontend tests and build, Rust format and check, and
+the desktop shell on Ubuntu, Windows and macOS).
 
 ### Conductor verification
 
