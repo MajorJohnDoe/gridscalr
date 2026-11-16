@@ -445,6 +445,10 @@ Custom fields record your own property data, such as fire class, component type 
 
 In **Properties**, the **Fields** section lists the fields that apply to the selected measurement. Each typed input validates when you leave it: an invalid number, date or option shows a message and is not stored, while the other fields keep saving normally. A stored value that no longer matches its field is reported with a clear action; GridScalr never reinterprets it as another type.
 
+![Custom fields editor with a text field, a choice field and a field set](screenshots/fields.png)
+
+![Properties Fields section for a selected floor area with a text value, a choice value and a field-set action](screenshots/fields-inspector.png)
+
 A field's type can change only while it has no stored values, and an enum option that is in use cannot be removed. Create a new field when existing data must keep its type.
 
 Field values are not shown in the Markups table or in the quantity CSV/XLSX reports. They appear as columns in schedules (**View → Summary**, then **New schedule…**) and in the schedule CSV round-trip. See [Known limitations](limitations.md).
@@ -462,6 +466,8 @@ With a drawing tool active, the marker appears as soon as the pointer is over a 
 ## Rooms and spaces
 
 Open **View → Spaces…** to keep a register of buildings, floors, rooms and zones next to the drawing. The register is a tree: a building contains floors, and a floor contains rooms or zones. Each row shows the type, the room number, the name and the area.
+
+![Space register with a building, a floor and two rooms, with measured and manual area badges](screenshots/spaces.png)
 
 - **New space** adds a space. Choose the **Type**, the **Parent**, and then the room number, name, floor, usage and status that apply. **Page** links the space to one drawing page; the link is optional.
 - **Edit** changes any of those values, including the parent. A space cannot become its own parent or sit under one of its own children.
@@ -501,6 +507,8 @@ Fields created with the **Space** scope in **Settings → Project settings… �
 
 **View → Summary** (`Ctrl+Alt+S`) opens the **Summary** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live: nothing is written until you save a schedule.
 
+![Summary tab with four KPI cards, a Room schedule, page and space filters and a live table](screenshots/summary.png)
+
 ### KPI cards
 
 The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
@@ -509,6 +517,8 @@ The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 - **Walls** sums the visible length measurements whose category has the summary role **Wall**. **Doors** sums the pieces per object for count items whose count type has the summary role **Door**.
 - Roles are explicit and are never inferred from a name. A missing role shows 0 with a **Configure** action instead of a wrong number.
 - **Summary roles…** sets the role on every category and count type. **Configure** on the Rooms or Area card opens the space register.
+
+![Summary roles dialog with a Wall role on the Wall category and a Door role on the Door count type](screenshots/schedule-roles.png)
 - Hidden items and layers are excluded from every card and table; locked items are included. Wall measurements without a page scale are named in the card note.
 
 Which cards are shown comes from the project's summary settings. Every new project starts with all four visible, and there is no settings editor for the card visibility yet.
@@ -536,6 +546,8 @@ Below the cards, the picker chooses **Summary by category**, a built-in table of
 
 **Save** writes the definition in one undo step. **Duplicate** creates a copy from the current draft, and **Delete** asks inline; a schedule that is placed on a drawing is not deleted until its placed table is removed.
 
+![Schedule builder with name, source, columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
+
 A column, group, sort or total that no longer resolves stays visible as **Unknown field** in the builder and the panel reports it instead of hiding the column. A filter that points at a deleted page, category, count type or space is reported the same way. A filter that does not apply to the space source is named as inapplicable and ignored.
 
 ### Place a schedule on the drawing
@@ -543,6 +555,8 @@ A column, group, sort or total that no longer resolves stays visible as **Unknow
 Select a stored schedule in the Summary picker and choose **Place on drawing…** in the panel header. The dialog asks for the **Page**, the table **Width** in millimetres, an optional **First row** and **Number of rows** (or **All rows**), and whether to show the header row and the totals. The table lands near the top-left of the page; a second placement is offset so two tables never stack exactly.
 
 A placed table is an ordinary drawing item:
+
+![A live schedule table placed on a floor plan and selected, with its row range and totals in Properties](screenshots/placed-table.png)
 
 - Drag it to move, drag a corner handle to resize the box, or use the rotation handle above it. The table keeps its rotation when it is resized.
 - Select it to edit **Show the header row**, **Show totals** and the row range in Properties, or choose **Edit schedule…** and **Change row range…** in the context menu. Double-clicking the table opens the schedule builder.
@@ -565,6 +579,8 @@ A total is computed from the filtered rows and never stored. **Count** counts ro
 
 Select a stored schedule in the Summary picker. **Export CSV…** writes a UTF-8 file with a BOM and the delimiter that matches the app language: English uses commas and points, Swedish uses semicolons and decimal commas. The first column is **ID** and the second **Typ** (**item** or **space**); every visible schedule column follows as `Label [key]`, where the key is the built-in field name or `custom:<field id>`. Numbers stay numeric. Text that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with an apostrophe so Excel treats it as text; GridScalr removes exactly that guard on import.
 
+![Import schedule CSV dialog with a changed row, before and after values and an apply action](screenshots/schedule-csv.png)
+
 - Only a schedule whose **Rows** is **One row per item** is a round-trip export. A **Grouped** schedule exports its groups and subtotals read-only and cannot be imported.
 - **Import CSV…** is enabled for a one-row-per-item schedule. Pick the file; GridScalr detects the delimiter and BOM and shows a dry run before anything is written.
 - The dry run names the changed rows with their before and after values, the unchanged rows, unknown fields, unknown IDs, duplicate IDs, wrong row types, invalid values, read-only columns and schedule rows that are not in the file. A row with any invalid value is rejected and never applied.
@@ -572,9 +588,9 @@ Select a stored schedule in the Summary picker. **Export CSV…** writes a UTF-8
 - The import updates a measurement's label, room and tag, a space's name, room number, floor, usage and status, and every custom field value. Reference and derived columns (page, layer, category, space, count type, symbol status, value, unit, area and timestamps) are listed as read-only in the dry run and are not imported.
 - A custom choice is imported by its exact option id or label. A multi-choice field is exported as labels separated by semicolons and imported the same way. A yes/no field accepts `true`/`false`, `yes`/`no`, `ja`/`nej`, `1`/`0`. A semicolon file accepts a decimal comma.
 - Limits: one file, UTF-8, at most 10 MB and 20 000 data rows. An over-limit file is refused with a message before anything is applied. A CSV cell is never evaluated as a spreadsheet formula.
-- There is no XLSX import or schedule XLSX export in this phase. See [Known limitations](limitations.md).
+- There is no XLSX import or schedule XLSX export in 0.29.0. See [Known limitations](limitations.md).
 
-Placing a schedule on a drawing and drawing-PDF table output ship with Phase 5. The schedule CSV round-trip ships with Phase 6; XLSX output and CSV import for other project data remain outside this slice.
+The placed table, the drawing-PDF table output and the CSV round-trip all ship in Drift Slice 1 on schema 28. XLSX output and CSV import for other project data remain outside this slice.
 
 ## Draw and annotate
 
@@ -1071,7 +1087,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are added after the existing pages by default and can be inserted at a chosen position. Deleting a page is a separate, explicit action: that page's items and page state are removed, later pages keep their stable IDs, and the operation cannot be undone.
 
-Schema version 28 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance, plus optional `provenance` on imported page records (source project and revision identity, source page ID, import time and app version). Schema 26 adds an optional `parentId` on a layer for grouped layers, with inherited visibility and locking. The Layers panel shows the hierarchy as a tree, the canvas, hit-testing, quantities and every export apply the inherited state, and the optional-content export writes the visible hierarchy as nested folders. The migration from schema 25 adds no field and generates no ID: every existing layer becomes a root, every layer, item, page and document ID is preserved, and a project without `parentId` loads and behaves exactly as before. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved. A layer `parentId` that is missing, loops or links two different kinds is reported by the project doctor, never silently dropped or reparented. Missing or malformed optional provenance is dropped with a load-report entry, never guessed. Schema 27 makes a TIF document's embedded PDF optional: the derived PDF may instead be named by a `derivedPdf` cache marker that records the source scan checksum, the converter version, the page count of the derived PDF and the cache file path in the sibling `<project>.derived/` folder. The cache is built on import and on save, reused on open only while that key still matches, and rebuilt from the scan when it is missing or stale. A schema 26 project keeps its embedded PDF byte for byte and renders exactly as before, and the migration adds no field. A marker that no longer matches its source, a malformed marker and a TIF document with no derived PDF at all are reported by the project doctor rather than guessed at. Schema 28 is the current development schema and starts the drift data foundation. It stores custom field definitions and field sets, a building/floor/room/zone register, live schedule definitions, schedule placements on a drawing and the visible summary cards. A measurement may link to a space and carry typed custom values, and a category or count type may carry an optional summary role. The schema 27 → 28 migration adds only empty arrays and the four default summary cards: it does not turn existing room text into spaces, assign summary roles or give items custom values. The field editor, Properties **Fields** section, space register, schedule builder, Summary tab and placed table ship in the Drift Slice 1 sequence; a placed table is drawn from its definition at render time and nothing is copied onto the item. The schedule CSV round-trip ships; XLSX and CSV import for other project data remain outside this slice. 1.0 is deferred; schema 28 is not the final pre-1.0 schema.
+Schema version 28 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance, plus optional `provenance` on imported page records (source project and revision identity, source page ID, import time and app version). Schema 26 adds an optional `parentId` on a layer for grouped layers, with inherited visibility and locking. The Layers panel shows the hierarchy as a tree, the canvas, hit-testing, quantities and every export apply the inherited state, and the optional-content export writes the visible hierarchy as nested folders. The migration from schema 25 adds no field and generates no ID: every existing layer becomes a root, every layer, item, page and document ID is preserved, and a project without `parentId` loads and behaves exactly as before. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved. A layer `parentId` that is missing, loops or links two different kinds is reported by the project doctor, never silently dropped or reparented. Missing or malformed optional provenance is dropped with a load-report entry, never guessed. Schema 27 makes a TIF document's embedded PDF optional: the derived PDF may instead be named by a `derivedPdf` cache marker that records the source scan checksum, the converter version, the page count of the derived PDF and the cache file path in the sibling `<project>.derived/` folder. The cache is built on import and on save, reused on open only while that key still matches, and rebuilt from the scan when it is missing or stale. A schema 26 project keeps its embedded PDF byte for byte and renders exactly as before, and the migration adds no field. A marker that no longer matches its source, a malformed marker and a TIF document with no derived PDF at all are reported by the project doctor rather than guessed at. Schema 28 is the current development schema and starts the drift data foundation. It stores custom field definitions and field sets, a building/floor/room/zone register, live schedule definitions, schedule placements on a drawing and the visible summary cards. A measurement may link to a space and carry typed custom values, and a category or count type may carry an optional summary role. The schema 27 → 28 migration adds only empty arrays and the four default summary cards: it does not turn existing room text into spaces, assign summary roles or give items custom values. The field editor, Properties **Fields** section, space register, schedule builder, Summary tab and placed table shipped with Drift Slice 1; a placed table is drawn from its definition at render time and nothing is copied onto the item. The schedule CSV round-trip shipped with the same slice; XLSX and CSV import for other project data remain outside it. 1.0 is deferred; schema 28 is not the final pre-1.0 schema.
 
 ## Keyboard and mouse
 
@@ -1084,6 +1100,7 @@ The full list is in **Help → Keyboard shortcuts** and in [shortcuts.md](shortc
 - `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo.
 - `Ctrl/Cmd+0` fit page, `Ctrl/Cmd+1` actual size.
 - `Ctrl/Cmd+L` opens or closes the Markups list.
+- `Ctrl/Cmd+Alt+S` opens the Summary tab, and `Ctrl/Cmd+Alt+Q` opens Quantities.
 - `PageUp` / `PageDown` change page.
 - `Space` + drag pans temporarily.
 

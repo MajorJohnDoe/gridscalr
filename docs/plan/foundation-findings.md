@@ -3273,3 +3273,30 @@ remains the scheduling home.
   geometry contract. Keep it a separate, explicitly confirmed action.
 - **Related:** `src/features/schedules/csv/plan.ts`,
   `src/features/schedules/csv/apply.ts`, `docs/limitations.md`.
+
+### F-133 — The bundled demo project has empty schema 28 registers
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 7 — hardening and documentation
+- **Severity:** P3
+- **Area:** Demo project / documentation screenshots
+- **Status:** open — deliberate for this phase; screenshots seed sample data
+- **Evidence:** `scripts/make-demo-project.mjs` writes empty `fieldDefinitions`,
+  `fieldSets`, `spaces` and `schedules` arrays. The Phase 7 capture flow uses
+  `seedCustomField()`, `seedSpaces()` and `seedSchedules()` from
+  `scripts/ui-harness.mjs` to capture the new surfaces with content, and the same
+  helpers drive the accessibility, touch-target and UI-scale gates.
+- **Problem:** A user who opens the bundled demo sees an empty Summary, an empty
+  space register and no custom fields, so the demo does not teach the new loop
+  that the release notes and workflows describe. The screenshot data is
+  deterministic but is not in the shipped fixture.
+- **Impact:** No product or data risk. The documentation screenshots are real
+  captures of the shipped UI, but the demo project itself does not demonstrate
+  fields, spaces or schedules.
+- **Next step:** Decide whether the demo should ship a small property-data set
+  (for example two rooms, a fire-class field and one room schedule). Adding it is
+  a fixture change with test updates, not a schema change. Keep the demo
+  language-neutral.
+- **Related:** `scripts/make-demo-project.mjs`, `scripts/ui-harness.mjs`,
+  `scripts/docs-capture-flow.mjs`, `fixtures/demo-project.gridscalr`,
+  `docs/screenshots/manifest.json`.

@@ -2,10 +2,19 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { inspectionPhotoDataUrl } from "./docs-capture-photo.mjs";
 import {
+  closeReopenedSettings,
   makeReferenceProject,
   openCompareProject,
+  openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openPlacedTableInspector,
+  openScheduleCsvImport,
+  openSpacesRegister,
+  openSummaryTab,
+  seedCustomField,
+  seedSchedules,
+  seedSpaces,
   settlePage,
   waitForToastsGone,
 } from "./ui-harness.mjs";
@@ -352,4 +361,95 @@ export async function captureDocumentation(page, { outputDir, base }) {
   }
   await page.keyboard.press("Escape");
   await helpDialog.waitFor({ state: "detached" });
+
+  // Drift Slice 1 surfaces. The bundled demo has no sample registers, so seed
+  // deterministic property data through the store, exactly like the browser
+  // gates do, and capture the shipped interface with real content.
+  await seedCustomField(page);
+  await seedSpaces(page);
+  await seedSchedules(page);
+
+  const fieldsDialog = await openCustomFieldsDialog(page);
+  await page.waitForTimeout(250);
+  await capture("fields.png");
+  await page.keyboard.press("Escape");
+  await fieldsDialog.waitFor({ state: "detached" });
+  await closeReopenedSettings(page);
+
+  await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    for (const layer of store.project.layers) {
+      if (layer.items.some((item) => item.id === "item_floor_living")) {
+        store.setSelection({ layerId: layer.id, itemId: "item_floor_living" });
+        return;
+      }
+    }
+  });
+  await settlePage(page);
+  await page.getByRole("button", { name: "Apply field set" }).click();
+  await page.waitForTimeout(250);
+  await page.getByRole("heading", { name: "Fields", exact: true }).last().scrollIntoViewIfNeeded();
+  await page.waitForTimeout(250);
+  await capture("fields-inspector.png");
+  await waitForToastsGone(page);
+
+  const spacesDialog = await openSpacesRegister(page);
+  await page.waitForTimeout(250);
+  await capture("spaces.png");
+  await page.keyboard.press("Escape");
+  await spacesDialog.waitFor({ state: "detached" });
+
+  const summary = await openSummaryTab(page);
+  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_spaces");
+  await page.waitForTimeout(350);
+  await capture("summary.png");
+
+  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  await page.waitForTimeout(250);
+  await summary.getByRole("button", { name: "Edit schedule…" }).click();
+  const builder = page.getByRole("dialog", { name: "Edit schedule" });
+  await builder.waitFor();
+  await page.waitForTimeout(300);
+  await capture("schedule-builder.png");
+  await page.keyboard.press("Escape");
+  await builder.waitFor({ state: "detached" });
+
+  await summary.getByRole("button", { name: "Summary roles…" }).click();
+  const roles = page.getByRole("dialog", { name: "Summary roles" });
+  await roles.waitFor();
+  await page.waitForTimeout(250);
+  await capture("schedule-roles.png");
+  await page.keyboard.press("Escape");
+  await roles.waitFor({ state: "detached" });
+
+  await openPlacedTableInspector(page);
+  await page.evaluate(() => {
+    const store = window.__gridscalr.store;
+    store.setPage(1);
+    const project = store.project;
+    const layer = project.layers.find((entry) =>
+      entry.items.some((item) => item.id === "item_sched_harness"),
+    );
+    const item = layer?.items.find((entry) => entry.id === "item_sched_harness");
+    if (!layer || !item) return;
+    store.setSelection({ layerId: layer.id, itemId: item.id });
+    const host = document.querySelector("#canvas-interaction")?.getBoundingClientRect();
+    if (!host) return;
+    const zoom = 2.2;
+    const center = {
+      x: (item.points[0].x + item.points[1].x) / 2,
+      y: (item.points[0].y + item.points[1].y) / 2,
+    };
+    store.setView(zoom, host.width / 2 - center.x * zoom, host.height / 2 - center.y * zoom);
+  });
+  await page.waitForTimeout(450);
+  await capture("placed-table.png");
+
+  const csvDialog = await openScheduleCsvImport(page);
+  await page.waitForTimeout(300);
+  await capture("schedule-csv.png");
+  await page.keyboard.press("Escape");
+  await csvDialog.waitFor({ state: "detached" });
+  await page.keyboard.press("Control+Alt+s");
+  await page.locator(".schedules-panel").waitFor({ state: "detached" });
 }

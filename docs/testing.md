@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses fourteen surfaces:
+`axe-core` through `@axe-core/playwright` and analyses fifteen surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -394,7 +394,7 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same fourteen surfaces, so the gate records 70 palette/surface
+and **Navy** — runs the same fifteen surfaces, so the gate records 75 palette/surface
 checks. The palette is chosen through **Settings → Preferences…**, which is
 itself one of the checked surfaces. A contrast regression in any palette fails the
 run, and `check:themes` pins the same text-on-surface pairs at the token level.
@@ -443,8 +443,11 @@ window leaves at each scale:
 At each scale the check asserts that the document does not scroll horizontally,
 the top bar, context bar, Pages/Layers panel, Properties panel and status bar do
 not clip their content, the canvas keeps at least 240 CSS px, every menu item
-stays inside the window, and the Project settings, Custom fields, Spaces and Help
-dialogs open entirely inside the viewport. A menu that is taller than the window scrolls inside its
+stays inside the window, and the Project settings, Custom fields, Spaces, Help,
+Schedule builder, Place schedule and Schedule CSV import dialogs open entirely
+inside the viewport. It also opens the Summary tab with a seeded room and
+measurement schedule and checks the placed-table inspector section for
+horizontal overflow. A menu that is taller than the window scrolls inside its
 panel (`max-height: calc(100vh - 16px)`), which keeps its last item reachable at
 200 %.
 

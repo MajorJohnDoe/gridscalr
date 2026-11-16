@@ -205,6 +205,103 @@ A drawing on a network share or in a cloud-synced folder can be replaced or move
 - The exported CSV, Excel workbook or PDF matches the reviewed quantities.
 - When comparing revisions, the diff list and comparison PDF were checked before the new quantities were ordered.
 
+## Measure rooms and produce a schedule
+
+Use this workflow when an operations technician or technical property manager
+needs a room register, a live area and quantity summary, and a table that can go
+to Excel and back without leaving the local project.
+
+### 1. Define the property fields
+
+Open **Settings → Project settings… → Fields → Manage fields…**. Add the typed
+values the property uses, such as fire class, component type or condition.
+Choose the **Scope** first: **Measurement** fields are filled on the selected
+drawing item, and **Space** fields are filled in the space form. A field's
+**Key** is permanent because schedules and CSV use it, while the label can
+change. Group fields that are usually filled together into a **field set**.
+
+### 2. Build the room register
+
+Open **View → Spaces…**. Add the building, then a floor, then each room or zone
+under it. A room carries its room number, name, floor, usage and status, and an
+optional page link. Use **Create rooms from the room text** to start from the
+room names already on the measurements, then move the rooms under the right
+building and floor.
+
+![Space register with a building, floors and rooms, and measured and manual area badges](screenshots/spaces.png)
+
+A **Measured** room takes its area from the visible area measurements linked to
+it, additions minus deductions, converted to m². Hidden items and hidden layers
+are excluded and locked measurements are included. A **Manual** area is a
+fallback only while nothing is linked; a linked measurement always wins and the
+row says the manual value is unused. If a linked measurement has no page scale,
+the area is reported as missing instead of showing a partial sum.
+
+### 3. Link the area measurements
+
+Select one or more area measurements on the drawing, open **View → Spaces…**,
+and use the link action on the room row. The hint under the buttons names how
+many area measurements are selected. Use the search action on a room to select
+and zoom to its first visible linked measurement. Linking the same measurement
+to another room moves it. Deleting a room asks first, unlinks its measurements
+but never deletes them, and a room with child spaces is kept until the children
+are moved or deleted.
+
+### 4. Set the summary roles
+
+Open **View → Summary** (`Ctrl/Cmd+Alt+S`) and choose **Summary roles…**. Give
+the relevant categories the **Wall**, **Floor**, **Ceiling** or **Roof** role,
+and the count types the **Door**, **Window**, **Fixture** or **Other** role. The
+four cards read those roles, never names; a card without a role shows 0 with a
+**Configure** action so a missing role is visible rather than a plausible wrong
+number.
+
+### 5. Build and place the schedule
+
+In the Summary tab choose **New schedule…**. Name it, choose the **Source**
+(measurements or spaces) and the row mode, then choose columns from the built-in
+fields and the custom fields. Add grouping, sorting, totals and filters; the
+preview uses the real engine over the filtered rows. **Save** writes the
+definition in one undo step.
+
+![Schedule builder with columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
+
+Select the saved schedule and choose **Place on drawing…**. Pick the page, the
+width in millimetres, the row range or **All rows**, and whether to show the
+header and totals. The placed table is a live drawing item: it moves, resizes,
+rotates, locks, hides and exports with the page, and it updates when a
+measurement, room, custom value or schedule definition changes. When the rows do
+not fit, Properties warns and offers **Continue on a new table**.
+
+![A live schedule table placed on a floor plan and selected, with its properties in the inspector](screenshots/placed-table.png)
+
+Export the drawing PDF to print the same header, rows, subtotals and totals as
+vector text and lines, or export the schedule CSV for Excel.
+
+### 6. Edit in Excel and import it back
+
+Choose **Export CSV…** on a one-row-per-item schedule. The file uses the app
+language's delimiter and decimal mark, a UTF-8 BOM and one `ID` column plus one
+`Label [key]` column per visible schedule field. Edit labels, rooms, tags, the
+space fields and custom values in Excel, then choose **Import CSV…**. GridScalr
+shows a dry run with the changed rows, before and after values, unchanged rows,
+unknown IDs, read-only columns and invalid values. A row with an invalid value
+is rejected as a whole, **Apply** updates only existing measurements and spaces
+by stable ID, and the whole import is one undo step. Reference and derived
+columns such as page, layer, category, space, count type and area are read-only
+because the CSV carries their display labels, not stable references.
+
+![Import schedule CSV dialog with a changed row, before and after values and the apply action](screenshots/schedule-csv.png)
+
+### Checklist
+
+- Every room has a parent and a usable area, or a named warning.
+- The wall and door roles are deliberate, and the card totals match the plan.
+- The schedule columns, filters and totals match the procurement structure.
+- The placed table fits its box and has a continuation if it does not.
+- A CSV round-trip changed only the cells that were meant to change.
+- The drawing PDF and the schedule CSV were reviewed before ordering.
+
 ## Recover a project split across two files
 
 Use this when the same drawing set was edited in two `.gridscalr` files by mistake and each file has one correct sheet.
