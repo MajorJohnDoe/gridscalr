@@ -258,6 +258,7 @@ describe("import preflight relink state", () => {
         checksumDocuments: [],
         pageCountChanges: [],
         warnings: [],
+        unresolved: { spaces: 0, schedules: 0, customValues: 0 },
       },
       sources: [
         {

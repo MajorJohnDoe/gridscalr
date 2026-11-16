@@ -13,6 +13,8 @@ import type { ProjectImportGroupOption } from "../features/projectImport/ui";
 import { projectImportDialog } from "../features/projectImport/ui";
 import { buildImportPreflight } from "../features/projectImport/preflight";
 import { projectImportPreflightDialog } from "../features/projectImport/preflightUi";
+import { unresolvedImportReferences } from "../features/projectImport/unresolved";
+import type { ImportUnresolvedCounts } from "../features/projectImport/unresolved";
 import type { ImportPreflightSnapshot } from "../features/projectImport/relink";
 import { buildImportSourceStates, emptyPreparedImport } from "../features/projectImport/relink";
 import type { ImportedRendererDocument } from "./rendererDocuments";
@@ -183,6 +185,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
       sourceName: source.name,
       skipped: resolved.skipped,
       warnings: resolved.warnings,
+      unresolved: unresolvedImportReferences(prepared, destination),
     }),
     sources: buildImportSourceStates({
       source,
@@ -221,7 +224,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
     return describe();
   };
 
-  const confirmed = await projectImportPreflightDialog(describe(), {
+  const decision = await projectImportPreflightDialog(describe(), {
     relink: async (documentId) => {
       const located = await loader.locate(documentId);
       return located ? rebuild() : null;
@@ -231,7 +234,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
       return rebuild();
     },
   });
-  if (!confirmed) {
+  if (!decision.confirmed) {
     loader.dispose(new Set());
     return;
   }
@@ -266,6 +269,7 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
   }
 
   let importWarnings: ImportWarning[] = [];
+  let clearedUnresolved: ImportUnresolvedCounts | undefined;
   await recordStructuralCheckpoint(
     t("sessionRecovery.checkpoint.importPages", {
       count: prepared.pageMap.length,
@@ -274,7 +278,11 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
   );
   try {
     store.mutate((project) => {
-      importWarnings = commitProjectImport(project, prepared).warnings;
+      const result = commitProjectImport(project, prepared, {
+        clearUnresolved: decision.clearUnresolved,
+      });
+      importWarnings = result.warnings;
+      clearedUnresolved = result.unresolved;
     }, "project");
     host.addImportedDocuments(entries);
   } catch (error) {
@@ -302,12 +310,13 @@ export async function importProjectPagesFlow(host: ProjectImportHost): Promise<v
     }),
     "success",
   );
-  await showWarnings(resolved, importWarnings);
+  await showWarnings(resolved, importWarnings, clearedUnresolved);
 }
 
 async function showWarnings(
   selection: SourceSelection,
   importWarnings: readonly ImportWarning[] = [],
+  clearedUnresolved?: ImportUnresolvedCounts,
 ): Promise<void> {
   const skipped = new Map<string, number[]>();
   const other: string[] = [];
@@ -337,8 +346,24 @@ async function showWarnings(
     );
   }
   other.push(...importWarnings.map(warningMessage));
+  other.push(...clearedUnresolvedMessages(clearedUnresolved));
   if (!other.length) return;
   await messageDialog(t("projectImport.warningsTitle"), other.join("\n\n"), "warning");
+}
+
+function clearedUnresolvedMessages(counts?: ImportUnresolvedCounts): string[] {
+  if (!counts) return [];
+  const messages: string[] = [];
+  if (counts.spaces) {
+    messages.push(t("projectImport.warning.clearedSpaces", { count: counts.spaces }));
+  }
+  if (counts.schedules) {
+    messages.push(t("projectImport.warning.clearedSchedules", { count: counts.schedules }));
+  }
+  if (counts.customValues) {
+    messages.push(t("projectImport.warning.clearedCustomValues", { count: counts.customValues }));
+  }
+  return messages;
 }
 
 function warningMessage(warning: ImportWarning): string {

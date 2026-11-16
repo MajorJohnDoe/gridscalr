@@ -11,10 +11,13 @@ import { projectImportPreflightDialog } from "../src/features/projectImport/pref
 import type { ImportPreflightRelinkHost } from "../src/features/projectImport/preflightUi";
 import type { ImportPreflightSnapshot } from "../src/features/projectImport/relink";
 import { buildImportSourceStates, emptyPreparedImport } from "../src/features/projectImport/relink";
+import { unresolvedImportReferences } from "../src/features/projectImport/unresolved";
 import { createTemplateDocument } from "../src/features/schematics/model/sheetDocument";
 import { createProject, defaultDocument } from "../src/model/layers";
 import type { Project } from "../src/model/types";
 import { withTestPageIds } from "./helpers/pages";
+
+const NOW = "2026-01-01T00:00:00.000Z";
 
 function nextFrame(): Promise<void> {
   return new Promise((resolve) => requestAnimationFrame(() => resolve()));
@@ -75,6 +78,7 @@ function snapshot(
       sourceName: source.name,
       skipped: input.skipped,
       warnings: warningsFor(input.mismatches),
+      unresolved: unresolvedImportReferences(prepared, destination),
     }),
     sources: buildImportSourceStates({
       source,
@@ -135,6 +139,10 @@ function mixedSnapshot(destination: Project, source: Project): ImportPreflightSn
         page,
         documentName: pdf.name,
       })),
+      unresolved: unresolvedImportReferences(
+        prepareProjectImport(destination, source, [4]),
+        destination,
+      ),
     }),
     sources: buildImportSourceStates({
       source,
@@ -201,7 +209,7 @@ describe("import preflight relink dialog", () => {
     // Cancel after a relink and un-relink leaves the project untouched.
     expect(JSON.stringify(destination)).toBe(before);
     footerButton("Cancel")?.click();
-    await expect(result).resolves.toBe(false);
+    await expect(result).resolves.toEqual({ confirmed: false, clearUnresolved: false });
     expect(JSON.stringify(destination)).toBe(before);
     expect(document.body.textContent).not.toContain("/drawings/Plan.pdf");
   });
@@ -242,10 +250,60 @@ describe("import preflight relink dialog", () => {
     action("skip")?.click();
     await flush();
     footerButton("Import")?.click();
-    await expect(result).resolves.toBe(true);
+    await expect(result).resolves.toEqual({ confirmed: true, clearUnresolved: false });
     // The dialog only reports a decision; filtering happened before it opened.
     expect(JSON.stringify(destination)).toBe(destinationBefore);
     expect(JSON.stringify(source)).toBe(sourceBefore);
+  });
+
+  it("offers an opt-in clear for unresolved references and keeps it off by default", async () => {
+    const destination = destinationProject();
+    const source = sourceProject();
+    const measure = source.layers.find((layer) => layer.kind === "measure")!;
+    measure.items.push({
+      id: "src_area_linked",
+      pageId: source.pages[0].id,
+      kind: "area",
+      points: [
+        { x: 10, y: 10 },
+        { x: 40, y: 40 },
+      ],
+      color: "#4cc9f0",
+      strokeWidth: 2,
+      createdAt: NOW,
+      updatedAt: NOW,
+      spaceId: "space_src_room",
+    });
+    source.spaces.push({
+      id: "space_src_room",
+      kind: "room",
+      name: "Source room",
+      areaMode: "measured",
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+    const ready = snapshot(destination, source, {
+      importPages: [1],
+      skipped: [],
+      pageCounts: new Map([[source.documents[0].id, 3]]),
+      mismatches: [],
+    });
+
+    const result = projectImportPreflightDialog(ready);
+    await nextFrame();
+
+    expect(document.body.textContent).toContain("room link that does not exist");
+    const row = [...document.querySelectorAll<HTMLLabelElement>("label.check-row")].find((label) =>
+      label.textContent?.includes("Clear unresolved links"),
+    );
+    const input = row?.querySelector<HTMLInputElement>('input[type="checkbox"]');
+    expect(input).toBeDefined();
+    expect(input?.checked).toBe(false);
+
+    input!.checked = true;
+    input!.dispatchEvent(new Event("change"));
+    footerButton("Import")?.click();
+    await expect(result).resolves.toEqual({ confirmed: true, clearUnresolved: true });
   });
 
   it("blocks a checksum mismatch until the changed file is accepted", async () => {
@@ -283,7 +341,7 @@ describe("import preflight relink dialog", () => {
     expect(footerButton("Import")?.disabled).toBe(false);
 
     footerButton("Import")?.click();
-    await expect(result).resolves.toBe(true);
+    await expect(result).resolves.toEqual({ confirmed: true, clearUnresolved: false });
   });
 
   it("shows a shorter replacement file and blocks the import", async () => {
@@ -314,7 +372,7 @@ describe("import preflight relink dialog", () => {
     expect(footerButton("Import")?.disabled).toBe(true);
 
     footerButton("Cancel")?.click();
-    await expect(result).resolves.toBe(false);
+    await expect(result).resolves.toEqual({ confirmed: false, clearUnresolved: false });
   });
 
   it("commits the relinked pages through the existing import path", () => {

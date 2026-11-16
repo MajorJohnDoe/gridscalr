@@ -26,6 +26,11 @@ import {
   mergeLineTypes,
   prepareDocument,
 } from "./merge";
+import {
+  clearUnresolvedImportReferences,
+  emptyImportUnresolvedCounts,
+  type ImportUnresolvedCounts,
+} from "./unresolved";
 
 export interface ImportPageInfo {
   /** 1-based page in the source project (display order). */
@@ -125,11 +130,18 @@ export interface PreparedProjectImport {
   warnings: ImportWarning[];
 }
 
+export interface ImportCommitOptions {
+  /** Remove copied references that do not resolve in the destination. */
+  clearUnresolved?: boolean;
+}
+
 export interface ImportCommitResult {
   pageMap: ImportPageMapEntry[];
   createdLayerIds: string[];
   importedItemCount: number;
   warnings: ImportWarning[];
+  /** References removed by `clearUnresolved`; zero when the option is off. */
+  unresolved: ImportUnresolvedCounts;
 }
 
 export type ProjectImportErrorCode = "noSelection" | "invalidPage";
@@ -383,7 +395,11 @@ export function prepareProjectImport(
 export function commitProjectImport(
   destination: Project,
   prepared: PreparedProjectImport,
+  options: ImportCommitOptions = {},
 ): ImportCommitResult {
+  const unresolved = options.clearUnresolved
+    ? clearUnresolvedImportReferences(prepared, destination)
+    : emptyImportUnresolvedCounts();
   destination.documents.push(...prepared.documents);
   const index =
     prepared.insertIndex === undefined
@@ -408,6 +424,7 @@ export function commitProjectImport(
     createdLayerIds: prepared.createdLayers.map((layer) => layer.id),
     importedItemCount: prepared.createdLayers.reduce((sum, layer) => sum + layer.items.length, 0),
     warnings: prepared.warnings,
+    unresolved,
   };
 }
 

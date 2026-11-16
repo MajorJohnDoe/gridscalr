@@ -1,8 +1,16 @@
 import { t } from "../../i18n";
 import { showModal } from "../../ui/dialogs";
 import { el } from "../../ui/dom";
+import { checkRow } from "../../ui/settingsControls";
 import { sourceNeedsConfirmation, summarizeImportPreflight } from "./relink";
 import type { ImportPreflightSnapshot, ImportSourceState } from "./relink";
+import { hasUnresolvedImport } from "./unresolved";
+
+/** The dialog reports the import decision and the explicit clear choice. */
+export interface ImportPreflightDecision {
+  confirmed: boolean;
+  clearUnresolved: boolean;
+}
 
 /**
  * The app wires these two actions to the in-memory import loader. Both return a
@@ -44,9 +52,11 @@ function statusLabel(state: ImportSourceState, confirmed: boolean, skipped: bool
 export async function projectImportPreflightDialog(
   initial: ImportPreflightSnapshot,
   host?: ImportPreflightRelinkHost,
-): Promise<boolean> {
+): Promise<ImportPreflightDecision> {
   let current = initial;
   let busy = false;
+  /** Off by default: the copies keep their references unless the user opts in. */
+  let clearUnresolved = false;
   let primary: HTMLButtonElement | null = null;
   let modal: HTMLElement | null = null;
   const confirmed = new Set<string>();
@@ -97,6 +107,44 @@ export async function projectImportPreflightDialog(
             count: current.preflight.warnings.length,
           }),
         ),
+      );
+    }
+    const unresolved = current.preflight.unresolved;
+    if (unresolved.spaces) {
+      notes.append(
+        el(
+          "p",
+          "settings-note preflight-unresolved",
+          t("projectImport.preflight.unresolvedSpaces", { count: unresolved.spaces }),
+        ),
+      );
+    }
+    if (unresolved.schedules) {
+      notes.append(
+        el(
+          "p",
+          "settings-note preflight-unresolved",
+          t("projectImport.preflight.unresolvedSchedules", { count: unresolved.schedules }),
+        ),
+      );
+    }
+    if (unresolved.customValues) {
+      notes.append(
+        el(
+          "p",
+          "settings-note preflight-unresolved",
+          t("projectImport.preflight.unresolvedCustomValues", {
+            count: unresolved.customValues,
+          }),
+        ),
+      );
+    }
+    if (hasUnresolvedImport(unresolved)) {
+      notes.append(
+        checkRow(t("projectImport.preflight.clearUnresolved"), clearUnresolved, (checked) => {
+          clearUnresolved = checked;
+        }),
+        el("p", "settings-note", t("projectImport.preflight.clearUnresolvedNote")),
       );
     }
   };
@@ -329,5 +377,6 @@ export async function projectImportPreflightDialog(
   });
   modal = null;
   primary = null;
-  return value === "import";
+  const accepted = value === "import";
+  return { confirmed: accepted, clearUnresolved: accepted && clearUnresolved };
 }

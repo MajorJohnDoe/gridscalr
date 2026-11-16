@@ -7,6 +7,7 @@ import {
   ProjectImportError,
 } from "../src/features/projectImport/model";
 import { buildImportPreflight } from "../src/features/projectImport/preflight";
+import { unresolvedImportReferences } from "../src/features/projectImport/unresolved";
 import { createProject, defaultDocument } from "../src/model/layers";
 import { parseProject } from "../src/io/projectFile";
 import { serializeProject } from "../src/io/projectFile/serialize";
@@ -249,6 +250,57 @@ function sourceProject(): Project {
   project.layers = [markups, measurements, hidden, empty];
   project.activeLayerId = markups.id;
   return project;
+}
+
+/**
+ * A source page with one of every schema 28 reference the destination does not
+ * define: a room link, a placed table and a custom value.
+ */
+function sourceWithUnresolvedReferences(): Project {
+  const source = sourceProject();
+  source.fieldDefinitions.push({
+    id: "field_src_fire",
+    key: "fireClass",
+    label: "Fire class",
+    type: "text",
+    scope: "measurement",
+    order: 0,
+  });
+  source.spaces.push({
+    id: "space_src_room",
+    kind: "room",
+    name: "Source room",
+    areaMode: "measured",
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+  source.schedules.push({
+    id: "sched_src_wall",
+    name: "Source wall schedule",
+    source: "measurements",
+    rowMode: "items",
+    columns: [{ id: "col_1", field: "label", visible: true }],
+    filters: {},
+    createdAt: NOW,
+    updatedAt: NOW,
+  });
+  const measurements = source.layers.find((entry) => entry.id === "layer_src_measure")!;
+  measurements.items.push(
+    item("src_area_space", 1, "area", { spaceId: "space_src_room" }),
+    item("src_length_custom", 1, "length", {
+      categoryId: "cat_src_walls",
+      custom: { field_src_fire: "EI30" },
+    }),
+  );
+  const markups = source.layers.find((entry) => entry.id === "layer_src_markups")!;
+  markups.items.push(item("src_schedule", 1, "schedule", { scheduleId: "sched_src_wall" }));
+  return source;
+}
+
+function importedItems(destination: Project, pageId: string): MarkupItem[] {
+  return destination.layers
+    .flatMap((layer) => layer.items)
+    .filter((entry) => entry.pageId === pageId);
 }
 
 function deepFreeze<T>(value: T): T {
@@ -623,5 +675,92 @@ describe("project page import", () => {
     const pipes = prepared.categories.find((category) => category.name === "Pipes")!;
     expect(pipes.id).not.toBe("cat_src_pipes");
     expect(prepared.categories.map((category) => category.id)).toContain(pipes.id);
+  });
+});
+
+describe("unresolved schema 28 references on imported copies", () => {
+  it("counts the room, schedule and custom references before the commit", () => {
+    const destination = destinationProject();
+    const source = sourceWithUnresolvedReferences();
+    const sourceBefore = JSON.stringify(source);
+
+    const prepared = prepareProjectImport(destination, source, [1]);
+    const unresolved = unresolvedImportReferences(prepared, destination);
+    expect(unresolved).toEqual({ spaces: 1, schedules: 1, customValues: 1 });
+
+    const preflight = buildImportPreflight({
+      prepared,
+      sourceName: source.name,
+      skipped: [],
+      warnings: [],
+      unresolved,
+    });
+    expect(preflight.unresolved).toEqual({ spaces: 1, schedules: 1, customValues: 1 });
+    expect(JSON.stringify(source), "preflight never touches the source").toBe(sourceBefore);
+  });
+
+  it("clears only the unresolved references when the option is on", () => {
+    const destination = destinationProject();
+    const source = sourceWithUnresolvedReferences();
+    const sourceBefore = JSON.stringify(source);
+    const destinationItemsBefore = destination.layers.reduce(
+      (total, layer) => total + layer.items.length,
+      0,
+    );
+    const prepared = prepareProjectImport(destination, source, [1]);
+    const newPageId = prepared.pageMap[0].newPageId;
+
+    const result = commitProjectImport(destination, prepared, { clearUnresolved: true });
+
+    expect(result.unresolved).toEqual({ spaces: 1, schedules: 1, customValues: 1 });
+    const copied = importedItems(destination, newPageId);
+    expect(copied.some((entry) => entry.spaceId === "space_src_room")).toBe(false);
+    expect(copied.some((entry) => entry.kind === "schedule")).toBe(false);
+    expect(copied.some((entry) => entry.custom !== undefined)).toBe(false);
+    expect(
+      destination.layers.reduce((total, layer) => total + layer.items.length, 0),
+    ).toBeGreaterThan(destinationItemsBefore);
+    expect(JSON.stringify(source), "commit never touches the source").toBe(sourceBefore);
+  });
+
+  it("keeps the copied references when the option is off", () => {
+    const destination = destinationProject();
+    const source = sourceWithUnresolvedReferences();
+    const sourceBefore = JSON.stringify(source);
+    const prepared = prepareProjectImport(destination, source, [1]);
+    const newPageId = prepared.pageMap[0].newPageId;
+
+    const result = commitProjectImport(destination, prepared);
+
+    expect(result.unresolved).toEqual({ spaces: 0, schedules: 0, customValues: 0 });
+    const copied = importedItems(destination, newPageId);
+    expect(copied.find((entry) => entry.spaceId === "space_src_room")).toBeDefined();
+    expect(copied.find((entry) => entry.kind === "schedule")?.scheduleId).toBe("sched_src_wall");
+    expect(copied.find((entry) => entry.custom?.field_src_fire === "EI30")).toBeDefined();
+    expect(JSON.stringify(source), "commit never touches the source").toBe(sourceBefore);
+  });
+
+  it("leaves a destination reference with the same id untouched", () => {
+    const destination = destinationProject();
+    destination.spaces.push({
+      id: "space_src_room",
+      kind: "room",
+      name: "Destination room",
+      areaMode: "measured",
+      createdAt: NOW,
+      updatedAt: NOW,
+    });
+    const source = sourceWithUnresolvedReferences();
+    const prepared = prepareProjectImport(destination, source, [1]);
+
+    const unresolved = unresolvedImportReferences(prepared, destination);
+    expect(unresolved.spaces).toBe(0);
+    const result = commitProjectImport(destination, prepared, { clearUnresolved: true });
+    expect(result.unresolved.spaces).toBe(0);
+    expect(
+      importedItems(destination, prepared.pageMap[0].newPageId).some(
+        (entry) => entry.spaceId === "space_src_room",
+      ),
+    ).toBe(true);
   });
 });
