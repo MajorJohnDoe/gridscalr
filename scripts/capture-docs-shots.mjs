@@ -179,4 +179,59 @@ export const shots = [
     description:
       "The saved/unsaved chip opens a live summary with backup, recovery, doctor and conflicted-copy actions.",
   },
+  {
+    file: "fields.png",
+    title: "Custom fields",
+    alt: "The GridScalr Custom fields dialog with measurement-scope Fire class and Condition fields, a typed value editor and a Fire data field set.",
+    description:
+      "Define typed property data once, then fill it in for each measurement from Properties.",
+  },
+  {
+    file: "fields-inspector.png",
+    title: "Custom field values in Properties",
+    alt: "The GridScalr Properties panel for a selected floor area with the Fields section showing a Fire class text value and a Condition choice, plus the field-set action.",
+    description:
+      "Fields are filled on the selected measurement with the control that matches the field type.",
+  },
+  {
+    file: "spaces.png",
+    title: "Space register",
+    alt: "The GridScalr Spaces dialog with a building, a floor and two rooms, a measured area badge and a manual area badge.",
+    description:
+      "Buildings, floors, rooms and zones keep their area derived from the area measurements linked to them.",
+  },
+  {
+    file: "summary.png",
+    title: "Summary and schedules",
+    alt: "The GridScalr Summary tab with Rooms, Area, Walls and Doors cards, a schedule picker showing Room schedule, page and space filters, and a live table of rooms.",
+    description:
+      "Four live KPI cards and a schedule table in the right dock, computed from the project data.",
+  },
+  {
+    file: "schedule-builder.png",
+    title: "Schedule builder",
+    alt: "The GridScalr schedule builder with name, measurement source, columns, grouping, sorting, totals and filters.",
+    description:
+      "Choose columns, grouping, sorting, filters and totals while the preview uses the real schedule engine.",
+  },
+  {
+    file: "schedule-roles.png",
+    title: "Summary roles",
+    alt: "The GridScalr Summary roles dialog with a role list for categories and count types, including Wall and Door roles.",
+    description: "A summary card reads an explicit role on a category or count type, never a name.",
+  },
+  {
+    file: "placed-table.png",
+    title: "Schedule placed on a drawing",
+    alt: "A schedule table placed on a calibrated floor plan and selected, with the schedule row range, header and totals in the Properties panel.",
+    description:
+      "A placed table is a live drawing item: it moves, resizes, locks, hides and exports with the page.",
+  },
+  {
+    file: "schedule-csv.png",
+    title: "Schedule CSV import",
+    alt: "The GridScalr Import schedule CSV dialog with a changed row, before and after values, unchanged rows and the apply action.",
+    description:
+      "A CSV from Excel is checked in a dry run before one confirmed import is applied as one undo step.",
+  },
 ];

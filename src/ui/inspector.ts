@@ -29,6 +29,14 @@ import { disableEditingControls, viewOnlyPanelNote } from "../features/viewOnly"
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   const previousScroll =
     refs.inspector.querySelector<HTMLElement>(".schedules-table-wrap")?.scrollTop ?? 0;
+  // The Summary toolbar is rebuilt with the panel, so remember which control
+  // had focus before clearing it. Without this, choosing a schedule, changing a
+  // filter or closing the roles/builder dialog drops focus to the page body.
+  const active = document.activeElement;
+  const summaryFocus =
+    active instanceof HTMLElement && active.closest(".schedules-panel")
+      ? (active.dataset.summaryFocus ?? null)
+      : null;
   clear(refs.inspector);
   const header = el("div", "inspector-header");
   const tabs = el("div", "inspector-tabs");
@@ -87,20 +95,24 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
 
   if (isSummaryOpen()) {
     refs.inspector.setAttribute("aria-label", t("schedules.title"));
-    refs.inspector.append(
-      renderSummaryPanel(
-        {
-          navigateToItem: actions.navigateToItem,
-          goToPage: (page) => actions.goToPage(page, true),
-          openSpaces: actions.openSpaces,
-          pageSize: actions.getPageSize,
-          refresh: actions.refresh,
-          exportScheduleCsv: actions.exportScheduleCsv,
-          importScheduleCsv: actions.importScheduleCsv,
-        },
-        previousScroll,
-      ),
+    const panel = renderSummaryPanel(
+      {
+        navigateToItem: actions.navigateToItem,
+        goToPage: (page) => actions.goToPage(page, true),
+        openSpaces: actions.openSpaces,
+        pageSize: actions.getPageSize,
+        refresh: actions.refresh,
+        exportScheduleCsv: actions.exportScheduleCsv,
+        importScheduleCsv: actions.importScheduleCsv,
+      },
+      previousScroll,
     );
+    refs.inspector.append(panel);
+    if (summaryFocus) {
+      panel
+        .querySelector<HTMLElement>(`[data-summary-focus="${summaryFocus}"]`)
+        ?.focus({ preventScroll: true });
+    }
     return;
   }
   refs.inspector.setAttribute("aria-label", t("shell.properties"));

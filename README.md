@@ -247,6 +247,16 @@ The **Pages**, **Layers** and **Markups** lists share one interaction model:
 | ![Docked Markups list with a saved view, building/floor/room groups and configurable columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The same guides ship inside the app under **Help**. |
 
+| Summary and schedules | Rooms and spaces |
+| --- | --- |
+| ![Summary tab with four KPI cards, a schedule picker and a live room table](docs/screenshots/summary.png) | ![Space register with a building, floors and rooms, measured and manual area badges](docs/screenshots/spaces.png) |
+| **One live view.** Four KPI cards and a schedule table read the project data without storing a second copy. | **Areas from the drawing.** A room's area is derived from the visible area measurements linked to it. |
+
+| Custom fields | Excel round-trip |
+| --- | --- |
+| ![Custom fields dialog with typed measurement fields and a field set](docs/screenshots/fields.png) | ![Import schedule CSV dialog with a changed row and its before and after values](docs/screenshots/schedule-csv.png) |
+| **Your property data.** Typed fields, field sets and inline validation on every measurement and space. | **Safe round-trip.** Export a one-row-per-item schedule, edit it in Excel, review the dry run and import one undo step. |
+
 | Reference pane | Excel handoff |
 | --- | --- |
 | ![Primary canvas and a read-only reference pane showing the same plan at the same pan and zoom](docs/screenshots/split-view.png) | **Procurement workbook.** Export summary, category, room, page, markup and source-notes sheets from the same takeoff data. |
@@ -391,12 +401,15 @@ surface, the repair planner with its filters and preview, the project doctor,
 source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
-The schedule feature in `src/features/schedules/` owns the live table, the
-builder, placement, the CSV round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and one
-shared layout for canvas and PDF. The CSV import is bounded to a UTF-8 file of
-10 MB and 20 000 rows, updates existing rows by stable ID and applies as one undo
-step. `src/app/exportFlows.ts` writes the schedule CSV; `src/app/summaryFlow.ts`
-opens the import dialog.
+The fields and spaces features in `src/features/fields/` and
+`src/features/spaces/` own typed property definitions, field sets, the room
+register and derived room areas; `src/features/schedules/` reads `spaceAreas()`
+rather than recomputing a room area. The schedule feature owns the live table,
+the builder, placement, the CSV round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and
+one shared layout for canvas and PDF. The CSV import is bounded to a UTF-8 file
+of 10 MB and 20 000 rows, updates existing rows by stable ID and applies as one
+undo step. `src/app/exportFlows.ts` writes the schedule CSV;
+`src/app/summaryFlow.ts` opens the import dialog.
 `src/model/layerHierarchy.ts` holds the pure layer-tree, effective visibility
 and locking rules, and `src/features/layerTree/` exposes the panel tree rows,
 inherited-state reasons, drag and keyboard nesting, subtree duplication and the

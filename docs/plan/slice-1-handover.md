@@ -887,10 +887,95 @@ numbers are in `docs/limitations.md`.
 - Squash merged as `ef52eec574cb42b7e91bb850b7d7bda811180d85`; `main` CI is green
   on that commit.
 
-### Next phase
+## Phase 7 — harden and document Drift Slice 1
 
-Phase 7 — [harden and document Drift Slice 1 #292](https://github.com/MajorJohnDoe/gridscalr/issues/292):
-screenshot recapture, the user-guide and workflows pass, limitations, shortcuts,
-README, a `0.29.0` release-notes draft, the roadmap status and the final
-accessibility, touch-target and UI-scale confirmation. No new features, no
-version bump, no tag and no release.
+- **Issue:** [#292](https://github.com/MajorJohnDoe/gridscalr/issues/292)
+- **PR:** [#294](https://github.com/MajorJohnDoe/gridscalr/pull/294)
+- **Branch:** `docs/slice-1-hardening`
+- **Implementation head:** `86e775ac68bdb2288c95fc4489f540c2006fac54`
+  (`2392c24` focus fix, `ef677cc` gate seed data, `86e775a` documentation,
+  release notes and screenshots)
+- **Status:** PR open against `main`; not merged.
+
+### Completed work
+
+- `npm run docs:capture` recaptured all 35 screenshots, including the new
+  Summary tab, schedule builder, summary roles, placed table, schedule CSV
+  import, space register and custom-fields editor/inspector. The capture flow
+  seeds deterministic property data through `scripts/ui-harness.mjs`.
+- `docs/user-guide.md` covers the shipped fields, spaces, summary, schedules,
+  placed tables and CSV round-trip; the stale phase wording is removed.
+- `docs/workflows.md` gains a "Measure rooms and produce a schedule" task guide
+  for an operations technician or technical property manager, including the
+  Excel round-trip step and checklist.
+- `docs/limitations.md` states every deliberate gap in F-118 … F-133 and adds
+  the measured Slice 1 performance profile (15 000-item summary, 10 000-row
+  schedule, placed-table layout, 10 000-row CSV export/import).
+- `docs/testing.md` records the 15 accessibility surfaces / 75 checks and the
+  current UI-scale dialog list.
+- `docs/release-notes/0.29.0.md` is a draft for schema 28 with the compatible
+  27 → 28 path and the known limits. No app version, tag, release or landing
+  site changed.
+- `docs/roadmap.md` marks Drift Slice 1 complete on schema 28 and links the
+  merged phase issues; the 1.0 gate wording remains honest.
+- The Summary toolbar now restores focus to the picker, filter chip, action or
+  dialog trigger after a repaint (F-127). The keyboard walkthrough covered the
+  picker and filters, builder, roles, placement, CSV import, space register and
+  placed-table selection.
+- F-133 records that the bundled demo project still has empty schema 28
+  registers; the screenshots seed sample data instead.
+
+### Modules
+
+- `src/ui/inspector.ts`, `src/features/schedules/ui/panel.ts`,
+  `tests/schedulesUi.test.ts`
+- `scripts/ui-harness.mjs`, `scripts/docs-capture-flow.mjs`,
+  `scripts/capture-docs-shots.mjs`
+- `docs/user-guide.md`, `docs/workflows.md`, `docs/limitations.md`,
+  `docs/testing.md`, `docs/roadmap.md`,
+  `docs/plan/drift-slice-1.md`, `docs/plan/foundation-findings.md`,
+  `docs/release-notes/0.29.0.md`, `README.md`, `AGENTS.md`
+- `docs/screenshots/` (35 images) and `docs/screenshots/manifest.json`
+
+### Decisions
+
+- Screenshot data is seeded through the same harness helpers as the browser
+  gates, so the docs capture exercises the real UI without changing the bundled
+  demo fixture (F-133).
+- No new feature, schema field, schema bump, version bump, tag, release or
+  landing-site change is part of this phase.
+- F-124, F-125 and F-118 stay open product decisions and are documented plainly
+  in `docs/limitations.md`; the code is unchanged.
+
+### Findings
+
+- F-133: the bundled demo project has empty schema 28 registers.
+- F-119 … F-132 remain as recorded by their phases; F-127's focus behaviour is
+  fixed in this phase rather than only documented.
+
+### Checks on the implementation head
+
+Local gate green: `check:versions`, `check:file-budgets` (603 files),
+`check:modules` (20 foundation features), `check:security`, `check:actions`,
+`check:dependencies` (5 accepted cargo advisories, 0 unaccepted),
+`GRIDSCALR_DOCS_STRICT=1 check:docs` (256 links, 50 images, 35 screenshots),
+`format:check`, `lint`, `check:i18n` (3486 keys), `check:themes`,
+`npx tsc --noEmit`, `npm test -- --run` (171 files, 1707 tests),
+`test:docs-capture` (35 screenshots, committed folder untouched),
+`test:a11y` (5 palettes × 15 surfaces, 75 checks, no serious/critical),
+`test:touch-targets` (531 controls, 15 surfaces), `test:ui-scale`
+(100/150/200 %), `test:visual` (4 baselines, 0 differing pixels), `test:ui` and
+`check:performance` (CI profile, all budgets pass). CI is authoritative on the
+PR head; the handover commit moves the head after this record.
+
+### Conductor verification: pending
+
+The conductor has not yet verified the PR head SHA, the check runs, the file
+list against the phase scope, or the merge state. No merge has been performed
+and auto-merge is not enabled.
+
+### Slice 1 status
+
+Drift Slice 1 is complete in the 0.29.0 development line and ready for
+conductor verification; no release has been tagged or published, and the app
+version and schema version remain unchanged.

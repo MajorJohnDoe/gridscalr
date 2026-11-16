@@ -1,6 +1,7 @@
 # Drift Slice 1 — Custom fields, spaces, schedules and summary
 
-Status: phases 1–3 (schema 28 foundation, custom fields, spaces) implemented; phases 4–7 pending.
+Status: complete. Phases 1–7 shipped on schema 28; 0.29.0 is a release draft,
+not a published release.
 Target: next minor release on schema 28 (for example 0.29.0). 1.0 is deferred.
 Owner: product + conductor; one fresh worker per phase.
 

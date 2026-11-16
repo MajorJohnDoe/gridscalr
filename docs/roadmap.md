@@ -12,6 +12,11 @@ organised by foundation slices so the product can release pre-1.0 minors while
 the base becomes stable. Feature details belong in GitHub issues, not in a
 version-numbered roadmap.
 
+**0.29.0 is the next pre-1.0 minor on schema 28.** It is prepared as a draft in
+[`release-notes/0.29.0.md`](release-notes/0.29.0.md); the app version, tag,
+release artifacts and landing site change only when the product owner decides
+the release.
+
 ## Product principles
 
 These are not negotiable without an explicit decision:
@@ -81,37 +86,50 @@ These are not negotiable without an explicit decision:
 | 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
 | 0.27.0 | Limits and lifecycle: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions and the docs/capture/Rust module gates, edit-safe shell rendering, a source check that no longer emits a save, themed Layers surfaces, and the colour-scan/OCG decisions | Complete | v26 |
 | 0.28.0 | Release candidate for 1.0: schema 27 colour-scan derived-PDF cache, ISO nested OCG `/Order`, import preflight relink from the picker, accessibility/touch-target/UI-scale/performance gates in CI, Light Green contrast fix, automated macOS artifact verification and the accepted `glib` position | Complete | v27 |
-| Drift Slice 1, phase 1 | Schema 28 foundation: custom field definitions and field sets, spaces, schedules, schedule placements, summary settings, migration, integrity rules, doctor codes and the schema 1–28 corpus | In progress | v28 |
+| Drift Slice 1 | Data foundation and the first room-to-schedule loop: custom field definitions and field sets, spaces with derived areas, live schedules and summary cards, placed tables with PDF output, and the CSV round-trip (schema 28) | Complete | v28 |
 
 **0.27.0** ships this work; its scope, decisions and follow-ups are recorded in
 [`plan/0.27.md`](plan/0.27.md), [`plan/0.27-handover.md`](plan/0.27-handover.md),
 [ADR 0015](adr/0015-colour-scan-storage.md) and
 [ADR 0016](adr/0016-optional-content-export-shape.md).
 
-**0.28.0** is the release candidate for 1.0.0. Schema 27 makes the colour-scan
-derived PDF a rebuildable cache beside the project, the ISO array form fixes
-optional-content nesting in Firefox and pdf.js, and the preflight **Relink…** is
-reachable from the import picker. The accessibility, touch-target, UI-scale and
-performance gates now run in CI, and the macOS artifact is verified
+**0.28.0** shipped as the release candidate for 1.0.0. Schema 27 makes the
+colour-scan derived PDF a rebuildable cache beside the project, the ISO array
+form fixes optional-content nesting in Firefox and pdf.js, and the preflight
+**Relink…** is reachable from the import picker. The accessibility, touch-target,
+UI-scale and performance gates run in CI, and the macOS artifact is verified
 automatically. There is no Mac hardware and no signing identity, so the physical
-install is unverified and the builds stay unsigned. 1.0.0 follows only after this
-release has been tested in real use. See [`plan/0.28.md`](plan/0.28.md),
-[`plan/0.28-handover.md`](plan/0.28-handover.md) and epic
-[#261](https://github.com/MajorJohnDoe/gridscalr/issues/261).
+install is unverified and the builds stay unsigned. After 0.28.0 the project
+decided to keep 1.0 deferred rather than freeze on schema 27; schema 28
+continues the foundation in the 0.29.0 development line. See
+[`plan/0.28.md`](plan/0.28.md), [`plan/0.28-handover.md`](plan/0.28-handover.md)
+and epic [#261](https://github.com/MajorJohnDoe/gridscalr/issues/261).
 
 **Schema status:** 1.0 is deferred. Schema 27 is no longer frozen for 1.0;
-schema 28 is the current development schema and starts Drift Slice 1. The
+schema 28 is the current development schema and carries Drift Slice 1. The
 migration ladder, the compatibility promise and the committed corpus now end at
 28. Every later format change needs its own migration, fixture, round-trip and
 determinism tests, not a routine bump.
 
-**Drift Slice 1 — data foundation** is in progress on schema 28. Phase 1 adds
-custom field definitions and field sets, spaces, schedules, schedule placements
-and summary settings, with migration, integrity rules, doctor codes and the
-schema 1–28 corpus. It deliberately has no field editor, space register,
-schedule builder, table placement, CSV or PDF table output yet. The later phases
-are listed in [`plan/drift-slice-1.md`](plan/drift-slice-1.md); their handover
-lives in [`plan/slice-1-handover.md`](plan/slice-1-handover.md).
+**Drift Slice 1 — data foundation** is complete on schema 28. It adds typed
+custom fields and field sets ([#275](https://github.com/MajorJohnDoe/gridscalr/issues/275)),
+a space register with derived room areas ([#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)),
+a live schedule engine and Summary tab ([#281](https://github.com/MajorJohnDoe/gridscalr/issues/281)),
+placed schedule tables with drawing-PDF output ([#284](https://github.com/MajorJohnDoe/gridscalr/issues/284)),
+the schedule CSV round-trip ([#287](https://github.com/MajorJohnDoe/gridscalr/issues/287))
+and the schema 28 foundation ([#273](https://github.com/MajorJohnDoe/gridscalr/issues/273)).
+The hardening and documentation pass is [#292](https://github.com/MajorJohnDoe/gridscalr/issues/292).
+The phase decisions and findings are in
+[`plan/slice-1-handover.md`](plan/slice-1-handover.md) and
+[`plan/drift-slice-1.md`](plan/drift-slice-1.md). The release notes draft is
+[`release-notes/0.29.0.md`](release-notes/0.29.0.md); it is not a published
+release.
+
+Schema 28 shipped in the 0.29.0 development line, not in the released 0.28.0
+binary. The quality gate for 1.0 is unchanged: Windows, macOS and Linux
+artifacts, the two interface languages, portable packages, tested large-project
+performance, and production-ready save, recovery and source handling. 1.0
+follows when that gate is met, not on a date.
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
