@@ -16,6 +16,7 @@ const FIXTURES: ReadonlyArray<{ version: number; file: string }> = [
   { version: 25, file: "schema-25.gridscalr" },
   { version: 26, file: "schema-26.gridscalr" },
   { version: 27, file: "schema-27.gridscalr" },
+  { version: 28, file: "schema-28.gridscalr" },
 ];
 
 function fixtureText(file: string): string {
@@ -81,7 +82,7 @@ function expectIntroducedFields(version: number, project: Project): void {
         sourceSha256: "b".repeat(64),
         converterVersion: 1,
         pageCount: 1,
-        relativePath: "schema-27.drawings/derived/derived-scan-bbbbbbbb.pdf",
+        relativePath: `schema-${version}.drawings/derived/derived-scan-bbbbbbbb.pdf`,
       });
     } else {
       expect(scan.embeddedPdf).toBe("JVBERi0xLjQK");
@@ -177,6 +178,60 @@ function expectIntroducedFields(version: number, project: Project): void {
     // A pre-26 file has no hierarchy field at all.
     expect(project.layers.every((layer) => layer.parentId === undefined)).toBe(true);
   }
+  if (version >= 28) {
+    expect(project.fieldDefinitions.map((field) => field.key)).toEqual(["fire_class", "condition"]);
+    expect(project.fieldSets).toHaveLength(1);
+    expect(project.fieldSets[0].fieldIds).toEqual(["field_fire"]);
+    expect(project.spaces.map((space) => [space.kind, space.name, space.areaMode])).toEqual([
+      ["room", "Room A", "measured"],
+    ]);
+    expect(project.spaces[0].custom).toEqual({ field_condition: 3 });
+    expect(project.schedules.map((schedule) => [schedule.source, schedule.rowMode])).toEqual([
+      ["spaces", "items"],
+    ]);
+    expect(project.settings.summary.cards).toEqual([
+      { id: "rooms", visible: true },
+      { id: "area", visible: true },
+      { id: "wallLength", visible: false },
+      { id: "doors", visible: true },
+    ]);
+    expect(project.categories.find((entry) => entry.id === "cat_floor")?.summaryRole).toBe("floor");
+    expect(project.countTypes.find((entry) => entry.id === "door")?.summaryRole).toBe("door");
+    expect(findItem(project, "item_area")?.spaceId).toBe("space_room");
+    expect(findItem(project, "item_area")?.custom).toEqual({ field_fire: "EI30" });
+    const placement = findItem(project, "item_schedule")!;
+    expect(placement.scheduleId).toBe("sched_rooms");
+    expect(placement.rowStart).toBe(3);
+    expect(placement.rowLimit).toBe(12);
+    expect(placement.showHeader).toBe(false);
+    expect(placement.showTotals).toBe(true);
+  } else {
+    // A pre-28 file gets the empty arrays and default cards, but no invented
+    // spaces, roles, custom values or placements.
+    expect(project.fieldDefinitions).toEqual([]);
+    expect(project.fieldSets).toEqual([]);
+    expect(project.spaces).toEqual([]);
+    expect(project.schedules).toEqual([]);
+    expect(project.settings.summary.cards.map((card) => card.id)).toEqual([
+      "rooms",
+      "area",
+      "wallLength",
+      "doors",
+    ]);
+    expect(project.settings.summary.cards.every((card) => card.visible)).toBe(true);
+    expect(project.categories.every((category) => category.summaryRole === undefined)).toBe(true);
+    expect(project.countTypes.every((countType) => countType.summaryRole === undefined)).toBe(true);
+    expect(
+      project.layers
+        .flatMap((layer) => layer.items)
+        .every(
+          (item) =>
+            item.spaceId === undefined &&
+            item.custom === undefined &&
+            item.scheduleId === undefined,
+        ),
+    ).toBe(true);
+  }
 }
 
 describe("migration corpus", () => {
@@ -184,7 +239,7 @@ describe("migration corpus", () => {
     expect(FIXTURES.map((entry) => entry.version)).toEqual(
       Array.from({ length: SCHEMA_VERSION }, (_, index) => index + 1),
     );
-    expect(SCHEMA_VERSION).toBe(27);
+    expect(SCHEMA_VERSION).toBe(28);
   });
 
   for (const { version, file } of FIXTURES) {
@@ -219,6 +274,11 @@ describe("migration corpus", () => {
       expect(second.layers.map((layer) => [layer.id, layer.parentId])).toEqual(
         first.layers.map((layer) => [layer.id, layer.parentId]),
       );
+      expect(second.fieldDefinitions).toEqual(first.fieldDefinitions);
+      expect(second.fieldSets).toEqual(first.fieldSets);
+      expect(second.spaces).toEqual(first.spaces);
+      expect(second.schedules).toEqual(first.schedules);
+      expect(second.settings.summary).toEqual(first.settings.summary);
 
       // A serialized current-schema project keeps the same page identity.
       const roundTrip = parseProjectWithReport(serializeProject(first)).project;

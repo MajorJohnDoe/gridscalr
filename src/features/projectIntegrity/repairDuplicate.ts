@@ -148,4 +148,66 @@ export function planDuplicateIds(project: Project, log: RepairChanges): void {
     },
     log,
   );
+  dedupe(
+    {
+      entries: project.fieldDefinitions,
+      id: (field) => field.id,
+      rename: (field, next) => {
+        field.id = next;
+      },
+      scope: "field",
+      reason: "duplicateFieldDefinitionId",
+    },
+    log,
+  );
+  dedupe(
+    {
+      entries: project.fieldSets,
+      id: (set) => set.id,
+      rename: (set, next) => {
+        set.id = next;
+      },
+      scope: "fieldSet",
+      reason: "duplicateFieldSetId",
+    },
+    log,
+  );
+  dedupe(
+    {
+      entries: project.spaces,
+      id: (space) => space.id,
+      rename: (space, next) => {
+        space.id = next;
+      },
+      scope: "space",
+      reason: "duplicateSpaceId",
+    },
+    log,
+  );
+  dedupe(
+    {
+      entries: project.schedules,
+      id: (schedule) => schedule.id,
+      rename: (schedule, next) => {
+        schedule.id = next;
+      },
+      scope: "schedule",
+      reason: "duplicateScheduleId",
+    },
+    log,
+  );
+  for (const schedule of project.schedules) {
+    dedupe(
+      {
+        entries: schedule.columns,
+        id: (column) => column.id,
+        rename: (column, next) => {
+          column.id = next;
+        },
+        scope: "scheduleColumn",
+        reason: "duplicateScheduleColumn",
+      },
+      log,
+    );
+  }
 }

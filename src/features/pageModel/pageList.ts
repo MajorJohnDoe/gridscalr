@@ -34,6 +34,8 @@ export interface DeletePageSummary {
   removedItems: number;
   removedLayers: number;
   removedDocuments: string[];
+  /** Spaces whose optional page link pointed at the deleted page. */
+  clearedSpaces: number;
   nextPageId: PageId | null;
 }
 
@@ -202,6 +204,15 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
     if (layer.homePageId === pageId) layer.homePageId = undefined;
   }
 
+  // A space keeps existing; only its optional page location is cleared and
+  // reported. Measurements are not touched here.
+  let clearedSpaces = 0;
+  for (const space of project.spaces) {
+    if (space.pageId !== pageId) continue;
+    delete space.pageId;
+    clearedSpaces += 1;
+  }
+
   const beforeLayers = project.layers.length;
   const fallbackPageId = project.pages[Math.min(index, project.pages.length - 1)]?.id ?? null;
   // A group survives while any descendant is still referenced, so a page delete
@@ -228,6 +239,7 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
     removedItems,
     removedLayers,
     removedDocuments,
+    clearedSpaces,
     nextPageId: project.pages[Math.min(index, project.pages.length - 1)]?.id ?? null,
   };
 }

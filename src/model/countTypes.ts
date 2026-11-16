@@ -7,6 +7,7 @@
 import { makeId } from "./calibration";
 import { normalizeRoom } from "./categories";
 import { countQuantityOf, COUNT_GLYPHS } from "./countSymbols";
+import { isCountSummaryRole } from "./summary";
 import type { CountGlyph, CountPreset, CountType, CountTypeDef, Project } from "./types";
 import { t } from "../i18n";
 
@@ -91,11 +92,17 @@ export function normalizeCountTypes(
         report?.("droppedCountType");
         continue;
       }
-      types.push({
+      const type: CountTypeDef = {
         id,
         label: uniqueCountTypeName(types, label),
         glyph: isCountGlyph(raw.glyph) ? raw.glyph : "other",
-      });
+      };
+      if (isCountSummaryRole(raw.summaryRole)) {
+        type.summaryRole = raw.summaryRole;
+      } else if (raw.summaryRole !== undefined) {
+        report?.("droppedCountTypeSummaryRole");
+      }
+      types.push(type);
     }
   }
   if (!types.length) return defaultCountTypes();

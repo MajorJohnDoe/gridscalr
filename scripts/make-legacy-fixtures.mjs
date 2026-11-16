@@ -23,6 +23,8 @@ const MAIN_SHA = "a".repeat(64);
 const SCAN_SHA = "b".repeat(64);
 const PNG_DATA =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==";
+const FIELD_FIRE = "field_fire";
+const FIELD_CONDITION = "field_condition";
 
 function pageRef(version, index) {
   return version >= 24 ? `page_${version}_${index}` : index;
@@ -163,6 +165,7 @@ function measurementItems(version) {
           areaMode: "subtract",
           ...(version >= 4 ? { areaShape: "rectangle" } : { areaShape: "polygon" }),
           ...(version >= 16 ? { labelFit: "center" } : {}),
+          ...(version >= 28 ? { spaceId: "space_room", custom: { [FIELD_FIRE]: "EI30" } } : {}),
         },
       ),
     );
@@ -305,6 +308,27 @@ function drawingItems(version) {
         ...(version >= 14 ? { symbolSize: 32 } : {}),
         ...(version >= 23 ? { tag: "FE-01", tagOffset: { x: 10, y: -12 } } : {}),
       }),
+    );
+  }
+  if (version >= 28) {
+    items.push(
+      item(
+        version,
+        "item_schedule",
+        "schedule",
+        [
+          { x: 300, y: 600 },
+          { x: 520, y: 720 },
+        ],
+        {
+          scheduleId: "sched_rooms",
+          rowStart: 3,
+          rowLimit: 12,
+          showHeader: false,
+          showTotals: true,
+          fontSize: 9,
+        },
+      ),
     );
   }
   if (version >= 23) {
@@ -511,24 +535,60 @@ function settingsFor(version) {
     settings.labelSize = 7;
     settings.compactAreaLabels = true;
   }
+  if (version >= 28) {
+    settings.summary = {
+      cards: [
+        { id: "rooms", visible: true },
+        { id: "area", visible: true },
+        { id: "wallLength", visible: false },
+        { id: "doors", visible: true },
+      ],
+    };
+  }
   return settings;
 }
 
 function categoriesFor(version) {
   if (version < 3) return undefined;
   return [
-    { id: "cat_floor", name: "Floor", wastePercent: 10, roundingStep: 0.5 },
-    { id: "cat_other", name: "Other" },
+    {
+      id: "cat_floor",
+      name: "Floor",
+      wastePercent: 10,
+      roundingStep: 0.5,
+      ...(version >= 28 ? { summaryRole: "floor" } : {}),
+    },
+    { id: "cat_other", name: "Other", ...(version >= 28 ? { summaryRole: "other" } : {}) },
   ];
 }
 
 function countTypesFor(version) {
   if (version < 20) return undefined;
   return [
-    { id: "door", label: "Door", glyph: "door" },
-    { id: "window", label: "Window", glyph: "window" },
-    { id: "valve", label: "Valve", glyph: "fixture" },
-    { id: "other", label: "Other", glyph: "other" },
+    {
+      id: "door",
+      label: "Door",
+      glyph: "door",
+      ...(version >= 28 ? { summaryRole: "door" } : {}),
+    },
+    {
+      id: "window",
+      label: "Window",
+      glyph: "window",
+      ...(version >= 28 ? { summaryRole: "window" } : {}),
+    },
+    {
+      id: "valve",
+      label: "Valve",
+      glyph: "fixture",
+      ...(version >= 28 ? { summaryRole: "fixture" } : {}),
+    },
+    {
+      id: "other",
+      label: "Other",
+      glyph: "other",
+      ...(version >= 28 ? { summaryRole: "other" } : {}),
+    },
   ];
 }
 
@@ -587,6 +647,88 @@ function markupsViewsFor(version) {
   ];
 }
 
+function fieldDefinitionsFor(version) {
+  if (version < 28) return undefined;
+  return [
+    {
+      id: FIELD_FIRE,
+      key: "fire_class",
+      label: "Fire class",
+      type: "enum",
+      scope: "measurement",
+      options: [
+        { id: "EI30", label: "EI 30" },
+        { id: "EI60", label: "EI 60" },
+      ],
+      order: 0,
+    },
+    {
+      id: FIELD_CONDITION,
+      key: "condition",
+      label: "Condition",
+      type: "number",
+      scope: "space",
+      order: 0,
+      validation: { min: 1, max: 5 },
+    },
+  ];
+}
+
+function fieldSetsFor(version) {
+  if (version < 28) return undefined;
+  return [
+    {
+      id: "fset_fire",
+      name: "Fire",
+      scope: "measurement",
+      fieldIds: [FIELD_FIRE],
+    },
+  ];
+}
+
+function spacesFor(version) {
+  if (version < 28) return undefined;
+  return [
+    {
+      id: "space_room",
+      kind: "room",
+      name: "Room A",
+      number: "101",
+      floor: "Floor 1",
+      usage: "Office",
+      status: "active",
+      areaMode: "measured",
+      pageId: pageRef(version, 1),
+      custom: { [FIELD_CONDITION]: 3 },
+      createdAt: NOW,
+      updatedAt: NOW,
+    },
+  ];
+}
+
+function schedulesFor(version) {
+  if (version < 28) return undefined;
+  return [
+    {
+      id: "sched_rooms",
+      name: "Rooms",
+      source: "spaces",
+      rowMode: "items",
+      columns: [
+        { id: "col_number", field: "number", label: "Number", visible: true },
+        { id: "col_name", field: "name", label: "Name", visible: true },
+        { id: "col_area", field: "area", format: "unit", visible: true },
+      ],
+      filters: {},
+      groupBy: "floor",
+      sort: [{ field: "number", direction: "asc" }],
+      totals: [{ field: "area", op: "sum" }],
+      createdAt: NOW,
+      updatedAt: NOW,
+    },
+  ];
+}
+
 function metadataFor(version) {
   if (version < 22) return undefined;
   return {
@@ -619,6 +761,14 @@ function buildFixture(version, { rich = false } = {}) {
   if (countPresets) project.countPresets = countPresets;
   const lineTypes = lineTypesFor(version);
   if (lineTypes) project.lineTypes = lineTypes;
+  const fieldDefinitions = fieldDefinitionsFor(version);
+  if (fieldDefinitions) project.fieldDefinitions = fieldDefinitions;
+  const fieldSets = fieldSetsFor(version);
+  if (fieldSets) project.fieldSets = fieldSets;
+  const spaces = spacesFor(version);
+  if (spaces) project.spaces = spaces;
+  const schedules = schedulesFor(version);
+  if (schedules) project.schedules = schedules;
   const assets = assetsFor(version);
   if (assets) project.assets = assets;
   if (version >= 24) {
@@ -671,5 +821,6 @@ write("schema-24-full.gridscalr", buildFixture(24, { rich: true }));
 write("schema-25.gridscalr", buildFixture(25, { rich: true }));
 write("schema-26.gridscalr", buildFixture(26, { rich: true }));
 write("schema-27.gridscalr", buildFixture(27, { rich: true }));
+write("schema-28.gridscalr", buildFixture(28, { rich: true }));
 
-console.log("Wrote schema 1-22, schema-23-full through schema-27 fixtures.");
+console.log("Wrote schema 1-22, schema-23-full through schema-28 fixtures.");

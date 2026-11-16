@@ -2896,3 +2896,30 @@ remains the scheduling home.
 - **Related:** [#74](https://github.com/MajorJohnDoe/gridscalr/issues/74), F-037,
   F-074, `docs/releasing.md`, `docs/limitations.md`,
   `scripts/verify-macos-bundle.mjs`.
+
+### F-118 — Project page import does not merge schema 28 registers
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 1 — schema 28 foundation
+- **Severity:** P3
+- **Area:** Project page import / schema 28 references
+- **Status:** open — deferred to the custom-field, space and schedule phases
+- **Evidence:** `src/features/projectImport/merge.ts` merges categories, count types,
+  line types, image assets and documents. It does not merge custom-field
+  definitions, field sets, spaces or schedules, and `cloneImportedItem` copies a
+  source item's `spaceId`, `custom` and schedule-placement fields unchanged.
+- **Problem:** Importing a page from a schema 28 project can therefore create an
+  item whose `spaceId` or `scheduleId` resolves in the source project but not in
+  the destination. The integrity validator reports `missingItemSpace` or
+  `missingSchedulePlacement` after the import, and the doctor can clear or remove
+  it, but the import preflight does not say so before the commit.
+- **Impact:** No data is lost silently. The preflight count is incomplete, and an
+  imported schedule placement renders nothing until the destination defines a
+  schedule with that id. Phase 1 has no UI that creates spaces, fields or
+  schedules, so the path is reachable only from a hand-authored schema 28 file.
+- **Next step:** When Phase 2 adds field sets and Phase 3 adds spaces, decide
+  whether page import should merge the referenced registers, remap the ids, or
+  drop the references with an explicit preflight warning. A schedule placement
+  belongs with the schedule-import decision in Phase 4/5.
+- **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
+  `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.

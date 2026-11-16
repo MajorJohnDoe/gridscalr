@@ -2,6 +2,12 @@ import { isMeasurementKind } from "../../model/layers";
 import { layerHierarchyIssues } from "../../model/layerHierarchy";
 import type { MarkupItem, PageRecord, Project } from "../../model/types";
 import type { RepairChanges } from "./repairPlan";
+import {
+  cleanCustomValues,
+  repairFieldReferences,
+  repairScheduleReferences,
+  repairSpaceReferences,
+} from "./repairDriftReferences";
 
 function repairItem(item: MarkupItem, project: Project, log: RepairChanges): void {
   const categoryIds = new Set(project.categories.map((entry) => entry.id));
@@ -54,6 +60,20 @@ export function planDanglingReferences(project: Project, log: RepairChanges): vo
   const assetIds = new Set(Object.keys(project.assets));
   const categoryIds = new Set(project.categories.map((entry) => entry.id));
   const countTypeIds = new Set(project.countTypes.map((entry) => entry.id));
+  const fieldById = new Map(project.fieldDefinitions.map((field) => [field.id, field]));
+
+  repairFieldReferences(project, fieldById, categoryIds, countTypeIds, log);
+  const spaceIds = repairSpaceReferences(project, fieldById, pageIds, log);
+  const scheduleIds = repairScheduleReferences(
+    project,
+    fieldById,
+    pageIds,
+    categoryIds,
+    countTypeIds,
+    spaceIds,
+    log,
+  );
+
   // A broken hierarchy link is cleared, never repaired by deleting a layer.
   // The issue code is recorded so the preview and the saved copy agree.
   const parentIssues = new Map<string, string>();
@@ -106,6 +126,50 @@ export function planDanglingReferences(project: Project, log: RepairChanges): vo
         log.remove("item", item.id, "missingImageAsset");
         continue;
       }
+      if (item.kind === "schedule") {
+        if (!item.scheduleId || !scheduleIds.has(item.scheduleId)) {
+          log.remove("item", item.id, "missingSchedulePlacement");
+          continue;
+        }
+        if (
+          item.rowStart !== undefined &&
+          (!Number.isInteger(item.rowStart) || item.rowStart < 0)
+        ) {
+          delete item.rowStart;
+          log.rewrite("item", item.id, "invalidScheduleRowRange");
+        }
+        if (
+          item.rowLimit !== undefined &&
+          (!Number.isInteger(item.rowLimit) || item.rowLimit < 1)
+        ) {
+          delete item.rowLimit;
+          log.rewrite("item", item.id, "invalidScheduleRowRange");
+        }
+      } else if (
+        item.scheduleId !== undefined ||
+        item.rowStart !== undefined ||
+        item.rowLimit !== undefined ||
+        item.showHeader !== undefined ||
+        item.showTotals !== undefined
+      ) {
+        delete item.scheduleId;
+        delete item.rowStart;
+        delete item.rowLimit;
+        delete item.showHeader;
+        delete item.showTotals;
+        log.rewrite("item", item.id, "unexpectedScheduleFields");
+      }
+      if (item.spaceId !== undefined) {
+        if (item.kind !== "area") {
+          delete item.spaceId;
+          log.rewrite("item", item.id, "invalidItemSpace");
+        } else if (!spaceIds.has(item.spaceId)) {
+          delete item.spaceId;
+          log.rewrite("item", item.id, "missingItemSpace");
+        }
+      }
+      item.custom = cleanCustomValues(item.custom, fieldById, "measurement", "item", item.id, log);
+      if (!item.custom) delete item.custom;
       repairItem(item, project, log);
       items.push(item);
     }

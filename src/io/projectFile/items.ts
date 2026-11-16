@@ -7,6 +7,7 @@ import { SYMBOL_MAX_SIZE, SYMBOL_MIN_SIZE, isInspectionStatus } from "../../mode
 import type {
   AreaMode,
   ArrowHeads,
+  FieldDefinition,
   LayerKind,
   LengthUnit,
   MarkupItem,
@@ -22,6 +23,7 @@ import {
   normalizeImageMode,
   normalizeTextRuns,
 } from "./shared";
+import { normalizeCustomValues } from "./fields";
 import { normalizeRailRows } from "./rail";
 
 export function normalizeItem(
@@ -35,6 +37,7 @@ export function normalizeItem(
   pageIds: ReadonlySet<PageId>,
   fallbackPageId: PageId | null,
   report?: (code: string) => void,
+  fields: readonly FieldDefinition[] = [],
 ): MarkupItem | null {
   if (typeof value !== "object" || value === null) return null;
   const raw = value as Partial<MarkupItem>;
@@ -97,6 +100,21 @@ export function normalizeItem(
     const height = Math.abs(points[1].y - points[0].y);
     if (width < 2 || height < 2) {
       report?.("droppedTextboxGeometry");
+      return null;
+    }
+  }
+  if (raw.kind === "schedule") {
+    if (typeof raw.scheduleId !== "string" || !raw.scheduleId.trim()) {
+      report?.("droppedSchedulePlacement");
+      return null;
+    }
+    if (points.length < 2) {
+      report?.("droppedSchedulePlacement");
+      return null;
+    }
+    if (points.length > 2) points.length = 2;
+    if (Math.abs(points[1].x - points[0].x) < 2 || Math.abs(points[1].y - points[0].y) < 2) {
+      report?.("droppedSchedulePlacement");
       return null;
     }
   }
@@ -213,6 +231,54 @@ export function normalizeItem(
             : raw.kind === "delta"
               ? "A"
               : undefined;
+  const spaceId =
+    raw.kind === "area" && typeof raw.spaceId === "string" && raw.spaceId.trim()
+      ? raw.spaceId.trim().slice(0, 120)
+      : undefined;
+  if (
+    raw.spaceId !== undefined &&
+    (raw.kind !== "area" || typeof raw.spaceId !== "string" || !raw.spaceId.trim())
+  ) {
+    report?.("droppedItemSpace");
+  }
+  const custom = isMeasure
+    ? normalizeCustomValues(raw.custom, fields, "measurement", report)
+    : undefined;
+  if (raw.custom !== undefined && !isMeasure) report?.("droppedCustomValue");
+  const scheduleId =
+    raw.kind === "schedule" && typeof raw.scheduleId === "string"
+      ? raw.scheduleId.trim().slice(0, 120)
+      : undefined;
+  const rowStart =
+    raw.kind === "schedule" &&
+    typeof raw.rowStart === "number" &&
+    Number.isInteger(raw.rowStart) &&
+    raw.rowStart >= 0
+      ? Math.min(100000, raw.rowStart)
+      : undefined;
+  const rowLimit =
+    raw.kind === "schedule" &&
+    typeof raw.rowLimit === "number" &&
+    Number.isInteger(raw.rowLimit) &&
+    raw.rowLimit > 0
+      ? Math.min(10000, raw.rowLimit)
+      : undefined;
+  if (
+    raw.kind === "schedule" &&
+    raw.rowStart !== undefined &&
+    (!Number.isInteger(raw.rowStart) || raw.rowStart < 0)
+  ) {
+    report?.("repairedScheduleRowRange");
+  }
+  if (
+    raw.kind === "schedule" &&
+    raw.rowLimit !== undefined &&
+    (!Number.isInteger(raw.rowLimit) || raw.rowLimit < 1)
+  ) {
+    report?.("repairedScheduleRowRange");
+  }
+  const showHeader = raw.kind === "schedule" ? raw.showHeader !== false : undefined;
+  const showTotals = raw.kind === "schedule" ? raw.showTotals === true : undefined;
   const fallbackColor = normalizeColor(layerColor, defaultColorForItem(raw.kind));
   const colorFallback =
     raw.kind === "image" ? "#7aa2f7" : raw.kind === "textbox" ? "#1a2024" : fallbackColor;
@@ -283,6 +349,13 @@ export function normalizeItem(
           : null,
     categoryId: isMeasure ? (categoryValid ? raw.categoryId : fallbackCategoryId) : undefined,
     room: isMeasure && room ? room : undefined,
+    spaceId,
+    custom,
+    scheduleId,
+    rowStart,
+    rowLimit,
+    showHeader,
+    showTotals,
     areaMode:
       raw.kind === "area"
         ? raw.areaMode === "subtract"

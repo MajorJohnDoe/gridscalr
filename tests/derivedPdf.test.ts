@@ -49,8 +49,8 @@ function issueCodes(project: Project): string[] {
 }
 
 describe("schema 27 derived-PDF cache marker", () => {
-  it("is the current schema and keeps a schema 27 marker through a round trip", () => {
-    expect(SCHEMA_VERSION).toBe(27);
+  it("keeps a schema 27 marker through a round trip on the current schema", () => {
+    expect(SCHEMA_VERSION).toBe(28);
     const { project, report } = parseProjectWithReport(SCHEMA_27);
     expect(report.migratedFrom).toBe(27);
     const scan = scanOf(project);

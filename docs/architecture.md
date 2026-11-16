@@ -271,9 +271,20 @@ src/
   io/projectFile/sourceStorage.ts schema 24 → 25 reference/managed storage migration
   io/projectFile/layerHierarchy.ts schema 25 → 26 layer parent migration and old-parent rejection
   io/projectFile/derivedPdf.ts schema 26 → 27 TIF derived-PDF marker, untrusted pre-27 markers and the renderable-source check
+  io/projectFile/schema28.ts schema 27 → 28 field, space, schedule and summary migration
+  io/projectFile/fields.ts custom-field definitions, field sets and typed custom values
+  io/projectFile/spaces.ts space register normalization
+  io/projectFile/schedules.ts schedule definition normalization
+  io/projectFile/summary.ts summary-card normalization
   src-tauri/src/derived_cache.rs verified derived-PDF cache write in `<project>.derived/`
   model/derivedPdf.ts    converter version, derived-PDF cache key rule and marker shape check
   model/layerHierarchy.ts pure parent links, tree order, effective visibility/lock and page-removal keep rules
+  model/driftTypes.ts    schema 28 field, space, schedule and summary types re-exported by model/types
+  model/fields.ts        pure field scopes, types, option and custom-value validation
+  model/spaces.ts        pure space-kind, area-mode and parent/cycle rules
+  model/schedules.ts     built-in schedule field catalogue and field-reference resolution
+  model/summary.ts       summary-card catalogue, roles and default settings
+  model/schema28Integrity.ts schema 28 referential-integrity rules called by model/integrity.ts
   features/layerTree/ layer tree view rows, inherited state, drag/keyboard nesting, subtree duplicate and delete plan, page-removal keep rules
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
@@ -299,13 +310,13 @@ docs/workflows.md        role-based guides for operations and property managemen
 docs/shortcuts.md        in-app keyboard reference
 docs/screenshots/        versioned screenshots and capture manifest
 tests/                   geometry, quick areas, snap, text layout, calibration, layers, quantities, selection/clipboard, hit-testing, project files, PDF export, page thumbnails, SHA-256, Markdown, help images, demo project, canvas geometry, autosave and the model-to-feature boundary scan
-tests/robustness/        seeded page/save sequences, competing saves, the schema 1–27 migration corpus and source-storage gates
+tests/robustness/        seeded page/save sequences, competing saves, the schema 1–28 migration corpus and source-storage gates
 fixtures/legacy/         committed project fixtures for every supported schema; generate with scripts/make-legacy-fixtures.mjs
 scripts/plan-geometry.mjs shared geometry for the industrial sample set
 scripts/make-industrial-fixture.mjs reproducible three-sheet industrial PDF generator
 scripts/make-fixture.mjs legacy A4 sample generator
 scripts/make-demo-project.mjs deterministic documentation project
-scripts/make-legacy-fixtures.mjs generator for the schema 1–27 migration corpus
+scripts/make-legacy-fixtures.mjs generator for the schema 1–28 migration corpus
 scripts/ui-harness.mjs shared Playwright server and demo-project helpers
 scripts/smoke-ui.mjs Playwright smoke test for open, measure, help and save
 scripts/canvas-regression.mjs pointer-level canvas gesture regressions
@@ -363,7 +374,11 @@ Key design choices:
 ## Planned foundation work
 
 The data-integrity work is accepted and progressively implemented. The source
-map above describes the current schema 27 code.
+map above describes the current schema 28 code. Schema 28 is the first drift
+slice: custom field definitions, field sets, spaces, schedules, schedule
+placements and summary settings are stored and validated. Their editors, the
+summary panel, table rendering, CSV round-trip and PDF table export are later
+phases; do not describe them as shipped.
 
 - [ADR 0010](adr/0010-project-file-integrity.md): conditional project writes,
   conflict copies, scoped autosave and advisory lock leases.
@@ -387,7 +402,7 @@ Do not describe these behaviours as shipped until their migrations and UI land.
 - `npm run check:file-budgets` compares every TypeScript and CSS file under `src` and every Rust file under `src-tauri/src` with `file-budgets.json`. Frontend files default to 700 lines with stricter directory limits; Rust files default to 400 lines. Listed legacy files may only shrink, a Rust exception must record a reviewed reason, and CI fails when a budget is exceeded or an exception is stale. `--update` may raise an existing exception but refuses a new oversized file.
 - `npm run lint` runs the type-aware ESLint checks for asynchronous calls, promise-returning handlers, type-only imports and exhaustive switches, plus the integration-module import boundary and the line budget. TypeScript 7 has no compiler API yet, so ESLint uses the official `@typescript/typescript6` alias while `npx tsc` remains TypeScript 7.
 - `npm run test:coverage` runs the same Vitest suite with the v8 coverage provider and writes text, HTML and `json-summary` reports to `coverage/`. CI uploads the report as an artifact; no threshold is enforced yet.
-- `npm run test:robustness` runs `tests/robustness/` as a named gate. The normal suite includes it; CI also runs the focused command. It covers seeded page identity, competing saves, the schema 1–26 corpus and source storage.
+- `npm run test:robustness` runs `tests/robustness/` as a named gate. The normal suite includes it; CI also runs the focused command. It covers seeded page identity, competing saves, the schema 1–28 corpus and source storage.
 - `npm run test:ui` and `npm run test:canvas` drive the browser fallback with Playwright.
 - `npm run test:count` drives the full count workflow: custom type creation, placement, pieces per object, Markups count-type filtering/grouping, quantities and presets.
 - `npm run test:touch` covers two-finger pan, pinch zoom and one-finger count placement.

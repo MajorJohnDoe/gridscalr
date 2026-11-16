@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 27,
+  "schemaVersion": 28,
   "id": "prj_demo_takeoff",
   "name": "Northgate Logistics Hub - Takeoff",
   "documents": [
@@ -61,6 +61,26 @@
       "defaultCategoryId": "cat_floor",
       "wastePercent": 10,
       "roundingStep": 0.5
+    },
+    "summary": {
+      "cards": [
+        {
+          "id": "rooms",
+          "visible": true
+        },
+        {
+          "id": "area",
+          "visible": true
+        },
+        {
+          "id": "wallLength",
+          "visible": true
+        },
+        {
+          "id": "doors",
+          "visible": true
+        }
+      ]
     }
   },
   "categories": [
@@ -95,6 +115,10 @@
       "name": "Other"
     }
   ],
+  "fieldDefinitions": [],
+  "fieldSets": [],
+  "spaces": [],
+  "schedules": [],
   "assets": {},
   "metadata": {
     "facility": "Northgate Logistics Hub",

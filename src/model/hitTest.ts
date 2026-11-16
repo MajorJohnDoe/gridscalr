@@ -481,7 +481,8 @@ function marqueePolyline(item: MarkupItem): { points: Point[]; closed: boolean }
       return item.highlightShape === "stroke"
         ? { points: item.points.map(toPage), closed: false }
         : null;
-    case "rect": {
+    case "rect":
+    case "schedule": {
       if (item.fillColor) return null;
       const first = item.points[0];
       if (!first) return null;

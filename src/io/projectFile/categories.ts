@@ -4,6 +4,7 @@ import {
   createDefaultCategories,
   normalizeCategoryName,
 } from "../../model/categories";
+import { isCategorySummaryRole } from "../../model/summary";
 import type { Category } from "../../model/types";
 
 export function uniqueCategoryName(categories: Category[], wanted: string): string {
@@ -43,6 +44,11 @@ export function normalizeCategories(value: unknown, report?: (code: string) => v
       }
       if (typeof raw.roundingStep === "number" && Number.isFinite(raw.roundingStep)) {
         category.roundingStep = Math.max(0, raw.roundingStep);
+      }
+      if (isCategorySummaryRole(raw.summaryRole)) {
+        category.summaryRole = raw.summaryRole;
+      } else if (raw.summaryRole !== undefined) {
+        report?.("droppedCategorySummaryRole");
       }
       categories.push(category);
     }

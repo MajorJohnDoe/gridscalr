@@ -110,6 +110,9 @@ export function dispatchItem(
     case "image":
       drawImageItem(ctx, item, state);
       break;
+    case "schedule":
+      // Schema 28 stores placements; the table renderer is a later phase.
+      break;
   }
   ctx.restore();
 

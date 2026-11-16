@@ -1,6 +1,7 @@
 import { isMeasurementKind } from "./layers";
 import { derivedPdfCacheIsCurrent, isDerivedPdfCacheRef } from "./derivedPdf";
 import { layerHierarchyIssues } from "./layerHierarchy";
+import { validateSchema28 } from "./schema28Integrity";
 import type { ImageAsset, MarkupItem, PageRecord, Project } from "./types";
 
 /**
@@ -381,6 +382,7 @@ export function validateProject(project: Project): ProjectIssue[] {
     }
   }
 
+  issues.push(...validateSchema28(project));
   return issues;
 }
 
@@ -395,20 +397,33 @@ export interface ProjectShape {
   lineTypes: number;
   countPresets: number;
   markupsViews: number;
+  fieldDefinitions: number;
+  fieldSets: number;
+  spaces: number;
+  schedules: number;
+  customValues: number;
 }
 
 export function projectShape(project: Project): ProjectShape {
+  const items = project.layers.flatMap((layer) => layer.items);
   return {
     documents: project.documents.length,
     pages: project.pages.length,
     layers: project.layers.length,
-    items: project.layers.reduce((total, layer) => total + layer.items.length, 0),
+    items: items.length,
     assets: Object.keys(project.assets).length,
     categories: project.categories.length,
     countTypes: project.countTypes.length,
     lineTypes: project.lineTypes.length,
     countPresets: project.countPresets.length,
     markupsViews: project.markupsViews.length,
+    fieldDefinitions: project.fieldDefinitions.length,
+    fieldSets: project.fieldSets.length,
+    spaces: project.spaces.length,
+    schedules: project.schedules.length,
+    customValues:
+      items.reduce((total, item) => total + Object.keys(item.custom ?? {}).length, 0) +
+      project.spaces.reduce((total, space) => total + Object.keys(space.custom ?? {}).length, 0),
   };
 }
 

@@ -1,6 +1,6 @@
 import { normalizeColor } from "../../model/color";
 import { createLayer, defaultColorForLayer, normalizeLayerOrder } from "../../model/layers";
-import type { Layer, LayerPageState, PageId } from "../../model/types";
+import type { FieldDefinition, Layer, LayerPageState, PageId } from "../../model/types";
 import { normalizeItem } from "./items";
 
 export function normalizeLayerPageState(
@@ -48,6 +48,7 @@ export function normalizeLayers(
   pageIds: ReadonlySet<PageId>,
   fallbackPageId: PageId | null,
   report?: (code: string) => void,
+  fields: readonly FieldDefinition[] = [],
 ): Layer[] {
   const layers: Layer[] = [];
   if (Array.isArray(rawLayers)) {
@@ -109,6 +110,7 @@ export function normalizeLayers(
             pageIds,
             fallbackPageId,
             report,
+            fields,
           );
           if (normalized) layer.items.push(normalized);
         }

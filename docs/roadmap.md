@@ -5,12 +5,12 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.28.0** · Project-file schema: **27, frozen for 1.0**
+Current version: **0.28.0** · Project-file schema: **28, in development**
 
-1.0 is a **quality gate**, not a target date. Work is organised by foundation
-workstreams so the product can release many versions while the base becomes
-stable. Feature details belong in GitHub issues, not in a version-numbered
-roadmap.
+1.0 is **deferred** and remains a quality gate, not a target date. Work is
+organised by foundation slices so the product can release pre-1.0 minors while
+the base becomes stable. Feature details belong in GitHub issues, not in a
+version-numbered roadmap.
 
 ## Product principles
 
@@ -81,6 +81,7 @@ These are not negotiable without an explicit decision:
 | 0.26.0 | Panels and demo: Layers sections with bulk actions and page-scoped drag/search, flat Pages list with source lines and view options, Preferences cards and a visible scrollbar, autosave focus fix, deterministic PDF metadata, and an operation card page in the demo | Complete | v26 |
 | 0.27.0 | Limits and lifecycle: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions and the docs/capture/Rust module gates, edit-safe shell rendering, a source check that no longer emits a save, themed Layers surfaces, and the colour-scan/OCG decisions | Complete | v26 |
 | 0.28.0 | Release candidate for 1.0: schema 27 colour-scan derived-PDF cache, ISO nested OCG `/Order`, import preflight relink from the picker, accessibility/touch-target/UI-scale/performance gates in CI, Light Green contrast fix, automated macOS artifact verification and the accepted `glib` position | Complete | v27 |
+| Drift Slice 1, phase 1 | Schema 28 foundation: custom field definitions and field sets, spaces, schedules, schedule placements, summary settings, migration, integrity rules, doctor codes and the schema 1–28 corpus | In progress | v28 |
 
 **0.27.0** ships this work; its scope, decisions and follow-ups are recorded in
 [`plan/0.27.md`](plan/0.27.md), [`plan/0.27-handover.md`](plan/0.27-handover.md),
@@ -98,10 +99,19 @@ release has been tested in real use. See [`plan/0.28.md`](plan/0.28.md),
 [`plan/0.28-handover.md`](plan/0.28-handover.md) and epic
 [#261](https://github.com/MajorJohnDoe/gridscalr/issues/261).
 
-**Schema freeze:** schema 27 is the last change before 1.0. The migration ladder,
-the compatibility promise and the committed corpus end at 27. A later format
-change is a schema 28 and a deliberate unfreeze with its own migration and
-fixture, not a routine bump.
+**Schema status:** 1.0 is deferred. Schema 27 is no longer frozen for 1.0;
+schema 28 is the current development schema and starts Drift Slice 1. The
+migration ladder, the compatibility promise and the committed corpus now end at
+28. Every later format change needs its own migration, fixture, round-trip and
+determinism tests, not a routine bump.
+
+**Drift Slice 1 — data foundation** is in progress on schema 28. Phase 1 adds
+custom field definitions and field sets, spaces, schedules, schedule placements
+and summary settings, with migration, integrity rules, doctor codes and the
+schema 1–28 corpus. It deliberately has no field editor, space register,
+schedule builder, table placement, CSV or PDF table output yet. The later phases
+are listed in [`plan/drift-slice-1.md`](plan/drift-slice-1.md); their handover
+lives in [`plan/slice-1-handover.md`](plan/slice-1-handover.md).
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).
@@ -228,7 +238,7 @@ Issue [#158](https://github.com/MajorJohnDoe/gridscalr/issues/158).
 
 Implemented in Phase 7 ([#159](https://github.com/MajorJohnDoe/gridscalr/issues/159)):
 `tests/robustness/` runs as `npm run test:robustness` and in the normal suite,
-and CI names the focused step. The migration corpus covers schema 1–27.
+and CI names the focused step. The migration corpus covers schema 1–28.
 
 Related: [#52](https://github.com/MajorJohnDoe/gridscalr/issues/52),
 [#61](https://github.com/MajorJohnDoe/gridscalr/issues/61),
@@ -319,6 +329,7 @@ full list.
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
 | Layer hierarchy | Complete in schema 26: optional `parentId`, tree order, visibility/lock inheritance, subtree deletion and page-removal keep rules, the Layers panel tree with inherited-state indicators and subtree duplication, and nested optional-content headings in the PDF export. Grouping never restacks a drawing. See [ADR 0014](adr/0014-layer-hierarchy.md). |
+| Custom fields, spaces and schedules | Schema 28 foundation is in progress: typed custom fields and field sets, the space register with derived-area rules, schedules and placements, summary settings and `summaryRole` on categories and count types. Storage, migration and integrity land in phase 1; editors, panels, table rendering and CSV follow in phases 2–7. 1.0 is deferred. See [`plan/drift-slice-1.md`](plan/drift-slice-1.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |

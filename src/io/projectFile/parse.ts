@@ -12,7 +12,11 @@ import { normalizeCalibration } from "./calibration";
 import { normalizeCategories } from "./categories";
 import { normalizeSettings } from "./settings";
 import { normalizeAssets } from "./assets";
+import { normalizeFieldDefinitions, normalizeFieldSets } from "./fields";
 import { normalizeLayers } from "./layers";
+import { normalizeSchedules } from "./schedules";
+import { migrateToSchema28 } from "./schema28";
+import { normalizeSpaces } from "./spaces";
 import { migrateLayerHierarchy } from "./layerHierarchy";
 import { normalizeLineTypes } from "./lineTypes";
 import { normalizeDocument } from "./documents";
@@ -82,6 +86,10 @@ export function parseProjectWithReport(text: string): {
   if (raw.schemaVersion > SCHEMA_VERSION) {
     throw new Error(t("projectFile.newerVersion"));
   }
+  // Schema 27 → 28: add the empty arrays and default summary cards, and ignore
+  // fields that did not exist before schema 28. No space is created from a room
+  // string and no summary role is assigned.
+  const schema28 = migrateToSchema28(raw as Record<string, unknown>, raw.schemaVersion);
   const legacy = raw.document;
   const rawDocuments: unknown[] = Array.isArray(raw.documents)
     ? raw.documents
@@ -143,7 +151,16 @@ export function parseProjectWithReport(text: string): {
   const categories = normalizeCategories(raw.categories, reportDrop);
   load.repair("repairedCategoryId", duplicateIdCount(raw.categories));
   const countTypes = normalizeCountTypes(raw.countTypes, reportDrop);
-  const settings = normalizeSettings(raw.settings, categories);
+  const settings = normalizeSettings(raw.settings, categories, reportDrop);
+  const fieldDefinitions = normalizeFieldDefinitions(raw.fieldDefinitions, reportDrop);
+  load.repair("repairedFieldId", duplicateIdCount(raw.fieldDefinitions));
+  const fieldSets = normalizeFieldSets(raw.fieldSets, fieldDefinitions, reportDrop);
+  load.repair("repairedFieldSetId", duplicateIdCount(raw.fieldSets));
+  const spaces = normalizeSpaces(raw.spaces, fieldDefinitions, pageIds, reportDrop);
+  load.repair("repairedSpaceId", duplicateIdCount(raw.spaces));
+  const schedules = normalizeSchedules(raw.schedules, reportDrop);
+  load.repair("repairedScheduleId", duplicateIdCount(raw.schedules));
+  load.drop("droppedSchedulePlacement", schema28.droppedSchedulePlacements);
   const rawDefaultCategory = (
     raw.settings as { quantity?: { defaultCategoryId?: unknown } } | undefined
   )?.quantity?.defaultCategoryId;
@@ -184,6 +201,7 @@ export function parseProjectWithReport(text: string): {
     pageIds,
     migration.firstPageId,
     reportDrop,
+    fieldDefinitions,
   );
   load.drop("droppedItem", droppedCount(rawItemCount(raw.layers), parsedItemCount(layers)));
   const project: Project = {
@@ -196,6 +214,10 @@ export function parseProjectWithReport(text: string): {
     countTypes,
     countPresets,
     lineTypes,
+    fieldDefinitions,
+    fieldSets,
+    spaces,
+    schedules,
     assets,
     pages: migration.records,
     metadata: normalizeProjectMetadata(raw.metadata),

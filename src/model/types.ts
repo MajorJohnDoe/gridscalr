@@ -1,4 +1,42 @@
-export const SCHEMA_VERSION = 27 as const;
+import type {
+  CustomValue,
+  FieldDefinition,
+  FieldSet,
+  ScheduleDefinition,
+  Space,
+  SummarySettings,
+} from "./driftTypes";
+
+export type {
+  CustomValue,
+  FieldAppliesTo,
+  FieldDefinition,
+  FieldOption,
+  FieldScope,
+  FieldSet,
+  FieldType,
+  FieldValidation,
+  ScheduleColumn,
+  ScheduleColumnFormat,
+  ScheduleCustomFilter,
+  ScheduleCustomFilterOp,
+  ScheduleDefinition,
+  ScheduleFieldRef,
+  ScheduleFilter,
+  ScheduleRowMode,
+  ScheduleSort,
+  ScheduleSource,
+  ScheduleTotal,
+  ScheduleTotalOp,
+  Space,
+  SpaceAreaMode,
+  SpaceKind,
+  SummaryCard,
+  SummaryCardId,
+  SummarySettings,
+} from "./driftTypes";
+
+export const SCHEMA_VERSION = 28 as const;
 
 /**
  * How a source drawing is stored. `reference` points at the original file.
@@ -62,7 +100,8 @@ export type DrawingKind =
   | "symbol"
   | "textbox"
   | "polyline"
-  | "rail";
+  | "rail"
+  | "schedule";
 export type ItemKind = MeasurementKind | DrawingKind;
 
 /** Background images sit above the PDF and below every markup. Annotation images follow layer order. */
@@ -99,7 +138,11 @@ export interface CountTypeDef {
   label: string;
   /** One of the built-in count glyphs. */
   glyph: CountGlyph;
+  /** Schema 28: optional role used by the summary cards. Never inferred. */
+  summaryRole?: CountSummaryRole;
 }
+
+export type CountSummaryRole = "door" | "window" | "fixture" | "other";
 
 /** Reusable count settings: type, category, room and default pieces. */
 export interface CountPreset {
@@ -176,6 +219,20 @@ export interface MarkupItem {
   categoryId?: string;
   /** Measurements only. Trimmed free text, omitted when empty. */
   room?: string;
+  /** Schema 28: area measurements only. Links this measurement to a space. */
+  spaceId?: string;
+  /** Schema 28: measurement-scope custom values keyed by field id. */
+  custom?: Record<string, CustomValue>;
+  /** Schedule items only: the definition this placement renders. */
+  scheduleId?: string;
+  /** Schedule items only: first visible row, 0-based. */
+  rowStart?: number;
+  /** Schedule items only: maximum visible rows. Missing means all rows. */
+  rowLimit?: number;
+  /** Schedule items only: draw the header row. Missing means true. */
+  showHeader?: boolean;
+  /** Schedule items only: draw defined totals. Missing means false. */
+  showTotals?: boolean;
   /** Areas only. Defaults to add. */
   areaMode?: AreaMode;
   /** Areas and volumes. Missing means polygon. */
@@ -488,6 +545,8 @@ export interface ProjectSettings {
   /** Reusable stamp labels. New projects inherit the app defaults. */
   stampPresets: string[];
   quantity: QuantitySettings;
+  /** Schema 28: which summary KPI cards are visible. */
+  summary: SummarySettings;
 }
 
 /** A user-defined grouping label for measurements. Order in the project is report order. */
@@ -500,7 +559,11 @@ export interface Category {
   wastePercent?: number;
   /** Overrides the project rounding step. Reserved for milestone 2B. */
   roundingStep?: number;
+  /** Schema 28: optional role used by the summary cards. Never inferred. */
+  summaryRole?: CategorySummaryRole;
 }
+
+export type CategorySummaryRole = "wall" | "floor" | "ceiling" | "roof" | "other";
 
 export interface QuantitySettings {
   /** Always references a category in the project. */
@@ -576,6 +639,14 @@ export interface Project {
   countPresets: CountPreset[];
   /** Media classes for schematic polylines. Order is picker order. */
   lineTypes: LineType[];
+  /** Schema 28: custom field definitions, in display order. */
+  fieldDefinitions: FieldDefinition[];
+  /** Schema 28: named subsets of field definitions. */
+  fieldSets: FieldSet[];
+  /** Schema 28: building, floor, room and zone register. */
+  spaces: Space[];
+  /** Schema 28: live schedule definitions. */
+  schedules: ScheduleDefinition[];
   /** Embedded image payloads keyed by asset id. Items reference these by id. */
   assets: Record<string, ImageAsset>;
   /** Canonical page order. Array position is the display page number. */
