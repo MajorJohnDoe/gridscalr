@@ -286,6 +286,14 @@ src/
   model/summary.ts       summary-card catalogue, roles and default settings
   model/schema28Integrity.ts schema 28 referential-integrity rules called by model/integrity.ts
   features/layerTree/ layer tree view rows, inherited state, drag/keyboard nesting, subtree duplicate and delete plan, page-removal keep rules
+  features/spaces/ space register dialog, space tree, derived room area, measurement links and room-from-text creation
+  features/spaces/model/area.ts pure derived area from visible linked area measurements
+  features/spaces/model/tree.ts tree order, subtree ids, reparent rules and sibling moves
+  features/spaces/model/mutations.ts create, update, delete, link and unlink as caller-owned undo steps
+  features/spaces/model/roomText.ts explicit room creation from existing room text
+  features/spaces/ui/dialog.ts register dialog, selection-driven link action and measurement reveal
+  features/spaces/ui/form.ts space editor with space-scope custom fields
+  features/spaces/ui/list.ts register rows with area badge, warning and inline delete confirmation
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages
   io/writeGuard.ts       conservative source-path matching for every save and export

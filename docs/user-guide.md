@@ -434,7 +434,7 @@ Change a measurement's category, room, area mode, line style, or count type late
 
 Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **Settings → Project settings… → Fields → Manage fields…**.
 
-- **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by schedules and CSV and cannot change after the field is created. **Scope** is **Measurement**; **Space** fields belong to the space register and have no input yet.
+- **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by schedules and CSV and cannot change after the field is created. **Scope** is **Measurement** or **Space**; space fields appear in the space form in the register (**View → Spaces…**).
 - Choose a **Type**: text, number, number with unit, yes or no, date, one of the options, or several of the options. An option's id stays stable while its label can change. Number fields can set a minimum and a maximum, and text fields a maximum length.
 - **Required** marks a field that should be filled. The inspector warns while the value is empty, but the project still saves.
 - **Default value** is written when you apply a field set.
@@ -457,6 +457,44 @@ When **Snap to geometry** is enabled in **Project settings**, point placement ca
 - Intersections between straight markup segments
 
 With a drawing tool active, the marker appears as soon as the pointer is over a target, before the first click. The snap marker names the target type. Hidden items and hidden layers never provide snap targets; locked but visible items do. Set the snap distance in Settings from 2 to 24 screen pixels.
+
+## Rooms and spaces
+
+Open **View → Spaces…** to keep a register of buildings, floors, rooms and zones next to the drawing. The register is a tree: a building contains floors, and a floor contains rooms or zones. Each row shows the type, the room number, the name and the area.
+
+- **New space** adds a space. Choose the **Type**, the **Parent**, and then the room number, name, floor, usage and status that apply. **Page** links the space to one drawing page; the link is optional.
+- **Edit** changes any of those values, including the parent. A space cannot become its own parent or sit under one of its own children.
+- Use the arrow buttons to reorder a space among its siblings.
+
+### Area source
+
+**Area source** decides where the area comes from; the area is never stored twice.
+
+- **Measured from linked area measurements** sums the visible area measurements linked to the space: additions minus deductions, converted to m². If no measurement is linked, the row shows **Missing** and a warning; GridScalr never falls back to a manual value on its own.
+- **Manual area** stores the value you type. As soon as an area measurement is linked, the measured value wins and the row reports that the manual value is not used.
+- Hidden measurements and hidden layers are excluded from the area. Locked measurements are included.
+- If a linked measurement has no page scale, the area is reported as missing instead of presenting a partial sum.
+
+### Link a measurement
+
+1. Select one or more area measurements on the drawing.
+2. Open **View → Spaces…** and use the link action on the space row. The hint under the buttons names how many area measurements are selected.
+
+A link moves the measurement into the space; linking it to another space moves it again. Locked measurements cannot be linked, and only area measurements can be linked. The search action on a space row selects the first visible linked measurement and zooms to it.
+
+### Create rooms from the room text
+
+Measurements already carry a room name. **Create rooms from the room text** creates one measured room per unique room name and reports how many names already had a room. It never links a measurement: link them yourself so no area appears without a deliberate action.
+
+### Delete a space
+
+Deleting a space asks first and names how many measurements are linked. Confirm and the measurements are unlinked but **not** deleted; the space and its custom field values are removed. One click is one undo step. A space that still has child spaces is kept until you move or delete those children first.
+
+A duplicate room number under the same parent is a warning, not an error. Deleting a page keeps its spaces and only clears their page link, which is reported after the delete.
+
+### Space custom fields
+
+Fields created with the **Space** scope in **Settings → Project settings… → Fields** appear in the space form. Values are saved with the space in one undo step. Field sets, schedules and the summary panel for spaces arrive in later Drift Slice 1 phases; see [Known limitations](limitations.md).
 
 ## Draw and annotate
 

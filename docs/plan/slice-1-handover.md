@@ -240,3 +240,122 @@ Phase 3 — [spaces #278](https://github.com/MajorJohnDoe/gridscalr/issues/278):
 `src/features/spaces/` model, register panel, area derivation and the
 measurement-to-space action. The measurement `custom` values and the field
 editor are the surface the space register will mirror for `space` scope.
+
+## Phase 3 — spaces
+
+- **Issue:** [#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
+- **PR:** filled in below once opened
+- **Branch:** `feat/spaces`
+- **Implementation head SHA:** filled in below
+- **Status:** open, awaiting conductor verification. The conductor records the
+  final merge commit.
+
+### Completed work
+
+- `src/features/spaces/` with `index.ts` as the only public surface and pure
+  model files: the space tree, derived area, create/update/delete and
+  measurement links, and explicit room-from-text creation. Every mutation is
+  caller-owned, so one click is one undo step.
+- **View → Spaces…** opens the space register: a building → floor → room/zone
+  tree with type, room number, name, an **Measured** / **Manual** / **Missing**
+  area badge and the area in m².
+- Add, edit, move to another parent, reorder among siblings and delete. A name
+  is required, a space can never become its own ancestor, and a duplicate room
+  number under one parent is a warning that names the number and does not block
+  the save.
+- Area derivation: a measured space sums its visible linked area measurements
+  (add minus subtract, m²). A manual value is used only while nothing is linked;
+  a linked measurement wins and the row says the manual value is unused. A
+  missing area is reported with the reason and never falls back to manual.
+- Hidden items and hidden layers are excluded from the area, locked measurements
+  are included, and a visible link without a page scale reports a missing area
+  instead of a partial sum.
+- **Link the selected measurements**, **Unlink the selected measurements**,
+  select-and-zoom to the first visible linked measurement, and **Create rooms
+  from the room text** (one measured room per unique name, never a link).
+- Space-scoped custom fields are edited in the space form and saved with the
+  space in one undo step, reusing `src/features/fields`.
+- Deleting a space asks first and names the link count; measurements are
+  unlinked, never deleted, and the delete is one undo step. A space with child
+  spaces is refused so a subtree is never reparented silently. Deleting a page
+  keeps spaces and clears their page link, and the page-delete flow now toasts
+  the cleared count.
+- Wiring only: `src/app/App.ts` (one menu action), `src/ui/topMenu.ts` and
+  `src/ui/panels.ts` (the action itself), `src/app/pageFlows.ts` (the page-delete
+  report), `src/main.ts` (stylesheet) and the gate scripts.
+- i18n keys in both catalogs, generated types, model and jsdom UI tests.
+
+### Modules
+
+- `src/features/spaces/index.ts`, `model.ts`, `ui.ts`
+- `src/features/spaces/model/area.ts`, `tree.ts`, `mutations.ts`, `links.ts`,
+  `roomText.ts`
+- `src/features/spaces/ui/dialog.ts`, `form.ts`, `list.ts`, `messages.ts`
+- `src/styles/spaces.css`
+- `src/features/fields/index.ts`, `model.ts`, `ui.ts`,
+  `model/fieldRules.ts` (`applicableSpaceFields`, `fieldAppliesToSpace`, and the
+  exported `valueControl`)
+- `src/app/App.ts`, `src/app/pageFlows.ts`, `src/ui/panels.ts`,
+  `src/ui/topMenu.ts`, `src/main.ts`
+- `tests/spaces.test.ts`, `tests/spacesUi.test.ts`, `tests/accessibilityGate.test.ts`
+- `scripts/accessibility-rules.mjs`, `scripts/accessibility-check.mjs`,
+  `scripts/touch-target-check.mjs`, `scripts/ui-scale-check.mjs`,
+  `scripts/ui-harness.mjs`, `scripts/check-module-boundaries.mjs`,
+  `file-budgets.json`
+
+### Decisions
+
+- The register is a wide modal opened from **View → Spaces…**, not a dock panel,
+  so this phase adds no dock tab, shortcut or shell render path. A dock panel
+  would need the selection to change while it is open; that is recorded as
+  F-121.
+- `areaMode` decides the source, but a linked measurement always wins: a manual
+  space with links reports the measured area and flags the manual value unused.
+  The derived area is never written to the space.
+- A partial sum is refused. If any visible linked measurement has no page scale
+  the space reports a missing area, because a smaller number presented as the
+  room area is worse than an explicit warning.
+- Area is reported in m² regardless of the project area unit, because the room
+  register is not a measurement readout. Recorded in `docs/limitations.md`.
+- A space with children cannot be deleted. Silent reparenting is a data change
+  the user did not ask for; the register names the child count instead (F-122).
+- **Create rooms from the room text** creates root-level measured rooms and
+  never links a measurement. Deduplication is case-insensitive within the
+  chosen parent.
+- Page import still does not merge spaces: the F-118 phase-3 decision records
+  why, and the missing preflight warning stays open rather than being
+  half-implemented outside this module map.
+- Custom field values on a space are edited in the space form (one undo step on
+  save), not as live inspector edits; there is no space inspector yet.
+
+### Findings
+
+- F-121: the register is a modal, so measuring and linking cannot interleave.
+- F-122: a space subtree has no bulk move or delete.
+- F-118 extended: the Phase 3 decision keeps spaces out of the page-import merge
+  and leaves the preflight warning open.
+
+### Checks
+
+Local gate green: `check:versions`, `check:file-budgets`, `check:modules`,
+`check:security`, `check:actions`, `check:dependencies`, `check:docs`,
+`format:check`, `lint`, `check:i18n` (3220 keys), `check:themes`,
+`npx tsc --noEmit`, `npx vitest run` (162 files, 1603 tests), `test:visual`
+(4 screens, no baseline change), `test:a11y` (45 checks, 5 palettes × 9
+surfaces), `test:touch-targets` (427 controls, 9 surfaces), `test:ui-scale`,
+`test:docs-capture` (27 screenshots, `docs/screenshots/` untouched) and
+`test:ui`. `check:docs` reports only the expected stale-screenshot warning;
+recapture is deferred to Phase 7.
+
+### Conductor verification
+
+Pending. The conductor verifies the PR head SHA, all checks on that SHA, the
+file list against the module map and the acceptance criteria, then records the
+merge commit here.
+
+### Next phase
+
+Phase 4 — schedule engine and summary: `src/features/schedules/model.ts`, the
+measurement and space sources, summary KPI computation, the builder and the
+summary panel. The space source reads `spaceAreas()` from
+`src/features/spaces/index.ts`; no schema change is expected.
