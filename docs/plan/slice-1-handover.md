@@ -8,12 +8,17 @@ tag or release is part of this phase.
 
 ## Phase 1 — schema 28 foundation
 
-- **Issue:** [#273](https://github.com/MajorJohnDoe/gridscalr/issues/273)
-- **PR:** [#274](https://github.com/MajorJohnDoe/gridscalr/pull/274)
-- **Branch:** `feat/schema-28-foundation`
-- **Commit:** `cf7b294` (implementation), `1869c38` (handover)
-- **Status:** PR open; local gate green and CI green on the verified head. The PR
-  checks are authoritative for the final head SHA.
+- **Issue:** [#273](https://github.com/MajorJohnDoe/gridscalr/issues/273) (closed by the merge)
+- **PR:** [#274](https://github.com/MajorJohnDoe/gridscalr/pull/274) (squash merged)
+- **Branch:** `feat/schema-28-foundation` (deleted after merge)
+- **Verified head SHA:** `1d64fb8ce01276f9a0a043577b2a12a34732c270`
+  (`cf7b294` implementation, `1869c38` handover, `1d64fb8` CI record)
+- **Merge commit:** `991ddca6b2de96cef02fd9b4ba101bb6ad4353ce`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43863542599](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43863542599)
+  is green on the merge commit (dependency advisory gate, frontend tests and
+  build, Rust format and check, and the desktop shell job on Ubuntu, Windows and
+  macOS).
 
 ### Completed work
 
@@ -96,7 +101,24 @@ Local gate green: `check:versions`, `check:file-budgets`, `check:modules`,
 changed; `check:docs` reports only the expected stale-screenshot warning.
 CI is authoritative on the PR head.
 
+### Conductor verification
+
+- PR [#274](https://github.com/MajorJohnDoe/gridscalr/pull/274) head
+  `1d64fb8ce01276f9a0a043577b2a12a34732c270` matched the handover SHA; every one
+  of the six checks was `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/robustness/migrations.test.ts
+  tests/schema28.test.ts`: 2 files, 71 tests passed.
+- File list matched the Phase 1 module map and the issue non-goals. No field
+  editor, space register, schedule builder, summary panel, CSV or table
+  rendering shipped. `src/canvas/items/dispatch.ts` and
+  `src/pdf/export/items/dispatch.ts` take a `schedule` branch that renders
+  nothing, with a comment that the table renderer belongs to Phase 5.
+- Squash merged as `991ddca6b2de96cef02fd9b4ba101bb6ad4353ce`; `main` CI is
+  green on that commit.
+
 ### Next phase
 
-Phase 2 — custom fields: `src/features/fields/` model, Project settings editor,
-inspector section and field-set application. No schema change is expected.
+Phase 2 — [custom fields #275](https://github.com/MajorJohnDoe/gridscalr/issues/275):
+`src/features/fields/` model, Project settings editor, inspector section and
+field-set application. No schema change is expected.
