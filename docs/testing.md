@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses nine surfaces:
+`axe-core` through `@axe-core/playwright` and analyses twelve surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -380,6 +380,9 @@ checklist in [`releasing.md`](releasing.md).
 | Help dialog | `F1` |
 | Custom fields dialog | **Project settings → Fields → Manage fields…** |
 | Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
+| Summary dock tab | `Ctrl/Cmd+Alt+S`, with seeded roles and schedules |
+| Schedule builder dialog | **New schedule…** in the Summary tab |
+| Summary roles dialog | **Summary roles…** in the Summary tab |
 
 A **serious** or **critical** axe violation fails the run. Moderate, minor and
 best-practice findings are printed with their target and are not hidden: there is
@@ -388,7 +391,7 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same nine surfaces, so the gate records 45 palette/surface
+and **Navy** — runs the same twelve surfaces, so the gate records 60 palette/surface
 checks. The palette is chosen through **Settings → Preferences…**, which is
 itself one of the checked surfaces. A contrast regression in any palette fails the
 run, and `check:themes` pins the same text-on-surface pairs at the token level.

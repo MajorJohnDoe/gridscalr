@@ -19,6 +19,9 @@ export const A11Y_SURFACES = [
   { id: "help", label: "Help dialog" },
   { id: "fields", label: "Custom fields dialog" },
   { id: "fields-inspector", label: "Custom fields inspector section" },
+  { id: "summary", label: "Summary dock tab" },
+  { id: "schedule-builder", label: "Schedule builder dialog" },
+  { id: "schedule-roles", label: "Summary roles dialog" },
 ];
 
 /**

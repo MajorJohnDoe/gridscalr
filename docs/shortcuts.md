@@ -156,6 +156,7 @@ ancestor path of every hit.
 | Toggle reference view | `Ctrl+Shift+2` |
 | Search drawing text | `Ctrl+Shift+F` |
 | Open Quantities | `Ctrl+Alt+Q` |
+| Open Summary | `Ctrl+Alt+S` |
 
 ## Project and file
 

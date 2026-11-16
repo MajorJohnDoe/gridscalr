@@ -55,6 +55,8 @@ export interface PanelActions {
   isSplitViewOpen: () => boolean;
   hasReferenceSession: () => boolean;
   openQuantities: () => void;
+  /** Shows or hides the right-dock Summary tab. */
+  toggleSummary: () => void;
   openSpaces: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;

@@ -34,6 +34,7 @@ const FOUNDATION_FEATURES = [
   "src/features/schematics",
   "src/features/fields",
   "src/features/spaces",
+  "src/features/schedules",
 ];
 
 const frontendErrors = [];

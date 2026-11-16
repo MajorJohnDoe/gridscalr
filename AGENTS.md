@@ -450,6 +450,14 @@ src/features/spaces/model/area.ts derived area from visible linked area measurem
 src/features/spaces/model/tree.ts space tree order, subtree ids, reparent rules and sibling moves
 src/features/spaces/model/mutations.ts create, update, delete, link and unlink as caller-owned undo steps
 src/features/spaces/ui/ register dialog, space editor with space-scope fields, rows with area badge and inline delete confirmation
+src/features/schedules/index.ts public surface for the schedule engine, summary cards and the Summary tab
+src/features/schedules/model.ts pure field catalogue, filters, stable sort, totals, grouping, definition rules, roles and revision cache
+src/features/schedules/sources/measurements.ts measurement rows from visible items, reusing itemMetrics and quantity rules
+src/features/schedules/sources/spaces.ts space rows reusing spaceAreas(), never a second area formula
+src/features/schedules/summary.ts four KPI cards from summaryRole plus the built-in category table
+src/features/schedules/ui/ Summary tab, virtualised live table, schedule builder, column picker and summary-role dialog
+src/app/summaryFlow.ts Ctrl+Alt+S and the View → Summary action
+src/styles/schedules.css summary cards, live table, builder and role dialog
 src/styles/spaces.css  space register rows, area badges and warnings
 src/styles/fields.css     custom field list, typed value and field-set styles
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths

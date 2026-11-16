@@ -201,6 +201,15 @@ export function removeCategory(
   for (const view of project.markupsViews) {
     if (view.categoryId === id) view.categoryId = null;
   }
+  // A schedule filter that named the removed category would silently empty the
+  // table, so the reference is removed with the category.
+  for (const schedule of project.schedules) {
+    const categoryIds = schedule.filters.categoryIds;
+    if (!categoryIds?.length) continue;
+    const kept = categoryIds.filter((entry) => entry !== id);
+    if (kept.length) schedule.filters.categoryIds = kept;
+    else delete schedule.filters.categoryIds;
+  }
   return { removed: true, moved };
 }
 

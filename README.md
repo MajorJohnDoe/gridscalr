@@ -201,6 +201,7 @@ use `Cmd` wherever `Ctrl` is shown.
 | Save / save as | `Ctrl+S` / `Ctrl+Shift+S` |
 | Markups list | `Ctrl+L` |
 | Quantities | `Ctrl+Alt+Q` |
+| Summary | `Ctrl+Alt+S` |
 
 The **Pages**, **Layers** and **Markups** lists share one interaction model:
 

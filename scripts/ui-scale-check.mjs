@@ -9,8 +9,11 @@ import {
   launchBrowser,
   openCustomFieldsDialog,
   openDemoProject,
+  openScheduleBuilder,
   openSpacesRegister,
+  openSummaryTab,
   seedCustomField,
+  seedSchedules,
   seedSpaces,
   settlePage,
   startVite,
@@ -160,6 +163,7 @@ try {
     await openDemoProject(page, { base: vite.base });
     await seedCustomField(page);
     await seedSpaces(page);
+    await seedSchedules(page);
     const shell = await readShell(page, viewport.label);
     await assertMenusFit(page, viewport.label);
     const settings = await assertDialogFits(
@@ -184,6 +188,17 @@ try {
     const help = await assertDialogFits(page, `${viewport.label} Help`, () =>
       page.keyboard.press("F1"),
     );
+    const builder = await assertDialogFits(
+      page,
+      `${viewport.label} Schedule builder`,
+      async () => {
+        await openScheduleBuilder(page);
+      },
+      "New schedule",
+    );
+    await openSummaryTab(page);
+    const summaryShell = await readShell(page, `${viewport.label} Summary tab`);
+    await page.keyboard.press("Control+Alt+s");
     assert.deepEqual(pageErrors, [], `${viewport.label}: the UI-scale check raised page errors`);
     results.push({
       scale: viewport.label,
@@ -193,6 +208,8 @@ try {
       fields: `${fields.left},${fields.top}–${fields.right},${fields.bottom}`,
       spaces: `${spaces.left},${spaces.top}–${spaces.right},${spaces.bottom}`,
       help: `${help.left},${help.top}–${help.right},${help.bottom}`,
+      builder: `${builder.left},${builder.top}–${builder.right},${builder.bottom}`,
+      summaryCanvas: summaryShell.canvas?.width ?? 0,
     });
     await page.close();
   }

@@ -107,6 +107,8 @@ import { isMarkupsOpen, setMarkupsOpen } from "../ui/markupsPanel";
 import { updatePageSizeLabel } from "../ui/pageList";
 import { openQuantitiesDialog } from "../ui/quantityDialog";
 import { openSpacesDialog } from "../features/spaces";
+import { summaryShortcut, toggleSummaryFlow } from "./summaryFlow";
+import { updateWindowTitle } from "./windowTitle";
 import { openSettingsDialog } from "../ui/settingsDialog";
 import { openExportMenu, setMenuActions } from "../ui/topMenu";
 import { detectPlatform, mountWindowControls, type WindowControls } from "../ui/windowChrome";
@@ -251,6 +253,7 @@ export class App {
       openDrawingReference: () => void this.reference.openDrawingReference(),
       openSearch: () => this.search.open(),
       openQuantities: () => openQuantitiesDialog(this.actions),
+      toggleSummary: () => toggleSummaryFlow(this.actions.refresh),
       // The register reveals a linked measurement through the same navigation
       // the Markups list uses.
       openSpaces: () => void openSpacesDialog({ revealItem: this.actions.navigateToItem }),
@@ -363,7 +366,7 @@ export class App {
       if (reason === "view") {
         renderTopbar(this.refs, this.actions);
         updateStatus(this.refs, this.actions);
-        this.updateTitle();
+        updateWindowTitle();
         return;
       }
       if (reason === "project") this.search.close();
@@ -514,11 +517,7 @@ export class App {
 
   private renderAll(reason: ChangeReason = "change"): void {
     renderChrome(this.refs, this.actions, reason);
-    this.updateTitle();
-  }
-
-  private updateTitle(): void {
-    document.title = store.project ? `GridScalr — ${store.project.name}` : "GridScalr";
+    updateWindowTitle();
   }
 
   private bind(): void {
@@ -591,6 +590,7 @@ export class App {
     const key = event.key.toLowerCase();
 
     if (mod) {
+      if (summaryShortcut(event, this.actions.refresh)) return;
       if (event.altKey && event.code === "KeyQ") {
         event.preventDefault();
         openQuantitiesDialog(this.actions);

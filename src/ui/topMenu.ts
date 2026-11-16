@@ -15,6 +15,7 @@ import {
 import { openPreferencesDialog } from "./preferencesDialog";
 import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
+import { isSummaryOpen } from "../features/schedules";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
 import { t } from "../i18n";
@@ -297,6 +298,11 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.view.quantities"), actions.openQuantities, {
           shortcut: APP_SHORTCUTS.quantities,
           disabled: !hasProject,
+        }),
+        action(t("menu.view.summary"), actions.toggleSummary, {
+          shortcut: APP_SHORTCUTS.summary,
+          disabled: !hasProject,
+          checked: isSummaryOpen(),
         }),
         action(t("menu.view.spaces"), actions.openSpaces, {
           disabled: !hasProject,

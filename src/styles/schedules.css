@@ -1,0 +1,486 @@
+/* Summary dock tab (KPI cards, live table) and the schedule builder. */
+
+/*
+ * The Summary tab is the third inspector tab. Let the tab strip scroll rather
+ * than widen the right dock or clip the Project settings tab.
+ */
+.inspector-tabs {
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+
+.schedules-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  min-width: 0;
+}
+
+/* ---------- KPI cards ---------- */
+
+.schedules-cards {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.schedules-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.schedules-card-label {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.schedules-card-value-row {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.schedules-card-value {
+  font-size: 19px;
+  font-weight: 650;
+  color: var(--text-strong);
+  font-variant-numeric: tabular-nums;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedules-card-unit {
+  font-size: 11px;
+  color: var(--muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedules-card-note {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.3;
+  color: var(--warning);
+}
+
+.schedules-card-configure {
+  align-self: flex-start;
+  margin-top: 3px;
+}
+
+/* ---------- Toolbar and chips ---------- */
+
+.schedules-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+.schedules-schedule-select {
+  flex: 1 1 130px;
+  min-width: 0;
+  height: 26px;
+  font-size: 11px;
+}
+
+.schedules-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedules-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.schedules-chip-label {
+  flex: 0 0 74px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.schedules-chip-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 24px;
+  font-size: 11px;
+}
+
+/* ---------- Live table ---------- */
+
+.schedules-table-wrap {
+  overflow: auto;
+  max-height: 44vh;
+  min-height: 60px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-sunken);
+}
+
+.schedules-table {
+  width: 100%;
+  table-layout: fixed;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.schedules-table th,
+.schedules-table td {
+  padding: 4px 6px;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedules-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface-panel);
+  color: var(--muted-2);
+  font-weight: 650;
+}
+
+.schedules-table tbody tr:hover {
+  background: var(--hover-soft);
+}
+
+.schedules-table .is-numeric {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.schedules-row-link {
+  max-width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-strong);
+  font: inherit;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.schedules-row-link:hover {
+  text-decoration: underline;
+}
+
+.schedules-group-row td {
+  background: var(--surface-panel);
+  font-weight: 650;
+}
+
+.schedules-group-count {
+  margin-left: 6px;
+  color: var(--muted);
+  font-weight: 400;
+}
+
+.schedules-group-total {
+  margin-left: 10px;
+  color: var(--muted-2);
+  font-weight: 400;
+}
+
+.schedules-total-row th,
+.schedules-total-row td {
+  border-top: 1px solid var(--border);
+  background: var(--surface-panel);
+  font-weight: 650;
+}
+
+.schedules-table .is-invalid {
+  color: var(--danger);
+}
+
+.schedules-table .is-mixed {
+  color: var(--warning);
+}
+
+.schedules-spacer td {
+  padding: 0;
+  border: 0;
+}
+
+.schedules-empty-row td {
+  padding: 16px;
+  color: var(--muted);
+  text-align: center;
+  white-space: normal;
+}
+
+.schedules-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.schedules-foot-count {
+  color: var(--text-strong);
+}
+
+.schedules-foot-warning {
+  color: var(--warning);
+}
+
+.schedules-empty {
+  padding: 18px 8px;
+  text-align: center;
+}
+
+.schedules-empty-title {
+  margin: 0;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.schedules-empty-hint {
+  margin: 4px 0 10px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.schedules-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ---------- Builder ---------- */
+
+.schedules-builder {
+  gap: 14px;
+}
+
+.schedules-builder-top {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 10px;
+}
+
+.schedules-builder-sections {
+  display: grid;
+  gap: 12px;
+}
+
+.schedules-builder-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-panel);
+}
+
+.schedules-builder-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.schedules-builder-title {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  color: var(--muted-2);
+}
+
+.schedules-builder-subtitle {
+  margin: 4px 0 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.schedules-builder-count {
+  margin-left: auto;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.schedules-builder-add {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.schedules-builder-columns {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.schedules-builder-column {
+  display: grid;
+  grid-template-columns: auto minmax(70px, 1fr) minmax(70px, 1.2fr) auto auto;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.schedules-builder-column.is-drop-target {
+  border-color: var(--accent);
+}
+
+.schedules-builder-column-field {
+  font-size: 11px;
+  color: var(--muted-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedules-builder-column-field.is-invalid {
+  color: var(--danger);
+}
+
+.schedules-builder-column-label {
+  height: 24px;
+  font-size: 11px;
+}
+
+.schedules-builder-handle {
+  cursor: grab;
+}
+
+.schedules-builder-row-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.schedules-builder-rule {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.schedules-builder-rule .select {
+  max-width: 220px;
+}
+
+.schedules-builder-multifield {
+  min-width: 0;
+}
+
+.schedules-builder-multiselect {
+  height: auto;
+  min-height: 56px;
+  font-size: 11px;
+}
+
+.schedules-builder-filters {
+  gap: 10px;
+}
+
+.schedules-builder-custom-filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+}
+
+.schedules-builder-problems {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.schedules-builder-actions {
+  justify-content: flex-end;
+}
+
+.schedules-preview-body {
+  overflow: auto;
+  max-height: 300px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+
+.schedules-preview-table {
+  font-size: 11px;
+}
+
+/* ---------- Summary roles ---------- */
+
+.schedules-roles {
+  gap: 12px;
+}
+
+.schedules-roles-section {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.schedules-role-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 3px 0;
+}
+
+.schedules-role-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.schedules-role-select {
+  max-width: 220px;
+}
+
+@media (max-width: 1100px) {
+  .schedules-builder-top {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .schedules-cards {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

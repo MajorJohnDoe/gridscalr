@@ -389,3 +389,150 @@ Phase 4 — [schedule engine and summary #281](https://github.com/MajorJohnDoe/g
 computation, the builder and the summary panel, plus the `Ctrl+Alt+S` shortcut.
 The space source reads `spaceAreas()` from `src/features/spaces/index.ts`; no
 schema change is expected.
+
+## Phase 4 — schedule engine and summary
+
+- **Issue:** [#281](https://github.com/MajorJohnDoe/gridscalr/issues/281)
+- **PR:** [#283](https://github.com/MajorJohnDoe/gridscalr/pull/283) — open, awaiting conductor verification
+- **Branch:** `feat/schedules`
+- **Implementation head:** `34b3f7711b572af2d2b6bdd228f9a84d97b7c377`
+  (`6a0e820` feature, `4ddfd80` documentation, `42be802` filter cleanup,
+  `34b3f77` findings; the handover commit follows and is the PR head)
+- **Status:** open, awaiting conductor verification. No schema change
+  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release, no
+  placement, CSV, XLSX or PDF table output.
+
+### Completed work
+
+- `src/features/schedules/` with `index.ts` as the only public surface and pure
+  model files: a field catalogue for built-in keys and `custom:<fieldId>`,
+  visibility-first filters, stable multi-field sorting, grouping with
+  subtotals, totals, definition problems, summary roles and a revision- and
+  locale-scoped cache.
+- Measurement source reuses `itemMetrics`, the category fallback and the count
+  quantity rule; the space source reads `spaceAreas()` from
+  `src/features/spaces`, so the room area is never recomputed.
+- Four KPI cards from `summaryRole` with 0 and a **Configure** action when a
+  role is missing, the built-in category table, and a live schedule table.
+- **View → Summary** / `Ctrl+Alt+S` opens the **Summary** tab in the right dock:
+  cards, schedule picker, page/category/space chips, a virtualised table,
+  row-to-drawing navigation and an empty state.
+- Schedule builder: name, source, row mode, columns with drag order and
+  accessible arrow buttons, grouping, sorting, totals, typed custom filters and
+  a 20-row live preview. Save, duplicate and inline delete.
+- **Summary roles…** sets the category and count-type roles the cards read, so
+  the Configure action can fix a zero. One role change is one undo step.
+- Shortcut in `src/ui/shortcuts.json`, `docs/shortcuts.md`, both README tables
+  and `scripts/shortcut-catalogue.mjs`.
+- i18n keys in `en.json` and `sv.json` (3389 keys), generated types,
+  `src/styles/schedules.css`.
+- Page, category, count-type and space deletion now cleans the matching
+  schedule filter list; a page-delete toast names the cleared count. A filter
+  that still dangles is reported by the panel and the doctor, never crashes.
+- Each new file is under 400 lines. `App.ts` stays at 1092 lines: `updateTitle`
+  moved to `src/app/windowTitle.ts` to pay for the action, shortcut and import.
+
+### Modules
+
+- `src/features/schedules/index.ts`, `model.ts`, `ui.ts`, `summary.ts`
+- `src/features/schedules/model/types.ts`, `fields.ts`, `filters.ts`, `sort.ts`,
+  `totals.ts`, `compute.ts`, `definition.ts`, `roles.ts`, `cache.ts`
+- `src/features/schedules/sources/measurements.ts`, `spaces.ts`
+- `src/features/schedules/ui/panel.ts`, `panelCards.ts`, `panelTable.ts`,
+  `tableParts.ts`, `builder.ts`, `builderColumns.ts`, `builderRules.ts`,
+  `builderFilters.ts`, `builderPreview.ts`, `builderContext.ts`, `roles.ts`,
+  `messages.ts`, `state.ts`
+- `src/app/App.ts`, `summaryFlow.ts`, `windowTitle.ts`, `pageFlows.ts`
+- `src/ui/inspector.ts`, `panels.ts`, `topMenu.ts`, `shortcuts.json`
+- `src/model/categories.ts`, `countTypes.ts`,
+  `src/features/pageModel/pageList.ts`
+- `src/main.ts`, `src/styles/schedules.css`
+- `tests/schedules.test.ts`, `schedulesUi.test.ts`, `schedulesPerformance.test.ts`
+- `scripts/accessibility-check.mjs`, `accessibility-rules.mjs`,
+  `touch-target-check.mjs`, `ui-scale-check.mjs`, `ui-harness.mjs`,
+  `check-module-boundaries.mjs`, `file-budgets.json`,
+  `tests/accessibilityGate.test.ts`, `tests/visual/*.png`
+
+### Decisions
+
+- The Summary lives as the third tab in the right inspector dock, not as a
+  second bottom panel. That is the plan's "right-dock tab" and reuses the
+  existing inspector header; the tab strip scrolls horizontally instead of
+  widening the dock. The table scrolls sideways for wide schedules, recorded as
+  F-125.
+- The panel's built-in table is the category summary the plan describes; a
+  stored schedule is a selectable alternative table, not a second panel.
+- The measurement source includes every visible item, so the schema's `status`,
+  `tag`, `visible` and `locked` fields are meaningful. The summary table and
+  cards use measurement kinds only.
+- `rowMode = "grouped"` renders one row per group with subtotals and is
+  read-only for the future CSV export; `items` is the round-trip mode.
+- Count is a row count, not a sum of values. A mixed-unit total is marked.
+- Roles are explicit. A missing role is 0 plus Configure, never a name match.
+- Card visibility is read from `settings.summary`; there is no editor yet
+  (F-124).
+- Deleting a schedule that a placement references is refused until the
+  placement phase owns the cascade.
+- A deleted custom field leaves its schedule column or filter visible as
+  **Unknown field** (F-123) rather than silently rewriting the definition.
+- Filter cleanup on page, space, category and count-type deletion is a page/entity
+  cascade and ships here, because this phase creates those filters.
+- The cache key is the project revision, schedule id, active locale, preview
+  limit and a stable filter signature. Any store change bumps the revision.
+- `tests/visual/{hero,markups,quantities,count-types}.png` are updated because
+  the inspector header gains the Summary tab. Intended and reviewed.
+
+### Findings
+
+- F-123: a deleted custom field leaves schedule references reported, not
+  removed.
+- F-124: summary card visibility has no editor.
+- F-125: the Summary tab inherits the right dock width, so wide schedules scroll
+  sideways.
+- F-126: a total on a field with no visible column is computed but not shown.
+- F-127: the Summary toolbar is rebuilt on every shell repaint, so a select
+  loses focus after a change.
+- F-118 extended: page import still does not merge schedule definitions; the
+  risk is unchanged because this phase cannot place a table. Removed
+  page/space/category/count-type filters no longer dangle; the preflight
+  warning stays open.
+
+### Checks
+
+Local gate green on the implementation head: `check:versions`,
+`check:file-budgets`, `check:modules` (20 foundation features), `check:security`,
+`check:actions`, `check:dependencies`, `check:docs` (only the expected
+stale-screenshot warning), `format:check`, `lint`, `check:i18n` (3389 keys),
+`check:themes`, `npx tsc --noEmit`, `npx vitest run` (165 files, 1642 tests),
+`test:ui`, `test:visual` (4 baselines updated), `test:a11y` (60 checks, 5
+palettes × 12 surfaces, no serious/critical), `test:touch-targets` (495 controls,
+12 surfaces), `test:ui-scale` (100/150/200 %, builder dialog and the open Summary
+tab) and `test:docs-capture` (27 screenshots, `docs/screenshots/` untouched).
+
+Measured on the development container with the synthetic 15 000-item project
+(`tests/schedulesPerformance.test.ts`): summary cold compute about 17 ms
+(target 100 ms), cached read about 0 ms, a cold 10 000-row schedule with
+grouping, sorting and a total about 192 ms (target 250 ms), cached read about
+0 ms, and a 1 000-row table renders at most 26 rows plus overscan. The test
+asserts a looser hard ceiling for CI and the documented targets under
+`GRIDSCALR_PERF_STRICT=1`. The numbers are also in `docs/limitations.md`.
+
+### Conductor verification: pending
+
+- Verify the PR head SHA, all six checks on that exact SHA, the base `main` and
+  the merge state.
+- Re-run `npx vitest run tests/schedules.test.ts tests/schedulesUi.test.ts
+  tests/schedulesPerformance.test.ts tests/schema28.test.ts` and
+  `npm run check:modules`.
+- Confirm the scope: no `SCHEMA_VERSION` change, no version bump, no placement,
+  CSV/XLSX or PDF table output, no card-visibility editor.
+- Review the four visual baselines: the only intended change is the third
+  inspector tab.
+- Check that `docs/plan/foundation-findings.md` has F-123 … F-127 and the F-118
+  Phase 4 decision.
+
+### Next phase
+
+Phase 5 — placement on the sheet: schedule item rendering, hit-test, move and
+resize, row range and continuation, PDF table output, page delete/duplicate and
+the placement cascade on schedule deletion.
