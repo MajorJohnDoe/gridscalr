@@ -724,15 +724,16 @@ expected.
 
 ## Phase 6 — CSV round-trip
 
-- **Issue:** [#287](https://github.com/MajorJohnDoe/gridscalr/issues/287)
-- **PR:** [#291](https://github.com/MajorJohnDoe/gridscalr/pull/291)
-- **Branch:** `feat/schedule-csv`
-- **Implementation head:** `a56c9fd7d7d3449a027cc1bbcad1886c025872de`
-  (`dfaccb1` feature and gates, `a56c9fd` documentation)
-- **Status:** open, awaiting conductor verification. No schema change
-  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release. This
-  section is committed after the PR was opened; the PR branch remains the one
-  under review.
+- **Issue:** [#287](https://github.com/MajorJohnDoe/gridscalr/issues/287) (closed by the merge)
+- **PR:** [#291](https://github.com/MajorJohnDoe/gridscalr/pull/291) (squash merged)
+- **Branch:** `feat/schedule-csv` (deleted after merge)
+- **Verified head SHA:** `35352c12f6c601d4d906044db9d7296af1409662`
+  (`dfaccb1` feature and gates, `a56c9fd` documentation, `35352c1` handover)
+- **Merge commit:** `ef52eec574cb42b7e91bb850b7d7bda811180d85`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43927295563](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43927295563)
+  is green on the merge commit. No schema change (`SCHEMA_VERSION` stays 28), no
+  app-version bump, no tag or release.
 
 ### Completed work
 
@@ -858,11 +859,38 @@ numbers are in `docs/limitations.md`.
 
 ### Conductor verification
 
-Conductor verification: pending.
+- PR [#291](https://github.com/MajorJohnDoe/gridscalr/pull/291) head
+  `35352c12f6c601d4d906044db9d7296af1409662` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/schedulesCsv.test.ts
+  tests/schedulesCsvUi.test.ts tests/schedulesCsvPerformance.test.ts
+  tests/schedulePlacement.test.ts tests/schema28.test.ts`: 5 files, 62 tests
+  passed. `check:modules` and `check:file-budgets` are green with no new
+  exception.
+- Scope matched the issue: `SCHEMA_VERSION` stays 28, no app version bump, no
+  store change (the existing `store.mutate` already gives one batch and one undo
+  step). `App.ts` gained six wiring lines for export and import.
+- The 10 MiB byte limit is shared in `src/io/limits.ts` and checked before
+  decoding; the 20 000-row limit is checked after the record split and before any
+  value is mapped. Both are documented in `docs/security-policy.md`.
+- Tests cover stable headers with a BOM, Swedish delimiter and decimal comma,
+  formula escaping and literal unguarding, grouped export read-only and import
+  refusal, unchanged round-trip, before/after conflicts, unknown fields and IDs,
+  duplicate headers and IDs, invalid enum options, read-only columns, non-UTF-8
+  rejection, space updates, absent rows untouched, no entity creation and one
+  undo step; export 209.2 ms and import plan 188.7 ms against the 1 500 ms
+  target.
+- No visual baseline changed. F-130 … F-132 are recorded; F-118 is unchanged
+  because CSV updates existing rows by stable ID and cannot create a dangling
+  reference.
+- Squash merged as `ef52eec574cb42b7e91bb850b7d7bda811180d85`; `main` CI is green
+  on that commit.
 
 ### Next phase
 
-Phase 7 — hardening and documentation: the performance benchmark and budget,
-accessibility/touch-target/UI-scale pass, visual regression and screenshots, the
-user guide and workflow pass, limitations, shortcuts, README, release notes and
-roadmap. No new features.
+Phase 7 — [harden and document Drift Slice 1 #292](https://github.com/MajorJohnDoe/gridscalr/issues/292):
+screenshot recapture, the user-guide and workflows pass, limitations, shortcuts,
+README, a `0.29.0` release-notes draft, the roadmap status and the final
+accessibility, touch-target and UI-scale confirmation. No new features, no
+version bump, no tag and no release.
