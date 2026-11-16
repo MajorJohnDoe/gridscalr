@@ -5,17 +5,16 @@ workstreams, the release quality gate and the backlog. It is not a schedule.
 Detailed planning documents live in `docs/plan/`; the historical
 implementation plans are in [`docs/plan/archive/`](plan/archive/README.md).
 
-Current version: **0.28.0** · Project-file schema: **28, in development**
+Current version: **0.29.0** · Project-file schema: **28, in development**
 
 1.0 is **deferred** and remains a quality gate, not a target date. Work is
 organised by foundation slices so the product can release pre-1.0 minors while
 the base becomes stable. Feature details belong in GitHub issues, not in a
 version-numbered roadmap.
 
-**0.29.0 is the next pre-1.0 minor on schema 28.** It is prepared as a draft in
-[`release-notes/0.29.0.md`](release-notes/0.29.0.md); the app version, tag,
-release artifacts and landing site change only when the product owner decides
-the release.
+**0.29.0 is the first Drift Slice**, released on schema 28:
+[`release-notes/0.29.0.md`](release-notes/0.29.0.md). 1.0 remains a quality gate,
+not a date.
 
 ## Product principles
 
