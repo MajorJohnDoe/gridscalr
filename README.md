@@ -77,6 +77,13 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   slopes, polygon volumes from area and depth, polygon areas, quick rectangles
   and ellipses, and count doors, windows, radiators, fixtures and custom object
   types as pieces, with a separate quantity row per type.
+- Record your own property data on a measurement. Define text, number, number
+  with unit, yes/no, date, single-choice and multi-choice fields in
+  **Project settings → Fields**, restrict a field to item kinds, categories or
+  count types, mark it required, give it a default and group fields into named
+  sets that fill their defaults in one action. Typed inputs validate inline, a
+  stored value that no longer matches is reported instead of reinterpreted, and
+  a field's type cannot change while it holds values.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision

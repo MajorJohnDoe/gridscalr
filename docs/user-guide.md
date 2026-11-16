@@ -430,6 +430,24 @@ While a measurement tool is active, the context bar shows a **New measurement** 
 
 Change a measurement's category, room, area mode, line style, or count type later in **Properties**, or for several selected measurements at once. When a markup is selected, the **Selection** section is shown above **Active layer** so it is clear whether a change applies to one markup or the whole layer.
 
+### Custom fields
+
+Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **Settings → Project settings… → Fields → Manage fields…**.
+
+- **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by schedules and CSV and cannot change after the field is created. **Scope** is **Measurement**; **Space** fields belong to the space register and have no input yet.
+- Choose a **Type**: text, number, number with unit, yes or no, date, one of the options, or several of the options. An option's id stays stable while its label can change. Number fields can set a minimum and a maximum, and text fields a maximum length.
+- **Required** marks a field that should be filled. The inspector warns while the value is empty, but the project still saves.
+- **Default value** is written when you apply a field set.
+- **Only for these measurements** limits the field to item kinds, categories and count types. Leave everything unchecked to show the field for every measurement.
+- Reorder fields with the arrow buttons. **Delete** asks first when the field holds values, names the count and removes those values in the same undo step.
+- A **field set** groups fields you often fill together. In Properties, choose the set and click **Apply field set** to fill each member's default value. Existing values are never overwritten, and the measurement is not attached to the set.
+
+In **Properties**, the **Fields** section lists the fields that apply to the selected measurement. Each typed input validates when you leave it: an invalid number, date or option shows a message and is not stored, while the other fields keep saving normally. A stored value that no longer matches its field is reported with a clear action; GridScalr never reinterprets it as another type.
+
+A field's type can change only while it has no stored values, and an enum option that is in use cannot be removed. Create a new field when existing data must keep its type.
+
+Field values are not yet shown in the Markups table or exported to CSV or XLSX; schedules and CSV mapping arrive in later Drift Slice 1 phases. See [Known limitations](limitations.md).
+
 ### Snapping
 
 When **Snap to geometry** is enabled in **Project settings**, point placement can lock to:
@@ -912,6 +930,7 @@ The dialog uses the same category menu as Preferences:
 - **Measurements** – the current page's calibration or manual scale and lock state, length and area units, **Smart length labels**, project label size and compact area labels. Change the page scale from the page scale chip in the status bar. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; individual measurements can override the label size in Properties.
 - **Display** – show grid, show scale line, snap to geometry, and snap distance. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, rounding step, count types, and **Manage categories…** to rename, reorder, delete and override waste or rounding per category.
+- **Fields** – the project's custom fields and field sets. **Manage fields…** opens the editor described under [Custom fields](#custom-fields); field values live on each measurement, not in Project settings.
 - **Stamps** – the project's own stamp presets, plus **Load app defaults into project** to copy the preferences list.
 
 Project settings are stored in the `.gridscalr` file and are undoable while the project is open. Preferences, panel layout, layer colours and app stamp defaults are stored locally and are not part of the project.
