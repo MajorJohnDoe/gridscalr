@@ -243,16 +243,17 @@ editor are the surface the space register will mirror for `space` scope.
 
 ## Phase 3 — spaces
 
-- **Issue:** [#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
-- **PR:** [#280](https://github.com/MajorJohnDoe/gridscalr/pull/280)
-- **Branch:** `feat/spaces`
-- **Implementation head SHA:** `d0f53a3db06fb0551de01c34b2524e6bc394619e`
-  (`5fe286f` feature, `f73d204` documentation, `5590c71` handover, `d0f53a3`
-  glossary); the handover update itself is the last commit on the branch. CI run
-  [43882088554](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43882088554)
-  is green on `d0f53a3` and the pull request reports `CLEAN`.
-- **Status:** open, awaiting conductor verification. The conductor records the
-  final merge commit.
+- **Issue:** [#278](https://github.com/MajorJohnDoe/gridscalr/issues/278) (closed by the merge)
+- **PR:** [#280](https://github.com/MajorJohnDoe/gridscalr/pull/280) (squash merged)
+- **Branch:** `feat/spaces` (deleted after merge)
+- **Verified head SHA:** `ed112b0bd327155d72074464a164bf0067a08bcc`
+  (`5fe286f` feature, `f73d204` documentation, `5590c71` handover,
+  `d0f53a3` glossary, `ed112b0` handover record)
+- **Merge commit:** `05fbd39038edb67f37cad31a8dc53b246e4e0e94`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43884442573](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43884442573)
+  is green on the merge commit. No schema change, no app version bump, no tag or
+  release.
 
 ### Completed work
 
@@ -355,13 +356,36 @@ the desktop shell on Ubuntu, Windows and macOS).
 
 ### Conductor verification
 
-Pending. The conductor verifies the PR head SHA, all checks on that SHA, the
-file list against the module map and the acceptance criteria, then records the
-merge commit here.
+- PR [#280](https://github.com/MajorJohnDoe/gridscalr/pull/280) head
+  `ed112b0bd327155d72074464a164bf0067a08bcc` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/spaces.test.ts tests/spacesUi.test.ts
+  tests/fields.test.ts tests/schema28.test.ts`: 4 files, 73 tests passed.
+  `check:modules` is green with 19 foundation features.
+- Scope matched the issue: `SCHEMA_VERSION` stays 28, no version bump, no
+  placement, CSV, XLSX or PDF output. Integration wiring is small — an import and
+  menu action in `src/app/App.ts`, one page-delete toast in
+  `src/app/pageFlows.ts`, the `PanelActions` entry and one View menu item.
+- Every new file is 266 lines or fewer. `src/features/spaces` joined the
+  foundation feature list and the 400-line directory budget; the a11y, touch and
+  UI-scale gates gained the register surface rather than being relaxed.
+- The area model derives from per-item scale, excludes hidden items and hidden
+  layers, includes locked items, refuses a partial sum when a link is
+  uncalibrated, and covers measured/manual/missing, page delete, page duplicate,
+  cycles, room-from-text and one-undo link, unlink and delete in
+  `tests/spaces.test.ts`. The documented child-delete refusal is in
+  `docs/limitations.md`.
+- F-118's Phase 3 decision is recorded: page import still does not merge spaces,
+  and the missing preflight warning stays open rather than half-implemented
+  outside the module map.
+- Squash merged as `05fbd39038edb67f37cad31a8dc53b246e4e0e94`; `main` CI is green
+  on that commit.
 
 ### Next phase
 
-Phase 4 — schedule engine and summary: `src/features/schedules/model.ts`, the
-measurement and space sources, summary KPI computation, the builder and the
-summary panel. The space source reads `spaceAreas()` from
-`src/features/spaces/index.ts`; no schema change is expected.
+Phase 4 — [schedule engine and summary #281](https://github.com/MajorJohnDoe/gridscalr/issues/281):
+`src/features/schedules/` model, the measurement and space sources, summary KPI
+computation, the builder and the summary panel, plus the `Ctrl+Alt+S` shortcut.
+The space source reads `spaceAreas()` from `src/features/spaces/index.ts`; no
+schema change is expected.
