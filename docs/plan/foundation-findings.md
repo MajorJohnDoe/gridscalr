@@ -2903,7 +2903,7 @@ remains the scheduling home.
 - **Phase:** Drift Slice 1, phase 1 — schema 28 foundation
 - **Severity:** P3
 - **Area:** Project page import / schema 28 references
-- **Status:** open — split by phase; the space half is answered in Phase 3 below, the field and schedule halves stay open
+- **Status:** open — split by phase; the space half is answered in Phase 3 below and the schedule half in Phase 4; the field half and the preflight warning stay open
 - **Evidence:** `src/features/projectImport/merge.ts` merges categories, count types,
   line types, image assets and documents. It does not merge custom-field
   definitions, field sets, spaces or schedules, and `cloneImportedItem` copies a
@@ -2933,6 +2933,17 @@ remains the scheduling home.
   this phase's module map, so it is left open rather than half-implemented. A
   later import phase should add the count and offer "clear the space link on
   import"; remapping is a product decision, not a default.
+- **Phase 4 decision — schedules are not merged by page import:** the import
+  still copies a `scheduleId` on an imported item and does not create or remap a
+  schedule definition. The schedule builder cannot place a table on a page yet,
+  so the only way to reach this is a hand-authored or previously saved
+  placement; the risk is unchanged by this phase. A normal schedule definition
+  is destination data and is not part of page import. Removed-space and
+  removed-page filters no longer create new dangling references: `deleteSpace`
+  cleans `spaceIds`, `deletePage` cleans `pageIds`, and category and count-type
+  deletion clean their filter lists. The remaining gap is still the **preflight
+  warning**, which belongs to `src/features/projectImport/preflight.ts` and stays
+  open rather than half-implemented outside this phase.
 - **Related:** `docs/plan/drift-slice-1.md`, `src/features/projectImport/merge.ts`,
   `src/features/projectImport/model.ts`, `tests/projectImport.test.ts`.
 
@@ -3031,3 +3042,113 @@ remains the scheduling home.
   Both are hierarchy operations for a later phase, not a schema change.
 - **Related:** `src/features/spaces/model/mutations.ts`,
   `src/features/spaces/ui/list.ts`, `docs/limitations.md`.
+
+### F-123 — Deleting a custom field leaves its schedule references reported but not removed
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
+- **Severity:** P3
+- **Area:** Project settings → Fields / schedule columns and filters
+- **Status:** open — deliberate; the reference is visible and repairable
+- **Evidence:** `src/features/fields/model/fieldRules.ts` deletes the field and
+  removes its values and field-set memberships in one undo step. A schedule
+  column, group, sort, total or custom filter that names `custom:<fieldId>` is
+  intentionally not rewritten; `scheduleDraftProblems()` and the project doctor
+  report it and the builder shows **Unknown field**.
+- **Problem:** After a field delete, a schedule can hold a column or filter that
+  can never resolve. The table keeps the column empty and names it, but the user
+  has to remove it in the builder.
+- **Impact:** No silent data loss and no crash. Removing schedule columns as a
+  side effect of deleting a field would be a data change the confirmation does
+  not name, so the safer default is to report it.
+- **Next step:** If this becomes common, extend the field-delete confirmation to
+  name the schedule count and offer an explicit "remove the column and filters"
+  action in the same undo step. That needs a schedule-inspection helper in
+  `src/features/fields` or a small shared model rule, not a second delete path.
+- **Related:** `src/features/schedules/model/definition.ts`,
+  `src/features/schedules/model/fields.ts`, `docs/limitations.md`.
+
+### F-124 — Summary card visibility has no editor
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
+- **Severity:** P3
+- **Area:** Summary tab / `settings.summary`
+- **Status:** open — deferred to a settings pass
+- **Evidence:** `src/features/schedules/summary.ts` reads
+  `project.settings.summary.cards`; the panel hides a card with
+  `visible: false`. No control writes that setting, so a project created with
+  all four visible has no way to hide one, and a card hidden in the file has no
+  way back.
+- **Problem:** The stored setting is respected but not editable. The plan placed
+  card visibility in schema 28 without a settings section.
+- **Impact:** No wrong number; only a missing configuration affordance. Every
+  new project defaults to all four visible.
+- **Next step:** Add a **Summary cards** section to Project settings → Display
+  with four checkboxes and one undo step per change, then remove the limitation
+  sentence. The model already has `defaultSummarySettings()` and the normalizer.
+- **Related:** `src/model/summary.ts`, `src/io/projectFile/summary.ts`,
+  `src/features/schedules/summary.ts`, `docs/limitations.md`.
+
+### F-125 — The Summary tab inherits the right dock width, so a wide schedule scrolls sideways
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
+- **Severity:** P3
+- **Area:** Summary tab layout
+- **Status:** open — deliberate for this phase
+- **Evidence:** The panel renders in `src/ui/inspector.ts`. The right dock is
+  250–420 px wide (`PANEL_LIMITS`); the table wrap scrolls horizontally and sets
+  a minimum table width of `max(320, columns × 84)` px. The Preview panel can be
+  widened, but there is no pop-out or separate dock.
+- **Problem:** A schedule with more than about five columns needs horizontal
+  scrolling in the right dock. The Markups panel below the canvas has more room.
+- **Impact:** Usable but cramped for very wide schedules. The builder's preview
+  is wider because it is a modal.
+- **Next step:** If users keep wide schedules, decide between a pop-out window, a
+  full-width bottom dock tab shared with Markups, or a column-priority mode.
+  Do not add a second table renderer.
+- **Related:** `src/ui/inspector.ts`, `src/features/schedules/ui/panelTable.ts`,
+  `src/styles/schedules.css`.
+
+### F-126 — A schedule total is invisible when its field has no visible column
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
+- **Severity:** P4
+- **Area:** Schedule table / totals
+- **Status:** open — known presentation choice
+- **Evidence:** `computeSchedule()` computes every configured total, but
+  `scheduleTotalRow()` positions a total under the column with the same field
+  ref. A total on a field that is not a visible column has nowhere to render.
+- **Problem:** The builder lets a user add a total for a field they then hide, so
+  the number is calculated but not shown. The builder still lists the total.
+- **Impact:** No wrong data, only a hidden total. The user can show the column.
+- **Next step:** Either render unmatched totals in the foot line ("Value (sum):
+  12.5") or block a total whose field has no visible column with an inline
+  problem. Prefer the foot-line summary so a total is never recomputed twice.
+- **Related:** `src/features/schedules/model/totals.ts`,
+  `src/features/schedules/ui/tableParts.ts`.
+
+### F-127 — The Summary panel rebuilds its toolbar on every shell repaint
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 4 — schedule engine and summary
+- **Severity:** P4
+- **Area:** Summary tab / focus handling
+- **Status:** open — matches the shell render model, low impact
+- **Evidence:** `renderSummaryPanel()` builds the picker and the three filter
+  chips each time `src/ui/inspector.ts` paints. A `change` on a select applies
+  the filter and then replaces the element, so focus leaves the control after
+  the change. Typing in the builder is not affected: the builder is a modal and
+  updates only the preview.
+- **Problem:** A keyboard user changing several filters in a row has to tab back
+  to the chips after each change. Markups keeps its toolbar stable and only
+  re-renders the table.
+- **Impact:** A small keyboard cost, no data risk. `editSafeRender` protects
+  focused inputs but does not restore a focused `select` across a repaint.
+- **Next step:** Either keep the panel's toolbar nodes and only replace the
+  table, or capture and restore the active chip through
+  `src/ui/editFieldSnapshot.ts`. The first is closer to the Markups pattern.
+- **Related:** `src/ui/inspector.ts`, `src/features/schedules/ui/panel.ts`,
+  `src/ui/editSafeRender.ts`.
