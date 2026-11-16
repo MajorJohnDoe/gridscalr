@@ -126,6 +126,26 @@ workers are also covered in a production build.
 `destroy()` after prompting. The dialog plugin's `message`, `ask` and `confirm`
 commands are not granted because those dialogs are app-drawn.
 
+## CSV import bounds
+
+The schedule CSV import is a controlled mutation of existing project data, not a
+script surface. It adds no CSP source and no capability, so `security/policy.json`
+is unchanged.
+
+| Bound | Value | Where |
+| --- | --- | --- |
+| File size | 10 MiB (`MAX_SCHEDULE_CSV_BYTES`) | `src/io/limits.ts`, checked by `pickCsv()` before the bytes are read and again before decoding |
+| Data rows | 20 000 (`MAX_SCHEDULE_CSV_ROWS`) | `src/features/schedules/csv`, checked after the record split and before any value is mapped |
+| Encoding | UTF-8 only | fatal `TextDecoder` with BOM preservation; an invalid byte sequence is refused |
+| Mutation scope | Existing measurements and spaces by stable ID | update only; a CSV never creates an entity, field or schedule |
+| Cell content | Plain text | no formula execution, no HTML rendering, no `eval` |
+
+Formula-leading text (`=`, `+`, `-`, `@`, tab, CR) is exported with a leading
+apostrophe and that exact guard is removed on import. A cell that still starts
+with a formula character after import is stored as text; it is never evaluated
+or added to a document as an expression. The import dialog writes every value
+with `textContent`.
+
 ## Dependency and advisory gate
 
 `npm run check:dependencies` runs on every pull request and before a release

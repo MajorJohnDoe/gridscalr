@@ -96,7 +96,10 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   schedule table on a drawing page, where it moves, resizes, rotates, locks and
   hides like any drawing item, updates when the drawing or the definition
   changes, continues a long range on a second table instead of clipping, and
-  exports as vector text and lines in the drawing PDF.
+  exports as vector text and lines in the drawing PDF. A one-row-per-item
+  schedule also round-trips through **Export CSV…** and **Import CSV…** with
+  stable IDs, a `Label [key]` header, a locale-aware delimiter and BOM, formula
+  escaping and a dry-run conflict report; a grouped schedule exports read-only.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision
@@ -388,6 +391,12 @@ surface, the repair planner with its filters and preview, the project doctor,
 source availability and explicit
 unused managed-copy cleanup, load-report presentation and path-free diagnostics;
 `src/model/integrity.ts` holds the pure rules.
+The schedule feature in `src/features/schedules/` owns the live table, the
+builder, placement, the CSV round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and one
+shared layout for canvas and PDF. The CSV import is bounded to a UTF-8 file of
+10 MB and 20 000 rows, updates existing rows by stable ID and applies as one undo
+step. `src/app/exportFlows.ts` writes the schedule CSV; `src/app/summaryFlow.ts`
+opens the import dialog.
 `src/model/layerHierarchy.ts` holds the pure layer-tree, effective visibility
 and locking rules, and `src/features/layerTree/` exposes the panel tree rows,
 inherited-state reasons, drag and keyboard nesting, subtree duplication and the
