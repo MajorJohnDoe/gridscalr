@@ -9,7 +9,9 @@ import {
   launchBrowser,
   openCustomFieldsDialog,
   openDemoProject,
+  openPlacedTableInspector,
   openScheduleBuilder,
+  openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
   seedCustomField,
@@ -198,7 +200,32 @@ try {
     );
     await openSummaryTab(page);
     const summaryShell = await readShell(page, `${viewport.label} Summary tab`);
-    await page.keyboard.press("Control+Alt+s");
+    const placement = await assertDialogFits(
+      page,
+      `${viewport.label} Place schedule`,
+      () => openSchedulePlacementDialog(page),
+      "Place schedule on drawing",
+    );
+    await openPlacedTableInspector(page);
+    const inspector = await page.evaluate(() => {
+      const node = document.querySelector(".selection-section");
+      if (!node) return null;
+      const rect = node.getBoundingClientRect();
+      return {
+        right: Math.round(rect.right),
+        bottom: Math.round(rect.bottom),
+        overflow: node.scrollWidth - node.clientWidth,
+      };
+    });
+    assert.ok(inspector, `${viewport.label}: the placed-table inspector section is missing`);
+    assert.ok(
+      inspector.overflow <= 1,
+      `${viewport.label}: the placed-table inspector clips ${inspector.overflow}px`,
+    );
+    assert.ok(
+      inspector.right <= viewport.width,
+      `${viewport.label}: the placed-table inspector overflows the window horizontally`,
+    );
     assert.deepEqual(pageErrors, [], `${viewport.label}: the UI-scale check raised page errors`);
     results.push({
       scale: viewport.label,
@@ -209,6 +236,8 @@ try {
       spaces: `${spaces.left},${spaces.top}–${spaces.right},${spaces.bottom}`,
       help: `${help.left},${help.top}–${help.right},${help.bottom}`,
       builder: `${builder.left},${builder.top}–${builder.right},${builder.bottom}`,
+      placement: `${placement.left},${placement.top}–${placement.right},${placement.bottom}`,
+      inspector: `${inspector.right},${inspector.bottom}`,
       summaryCanvas: summaryShell.canvas?.width ?? 0,
     });
     await page.close();
@@ -217,7 +246,8 @@ try {
     console.log(
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
         `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
-        `Spaces ${result.spaces}, Help ${result.help}, no overflow.`,
+        `Spaces ${result.spaces}, Help ${result.help}, Place schedule ${result.placement}, ` +
+        `no overflow.`,
     );
   }
   console.log(

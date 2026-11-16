@@ -90,6 +90,8 @@ describe("accessibility gate rules", () => {
       "fields",
       "fields-inspector",
       "summary",
+      "schedule-placement",
+      "schedule-inspector",
       "schedule-builder",
       "schedule-roles",
     ]);

@@ -15,6 +15,16 @@ import { textDialog } from "./dialogs";
 import type { PanelActions } from "./panels";
 import type { PopoverItem } from "./popover";
 import { showPopoverAt } from "./popover";
+import {
+  cachedSchedule,
+  continuePlacement,
+  findSchedule,
+  layoutForItem,
+  openRowRangeDialog,
+  openScheduleBuilder,
+  placementMeasure,
+  type PlacementResult,
+} from "../features/schedules";
 import { t } from "../i18n";
 
 /** Context menu for the current selection, shared by the canvas and the panels. */
@@ -78,6 +88,48 @@ export function showSelectionMenuAt(x: number, y: number, actions: PanelActions)
       icon: "settings",
       action: () => actions.editRail(resolved[0].item.id),
     });
+  }
+  if (resolved.length === 1 && resolved[0].item.kind === "schedule" && !resolved[0].locked) {
+    const placement = resolved[0].item;
+    items.push({
+      label: t("schedules.inspector.edit"),
+      icon: "schedule",
+      disabled: !placement.scheduleId,
+      action: () => {
+        if (placement.scheduleId) void openScheduleBuilder(placement.scheduleId);
+      },
+    });
+    items.push({
+      label: t("schedules.inspector.changeRange"),
+      icon: "settings",
+      action: () => void openRowRangeDialog(placement.id, { refresh: actions.refresh }),
+    });
+    const definition = findSchedule(project, placement.scheduleId);
+    const layout = definition
+      ? layoutForItem(
+          cachedSchedule(store.revision, project, definition),
+          placement,
+          placementMeasure(),
+        )
+      : null;
+    if (layout?.continuationRowStart !== null && layout?.continuationRowStart !== undefined) {
+      const next = layout.continuationRowStart;
+      items.push({
+        label: t("schedules.placement.continue"),
+        icon: "copy",
+        action: () => {
+          let created: PlacementResult | null = null;
+          store.mutate((current) => {
+            created = continuePlacement(current, placement.id, next, {
+              layerName: t("schedules.placement.layerName"),
+            });
+          }, "change");
+          const result = created as PlacementResult | null;
+          if (result) store.setSelection({ layerId: result.layerId, itemId: result.item.id });
+          actions.refresh();
+        },
+      });
+    }
   }
   items.push(
     { separator: true },

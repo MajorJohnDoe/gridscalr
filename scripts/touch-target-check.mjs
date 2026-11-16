@@ -11,7 +11,9 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openPlacedTableInspector,
   openScheduleBuilder,
+  openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
   seedCustomField,
@@ -153,6 +155,10 @@ try {
 
   const summary = await openSummaryTab(page);
   await collect("summary", ".schedules-panel");
+  const placement = await openSchedulePlacementDialog(page);
+  await collect("schedule-placement", ".modal");
+  await page.keyboard.press("Escape");
+  await placement.waitFor({ state: "detached" });
   const builder = await openScheduleBuilder(page);
   await collect("schedule-builder", ".modal");
   await page.keyboard.press("Escape");
@@ -163,8 +169,8 @@ try {
   await collect("schedule-roles", ".modal");
   await page.keyboard.press("Escape");
   await roles.waitFor({ state: "detached" });
-  await page.keyboard.press("Control+Alt+s");
-  await page.locator(".schedules-panel").waitFor({ state: "detached" });
+  await openPlacedTableInspector(page);
+  await collect("schedule-inspector", ".selection-section");
 
   await page.getByRole("menuitem", { name: "Settings" }).click();
   await page.getByRole("menuitem", { name: "Preferences…" }).click();

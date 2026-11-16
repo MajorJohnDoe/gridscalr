@@ -3152,3 +3152,47 @@ remains the scheduling home.
   `src/ui/editFieldSnapshot.ts`. The first is closer to the Markups pattern.
 - **Related:** `src/ui/inspector.ts`, `src/features/schedules/ui/panel.ts`,
   `src/ui/editSafeRender.ts`.
+
+### F-128 — A placed table has no automatic pagination or repeated header
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 5 — placement on the sheet
+- **Severity:** P3
+- **Area:** Placed schedule table
+- **Status:** open — deliberate for this slice
+- **Evidence:** `layoutScheduleTable()` fits one box and reports an overflow with
+  `continuationRowStart`; **Continue on a new table** creates a second placement
+  in `src/features/schedules/placement.ts`. There is no paginator, no repeated
+  header and no automatic link between the two placements.
+- **Problem:** A long schedule needs one manual continuation per page, and moving
+  or resizing the first table does not reflow the next one.
+- **Impact:** Predictable layout and no clipped rows, but more work than a
+  paginated report. The user can place several continuations.
+- **Next step:** If printed schedules become a main workflow, add an explicit
+  multi-page placement that shares a continuation group and reflows on resize.
+  Keep the single-box layout as the atom and do not grow a second renderer.
+- **Related:** `src/features/schedules/layout.ts`,
+  `src/features/schedules/placement.ts`, `docs/limitations.md`.
+
+### F-129 — The overflow warning uses a slightly different text metric than the export
+
+- **Date:** 2026-11-16
+- **Phase:** Drift Slice 1, phase 5 — placement on the sheet
+- **Severity:** P4
+- **Area:** Placed table inspector / PDF parity
+- **Status:** open — accepted measurement difference
+- **Evidence:** The canvas and the PDF export inject their own measure function
+  into the same `layoutScheduleTable()` call. The inspector warning uses
+  `placementMeasure()` (a canvas context, or a conservative estimate when no
+  canvas exists) because it renders outside the canvas.
+- **Problem:** A cell whose text is exactly at the ellipsis or overflow boundary
+  can be reported as fitting on screen and overflow in the export, or the
+  reverse. The layout structure, row count, subtotals and totals are shared.
+- **Impact:** A rare one-character ellipsis difference or an extra continuation
+  warning; no clipped row and no wrong value.
+- **Next step:** If a user reports it, cache the exact PDF font metrics in the
+  project session or compute the warning from the last rendered layout on the
+  canvas. Do not add a second layout function.
+- **Related:** `src/features/schedules/layout.ts`,
+  `src/features/schedules/ui/placement.ts`, `src/ui/inspector/schedule.ts`,
+  `src/pdf/export/items/schedule.ts`.

@@ -13,7 +13,7 @@ changed, then the full pre-commit list in `AGENTS.md` before a release.
 | `npm run test:canvas` | Pointer-level canvas gestures: draw, resize, rotate, text, locks, crop and split view. |
 | `npm run test:count` | Count types, placement, pieces per object, Markups filtering and quantities. |
 | `npm run test:touch` | Two-finger pan, pinch zoom, pen priority, palm rejection, long-press and one-finger count placement. |
-| `npm run test:a11y` | Automated axe check of the shell, six dialogs and the custom-fields inspector section; serious and critical violations fail. |
+| `npm run test:a11y` | Automated axe check of the shell, the shipped dialogs and the custom-fields and placed-table inspector sections; serious and critical violations fail. |
 | `npm run test:touch-targets` | Every visible control on the shell, Layers, Markups and the main dialogs is at least 24 × 24 CSS px with an emulated coarse pointer. |
 | `npm run test:ui-scale` | The shell, menus and dialogs stay usable at 100 %, 150 % and 200 % UI scale. |
 | `npm run check:performance` | The deterministic reference project against the budgets in [`limitations.md`](limitations.md). |
@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses twelve surfaces:
+`axe-core` through `@axe-core/playwright` and analyses fourteen surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -381,6 +381,8 @@ checklist in [`releasing.md`](releasing.md).
 | Custom fields dialog | **Project settings → Fields → Manage fields…** |
 | Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
 | Summary dock tab | `Ctrl/Cmd+Alt+S`, with seeded roles and schedules |
+| Place schedule dialog | **Place on drawing…** with a stored schedule selected |
+| Placed table inspector section | Select the seeded placed table; its section in Properties |
 | Schedule builder dialog | **New schedule…** in the Summary tab |
 | Summary roles dialog | **Summary roles…** in the Summary tab |
 
@@ -391,7 +393,7 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same twelve surfaces, so the gate records 60 palette/surface
+and **Navy** — runs the same fourteen surfaces, so the gate records 70 palette/surface
 checks. The palette is chosen through **Settings → Preferences…**, which is
 itself one of the checked surfaces. A contrast regression in any palette fails the
 run, and `check:themes` pins the same text-on-surface pairs at the token level.

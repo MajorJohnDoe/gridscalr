@@ -72,6 +72,7 @@ export function doubleClickContext(host: PointerHost): DoubleClickContext {
     startTextEdit: (item, layer) => host.startTextEdit(item, layer),
     startTextBoxEdit: (item, layer) => host.startTextBoxEdit(item, layer),
     editRail: (item) => host.editRail(item),
+    editSchedule: (item) => host.editSchedule(item),
     startCloudTextEdit: (item, layer) => host.startCloudTextEdit(item, layer),
     startCalloutTextEdit: (item, layer) => host.startCalloutTextEdit(item, layer),
     editItemText: (item) => host.editItemText(item),

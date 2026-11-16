@@ -16,6 +16,7 @@ import {
 } from "../model";
 import type { ScheduleDraft, ScheduleMutationResult } from "../model";
 import type { ScheduleRowMode, ScheduleSource } from "../../../model/types";
+import { deletePlacementsForSchedule, placementCount } from "../placement";
 import { createPreview } from "./builderPreview";
 import { columnsSection } from "./builderColumns";
 import { filtersSection } from "./builderFilters";
@@ -204,9 +205,19 @@ export function openScheduleBuilder(scheduleId?: string): Promise<void> {
   remove.addEventListener("click", () => {
     const id = draft.id;
     if (store.readOnly || !id) return;
+    const placements = project ? placementCount(project, id) : 0;
     clear(confirm);
     confirm.append(
-      el("p", "inline-confirm-text", t("schedules.builder.deleteMessage", { name: draft.name })),
+      el(
+        "p",
+        "inline-confirm-text",
+        placements > 0
+          ? t("schedules.builder.deleteMessageWithPlacements", {
+              name: draft.name,
+              count: placements,
+            })
+          : t("schedules.builder.deleteMessage", { name: draft.name }),
+      ),
     );
     const actions = el("div", "inline-confirm-actions");
     const cancel = el("button", "btn btn-small btn-ghost", t("common.cancel"));
@@ -221,6 +232,7 @@ export function openScheduleBuilder(scheduleId?: string): Promise<void> {
       let removed = false;
       let blocked = false;
       store.mutate((current) => {
+        if (placementCount(current, id) > 0) deletePlacementsForSchedule(current, id);
         const result = deleteSchedule(current, id);
         removed = result.removed;
         blocked = result.problems.some((problem) => problem.code === "inUse");

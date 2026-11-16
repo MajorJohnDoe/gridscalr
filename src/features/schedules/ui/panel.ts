@@ -1,6 +1,6 @@
 import { pageDisplayName, pageNumber } from "../../../model/pages";
 import { spaceMeasurements } from "../../spaces";
-import type { PageId, ScheduleFilter, SummaryCardId } from "../../../model/types";
+import type { PageId, PageSize, ScheduleFilter, SummaryCardId } from "../../../model/types";
 import { store } from "../../../state/store";
 import { el, option } from "../../../ui/dom";
 import { t, type MessageKey } from "../../../i18n";
@@ -8,6 +8,7 @@ import { cachedSchedule, findSchedule, scheduleDisplayEntries } from "../model";
 import type { ScheduleResult, ScheduleRow } from "../model";
 import { cachedSummary, type SummaryTable } from "../summary";
 import { openScheduleBuilder } from "./builder";
+import { openPlacementDialog } from "./placement";
 import { summaryCardsElement } from "./panelCards";
 import { panelTable } from "./panelTable";
 import { openSummaryRolesDialog } from "./roles";
@@ -32,6 +33,8 @@ export interface SummaryPanelHost {
   navigateToItem?: (pageId: PageId, layerId: string, itemId: string) => void;
   goToPage?: (page: number) => void;
   openSpaces?: () => void;
+  /** Page size for the default placement box; missing falls back to A3. */
+  pageSize?: (page: number) => PageSize | undefined;
   /** Repaints the shell after a panel-level change. */
   refresh?: () => void;
 }
@@ -196,6 +199,13 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   edit.addEventListener("click", () => {
     if (schedule) void openScheduleBuilder(schedule.id).then(() => reschedule(host));
   });
+  const place = el("button", "btn btn-small btn-ghost", t("schedules.placement.action"));
+  place.type = "button";
+  place.disabled = !schedule || store.readOnly;
+  place.title = t("schedules.placement.actionHint");
+  place.addEventListener("click", () => {
+    if (schedule) void openPlacementDialog(schedule.id, host).then(() => reschedule(host));
+  });
   const roles = el("button", "btn btn-small btn-ghost", t("schedules.manageRoles"));
   roles.type = "button";
   roles.disabled = store.readOnly;
@@ -203,7 +213,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
     "click",
     () => void openSummaryRolesDialog("walls").then(() => reschedule(host)),
   );
-  head.append(picker, add, edit, roles);
+  head.append(picker, add, edit, place, roles);
   root.append(head);
 
   const filters = summaryPanelFilters();

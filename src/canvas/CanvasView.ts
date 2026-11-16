@@ -67,6 +67,7 @@ import {
   sheetTemplateFor,
   templateDocumentForPage,
 } from "../features/schematics";
+import { openScheduleBuilder } from "../features/schedules";
 import { calloutLayout, cloudLabelLayout } from "../model/annotations";
 import type { ImageAsset, ItemKind, MarkupItem, PageSize, Point, Project } from "../model/types";
 import { formatNumber } from "../model/units";
@@ -325,6 +326,7 @@ export class CanvasView {
       editRail: (item) => {
         void openRailDialog(item.id);
       },
+      editSchedule: (item) => void (item.scheduleId && openScheduleBuilder(item.scheduleId)),
       startCloudTextEdit: (item, layer) => this.editors.startCloudTextEdit(item, layer),
       startCalloutTextEdit: (item, layer) => this.editors.startCalloutTextEdit(item, layer),
       editItemText: (item) => this.drafts.editItemText(item),

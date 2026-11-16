@@ -11,6 +11,7 @@ import type { ExportFonts, ExportImages } from "../types";
 import { drawAnnotationItem } from "./annotations";
 import { drawCountItem } from "./counts";
 import { drawMeasurementItem } from "./measurement";
+import { drawScheduleItem } from "./schedule";
 import { drawShapeItem } from "./shapes";
 import { drawSymbolItem } from "./symbols";
 import { drawTextFamilyItem } from "./text";
@@ -84,7 +85,7 @@ export function drawItem(
       break;
     }
     case "schedule":
-      // Schema 28 stores placements; the PDF table renderer is a later phase.
+      drawScheduleItem(context, item, layerOpacity);
       break;
   }
 

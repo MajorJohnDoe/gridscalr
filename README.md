@@ -90,6 +90,13 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   used only while nothing is linked. Create rooms from the room names already on
   measurements, fill space-scoped fields in the space form, and delete a space
   without deleting its measurements.
+- Build live schedules from measurements or rooms in **View → Summary**
+  (`Ctrl+Alt+S`): four KPI cards for rooms, area, walls and doors, chosen
+  columns, grouping, sorting, filters and totals. **Place on drawing…** puts a
+  schedule table on a drawing page, where it moves, resizes, rotates, locks and
+  hides like any drawing item, updates when the drawing or the definition
+  changes, continues a long range on a second table instead of clipping, and
+  exports as vector text and lines in the drawing PDF.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision

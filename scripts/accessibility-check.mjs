@@ -14,7 +14,9 @@ import {
   openCustomFieldsDialog,
   openDemoProject,
   openMarkupsItem,
+  openPlacedTableInspector,
   openScheduleBuilder,
+  openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
   seedCustomField,
@@ -182,6 +184,15 @@ try {
     // summary-role dialog behind a Configure action.
     const summary = await openSummaryTab(page);
     await analyze(page, checkFor(theme, "summary"), ".schedules-panel");
+
+    // Place-on-drawing dialog, then the placed-table inspector section.
+    const placement = await openSchedulePlacementDialog(page);
+    const placementCheck = checkFor(theme, "schedule-placement");
+    await expectFocusInside(page, ".modal", placementCheck);
+    await analyze(page, placementCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await placement.waitFor({ state: "detached" });
+
     await summary.getByRole("button", { name: "Summary roles…" }).click();
     const roles = page.getByRole("dialog", { name: "Summary roles" });
     await roles.waitFor();
@@ -197,8 +208,9 @@ try {
     await analyze(page, builderCheck, ".modal");
     await page.keyboard.press("Escape");
     await builder.waitFor({ state: "detached" });
-    await page.keyboard.press("Control+Alt+s");
-    await page.locator(".schedules-panel").waitFor({ state: "detached" });
+
+    await openPlacedTableInspector(page);
+    await analyze(page, checkFor(theme, "schedule-inspector"), ".selection-section");
   }
 
   assert.deepEqual(pageErrors, [], "the accessibility run should not raise page errors");

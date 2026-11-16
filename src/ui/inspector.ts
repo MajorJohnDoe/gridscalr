@@ -93,6 +93,7 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
           navigateToItem: actions.navigateToItem,
           goToPage: (page) => actions.goToPage(page, true),
           openSpaces: actions.openSpaces,
+          pageSize: actions.getPageSize,
           refresh: actions.refresh,
         },
         previousScroll,

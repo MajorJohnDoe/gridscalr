@@ -163,9 +163,14 @@ export async function openMarkupsItem(page, itemId, kind = "all") {
     await page.locator(".tool-markups").click();
   }
   await panel.waitFor({ state: "visible" });
+  // The table is virtualised; a row outside the rendered window cannot be
+  // clicked. Reset the saved scroll so a helper always starts from the top.
+  const wrap = panel.locator(".markups-table-wrap");
+  if (await wrap.count()) await wrap.evaluate((node) => (node.scrollTop = 0));
   if (kind !== "all") {
     await panel.getByLabel("Filter markups by type").selectOption(kind);
   }
+
   await panel.locator(`[data-item-id="${itemId}"]`).click();
   await page.waitForTimeout(120);
   if (await panel.isVisible()) {
@@ -285,12 +290,12 @@ export async function seedSchedules(page) {
           source: "measurements",
           rowMode: "items",
           columns: [
-            { id: "col_1", field: "label", visible: true },
-            { id: "col_2", field: "category", visible: true },
-            { id: "col_3", field: "value", visible: true, format: "unit" },
-            { id: "col_4", field: "unit", visible: true },
+            { id: "col_1", field: "label", visible: true, width: 22 },
+            { id: "col_2", field: "category", visible: true, width: 14 },
+            { id: "col_3", field: "value", visible: true, width: 14, format: "unit" },
+            { id: "col_4", field: "unit", visible: true, width: 8 },
           ],
-          filters: {},
+          filters: { itemKinds: ["length", "area"] },
           groupBy: "category",
           totals: [{ field: "value", op: "sum" }],
           createdAt: now,
@@ -312,9 +317,68 @@ export async function seedSchedules(page) {
           updatedAt: now,
         },
       );
+      const draw = project.layers.find((layer) => layer.kind === "draw");
+      const page = project.pages[0];
+      if (draw && page && !draw.items.some((item) => item.kind === "schedule")) {
+        draw.items.push({
+          id: "item_sched_harness",
+          pageId: page.id,
+          kind: "schedule",
+          points: [
+            { x: 40, y: 40 },
+            { x: 400, y: 210 },
+          ],
+          color: draw.color,
+          strokeWidth: 1,
+          scheduleId: "sched_harness_measure",
+          rowStart: 0,
+          rowLimit: 8,
+          showHeader: true,
+          showTotals: true,
+          createdAt: now,
+          updatedAt: now,
+        });
+      }
     }, "change");
   });
   await settlePage(page);
+}
+
+/**
+ * Opens the Place schedule dialog from the Summary tab with a stored schedule
+ * selected, so the placement dialog is inspectable in the browser gates.
+ */
+export async function openSchedulePlacementDialog(page) {
+  const summary = await openSummaryTab(page);
+  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  await summary.getByRole("button", { name: "Place on drawing…" }).click();
+  const dialog = page.getByRole("dialog", { name: "Place schedule on drawing" });
+  await dialog.waitFor();
+  return dialog;
+}
+
+/**
+ * Selects the seeded placed table and shows Properties, so the placed-table
+ * inspector section is inspectable after the Summary tab is closed.
+ */
+export async function openPlacedTableInspector(page) {
+  await page.evaluate(() => {
+    const store = window.__gridscalr?.store;
+    const project = store?.project;
+    if (!store || !project) return;
+    const layer = project.layers.find((entry) =>
+      entry.items.some((item) => item.id === "item_sched_harness"),
+    );
+    if (layer) store.setSelection({ layerId: layer.id, itemId: "item_sched_harness" });
+  });
+  const summary = page.locator(".schedules-panel");
+  if (await summary.isVisible()) {
+    await page.keyboard.press("Control+Alt+s");
+    await summary.waitFor({ state: "detached" });
+  }
+  const section = page.locator(".selection-section");
+  await section.waitFor({ state: "visible" });
+  return section;
 }
 
 /**

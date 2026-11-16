@@ -12,6 +12,7 @@ import { drawAnnotationItem, drawCloudLabel } from "./annotations";
 import { drawCountItem } from "./counts";
 import { drawImageItem } from "./images";
 import { drawMeasurementItem } from "./measurement";
+import { drawScheduleItem } from "./schedule";
 import { drawCloudShape, drawShapeItem } from "./shapes";
 import { drawSymbolItem, drawSymbolTag } from "./symbols";
 import { drawTextItem } from "./text";
@@ -41,6 +42,7 @@ export function dispatchItem(
       item.kind === "rect" ||
       item.kind === "ellipse" ||
       item.kind === "image" ||
+      item.kind === "schedule" ||
       item.kind === "symbol");
   const center = rotatesInPlace ? context.toScreen(itemCenter(item)) : null;
   const color = resolveItemColor(item);
@@ -111,7 +113,7 @@ export function dispatchItem(
       drawImageItem(ctx, item, state);
       break;
     case "schedule":
-      // Schema 28 stores placements; the table renderer is a later phase.
+      drawScheduleItem(ctx, item, state);
       break;
   }
   ctx.restore();
