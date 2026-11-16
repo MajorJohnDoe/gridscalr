@@ -557,13 +557,16 @@ change is expected, because schema 28 already stores the placement fields.
 
 ## Phase 5 — placement on the sheet
 
-- **Issue:** [#284](https://github.com/MajorJohnDoe/gridscalr/issues/284)
-- **PR:** [#286](https://github.com/MajorJohnDoe/gridscalr/pull/286)
-- **Branch:** `feat/schedule-placement`
-- **Implementation head:** `68ab759ddc118df21f0f66c77ba0212d1857f68e`
-- **Status:** open, awaiting conductor verification. No schema change
-  (`SCHEMA_VERSION` stays 28), no app-version bump, no tag or release, no CSV or
-  XLSX work.
+- **Issue:** [#284](https://github.com/MajorJohnDoe/gridscalr/issues/284) (closed by the merge)
+- **PR:** [#286](https://github.com/MajorJohnDoe/gridscalr/pull/286) (squash merged)
+- **Branch:** `feat/schedule-placement` (deleted after merge)
+- **Verified head SHA:** `7dac593096162d54b774d57ec7a18261f9fafc13`
+  (`68ab759` implementation, `7dac593` handover)
+- **Merge commit:** `7a4944bced4f8aeb0945ac5ceba9c2cbcb7f8bac`
+- **Status:** merged to `main`. All six PR checks passed on the verified head.
+  The `main` CI run [43915397859](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43915397859)
+  is green on the merge commit. No schema change (`SCHEMA_VERSION` stays 28), no
+  app-version bump, no tag or release, no CSV or XLSX work.
 
 ### Completed work
 
@@ -681,16 +684,40 @@ existing 15 000-item summary and 10 000-row schedule budgets are unchanged
 (about 19.9 ms and 195.2 ms cold). The placed-table test asserts a looser CI
 ceiling and the documented targets under `GRIDSCALR_PERF_STRICT=1`.
 
-### Conductor verification: pending
+### Conductor verification
 
-The conductor still needs to confirm the PR head SHA, every check on that exact
-SHA, the base branch and merge state, the file list against the phase module
-map, the acceptance criteria, and the focused local tests for the placement and
-page invariants. Nothing below should be treated as verified until that pass.
+- PR [#286](https://github.com/MajorJohnDoe/gridscalr/pull/286) head
+  `7dac593096162d54b774d57ec7a18261f9fafc13` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/schedulePlacement.test.ts
+  tests/schedulePlacementPdf.test.ts tests/schedulePlacementUi.test.ts
+  tests/schedulesPerformance.test.ts tests/schema28.test.ts`: 5 files, 46 tests
+  passed. `check:modules`, `check:file-budgets` and `check:docs` are green.
+- Scope matched the issue: no CSV, XLSX or report file changed and
+  `SCHEMA_VERSION` stays 28. `src/canvas/CanvasView.ts` gained three wiring
+  lines (an import and one builder callback), so the integration file stayed
+  wiring only.
+- Canvas and PDF both consume the shared layout through
+  `src/features/schedules/layout.ts`; a shared-input test proves parity. PDF
+  coverage exports a locked placement, excludes a hidden one and draws the
+  missing-schedule placeholder.
+- Placement tests cover the draw-layer rule, row-range update and delete,
+  continuation, the schedule-delete cascade in one undo, move, corner resize,
+  rotation with a locked refusal, page delete and duplicate with the same
+  `scheduleId`, hit-test exclusion of hidden items and the doctor report.
+- No visual baseline changed and no new `file-budgets.json` exception was added;
+  the largest new file is 351 lines.
+- F-128 and F-129 are recorded, and F-118 is extended: page import still does not
+  merge schedule definitions, so an imported placement can reference a missing
+  schedule and the preflight warning stays open.
+- Squash merged as `7a4944bced4f8aeb0945ac5ceba9c2cbcb7f8bac`; `main` CI is green
+  on that commit.
 
 ### Next phase
 
-Phase 6 — CSV round-trip: `src/features/schedules/csv.ts` and `csvUi.ts`,
-stable `Label [key]` headers with an `ID` column, locale delimiter and BOM,
-formula-injection escaping, a dry-run conflict report, one undo step and the
-large-file budget. No schema change is expected.
+Phase 6 — [CSV round-trip for schedules #287](https://github.com/MajorJohnDoe/gridscalr/issues/287):
+`src/features/schedules/csv.ts` and `csvUi.ts`, stable `Label [key]` headers with
+an `ID` column, locale delimiter and BOM, formula-injection escaping, a dry-run
+conflict report, one undo step and the large-file budget. No schema change is
+expected.
