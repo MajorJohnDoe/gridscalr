@@ -230,6 +230,7 @@ describe("summary panel", () => {
     });
 
     const picker = labelled<HTMLSelectElement>("Summary table")!;
+    expect(picker.dataset.summaryFocus).toBe("picker");
     setValue(picker, "sched_ui");
     expect(container.querySelector(".schedules-table thead th")?.textContent).toBe("Label");
     const links = [...container.querySelectorAll<HTMLButtonElement>(".schedules-row-link")];
@@ -251,6 +252,7 @@ describe("summary panel", () => {
     const pageChip = [
       ...container.querySelectorAll<HTMLSelectElement>(".schedules-chip-select"),
     ][0];
+    expect(pageChip.dataset.summaryFocus).toBe("filter-page");
     setValue(pageChip, pageIdFor(2));
     expect(container.querySelectorAll(".schedules-row-link")).toHaveLength(1);
     expect(container.querySelector(".schedules-row-link")?.textContent).toBe("Wall B");

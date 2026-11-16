@@ -110,11 +110,13 @@ function filterChip(
   value: string,
   options: { value: string; label: string }[],
   onChange: (value: string) => void,
+  focusKey: string,
 ): HTMLLabelElement {
   const field = el("label", "schedules-chip");
   field.append(el("span", "schedules-chip-label", label));
   const select = el("select", "select schedules-chip-select");
   select.setAttribute("aria-label", label);
+  select.dataset.summaryFocus = focusKey;
   for (const entry of options) {
     select.append(option(entry.value, entry.label, entry.value === value));
   }
@@ -184,6 +186,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   const head = el("div", "schedules-head");
   const picker = el("select", "select schedules-schedule-select");
   picker.setAttribute("aria-label", t("schedules.pickerAria"));
+  picker.dataset.summaryFocus = "picker";
   picker.append(option("", t("schedules.builtInTable"), !selectedId));
   for (const entry of project.schedules) {
     picker.append(option(entry.id, entry.name, entry.id === selectedId));
@@ -195,16 +198,19 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   });
   const add = el("button", "btn btn-small", t("schedules.newSchedule"));
   add.type = "button";
+  add.dataset.summaryFocus = "new";
   add.disabled = store.readOnly;
   add.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
   const edit = el("button", "btn btn-small btn-ghost", t("schedules.editSchedule"));
   edit.type = "button";
+  edit.dataset.summaryFocus = "edit";
   edit.disabled = !schedule || store.readOnly;
   edit.addEventListener("click", () => {
     if (schedule) void openScheduleBuilder(schedule.id).then(() => reschedule(host));
   });
   const place = el("button", "btn btn-small btn-ghost", t("schedules.placement.action"));
   place.type = "button";
+  place.dataset.summaryFocus = "place";
   place.disabled = !schedule || store.readOnly;
   place.title = t("schedules.placement.actionHint");
   place.addEventListener("click", () => {
@@ -212,6 +218,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   });
   const roles = el("button", "btn btn-small btn-ghost", t("schedules.manageRoles"));
   roles.type = "button";
+  roles.dataset.summaryFocus = "roles";
   roles.disabled = store.readOnly;
   roles.addEventListener(
     "click",
@@ -219,6 +226,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   );
   const exportCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.export"));
   exportCsv.type = "button";
+  exportCsv.dataset.summaryFocus = "export";
   exportCsv.title = t("schedulesCsv.exportHint");
   exportCsv.disabled = !schedule || !host.exportScheduleCsv;
   exportCsv.addEventListener("click", () => {
@@ -226,6 +234,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   });
   const importCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.import"));
   importCsv.type = "button";
+  importCsv.dataset.summaryFocus = "import";
   importCsv.title =
     schedule && schedule.rowMode !== "items"
       ? t("schedulesCsv.importReadOnly")
@@ -249,6 +258,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
         ...pageOptions().map((page) => ({ value: page.id, label: page.label })),
       ],
       (value) => setChip("pageId", value, host),
+      "filter-page",
     ),
     filterChip(
       t("schedules.filter.category"),
@@ -258,6 +268,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
         ...project.categories.map((category) => ({ value: category.id, label: category.name })),
       ],
       (value) => setChip("categoryId", value, host),
+      "filter-category",
     ),
     filterChip(
       t("schedules.filter.space"),
@@ -270,6 +281,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
         })),
       ],
       (value) => setChip("spaceId", value, host),
+      "filter-space",
     ),
   );
   root.append(chips);
@@ -304,6 +316,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   if (summaryFiltersActive()) {
     const clear = el("button", "btn btn-small btn-ghost", t("schedules.filter.clear"));
     clear.type = "button";
+    clear.dataset.summaryFocus = "clear-filters";
     clear.addEventListener("click", () => {
       setSummaryFilter("pageId", null);
       setSummaryFilter("categoryId", null);
