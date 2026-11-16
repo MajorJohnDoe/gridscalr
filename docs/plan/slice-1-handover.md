@@ -11,8 +11,9 @@ tag or release is part of this phase.
 - **Issue:** [#273](https://github.com/MajorJohnDoe/gridscalr/issues/273)
 - **PR:** [#274](https://github.com/MajorJohnDoe/gridscalr/pull/274)
 - **Branch:** `feat/schema-28-foundation`
-- **Commit:** `cf7b294` (implementation); handover commit follows
-- **Status:** PR open; local gate green, CI verification pending on the PR head
+- **Commit:** `cf7b294` (implementation), `1869c38` (handover)
+- **Status:** PR open; local gate green and CI green on the verified head. The PR
+  checks are authoritative for the final head SHA.
 
 ### Completed work
 
