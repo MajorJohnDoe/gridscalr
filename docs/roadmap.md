@@ -120,15 +120,14 @@ and the schema 28 foundation ([#273](https://github.com/MajorJohnDoe/gridscalr/i
 The hardening and documentation pass is [#292](https://github.com/MajorJohnDoe/gridscalr/issues/292).
 The phase decisions and findings are in
 [`plan/slice-1-handover.md`](plan/slice-1-handover.md) and
-[`plan/drift-slice-1.md`](plan/drift-slice-1.md). The release notes draft is
-[`release-notes/0.29.0.md`](release-notes/0.29.0.md); it is not a published
-release.
+[`plan/drift-slice-1.md`](plan/drift-slice-1.md). It was released as
+[`0.29.0`](release-notes/0.29.0.md) on 2026-11-16.
 
-Schema 28 shipped in the 0.29.0 development line, not in the released 0.28.0
-binary. The quality gate for 1.0 is unchanged: Windows, macOS and Linux
-artifacts, the two interface languages, portable packages, tested large-project
-performance, and production-ready save, recovery and source handling. 1.0
-follows when that gate is met, not on a date.
+Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
+for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
+languages, portable packages, tested large-project performance, and
+production-ready save, recovery and source handling. 1.0 follows when that gate
+is met, not on a date.
 
 Schema history and migration rules are documented in
 [`project-file.md`](project-file.md).

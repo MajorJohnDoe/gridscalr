@@ -1004,10 +1004,11 @@ placed tables with PDF output, the CSV round-trip, and the hardening and
 documentation pass. Phases #273, #275, #278, #281, #284, #287 and #292 are all
 closed by their merges.
 
-No release has been tagged or published. The app version stays `0.28.0`, the
-schema stays 28, and the `0.29.0` release notes are a draft. A release requires
-the product owner's explicit approval, including the version bump, the
-documentation pass confirmation and the landing-site update.
+Released as **0.29.0** on 2026-11-16. The app version is `0.29.0`, the schema
+stays 28, and [`release-notes/0.29.0.md`](../release-notes/0.29.0.md) is the
+published release note. `main` CI and the Pages deployment were green on the
+release commit `c43842e` and the site metadata commit `319ad0d` before the tag
+was announced.
 
 Open product decisions recorded, not implemented: F-125 (the right dock is narrow
 for wide schedules) and the later import-phase choice between merging and
@@ -1017,9 +1018,14 @@ bundled project.
 
 ### Release readiness
 
-With the closeout merged, no known P0–P2 issue and no open release-blocking P3
-remains in Slice 1. The version, tag, GitHub release and `site/release.json`
-update are deliberately still pending the product owner's explicit approval.
+Released as **0.29.0** on 2026-11-16: tag
+[`v0.29.0`](https://github.com/MajorJohnDoe/gridscalr/releases/tag/v0.29.0),
+release commit `c43842ebf9c9b3e35ff7563e0115de353c049bd9`, Release build run
+[43958730434](https://github.com/MajorJohnDoe/gridscalr/actions/runs/43958730434)
+green, all eight artifacts plus `SHA256SUMS.txt` verified against the merged
+checksum file, and the landing site updated in `319ad0d`. No known P0–P2 issue
+and no open release-blocking P3 remains. The later import-phase merge/remap
+decision and F-125 stay open as recorded.
 
 ## Closeout — release blockers
 
