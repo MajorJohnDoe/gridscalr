@@ -122,3 +122,96 @@ CI is authoritative on the PR head.
 Phase 2 — [custom fields #275](https://github.com/MajorJohnDoe/gridscalr/issues/275):
 `src/features/fields/` model, Project settings editor, inspector section and
 field-set application. No schema change is expected.
+
+## Phase 2 — custom fields
+
+- **Issue:** [#275](https://github.com/MajorJohnDoe/gridscalr/issues/275)
+- **PR:** [#277](https://github.com/MajorJohnDoe/gridscalr/pull/277)
+- **Branch:** `feat/custom-fields`
+- **Implementation head:** `f2f2e7f` (`ae8b8bb` model and editor, `16b7208`
+  gates, `f2f2e7f` docs; this handover follows as a docs commit)
+- **Status:** open, awaiting conductor verification. No schema change, no app
+  version bump, no tag or release.
+
+### Completed work
+
+- `src/features/fields/` with `index.ts` as the only public surface and pure
+  model files: field lookup, strict `appliesTo`, typed value coercion and
+  stored-value health, usage counting, draft validation, create/update/delete/
+  reorder and field sets.
+- Project settings → **Fields**: per-scope list, add/edit form (label, key, type,
+  unit, options, required, default, description, min/max/maxLength, applies-to),
+  reorder, delete with an inline confirmation that names the value count.
+- Field sets: create, edit and delete in the same dialog; **Apply field set** in
+  Properties fills each member's default value once.
+- Inspector **Fields** section for the selected measurement: typed controls for
+  text, number, unit number, yes/no, date, enum and multi-enum, inline validation,
+  required hint, clear action and an explicit error when a stored value no longer
+  matches its field.
+- A type change with values is refused at the control and by the model with the
+  value count; key and scope are permanent; an in-use enum option cannot be
+  removed; deletion cascades values and set memberships in one undo step.
+- Wiring only in `src/ui/settingsDialog.ts` and `src/ui/selectionInspector.ts`;
+  `src/features/fields` is a foundation feature with a 400-line directory budget.
+- i18n keys in both catalogs, generated types, model and jsdom UI tests.
+- The axe gate covers the Custom fields dialog and the inspector section (8
+  surfaces × 5 palettes); touch-target and UI-scale checks cover the editor.
+  `tests/visual/hero.png` is updated because the inspector now shows Fields.
+
+### Modules
+
+- `src/features/fields/index.ts`, `model.ts`, `ui.ts`
+- `src/features/fields/model/fieldRules.ts`, `draft.ts`, `sets.ts`, `problems.ts`
+- `src/features/fields/ui/fieldDialog.ts`, `fieldForm.ts`, `fieldList.ts`,
+  `fieldSets.ts`, `fieldOptions.ts`, `fieldAppliesTo.ts`, `valueInput.ts`,
+  `inspector.ts`, `messages.ts`
+- `src/styles/fields.css`
+- `src/ui/settingsDialog.ts`, `src/ui/selectionInspector.ts`,
+  `src/model/layers.ts` (`MEASUREMENT_ITEM_KINDS`)
+- `tests/fields.test.ts`, `tests/fieldsUi.test.ts`
+- `scripts/accessibility-*.mjs`, `scripts/touch-target-check.mjs`,
+  `scripts/ui-scale-check.mjs`, `scripts/ui-harness.mjs`
+
+### Decisions
+
+- A field set fills default values on the selected measurement. Schema 28 has no
+  per-item set reference, so the set is not a binding and nothing is inherited.
+  There is no automatic fill when an item is created; the user applies the set.
+- Only `measurement` and `space` scopes are offered. Space values wait for the
+  register in Phase 3; the other scopes have no entity in schema 28.
+- Custom values stay out of the Markups table, quantity reports, CSV, XLSX and
+  PDF in this slice. `customFieldRef()` and `customValueText()` expose the stable
+  `custom:<fieldId>` mapping for the schedule and CSV phases.
+- The editor is its own modal, like the count-type manager. Closing it reopens
+  Project settings on Fields.
+- An invalid stored value is shown and can be replaced or cleared; it is never
+  rewritten into another type.
+
+### Findings
+
+- F-119: the empty field editor explains fields but does not offer a template.
+- F-120: the field editor closes Project settings while it is open; closing it
+  reopens settings on Fields.
+- F-118 remains open: page import still does not merge field definitions or field
+  sets. Phase 2 did not change `src/features/projectImport`.
+- No larger out-of-scope work was added to the phase; templates, CSV/schedule
+  columns and the space register stay in their own phases.
+
+### Checks
+
+Local gate green: `check:versions`, `check:file-budgets`, `check:modules`,
+`check:security`, `check:actions`, `check:dependencies`, `check:docs`,
+`format:check`, `lint`, `check:i18n` (3146 keys), `check:themes`,
+`npx tsc --noEmit`, `npx vitest run` (160 files, 1567 tests), `test:visual`,
+`test:a11y` (40 checks), `test:touch-targets` (395 controls, 8 surfaces),
+`test:ui-scale` and `test:docs-capture` (27 screenshots, `docs/screenshots/`
+untouched), plus `test:ui`. `check:docs` reports only the expected
+stale-screenshot warning; recapture is deferred to Phase 7.
+
+### Next phase
+
+Phase 3 — [spaces #278](https://github.com/MajorJohnDoe/gridscalr/issues/278)
+(issue number to be confirmed by the conductor): `src/features/spaces/` model,
+register panel, area derivation and the measurement-to-space action. The
+measurement `custom` values and the field editor are the surface the space
+register will mirror for `space` scope.
