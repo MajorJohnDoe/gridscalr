@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { computeSummary } from "../src/features/schedules";
 import { parseProject } from "../src/io/projectFile";
 import { SCHEMA_VERSION } from "../src/model/types";
 
@@ -51,6 +52,28 @@ describe("documentation demo project", () => {
     expect(draw?.items.find((item) => item.symbolId === "egress.exit")?.status).toBe(
       "not-approved",
     );
+  });
+
+  it("ships a small property example with a derived room area and a schedule", () => {
+    expect(project.fieldDefinitions.map((field) => field.key)).toEqual(["fireClass"]);
+    expect(project.fieldSets.map((set) => set.name)).toEqual(["Fire data"]);
+    const rooms = project.spaces.filter((space) => space.kind === "room");
+    expect(rooms.map((room) => room.number)).toEqual(["101", "102"]);
+    const warehouse = rooms.find((room) => room.number === "102")!;
+    const linkedArea = project.layers
+      .flatMap((layer) => layer.items)
+      .find((item) => item.spaceId === warehouse.id);
+    expect(linkedArea?.kind).toBe("area");
+    expect(project.schedules).toHaveLength(1);
+    expect(project.schedules[0]).toMatchObject({
+      id: "sched_demo_quantities",
+      source: "measurements",
+    });
+
+    const summary = computeSummary(project);
+    expect(summary.roomCount).toBe(2);
+    expect(summary.cards.find((card) => card.id === "rooms")?.value).toBe(2);
+    expect(summary.cards.find((card) => card.id === "area")?.value).toBeGreaterThan(0);
   });
 
   it("includes the operation card sheet used by the template screenshots", () => {

@@ -126,6 +126,14 @@ export async function waitForToastsGone(page) {
  * Opens the deterministic demo project through the browser fallback. The
  * project starts as a recovery snapshot so no native file paths are required.
  */
+/**
+ * Stable schedule ids the browser gates and the capture flow select. The
+ * bundled demo already ships the measurement schedule, so the seed helper only
+ * adds the space schedule and the placed table that the demo does not carry.
+ */
+export const DEMO_MEASURE_SCHEDULE_ID = "sched_demo_quantities";
+export const HARNESS_SPACE_SCHEDULE_ID = "sched_harness_spaces";
+
 export async function openDemoProject(page, { base } = {}) {
   if (!base) throw new Error("openDemoProject requires a base URL.");
   const projectPath = resolve(repoRoot, "fixtures", "demo-project.gridscalr");
@@ -283,9 +291,10 @@ export async function seedSpaces(page) {
 }
 
 /**
- * Seeds a measurement and a space schedule plus explicit summary roles, so the
- * summary cards, the live table, the builder and the role dialog all have
- * content to inspect in the browser gates.
+ * Adds explicit summary roles plus the space schedule and placed table the
+ * bundled demo does not ship, so the summary cards, the live table, the builder
+ * and the role dialog all have content to inspect in the browser gates. The
+ * demo's own measurement schedule is reused when present.
  */
 export async function seedSchedules(page) {
   await page.evaluate(() => {
@@ -297,10 +306,10 @@ export async function seedSchedules(page) {
       if (wall) wall.summaryRole = "wall";
       const door = project.countTypes?.find((type) => type.id === "door");
       if (door) door.summaryRole = "door";
-      if (project.schedules.length) return;
-      project.schedules.push(
-        {
-          id: "sched_harness_measure",
+      let measurement = project.schedules.find((schedule) => schedule.source === "measurements");
+      if (!measurement) {
+        measurement = {
+          id: "sched_demo_quantities",
           name: "Wall schedule",
           source: "measurements",
           rowMode: "items",
@@ -315,8 +324,11 @@ export async function seedSchedules(page) {
           totals: [{ field: "value", op: "sum" }],
           createdAt: now,
           updatedAt: now,
-        },
-        {
+        };
+        project.schedules.push(measurement);
+      }
+      if (!project.schedules.some((schedule) => schedule.source === "spaces")) {
+        project.schedules.push({
           id: "sched_harness_spaces",
           name: "Room schedule",
           source: "spaces",
@@ -330,8 +342,8 @@ export async function seedSchedules(page) {
           totals: [{ field: "area", op: "sum" }],
           createdAt: now,
           updatedAt: now,
-        },
-      );
+        });
+      }
       const draw = project.layers.find((layer) => layer.kind === "draw");
       const page = project.pages[0];
       if (draw && page && !draw.items.some((item) => item.kind === "schedule")) {
@@ -345,7 +357,7 @@ export async function seedSchedules(page) {
           ],
           color: draw.color,
           strokeWidth: 1,
-          scheduleId: "sched_harness_measure",
+          scheduleId: measurement.id,
           rowStart: 0,
           rowLimit: 8,
           showHeader: true,
@@ -365,7 +377,7 @@ export async function seedSchedules(page) {
  */
 export async function openSchedulePlacementDialog(page) {
   const summary = await openSummaryTab(page);
-  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   await summary.getByRole("button", { name: "Place on drawing…" }).click();
   const dialog = page.getByRole("dialog", { name: "Place schedule on drawing" });
   await dialog.waitFor();
@@ -380,7 +392,7 @@ export async function openSchedulePlacementDialog(page) {
  */
 export async function openScheduleCsvImport(page) {
   const summary = await openSummaryTab(page);
-  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   const itemId = await page.evaluate(() => {
     const project = window.__gridscalr?.store.project;
     if (!project) return "";

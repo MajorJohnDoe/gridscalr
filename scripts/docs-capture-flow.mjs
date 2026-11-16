@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 import { inspectionPhotoDataUrl } from "./docs-capture-photo.mjs";
 import {
   closeReopenedSettings,
+  DEMO_MEASURE_SCHEDULE_ID,
+  HARNESS_SPACE_SCHEDULE_ID,
   makeReferenceProject,
   openCompareProject,
   openCustomFieldsDialog,
@@ -362,9 +364,10 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.keyboard.press("Escape");
   await helpDialog.waitFor({ state: "detached" });
 
-  // Drift Slice 1 surfaces. The bundled demo has no sample registers, so seed
-  // deterministic property data through the store, exactly like the browser
-  // gates do, and capture the shipped interface with real content.
+  // Drift Slice 1 surfaces. The bundled demo ships the property registers, so
+  // the seed helpers only top up the summary roles, the space schedule and the
+  // placed table the demo does not carry. They go through the store exactly
+  // like the browser gates do.
   await seedCustomField(page);
   await seedSpaces(page);
   await seedSchedules(page);
@@ -400,11 +403,11 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await spacesDialog.waitFor({ state: "detached" });
 
   const summary = await openSummaryTab(page);
-  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_spaces");
+  await summary.locator(".schedules-schedule-select").selectOption(HARNESS_SPACE_SCHEDULE_ID);
   await page.waitForTimeout(350);
   await capture("summary.png");
 
-  await summary.locator(".schedules-schedule-select").selectOption("sched_harness_measure");
+  await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   await page.waitForTimeout(250);
   await summary.getByRole("button", { name: "Edit schedule…" }).click();
   const builder = page.getByRole("dialog", { name: "Edit schedule" });
