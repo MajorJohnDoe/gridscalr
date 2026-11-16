@@ -57,6 +57,8 @@ export interface PanelActions {
   openQuantities: () => void;
   /** Shows or hides the right-dock Summary tab. */
   toggleSummary: () => void;
+  exportScheduleCsv: (scheduleId: string) => void;
+  importScheduleCsv: (scheduleId: string) => void;
   openSpaces: () => void;
   startCalibration: () => void;
   clearCalibration: () => void;

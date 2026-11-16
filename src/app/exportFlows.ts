@@ -8,6 +8,8 @@ import type { PdfRenderer } from "../pdf/pdfRenderer";
 import { serializeQuantityCsv } from "../report/csv";
 import { serializeMarkupCsv } from "../report/markupCsv";
 import { buildQuantityReport } from "../report/reportModel";
+import { findSchedule, serializeScheduleCsv } from "../features/schedules";
+import { store } from "../state/store";
 import { messageDialog } from "../ui/dialogs";
 import { toast } from "../ui/toast";
 import { t } from "../i18n";
@@ -18,6 +20,7 @@ export type ExportKind =
 const jsonFilters = () => [{ name: t("export.jsonFilter"), extensions: ["json"] }];
 const csvFilters = () => [{ name: t("export.markupCsvFilter"), extensions: ["csv"] }];
 const quantityCsvFilters = () => [{ name: t("export.quantityCsvFilter"), extensions: ["csv"] }];
+const scheduleCsvFilters = () => [{ name: t("export.scheduleCsvFilter"), extensions: ["csv"] }];
 const xlsxFilters = () => [{ name: t("export.xlsxFilter"), extensions: ["xlsx"] }];
 const pngFilters = () => [{ name: t("export.pngFilter"), extensions: ["png"] }];
 const pdfFilters = () => [{ name: t("export.pdfFilter"), extensions: ["pdf"] }];
@@ -32,6 +35,45 @@ export interface ExportContext {
 
 function safeProjectName(project: Project): string {
   return project.name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "gridscalr";
+}
+
+function safeScheduleName(name: string): string {
+  return name.replace(/[^\w.-]+/g, "_").replace(/^_+|_+$/g, "") || "schedule";
+}
+
+/**
+ * Exports one stored schedule as a round-trip CSV. A grouped schedule is
+ * written read-only and says so, because its grouped rows have no stable IDs.
+ * The export never touches a source drawing.
+ */
+export async function exportScheduleCsvFlow(scheduleId: string): Promise<void> {
+  const project = store.project;
+  if (!project) return;
+  const schedule = findSchedule(project, scheduleId);
+  if (!schedule) {
+    toast(t("export.scheduleCsvMissing"), "warning");
+    return;
+  }
+  const result = serializeScheduleCsv(project, scheduleId);
+  if (!result) return;
+  const protectedPaths = sourceDocumentPaths(project, store.projectPath);
+  try {
+    const path = await saveTextFile(
+      result.text,
+      `${safeProjectName(project)}-${safeScheduleName(schedule.name)}.csv`,
+      scheduleCsvFilters(),
+      { forbiddenPaths: protectedPaths },
+    );
+    if (!path) return;
+    toast(
+      result.importable
+        ? t("export.scheduleCsvExported", { name: schedule.name })
+        : t("export.scheduleCsvReadOnlyExported", { name: schedule.name }),
+      result.importable ? "success" : "warning",
+    );
+  } catch (error) {
+    await messageDialog(t("export.failedTitle"), describeError(error), "warning");
+  }
 }
 
 export async function exportProject(kind: ExportKind, context: ExportContext): Promise<void> {

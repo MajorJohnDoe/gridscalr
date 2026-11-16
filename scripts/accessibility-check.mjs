@@ -16,6 +16,7 @@ import {
   openMarkupsItem,
   openPlacedTableInspector,
   openScheduleBuilder,
+  openScheduleCsvImport,
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
@@ -208,6 +209,13 @@ try {
     await analyze(page, builderCheck, ".modal");
     await page.keyboard.press("Escape");
     await builder.waitFor({ state: "detached" });
+
+    const csv = await openScheduleCsvImport(page);
+    const csvCheck = checkFor(theme, "schedule-csv");
+    await expectFocusInside(page, ".modal", csvCheck);
+    await analyze(page, csvCheck, ".modal");
+    await page.keyboard.press("Escape");
+    await csv.waitFor({ state: "detached" });
 
     await openPlacedTableInspector(page);
     await analyze(page, checkFor(theme, "schedule-inspector"), ".selection-section");

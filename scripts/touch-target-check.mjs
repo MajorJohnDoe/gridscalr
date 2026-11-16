@@ -13,6 +13,7 @@ import {
   openMarkupsItem,
   openPlacedTableInspector,
   openScheduleBuilder,
+  openScheduleCsvImport,
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
@@ -163,6 +164,10 @@ try {
   await collect("schedule-builder", ".modal");
   await page.keyboard.press("Escape");
   await builder.waitFor({ state: "detached" });
+  const csv = await openScheduleCsvImport(page);
+  await collect("schedule-csv", ".modal");
+  await page.keyboard.press("Escape");
+  await csv.waitFor({ state: "detached" });
   await summary.getByRole("button", { name: "Summary roles…" }).click();
   const roles = page.getByRole("dialog", { name: "Summary roles" });
   await roles.waitFor();

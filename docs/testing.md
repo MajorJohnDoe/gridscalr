@@ -384,6 +384,7 @@ checklist in [`releasing.md`](releasing.md).
 | Place schedule dialog | **Place on drawing…** with a stored schedule selected |
 | Placed table inspector section | Select the seeded placed table; its section in Properties |
 | Schedule builder dialog | **New schedule…** in the Summary tab |
+| Schedule CSV import dialog | **Import CSV…** with a stored one-row-per-item schedule selected |
 | Summary roles dialog | **Summary roles…** in the Summary tab |
 
 A **serious** or **critical** axe violation fails the run. Moderate, minor and

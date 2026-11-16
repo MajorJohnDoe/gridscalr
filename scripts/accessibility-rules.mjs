@@ -23,6 +23,7 @@ export const A11Y_SURFACES = [
   { id: "schedule-placement", label: "Place schedule dialog" },
   { id: "schedule-inspector", label: "Placed table inspector section" },
   { id: "schedule-builder", label: "Schedule builder dialog" },
+  { id: "schedule-csv", label: "Schedule CSV import dialog" },
   { id: "schedule-roles", label: "Summary roles dialog" },
 ];
 
