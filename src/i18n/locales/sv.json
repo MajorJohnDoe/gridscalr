@@ -3389,5 +3389,6 @@
   "schedules.role.count.fixture": "Inredning",
   "schedules.role.count.other": "\u00d6vrigt",
   "schedules.empty": "Inga rader ännu.",
-  "schedules.emptyHint": "Skapa ett schema, eller lägg till synliga mätningar och rum för att se en live-tabell."
+  "schedules.emptyHint": "Skapa ett schema, eller lägg till synliga mätningar och rum för att se en live-tabell.",
+  "schedules.pageDeleteCleared": "Tog bort den raderade sidan från {count} schemafilter."
 }

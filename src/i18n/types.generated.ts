@@ -3389,6 +3389,7 @@ export type MessageKey =
   | "schedules.role.count.fixture"
   | "schedules.role.count.other"
   | "schedules.empty"
-  | "schedules.emptyHint";
+  | "schedules.emptyHint"
+  | "schedules.pageDeleteCleared";
 
 export type MessageCatalog = Record<MessageKey, string>;

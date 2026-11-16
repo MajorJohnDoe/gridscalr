@@ -36,6 +36,8 @@ export interface DeletePageSummary {
   removedDocuments: string[];
   /** Spaces whose optional page link pointed at the deleted page. */
   clearedSpaces: number;
+  /** Schedule filters that named the deleted page and were cleaned up. */
+  clearedScheduleFilters: number;
   nextPageId: PageId | null;
 }
 
@@ -213,6 +215,18 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
     clearedSpaces += 1;
   }
 
+  // A schedule filter that names the deleted page would silently empty the
+  // table, so the page reference is removed and reported like a space link.
+  let clearedScheduleFilters = 0;
+  for (const schedule of project.schedules) {
+    const pageIds = schedule.filters.pageIds;
+    if (!pageIds?.length) continue;
+    const kept = pageIds.filter((id) => id !== pageId);
+    clearedScheduleFilters += pageIds.length - kept.length;
+    if (kept.length) schedule.filters.pageIds = kept;
+    else delete schedule.filters.pageIds;
+  }
+
   const beforeLayers = project.layers.length;
   const fallbackPageId = project.pages[Math.min(index, project.pages.length - 1)]?.id ?? null;
   // A group survives while any descendant is still referenced, so a page delete
@@ -240,6 +254,7 @@ export function deletePage(project: Project, pageId: PageId): DeletePageSummary 
     removedLayers,
     removedDocuments,
     clearedSpaces,
+    clearedScheduleFilters,
     nextPageId: project.pages[Math.min(index, project.pages.length - 1)]?.id ?? null,
   };
 }

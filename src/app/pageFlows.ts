@@ -156,6 +156,9 @@ export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promis
   if (result.clearedSpaces > 0) {
     toast(t("spaces.pageDeleteCleared", { count: result.clearedSpaces }), "info");
   }
+  if (result.clearedScheduleFilters > 0) {
+    toast(t("schedules.pageDeleteCleared", { count: result.clearedScheduleFilters }), "info");
+  }
 }
 
 export async function resetProject(host: PageFlowHost): Promise<void> {

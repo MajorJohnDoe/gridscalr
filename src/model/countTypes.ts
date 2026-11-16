@@ -291,6 +291,15 @@ export function removeCountType(project: Project, id: CountType): RemoveCountTyp
   if (index < 0) return { removed: false, reason: "missing" };
   if (isBuiltInCountType(id) || id === "other") return { removed: false, reason: "builtin" };
   project.countTypes.splice(index, 1);
+  // A schedule filter that named the removed count type would silently empty
+  // the table, so the reference is removed with the type.
+  for (const schedule of project.schedules) {
+    const countTypes = schedule.filters.countTypes;
+    if (!countTypes?.length) continue;
+    const kept = countTypes.filter((entry) => entry !== id);
+    if (kept.length) schedule.filters.countTypes = kept;
+    else delete schedule.filters.countTypes;
+  }
   let reassigned = 0;
   for (const layer of project.layers) {
     for (const item of layer.items) {

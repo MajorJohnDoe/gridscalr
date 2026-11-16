@@ -19,6 +19,9 @@ import {
 } from "../src/features/schedules";
 import type { ScheduleDraft } from "../src/features/schedules";
 import { createSpace, emptySpaceDraft } from "../src/features/spaces";
+import { deletePage } from "../src/features/pageModel";
+import { removeCategory } from "../src/model/categories";
+import { addCountType, removeCountType } from "../src/model/countTypes";
 import {
   addItem,
   addLayer,
@@ -520,6 +523,35 @@ describe("definition rules", () => {
     });
     expect(updated.schedule?.name).toBe("Walls");
     expect(deleteSchedule(project, createdId).removed).toBe(true);
+  });
+
+  it("removes a deleted page from every schedule filter", () => {
+    const project = makeProject();
+    project.schedules.push(definition({ filters: { pageIds: [pageIdFor(1), pageIdFor(2)] } }));
+    const summary = deletePage(project, pageIdFor(1));
+    expect(summary?.clearedScheduleFilters).toBe(1);
+    expect(project.schedules[0].filters.pageIds).toEqual([pageIdFor(2)]);
+    const last = deletePage(project, pageIdFor(2));
+    expect(last?.clearedScheduleFilters).toBe(1);
+    expect(project.schedules[0].filters.pageIds).toBeUndefined();
+  });
+
+  it("cleans a removed category or count type from schedule filters", () => {
+    const project = makeProject();
+    const wall = wallCategory(project);
+    const floor = project.categories.find((category) => category.name === "Floor")!;
+    const custom = addCountType(project, "Server rack", "other")!;
+    project.schedules.push(
+      definition({
+        filters: { categoryIds: [wall, floor.id], countTypes: ["door", custom.id] },
+      }),
+    );
+    const removed = removeCategory(project, wall, floor.id);
+    expect(removed.removed).toBe(true);
+    expect(project.schedules[0].filters.categoryIds).toEqual([floor.id]);
+    const removedType = removeCountType(project, custom.id);
+    expect(removedType.removed).toBe(true);
+    expect(project.schedules[0].filters.countTypes).toEqual(["door"]);
   });
 
   it("refuses to delete a schedule a placed table references", () => {

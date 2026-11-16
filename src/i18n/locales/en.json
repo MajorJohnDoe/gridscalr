@@ -3387,5 +3387,6 @@
   "schedules.role.count.fixture": "Fixture",
   "schedules.role.count.other": "Other",
   "schedules.empty": "No rows yet.",
-  "schedules.emptyHint": "Create a schedule, or add visible measurements and rooms to see a live table."
+  "schedules.emptyHint": "Create a schedule, or add visible measurements and rooms to see a live table.",
+  "schedules.pageDeleteCleared": "Removed the deleted page from {count} schedule filter(s)."
 }
