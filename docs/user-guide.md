@@ -505,7 +505,7 @@ Fields created with the **Space** scope in **View → Takeoff settings… → Fi
 
 ## Takeoff and takeoff tables
 
-**View → Takeoff** (`Ctrl+Alt+S`) opens the **Takeoff** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live: nothing is written until you save a takeoff table.
+**View → Takeoff** (`Ctrl+Alt+S`) opens the **Takeoff** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live and opening it writes nothing: a takeoff table is created only by an explicit action.
 
 ![Takeoff tab with four KPI cards, a Room takeoff table, page and space filters and a live table](screenshots/summary.png)
 
@@ -527,13 +527,17 @@ The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 
 Below the cards, the picker chooses **Preview – cannot be placed**, a built-in preview of the visible measurements, or one of the project's takeoff tables.
 
-- **Preview – cannot be placed** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area. The preview cannot be placed, edited or exported as CSV; use **Create takeoff table** or **New takeoff table…** to build a saved takeoff table.
+- **Preview – cannot be placed** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area. The preview cannot be placed, edited or exported as CSV. It offers **Create takeoff table**, which adds the standard takeoff table, and **Create takeoff table and place…**, which adds it and opens the placement dialog in the same undo step. **New takeoff table…** still opens the builder for your own table.
 - A stored takeoff table shows its own columns, grouping, sorting and totals.
 - The **Page**, **Category** and **Space** chips narrow the table on top of the takeoff table's own filters. **Clear filters** restores the full table.
 - Selecting a row reveals the measurement on the drawing. A space row opens the first visible linked measurement, or the space's page when nothing is linked.
 - The table is virtualised: a takeoff table with thousands of rows scrolls without rendering every row.
 
 ### Create a takeoff table
+
+When a project has no takeoff table, **Create takeoff table** in the preview adds the **Standard** takeoff table. It uses the measurement source with one row per item and the columns **Object**, **Count**, **Unit** and **Value**, and it has no filters. The new table is selected in the picker, so **Place on drawing…**, **Edit takeoff table…** and **Export CSV…** work immediately, and **Import CSV…** follows the usual one-row-per-item rule. Creating it is one undo step. The standard table is an ordinary takeoff table: rename it, change its columns, filters, grouping and totals in the builder like any other.
+
+**Create takeoff table and place…** creates the same table, selects it and opens the placement dialog. Confirming writes the table and the placement in one undo step, and **Cancel** writes nothing.
 
 **New takeoff table…** opens the builder:
 
