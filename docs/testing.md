@@ -374,18 +374,18 @@ checklist in [`releasing.md`](releasing.md).
 | Main shell | The shell with the demo project, without a dialog |
 | Project settings dialog | `Ctrl/Cmd+,` |
 | Preferences dialog | **Settings → Preferences…** |
-| Quantities dialog | `Ctrl/Cmd+Alt+Q` |
+| Order dialog | `Ctrl/Cmd+Alt+Q` |
 | Drawing export dialog | **File → Export → Drawing PDF…** |
 | Spaces register dialog | **View → Spaces…** |
 | Help dialog | `F1` |
 | Custom fields dialog | **Project settings → Fields → Manage fields…** |
 | Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
-| Summary dock tab | `Ctrl/Cmd+Alt+S`, with seeded roles and schedules |
-| Place schedule dialog | **Place on drawing…** with a stored schedule selected |
+| Takeoff dock tab | `Ctrl/Cmd+Alt+S`, with seeded card sources and takeoff tables |
+| Place takeoff table dialog | **Place on drawing…** with a stored takeoff table selected |
 | Placed table inspector section | Select the seeded placed table; its section in Properties |
-| Schedule builder dialog | **New schedule…** in the Summary tab |
-| Schedule CSV import dialog | **Import CSV…** with a stored one-row-per-item schedule selected |
-| Summary roles dialog | **Summary roles…** in the Summary tab |
+| Takeoff table builder dialog | **New takeoff table…** in the Takeoff tab |
+| Takeoff table CSV import dialog | **Import CSV…** with a stored one-row-per-item takeoff table selected |
+| Card sources dialog | **Card sources…** in the Takeoff tab |
 
 A **serious** or **critical** axe violation fails the run. Moderate, minor and
 best-practice findings are printed with their target and are not hidden: there is
@@ -414,7 +414,7 @@ the documented surface list and the theme × surface matrix.
 the layout the real CSS produces instead of overriding `matchMedia`.
 
 Every visible control on the shell, the expanded Layers panel, the Markups panel,
-the Project settings, Preferences and Quantities dialogs, and the Custom fields,
+the Project settings, Preferences and Order dialogs, and the Custom fields,
 Spaces register and Custom fields inspector sections must measure at least
 **24 × 24 CSS px**, the WCAG 2.2 AA Success Criterion 2.5.8 minimum:
 
@@ -444,8 +444,8 @@ At each scale the check asserts that the document does not scroll horizontally,
 the top bar, context bar, Pages/Layers panel, Properties panel and status bar do
 not clip their content, the canvas keeps at least 240 CSS px, every menu item
 stays inside the window, and the Project settings, Custom fields, Spaces, Help,
-Schedule builder, Place schedule and Schedule CSV import dialogs open entirely
-inside the viewport. It also opens the Summary tab with a seeded room and
+Takeoff table builder, Place takeoff table and Takeoff table CSV import dialogs open entirely
+inside the viewport. It also opens the Takeoff tab with a seeded room and
 measurement schedule and checks the placed-table inspector section for
 horizontal overflow. A menu that is taller than the window scrolls inside its
 panel (`max-height: calc(100vh - 16px)`), which keeps its last item reachable at
@@ -529,7 +529,7 @@ Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
 
 - the main shell with a selected markup (`hero.png`);
 - the Markups and Layers panels (`markups.png`);
-- the Quantities dialog (`quantities.png`);
+- the Order dialog (`quantities.png`);
 - the Count types dialog (`count-types.png`).
 
 The baselines live in `tests/visual/`. The script loads the bundled Liberation

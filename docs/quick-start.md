@@ -33,8 +33,8 @@ mode for the next item. Properties lets you change a placed item.
 
 ## 4. Review and export
 
-Open **View → Quantities…** for the live quantity summary. Export it as CSV,
-Excel or PDF from the same dialog. Project metadata and a report logo are set in
+Open **View → Order…** for the live order summary. Export it as CSV, Excel or
+PDF from the same dialog. Project metadata and a report logo are set in
 **Settings → Project settings…**.
 
 ## Tips

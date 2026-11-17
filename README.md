@@ -90,16 +90,17 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   used only while nothing is linked. Create rooms from the room names already on
   measurements, fill space-scoped fields in the space form, and delete a space
   without deleting its measurements.
-- Build live schedules from measurements or rooms in **View → Summary**
+- Build live takeoff tables from measurements or rooms in **View → Takeoff**
   (`Ctrl+Alt+S`): four KPI cards for rooms, area, walls and doors, chosen
   columns, grouping, sorting, filters and totals. **Place on drawing…** puts a
-  schedule table on a drawing page, where it moves, resizes, rotates, locks and
+  takeoff table on a drawing page, where it moves, resizes, rotates, locks and
   hides like any drawing item, updates when the drawing or the definition
   changes, continues a long range on a second table instead of clipping, and
   exports as vector text and lines in the drawing PDF. A one-row-per-item
-  schedule also round-trips through **Export CSV…** and **Import CSV…** with
+  takeoff table also round-trips through **Export CSV…** and **Import CSV…** with
   stable IDs, a `Label [key]` header, a locale-aware delimiter and BOM, formula
-  escaping and a dry-run conflict report; a grouped schedule exports read-only.
+  escaping and a dry-run conflict report; a grouped takeoff table exports
+  read-only.
 - Snap to endpoints, midpoints and intersections between visible markup
   segments, with an adjustable screen-pixel threshold.
 - Draw pen strokes, lines, arrows, rectangles, ellipses, highlights, revision
@@ -210,8 +211,8 @@ use `Cmd` wherever `Ctrl` is shown.
 | Fit page / actual size | `Ctrl+0` / `Ctrl+1` |
 | Save / save as | `Ctrl+S` / `Ctrl+Shift+S` |
 | Markups list | `Ctrl+L` |
-| Quantities | `Ctrl+Alt+Q` |
-| Summary | `Ctrl+Alt+S` |
+| Order | `Ctrl+Alt+Q` |
+| Takeoff | `Ctrl+Alt+S` |
 
 The **Pages**, **Layers** and **Markups** lists share one interaction model:
 
@@ -234,7 +235,7 @@ The **Pages**, **Layers** and **Markups** lists share one interaction model:
 
 | Measure and annotate | Review quantities |
 | --- | --- |
-| ![Length tool active with the Layers panel and measurement context](docs/screenshots/measure.png) | ![Quantities dialog with deductions, waste and order quantities](docs/screenshots/quantities.png) |
+| ![Length tool active with the Layers panel and measurement context](docs/screenshots/measure.png) | ![Order dialog with deductions, waste and order quantities](docs/screenshots/quantities.png) |
 | **Drawing and measurement layers.** Tools stay on the matching layer type, with categories, rooms and deductions. | **Live procurement quantities.** Review gross, deduction, net, waste and order quantities before export. |
 
 | Markups and layers | Drawing export |
@@ -247,15 +248,15 @@ The **Pages**, **Layers** and **Markups** lists share one interaction model:
 | ![Docked Markups list with a saved view, building/floor/room groups and configurable columns](docs/screenshots/markups-list.png) | ![Help workflows for operations technicians and technical property managers](docs/screenshots/workflows-help.png) |
 | **Find every item.** Search, select and navigate measurements and drawings across all pages. | **Task-oriented help.** The same guides ship inside the app under **Help**. |
 
-| Summary and schedules | Rooms and spaces |
+| Takeoff and takeoff tables | Rooms and spaces |
 | --- | --- |
-| ![Summary tab with four KPI cards, a schedule picker and a live room table](docs/screenshots/summary.png) | ![Space register with a building, floors and rooms, measured and manual area badges](docs/screenshots/spaces.png) |
-| **One live view.** Four KPI cards and a schedule table read the project data without storing a second copy. | **Areas from the drawing.** A room's area is derived from the visible area measurements linked to it. |
+| ![Takeoff tab with four KPI cards, a takeoff table picker and a live room table](docs/screenshots/summary.png) | ![Space register with a building, floors and rooms, measured and manual area badges](docs/screenshots/spaces.png) |
+| **One live view.** Four KPI cards and a takeoff table read the project data without storing a second copy. | **Areas from the drawing.** A room's area is derived from the visible area measurements linked to it. |
 
 | Custom fields | Excel round-trip |
 | --- | --- |
-| ![Custom fields dialog with typed measurement fields and a field set](docs/screenshots/fields.png) | ![Import schedule CSV dialog with a changed row and its before and after values](docs/screenshots/schedule-csv.png) |
-| **Your property data.** Typed fields, field sets and inline validation on every measurement and space. | **Safe round-trip.** Export a one-row-per-item schedule, edit it in Excel, review the dry run and import one undo step. |
+| ![Custom fields dialog with typed measurement fields and a field set](docs/screenshots/fields.png) | ![Import takeoff table CSV dialog with a changed row and its before and after values](docs/screenshots/schedule-csv.png) |
+| **Your property data.** Typed fields, field sets and inline validation on every measurement and space. | **Safe round-trip.** Export a one-row-per-item takeoff table, edit it in Excel, review the dry run and import one undo step. |
 
 | Reference pane | Excel handoff |
 | --- | --- |

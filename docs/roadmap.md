@@ -113,7 +113,7 @@ determinism tests, not a routine bump.
 **Drift Slice 1 — data foundation** is complete on schema 28. It adds typed
 custom fields and field sets ([#275](https://github.com/MajorJohnDoe/gridscalr/issues/275)),
 a space register with derived room areas ([#278](https://github.com/MajorJohnDoe/gridscalr/issues/278)),
-a live schedule engine and Summary tab ([#281](https://github.com/MajorJohnDoe/gridscalr/issues/281)),
+a live schedule engine and Takeoff tab ([#281](https://github.com/MajorJohnDoe/gridscalr/issues/281)),
 placed schedule tables with drawing-PDF output ([#284](https://github.com/MajorJohnDoe/gridscalr/issues/284)),
 the schedule CSV round-trip ([#287](https://github.com/MajorJohnDoe/gridscalr/issues/287))
 and the schema 28 foundation ([#273](https://github.com/MajorJohnDoe/gridscalr/issues/273)).

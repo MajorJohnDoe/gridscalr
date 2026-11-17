@@ -32,8 +32,8 @@ objekt. I Egenskaper kan du ändra ett placerat objekt.
 
 ## 4. Granska och exportera
 
-Öppna **Visa → Mängder…** för den aktuella mängdsammanställningen. Exportera den
-som CSV, Excel eller PDF i samma dialog. Projektmetadata och rapportlogotyp
+Öppna **Visa → Beställning…** för den aktuella beställningsöversikten. Exportera
+den som CSV, Excel eller PDF i samma dialog. Projektmetadata och rapportlogotyp
 anges i **Inställningar → Projektinställningar…**.
 
 ## Tips

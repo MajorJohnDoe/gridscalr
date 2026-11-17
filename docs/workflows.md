@@ -112,9 +112,9 @@ Nest layers into groups when a floor or discipline should hide and lock as a uni
 
 ### 4. Review quantities and order settings
 
-Open **View → Quantities…** (`Ctrl/Cmd+Alt+Q`). Each row combines one category, room and measurement type and shows gross, deduction, net, waste and order quantity.
+Open **View → Order…** (`Ctrl/Cmd+Alt+Q`). Each row combines one category, room and measurement type and shows gross, deduction, net, waste and order quantity.
 
-![Quantities dialog with categories, rooms, deductions, waste and order quantities](screenshots/quantities.png)
+![Order dialog with categories, rooms, deductions, waste and order quantities](screenshots/quantities.png)
 
 Set the project waste percentage and rounding step under **Settings → Project settings → Quantities**. A category can override either value under **Settings → Manage categories…**. Rounding always goes up and order quantity is never lower than net.
 
@@ -124,7 +124,7 @@ Measurements without a page scale are excluded and reported in the dialog. Hidde
 
 Before exporting, open **Settings → Project settings… → Report → Report metadata** and fill in the facility, client, project number, revision, author, date, report title and notes. **Choose logo…** embeds a PNG or JPEG inside the project file; the logo appears on the quantity PDF and in the Excel summary. These fields travel with the `.gridscalr` file and survive project packaging.
 
-Use **Quantities CSV**, **Quantities to Excel…** or **Quantity PDF** in the Quantities dialog, or **File → Export**.
+Use **Order CSV**, **Order Excel** or **Order PDF** in the Order dialog, or **File → Export**.
 
 - CSV is intended for spreadsheet imports and simple procurement tools. It is UTF-8 with BOM and CRLF line endings. By default the delimiter and decimal mark follow the app language (Swedish uses semicolon and decimal comma; English uses comma and point). Choose **Interchange (RFC 4180)** in Preferences for commas and points in scripts and other tools.
 - The Excel workbook is the usual handoff when the buyer wants to sort, filter or annotate the takeoff. It includes summary, category, room, page, markup and source-notes sheets, all derived from the same item data.
@@ -205,7 +205,7 @@ A drawing on a network share or in a cloud-synced folder can be replaced or move
 - The exported CSV, Excel workbook or PDF matches the reviewed quantities.
 - When comparing revisions, the diff list and comparison PDF were checked before the new quantities were ordered.
 
-## Measure rooms and produce a schedule
+## Measure rooms and produce a takeoff table
 
 Use this workflow when an operations technician or technical property manager
 needs a room register, a live area and quantity summary, and a table that can go
@@ -217,7 +217,7 @@ Open **Settings → Project settings… → Fields → Manage fields…**. Add t
 values the property uses, such as fire class, component type or condition.
 Choose the **Scope** first: **Measurement** fields are filled on the selected
 drawing item, and **Space** fields are filled in the space form. A field's
-**Key** is permanent because schedules and CSV use it, while the label can
+**Key** is permanent because takeoff tables and CSV use it, while the label can
 change. Group fields that are usually filled together into a **field set**.
 
 ### 2. Build the room register
@@ -247,42 +247,42 @@ to another room moves it. Deleting a room asks first, unlinks its measurements
 but never deletes them, and a room with child spaces is kept until the children
 are moved or deleted.
 
-### 4. Set the summary roles
+### 4. Set the card sources
 
-Open **View → Summary** (`Ctrl/Cmd+Alt+S`) and choose **Summary roles…**. Give
-the relevant categories the **Wall**, **Floor**, **Ceiling** or **Roof** role,
-and the count types the **Door**, **Window**, **Fixture** or **Other** role. The
-four cards read those roles, never names; a card without a role shows 0 with a
-**Configure** action so a missing role is visible rather than a plausible wrong
-number.
+Open **View → Takeoff** (`Ctrl/Cmd+Alt+S`) and choose **Card sources…**. Give
+the relevant categories the **Wall**, **Floor**, **Ceiling** or **Roof** source,
+and the count types the **Door**, **Window**, **Fixture** or **Other** source. The
+four cards read those sources, never names; a card without a source shows 0 with
+a **Configure** action so a missing source is visible rather than a plausible
+wrong number.
 
-### 5. Build and place the schedule
+### 5. Build and place the takeoff table
 
-In the Summary tab choose **New schedule…**. Name it, choose the **Source**
-(measurements or spaces) and the row mode, then choose columns from the built-in
-fields and the custom fields. Add grouping, sorting, totals and filters; the
-preview uses the real engine over the filtered rows. **Save** writes the
-definition in one undo step.
+In the Takeoff tab choose **New takeoff table…**. Name the takeoff table, choose
+the **Source** (measurements or spaces) and the row mode, then choose columns
+from the built-in fields and the custom fields. Add grouping, sorting, totals and
+filters; the preview uses the real engine over the filtered rows. **Save** writes
+the definition in one undo step.
 
-![Schedule builder with columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
+![Takeoff table builder with columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
 
-Select the saved schedule and choose **Place on drawing…**. Pick the page, the
+Select the saved takeoff table and choose **Place on drawing…**. Pick the page, the
 width in millimetres, the row range or **All rows**, and whether to show the
 header and totals. The placed table is a live drawing item: it moves, resizes,
 rotates, locks, hides and exports with the page, and it updates when a
-measurement, room, custom value or schedule definition changes. When the rows do
+measurement, room, custom value or takeoff table definition changes. When the rows do
 not fit, Properties warns and offers **Continue on a new table**.
 
-![A live schedule table placed on a floor plan and selected, with its properties in the inspector](screenshots/placed-table.png)
+![A live takeoff table placed on a floor plan and selected, with its properties in the inspector](screenshots/placed-table.png)
 
 Export the drawing PDF to print the same header, rows, subtotals and totals as
-vector text and lines, or export the schedule CSV for Excel.
+vector text and lines, or export the takeoff table CSV for Excel.
 
 ### 6. Edit in Excel and import it back
 
-Choose **Export CSV…** on a one-row-per-item schedule. The file uses the app
+Choose **Export CSV…** on a one-row-per-item takeoff table. The file uses the app
 language's delimiter and decimal mark, a UTF-8 BOM and one `ID` column plus one
-`Label [key]` column per visible schedule field. Edit labels, rooms, tags, the
+`Label [key]` column per visible takeoff table field. Edit labels, rooms, tags, the
 space fields and custom values in Excel, then choose **Import CSV…**. GridScalr
 shows a dry run with the changed rows, before and after values, unchanged rows,
 unknown IDs, read-only columns and invalid values. A row with an invalid value
@@ -291,16 +291,16 @@ by stable ID, and the whole import is one undo step. Reference and derived
 columns such as page, layer, category, space, count type and area are read-only
 because the CSV carries their display labels, not stable references.
 
-![Import schedule CSV dialog with a changed row, before and after values and the apply action](screenshots/schedule-csv.png)
+![Import takeoff table CSV dialog with a changed row, before and after values and the apply action](screenshots/schedule-csv.png)
 
 ### Checklist
 
 - Every room has a parent and a usable area, or a named warning.
-- The wall and door roles are deliberate, and the card totals match the plan.
-- The schedule columns, filters and totals match the procurement structure.
+- The wall and door card sources are deliberate, and the card totals match the plan.
+- The takeoff table columns, filters and totals match the procurement structure.
 - The placed table fits its box and has a continuation if it does not.
 - A CSV round-trip changed only the cells that were meant to change.
-- The drawing PDF and the schedule CSV were reviewed before ordering.
+- The drawing PDF and the takeoff table CSV were reviewed before ordering.
 
 ## Recover a project split across two files
 
@@ -310,7 +310,7 @@ Use this when the same drawing set was edited in two `.gridscalr` files by mista
 2. Save a copy before changing anything.
 3. Choose **File → Import pages from project…** and pick the other file.
 4. In the picker, select the corrected sheet. A page whose PDF has moved stays selectable and is marked **File missing**; check its page name and item count, then import it.
-5. Review the **Import preflight** counts and the **Source files** list. Relink a missing PDF with **Relink…**; the replacement's page count and SHA-256 checksum are verified. If you want the other pages anyway, **Skip these pages** drops that document's selected pages explicitly. If a file differs, choose **Use anyway** for that file or relink the correct copy — **Import pages** stays disabled until every missing file is relinked or skipped and every change is confirmed. If the imported measurements reference rooms, schedules or custom fields that only exist in the source project, the preflight names the counts; leave **Clear unresolved links** off to keep the links and let the project doctor report them, or switch it on to clear the room links, remove placed tables with a missing schedule and drop the custom values. Registers are never merged or remapped, and the source file is unchanged. The summary beside the button shows the current missing and changed state. Cancel leaves both projects and the source files untouched.
+5. Review the **Import preflight** counts and the **Source files** list. Relink a missing PDF with **Relink…**; the replacement's page count and SHA-256 checksum are verified. If you want the other pages anyway, **Skip these pages** drops that document's selected pages explicitly. If a file differs, choose **Use anyway** for that file or relink the correct copy — **Import pages** stays disabled until every missing file is relinked or skipped and every change is confirmed. If the imported measurements reference rooms, takeoff tables or custom fields that only exist in the source project, the preflight names the counts; leave **Clear unresolved links** off to keep the links and let the project doctor report them, or switch it on to clear the room links, remove placed tables with a missing takeoff table and drop the custom values. Registers are never merged or remapped, and the source file is unchanged. The summary beside the button shows the current missing and changed state. Cancel leaves both projects and the source files untouched.
 6. If the old, incorrect version is still in the project, delete that page from the Pages tab. The other pages keep their stable IDs and measurements, so the corrected sheet takes the old position and the later displayed numbers move down by one.
 7. Remove any empty page-scoped layers left behind by the deleted page from the Layers panel.
 8. Check that the quantities, Markups list and drawing PDF still match the intended set before saving.
@@ -339,5 +339,5 @@ The doctor cannot prove that a drawing is the right revision, that a quantity is
 - [Workspace lists](user-guide.md#workspace-lists)
 - [Measure](user-guide.md#measure)
 - [Draw and annotate](user-guide.md#draw-and-annotate)
-- [Quantities](user-guide.md#quantities)
+- [Order](user-guide.md#order)
 - [Save and export](user-guide.md#save-and-export)
