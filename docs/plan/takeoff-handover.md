@@ -167,9 +167,12 @@ sources. No schema change is expected.
 - **PR:** [#309](https://github.com/MajorJohnDoe/gridscalr/pull/309), opened from
   `feat/takeoff-settings-hub`.
 - **Branch:** `feat/takeoff-settings-hub`
-- **Verified head SHA:** `144e3b4` (product `7709be9`, documentation `144e3b4`);
-  the Phase 2 handover record is the following commit on the same branch and is
-  the final head the conductor verifies.
+- **Verified head SHA:** `f56172d` (product `7709be9`, documentation `144e3b4`,
+  handover `f56172d`). CI run
+  [44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
+  passed every job on that exact SHA. This handover status line is the only change
+  after that verified head, so the conductor starts verification from the final
+  branch head.
 - **Merge commit:** pending.
 - **Status:** implementation and documentation committed, PR open, local gate and
   browser gates green. No schema change, no app version bump, no tag, release or
@@ -298,7 +301,10 @@ Local gate on `7709be9` + `144e3b4`:
   `test:docs-capture` (35 screenshots in a temporary folder,
   `docs/screenshots/` untouched)
 
-CI is authoritative on the PR head; the conductor verifies the final SHA.
+CI is authoritative on the PR head. Run
+[44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
+on `f56172d` passed the dependency gate, the Rust format and check job, the
+frontend tests and build, and the desktop shell on Ubuntu, Windows and macOS.
 
 ### Conductor verification
 
