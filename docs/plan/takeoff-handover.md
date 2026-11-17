@@ -175,8 +175,8 @@ sources. No schema change is expected.
   branch head.
 - **Merge commit:** pending.
 - **Status:** implementation and documentation committed, PR open, local gate and
-  browser gates green. No schema change, no app version bump, no tag, release or
-  `site/` change.
+  browser gates green. Conductor review fixes are in `18c4269`. No schema change,
+  no app version bump, no tag, release or `site/` change.
 
 ### Completed work
 
@@ -265,18 +265,28 @@ sources. No schema change is expected.
 - **A nested editor returns to the hub.** The field editor and the table builder
   replace the hub modal (the dialog layer supports one active modal), and the hub
   reopens on the same tab when they close.
-- **The hub is disabled in a view-only session** at its entry points, matching
-  the old Project settings, category and card-source behaviour.
+- **The hub refuses a view-only session.** `openTakeoffSettingsDialog` returns
+  the localized **Editing disabled (view-only)** reason instead of opening when
+  `store.readOnly` is set, so no hub control can show a mutation the store will
+  silently ignore. The Takeoff-tab gear carries the same reason and the View
+  menu, Project settings and inspector entry points are disabled, so an empty
+  card's **Configure** and the inspector action cannot bypass the guard. The
+  Tables tab follows the same rule because the whole hub is refused.
+- **The Fields tab names every applies-to restriction.** Item kinds, categories,
+  count types and space kinds are all summarised, using `itemKindLabel` and the
+  existing `fields.spaceKind.*` keys; **All fields** appears only when the field
+  has no restriction at all.
 - **No standard table, no card-owned multi-source KPI.** Both stay in their
   follow-up issues (#302 and #304).
 
 ### Findings
 
-- The Fields tab lists categories and count types in an object's applies-to
-  column, but measurement-kind and space-kind restrictions are summarised only
-  as **All fields** when no category or count type is named. Showing every
-  applies-to dimension would need a compact summary design; it is not required by
-  this phase and belongs with the Phase 4 documentation and UX pass.
+- The conductor review found two in-scope defects that are now fixed in
+  `18c4269`: the Fields applies-to summary ignored item-kind and space-kind
+  restrictions, and the hub opened in a view-only session with editable-looking
+  controls. Tests now cover an item-kind-only field, a space-kind-only field and
+  a view-only hub that refuses the dialog, the card Configure action and the
+  inspector action.
 - The inspector **Edit object** action adds a button to every measurement's
   Properties section, which changed the `hero.png` visual baseline. The action is
   the issue's deep link, so the change is intended rather than a regression.
@@ -305,6 +315,18 @@ CI is authoritative on the PR head. Run
 [44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
 on `f56172d` passed the dependency gate, the Rust format and check job, the
 frontend tests and build, and the desktop shell on Ubuntu, Windows and macOS.
+
+Review fixes on `18c4269` re-ran:
+
+- `npx tsc --noEmit`, `lint`, `format:check`, `check:i18n` (3 566 keys),
+  `check:file-budgets` (609 files), `check:modules` (21 foundation features),
+  `check:docs` (only the expected stale-screenshot warning)
+- `npx vitest run`: 173 files, 1 730 tests passed (the two new hub tests cover
+  the applies-to summary and the view-only refusal)
+- `test:ui` and `test:ui-scale` (100/150/200 %, hub tabs in English and Swedish,
+  now labelled with English-only script strings)
+
+The final CI run on the review-fix head is recorded in the PR.
 
 ### Conductor verification
 
