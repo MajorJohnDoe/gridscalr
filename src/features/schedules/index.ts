@@ -1,6 +1,6 @@
 /**
  * Public surface of the schedules feature. Other modules import only this
- * index: the pure model, the summary cards and the right-dock panel/builder.
+ * index: the pure model, the cards and the right-dock panel/builder.
  * The measurement and space sources stay internal so one engine computes every
  * table.
  */

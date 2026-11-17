@@ -1,7 +1,7 @@
 import type { PageId } from "../../../model/types";
 
 /**
- * Session-only summary panel state: whether the right-dock Summary tab is
+ * Session-only takeoff panel state: whether the right-dock Takeoff tab is
  * active, which schedule is shown and the panel-level filter chips. None of it
  * is stored in the project, so opening a project never changes it.
  */

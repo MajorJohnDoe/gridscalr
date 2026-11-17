@@ -55,7 +55,7 @@ export interface PanelActions {
   isSplitViewOpen: () => boolean;
   hasReferenceSession: () => boolean;
   openQuantities: () => void;
-  /** Shows or hides the right-dock Summary tab. */
+  /** Shows or hides the right-dock Takeoff tab. */
   toggleSummary: () => void;
   exportScheduleCsv: (scheduleId: string) => void;
   importScheduleCsv: (scheduleId: string) => void;

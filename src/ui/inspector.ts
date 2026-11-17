@@ -29,7 +29,7 @@ import { disableEditingControls, viewOnlyPanelNote } from "../features/viewOnly"
 export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
   const previousScroll =
     refs.inspector.querySelector<HTMLElement>(".schedules-table-wrap")?.scrollTop ?? 0;
-  // The Summary toolbar is rebuilt with the panel, so remember which control
+  // The Takeoff toolbar is rebuilt with the panel, so remember which control
   // had focus before clearing it. Without this, choosing a schedule, changing a
   // filter or closing the roles/builder dialog drops focus to the page body.
   const active = document.activeElement;

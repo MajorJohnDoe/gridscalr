@@ -13,8 +13,8 @@ import { findSchedule } from "../model";
 import { createPlacement, updatePlacement, type PlacementResult } from "../placement";
 
 /**
- * Placement dialogs: **Place on drawing…** from the Summary tab and the
- * schedule list, and **Change row range…** from the inspector or the context
+ * Placement dialogs: **Place on drawing…** from the Takeoff tab and the
+ * takeoff table list, and **Change row range…** from the inspector or the context
  * menu. Both write one store mutation, so a placement or a range change is one
  * undo step.
  */

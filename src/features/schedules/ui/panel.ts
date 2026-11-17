@@ -23,11 +23,13 @@ import {
 } from "./state";
 
 /**
- * The right-dock Summary tab. It renders the KPI cards, a schedule picker, the
- * filter chips and one live table. The built-in table summarizes visible
- * measurements by category; choosing a stored schedule shows its own columns,
- * grouping, sorting and totals. Nothing is stored by the panel.
+ * The right-dock Takeoff tab. It renders the KPI cards, a takeoff table picker,
+ * the filter chips and one live table. The built-in table previews visible
+ * measurements by category; choosing a stored takeoff table shows its own
+ * columns, grouping, sorting and totals. Nothing is stored by the panel.
  */
+
+const ACTION_REASON_ID = "schedules-action-reason";
 
 export interface SummaryPanelHost {
   navigateToItem?: (pageId: PageId, layerId: string, itemId: string) => void;
@@ -138,6 +140,32 @@ function configure(id: SummaryCardId, host: SummaryPanelHost): void {
   void openSummaryRolesDialog(id === "doors" ? "doors" : "walls").then(() => reschedule(host));
 }
 
+function explainDisabled(button: HTMLButtonElement, reason: string): void {
+  button.disabled = true;
+  button.title = reason;
+  button.setAttribute("aria-describedby", ACTION_REASON_ID);
+}
+
+function previewNotice(host: SummaryPanelHost): HTMLElement {
+  const block = el("div", "schedules-preview");
+  const text = el("div", "schedules-preview-text");
+  text.append(
+    el("p", "schedules-preview-title", t("schedules.preview.title")),
+    el("p", "schedules-preview-hint", t("schedules.preview.hint")),
+  );
+  const create = el("button", "btn btn-small btn-primary", t("schedules.preview.create"));
+  create.type = "button";
+  create.dataset.summaryFocus = "preview-create";
+  if (store.readOnly) {
+    explainDisabled(create, t("schedules.action.readOnly"));
+  } else {
+    create.title = t("schedules.preview.createHint");
+    create.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
+  }
+  block.append(text, create);
+  return block;
+}
+
 function navigateRow(
   row: ScheduleRow,
   source: ScheduleResult["source"],
@@ -160,8 +188,11 @@ function emptyState(host: SummaryPanelHost): HTMLElement {
   block.append(el("p", "schedules-empty-hint", t("schedules.emptyHint")));
   const create = el("button", "btn btn-small btn-primary", t("schedules.newSchedule"));
   create.type = "button";
-  create.disabled = store.readOnly;
-  create.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
+  if (store.readOnly) {
+    explainDisabled(create, t("schedules.action.readOnly"));
+  } else {
+    create.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
+  }
   block.append(create);
   return block;
 }
@@ -183,6 +214,13 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   const root = el("div", "schedules-panel");
   root.append(summaryCardsElement(summary.cards, (id) => configure(id, host)));
 
+  const hasSchedule = Boolean(schedule);
+  const noScheduleReason = t("schedules.action.noSchedule");
+  const readOnlyReason = t("schedules.action.readOnly");
+  const reasons: string[] = [];
+  if (!hasSchedule) reasons.push(noScheduleReason);
+  if (store.readOnly) reasons.push(readOnlyReason);
+
   const head = el("div", "schedules-head");
   const picker = el("select", "select schedules-schedule-select");
   picker.setAttribute("aria-label", t("schedules.pickerAria"));
@@ -199,27 +237,31 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   const add = el("button", "btn btn-small", t("schedules.newSchedule"));
   add.type = "button";
   add.dataset.summaryFocus = "new";
-  add.disabled = store.readOnly;
+  if (store.readOnly) explainDisabled(add, readOnlyReason);
   add.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
   const edit = el("button", "btn btn-small btn-ghost", t("schedules.editSchedule"));
   edit.type = "button";
   edit.dataset.summaryFocus = "edit";
-  edit.disabled = !schedule || store.readOnly;
+  if (!hasSchedule || store.readOnly) {
+    explainDisabled(edit, hasSchedule ? readOnlyReason : noScheduleReason);
+  }
   edit.addEventListener("click", () => {
     if (schedule) void openScheduleBuilder(schedule.id).then(() => reschedule(host));
   });
   const place = el("button", "btn btn-small btn-ghost", t("schedules.placement.action"));
   place.type = "button";
   place.dataset.summaryFocus = "place";
-  place.disabled = !schedule || store.readOnly;
   place.title = t("schedules.placement.actionHint");
+  if (!hasSchedule || store.readOnly) {
+    explainDisabled(place, hasSchedule ? readOnlyReason : noScheduleReason);
+  }
   place.addEventListener("click", () => {
     if (schedule) void openPlacementDialog(schedule.id, host).then(() => reschedule(host));
   });
   const roles = el("button", "btn btn-small btn-ghost", t("schedules.manageRoles"));
   roles.type = "button";
   roles.dataset.summaryFocus = "roles";
-  roles.disabled = store.readOnly;
+  if (store.readOnly) explainDisabled(roles, readOnlyReason);
   roles.addEventListener(
     "click",
     () => void openSummaryRolesDialog("walls").then(() => reschedule(host)),
@@ -228,24 +270,35 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   exportCsv.type = "button";
   exportCsv.dataset.summaryFocus = "export";
   exportCsv.title = t("schedulesCsv.exportHint");
-  exportCsv.disabled = !schedule || !host.exportScheduleCsv;
+  if (!hasSchedule) explainDisabled(exportCsv, noScheduleReason);
+  else if (!host.exportScheduleCsv) exportCsv.disabled = true;
   exportCsv.addEventListener("click", () => {
     if (schedule) host.exportScheduleCsv?.(schedule.id);
   });
   const importCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.import"));
   importCsv.type = "button";
   importCsv.dataset.summaryFocus = "import";
-  importCsv.title =
-    schedule && schedule.rowMode !== "items"
-      ? t("schedulesCsv.importReadOnly")
-      : t("schedulesCsv.importHint");
-  importCsv.disabled =
-    !schedule || store.readOnly || schedule.rowMode !== "items" || !host.importScheduleCsv;
+  const importReason = !hasSchedule
+    ? noScheduleReason
+    : store.readOnly
+      ? readOnlyReason
+      : schedule && schedule.rowMode !== "items"
+        ? t("schedulesCsv.importReadOnly")
+        : !host.importScheduleCsv
+          ? t("schedulesCsv.importHint")
+          : null;
+  importCsv.title = importReason ?? t("schedulesCsv.importHint");
+  if (importReason) explainDisabled(importCsv, importReason);
   importCsv.addEventListener("click", () => {
     if (schedule) host.importScheduleCsv?.(schedule.id);
   });
   head.append(picker, add, edit, place, roles, exportCsv, importCsv);
   root.append(head);
+  if (reasons.length) {
+    const reason = el("p", "schedules-action-reason", reasons.join(" "));
+    reason.id = ACTION_REASON_ID;
+    root.append(reason);
+  }
 
   const filters = summaryPanelFilters();
   const chips = el("div", "schedules-chips");
@@ -302,6 +355,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
       }),
     );
   } else {
+    root.append(previewNotice(host));
     root.append(builtInTable(summary.table));
   }
 

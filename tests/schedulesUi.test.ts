@@ -229,7 +229,7 @@ describe("summary panel", () => {
       navigateToItem: (pageId, layerId, itemId) => navigated.push(`${pageId}:${layerId}:${itemId}`),
     });
 
-    const picker = labelled<HTMLSelectElement>("Summary table")!;
+    const picker = labelled<HTMLSelectElement>("Takeoff table")!;
     expect(picker.dataset.summaryFocus).toBe("picker");
     setValue(picker, "sched_ui");
     expect(container.querySelector(".schedules-table thead th")?.textContent).toBe("Label");
@@ -246,7 +246,7 @@ describe("summary panel", () => {
     schedule(project);
     store.setProject(project, null);
     const { container } = mountPanel();
-    setValue(labelled<HTMLSelectElement>("Summary table")!, "sched_ui");
+    setValue(labelled<HTMLSelectElement>("Takeoff table")!, "sched_ui");
     expect(container.querySelectorAll(".schedules-row-link")).toHaveLength(2);
 
     const pageChip = [
@@ -266,7 +266,68 @@ describe("summary panel", () => {
     store.setProject(project, null);
     const { container } = mountPanel();
     expect(container.querySelector(".schedules-empty-title")?.textContent).toBe("No rows yet.");
-    expect(button("New schedule…", container)).toBeTruthy();
+    expect(button("New takeoff table…", container)).toBeTruthy();
+  });
+
+  it("labels the built-in table as a preview and offers the create action", () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    store.setProject(project, null);
+    const { container } = mountPanel();
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    expect(picker.selectedOptions[0].textContent).toBe("Preview – cannot be placed");
+    expect(container.querySelector(".schedules-preview-title")?.textContent).toBe(
+      "Preview – cannot be placed",
+    );
+    const create = container.querySelector<HTMLButtonElement>(".schedules-preview .btn-primary")!;
+    expect(create.textContent).toBe("Create takeoff table");
+    create.click();
+    expect(document.querySelector(".modal")?.textContent).toContain("New takeoff table");
+    expect(project.schedules).toHaveLength(0);
+    closeActiveModal();
+  });
+
+  it("states why the takeoff actions are disabled", () => {
+    const project = makeProject();
+    lengthItem(project, { label: "Wall A" });
+    schedule(project);
+    store.setProject(project, null);
+    const { container, paint } = mountPanel({
+      exportScheduleCsv: () => undefined,
+      importScheduleCsv: () => undefined,
+    });
+
+    const reason = container.querySelector(".schedules-action-reason")!;
+    const noTable = "Select a saved takeoff table to edit, place, export or import it.";
+    expect(reason.textContent).toBe(noTable);
+    const edit = container.querySelector<HTMLButtonElement>('[data-summary-focus="edit"]')!;
+    expect(edit.disabled).toBe(true);
+    expect(edit.title).toBe(noTable);
+    expect(edit.getAttribute("aria-describedby")).toBe(reason.id);
+
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    setValue(picker, "sched_ui");
+    expect(container.querySelector(".schedules-action-reason")).toBeNull();
+    const enabledEdit = container.querySelector<HTMLButtonElement>('[data-summary-focus="edit"]')!;
+    expect(enabledEdit.disabled).toBe(false);
+    expect(enabledEdit.hasAttribute("aria-describedby")).toBe(false);
+
+    store.setReadOnly(true);
+    paint();
+    const readOnly = container.querySelector(".schedules-action-reason")!;
+    const note = "The session is read-only, so editing, placing and importing are unavailable.";
+    expect(readOnly.textContent).toBe(note);
+    const place = container.querySelector<HTMLButtonElement>('[data-summary-focus="place"]')!;
+    expect(place.disabled).toBe(true);
+    expect(place.title).toBe(note);
+    expect(place.getAttribute("aria-describedby")).toBe(readOnly.id);
+    expect(container.querySelector<HTMLButtonElement>('[data-summary-focus="new"]')?.disabled).toBe(
+      true,
+    );
+    expect(
+      container.querySelector<HTMLButtonElement>('[data-summary-focus="export"]')?.disabled,
+    ).toBe(false);
+    store.setReadOnly(false);
   });
 
   it("excludes hidden items from a schedule table", () => {
@@ -295,7 +356,7 @@ describe("summary panel", () => {
     schedule(project);
     store.setProject(project, null);
     const { container } = mountPanel();
-    setValue(labelled<HTMLSelectElement>("Summary table")!, "sched_ui");
+    setValue(labelled<HTMLSelectElement>("Takeoff table")!, "sched_ui");
     const labels = [...container.querySelectorAll(".schedules-row-link")].map(
       (node) => node.textContent,
     );
@@ -391,7 +452,7 @@ describe("summary roles", () => {
     store.setProject(project, null);
     const done = openSummaryRolesDialog("walls");
     const wall = project.categories.find((category) => category.name === "Wall")!;
-    const wallSelect = labelled<HTMLSelectElement>("Summary role for Wall")!;
+    const wallSelect = labelled<HTMLSelectElement>("Card source for Wall")!;
     setValue(wallSelect, "wall");
     expect(wall.summaryRole).toBe("wall");
     store.undo();
@@ -399,7 +460,7 @@ describe("summary roles", () => {
       store.project!.categories.find((category) => category.id === wall.id)?.summaryRole,
     ).toBeUndefined();
 
-    const doorSelect = labelled<HTMLSelectElement>("Summary role for Door")!;
+    const doorSelect = labelled<HTMLSelectElement>("Card source for Door")!;
     setValue(doorSelect, "door");
     expect(store.project!.countTypes.find((type) => type.id === "door")?.summaryRole).toBe("door");
     button("Close")!.click();

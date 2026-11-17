@@ -181,8 +181,8 @@ try {
       "the selected measurement should show the seeded custom field",
     );
 
-    // The right-dock Summary tab, the schedule builder it opens and the
-    // summary-role dialog behind a Configure action.
+    // The right-dock Takeoff tab, the takeoff table builder it opens and
+    // the card-sources dialog behind a Configure action.
     const summary = await openSummaryTab(page);
     await analyze(page, checkFor(theme, "summary"), ".schedules-panel");
 
@@ -194,8 +194,8 @@ try {
     await page.keyboard.press("Escape");
     await placement.waitFor({ state: "detached" });
 
-    await summary.getByRole("button", { name: "Summary roles…" }).click();
-    const roles = page.getByRole("dialog", { name: "Summary roles" });
+    await summary.getByRole("button", { name: "Card sources…" }).click();
+    const roles = page.getByRole("dialog", { name: "Card sources" });
     await roles.waitFor();
     const rolesCheck = checkFor(theme, "schedule-roles");
     await expectFocusInside(page, ".modal", rolesCheck);
