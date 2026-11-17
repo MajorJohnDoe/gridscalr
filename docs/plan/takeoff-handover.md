@@ -12,17 +12,18 @@ release is part of this effort.
 - **PR:** [#305](https://github.com/MajorJohnDoe/gridscalr/pull/305), opened from
   `refactor/takeoff-terminology`.
 - **Branch:** `refactor/takeoff-terminology`
-- **Verified head SHA:** `29964eeb87d1db4596e2b76bc090c586fb511771`
-  (implementation `b11887b`, documentation `8697403`, handover `29964ee`). CI
-  on that SHA: frontend tests and build, Rust format and check, and the desktop
-  shell on Ubuntu, Windows and macOS all passed; the dependency advisory gate
-  failed on the external `chrono` advisory recorded below. This follow-up commit
-  adds the PR link and the CI result; the conductor verifies the final branch
-  head.
-- **Merge commit:** pending.
-- **Status:** implementation, tests and documentation complete; PR open; all PR
-  checks green except the external dependency advisory gate; conductor
-  verification pending.
+- **Verified head SHA:** `253bed00c7ad99c49a35aa41699995819b9701aa`
+  (implementation `877c621`, documentation `dbeb7bf`, handover `34cf29d`, PR/CI
+  record `253bed0`). The branch was rebased onto `main` `b825701` after the
+  prerequisite advisory fix, so this is the final head the conductor verified.
+  All six PR checks passed on that exact SHA (CI run
+  [44077373737](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44077373737)).
+- **Merge commit:** `5f1208705e62e074eae74c5e7f93b5411e2a1de1` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`. The `main` CI run
+  [44078536510](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44078536510)
+  is green on the merge commit. No schema change, no app version bump, no tag,
+  release or `site/` change.
 
 ### Completed work
 
@@ -92,12 +93,14 @@ release is part of this effort.
 
 ### Findings
 
-- `npm run check:dependencies` now fails on a new Rust advisory,
-  `RUSTSEC-2026-0543` for `chrono 0.4.45`, which is not in
-  `security/dependency-allowlist.json`. No Cargo file changed in this phase, so
-  this is an external advisory update and not caused by the terminology work.
-  It needs a reviewed fix or acceptance before CI can be green; it is a stop
-  condition for the conductor, not a Phase 1 change.
+- The external Rust advisory `RUSTSEC-2026-0543` for `chrono 0.4.45`
+  (informational, unmaintained, no patched release) blocked CI on every branch,
+  including untouched `main`. It was accepted with the product owner's approval
+  as a reviewed allowlist entry in
+  [#307](https://github.com/MajorJohnDoe/gridscalr/pull/307) (tracking issue
+  [#306](https://github.com/MajorJohnDoe/gridscalr/issues/306)). Phase 1 was
+  rebased onto that `main` and then passed every check. This is a prerequisite,
+  not a Phase 1 code change.
 - `npm run test:docs-capture` failed once at the count-type add step and passed
   on the next identical run; the failing locator is unrelated to the renamed
   takeoff surfaces.
@@ -118,18 +121,38 @@ Local gate on the implementation + documentation head:
   `test:touch-targets` (527 controls, 15 surfaces), `test:ui-scale` (100/150/200 %),
   `test:docs-capture` (35 screenshots in a temporary folder,
   `docs/screenshots/` untouched)
-- `check:dependencies` is **red** on the new `chrono` advisory above. Every other
-  local check is green.
+- `check:dependencies` is green after the prerequisite allowlist fix above.
 
 CI is authoritative on the PR head. Run
-[44072478873](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44072478873)
-on `29964ee` passed every job except `Dependency advisory gate`.
+[44077373737](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44077373737)
+on `253bed0` passed every job.
 
 ### Conductor verification
 
-Pending. The conductor must verify the PR head SHA against this file, every
-required check on that exact SHA, the base `main`, the module map and the
-acceptance criteria before merging.
+- PR [#305](https://github.com/MajorJohnDoe/gridscalr/pull/305) head
+  `253bed00c7ad99c49a35aa41699995819b9701aa` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- The branch was rebased onto `main` `b825701` (the reviewed chrono allowlist
+  fix). The only content difference from the pre-rebase head is the merged
+  `security/dependency-allowlist.json` and `tests/dependencyGate.test.ts` pair;
+  no phase file changed.
+- Conductor re-ran `npx vitest run tests/schedulesUi.test.ts
+  tests/schedulePlacementUi.test.ts tests/schedulePlacement.test.ts
+  tests/schedulePlacementPdf.test.ts tests/markdown.test.ts
+  tests/schema28.test.ts`: 6 files, 70 tests passed. `check:modules`,
+  `check:file-budgets` and `check:i18n` are green. `check:docs` passes with
+  only the expected stale-screenshot warning, which Phase 4 clears.
+- Scope matched the issue: no `src/model/types.ts`, `src/io/projectFile`, version
+  file, Tauri manifest or `site/` file changed; `SCHEMA_VERSION` stays 28 and the
+  app version stays 0.29.0. No Swedish was added outside
+  `src/i18n/locales/sv.json`.
+- Disabled controls point at one visible reason paragraph with
+  `aria-describedby`; the built-in view is labelled a preview and its create
+  action opens the existing builder without writing anything, so standard-table
+  creation remains in Phase 3.
+- Squash merged as `5f1208705e62e074eae74c5e7f93b5411e2a1de1`; `main` CI is
+  green on that commit.
 
 ### Next phase
 
