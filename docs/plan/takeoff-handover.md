@@ -9,14 +9,20 @@ release is part of this effort.
 ## Phase 1 — terminology and feedback
 
 - **Issue:** [#300](https://github.com/MajorJohnDoe/gridscalr/issues/300)
-- **PR:** pending, opened from `refactor/takeoff-terminology`.
+- **PR:** [#305](https://github.com/MajorJohnDoe/gridscalr/pull/305), opened from
+  `refactor/takeoff-terminology`.
 - **Branch:** `refactor/takeoff-terminology`
-- **Verified head SHA:** `8697403c83951dd8336ef1c060592edf09a129a0`
-  (implementation `b11887b`, documentation `8697403`); the handover commit is
-  the final branch head and the conductor verifies that exact SHA.
+- **Verified head SHA:** `29964eeb87d1db4596e2b76bc090c586fb511771`
+  (implementation `b11887b`, documentation `8697403`, handover `29964ee`). CI
+  on that SHA: frontend tests and build, Rust format and check, and the desktop
+  shell on Ubuntu, Windows and macOS all passed; the dependency advisory gate
+  failed on the external `chrono` advisory recorded below. This follow-up commit
+  adds the PR link and the CI result; the conductor verifies the final branch
+  head.
 - **Merge commit:** pending.
-- **Status:** implementation, tests and documentation complete; PR open;
-  conductor verification pending.
+- **Status:** implementation, tests and documentation complete; PR open; all PR
+  checks green except the external dependency advisory gate; conductor
+  verification pending.
 
 ### Completed work
 
@@ -115,7 +121,9 @@ Local gate on the implementation + documentation head:
 - `check:dependencies` is **red** on the new `chrono` advisory above. Every other
   local check is green.
 
-CI is authoritative on the PR head.
+CI is authoritative on the PR head. Run
+[44072478873](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44072478873)
+on `29964ee` passed every job except `Dependency advisory gate`.
 
 ### Conductor verification
 
