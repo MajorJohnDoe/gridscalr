@@ -136,6 +136,12 @@
   color: var(--muted);
 }
 
+.schedules-preview-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
 .schedules-chips {
   display: flex;
   flex-direction: column;

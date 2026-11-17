@@ -1,6 +1,6 @@
 import { makeId } from "../../../model/calibration";
 import { isCustomValueForField } from "../../../model/fields";
-import { t } from "../../../i18n";
+import { t, type MessageKey } from "../../../i18n";
 import type {
   Project,
   ScheduleColumn,
@@ -62,6 +62,37 @@ function defaultColumns(
     columns.push(makeColumn(ref, columns, scheduleFieldInfo(project, source, ref)));
   }
   return columns;
+}
+
+/**
+ * The standard takeoff table: one row per item from the measurement source,
+ * four columns, no filters, no grouping, sorting or totals. It is an ordinary
+ * definition with a localized name, so the builder can edit it like any other.
+ */
+const STANDARD_COLUMNS = [
+  { field: "label", labelKey: "schedules.standard.column.object" },
+  { field: "countQuantity", labelKey: "schedules.standard.column.count" },
+  { field: "unit", labelKey: "schedules.standard.column.unit" },
+  { field: "value", labelKey: "schedules.standard.column.value" },
+] as const satisfies readonly { field: string; labelKey: MessageKey }[];
+
+export function standardScheduleDraft(
+  project: Pick<Project, "fieldDefinitions" | "schedules">,
+): ScheduleDraft {
+  const columns: ScheduleColumn[] = [];
+  for (const entry of STANDARD_COLUMNS) {
+    const info = scheduleFieldInfo(project, "measurements", entry.field);
+    columns.push({ ...makeColumn(entry.field, columns, info), label: t(entry.labelKey) });
+  }
+  return {
+    name: uniqueScheduleName(project, t("schedules.standard.name")),
+    source: "measurements",
+    rowMode: "items",
+    columns,
+    filters: {},
+    sort: [],
+    totals: [],
+  };
 }
 
 /** A new draft with the source's default columns and no filters. */

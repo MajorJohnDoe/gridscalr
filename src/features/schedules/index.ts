@@ -11,6 +11,8 @@ export * from "./csv";
 export * from "./csvUi";
 export {
   clearSummaryFilters,
+  createAndPlaceStandardSchedule,
+  createStandardSchedule,
   isSummaryOpen,
   openPlacementDialog,
   openRowRangeDialog,
@@ -28,6 +30,6 @@ export {
   tableWindow,
   toggleSummary,
 } from "./ui";
-export type { PlacementHost, SummaryPanelFilters, SummaryPanelHost } from "./ui";
+export type { PlacementHost, PlacementOptions, SummaryPanelFilters, SummaryPanelHost } from "./ui";
 export { cachedSummary, clearSummaryCache, computeSummary, summaryCacheKey } from "./summary";
 export type { SummaryCardValue, SummaryModel, SummaryTable, SummaryTableRow } from "./summary";

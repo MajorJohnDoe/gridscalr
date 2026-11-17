@@ -273,7 +273,7 @@ describe("summary panel", () => {
     expect(button("New takeoff table…", container)).toBeTruthy();
   });
 
-  it("labels the built-in table as a preview and offers the create action", () => {
+  it("labels the built-in table as a preview and offers both create actions", () => {
     const project = makeProject();
     lengthItem(project, { label: "Wall A" });
     store.setProject(project, null);
@@ -283,12 +283,15 @@ describe("summary panel", () => {
     expect(container.querySelector(".schedules-preview-title")?.textContent).toBe(
       "Preview – cannot be placed",
     );
-    const create = container.querySelector<HTMLButtonElement>(".schedules-preview .btn-primary")!;
+    const create = container.querySelector<HTMLButtonElement>(
+      '[data-summary-focus="preview-create"]',
+    )!;
     expect(create.textContent).toBe("Create takeoff table");
-    create.click();
-    expect(document.querySelector(".modal")?.textContent).toContain("New takeoff table");
+    const createPlace = container.querySelector<HTMLButtonElement>(
+      '[data-summary-focus="preview-create-place"]',
+    )!;
+    expect(createPlace.textContent).toBe("Create takeoff table and place…");
     expect(project.schedules).toHaveLength(0);
-    closeActiveModal();
   });
 
   it("states why the takeoff actions are disabled", () => {

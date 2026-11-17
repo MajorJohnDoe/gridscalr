@@ -5,8 +5,14 @@
 export { renderSummaryPanel } from "./ui/panel";
 export type { SummaryPanelHost } from "./ui/panel";
 export { openScheduleBuilder } from "./ui/builder";
-export { openPlacementDialog, openRowRangeDialog, placementMeasure } from "./ui/placement";
-export type { PlacementHost } from "./ui/placement";
+export {
+  createAndPlaceStandardSchedule,
+  createStandardSchedule,
+  openPlacementDialog,
+  openRowRangeDialog,
+  placementMeasure,
+} from "./ui/placement";
+export type { PlacementHost, PlacementOptions } from "./ui/placement";
 export { SCHEDULE_ROW_HEIGHT, tableWindow } from "./ui/panelTable";
 export {
   clearSummaryFilters,
