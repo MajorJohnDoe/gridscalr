@@ -59,6 +59,25 @@ function lengthItem(project: Project, label: string): MarkupItem {
   return item;
 }
 
+function savedSchedule(project: Project): ScheduleDefinition {
+  const entry: ScheduleDefinition = {
+    id: "sched_saved",
+    name: "Walls",
+    source: "measurements",
+    rowMode: "items",
+    columns: [
+      { id: "c1", field: "label", visible: true },
+      { id: "c2", field: "value", visible: true, format: "unit" },
+      { id: "c3", field: "unit", visible: true },
+    ],
+    filters: {},
+    createdAt: NOW,
+    updatedAt: NOW,
+  };
+  project.schedules.push(entry);
+  return entry;
+}
+
 function button(label: string, root: ParentNode = document): HTMLButtonElement | undefined {
   return [...root.querySelectorAll<HTMLButtonElement>("button")].find(
     (node) => node.textContent?.trim() === label || node.getAttribute("aria-label") === label,
@@ -231,6 +250,66 @@ describe("no table preview", () => {
     );
     expect(createPlace.getAttribute("aria-describedby")).toBe("schedules-action-reason");
     expect(store.project!.schedules).toHaveLength(0);
+  });
+
+  it("selects the first saved table instead of the no-table preview", () => {
+    const project = makeProject();
+    lengthItem(project, "Wall A");
+    const saved = savedSchedule(project);
+    store.setProject(project, null);
+    const before = JSON.stringify(store.project);
+    const revision = store.revision;
+    const { container } = mountPanel({
+      exportScheduleCsv: () => undefined,
+      importScheduleCsv: () => undefined,
+    });
+
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    expect(picker.value).toBe(saved.id);
+    expect(container.querySelector(".schedules-preview")).toBeNull();
+    expect(container.querySelector(".schedules-built-in")).toBeNull();
+    expect(container.querySelectorAll(".schedules-row-link")).toHaveLength(1);
+    expect(container.querySelector(".schedules-action-reason")).toBeNull();
+    for (const focus of ["place", "edit", "export", "import"]) {
+      expect(
+        container.querySelector<HTMLButtonElement>(`[data-summary-focus="${focus}"]`)?.disabled,
+      ).toBe(false);
+    }
+    // Session selection only: the project is byte-identical and not dirty.
+    expect(JSON.stringify(store.project)).toBe(before);
+    expect(store.revision).toBe(revision);
+    expect(store.dirty).toBe(false);
+    expect(store.canUndo).toBe(false);
+  });
+
+  it("keeps the built-in preview selectable without a create block", () => {
+    const project = makeProject();
+    lengthItem(project, "Wall A");
+    savedSchedule(project);
+    store.setProject(project, null);
+    const before = JSON.stringify(store.project);
+    const { container } = mountPanel({
+      exportScheduleCsv: () => undefined,
+      importScheduleCsv: () => undefined,
+    });
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    picker.value = "";
+    picker.dispatchEvent(new Event("change", { bubbles: true }));
+
+    const current = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    expect(current.value).toBe("");
+    expect(container.querySelector(".schedules-preview")).toBeNull();
+    expect(container.querySelector('[data-summary-focus="preview-create"]')).toBeNull();
+    expect(container.querySelector('[data-summary-focus="preview-create-place"]')).toBeNull();
+    expect(container.querySelector(".schedules-built-in")).toBeTruthy();
+    const reason = container.querySelector(".schedules-action-reason")!;
+    expect(reason.textContent).toBe(
+      "Select a saved takeoff table to edit, place, export or import it.",
+    );
+    const place = container.querySelector<HTMLButtonElement>('[data-summary-focus="place"]')!;
+    expect(place.disabled).toBe(true);
+    expect(place.getAttribute("aria-describedby")).toBe(reason.id);
+    expect(JSON.stringify(store.project)).toBe(before);
   });
 
   it("creates and selects the standard table in one undo step", () => {

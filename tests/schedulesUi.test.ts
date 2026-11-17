@@ -304,6 +304,12 @@ describe("summary panel", () => {
       importScheduleCsv: () => undefined,
     });
 
+    // A saved table exists, so the tab opens on the first one with live actions.
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    expect(picker.value).toBe("sched_ui");
+    expect(container.querySelector(".schedules-action-reason")).toBeNull();
+    // Choosing the built-in preview explicitly restores the disabled reason.
+    setValue(picker, "");
     const reason = container.querySelector(".schedules-action-reason")!;
     const noTable = "Select a saved takeoff table to edit, place, export or import it.";
     expect(reason.textContent).toBe(noTable);
@@ -312,7 +318,6 @@ describe("summary panel", () => {
     expect(edit.title).toBe(noTable);
     expect(edit.getAttribute("aria-describedby")).toBe(reason.id);
 
-    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
     setValue(picker, "sched_ui");
     expect(container.querySelector(".schedules-action-reason")).toBeNull();
     const enabledEdit = container.querySelector<HTMLButtonElement>('[data-summary-focus="edit"]')!;

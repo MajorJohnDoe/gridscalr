@@ -525,9 +525,9 @@ The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 
 ### Live table
 
-Below the cards, the picker chooses **Preview – cannot be placed**, a built-in preview of the visible measurements, or one of the project's takeoff tables.
+Below the cards, the picker chooses **Preview – cannot be placed**, a built-in preview of the visible measurements, or one of the project's takeoff tables. When the project has saved takeoff tables, the tab opens on the first one; choosing the preview from the picker shows the built-in table without offering another standard table.
 
-- **Preview – cannot be placed** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area. The preview cannot be placed, edited or exported as CSV. It offers **Create takeoff table**, which adds the standard takeoff table, and **Create takeoff table and place…**, which adds it and opens the placement dialog in the same undo step. **New takeoff table…** still opens the builder for your own table.
+- **Preview – cannot be placed** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area. The preview cannot be placed, edited or exported as CSV. In a project with no takeoff table it offers **Create takeoff table**, which adds the standard takeoff table, and **Create takeoff table and place…**, which adds it and opens the placement dialog in the same undo step. **New takeoff table…** still opens the builder for your own table.
 - A stored takeoff table shows its own columns, grouping, sorting and totals.
 - The **Page**, **Category** and **Space** chips narrow the table on top of the takeoff table's own filters. **Clear filters** restores the full table.
 - Selecting a row reveals the measurement on the drawing. A space row opens the first visible linked measurement, or the space's page when nothing is linked.
