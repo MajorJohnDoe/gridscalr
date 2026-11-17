@@ -413,7 +413,7 @@ schema change is expected.
 
 - `src/features/schedules/model/definition.ts` (`standardScheduleDraft`),
   `model.ts`, `index.ts`
-- `src/features/schedules/ui/placement.ts` (`placeholderOptions` collector,
+- `src/features/schedules/ui/placement.ts` (`placementOptions` collector,
   `createStandardSchedule`, `createAndPlaceStandardSchedule`), `ui.ts`
 - `src/features/schedules/ui/panelNotice.ts` (new), `ui/panel.ts`
 - `src/styles/schedules.css`
