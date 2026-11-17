@@ -548,14 +548,21 @@ recaptured screenshots and a release-notes draft. No version bump, tag or releas
 - **PR:** [#313](https://github.com/MajorJohnDoe/gridscalr/pull/313), opened from
   `docs/takeoff-pass`.
 - **Branch:** `docs/takeoff-pass`
-- **Verified head SHA:** `0466b76bf56477e0b305251a44163528c88e6dae`
-  (documentation, screenshots and the capture harness). All six PR checks passed
-  on that exact SHA (CI run
-  [44126754525](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44126754525)).
-  This handover commit follows and changes no product file.
-- **Merge commit:** pending.
-- **Status:** open for conductor review. No schema change, no app version bump,
-  no tag, release or `site/` change.
+- **Verified head SHA:** `dad5e65575ff041f6674fd8b2bf0f982b0bd72e3`
+  (documentation, screenshots, the capture harness and the conductor's screenshot
+  rename fix). All six PR checks passed on that exact SHA (CI run
+  [44132392212](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44132392212)).
+- **Merge commit:** `0c03aa9c19c60c0f900df4f4560bee2c0b117a8f` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`. The `main` CI run
+  [44135027870](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44135027870)
+  is green on the merge commit after the macOS desktop job was re-run (three
+  queue attempts were cancelled at the 15-minute runner limit without executing a
+  step; the fourth ran and passed). The **Pages** run
+  [44135027836](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44135027836)
+  deployed the recaptured screenshot set. No schema change, no app version bump,
+  no tag, release or release-metadata change; the site only updated the Objects
+  screenshot link and alt text.
 
 ### Completed work
 
@@ -677,10 +684,71 @@ Local gate on `0466b76`:
   references, 64 images) after the Objects screenshot link rename
 
 CI is authoritative on the PR head. Run
-[44126754525](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44126754525)
-on `0466b76` passed the dependency gate, Rust format and check, frontend tests
+[44132392212](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44132392212)
+on `dad5e65` passed the dependency gate, Rust format and check, frontend tests
 and build, and the desktop shell on Ubuntu, Windows and macOS.
 
 ### Conductor verification
 
-Pending.
+- PR [#313](https://github.com/MajorJohnDoe/gridscalr/pull/313) head
+  `dad5e65575ff041f6674fd8b2bf0f982b0bd72e3` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor review found one acceptance gap, fixed in the final head: the
+  documentation screenshot set still used `summary.png`, `schedule-roles.png`
+  and `count-types.png`, and the manifest still said **Card sources**. They are
+  now `takeoff-tab.png`, `takeoff-settings-cards.png` and
+  `takeoff-settings-objects.png`, with manifest titles **Takeoff tab**,
+  **Takeoff settings — Cards** and **Takeoff settings — Objects**. The site
+  feature tour's Objects link, alt text and build copy list were updated with
+  them; no release metadata changed.
+- Conductor re-ran `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` (260 links, 54
+  images, 39 screenshots, no stale warning), `npm run test:docs-capture` (39
+  screenshots in a temporary folder, committed folder untouched),
+  `npm run site:build` and `npm run site:check` (4 pages, 250 local references,
+  64 images, version 0.29.0 unchanged), `check:modules`, `check:file-budgets`
+  and `check:i18n`.
+- The new screenshots were inspected: the no-table preview with both actions,
+  the Standard table with Object / Count / Unit / Value, the Objects, Fields,
+  Tables and Cards hub tabs, and the **Fed by** lists all show the real UI. The
+  old screenshot paths are deleted and no document or page references them.
+- No `src/`, `src-tauri/`, package or version file changed. `SCHEMA_VERSION`
+  stays 28 and the app version stays 0.29.0. `site/release.json` is unchanged.
+- Squash merged as `0c03aa9c19c60c0f900df4f4560bee2c0b117a8f`. `main` CI is green
+  after the macOS runner retries described above, and the Pages deployment is
+  green on the merge commit.
+
+## Effort status
+
+The Takeoff UI effort is **complete and merged** on schema 28: terminology and
+disabled-state feedback (#300), the Takeoff settings hub (#301), the standard
+takeoff table with preview and one-step create-and-place (#302), and the
+documentation, screenshot and release-notes draft pass (#303).
+
+- **Merges:** Phase 1 `5f1208705e62e074eae74c5e7f93b5411e2a1de1`, Phase 2
+  `49c06a554faebe9ac8cfcd13b0b167cd65b2b4cf`, Phase 3
+  `fc94b41bd1c6a4e72d72cb468766d24078f16eda`, Phase 4
+  `0c03aa9c19c60c0f900df4f4560bee2c0b117a8f`.
+- **Prerequisite:** the external `chrono` unmaintained advisory
+  (RUSTSEC-2026-0543) was accepted as a reviewed allowlist entry in #307
+  (tracking issue #306) before Phase 1 could merge. It is unrelated to the UI
+  work and expires 2027-02-15.
+- **Schema and version:** `SCHEMA_VERSION` is 28 throughout. No project field,
+  migration, fixture or compatibility promise changed. The app version is still
+  **0.29.0**; no tag, GitHub Release or `site/release.json` change was made.
+- **Findings to carry:** unused summary roles stay in the model and are not
+  exposed until a card uses them; one takeoff table reads one source; no table
+  is created on open; counted objects keep stored order because no count-type
+  reorder rule exists; a wide standard table can exceed the default dock width
+  (F-125, the resizer is the workaround); the view-only session refuses the hub
+  rather than showing disabled edits.
+- **Backlog:** card-owned KPI sources (#304) stays out of 0.30 and needs its own
+  schema decision before implementation.
+- **Environment finding:** the GitHub-hosted macOS desktop job on `main` was
+  repeatedly cancelled at the 15-minute queue limit without executing a step
+  during this effort (Phase 3 once, Phase 4 three times). The identical job
+  passed on every PR head, and each main run went green after a retry. This is
+  runner capacity, not a code failure; no application change was made for it.
+- **Release decision:** 0.30.0 is ready for the product owner's release decision
+  with the schema unchanged and the version still 0.29.0. The draft is
+  [`release-notes/0.30.0.md`](../release-notes/0.30.0.md).
