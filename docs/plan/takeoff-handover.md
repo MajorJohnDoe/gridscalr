@@ -371,9 +371,12 @@ schema change is expected.
 - **PR:** [#311](https://github.com/MajorJohnDoe/gridscalr/pull/311), opened from
   `feat/standard-takeoff-table`.
 - **Branch:** `feat/standard-takeoff-table`
-- **Verified head SHA:** `747135f` (implementation `9671e82`, documentation
-  `747135f`). The Phase 3 handover commit follows this record; the conductor
-  verifies the final PR head.
+- **Verified head SHA:** `0865e22` (implementation `9671e82`, documentation
+  `747135f`, handover `e431007`, module-note correction `0865e22`). All six PR
+  checks passed on that exact SHA (CI run
+  [44100892370](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44100892370)).
+  The docs-only record commit that carries this line follows it and changes no
+  code.
 - **Merge commit:** pending.
 - **Status:** open, awaiting conductor verification. No schema change, no app
   version bump, no tag, release or `site/` change.
