@@ -279,10 +279,13 @@ describe("dependency gate allowlist", () => {
     expect(allowlist.entries.length).toBeLessThanOrEqual(8);
   });
 
-  it("accepts exactly the six current Rust advisories with the committed allowlist", () => {
+  it("accepts exactly the seven current advisories with the committed allowlist", () => {
     const allowlist = JSON.parse(
       readFileSync(resolve(__dirname, "../security/dependency-allowlist.json"), "utf8"),
     ) as Allowlist;
+    const npmReport = npmReportWith(
+      npmVia("picomatch", "high", "GHSA-FC5Q-39XC-VJPF", "picomatch ReDoS"),
+    );
     const report = {
       vulnerabilities: { found: false, count: 0, list: [] },
       warnings: {
@@ -296,9 +299,10 @@ describe("dependency gate allowlist", () => {
         ],
       },
     };
-    const result = gate(emptyNpmReport(), report, allowlist, committedReviewDate(allowlist));
+    const result = gate(npmReport, report, allowlist, committedReviewDate(allowlist));
     expect(result.ok).toBe(true);
-    expect(result.accepted).toHaveLength(6);
+    expect(result.accepted).toHaveLength(7);
+    expect(result.accepted.map((item) => item.finding.advisory)).toContain("GHSA-FC5Q-39XC-VJPF");
   });
 });
 
