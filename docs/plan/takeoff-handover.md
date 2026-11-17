@@ -167,16 +167,16 @@ sources. No schema change is expected.
 - **PR:** [#309](https://github.com/MajorJohnDoe/gridscalr/pull/309), opened from
   `feat/takeoff-settings-hub`.
 - **Branch:** `feat/takeoff-settings-hub`
-- **Verified head SHA:** `f56172d` (product `7709be9`, documentation `144e3b4`,
-  handover `f56172d`). CI run
-  [44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
-  passed every job on that exact SHA. This handover status line is the only change
-  after that verified head, so the conductor starts verification from the final
-  branch head.
-- **Merge commit:** pending.
-- **Status:** implementation and documentation committed, PR open, local gate and
-  browser gates green. Conductor review fixes are in `18c4269`. No schema change,
-  no app version bump, no tag, release or `site/` change.
+- **Verified head SHA:** `7dc0d5b079f606816af82e6043450441728196e4`
+  (implementation `7709be9`, documentation `144e3b4`, conductor review fixes
+  `18c4269`, handover `7dc0d5b`). All six PR checks passed on that exact SHA
+  (CI run [44091688600](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44091688600)).
+- **Merge commit:** `49c06a554faebe9ac8cfcd13b0b167cd65b2b4cf` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`. The `main` CI run
+  [44093504582](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44093504582)
+  is green on the merge commit. No schema change, no app version bump, no tag,
+  release or `site/` change.
 
 ### Completed work
 
@@ -330,11 +330,37 @@ The final CI run on the review-fix head is recorded in the PR.
 
 ### Conductor verification
 
-pending
-
-### Next phase
-
-Phase 3 — [Standard takeoff table #302](https://github.com/MajorJohnDoe/gridscalr/issues/302):
+- PR [#309](https://github.com/MajorJohnDoe/gridscalr/pull/309) head
+  `7dc0d5b079f606816af82e6043450441728196e4` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- The first review found three in-scope defects, which the worker fixed in
+  `18c4269`: the Fields tab labelled item-kind- and space-kind-restricted fields
+  as **All fields**; the hub was reachable in a view-only session from an empty
+  card's Configure and the inspector action while its controls stayed editable;
+  and the UI-scale gate hard-coded Swedish tab labels. All three are corrected
+  and covered by tests.
+- Conductor re-ran `npx vitest run tests/takeoffSettingsUi.test.ts
+  tests/schedulesUi.test.ts tests/summaryCardsSettings.test.ts
+  tests/accessibilityGate.test.ts tests/schema28.test.ts`: 5 files, 55 tests
+  passed. `check:modules` (21 foundation features), `check:file-budgets` (609
+  files), `check:i18n`, `check:docs` (only the expected stale-screenshot
+  warning), `check:versions`, `check:security`, `check:themes`, `check:actions`,
+  `check:dependencies`, `format:check` and `npx tsc --noEmit` are green.
+- The old Quantities, Count types and Fields sections and the category,
+  count-type and role dialogs are deleted; card visibility and Fed by have their
+  only writer in the hub, so no takeoff setting exists in two places. Project
+  settings → Display has exactly one link row. Opening the hub writes nothing.
+- No `src/model/types.ts`, `src/io/projectFile`, version file, Tauri manifest or
+  `site/` file changed; `SCHEMA_VERSION` stays 28 and the app version stays
+  0.29.0. No Swedish literal was added outside `src/i18n/locales/sv.json`; the
+  only remaining match is the English word "Swedish" in an a11y summary.
+- The two visual baselines are the harness's masked captures: `hero.png` changes
+  only in the inspector (the new **Edit object** action) and `count-types.png`
+  only in the right-hand shell state around the masked dialog area. No canvas or
+  thumbnail rasterisation is compared.
+- Squash merged as `49c06a554faebe9ac8cfcd13b0b167cd65b2b4cf`; `main` CI is green
+  on that commit.(https://github.com/MajorJohnDoe/gridscalr/issues/302):
 create the standard table only on an explicit action, offer create and
 create-and-place in the preview, and keep create-and-place to one undo step. No
 schema change is expected.
