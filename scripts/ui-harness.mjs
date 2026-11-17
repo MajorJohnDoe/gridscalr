@@ -198,18 +198,21 @@ export async function seedCustomField(page) {
     const store = window.__gridscalr?.store;
     if (!store?.project) return;
     store.mutate((project) => {
-      if (project.fieldDefinitions.some((field) => field.key === "fireClass")) return;
-      project.fieldDefinitions.push(
-        {
-          id: "field_harness",
+      const fireClass = project.fieldDefinitions.find((field) => field.key === "fireClass");
+      const fireId = fireClass?.id ?? "field_harness";
+      if (!fireClass) {
+        project.fieldDefinitions.push({
+          id: fireId,
           key: "fireClass",
           label: "Fire class",
           type: "text",
           scope: "measurement",
           order: 0,
           defaultValue: "EI30",
-        },
-        {
+        });
+      }
+      if (!project.fieldDefinitions.some((field) => field.key === "condition")) {
+        project.fieldDefinitions.push({
           id: "field_harness_condition",
           key: "condition",
           label: "Condition",
@@ -221,13 +224,21 @@ export async function seedCustomField(page) {
             { id: "repair", label: "Needs repair" },
           ],
           defaultValue: "good",
-        },
-      );
+        });
+      }
+      const set = project.fieldSets.find((entry) => entry.name === "Fire data");
+      if (set) {
+        if (!set.fieldIds.includes(fireId)) set.fieldIds.unshift(fireId);
+        if (!set.fieldIds.includes("field_harness_condition")) {
+          set.fieldIds.push("field_harness_condition");
+        }
+        return;
+      }
       project.fieldSets.push({
         id: "fset_harness",
         name: "Fire data",
         scope: "measurement",
-        fieldIds: ["field_harness", "field_harness_condition"],
+        fieldIds: [fireId, "field_harness_condition"],
       });
     }, "change");
   });
@@ -367,6 +378,29 @@ export async function seedSchedules(page) {
         });
       }
     }, "change");
+  });
+  await settlePage(page);
+}
+
+/**
+ * Removes every saved takeoff table and its placements so the Takeoff tab
+ * renders the no-table preview. Only the documentation capture uses it: the demo
+ * project ships one table, and the preview state must be documented from the
+ * real panel rather than a mock screen.
+ */
+export async function clearSchedules(page) {
+  await page.evaluate(() => {
+    const store = window.__gridscalr?.store;
+    const project = store?.project;
+    if (!store || !project) return;
+    // Replace the project rather than mutate it: the documented preview must be
+    // a clean project that has no table, not an edited project that lost one.
+    const next = JSON.parse(JSON.stringify(project));
+    next.schedules = [];
+    for (const layer of next.layers) {
+      layer.items = layer.items.filter((item) => item.kind !== "schedule");
+    }
+    store.setProject(next, store.projectPath ?? null, false);
   });
   await settlePage(page);
 }

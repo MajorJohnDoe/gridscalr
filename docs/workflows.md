@@ -208,8 +208,14 @@ A drawing on a network share or in a cloud-synced folder can be replaced or move
 ## Measure rooms and produce a takeoff table
 
 Use this workflow when an operations technician or technical property manager
-needs a room register, a live area and quantity summary, and a table that can go
+needs a room register, a live area and quantity takeoff, and a table that can go
 to Excel and back without leaving the local project.
+
+All of the takeoff setup lives in **View → Takeoff settings…**, one hub with the
+tabs **Objects**, **Fields**, **Tables** and **Cards**. The Objects tab lists
+measured objects (categories) and counted objects (count types) together; Fields
+holds the typed properties and field sets; Tables manages the saved takeoff
+tables; and Cards sets the four KPI cards and what feeds them.
 
 ### 1. Define the property fields
 
@@ -257,8 +263,14 @@ visible rather than a plausible wrong number.
 
 ### 5. Build and place the takeoff table
 
-In the Takeoff tab choose **New takeoff table…**. Name the takeoff table, choose
-the **Source** (measurements or spaces) and the row mode, then choose columns
+Open the Takeoff tab. With no saved table, the tab
+shows the labelled preview first: **Create takeoff table** adds the standard
+table with **Object**, **Count**, **Unit** and **Value** columns and one row per
+item, and **Create takeoff table and place…** adds it and opens the placement
+dialog in one undo step. Opening the tab never creates a table by itself.
+
+To build your own table, choose **New takeoff table…**, name it, choose the
+**Source** (measurements or spaces) and the row mode, then choose columns
 from the built-in fields and the custom fields. Add grouping, sorting, totals and
 filters; the preview uses the real engine over the filtered rows. **Save** writes
 the definition in one undo step.

@@ -84,10 +84,11 @@ export const shots = [
     description: "Live order quantities with deductions, waste and rounding for procurement.",
   },
   {
-    file: "count-types.png",
-    title: "Counted objects",
-    alt: "The GridScalr Takeoff settings Objects tab with measured categories and counted types, including a custom Socket type with a fixture glyph, plus the add-object form.",
-    description: "Add counted objects and choose the vector glyph used on the plan and in exports.",
+    file: "takeoff-settings-objects.png",
+    title: "Takeoff settings — Objects",
+    alt: "The GridScalr Takeoff settings Objects tab with measured categories and counted types in one list with a Type column, including a custom Socket type and its glyph picker.",
+    description:
+      "Measured and counted objects share one list, and each counted object chooses the vector glyph used on the plan and in exports.",
   },
   {
     file: "count-schedule.png",
@@ -186,6 +187,13 @@ export const shots = [
       "Define typed property data once, then fill it in for each measurement from Properties.",
   },
   {
+    file: "takeoff-settings-fields.png",
+    title: "Takeoff settings — Fields",
+    alt: "The GridScalr Takeoff settings Fields tab listing the measurement and space fields with their applies-to rules and the field sets, with the Manage fields action.",
+    description:
+      "Fields and field sets live in the Takeoff settings hub; the editor and its rules are the same one the inspector uses.",
+  },
+  {
     file: "fields-inspector.png",
     title: "Custom field values in Properties",
     alt: "The GridScalr Properties panel for a selected floor area with the Fields section showing a Fire class text value and a Condition choice, plus the field-set action.",
@@ -200,11 +208,25 @@ export const shots = [
       "Buildings, floors, rooms and zones keep their area derived from the area measurements linked to them.",
   },
   {
-    file: "summary.png",
-    title: "Takeoff and takeoff tables",
+    file: "takeoff-tab.png",
+    title: "Takeoff tab",
     alt: "The GridScalr Takeoff tab with Rooms, Area, Walls and Doors cards, a takeoff table picker showing Room schedule, page and space filters, and a live table of rooms.",
     description:
       "Four live KPI cards and a takeoff table in the right dock, computed from the project data.",
+  },
+  {
+    file: "takeoff-preview.png",
+    title: "Takeoff preview without a table",
+    alt: "The GridScalr Takeoff tab with the four KPI cards and the labelled Preview – cannot be placed state, offering Create takeoff table and Create takeoff table and place….",
+    description:
+      "Opening the tab writes nothing. The standard takeoff table exists only after the explicit create action.",
+  },
+  {
+    file: "takeoff-standard-table.png",
+    title: "Standard takeoff table",
+    alt: "The GridScalr Takeoff tab showing the Standard takeoff table with Object, Count, Unit and Value columns and one row per item.",
+    description:
+      "The standard table is an ordinary takeoff table: one row per item, created in one undo step and editable in the builder.",
   },
   {
     file: "schedule-builder.png",
@@ -214,10 +236,17 @@ export const shots = [
       "Choose columns, grouping, sorting, filters and totals while the preview uses the real takeoff table engine.",
   },
   {
-    file: "schedule-roles.png",
-    title: "Card sources",
+    file: "takeoff-settings-cards.png",
+    title: "Takeoff settings — Cards",
     alt: "The GridScalr Takeoff settings Cards tab with the four cards, their visibility switches and the Fed by lists for Walls categories and Doors count types.",
     description: "A card reads the categories or count types ticked under Fed by, never a name.",
+  },
+  {
+    file: "takeoff-settings-tables.png",
+    title: "Takeoff settings — Tables",
+    alt: "The GridScalr Takeoff settings Tables tab listing the saved takeoff tables with Edit, Duplicate and Delete, and the New takeoff table action.",
+    description:
+      "Saved takeoff tables are managed in the hub, which never creates a table by opening.",
   },
   {
     file: "placed-table.png",

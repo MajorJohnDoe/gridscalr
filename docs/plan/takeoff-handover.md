@@ -541,3 +541,146 @@ CI is authoritative on the PR head and is recorded in the PR.
 Phase 4 — [Documentation and screenshots #303](https://github.com/MajorJohnDoe/gridscalr/issues/303):
 user guide, workflows, limitations, README, AGENTS map and shortcut tables,
 recaptured screenshots and a release-notes draft. No version bump, tag or release.
+
+## Phase 4 — documentation and screenshots
+
+- **Issue:** [#303](https://github.com/MajorJohnDoe/gridscalr/issues/303)
+- **PR:** [#313](https://github.com/MajorJohnDoe/gridscalr/pull/313), opened from
+  `docs/takeoff-pass`.
+- **Branch:** `docs/takeoff-pass`
+- **Verified head SHA:** `0466b76bf56477e0b305251a44163528c88e6dae`
+  (documentation, screenshots and the capture harness). All six PR checks passed
+  on that exact SHA (CI run
+  [44126754525](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44126754525)).
+  This handover commit follows and changes no product file.
+- **Merge commit:** pending.
+- **Status:** open for conductor review. No schema change, no app version bump,
+  no tag, release or `site/` change.
+
+### Completed work
+
+- `docs/user-guide.md` gains one **Takeoff settings** section that explains the
+  hub, its entry points, the four tabs and where each takeoff setting lives,
+  including the Objects delete rules, the Fields editor entry, the Tables list
+  and the Cards **Fed by** lists. The interface list, Takeoff tab, Custom fields,
+  Takeoff, Create a takeoff table and Order sections use the shipped names. The
+  preview and standard-table captures are inserted where the actions are
+  described; the old "in 0.29.0" sentence is now version-neutral.
+- `docs/workflows.md` room-to-schedule guide opens with the hub path and the four
+  tabs, and step 5 documents the no-table preview, both create actions and the
+  standard table before the builder walkthrough.
+- `docs/limitations.md` records the deliberate gaps: no automatic table on open,
+  the fixed standard table, one source per table, the four-card limit and unused
+  roles being preserved but not exposed. The stale "roles dialog" wording,
+  summary-card wording and the summary performance row labels are corrected.
+- `README.md` features and architecture description name the hub, the standard
+  table and its factory, the two create actions and **View → Order…**.
+- `AGENTS.md` maps `src/features/schedules/model/definition.ts`
+  (`standardScheduleDraft`), the schedules UI row and the existing
+  `src/features/takeoffSettings/` entry. `docs/architecture.md` maps the
+  standard-table factory, `ui/panelNotice.ts` and `ui/placement.ts`, and removes
+  the stale "later phases; do not describe as shipped" paragraph.
+- `docs/release-notes/0.30.0.md` is the next-minor draft: one vocabulary, the
+  hub, the standard table, the deliberate gaps, no schema change, documentation
+  and upgrade notes. The version, tag and publication stay undecided.
+- `docs/roadmap.md` adds the Takeoff UI row and completion paragraph on schema 28
+  with #300–#303, and closes the custom-fields/spaces/schedules open decision.
+- `docs/screenshots/` and `manifest.json` were recaptured with
+  `npm run docs:capture`: 39 screenshots. New files: `takeoff-preview.png`,
+  `takeoff-standard-table.png`, `takeoff-settings-fields.png` and
+  `takeoff-settings-tables.png`. The old `count-types.png`, `summary.png` and
+  `schedule-roles.png` captures are now `takeoff-settings-objects.png`,
+  `takeoff-tab.png` and `takeoff-settings-cards.png`. Those files, `fields.png`
+  and the remaining shells show the current hub and terminology instead of the
+  old role dialog and old inspector tab.
+- Shortcut tables are unchanged because the two documented labels (**Takeoff**,
+  **Order**) did not change; `check:docs` pins them.
+
+### Modules
+
+- `docs/user-guide.md`, `docs/workflows.md`, `docs/limitations.md`,
+  `docs/roadmap.md`, `docs/architecture.md`, `docs/release-notes/0.30.0.md`
+- `README.md`, `AGENTS.md`, `docs/plan/takeoff-handover.md`
+- `docs/screenshots/*.png`, `docs/screenshots/manifest.json`
+- `scripts/docs-capture-flow.mjs`, `scripts/capture-docs-shots.mjs`,
+  `scripts/ui-harness.mjs`, `scripts/build-site.mjs`
+- `site/features/index.html`, `site/sv/funktioner/index.html` (screenshot link,
+  alt text and aria-label only)
+
+### Decisions
+
+- **The preview is captured from a clean project without tables, not from an
+  edited project.** `clearSchedules()` replaces the in-memory project with a
+  schedule-free copy through `store.setProject(..., dirty = false)` so the
+  screenshot can state that opening the tab writes nothing without showing an
+  "Unsaved changes" badge caused by the capture itself. It is a capture-only
+  harness helper; no application code changed.
+- **The standard-table capture uses the widest user-resizable inspector
+  (420 px).** The default 304 px dock clips the fourth column, so the capture
+  widens `--inspector-w` and scrolls the virtualised table to its measured rows.
+  The image is the real panel, not a mock; the wider dock is a state the panel
+  resizer already supports.
+- **The three takeoff screenshots use new-term paths.** The conductor review
+  found old names still in the screenshot set, so `summary.png` became
+  `takeoff-tab.png`, `count-types.png` became `takeoff-settings-objects.png` and
+  `schedule-roles.png` became `takeoff-settings-cards.png`. The names match the
+  tab titles (**Takeoff tab**, **Takeoff settings — Objects**, **Takeoff
+  settings — Cards**) and every guide, README and testing reference follows the
+  new files. No `tests/visual/` baseline was renamed. The site feature tour
+  also names the Objects screenshot, so its link, alt text and aria-label and
+  the `build-site.mjs` copy list were updated to the new path; no release
+  metadata, version or site content changed.
+- **The seeded field helper is additive.** The demo already ships `fireClass`,
+  so the old early return skipped the Condition field and the Fire data set
+  membership; the helper now extends the existing set instead. That makes the
+  `fields.png` alt text true, not only the new Fields-tab capture.
+- **No application defect was fixed.** The standard table listing drawing rows
+  before measured rows is the shipped "one row per item" behaviour, so the
+  capture scrolls instead of changing the table.
+
+### Findings
+
+- The old `count-types.png` and `schedule-roles.png` were still the pre-hub
+  screens: the Objects capture did not show the added Socket row, and the Cards
+  capture was the deleted role dialog. Both are corrected by the new capture
+  steps and now sit at the new-term paths.
+- The standard table's fourth column does not fit the default right dock. This
+  is the documented F-125 width limit; the capture uses the 420 px panel width
+  and no layout change was made.
+- No new out-of-scope finding was added to
+  `docs/plan/foundation-findings.md`.
+
+### Checks
+
+Local gate on `0466b76`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (610 files),
+  `check:modules` (21 foundation features, 34 Tauri commands),
+  `check:security`, `check:actions` (37 pinned references),
+  `check:dependencies` (six accepted cargo advisories, none unaccepted),
+  `check:i18n` (3 574 keys, no hard-coded text), `check:themes` (5 themes),
+  `format:check`, `lint`, `npx tsc --noEmit`
+- `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`: 260 links, 54 images,
+  39 screenshots, no stale-screenshot warning
+- `npm run test:docs-capture`: 39 screenshots in a temporary folder,
+  `docs/screenshots/` untouched
+- `npx vitest run tests/markdown.test.ts tests/helpImages.test.ts
+  tests/shortcutDocs.test.ts tests/schedulesUi.test.ts
+  tests/takeoffSettingsUi.test.ts tests/scheduleStandardTable.test.ts
+  tests/performanceBudget.test.ts`: 7 files, 78 tests, plus 3 files, 28 tests
+  after the final text edit
+- `test:a11y` (5 palettes × 18 surfaces plus 4 Swedish hub tabs, 94 checks, no
+  serious or critical), `test:touch-targets` (748 controls, 22 surfaces),
+  `test:ui-scale` (100/150/200 %, no overflow)
+- `npm run docs:capture`: 39 screenshots and a regenerated manifest
+- `npm run site:build` (22 screenshots) and `npm run site:check` (250 local
+  references, 64 images) after the Objects screenshot link rename
+
+CI is authoritative on the PR head. Run
+[44126754525](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44126754525)
+on `0466b76` passed the dependency gate, Rust format and check, frontend tests
+and build, and the desktop shell on Ubuntu, Windows and macOS.
+
+### Conductor verification
+
+Pending.
