@@ -367,7 +367,7 @@ checklist in [`releasing.md`](releasing.md).
 ### Automated accessibility check
 
 `npm run test:a11y` opens the demo project in the browser fallback, injects
-`axe-core` through `@axe-core/playwright` and analyses fifteen surfaces:
+`axe-core` through `@axe-core/playwright` and analyses eighteen surfaces:
 
 | Surface | What is opened |
 | --- | --- |
@@ -378,14 +378,17 @@ checklist in [`releasing.md`](releasing.md).
 | Drawing export dialog | **File → Export → Drawing PDF…** |
 | Spaces register dialog | **View → Spaces…** |
 | Help dialog | `F1` |
-| Custom fields dialog | **Project settings → Fields → Manage fields…** |
+| Custom fields dialog | **View → Takeoff settings… → Fields → Manage fields…** |
 | Custom fields inspector section | Select a measurement; the **Fields** section in Properties |
 | Takeoff dock tab | `Ctrl/Cmd+Alt+S`, with seeded card sources and takeoff tables |
 | Place takeoff table dialog | **Place on drawing…** with a stored takeoff table selected |
 | Placed table inspector section | Select the seeded placed table; its section in Properties |
 | Takeoff table builder dialog | **New takeoff table…** in the Takeoff tab |
 | Takeoff table CSV import dialog | **Import CSV…** with a stored one-row-per-item takeoff table selected |
-| Card sources dialog | **Card sources…** in the Takeoff tab |
+| Takeoff settings Objects tab | The Takeoff tab gear, then **Objects** |
+| Takeoff settings Fields tab | The Takeoff tab gear, then **Fields** |
+| Takeoff settings Tables tab | The Takeoff tab gear, then **Tables** |
+| Takeoff settings Cards tab | The Takeoff tab gear, then **Cards** |
 
 A **serious** or **critical** axe violation fails the run. Moderate, minor and
 best-practice findings are printed with their target and are not hidden: there is
@@ -394,10 +397,12 @@ that each dialog receives focus when it opens, that every palette/surface pair
 ran, and that the run raises no page errors.
 
 Each of the 5 palettes — **Medium Gray**, **Light Green**, **Dark Gray**, **Jade**
-and **Navy** — runs the same fifteen surfaces, so the gate records 75 palette/surface
-checks. The palette is chosen through **Settings → Preferences…**, which is
-itself one of the checked surfaces. A contrast regression in any palette fails the
-run, and `check:themes` pins the same text-on-surface pairs at the token level.
+and **Navy** — runs the same eighteen surfaces, so the gate records 90 palette/surface
+checks. The four Takeoff settings tabs run a second time in Swedish, so a
+localized label that clips or breaks an accessible name fails too. The palette is
+chosen through **Settings → Preferences…**, which is itself one of the checked
+surfaces. A contrast regression in any palette fails the run, and
+`check:themes` pins the same text-on-surface pairs at the token level.
 
 The freehand canvas has no DOM model for axe to inspect. It is covered by the
 manual checklist below, not by this gate; full screen-reader support for freehand
@@ -530,7 +535,7 @@ Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
 - the main shell with a selected markup (`hero.png`);
 - the Markups and Layers panels (`markups.png`);
 - the Order dialog (`quantities.png`);
-- the Count types dialog (`count-types.png`).
+- the Takeoff settings Objects tab with a custom counted object (`count-types.png`).
 
 The baselines live in `tests/visual/`. The script loads the bundled Liberation
 Sans regular, bold and italic faces as the UI `Inter` family, so font

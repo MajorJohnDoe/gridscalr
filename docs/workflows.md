@@ -116,7 +116,7 @@ Open **View → Order…** (`Ctrl/Cmd+Alt+Q`). Each row combines one category, r
 
 ![Order dialog with categories, rooms, deductions, waste and order quantities](screenshots/quantities.png)
 
-Set the project waste percentage and rounding step under **Settings → Project settings → Quantities**. A category can override either value under **Settings → Manage categories…**. Rounding always goes up and order quantity is never lower than net.
+Set the project waste percentage and rounding step under **View → Takeoff settings… → Objects**. A measured object can override either value in the same list. Rounding always goes up and order quantity is never lower than net.
 
 Measurements without a page scale are excluded and reported in the dialog. Hidden items and hidden layers are also excluded by default.
 
@@ -213,7 +213,7 @@ to Excel and back without leaving the local project.
 
 ### 1. Define the property fields
 
-Open **Settings → Project settings… → Fields → Manage fields…**. Add the typed
+Open **View → Takeoff settings… → Fields → Manage fields…**. Add the typed
 values the property uses, such as fire class, component type or condition.
 Choose the **Scope** first: **Measurement** fields are filled on the selected
 drawing item, and **Space** fields are filled in the space form. A field's
@@ -249,12 +249,11 @@ are moved or deleted.
 
 ### 4. Set the card sources
 
-Open **View → Takeoff** (`Ctrl/Cmd+Alt+S`) and choose **Card sources…**. Give
-the relevant categories the **Wall**, **Floor**, **Ceiling** or **Roof** source,
-and the count types the **Door**, **Window**, **Fixture** or **Other** source. The
-four cards read those sources, never names; a card without a source shows 0 with
-a **Configure** action so a missing source is visible rather than a plausible
-wrong number.
+Open **View → Takeoff settings… → Cards**. Tick the categories that feed
+**Walls** and the count types that feed **Doors** under **Fed by**. **Rooms** and
+**Area** read the space register. The four cards read those ticks, never names; a
+card without a source shows 0 with a **Configure** action so a missing source is
+visible rather than a plausible wrong number.
 
 ### 5. Build and place the takeoff table
 

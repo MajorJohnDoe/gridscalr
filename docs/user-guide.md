@@ -409,11 +409,11 @@ Choose **Count** (`C`), pick a project count type, and click the plan. Each coun
 
 The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
 
-Manage types in **Settings → Project settings… → Quantities → Count types**. Built-in types are named by the interface language and cannot be renamed or deleted. Add a custom type, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
+Manage types in **View → Takeoff settings… → Objects**. Measured objects (categories) and counted objects (count types) are one list with a **Type** column. Built-in count types are named by the interface language and cannot be renamed or deleted. Add a counted object, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
 
 In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
-![Count types dialog with built-in and custom types](screenshots/count-types.png)
+![Takeoff settings Objects tab with measured categories and custom counted objects](screenshots/count-types.png)
 
 ![Markups table grouped by count type](screenshots/count-schedule.png)
 
@@ -433,7 +433,7 @@ Change a measurement's category, room, area mode, line style, or count type late
 
 ### Custom fields
 
-Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **Settings → Project settings… → Fields → Manage fields…**.
+Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **View → Takeoff settings… → Fields → Manage fields…**.
 
 - **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by takeoff tables and CSV and cannot change after the field is created. **Scope** is **Measurement** or **Space**; space fields appear in the space form in the register (**View → Spaces…**).
 - Choose a **Type**: text, number, number with unit, yes or no, date, one of the options, or several of the options. An option's id stays stable while its label can change. Number fields can set a minimum and a maximum, and text fields a maximum length.
@@ -501,7 +501,7 @@ A duplicate room number under the same parent is a warning, not an error. Deleti
 
 ### Space custom fields
 
-Fields created with the **Space** scope in **Settings → Project settings… → Fields** appear in the space form. Values are saved with the space in one undo step.
+Fields created with the **Space** scope in **View → Takeoff settings… → Fields** appear in the space form. Values are saved with the space in one undo step.
 
 ## Takeoff and takeoff tables
 
@@ -516,12 +516,12 @@ The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 - **Rooms** counts the spaces of type Room. **Area** sums their derived areas; a room without a usable area is named in the card note and is not counted as zero.
 - **Walls** sums the visible length measurements whose category feeds the Walls card. **Doors** sums the pieces per object for count items whose count type feeds the Doors card.
 - Card sources are explicit and are never inferred from a name. A missing source shows 0 with a **Configure** action instead of a wrong number.
-- **Card sources…** sets the source on every category and count type. **Configure** on the Rooms or Area card opens the space register.
+- **Takeoff settings → Cards → Fed by** ticks the categories that feed Walls and the count types that feed Doors. **Configure** on any card opens the Cards tab on that card; **Configure** on the Rooms or Area card opens the space register.
 
-![Card sources dialog with the Wall category feeding the Walls card and the Door count type feeding the Doors card](screenshots/schedule-roles.png)
+![Takeoff settings Cards tab with the Wall category feeding the Walls card and the Door count type feeding the Doors card](screenshots/schedule-roles.png)
 - Hidden items and layers are excluded from every card and table; locked items are included. Wall measurements without a page scale are named in the card note.
 
-**Project settings → Display → Cards** switches each of the four cards on or off. Every new project starts with all four visible, and each switch is one undo step.
+**Takeoff settings → Cards** switches each of the four cards on or off. Every new project starts with all four visible, and each switch is one undo step.
 
 ### Live table
 
@@ -888,11 +888,11 @@ Quantities are derived from the current items every time the data changes and ar
 
 ### Waste and rounding
 
-Set project defaults under **Settings → Project settings → Quantities**:
+Set project defaults under **View → Takeoff settings… → Objects**:
 
 - **Waste** is a percentage of net, from 0 to 100.
 - **Rounding step** controls how order quantities round up. A step of 0 means no rounding.
-- A category can override either value in **Settings → Manage categories…**. Leave a field empty to inherit the project default.
+- A measured object can override either value in the same list. Leave a field empty to inherit the project default.
 - Rounding always goes up. Counts always round to whole pcs even when another step is configured.
 - Order quantity is never lower than net.
 
@@ -1062,10 +1062,10 @@ The dialog uses the same category menu as Preferences:
 - **Project** – the project name shown in the title row, reports, exports and suggested file names, plus the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that. A drawing that is missing or whose checksum changed on disk is marked here and in the status bar before an export fails, together with whether it is a reference or a managed copy.
 - **Report** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
 - **Measurements** – the current page's calibration or manual scale and lock state, length and area units, **Smart length labels**, project label size and compact area labels. Change the page scale from the page scale chip in the status bar. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; individual measurements can override the label size in Properties.
-- **Display** – show grid, show scale line, snap to geometry, snap distance, and the four **Cards** switches. The **Canvas** popover in the context bar provides quick access to the same units and guides.
-- **Quantities** – default category, waste percentage, rounding step, count types, and **Manage categories…** to rename, reorder, delete and override waste or rounding per category.
-- **Fields** – the project's custom fields and field sets. **Manage fields…** opens the editor described under [Custom fields](#custom-fields); field values live on each measurement, not in Project settings.
+- **Display** – show grid, show scale line, snap to geometry, snap distance, and one **Takeoff settings** link row. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Stamps** – the project's own stamp presets, plus **Load app defaults into project** to copy the preferences list.
+
+Takeoff data lives in **View → Takeoff settings…** (`Objects`, `Fields`, `Tables`, `Cards`): the default category, waste percentage, rounding step, measured and counted objects, custom fields and field sets, saved takeoff tables and card visibility/sources.
 
 Project settings are stored in the `.gridscalr` file and are undoable while the project is open. Preferences, panel layout, layer colours and app stamp defaults are stored locally and are not part of the project.
 
