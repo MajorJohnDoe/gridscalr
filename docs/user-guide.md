@@ -413,7 +413,7 @@ Manage types in **View → Takeoff settings… → Objects**. Measured objects (
 
 In **Markups**, use the **Count type** column, the count-type filter and the **Count schedule** grouping. The drawing PDF legend shows the glyph, type and total for every counted object.
 
-![Takeoff settings Objects tab with measured categories and custom counted objects](screenshots/count-types.png)
+![Takeoff settings Objects tab with measured categories and custom counted objects](screenshots/takeoff-settings-objects.png)
 
 ![Markups table grouped by count type](screenshots/count-schedule.png)
 
@@ -524,7 +524,7 @@ Deep links open the hub on the right tab and row: an empty card's **Configure** 
 
 **View → Takeoff** (`Ctrl+Alt+S`) opens the **Takeoff** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live and opening it writes nothing: a takeoff table is created only by an explicit action.
 
-![Takeoff tab with four KPI cards, a Room takeoff table, page and space filters and a live table](screenshots/summary.png)
+![Takeoff tab with four KPI cards, a Room takeoff table, page and space filters and a live table](screenshots/takeoff-tab.png)
 
 ### KPI cards
 
@@ -535,7 +535,7 @@ The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 - Card sources are explicit and are never inferred from a name. A missing source shows 0 with a **Configure** action instead of a wrong number.
 - **Takeoff settings → Cards → Fed by** ticks the categories that feed Walls and the count types that feed Doors. **Configure** on any card opens the Cards tab on that card; **Configure** on the Rooms or Area card opens the space register.
 
-![Takeoff settings Cards tab with the Wall category feeding the Walls card and the Door count type feeding the Doors card](screenshots/schedule-roles.png)
+![Takeoff settings Cards tab with the Wall category feeding the Walls card and the Door count type feeding the Doors card](screenshots/takeoff-settings-cards.png)
 - Hidden items and layers are excluded from every card and table; locked items are included. Wall measurements without a page scale are named in the card note.
 
 **Takeoff settings → Cards** switches each of the four cards on or off. Every new project starts with all four visible, and each switch is one undo step.

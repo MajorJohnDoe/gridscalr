@@ -126,7 +126,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await hub.getByLabel("Count type name: Socket").waitFor();
   await hub.getByLabel("Count type name: Socket").scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
-  await capture("count-types.png");
+  await capture("takeoff-settings-objects.png");
   await page.keyboard.press("Escape");
   await hub.waitFor({ state: "detached" });
 
@@ -404,7 +404,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
   const summary = await openSummaryTab(page);
   await summary.locator(".schedules-schedule-select").selectOption(HARNESS_SPACE_SCHEDULE_ID);
   await page.waitForTimeout(350);
-  await capture("summary.png");
+  await capture("takeoff-tab.png");
 
   await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   await page.waitForTimeout(250);
@@ -430,7 +430,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
 
   const cardsHub = await openTakeoffSettings(page, 3);
   await page.waitForTimeout(250);
-  await capture("schedule-roles.png");
+  await capture("takeoff-settings-cards.png");
   await page.keyboard.press("Escape");
   await cardsHub.waitFor({ state: "detached" });
 

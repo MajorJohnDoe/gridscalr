@@ -24,7 +24,7 @@ const screenshots = [
   "layers.png",
   "operation-card.png",
   "quantities.png",
-  "count-types.png",
+  "takeoff-settings-objects.png",
   "count-schedule.png",
   "markups-list.png",
   "symbols.png",

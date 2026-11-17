@@ -535,7 +535,7 @@ Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
 - the main shell with a selected markup (`hero.png`);
 - the Markups and Layers panels (`markups.png`);
 - the Order dialog (`quantities.png`);
-- the Takeoff settings Objects tab with a custom counted object (`count-types.png`).
+- the Takeoff settings Objects tab with a custom counted object (`takeoff-settings-objects.png`).
 
 The baselines live in `tests/visual/`. The script loads the bundled Liberation
 Sans regular, bold and italic faces as the UI `Inter` family, so font

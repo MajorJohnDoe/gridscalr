@@ -588,9 +588,11 @@ recaptured screenshots and a release-notes draft. No version bump, tag or releas
 - `docs/screenshots/` and `manifest.json` were recaptured with
   `npm run docs:capture`: 39 screenshots. New files: `takeoff-preview.png`,
   `takeoff-standard-table.png`, `takeoff-settings-fields.png` and
-  `takeoff-settings-tables.png`. `count-types.png`, `schedule-roles.png`,
-  `fields.png` and the remaining shells now show the current hub and terminology
-  instead of the old role dialog and old inspector tab.
+  `takeoff-settings-tables.png`. The old `count-types.png`, `summary.png` and
+  `schedule-roles.png` captures are now `takeoff-settings-objects.png`,
+  `takeoff-tab.png` and `takeoff-settings-cards.png`. Those files, `fields.png`
+  and the remaining shells show the current hub and terminology instead of the
+  old role dialog and old inspector tab.
 - Shortcut tables are unchanged because the two documented labels (**Takeoff**,
   **Order**) did not change; `check:docs` pins them.
 
@@ -601,7 +603,9 @@ recaptured screenshots and a release-notes draft. No version bump, tag or releas
 - `README.md`, `AGENTS.md`, `docs/plan/takeoff-handover.md`
 - `docs/screenshots/*.png`, `docs/screenshots/manifest.json`
 - `scripts/docs-capture-flow.mjs`, `scripts/capture-docs-shots.mjs`,
-  `scripts/ui-harness.mjs`
+  `scripts/ui-harness.mjs`, `scripts/build-site.mjs`
+- `site/features/index.html`, `site/sv/funktioner/index.html` (screenshot link,
+  alt text and aria-label only)
 
 ### Decisions
 
@@ -616,9 +620,16 @@ recaptured screenshots and a release-notes draft. No version bump, tag or releas
   widens `--inspector-w` and scrolls the virtualised table to its measured rows.
   The image is the real panel, not a mock; the wider dock is a state the panel
   resizer already supports.
-- **Existing screenshot files keep their names.** `count-types.png` remains the
-  Objects tab and `schedule-roles.png` remains the Cards tab, so the guide and
-  README references stay stable; only their content and alt text changed.
+- **The three takeoff screenshots use new-term paths.** The conductor review
+  found old names still in the screenshot set, so `summary.png` became
+  `takeoff-tab.png`, `count-types.png` became `takeoff-settings-objects.png` and
+  `schedule-roles.png` became `takeoff-settings-cards.png`. The names match the
+  tab titles (**Takeoff tab**, **Takeoff settings — Objects**, **Takeoff
+  settings — Cards**) and every guide, README and testing reference follows the
+  new files. No `tests/visual/` baseline was renamed. The site feature tour
+  also names the Objects screenshot, so its link, alt text and aria-label and
+  the `build-site.mjs` copy list were updated to the new path; no release
+  metadata, version or site content changed.
 - **The seeded field helper is additive.** The demo already ships `fireClass`,
   so the old early return skipped the Condition field and the Fire data set
   membership; the helper now extends the existing set instead. That makes the
@@ -629,9 +640,10 @@ recaptured screenshots and a release-notes draft. No version bump, tag or releas
 
 ### Findings
 
-- `count-types.png` and `schedule-roles.png` were still the pre-hub screens: the
-  Objects capture did not show the added Socket row, and the Cards capture was
-  the deleted role dialog. Both are corrected by the new capture steps.
+- The old `count-types.png` and `schedule-roles.png` were still the pre-hub
+  screens: the Objects capture did not show the added Socket row, and the Cards
+  capture was the deleted role dialog. Both are corrected by the new capture
+  steps and now sit at the new-term paths.
 - The standard table's fourth column does not fit the default right dock. This
   is the documented F-125 width limit; the capture uses the 420 px panel width
   and no layout change was made.
@@ -661,6 +673,8 @@ Local gate on `0466b76`:
   serious or critical), `test:touch-targets` (748 controls, 22 surfaces),
   `test:ui-scale` (100/150/200 %, no overflow)
 - `npm run docs:capture`: 39 screenshots and a regenerated manifest
+- `npm run site:build` (22 screenshots) and `npm run site:check` (250 local
+  references, 64 images) after the Objects screenshot link rename
 
 CI is authoritative on the PR head. Run
 [44126754525](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44126754525)

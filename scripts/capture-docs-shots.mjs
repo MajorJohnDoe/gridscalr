@@ -84,10 +84,11 @@ export const shots = [
     description: "Live order quantities with deductions, waste and rounding for procurement.",
   },
   {
-    file: "count-types.png",
-    title: "Counted objects",
+    file: "takeoff-settings-objects.png",
+    title: "Takeoff settings — Objects",
     alt: "The GridScalr Takeoff settings Objects tab with measured categories and counted types in one list with a Type column, including a custom Socket type and its glyph picker.",
-    description: "Add counted objects and choose the vector glyph used on the plan and in exports.",
+    description:
+      "Measured and counted objects share one list, and each counted object chooses the vector glyph used on the plan and in exports.",
   },
   {
     file: "count-schedule.png",
@@ -207,8 +208,8 @@ export const shots = [
       "Buildings, floors, rooms and zones keep their area derived from the area measurements linked to them.",
   },
   {
-    file: "summary.png",
-    title: "Takeoff and takeoff tables",
+    file: "takeoff-tab.png",
+    title: "Takeoff tab",
     alt: "The GridScalr Takeoff tab with Rooms, Area, Walls and Doors cards, a takeoff table picker showing Room schedule, page and space filters, and a live table of rooms.",
     description:
       "Four live KPI cards and a takeoff table in the right dock, computed from the project data.",
@@ -235,8 +236,8 @@ export const shots = [
       "Choose columns, grouping, sorting, filters and totals while the preview uses the real takeoff table engine.",
   },
   {
-    file: "schedule-roles.png",
-    title: "Card sources",
+    file: "takeoff-settings-cards.png",
+    title: "Takeoff settings — Cards",
     alt: "The GridScalr Takeoff settings Cards tab with the four cards, their visibility switches and the Fed by lists for Walls categories and Doors count types.",
     description: "A card reads the categories or count types ticked under Fed by, never a name.",
   },

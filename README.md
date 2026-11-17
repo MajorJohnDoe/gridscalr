@@ -254,7 +254,7 @@ The **Pages**, **Layers** and **Markups** lists share one interaction model:
 
 | Takeoff and takeoff tables | Rooms and spaces |
 | --- | --- |
-| ![Takeoff tab with four KPI cards, a takeoff table picker and a live room table](docs/screenshots/summary.png) | ![Space register with a building, floors and rooms, measured and manual area badges](docs/screenshots/spaces.png) |
+| ![Takeoff tab with four KPI cards, a takeoff table picker and a live room table](docs/screenshots/takeoff-tab.png) | ![Space register with a building, floors and rooms, measured and manual area badges](docs/screenshots/spaces.png) |
 | **One live view.** Four KPI cards and a takeoff table read the project data without storing a second copy. | **Areas from the drawing.** A room's area is derived from the visible area measurements linked to it. |
 
 | Custom fields | Excel round-trip |
