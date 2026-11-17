@@ -279,7 +279,7 @@ describe("dependency gate allowlist", () => {
     expect(allowlist.entries.length).toBeLessThanOrEqual(8);
   });
 
-  it("accepts exactly the five current Rust advisories with the committed allowlist", () => {
+  it("accepts exactly the six current Rust advisories with the committed allowlist", () => {
     const allowlist = JSON.parse(
       readFileSync(resolve(__dirname, "../security/dependency-allowlist.json"), "utf8"),
     ) as Allowlist;
@@ -288,6 +288,7 @@ describe("dependency gate allowlist", () => {
       warnings: {
         unsound: [cargoWarning("unsound", "glib", "RUSTSEC-2024-0429")],
         unmaintained: [
+          cargoWarning("unmaintained", "chrono", "RUSTSEC-2026-0543"),
           cargoWarning("unmaintained", "proc-macro-error", "RUSTSEC-2024-0370"),
           cargoWarning("unmaintained", "zvariant", "RUSTSEC-2026-0370"),
           cargoWarning("unmaintained", "zbus_names", "RUSTSEC-2026-0371"),
@@ -297,7 +298,7 @@ describe("dependency gate allowlist", () => {
     };
     const result = gate(emptyNpmReport(), report, allowlist, committedReviewDate(allowlist));
     expect(result.ok).toBe(true);
-    expect(result.accepted).toHaveLength(5);
+    expect(result.accepted).toHaveLength(6);
   });
 });
 
