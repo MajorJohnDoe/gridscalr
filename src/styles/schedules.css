@@ -1,7 +1,7 @@
-/* Summary dock tab (KPI cards, live table) and the schedule builder. */
+/* Takeoff dock tab (KPI cards, live table) and the takeoff table builder. */
 
 /*
- * The Summary tab is the third inspector tab. Let the tab strip scroll rather
+ * The Takeoff tab is the third inspector tab. Let the tab strip scroll rather
  * than widen the right dock or clip the Project settings tab.
  */
 .inspector-tabs {
@@ -97,6 +97,43 @@
   min-width: 0;
   height: 26px;
   font-size: 11px;
+}
+
+.schedules-action-reason {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.schedules-preview {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  border: 1px dashed var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-raised);
+}
+
+.schedules-preview-text {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.schedules-preview-title {
+  margin: 0;
+  font-weight: 650;
+  color: var(--text-strong);
+}
+
+.schedules-preview-hint {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--muted);
 }
 
 .schedules-chips {
@@ -444,7 +481,7 @@
   font-size: 11px;
 }
 
-/* ---------- Summary roles ---------- */
+/* ---------- Card sources ---------- */
 
 .schedules-roles {
   gap: 12px;

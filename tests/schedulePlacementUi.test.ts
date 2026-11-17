@@ -144,7 +144,7 @@ describe("placed table inspector", () => {
     store.setProject(project, null);
     const { section } = mountInspector(project, item);
     expect(section.querySelector(".schedules-inspector-name")?.textContent).toBe("Walls");
-    expect(button("Edit schedule…", section)).toBeTruthy();
+    expect(button("Edit takeoff table…", section)).toBeTruthy();
     expect(button("Change row range…", section)).toBeTruthy();
     expect(section.textContent).toContain("All 2 rows");
   });
@@ -155,7 +155,7 @@ describe("placed table inspector", () => {
     schedule(project);
     const item = placement(project, { locked: true });
     const { section } = mountInspector(project, item);
-    expect(button("Edit schedule…", section)?.disabled).toBe(true);
+    expect(button("Edit takeoff table…", section)?.disabled).toBe(true);
     expect(button("Change row range…", section)?.disabled).toBe(true);
   });
 
@@ -252,7 +252,7 @@ describe("placement actions", () => {
     const labels = [...document.querySelectorAll(".popover button")].map((node) =>
       node.textContent?.trim(),
     );
-    expect(labels).toContain("Edit schedule…");
+    expect(labels).toContain("Edit takeoff table…");
     expect(labels).toContain("Change row range…");
   });
 

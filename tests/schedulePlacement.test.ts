@@ -353,7 +353,7 @@ describe("canvas renderer", () => {
     expect(strokes()).toBeGreaterThan(6);
   });
 
-  it("draws a placeholder for a missing schedule", () => {
+  it("draws a placeholder for a missing takeoff table", () => {
     const project = makeProject();
     schedule(project);
     store.setProject(project, null);
@@ -361,7 +361,7 @@ describe("canvas renderer", () => {
     const { ctx, state, texts } = renderContext(project);
     state.points = item.points;
     drawScheduleItem(ctx, item, state);
-    expect(texts.some((cell) => cell.text.includes("missing schedule"))).toBe(true);
+    expect(texts.some((cell) => cell.text.includes("missing takeoff table"))).toBe(true);
   });
 });
 
@@ -496,7 +496,7 @@ describe("page lifecycle and schedule placements", () => {
   });
 });
 
-describe("visibility, locking and missing schedules", () => {
+describe("visibility, locking and missing takeoff tables", () => {
   it("hit-tests a table inside its box and ignores hidden and locked items", () => {
     const project = makeProject();
     schedule(project);
@@ -519,7 +519,7 @@ describe("visibility, locking and missing schedules", () => {
     );
   });
 
-  it("renders a missing schedule as a placeholder and reports it to the doctor", () => {
+  it("renders a missing takeoff table as a placeholder and reports it to the doctor", () => {
     const project = makeProject();
     schedule(project);
     const item = placementItem(project);

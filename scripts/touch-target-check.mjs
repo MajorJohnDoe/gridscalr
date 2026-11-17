@@ -168,8 +168,8 @@ try {
   await collect("schedule-csv", ".modal");
   await page.keyboard.press("Escape");
   await csv.waitFor({ state: "detached" });
-  await summary.getByRole("button", { name: "Summary roles…" }).click();
-  const roles = page.getByRole("dialog", { name: "Summary roles" });
+  await summary.getByRole("button", { name: "Card sources…" }).click();
+  const roles = page.getByRole("dialog", { name: "Card sources" });
   await roles.waitFor();
   await collect("schedule-roles", ".modal");
   await page.keyboard.press("Escape");

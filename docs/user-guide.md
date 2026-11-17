@@ -10,12 +10,12 @@ This guide follows the current interface. For a printable shortcut list, open **
 2. Pick a PDF or a scanned TIF drawing, start from an operation card sheet template, or add a blank A3/A2 page.
 3. Calibrate the page against a known dimension, or enter the printed scale.
 4. Choose a measurement tool and draw on the plan.
-5. Review **View → Quantities…**.
+5. Review **View → Order…**.
 6. Save the project with **File → Save**.
 
 The welcome screen also offers **Open drawing**, **Open project**, **New project…**, **Open demo project**, **Recovery center**, and up to ten recent files, plus a three-step quick start: open a drawing or the demo, calibrate the page, then measure and review the quantities. **New project…** opens the same source chooser as **File → New project…**, including the **Empty project** start.
 
-**Open demo project** loads a bundled sample with one drawing, three calibrated drawing sheets, a fourth operation card sheet (driftkort) with schematic symbols, and finished measurements. It also includes a small property example: a building with two rooms, one room linked to a measured area, a fire-class field with a field set, and a wall schedule. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
+**Open demo project** loads a bundled sample with one drawing, three calibrated drawing sheets, a fourth operation card sheet (driftkort) with schematic symbols, and finished measurements. It also includes a small property example: a building with two rooms, one room linked to a measured area, a fire-class field with a field set, and a wall takeoff table. GridScalr copies the demo into its app data folder the first time, so you can edit, calibrate and save it like any project; the bundled files are never changed. Delete the `demo` folder in the app data directory to get a fresh copy.
 
 The demo requires the desktop app. The browser fallback offers open, restore and recent files only.
 
@@ -29,8 +29,8 @@ GridScalr uses a compact, drawing-first layout.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab shows the open page's layers in separate drawing and measurement sections, with a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
-- **Properties** – the active layer and the selected item, with **Properties**, **Summary** and **Project settings** tabs in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
-- **Summary tab** – **View → Summary** (`Ctrl+Alt+S`) shows four KPI cards and a live table in the right dock. Choose the built-in category summary or a saved schedule, narrow it with the page, category and space chips, open **New schedule…** to build one, and place a schedule on the drawing with **Place on drawing…**. See [Summary and schedules](#summary-and-schedules).
+- **Properties** – the active layer and the selected item, with **Properties**, **Takeoff** and **Project settings** tabs in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
+- **Takeoff tab** – **View → Takeoff** (`Ctrl+Alt+S`) shows four KPI cards and a live table in the right dock. Choose the labelled preview or a saved takeoff table, narrow it with the page, category and space chips, open **New takeoff table…** to build one, and place a takeoff table on the drawing with **Place on drawing…**. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables).
 - **Status bar** – the clickable page scale, the project status chip that opens the save, backup, autosave, validation and recovery summary, cursor position with its unit, source-drawing warnings, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
@@ -249,7 +249,7 @@ The pages are appended after the existing pages by default. Existing page number
 - **Missing PDFs:** a page whose PDF cannot be found stays selectable in the picker and is marked **File missing** with no preview. Use **Locate…** on its group to resolve the file before importing, or select the pages anyway and resolve it in the preflight with **Relink…**. A missing page is never skipped silently: **Import pages** stays disabled until that document is relinked or you choose **Skip these pages**, which drops its selected pages with a warning. A TIF page is available when its derived PDF is embedded, its cache is present beside the project, or its original scan is reachable so the cache can be rebuilt; a TIF with none of those stays disabled in the picker, and opening the project offers **Locate the scan…** instead.
 - **Undo:** the whole import is one step. `Ctrl/Cmd+Z` removes the imported pages and their layers; `Ctrl/Cmd+Shift+Z` brings them back. The imported PDFs stay in memory until the project is closed or replaced, which is what makes redo immediate.
 - **Units and metadata:** the destination project keeps its units, metadata, settings, saved Markups views and count presets. Imported measurements keep their geometry and are displayed in the destination's units.
-- **Preflight:** before anything changes, GridScalr shows the pages, items, documents, categories, count types, line types and image assets that will be added. The **Source files** list shows every selected document with its verified state. A missing PDF offers **Relink…**; the replacement is checked for readability, page count and SHA-256 checksum before it is used. It also offers **Skip these pages**, which is the explicit confirmation that its selected pages are dropped; while a missing document is neither relinked nor skipped, the summary names it and **Import pages** stays disabled. A different checksum or page count is never accepted silently: **Import pages** stays disabled until you choose **Use anyway** for that file, or you relink a correct copy. **Forget relink** returns the document to the path recorded in the source project. If an imported measurement links to a room or schedule, or carries a custom value, that does not exist in this project, the preflight names the counts. **Clear unresolved links** is off by default; when on, the commit clears the dangling room link, removes a placed table whose schedule is missing and drops the custom values, and the counts are reported after the import. Registers are never merged or remapped, and the source project and source file stay untouched. The summary beside **Import pages** always shows the current missing-file, skipped-page and changed-file state. Choose **Cancel** to leave both projects and every source file untouched.
+- **Preflight:** before anything changes, GridScalr shows the pages, items, documents, categories, count types, line types and image assets that will be added. The **Source files** list shows every selected document with its verified state. A missing PDF offers **Relink…**; the replacement is checked for readability, page count and SHA-256 checksum before it is used. It also offers **Skip these pages**, which is the explicit confirmation that its selected pages are dropped; while a missing document is neither relinked nor skipped, the summary names it and **Import pages** stays disabled. A different checksum or page count is never accepted silently: **Import pages** stays disabled until you choose **Use anyway** for that file, or you relink a correct copy. **Forget relink** returns the document to the path recorded in the source project. If an imported measurement links to a room or takeoff table, or carries a custom value, that does not exist in this project, the preflight names the counts. **Clear unresolved links** is off by default; when on, the commit clears the dangling room link, removes a placed table whose takeoff table is missing and drops the custom values, and the counts are reported after the import. Registers are never merged or remapped, and the source project and source file stay untouched. The summary beside **Import pages** always shows the current missing-file, skipped-page and changed-file state. Choose **Cancel** to leave both projects and every source file untouched.
 - **Provenance:** each imported page stores the source project ID, the source file's SHA-256, size and modification time, the source page ID, the import time and the GridScalr version. The hash is computed over the raw `.gridscalr` bytes, so it matches the checksum shown for packages and backups. Pages imported by an older release keep their historical hash, which was computed from the decoded text; GridScalr does not rewrite it. Provenance is additive optional data in schema 25; older files load unchanged and are never given invented provenance. Select the page and open **Properties** to see a read-only **Imported page** section with the shortened source project ID, the short revision hash and size, the revision time, the source page and the import time. A normal page shows no provenance section, and a malformed record is omitted rather than displayed.
 - **Packages:** `.gridscalr.zip` cannot be imported directly. Extract the package first and choose the `.gridscalr` file inside it.
 
@@ -435,7 +435,7 @@ Change a measurement's category, room, area mode, line style, or count type late
 
 Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **Settings → Project settings… → Fields → Manage fields…**.
 
-- **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by schedules and CSV and cannot change after the field is created. **Scope** is **Measurement** or **Space**; space fields appear in the space form in the register (**View → Spaces…**).
+- **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by takeoff tables and CSV and cannot change after the field is created. **Scope** is **Measurement** or **Space**; space fields appear in the space form in the register (**View → Spaces…**).
 - Choose a **Type**: text, number, number with unit, yes or no, date, one of the options, or several of the options. An option's id stays stable while its label can change. Number fields can set a minimum and a maximum, and text fields a maximum length.
 - **Required** marks a field that should be filled. The inspector warns while the value is empty, but the project still saves.
 - **Default value** is written when you apply a field set.
@@ -451,7 +451,7 @@ In **Properties**, the **Fields** section lists the fields that apply to the sel
 
 A field's type can change only while it has no stored values, and an enum option that is in use cannot be removed. Create a new field when existing data must keep its type.
 
-Field values are not shown in the Markups table or in the quantity CSV/XLSX reports. They appear as columns in schedules (**View → Summary**, then **New schedule…**) and in the schedule CSV round-trip. See [Known limitations](limitations.md).
+Field values are not shown in the Markups table or in the quantity CSV/XLSX reports. They appear as columns in takeoff tables (**View → Takeoff**, then **New takeoff table…**) and in the takeoff table CSV round-trip. See [Known limitations](limitations.md).
 
 ### Snapping
 
@@ -503,71 +503,71 @@ A duplicate room number under the same parent is a warning, not an error. Deleti
 
 Fields created with the **Space** scope in **Settings → Project settings… → Fields** appear in the space form. Values are saved with the space in one undo step.
 
-## Summary and schedules
+## Takeoff and takeoff tables
 
-**View → Summary** (`Ctrl+Alt+S`) opens the **Summary** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live: nothing is written until you save a schedule.
+**View → Takeoff** (`Ctrl+Alt+S`) opens the **Takeoff** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live: nothing is written until you save a takeoff table.
 
-![Summary tab with four KPI cards, a Room schedule, page and space filters and a live table](screenshots/summary.png)
+![Takeoff tab with four KPI cards, a Room takeoff table, page and space filters and a live table](screenshots/summary.png)
 
 ### KPI cards
 
 The four cards are **Rooms**, **Area**, **Walls** and **Doors**.
 
 - **Rooms** counts the spaces of type Room. **Area** sums their derived areas; a room without a usable area is named in the card note and is not counted as zero.
-- **Walls** sums the visible length measurements whose category has the summary role **Wall**. **Doors** sums the pieces per object for count items whose count type has the summary role **Door**.
-- Roles are explicit and are never inferred from a name. A missing role shows 0 with a **Configure** action instead of a wrong number.
-- **Summary roles…** sets the role on every category and count type. **Configure** on the Rooms or Area card opens the space register.
+- **Walls** sums the visible length measurements whose category feeds the Walls card. **Doors** sums the pieces per object for count items whose count type feeds the Doors card.
+- Card sources are explicit and are never inferred from a name. A missing source shows 0 with a **Configure** action instead of a wrong number.
+- **Card sources…** sets the source on every category and count type. **Configure** on the Rooms or Area card opens the space register.
 
-![Summary roles dialog with a Wall role on the Wall category and a Door role on the Door count type](screenshots/schedule-roles.png)
+![Card sources dialog with the Wall category feeding the Walls card and the Door count type feeding the Doors card](screenshots/schedule-roles.png)
 - Hidden items and layers are excluded from every card and table; locked items are included. Wall measurements without a page scale are named in the card note.
 
-**Project settings → Display → Summary cards** switches each of the four cards on or off. Every new project starts with all four visible, and each switch is one undo step.
+**Project settings → Display → Cards** switches each of the four cards on or off. Every new project starts with all four visible, and each switch is one undo step.
 
 ### Live table
 
-Below the cards, the picker chooses **Summary by category**, a built-in table of the visible measurements, or one of the project's schedules.
+Below the cards, the picker chooses **Preview – cannot be placed**, a built-in preview of the visible measurements, or one of the project's takeoff tables.
 
-- **Summary by category** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area.
-- A stored schedule shows its own columns, grouping, sorting and totals.
-- The **Page**, **Category** and **Space** chips narrow the table on top of the schedule's own filters. **Clear filters** restores the full table.
+- **Preview – cannot be placed** shows one row per measurement category: the item count, the length in the project length unit, the net area (additions minus deductions), and the unit of the row. The table totals the length and area. The preview cannot be placed, edited or exported as CSV; use **Create takeoff table** or **New takeoff table…** to build a saved takeoff table.
+- A stored takeoff table shows its own columns, grouping, sorting and totals.
+- The **Page**, **Category** and **Space** chips narrow the table on top of the takeoff table's own filters. **Clear filters** restores the full table.
 - Selecting a row reveals the measurement on the drawing. A space row opens the first visible linked measurement, or the space's page when nothing is linked.
-- The table is virtualised: a schedule with thousands of rows scrolls without rendering every row.
+- The table is virtualised: a takeoff table with thousands of rows scrolls without rendering every row.
 
-### Create a schedule
+### Create a takeoff table
 
-**New schedule…** opens the builder:
+**New takeoff table…** opens the builder:
 
-1. **Name** the schedule and choose the **Source**: measurements or spaces.
+1. **Name** the takeoff table and choose the **Source**: measurements or spaces.
 2. **Rows** is **One row per item** or **Grouped**. Grouped shows one row per group with subtotals and is read-only for CSV; items mode is the round-trip mode.
 3. **Columns** lists the built-in fields and the custom fields for the source. Add a column, hide or show it, give it your own header label, and drag the grip or use the arrow buttons to reorder. A custom column keeps the typed value, for example the option label of a choice field.
 4. **Group by** picks one field. **Sort** adds one or more fields with ascending or descending direction. **Totals** adds a sum, count, average, minimum or maximum for a field.
 5. **Filters** narrow by page, category, count type, item kind and space, and by a custom field with equals, contains, is empty or is not empty. The custom value uses the field's own typed control, so an invalid number, date or option is reported before it is stored.
 6. The **Preview** shows the first 20 displayed rows and the real totals over every filtered row.
 
-**Save** writes the definition in one undo step. **Duplicate** creates a copy from the current draft, and **Delete** asks inline; a schedule that is placed on a drawing is not deleted until its placed table is removed.
+**Save** writes the definition in one undo step. **Duplicate** creates a copy from the current draft, and **Delete** asks inline; a takeoff table that is placed on a drawing is not deleted until its placed table is removed.
 
-![Schedule builder with name, source, columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
+![Takeoff table builder with name, source, columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
 
 A column, group, sort or total that no longer resolves stays visible as **Unknown field** in the builder and the panel reports it instead of hiding the column. A filter that points at a deleted page, category, count type or space is reported the same way. A filter that does not apply to the space source is named as inapplicable and ignored.
 
-### Place a schedule on the drawing
+### Place a takeoff table on the drawing
 
-Select a stored schedule in the Summary picker and choose **Place on drawing…** in the panel header. The dialog asks for the **Page**, the table **Width** in millimetres, an optional **First row** and **Number of rows** (or **All rows**), and whether to show the header row and the totals. The table lands near the top-left of the page; a second placement is offset so two tables never stack exactly.
+Select a stored takeoff table in the Takeoff picker and choose **Place on drawing…** in the panel header. The dialog asks for the **Page**, the table **Width** in millimetres, an optional **First row** and **Number of rows** (or **All rows**), and whether to show the header row and the totals. The table lands near the top-left of the page; a second placement is offset so two tables never stack exactly.
 
 A placed table is an ordinary drawing item:
 
-![A live schedule table placed on a floor plan and selected, with its row range and totals in Properties](screenshots/placed-table.png)
+![A live takeoff table placed on a floor plan and selected, with its row range and totals in Properties](screenshots/placed-table.png)
 
 - Drag it to move, drag a corner handle to resize the box, or use the rotation handle above it. The table keeps its rotation when it is resized.
-- Select it to edit **Show the header row**, **Show totals** and the row range in Properties, or choose **Edit schedule…** and **Change row range…** in the context menu. Double-clicking the table opens the schedule builder.
+- Select it to edit **Show the header row**, **Show totals** and the row range in Properties, or choose **Edit takeoff table…** and **Change row range…** in the context menu. Double-clicking the table opens the takeoff table builder.
 - Hide or lock it like any other item. A hidden table is not drawn, hit-tested or exported; a locked table stays visible and exportable but cannot be moved, resized, rotated, edited or deleted. A hidden or locked layer applies the same rules.
-- It sits on a draw layer. If the active layer is a measurement layer, GridScalr selects an existing draw layer or creates one named **Schedules**.
+- It sits on a draw layer. If the active layer is a measurement layer, GridScalr selects an existing draw layer or creates one named **Takeoff tables**.
 
-The table is a live view over the schedule definition: a measurement, room area, custom value or schedule edit changes the drawn table immediately. Nothing is copied onto the item. A schedule that was deleted outside the interface is drawn as a named placeholder and reported by **File → Project doctor…**.
+The table is a live view over the takeoff table definition: a measurement, room area, custom value or takeoff table edit changes the drawn table immediately. Nothing is copied onto the item. A takeoff table that was deleted outside the interface is drawn as a named placeholder and reported by **File → Project doctor…**.
 
 The row range keeps a long table predictable. When some rows do not fit the box or the chosen range stops before the last row, Properties warns and offers **Continue on a new table**, which places the remaining rows directly below with the same width, columns and totals. The table never shrinks below its minimum font size and never clips silently: long cell text is shortened with an ellipsis, and rows that do not fit at the minimum size are reported as an overflow instead.
 
-**Delete** on a schedule asks first when the schedule is placed; the confirmation names the number of placed tables, and deleting removes the schedule and every placement in one undo step.
+**Delete** on a takeoff table asks first when the takeoff table is placed; the confirmation names the number of placed tables, and deleting removes the takeoff table and every placement in one undo step.
 
 The drawing PDF export draws the same header, rows, subtotals and totals as vector text and lines. Page ranges, crop, layer selection, hidden items and locked items follow the same rules as the canvas.
 
@@ -575,20 +575,20 @@ The drawing PDF export draws the same header, rows, subtotals and totals as vect
 
 A total is computed from the filtered rows and never stored. **Count** counts rows rather than adding field values. A sum, average, minimum or maximum only uses numeric cells; an empty value is skipped. If the contributing rows do not share one unit, the table marks the total as mixed instead of presenting a comparable sum. A deduction area contributes a negative value.
 
-### Edit a schedule in Excel (CSV)
+### Edit a takeoff table in Excel (CSV)
 
-Select a stored schedule in the Summary picker. **Export CSV…** writes a UTF-8 file with a BOM and the delimiter that matches the app language: English uses commas and points, Swedish uses semicolons and decimal commas. The first column is **ID** and the second **Typ** (**item** or **space**); every visible schedule column follows as `Label [key]`, where the key is the built-in field name or `custom:<field id>`. Numbers stay numeric. Text that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with an apostrophe so Excel treats it as text; GridScalr removes exactly that guard on import.
+Select a stored takeoff table in the Takeoff picker. **Export CSV…** writes a UTF-8 file with a BOM and the delimiter that matches the app language: English uses commas and points, Swedish uses semicolons and decimal commas. The first column is **ID** and the second **Typ** (**item** or **space**); every visible takeoff table column follows as `Label [key]`, where the key is the built-in field name or `custom:<field id>`. Numbers stay numeric. Text that starts with `=`, `+`, `-`, `@`, a tab or a carriage return is prefixed with an apostrophe so Excel treats it as text; GridScalr removes exactly that guard on import.
 
-![Import schedule CSV dialog with a changed row, before and after values and an apply action](screenshots/schedule-csv.png)
+![Import takeoff table CSV dialog with a changed row, before and after values and an apply action](screenshots/schedule-csv.png)
 
-- Only a schedule whose **Rows** is **One row per item** is a round-trip export. A **Grouped** schedule exports its groups and subtotals read-only and cannot be imported.
-- **Import CSV…** is enabled for a one-row-per-item schedule. Pick the file; GridScalr detects the delimiter and BOM and shows a dry run before anything is written.
-- The dry run names the changed rows with their before and after values, the unchanged rows, unknown fields, unknown IDs, duplicate IDs, wrong row types, invalid values, read-only columns and schedule rows that are not in the file. A row with any invalid value is rejected and never applied.
-- **Apply** updates only existing measurements and spaces through their stable ID. It never creates a measurement, space, field or schedule. A multi-row import is one undo step. If the project changes while the preview is open, the apply is refused and you open the import again.
+- Only a takeoff table whose **Rows** is **One row per item** is a round-trip export. A **Grouped** takeoff table exports its groups and subtotals read-only and cannot be imported.
+- **Import CSV…** is enabled for a one-row-per-item takeoff table. Pick the file; GridScalr detects the delimiter and BOM and shows a dry run before anything is written.
+- The dry run names the changed rows with their before and after values, the unchanged rows, unknown fields, unknown IDs, duplicate IDs, wrong row types, invalid values, read-only columns and takeoff table rows that are not in the file. A row with any invalid value is rejected and never applied.
+- **Apply** updates only existing measurements and spaces through their stable ID. It never creates a measurement, space, field or takeoff table. A multi-row import is one undo step. If the project changes while the preview is open, the apply is refused and you open the import again.
 - The import updates a measurement's label, room and tag, a space's name, room number, floor, usage and status, and every custom field value. Reference and derived columns (page, layer, category, space, count type, symbol status, value, unit, area and timestamps) are listed as read-only in the dry run and are not imported.
 - A custom choice is imported by its exact option id or label. A multi-choice field is exported as labels separated by semicolons and imported the same way. A yes/no field accepts `true`/`false`, `yes`/`no`, `ja`/`nej`, `1`/`0`. A semicolon file accepts a decimal comma.
 - Limits: one file, UTF-8, at most 10 MB and 20 000 data rows. An over-limit file is refused with a message before anything is applied. A CSV cell is never evaluated as a spreadsheet formula.
-- There is no XLSX import or schedule XLSX export in 0.29.0. See [Known limitations](limitations.md).
+- There is no XLSX import or takeoff table XLSX export in 0.29.0. See [Known limitations](limitations.md).
 
 The placed table, the drawing-PDF table output and the CSV round-trip all ship in Drift Slice 1 on schema 28. XLSX output and CSV import for other project data remain outside this slice.
 
@@ -871,9 +871,9 @@ Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow button
 
 The Highlight variants menu also includes the shared colour palette, so the stroke and fill colour can be chosen before drawing. Existing projects keep their freehand highlights; new highlights use the selected mode.
 
-## Quantities
+## Order
 
-Open **View → Quantities…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters.
+Open **View → Order…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters.
 
 Each row covers one category, room, and measurement type; count rows also carry the count type, so doors, windows and sockets stay separate. Every row shows gross, deduction, net, waste, order quantity, and item count. Category and room headers provide subtotals, and a total row summarises each measurement type.
 
@@ -898,7 +898,7 @@ Set project defaults under **Settings → Project settings → Quantities**:
 
 ### Export quantity reports
 
-Use the **CSV**, **Excel** or **PDF** buttons in the Quantities dialog, or **File → Export → Quantities to CSV / Quantities to Excel… / Quantity report (PDF)**.
+Use the **CSV**, **Excel** or **PDF** buttons in the Order dialog, or **File → Export → Quantities to CSV / Quantities to Excel… / Quantity report (PDF)**.
 
 Reports cover every page and every category, exclude hidden items and hidden layers, and include locked items. Dialog filters do not affect the exported report. Reports are generated on demand and never stored in the project file.
 
@@ -1062,7 +1062,7 @@ The dialog uses the same category menu as Preferences:
 - **Project** – the project name shown in the title row, reports, exports and suggested file names, plus the approximate project data size, embedded image and OCR contributions, item and page counts, and the live status of every source drawing. Renaming the project does not change the `.gridscalr` file name; use **File → Save as…** for that. A drawing that is missing or whose checksum changed on disk is marked here and in the status bar before an export fails, together with whether it is a reference or a managed copy.
 - **Report** – optional facility, client, project number, revision, author, date, report title and notes shown on the quantity PDF and in the Excel summary. **Choose logo…** embeds a PNG or JPEG inside the project file; **Remove logo** deletes the embedded copy.
 - **Measurements** – the current page's calibration or manual scale and lock state, length and area units, **Smart length labels**, project label size and compact area labels. Change the page scale from the page scale chip in the status bar. **Smart length labels** shows metric lengths under 1 m in the selected unit and longer values in metres; quantity reports keep the selected project unit. Compact area labels show `P 14.48 m` instead of `Perimeter 14.48 m`; individual measurements can override the label size in Properties.
-- **Display** – show grid, show scale line, snap to geometry, snap distance, and the four **Summary cards** switches. The **Canvas** popover in the context bar provides quick access to the same units and guides.
+- **Display** – show grid, show scale line, snap to geometry, snap distance, and the four **Cards** switches. The **Canvas** popover in the context bar provides quick access to the same units and guides.
 - **Quantities** – default category, waste percentage, rounding step, count types, and **Manage categories…** to rename, reorder, delete and override waste or rounding per category.
 - **Fields** – the project's custom fields and field sets. **Manage fields…** opens the editor described under [Custom fields](#custom-fields); field values live on each measurement, not in Project settings.
 - **Stamps** – the project's own stamp presets, plus **Load app defaults into project** to copy the preferences list.
@@ -1087,7 +1087,7 @@ A `.gridscalr` file is UTF-8 JSON. It contains document references, per-page cal
 
 New sheets are added after the existing pages by default and can be inserted at a chosen position. Deleting a page is a separate, explicit action: that page's items and page state are removed, later pages keep their stable IDs, and the operation cannot be undone.
 
-Schema version 28 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance, plus optional `provenance` on imported page records (source project and revision identity, source page ID, import time and app version). Schema 26 adds an optional `parentId` on a layer for grouped layers, with inherited visibility and locking. The Layers panel shows the hierarchy as a tree, the canvas, hit-testing, quantities and every export apply the inherited state, and the optional-content export writes the visible hierarchy as nested folders. The migration from schema 25 adds no field and generates no ID: every existing layer becomes a root, every layer, item, page and document ID is preserved, and a project without `parentId` loads and behaves exactly as before. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved. A layer `parentId` that is missing, loops or links two different kinds is reported by the project doctor, never silently dropped or reparented. Missing or malformed optional provenance is dropped with a load-report entry, never guessed. Schema 27 makes a TIF document's embedded PDF optional: the derived PDF may instead be named by a `derivedPdf` cache marker that records the source scan checksum, the converter version, the page count of the derived PDF and the cache file path in the sibling `<project>.derived/` folder. The cache is built on import and on save, reused on open only while that key still matches, and rebuilt from the scan when it is missing or stale. A schema 26 project keeps its embedded PDF byte for byte and renders exactly as before, and the migration adds no field. A marker that no longer matches its source, a malformed marker and a TIF document with no derived PDF at all are reported by the project doctor rather than guessed at. Schema 28 is the current development schema and starts the drift data foundation. It stores custom field definitions and field sets, a building/floor/room/zone register, live schedule definitions, schedule placements on a drawing and the visible summary cards. A measurement may link to a space and carry typed custom values, and a category or count type may carry an optional summary role. The schema 27 → 28 migration adds only empty arrays and the four default summary cards: it does not turn existing room text into spaces, assign summary roles or give items custom values. The field editor, Properties **Fields** section, space register, schedule builder, Summary tab and placed table shipped with Drift Slice 1; a placed table is drawn from its definition at render time and nothing is copied onto the item. The schedule CSV round-trip shipped with the same slice; XLSX and CSV import for other project data remain outside it. 1.0 is deferred; schema 28 is not the final pre-1.0 schema.
+Schema version 28 is the current format. It keeps the label sizing and inside-area label locks from schema 16, the per-page OCR data from schema 17, the radius/diameter/arc kinds from schema 18, the angle, slope and volume measurements with an optional `depth` from schema 19, the project count-type definitions and count quantity from schema 20, the reusable count presets and count-type Markups views from schema 21, the optional report metadata and report-logo reference from schema 22, and operation-card sheet documents, line types, polylines and rails from schema 23. Schema 24 adds the explicit page list with stable page IDs, page insert/reorder/duplicate/delete, empty projects and superseded sources after **Replace source…**. Schema 25 adds the explicit reference/managed-copy storage mode with original-path provenance, plus optional `provenance` on imported page records (source project and revision identity, source page ID, import time and app version). Schema 26 adds an optional `parentId` on a layer for grouped layers, with inherited visibility and locking. The Layers panel shows the hierarchy as a tree, the canvas, hit-testing, quantities and every export apply the inherited state, and the optional-content export writes the visible hierarchy as nested folders. The migration from schema 25 adds no field and generates no ID: every existing layer becomes a root, every layer, item, page and document ID is preserved, and a project without `parentId` loads and behaves exactly as before. Older projects load normally and are migrated when opened; a schema 24 project becomes reference mode without any file being moved. A layer `parentId` that is missing, loops or links two different kinds is reported by the project doctor, never silently dropped or reparented. Missing or malformed optional provenance is dropped with a load-report entry, never guessed. Schema 27 makes a TIF document's embedded PDF optional: the derived PDF may instead be named by a `derivedPdf` cache marker that records the source scan checksum, the converter version, the page count of the derived PDF and the cache file path in the sibling `<project>.derived/` folder. The cache is built on import and on save, reused on open only while that key still matches, and rebuilt from the scan when it is missing or stale. A schema 26 project keeps its embedded PDF byte for byte and renders exactly as before, and the migration adds no field. A marker that no longer matches its source, a malformed marker and a TIF document with no derived PDF at all are reported by the project doctor rather than guessed at. Schema 28 is the current development schema and starts the drift data foundation. It stores custom field definitions and field sets, a building/floor/room/zone register, live schedule definitions, schedule placements on a drawing and the visible summary cards. A measurement may link to a space and carry typed custom values, and a category or count type may carry an optional summary role. The schema 27 → 28 migration adds only empty arrays and the four default summary cards: it does not turn existing room text into spaces, assign summary roles or give items custom values. The field editor, Properties **Fields** section, space register, takeoff table builder, Takeoff tab and placed table shipped with Drift Slice 1; a placed table is drawn from its definition at render time and nothing is copied onto the item. The schedule CSV round-trip shipped with the same slice; XLSX and CSV import for other project data remain outside it. 1.0 is deferred; schema 28 is not the final pre-1.0 schema.
 
 ## Keyboard and mouse
 
@@ -1100,7 +1100,7 @@ The full list is in **Help → Keyboard shortcuts** and in [shortcuts.md](shortc
 - `Ctrl/Cmd+Z` undo, `Ctrl/Cmd+Shift+Z` redo.
 - `Ctrl/Cmd+0` fit page, `Ctrl/Cmd+1` actual size.
 - `Ctrl/Cmd+L` opens or closes the Markups list.
-- `Ctrl/Cmd+Alt+S` opens the Summary tab, and `Ctrl/Cmd+Alt+Q` opens Quantities.
+- `Ctrl/Cmd+Alt+S` opens the Takeoff tab, and `Ctrl/Cmd+Alt+Q` opens Order.
 - `PageUp` / `PageDown` change page.
 - `Space` + drag pans temporarily.
 

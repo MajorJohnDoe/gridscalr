@@ -193,25 +193,25 @@ try {
     );
     const builder = await assertDialogFits(
       page,
-      `${viewport.label} Schedule builder`,
+      `${viewport.label} Takeoff table builder`,
       async () => {
         await openScheduleBuilder(page);
       },
-      "New schedule",
+      "New takeoff table",
     );
     const csv = await assertDialogFits(
       page,
       `${viewport.label} Schedule CSV import`,
       () => openScheduleCsvImport(page),
-      "Import schedule CSV",
+      "Import takeoff table CSV",
     );
     await openSummaryTab(page);
-    const summaryShell = await readShell(page, `${viewport.label} Summary tab`);
+    const summaryShell = await readShell(page, `${viewport.label} Takeoff tab`);
     const placement = await assertDialogFits(
       page,
-      `${viewport.label} Place schedule`,
+      `${viewport.label} Place takeoff table`,
       () => openSchedulePlacementDialog(page),
-      "Place schedule on drawing",
+      "Place takeoff table on drawing",
     );
     await openPlacedTableInspector(page);
     const inspector = await page.evaluate(() => {
@@ -255,7 +255,7 @@ try {
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
         `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
         `Spaces ${result.spaces}, Help ${result.help}, Schedule CSV ${result.csv}, ` +
-        `Place schedule ${result.placement}, no overflow.`,
+        `Place takeoff table ${result.placement}, no overflow.`,
     );
   }
   console.log(

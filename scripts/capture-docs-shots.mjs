@@ -79,9 +79,9 @@ export const shots = [
   },
   {
     file: "quantities.png",
-    title: "Quantities",
-    alt: "The GridScalr Quantities dialog showing gross, deduction, net, waste and order quantities by category and room.",
-    description: "Live quantities with deductions, waste and rounding for procurement.",
+    title: "Order",
+    alt: "The GridScalr Order dialog showing gross, deduction, net, waste and order quantities by category and room.",
+    description: "Live order quantities with deductions, waste and rounding for procurement.",
   },
   {
     file: "count-types.png",
@@ -202,35 +202,35 @@ export const shots = [
   },
   {
     file: "summary.png",
-    title: "Summary and schedules",
-    alt: "The GridScalr Summary tab with Rooms, Area, Walls and Doors cards, a schedule picker showing Room schedule, page and space filters, and a live table of rooms.",
+    title: "Takeoff and takeoff tables",
+    alt: "The GridScalr Takeoff tab with Rooms, Area, Walls and Doors cards, a takeoff table picker showing Room schedule, page and space filters, and a live table of rooms.",
     description:
-      "Four live KPI cards and a schedule table in the right dock, computed from the project data.",
+      "Four live KPI cards and a takeoff table in the right dock, computed from the project data.",
   },
   {
     file: "schedule-builder.png",
-    title: "Schedule builder",
-    alt: "The GridScalr schedule builder with name, measurement source, columns, grouping, sorting, totals and filters.",
+    title: "Takeoff table builder",
+    alt: "The GridScalr takeoff table builder with name, measurement source, columns, grouping, sorting, totals and filters.",
     description:
-      "Choose columns, grouping, sorting, filters and totals while the preview uses the real schedule engine.",
+      "Choose columns, grouping, sorting, filters and totals while the preview uses the real takeoff table engine.",
   },
   {
     file: "schedule-roles.png",
-    title: "Summary roles",
-    alt: "The GridScalr Summary roles dialog with a role list for categories and count types, including Wall and Door roles.",
-    description: "A summary card reads an explicit role on a category or count type, never a name.",
+    title: "Card sources",
+    alt: "The GridScalr Card sources dialog with a source list for categories and count types, including the Walls and Doors cards.",
+    description: "A card reads an explicit source on a category or count type, never a name.",
   },
   {
     file: "placed-table.png",
-    title: "Schedule placed on a drawing",
-    alt: "A schedule table placed on a calibrated floor plan and selected, with the schedule row range, header and totals in the Properties panel.",
+    title: "Takeoff table placed on a drawing",
+    alt: "A takeoff table placed on a calibrated floor plan and selected, with its row range, header and totals in the Properties panel.",
     description:
       "A placed table is a live drawing item: it moves, resizes, locks, hides and exports with the page.",
   },
   {
     file: "schedule-csv.png",
-    title: "Schedule CSV import",
-    alt: "The GridScalr Import schedule CSV dialog with a changed row, before and after values, unchanged rows and the apply action.",
+    title: "Takeoff table CSV import",
+    alt: "The GridScalr Import takeoff table CSV dialog with a changed row, before and after values, unchanged rows and the apply action.",
     description:
       "A CSV from Excel is checked in a dry run before one confirmed import is applied as one undo step.",
   },

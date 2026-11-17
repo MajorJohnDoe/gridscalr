@@ -291,9 +291,9 @@ export async function seedSpaces(page) {
 }
 
 /**
- * Adds explicit summary roles plus the space schedule and placed table the
- * bundled demo does not ship, so the summary cards, the live table, the builder
- * and the role dialog all have content to inspect in the browser gates. The
+ * Adds explicit card sources plus the space takeoff table and placed table the
+ * bundled demo does not ship, so the cards, the live table, the builder and the
+ * card-sources dialog all have content to inspect in the browser gates. The
  * demo's own measurement schedule is reused when present.
  */
 export async function seedSchedules(page) {
@@ -372,14 +372,14 @@ export async function seedSchedules(page) {
 }
 
 /**
- * Opens the Place schedule dialog from the Summary tab with a stored schedule
+ * Opens the Place takeoff table dialog from the Takeoff tab with a stored schedule
  * selected, so the placement dialog is inspectable in the browser gates.
  */
 export async function openSchedulePlacementDialog(page) {
   const summary = await openSummaryTab(page);
   await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   await summary.getByRole("button", { name: "Place on drawing…" }).click();
-  const dialog = page.getByRole("dialog", { name: "Place schedule on drawing" });
+  const dialog = page.getByRole("dialog", { name: "Place takeoff table on drawing" });
   await dialog.waitFor();
   return dialog;
 }
@@ -412,14 +412,14 @@ export async function openScheduleCsvImport(page) {
     mimeType: "text/csv",
     buffer: Buffer.from(csv, "utf8"),
   });
-  const dialog = page.getByRole("dialog", { name: "Import schedule CSV" });
+  const dialog = page.getByRole("dialog", { name: "Import takeoff table CSV" });
   await dialog.waitFor();
   return dialog;
 }
 
 /**
  * Selects the seeded placed table and shows Properties, so the placed-table
- * inspector section is inspectable after the Summary tab is closed.
+ * inspector section is inspectable after the Takeoff tab is closed.
  */
 export async function openPlacedTableInspector(page) {
   await page.evaluate(() => {
@@ -442,7 +442,7 @@ export async function openPlacedTableInspector(page) {
 }
 
 /**
- * Opens the Schedule builder from the Summary tab and returns the dialog.
+ * Opens the takeoff table builder from the Takeoff tab and returns the dialog.
  */
 export async function openScheduleBuilder(page) {
   const summary = page.locator(".schedules-panel");
@@ -450,14 +450,14 @@ export async function openScheduleBuilder(page) {
     await page.keyboard.press("Control+Alt+s");
     await summary.waitFor({ state: "visible" });
   }
-  await summary.getByRole("button", { name: "New schedule…" }).click();
-  const dialog = page.getByRole("dialog", { name: "New schedule" });
+  await summary.getByRole("button", { name: "New takeoff table…" }).click();
+  const dialog = page.getByRole("dialog", { name: "New takeoff table" });
   await dialog.waitFor();
   return dialog;
 }
 
 /**
- * Opens the Summary tab through the documented shortcut and returns the panel.
+ * Opens the Takeoff tab through the documented shortcut and returns the panel.
  */
 export async function openSummaryTab(page) {
   const panel = page.locator(".schedules-panel");

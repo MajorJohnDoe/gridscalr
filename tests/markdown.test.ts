@@ -86,7 +86,7 @@ describe("markdown renderer", () => {
 
   it("ships bundled help content", () => {
     expect(HELP_CONTENT.guide).toContain("# GridScalr User Guide");
-    expect(HELP_CONTENT.guide).toContain("## Quantities");
+    expect(HELP_CONTENT.guide).toContain("## Order");
     expect(HELP_CONTENT.guide).toContain("Settings → Project settings");
     expect(HELP_CONTENT.shortcuts).toContain("## Project and file");
     expect(HELP_CONTENT.shortcuts).toContain("Ctrl+L");

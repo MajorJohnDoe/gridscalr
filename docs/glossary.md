@@ -7,6 +7,10 @@ stable identifier in the project file; only the displayed text is translated.
 | English | Swedish | Notes |
 | --- | --- | --- |
 | takeoff | mängdning | The act of measuring drawings to produce procurement quantities. |
+| takeoff table | mängdschema | A saved definition of columns, filters, grouping, sorting and totals that can be placed on a drawing. |
+| card | kort | One of four fixed KPIs in the Takeoff tab; a card counts only what its sources feed it. |
+| card source | kortkälla | The category or count type a Walls or Doors card reads. |
+| order | beställning | The procurement view with waste, rounding and export (**View → Order…**). |
 | markup | markering | Any measurement, drawing or symbol placed on a drawing. |
 | layer | lager | A measurement or drawing layer. Layers are never mixed. |
 | quantity | mängd | A calculated length, area, volume, count, angle or slope. |

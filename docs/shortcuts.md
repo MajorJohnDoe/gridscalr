@@ -155,8 +155,8 @@ ancestor path of every hit.
 | Open Markups list | `Ctrl+L` |
 | Toggle reference view | `Ctrl+Shift+2` |
 | Search drawing text | `Ctrl+Shift+F` |
-| Open Quantities | `Ctrl+Alt+Q` |
-| Open Summary | `Ctrl+Alt+S` |
+| Open Order | `Ctrl+Alt+Q` |
+| Open Takeoff | `Ctrl+Alt+S` |
 
 ## Project and file
 

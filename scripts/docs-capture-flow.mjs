@@ -365,7 +365,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await helpDialog.waitFor({ state: "detached" });
 
   // Drift Slice 1 surfaces. The bundled demo ships the property registers, so
-  // the seed helpers only top up the summary roles, the space schedule and the
+  // the seed helpers only top up the card sources, the space takeoff table and the
   // placed table the demo does not carry. They go through the store exactly
   // like the browser gates do.
   await seedCustomField(page);
@@ -409,16 +409,16 @@ export async function captureDocumentation(page, { outputDir, base }) {
 
   await summary.locator(".schedules-schedule-select").selectOption(DEMO_MEASURE_SCHEDULE_ID);
   await page.waitForTimeout(250);
-  await summary.getByRole("button", { name: "Edit schedule…" }).click();
-  const builder = page.getByRole("dialog", { name: "Edit schedule" });
+  await summary.getByRole("button", { name: "Edit takeoff table…" }).click();
+  const builder = page.getByRole("dialog", { name: "Edit takeoff table" });
   await builder.waitFor();
   await page.waitForTimeout(300);
   await capture("schedule-builder.png");
   await page.keyboard.press("Escape");
   await builder.waitFor({ state: "detached" });
 
-  await summary.getByRole("button", { name: "Summary roles…" }).click();
-  const roles = page.getByRole("dialog", { name: "Summary roles" });
+  await summary.getByRole("button", { name: "Card sources…" }).click();
+  const roles = page.getByRole("dialog", { name: "Card sources" });
   await roles.waitFor();
   await page.waitForTimeout(250);
   await capture("schedule-roles.png");

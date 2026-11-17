@@ -25,7 +25,7 @@ import type { BuilderContext } from "./builderContext";
 import { scheduleProblemText } from "./messages";
 
 /**
- * The schedule builder. It edits one draft, previews it with the real engine and
+ * The takeoff table builder. It edits one draft, previews it with the real engine and
  * writes it back in one store mutation, so a save is one undo step. Existing
  * schedules can be edited, duplicated and deleted; a delete that a placement
  * still references is refused with an explicit message.

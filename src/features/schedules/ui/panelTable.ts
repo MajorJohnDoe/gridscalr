@@ -16,7 +16,7 @@ import {
 } from "./tableParts";
 
 /**
- * The live summary table. It is virtualised: a 1 000-row schedule renders only
+ * The live takeoff table. It is virtualised: a 1 000-row takeoff table renders only
  * the rows inside the scroll window plus a small overscan, with spacer rows
  * preserving the scroll height.
  */

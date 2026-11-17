@@ -155,13 +155,13 @@ describe("placed schedule PDF export", () => {
     expect(await textItems(await exportBytes(lockedProject))).toContain("Wall A");
   });
 
-  it("exports the missing-schedule placeholder instead of an empty box", async () => {
+  it("exports the missing-takeoff-table placeholder instead of an empty box", async () => {
     const project = makeProject();
     const placement = project.layers
       .flatMap((layer) => layer.items)
       .find((item) => item.kind === "schedule")!;
     placement.scheduleId = "sched_missing";
     const text = await textItems(await exportBytes(project));
-    expect(text.some((entry) => entry.includes("missing schedule"))).toBe(true);
+    expect(text.some((entry) => entry.includes("missing takeoff table"))).toBe(true);
   });
 });
