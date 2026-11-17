@@ -452,10 +452,11 @@ src/features/spaces/model/mutations.ts create, update, delete, link and unlink a
 src/features/spaces/ui/ register dialog, space editor with space-scope fields, rows with area badge and inline delete confirmation
 src/features/schedules/index.ts public surface for the schedule engine, cards and the Takeoff tab
 src/features/schedules/model.ts pure field catalogue, filters, stable sort, totals, grouping, definition rules, roles and revision cache
+src/features/schedules/model/definition.ts standard-table factory (standardScheduleDraft) and draft create/update/duplicate/delete rules
 src/features/schedules/sources/measurements.ts measurement rows from visible items, reusing itemMetrics and quantity rules
 src/features/schedules/sources/spaces.ts space rows reusing spaceAreas(), never a second area formula
 src/features/schedules/summary.ts four KPI cards from summaryRole plus the built-in category table
-src/features/schedules/ui/ Takeoff tab, virtualised live table, takeoff table builder and column picker
+src/features/schedules/ui/ Takeoff tab, preview and standard-table actions, virtualised live table, builder and column picker
 src/features/takeoffSettings/index.ts public surface of the Takeoff settings hub
 src/features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
 src/features/takeoffSettings/ui/ Objects, Fields, Tables and Cards tabs, the shared dialog and object rows

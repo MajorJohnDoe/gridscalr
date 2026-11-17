@@ -86,6 +86,7 @@ These are not negotiable without an explicit decision:
 | 0.27.0 | Limits and lifecycle: package and managed-copy write caps with a free-space check, stale-temporary cleanup, explicit **Remove unused drawings…** in the project doctor, managed-copy replacement hygiene, Windows Rust path tests and a write-guard fix, SHA-pinned actions and the docs/capture/Rust module gates, edit-safe shell rendering, a source check that no longer emits a save, themed Layers surfaces, and the colour-scan/OCG decisions | Complete | v26 |
 | 0.28.0 | Release candidate for 1.0: schema 27 colour-scan derived-PDF cache, ISO nested OCG `/Order`, import preflight relink from the picker, accessibility/touch-target/UI-scale/performance gates in CI, Light Green contrast fix, automated macOS artifact verification and the accepted `glib` position | Complete | v27 |
 | Drift Slice 1 | Data foundation and the first room-to-schedule loop: custom field definitions and field sets, spaces with derived areas, live schedules and summary cards, placed tables with PDF output, and the CSV round-trip (schema 28) | Complete | v28 |
+| Takeoff UI | One takeoff vocabulary (**Takeoff**, **takeoff table**, **Order…**), the Takeoff settings hub (**Objects**, **Fields**, **Tables**, **Cards**) and the standard takeoff table created on first placement | Complete | v28 |
 
 **0.27.0** ships this work; its scope, decisions and follow-ups are recorded in
 [`plan/0.27.md`](plan/0.27.md), [`plan/0.27-handover.md`](plan/0.27-handover.md),
@@ -122,6 +123,20 @@ The phase decisions and findings are in
 [`plan/slice-1-handover.md`](plan/slice-1-handover.md) and
 [`plan/drift-slice-1.md`](plan/drift-slice-1.md). It was released as
 [`0.29.0`](release-notes/0.29.0.md) on 2026-11-16.
+
+**Takeoff UI** is complete on schema 28
+([#299](https://github.com/MajorJohnDoe/gridscalr/issues/299)): the shared
+**Takeoff** / **takeoff table** / **Order…** vocabulary
+([#300](https://github.com/MajorJohnDoe/gridscalr/issues/300)), the Takeoff
+settings hub with the Objects, Fields, Tables and Cards tabs
+([#301](https://github.com/MajorJohnDoe/gridscalr/issues/301)), the standard
+takeoff table created only by an explicit action and offered at first placement
+([#302](https://github.com/MajorJohnDoe/gridscalr/issues/302)), and the
+documentation, screenshot and release-note pass
+([#303](https://github.com/MajorJohnDoe/gridscalr/issues/303)). No schema field
+changed; schema 28 stays the current development schema. The next minor is
+prepared in [`release-notes/0.30.0.md`](release-notes/0.30.0.md) and the phase
+records are in [`plan/takeoff-handover.md`](plan/takeoff-handover.md).
 
 Schema 28 shipped in 0.29.0, not in the released 0.28.0 binary. The quality gate
 for 1.0 is unchanged: Windows, macOS and Linux artifacts, the two interface
@@ -345,7 +360,7 @@ full list.
 | Page order | Complete in schema 24: ordered `PageRecord[]`, stable page IDs, insert/reorder/duplicate/delete, empty projects and **Replace source…**. See [ADR 0011](adr/0011-page-list-and-source-replacement.md). |
 | Source storage | Complete in schema 25: explicit reference and managed-copy modes, consolidation, detach, the source-changed banner, relink and package inclusion. The managed folder is fixed at `<project>.drawings/`; see [ADR 0012](adr/0012-source-storage-modes.md). |
 | Layer hierarchy | Complete in schema 26: optional `parentId`, tree order, visibility/lock inheritance, subtree deletion and page-removal keep rules, the Layers panel tree with inherited-state indicators and subtree duplication, and nested optional-content headings in the PDF export. Grouping never restacks a drawing. See [ADR 0014](adr/0014-layer-hierarchy.md). |
-| Custom fields, spaces and schedules | Schema 28 foundation is in progress: typed custom fields and field sets, the space register with derived-area rules, schedules and placements, summary settings and `summaryRole` on categories and count types. Storage, migration and integrity land in phase 1; editors, panels, table rendering and CSV follow in phases 2–7. 1.0 is deferred. See [`plan/drift-slice-1.md`](plan/drift-slice-1.md). |
+| Custom fields, spaces and schedules | Complete on schema 28 in 0.29.0: typed custom fields and field sets, the space register with derived-area rules, schedules and placements, card visibility settings and `summaryRole` on categories and count types. The Takeoff settings hub and the standard takeoff table followed in the Takeoff UI effort (#299), with no schema change. 1.0 is deferred. See [`plan/drift-slice-1.md`](plan/drift-slice-1.md) and [`plan/takeoff-handover.md`](plan/takeoff-handover.md). |
 | Windows code signing | Deferred. Unsigned installers, checksums and SmartScreen instructions. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | macOS signing and notarization | Deferred. Document the Gatekeeper path. Revisit in [#56](https://github.com/MajorJohnDoe/gridscalr/issues/56). |
 | Windows and Linux ARM64 | Deferred until there is demand. |

@@ -92,7 +92,11 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   without deleting its measurements.
 - Build live takeoff tables from measurements or rooms in **View → Takeoff**
   (`Ctrl+Alt+S`): four KPI cards for rooms, area, walls and doors, chosen
-  columns, grouping, sorting, filters and totals. **Place on drawing…** puts a
+  columns, grouping, sorting, filters and totals. All takeoff setup lives in one
+  **View → Takeoff settings…** hub with the **Objects**, **Fields**, **Tables**
+  and **Cards** tabs. A project without a table shows a labelled preview with
+  **Create takeoff table** and **Create takeoff table and place…**; opening the
+  tab never creates one. **Place on drawing…** puts a
   takeoff table on a drawing page, where it moves, resizes, rotates, locks and
   hides like any drawing item, updates when the drawing or the definition
   changes, continues a long range on a second table instead of clipping, and
@@ -124,9 +128,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   Layers and Markups lists share one focus, selection, drag, filter and collapse
   model, with every keyboard move announced and applied as one undo step.
 - Review gross, deduction, net, waste and order quantities per category,
-  room and page, then export a CSV, an Excel workbook or a print-friendly PDF
-  report. Add optional facility, client, project number, revision, author and
-  notes plus a report logo in Project settings.
+  room and page in **View → Order…**, then export a CSV, an Excel workbook or a
+  print-friendly PDF report. Add optional facility, client, project number,
+  revision, author and notes plus a report logo in Project settings.
 - Switch between English and Swedish in Preferences. The interface, reports,
   XLSX/CSV headings and number formatting follow the selected language, and the
   Swedish help includes a Swedish quick start.
@@ -406,7 +410,10 @@ The fields and spaces features in `src/features/fields/` and
 `src/features/spaces/` own typed property definitions, field sets, the room
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`
 rather than recomputing a room area. The schedule feature owns the live table,
-the builder, placement, the CSV round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and
+the builder, placement, the standard-table factory
+(`standardScheduleDraft` in `model/definition.ts`) and the
+`Create takeoff table` / `Create takeoff table and place…` actions, the CSV
+round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and
 one shared layout for canvas and PDF. `src/features/takeoffSettings/` owns the
 Takeoff settings hub: one modal with the Objects, Fields, Tables and Cards tabs,
 the unified measured/counted object list, the card visibility switches and the

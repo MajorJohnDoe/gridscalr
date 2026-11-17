@@ -30,7 +30,7 @@ GridScalr uses a compact, drawing-first layout.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
 - **Properties** – the active layer and the selected item, with **Properties**, **Takeoff** and **Project settings** tabs in the header. Collapse it with the header chevron, `Ctrl/Cmd+Shift+\`, or **View → Properties**; a tab on the right edge reopens it.
-- **Takeoff tab** – **View → Takeoff** (`Ctrl+Alt+S`) shows four KPI cards and a live table in the right dock. Choose the labelled preview or a saved takeoff table, narrow it with the page, category and space chips, open **New takeoff table…** to build one, and place a takeoff table on the drawing with **Place on drawing…**. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables).
+- **Takeoff tab** – **View → Takeoff** (`Ctrl+Alt+S`) shows four KPI cards and a live table in the right dock. Choose the labelled preview or a saved takeoff table, narrow it with the page, category and space chips, open **New takeoff table…** to build one, and place a takeoff table on the drawing with **Place on drawing…**. The gear opens **Takeoff settings**, where objects, fields, tables and cards are managed. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables).
 - **Status bar** – the clickable page scale, the project status chip that opens the save, backup, autosave, validation and recovery summary, cursor position with its unit, source-drawing warnings, zoom controls, page navigation, and the active layer.
 
 Panels remember their width, height and collapsed state between sessions. The window remembers its size, position and maximised state per user account and restores them when it is on a known monitor.
@@ -435,6 +435,8 @@ Change a measurement's category, room, area mode, line style, or count type late
 
 Custom fields record your own property data, such as fire class, component type or condition, on a measurement. Define them in **View → Takeoff settings… → Fields → Manage fields…**.
 
+![Takeoff settings Fields tab listing the measurement and space fields, their applies-to rules and the field sets](screenshots/takeoff-settings-fields.png)
+
 - **Add field** opens the editor. **Label** is what Properties shows. **Key** is the stable identifier used by takeoff tables and CSV and cannot change after the field is created. **Scope** is **Measurement** or **Space**; space fields appear in the space form in the register (**View → Spaces…**).
 - Choose a **Type**: text, number, number with unit, yes or no, date, one of the options, or several of the options. An option's id stays stable while its label can change. Number fields can set a minimum and a maximum, and text fields a maximum length.
 - **Required** marks a field that should be filled. The inspector warns while the value is empty, but the project still saves.
@@ -503,6 +505,21 @@ A duplicate room number under the same parent is a warning, not an error. Deleti
 
 Fields created with the **Space** scope in **View → Takeoff settings… → Fields** appear in the space form. Values are saved with the space in one undo step.
 
+## Takeoff settings
+
+Every takeoff setting lives in one hub: **View → Takeoff settings…**, the gear in the Takeoff tab header, or the single **Takeoff settings** link row in **Project settings → Display**. The hub edits project data, so it is refused in a view-only session. Opening it writes nothing.
+
+The hub has four tabs, and each concept has one home:
+
+- **Objects** – measured objects (categories) and counted objects (count types) in one list with a **Type** column (**Measured** or **Counted**), a **Unit or symbol** column and a **Waste, rounding or pieces** column. The project default category, waste and rounding sit above the list. **Add object** asks whether the new object is measured or counted. Measured rows carry inline rename, up/down order and optional waste and rounding overrides; counted rows carry inline rename, the glyph picker and their usage. Deleting a measured object asks where its measurements should move; deleting a counted object moves its counts to **Other**, with a confirmation that names the count when counts use it.
+- **Fields** – the measurement and space fields with their applies-to rules, plus the field sets. **Manage fields…** opens the same field editor the inspector uses.
+- **Tables** – the saved takeoff tables with **Edit takeoff table…**, **Duplicate**, **Delete** and **New takeoff table…**. Opening the tab never creates a table.
+- **Cards** – the four KPI cards with a **Show card** switch. **Fed by** lists the categories that feed Walls and the count types that feed Doors; Rooms and Area explain that they read the space register.
+
+![Takeoff settings Tables tab with the saved takeoff tables and the New takeoff table action](screenshots/takeoff-settings-tables.png)
+
+Deep links open the hub on the right tab and row: an empty card's **Configure** opens Cards on that card (Rooms and Area open the space register instead), and **Edit object “…”** in Properties opens Objects on that object. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables), [Count](#count) and [Custom fields](#custom-fields).
+
 ## Takeoff and takeoff tables
 
 **View → Takeoff** (`Ctrl+Alt+S`) opens the **Takeoff** tab in the right dock. The tab sits beside **Properties** and **Project settings**; the inspector expands when it is opened. The panel reads the project live and opening it writes nothing: a takeoff table is created only by an explicit action.
@@ -536,6 +553,10 @@ Below the cards, the picker chooses **Preview – cannot be placed**, a built-in
 ### Create a takeoff table
 
 When a project has no takeoff table, **Create takeoff table** in the preview adds the **Standard** takeoff table. It uses the measurement source with one row per item and the columns **Object**, **Count**, **Unit** and **Value**, and it has no filters. The new table is selected in the picker, so **Place on drawing…**, **Edit takeoff table…** and **Export CSV…** work immediately, and **Import CSV…** follows the usual one-row-per-item rule. Creating it is one undo step. The standard table is an ordinary takeoff table: rename it, change its columns, filters, grouping and totals in the builder like any other.
+
+![Takeoff tab with the labelled Preview – cannot be placed state and both create actions](screenshots/takeoff-preview.png)
+
+![The Standard takeoff table in the Takeoff tab after creation, with Object, Count, Unit and Value columns](screenshots/takeoff-standard-table.png)
 
 **Create takeoff table and place…** creates the same table, selects it and opens the placement dialog. Confirming writes the table and the placement in one undo step, and **Cancel** writes nothing.
 
@@ -592,7 +613,7 @@ Select a stored takeoff table in the Takeoff picker. **Export CSV…** writes a 
 - The import updates a measurement's label, room and tag, a space's name, room number, floor, usage and status, and every custom field value. Reference and derived columns (page, layer, category, space, count type, symbol status, value, unit, area and timestamps) are listed as read-only in the dry run and are not imported.
 - A custom choice is imported by its exact option id or label. A multi-choice field is exported as labels separated by semicolons and imported the same way. A yes/no field accepts `true`/`false`, `yes`/`no`, `ja`/`nej`, `1`/`0`. A semicolon file accepts a decimal comma.
 - Limits: one file, UTF-8, at most 10 MB and 20 000 data rows. An over-limit file is refused with a message before anything is applied. A CSV cell is never evaluated as a spreadsheet formula.
-- There is no XLSX import or takeoff table XLSX export in 0.29.0. See [Known limitations](limitations.md).
+- There is no XLSX import or takeoff table XLSX export yet. See [Known limitations](limitations.md).
 
 The placed table, the drawing-PDF table output and the CSV round-trip all ship in Drift Slice 1 on schema 28. XLSX output and CSV import for other project data remain outside this slice.
 
@@ -877,7 +898,7 @@ The Highlight variants menu also includes the shared colour palette, so the stro
 
 ## Order
 
-Open **View → Order…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters.
+Open **View → Order…** (`Ctrl/Cmd+Alt+Q`) to summarise the measurements currently included by the filters. Order is the procurement view: it applies waste and rounding to the visible takeoff and never stores a second copy of the numbers. The objects and their waste, rounding and pieces are defined in **Takeoff settings → Objects**.
 
 Each row covers one category, room, and measurement type; count rows also carry the count type, so doors, windows and sockets stay separate. Every row shows gross, deduction, net, waste, order quantity, and item count. Category and room headers provide subtotals, and a total row summarises each measurement type.
 

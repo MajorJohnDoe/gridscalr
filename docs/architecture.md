@@ -298,12 +298,14 @@ src/
   features/schedules/model/fields.ts built-in and custom `<field>` references, column resolution and default columns
   features/schedules/model/filters.ts visibility-first item and space filters, including typed custom filters
   features/schedules/model/compute.ts filter, map, stable sort, group, subtotal, total and preview limit
-  features/schedules/model/definition.ts draft rules, create/update/duplicate/delete and inline problems
+  features/schedules/model/definition.ts draft rules, standard-table factory, create/update/duplicate/delete and inline problems
   features/schedules/model/roles.ts explicit category and count-type summary roles
   features/schedules/sources/measurements.ts measurement rows from visible items with the existing quantity rules
   features/schedules/sources/spaces.ts space rows reusing the derived area from features/spaces
   features/schedules/summary.ts four KPI cards from summaryRole and the built-in category table
   features/schedules/ui/panel.ts right-dock Takeoff tab with cards, chips, picker and empty state
+  features/schedules/ui/panelNotice.ts labelled no-table preview, standard-table actions and the disabled reason
+  features/schedules/ui/placement.ts placement options, create and create-and-place in one undo step
   features/schedules/ui/builder.ts takeoff table builder with a live 20-row preview and one-undo save
   features/schedules/ui/panelTable.ts virtualised live table and the pure row window
   features/takeoffSettings/index.ts public surface of the Takeoff settings hub
@@ -405,9 +407,10 @@ Key design choices:
 The data-integrity work is accepted and progressively implemented. The source
 map above describes the current schema 28 code. Schema 28 is the first drift
 slice: custom field definitions, field sets, spaces, schedules, schedule
-placements and summary settings are stored and validated. Their editors, the
-summary panel, table rendering, CSV round-trip and PDF table export are later
-phases; do not describe them as shipped.
+placements and card visibility settings are stored and validated. Their editors,
+the Takeoff tab, the Takeoff settings hub, table rendering, the CSV round-trip
+and PDF table export shipped in 0.29.0 and the Takeoff UI effort; 1.0 remains
+deferred.
 
 - [ADR 0010](adr/0010-project-file-integrity.md): conditional project writes,
   conflict copies, scoped autosave and advisory lock leases.

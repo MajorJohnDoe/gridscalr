@@ -2,6 +2,7 @@ import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { inspectionPhotoDataUrl } from "./docs-capture-photo.mjs";
 import {
+  clearSchedules,
   closeReopenedSettings,
   DEMO_MEASURE_SCHEDULE_ID,
   HARNESS_SPACE_SCHEDULE_ID,
@@ -14,6 +15,7 @@ import {
   openScheduleCsvImport,
   openSpacesRegister,
   openSummaryTab,
+  openTakeoffSettings,
   seedCustomField,
   seedSchedules,
   seedSpaces,
@@ -122,6 +124,7 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await hub.getByLabel("Object type").selectOption("count");
   await hub.getByRole("button", { name: "Add object", exact: true }).click();
   await hub.getByLabel("Count type name: Socket").waitFor();
+  await hub.getByLabel("Count type name: Socket").scrollIntoViewIfNeeded();
   await page.waitForTimeout(300);
   await capture("count-types.png");
   await page.keyboard.press("Escape");
@@ -413,10 +416,19 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.keyboard.press("Escape");
   await builder.waitFor({ state: "detached" });
 
-  await page.locator(".schedules-settings").click();
-  const cardsHub = page.getByRole("dialog", { name: "Takeoff settings" });
-  await cardsHub.waitFor();
-  await cardsHub.getByRole("button", { name: "Cards", exact: true }).click();
+  const fieldsHub = await openTakeoffSettings(page, 1);
+  await page.waitForTimeout(250);
+  await capture("takeoff-settings-fields.png");
+  await page.keyboard.press("Escape");
+  await fieldsHub.waitFor({ state: "detached" });
+
+  const tablesHub = await openTakeoffSettings(page, 2);
+  await page.waitForTimeout(250);
+  await capture("takeoff-settings-tables.png");
+  await page.keyboard.press("Escape");
+  await tablesHub.waitFor({ state: "detached" });
+
+  const cardsHub = await openTakeoffSettings(page, 3);
   await page.waitForTimeout(250);
   await capture("schedule-roles.png");
   await page.keyboard.press("Escape");
@@ -450,6 +462,29 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await capture("schedule-csv.png");
   await page.keyboard.press("Escape");
   await csvDialog.waitFor({ state: "detached" });
+
+  // The documented no-table state. The demo ships one table, so the capture
+  // removes the saved tables and their placements and then uses the real
+  // preview action to create the standard table, exactly as a user would.
+  // The standard table is one column wider than fits the default dock, so the
+  // capture uses the widest inspector the app allows (a user-resizable panel).
+  await page.evaluate(() => {
+    document.documentElement.style.setProperty("--inspector-w", "420px");
+  });
+  await clearSchedules(page);
+  await page.waitForTimeout(350);
+  await capture("takeoff-preview.png");
+  await summary.getByRole("button", { name: "Create takeoff table", exact: true }).click();
+  await waitForToastsGone(page);
+  await page.waitForTimeout(450);
+  // The standard table lists every item, drawings first. Scroll to its measured
+  // rows so the capture shows the Count, Unit and Value columns with data.
+  await page.evaluate(() => {
+    const wrap = document.querySelector(".schedules-panel .schedules-table-wrap");
+    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+  });
+  await page.waitForTimeout(500);
+  await capture("takeoff-standard-table.png");
   await page.keyboard.press("Control+Alt+s");
   await page.locator(".schedules-panel").waitFor({ state: "detached" });
 }
