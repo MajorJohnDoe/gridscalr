@@ -371,22 +371,26 @@ schema change is expected.
 - **PR:** [#311](https://github.com/MajorJohnDoe/gridscalr/pull/311), opened from
   `feat/standard-takeoff-table`.
 - **Branch:** `feat/standard-takeoff-table`
-- **Verified head SHA:** `0865e22` (implementation `9671e82`, documentation
-  `747135f`, handover `e431007`, module-note correction `0865e22`). All six PR
-  checks passed on that exact SHA (CI run
-  [44100892370](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44100892370)).
-  The docs-only record commit that carries this line follows it and changes no
-  code.
+- **Verified head SHA:** `ea37052` (implementation `9671e82`, documentation
+  `747135f`, handover `e431007`, module-note correction `0865e22`, conductor
+  review fix `ea37052`). The docs-only handover update that carries this line
+  follows it and changes no code; the final PR head is verified by the conductor.
 - **Merge commit:** pending.
 - **Status:** open, awaiting conductor verification. No schema change, no app
   version bump, no tag, release or `site/` change.
 
 ### Completed work
 
-- With no stored takeoff table selected, the Takeoff tab renders the labelled
-  **Preview – cannot be placed** state with two actions: **Create takeoff table**
-  and **Create takeoff table and place…**. Both are disabled with the existing
-  view-only reason and `aria-describedby` in a read-only session.
+- When the project has no saved takeoff table, the Takeoff tab renders the
+  labelled **Preview – cannot be placed** state with two actions: **Create
+  takeoff table** and **Create takeoff table and place…**. Both are disabled with
+  the existing view-only reason and `aria-describedby` in a read-only session.
+- When the project has saved takeoff tables, the tab opens on the first one in
+  session state, so the live table renders and **Place on drawing…**, **Edit
+  takeoff table…** and **Export CSV…** are enabled. The selection never writes
+  the project, never marks it dirty and adds no undo step. Choosing the built-in
+  preview from the picker still shows the built-in table with the disabled reason
+  to select a saved table, but with no standard-table create block.
 - Opening the tab still writes nothing: no schedule, no revision bump, no dirty
   flag and no undo entry, asserted on the serialized project and the store.
 - `standardScheduleDraft()` in the schedule model builds the localized
@@ -418,7 +422,7 @@ schema change is expected.
   `model.ts`, `index.ts`
 - `src/features/schedules/ui/placement.ts` (`placementOptions` collector,
   `createStandardSchedule`, `createAndPlaceStandardSchedule`), `ui.ts`
-- `src/features/schedules/ui/panelNotice.ts` (new), `ui/panel.ts`
+- `src/features/schedules/ui/panelNotice.ts` (new), `ui/panel.ts`, `ui/state.ts`
 - `src/styles/schedules.css`
 - `src/i18n/locales/en.json`, `sv.json`, `src/i18n/types.generated.ts`
 - `tests/scheduleStandardTable.test.ts` (new), `tests/schedulesUi.test.ts`
@@ -440,9 +444,16 @@ schema change is expected.
   `label` field and the second the `countQuantity` field; both carry the
   localized **Object** / **Count** header so the standard table reads as the
   plan specifies while remaining an ordinary editable definition.
-- **The preview stays visible when the project has tables but none is selected.**
-  It is the picker's built-in entry; creating from it is allowed and produces
-  **Standard (2)** rather than overwriting a table named Standard.
+- **The no-table preview is keyed on the saved-table count, not the session
+  selection.** Zero saved tables shows the preview with both create actions. Saved
+  tables with no selection auto-select the first in session state, so the live
+  table is shown without offering a duplicate standard table. An explicit pick of
+  the built-in option keeps the built-in table and its disabled reason, and never
+  shows the standard-table create block.
+- **The live table's row links meet the 24 px touch minimum.** Now that the
+  Takeoff tab can open on a live table, the row link gained a 24 px hit area with
+  compensating negative block margin so the row height stays within the
+  virtualiser's estimate.
 - **One existing test changed meaning.** The Phase 1 test that clicked **Create
   takeoff table** expected the builder to open; it now asserts the two preview
   actions and that nothing is written on open. Creation is covered by the new
@@ -450,17 +461,23 @@ schema change is expected.
 
 ### Findings
 
-- The `count-types.png` visual baseline changed because the Takeoff tab behind
-  the masked Takeoff settings dialog now shows the second preview action. The
-  rest of the shell and the masked area are byte-identical; the new baseline was
-  inspected before it was committed.
-- No new out-of-scope finding was added to `docs/plan/foundation-findings.md`.
+- The `count-types.png` visual baseline changed twice: first because the Takeoff
+  tab behind the masked Takeoff settings dialog showed the second preview action,
+  then because the tab now opens on the first saved table (with the 24 px row
+  link). Both captures were inspected before they were committed; the rest of the
+  shell and the masked area are byte-identical.
+- The conductor review found the no-table preview was keyed on the session
+  selection instead of the saved-table count, so a non-empty project could invite
+  a duplicate standard table and left Place/Edit/CSV disabled. Fixed in
+  `ea37052`; tests cover zero tables, auto-selection without a write and the
+  explicit built-in pick without a create block.
+- No other out-of-scope finding was added to `docs/plan/foundation-findings.md`.
 - The Phase 2 "Next phase" paragraph in this file is missing its heading and has
   a run-on link; it is left untouched to preserve the Phase 2 record.
 
 ### Checks
 
-Local gate on `9671e82` + `747135f`:
+Local gate on `ea37052` (implementation + review fix; documentation `747135f`):
 
 - `check:versions` (0.29.0), `check:file-budgets` (610 files; `panel.ts` reduced,
   `placement.ts` and `definition.ts` under 400 lines), `check:modules` (21
@@ -468,19 +485,18 @@ Local gate on `9671e82` + `747135f`:
   (six accepted advisories, none unaccepted), `check:docs` (only the expected
   stale-screenshot warning), `format:check`, `lint`, `check:i18n` (3 574 keys),
   `check:themes`, `npx tsc --noEmit`
-- `npx vitest run`: 174 files, 1 740 tests passed
-- `test:ui`, `test:visual` (one baseline, `count-types.png`, updated and
-  re-verified at 0 differing pixels), `test:a11y` (5 palettes × 18 surfaces plus
-  4 Swedish hub tabs, 94 checks, no serious or critical), `test:touch-targets`
-  (735 controls, 22 surfaces), `test:ui-scale` (100/150/200 %),
-  `test:docs-capture` (35 screenshots in a temporary folder,
-  `docs/screenshots/` untouched)
+- `npx vitest run`: 174 files, 1 743 tests passed (three new selection tests)
+- `test:ui`, `test:visual` (`count-types.png` updated and re-verified at 0
+  differing pixels), `test:a11y` (5 palettes × 18 surfaces plus 4 Swedish hub
+  tabs, 94 checks, no serious or critical), `test:touch-targets` (743 controls,
+  22 surfaces), `test:ui-scale` (100/150/200 %), `test:docs-capture` (35
+  screenshots in a temporary folder, `docs/screenshots/` untouched)
 
 CI is authoritative on the PR head and is recorded in the PR.
 
 ### Conductor verification
 
-pending
+Conductor verification: pending
 
 ### Next phase
 
