@@ -439,11 +439,11 @@ src/i18n/types.generated.ts generated MessageKey and MessageCatalog from en.json
 src/i18n/format.ts         locale-aware number, date and localized-number formatting
 src/i18n/index.ts          catalog loading, ICU translation, language state and t()
 src/features/              feature modules; see docs/adr/0001-feature-modules.md
-src/features/countTypes/index.ts public surface for the count-type management dialog
-src/features/countTypes/ui.ts count-type management dialog
+src/features/countTypes/index.ts public surface for the counted-object rows of the Takeoff settings hub
+src/features/countTypes/ui.ts counted-object table rows: rename, glyph, usage and delete request
 src/features/fields/index.ts public surface for custom fields, typed values and field sets
 src/features/fields/model.ts pure custom-field rules, value coercion, deletion and field-set application
-src/features/fields/ui.ts Project settings → Fält section, the field editor entry and the inspector Fält section
+src/features/fields/ui.ts Takeoff settings Fields tab entry, the field editor and the inspector fields section
 src/features/fields/ui/ field editor, field list, field sets, applies-to and typed value control
 src/features/spaces/ index.ts, model/ and ui/ public surface, register dialog, derived room area, measurement links and room-from-text creation
 src/features/spaces/model/area.ts derived area from visible linked area measurements (add minus subtract, m²)
@@ -455,9 +455,13 @@ src/features/schedules/model.ts pure field catalogue, filters, stable sort, tota
 src/features/schedules/sources/measurements.ts measurement rows from visible items, reusing itemMetrics and quantity rules
 src/features/schedules/sources/spaces.ts space rows reusing spaceAreas(), never a second area formula
 src/features/schedules/summary.ts four KPI cards from summaryRole plus the built-in category table
-src/features/schedules/ui/ Takeoff tab, virtualised live table, takeoff table builder, column picker and card-sources dialog
+src/features/schedules/ui/ Takeoff tab, virtualised live table, takeoff table builder and column picker
+src/features/takeoffSettings/index.ts public surface of the Takeoff settings hub
+src/features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
+src/features/takeoffSettings/ui/ Objects, Fields, Tables and Cards tabs, the shared dialog and object rows
 src/app/summaryFlow.ts Ctrl+Alt+S and the View → Takeoff action
-src/styles/schedules.css cards, live table, builder and card-sources dialog
+src/styles/schedules.css cards, live table and builder
+src/styles/takeoffSettings.css hub tabs, object table, table list and card feeds
 src/styles/spaces.css  space register rows, area badges and warnings
 src/styles/fields.css     custom field list, typed value and field-set styles
 src/features/projectPackage/model.ts package manifest, safe names and portable project paths
@@ -611,7 +615,7 @@ src/ui/pageImportDialog.ts page picker with previews for PDF/TIF import
 src/ui/topMenu.ts          File/Edit/View/Settings/Help menu and keyboard navigation
 src/ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
 src/ui/settingsDialog.ts   settings dialog orchestrator
-src/ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
+src/ui/settings/           project, storage, metadata, scale, units, labels, display and stamps sections
 src/source/sourceStatus.ts source drawing existence, size and checksum monitor
 src/features/sourceStorage/  reference/managed source modes, managed copies, consolidation, relinking and the source-changed banner
 src/io/projectFile/sourceStorage.ts schema 24 → 25 migration to explicit reference storage

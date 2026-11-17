@@ -94,7 +94,10 @@ describe("accessibility gate rules", () => {
       "schedule-inspector",
       "schedule-builder",
       "schedule-csv",
-      "schedule-roles",
+      "takeoff-objects",
+      "takeoff-fields",
+      "takeoff-tables",
+      "takeoff-cards",
     ]);
   });
 
@@ -120,7 +123,7 @@ describe("accessibility gate rules", () => {
       surface: "shell",
       surfaceLabel: "Main shell",
     });
-    expect(checks.at(-1)?.key).toBe("navy:schedule-roles");
+    expect(checks.at(-1)?.key).toBe("navy:takeoff-cards");
   });
 
   it("lets a test narrow the theme list without changing the surfaces", () => {

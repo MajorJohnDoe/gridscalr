@@ -13,6 +13,7 @@ import { store } from "../state/store";
 import { pageIdAt } from "../model/pages";
 import { pageProvenanceSection } from "../features/importProvenance";
 import { isSummaryOpen, renderSummaryPanel, setSummaryOpen } from "../features/schedules";
+import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { confirmDialog } from "./dialogs";
@@ -104,6 +105,8 @@ export function renderInspector(refs: ShellRefs, actions: PanelActions): void {
         refresh: actions.refresh,
         exportScheduleCsv: actions.exportScheduleCsv,
         importScheduleCsv: actions.importScheduleCsv,
+        openTakeoffSettings: (tab, focusId) =>
+          openTakeoffSettingsDialog({ tab, focusId }).then(() => actions.refresh()),
       },
       previousScroll,
     );

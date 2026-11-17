@@ -1,7 +1,6 @@
 import { hasClipboard } from "../model/clipboard";
 import { clearRecent, getRecent, isTauri } from "../io/platform";
 import { store } from "../state/store";
-import { openCategoriesDialog } from "./categoriesDialog";
 import { el } from "./dom";
 import { openHelp } from "./helpDialog";
 import { icon } from "./icons";
@@ -16,6 +15,7 @@ import { openPreferencesDialog } from "./preferencesDialog";
 import { openSettingsDialog } from "./settingsDialog";
 import { isMarkupsOpen } from "./markupsPanel";
 import { isSummaryOpen } from "../features/schedules";
+import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
 import { APP_SHORTCUTS, formatShortcut } from "./shortcuts";
 import { toast } from "./toast";
 import { t } from "../i18n";
@@ -304,6 +304,9 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
           disabled: !hasProject,
           checked: isSummaryOpen(),
         }),
+        action(t("menu.view.takeoffSettings"), () => void openTakeoffSettingsDialog(), {
+          disabled: !hasProject || viewOnly,
+        }),
         action(t("menu.view.spaces"), actions.openSpaces, {
           disabled: !hasProject,
         }),
@@ -316,9 +319,6 @@ function buildMenus(actions: PanelActions): MenuDefinition[] {
         action(t("menu.settings.preferences"), () => openPreferencesDialog()),
         action(t("menu.settings.project"), () => openSettingsDialog(), {
           shortcut: APP_SHORTCUTS.settings,
-          disabled: !hasProject || viewOnly,
-        }),
-        action(t("menu.settings.categories"), () => void openCategoriesDialog(), {
           disabled: !hasProject || viewOnly,
         }),
       ],

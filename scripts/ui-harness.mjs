@@ -469,28 +469,54 @@ export async function openSummaryTab(page) {
 }
 
 /**
- * Closes Project settings after the field editor, which reopens it on the
- * Fields category. Tolerates no dialog, so it is safe after a direct close.
+ * Closes the Takeoff settings hub after a nested field or table editor reopens
+ * it. Tolerates no dialog, so it is safe after a direct close.
  */
-export async function closeReopenedSettings(page) {
-  const settings = page.getByRole("dialog", { name: "Project settings" });
+export async function closeReopenedTakeoffSettings(page) {
+  const hub = page.locator(".takeoff-settings-modal");
   try {
-    await settings.waitFor({ state: "visible", timeout: 3000 });
+    await hub.waitFor({ state: "visible", timeout: 3000 });
   } catch {
     return false;
   }
   await page.keyboard.press("Escape");
-  await settings.waitFor({ state: "detached" });
+  await hub.waitFor({ state: "detached" });
   return true;
 }
 
-/** Opens Project settings → Fields → Manage fields and returns the dialog. */
+/** Kept as the previous name for call sites that close a reopened editor. */
+export const closeReopenedSettings = closeReopenedTakeoffSettings;
+
+/**
+ * Opens the Takeoff settings hub from the Takeoff tab gear and selects a tab by
+ * index (0 Objects, 1 Fields, 2 Tables, 3 Cards). The index keeps the helper
+ * locale-independent for the Swedish gate passes.
+ */
+export async function openTakeoffSettings(page, tabIndex = 0) {
+  const summary = await openSummaryTab(page);
+  await summary.locator(".schedules-settings").click();
+  const dialog = page.locator(".takeoff-settings-modal");
+  await dialog.waitFor();
+  if (tabIndex > 0) {
+    await dialog.locator(".dialog-nav button").nth(tabIndex).click();
+  }
+  return dialog;
+}
+
+/** Switches the interface language through the app's own preference setter. */
+export async function setLanguage(page, language) {
+  await page.evaluate((value) => window.__gridscalr.setLanguage(value), language);
+  await settlePage(page);
+}
+
+/** Opens the hub's Fields tab → Manage fields… and returns the dialog. */
 export async function openCustomFieldsDialog(page) {
-  await page.keyboard.press("Control+,");
-  const settings = page.getByRole("dialog", { name: "Project settings" });
-  await settings.waitFor();
-  await settings.getByRole("button", { name: "Fields", exact: true }).click();
-  await settings.getByRole("button", { name: /Manage fields/ }).click();
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Takeoff settings…" }).click();
+  const hub = page.locator(".takeoff-settings-modal");
+  await hub.waitFor();
+  await hub.locator(".dialog-nav button").nth(1).click();
+  await hub.getByRole("button", { name: /Manage fields/ }).click();
   const dialog = page.getByRole("dialog", { name: "Custom fields" });
   await dialog.waitFor();
   return dialog;

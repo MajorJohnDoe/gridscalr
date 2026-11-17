@@ -85,10 +85,9 @@ export const shots = [
   },
   {
     file: "count-types.png",
-    title: "Count types",
-    alt: "The GridScalr Count types dialog with built-in door, window, radiator, fixture and other types, a custom Socket type with a fixture glyph, and the add form.",
-    description:
-      "Name the objects you count and choose the vector glyph used on the plan and in exports.",
+    title: "Counted objects",
+    alt: "The GridScalr Takeoff settings Objects tab with measured categories and counted types, including a custom Socket type with a fixture glyph, plus the add-object form.",
+    description: "Add counted objects and choose the vector glyph used on the plan and in exports.",
   },
   {
     file: "count-schedule.png",
@@ -217,8 +216,8 @@ export const shots = [
   {
     file: "schedule-roles.png",
     title: "Card sources",
-    alt: "The GridScalr Card sources dialog with a source list for categories and count types, including the Walls and Doors cards.",
-    description: "A card reads an explicit source on a category or count type, never a name.",
+    alt: "The GridScalr Takeoff settings Cards tab with the four cards, their visibility switches and the Fed by lists for Walls categories and Doors count types.",
+    description: "A card reads the categories or count types ticked under Fed by, never a name.",
   },
   {
     file: "placed-table.png",

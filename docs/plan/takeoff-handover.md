@@ -160,3 +160,181 @@ Phase 2 — [Takeoff settings hub #301](https://github.com/MajorJohnDoe/gridscal
 a new `src/features/takeoffSettings/` module with Objects, Fields, Tables and
 Cards tabs, deep links, the single Project settings link row and **Fed by** card
 sources. No schema change is expected.
+
+## Phase 2 — Takeoff settings hub
+
+- **Issue:** [#301](https://github.com/MajorJohnDoe/gridscalr/issues/301)
+- **PR:** [#309](https://github.com/MajorJohnDoe/gridscalr/pull/309), opened from
+  `feat/takeoff-settings-hub`.
+- **Branch:** `feat/takeoff-settings-hub`
+- **Verified head SHA:** `f56172d` (product `7709be9`, documentation `144e3b4`,
+  handover `f56172d`). CI run
+  [44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
+  passed every job on that exact SHA. This handover status line is the only change
+  after that verified head, so the conductor starts verification from the final
+  branch head.
+- **Merge commit:** pending.
+- **Status:** implementation and documentation committed, PR open, local gate and
+  browser gates green. Conductor review fixes are in `18c4269`. No schema change,
+  no app version bump, no tag, release or `site/` change.
+
+### Completed work
+
+- One modal, **Takeoff settings** / **Mängdning – inställningar**, with **Objects**,
+  **Fields**, **Tables** and **Cards**. The tab layout reuses the shared
+  two-column dialog shell, so keyboard focus, the always-visible scrollbar and
+  the narrow-dialog rules are the same as Project settings.
+- **Objects** lists measured objects (categories) and counted objects (count
+  types) in one table with an **Object**, **Type**, **Unit or symbol**,
+  **Waste, rounding or pieces**, **Applies to** and **Actions** column. The
+  project default category, waste and rounding controls sit above the list.
+  Measured rows carry inline rename, up/down reorder and optional waste and
+  rounding overrides; counted rows carry inline rename, the glyph picker and
+  usage. Delete uses the existing category move-to-target confirmation and the
+  existing count-type reassignment confirmation. **Add object** chooses Measured
+  or Counted from one control. Every mutation is one `store.mutate` call.
+- **Fields** lists measurement and space fields, their applies-to names and the
+  field sets, and opens the existing **Custom fields** editor. Field behaviour is
+  unchanged; closing the editor reopens the hub on the Fields tab.
+- **Tables** lists the saved takeoff tables with edit, duplicate and delete plus
+  **New takeoff table…**. Duplicate and delete call the schedules feature's own
+  definition rules and placement cascade. No standard table is created or
+  offered; that remains Phase 3 (#302).
+- **Cards** shows the four cards with their visibility switch and a **Fed by**
+  list: Walls lists categories, Doors lists count types, Rooms and Area explain
+  that they read the space register. A stored role that no card uses is preserved
+  in the project and is not rendered. Each tick and each visibility switch is one
+  undo step.
+- **Entry points:** a gear in the Takeoff tab, **View → Takeoff settings…**, and a
+  single **Takeoff settings** link row in Project settings → Display. Project
+  settings no longer has Quantities, Count types, Fields or card switches, and
+  Settings → Manage categories… is removed.
+- **Deep links:** an empty card's **Configure** opens the Cards tab on that card;
+  the selection inspector gains **Edit object “…”** under the category and count
+  type controls and opens the Objects tab on that row. The hub scrolls the card
+  or focuses the object's name field.
+- All text is localized in English and Swedish (60 new catalog keys); the
+  generated message types are regenerated. No Swedish was added to code.
+- The accessibility, touch-target and UI-scale gates now cover the four hub tabs.
+  The a11y gate also runs the four tabs in Swedish; touch targets cover 734
+  controls across 22 surfaces; UI scale covers 100/150/200 % in both locales.
+- The count-workflow, visual-regression, documentation-capture and count-type
+  screenshot paths were moved to the hub. `tests/visual/hero.png` changed because
+  the inspector now shows the **Edit object** action; `count-types.png` changed
+  from the old dialog to the Objects tab.
+
+### Modules
+
+- `src/features/takeoffSettings/{index,model}.ts` and
+  `ui/{dialog,objects,categoryRows,fields,tables,cards}.ts`
+- `src/features/countTypes/{index,ui}.ts` (counted-object rows moved here and kept
+  as the feature's public surface)
+- `src/features/fields/{index,ui}.ts` (dead Project settings section removed)
+- `src/features/schedules/{index,ui}.ts`, `ui/panel.ts` (gear and deep-link host
+  callback; `ui/roles.ts` removed)
+- `src/ui/{settingsDialog,topMenu,inspector}.ts`,
+  `src/ui/settings/display.ts`, `src/ui/inspector/measurement.ts`
+- `src/styles/takeoffSettings.css`, `src/main.ts`
+- `src/i18n/locales/{en,sv}.json`, `src/i18n/types.generated.ts`
+- `tests/takeoffSettingsUi.test.ts`, `schedulesUi.test.ts`,
+  `summaryCardsSettings.test.ts`, `accessibilityGate.test.ts`,
+  `tests/visual/{hero,count-types}.png`
+- `scripts/{accessibility-check,accessibility-rules,touch-target-check,
+  ui-scale-check,ui-harness,count-workflow,visual-regression,docs-capture-flow,
+  capture-docs-shots,check-module-boundaries}.mjs`, `file-budgets.json`
+- `AGENTS.md`, `README.md`, `docs/architecture.md`, `docs/limitations.md`,
+  `docs/testing.md`, `docs/user-guide.md`, `docs/workflows.md`
+
+### Decisions
+
+- **The category and count-type managers moved into the hub rather than opening
+  from it.** The two old dialogs were presentation shells over the same store and
+  model rules; moving their rows into one table gives the issue's single list
+  with a Type column, while every rule, validation message and confirmation text
+  is reused verbatim. The `countTypes` feature keeps the counted rows as its
+  public surface. The old `categoriesDialog.ts`, `settings/quantities.ts`,
+  `settings/countTypes.ts` and `schedules/ui/roles.ts` were deleted so no setting
+  has two homes.
+- **Roles are presented as card sources, not as a role field.** A tick in the
+  Walls Fed by list stores `summaryRole: "wall"`, and a tick in Doors stores
+  `"door"`; unticking clears it. Roles without a card are never shown and are
+  never migrated away.
+- **Counted objects keep their stored order.** No count-type reorder rule exists
+  and Phase 2 moves behaviour rather than adding it, so only measured objects
+  have up/down actions.
+- **A nested editor returns to the hub.** The field editor and the table builder
+  replace the hub modal (the dialog layer supports one active modal), and the hub
+  reopens on the same tab when they close.
+- **The hub refuses a view-only session.** `openTakeoffSettingsDialog` returns
+  the localized **Editing disabled (view-only)** reason instead of opening when
+  `store.readOnly` is set, so no hub control can show a mutation the store will
+  silently ignore. The Takeoff-tab gear carries the same reason and the View
+  menu, Project settings and inspector entry points are disabled, so an empty
+  card's **Configure** and the inspector action cannot bypass the guard. The
+  Tables tab follows the same rule because the whole hub is refused.
+- **The Fields tab names every applies-to restriction.** Item kinds, categories,
+  count types and space kinds are all summarised, using `itemKindLabel` and the
+  existing `fields.spaceKind.*` keys; **All fields** appears only when the field
+  has no restriction at all.
+- **No standard table, no card-owned multi-source KPI.** Both stay in their
+  follow-up issues (#302 and #304).
+
+### Findings
+
+- The conductor review found two in-scope defects that are now fixed in
+  `18c4269`: the Fields applies-to summary ignored item-kind and space-kind
+  restrictions, and the hub opened in a view-only session with editable-looking
+  controls. Tests now cover an item-kind-only field, a space-kind-only field and
+  a view-only hub that refuses the dialog, the card Configure action and the
+  inspector action.
+- The inspector **Edit object** action adds a button to every measurement's
+  Properties section, which changed the `hero.png` visual baseline. The action is
+  the issue's deep link, so the change is intended rather than a regression.
+- No new out-of-scope data or UI finding was added to
+  `docs/plan/foundation-findings.md`.
+
+### Checks
+
+Local gate on `7709be9` + `144e3b4`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (609 files; new feature files
+  under 400 lines), `check:modules` (21 foundation features),
+  `check:security`, `check:actions`, `check:dependencies` (six accepted
+  advisories, none unaccepted), `check:docs` (only the expected stale-screenshot
+  warning), `format:check`, `lint`, `check:i18n` (3 566 keys), `check:themes`,
+  `npx tsc --noEmit`
+- `npx vitest run`: 173 files, 1 728 tests passed
+- `test:ui`, `test:count`, `test:visual` (two baselines updated),
+  `test:a11y` (5 palettes × 18 surfaces plus 4 Swedish hub tabs, 94 checks, no
+  serious or critical), `test:touch-targets` (734 controls, 22 surfaces),
+  `test:ui-scale` (100/150/200 %, hub tabs in English and Swedish),
+  `test:docs-capture` (35 screenshots in a temporary folder,
+  `docs/screenshots/` untouched)
+
+CI is authoritative on the PR head. Run
+[44087039782](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44087039782)
+on `f56172d` passed the dependency gate, the Rust format and check job, the
+frontend tests and build, and the desktop shell on Ubuntu, Windows and macOS.
+
+Review fixes on `18c4269` re-ran:
+
+- `npx tsc --noEmit`, `lint`, `format:check`, `check:i18n` (3 566 keys),
+  `check:file-budgets` (609 files), `check:modules` (21 foundation features),
+  `check:docs` (only the expected stale-screenshot warning)
+- `npx vitest run`: 173 files, 1 730 tests passed (the two new hub tests cover
+  the applies-to summary and the view-only refusal)
+- `test:ui` and `test:ui-scale` (100/150/200 %, hub tabs in English and Swedish,
+  now labelled with English-only script strings)
+
+The final CI run on the review-fix head is recorded in the PR.
+
+### Conductor verification
+
+pending
+
+### Next phase
+
+Phase 3 — [Standard takeoff table #302](https://github.com/MajorJohnDoe/gridscalr/issues/302):
+create the standard table only on an explicit action, offer create and
+create-and-place in the preview, and keep create-and-place to one undo step. No
+schema change is expected.

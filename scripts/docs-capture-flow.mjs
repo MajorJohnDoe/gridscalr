@@ -113,23 +113,19 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
-  await page.keyboard.press("Control+,");
-  const projectSettings = page.getByRole("dialog", { name: "Project settings" });
-  await projectSettings.waitFor();
-  await projectSettings.getByRole("button", { name: "Quantities", exact: true }).click();
-  await page.getByRole("button", { name: /Manage count types/ }).click();
-  const countTypesDialog = page.getByRole("dialog", { name: "Count types" });
-  await countTypesDialog.getByLabel("New count type name").waitFor();
-  await countTypesDialog.getByLabel("New count type name").fill("Socket");
-  await countTypesDialog.getByLabel("Glyph for the new count type").selectOption("fixture");
-  await countTypesDialog.getByRole("button", { name: "Add", exact: true }).click();
-  await countTypesDialog.getByLabel("Count type name: Socket").waitFor();
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Takeoff settings…" }).click();
+  const hub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await hub.waitFor();
+  await hub.getByLabel("New object name").waitFor();
+  await hub.getByLabel("New object name").fill("Socket");
+  await hub.getByLabel("Object type").selectOption("count");
+  await hub.getByRole("button", { name: "Add object", exact: true }).click();
+  await hub.getByLabel("Count type name: Socket").waitFor();
   await page.waitForTimeout(300);
   await capture("count-types.png");
-  await countTypesDialog.getByRole("button", { name: "Done" }).click();
-  await page.getByRole("dialog").waitFor();
   await page.keyboard.press("Escape");
-  await page.getByRole("dialog").waitFor({ state: "detached" });
+  await hub.waitFor({ state: "detached" });
 
   await page.getByRole("menuitem", { name: "File" }).click();
   await page.getByRole("menuitem", { name: /^Export/ }).click();
@@ -417,13 +413,14 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.keyboard.press("Escape");
   await builder.waitFor({ state: "detached" });
 
-  await summary.getByRole("button", { name: "Card sources…" }).click();
-  const roles = page.getByRole("dialog", { name: "Card sources" });
-  await roles.waitFor();
+  await page.locator(".schedules-settings").click();
+  const cardsHub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await cardsHub.waitFor();
+  await cardsHub.getByRole("button", { name: "Cards", exact: true }).click();
   await page.waitForTimeout(250);
   await capture("schedule-roles.png");
   await page.keyboard.press("Escape");
-  await roles.waitFor({ state: "detached" });
+  await cardsHub.waitFor({ state: "detached" });
 
   await openPlacedTableInspector(page);
   await page.evaluate(() => {

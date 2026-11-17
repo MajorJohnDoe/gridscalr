@@ -226,17 +226,14 @@ try {
   await page.keyboard.press("Escape");
   await page.getByRole("dialog").waitFor({ state: "detached" });
 
-  await page.keyboard.press("Control+,");
-  const projectSettings = page.getByRole("dialog", { name: "Project settings" });
-  await projectSettings.waitFor();
-  await projectSettings.getByRole("button", { name: "Quantities", exact: true }).click();
-  await page.getByRole("button", { name: /Manage count types/ }).click();
-  const countTypesDialog = page.getByRole("dialog", { name: "Count types" });
-  await countTypesDialog.getByLabel("New count type name").waitFor();
-  await countTypesDialog.getByLabel("New count type name").fill("Socket");
-  await countTypesDialog.getByLabel("Glyph for the new count type").selectOption("fixture");
-  await countTypesDialog.getByRole("button", { name: "Add", exact: true }).click();
-  await countTypesDialog.getByLabel("Count type name: Socket").waitFor();
+  await page.keyboard.press("Control+Alt+s");
+  await page.locator(".schedules-settings").click();
+  const hub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await hub.waitFor();
+  await hub.getByLabel("New object name").fill("Socket");
+  await hub.getByLabel("Object type").selectOption("count");
+  await hub.getByRole("button", { name: "Add object", exact: true }).click();
+  await hub.getByLabel("Count type name: Socket").waitFor();
   await page.waitForTimeout(300);
   await capture("count-types.png");
 

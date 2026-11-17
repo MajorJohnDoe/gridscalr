@@ -1,0 +1,313 @@
+/* ---------- Takeoff settings hub ---------- */
+
+.takeoff-settings-modal .dialog-scroll {
+  max-height: min(72vh, 760px);
+}
+
+.takeoff-object-kinds {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 6px 0 10px;
+}
+
+.takeoff-object-kind {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.takeoff-object-defaults {
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-inset);
+}
+
+.takeoff-object-defaults h4,
+.takeoff-object-add h4 {
+  margin: 0 0 2px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.takeoff-object-defaults .field,
+.takeoff-object-defaults .field-row {
+  margin-top: 6px;
+}
+
+.takeoff-object-add {
+  margin: 12px 0 6px;
+}
+
+.takeoff-object-add .input-row {
+  margin-top: 6px;
+}
+
+.takeoff-object-table-wrap {
+  overflow-x: auto;
+}
+
+.takeoff-object-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.takeoff-object-table th,
+.takeoff-object-table td {
+  padding: 6px 6px;
+  border-bottom: 1px solid var(--border-soft);
+  text-align: left;
+  vertical-align: top;
+}
+
+.takeoff-object-table thead th {
+  padding-top: 4px;
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.takeoff-object-name {
+  min-width: 140px;
+  font-weight: 400;
+}
+
+.takeoff-object-name .category-name {
+  width: 100%;
+}
+
+.takeoff-object-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted-2);
+  font-size: 10px;
+}
+
+.takeoff-object-meta.is-default {
+  color: var(--accent-strong);
+}
+
+.takeoff-object-unit,
+.takeoff-object-applies {
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.takeoff-object-applies {
+  max-width: 160px;
+  white-space: normal;
+}
+
+.takeoff-object-glyph {
+  min-width: 130px;
+}
+
+.takeoff-object-symbol {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--muted);
+}
+
+.takeoff-object-pieces .takeoff-object-hint {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted-2);
+  font-size: 10px;
+}
+
+.takeoff-object-quantity .category-overrides {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.takeoff-object-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  white-space: nowrap;
+}
+
+.takeoff-object-empty td {
+  color: var(--muted);
+  text-align: center;
+}
+
+.takeoff-objects .inline-confirm {
+  margin-top: 10px;
+}
+
+/* Fields tab */
+
+.takeoff-field-scope {
+  margin-top: 10px;
+}
+
+.takeoff-field-scope h4 {
+  margin: 0 0 2px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.takeoff-field-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.takeoff-field-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  padding: 4px 0;
+  border-bottom: 1px dashed var(--border-soft);
+}
+
+.takeoff-field-row:last-child {
+  border-bottom: 0;
+}
+
+.takeoff-field-name {
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.takeoff-field-meta {
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+.takeoff-field-empty,
+.takeoff-table-empty {
+  margin: 4px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+/* Tables tab */
+
+.takeoff-table-list {
+  margin: 6px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.takeoff-table-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--border-soft);
+}
+
+.takeoff-table-row:last-child {
+  border-bottom: 0;
+}
+
+.takeoff-table-name {
+  flex: 1 1 160px;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.takeoff-table-meta {
+  color: var(--muted-2);
+  font-size: 11px;
+}
+
+.takeoff-table-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.takeoff-tables .inline-confirm {
+  margin: 8px 0;
+}
+
+/* Cards tab */
+
+.takeoff-card-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.takeoff-card {
+  padding: 8px 10px;
+  border: 1px solid var(--border-soft);
+  border-radius: 6px;
+  background: var(--surface-inset);
+}
+
+.takeoff-card:focus-visible {
+  outline: 2px solid var(--accent-strong);
+  outline-offset: 1px;
+}
+
+.takeoff-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.takeoff-card-head h4 {
+  margin: 0;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.takeoff-card-feed {
+  margin-top: 6px;
+}
+
+.takeoff-card-feed h5 {
+  margin: 0 0 2px;
+  color: var(--muted-2);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.takeoff-card-feed-note {
+  margin: 2px 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.takeoff-card-feed-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 14px;
+  margin: 2px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.takeoff-card-toggle {
+  flex: 0 0 auto;
+}
+
+.takeoff-cards-later {
+  margin-top: 10px;
+}

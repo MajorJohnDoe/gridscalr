@@ -79,7 +79,7 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   types as pieces, with a separate quantity row per type.
 - Record your own property data on a measurement. Define text, number, number
   with unit, yes/no, date, single-choice and multi-choice fields in
-  **Project settings → Fields**, restrict a field to item kinds, categories or
+  **View → Takeoff settings… → Fields**, restrict a field to item kinds, categories or
   count types, mark it required, give it a default and group fields into named
   sets that fill their defaults in one action. Typed inputs validate inline, a
   stored value that no longer matches is reported instead of reinterpreted, and
@@ -407,7 +407,10 @@ The fields and spaces features in `src/features/fields/` and
 register and derived room areas; `src/features/schedules/` reads `spaceAreas()`
 rather than recomputing a room area. The schedule feature owns the live table,
 the builder, placement, the CSV round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and
-one shared layout for canvas and PDF. The CSV import is bounded to a UTF-8 file
+one shared layout for canvas and PDF. `src/features/takeoffSettings/` owns the
+Takeoff settings hub: one modal with the Objects, Fields, Tables and Cards tabs,
+the unified measured/counted object list, the card visibility switches and the
+**Fed by** lists. The CSV import is bounded to a UTF-8 file
 of 10 MB and 20 000 rows, updates existing rows by stable ID and applies as one
 undo step. `src/app/exportFlows.ts` writes the schedule CSV;
 `src/app/summaryFlow.ts` opens the import dialog.

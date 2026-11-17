@@ -24,17 +24,15 @@ try {
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await openDemoProject(page, { base: vite.base });
 
-  // Add a project count type through the real settings workflow.
-  await page.keyboard.press("Control+,");
-  const settings = page.getByRole("dialog", { name: "Project settings" });
-  await settings.waitFor();
-  await settings.getByRole("button", { name: "Quantities", exact: true }).click();
-  await settings.getByRole("button", { name: /Manage count types/ }).click();
-  const countTypes = page.getByRole("dialog", { name: "Count types" });
-  await countTypes.getByLabel("New count type name").waitFor();
-  await countTypes.getByLabel("New count type name").fill("Socket");
-  await countTypes.getByLabel("Glyph for the new count type").selectOption("fixture");
-  const addButton = countTypes.getByRole("button", { name: "Add", exact: true });
+  // Add a project count type through the real Takeoff settings workflow.
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Takeoff settings…" }).click();
+  const hub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await hub.waitFor();
+  await hub.getByLabel("New object name").waitFor();
+  await hub.getByLabel("New object name").fill("Socket");
+  await hub.getByLabel("Object type").selectOption("count");
+  const addButton = hub.getByRole("button", { name: "Add object", exact: true });
   await addButton.click();
   const socketInProject = () =>
     page.waitForFunction(
@@ -48,7 +46,7 @@ try {
   if (!added) {
     // A rare click can be lost on a busy CI runner. Refill and retry once;
     // the store check above tells us whether the first click landed.
-    await countTypes.getByLabel("New count type name").fill("Socket");
+    await hub.getByLabel("New object name").fill("Socket");
     await addButton.click();
   }
   await page.waitForFunction(
@@ -56,21 +54,20 @@ try {
     null,
     { timeout: 30000 },
   );
-  const socketName = countTypes.getByLabel("Count type name: Socket");
+  await hub.getByLabel("Glyph for Socket").selectOption("fixture");
+  const socketName = hub.getByLabel("Count type name: Socket");
   await socketName.waitFor();
   await socketName.fill("Power socket");
   await socketName.press("Enter");
-  await countTypes.getByLabel("Count type name: Power socket").waitFor();
+  await hub.getByLabel("Count type name: Power socket").waitFor();
 
   const customType = await page.evaluate(() =>
     window.__gridscalr.store.project.countTypes.find((entry) => entry.label === "Power socket"),
   );
   assert.ok(customType, "the custom count type should be stored in the project");
   assert.equal(customType.glyph, "fixture", "the selected glyph should be stored");
-  await countTypes.getByRole("button", { name: "Done" }).click();
-  await page.getByRole("dialog").waitFor();
   await page.keyboard.press("Escape");
-  await page.getByRole("dialog").waitFor({ state: "detached" });
+  await hub.waitFor({ state: "detached" });
 
   // Place two counts on a dedicated room so the quantity report is unambiguous.
   await page.keyboard.press("c");

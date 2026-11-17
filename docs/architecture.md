@@ -30,8 +30,8 @@ src/
   app/diagnosticsFlows.ts diagnostics text, copy and report flow
   app/recoveryHost.ts   session-recovery host wiring for autosave, leases and banners
   features/              feature modules; see docs/adr/0001-feature-modules.md
-  features/countTypes/index.ts public surface for the count-type management dialog
-  features/countTypes/ui.ts count-type management dialog
+  features/countTypes/index.ts public surface for the counted-object rows of the Takeoff settings hub
+  features/countTypes/ui.ts counted-object table rows: rename, glyph, usage and delete request
   features/projectPackage/model.ts package manifest validation, safe archive names and portable project paths
   features/projectPackage/controller.ts package creation and open-package flows, checksums and progress
   features/projectPackage/ui.ts package options, destination and progress dialogs
@@ -242,7 +242,7 @@ src/
   ui/windowChrome.ts     minimize, maximize and close controls for the custom title row
   ui/helpDialog.ts       bundled Markdown help, search, table of contents and image lightbox
   ui/settingsDialog.ts   settings dialog orchestrator
-  ui/settings/           project, storage, metadata, scale, units, labels, display, quantities, count types and stamps sections
+  ui/settings/           project, storage, metadata, scale, units, labels, display and stamps sections
   ui/settings/autosave.ts Preferences → Data autosave controls
   ui/settings/backups.ts Preferences → Data backup retention and manager entry
   source/sourceStatus.ts source drawing existence, size and checksum monitor with notify-on-change status sets
@@ -306,6 +306,14 @@ src/
   features/schedules/ui/panel.ts right-dock Takeoff tab with cards, chips, picker and empty state
   features/schedules/ui/builder.ts takeoff table builder with a live 20-row preview and one-undo save
   features/schedules/ui/panelTable.ts virtualised live table and the pure row window
+  features/takeoffSettings/index.ts public surface of the Takeoff settings hub
+  features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
+  features/takeoffSettings/ui/dialog.ts four-tab hub modal and the deep-link target
+  features/takeoffSettings/ui/objects.ts project defaults, Add object and the unified object table
+  features/takeoffSettings/ui/categoryRows.ts measured-object rows with rename, order and overrides
+  features/takeoffSettings/ui/fields.ts field and field-set list with the editor entry
+  features/takeoffSettings/ui/tables.ts saved table list, builder entry, duplicate and delete
+  features/takeoffSettings/ui/cards.ts four cards, visibility and Fed by lists
   app/summaryFlow.ts     Ctrl+Alt+S and the View → Takeoff action
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages

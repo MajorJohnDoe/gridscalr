@@ -15,7 +15,6 @@ export {
   openPlacementDialog,
   openRowRangeDialog,
   openScheduleBuilder,
-  openSummaryRolesDialog,
   placementMeasure,
   renderSummaryPanel,
   SCHEDULE_ROW_HEIGHT,
@@ -29,6 +28,6 @@ export {
   tableWindow,
   toggleSummary,
 } from "./ui";
-export type { PlacementHost, SummaryPanelFilters, SummaryPanelHost, SummaryRoleFocus } from "./ui";
+export type { PlacementHost, SummaryPanelFilters, SummaryPanelHost } from "./ui";
 export { cachedSummary, clearSummaryCache, computeSummary, summaryCacheKey } from "./summary";
 export type { SummaryCardValue, SummaryModel, SummaryTable, SummaryTableRow } from "./summary";

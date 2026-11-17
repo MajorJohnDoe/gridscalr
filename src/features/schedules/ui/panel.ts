@@ -3,6 +3,7 @@ import { spaceMeasurements } from "../../spaces";
 import type { PageId, PageSize, ScheduleFilter, SummaryCardId } from "../../../model/types";
 import { store } from "../../../state/store";
 import { el, option } from "../../../ui/dom";
+import { icon } from "../../../ui/icons";
 import { t, type MessageKey } from "../../../i18n";
 import { cachedSchedule, findSchedule, scheduleDisplayEntries } from "../model";
 import type { ScheduleResult, ScheduleRow } from "../model";
@@ -11,7 +12,6 @@ import { openScheduleBuilder } from "./builder";
 import { openPlacementDialog } from "./placement";
 import { summaryCardsElement } from "./panelCards";
 import { panelTable } from "./panelTable";
-import { openSummaryRolesDialog } from "./roles";
 import {
   setSummaryFilter,
   setSummarySelectedScheduleId,
@@ -35,6 +35,8 @@ export interface SummaryPanelHost {
   navigateToItem?: (pageId: PageId, layerId: string, itemId: string) => void;
   goToPage?: (page: number) => void;
   openSpaces?: () => void;
+  /** Opens the Takeoff settings hub on the Objects or Cards tab. */
+  openTakeoffSettings?: (tab: "objects" | "cards", focusId?: string) => void | Promise<void>;
   /** Page size for the default placement box; missing falls back to A3. */
   pageSize?: (page: number) => PageSize | undefined;
   /** Repaints the shell after a panel-level change. */
@@ -137,7 +139,7 @@ function configure(id: SummaryCardId, host: SummaryPanelHost): void {
     host.openSpaces?.();
     return;
   }
-  void openSummaryRolesDialog(id === "doors" ? "doors" : "walls").then(() => reschedule(host));
+  void Promise.resolve(host.openTakeoffSettings?.("cards", id)).then(() => reschedule(host));
 }
 
 function explainDisabled(button: HTMLButtonElement, reason: string): void {
@@ -258,14 +260,15 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   place.addEventListener("click", () => {
     if (schedule) void openPlacementDialog(schedule.id, host).then(() => reschedule(host));
   });
-  const roles = el("button", "btn btn-small btn-ghost", t("schedules.manageRoles"));
-  roles.type = "button";
-  roles.dataset.summaryFocus = "roles";
-  if (store.readOnly) explainDisabled(roles, readOnlyReason);
-  roles.addEventListener(
-    "click",
-    () => void openSummaryRolesDialog("walls").then(() => reschedule(host)),
-  );
+  const settings = el("button", "btn btn-small btn-ghost schedules-settings");
+  settings.type = "button";
+  settings.dataset.summaryFocus = "settings";
+  settings.title = t("takeoffSettings.openTitle");
+  settings.innerHTML = `${icon("settings", 13)}<span>${t("takeoffSettings.open")}</span>`;
+  const openSettings = () =>
+    void Promise.resolve(host.openTakeoffSettings?.("objects")).then(() => reschedule(host));
+  settings.addEventListener("click", openSettings);
+  if (store.readOnly) explainDisabled(settings, t("viewOnly.disabled"));
   const exportCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.export"));
   exportCsv.type = "button";
   exportCsv.dataset.summaryFocus = "export";
@@ -292,7 +295,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   importCsv.addEventListener("click", () => {
     if (schedule) host.importScheduleCsv?.(schedule.id);
   });
-  head.append(picker, add, edit, place, roles, exportCsv, importCsv);
+  head.append(picker, add, edit, place, settings, exportCsv, importCsv);
   root.append(head);
   if (reasons.length) {
     const reason = el("p", "schedules-action-reason", reasons.join(" "));
