@@ -8,14 +8,11 @@ import { scaleSection } from "./settings/scale";
 import { unitsSection } from "./settings/units";
 import { labelsSection } from "./settings/labels";
 import { displaySection } from "./settings/display";
-import { quantitiesSection } from "./settings/quantities";
-import { countTypesSection } from "./settings/countTypes";
 import { stampsSection } from "./settings/stamps";
-import { fieldsSettingsSection } from "../features/fields";
 import { categoryLayout } from "./settingsControls";
+import { openTakeoffSettingsDialog } from "../features/takeoffSettings";
 
-type SettingsCategory =
-  "project" | "report" | "measurements" | "display" | "quantities" | "fields" | "stamps";
+type SettingsCategory = "project" | "report" | "measurements" | "display" | "stamps";
 
 export function openSettingsDialog(initialCategory: SettingsCategory = "project"): void {
   if (!store.project) return;
@@ -41,20 +38,7 @@ export function openSettingsDialog(initialCategory: SettingsCategory = "project"
       {
         id: "display",
         label: t("settings.navDisplay"),
-        render: () => [displaySection()],
-      },
-      {
-        id: "quantities",
-        label: t("settings.quantitiesTitle"),
-        render: () => [
-          quantitiesSection(() => openSettingsDialog("quantities")),
-          countTypesSection(() => openSettingsDialog("quantities")),
-        ],
-      },
-      {
-        id: "fields",
-        label: t("settings.navFields"),
-        render: () => [fieldsSettingsSection(() => openSettingsDialog("fields"))],
+        render: () => [displaySection(() => void openTakeoffSettingsDialog())],
       },
       {
         id: "stamps",

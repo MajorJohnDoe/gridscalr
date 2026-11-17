@@ -1,12 +1,5 @@
 import { COUNT_GLYPHS } from "../../model/countSymbols";
-import type { CountGlyph } from "../../model/types";
-import { store } from "../../state/store";
-import { showModal } from "../../ui/dialogs";
-import { clear, el, option } from "../../ui/dom";
-import { icon } from "../../ui/icons";
-import { toast } from "../../ui/toast";
 import {
-  addCountType,
   countGlyphLabel,
   countTypeItemCount,
   countTypeLabel,
@@ -15,19 +8,33 @@ import {
   removeCountType,
   renameCountType,
 } from "../../model/countTypes";
+import type { CountGlyph } from "../../model/types";
+import { store } from "../../state/store";
+import { el, option } from "../../ui/dom";
+import { icon } from "../../ui/icons";
+import { toast } from "../../ui/toast";
 import { t } from "../../i18n";
 
-function iconButton(markup: string, label: string, onClick: () => void): HTMLButtonElement {
-  const node = el("button", "icon-btn category-action");
-  node.type = "button";
-  node.title = label;
-  node.setAttribute("aria-label", label);
-  node.innerHTML = markup;
-  node.addEventListener("click", onClick);
-  return node;
+/**
+ * The counted-object rows of the Takeoff settings hub. The rules stay in
+ * `src/model/countTypes.ts`; this module owns only the row presentation, so the
+ * hub and a future surface share one editor and one set of aria labels.
+ */
+
+export interface CountTypeRowOptions {
+  /** Repaints the Objects tab after a rename or glyph change. */
+  onChanged: () => void;
+  /** The hub owns the shared delete confirmation. */
+  onDelete: (id: string, label: string) => void;
+  /** Field labels whose applies-to rule names this count type. */
+  appliesTo: (id: string) => string[];
 }
 
-function glyphSelect(value: CountGlyph, label: string, onChange: (glyph: CountGlyph) => void) {
+function glyphSelect(
+  value: CountGlyph,
+  label: string,
+  onChange: (glyph: CountGlyph) => void,
+): HTMLSelectElement {
   const select = el("select", "select count-type-glyph");
   select.setAttribute("aria-label", label);
   for (const glyph of COUNT_GLYPHS) {
@@ -37,165 +44,81 @@ function glyphSelect(value: CountGlyph, label: string, onChange: (glyph: CountGl
   return select;
 }
 
-/**
- * Count-type management. Every mutation goes through one store mutation so a
- * rename, glyph change or deletion is one undo step.
- */
-export function openCountTypesDialog(): Promise<void> {
-  if (!store.project) return Promise.resolve();
+function commitRename(
+  id: string,
+  current: string,
+  input: HTMLInputElement,
+  onChanged: () => void,
+): void {
+  const project = store.project;
+  if (!project) return;
+  if (input.value.trim() === current) {
+    input.value = current;
+    return;
+  }
+  const error = countTypeNameError(project.countTypes, input.value, id);
+  if (error) {
+    toast(error, "warning");
+    input.value = current;
+    return;
+  }
+  store.mutate((next) => {
+    renameCountType(next, id, input.value);
+  }, "change");
+  onChanged();
+}
 
-  const body = el("div", "form-stack category-manager");
-  body.append(el("p", "modal-message", t("countTypeUi.intro")));
+/** One table row per project count type, in stored order. */
+export function countTypeObjectRows(options: CountTypeRowOptions): HTMLTableRowElement[] {
+  const project = store.project;
+  if (!project) return [];
+  return project.countTypes.map((type) => {
+    const label = countTypeLabel(project, type.id);
+    const builtIn = isBuiltInCountType(type.id);
+    const usage = countTypeItemCount(project, type.id);
 
-  const list = el("div", "category-list");
-  const confirm = el("div", "inline-confirm");
-  confirm.hidden = true;
+    const row = el("tr", "takeoff-object-row takeoff-object-counted");
+    row.dataset.objectId = type.id;
+    row.dataset.objectKind = "counted";
 
-  const addRow = el("div", "input-row");
-  const addInput = el("input", "input");
-  addInput.type = "text";
-  addInput.placeholder = t("countTypeUi.newCountType");
-  addInput.setAttribute("aria-label", t("countTypeUi.newName"));
-  let addGlyph: CountGlyph = "other";
-  const addGlyphSelect = glyphSelect("other", t("countTypeUi.newGlyph"), (glyph) => {
-    addGlyph = glyph;
-  });
-  const addButton = el("button", "btn btn-small", t("common.add"));
-  addButton.type = "button";
-  addRow.append(addInput, addGlyphSelect, addButton);
-
-  const add = () => {
-    const project = store.project;
-    if (!project) return;
-    const error = countTypeNameError(project.countTypes, addInput.value);
-    if (error) {
-      toast(error, "warning");
-      return;
-    }
-    let created = false;
-    store.mutate((current) => {
-      created = addCountType(current, addInput.value, addGlyph) !== null;
-    }, "change");
-    if (!created) {
-      toast(t("countTypeUi.addFailed"), "warning");
-      return;
-    }
-    addInput.value = "";
-    addGlyph = "other";
-    render();
-    addInput.focus();
-  };
-
-  addButton.addEventListener("click", add);
-  addInput.addEventListener("keydown", (event) => {
-    if (event.key === "Enter") {
-      event.preventDefault();
-      add();
-    }
-  });
-
-  body.append(list, addRow, confirm);
-
-  const hideConfirm = () => {
-    confirm.hidden = true;
-    clear(confirm);
-  };
-
-  const commitRename = (id: string, current: string, input: HTMLInputElement) => {
-    const project = store.project;
-    if (!project) return;
-    if (input.value.trim() === current) {
-      input.value = current;
-      return;
-    }
-    const error = countTypeNameError(project.countTypes, input.value, id);
-    if (error) {
-      toast(error, "warning");
-      input.value = current;
-      return;
-    }
-    store.mutate((next) => {
-      renameCountType(next, id, input.value);
-    }, "change");
-    render();
-  };
-
-  const requestDelete = (id: string, label: string) => {
-    const project = store.project;
-    if (!project) return;
-    const usage = countTypeItemCount(project, id);
-    const remove = () => {
-      let removed = false;
-      let reassigned = 0;
-      store.mutate((next) => {
-        const result = removeCountType(next, id);
-        removed = result.removed;
-        if (result.removed) reassigned = result.reassigned;
-      }, "change");
-      if (!removed) {
-        toast(t("countTypeUi.builtInCannotDelete"), "warning");
-        return;
-      }
-      toast(
-        reassigned > 0
-          ? t("countTypeUi.deletedMoved", { name: label, count: reassigned })
-          : t("countTypeUi.deleted", { name: label }),
-      );
-      render();
-    };
-
-    if (usage === 0) {
-      remove();
-      return;
-    }
-
-    clear(confirm);
-    confirm.hidden = false;
-    confirm.append(
-      el("p", "inline-confirm-text", t("countTypeUi.used", { name: label, count: usage })),
+    const nameCell = el("th", "takeoff-object-name");
+    nameCell.scope = "row";
+    const name = el("input", "input category-name");
+    name.type = "text";
+    name.value = label;
+    name.readOnly = builtIn;
+    name.setAttribute("aria-label", t("countTypeUi.nameAria", { name: label }));
+    name.addEventListener("change", () =>
+      commitRename(type.id, type.label, name, options.onChanged),
     );
-    const actions = el("div", "inline-confirm-actions");
-    const cancel = el("button", "btn btn-small btn-ghost", t("common.cancel"));
-    cancel.type = "button";
-    cancel.addEventListener("click", hideConfirm);
-    const deleteButton = el("button", "btn btn-small btn-danger", t("countTypeUi.deleteTitle"));
-    deleteButton.type = "button";
-    deleteButton.addEventListener("click", () => {
-      hideConfirm();
-      remove();
+    name.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        name.blur();
+      }
     });
-    actions.append(cancel, deleteButton);
-    confirm.append(actions);
-    deleteButton.focus();
-  };
+    nameCell.append(name);
 
-  const render = () => {
-    const project = store.project;
-    if (!project) return;
-    hideConfirm();
-    clear(list);
+    const typeCell = el("td");
+    typeCell.append(el("span", "status-chip", t("takeoffSettings.objects.counted")));
 
-    for (const type of project.countTypes) {
-      const row = el("div", "category-row");
-      const label = countTypeLabel(project, type.id);
-      const builtIn = isBuiltInCountType(type.id);
-      const name = el("input", "input category-name");
-      name.type = "text";
-      name.value = label;
-      name.readOnly = builtIn;
-      name.setAttribute("aria-label", t("countTypeUi.nameAria", { name: label }));
-      name.addEventListener("change", () => commitRename(type.id, type.label, name));
-      name.addEventListener("keydown", (event) => {
-        if (event.key === "Enter") {
-          event.preventDefault();
-          name.blur();
-        }
-      });
+    const glyphCell = el("td", "takeoff-object-glyph");
+    glyphCell.append(
+      el("span", "takeoff-object-symbol", countGlyphLabel(type.glyph)),
+      glyphSelect(type.glyph, t("countTypeUi.glyphAria", { name: label }), (value) => {
+        store.mutate((next) => {
+          const target = next.countTypes.find((entry) => entry.id === type.id);
+          if (target) target.glyph = value;
+        }, "change");
+        options.onChanged();
+      }),
+    );
 
-      const usage = countTypeItemCount(project, type.id);
-      const meta = el(
+    const piecesCell = el("td", "takeoff-object-pieces");
+    piecesCell.append(
+      el(
         "span",
-        "category-meta",
+        "takeoff-object-meta",
         builtIn
           ? usage > 0
             ? t("countTypeUi.builtInUsage", { count: usage })
@@ -203,40 +126,39 @@ export function openCountTypesDialog(): Promise<void> {
           : usage > 0
             ? t("countTypeUi.usage", { count: usage })
             : t("countTypeUi.unused"),
-      );
+      ),
+      el("span", "takeoff-object-hint", t("takeoffSettings.objects.piecesHint")),
+    );
 
-      const glyph = glyphSelect(
-        type.glyph,
-        t("countTypeUi.glyphAria", { name: label }),
-        (value) => {
-          store.mutate((next) => {
-            const target = next.countTypes.find((entry) => entry.id === type.id);
-            if (target) target.glyph = value;
-          }, "change");
-        },
-      );
+    const labels = options.appliesTo(type.id);
+    const appliesCell = el("td", "takeoff-object-applies");
+    appliesCell.textContent = labels.length
+      ? labels.join(", ")
+      : t("takeoffSettings.objects.appliesAll");
 
-      const actions = el("div", "category-row-actions");
-      const remove = iconButton(
-        icon("trash", 14),
-        t("countTypeUi.deleteAria", { name: label }),
-        () => requestDelete(type.id, label),
-      );
-      remove.disabled = builtIn;
-      actions.append(remove);
+    const actions = el("td", "takeoff-object-actions");
+    const remove = el("button", "icon-btn category-action");
+    remove.type = "button";
+    remove.title = t("countTypeUi.deleteAria", { name: label });
+    remove.setAttribute("aria-label", t("countTypeUi.deleteAria", { name: label }));
+    remove.innerHTML = icon("trash", 14);
+    remove.disabled = builtIn;
+    remove.addEventListener("click", () => options.onDelete(type.id, label));
+    actions.append(remove);
 
-      row.append(name, glyph, meta, actions);
-      list.append(row);
-    }
-  };
+    row.append(nameCell, typeCell, glyphCell, piecesCell, appliesCell, actions);
+    return row;
+  });
+}
 
-  render();
-
-  return showModal({
-    title: t("countTypeUi.title"),
-    subtitle: t("countTypeUi.subtitle"),
-    body,
-    wide: true,
-    actions: [{ label: t("countTypeUi.done"), value: "done", primary: true }],
-  }).then(() => undefined);
+/** Removes one custom type in one undo step; returns the reassigned count. */
+export function deleteCountType(id: string): { removed: boolean; reassigned: number } {
+  let removed = false;
+  let reassigned = 0;
+  store.mutate((next) => {
+    const result = removeCountType(next, id);
+    removed = result.removed;
+    if (result.removed) reassigned = result.reassigned;
+  }, "change");
+  return { removed, reassigned };
 }

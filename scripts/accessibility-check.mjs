@@ -20,9 +20,11 @@ import {
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
+  openTakeoffSettings,
   seedCustomField,
   seedSchedules,
   seedSpaces,
+  setLanguage,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -43,6 +45,21 @@ const port = Number(process.env.GRIDSCALR_A11Y_PORT ?? 1436);
 
 const checks = a11ySurfaceChecks();
 const results = new Map();
+
+/** The hub tabs are inspected through their index so the pass is locale-free. */
+const HUB_TABS = [
+  { index: 0, id: "takeoff-objects", label: "Takeoff settings Objects tab" },
+  { index: 1, id: "takeoff-fields", label: "Takeoff settings Fields tab" },
+  { index: 2, id: "takeoff-tables", label: "Takeoff settings Tables tab" },
+  { index: 3, id: "takeoff-cards", label: "Takeoff settings Cards tab" },
+];
+const swedishChecks = HUB_TABS.map((entry) => ({
+  key: `sv:${entry.id}`,
+  theme: "sv",
+  themeLabel: "Swedish",
+  surface: entry.id,
+  surfaceLabel: entry.label,
+}));
 let browser;
 let vite;
 
@@ -182,8 +199,8 @@ try {
     );
 
     // The right-dock Takeoff tab, the takeoff table builder it opens and
-    // the card-sources dialog behind a Configure action.
-    const summary = await openSummaryTab(page);
+    // the Takeoff settings hub at the end of the theme pass.
+    await openSummaryTab(page);
     await analyze(page, checkFor(theme, "summary"), ".schedules-panel");
 
     // Place-on-drawing dialog, then the placed-table inspector section.
@@ -193,15 +210,6 @@ try {
     await analyze(page, placementCheck, ".modal");
     await page.keyboard.press("Escape");
     await placement.waitFor({ state: "detached" });
-
-    await summary.getByRole("button", { name: "Card sources…" }).click();
-    const roles = page.getByRole("dialog", { name: "Card sources" });
-    await roles.waitFor();
-    const rolesCheck = checkFor(theme, "schedule-roles");
-    await expectFocusInside(page, ".modal", rolesCheck);
-    await analyze(page, rolesCheck, ".modal");
-    await page.keyboard.press("Escape");
-    await roles.waitFor({ state: "detached" });
 
     const builder = await openScheduleBuilder(page);
     const builderCheck = checkFor(theme, "schedule-builder");
@@ -219,18 +227,44 @@ try {
 
     await openPlacedTableInspector(page);
     await analyze(page, checkFor(theme, "schedule-inspector"), ".selection-section");
+
+    // The Takeoff settings hub, one tab at a time.
+    for (const entry of HUB_TABS) {
+      const hub = await openTakeoffSettings(page, entry.index);
+      const check = checkFor(theme, entry.id);
+      await expectFocusInside(page, ".modal", check);
+      await analyze(page, check, ".modal");
+      await page.keyboard.press("Escape");
+      await hub.waitFor({ state: "detached" });
+    }
+    // The hub is opened from the Takeoff tab; return the inspector to
+    // Properties so the next theme starts from the same state.
+    await openPlacedTableInspector(page);
   }
+
+  // The same four tabs in Swedish, so a localized label that clips or breaks a
+  // name cannot pass on the English pass alone.
+  await setLanguage(page, "sv");
+  for (const check of swedishChecks) {
+    const entry = HUB_TABS.find((tab) => tab.id === check.surface);
+    const hub = await openTakeoffSettings(page, entry.index);
+    await expectFocusInside(page, ".modal", check);
+    await analyze(page, check, ".modal");
+    await page.keyboard.press("Escape");
+    await hub.waitFor({ state: "detached" });
+  }
+  await setLanguage(page, "en");
 
   assert.deepEqual(pageErrors, [], "the accessibility run should not raise page errors");
   assert.equal(
     results.size,
-    checks.length,
-    `${checks.length} palette/surface checks were expected, ${results.size} ran`,
+    checks.length + swedishChecks.length,
+    `${checks.length + swedishChecks.length} palette/surface checks were expected, ${results.size} ran`,
   );
 
   let failing = 0;
   let reported = 0;
-  for (const check of checks) {
+  for (const check of [...checks, ...swedishChecks]) {
     const result = results.get(check.key);
     assert.ok(result, `${check.themeLabel} ${check.surfaceLabel}: the surface was not checked`);
     failing += result.failing.length;
@@ -248,7 +282,7 @@ try {
     }
   }
 
-  const matrix = `${A11Y_THEMES.length} palettes × ${A11Y_SURFACES.length} surfaces`;
+  const matrix = `${A11Y_THEMES.length} palettes × ${A11Y_SURFACES.length} surfaces plus ${swedishChecks.length} Swedish hub tabs`;
   if (failing > 0) {
     console.error(
       `Accessibility gate failed: ${failing} serious/critical violation(s) across ${matrix}.`,
@@ -256,7 +290,7 @@ try {
     process.exitCode = 1;
   } else {
     console.log(
-      `Accessibility gate passed: ${matrix} (${checks.length} checks), no ` +
+      `Accessibility gate passed: ${matrix} (${checks.length + swedishChecks.length} checks), no ` +
         `${A11Y_FAIL_IMPACTS.join("/")} violations (${reported} lower-impact finding(s) reported).`,
     );
   }

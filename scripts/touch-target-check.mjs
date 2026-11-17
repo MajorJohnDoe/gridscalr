@@ -17,9 +17,11 @@ import {
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
+  openTakeoffSettings,
   seedCustomField,
   seedSchedules,
   seedSpaces,
+  setLanguage,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -154,7 +156,7 @@ try {
   await openMarkupsItem(page, "item_floor_living");
   await collect("fields-inspector", ".selection-section");
 
-  const summary = await openSummaryTab(page);
+  await openSummaryTab(page);
   await collect("summary", ".schedules-panel");
   const placement = await openSchedulePlacementDialog(page);
   await collect("schedule-placement", ".modal");
@@ -168,14 +170,24 @@ try {
   await collect("schedule-csv", ".modal");
   await page.keyboard.press("Escape");
   await csv.waitFor({ state: "detached" });
-  await summary.getByRole("button", { name: "Card sources…" }).click();
-  const roles = page.getByRole("dialog", { name: "Card sources" });
-  await roles.waitFor();
-  await collect("schedule-roles", ".modal");
-  await page.keyboard.press("Escape");
-  await roles.waitFor({ state: "detached" });
   await openPlacedTableInspector(page);
   await collect("schedule-inspector", ".selection-section");
+
+  const HUB_TABS = ["takeoff-objects", "takeoff-fields", "takeoff-tables", "takeoff-cards"];
+  for (const [index, surface] of HUB_TABS.entries()) {
+    const hub = await openTakeoffSettings(page, index);
+    await collect(surface, ".modal");
+    await page.keyboard.press("Escape");
+    await hub.waitFor({ state: "detached" });
+  }
+  await setLanguage(page, "sv");
+  for (const [index, surface] of HUB_TABS.entries()) {
+    const hub = await openTakeoffSettings(page, index);
+    await collect(`${surface}-sv`, ".modal");
+    await page.keyboard.press("Escape");
+    await hub.waitFor({ state: "detached" });
+  }
+  await setLanguage(page, "en");
 
   await page.getByRole("menuitem", { name: "Settings" }).click();
   await page.getByRole("menuitem", { name: "Preferences…" }).click();

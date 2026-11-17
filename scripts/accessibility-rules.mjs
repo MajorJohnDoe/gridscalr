@@ -24,7 +24,10 @@ export const A11Y_SURFACES = [
   { id: "schedule-inspector", label: "Placed table inspector section" },
   { id: "schedule-builder", label: "Takeoff table builder dialog" },
   { id: "schedule-csv", label: "Takeoff table CSV import dialog" },
-  { id: "schedule-roles", label: "Card sources dialog" },
+  { id: "takeoff-objects", label: "Takeoff settings Objects tab" },
+  { id: "takeoff-fields", label: "Takeoff settings Fields tab" },
+  { id: "takeoff-tables", label: "Takeoff settings Tables tab" },
+  { id: "takeoff-cards", label: "Takeoff settings Cards tab" },
 ];
 
 /**

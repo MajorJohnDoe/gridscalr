@@ -15,9 +15,11 @@ import {
   openSchedulePlacementDialog,
   openSpacesRegister,
   openSummaryTab,
+  openTakeoffSettings,
   seedCustomField,
   seedSchedules,
   seedSpaces,
+  setLanguage,
   settlePage,
   startVite,
 } from "./ui-harness.mjs";
@@ -205,6 +207,20 @@ try {
       () => openScheduleCsvImport(page),
       "Import takeoff table CSV",
     );
+    // The Takeoff settings hub in both locales; the tab is selected by index so
+    // the check does not depend on a translated label.
+    for (const [index, name] of ["Objects", "Fields", "Tables", "Cards"].entries()) {
+      await assertDialogFits(page, `${viewport.label} Takeoff settings ${name}`, () =>
+        openTakeoffSettings(page, index),
+      );
+    }
+    await setLanguage(page, "sv");
+    for (const [index, name] of ["Objekt", "Fält", "Schema", "Kort"].entries()) {
+      await assertDialogFits(page, `${viewport.label} Mängdning ${name}`, () =>
+        openTakeoffSettings(page, index),
+      );
+    }
+    await setLanguage(page, "en");
     await openSummaryTab(page);
     const summaryShell = await readShell(page, `${viewport.label} Takeoff tab`);
     const placement = await assertDialogFits(

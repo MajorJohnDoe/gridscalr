@@ -2,7 +2,6 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   openScheduleBuilder,
-  openSummaryRolesDialog,
   renderSummaryPanel,
   setCategorySummaryRole,
   setCountTypeSummaryRole,
@@ -208,14 +207,19 @@ describe("summary panel", () => {
     const project = makeProject();
     lengthItem(project, { label: "Wall A" });
     store.setProject(project, null);
-    const { container } = mountPanel();
+    const calls: Array<[string, string | undefined]> = [];
+    const { container } = mountPanel({
+      openTakeoffSettings: (tab, focusId) => {
+        calls.push([tab, focusId]);
+      },
+    });
     const wallCard = container.querySelector(".schedules-card-wallLength")!;
     expect(wallCard.querySelector(".schedules-card-value")?.textContent).toBe("0");
     expect(wallCard.textContent).toContain("No category is set as a wall");
     const configure = wallCard.querySelector<HTMLButtonElement>(".schedules-card-configure");
     expect(configure).toBeTruthy();
     configure!.click();
-    expect(document.querySelector(".modal .schedules-roles")).toBeTruthy();
+    expect(calls).toEqual([["cards", "wallLength"]]);
   });
 
   it("switches to a stored schedule and navigates to a row", () => {
@@ -446,25 +450,20 @@ describe("schedule builder", () => {
   });
 });
 
-describe("summary roles", () => {
-  it("sets a wall and a door role in one undo step each", async () => {
+describe("takeoff settings gear", () => {
+  it("opens the hub from the panel toolbar", () => {
     const project = makeProject();
     store.setProject(project, null);
-    const done = openSummaryRolesDialog("walls");
-    const wall = project.categories.find((category) => category.name === "Wall")!;
-    const wallSelect = labelled<HTMLSelectElement>("Card source for Wall")!;
-    setValue(wallSelect, "wall");
-    expect(wall.summaryRole).toBe("wall");
-    store.undo();
-    expect(
-      store.project!.categories.find((category) => category.id === wall.id)?.summaryRole,
-    ).toBeUndefined();
-
-    const doorSelect = labelled<HTMLSelectElement>("Card source for Door")!;
-    setValue(doorSelect, "door");
-    expect(store.project!.countTypes.find((type) => type.id === "door")?.summaryRole).toBe("door");
-    button("Close")!.click();
-    await done;
+    const calls: Array<[string, string | undefined]> = [];
+    const { container } = mountPanel({
+      openTakeoffSettings: (tab, focusId) => {
+        calls.push([tab, focusId]);
+      },
+    });
+    const settings = container.querySelector<HTMLButtonElement>(".schedules-settings")!;
+    expect(settings).toBeTruthy();
+    settings.click();
+    expect(calls).toEqual([["objects", undefined]]);
   });
 });
 

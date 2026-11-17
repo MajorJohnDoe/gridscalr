@@ -7,6 +7,7 @@ import { findItem, isMeasurementKind } from "../../model/layers";
 import type { AreaMode, CountType } from "../../model/types";
 import { formatNumber } from "../../model/units";
 import { store } from "../../state/store";
+import { openTakeoffSettingsDialog } from "../../features/takeoffSettings";
 import { el, option } from "../dom";
 import { toast } from "../toast";
 import type { InspectorContext } from "./context";
@@ -131,6 +132,19 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       typeField.append(typeSelect);
       section.append(typeField);
 
+      const editType = el(
+        "button",
+        "btn btn-small btn-ghost takeoff-edit-object",
+        t("takeoffSettings.inspector.editObject", {
+          name: countTypeLabel(project, item.countType),
+        }),
+      );
+      editType.type = "button";
+      editType.addEventListener("click", () => {
+        void openTakeoffSettingsDialog({ tab: "objects", focusId: item.countType ?? "other" });
+      });
+      section.append(editType);
+
       const quantityField = el("label", "field");
       quantityField.append(el("span", "field-label", t("inspector.piecesPerObject")));
       const quantityInput = el("input", "input");
@@ -183,6 +197,20 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
     });
     categoryField.append(categorySelect);
     section.append(categoryField);
+
+    const editCategory = el(
+      "button",
+      "btn btn-small btn-ghost takeoff-edit-object",
+      t("takeoffSettings.inspector.editObject", {
+        name: currentCategory?.name ?? t("takeoffSettings.inspector.unknownObject"),
+      }),
+    );
+    editCategory.type = "button";
+    editCategory.addEventListener("click", () => {
+      if (!currentCategory) return;
+      void openTakeoffSettingsDialog({ tab: "objects", focusId: currentCategory.id });
+    });
+    section.append(editCategory);
 
     if (item.kind === "area") {
       const modeField = el("label", "field");

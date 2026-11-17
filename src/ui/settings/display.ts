@@ -3,7 +3,12 @@ import { store } from "../../state/store";
 import { el } from "../dom";
 import { checkRow, field, section } from "../settingsControls";
 
-export function displaySection(): HTMLElement {
+/**
+ * Display and snapping. The KPI cards moved to the Takeoff settings hub in
+ * Phase 2, so this section keeps one link row rather than a second set of card
+ * controls.
+ */
+export function displaySection(onOpenTakeoffSettings: () => void): HTMLElement {
   const project = store.project!;
   const wrap = section(t("settings.displayTitle"));
   wrap.append(
@@ -46,23 +51,11 @@ export function displaySection(): HTMLElement {
   range.append(input, readout);
   wrap.append(snapField);
 
-  const summary = section(t("settings.summaryCardsTitle"), t("settings.summaryCardsNote"));
-  for (const card of [
-    { id: "rooms" as const, label: t("settings.summaryCardRooms") },
-    { id: "area" as const, label: t("settings.summaryCardArea") },
-    { id: "wallLength" as const, label: t("settings.summaryCardWallLength") },
-    { id: "doors" as const, label: t("settings.summaryCardDoors") },
-  ]) {
-    const visible = project.settings.summary.cards.find((entry) => entry.id === card.id)?.visible;
-    summary.append(
-      checkRow(card.label, visible !== false, (checked) => {
-        store.mutate((current) => {
-          const target = current.settings.summary.cards.find((entry) => entry.id === card.id);
-          if (target) target.visible = checked;
-        }, "change");
-      }),
-    );
-  }
-  wrap.append(summary);
+  const takeoff = section(t("takeoffSettings.link.title"), t("takeoffSettings.link.note"));
+  const open = el("button", "btn btn-small", t("takeoffSettings.link.action"));
+  open.type = "button";
+  open.addEventListener("click", onOpenTakeoffSettings);
+  takeoff.append(open);
+  wrap.append(takeoff);
   return wrap;
 }
