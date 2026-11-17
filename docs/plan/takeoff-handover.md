@@ -364,3 +364,142 @@ The final CI run on the review-fix head is recorded in the PR.
 create the standard table only on an explicit action, offer create and
 create-and-place in the preview, and keep create-and-place to one undo step. No
 schema change is expected.
+
+## Phase 3 — standard table on first placement
+
+- **Issue:** [#302](https://github.com/MajorJohnDoe/gridscalr/issues/302)
+- **PR:** [#311](https://github.com/MajorJohnDoe/gridscalr/pull/311), opened from
+  `feat/standard-takeoff-table`.
+- **Branch:** `feat/standard-takeoff-table`
+- **Verified head SHA:** `ea37052` (implementation `9671e82`, documentation
+  `747135f`, handover `e431007`, module-note correction `0865e22`, conductor
+  review fix `ea37052`). The docs-only handover update that carries this line
+  follows it and changes no code; the final PR head is verified by the conductor.
+- **Merge commit:** pending.
+- **Status:** open, awaiting conductor verification. No schema change, no app
+  version bump, no tag, release or `site/` change.
+
+### Completed work
+
+- When the project has no saved takeoff table, the Takeoff tab renders the
+  labelled **Preview – cannot be placed** state with two actions: **Create
+  takeoff table** and **Create takeoff table and place…**. Both are disabled with
+  the existing view-only reason and `aria-describedby` in a read-only session.
+- When the project has saved takeoff tables, the tab opens on the first one in
+  session state, so the live table renders and **Place on drawing…**, **Edit
+  takeoff table…** and **Export CSV…** are enabled. The selection never writes
+  the project, never marks it dirty and adds no undo step. Choosing the built-in
+  preview from the picker still shows the built-in table with the disabled reason
+  to select a saved table, but with no standard-table create block.
+- Opening the tab still writes nothing: no schedule, no revision bump, no dirty
+  flag and no undo entry, asserted on the serialized project and the store.
+- `standardScheduleDraft()` in the schedule model builds the localized
+  **Standard** table: measurement source, one row per item, columns
+  **Object / Count / Unit / Value**, no filters, grouping, sorting or totals. It
+  is an ordinary `ScheduleDefinition` with no standard flag and no new persisted
+  field, so the builder can rename it and change every rule.
+- **Create takeoff table** adds the table and selects it in one `store.mutate`
+  call; one undo removes it. **Create takeoff table and place…** collects the
+  existing placement dialog's answers first, then creates the table and the
+  placement in one mutation, selects the table and the placed item, and reports
+  **Standard takeoff table created.** Cancelling the dialog writes nothing.
+- Placement keeps the existing draw-layer rule: the active draw layer, an
+  existing draw layer, or a new draw layer named **Takeoff tables**. A
+  measurement layer is never used, including when the active layer is a
+  measurement layer and no draw layer exists.
+- After creation the table is selected, so **Place on drawing…**, **Edit takeoff
+  table…** and **Export CSV…** are enabled with no reason paragraph.
+  **Import CSV…** keeps the existing one-row-per-item rule.
+- The standard table appears in the Takeoff settings → Tables tab and opens in
+  the builder with its four columns.
+- A new `ui/panelNotice.ts` owns the preview block, the empty-rows hint and the
+  shared disabled-reason helper, so `ui/panel.ts` stays under its line budget
+  and the notice stays one module.
+
+### Modules
+
+- `src/features/schedules/model/definition.ts` (`standardScheduleDraft`),
+  `model.ts`, `index.ts`
+- `src/features/schedules/ui/placement.ts` (`placementOptions` collector,
+  `createStandardSchedule`, `createAndPlaceStandardSchedule`), `ui.ts`
+- `src/features/schedules/ui/panelNotice.ts` (new), `ui/panel.ts`, `ui/state.ts`
+- `src/styles/schedules.css`
+- `src/i18n/locales/en.json`, `sv.json`, `src/i18n/types.generated.ts`
+- `tests/scheduleStandardTable.test.ts` (new), `tests/schedulesUi.test.ts`
+- `tests/visual/count-types.png`
+- `docs/user-guide.md`, `docs/plan/takeoff-handover.md`
+
+### Decisions
+
+- **The placement dialog is split into an options collector and a write.** The
+  dialog no longer mutates when it closes; it resolves the page, width, row
+  range, header and totals choices, and the caller writes. That is what makes
+  create-and-place one mutation and makes Cancel write nothing, without a new
+  placement engine.
+- **The create actions live where placement already lives.** The standard-table
+  factory is pure model code; the two actions and the selection side effect are
+  in `ui/placement.ts`, which already owns the placement lifecycle and the
+  localized draw-layer name.
+- **Object and Count are stored column labels.** The first column is the item
+  `label` field and the second the `countQuantity` field; both carry the
+  localized **Object** / **Count** header so the standard table reads as the
+  plan specifies while remaining an ordinary editable definition.
+- **The no-table preview is keyed on the saved-table count, not the session
+  selection.** Zero saved tables shows the preview with both create actions. Saved
+  tables with no selection auto-select the first in session state, so the live
+  table is shown without offering a duplicate standard table. An explicit pick of
+  the built-in option keeps the built-in table and its disabled reason, and never
+  shows the standard-table create block.
+- **The live table's row links meet the 24 px touch minimum.** Now that the
+  Takeoff tab can open on a live table, the row link gained a 24 px hit area with
+  compensating negative block margin so the row height stays within the
+  virtualiser's estimate.
+- **One existing test changed meaning.** The Phase 1 test that clicked **Create
+  takeoff table** expected the builder to open; it now asserts the two preview
+  actions and that nothing is written on open. Creation is covered by the new
+  suite.
+
+### Findings
+
+- The `count-types.png` visual baseline changed twice: first because the Takeoff
+  tab behind the masked Takeoff settings dialog showed the second preview action,
+  then because the tab now opens on the first saved table (with the 24 px row
+  link). Both captures were inspected before they were committed; the rest of the
+  shell and the masked area are byte-identical.
+- The conductor review found the no-table preview was keyed on the session
+  selection instead of the saved-table count, so a non-empty project could invite
+  a duplicate standard table and left Place/Edit/CSV disabled. Fixed in
+  `ea37052`; tests cover zero tables, auto-selection without a write and the
+  explicit built-in pick without a create block.
+- No other out-of-scope finding was added to `docs/plan/foundation-findings.md`.
+- The Phase 2 "Next phase" paragraph in this file is missing its heading and has
+  a run-on link; it is left untouched to preserve the Phase 2 record.
+
+### Checks
+
+Local gate on `ea37052` (implementation + review fix; documentation `747135f`):
+
+- `check:versions` (0.29.0), `check:file-budgets` (610 files; `panel.ts` reduced,
+  `placement.ts` and `definition.ts` under 400 lines), `check:modules` (21
+  foundation features), `check:security`, `check:actions`, `check:dependencies`
+  (six accepted advisories, none unaccepted), `check:docs` (only the expected
+  stale-screenshot warning), `format:check`, `lint`, `check:i18n` (3 574 keys),
+  `check:themes`, `npx tsc --noEmit`
+- `npx vitest run`: 174 files, 1 743 tests passed (three new selection tests)
+- `test:ui`, `test:visual` (`count-types.png` updated and re-verified at 0
+  differing pixels), `test:a11y` (5 palettes × 18 surfaces plus 4 Swedish hub
+  tabs, 94 checks, no serious or critical), `test:touch-targets` (743 controls,
+  22 surfaces), `test:ui-scale` (100/150/200 %), `test:docs-capture` (35
+  screenshots in a temporary folder, `docs/screenshots/` untouched)
+
+CI is authoritative on the PR head and is recorded in the PR.
+
+### Conductor verification
+
+Conductor verification: pending
+
+### Next phase
+
+Phase 4 — [Documentation and screenshots #303](https://github.com/MajorJohnDoe/gridscalr/issues/303):
+user guide, workflows, limitations, README, AGENTS map and shortcut tables,
+recaptured screenshots and a release-notes draft. No version bump, tag or release.

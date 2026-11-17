@@ -15,6 +15,8 @@ export interface SummaryPanelFilters {
 let open = false;
 let projectId: string | null = null;
 let selectedScheduleId: string | null = null;
+/** True when the picker's built-in preview was chosen explicitly. */
+let builtInSelected = false;
 let filters: SummaryPanelFilters = { pageId: null, categoryId: null, spaceId: null };
 
 export function isSummaryOpen(): boolean {
@@ -34,6 +36,7 @@ export function syncSummaryProject(id: string | null): void {
   if (id === projectId) return;
   projectId = id;
   selectedScheduleId = null;
+  builtInSelected = false;
   filters = { pageId: null, categoryId: null, spaceId: null };
 }
 
@@ -43,6 +46,20 @@ export function summarySelectedScheduleId(): string | null {
 
 export function setSummarySelectedScheduleId(id: string | null): void {
   selectedScheduleId = id;
+  if (id) builtInSelected = false;
+}
+
+/**
+ * The picker's built-in preview was chosen explicitly. It only shows the
+ * built-in table; it does not offer to create another takeoff table.
+ */
+export function selectSummaryBuiltIn(): void {
+  selectedScheduleId = null;
+  builtInSelected = true;
+}
+
+export function summaryBuiltInSelected(): boolean {
+  return builtInSelected;
 }
 
 export function summaryPanelFilters(): SummaryPanelFilters {

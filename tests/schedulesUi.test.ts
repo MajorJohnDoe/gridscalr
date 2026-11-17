@@ -273,7 +273,7 @@ describe("summary panel", () => {
     expect(button("New takeoff table…", container)).toBeTruthy();
   });
 
-  it("labels the built-in table as a preview and offers the create action", () => {
+  it("labels the built-in table as a preview and offers both create actions", () => {
     const project = makeProject();
     lengthItem(project, { label: "Wall A" });
     store.setProject(project, null);
@@ -283,12 +283,15 @@ describe("summary panel", () => {
     expect(container.querySelector(".schedules-preview-title")?.textContent).toBe(
       "Preview – cannot be placed",
     );
-    const create = container.querySelector<HTMLButtonElement>(".schedules-preview .btn-primary")!;
+    const create = container.querySelector<HTMLButtonElement>(
+      '[data-summary-focus="preview-create"]',
+    )!;
     expect(create.textContent).toBe("Create takeoff table");
-    create.click();
-    expect(document.querySelector(".modal")?.textContent).toContain("New takeoff table");
+    const createPlace = container.querySelector<HTMLButtonElement>(
+      '[data-summary-focus="preview-create-place"]',
+    )!;
+    expect(createPlace.textContent).toBe("Create takeoff table and place…");
     expect(project.schedules).toHaveLength(0);
-    closeActiveModal();
   });
 
   it("states why the takeoff actions are disabled", () => {
@@ -301,6 +304,12 @@ describe("summary panel", () => {
       importScheduleCsv: () => undefined,
     });
 
+    // A saved table exists, so the tab opens on the first one with live actions.
+    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
+    expect(picker.value).toBe("sched_ui");
+    expect(container.querySelector(".schedules-action-reason")).toBeNull();
+    // Choosing the built-in preview explicitly restores the disabled reason.
+    setValue(picker, "");
     const reason = container.querySelector(".schedules-action-reason")!;
     const noTable = "Select a saved takeoff table to edit, place, export or import it.";
     expect(reason.textContent).toBe(noTable);
@@ -309,7 +318,6 @@ describe("summary panel", () => {
     expect(edit.title).toBe(noTable);
     expect(edit.getAttribute("aria-describedby")).toBe(reason.id);
 
-    const picker = container.querySelector<HTMLSelectElement>(".schedules-schedule-select")!;
     setValue(picker, "sched_ui");
     expect(container.querySelector(".schedules-action-reason")).toBeNull();
     const enabledEdit = container.querySelector<HTMLButtonElement>('[data-summary-focus="edit"]')!;

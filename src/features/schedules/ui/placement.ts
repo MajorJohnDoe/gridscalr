@@ -1,6 +1,6 @@
 import { t } from "../../../i18n";
 import { pageDisplayName, pageNumber } from "../../../model/pages";
-import type { PageId, PageSize } from "../../../model/types";
+import type { PageId, PageSize, ScheduleDefinition } from "../../../model/types";
 import { findItem } from "../../../model/layers";
 import { store } from "../../../state/store";
 import { showModal } from "../../../ui/dialogs";
@@ -9,14 +9,16 @@ import { toast } from "../../../ui/toast";
 import { TEXT_FONT_STACK } from "../../../model/text";
 import type { MeasureText } from "../layout";
 import { estimateTextWidth } from "../layout";
-import { findSchedule } from "../model";
+import { createSchedule, findSchedule, standardScheduleDraft } from "../model";
 import { createPlacement, updatePlacement, type PlacementResult } from "../placement";
+import { setSummarySelectedScheduleId } from "./state";
 
 /**
  * Placement dialogs: **Place on drawing…** from the Takeoff tab and the
- * takeoff table list, and **Change row range…** from the inspector or the context
- * menu. Both write one store mutation, so a placement or a range change is one
- * undo step.
+ * takeoff table list, **Change row range…** from the inspector or the context
+ * menu, and the standard-table actions of the empty Takeoff tab. Placement
+ * options are collected before anything is written, so create-and-place is one
+ * store mutation and cancelling writes nothing.
  */
 
 const MM_PER_POINT = 25.4 / 72;
@@ -25,6 +27,18 @@ export interface PlacementHost {
   goToPage?: (page: number) => void;
   refresh?: () => void;
   pageSize?: (page: number) => PageSize | undefined;
+}
+
+/** The placement dialog's answers, collected before anything is stored. */
+export interface PlacementOptions {
+  pageId: PageId;
+  /** Box width in page points. */
+  width: number;
+  rowStart: number;
+  rowLimit: number | null;
+  showHeader: boolean;
+  showTotals: boolean;
+  pageSize?: PageSize;
 }
 
 /** Canvas-backed text metrics for the inspector's overflow warning. */
@@ -70,14 +84,19 @@ function checkRow(
   return { row, input };
 }
 
-export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}): Promise<void> {
+/**
+ * Collects the placement answers for a named table without writing anything.
+ * The schedule does not need to exist yet, so create-and-place can reuse it.
+ */
+function placementOptions(
+  scheduleName: string,
+  host: PlacementHost,
+): Promise<PlacementOptions | null> {
   const project = store.project;
-  if (!project || store.readOnly) return Promise.resolve();
-  const schedule = findSchedule(project, scheduleId);
-  if (!schedule) return Promise.resolve();
+  if (!project || store.readOnly) return Promise.resolve(null);
   if (!project.pages.length) {
     toast(t("schedules.placement.noPages"), "warning");
-    return Promise.resolve();
+    return Promise.resolve(null);
   }
 
   const currentPageId =
@@ -131,7 +150,7 @@ export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}
   const totals = checkRow(t("schedules.placement.showTotals"), false);
 
   body.append(
-    el("p", "settings-note", t("schedules.placement.intro", { name: schedule.name })),
+    el("p", "settings-note", t("schedules.placement.intro", { name: scheduleName })),
     field(t("schedules.placement.page"), pageSelect),
     widthField,
     allRows.row,
@@ -143,7 +162,7 @@ export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}
 
   return showModal({
     title: t("schedules.placement.title"),
-    subtitle: schedule.name,
+    subtitle: scheduleName,
     body,
     wide: false,
     actions: [
@@ -162,24 +181,48 @@ export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}
       return null;
     },
   }).then((value) => {
-    if (value !== "save") return;
+    if (value !== "save") return null;
+    const pageId = pageSelect.value as PageId;
+    if (!project.pages.some((page) => page.id === pageId)) return null;
+    return {
+      pageId,
+      width: Math.max(30, Number(widthInput.value)) / MM_PER_POINT,
+      rowStart: allRows.input.checked ? 0 : Number(startInput.value) - 1,
+      rowLimit: allRows.input.checked ? null : Number(limitInput.value),
+      showHeader: header.input.checked,
+      showTotals: totals.input.checked,
+      pageSize: host.pageSize?.(pageNumber(project, pageId)),
+    };
+  });
+}
+
+function finishPlacement(
+  result: PlacementResult,
+  options: PlacementOptions,
+  host: PlacementHost,
+  message: string,
+): void {
+  const project = store.project;
+  if (project) host.goToPage?.(pageNumber(project, options.pageId));
+  store.setSelection({ layerId: result.layerId, itemId: result.item.id });
+  toast(message, "success");
+  host.refresh?.();
+}
+
+export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}): Promise<void> {
+  const project = store.project;
+  if (!project || store.readOnly) return Promise.resolve();
+  const schedule = findSchedule(project, scheduleId);
+  if (!schedule) return Promise.resolve();
+  return placementOptions(schedule.name, host).then((options) => {
+    if (!options) return;
     const current = store.project;
     if (!current || store.readOnly) return;
-    const pageId = pageSelect.value as PageId;
-    const page = current.pages.find((entry) => entry.id === pageId);
-    if (!page) return;
-    const size = host.pageSize?.(pageNumber(current, pageId));
     let created: PlacementResult | null = null;
-    store.mutate((project) => {
-      created = createPlacement(project, {
+    store.mutate((entry) => {
+      created = createPlacement(entry, {
         scheduleId,
-        pageId,
-        width: Math.max(30, Number(widthInput.value)) / MM_PER_POINT,
-        pageSize: size,
-        rowStart: allRows.input.checked ? 0 : Number(startInput.value) - 1,
-        rowLimit: allRows.input.checked ? null : Number(limitInput.value),
-        showHeader: header.input.checked,
-        showTotals: totals.input.checked,
+        ...options,
         layerName: t("schedules.placement.layerName"),
       });
     }, "change");
@@ -188,10 +231,67 @@ export function openPlacementDialog(scheduleId: string, host: PlacementHost = {}
       toast(t("schedules.placement.failed"), "warning");
       return;
     }
-    host.goToPage?.(pageNumber(store.project ?? current, pageId));
-    store.setSelection({ layerId: result.layerId, itemId: result.item.id });
-    toast(t("schedules.placement.placed", { name: schedule.name }), "success");
-    host.refresh?.();
+    finishPlacement(
+      result,
+      options,
+      host,
+      t("schedules.placement.placed", { name: schedule.name }),
+    );
+  });
+}
+
+/**
+ * Creates the standard takeoff table and selects it. One store mutation, so one
+ * undo step removes it; the panel reports it and repaints.
+ */
+export function createStandardSchedule(): ScheduleDefinition | null {
+  const project = store.project;
+  if (!project || store.readOnly) return null;
+  let created: ScheduleDefinition | null = null;
+  store.mutate((current) => {
+    created = createSchedule(current, standardScheduleDraft(current)).schedule;
+  }, "change");
+  const schedule = created as ScheduleDefinition | null;
+  if (schedule) setSummarySelectedScheduleId(schedule.id);
+  return schedule;
+}
+
+/**
+ * Creates the standard takeoff table and places it in one store mutation. The
+ * placement answers are collected first, so cancelling the dialog writes
+ * nothing and one undo removes both the table and its placement.
+ */
+export function createAndPlaceStandardSchedule(
+  host: PlacementHost = {},
+): Promise<ScheduleDefinition | null> {
+  const project = store.project;
+  if (!project || store.readOnly) return Promise.resolve(null);
+  const requestedName = standardScheduleDraft(project).name;
+  return placementOptions(requestedName, host).then((options) => {
+    if (!options) return null;
+    const current = store.project;
+    if (!current || store.readOnly) return null;
+    let created: { schedule: ScheduleDefinition; placement: PlacementResult } | null = null;
+    store.mutate((entry) => {
+      const schedule = createSchedule(entry, standardScheduleDraft(entry)).schedule;
+      if (!schedule) return;
+      const placement = createPlacement(entry, {
+        scheduleId: schedule.id,
+        ...options,
+        layerName: t("schedules.placement.layerName"),
+      });
+      // A valid schedule id and page make placement fail only on a bug, so the
+      // table and its placement are always written by this one mutation.
+      if (placement) created = { schedule, placement };
+    }, "change");
+    const done = created as { schedule: ScheduleDefinition; placement: PlacementResult } | null;
+    if (!done) {
+      toast(t("schedules.placement.failed"), "warning");
+      return null;
+    }
+    setSummarySelectedScheduleId(done.schedule.id);
+    finishPlacement(done.placement, options, host, t("schedules.standard.created"));
+    return done.schedule;
   });
 }
 

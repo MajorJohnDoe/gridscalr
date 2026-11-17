@@ -12,9 +12,12 @@ import { openScheduleBuilder } from "./builder";
 import { openPlacementDialog } from "./placement";
 import { summaryCardsElement } from "./panelCards";
 import { panelTable } from "./panelTable";
+import { ACTION_REASON_ID, emptyState, explainDisabled, previewNotice } from "./panelNotice";
 import {
+  selectSummaryBuiltIn,
   setSummaryFilter,
   setSummarySelectedScheduleId,
+  summaryBuiltInSelected,
   summaryFiltersActive,
   summaryPanelFilters,
   summarySelectedScheduleId,
@@ -28,8 +31,6 @@ import {
  * measurements by category; choosing a stored takeoff table shows its own
  * columns, grouping, sorting and totals. Nothing is stored by the panel.
  */
-
-const ACTION_REASON_ID = "schedules-action-reason";
 
 export interface SummaryPanelHost {
   navigateToItem?: (pageId: PageId, layerId: string, itemId: string) => void;
@@ -142,32 +143,6 @@ function configure(id: SummaryCardId, host: SummaryPanelHost): void {
   void Promise.resolve(host.openTakeoffSettings?.("cards", id)).then(() => reschedule(host));
 }
 
-function explainDisabled(button: HTMLButtonElement, reason: string): void {
-  button.disabled = true;
-  button.title = reason;
-  button.setAttribute("aria-describedby", ACTION_REASON_ID);
-}
-
-function previewNotice(host: SummaryPanelHost): HTMLElement {
-  const block = el("div", "schedules-preview");
-  const text = el("div", "schedules-preview-text");
-  text.append(
-    el("p", "schedules-preview-title", t("schedules.preview.title")),
-    el("p", "schedules-preview-hint", t("schedules.preview.hint")),
-  );
-  const create = el("button", "btn btn-small btn-primary", t("schedules.preview.create"));
-  create.type = "button";
-  create.dataset.summaryFocus = "preview-create";
-  if (store.readOnly) {
-    explainDisabled(create, t("schedules.action.readOnly"));
-  } else {
-    create.title = t("schedules.preview.createHint");
-    create.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
-  }
-  block.append(text, create);
-  return block;
-}
-
 function navigateRow(
   row: ScheduleRow,
   source: ScheduleResult["source"],
@@ -184,21 +159,6 @@ function navigateRow(
   else if (row.pageId) host.goToPage?.(pageNumber(project, row.pageId));
 }
 
-function emptyState(host: SummaryPanelHost): HTMLElement {
-  const block = el("div", "schedules-empty");
-  block.append(el("p", "schedules-empty-title", t("schedules.empty")));
-  block.append(el("p", "schedules-empty-hint", t("schedules.emptyHint")));
-  const create = el("button", "btn btn-small btn-primary", t("schedules.newSchedule"));
-  create.type = "button";
-  if (store.readOnly) {
-    explainDisabled(create, t("schedules.action.readOnly"));
-  } else {
-    create.addEventListener("click", () => void openScheduleBuilder().then(() => reschedule(host)));
-  }
-  block.append(create);
-  return block;
-}
-
 export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): HTMLElement {
   const project = store.project;
   if (!project) {
@@ -208,9 +168,22 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   syncSummaryProject(project.id);
   const extra = extraFilter();
   const summary = cachedSummary(store.revision, project, extra);
-  const selectedId = summarySelectedScheduleId();
-  const schedule = findSchedule(project, selectedId);
-  if (selectedId && !schedule) setSummarySelectedScheduleId(null);
+  // A stored table exists: the tab opens on the first one instead of the
+  // no-table preview, so Place/Edit/CSV have a target. This is session state
+  // only and never writes the project. The explicit built-in choice keeps the
+  // preview when the user asked for it.
+  let selectedId = summarySelectedScheduleId();
+  let schedule = findSchedule(project, selectedId);
+  if (selectedId && !schedule) {
+    setSummarySelectedScheduleId(null);
+    selectedId = null;
+  }
+  if (!schedule && !selectedId && project.schedules.length && !summaryBuiltInSelected()) {
+    schedule = project.schedules[0];
+    setSummarySelectedScheduleId(schedule.id);
+    selectedId = schedule.id;
+  }
+  const hasSchedules = project.schedules.length > 0;
   const result = schedule ? cachedSchedule(store.revision, project, schedule, { extra }) : null;
 
   const root = el("div", "schedules-panel");
@@ -233,7 +206,8 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   }
   picker.value = schedule?.id ?? "";
   picker.addEventListener("change", () => {
-    setSummarySelectedScheduleId(picker.value || null);
+    if (picker.value) setSummarySelectedScheduleId(picker.value);
+    else selectSummaryBuiltIn();
     reschedule(host);
   });
   const add = el("button", "btn btn-small", t("schedules.newSchedule"));
@@ -343,23 +317,26 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   root.append(chips);
 
   const rowCount = result ? result.rowCount : summary.table.rows.length;
-  if (!rowCount) {
+  if (!result) {
+    // The standard-table create block belongs to the no-table state only. With
+    // saved tables, the built-in preview is a deliberate pick and offers no
+    // duplicate-table action.
+    if (!hasSchedules) root.append(previewNotice(host));
+    if (rowCount) root.append(builtInTable(summary.table));
+    else root.append(emptyState(host, { withCreate: !hasSchedules }));
+  } else if (!rowCount) {
     root.append(emptyState(host));
-  } else if (result) {
-    const caption = schedule ? schedule.name : t("schedules.builtInCaption");
+  } else {
     root.append(
       panelTable({
         columns: result.columns,
         entries: scheduleDisplayEntries(result),
         totals: result.totals,
-        caption,
+        caption: schedule?.name ?? t("schedules.builtInCaption"),
         previousScroll,
         onNavigate: (row) => navigateRow(row, result.source, host),
       }),
     );
-  } else {
-    root.append(previewNotice(host));
-    root.append(builtInTable(summary.table));
   }
 
   const foot = el("div", "schedules-foot");

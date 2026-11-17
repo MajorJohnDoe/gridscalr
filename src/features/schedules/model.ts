@@ -36,6 +36,7 @@ export {
   projectSchedules,
   scheduleDraftFor,
   scheduleDraftProblems,
+  standardScheduleDraft,
   uniqueScheduleName,
   updateSchedule,
 } from "./model/definition";
