@@ -729,13 +729,21 @@ documentation, screenshot and release-notes draft pass (#303).
   `49c06a554faebe9ac8cfcd13b0b167cd65b2b4cf`, Phase 3
   `fc94b41bd1c6a4e72d72cb468766d24078f16eda`, Phase 4
   `0c03aa9c19c60c0f900df4f4560bee2c0b117a8f`.
-- **Prerequisite:** the external `chrono` unmaintained advisory
-  (RUSTSEC-2026-0543) was accepted as a reviewed allowlist entry in #307
-  (tracking issue #306) before Phase 1 could merge. It is unrelated to the UI
-  work and expires 2027-02-15.
+- **Prerequisites (external advisories, unrelated to the UI work):**
+  - `RUSTSEC-2026-0543` (`chrono`, informational unmaintained, no patched
+    release) was accepted in #307, tracking issue #306.
+  - `GHSA-FC5Q-39XC-VJPF` (`picomatch`, high-severity ReDoS, all published
+    versions affected, build/test-only through vite and vitest, no patched
+    release) was accepted in #316, tracking issue #315.
+  Both reviewed allowlist entries expire 2027-02-15 and block CI until a patch
+  or replacement lands.
 - **Schema and version:** `SCHEMA_VERSION` is 28 throughout. No project field,
   migration, fixture or compatibility promise changed. The app version is still
   **0.29.0**; no tag, GitHub Release or `site/release.json` change was made.
+- **Closeout record:** the documentation PR #314 merged this handover as
+  `15eeb8810afd2b3f000988871dd6313cfcb12ffb`. The final `main` CI run
+  [44153093981](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44153093981)
+  is green on that commit after the macOS job was re-run.
 - **Findings to carry:** unused summary roles stay in the model and are not
   exposed until a card uses them; one takeoff table reads one source; no table
   is created on open; counted objects keep stored order because no count-type
@@ -744,11 +752,11 @@ documentation, screenshot and release-notes draft pass (#303).
   rather than showing disabled edits.
 - **Backlog:** card-owned KPI sources (#304) stays out of 0.30 and needs its own
   schema decision before implementation.
-- **Environment finding:** the GitHub-hosted macOS desktop job on `main` was
-  repeatedly cancelled at the 15-minute queue limit without executing a step
-  during this effort (Phase 3 once, Phase 4 three times). The identical job
-  passed on every PR head, and each main run went green after a retry. This is
-  runner capacity, not a code failure; no application change was made for it.
+- **Environment finding:** the GitHub-hosted macOS desktop job was repeatedly
+  cancelled at the 15-minute queue limit without executing a step during this
+  effort, on both `main` and PR heads. The identical job passed on every PR head
+  and each run went green after a retry. This is runner capacity, not a code
+  failure; no application change was made for it.
 - **Release decision:** 0.30.0 is ready for the product owner's release decision
   with the schema unchanged and the version still 0.29.0. The draft is
   [`release-notes/0.30.0.md`](../release-notes/0.30.0.md).
