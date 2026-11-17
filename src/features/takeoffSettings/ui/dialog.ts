@@ -1,5 +1,6 @@
 import { showModal } from "../../../ui/dialogs";
 import { categoryLayout } from "../../../ui/settingsControls";
+import { toast } from "../../../ui/toast";
 import { store } from "../../../state/store";
 import { t } from "../../../i18n";
 import type { TakeoffSettingsTarget } from "../model";
@@ -18,6 +19,12 @@ export function openTakeoffSettingsDialog(
   target: TakeoffSettingsTarget = { tab: "objects" },
 ): Promise<void> {
   if (!store.project) return Promise.resolve();
+  // The hub edits project data, so a view-only session refuses the deep link
+  // instead of showing controls whose store mutations are silently ignored.
+  if (store.readOnly) {
+    toast(t("viewOnly.disabled"), "warning");
+    return Promise.resolve();
+  }
   const layout = categoryLayout(
     t("takeoffSettings.tabsAria"),
     [

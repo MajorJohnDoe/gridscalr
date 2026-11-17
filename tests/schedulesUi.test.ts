@@ -465,6 +465,20 @@ describe("takeoff settings gear", () => {
     settings.click();
     expect(calls).toEqual([["objects", undefined]]);
   });
+
+  it("disables the gear in a view-only session", () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    store.setReadOnly(true);
+    try {
+      const { container } = mountPanel();
+      const settings = container.querySelector<HTMLButtonElement>(".schedules-settings")!;
+      expect(settings.disabled).toBe(true);
+      expect(settings.title).toBe("Editing disabled (view-only)");
+    } finally {
+      store.setReadOnly(false);
+    }
+  });
 });
 
 describe("summary tab state", () => {

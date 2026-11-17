@@ -214,9 +214,11 @@ try {
         openTakeoffSettings(page, index),
       );
     }
+    // The same four tabs with the Swedish catalog active. The tab is selected
+    // by index so no translated label is duplicated in the script.
     await setLanguage(page, "sv");
-    for (const [index, name] of ["Objekt", "Fält", "Schema", "Kort"].entries()) {
-      await assertDialogFits(page, `${viewport.label} Mängdning ${name}`, () =>
+    for (let index = 0; index < 4; index += 1) {
+      await assertDialogFits(page, `${viewport.label} Takeoff settings tab ${index + 1} (sv)`, () =>
         openTakeoffSettings(page, index),
       );
     }

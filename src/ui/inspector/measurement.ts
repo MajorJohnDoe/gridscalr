@@ -140,6 +140,8 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
         }),
       );
       editType.type = "button";
+      editType.disabled = store.readOnly;
+      editType.title = store.readOnly ? t("viewOnly.disabled") : "";
       editType.addEventListener("click", () => {
         void openTakeoffSettingsDialog({ tab: "objects", focusId: item.countType ?? "other" });
       });
@@ -206,6 +208,8 @@ export function appendMeasurement(section: HTMLElement, context: InspectorContex
       }),
     );
     editCategory.type = "button";
+    editCategory.disabled = store.readOnly;
+    editCategory.title = store.readOnly ? t("viewOnly.disabled") : "";
     editCategory.addEventListener("click", () => {
       if (!currentCategory) return;
       void openTakeoffSettingsDialog({ tab: "objects", focusId: currentCategory.id });

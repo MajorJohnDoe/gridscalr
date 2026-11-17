@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from "vitest";
 import { TAKEOFF_SETTINGS_TABS, openTakeoffSettingsDialog } from "../src/features/takeoffSettings";
+import { renderSummaryPanel } from "../src/features/schedules";
+import type { SummaryPanelHost } from "../src/features/schedules";
 import { appendMeasurement } from "../src/ui/inspector/measurement";
 import type { InspectorContext } from "../src/ui/inspector/context";
 import { closeActiveModal } from "../src/ui/dialogs";
@@ -39,6 +41,24 @@ function makeProject(): Project {
     name: "Fire data",
     scope: "measurement",
     fieldIds: ["field_fire"],
+  });
+  project.fieldDefinitions.push({
+    id: "field_area_only",
+    key: "areaOnly",
+    label: "Area only",
+    type: "text",
+    scope: "measurement",
+    order: 1,
+    appliesTo: { itemKinds: ["area"] },
+  });
+  project.fieldDefinitions.push({
+    id: "field_room_only",
+    key: "roomOnly",
+    label: "Room only",
+    type: "text",
+    scope: "space",
+    order: 0,
+    appliesTo: { spaceKinds: ["room"] },
   });
   return project;
 }
@@ -104,7 +124,12 @@ function nextFrame(): Promise<void> {
 afterEach(() => {
   closeActiveModal();
   document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
-  document.body.replaceChildren();
+  // The toast module keeps its stack element; keep it attached and empty so a
+  // later test's toast is visible instead of appending to a detached node.
+  for (const child of [...document.body.children]) {
+    if (child.classList.contains("toast-stack")) child.replaceChildren();
+    else child.remove();
+  }
   store.closeProject();
 });
 
@@ -141,6 +166,10 @@ describe("takeoff settings hub", () => {
     expect(modal().querySelector(".takeoff-fields")).toBeTruthy();
     expect(modal().textContent).toContain("Fire class");
     expect(modal().textContent).toContain("Fire data");
+    // Every restriction dimension is named, not only categories and count types.
+    expect(modal().textContent).toContain("Applies to Wall");
+    expect(modal().textContent).toContain("Applies to Area");
+    expect(modal().textContent).toContain("Applies to Room");
 
     tab("Tables").click();
     expect(modal().querySelector(".takeoff-tables")).toBeTruthy();
@@ -441,5 +470,81 @@ describe("takeoff settings deep links", () => {
     await nextFrame();
     expect(tab("Objects").getAttribute("aria-current")).toBe("true");
     expect(document.activeElement?.getAttribute("aria-label")).toBe("Category name: Wall");
+  });
+});
+
+describe("takeoff settings read-only", () => {
+  it("refuses the hub and every editing entry point in a view-only session", async () => {
+    const project = makeProject();
+    const layer = layersForKind(project, "measure")[0];
+    const item: MarkupItem = {
+      id: "item_readonly",
+      pageId: pageIdFor(1),
+      kind: "length",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      color: "#e30613",
+      strokeWidth: 2,
+      scale: { pointsPerMeter: 100, sourceUnit: "m" },
+      createdAt: NOW,
+      updatedAt: NOW,
+      categoryId: project.categories.find((entry) => entry.name === "Wall")!.id,
+    };
+    addItem(project, layer.id, item);
+    store.setProject(project, null);
+    store.setReadOnly(true);
+    try {
+      const categories = store.project!.categories.length;
+      const countTypes = store.project!.countTypes.length;
+
+      await openTakeoffSettingsDialog();
+      expect(document.querySelector(".takeoff-settings-modal")).toBeNull();
+      expect(document.body.textContent).toContain("Editing disabled (view-only)");
+
+      // An empty card's Configure goes through the same guard.
+      const container = document.createElement("div");
+      document.body.append(container);
+      const host: SummaryPanelHost = {
+        navigateToItem: () => undefined,
+        goToPage: () => undefined,
+        openSpaces: () => undefined,
+        refresh: () => undefined,
+        openTakeoffSettings: (tab, focusId) => {
+          void openTakeoffSettingsDialog({ tab, focusId });
+        },
+      };
+      container.replaceChildren(renderSummaryPanel(host));
+      container
+        .querySelector<HTMLButtonElement>(".schedules-card-wallLength .schedules-card-configure")!
+        .click();
+      expect(document.querySelector(".takeoff-settings-modal")).toBeNull();
+
+      // The inspector action is disabled with the localized reason.
+      const section = document.createElement("section");
+      document.body.append(section);
+      appendMeasurement(section, {
+        project,
+        selection: { layerId: layer.id, itemId: item.id },
+        item,
+        layer,
+        actions: {} as InspectorContext["actions"],
+        locked: false,
+        hidden: false,
+        metrics: {} as InspectorContext["metrics"],
+        section,
+      });
+      const edit = [...section.querySelectorAll<HTMLButtonElement>("button")].find((entry) =>
+        entry.textContent?.includes("Edit object"),
+      )!;
+      expect(edit.disabled).toBe(true);
+      expect(edit.title).toBe("Editing disabled (view-only)");
+
+      expect(store.project!.categories).toHaveLength(categories);
+      expect(store.project!.countTypes).toHaveLength(countTypes);
+    } finally {
+      store.setReadOnly(false);
+    }
   });
 });

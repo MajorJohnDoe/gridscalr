@@ -1,4 +1,6 @@
 import { fieldSetsForScope, fieldsForScope, openFieldsDialog } from "../../fields";
+import { countTypeLabel } from "../../../model/countTypes";
+import { itemKindLabel } from "../../../model/measure";
 import type { FieldDefinition, FieldScope } from "../../../model/types";
 import { store } from "../../../state/store";
 import { el } from "../../../ui/dom";
@@ -94,13 +96,18 @@ function appliesToLabels(
   const applies = field.appliesTo;
   if (!applies) return [];
   const labels: string[] = [];
+  for (const kind of applies.itemKinds ?? []) labels.push(itemKindLabel(kind));
   for (const categoryId of applies.categoryIds ?? []) {
     const category = project.categories.find((entry) => entry.id === categoryId);
     if (category) labels.push(category.name);
   }
   for (const typeId of applies.countTypes ?? []) {
-    const type = project.countTypes.find((entry) => entry.id === typeId);
-    if (type) labels.push(type.label);
+    if (project.countTypes.some((entry) => entry.id === typeId)) {
+      labels.push(countTypeLabel(project, typeId));
+    }
+  }
+  for (const kind of applies.spaceKinds ?? []) {
+    labels.push(t(`fields.spaceKind.${kind}` as MessageKey));
   }
   return labels;
 }

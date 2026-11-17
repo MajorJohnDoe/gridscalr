@@ -268,7 +268,7 @@ export function renderSummaryPanel(host: SummaryPanelHost, previousScroll = 0): 
   const openSettings = () =>
     void Promise.resolve(host.openTakeoffSettings?.("objects")).then(() => reschedule(host));
   settings.addEventListener("click", openSettings);
-  if (store.readOnly) explainDisabled(settings, readOnlyReason);
+  if (store.readOnly) explainDisabled(settings, t("viewOnly.disabled"));
   const exportCsv = el("button", "btn btn-small btn-ghost", t("schedulesCsv.export"));
   exportCsv.type = "button";
   exportCsv.dataset.summaryFocus = "export";
