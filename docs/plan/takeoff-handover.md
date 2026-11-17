@@ -371,13 +371,20 @@ schema change is expected.
 - **PR:** [#311](https://github.com/MajorJohnDoe/gridscalr/pull/311), opened from
   `feat/standard-takeoff-table`.
 - **Branch:** `feat/standard-takeoff-table`
-- **Verified head SHA:** `ea37052` (implementation `9671e82`, documentation
-  `747135f`, handover `e431007`, module-note correction `0865e22`, conductor
-  review fix `ea37052`). The docs-only handover update that carries this line
-  follows it and changes no code; the final PR head is verified by the conductor.
-- **Merge commit:** pending.
-- **Status:** open, awaiting conductor verification. No schema change, no app
-  version bump, no tag, release or `site/` change.
+- **Verified head SHA:** `d5c18d9392b6bc503db58a681b99f5a8b54c4a24`
+  (implementation `9671e82`, documentation `747135f`, handover `e431007`,
+  module-note correction `0865e22`, handover update `6ee433d`, conductor
+  preview-state fix `ea37052` and its handover `d5c18d9`). All six PR checks passed on that
+  exact SHA (CI run
+  [44108619891](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44108619891)).
+- **Merge commit:** `fc94b41bd1c6a4e72d72cb468766d24078f16eda` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`. The `main` CI run
+  [44110236446](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44110236446)
+  is green on the merge commit after the queued macOS desktop job was re-run
+  (its first attempt was cancelled at the 15-minute runner queue limit without
+  starting a step). No schema change, no app version bump, no tag, release or
+  `site/` change.
 
 ### Completed work
 
@@ -496,7 +503,38 @@ CI is authoritative on the PR head and is recorded in the PR.
 
 ### Conductor verification
 
-Conductor verification: pending
+- PR [#311](https://github.com/MajorJohnDoe/gridscalr/pull/311) head
+  `d5c18d9392b6bc503db58a681b99f5a8b54c4a24` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE`.
+- Conductor review found one plan deviation, fixed in `ea37052`: the preview was
+  keyed on the absence of a *selected* table, so a project with saved tables but
+  no selection showed the no-table create block and left Place/Edit/CSV
+  disabled. It is now keyed on `project.schedules.length === 0`; with saved
+  tables the first table is selected in session state (no project write, no
+  dirty flag) and an explicit built-in pick shows the built-in table without the
+  create block.
+- Conductor re-ran `npx vitest run tests/scheduleStandardTable.test.ts
+  tests/schedulesUi.test.ts tests/schedulePlacement.test.ts
+  tests/schedulePlacementUi.test.ts tests/schedulePlacementPdf.test.ts
+  tests/takeoffSettingsUi.test.ts tests/schema28.test.ts`: 7 files, 83 tests
+  passed. `check:modules` (21 features), `check:file-budgets` (610 files),
+  `check:i18n` (3 574 keys) and `check:docs` (only the expected stale-screenshot
+  warning) are green.
+- The standard table is an ordinary `ScheduleDefinition`: measurement source,
+  row mode `items`, columns Object / Count / Unit / Value, no filters, localized
+  **Standard** name. No `src/model/types.ts`, `src/io/projectFile`, version file,
+  Tauri manifest or `site/` file changed; `SCHEMA_VERSION` stays 28 and the app
+  version stays 0.29.0. No Swedish was added outside `src/i18n/locales/sv.json`.
+- `createAndPlaceStandardSchedule` collects the placement options first and adds
+  the table plus the placement in one `store.mutate`; Cancel writes nothing and
+  one undo removes both. Create-only is also one mutation and selects the table.
+- The only visual baseline change is `count-types.png`, limited to the right
+  dock (x 1627–1905) because the Takeoff tab behind the masked hub dialog now
+  shows the live table. No canvas or thumbnail pixels are compared.
+- Squash merged as `fc94b41bd1c6a4e72d72cb468766d24078f16eda`. The `main` run was
+  re-run once because the macOS desktop job was cancelled at the 15-minute queue
+  limit with no step started; the re-run is green on the merge commit.
 
 ### Next phase
 
