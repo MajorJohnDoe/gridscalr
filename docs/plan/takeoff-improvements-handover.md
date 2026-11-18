@@ -333,10 +333,14 @@ focus and accessibility work.
 - **PR:** [#326](https://github.com/MajorJohnDoe/gridscalr/pull/326), opened from
   `feat/movable-dialogs`, base `main` (`e897d6e`). Not merged, not auto-merge.
 - **Branch:** `feat/movable-dialogs`
-- **Implementation commit:** `d28cac71e6cd18b1e77de455938dcfcf993b5e64`
+- **Implementation commit:** `7e11296048d22cb99141794e289d39fdbb25189b`
+  (feature commit `d28cac7`, deterministic-centring fix `7e11296`). All six PR
+  checks passed on `7e11296` (CI run
+  [44319036364](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44319036364));
+  the earlier run failed only on the visual gate, which the second commit fixes.
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
   field, no migration fixture and no `src/io/projectFile` change.
-- **Status:** PR open; conductor verification and CI on the PR head pending.
+- **Status:** PR open; conductor verification pending.
 
 ### Completed work
 
@@ -361,7 +365,11 @@ focus and accessibility work.
   so the first `.dialog-layer` is the topmost. `Escape` closes the focused
   dialog, else the topmost, and yields to an open flyout or menu.
 - Header drag with button/field/`[data-dialog-no-drag]` opt-outs, an 8 px
-  viewport clamp and a re-clamp on resize. Positions are not stored.
+  viewport clamp and a re-clamp on resize. Positions are not stored. An unmoved
+  window is centred by CSS; the first drag freezes explicit coordinates. Freezing
+  the position on mount was removed because the mount-time rectangle depends on
+  when lazy content finished growing, which made the dialog's shadow land one
+  pixel differently across machines and failed the visual gate.
 - `showModal({ headerActions })` renders a reusable `.modal-header-actions`
   surface beside the close control; no Phase 4 action was added.
 - `showModal` no longer closes the active dialog. Nested editors **stack**: the
@@ -430,6 +438,9 @@ focus and accessibility work.
   guard would have made the keyboard useless while a window was open.
 - **No remembered positions and no keyboard move**, recorded in the ADR and
   `docs/limitations.md`.
+- **Layout centring, not a mount-time position.** A frozen mount-time rectangle
+  is timing-dependent; CSS centring plus clamping only on drag/resize is
+  deterministic and fixed the visual gate.
 
 ### Findings
 
