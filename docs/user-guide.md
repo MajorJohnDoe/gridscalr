@@ -24,8 +24,8 @@ The demo requires the desktop app. The browser fallback offers open, restore and
 GridScalr uses a compact, drawing-first layout.
 
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
-- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
-- **Context bar** – the active tool, target layer, tool-specific options, and a **New measurement** popover. With the Symbol tool it shows the chosen symbol, its category and the next inspection status.
+- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. A normal click on a family button opens its flyout and also activates the last-used member, so the previous one-click selection path still works; long-press or right-click opens the same flyout for touch, pen and discoverability. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
+- **Context bar** – the active tool, a compact current-setting summary for measurement tools, tool-specific options, and the drawing target layer. The measurement summary opens the measurement flyout, which holds the category, room, type, pieces, area mode and target layer. With the Symbol tool the context bar shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab shows the open page's layers in separate drawing and measurement sections, with a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
 - **Markups panel** – optional docked table below the canvas for every measurement, drawing and symbol, with configurable columns, saved views, grouping, filters, inline rename, layer changes, visibility, locking, symbol status, and CSV export. Selecting a row zooms to that markup, capped at four times Fit page so a small symbol keeps its drawing context.
@@ -361,9 +361,9 @@ Measurements without a scale are shown in PDF points (`pt` / `pt²`) and are exc
 
 ## Measure
 
-Measurements are added to the active **measurement layer**. Choose the target layer in the context bar or the Layers tab. New measurements use a **0.75 pt** paper-space line weight; change it in **Properties → Stroke width** from 0.25 to 8 pt. The line weight is stored per item and is used by the PDF export. While you draw, the preview uses the target layer's colour, so the finished measurement matches the colour you saw during measuring.
+Measurements are added to the active **measurement layer**. Choose the target layer in the measurement flyout or the Layers tab. The flyout lists only the measurement layers that can receive an item on the open page: hidden, locked and other-page-only layers are left out. New measurements use a **0.75 pt** paper-space line weight; change it in **Properties → Stroke width** from 0.25 to 8 pt. The line weight is stored per item and is used by the PDF export. While you draw, the preview uses the target layer's colour, so the finished measurement matches the colour you saw during measuring.
 
-Radius, diameter and arc share one **Circle & arc** button in the tool rail, and angle and slope share an **Angle & slope** button. Click the button to reuse the last variant, or long-press/right-click it to choose another variant. The shortcuts `Q`/`W`/`Z` and `E`/`J` keep working directly.
+Radius, diameter and arc share one **Circle & arc** button in the tool rail, and angle and slope share an **Angle & slope** button. Click the button to open the measurement flyout with the last variant already active, or long-press/right-click it for the same flyout. Choosing another variant activates it and closes the flyout. The shortcuts `Q`/`W`/`Z` and `E`/`J` keep working directly.
 
 ### Length
 
@@ -395,19 +395,19 @@ Choose **Volume** (`M`) and draw a polygon like an area, then finish with `Enter
 
 ### Area
 
-Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the **New measurement** popover.
+Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the measurement flyout. The same flyout is one click away from the rail's Area button or from the context-bar summary.
 
 - **Polygon** works click-by-click. Click around the perimeter, then click the first vertex or press `Enter` to close it.
 - **Rectangle** and **Ellipse** are quick areas drawn by dragging from one corner to the opposite corner.
 - Hold `Shift` while dragging a quick area to make a square or circle.
-- Use the **Add / Deduct** switch in the context bar before drawing. Deductions are subtracted inside the same category and room.
-- The same mode is available in the **New measurement** popover and by right-clicking or long-pressing the Area tool.
+- Choose **Add** or **Deduct** under **Area mode** in the measurement flyout before drawing. Deductions are subtracted inside the same category and room.
+- The context bar shows the current shape and area mode in its compact summary; click it to change them.
 
 ### Count
 
 Choose **Count** (`C`), pick a project count type, and click the plan. Each count is one piece by default and uses the vector glyph assigned to its type. Set **Pieces per object** in Properties when one symbol represents several identical objects, or apply it to a mixed selection in one undoable action.
 
-The **New measurement** popover also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same popover when it is selected.
+The measurement flyout also has a **Pieces** field for new counts and a **Preset** selector. Choose a saved preset to restore its count type, category, room and pieces, or use **Save preset** to keep the current combination for later. Delete a preset from the same flyout when it is selected. Open the flyout with a click on the rail's Count button or from the context-bar summary.
 
 Manage types in **View → Takeoff settings… → Objects**. Measured objects (categories) and counted objects (count types) are one list with a **Type** column. Built-in count types are named by the interface language and cannot be renamed or deleted. Add a counted object, choose one of the five built-in glyphs, and rename it later; deleting a custom type moves its counts to **Other**. Count quantities feed the plan label, the Markups value, the quantity report and the CSV, XLSX and PDF exports. The quantity report keeps one row per count type, so a count schedule for doors, windows and fixtures no longer collapses into one Count row.
 
@@ -427,7 +427,9 @@ The project label size and compact area labels are in **Settings → Project set
 
 ### Category and room
 
-While a measurement tool is active, the context bar shows a **New measurement** button with the current category and room. The Area tool also shows a direct **Add / Deduct** switch. Open the **New measurement** popover to change the category, room, object type, area shape, and add/deduct mode. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project.
+While a measurement tool is active, the context bar shows a compact **New measurement** summary with the current category, room, type, area mode and target layer. Click it, or click a measurement tool in the rail, to open the measurement flyout. The flyout changes the category, room, count type, pieces, area shape, add/deduct mode and target layer in one place. The last choice is kept for the next measurement. Room names autocomplete from rooms already used in the project. There is no separate measurement settings popover; the context bar is a read-out that opens the same flyout.
+
+![Measurement flyout with category, room, area shape, area mode and target layer](screenshots/measure-flyout.png)
 
 Change a measurement's category, room, area mode, line style, or count type later in **Properties**, or for several selected measurements at once. When a markup is selected, the **Selection** section is shown above **Active layer** so it is clear whether a change applies to one markup or the whole layer.
 

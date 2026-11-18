@@ -171,6 +171,16 @@ try {
     await seedSchedules(page);
     const shell = await readShell(page, viewport.label);
     await assertMenusFit(page, viewport.label);
+    const measureFlyout = await assertDialogFits(
+      page,
+      `${viewport.label} Measurement flyout`,
+      async () => {
+        await page.keyboard.press("a");
+        await page.getByRole("button", { name: /New measurement options/ }).click();
+      },
+      "New measurement options",
+    );
+    await page.keyboard.press("v");
     const settings = await assertDialogFits(
       page,
       `${viewport.label} Project settings`,
@@ -256,6 +266,7 @@ try {
       scale: viewport.label,
       viewport: `${viewport.width}×${viewport.height}`,
       canvas: shell.canvas?.width,
+      measureFlyout: `${measureFlyout.left},${measureFlyout.top}–${measureFlyout.right},${measureFlyout.bottom}`,
       settings: `${settings.left},${settings.top}–${settings.right},${settings.bottom}`,
       fields: `${fields.left},${fields.top}–${fields.right},${fields.bottom}`,
       spaces: `${spaces.left},${spaces.top}–${spaces.right},${spaces.bottom}`,
@@ -271,9 +282,9 @@ try {
   for (const result of results) {
     console.log(
       `UI scale ${result.scale} (${result.viewport} CSS px): canvas ${result.canvas}px, ` +
-        `Project settings ${result.settings}, Custom fields ${result.fields}, ` +
-        `Spaces ${result.spaces}, Help ${result.help}, Schedule CSV ${result.csv}, ` +
-        `Place takeoff table ${result.placement}, no overflow.`,
+        `Measurement flyout ${result.measureFlyout}, Project settings ${result.settings}, ` +
+        `Custom fields ${result.fields}, Spaces ${result.spaces}, Help ${result.help}, ` +
+        `Schedule CSV ${result.csv}, Place takeoff table ${result.placement}, no overflow.`,
     );
   }
   console.log(

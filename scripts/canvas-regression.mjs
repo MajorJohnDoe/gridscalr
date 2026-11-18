@@ -148,17 +148,14 @@ try {
     "dragging a vertex should edit the quick area",
   );
 
-  // 2b. Switch the Area tool to Deduct in the context bar and draw a deduction.
+  // 2b. Switch the Area tool to Deduct in the measurement flyout and draw.
   await page.keyboard.press("a");
-  const areaMode = page.locator(".area-mode-toggle");
-  await areaMode.getByRole("button", { name: "Deduct", exact: true }).click();
-  assert.equal(
-    await areaMode
-      .getByRole("button", { name: "Deduct", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
-    "the context bar should expose the deduct mode",
-  );
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const areaOptions = page.getByRole("dialog", { name: "New measurement options" });
+  await areaOptions.waitFor();
+  await areaOptions.getByLabel("Area mode").selectOption("subtract");
+  await page.keyboard.press("Escape");
+  await areaOptions.waitFor({ state: "detached" });
   await dragPage({ x: 540, y: 240 }, { x: 580, y: 280 });
   const afterDeduct = await itemIds();
   const deductionId = afterDeduct.find(
@@ -168,7 +165,12 @@ try {
   const deduction = await itemById(deductionId);
   assert.equal(deduction.kind, "area");
   assert.equal(deduction.areaMode, "subtract");
-  await areaMode.getByRole("button", { name: "Add", exact: true }).click();
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const resetOptions = page.getByRole("dialog", { name: "New measurement options" });
+  await resetOptions.waitFor();
+  await resetOptions.getByLabel("Area mode").selectOption("add");
+  await page.keyboard.press("Escape");
+  await resetOptions.waitFor({ state: "detached" });
 
   // 3. Draw a rectangle, resize its south-east box handle and rotate it.
   await page.keyboard.press("r");

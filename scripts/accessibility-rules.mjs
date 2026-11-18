@@ -11,6 +11,7 @@ export const A11Y_FAIL_IMPACTS = ["serious", "critical"];
 /** The surfaces the automated check covers, in report order. */
 export const A11Y_SURFACES = [
   { id: "shell", label: "Main shell" },
+  { id: "measurement-flyout", label: "Measurement flyout" },
   { id: "project-settings", label: "Project settings dialog" },
   { id: "preferences", label: "Preferences dialog" },
   { id: "quantities", label: "Order dialog" },

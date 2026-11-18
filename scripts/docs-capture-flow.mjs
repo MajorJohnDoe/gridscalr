@@ -92,6 +92,16 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.waitForTimeout(200);
   await capture("measure.png");
 
+  await page.keyboard.press("a");
+  await page.waitForTimeout(150);
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const measureFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await measureFlyout.waitFor();
+  await page.waitForTimeout(200);
+  await capture("measure-flyout.png");
+  await page.keyboard.press("Escape");
+  await measureFlyout.waitFor({ state: "detached" });
+
   await page.keyboard.press("Escape");
   await openMarkupsItem(page, "item_cloud_dock", "draw");
   await page.getByRole("button", { name: "Layers", exact: true }).click();

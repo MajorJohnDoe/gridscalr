@@ -1,6 +1,4 @@
-import { measurementCategory } from "../model/categories";
 import { CLOUD_FILL_PRESETS, cloudFillColor, cloudFillLabel } from "../model/cloud";
-import { countTypeLabel } from "../model/countTypes";
 import {
   DEFAULT_DRAW_COLOR,
   layerAppliesToPage,
@@ -23,19 +21,24 @@ import {
   symbolSvgMarkup,
   drawingOverflowsArea,
 } from "../features/schematics";
-import type { LayerKind, Project } from "../model/types";
+import type { LayerKind } from "../model/types";
 import { store, toolLayerKind } from "../state/store";
 import { pageIdAt } from "../model/pages";
+import { measurementSummary } from "../features/measurementFlyout";
 import { colorInputValue, setColorInput } from "./colorInput";
 import { colorWithEyedropper } from "./colorPicker";
 import { clear, el, option } from "./dom";
-import { openMeasureOptions } from "./measureOptions";
 import { textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
-import { TOOL_BY_ID, familyForTool } from "./toolDefs";
-import { hasToolVariants, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
+import { TOOL_BY_ID, familyForTool, isMeasurementTool } from "./toolDefs";
+import {
+  hasToolVariants,
+  openMeasurementFlyout,
+  openToolFamilyVariants,
+  openToolVariants,
+} from "./toolFlyouts";
 import { toast } from "./toast";
 import { t } from "../i18n";
 
@@ -48,7 +51,9 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   if (tool) {
     toolWrap.innerHTML = icon(tool.icon, 17);
     toolWrap.append(el("span", "", t(tool.label)));
-    if (hasToolVariants(tool.id) || family) {
+    // Measurement tools open their settings from the compact summary below;
+    // keeping a second variant button there would be a duplicate surface.
+    if ((hasToolVariants(tool.id) || family) && !isMeasurementTool(tool.id)) {
       const variants = el("button", "context-variant-btn");
       variants.type = "button";
       variants.title = t("context.chooseVariants");
@@ -91,7 +96,10 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   const activeLayer = project.layers.find((layer) => layer.id === project.activeLayerId);
   const targetKind = toolLayerKind(store.ui.activeTool);
   const layerTarget = el("label", "layer-target");
-  if (activeLayer) {
+  // A measurement target layer lives in the measurement flyout, together with
+  // the rest of the New measurement settings. Drawing and neutral tools keep
+  // their direct picker.
+  if (activeLayer && targetKind !== "measure") {
     const page = store.ui.page;
     const pageId = pageIdAt(project, page) ?? "";
     const hierarchy = buildLayerHierarchy(project.layers);
@@ -156,17 +164,7 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     controls.append(layerTarget, el("div", "divider-v"));
   }
 
-  const measureTool =
-    store.ui.activeTool === "length" ||
-    store.ui.activeTool === "area" ||
-    store.ui.activeTool === "count" ||
-    store.ui.activeTool === "radius" ||
-    store.ui.activeTool === "diameter" ||
-    store.ui.activeTool === "arc" ||
-    store.ui.activeTool === "angle" ||
-    store.ui.activeTool === "slope" ||
-    store.ui.activeTool === "volume";
-  if (measureTool) {
+  if (isMeasurementTool(store.ui.activeTool)) {
     const measureOptions = el("button", "btn btn-small btn-ghost context-measure-options");
     measureOptions.type = "button";
     measureOptions.title = t("context.measureOptionsTitle");
@@ -175,53 +173,19 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
     measureOptions.setAttribute("aria-haspopup", "dialog");
     measureOptions.innerHTML = `${icon("markups", 14)}<span class="context-measure-summary"></span>${icon("chevronDown", 12)}`;
     const summary = measureOptions.querySelector<HTMLElement>(".context-measure-summary");
-    if (summary) summary.textContent = measurementSummary(project);
-
-    let syncAreaMode = () => {};
-    const updateSummary = () => {
+    const updateSummary = (): void => {
       const current = store.project;
-      if (current && summary) summary.textContent = measurementSummary(current);
-      syncAreaMode();
+      if (!current || !summary) return;
+      summary.textContent = measurementSummary(current, store.ui);
+      // The summary is compact and can truncate at narrow widths; the tooltip
+      // keeps the full category, room, type, area mode and target layer.
+      measureOptions.title = summary.textContent;
     };
-    const selectAreaMode = (mode: "add" | "subtract") => {
-      store.setMeasureAreaMode(mode);
-      updateSummary();
-    };
-
-    let areaMode: HTMLElement | null = null;
-    if (store.ui.activeTool === "area") {
-      const addButton = toggleButton(
-        "plus",
-        t("context.add"),
-        store.ui.measureAreaMode === "add",
-        () => selectAreaMode("add"),
-      );
-      const deductButton = toggleButton(
-        "minus",
-        t("context.deduct"),
-        store.ui.measureAreaMode === "subtract",
-        () => selectAreaMode("subtract"),
-      );
-      addButton.classList.add("area-mode-btn");
-      deductButton.classList.add("area-mode-btn");
-      addButton.title = t("context.addAreasTitle");
-      deductButton.title = t("context.deductAreasTitle");
-      areaMode = el("div", "area-mode-toggle");
-      areaMode.setAttribute("role", "group");
-      areaMode.setAttribute("aria-label", t("context.areaMode"));
-      areaMode.append(addButton, deductButton);
-      syncAreaMode = () => {
-        addButton.classList.toggle("is-on", store.ui.measureAreaMode === "add");
-        addButton.setAttribute("aria-pressed", String(store.ui.measureAreaMode === "add"));
-        deductButton.classList.toggle("is-on", store.ui.measureAreaMode === "subtract");
-        deductButton.setAttribute("aria-pressed", String(store.ui.measureAreaMode === "subtract"));
-      };
-    }
-
+    updateSummary();
+    // The summary is a compact read-out; it opens the same flyout the rail does.
     measureOptions.addEventListener("click", () =>
-      openMeasureOptions(measureOptions, updateSummary),
+      openMeasurementFlyout(measureOptions, store.ui.activeTool, { onChange: updateSummary }),
     );
-    if (areaMode) controls.append(areaMode, el("div", "divider-v"));
     controls.append(measureOptions, el("div", "divider-v"));
   }
 
@@ -456,27 +420,6 @@ export function renderContextBar(refs: ShellRefs, actions: PanelActions): void {
   }
 
   refs.contextBar.append(controls);
-}
-
-function measurementSummary(project: Project): string {
-  const parts: string[] = [];
-  if (store.ui.activeTool === "area") {
-    parts.push(
-      store.ui.measureAreaShape === "rectangle"
-        ? t("tool.rect")
-        : store.ui.measureAreaShape === "ellipse"
-          ? t("tool.ellipse")
-          : t("context.polygon"),
-    );
-    parts.push(store.ui.measureAreaMode === "subtract" ? t("context.deduct") : t("context.add"));
-  } else if (store.ui.activeTool === "count") {
-    parts.push(countTypeLabel(project, store.ui.measureCountType));
-  }
-  const category = measurementCategory(project, store.ui.measureCategoryId);
-  parts.push(category?.name ?? t("context.categoryFallback"));
-  const room = store.ui.measureRoom.trim();
-  if (room) parts.push(room);
-  return parts.join(" · ");
 }
 
 function toggleButton(

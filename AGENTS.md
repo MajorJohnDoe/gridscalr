@@ -481,6 +481,7 @@ src/features/pageStatus/ pure page badges and status filters derived from projec
 src/features/pageMenu/ page card menu, insert and move targets, page keyboard commands
 src/features/listInteraction/ shared list selection, drag controller, drop line, keyboard move, filter and collapse rules
 src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
+src/features/measurementFlyout/ model, controller and UI for the one New measurement settings panel and its page-scoped layer list
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
 src/features/projectIntegrity/repair.ts explicit duplicate-ID, dangling-reference and stale-OCR repairs
 src/features/projectIntegrity/doctor.ts doctor loop, load-report decision, source section wiring and path-free diagnostics
@@ -586,11 +587,10 @@ src/styles/popovers.css    tool flyouts and measurement options
 src/styles/reference.css   reference page navigation and follow-primary control
 src/styles/status.css      status, storage and welcome details
 src/styles/responsive.css  laptop widths and high OS scaling
-src/ui/contextBar.ts       tool-specific context bar and target layer controls
+src/ui/contextBar.ts       tool-specific context bar, drawing target layer and measurement summary
 src/ui/editSafeRender.ts   shell render scheduling: background deferral, focus restore and render coalescing
 src/ui/editFieldSnapshot.ts focused-field snapshot, rebuild match and value/caret/scroll restore
 src/ui/inspector.ts        Properties header, active-layer and selection sections
-src/ui/measureOptions.ts   category, room, count type and area options popover
 src/ui/selectionInspector.ts selection Properties dispatcher
 src/ui/inspector/         selection summary, measurement, image, symbol, drawing, style and item actions
 src/ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
@@ -605,7 +605,8 @@ src/ui/itemIcon.ts         icon lookup shared by Layers and Markups
 src/ui/shortcuts.json      single source for tool and application shortcuts
 src/ui/shortcuts.ts        typed shortcut maps and platform formatting
 src/ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
-src/ui/toolFlyouts.ts      long-press/right-click variant and family panels
+src/ui/flyoutHost.ts        shared flyout mount, positioning, focus, keyboard and long-press gesture
+src/ui/toolFlyouts.ts      click/long-press/right-click variant, family and measurement panels
 src/ui/statusBar.ts        page scale menu, cursor position and layer status
 src/ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
 src/ui/referencePane.ts    reference source selector, name and Open/Close controls

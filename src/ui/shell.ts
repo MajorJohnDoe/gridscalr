@@ -1,7 +1,7 @@
 import { el } from "./dom";
 import { brandMark, icon } from "./icons";
 import { createMenuBar, relabelMenuBar } from "./topMenu";
-import { attachToolFamilyFlyout, attachToolFlyout } from "./toolFlyouts";
+import { attachMeasurementFlyout, attachToolFamilyFlyout, attachToolFlyout } from "./toolFlyouts";
 import {
   TOOLS,
   TOOL_BY_ID,
@@ -9,6 +9,7 @@ import {
   TOOL_FAMILY_BY_TOOL,
   familyToolForDisplay,
   isFamilyLeader,
+  isMeasurementTool,
   rememberFamilyTool,
   type ToolFamilyId,
 } from "./toolDefs";
@@ -176,14 +177,16 @@ export function createShell(root: HTMLElement): ShellRefs {
         rememberFamilyTool(next);
         store.setTool(next);
       });
-      attachToolFamilyFlyout(btn, family);
+      if (isMeasurementTool(tool.id)) attachMeasurementFlyout(btn, tool.id);
+      else attachToolFamilyFlyout(btn, family);
     } else {
       btn.dataset.tool = tool.id;
       btn.innerHTML = icon(tool.icon, 19);
       btn.title = tool.shortcut ? `${t(tool.label)} (${tool.shortcut})` : t(tool.label);
       btn.setAttribute("aria-label", t(tool.label));
       btn.addEventListener("click", () => store.setTool(tool.id));
-      attachToolFlyout(btn, tool.id);
+      if (isMeasurementTool(tool.id)) attachMeasurementFlyout(btn, tool.id);
+      else attachToolFlyout(btn, tool.id);
     }
     railTools.append(btn);
   }

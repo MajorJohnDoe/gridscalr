@@ -22,14 +22,15 @@ apply a manual scale to all pages, or clear it.
 
 - **Length** measures a polyline. Press Enter or double-click to finish.
 - **Area** measures a polygon, rectangle or ellipse. Choose **Add** or
-  **Deduct** in the context bar.
+  **Deduct** in the measurement flyout.
 - **Count** places a count symbol. Choose the count type, category and room; set
   pieces per object for doors with several leaves.
 - Use the other measurement tools for radius, diameter, arc, angle, slope and
   volume.
 
-The **New measurement** popover sets the category, room, count type and area
-mode for the next item. Properties lets you change a placed item.
+The measurement flyout sets the category, room, target layer, count type and
+area mode for the next item. Open it from a measurement tool in the rail or from
+the context-bar summary. Properties lets you change a placed item.
 
 ## 4. Review and export
 

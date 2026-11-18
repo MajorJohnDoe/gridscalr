@@ -168,3 +168,120 @@ Phase 2 — [measurement tool flyout #320](https://github.com/MajorJohnDoe/grids
 move the **New measurement** settings and layer selection into the measurement
 tool flyout, open family flyouts on a normal left-click, keep long-press and
 right-click. No schema change expected.
+
+## Phase 2 — measurement tool flyout
+
+- **Issue:** [#320](https://github.com/MajorJohnDoe/gridscalr/issues/320)
+- **PR:** [#325](https://github.com/MajorJohnDoe/gridscalr/pull/325), opened from
+  `feat/measurement-tool-flyout`, base `main` (`2e4e5e6`). Not merged, not
+  auto-merge.
+- **Branch:** `feat/measurement-tool-flyout`
+- **Verified head SHA:** `f4c3482a1e94d0ea22b594ea4649b6f1bd1f1514`
+  (implementation `1c8083f`, handover `f4c3482`). CI run
+  [44304280280](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44304280280)
+  is green on that exact SHA after an earlier Linux-dependency install timeout
+  on the first run was retried. A docs-only handover-record commit may follow;
+  the conductor verifies the final PR head.
+- **Merge commit:** pending the conductor review.
+- **Schema:** unchanged at 28. App version unchanged at 0.29.0.
+
+### Completed work
+
+- Rail family flyouts now open on a normal left-click. Long-press and
+  right-click still open them. The rail click still activates the displayed
+  member, so the previous one-click selection path is preserved; choosing
+  another member selects it and closes the flyout.
+- The **New measurement** settings moved into the measurement tool flyout:
+  category, room (free text, clear and suggestions), count preset, count type,
+  pieces, save/delete preset, area shape and Add/Deduct mode where supported.
+  The same panel owns the page-scoped target layer.
+- The context bar keeps a compact summary for measurement tools and opens the
+  same flyout. The measurement target-layer select and the area Add/Deduct
+  toggle were removed from the context bar; drawing and neutral tools keep
+  their direct layer picker.
+- `src/ui/measureOptions.ts` and its CSS surface are deleted.
+- The layer list is page-scoped and excludes hidden, locked and other-page-only
+  layers, including inherited hierarchy state. A view-only session refuses to
+  open the panel and renders no editable controls.
+- All setting changes reuse the existing store actions. Saving a count preset is
+  one undo step.
+- Keyboard: focus enters the panel, Tab follows the form order, Escape closes
+  and returns focus to the anchor. Menu flyouts support
+  ArrowUp/ArrowDown/Home/End.
+- New `src/features/measurementFlyout/` module and `src/ui/flyoutHost.ts` shared
+  mount/extraction. `toolFlyouts.ts` shrank from 705 to 617 lines.
+- Docs updated in the same change; `measure.png` and the new
+  `measure-flyout.png` were regenerated. The other capture outputs differed only
+  by environment-level rendering noise, so they were not committed.
+- Visual baselines updated for the intended rail triangles on measurement
+  tools; the four scenes now pass with 0 differing pixels.
+
+### Modules
+
+- `src/features/measurementFlyout/model.ts`, `controller.ts`, `ui.ts`,
+  `index.ts`
+- `src/ui/flyoutHost.ts` (new), `src/ui/toolFlyouts.ts`, `toolDefs.ts`,
+  `contextBar.ts`, `shell.ts`
+- `src/styles/popovers.css`, `src/styles/themes/chrome.css`
+- `tests/measurementFlyout.test.ts`, `tests/toolFlyouts.test.ts`,
+  `tests/accessibilityGate.test.ts`, `tests/visual/`
+- `scripts/smoke-ui.mjs`, `canvas-regression.mjs`, `theme-preview.mjs`,
+  `accessibility-check.mjs`, `accessibility-rules.mjs`,
+  `touch-target-check.mjs`, `ui-scale-check.mjs`, `capture-docs-shots.mjs`,
+  `docs-capture-flow.mjs`
+
+### Decisions
+
+- **A rail click selects and opens.** Opening the flyout must not cost the
+  one-click measurement path, so the rail handler still activates the displayed
+  member before the flyout opens. Keyboard shortcuts keep selecting directly.
+- **Member selection closes; settings changes stay open.** This matches the
+  existing family-flyout behaviour and leaves the settings panel usable for
+  repeated changes.
+- **One surface.** The context-bar summary opens the measurement flyout; it is
+  not a second editor. The measurement layer list lives only in the flyout.
+- **Page-scoped target list.** A layer is offered only when it applies to the
+  page, is visible on it and is unlocked. `createItemInStore` keeps its existing
+  final guard.
+- **`flyoutHost` extraction.** The shared mount, focus, Escape, arrow key and
+  long-press code moved out of `toolFlyouts.ts` rather than raising its budget.
+
+### Findings
+
+- No new finding. The existing F-135 platform manual reorder gate is unchanged.
+
+### Open questions
+
+- The left-click flyout and touch long-press are covered by jsdom and Chromium
+  tests; a real pen/touch hardware pass remains on the manual review list.
+- Windows mouse behaviour is unchanged by this phase and still needs the Phase 1
+  product-owner confirmation.
+
+### Checks
+
+Local gate on `1c8083f`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (615 files),
+  `check:modules` (21 foundation features, 34 Tauri commands),
+  `check:security`, `check:actions`, `check:dependencies`,
+  `check:docs` (261 links, 55 images, 40 screenshots), `format:check`, `lint`,
+  `check:i18n` (3,577 keys), `check:themes`, `npx tsc --noEmit`
+- `npx vitest run`: 176 files, 1,767 tests passed
+- `test:ui`, `test:canvas`, `test:count`, `test:visual` (4 baselines, 0
+  differing pixels), `test:a11y` (5 palettes × 19 surfaces plus 5 Swedish
+  checks, 100 checks), `test:touch-targets` (754 controls across 23 surfaces),
+  `test:ui-scale` (100/150/200 %), `test:docs-capture`
+
+Not run locally, left to CI: the Windows/macOS desktop matrix, packaged smoke
+tests, `tauri build` (no Rust or Tauri change) and the complete CI suite on the
+PR head.
+
+### Conductor verification
+
+- pending
+
+### Next phase
+
+Phase 3 — [movable dialogs #321](https://github.com/MajorJohnDoe/gridscalr/issues/321):
+make every dialog with a close control movable and non-modal, with the ADR,
+focus and accessibility work.

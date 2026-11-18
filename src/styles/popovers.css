@@ -12,85 +12,82 @@
   opacity: 0.6;
 }
 
-/* ---------- Measurement options popover ---------- */
+/* ---------- Measurement flyout ---------- */
 
-.measure-options-root {
-  position: fixed;
-  inset: 0;
-  z-index: 1600;
-  pointer-events: none;
+.tool-flyout.is-measurement {
+  width: 300px;
 }
 
-.measure-options {
-  position: fixed;
-  width: 282px;
-  padding: 11px;
-  border: 1px solid var(--border);
-  border-radius: 9px;
-  background: var(--panel-raised);
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.55);
-  pointer-events: auto;
+.tool-flyout-heading {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-}
-
-.measure-options-title {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 1px 2px 5px;
+  align-items: flex-start;
+  gap: 2px;
+  margin: 0 6px 6px;
+  padding: 2px 0 6px;
   border-bottom: 1px solid var(--border-soft);
 }
 
-.measure-options-title > span:first-child {
+.tool-flyout-heading-title {
   color: var(--text-strong);
   font-size: 12px;
   font-weight: 650;
 }
 
-.measure-options-subtitle {
-  color: var(--muted-2);
-  font-size: 11px;
-  text-transform: uppercase;
+.tool-flyout-subtitle {
+  color: var(--muted);
+  font-size: 10px;
   letter-spacing: 0.5px;
+  text-transform: uppercase;
 }
 
-.measure-option-field {
+.tool-flyout-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  margin: 0 6px 6px;
 }
 
-.measure-option-label {
-  color: var(--muted-2);
-  font-size: 11px;
+.tool-flyout-field-label {
+  color: var(--muted);
+  font-size: 10px;
   font-weight: 650;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
-.measure-option-room {
+.tool-flyout-field .tool-flyout-select {
+  width: 100%;
+  margin: 0;
+}
+
+.tool-flyout-room {
   display: flex;
   align-items: center;
   gap: 3px;
 }
 
-.measure-option-room .input {
+.tool-flyout-room .input {
   flex: 1;
   min-width: 0;
 }
 
-.measure-option-clear {
+.tool-flyout-clear {
   width: 24px;
   height: 24px;
   color: var(--muted-2);
   font-size: 15px;
 }
 
-.measure-option-clear:hover {
+.tool-flyout-clear:hover {
   color: var(--text);
+}
+
+.tool-flyout-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 6px 6px;
 }
 
 .tool-flyout-root {
@@ -134,7 +131,7 @@
 
 .tool-flyout-section {
   margin: 7px 6px 3px;
-  color: var(--muted-2);
+  color: var(--muted);
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.6px;
