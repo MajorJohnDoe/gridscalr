@@ -326,3 +326,153 @@ PR head.
 Phase 3 — [movable dialogs #321](https://github.com/MajorJohnDoe/gridscalr/issues/321):
 make every dialog with a close control movable and non-modal, with the ADR,
 focus and accessibility work.
+
+## Phase 3 — movable, non-modal dialogs
+
+- **Issue:** [#321](https://github.com/MajorJohnDoe/gridscalr/issues/321)
+- **PR:** [#326](https://github.com/MajorJohnDoe/gridscalr/pull/326), opened from
+  `feat/movable-dialogs`, base `main` (`e897d6e`). Not merged, not auto-merge.
+- **Branch:** `feat/movable-dialogs`
+- **Implementation commit:** `d28cac71e6cd18b1e77de455938dcfcf993b5e64`
+- **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
+  field, no migration fixture and no `src/io/projectFile` change.
+- **Status:** PR open; conductor verification and CI on the PR head pending.
+
+### Completed work
+
+- New foundation feature `src/features/dialogHost/` owns the window model:
+  `model.ts` (pure stack, viewport clamp, target comparison), `controller.ts`
+  (mount, stacking, header drag, Escape routing, focus return) and `ui.ts`
+  (shell markup plus the shared confirm, message, text, depth, password and
+  unsaved prompts). `src/ui/dialogs.ts` shrank from 525 to 264 lines and keeps
+  only calibration, manual-scale and recovery content plus the `showModal` /
+  `closeActiveModal` / prompt re-exports, so no call site changed its import.
+- The dimming backdrop is gone. Each dialog is a `.dialog-layer` fixed to the
+  viewport with `pointer-events: none`; only the `.modal` rectangle is
+  interactive, so the canvas behind it pans, zooms, selects and measures.
+  Clicking outside a dialog no longer dismisses it.
+- `role="dialog"`, a unique per-dialog `aria-labelledby` title id and
+  `aria-modal="false"`. Initial focus still enters the dialog and never lands on
+  a destructive primary action; there is no focus trap, `Tab` leaves and
+  re-enters, and closing returns focus to the opener when the closing dialog
+  owned focus.
+- Deterministic stacking: a monotonic counter from `DIALOG_Z_BASE` (2000), raised
+  on open, pointer press and focus-in. New dialogs are inserted first in `<body>`
+  so the first `.dialog-layer` is the topmost. `Escape` closes the focused
+  dialog, else the topmost, and yields to an open flyout or menu.
+- Header drag with button/field/`[data-dialog-no-drag]` opt-outs, an 8 px
+  viewport clamp and a re-clamp on resize. Positions are not stored.
+- `showModal({ headerActions })` renders a reusable `.modal-header-actions`
+  surface beside the close control; no Phase 4 action was added.
+- `showModal` no longer closes the active dialog. Nested editors **stack**: the
+  Takeoff settings hub stays open under the field editor and table builder and
+  repaints the current tab in place (`categoryLayout().refresh()`; the hub now
+  tracks `refresh` instead of reopening itself). Preferences repaints in place
+  through `refreshPreferencesDialog()` for workspace, stamp, recovery and
+  recent-file changes; a language switch still rebuilds the window for relabel.
+- Destructive confirmations revalidate their target by stable id at confirm
+  time: layer/inspector/bulk/subtree delete, layer clear-on-page, page delete,
+  category, count type, takeoff table, custom field and space delete, backup
+  delete, conflicted-copy delete and the destructive source actions. A vanished
+  or changed target refuses with a localized explanation; one rule
+  (`checkDialogTarget`/`targetProblem`, `revalidateTarget`,
+  `revalidateTargetNow`) is shared, not copied per dialog.
+- Global application shortcuts pause only while focus is inside a dialog
+  (`App.onKeyDown`), so clicking the drawing restores tool, zoom and pan keys
+  without closing the window; clipboard paste still refuses while a dialog is
+  open.
+- Docs: new `docs/adr/0017-movable-non-modal-dialogs.md`, updated
+  `docs/adr/README.md`, `docs/architecture.md`, `docs/testing.md`,
+  `docs/limitations.md`, `docs/user-guide.md` (**Dialogs and windows**),
+  `README.md` and the `AGENTS.md` module map. The space-register limitation was
+  corrected from "cannot change the selection while it is open" to "does not
+  rebuild when the selection changes".
+- Screenshots: 15 dialog captures plus `docs/screenshots/manifest.json`
+  recaptured with `npm run docs:capture`; `test:docs-capture` passes. The visual
+  baselines for `quantities.png` and `count-types.png` were re-baselined because
+  the dimming layer is gone (the dialog itself sits under the masked canvas
+  region). Non-dialog captures that differed only in the known ~30 px rendering
+  noise were not committed.
+
+### Modules
+
+- `src/features/dialogHost/model.ts`, `controller.ts`, `ui.ts`, `index.ts`
+- `src/ui/dialogs.ts` (264 lines), `src/styles/dialogs.css`,
+  `src/styles/themes/chrome.css`
+- `src/ui/preferencesDialog.ts`, `src/ui/settingsControls.ts` (`current()`)
+- `src/features/takeoffSettings/ui/dialog.ts`, `objects.ts`, `tables.ts`
+- `src/features/spaces/ui/list.ts`, `src/features/fields/ui/fieldList.ts`
+- `src/ui/inspector.ts`, `src/ui/layers/menu.ts`, `src/ui/layers/bulk.ts`
+- `src/app/pageFlows.ts`, `App.ts`, `clipboardPaste.ts`
+- `src/features/saveIntegrity/backupController.ts`,
+  `src/features/conflictedCopies/ui.ts` + `ports.ts`,
+  `src/features/sourceStorage/sourceActions.ts`
+- `src/i18n/locales/*.json`, `src/i18n/types.generated.ts`
+- `scripts/check-module-boundaries.mjs`, `scripts/docs-capture-flow.mjs`
+- `tests/dialogHost.test.ts` (new), `tests/takeoffSettingsUi.test.ts`,
+  `tests/dialogFocus.test.ts` and the `.dialog-layer` cleanup rename across the
+  dialog suites, `tests/visual/`
+
+### Decisions
+
+- **Non-modal means no outside-click close.** A modal backdrop dismissed on an
+  outside click; a desktop window does not. A stray canvas click must not discard
+  typed settings, and the drawing must remain a click target.
+- **Stack, do not replace.** Opening a dialog from a dialog pushes it on top;
+  closing returns to the window underneath. Self-rebuilding windows repaint in
+  place instead of reopening, because reopening would now stack a duplicate.
+- **Id-based revalidation, not a canvas freeze.** A blanket freeze would undo the
+  reason for non-modal dialogs. The captured id plus a resolve callback is
+  narrower and keeps the rest of the window usable. Inline confirmations use the
+  synchronous `revalidateTargetNow`; the type (`ResolvedTarget`) rejects an async
+  resolver at compile time.
+- **Shortcuts pause on focus, not on presence.** The old `querySelector`
+  guard would have made the keyboard useless while a window was open.
+- **No remembered positions and no keyboard move**, recorded in the ADR and
+  `docs/limitations.md`.
+
+### Findings
+
+- **F-136** (P3): `docs/screenshots/layers.png` was left stale in Phase 2 because
+  a real context-bar change was filtered as capture noise.
+- **F-137** (P3): transient flyouts and menus are not part of `DialogStack`;
+  Escape precedence is a class-name check.
+- **F-138** (P3): `--overlay-modal` is now an unused theme token in all five
+  palettes.
+
+### Open questions
+
+- Windows 11 and macOS drag/interaction of a non-modal window are covered by
+  jsdom and Chromium only; they stay on the manual release review list.
+- `F-136` leaves `layers.png` stale in this PR on purpose to keep the change
+  scoped; it belongs to the release documentation pass.
+
+### Checks
+
+Local gate on `d28cac7`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (619 files),
+  `check:modules` (22 foundation features, 34 Tauri commands),
+  `check:security`, `check:actions`, `check:dependencies`,
+  `check:docs` (270 links, 55 images, 40 screenshots, no stale warning),
+  `format:check`, `lint`, `check:i18n` (3 590 keys), `check:themes`,
+  `npx tsc --noEmit`
+- `npx vitest run`: 177 files, 1 783 tests passed
+- `test:ui`, `test:visual` (4 baselines, 0 differing pixels),
+  `test:a11y` (100 checks, 0 serious/critical), `test:touch-targets`
+  (754 controls across 23 surfaces), `test:ui-scale` (100/150/200 %),
+  `test:docs-capture`, `npm run docs:capture`
+
+Not run locally, left to CI: the Windows/macOS desktop matrix and the packaged
+smoke test. No Rust or `tauri.conf.json` change, so no desktop shell build was
+needed.
+
+### Conductor verification
+
+- pending
+
+### Next phase
+
+Phase 4 — [schedule editor header actions #322](https://github.com/MajorJohnDoe/gridscalr/issues/322):
+put Save, Duplicate and Delete in the takeoff table editor header beside Close,
+reusing the Phase 3 `headerActions` surface.
