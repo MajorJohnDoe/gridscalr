@@ -176,13 +176,16 @@ right-click. No schema change expected.
   `feat/measurement-tool-flyout`, base `main` (`2e4e5e6`). Not merged, not
   auto-merge.
 - **Branch:** `feat/measurement-tool-flyout`
-- **Verified head SHA:** `f4c3482a1e94d0ea22b594ea4649b6f1bd1f1514`
-  (implementation `1c8083f`, handover `f4c3482`). CI run
-  [44304280280](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44304280280)
-  is green on that exact SHA after an earlier Linux-dependency install timeout
-  on the first run was retried. A docs-only handover-record commit may follow;
-  the conductor verifies the final PR head.
-- **Merge commit:** pending the conductor review.
+- **Verified head SHA:** `b907897749c38517458b1576271159a1e107d841`
+  (implementation `1c8083f`, handover `f4c3482`, CI record `b907897`). All six
+  PR checks passed on that exact SHA (CI run
+  [44306061281](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44306061281));
+  an earlier run failed only on a Linux dependency-install timeout and was
+  retried green.
+- **Merge commit:** `22a1f6d7238f4cd1394eabdbcf91d4c3314d50d6` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`; the `main` CI run on the merge commit is
+  [44307835270](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44307835270).
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0.
 
 ### Completed work
@@ -278,7 +281,45 @@ PR head.
 
 ### Conductor verification
 
-- pending
+- PR [#325](https://github.com/MajorJohnDoe/gridscalr/pull/325) head
+  `b907897749c38517458b1576271159a1e107d841` matched the worker report; all six
+  checks were `success`, the base was `main` (`2e4e5e6`, whose `main` CI run
+  [44294008412](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44294008412)
+  is green) and the merge state was `CLEAN`/`MERGEABLE` before the merge.
+- Conductor re-ran `npx vitest run tests/measurementFlyout.test.ts
+  tests/toolFlyouts.test.ts tests/accessibilityGate.test.ts`: 3 files, 32 tests
+  passed. `check:versions` (0.29.0), `check:file-budgets` (615 files),
+  `check:modules` (21 foundation features, 34 Tauri commands) and `check:i18n`
+  (3 577 keys) are green.
+- Scope matched #320 and the module map: new
+  `src/features/measurementFlyout/` (pure model 100 lines, controller 50, UI 237,
+  `index.ts` 10) plus the shared `src/ui/flyoutHost.ts`; `toolFlyouts.ts` shrank
+  to 617 lines instead of growing. No `src/model/types.ts`,
+  `src/io/projectFile`, version file, `tauri.conf.json`, `Cargo.*`, `security/`
+  or `site/` file changed; `SCHEMA_VERSION` stays 28 and the app version stays
+  0.29.0.
+- One surface, verified in code: `src/ui/measureOptions.ts` and its CSS are
+  deleted, no source imports a measure-options popover, the context bar renders a
+  compact summary that calls `openMeasurementFlyout`, and the measurement target
+  layer select is gone from the context bar (drawing and neutral tools keep their
+  picker). The module keeps the model rules in `model.ts`
+  (`measurementTargetLayers`, `matchingCountPreset`, `measurementSummary`) and
+  reuses the store actions in `controller.ts`.
+- Layer scoping and view-only are covered by tests: the target list is page-scoped
+  and drops hidden, locked, other-page and draw-kind layers, including inherited
+  hierarchy state; a view-only session refuses to open the panel. Left-click,
+  long-press and right-click each open the family flyout, and a rail click still
+  selects the displayed member, so the one-click measurement path is kept.
+- Screenshots: `docs/screenshots/measure.png` and the new
+  `docs/screenshots/measure-flyout.png` were recaptured; the four visual
+  baselines changed only by the intended rail marker on family tools and pass at
+  0 differing pixels. `docs/theme-preview/chrome.css` is the regenerated copy of
+  the removed `.measure-options` rule.
+- Squash merged as `22a1f6d7238f4cd1394eabdbcf91d4c3314d50d6`; the `main` CI run
+  on that commit, the **Pages** screenshot deploy and a fresh `Release build`
+  (run [44307859472](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44307859472),
+  Windows test build for the product owner) were started from the merge commit.
+  No tag, release or `site/` change.
 
 ### Next phase
 
