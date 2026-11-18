@@ -12,14 +12,17 @@ import {
   type ListSelectMode,
   type MoveOutcome,
 } from "./model";
+import { PointerRowDrag } from "./pointerDrag";
 import { DropIndicator, LiveRegion } from "./ui";
 
 /**
  * Generic drag, multi-selection and keyboard reorder controller for a vertical
- * list. A host supplies the ordered entries, the row selector, the drag MIME
- * marker and one move callback; the controller owns the transient drag state,
- * the drop line, the selection and the live-region announcement.
+ * list. A host supplies the ordered entries, the row selector and one move
+ * callback; the controller owns the transient drag state, the drop line, the
+ * selection and the live-region announcement.
  *
+ * The drag gesture is pointer-based (see `PointerRowDrag`), so it keeps working
+ * while the desktop shell owns the operating system's drag-and-drop channel.
  * The controller never writes the project. Every move is one host action, so a
  * list keeps its own checkpoint and undo semantics.
  */
@@ -48,8 +51,6 @@ export interface ListReorderOptions<E extends ListEntry> {
   canReorder: () => boolean;
   /** Enables click selection, range selection and `is-selected` styling. */
   selectable?: boolean;
-  /** `dataTransfer` type that marks an internal list drag. */
-  dragMime: string;
   /**
    * Applies one move. `changesOrder` is false for a drop that keeps the order,
    * so a host can skip writing a history step.
@@ -71,9 +72,7 @@ export interface ListReorderOptions<E extends ListEntry> {
 export class ListReorderController<E extends ListEntry = ListEntry> {
   private readonly indicator: DropIndicator;
   private readonly announcer: LiveRegion;
-  private readonly onDragOver = (event: DragEvent): void => this.handleDragOver(event);
-  private readonly onDragLeave = (event: DragEvent): void => this.handleDragLeave(event);
-  private readonly onDrop = (event: DragEvent): void => this.handleDrop(event);
+  private readonly pointer: PointerRowDrag;
   private readonly stepScroll = (): void => this.runScroll();
   private list: HTMLElement | null = null;
   private scroll: HTMLElement | null = null;
@@ -92,6 +91,14 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
       labelClass: options.dropLabelClass,
     });
     this.announcer = new LiveRegion(options.announcerClass);
+    this.pointer = new PointerRowDrag({
+      rowSelector: options.rowSelector,
+      canStart: () => this.options.canReorder(),
+      onStart: (row) => this.beginDrag(row),
+      onMove: (x, y) => this.dragOver(x, y),
+      onDrop: (x, y) => this.drop(x, y),
+      onCancel: () => this.clearDragState(),
+    });
   }
 
   /** Selected IDs in list order; empty in a list without selection. */
@@ -104,9 +111,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.releaseList();
     this.list = list;
     this.scroll = scroll;
-    list.addEventListener("dragover", this.onDragOver);
-    list.addEventListener("dragleave", this.onDragLeave);
-    list.addEventListener("drop", this.onDrop);
+    this.pointer.bind(list);
     this.prune();
   }
 
@@ -132,37 +137,6 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.anchor = next.anchor;
     this.applySelection();
     return mode !== "toggle";
-  }
-
-  handleDragStart(event: DragEvent, id: string, row: HTMLElement): void {
-    if (!this.options.canReorder()) {
-      event.preventDefault();
-      return;
-    }
-    if (this.options.selectable && !this.selection.includes(id)) {
-      this.selection = [id];
-      this.anchor = id;
-    }
-    const entries = this.options.entries();
-    this.dragging = this.options.selectable ? dragSet(entries, new Set(this.selection), id) : [id];
-    this.applySelection();
-    row.classList.add("is-dragging");
-    for (const other of this.rows()) {
-      const otherId = this.options.rowId(other);
-      if (other !== row && otherId && this.dragging.includes(otherId)) {
-        other.classList.add("is-dragging");
-      }
-    }
-    // The text payload and the custom type are the internal drag markers. An
-    // operating-system file drop only carries `Files`, so the two gestures stay
-    // apart even when they land on the same panel.
-    event.dataTransfer?.setData("text/plain", this.dragging.join("\n"));
-    event.dataTransfer?.setData(this.options.dragMime, this.dragging.join("\n"));
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-  }
-
-  handleDragEnd(): void {
-    this.clearDragState();
   }
 
   handleKeyDown(event: KeyboardEvent, id: string): void {
@@ -223,10 +197,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     const list = this.list;
     if (!list) return null;
     const rows = this.rows();
-    const spans = rows.map((row) => {
-      const rect = row.getBoundingClientRect();
-      return { top: rect.top, bottom: rect.bottom };
-    });
+    const spans = rowSpans(rows);
     const renderedIndex = insertionIndexAt(spans, clientY);
     this.indicator.show(list, rows, renderedIndex, null);
     return mapIndex ? mapIndex(renderedIndex, rows) : renderedIndex;
@@ -272,55 +243,75 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     };
   }
 
+  /**
+   * Starts one row drag: an unselected grabbed row becomes the selection, and
+   * a grabbed row inside the selection moves the whole block.
+   */
+  private beginDrag(row: HTMLElement): boolean {
+    const id = this.options.rowId(row);
+    if (!id || !this.options.canReorder()) return false;
+    if (this.options.selectable && !this.selection.includes(id)) {
+      this.selection = [id];
+      this.anchor = id;
+    }
+    const entries = this.options.entries();
+    this.dragging = this.options.selectable ? dragSet(entries, new Set(this.selection), id) : [id];
+    this.applySelection();
+    row.classList.add("is-dragging");
+    for (const other of this.rows()) {
+      const otherId = this.options.rowId(other);
+      if (other !== row && otherId && this.dragging.includes(otherId)) {
+        other.classList.add("is-dragging");
+      }
+    }
+    return true;
+  }
+
+  private isInsideList(clientX: number, clientY: number): boolean {
+    const list = this.list;
+    if (!list) return false;
+    const rect = list.getBoundingClientRect();
+    return (
+      clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    );
+  }
+
+  private dragOver(clientX: number, clientY: number): void {
+    if (!this.dragging.length || !this.options.canReorder()) return;
+    if (!this.isInsideList(clientX, clientY)) {
+      // A pointer outside the list has no insertion point, same as leaving a
+      // native drag: hide the line and stop scrolling, but keep the drag.
+      this.plan = null;
+      this.indicator.hide();
+      this.scrollSpeed = 0;
+      return;
+    }
+    this.pointerY = clientY;
+    this.refreshPlan();
+    this.updateAutoScroll();
+  }
+
   private refreshPlan(): void {
     if (!this.list || !this.dragging.length) return;
     const rows = this.rows();
-    const spans = rows.map((row) => {
-      const rect = row.getBoundingClientRect();
-      return { top: rect.top, bottom: rect.bottom };
-    });
-    const insertionIndex = insertionIndexAt(spans, this.pointerY);
+    const insertionIndex = insertionIndexAt(rowSpans(rows), this.pointerY);
     const entries = this.options.entries();
     const plan = this.planFor(entries, new Set(this.dragging), insertionIndex);
     this.plan = plan;
     this.indicator.show(this.list, rows, insertionIndex, plan.label, plan.crossDocument);
   }
 
-  private handleDragOver(event: DragEvent): void {
-    if (this.isFileDrag(event)) return;
-    if (!this.dragging.length || !this.options.canReorder()) return;
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    this.pointerY = event.clientY;
-    this.refreshPlan();
-    this.updateAutoScroll();
-  }
-
-  private handleDragLeave(event: DragEvent): void {
-    if (!this.list) return;
-    const rect = this.list.getBoundingClientRect();
-    const inside =
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom;
-    if (inside) return;
-    this.indicator.hide();
-    this.scrollSpeed = 0;
-  }
-
-  private handleDrop(event: DragEvent): void {
-    if (this.isFileDrag(event)) return;
-    event.preventDefault();
-    const plan = this.plan;
+  private drop(clientX: number, clientY: number): void {
     const ids = [...this.dragging];
+    let plan: ListDropPlan | null = null;
+    if (ids.length && this.options.canReorder() && this.isInsideList(clientX, clientY)) {
+      this.pointerY = clientY;
+      this.refreshPlan();
+      plan = this.plan;
+    }
     this.clearDragState();
-    if (!plan || !ids.length || !this.options.canReorder()) return;
+    if (!plan || !ids.length) return;
     this.options.onMove(ids, plan.insertionIndex, plan.changesOrder);
-  }
-
-  private isFileDrag(event: DragEvent): boolean {
-    return Array.from(event.dataTransfer?.types ?? []).includes("Files");
   }
 
   private clearDragState(): void {
@@ -363,11 +354,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
   }
 
   private releaseList(): void {
-    if (this.list) {
-      this.list.removeEventListener("dragover", this.onDragOver);
-      this.list.removeEventListener("dragleave", this.onDragLeave);
-      this.list.removeEventListener("drop", this.onDrop);
-    }
+    this.pointer.detach();
     if (this.scrollFrame !== null && typeof cancelAnimationFrame === "function") {
       cancelAnimationFrame(this.scrollFrame);
     }
@@ -377,4 +364,12 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     this.list = null;
     this.scroll = null;
   }
+}
+
+/** Row spans for the insertion rule; one helper keeps both paths aligned. */
+function rowSpans(rows: readonly HTMLElement[]): { top: number; bottom: number }[] {
+  return rows.map((row) => {
+    const rect = row.getBoundingClientRect();
+    return { top: rect.top, bottom: rect.bottom };
+  });
 }

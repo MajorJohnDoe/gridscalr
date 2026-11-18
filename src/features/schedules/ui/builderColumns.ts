@@ -3,12 +3,14 @@ import { icon } from "../../../ui/icons";
 import { t } from "../../../i18n";
 import { makeColumn, scheduleFieldInfo, scheduleFieldsForSource } from "../model";
 import type { ScheduleDraft } from "../model";
+import { PointerRowDrag, rowIndexAt } from "../../listInteraction";
 import type { BuilderContext } from "./builderContext";
 
 /**
  * The column picker with drag order. A pointer drag and the accessible
  * up/down buttons write the same array order, and a hidden column keeps its
- * place so showing it again does not move it.
+ * place so showing it again does not move it. The drag is pointer-based, so a
+ * desktop shell that owns OS drag-and-drop cannot swallow it.
  */
 
 function iconButton(markup: string, label: string, onClick: () => void): HTMLButtonElement {
@@ -56,6 +58,60 @@ export function columnsSection(ctx: BuilderContext): HTMLElement {
   const list = el("div", "schedules-builder-columns");
   list.setAttribute("role", "list");
   let dragIndex: number | null = null;
+  let dropIndex: number | null = null;
+
+  const columnRows = (): HTMLElement[] => [
+    ...list.querySelectorAll<HTMLElement>(".schedules-builder-column"),
+  ];
+
+  const clearDropTarget = (): void => {
+    dropIndex = null;
+    for (const entry of columnRows()) entry.classList.remove("is-drop-target", "is-dragging");
+  };
+
+  const targetIndex = (clientY: number): number => {
+    const spans = columnRows().map((entry) => {
+      const rect = entry.getBoundingClientRect();
+      return { top: rect.top, bottom: rect.bottom };
+    });
+    return rowIndexAt(spans, clientY);
+  };
+
+  const drag = new PointerRowDrag({
+    rowSelector: ".schedules-builder-column",
+    handleSelector: ".schedules-builder-handle",
+    canStart: () => draft.columns.length > 1,
+    onStart: (row) => {
+      const index = Number(row.dataset.index);
+      if (!Number.isFinite(index)) return false;
+      dragIndex = index;
+      row.classList.add("is-dragging");
+      return true;
+    },
+    onMove: (_x, clientY) => {
+      if (dragIndex === null) return;
+      const index = targetIndex(clientY);
+      if (index < 0) return;
+      if (dropIndex !== index) {
+        for (const entry of columnRows()) {
+          entry.classList.toggle("is-drop-target", Number(entry.dataset.index) === index);
+        }
+        dropIndex = index;
+      }
+    },
+    onDrop: (_x, clientY) => {
+      const from = dragIndex;
+      const to = targetIndex(clientY);
+      dragIndex = null;
+      clearDropTarget();
+      if (from === null || to < 0) return;
+      if (moveColumn(draft, from, to)) ctx.rebuild();
+    },
+    onCancel: () => {
+      dragIndex = null;
+      clearDropTarget();
+    },
+  });
 
   draft.columns.forEach((column, index) => {
     const info = scheduleFieldInfo(project, draft.source, column.field);
@@ -65,31 +121,9 @@ export function columnsSection(ctx: BuilderContext): HTMLElement {
 
     const handle = el("button", "icon-btn schedules-builder-handle");
     handle.type = "button";
-    handle.draggable = true;
     handle.title = t("schedules.builder.dragColumn");
     handle.setAttribute("aria-label", t("schedules.builder.dragColumnAria", { field: info.label }));
     handle.innerHTML = icon("grip", 14);
-    handle.addEventListener("dragstart", (event) => {
-      dragIndex = index;
-      event.dataTransfer?.setData("text/plain", String(index));
-      if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-    });
-    handle.addEventListener("dragend", () => {
-      dragIndex = null;
-    });
-    row.addEventListener("dragover", (event) => {
-      if (dragIndex === null) return;
-      event.preventDefault();
-      row.classList.add("is-drop-target");
-    });
-    row.addEventListener("dragleave", () => row.classList.remove("is-drop-target"));
-    row.addEventListener("drop", (event) => {
-      event.preventDefault();
-      row.classList.remove("is-drop-target");
-      const from = dragIndex ?? Number(event.dataTransfer?.getData("text/plain"));
-      dragIndex = null;
-      if (Number.isFinite(from) && moveColumn(draft, from, index)) ctx.rebuild();
-    });
 
     const label = el("input", "input schedules-builder-column-label");
     label.type = "text";
@@ -155,6 +189,7 @@ export function columnsSection(ctx: BuilderContext): HTMLElement {
     list.append(row);
   });
 
+  drag.bind(list);
   if (!draft.columns.length) {
     list.append(el("p", "schedules-builder-empty", t("schedules.builder.noColumns")));
   }

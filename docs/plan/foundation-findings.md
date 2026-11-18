@@ -3352,3 +3352,29 @@ remains the scheduling home.
   this closeout.
 - **Related:** F-118, `src/features/projectImport/unresolved.ts`,
   `docs/limitations.md`.
+
+### F-135 — Row reordering is not automated on WebKitGTK and WKWebView
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 1 — Windows 11 row reordering
+- **Severity:** P3
+- **Area:** List interaction / desktop webviews
+- **Status:** open — documented in `docs/testing.md`
+- **Evidence:** `PointerRowDrag` in
+  `src/features/listInteraction/pointerDrag.ts` is the only mouse reorder path
+  for Pages, Layers and the takeoff builder columns. It is covered in jsdom
+  (`tests/listInteraction.test.ts`, `tests/pageReorder.test.ts`,
+  `tests/layerTreeDrag.test.ts`, `tests/schedulesUi.test.ts`) and by one real
+  mouse drag in Chromium (`scripts/smoke-ui.mjs`). Playwright drives Chromium,
+  not the WebKitGTK or WKWebView engine the packaged app embeds.
+- **Problem:** A platform-specific pointer or focus difference in a packaged
+  macOS or Linux build would not fail CI, and Windows itself cannot be automated
+  either (`tauri-driver` has no macOS support and native drag is not scripted on
+  any platform).
+- **Impact:** No data risk; the gesture is standard DOM pointer input and the
+  reorder model is unchanged. A broken gesture would be caught only by the
+  manual release review.
+- **Next step:** keep the per-platform manual reorder step in the release
+  checklist, and add an automated gesture check only if a desktop WebDriver path
+  becomes available.
+- **Related:** #319, `docs/testing.md`, `scripts/smoke-ui.mjs`.

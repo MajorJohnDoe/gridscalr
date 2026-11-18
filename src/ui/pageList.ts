@@ -235,7 +235,6 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
     }
     const card = el("button", "page-card");
     card.type = "button";
-    card.draggable = reorderEnabled;
     card.dataset.page = String(page);
     card.dataset.pageId = pageId;
     card.classList.toggle("is-active", page === store.ui.page);
@@ -326,10 +325,6 @@ export function renderPages(refs: ShellRefs, actions: PanelActions): void {
       if (pageReorder.handleClick(event, pageId)) actions.goToPage(page, true);
     });
     if (reorderEnabled) {
-      card.addEventListener("dragstart", (event) =>
-        pageReorder.handleDragStart(event, pageId, card),
-      );
-      card.addEventListener("dragend", () => pageReorder.handleDragEnd());
       card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, pageId));
     }
     pageMenu.bindCard(card, pageId, actions);

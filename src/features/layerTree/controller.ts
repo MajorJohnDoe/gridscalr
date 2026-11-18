@@ -5,6 +5,7 @@ import {
   dragSet,
   DropIndicator,
   LiveRegion,
+  PointerRowDrag,
   pruneSelection,
   selectionAfterClick,
   type ListSelectMode,
@@ -34,7 +35,6 @@ export interface LayerTreeControllerOptions {
   /** Repaints the panel after a pure view change such as expand/collapse. */
   requestRender?: () => void;
   rowSelector?: string;
-  mime: string;
 }
 
 function layerName(project: Pick<Project, "layers"> | null, layerId: string): string {
@@ -54,19 +54,25 @@ export class LayerTreeController {
   });
   private readonly announcer = new LiveRegion("layer-reorder-announcer");
   private readonly scroller = new ListAutoScroll();
-  private readonly onDragOver = (event: DragEvent): void => this.handleDragOver(event);
-  private readonly onDragLeave = (event: DragEvent): void => this.handleDragLeave(event);
-  private readonly onDrop = (event: DragEvent): void => this.handleDrop(event);
+  private readonly pointer: PointerRowDrag;
   private list: HTMLElement | null = null;
   private scroll: HTMLElement | null = null;
   private selection: string[] = [];
   private anchor: string | null = null;
   private dragging: string[] = [];
-  private preview: LayerDropPreview | null = null;
   private highlight: HTMLElement | null = null;
   private pendingFocus: string | null = null;
 
-  constructor(private readonly options: LayerTreeControllerOptions) {}
+  constructor(private readonly options: LayerTreeControllerOptions) {
+    this.pointer = new PointerRowDrag({
+      rowSelector: options.rowSelector ?? ".layer-row",
+      canStart: () => this.options.canMove(),
+      onStart: (row) => this.beginDrag(row),
+      onMove: (x, y) => this.dragOver(x, y),
+      onDrop: (x, y) => this.drop(x, y),
+      onCancel: () => this.clearDragState(),
+    });
+  }
 
   /** Selected layer ids in display order. */
   selectionIds(): string[] {
@@ -77,9 +83,7 @@ export class LayerTreeController {
     this.release();
     this.list = list;
     this.scroll = scroll;
-    list.addEventListener("dragover", this.onDragOver);
-    list.addEventListener("dragleave", this.onDragLeave);
-    list.addEventListener("drop", this.onDrop);
+    this.pointer.bind(list);
     this.selection = pruneSelection(
       this.renderedIds().map((id) => ({ id })),
       this.selection,
@@ -121,11 +125,13 @@ export class LayerTreeController {
     return mode === "replace";
   }
 
-  handleDragStart(event: DragEvent, id: string, row: HTMLElement): void {
-    if (!this.options.canMove()) {
-      event.preventDefault();
-      return;
-    }
+  /**
+   * Starts one row drag. A grabbed row outside the selection becomes the
+   * selection, so dragging any selected row moves the whole block.
+   */
+  private beginDrag(row: HTMLElement): boolean {
+    const id = row.dataset.layerId;
+    if (!id || !this.options.canMove()) return false;
     if (!this.selection.includes(id)) {
       this.selection = [id];
       this.anchor = id;
@@ -140,13 +146,7 @@ export class LayerTreeController {
         other.classList.add("is-dragging");
       }
     }
-    event.dataTransfer?.setData("text/plain", this.dragging.join("\n"));
-    event.dataTransfer?.setData(this.options.mime, this.dragging.join("\n"));
-    if (event.dataTransfer) event.dataTransfer.effectAllowed = "move";
-  }
-
-  handleDragEnd(): void {
-    this.clearDragState();
+    return true;
   }
 
   /**
@@ -299,20 +299,28 @@ export class LayerTreeController {
     return [...this.list.querySelectorAll<HTMLElement>(this.options.rowSelector ?? ".layer-row")];
   }
 
-  private handleDragOver(event: DragEvent): void {
-    if (this.isFileDrag(event) || !this.dragging.length) return;
+  private isInsideList(clientX: number, clientY: number): boolean {
+    const list = this.list;
+    if (!list) return false;
+    const rect = list.getBoundingClientRect();
+    return (
+      clientX >= rect.left && clientX <= rect.right && clientY >= rect.top && clientY <= rect.bottom
+    );
+  }
+
+  private dragOver(clientX: number, clientY: number): void {
+    if (!this.dragging.length) return;
     if (!this.options.canMove() || !this.list) return;
     const project = this.options.project();
     if (!project) return;
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    const preview = layerDropPreview(
-      project,
-      this.dragging,
-      layerRowSpans(this.rows()),
-      event.clientY,
-    );
-    this.preview = preview;
+    if (!this.isInsideList(clientX, clientY)) {
+      // Leaving the tree keeps the row held but clears the drop target.
+      this.indicator.hide();
+      this.clearHighlight();
+      this.scroller.stop();
+      return;
+    }
+    const preview = layerDropPreview(project, this.dragging, layerRowSpans(this.rows()), clientY);
     if (!preview) return;
     this.indicator.show(
       this.list,
@@ -322,27 +330,15 @@ export class LayerTreeController {
       preview.feedback === "reject",
     );
     this.setHighlight(preview.highlightId);
-    this.scroller.update(this.scroll, event.clientY);
+    this.scroller.update(this.scroll, clientY);
   }
 
-  private handleDragLeave(event: DragEvent): void {
-    if (!this.list) return;
-    const rect = this.list.getBoundingClientRect();
-    const inside =
-      event.clientX >= rect.left &&
-      event.clientX <= rect.right &&
-      event.clientY >= rect.top &&
-      event.clientY <= rect.bottom;
-    if (inside) return;
-    this.indicator.hide();
-    this.clearHighlight();
-    this.scroller.stop();
-  }
-
-  private handleDrop(event: DragEvent): void {
-    if (this.isFileDrag(event)) return;
-    event.preventDefault();
-    const preview = this.preview;
+  private drop(clientX: number, clientY: number): void {
+    const project = this.options.project();
+    let preview: LayerDropPreview | null = null;
+    if (this.dragging.length && project && this.isInsideList(clientX, clientY)) {
+      preview = layerDropPreview(project, this.dragging, layerRowSpans(this.rows()), clientY);
+    }
     const ids = [...this.dragging];
     this.clearDragState();
     if (!preview || !ids.length) return;
@@ -351,10 +347,6 @@ export class LayerTreeController {
       return;
     }
     this.run(ids, preview.plan);
-  }
-
-  private isFileDrag(event: DragEvent): boolean {
-    return Array.from(event.dataTransfer?.types ?? []).includes("Files");
   }
 
   private setHighlight(id: string | null): void {
@@ -372,7 +364,6 @@ export class LayerTreeController {
 
   private clearDragState(): void {
     this.dragging = [];
-    this.preview = null;
     this.indicator.hide();
     this.clearHighlight();
     this.scroller.stop();
@@ -380,11 +371,7 @@ export class LayerTreeController {
   }
 
   private release(): void {
-    if (this.list) {
-      this.list.removeEventListener("dragover", this.onDragOver);
-      this.list.removeEventListener("dragleave", this.onDragLeave);
-      this.list.removeEventListener("drop", this.onDrop);
-    }
+    this.pointer.detach();
     this.scroller.stop();
     this.indicator.destroy();
     this.list = null;

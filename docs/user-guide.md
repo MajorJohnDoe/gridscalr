@@ -787,7 +787,7 @@ Open the **Layers** tab in the left panel. The panel always shows the layers of 
 - Drawing layers and measurement layers each have their own section with a header, a count and an action strip at the bottom.
 - **Eye** shows or hides a layer on the current page.
 - **Lock** prevents moving, editing, and deleting its items on the current page.
-- Click the colour swatch to change the layer colour. Press and drag anywhere on the row, including the swatch, folder icon or name, to move the layer.
+- Click the colour swatch to change the layer colour. Press and drag the row itself, for example its name or the space beside it, to move the layer. A press on the swatch, the chevron or a row button keeps that control's own action instead of starting a drag.
 - Double-click anywhere on a layer row, or press `F2` on the focused row, to rename it inline.
 - Drag a layer row within its group to reorder it. `Alt` + `Up` / `Down` moves the focused layer one step among its siblings and `Alt` + `Home` / `End` moves it to the first or last sibling; each move is announced and is one undo step.
 - Use the search field to filter by layer name, item label, kind or room. A matching item is revealed inside its layer, which expands automatically and lists only the matching items. Filtering narrows the list without changing the saved order, and a drag while filtered keeps the layers it did not show in their existing slots. A search keeps the group path of every match open.
