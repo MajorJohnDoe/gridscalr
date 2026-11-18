@@ -948,6 +948,15 @@ Next: effort exit — final documentation pass, Windows build and release decisi
   [#330](https://github.com/MajorJohnDoe/gridscalr/issues/330) (area shape as
   clickable icon options), one PR closing both. Epic #318. Schema unchanged at
   28; app version unchanged at 0.29.0.
+- **PR:** [#331](https://github.com/MajorJohnDoe/gridscalr/pull/331), opened from
+  `feat/measurement-flyout-polish`, base `main` (`504ad8f`). Not merged, not
+  auto-merge.
+- **Verified implementation head:** `4aa3996742addda5a25b3c0474a0c37d54239dd0`
+  (`d440e17` #329, `e2617b7` #330 with docs and screenshot, `2b5a119` withdrawn
+  advisory, `4aa3996` allowlist test). All six PR checks passed on that SHA (CI
+  run [44397348746](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44397348746)).
+  The commit carrying this handover entry is documentation only; it is not a new
+  implementation head.
 - **Branch:** `feat/measurement-flyout-polish`.
 
 ### Changes
@@ -997,5 +1006,11 @@ Next: effort exit — final documentation pass, Windows build and release decisi
   `npm audit` reported zero npm findings for the unchanged lockfile and the gate
   demanded the stale entry's removal. The withdrawn npm exception is removed
   from `security/dependency-allowlist.json` (six cargo entries remain, all
-  reviewed to 2027-02-15) and the gate passes. No dependency version changed.
+  reviewed to 2027-02-15), the committed-allowlist test now pins those six, and
+  the gate passes. No dependency version changed.
+- **Run record:** the first CI run failed only on that stale gate plus the
+  documented `Install Linux dependencies` apt-mirror timeout in the Rust job
+  (re-run, then green). A second run exposed the allowlist test still asserting
+  seven advisories; `4aa3996` fixes it, and the run above is green in all six
+  jobs.
 
