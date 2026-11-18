@@ -1014,3 +1014,35 @@ Next: effort exit — final documentation pass, Windows build and release decisi
   seven advisories; `4aa3996` fixes it, and the run above is green in all six
   jobs.
 
+### Conductor verification and merge
+
+- Final PR head `e08310aebfd4e64b195f0e67bb75db2382142ebe` (documentation commit
+  on top of the implementation head); all six PR checks `success`, base `main`,
+  `CLEAN`/`MERGEABLE`.
+- The base `504ad8f` had one red job, `Desktop shell (ubuntu-22.04)`, from the
+  same `Install Linux dependencies` apt-mirror failure that recurs in this
+  environment; its dependency gate, Rust job and frontend job were green, so no
+  code was at fault and none was changed.
+- The withdrawn advisory was verified independently before the allowlist change
+  was accepted: `gh api /advisories/GHSA-FC5Q-39XC-VJPF` reports
+  `withdrawn_at: 2026-11-18T15:38:56Z`, and `npm run check:dependencies` now
+  reports **0 npm findings** with the six reviewed cargo exceptions unchanged.
+  Removing a withdrawn exception is not a new acceptance.
+- Conductor re-ran `npx vitest run tests/toolFlyouts.test.ts
+  tests/measurementFlyout.test.ts tests/dependencyGate.test.ts
+  tests/accessibilityGate.test.ts`: 4 files, 60 tests passed. `check:versions`
+  (0.29.0), `check:file-budgets` (623 files), `check:modules` (22 features),
+  `check:i18n` (3 590 keys) and `GRIDSCALR_DOCS_STRICT=1 npm run check:docs`
+  (272 links, 55 images, 40 screenshots, no stale warning) are green.
+- Scope verified: the click rule comes from `ToolDef.variantFlyout` +
+  `hasToolVariants()`, the per-tool renderer is a keyed `VARIANT_FLYOUTS` record
+  and a test fails when metadata and panels disagree; the area shape is a named
+  `radiogroup` of `variantRow` options with one tab stop and arrow/Enter/Space
+  handling, writing through the unchanged `store.setMeasureAreaShape`. No
+  `src/model/types.ts`, `src/io/projectFile`, version file, `Cargo.*`,
+  `tauri.conf.json`, `site/` or `docs/release-notes/` change.
+- Squash merged as `a0e8b366ba104e7873e4aef41decc0ae89c349fa`. `Release build`
+  run
+  [44406978628](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44406978628)
+  was dispatched on that commit for a fresh Windows installer; it does not tag,
+  publish or change `site/`.
