@@ -50,6 +50,8 @@ Every dialog with a close (X) behaves like a normal desktop window, so you can r
 - Opening a dialog from another dialog stacks it on top. Closing it returns to the window underneath; the Takeoff settings hub stays open when you open the field editor or the takeoff table builder and repaints itself when you return.
 - A confirmation that deletes or replaces something names its object. If that object changed or disappeared while the window was open, **Confirm** explains why and does nothing, so a changed selection or page cannot apply the action to something else.
 
+The **Help** image viewer is the one exception: it opens full screen over the guide so a screenshot can be read at that size, and closes with `Escape`, its close button or a click outside the image. It holds no settings, so nothing typed can be lost behind it.
+
 ## Workspace lists
 
 The **Pages**, **Layers** and **Markups** lists share one interaction model, so the same habits work in all three.

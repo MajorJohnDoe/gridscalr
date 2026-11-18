@@ -21,9 +21,10 @@ the drawing, remember the value and reopen the dialog. Opening a confirmation
 from a settings dialog also closed the settings dialog, because `showModal`
 closed the active dialog before mounting the next one.
 
-The product decision is that **every dialog with a close (X) behaves like a
+The product decision is that **every work dialog with a close (X) behaves like a
 normal desktop window**: it can be moved out of the way, it does not block the
-rest of the window, and focus and Escape still behave predictably.
+rest of the window, and focus and Escape still behave predictably. The one
+documented exception is the full-screen help image viewer, decided in §9 below.
 
 A non-modal window makes one destructive case newly possible: the object named
 by a confirmation can change or disappear while the confirmation is open,
@@ -157,6 +158,27 @@ table editor Save, Duplicate and Delete there; the shell itself owns no action.
 trap and must stay at zero serious or critical violations. No allowlist entry was
 needed. The manual checklist in [`testing.md`](../testing.md) covers focus
 return, `Tab` leaving and re-entering, Escape routing and moving a window.
+
+### 9. Exception: the help image lightbox
+
+One dialog-like surface is deliberately **not** a movable window: the image
+lightbox in [`src/ui/helpDialog.ts`](../../src/ui/helpDialog.ts). It is a
+full-screen media viewer over the Help dialog, built as a `role="dialog"` with
+`aria-modal="true"` and its own dimmed backdrop. It keeps the modal contract:
+
+- It closes on `Escape`, its close button and a click outside the image, and it
+  moves focus to the close control. It cannot be dragged or resized.
+- It holds no form state and edits nothing, so a stray click on what is behind
+  it cannot lose typed input. The only content behind it is the Help dialog and
+  the app shell, and no drawing work happens under it.
+- Its purpose is to fill the viewport with one screenshot. A movable, non-modal
+  viewer would be worse: the image would shrink to a window on a background that
+  is not being worked on, and the close control could be dragged off the useful
+  area.
+
+This is an exception to the window model, not a gap in it. A surface that gains
+editable state or becomes part of a drawing workflow must move to the
+`dialogHost` window instead. The user guide states the same distinction.
 
 ## Consequences
 

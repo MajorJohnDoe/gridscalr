@@ -338,9 +338,17 @@ focus and accessibility work.
   checks passed on `7e11296` (CI run
   [44319036364](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44319036364));
   the earlier run failed only on the visual gate, which the second commit fixes.
+- **Conductor-verified head:** `456c0a4292070ad02fd5cedf831ea0444b4c340a`,
+  all six PR checks passed (run
+  [44320809214](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44320809214)).
+  The conductor then asked for two review fixes on the same branch: document the
+  help image lightbox exception and close F-136 by committing the stale
+  `layers.png`. Screenshot fix `1738c3ffdf6371770a4b7ceb39f593746e7cb9c0`; the
+  documentation fix is the commit that records this handover text.
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
   field, no migration fixture and no `src/io/projectFile` change.
-- **Status:** PR open; conductor verification pending.
+- **Status:** PR open; review fixes applied, conductor verification of the new
+  head pending.
 
 ### Completed work
 
@@ -438,14 +446,21 @@ focus and accessibility work.
   guard would have made the keyboard useless while a window was open.
 - **No remembered positions and no keyboard move**, recorded in the ADR and
   `docs/limitations.md`.
+- **The help image lightbox stays a full-screen modal viewer.** It is the one
+  documented exception to the window model (ADR 0017 §9): it fills the viewport
+  with one screenshot, holds no editable state and no drawing work happens under
+  it, so a movable window would be worse. The user guide states the same
+  distinction. A surface that gains editable state must move to `dialogHost`.
 - **Layout centring, not a mount-time position.** A frozen mount-time rectangle
   is timing-dependent; CSS centring plus clamping only on drag/resize is
   deterministic and fixed the visual gate.
 
 ### Findings
 
-- **F-136** (P3): `docs/screenshots/layers.png` was left stale in Phase 2 because
-  a real context-bar change was filtered as capture noise.
+- **F-136** (P3, **resolved** in `1738c3f`): `docs/screenshots/layers.png` was
+  left stale in Phase 2 because a real context-bar change was filtered as
+  capture noise. The image was recaptured and committed in this PR; it now shows
+  the current Area context bar with no **Variants** control.
 - **F-137** (P3): transient flyouts and menus are not part of `DialogStack`;
   Escape precedence is a class-name check.
 - **F-138** (P3): `--overlay-modal` is now an unused theme token in all five
@@ -481,6 +496,20 @@ needed.
 ### Conductor verification
 
 - pending
+
+### Review fixes
+
+- ADR 0017 §9 and the user guide now state the help image lightbox exception;
+  the lightbox is unchanged (`role="dialog"`, `aria-modal="true"`, dimmed
+  backdrop, Escape/close/click-outside).
+- F-136 is resolved with the recaptured `docs/screenshots/layers.png`
+  (`1738c3f`), and every other committed screenshot was re-checked by changed
+  bounding box: only the autosave timestamp in `recovery-center.png` and faint
+  antialiasing in `schedule-csv.png` differ between captures, and both remain
+  current UI.
+- Re-ran `check:docs`, `format:check`, `lint`, `npx tsc --noEmit`,
+  `check:i18n` (catalogs unchanged) and
+  `npx vitest run tests/markdown.test.ts tests/helpImages.test.ts tests/dialogHost.test.ts`.
 
 ### Next phase
 

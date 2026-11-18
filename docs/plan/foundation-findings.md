@@ -3385,23 +3385,31 @@ remains the scheduling home.
 - **Phase:** Takeoff improvements, phase 3 — movable, non-modal dialogs
 - **Severity:** P3
 - **Area:** Documentation screenshots
-- **Status:** open
+- **Status:** resolved in `1738c3ffdf6371770a4b7ceb39f593746e7cb9c0`
+  (PR [#326](https://github.com/MajorJohnDoe/gridscalr/pull/326))
 - **Evidence:** Phase 2 recaptured all 40 screenshots and committed only the two
   that its feature changed, treating the other outputs as environment rendering
   noise. `docs/screenshots/layers.png` also differs in the context bar: the
-  committed image still shows a **Variants** control beside the Area tool that
+  committed image still showed a **Variants** control beside the Area tool that
   the current UI no longer renders (about 11 700 differing pixels outside the
-  noise band). The Phase 3 dialog recapture reproduces the same difference.
+  noise band). The Phase 3 dialog recapture reproduced the same difference.
 - **Problem:** A capture diff was classified as noise by pixel count without
   inspecting where the pixels are. A real control removal was therefore recorded
-  as "environment noise" and the committed screenshot is now stale for a screen
-  the guide references.
-- **Impact:** No runtime or data impact. A reader of the guide sees one control
+  as "environment noise" and the committed screenshot was stale for a screen the
+  guide references.
+- **Impact:** No runtime or data impact. A reader of the guide saw one control
   that no longer exists. The stale-screenshot warning in `check:docs` was already
   global, so CI did not distinguish this from ordinary noise.
-- **Next step:** recapture and commit `layers.png` in the release documentation
-  pass, or immediately if the guide references that control. When filtering a
-  capture, compare the changed bounding box, not just the pixel count.
+- **Resolution:** `layers.png` was recaptured and committed in `1738c3f`. The
+  image now shows the current Area context bar (a `Polygon · Add · F…` family
+  picker on the right and the "Add or Deduct in the context bar" hint) with no
+  **Variants** control. The other 39 captures were classified by changed bounding
+  box: `recovery-center.png` differs only in its autosave timestamp and
+  `schedule-csv.png` only in faint text antialiasing (max channel delta 20); both
+  are current UI and were left as committed, and every other capture differs
+  only in the known 4 × 200 px noise strip at x = 37.
+- **Next step:** when filtering a capture, compare the changed bounding box, not
+  just the pixel count; keep the timestamped recovery capture out of that test.
 - **Related:** #320, #321, `scripts/capture-docs.mjs`,
   `docs/screenshots/layers.png`.
 
