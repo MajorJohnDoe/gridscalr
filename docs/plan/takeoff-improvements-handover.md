@@ -731,6 +731,15 @@ canvas and in the PDF through one shared layout.
   `feat/placed-table-style`, base `main` (`f1e2a34`). Not merged, not auto-merge.
 - **Branch:** `feat/placed-table-style`
 - **Implementation commit:** `a39cd5c93ecc300df0f410b72478065e72d7c41f`
+  (feature), documentation and capture commit `375a370`.
+- **Final verified head:** `375a3706a2aae5ec5c17d0b14f16416954951b1b`.
+  All six PR checks are `success` on that exact SHA after the `Rust format and
+  check` job was re-run once: its two attempts failed only in
+  "Install Linux dependencies" (`us-east-2.ec2.archive.ubuntu.com` apt mirror
+  timeout), the same runner class as Phases 3–4, and it passed unchanged at the
+  third attempt.
+- **Merge commit:** `5dd6c681dd8e0c1ecd54c0f8bcdb2120a81eec8b` (squash merged,
+  branch deleted).
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
   field, no migration fixture and no `src/io/projectFile` change.
 
@@ -834,7 +843,66 @@ needed.
 
 ### Conductor verification
 
-Conductor verification: pending
+- PR [#328](https://github.com/MajorJohnDoe/gridscalr/pull/328) head
+  `375a3706a2aae5ec5c17d0b14f16416954951b1b` matched the worker report; the base
+  was `main` (`f1e2a34`, green) and the merge state was
+  `CLEAN`/`MERGEABLE` after the one environment re-run described above.
+- Conductor re-ran `npx vitest run tests/scheduleTableStyle.test.ts
+  tests/schedulePlacement.test.ts tests/schedulePlacementPdf.test.ts
+  tests/schedulesPerformance.test.ts`: 4 files, 46 tests passed.
+  `check:themes` (5 themes), `check:file-budgets` (622 files), `check:modules`
+  (22 foundation features), `check:versions` (0.29.0) and
+  `GRIDSCALR_PERF_PROFILE=ci npm run check:performance` (p95 edit 32.7 ms,
+  open 9.6 ms, autosave 950 ms, page switch 13.3 ms, freeze 76.7 ms — all PASS)
+  are green.
+- Scope matched #323 and the module map: `layout.ts` emits paint-ordered
+  `bands` plus `grid`/`outer`/`header`/`group`/`subtotal`/`total` rules, the new
+  `layoutStyle.ts` (253 lines) owns the band roles and the injected token
+  resolver, and the new `canvas/items/scheduleStyle.ts` (40 lines) only reads the
+  palette. Both renderers consume the same layout; the parity tests assert
+  identical rows, cells, lines and bands for a grouped table and a difference
+  only in measured text. No `src/model/types.ts`, `src/io/projectFile`, version
+  file, `Cargo.*`, `tauri.conf.json`, `security/`, `site/` or `file-budgets.json`
+  change.
+- Theme rule verified in tests and by `check:themes`: 12 `--table-*` tokens are
+  required in all five palettes, a missing or malformed token falls back to the
+  document palette, and a band that defeats both document inks is re-resolved so
+  black-on-black cannot be produced.
+- Screenshots: `placed-table.png` and `takeoff-tab.png` carry the restyle. Eight
+  other captures were committed with sub-1 % size deltas from the same run; they
+  are current renders rather than UI changes, which is the conservative choice
+  after F-136. No `tests/visual/` baseline changed because no visual scene shows
+  a placed table.
+- Squash merged as `5dd6c681dd8e0c1ecd54c0f8bcdb2120a81eec8b`. No tag, release or
+  `site/` change. F-140 (dock table and report PDF keep their own palette) and
+  F-141 (capture manifest escaping churn) are recorded as P3 follow-ups.
+
+## Effort status
+
+The five phases are merged on schema 28 with the app version still **0.29.0**.
+`0.30.0` remains untagged and unreleased, and `site/release.json` is unchanged.
+
+- Phase 1 `0afa4dbf0f3eec97ac7ac860dde5a83fd2767ce6` — pointer-based row
+  reordering for pages, layers and builder columns; native file drops kept.
+- Phase 2 `22a1f6d7238f4cd1394eabdbcf91d4c3314d50d6` — measurement settings and
+  the page-scoped target layer in one flyout; left-click family flyouts.
+- Phase 3 `e37cff6ce670da203c491b5b69d878d57a6367f8` — movable, non-modal
+  dialog windows, ADR 0017, id-based confirmation revalidation.
+- Phase 4 `63e9659a092dcbf7c66f8b4149b659eadc5a7b85` — takeoff table builder Save
+  / Duplicate / Delete in the header.
+- Phase 5 `5dd6c681dd8e0c1ecd54c0f8bcdb2120a81eec8b` — grey banded placed table
+  with group, subtotal and total bands shared by canvas and PDF.
+- Findings carried: F-135 (per-platform reorder manual gate), F-137 (flyouts and
+  menus outside `DialogStack`), F-138 (unused `--overlay-modal` token), F-139
+  (unused builder delete label key), F-140 (dock table palette), F-141 (capture
+  manifest churn). All are P3.
+- Open gate: the product owner's Windows 11 check of mouse reordering and file
+  drops, on a build from `5dd6c681d`. The release decision belongs to the product
+  owner; no version bump, tag, GitHub Release or `site/release.json` change was
+  made by this effort.
+- Environment finding: the `Install Linux dependencies` step failed on an apt
+  mirror timeout in four separate runs across Phases 3–5 and passed unchanged on
+  re-run each time. No application change was made for it.
 
 ### Next
 
