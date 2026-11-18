@@ -907,3 +907,36 @@ The five phases are merged on schema 28 with the app version still **0.29.0**.
 ### Next
 
 Next: effort exit — final documentation pass, Windows build and release decision
+
+## Windows test build and effort exit
+
+- **Build:** `Release build` run
+  [44348740635](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44348740635)
+  on merge commit `5dd6c681d`. The Windows job succeeded; the macOS job was
+  cancelled at the runner-queue limit, so the `checksums` job was skipped and no
+  merged `SHA256SUMS.txt` exists for this run. The Windows artifact was
+  downloaded on its own and verified against the artifact's own
+  `SHA256SUMS-windows.txt` (`sha256sum -c`: three files OK).
+- **Artifacts handed to the product owner** (app version still 0.29.0, no tag, no
+  release):
+  - `GridScalr_0.29.0_x64-setup.exe` — `79c4c34abb94ae292f2ed8f14df1f531fd767f9fb49dc2319a2ea6b96975654b`
+  - `GridScalr_0.29.0_x64_en-US.msi` — `2fbd105ccecd21caafdd62f4abecbd884dc16b920ccae0a31d7698a954bbb7e6`
+  - `gridscalr.exe` (portable) — `edbb159e152600149b9614b7016d01ecde3a1fff6b0a920de56d876f5faa94c5`
+- **Verification build for Windows 11:** drag a page card, a layer row and a
+  takeoff builder column; drop a PDF, TIF and `.gridscalr` on the window and on
+  the Pages panel; open a measurement tool flyout with a left-click and with a
+  long-press. The result decides whether #319 is release-complete.
+- **CI on `main`:** the merge-commit run
+  [44348719921](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44348719921)
+  was cancelled by the concurrency group when this handover commit was pushed.
+  The descendant commit `a2b522a` (documentation only) is green in all six jobs
+  (run
+  [44348901947](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44348901947)),
+  so the merged tree is verified. The **Pages** run
+  [44348719855](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44348719855)
+  deployed the recaptured screenshot set.
+- **Strict documentation:** `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` passes
+  with 272 links, 55 images and 40 screenshots and no stale-screenshot warning.
+- **Release decision:** 0.30.0 stays untagged and unreleased. No version field,
+  tag, GitHub Release or `site/release.json` entry changed in this effort; the
+  product owner decides the version and release after the Windows check.
