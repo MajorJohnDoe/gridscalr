@@ -158,11 +158,23 @@ try {
   const circleFamily = page.locator('.tool-family[data-tool-group="circle-arc"]');
   await circleFamily.waitFor();
   assert.equal(await circleFamily.getAttribute("data-display-tool"), "radius");
+  // A normal left click opens the measurement flyout and keeps the rail's
+  // one-click selection path: the displayed member is already active.
+  await circleFamily.click();
+  const leftClickFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await leftClickFlyout.waitFor();
+  assert.equal(
+    await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
+    "radius",
+    "a left click should select the displayed family member",
+  );
+  await page.keyboard.press("Escape");
+  await leftClickFlyout.waitFor({ state: "detached" });
   await circleFamily.click({ button: "right" });
-  const circleMenu = page.getByRole("menu", { name: "Circle & arc tools" });
-  await circleMenu.waitFor();
-  await circleMenu.getByRole("menuitemradio", { name: /Arc/ }).click();
-  await circleMenu.waitFor({ state: "detached" });
+  const circleFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await circleFlyout.waitFor();
+  await circleFlyout.getByRole("radio", { name: /Arc/ }).click();
+  await circleFlyout.waitFor({ state: "detached" });
   assert.equal(
     await page.evaluate(() => window.__gridscalr.store.ui.activeTool),
     "arc",
@@ -178,20 +190,18 @@ try {
     "the Diameter shortcut should still work without its own rail button",
   );
   assert.equal(await circleFamily.getAttribute("data-display-tool"), "diameter");
-  const diameterVariants = page.getByRole("button", { name: "Choose variants for Diameter" });
-  await diameterVariants.waitFor();
-  await diameterVariants.click();
-  const contextFamilyMenu = page.getByRole("menu", { name: "Circle & arc tools" });
-  await contextFamilyMenu.waitFor();
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const contextFamilyFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await contextFamilyFlyout.waitFor();
   await page.keyboard.press("Escape");
-  await contextFamilyMenu.waitFor({ state: "detached" });
+  await contextFamilyFlyout.waitFor({ state: "detached" });
   const angleFamily = page.locator('.tool-family[data-tool-group="angle-slope"]');
   await angleFamily.click({ button: "right" });
-  const angleMenu = page.getByRole("menu", { name: "Angle & slope tools" });
-  await angleMenu.waitFor();
-  assert.equal(await angleMenu.getByRole("menuitemradio", { name: /Slope/ }).count(), 1);
+  const angleFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await angleFlyout.waitFor();
+  assert.equal(await angleFlyout.getByRole("radio", { name: /Slope/ }).count(), 1);
   await page.keyboard.press("Escape");
-  await angleMenu.waitFor({ state: "detached" });
+  await angleFlyout.waitFor({ state: "detached" });
   const volumeIcon = await page.locator('[data-tool="volume"]').innerHTML();
   const symbolIcon = await page.locator('[data-tool="symbol"]').innerHTML();
   assert.notEqual(volumeIcon, symbolIcon, "symbol and volume should use different icons");
@@ -300,34 +310,13 @@ try {
   await page.keyboard.press("a");
   await page.locator(".context-tool", { hasText: "Area" }).waitFor();
 
-  const areaMode = page.locator(".area-mode-toggle");
-  await areaMode.getByRole("button", { name: "Deduct", exact: true }).click();
-  assert.equal(
-    await areaMode
-      .getByRole("button", { name: "Deduct", exact: true })
-      .getAttribute("aria-pressed"),
-    "true",
-    "the Deduct switch should mark the area mode",
-  );
-  assert.match(
-    (await page.getByRole("button", { name: /New measurement options/ }).textContent()) ?? "",
-    /Deduct/,
-    "the New measurement summary should follow the Deduct switch",
-  );
-  await areaMode.getByRole("button", { name: "Add", exact: true }).click();
-  assert.equal(
-    await areaMode.getByRole("button", { name: "Add", exact: true }).getAttribute("aria-pressed"),
-    "true",
-    "the Add switch should restore additive areas",
-  );
-
   await page.getByRole("button", { name: /New measurement options/ }).click();
   const measureOptions = page.getByRole("dialog", { name: "New measurement options" });
   await measureOptions.waitFor();
   assert.equal(
-    await page.evaluate(() => Boolean(document.activeElement?.closest(".measure-options"))),
+    await page.evaluate(() => Boolean(document.activeElement?.closest(".tool-flyout"))),
     true,
-    "focus should move into the New measurement popover",
+    "focus should move into the measurement flyout",
   );
   await measureOptions.getByLabel("Area shape").selectOption("rectangle");
   await measureOptions.getByLabel("Area mode").selectOption("subtract");
@@ -336,9 +325,21 @@ try {
   assert.match(
     (await page.getByRole("button", { name: /New measurement options/ }).textContent()) ?? "",
     /Rectangle · Deduct/,
-    "the New measurement button should summarise the active area mode",
+    "the New measurement summary should follow the area settings",
   );
   await assertContextBarFits("Area options applied");
+
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const resetOptions = page.getByRole("dialog", { name: "New measurement options" });
+  await resetOptions.waitFor();
+  await resetOptions.getByLabel("Area mode").selectOption("add");
+  await page.keyboard.press("Escape");
+  await resetOptions.waitFor({ state: "detached" });
+  assert.match(
+    (await page.getByRole("button", { name: /New measurement options/ }).textContent()) ?? "",
+    /Add/,
+    "the Add mode should be restored from the flyout",
+  );
 
   await page.keyboard.press("d");
   await page.locator(".context-tool", { hasText: "Revision cloud" }).waitFor();

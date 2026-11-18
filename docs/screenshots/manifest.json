@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-17T16:58:04.123Z",
+  "generatedAt": "2026-11-18T12:14:48.966Z",
   "appVersion": "0.29.0",
-  "sourceFingerprint": "2cd50f8977e54cd907f43cc5bb4af9dcea060bae905416473b5867790b3faa94",
+  "sourceFingerprint": "74d7e299e427b8b097cebd46cf90a83aa30e80acfa148cb11dce6a709c944048",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -47,8 +47,14 @@
     {
       "file": "measure.png",
       "title": "Measure and annotate",
-      "alt": "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
+      "alt": "GridScalr with the Length tool active, the Layers panel open and a compact New measurement summary in the context bar, with Properties on the right.",
       "description": "Measurement and drawing tools share one canvas but stay on separate layer types."
+    },
+    {
+      "file": "measure-flyout.png",
+      "title": "Measurement flyout",
+      "alt": "The GridScalr measurement flyout with category, room, area shape, area mode and target layer beside the active Area tool.",
+      "description": "One flyout owns the New measurement settings and the page-scoped target layer."
     },
     {
       "file": "calibration.png",

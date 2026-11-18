@@ -81,6 +81,7 @@ describe("accessibility gate rules", () => {
     expect(A11Y_FAIL_IMPACTS).toEqual(["serious", "critical"]);
     expect(A11Y_SURFACES.map((surface) => surface.id)).toEqual([
       "shell",
+      "measurement-flyout",
       "project-settings",
       "preferences",
       "quantities",

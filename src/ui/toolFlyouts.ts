@@ -1,19 +1,28 @@
 import { CLOUD_FILL_PRESETS, cloudFillLabel, type CloudFillPreset } from "../model/cloud";
 import { stampStatusColor } from "../model/stamps";
 import { DRAW_COLOR_PRESETS, STROKE_WIDTH_OPTIONS, drawColorLabel } from "../model/style";
-import type { AreaMode, AreaShape, HighlightShape } from "../model/types";
+import type { HighlightShape } from "../model/types";
 import { store, type ToolId } from "../state/store";
+import { renderMeasurementPanel } from "../features/measurementFlyout";
 import { colorInputValue, colorWithEyedropper, setColorInput } from "./colorPicker";
 import { textDialog } from "./dialogs";
 import { el, option } from "./dom";
+import {
+  attachFlyoutPressHandlers as attachPressHandlers,
+  closeFlyout as closeToolFlyout,
+  mountFlyout,
+} from "./flyoutHost";
 import { icon } from "./icons";
-import { familyToolForDisplay, rememberFamilyTool, TOOL_BY_ID, type ToolFamily } from "./toolDefs";
+import {
+  familyForTool,
+  familyToolForDisplay,
+  rememberFamilyTool,
+  TOOL_BY_ID,
+  type ToolFamily,
+} from "./toolDefs";
 import { t } from "../i18n";
 
-const LONG_PRESS_MS = 320;
-
 const VARIANT_TOOLS = new Set([
-  "area",
   "cloud",
   "highlight",
   "callout",
@@ -22,10 +31,6 @@ const VARIANT_TOOLS = new Set([
   "line",
   "polyline",
 ]);
-
-let flyoutRoot: HTMLElement | null = null;
-let flyoutCleanup: (() => void) | null = null;
-let longPressTimer: number | null = null;
 
 export function hasToolVariants(toolId: string): boolean {
   return VARIANT_TOOLS.has(toolId);
@@ -37,47 +42,21 @@ export function attachToolFlyout(button: HTMLButtonElement, toolId: string): voi
   attachPressHandlers(button, () => openToolFlyout(button, toolId));
 }
 
-/** Opens the shared rail slot for a tool family on long-press or right-click. */
+/**
+ * Opens the shared rail slot for a tool family on a normal click, long-press or
+ * right-click. The rail's own click handler still selects the last-used member,
+ * so one click keeps the previous direct-selection path.
+ */
 export function attachToolFamilyFlyout(button: HTMLButtonElement, family: ToolFamily): void {
   button.classList.add("has-variants");
-  attachPressHandlers(button, () => openToolFamilyFlyout(button, family));
+  attachPressHandlers(button, () => openToolFamilyFlyout(button, family), true);
 }
 
-function attachPressHandlers(button: HTMLButtonElement, open: () => void): void {
-  button.addEventListener("pointerdown", (event) => {
-    if (event.button !== 0) return;
-    if (longPressTimer !== null) window.clearTimeout(longPressTimer);
-    longPressTimer = window.setTimeout(() => {
-      longPressTimer = null;
-      button.dataset.longPressed = "1";
-      open();
-    }, LONG_PRESS_MS);
-  });
-  for (const type of ["pointerup", "pointercancel", "pointerleave"]) {
-    button.addEventListener(type, () => {
-      if (longPressTimer !== null) {
-        window.clearTimeout(longPressTimer);
-        longPressTimer = null;
-      }
-    });
-  }
-
-  button.addEventListener(
-    "click",
-    (event) => {
-      if (button.dataset.longPressed === "1") {
-        delete button.dataset.longPressed;
-        event.stopImmediatePropagation();
-      }
-    },
-    true,
-  );
-
-  button.addEventListener("contextmenu", (event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    open();
-  });
+/** Attaches the measurement settings flyout to a measurement tool rail slot. */
+export function attachMeasurementFlyout(button: HTMLButtonElement, toolId: ToolId): void {
+  button.classList.add("has-variants");
+  button.setAttribute("aria-haspopup", "dialog");
+  attachPressHandlers(button, () => openMeasurementFlyout(button, toolId), true);
 }
 
 export function openToolVariants(anchor: HTMLElement, toolId: string): void {
@@ -90,11 +69,76 @@ export function openToolFamilyVariants(anchor: HTMLElement, family: ToolFamily):
   openToolFamilyFlyout(anchor, family);
 }
 
+export interface MeasurementFlyoutOptions {
+  /** Called after a setting changes so the context-bar summary can refresh. */
+  onChange?: () => void;
+}
+
+/**
+ * Opens the one measurement settings flyout. The rail slot and the compact
+ * context-bar summary both call this, so there is no second editor.
+ */
+export function openMeasurementFlyout(
+  anchor: HTMLElement,
+  toolId: ToolId,
+  options: MeasurementFlyoutOptions = {},
+): void {
+  if (!store.project || store.readOnly) return;
+  const family = familyForTool(toolId);
+  const target = family
+    ? family.tools.includes(store.ui.activeTool)
+      ? store.ui.activeTool
+      : familyToolForDisplay(family, store.ui.activeTool)
+    : toolId;
+  if (target !== store.ui.activeTool) {
+    if (family) rememberFamilyTool(target);
+    store.setTool(target);
+  }
+  mountFlyout(
+    anchor,
+    t("measureOptions.title"),
+    (panel, rerender) => {
+      if (family) renderMeasurementMembers(panel, family);
+      renderMeasurementPanel(panel, {
+        tool: store.ui.activeTool,
+        rerender,
+        onChange: options.onChange,
+      });
+    },
+    { role: "dialog", focus: true, returnFocus: true, className: "is-measurement" },
+  );
+}
+
+function renderMeasurementMembers(panel: HTMLElement, family: ToolFamily): void {
+  panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
+  const group = el("div", "tool-flyout-choices");
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", t(family.label));
+  panel.append(group);
+  const displayed = familyToolForDisplay(family, store.ui.activeTool);
+  for (const member of family.tools) {
+    const tool = TOOL_BY_ID.get(member);
+    if (!tool) continue;
+    variantRow(panel, {
+      label: `${t(tool.label)} · ${tool.shortcut}`,
+      description: t(tool.hint),
+      iconName: tool.icon,
+      selected: displayed === member,
+      role: "radio",
+      container: group,
+      onSelect: () => {
+        rememberFamilyTool(member);
+        store.setTool(member);
+        closeToolFlyout();
+      },
+    });
+  }
+}
+
 function openToolFlyout(button: HTMLElement, toolId: string): void {
   store.setTool(toolId as ToolId);
   mountFlyout(button, toolFlyoutLabel(toolId), (panel, rerender) => {
-    if (toolId === "area") renderArea(panel, rerender);
-    else if (toolId === "cloud") renderCloud(panel, rerender);
+    if (toolId === "cloud") renderCloud(panel, rerender);
     else if (toolId === "highlight") renderHighlight(panel, rerender);
     else if (toolId === "callout") renderCallout(panel, rerender);
     else if (toolId === "stamp") renderStamp(panel, rerender);
@@ -104,7 +148,6 @@ function openToolFlyout(button: HTMLElement, toolId: string): void {
 }
 
 function toolFlyoutLabel(toolId: string): string {
-  if (toolId === "area") return t("tool.flyout.areaOptions");
   if (toolId === "cloud") return t("tool.flyout.cloudVariants");
   if (toolId === "highlight") return t("tool.flyout.highlightVariants");
   if (toolId === "callout") return t("tool.flyout.calloutColours");
@@ -203,40 +246,41 @@ function renderLineColourSwatches(panel: HTMLElement, render: () => void): void 
   panel.append(swatches);
 }
 
-function outsideHandler(event: MouseEvent): void {
-  if (!flyoutRoot) return;
-  const target = event.target as Node;
-  if (flyoutRoot.contains(target)) return;
-  closeToolFlyout();
-}
-
 function openToolFamilyFlyout(button: HTMLElement, family: ToolFamily): void {
   if (family.id === "rect-ellipse") {
-    mountFlyout(button, t("tool.family.shapes"), (panel, rerender) =>
-      renderShapeOptions(panel, rerender),
+    mountFlyout(
+      button,
+      t("tool.family.shapes"),
+      (panel, rerender) => renderShapeOptions(panel, rerender),
+      { focus: true, returnFocus: true },
     );
     return;
   }
-  mountFlyout(button, t("tool.familyTools", { name: t(family.label) }), (panel) => {
-    panel.append(el("div", "tool-flyout-title", t(family.label)));
-    panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
-    const displayed = familyToolForDisplay(family, store.ui.activeTool);
-    for (const toolId of family.tools) {
-      const tool = TOOL_BY_ID.get(toolId);
-      if (!tool) continue;
-      variantRow(panel, {
-        label: `${t(tool.label)} · ${tool.shortcut}`,
-        description: t(tool.hint),
-        iconName: tool.icon,
-        selected: displayed === toolId,
-        onSelect: () => {
-          rememberFamilyTool(toolId);
-          store.setTool(toolId);
-          closeToolFlyout();
-        },
-      });
-    }
-  });
+  mountFlyout(
+    button,
+    t("tool.familyTools", { name: t(family.label) }),
+    (panel) => {
+      panel.append(el("div", "tool-flyout-title", t(family.label)));
+      panel.append(el("div", "tool-flyout-section", t("tool.flyout.tools")));
+      const displayed = familyToolForDisplay(family, store.ui.activeTool);
+      for (const toolId of family.tools) {
+        const tool = TOOL_BY_ID.get(toolId);
+        if (!tool) continue;
+        variantRow(panel, {
+          label: `${t(tool.label)} · ${tool.shortcut}`,
+          description: t(tool.hint),
+          iconName: tool.icon,
+          selected: displayed === toolId,
+          onSelect: () => {
+            rememberFamilyTool(toolId);
+            store.setTool(toolId);
+            closeToolFlyout();
+          },
+        });
+      }
+    },
+    { focus: true, returnFocus: true },
+  );
 }
 
 function renderShapeOptions(panel: HTMLElement, render: () => void): void {
@@ -335,141 +379,6 @@ function renderShapeOptions(panel: HTMLElement, render: () => void): void {
     lineStyles.append(button);
   }
   panel.append(lineStyles);
-}
-
-function mountFlyout(
-  anchor: HTMLElement,
-  ariaLabel: string,
-  render: (panel: HTMLElement, rerender: () => void) => void,
-): void {
-  closeToolFlyout();
-  const root = el("div", "tool-flyout-root");
-  root.addEventListener("mousedown", (event) => {
-    if (event.target === root) closeToolFlyout();
-  });
-  const panel = el("div", "tool-flyout");
-  panel.setAttribute("role", "menu");
-  panel.setAttribute("aria-label", ariaLabel);
-  root.append(panel);
-  document.body.append(root);
-  flyoutRoot = root;
-
-  const rerender = () => {
-    panel.replaceChildren();
-    render(panel, rerender);
-    positionFlyout(anchor, panel);
-  };
-  rerender();
-
-  const onKey = (event: KeyboardEvent) => {
-    if (event.key === "Escape") {
-      event.preventDefault();
-      event.stopPropagation();
-      closeToolFlyout();
-    }
-  };
-  document.addEventListener("keydown", onKey);
-  document.addEventListener("mousedown", outsideHandler, true);
-  window.addEventListener("resize", closeToolFlyout);
-  window.addEventListener("blur", closeToolFlyout);
-  flyoutCleanup = () => {
-    document.removeEventListener("keydown", onKey);
-    document.removeEventListener("mousedown", outsideHandler, true);
-    window.removeEventListener("resize", closeToolFlyout);
-    window.removeEventListener("blur", closeToolFlyout);
-  };
-}
-
-function positionFlyout(anchor: HTMLElement, panel: HTMLElement): void {
-  const rect = anchor.getBoundingClientRect();
-  panel.style.left = `${rect.right + 5}px`;
-  panel.style.top = `${rect.top}px`;
-  const box = panel.getBoundingClientRect();
-  if (box.right > window.innerWidth - 8) {
-    panel.style.left = `${Math.max(8, rect.left - box.width - 5)}px`;
-  }
-  if (box.bottom > window.innerHeight - 8) {
-    panel.style.top = `${Math.max(8, window.innerHeight - box.height - 8)}px`;
-  }
-}
-
-function closeToolFlyout(): void {
-  if (longPressTimer !== null) {
-    window.clearTimeout(longPressTimer);
-    longPressTimer = null;
-  }
-  if (!flyoutRoot) return;
-  const root = flyoutRoot;
-  flyoutRoot = null;
-  flyoutCleanup?.();
-  flyoutCleanup = null;
-  root.remove();
-}
-
-function renderArea(panel: HTMLElement, render: () => void): void {
-  panel.append(el("div", "tool-flyout-title", t("toolFlyout.area")));
-  panel.append(el("div", "tool-flyout-section", t("toolFlyout.shape")));
-  const shapes: Array<{ id: AreaShape; label: string; description: string; iconName: string }> = [
-    {
-      id: "polygon",
-      label: t("toolFlyout.polygon"),
-      description: t("toolFlyout.clickCorner"),
-      iconName: "area",
-    },
-    {
-      id: "rectangle",
-      label: t("toolFlyout.rectangle"),
-      description: t("toolFlyout.dragQuick"),
-      iconName: "rect",
-    },
-    {
-      id: "ellipse",
-      label: t("toolFlyout.ellipse"),
-      description: t("toolFlyout.dragOval"),
-      iconName: "ellipse",
-    },
-  ];
-  for (const entry of shapes) {
-    variantRow(panel, {
-      label: entry.label,
-      description: entry.description,
-      iconName: entry.iconName,
-      selected: store.ui.measureAreaShape === entry.id,
-      onSelect: () => {
-        store.setMeasureAreaShape(entry.id);
-        render();
-      },
-    });
-  }
-
-  panel.append(el("div", "tool-flyout-section", t("toolFlyout.mode")));
-  const modes: Array<{ id: AreaMode; label: string; description: string; iconName: string }> = [
-    {
-      id: "add",
-      label: t("toolFlyout.addArea"),
-      description: t("toolFlyout.addsTotal"),
-      iconName: "plus",
-    },
-    {
-      id: "subtract",
-      label: t("toolFlyout.deductArea"),
-      description: t("toolFlyout.subtractsTotal"),
-      iconName: "minus",
-    },
-  ];
-  for (const entry of modes) {
-    variantRow(panel, {
-      label: entry.label,
-      description: entry.description,
-      iconName: entry.iconName,
-      selected: store.ui.measureAreaMode === entry.id,
-      onSelect: () => {
-        store.setMeasureAreaMode(entry.id);
-        render();
-      },
-    });
-  }
-  panel.append(el("div", "tool-flyout-note", t("toolFlyout.modeNote")));
 }
 
 function renderCloud(panel: HTMLElement, render: () => void): void {
@@ -685,12 +594,15 @@ function variantRow(
     description: string;
     iconName: string;
     selected: boolean;
+    /** A menu uses menuitemradio; the measurement dialog uses a radiogroup. */
+    role?: "menuitemradio" | "radio";
+    container?: HTMLElement;
     onSelect: () => void;
   },
 ): void {
   const button = el("button", `tool-variant-row${options.selected ? " is-selected" : ""}`);
   button.type = "button";
-  button.setAttribute("role", "menuitemradio");
+  button.setAttribute("role", options.role ?? "menuitemradio");
   button.setAttribute("aria-checked", String(options.selected));
   const mark = el("span", "tool-variant-check");
   if (options.selected) mark.innerHTML = icon("check", 11);
@@ -701,5 +613,5 @@ function variantRow(
   text.append(el("span", "tool-variant-description", options.description));
   button.append(mark, iconWrap, text);
   button.addEventListener("click", options.onSelect);
-  panel.append(button);
+  (options.container ?? panel).append(button);
 }

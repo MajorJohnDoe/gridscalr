@@ -59,8 +59,7 @@ async function applyTheme(page, theme) {
 async function closeFloatingUi(page) {
   for (let attempt = 0; attempt < 3; attempt += 1) {
     const open = await page.evaluate(
-      () =>
-        document.querySelectorAll(".menu-panel, .tool-flyout, .measure-options, .popover").length,
+      () => document.querySelectorAll(".menu-panel, .tool-flyout, .popover").length,
     );
     if (open === 0) return;
     await page.keyboard.press("Escape");
@@ -72,15 +71,9 @@ async function openFloatingUi(page) {
   // The options button only exists for measurement tools, so switch to Length.
   await page.keyboard.press("l");
   await page.waitForTimeout(250);
-  // The measurement options popover toggles; only open it when it is closed.
-  if ((await page.locator(".measure-options").count()) === 0) {
-    await page.locator(".context-measure-options").dispatchEvent("click");
-    await page.waitForTimeout(150);
-  }
-  // A contextmenu event opens the tool family flyout without a mouse-down,
-  // which would close the other floating panels.
+  // The measurement flyout toggles; only open it when it is closed.
   if ((await page.locator(".tool-flyout").count()) === 0) {
-    await page.locator('[data-tool-group="circle-arc"]').dispatchEvent("contextmenu");
+    await page.locator(".context-measure-options").dispatchEvent("click");
     await page.waitForTimeout(150);
   }
   if ((await page.locator(".menu-panel").count()) === 0) {

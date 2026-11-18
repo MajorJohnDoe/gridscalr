@@ -36,6 +36,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
   document.body.replaceChildren();
 });
 
@@ -45,6 +46,14 @@ describe("family tool flyout", () => {
     expect(menu.getAttribute("aria-label")).toBe("Circle & arc tools");
     expect(menu.querySelectorAll('[role="menuitemradio"]')).toHaveLength(3);
     expect(menuItem(menu, "Radius").getAttribute("aria-checked")).toBe("true");
+  });
+
+  it("opens the family menu on a normal left click", () => {
+    const button = familyButton();
+    button.click();
+    const menu = document.querySelector<HTMLElement>('[role="menu"]');
+    expect(menu).not.toBeNull();
+    expect(menu?.getAttribute("aria-label")).toBe("Circle & arc tools");
   });
 
   it("opens the shape menu with fill, colour and line controls", () => {

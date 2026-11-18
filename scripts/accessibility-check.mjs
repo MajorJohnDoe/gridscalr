@@ -53,13 +53,22 @@ const HUB_TABS = [
   { index: 2, id: "takeoff-tables", label: "Takeoff settings Tables tab" },
   { index: 3, id: "takeoff-cards", label: "Takeoff settings Cards tab" },
 ];
-const swedishChecks = HUB_TABS.map((entry) => ({
-  key: `sv:${entry.id}`,
-  theme: "sv",
-  themeLabel: "Swedish",
-  surface: entry.id,
-  surfaceLabel: entry.label,
-}));
+const swedishChecks = [
+  ...HUB_TABS.map((entry) => ({
+    key: `sv:${entry.id}`,
+    theme: "sv",
+    themeLabel: "Swedish",
+    surface: entry.id,
+    surfaceLabel: entry.label,
+  })),
+  {
+    key: "sv:measurement-flyout",
+    theme: "sv",
+    themeLabel: "Swedish",
+    surface: "measurement-flyout",
+    surfaceLabel: "Measurement flyout",
+  },
+];
 let browser;
 let vite;
 
@@ -132,6 +141,18 @@ try {
     await preferences.waitFor({ state: "detached" });
 
     await analyze(page, checkFor(theme, "shell"));
+
+    // The measurement flyout is the one settings surface for measurement tools.
+    await page.keyboard.press("a");
+    await page.getByRole("button", { name: /New measurement options/ }).click();
+    const measureFlyout = page.getByRole("dialog", { name: "New measurement options" });
+    await measureFlyout.waitFor();
+    const measureFlyoutCheck = checkFor(theme, "measurement-flyout");
+    await expectFocusInside(page, ".tool-flyout.is-measurement", measureFlyoutCheck);
+    await analyze(page, measureFlyoutCheck, ".tool-flyout.is-measurement");
+    await page.keyboard.press("Escape");
+    await measureFlyout.waitFor({ state: "detached" });
+    await page.keyboard.press("v");
 
     // Project settings, opened with the documented shortcut.
     await page.keyboard.press("Control+,");
@@ -246,6 +267,17 @@ try {
   // name cannot pass on the English pass alone.
   await setLanguage(page, "sv");
   for (const check of swedishChecks) {
+    if (check.surface === "measurement-flyout") {
+      await page.keyboard.press("a");
+      await page.locator(".context-measure-options").click();
+      await page.locator(".tool-flyout.is-measurement").waitFor();
+      await expectFocusInside(page, ".tool-flyout.is-measurement", check);
+      await analyze(page, check, ".tool-flyout.is-measurement");
+      await page.keyboard.press("Escape");
+      await page.locator(".tool-flyout.is-measurement").waitFor({ state: "detached" });
+      await page.keyboard.press("v");
+      continue;
+    }
     const entry = HUB_TABS.find((tab) => tab.id === check.surface);
     const hub = await openTakeoffSettings(page, entry.index);
     await expectFocusInside(page, ".modal", check);
@@ -282,7 +314,7 @@ try {
     }
   }
 
-  const matrix = `${A11Y_THEMES.length} palettes × ${A11Y_SURFACES.length} surfaces plus ${swedishChecks.length} Swedish hub tabs`;
+  const matrix = `${A11Y_THEMES.length} palettes × ${A11Y_SURFACES.length} surfaces plus ${swedishChecks.length} Swedish checks`;
   if (failing > 0) {
     console.error(
       `Accessibility gate failed: ${failing} serious/critical violation(s) across ${matrix}.`,

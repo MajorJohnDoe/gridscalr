@@ -235,6 +235,23 @@ export const TOOLS: ToolDef[] = [
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));
 
+/** Tools whose rail slot opens the shared measurement settings flyout. */
+const MEASUREMENT_TOOL_IDS: ReadonlySet<ToolId> = new Set([
+  "length",
+  "area",
+  "count",
+  "radius",
+  "diameter",
+  "arc",
+  "angle",
+  "slope",
+  "volume",
+]);
+
+export function isMeasurementTool(toolId: ToolId): boolean {
+  return MEASUREMENT_TOOL_IDS.has(toolId);
+}
+
 export type ToolFamilyId = "circle-arc" | "angle-slope" | "rect-ellipse";
 
 export interface ToolFamily {

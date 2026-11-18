@@ -40,8 +40,14 @@ export const shots = [
   {
     file: "measure.png",
     title: "Measure and annotate",
-    alt: "GridScalr with the Length tool active, the Layers panel open and the context bar showing the target layer and New measurement options, with Properties on the right.",
+    alt: "GridScalr with the Length tool active, the Layers panel open and a compact New measurement summary in the context bar, with Properties on the right.",
     description: "Measurement and drawing tools share one canvas but stay on separate layer types.",
+  },
+  {
+    file: "measure-flyout.png",
+    title: "Measurement flyout",
+    alt: "The GridScalr measurement flyout with category, room, area shape, area mode and target layer beside the active Area tool.",
+    description: "One flyout owns the New measurement settings and the page-scoped target layer.",
   },
   {
     file: "calibration.png",

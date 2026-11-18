@@ -28,7 +28,7 @@ The page cards show a badge when the drawing on disk no longer matches the proje
 
 ### 2. Measure what the job needs
 
-Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps the active measurement layer and the **New measurement** settings, so repeated measurements stay consistent. Check units and snapping in **Project settings**. On a touch screen, use one finger to draw and two fingers to pan or pinch-zoom; a pen takes priority over palm touches. Long-press an item for its context menu.
+Choose **Length** (`L`), **Area** (`A`) or **Count** (`C`). The context bar keeps a compact **New measurement** summary, and the measurement flyout holds the active target layer plus the category, room, type, pieces and area mode, so repeated measurements stay consistent. Check units and snapping in **Project settings**. On a touch screen, use one finger to draw and two fingers to pan or pinch-zoom; a pen takes priority over palm touches. Long-press an item for its context menu.
 
 ![Length tool active with the Layers panel and measurement context](screenshots/measure.png)
 
@@ -96,7 +96,7 @@ Use **Lock scale** once the scale is verified. This prevents accidental recalibr
 
 ### 3. Measure by category and room
 
-Check the length and area units in **Project settings → Measurements → Units**. Set the project category and room from the **New measurement** button for each measurement. Room names autocomplete from names already used in the project.
+Check the length and area units in **Project settings → Measurements → Units**. Set the project category and room from the measurement flyout for each measurement; its summary in the context bar opens the same flyout. Room names autocomplete from names already used in the project.
 
 - Measure gross floor area per room.
 - Add deductions for shafts, openings and other non-orderable areas with the **Deduct** switch in the context bar.

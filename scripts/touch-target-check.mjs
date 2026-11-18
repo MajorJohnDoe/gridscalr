@@ -124,6 +124,15 @@ try {
 
   await collect("shell");
 
+  await page.keyboard.press("a");
+  await page.getByRole("button", { name: /New measurement options/ }).click();
+  const measurementFlyout = page.getByRole("dialog", { name: "New measurement options" });
+  await measurementFlyout.waitFor();
+  await collect("measurement flyout", ".tool-flyout.is-measurement");
+  await page.keyboard.press("Escape");
+  await measurementFlyout.waitFor({ state: "detached" });
+  await page.keyboard.press("v");
+
   await page.locator('.dock-tab[data-tab="layers"]').click();
   await page.getByRole("button", { name: "Expand all", exact: true }).click();
   await collect("layers");

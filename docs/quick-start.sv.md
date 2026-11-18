@@ -22,13 +22,14 @@ skala på alla sidor eller rensa den.
 
 - **Längd** mäter en polylinje. Tryck Enter eller dubbelklicka för att avsluta.
 - **Area** mäter en polygon, rektangel eller ellips. Välj **Lägg till** eller
-  **Dra av** i kontextraden.
+  **Dra av** i mätpopupen.
 - **Räkna** placerar en antalssymbol. Välj antalstyp, kategori och rum; ange
   delar per objekt för dörrar med flera blad.
 - Använd övriga mätverktyg för radie, diameter, båge, vinkel, lutning och volym.
 
-Popupen **Ny mätning** anger kategori, rum, antalstyp och arealäge för nästa
-objekt. I Egenskaper kan du ändra ett placerat objekt.
+Mätpopupen anger kategori, rum, mållager, antalstyp och arealäge för nästa
+objekt. Öppna den från ett mätverktyg i verktygsraden eller från sammanfattningen
+i kontextraden. I Egenskaper kan du ändra ett placerat objekt.
 
 ## 4. Granska och exportera
 

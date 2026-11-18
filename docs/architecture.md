@@ -41,6 +41,9 @@ src/
   features/projectImport/ui.ts graphical source-page picker with lazy previews
   features/listInteraction/ shared list selection, drag, drop line, keyboard move, filter and collapse rules
   features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
+  features/measurementFlyout/model.ts pure capability, page-scoped target-layer and summary rules
+  features/measurementFlyout/controller.ts count-preset apply, save and delete as one undo step
+  features/measurementFlyout/ui.ts the one New measurement settings panel with layer selection
   features/projectIntegrity/ shared validator, doctor loop, load report, source availability and unused-copy cleanup
   features/projectIntegrity/repairPlan.ts repair planner: the concrete change plan the preview and the copy share
   features/projectIntegrity/repairFilter.ts pure severity, entity-kind and repair-availability filters
@@ -207,11 +210,11 @@ src/
   styles/projectImport.css project page import picker and source-document groups
   styles/markups.css     Markups panel, revision compare and text search
   styles/help.css        help dialog, search, TOC and image lightbox
-  styles/popovers.css    tool flyouts, Canvas options and measurement options
+  styles/popovers.css    tool flyouts, Canvas options and the measurement flyout
   styles/reference.css   reference page navigation and follow-primary control
   styles/status.css      status, storage and welcome details
   styles/responsive.css  laptop widths and high OS scaling
-  ui/contextBar.ts       tool-specific context bar and target layer controls
+  ui/contextBar.ts       tool-specific context bar, drawing target layer and measurement summary
   ui/editSafeRender.ts   shell render scheduling: background deferral, focus restore and render coalescing
   ui/editFieldSnapshot.ts focused-field snapshot, rebuild match and value/caret/scroll restore
   ui/inspector.ts        Properties header, active-layer and selection sections
@@ -222,7 +225,6 @@ src/
   ui/layerAction.ts      shared row icon button for Layers and Markups
   ui/symbolLibrary.ts    searchable Signs/Schematic symbol library and recent symbols
   ui/duplicatePageDialog.ts page name, scale and markup duplication options
-  ui/measureOptions.ts   category, room, count type and area options popover
   ui/selectionInspector.ts selection Properties dispatcher
   ui/inspector/          selection summary, measurement, image, symbol, drawing, style and item actions
   ui/selectionMenu.ts    shared item context menu for canvas, layers and Markups
@@ -230,7 +232,8 @@ src/
   ui/shortcuts.json      single source for tool and application shortcuts
   ui/shortcuts.ts        typed shortcut maps and platform formatting
   ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
-  ui/toolFlyouts.ts      long-press/right-click variant and family panels
+  ui/flyoutHost.ts       shared flyout mount, positioning, focus, keyboard and long-press gesture
+  ui/toolFlyouts.ts      click/long-press/right-click variant, family and measurement panels
   ui/statusBar.ts        page scale menu, cursor position and layer status
   ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
   ui/referencePane.ts    reference source selector, reference name and Open/Close controls
