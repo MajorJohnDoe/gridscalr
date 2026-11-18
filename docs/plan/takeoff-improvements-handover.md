@@ -176,10 +176,12 @@ right-click. No schema change expected.
   `feat/measurement-tool-flyout`, base `main` (`2e4e5e6`). Not merged, not
   auto-merge.
 - **Branch:** `feat/measurement-tool-flyout`
-- **Verified head SHA:** `1c8083f48019df9345688099ba12ac74143d7809`
-  (implementation). The local gate, the full Vitest suite and the browser gates
-  are green on this tree; the handover commit follows on the same PR, and the PR
-  head is verified by the conductor.
+- **Verified head SHA:** `f4c3482a1e94d0ea22b594ea4649b6f1bd1f1514`
+  (implementation `1c8083f`, handover `f4c3482`). CI run
+  [44304280280](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44304280280)
+  is green on that exact SHA after an earlier Linux-dependency install timeout
+  on the first run was retried. A docs-only handover-record commit may follow;
+  the conductor verifies the final PR head.
 - **Merge commit:** pending the conductor review.
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0.
 
