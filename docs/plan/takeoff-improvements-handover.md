@@ -992,9 +992,10 @@ Next: effort exit — final documentation pass, Windows build and release decisi
 - Docs: `docs/user-guide.md` (click opens the variant flyouts; the shape is
   clicked), `docs/workflows.md`, `docs/architecture.md`, `AGENTS.md` module map,
   the recaptured `docs/screenshots/measure-flyout.png` with its manifest entry.
-- **Environment note:** `check:dependencies` reports the reviewed npm
-  `picomatch` exception (`GHSA-FC5Q-39XC-VJPF`) as no longer matching an
-  advisory; `npm audit` now reports zero npm findings with the same lockfile that
-  passed the gate on `main` three hours earlier. No dependency or allowlist file
-  is touched by this follow-up.
+- **Dependency gate (F-142):** the first push failed `check:dependencies` because
+  GitHub withdrew `GHSA-FC5Q-39XC-VJPF` (picomatch ReDoS) at 2026-11-18T15:38Z;
+  `npm audit` reported zero npm findings for the unchanged lockfile and the gate
+  demanded the stale entry's removal. The withdrawn npm exception is removed
+  from `security/dependency-allowlist.json` (six cargo entries remain, all
+  reviewed to 2027-02-15) and the gate passes. No dependency version changed.
 

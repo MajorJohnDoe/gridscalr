@@ -3523,3 +3523,28 @@ remains the scheduling home.
   release documentation pass, or run the written manifest through the same
   formatter the committed file used, so generator and repository agree.
 - **Related:** #323, `scripts/capture-docs.mjs`, `scripts/check-docs.mjs`.
+
+### F-142 — a withdrawn npm advisory left the dependency gate red for every branch
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements follow-up — variant flyout click and area shape rows
+- **Severity:** P3
+- **Area:** Dependency and advisory gate
+- **Status:** resolved in this follow-up
+- **Evidence:** GitHub withdrew `GHSA-FC5Q-39XC-VJPF` (picomatch ReDoS) at
+  2026-11-18T15:38Z. `npm audit` then reported zero findings for the unchanged
+  `package-lock.json` (picomatch 4.0.7), and `npm run check:dependencies` failed
+  with "allowlist: npm|picomatch|GHSA-FC5Q-39XC-VJPF no longer matches any
+  advisory; remove the entry". The `main` gate had accepted the entry at 16:53Z,
+  before the advisory feed caught up, so the failure appeared on the next push
+  rather than on the commit that changed anything.
+- **Problem:** A stale acceptance in `security/dependency-allowlist.json` fails
+  the gate closed, which is correct, but it blocks every branch until the entry
+  is removed.
+- **Impact:** No runtime or data effect. One red dependency job on the first push
+  of the follow-up branch until the entry was removed.
+- **Next step:** done — the entry was removed with the documented "no longer
+  matches any advisory" remedy and the gate passes with six accepted cargo
+  entries and zero npm findings.
+- **Related:** #329, #330, `security/dependency-allowlist.json`,
+  `scripts/check-dependencies.mjs`.

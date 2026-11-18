@@ -61,16 +61,6 @@
       "reviewedAt": "2026-11-15",
       "reviewBy": "2027-02-15",
       "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/21"
-    },
-    {
-      "ecosystem": "npm",
-      "package": "picomatch",
-      "advisory": "GHSA-FC5Q-39XC-VJPF",
-      "kind": "vulnerability",
-      "reason": "High-severity ReDoS through single-branch repeated extglobs, reached only through vite 8.3.5 and vitest 5.0.5 for build and test tooling and not present in the shipped desktop binary. The advisory range is <=4.0.7 and every published picomatch version is affected, so no upgrade or override clears it until a patched release exists. Acceptance is temporary until picomatch is updated in #315.",
-      "reviewedAt": "2026-11-17",
-      "reviewBy": "2027-02-15",
-      "issue": "https://github.com/MajorJohnDoe/gridscalr/issues/315"
     }
   ]
 }
