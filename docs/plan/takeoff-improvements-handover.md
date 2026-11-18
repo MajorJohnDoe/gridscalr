@@ -14,12 +14,13 @@ Schema 28 stays the current development schema. No persisted field is added.
   `fix/windows-row-drag`, base `main`
   (`e1efb58`). Not merged, not auto-merge.
 - **Branch:** `fix/windows-row-drag`
-- **Implementation commit:** `432bfb6` (implementation, documentation and
-  tests). This handover is the commit on top of it; the PR head is authoritative
-  and was not reported as verified here — the conductor verifies it.
+- **Verified head SHA:** `8f818b1` (implementation `432bfb6`, handover
+  `8f818b1`). All six PR checks passed on that exact SHA (CI run
+  [44289208825](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44289208825)).
+  This CI-record commit follows it; the conductor verifies the actual PR head.
 - **Merge commit:** pending.
-- **Status:** PR open, CI running on the PR head. Windows manual confirmation is
-  pending and the issue stays open until it passes.
+- **Status:** PR open and green, not merged, no auto-merge. Windows manual
+  confirmation is pending and the issue stays open until it passes.
 
 ### Completed work
 
@@ -122,7 +123,9 @@ Local gate on the implementation head (`432bfb6`):
   the drop path.
 
 Not run locally, left to CI: the Windows and macOS desktop jobs, the packaged
-smoke test, the docs-capture dry run and the full release workflow.
+smoke test, the docs-capture dry run and the full release workflow. The windows
+and macOS desktop jobs compile the shell and run the packaged smoke test; they
+do not exercise a mouse drag, so Windows reordering is still the manual gate.
 
 ### Conductor verification
 
