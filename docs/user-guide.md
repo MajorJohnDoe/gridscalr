@@ -24,7 +24,7 @@ The demo requires the desktop app. The browser fallback offers open, restore and
 GridScalr uses a compact, drawing-first layout.
 
 - **Title row** – the app mark, the menu bar (File, Edit, View, Settings, Help), undo/redo, the project name with the drawing and page, the unsaved-changes dot, and the window buttons. On macOS the system traffic lights sit at the left of the same row.
-- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. A normal click on a family button opens its flyout and also activates the last-used member, so the previous one-click selection path still works; long-press or right-click opens the same flyout for touch, pen and discoverability. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
+- **Tool rail** – Select, pan, calibrate, measurement, drawing and symbol tools, plus a **Markups** button at the bottom. A normal click on a family or variant button opens its flyout and also activates the tool, so the previous one-click selection path still works; long-press or right-click opens the same flyout for touch, pen and discoverability. The chevron at the top expands the rail to two tool columns; the wider state is remembered with the panel layout and resets from **Preferences → Workspace**.
 - **Context bar** – the active tool, a compact current-setting summary for measurement tools, tool-specific options, and the drawing target layer. The measurement summary opens the measurement flyout, which holds the category, room, type, pieces, area mode and target layer. With the Symbol tool the context bar shows the chosen symbol, its category and the next inspection status.
 - **Left panel** – Pages and Layers. Page cards can be renamed, given a building/floor location, inserted, duplicated, dragged to reorder and deleted, a status filter bar narrows the list to problem sheets, and a PDF or TIF dropped on the cards adds its pages. The Layers tab shows the open page's layers in separate drawing and measurement sections, with a search field and expand/collapse-all controls. It opens on Pages, and choosing a measurement or drawing tool switches it to Layers so the target layer is visible. The Symbol tool swaps the panel to the symbol library; selecting Pages or Layers returns to the lists. Select and Pan leave the current tab alone. Collapse it with the chevron in the panel header, `Ctrl/Cmd+\`, or **View → Sidebar**.
 - **Canvas** – the drawing, markups, selection handles, and inline editors.
@@ -410,7 +410,7 @@ Choose **Volume** (`M`) and draw a polygon like an area, then finish with `Enter
 
 ### Area
 
-Choose **Area** (`A`) and select **Polygon**, **Rectangle**, or **Ellipse** in the measurement flyout. The same flyout is one click away from the rail's Area button or from the context-bar summary.
+Choose **Area** (`A`) and click **Polygon**, **Rectangle**, or **Ellipse** in the measurement flyout; the current shape is marked with a check. The same flyout is one click away from the rail's Area button or from the context-bar summary.
 
 - **Polygon** works click-by-click. Click around the perimeter, then click the first vertex or press `Enter` to close it.
 - **Rectangle** and **Ellipse** are quick areas drawn by dragging from one corner to the opposite corner.
@@ -642,7 +642,7 @@ Use the pen, line, arrow, rectangle, ellipse, highlight, cloud, callout, stamp, 
 
 Hold `Shift` while drawing lines, arrows, rectangles, or ellipses to constrain angles or proportions. The same angle constraint applies when you drag an endpoint of a line or arrow, or a vertex of a pipe/duct, to reshape it.
 
-**Rectangle** and **Ellipse** share one button in the tool rail. Long-press or right-click it, or choose **Shapes** in the context bar, to pick filled or outline-only, colour, stroke width and solid or dashed. Outline-only is the default for new shapes: it has no fill and is hit only along its outline, so you can click the objects it encloses. Filled shapes keep a clickable interior. Select a rectangle or ellipse to switch fill on or off and change its outline style in Properties.
+**Rectangle** and **Ellipse** share one button in the tool rail. Click it (or long-press or right-click it), or choose **Shapes** in the context bar, to pick filled or outline-only, colour, stroke width and solid or dashed. Outline-only is the default for new shapes: it has no fill and is hit only along its outline, so you can click the objects it encloses. Filled shapes keep a clickable interior. Select a rectangle or ellipse to switch fill on or off and change its outline style in Properties.
 
 Every colour swatch has a pipette button. Click it, then click a colour on the drawing to reuse that colour for the selected item, layer, line type or tool. `Esc` cancels the pick.
 
@@ -650,7 +650,7 @@ Every colour swatch has a pipette button. Click it, then click a colour on the d
 
 Choose **Revision cloud** (`D`) and click each corner. Close the shape on the first point or press `Enter`.
 
-Long-press or right-click the cloud button in the tool rail, or choose **Variants** in the context bar, to pick **Cloud** or **Cloud + text**, and one of the fill presets: **No fill**, **Blue**, **Orange**, **Green**, or **Red**. Form and fill are independent, so Red + Cloud + text and Red + Cloud are both available without separate tools. The default is **Cloud** with no text box and no fill. The context bar also has quick **Text box** and **Fill** controls. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
+Click the cloud button in the tool rail (or long-press or right-click it), or choose **Variants** in the context bar, to pick **Cloud** or **Cloud + text**, and one of the fill presets: **No fill**, **Blue**, **Orange**, **Green**, or **Red**. Form and fill are independent, so Red + Cloud + text and Red + Cloud are both available without separate tools. The default is **Cloud** with no text box and no fill. The context bar also has quick **Text box** and **Fill** controls. The cloud can be reshaped with its vertex handles. Double-click the cloud, use **Edit text…** in Properties, or right-click it to edit its text box.
 
 Every cloud gets an attached text box with a leader arrow to the cloud edge. Select the cloud and drag the round label handle, or drag inside the text box, to move the box independently. When the whole cloud is moved, the box keeps its relative position.
 
@@ -660,7 +660,7 @@ Clouds use the current drawing colour and line weight. Use **Fill** in Propertie
 
 ### Callout
 
-Long-press or right-click the Callout button to choose the leader colour: Blue, Orange, Green, Red, Violet, or Graphite. The text colour is changed separately in the inline editor.
+Click the Callout button (or long-press or right-click it) to choose the leader colour: Blue, Orange, Green, Red, Violet, or Graphite. The text colour is changed separately in the inline editor.
 
 Choose **Callout** (`N`). Click the object the callout should point at, then click where the text box should sit. The inline editor opens immediately with size, text colour, bold, underline, alignment, Cancel, and Done. The leader ends in a filled arrow exactly at the target.
 
@@ -668,7 +668,7 @@ Double-click the text box, use **Edit text…** in Properties, or right-click th
 
 ### Stamp
 
-Long-press or right-click the Stamp button to pick a project status preset, or choose **Custom…**. The preset list uses the status colours. A placed stamp can still get an individual colour override in Properties.
+Click the Stamp button (or long-press or right-click it) to pick a project status preset, or choose **Custom…**. The preset list uses the status colours. A placed stamp can still get an individual colour override in Properties.
 
 Choose **Stamp** (`S`) and select a preset in the context bar, its **Variants** popover or the tool flyout. Click the plan to place it. **Custom…** lets you type a one-off status, and double-clicking or right-clicking a placed stamp edits only that stamp, not the preset list.
 
@@ -678,7 +678,7 @@ Project stamp presets are managed under **Settings → Project settings → Stam
 
 ### Arrow
 
-Long-press or right-click the Arrow button, or choose **Variants** in the context bar, to pick **Single** or **Double** arrowheads and a colour preset. The same head and colour controls are available in the context bar and Properties.
+Click the Arrow button (or long-press or right-click it), or choose **Variants** in the context bar, to pick **Single** or **Double** arrowheads and a colour preset. The same head and colour controls are available in the context bar and Properties.
 
 ### Revision delta
 
@@ -907,7 +907,7 @@ A view stores the visible columns, page/type/category/count-type filters, search
 
 ## Highlight modes
 
-Long-press or right-click the Cloud, Highlight, Callout, Stamp, and Arrow buttons, or choose **Variants** in the context bar, for additional variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
+Click the Cloud, Highlight, Callout, Stamp, Arrow, Line or Pipe / duct button (or long-press or right-click it), or choose **Variants** in the context bar, for additional variants. The small corner triangle shows that alternatives exist. The **Highlight** tool (`G`) also exposes the same three modes in the context bar:
 
 - **Pen** – the original freehand highlighter.
 - **Rectangle** – drag a translucent highlight box.

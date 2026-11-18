@@ -32,13 +32,8 @@ import { textDialog } from "./dialogs";
 import { icon } from "./icons";
 import type { PanelActions } from "./panels";
 import type { ShellRefs } from "./shell";
-import { TOOL_BY_ID, familyForTool, isMeasurementTool } from "./toolDefs";
-import {
-  hasToolVariants,
-  openMeasurementFlyout,
-  openToolFamilyVariants,
-  openToolVariants,
-} from "./toolFlyouts";
+import { TOOL_BY_ID, familyForTool, hasToolVariants, isMeasurementTool } from "./toolDefs";
+import { openMeasurementFlyout, openToolFamilyVariants, openToolVariants } from "./toolFlyouts";
 import { toast } from "./toast";
 import { t } from "../i18n";
 

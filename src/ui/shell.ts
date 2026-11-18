@@ -185,6 +185,9 @@ export function createShell(root: HTMLElement): ShellRefs {
       btn.title = tool.shortcut ? `${t(tool.label)} (${tool.shortcut})` : t(tool.label);
       btn.setAttribute("aria-label", t(tool.label));
       btn.addEventListener("click", () => store.setTool(tool.id));
+      // The helper reads the tool metadata: a tool that declares a variant
+      // flyout opens it on the same click that selects it, so this wiring
+      // cannot drift from the list of tools that own one.
       if (isMeasurementTool(tool.id)) attachMeasurementFlyout(btn, tool.id);
       else attachToolFlyout(btn, tool.id);
     }

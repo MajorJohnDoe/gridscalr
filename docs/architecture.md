@@ -43,7 +43,7 @@ src/
   features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
   features/measurementFlyout/model.ts pure capability, page-scoped target-layer and summary rules
   features/measurementFlyout/controller.ts count-preset apply, save and delete as one undo step
-  features/measurementFlyout/ui.ts the one New measurement settings panel with layer selection
+  features/measurementFlyout/ui.ts the one New measurement settings panel with the layer and area-shape pickers
   features/projectIntegrity/ shared validator, doctor loop, load report, source availability and unused-copy cleanup
   features/projectIntegrity/repairPlan.ts repair planner: the concrete change plan the preview and the copy share
   features/projectIntegrity/repairFilter.ts pure severity, entity-kind and repair-availability filters
@@ -237,6 +237,7 @@ src/
   ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
   ui/flyoutHost.ts       shared flyout mount, positioning, focus, keyboard and long-press gesture
   ui/toolFlyouts.ts      click/long-press/right-click variant, family and measurement panels
+  ui/variantRow.ts       shared icon + label row for the tool flyouts and the measurement shape options
   ui/statusBar.ts        page scale menu, cursor position and layer status
   ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
   ui/referencePane.ts    reference source selector, reference name and Open/Close controls

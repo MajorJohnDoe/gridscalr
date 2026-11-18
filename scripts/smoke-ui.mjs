@@ -318,7 +318,7 @@ try {
     true,
     "focus should move into the measurement flyout",
   );
-  await measureOptions.getByLabel("Area shape").selectOption("rectangle");
+  await measureOptions.getByRole("radio", { name: "Rectangle" }).click();
   await measureOptions.getByLabel("Area mode").selectOption("subtract");
   await page.keyboard.press("Escape");
   await measureOptions.waitFor({ state: "detached" });

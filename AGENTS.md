@@ -612,6 +612,7 @@ src/ui/shortcuts.ts        typed shortcut maps and platform formatting
 src/ui/toolDefs.ts         tool metadata, shared rail families and last-used family member
 src/ui/flyoutHost.ts        shared flyout mount, positioning, focus, keyboard and long-press gesture
 src/ui/toolFlyouts.ts      click/long-press/right-click variant, family and measurement panels
+src/ui/variantRow.ts        shared icon + label row for the tool flyouts and the measurement shape options
 src/ui/statusBar.ts        page scale menu, cursor position and layer status
 src/ui/splitView.ts        synchronized read-only reference pane, comparison mode and divider
 src/ui/referencePane.ts    reference source selector, name and Open/Close controls
