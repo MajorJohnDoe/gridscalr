@@ -723,3 +723,119 @@ Windows/macOS desktop matrix and the packaged smoke test. No Rust or
 Phase 5 — [placed takeoff table style #323](https://github.com/MajorJohnDoe/gridscalr/issues/323):
 grey striped placed table with group, subtotal and grand-total emphasis on the
 canvas and in the PDF through one shared layout.
+
+## Phase 5 — placed takeoff table style
+
+- **Issue:** [#323](https://github.com/MajorJohnDoe/gridscalr/issues/323)
+- **PR:** [#328](https://github.com/MajorJohnDoe/gridscalr/pull/328), opened from
+  `feat/placed-table-style`, base `main` (`f1e2a34`). Not merged, not auto-merge.
+- **Branch:** `feat/placed-table-style`
+- **Implementation commit:** `a39cd5c93ecc300df0f410b72478065e72d7c41f`
+- **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
+  field, no migration fixture and no `src/io/projectFile` change.
+
+### Completed work
+
+- The placed table is banded in the shared layout: a light grey header band,
+  subtle alternating row bands, a banded group header with a section rule above
+  it, one separated subtotal row per group and a dark grand total row with light
+  bold text. Cell padding, rule weights (0.4 grid / 0.8 section), alignment
+  (numbers right, text left) and bold typography (headings, groups, subtotals,
+  total) are unchanged or made explicit; the layout's geometry is untouched.
+- `layoutScheduleTable()` stays the single source: it now also emits
+  `bands: ScheduleBand[]` (one background rectangle per drawn row, in paint
+  order) and adds `group`/`subtotal` section rules to `lines`. `ScheduleLineRole`
+  gained those two roles. The canvas fills the bands, strokes the lines and inks
+  the cells; the PDF export fills the same bands as rotated rectangles and
+  strokes/inks the same cells.
+- New `src/features/schedules/layoutStyle.ts` (253 lines, pure): band and ink
+  roles, the `--table-*` token contract, the document palette, WCAG contrast and
+  the readability resolver, plus the role mapping both renderers share.
+- New `src/canvas/items/scheduleStyle.ts` (40 lines): reads the active theme's
+  custom properties, caches per `data-theme` so a pan or zoom never calls
+  `getComputedStyle`, and exposes a reset for tests and a theme switch.
+- Twelve `--table-*` tokens added to `src/styles/tokens.css` and all five
+  palettes, plus `REQUIRED` and nine AA pairs in `scripts/theme-token-rules.mjs`.
+- Unchanged by design: hidden/locked rules, row ranges, overflow reporting,
+  ellipsis, the column model, the builder, the right-dock live table and
+  CSV/XLSX.
+
+### Modules
+
+- `src/features/schedules/layoutStyle.ts` (new), `layout.ts`, `layoutCells.ts`
+- `src/canvas/items/scheduleStyle.ts` (new), `src/canvas/items/schedule.ts`
+- `src/pdf/export/items/schedule.ts`
+- `src/styles/tokens.css`, `src/styles/themes/*.css` (five palettes),
+  `scripts/theme-token-rules.mjs`
+- `tests/scheduleTableStyle.test.ts` (new)
+- `docs/user-guide.md`, `README.md`, `docs/architecture.md`, `AGENTS.md`,
+  `docs/plan/foundation-findings.md`, ten `docs/screenshots/*.png` and
+  `docs/screenshots/manifest.json`
+
+### Decisions
+
+- **Document contract, not chrome.** A placed table is drawing content on the PDF
+  sheet, which is white in every palette, so its roles describe a printed
+  document: paper and bands stay light in all five themes and only the neutral
+  tint and the header accent follow the palette. `check:themes` pins nine ink/band
+  pairs at 4.5:1 in every palette so no theme can ship an unreadable table.
+- **Injected resolution, one rule.** The pure layout carries roles, never
+  colours. The canvas injects the theme tokens, the PDF injects nothing and gets
+  the document palette, and both call the same resolver, so a broken palette
+  falls back instead of rendering black on black.
+- **Item colour keeps the outer frame.** `resolveItemColor` still draws the outer
+  border (never black), so the table stays identifiable by its layer; inner rules
+  and all ink come from the table contract. An explicit `item.fillColor` becomes
+  the table paper rather than being overpainted.
+- **The first group header reuses the header rule.** Its section rule lands on
+  the header bottom, so `gridLines` de-duplicates by y instead of drawing two
+  overlapping rules.
+
+### Findings
+
+- **F-140** (P3): the right-dock live table, the quantity report PDF and the
+  CSV/XLSX output keep their own table styling, so one takeoff table has three
+  looks. Out of scope for #323 by design.
+- **F-141** (P3): `docs:capture` writes literal em dashes while the committed
+  manifest stores `\u2014` escapes, so every capture changes six unrelated title
+  lines. Phase 5 patched only `generatedAt` and `sourceFingerprint`.
+- No regression finding: canvas draw work grows by one `fillRect` per drawn row
+  (bounded by the row window), and the layout cost is unchanged; `check:performance`
+  and the placement suites stay green.
+
+### Open questions
+
+- Whether the report PDF should adopt `DOCUMENT_SCHEDULE_STYLE` (F-140) is a
+  design decision for the effort exit, not a bug.
+- A future theme that renders a dark drawing sheet would need the `--table-*`
+  contrast pairs re-checked; the contract assumes a white sheet.
+
+### Checks
+
+Local gate on `a39cd5c`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (622 files),
+  `check:modules` (22 foundation features, 34 Tauri commands), `check:security`,
+  `check:actions` (37 pins), `check:dependencies` (PASS), `check:docs`
+  (272 links, 55 images, 40 screenshots, no stale warning), `format:check`,
+  `lint`, `check:i18n` (2 catalogs, 3 590 keys), `check:themes` (5 themes),
+  `npx tsc --noEmit`
+- focused Vitest: `scheduleTableStyle` (new, 19 tests), `schedulePlacement`,
+  `schedulePlacementPdf`, `schedulesPerformance`, `schedules`, `theme` — 6 files,
+  114 tests passed
+- `check:performance` (p95 edit 37.7 ms, open 9.6 ms, autosave 938.7 ms, page
+  switch 23.8 ms, freeze 86.3 ms — all PASS), `test:visual` (4 baselines,
+  `count-types` 24 px at delta 1), `test:a11y` (100 checks, no serious/critical),
+  `test:ui-scale` (100/150/200 %), `test:docs-capture` (40 screenshots, dry run)
+
+Not run locally, left to CI: the Windows/macOS desktop matrix and the packaged
+smoke test. No Rust or `tauri.conf.json` change, so no desktop shell build was
+needed.
+
+### Conductor verification
+
+Conductor verification: pending
+
+### Next
+
+Next: effort exit — final documentation pass, Windows build and release decision

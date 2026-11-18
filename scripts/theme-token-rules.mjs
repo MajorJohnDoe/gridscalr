@@ -35,6 +35,19 @@ export const REQUIRED = [
   "--surface-inset-foot",
   "--chrome-topbar",
   "--chrome-rail",
+  /* Placed takeoff table: a printed-document contract, not chrome. */
+  "--table-paper",
+  "--table-band-head",
+  "--table-band-row-alt",
+  "--table-band-group",
+  "--table-band-subtotal",
+  "--table-band-total",
+  "--table-ink",
+  "--table-ink-strong",
+  "--table-ink-inverse",
+  "--table-ink-muted",
+  "--table-rule",
+  "--table-rule-strong",
 ];
 
 /**
@@ -66,6 +79,21 @@ const PAIRS = [
   ["--warning", "--bg", 3],
   ["--warning", "--bg-deep", 4.5],
   ["--danger", "--bg", 3],
+  /*
+   * Placed takeoff table. Every ink is checked against the band it is actually
+   * drawn on, so the table cannot ship black text on a black band in any
+   * palette. The same pairs guard the PDF document palette in
+   * `src/features/schedules/layoutStyle.ts`.
+   */
+  ["--table-ink", "--table-paper", 4.5],
+  ["--table-ink", "--table-band-row-alt", 4.5],
+  ["--table-ink", "--table-band-group", 4.5],
+  ["--table-ink", "--table-band-subtotal", 4.5],
+  ["--table-ink-strong", "--table-band-head", 4.5],
+  ["--table-ink-strong", "--table-band-group", 4.5],
+  ["--table-ink-strong", "--table-band-subtotal", 4.5],
+  ["--table-ink-inverse", "--table-band-total", 4.5],
+  ["--table-ink-muted", "--table-paper", 4.5],
 ];
 
 /** Parses `--token: value;` declarations from a stylesheet. */

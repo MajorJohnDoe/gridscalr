@@ -451,6 +451,8 @@ src/features/spaces/model/tree.ts space tree order, subtree ids, reparent rules 
 src/features/spaces/model/mutations.ts create, update, delete, link and unlink as caller-owned undo steps
 src/features/spaces/ui/ register dialog, space editor with space-scope fields, rows with area badge and inline delete confirmation
 src/features/schedules/index.ts public surface for the schedule engine, cards and the Takeoff tab
+src/features/schedules/layout.ts shared canvas/PDF placed-table layout: fit, rows, cells, rules and bands
+src/features/schedules/layoutStyle.ts placed-table band roles, theme token resolution and the readable-ink fallback
 src/features/schedules/model.ts pure field catalogue, filters, stable sort, totals, grouping, definition rules, roles and revision cache
 src/features/schedules/model/definition.ts standard-table factory (standardScheduleDraft) and draft create/update/duplicate/delete rules
 src/features/schedules/sources/measurements.ts measurement rows from visible items, reusing itemMetrics and quantity rules
@@ -511,6 +513,8 @@ src/canvas/items/symbols.ts symbol artwork, free-text tags and inspection badges
 src/canvas/items/images.ts embedded image drawing and opacity
 src/canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
 src/canvas/items/counts.ts count symbols and count-type glyphs
+src/canvas/items/schedule.ts placed takeoff table drawing from the shared layout
+src/canvas/items/scheduleStyle.ts placed-table theme token reader and its palette cache
 src/canvas/items/visible.ts viewport culling and layered item iteration
 src/canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
 src/canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers

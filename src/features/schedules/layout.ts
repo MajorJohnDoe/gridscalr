@@ -1,10 +1,12 @@
 import { t } from "../../i18n";
 import type { ScheduleResult } from "./model/types";
-import { cellsFor, columnBoxes, gridLines, type BodyRow } from "./layoutCells";
+import { cellsFor, columnBoxes, gridLines, type BodyRow, type RowSeparator } from "./layoutCells";
 import { estimateTextWidth, ellipsizeText, type MeasureText } from "./layoutText";
+import { bandRoleFor, type ScheduleBand } from "./layoutStyle";
 
 export { ellipsizeText, estimateTextWidth };
 export type { MeasureText };
+export * from "./layoutStyle";
 
 /**
  * Pure table layout shared by the canvas renderer and the PDF exporter. The
@@ -40,7 +42,7 @@ export interface ScheduleTableText {
   role: ScheduleCellRole;
 }
 
-export type ScheduleLineRole = "grid" | "outer" | "header" | "total";
+export type ScheduleLineRole = "grid" | "outer" | "header" | "group" | "subtotal" | "total";
 
 export interface ScheduleTableLine {
   x1: number;
@@ -85,6 +87,8 @@ export interface ScheduleTableLayout {
   header: ScheduleTableText[];
   cells: ScheduleTableText[];
   lines: ScheduleTableLine[];
+  /** Background bands, one per drawn row, in paint order. */
+  bands: ScheduleBand[];
   /** True when some rows did not fit or the range is narrower than the source. */
   overflow: boolean;
   overflowReason: "range" | "box" | null;
@@ -214,6 +218,13 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
   }
 
   const cells: ScheduleTableText[] = [];
+  const bands: ScheduleBand[] = [];
+  const separators: RowSeparator[] = [];
+  const grouped = input.result.rowMode === "grouped";
+  if (headerHeight > 0) bands.push({ role: "header", x: 0, y: 0, width, height: headerHeight });
+  if (headerHeight > 0 && height > headerHeight) {
+    separators.push({ y: headerHeight, role: "header" });
+  }
   if (!included.length) {
     cells.push({
       text: t("schedules.table.noRows"),
@@ -229,12 +240,25 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
   }
   for (const row of included) {
     cells.push(...cellsFor(row, columns, fontSize, padding, measure, cursor, rowHeight));
+    bands.push({
+      role: bandRoleFor(row.kind, row.first, grouped),
+      x: 0,
+      y: cursor,
+      width,
+      height: rowHeight,
+    });
+    // A group header and a subtotal are section rows: each one is separated from
+    // the row above so the eye can find the group and its total.
+    if ((row.kind === "group" || row.kind === "subtotal") && cursor > 0) {
+      separators.push({ y: cursor, role: row.kind });
+    }
     cursor += rowHeight;
   }
 
-  let totalTop: number | null = null;
   if (totals.length && cursor + totalRowHeight <= height) {
-    totalTop = cursor;
+    const totalTop = cursor;
+    bands.push({ role: "total", x: 0, y: totalTop, width, height: totalRowHeight });
+    if (totalTop > 0) separators.push({ y: totalTop, role: "total" });
     cells.push(
       ...cellsFor(
         {
@@ -248,7 +272,7 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
         fontSize,
         padding,
         measure,
-        cursor,
+        totalTop,
         totalRowHeight,
       ),
     );
@@ -282,15 +306,8 @@ export function layoutScheduleTable(input: ScheduleLayoutInput): ScheduleTableLa
     columns,
     header,
     cells,
-    lines: gridLines(
-      columns,
-      width,
-      height,
-      headerHeight,
-      totalTop,
-      headerHeight > 0,
-      totals.length > 0 && totalTop !== null,
-    ),
+    lines: gridLines(columns, width, height, separators),
+    bands,
     overflow,
     overflowReason: overflow ? (boxOverflow ? "box" : "range") : null,
     continuationRowStart,

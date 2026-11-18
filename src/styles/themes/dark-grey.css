@@ -75,4 +75,18 @@
   --help-row: rgba(255, 255, 255, 0.03);
   --help-figure-shadow: rgba(0, 0, 0, 0.48);
   --export-list: rgba(0, 0, 0, 0.2);
+
+  /* Placed takeoff table: printed-document roles, cool neutral here. */
+  --table-paper: #ffffff;
+  --table-band-head: #e7ebee;
+  --table-band-row-alt: #eef1f4;
+  --table-band-group: #dce2e6;
+  --table-band-subtotal: #e8ecef;
+  --table-band-total: #22282c;
+  --table-ink: #1a2024;
+  --table-ink-strong: #0b1013;
+  --table-ink-inverse: #f7f9fa;
+  --table-ink-muted: #59646b;
+  --table-rule: #d0d8dd;
+  --table-rule-strong: #97a3aa;
 }

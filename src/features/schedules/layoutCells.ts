@@ -3,6 +3,7 @@ import type { ScheduleResult, ScheduleRow, ScheduleTotalValue } from "./model/ty
 import type {
   ScheduleCellRole,
   ScheduleColumnBox,
+  ScheduleLineRole,
   ScheduleTableLine,
   ScheduleTableText,
 } from "./layout";
@@ -97,37 +98,53 @@ export function cellsFor(
   });
 }
 
+/** A horizontal section rule: header bottom, group header, subtotal or total. */
+export interface RowSeparator {
+  y: number;
+  role: Extract<ScheduleLineRole, "header" | "group" | "subtotal" | "total">;
+}
+
+/** Two weights: a light grid inside the body, a firm rule at every section. */
+const GRID_WEIGHT = 0.4;
+const RULE_WEIGHT = 0.8;
+
 export function gridLines(
   columns: ScheduleColumnBox[],
   width: number,
   height: number,
-  headerBottom: number,
-  totalTop: number | null,
-  hasHeader: boolean,
-  hasTotal: boolean,
+  separators: readonly RowSeparator[],
 ): ScheduleTableLine[] {
   const lines: ScheduleTableLine[] = [];
   for (const column of columns) {
-    lines.push({ x1: column.x, y1: 0, x2: column.x, y2: height, width: 0.4, role: "grid" });
-  }
-  lines.push({ x1: width, y1: 0, x2: width, y2: height, width: 0.4, role: "grid" });
-  if (hasHeader) {
     lines.push({
-      x1: 0,
-      y1: headerBottom,
-      x2: width,
-      y2: headerBottom,
-      width: 0.8,
-      role: "header",
+      x1: column.x,
+      y1: 0,
+      x2: column.x,
+      y2: height,
+      width: GRID_WEIGHT,
+      role: "grid",
     });
   }
-  if (hasTotal && totalTop !== null) {
-    lines.push({ x1: 0, y1: totalTop, x2: width, y2: totalTop, width: 0.8, role: "total" });
+  lines.push({ x1: width, y1: 0, x2: width, y2: height, width: GRID_WEIGHT, role: "grid" });
+  const drawn = new Set<number>();
+  for (const separator of separators) {
+    if (separator.y <= 0 || separator.y >= height) continue;
+    const key = Math.round(separator.y * 100);
+    if (drawn.has(key)) continue;
+    drawn.add(key);
+    lines.push({
+      x1: 0,
+      y1: separator.y,
+      x2: width,
+      y2: separator.y,
+      width: RULE_WEIGHT,
+      role: separator.role,
+    });
   }
   lines.push(
-    { x1: 0, y1: 0, x2: width, y2: 0, width: 0.8, role: "outer" },
-    { x1: 0, y1: height, x2: width, y2: height, width: 0.8, role: "outer" },
-    { x1: 0, y1: 0, x2: 0, y2: height, width: 0.8, role: "outer" },
+    { x1: 0, y1: 0, x2: width, y2: 0, width: RULE_WEIGHT, role: "outer" },
+    { x1: 0, y1: height, x2: width, y2: height, width: RULE_WEIGHT, role: "outer" },
+    { x1: 0, y1: 0, x2: 0, y2: height, width: RULE_WEIGHT, role: "outer" },
   );
   return lines;
 }
