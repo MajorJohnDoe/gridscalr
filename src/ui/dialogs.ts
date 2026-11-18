@@ -4,300 +4,39 @@ import { manualPointsPerMeter } from "../model/calibration";
 
 import { formatNumber, LENGTH_UNITS, lengthUnitLabel } from "../model/units";
 import { el, option } from "./dom";
-import { appendSanitizedCopy } from "./errorDetails";
-import { icon } from "./icons";
 import { t } from "../i18n";
+import { openDialog } from "../features/dialogHost";
 
-let activeModal: { close: () => void } | null = null;
+/**
+ * Project-specific dialogs built on the shared movable, non-modal window shell.
+ * The shell, its stacking rules and the small shared prompts live in
+ * `src/features/dialogHost`; this file only owns the scale and recovery content.
+ */
 
-interface ModalAction {
-  label: string;
-  value: string;
-  primary?: boolean;
-  danger?: boolean;
-}
-
-export function closeActiveModal(): void {
-  activeModal?.close();
-}
-
-export function showModal(options: {
-  title: string;
-  subtitle?: string;
-  body: HTMLElement;
-  actions: ModalAction[];
-  onValidate?: () => string | null;
-  /** Called after the modal is mounted, for dynamic button and field state. */
-  onMount?: (modal: HTMLElement, close: () => void) => void;
-  onClose?: () => void;
-  wide?: boolean;
-  className?: string;
-}): Promise<string | null> {
-  closeActiveModal();
-  return new Promise((resolve) => {
-    const previousFocus =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    const backdrop = el("div", "modal-backdrop");
-    const modal = el(
-      "div",
-      `modal${options.wide ? " modal-wide" : ""}${options.className ? ` ${options.className}` : ""}`,
-    );
-    modal.setAttribute("role", "dialog");
-    modal.setAttribute("aria-modal", "true");
-    modal.setAttribute("aria-labelledby", "modal-title");
-    modal.tabIndex = -1;
-
-    const header = el("div", "modal-header");
-    const titles = el("div", "modal-titles");
-    const title = el("h2", "", options.title);
-    title.id = "modal-title";
-    titles.append(title);
-    if (options.subtitle) titles.append(el("p", "modal-subtitle", options.subtitle));
-    header.append(titles);
-    const close = el("button", "icon-btn modal-close");
-    close.type = "button";
-    close.title = t("common.close");
-    close.innerHTML = icon("close", 16);
-    header.append(close);
-
-    const body = el("div", "modal-body");
-    body.append(options.body);
-
-    const footer = el("div", "modal-footer");
-    let error: HTMLElement | null = null;
-    let finished = false;
-
-    const finish = (value: string | null) => {
-      if (finished) return;
-      finished = true;
-      document.removeEventListener("keydown", onKeyDown);
-      backdrop.remove();
-      if (activeModal?.close === closeModal) activeModal = null;
-      options.onClose?.();
-      if (previousFocus?.isConnected) previousFocus.focus();
-      resolve(value);
-    };
-    const closeModal = () => finish(null);
-
-    for (const action of options.actions) {
-      const btn = el(
-        "button",
-        `btn${action.primary ? " btn-primary" : ""}${action.danger ? " btn-danger" : ""}`,
-        action.label,
-      );
-      btn.type = "button";
-      btn.addEventListener("click", () => {
-        if (action.value === "__cancel__") {
-          closeModal();
-          return;
-        }
-        const validation = options.onValidate?.();
-        if (validation) {
-          if (!error) {
-            error = el("p", "form-error");
-            body.append(error);
-          }
-          error.textContent = validation;
-          return;
-        }
-        finish(action.value);
-      });
-      footer.append(btn);
-    }
-
-    modal.append(header, body, footer);
-    backdrop.append(modal);
-    document.body.append(backdrop);
-    activeModal = { close: closeModal };
-    options.onMount?.(modal, closeModal);
-
-    close.addEventListener("click", closeModal);
-    backdrop.addEventListener("mousedown", (event) => {
-      if (event.target === backdrop) closeModal();
-    });
-    const focusableSelector =
-      'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    const focusableElements = () =>
-      [...modal.querySelectorAll<HTMLElement>(focusableSelector)].filter(
-        (element) => !element.hasAttribute("hidden") && element.offsetParent !== null,
-      );
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        closeModal();
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = focusableElements();
-      if (!focusable.length) {
-        event.preventDefault();
-        modal.focus();
-        return;
-      }
-      const first = focusable[0];
-      const last = focusable[focusable.length - 1];
-      const active = document.activeElement;
-      if (!modal.contains(active)) {
-        event.preventDefault();
-        first.focus();
-      } else if (event.shiftKey && active === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && active === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKeyDown);
-
-    const input = [...modal.querySelectorAll<HTMLElement>("input, textarea, select")].find(
-      (element) => !element.hasAttribute("disabled"),
-    );
-    const primary = footer.querySelector<HTMLButtonElement>("button.btn-primary:not([disabled])");
-    const safe = [...footer.querySelectorAll<HTMLButtonElement>("button.btn:not([disabled])")].find(
-      (button) => !button.classList.contains("btn-danger"),
-    );
-    // Destructive primary actions must not receive focus by default.
-    const target =
-      input ?? (primary && !primary.classList.contains("btn-danger") ? primary : safe) ?? primary;
-    requestAnimationFrame(() => target?.focus());
-  });
-}
-
-export type UnsavedChangesChoice = "save" | "discard" | "cancel";
-
-export function unsavedChangesDialog(message: string): Promise<UnsavedChangesChoice> {
-  const body = el("div");
-  body.append(el("p", "modal-message", message));
-  return showModal({
-    title: t("dialogs.unsavedTitle"),
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "cancel" },
-      { label: t("dialogs.discardChanges"), value: "discard", danger: true },
-      { label: t("common.save"), value: "save", primary: true },
-    ],
-  }).then((value) => (value === "save" || value === "discard" ? value : "cancel"));
-}
-
-export function confirmDialog(
-  title: string,
-  message: string,
-  confirmLabel = t("common.confirm"),
-  options: { danger?: boolean } = {},
-): Promise<boolean> {
-  const body = el("div");
-  body.append(el("p", "modal-message", message));
-  return showModal({
-    title,
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: confirmLabel, value: "confirm", primary: true, danger: options.danger },
-    ],
-  }).then((value) => value === "confirm");
-}
-
-export function messageDialog(
-  title: string,
-  message: string,
-  kind: "info" | "warning" = "info",
-): Promise<void> {
-  const body = el("div", "modal-message-row");
-  const iconWrap = el("div", `modal-callout ${kind}`);
-  iconWrap.innerHTML = icon(kind === "warning" ? "warning" : "info", 20);
-  const text = el("div", "modal-message-text");
-  for (const paragraph of message.split(/\n{2,}/)) {
-    text.append(el("p", "modal-message", paragraph));
-  }
-  body.append(iconWrap, text);
-  // Absolute paths stay on screen because they help troubleshooting, but the
-  // copy action writes a sanitized version (F-042).
-  appendSanitizedCopy(body, message);
-  return showModal({
-    title,
-    body,
-    actions: [{ label: t("common.ok"), value: "ok", primary: true }],
-  }).then(() => undefined);
-}
-
-export function textDialog(
-  title: string,
-  subtitle: string,
-  initial = "",
-  placeholder = "",
-  multiline = false,
-): Promise<string | null> {
-  const body = el("div", "form-stack");
-  const field = el("label", "field");
-  field.append(el("span", "field-label", t("dialogs.textLabel")));
-  const input = multiline ? el("textarea", "input textarea") : el("input", "input");
-  if (!multiline) (input as HTMLInputElement).type = "text";
-  input.value = initial;
-  input.placeholder = placeholder;
-  field.append(input);
-  body.append(field);
-  return showModal({
-    title,
-    subtitle,
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: t("common.apply"), value: "apply", primary: true },
-    ],
-    onValidate: () => (input.value.trim() ? null : t("dialogs.textRequired")),
-  }).then((value) => (value === "apply" ? input.value.trim() : null));
-}
-
-export function depthDialog(unit: LengthUnit, initial = 1): Promise<number | null> {
-  const body = el("div", "form-stack");
-  body.append(el("p", "modal-message", t("dialogs.depth.message")));
-  const field = el("label", "field");
-  field.append(el("span", "field-label", t("dialogs.depth.label")));
-  const wrap = el("div", "input-row");
-  const input = el("input", "input");
-  input.type = "number";
-  input.min = "0.001";
-  input.step = "0.01";
-  input.value = String(initial);
-  input.setAttribute("aria-label", t("dialogs.depth.aria"));
-  wrap.append(input, el("span", "context-unit", unit));
-  field.append(wrap);
-  body.append(field);
-  return showModal({
-    title: t("dialogs.depth.title"),
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: t("common.apply"), value: "apply", primary: true },
-    ],
-    onValidate: () => {
-      const value = Number(input.value);
-      return Number.isFinite(value) && value > 0 ? null : t("dialogs.depth.invalid");
-    },
-  }).then((value) => (value === "apply" ? Number(input.value) : null));
-}
-
-export function passwordDialog(filename: string): Promise<string | null> {
-  const body = el("div", "form-stack");
-  body.append(el("p", "modal-message", t("dialogs.password.message", { filename })));
-  const field = el("label", "field");
-  field.append(el("span", "field-label", t("dialogs.password.label")));
-  const input = el("input", "input");
-  input.type = "password";
-  input.autocomplete = "off";
-  field.append(input);
-  body.append(field);
-  return showModal({
-    title: t("dialogs.password.title"),
-    body,
-    actions: [
-      { label: t("common.cancel"), value: "__cancel__" },
-      { label: t("common.unlock"), value: "unlock", primary: true },
-    ],
-    onValidate: () => (input.value ? null : t("dialogs.password.invalid")),
-  }).then((value) => (value === "unlock" ? input.value : null));
-}
+export { openDialog as showModal } from "../features/dialogHost";
+export {
+  closeAllDialogs,
+  closeTopDialog as closeActiveModal,
+  dialogCount,
+  topDialogId,
+} from "../features/dialogHost";
+export {
+  checkDialogTarget,
+  confirmDialog,
+  messageDialog,
+  revalidateTarget,
+  revalidateTargetNow,
+  targetIdentity,
+  textDialog,
+  unsavedChangesDialog,
+  depthDialog,
+  passwordDialog,
+  type ConfirmOptions,
+  type DialogOptions,
+  type UnsavedChangesChoice,
+  type DialogTarget,
+  type TargetKind,
+} from "../features/dialogHost";
 
 export interface CalibrationDialogResult {
   knownLength: number;
@@ -365,7 +104,7 @@ export function calibrationDialog(options: {
     body.append(updateLabel);
   }
 
-  return showModal({
+  return openDialog({
     title: editing
       ? t("dialogs.calibration.editTitle", { page: options.currentPage })
       : t("dialogs.calibration.newTitle", { page: options.currentPage }),
@@ -475,7 +214,7 @@ export function manualScaleDialog(options: {
     body.append(updateLabel);
   }
 
-  return showModal({
+  return openDialog({
     title: t("dialogs.manual.title", { page: options.currentPage }),
     subtitle: t("dialogs.manual.subtitle"),
     body,
@@ -514,7 +253,7 @@ export function recoveryDialog(
       }),
     ),
   );
-  return showModal({
+  return openDialog({
     title: t("dialogs.recovery.title"),
     body,
     actions: [

@@ -155,7 +155,7 @@ function mixedSnapshot(destination: Project, source: Project): ImportPreflightSn
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
   vi.restoreAllMocks();
 });

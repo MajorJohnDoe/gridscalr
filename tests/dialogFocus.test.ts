@@ -15,7 +15,7 @@ function clickFooter(label: string): void {
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
 });
 

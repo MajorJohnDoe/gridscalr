@@ -4,7 +4,7 @@ import { removeLayer, setLayerLockedOnPage, setLayerVisibleOnPage } from "../../
 import { pageIdAt } from "../../model/pages";
 import type { Layer } from "../../model/types";
 import { store } from "../../state/store";
-import { confirmDialog } from "../dialogs";
+import { confirmDialog, targetIdentity } from "../dialogs";
 import type { PanelActions } from "../panels";
 import { layerTreeController } from "./reorder";
 
@@ -75,11 +75,26 @@ export function selectionDeleteTotals(): { layers: number; items: number; roots:
 export function deleteSelectedLayers(actions: PanelActions): void {
   const totals = selectionDeleteTotals();
   if (!totals.layers) return;
+  const identity = targetIdentity(totals.roots);
   void confirmDialog(
     t("layer.bulkDelete"),
     t("layer.bulkDeleteConfirm", { count: totals.layers, items: totals.items }),
     t("layer.deleteAction"),
-    { danger: true },
+    {
+      danger: true,
+      target: {
+        kind: "layer",
+        id: identity,
+        name: t("layer.selectedCount", { count: totals.layers }),
+        resolve: () => {
+          const current = store.project;
+          if (!current) return null;
+          const present = new Set(current.layers.map((layer) => layer.id));
+          if (!totals.roots.every((id) => present.has(id))) return null;
+          return targetIdentity(totals.roots);
+        },
+      },
+    },
   ).then((confirmed) => {
     if (!confirmed) return;
     store.mutate((current) => {

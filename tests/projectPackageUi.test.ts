@@ -13,7 +13,7 @@ function button(label: string): HTMLButtonElement | undefined {
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
 });
 
@@ -100,7 +100,7 @@ describe("project package dialogs", () => {
     );
 
     expect(outcome).toEqual({ status: "ok", value: 42 });
-    expect(document.querySelector(".modal-backdrop")).toBeNull();
+    expect(document.querySelector(".dialog-layer")).toBeNull();
   });
 
   it("asks the job to cancel and reports a cancelled outcome", async () => {

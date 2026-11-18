@@ -1,23 +1,30 @@
 /* Dialogs, menus, forms, quantities, settings and preferences. */
-/* ---------- Modal ---------- */
+/* ---------- Dialog window ---------- */
 
-.modal-backdrop {
+/*
+ * Every dialog with a close control is a movable, non-modal window. The layer
+ * covers the viewport but never receives pointer input, so the drawing behind
+ * it stays pannable, selectable and measurable; only the `.modal` rectangle is
+ * interactive. See docs/adr/0017-movable-non-modal-dialogs.md.
+ */
+.dialog-layer {
   position: fixed;
   inset: 0;
-  background: rgba(4, 7, 8, 0.68);
-  backdrop-filter: blur(4px);
+  pointer-events: none;
   z-index: 2000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
   animation: fade-in 0.12s ease-out;
 }
 
 .modal {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  translate: -50% -50%;
+  pointer-events: auto;
   display: flex;
   flex-direction: column;
   width: min(468px, 100%);
+  max-width: calc(100vw - 16px);
   max-height: min(90vh, 900px);
   background: linear-gradient(180deg, #252d32, #1b2125);
   border: 1px solid #3a444a;
@@ -25,6 +32,14 @@
   box-shadow: var(--shadow);
   overflow: hidden;
   animation: modal-in 0.14s ease-out;
+}
+
+.modal.is-positioned {
+  translate: none;
+}
+
+.modal.is-dragging {
+  user-select: none;
 }
 
 .modal-wide {
@@ -49,6 +64,15 @@
   align-items: flex-start;
   gap: 10px;
   padding: 16px 16px 0;
+  cursor: move;
+  touch-action: none;
+}
+
+.modal-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 0 auto;
 }
 
 .modal-titles {

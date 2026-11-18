@@ -198,7 +198,8 @@ src/
   search/textIndex.ts    PDF text extraction, local index and page-space search hits
   search/ocr.ts          bundled Tesseract eng+swe OCR, page rendering and stored OCR conversion
   report/markupCsv.ts    visible markup CSV serialization
-  ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, dialogs, status bar
+  ui/                    top menu, sidebar, page/layer lists, Markups panel, context bar, inspector, status bar
+  ui/dialogs.ts         project calibration, manual-scale and recovery dialogs; re-exports the shared dialog host prompts
   styles/tokens.css      theme token contract and semantic aliases
   styles/themes/         medium grey default, light green, dark grey, jade and navy palettes plus chrome overrides
   theme/theme.ts         theme preference resolution, application and System-mode watching
@@ -313,12 +314,16 @@ src/
   features/schedules/ui/panelTable.ts virtualised live table and the pure row window
   features/takeoffSettings/index.ts public surface of the Takeoff settings hub
   features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
-  features/takeoffSettings/ui/dialog.ts four-tab hub modal and the deep-link target
+  features/takeoffSettings/ui/dialog.ts four-tab hub window and the deep-link target
   features/takeoffSettings/ui/objects.ts project defaults, Add object and the unified object table
   features/takeoffSettings/ui/categoryRows.ts measured-object rows with rename, order and overrides
   features/takeoffSettings/ui/fields.ts field and field-set list with the editor entry
   features/takeoffSettings/ui/tables.ts saved table list, builder entry, duplicate and delete
   features/takeoffSettings/ui/cards.ts four cards, visibility and Fed by lists
+  features/dialogHost/index.ts public surface of the movable, non-modal dialog window host
+  features/dialogHost/model.ts pure stacking order, viewport clamping and destructive-target revalidation
+  features/dialogHost/controller.ts dialog stack, header drag, focus return and Escape routing
+  features/dialogHost/ui.ts dialog shell construction and the shared confirm, message, text, depth, password and unsaved prompts
   app/summaryFlow.ts     Ctrl+Alt+S and the View → Takeoff action
   io/platform.ts         Tauri/browser file I/O, dialogs, recents, SHA-256 entry point
   io/platformError.ts    Rust command error codes to localized messages

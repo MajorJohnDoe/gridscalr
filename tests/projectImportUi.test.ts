@@ -71,7 +71,7 @@ function tile(page: number): HTMLLabelElement | undefined {
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
   vi.restoreAllMocks();
 });

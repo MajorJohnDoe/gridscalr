@@ -178,9 +178,9 @@ export async function captureDocumentation(page, { outputDir, base }) {
   await page.waitForTimeout(250);
   await capture("count-schedule.png");
 
-  if (await page.locator(".modal-backdrop").count()) {
+  if (await page.locator(".dialog-layer").count()) {
     await page.keyboard.press("Escape");
-    await page.locator(".modal-backdrop").waitFor({ state: "detached" });
+    await page.locator(".dialog-layer").waitFor({ state: "detached" });
   }
 
   await markupsPanel.getByLabel("Markups view").selectOption({ label: "Symbols & status" });

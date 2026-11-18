@@ -35,7 +35,7 @@ function paintSummary(container: HTMLElement): void {
 
 afterEach(() => {
   closeActiveModal();
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
   store.closeProject();
 });

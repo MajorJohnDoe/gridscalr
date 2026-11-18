@@ -47,7 +47,7 @@ function footerButton(label: string): HTMLButtonElement | undefined {
 }
 
 afterEach(async () => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
   await clearAllRecovery().catch(() => undefined);
 });

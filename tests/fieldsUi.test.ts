@@ -71,7 +71,7 @@ function setValue(input: HTMLInputElement | HTMLSelectElement, value: string): v
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
 });
 

@@ -121,11 +121,24 @@ export async function showConflictedCopies(
 }
 
 /** A permanent single-file delete, named before it happens. */
-export function confirmDeleteCopy(entry: ConflictedCopyEntry): Promise<boolean> {
+export function confirmDeleteCopy(
+  entry: ConflictedCopyEntry,
+  exists?: () => Promise<boolean>,
+): Promise<boolean> {
   return confirmDialog(
     t("conflictedCopies.deleteTitle"),
     t("conflictedCopies.deleteNoteConfirm", { name: entry.fileName }),
     t("conflictedCopies.deleteConfirm"),
-    { danger: true },
+    {
+      danger: true,
+      target: exists
+        ? {
+            kind: "conflictedCopy",
+            id: entry.path,
+            name: entry.fileName,
+            resolve: async () => ((await exists()) ? entry.path : null),
+          }
+        : undefined,
+    },
   );
 }

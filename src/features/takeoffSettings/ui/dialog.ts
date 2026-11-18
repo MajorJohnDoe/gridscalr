@@ -36,20 +36,12 @@ export function openTakeoffSettingsDialog(
       {
         id: "fields",
         label: t("takeoffSettings.tab.fields"),
-        render: () => [
-          fieldsSection(() => {
-            void openTakeoffSettingsDialog({ tab: "fields" });
-          }),
-        ],
+        render: () => [fieldsSection(() => refresh())],
       },
       {
         id: "tables",
         label: t("takeoffSettings.tab.tables"),
-        render: () => [
-          tablesSection(() => {
-            void openTakeoffSettingsDialog({ tab: "tables" });
-          }),
-        ],
+        render: () => [tablesSection(() => refresh())],
       },
       {
         id: "cards",
@@ -59,6 +51,9 @@ export function openTakeoffSettingsDialog(
     ],
     target.tab,
   );
+  // A nested field or table editor now stacks on top of the hub instead of
+  // replacing it, so returning repaints the current tab in place.
+  const refresh = () => layout.refresh();
 
   return showModal({
     title: t("takeoffSettings.title"),

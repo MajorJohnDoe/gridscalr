@@ -414,8 +414,12 @@ the builder, placement, the standard-table factory
 (`standardScheduleDraft` in `model/definition.ts`) and the
 `Create takeoff table` / `Create takeoff table and place…` actions, the CSV
 round-trip (`csv.ts`, `csv/` and `csvUi.ts`) and
-one shared layout for canvas and PDF. `src/features/takeoffSettings/` owns the
-Takeoff settings hub: one modal with the Objects, Fields, Tables and Cards tabs,
+one shared layout for canvas and PDF. `src/features/dialogHost/` owns the movable,
+non-modal dialog window: stacking, header drag, viewport clamping, focus return,
+Escape routing and destructive-target revalidation
+([ADR 0017](docs/adr/0017-movable-non-modal-dialogs.md)).
+`src/features/takeoffSettings/` owns the
+Takeoff settings hub: one window with the Objects, Fields, Tables and Cards tabs,
 the unified measured/counted object list, the card visibility switches and the
 **Fed by** lists. The CSV import is bounded to a UTF-8 file
 of 10 MB and 20 000 rows, updates existing rows by stable ID and applies as one

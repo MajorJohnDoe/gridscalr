@@ -5,6 +5,7 @@ import { store } from "../../../state/store";
 import { clear, el, iconButton } from "../../../ui/dom";
 import { icon } from "../../../ui/icons";
 import { toast } from "../../../ui/toast";
+import { revalidateTargetNow } from "../../../ui/dialogs";
 import type { SpaceArea, SpaceMeasurement } from "../model";
 import { deleteSpace, moveSpace, spaceTree } from "../model";
 import { areaWarningText } from "./messages";
@@ -103,7 +104,21 @@ export function spaceList(options: SpaceListOptions): HTMLElement {
     cancel.addEventListener("click", hideConfirm);
     const removeButton = el("button", "btn btn-small btn-danger", t("common.delete"));
     removeButton.type = "button";
-    removeButton.addEventListener("click", () => remove(space));
+    removeButton.addEventListener("click", () => {
+      const problem = revalidateTargetNow({
+        kind: "space",
+        id: space.id,
+        name: space.name,
+        resolve: () =>
+          store.project?.spaces.some((entry) => entry.id === space.id) ? space.id : null,
+      });
+      hideConfirm();
+      if (problem) {
+        toast(problem, "warning");
+        return;
+      }
+      remove(space);
+    });
     actions.append(cancel, removeButton);
     confirm.append(actions);
     removeButton.focus();

@@ -460,6 +460,7 @@ src/features/schedules/ui/ Takeoff tab, preview and standard-table actions, virt
 src/features/takeoffSettings/index.ts public surface of the Takeoff settings hub
 src/features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
 src/features/takeoffSettings/ui/ Objects, Fields, Tables and Cards tabs, the shared dialog and object rows
+src/features/dialogHost/ movable, non-modal dialog window: pure stacking/clamping/target rules, controller and shell
 src/app/summaryFlow.ts Ctrl+Alt+S and the View → Takeoff action
 src/styles/schedules.css cards, live table and builder
 src/styles/takeoffSettings.css hub tabs, object table, table list and card feeds

@@ -37,6 +37,9 @@ import { autosaveSection } from "./settings/autosave";
 import { backupSection } from "./settings/backups";
 import { toast } from "./toast";
 
+let activePreferencesClose: (() => void) | null = null;
+let activePreferencesRefresh: (() => void) | null = null;
+
 function generalSection(): HTMLElement {
   const wrap = section(t("preferences.general"), t("language.note"));
   const select = el("select", "select");
@@ -114,14 +117,14 @@ function workspaceSection(): HTMLElement {
   expand.addEventListener("click", () => {
     setSidebarCollapsed(false);
     setInspectorCollapsed(false);
-    openPreferencesDialog();
+    refreshPreferencesDialog();
     toast(t("preferences.workspace.expanded"), "success");
   });
   const reset = el("button", "btn btn-small", t("preferences.workspace.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetPanelLayout();
-    openPreferencesDialog();
+    refreshPreferencesDialog();
     toast(t("preferences.workspace.resetDone"), "success");
   });
   actions.append(expand, reset);
@@ -201,14 +204,14 @@ function stampsSection(): HTMLElement {
     const project = store.project;
     if (!project) return;
     saveGlobalStampPresets(project.settings.stampPresets);
-    openPreferencesDialog();
+    refreshPreferencesDialog();
     toast(t("preferences.stamps.updated"), "success");
   });
   const reset = el("button", "btn btn-small", t("preferences.stamps.reset"));
   reset.type = "button";
   reset.addEventListener("click", () => {
     resetGlobalStampPresets();
-    openPreferencesDialog();
+    refreshPreferencesDialog();
     toast(t("preferences.stamps.resetDone"), "success");
   });
   actions.append(fromProject, reset);
@@ -258,7 +261,8 @@ function recoveryCard(): HTMLElement {
   reviewRecovery.addEventListener("click", () => {
     void (async () => {
       await openRecoveryCenter();
-      openPreferencesDialog();
+      await refreshRecoverySummary();
+      refreshPreferencesDialog();
     })();
   });
   const clearRecovery = el(
@@ -279,7 +283,7 @@ function recoveryCard(): HTMLElement {
       if (!confirmed) return;
       await clearAllRecovery();
       await refreshRecoverySummary();
-      openPreferencesDialog();
+      refreshPreferencesDialog();
       toast(t("preferences.data.recoveryCleared"), "success");
     })();
   });
@@ -312,7 +316,7 @@ function recentCard(): HTMLElement {
       remove.type = "button";
       remove.addEventListener("click", () => {
         removeRecent(entry.path, entry.kind);
-        openPreferencesDialog();
+        refreshPreferencesDialog();
       });
       row.append(name, missing, kind, remove);
       list.append(row);
@@ -337,7 +341,7 @@ function recentCard(): HTMLElement {
       );
       if (!confirmed) return;
       clearRecent();
-      openPreferencesDialog();
+      refreshPreferencesDialog();
       toast(t("preferences.data.recentCleared"), "success");
     })();
   });
@@ -359,21 +363,52 @@ function dataSection(): HTMLElement[] {
 export function openPreferencesDialog(): void {
   void (async () => {
     await refreshRecoverySummary();
-    const layout = categoryLayout(t("preferences.categories"), [
+    const host = el("div", "preferences-host");
+    let layout = buildPreferencesLayout();
+    host.append(layout.body);
+    // A preference change repaints this window in place. Reopening it would
+    // stack a second Preferences dialog now that dialogs are non-modal.
+    const refresh = () => {
+      layout = buildPreferencesLayout(layout.current());
+      host.replaceChildren(layout.body);
+    };
+    activePreferencesRefresh = refresh;
+
+    activePreferencesClose?.();
+    activePreferencesClose = null;
+    void showModal({
+      title: t("preferences.title"),
+      subtitle: t("preferences.subtitle"),
+      body: host,
+      wide: true,
+      className: "modal-preferences",
+      actions: [{ label: t("common.close"), value: "close", primary: true }],
+      onMount: (_modal, close) => {
+        activePreferencesClose = close;
+      },
+      onClose: () => {
+        activePreferencesClose = null;
+        activePreferencesRefresh = null;
+      },
+    });
+  })();
+}
+
+/** Repaints the open Preferences window after a change in the Data section. */
+export function refreshPreferencesDialog(): void {
+  activePreferencesRefresh?.();
+}
+
+function buildPreferencesLayout(initialId?: string) {
+  return categoryLayout(
+    t("preferences.categories"),
+    [
       { id: "general", label: t("preferences.general"), render: generalSection },
       { id: "workspace", label: t("preferences.workspace"), render: workspaceSection },
       { id: "layers", label: t("preferences.layers"), render: layersSection },
       { id: "stamps", label: t("preferences.stamps"), render: stampsSection },
       { id: "data", label: t("preferences.data"), render: dataSection },
-    ]);
-
-    void showModal({
-      title: t("preferences.title"),
-      subtitle: t("preferences.subtitle"),
-      body: layout.body,
-      wide: true,
-      className: "modal-preferences",
-      actions: [{ label: t("common.close"), value: "close", primary: true }],
-    });
-  })();
+    ],
+    initialId,
+  );
 }
