@@ -139,7 +139,15 @@ export async function deletePageFlow(host: PageFlowHost, pageId: PageId): Promis
     t("app.deletePageTitle"),
     t("app.deletePageMessage", { target: targetLabel, source: sourceLabel }),
     t("app.deletePageConfirm"),
-    { danger: true },
+    {
+      danger: true,
+      target: {
+        kind: "page",
+        id: pageId,
+        name: targetLabel,
+        resolve: () => (store.project?.pages.some((entry) => entry.id === pageId) ? pageId : null),
+      },
+    },
   );
   if (!confirmed) return;
   await recordStructuralCheckpoint(t("sessionRecovery.checkpoint.deletePage", { page: target }));

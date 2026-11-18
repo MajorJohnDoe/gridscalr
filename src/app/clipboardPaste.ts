@@ -11,7 +11,7 @@ export async function pasteFromClipboard(
   event: ClipboardEvent,
 ): Promise<void> {
   if (!store.project) return;
-  if (document.querySelector(".modal-backdrop")) return;
+  if (document.querySelector(".dialog-layer")) return;
   if (isEditableTarget(event.target)) return;
   const clipboard = event.clipboardData;
   if (!clipboard) return;

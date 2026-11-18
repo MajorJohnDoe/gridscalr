@@ -5,11 +5,22 @@ import { relativeDocumentPath } from "../../io/projectFile";
 import { sourceFileHash } from "./files";
 import { store } from "../../state/store";
 import { confirmDialog, messageDialog } from "../../ui/dialogs";
+import type { DialogTarget } from "../../ui/dialogs";
 import { cloneDocument, findDocument, resolveDocumentPath, restoreDocument } from "./documents";
 import { detachManagedCopy } from "./managedCopy";
 import { isManagedDocument } from "./mode";
 import type { SourceStorageHost } from "./ports";
 import { checksumMatches, findRelinkSource, pageCountChanged } from "./relink";
+
+/** Re-resolves a source drawing by stable document id when a user confirms. */
+function documentTarget(id: string, name: string): DialogTarget {
+  return {
+    kind: "document",
+    id,
+    name,
+    resolve: () => (store.project?.documents.some((entry) => entry.id === id) ? id : null),
+  };
+}
 
 export async function detachDocumentFromSource(
   host: SourceStorageHost,
@@ -22,6 +33,7 @@ export async function detachDocumentFromSource(
     t("sourceStorage.detachTitle"),
     t("sourceStorage.detachMessage", { name: document.name }),
     t("sourceStorage.detachAction"),
+    { target: documentTarget(documentId, document.name) },
   );
   if (!confirmed) return;
   await host.checkpoint(t("sourceStorage.checkpoint.detach", { name: document.name }));
@@ -175,7 +187,7 @@ export async function relinkSource(host: SourceStorageHost, documentId: string):
         t("sourceStorage.relinkMismatchTitle"),
         t("sourceStorage.relinkMismatchMessage", { name: document.name }),
         t("sourceStorage.relinkAnyway"),
-        { danger: true },
+        { danger: true, target: documentTarget(documentId, document.name) },
       );
       if (!accept) return;
     }

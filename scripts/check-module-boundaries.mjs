@@ -36,6 +36,7 @@ const FOUNDATION_FEATURES = [
   "src/features/spaces",
   "src/features/schedules",
   "src/features/takeoffSettings",
+  "src/features/dialogHost",
 ];
 
 const frontendErrors = [];

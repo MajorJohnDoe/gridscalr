@@ -123,7 +123,7 @@ function nextFrame(): Promise<void> {
 
 afterEach(() => {
   closeActiveModal();
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   // The toast module keeps its stack element; keep it attached and empty so a
   // later test's toast is visible instead of appending to a detached node.
   for (const child of [...document.body.children]) {
@@ -134,6 +134,26 @@ afterEach(() => {
 });
 
 describe("takeoff settings hub", () => {
+  it("stacks a nested field editor and repaints the hub when it closes", async () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    void openTakeoffSettingsDialog({ tab: "fields" });
+    await nextFrame();
+    const before = modal().querySelector(".takeoff-fields");
+    expect(before).toBeTruthy();
+
+    button("Manage fields…").click();
+    await nextFrame();
+    expect(document.querySelectorAll(".modal")).toHaveLength(2);
+
+    // The newest dialog is first in the document, so this is the editor.
+    const [editor] = [...document.querySelectorAll<HTMLElement>(".modal")];
+    editor.querySelector<HTMLButtonElement>(".modal-close")!.click();
+    await nextFrame();
+    expect(document.querySelectorAll(".modal")).toHaveLength(1);
+    expect(modal().querySelector(".takeoff-fields")).not.toBe(before);
+  });
+
   it("opens on Objects and renders every tab", () => {
     const project = makeProject();
     store.setProject(project, null);
@@ -244,7 +264,7 @@ describe("takeoff settings hub", () => {
     // The list was rebuilt by the delete, so open it again before the next
     // action uses the restored row.
     closeActiveModal();
-    document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+    document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
     void openTakeoffSettingsDialog();
 
     const item: MarkupItem = {
@@ -278,6 +298,47 @@ describe("takeoff settings hub", () => {
     store.undo();
     expect(store.project!.categories.some((entry) => entry.id === temp.id)).toBe(true);
     expect(store.canUndo).toBe(undoBefore);
+  });
+
+  it("refuses an inline delete whose object vanished behind the non-modal dialog", () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    void openTakeoffSettingsDialog();
+
+    const name = labelled<HTMLInputElement>("New object name");
+    name.value = "Temp";
+    button("Add object").click();
+    const temp = store.project!.categories.find((entry) => entry.name === "Temp")!;
+    const item: MarkupItem = {
+      id: "item_temp_wall",
+      pageId: pageIdFor(1),
+      kind: "length",
+      points: [
+        { x: 0, y: 0 },
+        { x: 100, y: 0 },
+      ],
+      color: "#e30613",
+      strokeWidth: 2,
+      scale: { pointsPerMeter: 100, sourceUnit: "m" },
+      createdAt: NOW,
+      updatedAt: NOW,
+      categoryId: temp.id,
+    };
+    addItem(store.project!, layersForKind(store.project!, "measure")[0].id, item);
+    button("Delete Temp").click();
+    const confirm = modal().querySelector<HTMLElement>(".inline-confirm")!;
+    expect(confirm.hidden).toBe(false);
+
+    // The drawing stays interactive behind the dialog: remove the category
+    // elsewhere, then answer the stale confirmation.
+    const other = store.project!.categories.find((entry) => entry.id !== temp.id)!;
+    store.removeCategory(temp.id, other.id);
+    button("Delete category", confirm).click();
+
+    expect(confirm.hidden).toBe(true);
+    expect(document.body.textContent).toContain("no longer exists");
+    expect(store.project!.categories.some((entry) => entry.id === temp.id)).toBe(false);
+    expect(store.project!.categories.some((entry) => entry.id === other.id)).toBe(true);
   });
 
   it("renames, reglyphs and deletes a counted object in one undo step each", () => {

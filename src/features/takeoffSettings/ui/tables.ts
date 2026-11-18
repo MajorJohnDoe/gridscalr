@@ -9,6 +9,7 @@ import type { ScheduleDefinition } from "../../../model/types";
 import { store } from "../../../state/store";
 import { clear, el } from "../../../ui/dom";
 import { toast } from "../../../ui/toast";
+import { revalidateTargetNow } from "../../../ui/dialogs";
 import { t } from "../../../i18n";
 
 /**
@@ -48,6 +49,18 @@ export function tablesSection(onReturn: () => void): HTMLElement {
     const remove = el("button", "btn btn-small btn-danger", t("schedules.builder.delete"));
     remove.type = "button";
     remove.addEventListener("click", () => {
+      const problem = revalidateTargetNow({
+        kind: "schedule",
+        id: schedule.id,
+        name: schedule.name,
+        resolve: () =>
+          store.project?.schedules.some((entry) => entry.id === schedule.id) ? schedule.id : null,
+      });
+      if (problem) {
+        hideConfirm();
+        toast(problem, "warning");
+        return;
+      }
       let removed = false;
       let blocked = false;
       store.mutate((current) => {

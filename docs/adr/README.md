@@ -18,6 +18,7 @@
 | [0014](0014-layer-hierarchy.md) | Layer hierarchy | Accepted | 2026-11-12 |
 | [0015](0015-colour-scan-storage.md) | Colour-scan TIF storage and size budget | Accepted; cache implementation deferred | 2026-11-13 |
 | [0016](0016-optional-content-export-shape.md) | Optional-content export shape | Accepted; `/Order` form change deferred | 2026-11-13 |
+| [0017](0017-movable-non-modal-dialogs.md) | Movable, non-modal dialog windows | Accepted | 2026-11-18 |
 
 An ADR records a decision that affects the project structure, format or release
 process. Add a new ADR rather than silently changing an accepted one. A superseded

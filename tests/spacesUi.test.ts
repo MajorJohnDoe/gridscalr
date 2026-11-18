@@ -74,7 +74,7 @@ function rowFor(name: string): HTMLElement | undefined {
 }
 
 afterEach(() => {
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
   store.closeProject();
 });

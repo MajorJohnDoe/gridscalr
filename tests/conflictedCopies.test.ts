@@ -131,7 +131,7 @@ beforeEach(() => {
   store.projectPath = null;
   store.fileStamp = null;
   store.dirty = false;
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
 });
 
@@ -263,7 +263,7 @@ describe("conflicted copies dialog", () => {
     footerButton(t("conflictedCopies.compare"))?.click();
     await expect(result).resolves.toMatchObject({ action: "compare" });
 
-    document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+    document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
     const cancelled = showConflictedCopies([entry()], { projectFileName: "Plan.gridscalr" });
     await nextFrame();
     footerButton(t("common.close"))?.click();

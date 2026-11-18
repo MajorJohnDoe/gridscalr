@@ -584,7 +584,7 @@ export class App {
 
   private onKeyDown = (event: KeyboardEvent): void => {
     if (this.disposed) return;
-    if (document.querySelector(".modal-backdrop")) return;
+    if (document.activeElement?.closest(".dialog-layer")) return;
     if (isEditableTarget(event.target)) return;
     if (this.canvas.isCropping && event.key !== "Escape" && event.key !== "Enter") return;
 

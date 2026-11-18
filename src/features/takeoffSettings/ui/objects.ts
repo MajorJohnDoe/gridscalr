@@ -11,6 +11,7 @@ import { store } from "../../../state/store";
 import { clear, el, option } from "../../../ui/dom";
 import { field } from "../../../ui/settingsControls";
 import { toast } from "../../../ui/toast";
+import { revalidateTargetNow } from "../../../ui/dialogs";
 import { t } from "../../../i18n";
 import { countTypeObjectRows, deleteCountType } from "../../countTypes";
 import { categoryObjectRows } from "./categoryRows";
@@ -189,6 +190,18 @@ export function objectsSection(focusId?: string): HTMLElement {
     const remove = el("button", "btn btn-small btn-danger", t("category.deleteCategory"));
     remove.type = "button";
     remove.addEventListener("click", () => {
+      const problem = revalidateTargetNow({
+        kind: "category",
+        id: category.id,
+        name: category.name,
+        resolve: () =>
+          store.project?.categories.some((entry) => entry.id === category.id) ? category.id : null,
+      });
+      if (problem) {
+        hideConfirm();
+        toast(problem, "warning");
+        return;
+      }
       const result = store.removeCategory(category.id, targetSelect.value);
       if (!result.removed) {
         toast(t("category.deleteFailed"), "warning");
@@ -243,7 +256,17 @@ export function objectsSection(focusId?: string): HTMLElement {
     const remove = el("button", "btn btn-small btn-danger", t("countTypeUi.deleteTitle"));
     remove.type = "button";
     remove.addEventListener("click", () => {
+      const problem = revalidateTargetNow({
+        kind: "countType",
+        id,
+        name: label,
+        resolve: () => (store.project?.countTypes.some((entry) => entry.id === id) ? id : null),
+      });
       hideConfirm();
+      if (problem) {
+        toast(problem, "warning");
+        return;
+      }
       removeNow();
     });
     showConfirm(t("countTypeUi.used", { name: label, count: usage }), [], remove, remove);

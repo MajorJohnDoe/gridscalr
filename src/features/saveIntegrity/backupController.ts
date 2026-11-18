@@ -5,6 +5,7 @@ import { parseProject, serializeProject } from "../../io/projectFile";
 import type { Project } from "../../model/types";
 import { store } from "../../state/store";
 import { logEvent } from "../diagnostics/log";
+import type { ConfirmOptions } from "../../ui/dialogs";
 import type { BackupEntry } from "./backup";
 import { sortBackupsNewestFirst } from "./backup";
 import { openBackupManager } from "./backupManagerUi";
@@ -42,7 +43,7 @@ export interface BackupPorts {
     title: string,
     message: string,
     confirmLabel: string,
-    options?: { danger?: boolean },
+    options?: ConfirmOptions,
   ) => Promise<boolean>;
   /** The unsaved-changes guard, including its Save choice. */
   confirmDiscard: (message: string) => Promise<boolean>;
@@ -165,7 +166,18 @@ async function deleteBackup(ports: BackupPorts, projectId: string, entry: Backup
       time: formatDate(entry.modifiedAt, { dateStyle: "medium", timeStyle: "short" }),
     }),
     t("saveIntegrity.deleteConfirm"),
-    { danger: true },
+    {
+      danger: true,
+      target: {
+        kind: "backup",
+        id: entry.fileName,
+        name: entry.fileName,
+        resolve: async () => {
+          const current = await ports.listBackups(projectId);
+          return current.some((item) => item.fileName === entry.fileName) ? entry.fileName : null;
+        },
+      },
+    },
   );
   if (!confirmed) return false;
   await ports.deleteBackup(projectId, entry.fileName);

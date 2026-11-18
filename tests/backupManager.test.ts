@@ -139,7 +139,7 @@ beforeEach(() => {
   store.projectPath = null;
   store.fileStamp = null;
   store.dirty = false;
-  document.querySelectorAll(".modal-backdrop").forEach((node) => node.remove());
+  document.querySelectorAll(".dialog-layer").forEach((node) => node.remove());
   document.body.replaceChildren();
 });
 

@@ -275,6 +275,13 @@ function activeLayerSection(
           : t("inspector.deleteLayerEmpty", { name: active.name });
     void confirmDialog(t("inspector.deleteLayerTitle"), message, t("common.delete"), {
       danger: true,
+      target: {
+        kind: "layer",
+        id: active.id,
+        name: active.name,
+        resolve: () =>
+          store.project?.layers.some((layer) => layer.id === active.id) ? active.id : null,
+      },
     }).then((confirmed) => {
       if (confirmed) store.mutate((project) => removeLayer(project, active.id), "layers");
       actions.refresh();

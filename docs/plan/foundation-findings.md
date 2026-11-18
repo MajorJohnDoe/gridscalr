@@ -3378,3 +3378,75 @@ remains the scheduling home.
   checklist, and add an automated gesture check only if a desktop WebDriver path
   becomes available.
 - **Related:** #319, `docs/testing.md`, `scripts/smoke-ui.mjs`.
+
+### F-136 — A filtered screenshot capture left one real UI difference uncommitted
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 3 — movable, non-modal dialogs
+- **Severity:** P3
+- **Area:** Documentation screenshots
+- **Status:** open
+- **Evidence:** Phase 2 recaptured all 40 screenshots and committed only the two
+  that its feature changed, treating the other outputs as environment rendering
+  noise. `docs/screenshots/layers.png` also differs in the context bar: the
+  committed image still shows a **Variants** control beside the Area tool that
+  the current UI no longer renders (about 11 700 differing pixels outside the
+  noise band). The Phase 3 dialog recapture reproduces the same difference.
+- **Problem:** A capture diff was classified as noise by pixel count without
+  inspecting where the pixels are. A real control removal was therefore recorded
+  as "environment noise" and the committed screenshot is now stale for a screen
+  the guide references.
+- **Impact:** No runtime or data impact. A reader of the guide sees one control
+  that no longer exists. The stale-screenshot warning in `check:docs` was already
+  global, so CI did not distinguish this from ordinary noise.
+- **Next step:** recapture and commit `layers.png` in the release documentation
+  pass, or immediately if the guide references that control. When filtering a
+  capture, compare the changed bounding box, not just the pixel count.
+- **Related:** #320, #321, `scripts/capture-docs.mjs`,
+  `docs/screenshots/layers.png`.
+
+### F-137 — Transient flyouts and menus do not participate in the dialog stack
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 3 — movable, non-modal dialogs
+- **Severity:** P3
+- **Area:** Dialog host / transient surfaces
+- **Status:** open
+- **Evidence:** `src/features/dialogHost/controller.ts` routes `Escape` to the
+  focused or topmost dialog, but yields to a transient surface with
+  `document.querySelector(".tool-flyout, .menu-panel")`, and each flyout or
+  popover owns its own document-level `Escape` listener.
+  `src/ui/flyoutHost.ts` and `src/ui/popover.ts` keep separate roots, outside
+  `DialogStack`.
+- **Problem:** Dialog stacking is deterministic, but the transient surfaces above
+  it are identified by class name rather than by a shared stack. A new transient
+  surface with another class name would let `Escape` close a dialog underneath
+  it, and two transient surfaces cannot be ordered against each other.
+- **Impact:** No current defect: the two existing surfaces use the checked class
+  names and close before any dialog. The rule is fragile for the next surface,
+  and the ADR documents the intended precedence rather than enforcing it.
+- **Next step:** move flyouts and popovers onto one transient-overlay registry
+  with the same monotonic order and Escape routing, so one manager owns the top
+  of the window. That is a refactor of `flyoutHost.ts` and `popover.ts`, not a
+  dialog change.
+- **Related:** #321, `docs/adr/0017-movable-non-modal-dialogs.md`,
+  `src/ui/flyoutHost.ts`, `src/ui/popover.ts`.
+
+### F-138 — The `--overlay-modal` theme token is now unused
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 3 — movable, non-modal dialogs
+- **Severity:** P3
+- **Area:** Theme tokens
+- **Status:** open
+- **Evidence:** The dimming backdrop was the only consumer of
+  `var(--overlay-modal)`. The token is still defined in all five palettes
+  (`src/styles/themes/*.css`) and copied into the generated
+  `docs/theme-preview/*.css`, but no rule reads it.
+- **Problem:** A dead token stays in the palette contract that `check:themes`
+  enforces, so every new palette must define a colour nothing renders.
+- **Impact:** No runtime effect. Small maintenance cost and a misleading name in
+  the token contract after ADR 0017 removed modal dimming.
+- **Next step:** remove the token from the contract and the five palettes in a
+  theme pass, and regenerate `docs/theme-preview/`.
+- **Related:** #321, `scripts/check-theme-tokens.mjs`, `src/styles/tokens.css`.

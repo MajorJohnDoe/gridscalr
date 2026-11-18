@@ -4,6 +4,7 @@ import { store } from "../../../state/store";
 import { clear, el, iconButton } from "../../../ui/dom";
 import { icon } from "../../../ui/icons";
 import { toast } from "../../../ui/toast";
+import { revalidateTargetNow } from "../../../ui/dialogs";
 import { deleteField, fieldValueCount, fieldsForScope, moveField } from "../model";
 
 /** The ordered field list in Project settings → Fields. */
@@ -65,7 +66,21 @@ export function fieldList(options: FieldListOptions): HTMLElement {
     cancel.addEventListener("click", hideConfirm);
     const removeButton = el("button", "btn btn-small btn-danger", t("common.delete"));
     removeButton.type = "button";
-    removeButton.addEventListener("click", () => remove(field));
+    removeButton.addEventListener("click", () => {
+      const problem = revalidateTargetNow({
+        kind: "field",
+        id: field.id,
+        name: field.label,
+        resolve: () =>
+          store.project?.fieldDefinitions.some((entry) => entry.id === field.id) ? field.id : null,
+      });
+      hideConfirm();
+      if (problem) {
+        toast(problem, "warning");
+        return;
+      }
+      remove(field);
+    });
     actions.append(cancel, removeButton);
     confirm.append(actions);
     removeButton.focus();

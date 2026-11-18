@@ -144,7 +144,20 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
             name: layer.name,
           }),
           t("layer.clearAction"),
-          { danger: true },
+          {
+            danger: true,
+            target: {
+              kind: "layer",
+              id: `${layerId}@${pageId}`,
+              name: layer.name,
+              resolve: () => {
+                const current = store.project;
+                const exists = current?.layers.some((entry) => entry.id === layerId);
+                const pageExists = current?.pages.some((entry) => entry.id === pageId);
+                return exists && pageExists ? `${layerId}@${pageId}` : null;
+              },
+            },
+          },
         ).then((confirmed) => {
           if (!confirmed) return;
           store.mutate((current) => {
@@ -173,6 +186,13 @@ export function layerMenuItems(layerId: string, actions: PanelActions): PopoverI
               : t("layer.deleteEmpty", { name: layer.name });
         void confirmDialog(t("layer.delete"), message, t("layer.deleteAction"), {
           danger: true,
+          target: {
+            kind: "layer",
+            id: layerId,
+            name: layer.name,
+            resolve: () =>
+              store.project?.layers.some((entry) => entry.id === layerId) ? layerId : null,
+          },
         }).then((confirmed) => {
           if (!confirmed) return;
           store.mutate((current) => {

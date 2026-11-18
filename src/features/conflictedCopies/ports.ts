@@ -21,7 +21,7 @@ export function createConflictedCopyPorts(host: ConflictedCopyHost): ConflictedC
     open: host.openProject,
     readText: readFileText,
     compare: compareDialog,
-    confirmDelete: confirmDeleteCopy,
+    confirmDelete: (entry) => confirmDeleteCopy(entry, () => pathExists(entry.path)),
     notify: (message, kind = "info") => toast(message, kind),
     notifyError: (title, message) => messageDialog(title, message, "warning"),
   };

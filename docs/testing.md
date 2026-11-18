@@ -355,6 +355,22 @@ cannot compare file identities; and Windows 8.3 short-name aliases and alternate
 data streams are not exercised (F-036 covered the junction and verbatim-prefix
 cases in 0.27.0 phase 4, #199).
 
+## Dialog windows
+
+`tests/dialogHost.test.ts` pins the window model from
+[ADR 0017](adr/0017-movable-non-modal-dialogs.md): the pure clamp and stacking
+rules, a named `role="dialog"` with `aria-modal="false"` and no dimming layer,
+initial focus inside, `Tab` that is not intercepted, focus returning to the
+opener, `Escape` closing only the topmost of two dialogs, focus-to-front
+stacking, two independently movable windows, the viewport clamp, no drag from the
+body or the close control, the reusable header-action surface, and target
+revalidation (gone, changed and unchanged). `tests/dialogFocus.test.ts` keeps the
+safe-initial-focus contract. `tests/takeoffSettingsUi.test.ts` proves a nested
+field editor stacks on the hub and repaints it on return. The accessibility,
+touch-target and UI-scale gates then run against the real non-modal dialogs, and
+`npm run test:docs-capture` opens every captured dialog through its documented
+locator.
+
 ## Accessibility, touch-target, UI-scale and performance gates
 
 These four gates turn the 1.0 quality items that used to be manual review into
@@ -521,7 +537,7 @@ Check each row in both English and Swedish, and at 100 % and 200 % UI scale.
 | --- | --- |
 | Keyboard reaches the chrome | `Alt` or `F10` opens the menu bar, arrow keys move between menus and items, `Escape` closes without losing focus. Every top-bar button, tool-rail button, dock tab and status-bar control is reachable with `Tab` in a sensible order. |
 | Focus is always visible | The focus ring is visible on the menu bar, tool rail, dock tabs, page cards, layer rows, Markups rows, inspector fields, status chips and dialog buttons in all five themes. Zooming the canvas does not hide the ring. |
-| Dialog focus contract | A dialog moves focus inside on open, `Tab` and `Shift+Tab` stay inside it, `Escape` closes it and focus returns to the control that opened it. The safe action is focused by default where one exists (for example **Save** in the unsaved-changes prompt). |
+| Dialog focus contract | A dialog moves focus inside on open. `Tab` and `Shift+Tab` may leave and re-enter it (the window is non-modal), `Escape` closes the focused or topmost dialog and focus returns to the control that opened it. The window moves by its header, stays inside the viewport and never blocks the drawing outside its own rectangle. The safe action is focused by default where one exists (for example **Save** in the unsaved-changes prompt). A destructive confirmation refuses with an explanation when its object changed or disappeared behind the dialog. See [ADR 0017](adr/0017-movable-non-modal-dialogs.md). |
 | Shortcuts do not trap typing | Shortcuts fire on the canvas and in the Markups and Layers lists, but typing in a text field, the inline editor, a rename field or a number input never triggers a tool or command. `Delete` and `Ctrl/Cmd+Z` act on the focused list. |
 | Canvas landmarks | The canvas exposes a name and role, the reference pane and the split divider are announced, and the split divider is keyboard-adjustable. A screen reader can find the canvas and its page context even though it cannot describe freehand geometry. |
 | Draft and selection feedback | The draft preview, snap indicator, selection outline, resize/rotate handles and marquee are visible against both light and dark drawings and are not conveyed by colour alone. Selection and hover states survive at 200 % zoom. |

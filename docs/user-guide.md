@@ -37,6 +37,19 @@ Panels remember their width, height and collapsed state between sessions. The wi
 
 On a touch screen or laptop touchpad, use **two fingers** to pan and pinch to zoom around the point between them, over either the primary canvas or the reference pane. `Ctrl`/`Cmd` + mouse wheel also zooms. When a two-finger gesture starts, an unfinished touch draft is cancelled; lift all fingers before drawing again. While a pen is active, or just after it was used, touch is treated as palm input and does not draw. Long-press an item with the Select tool to open the same context menu as a right-click.
 
+## Dialogs and windows
+
+Every dialog with a close (X) behaves like a normal desktop window, so you can read and change the drawing while it is open.
+
+- Drag the dialog's header to move it out of the way. The window stays inside the viewport, and its close button, header controls and fields stay clickable. The window's position is not remembered between sessions.
+- Nothing is dimmed and the drawing stays interactive: pan, zoom, select and measure behind the dialog. The dialog never blocks clicks outside its own rectangle.
+- Close it with X, its **Cancel**/**Close** action or `Escape`. A click on the drawing does not close it, so typed settings are not lost by accident.
+- `Escape` closes the dialog that has focus, or the topmost dialog when focus is on the drawing. When a menu or tool flyout is open, `Escape` closes that first.
+- Focus starts in the dialog and returns to the control that opened it when it closes. `Tab` can leave the dialog and come back; the window does not trap the keyboard.
+- Tool and view shortcuts work again as soon as you click the drawing. While focus is inside a dialog, keys stay in the dialog, so typing a room name never triggers a tool.
+- Opening a dialog from another dialog stacks it on top. Closing it returns to the window underneath; the Takeoff settings hub stays open when you open the field editor or the takeoff table builder and repaints itself when you return.
+- A confirmation that deletes or replaces something names its object. If that object changed or disappeared while the window was open, **Confirm** explains why and does nothing, so a changed selection or page cannot apply the action to something else.
+
 ## Workspace lists
 
 The **Pages**, **Layers** and **Markups** lists share one interaction model, so the same habits work in all three.

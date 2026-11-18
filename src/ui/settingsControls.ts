@@ -15,6 +15,8 @@ export interface CategoryLayout {
   content: HTMLElement;
   select: (id: string) => void;
   refresh: () => void;
+  /** The category currently shown, so a rebuild can stay on the same tab. */
+  current: () => string;
 }
 
 /** Two-column dialog layout with a category menu, shared by Preferences and Project settings. */
@@ -104,7 +106,7 @@ export function categoryLayout(
   }
   if (currentId) select(currentId);
 
-  return { body, content, select, refresh: () => select(currentId) };
+  return { body, content, select, refresh: () => select(currentId), current: () => currentId };
 }
 
 export function section(title: string, note?: string): HTMLElement {
