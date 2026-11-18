@@ -50,7 +50,7 @@ Drawing tools live on drawing layers, separately from measurements. A practical 
 
 ![Revision cloud, callout and inspected stamp on a drawing layer](screenshots/markups.png)
 
-Right-click or long-press the Cloud, Callout, Stamp and Arrow tools to choose variants, colours and presets. Every object can still be hidden or locked individually without changing the layer.
+Click, right-click or long-press the Cloud, Callout, Stamp and Arrow tools to choose variants, colours and presets. Every object can still be hidden or locked individually without changing the layer.
 
 ### 4. Export the work order
 

@@ -1,8 +1,13 @@
 // @vitest-environment jsdom
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { store } from "../src/state/store";
-import { attachToolFamilyFlyout } from "../src/ui/toolFlyouts";
-import { familyForTool, resetFamilyToolMemory } from "../src/ui/toolDefs";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { store, type ToolId } from "../src/state/store";
+import {
+  attachToolFamilyFlyout,
+  attachToolFlyout,
+  openToolVariants,
+  VARIANT_FLYOUT_IDS,
+} from "../src/ui/toolFlyouts";
+import { familyForTool, hasToolVariants, resetFamilyToolMemory, TOOLS } from "../src/ui/toolDefs";
 
 function familyButton(): HTMLButtonElement {
   const button = document.createElement("button");
@@ -14,11 +19,25 @@ function familyButton(): HTMLButtonElement {
   return button;
 }
 
-function open(button: HTMLButtonElement): HTMLElement {
-  button.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+/** A rail slot: the rail's own handler selects the tool, then the flyout helper. */
+function variantButton(toolId: ToolId): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  document.body.append(button);
+  button.addEventListener("click", () => store.setTool(toolId));
+  attachToolFlyout(button, toolId);
+  return button;
+}
+
+function openedMenu(): HTMLElement {
   const menu = document.querySelector<HTMLElement>('[role="menu"]');
   if (!menu) throw new Error("Expected an open flyout.");
   return menu;
+}
+
+function open(button: HTMLButtonElement): HTMLElement {
+  button.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+  return openedMenu();
 }
 
 function menuItem(menu: HTMLElement, label: string): HTMLButtonElement {
@@ -113,5 +132,80 @@ describe("family tool flyout", () => {
     open(familyButton());
     document.body.dispatchEvent(new MouseEvent("mousedown", { bubbles: true }));
     expect(document.querySelector('[role="menu"]')).toBeNull();
+  });
+});
+
+describe("variant tool flyout", () => {
+  const variantTools = TOOLS.filter((tool) => hasToolVariants(tool.id)).map((tool) => tool.id);
+
+  it("keeps the declared variant tools and the flyout panels in step", () => {
+    // A tool that declares `variantFlyout` without a panel, or a panel without
+    // the metadata, fails here instead of opening nothing or silently falling
+    // back to another tool's panel.
+    expect([...variantTools].sort()).toEqual([...VARIANT_FLYOUT_IDS].sort());
+    expect(variantTools).toEqual(
+      expect.arrayContaining([
+        "cloud",
+        "highlight",
+        "callout",
+        "stamp",
+        "arrow",
+        "line",
+        "polyline",
+      ]),
+    );
+  });
+
+  it("opens on one left click and still selects the base tool, for every variant tool", () => {
+    for (const toolId of variantTools) {
+      store.setTool("select");
+      const button = variantButton(toolId);
+      expect(button.classList.contains("has-variants")).toBe(true);
+      expect(button.getAttribute("aria-haspopup")).toBe("menu");
+
+      button.click();
+
+      expect(store.ui.activeTool).toBe(toolId);
+      const menu = openedMenu();
+      expect(menu.getAttribute("aria-label")).toBeTruthy();
+      expect(button.getAttribute("aria-expanded")).toBe("true");
+    }
+  });
+
+  it("still opens on a long press and on a right click", () => {
+    vi.useFakeTimers();
+    const button = variantButton("cloud");
+    button.dispatchEvent(new MouseEvent("pointerdown", { button: 0, bubbles: true }));
+    vi.advanceTimersByTime(320);
+    expect(openedMenu().getAttribute("aria-label")).toBe("Revision cloud variants");
+    button.dispatchEvent(new MouseEvent("pointerup", { bubbles: true }));
+    vi.useRealTimers();
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+
+    open(button);
+    expect(openedMenu().getAttribute("aria-label")).toBe("Revision cloud variants");
+  });
+
+  it("ignores a tool without variant metadata", () => {
+    const button = document.createElement("button");
+    button.type = "button";
+    document.body.append(button);
+    attachToolFlyout(button, "pen");
+    button.click();
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+    expect(button.classList.contains("has-variants")).toBe(false);
+    openToolVariants(button, "pen");
+    expect(document.querySelector('[role="menu"]')).toBeNull();
+  });
+
+  it("uses the selected tool's own panel, not another tool's", () => {
+    variantButton("stamp").click();
+    expect(openedMenu().getAttribute("aria-label")).toBe("Stamp presets");
+
+    document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true }));
+    variantButton("polyline").click();
+    const menu = openedMenu();
+    expect(menu.getAttribute("aria-label")).toBe("Pipe & duct options");
+    expect(menu.textContent).toContain("Stroke width");
   });
 });

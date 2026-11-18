@@ -11,6 +11,12 @@ export interface ToolDef {
   group: "nav" | "measure" | "draw";
   /** Available from the symbol library instead of the tool rail. */
   libraryOnly?: boolean;
+  /**
+   * The rail slot opens a variant flyout. Declared here, next to the tool, so
+   * the rail wiring, the context-bar Variants control and the flyout renderers
+   * all read one source instead of keeping a second list of ids.
+   */
+  variantFlyout?: boolean;
 }
 
 export const TOOLS: ToolDef[] = [
@@ -124,6 +130,7 @@ export const TOOLS: ToolDef[] = [
     icon: "line",
     shortcut: TOOL_SHORTCUTS.line,
     hint: "tool.line.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -132,6 +139,7 @@ export const TOOLS: ToolDef[] = [
     icon: "arrow",
     shortcut: TOOL_SHORTCUTS.arrow,
     hint: "tool.arrow.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -156,6 +164,7 @@ export const TOOLS: ToolDef[] = [
     icon: "highlight",
     shortcut: TOOL_SHORTCUTS.highlight,
     hint: "tool.highlight.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -180,6 +189,7 @@ export const TOOLS: ToolDef[] = [
     icon: "polyline",
     shortcut: TOOL_SHORTCUTS.polyline,
     hint: "tool.polyline.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -197,6 +207,7 @@ export const TOOLS: ToolDef[] = [
     icon: "cloud",
     shortcut: TOOL_SHORTCUTS.cloud,
     hint: "tool.cloud.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -205,6 +216,7 @@ export const TOOLS: ToolDef[] = [
     icon: "callout",
     shortcut: TOOL_SHORTCUTS.callout,
     hint: "tool.callout.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -213,6 +225,7 @@ export const TOOLS: ToolDef[] = [
     icon: "stamp",
     shortcut: TOOL_SHORTCUTS.stamp,
     hint: "tool.stamp.hint",
+    variantFlyout: true,
     group: "draw",
   },
   {
@@ -234,6 +247,15 @@ export const TOOLS: ToolDef[] = [
 ];
 
 export const TOOL_BY_ID = new Map(TOOLS.map((tool) => [tool.id, tool]));
+
+/**
+ * True when the tool's own metadata declares a variant flyout. The rail, the
+ * context-bar Variants control and the flyout renderers all ask this function,
+ * so a tool cannot claim variants without the slot opening on a click.
+ */
+export function hasToolVariants(toolId: string): boolean {
+  return TOOL_BY_ID.get(toolId as ToolId)?.variantFlyout === true;
+}
 
 /** Tools whose rail slot opens the shared measurement settings flyout. */
 const MEASUREMENT_TOOL_IDS: ReadonlySet<ToolId> = new Set([

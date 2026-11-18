@@ -12,34 +12,74 @@ import {
   closeFlyout as closeToolFlyout,
   mountFlyout,
 } from "./flyoutHost";
+import type { MessageKey } from "../i18n";
 import { icon } from "./icons";
 import {
   familyForTool,
   familyToolForDisplay,
+  hasToolVariants,
   rememberFamilyTool,
   TOOL_BY_ID,
   type ToolFamily,
 } from "./toolDefs";
+import { variantRow } from "./variantRow";
 import { t } from "../i18n";
 
-const VARIANT_TOOLS = new Set([
-  "cloud",
-  "highlight",
-  "callout",
-  "stamp",
-  "arrow",
-  "line",
-  "polyline",
-]);
-
-export function hasToolVariants(toolId: string): boolean {
-  return VARIANT_TOOLS.has(toolId);
+interface VariantFlyout {
+  label: MessageKey;
+  render: (panel: HTMLElement, render: () => void, toolId: string) => void;
 }
 
+/**
+ * Every flyout a variant tool can show, keyed by the tool's own id. The keys
+ * are asserted against the tool metadata in `tests/toolFlyouts.test.ts`, so a
+ * tool that declares `variantFlyout` without a panel fails instead of silently
+ * opening nothing.
+ */
+const VARIANT_FLYOUTS: Record<string, VariantFlyout> = {
+  cloud: {
+    label: "tool.flyout.cloudVariants",
+    render: (panel, render) => renderCloud(panel, render),
+  },
+  highlight: {
+    label: "tool.flyout.highlightVariants",
+    render: (panel, render) => renderHighlight(panel, render),
+  },
+  callout: {
+    label: "tool.flyout.calloutColours",
+    render: (panel, render) => renderCallout(panel, render),
+  },
+  stamp: {
+    label: "tool.flyout.stampPresets",
+    render: (panel, render) => renderStamp(panel, render),
+  },
+  arrow: {
+    label: "tool.flyout.arrowVariants",
+    render: (panel, render) => renderArrow(panel, render),
+  },
+  line: {
+    label: "tool.flyout.lineOptions",
+    render: (panel, render, toolId) => renderLineOptions(panel, render, toolId),
+  },
+  polyline: {
+    label: "tool.flyout.pipeOptions",
+    render: (panel, render, toolId) => renderLineOptions(panel, render, toolId),
+  },
+};
+
+/** The tool ids that own a variant flyout panel. */
+export const VARIANT_FLYOUT_IDS: readonly string[] = Object.keys(VARIANT_FLYOUTS);
+
+/**
+ * Opens the variant flyout for a tool on a normal click, long-press or
+ * right-click. The rail's own click handler still selects the tool first, so
+ * one click keeps the direct-selection path; opening changes no tool.
+ */
 export function attachToolFlyout(button: HTMLButtonElement, toolId: string): void {
-  if (!VARIANT_TOOLS.has(toolId)) return;
+  if (!hasToolVariants(toolId)) return;
   button.classList.add("has-variants");
-  attachPressHandlers(button, () => openToolFlyout(button, toolId));
+  button.setAttribute("aria-haspopup", "menu");
+  attachPressHandlers(button, () => openToolFlyout(button, toolId), true);
 }
 
 /**
@@ -60,7 +100,7 @@ export function attachMeasurementFlyout(button: HTMLButtonElement, toolId: ToolI
 }
 
 export function openToolVariants(anchor: HTMLElement, toolId: string): void {
-  if (!VARIANT_TOOLS.has(toolId)) return;
+  if (!hasToolVariants(toolId)) return;
   openToolFlyout(anchor, toolId);
 }
 
@@ -136,25 +176,10 @@ function renderMeasurementMembers(panel: HTMLElement, family: ToolFamily): void 
 }
 
 function openToolFlyout(button: HTMLElement, toolId: string): void {
+  const entry = VARIANT_FLYOUTS[toolId];
+  if (!entry) return;
   store.setTool(toolId as ToolId);
-  mountFlyout(button, toolFlyoutLabel(toolId), (panel, rerender) => {
-    if (toolId === "cloud") renderCloud(panel, rerender);
-    else if (toolId === "highlight") renderHighlight(panel, rerender);
-    else if (toolId === "callout") renderCallout(panel, rerender);
-    else if (toolId === "stamp") renderStamp(panel, rerender);
-    else if (toolId === "line" || toolId === "polyline") renderLineOptions(panel, rerender, toolId);
-    else renderArrow(panel, rerender);
-  });
-}
-
-function toolFlyoutLabel(toolId: string): string {
-  if (toolId === "cloud") return t("tool.flyout.cloudVariants");
-  if (toolId === "highlight") return t("tool.flyout.highlightVariants");
-  if (toolId === "callout") return t("tool.flyout.calloutColours");
-  if (toolId === "stamp") return t("tool.flyout.stampPresets");
-  if (toolId === "line") return t("tool.flyout.lineOptions");
-  if (toolId === "polyline") return t("tool.flyout.pipeOptions");
-  return t("tool.flyout.arrowVariants");
+  mountFlyout(button, t(entry.label), (panel, rerender) => entry.render(panel, rerender, toolId));
 }
 
 function renderLineOptions(panel: HTMLElement, render: () => void, toolId: string): void {
@@ -585,33 +610,4 @@ function renderColorSwatches(panel: HTMLElement, render: () => void): void {
     swatches.append(option);
   }
   panel.append(swatches);
-}
-
-function variantRow(
-  panel: HTMLElement,
-  options: {
-    label: string;
-    description: string;
-    iconName: string;
-    selected: boolean;
-    /** A menu uses menuitemradio; the measurement dialog uses a radiogroup. */
-    role?: "menuitemradio" | "radio";
-    container?: HTMLElement;
-    onSelect: () => void;
-  },
-): void {
-  const button = el("button", `tool-variant-row${options.selected ? " is-selected" : ""}`);
-  button.type = "button";
-  button.setAttribute("role", options.role ?? "menuitemradio");
-  button.setAttribute("aria-checked", String(options.selected));
-  const mark = el("span", "tool-variant-check");
-  if (options.selected) mark.innerHTML = icon("check", 11);
-  const iconWrap = el("span", "tool-variant-icon");
-  iconWrap.innerHTML = icon(options.iconName, 15);
-  const text = el("span", "tool-variant-text");
-  text.append(el("span", "tool-variant-label", options.label));
-  text.append(el("span", "tool-variant-description", options.description));
-  button.append(mark, iconWrap, text);
-  button.addEventListener("click", options.onSelect);
-  (options.container ?? panel).append(button);
 }
