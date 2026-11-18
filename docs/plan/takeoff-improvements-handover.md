@@ -940,3 +940,61 @@ Next: effort exit — final documentation pass, Windows build and release decisi
 - **Release decision:** 0.30.0 stays untagged and unreleased. No version field,
   tag, GitHub Release or `site/release.json` entry changed in this effort; the
   product owner decides the version and release after the Windows check.
+
+## Follow-up — variant flyout click and area shape rows
+
+- **Issues:** [#329](https://github.com/MajorJohnDoe/gridscalr/issues/329)
+  (one left-click opens every tool flyout) and
+  [#330](https://github.com/MajorJohnDoe/gridscalr/issues/330) (area shape as
+  clickable icon options), one PR closing both. Epic #318. Schema unchanged at
+  28; app version unchanged at 0.29.0.
+- **Branch:** `feat/measurement-flyout-polish`.
+
+### Changes
+
+- **#329.** The "opens on a click" decision moved out of a second id list in
+  `toolFlyouts.ts` into the tool metadata: `ToolDef.variantFlyout` on the seven
+  tools plus `hasToolVariants()` in `toolDefs.ts`. `attachToolFlyout` now passes
+  the left-click flag to the shared press handler, so `cloud`, `highlight`,
+  `callout`, `stamp`, `arrow`, `line` and `polyline` open on a normal click while
+  the rail click still selects the tool. Long-press and right-click are
+  unchanged, and the context bar's **Variants** control opens the same panel.
+  The per-tool renderer is now a keyed `VARIANT_FLYOUTS` record instead of an
+  if-chain that quietly fell back to the arrow panel, so a tool that declares
+  variants without a panel is caught by `tests/toolFlyouts.test.ts`.
+- **#330.** `renderAreaOptions` replaces the **Shape** select with a
+  `role="radiogroup"` (`aria-label` from `measureOptions.areaShape`) of three
+  `role="radio"` rows — Polygon, Rectangle, Ellipse — each with its tool icon and
+  localized label. The selected row carries the check mark, the selected row
+  style and `aria-checked`, and the group is one tab stop (roving `tabindex`);
+  arrow keys move and apply, `Space`/`Enter` apply the focused row, focus stays
+  in the flyout. The write path is still `store.setMeasureAreaShape(...)` and the
+  **Area** add/deduct select is untouched. The row markup moved to the new
+  shared `src/ui/variantRow.ts`, used by both the tool flyouts and this panel;
+  `ui.ts` is 304 lines and `toolFlyouts.ts` shrank to 604.
+
+### Tests and checks
+
+- `tests/toolFlyouts.test.ts`: left-click opens and selects for every declared
+  variant tool, metadata and renderer keys must match, long-press and
+  right-click still open, a tool without metadata stays inert, each tool uses
+  its own panel.
+- `tests/measurementFlyout.test.ts`: three icon rows with no shape select, the
+  selected row marked and announced, click writes and re-marks, single tab stop,
+  arrow/Enter/Space keyboard path with focus kept in the flyout, and the Swedish
+  group name and labels.
+- `npm test -- --run` 179 files / 1 821 tests; focused flyout, tool-family,
+  shortcut, accessibility, schedule-UI and dialog-focus suites; the local gate;
+  `test:ui`, `test:canvas`, `test:a11y` (100 checks), `test:touch-targets` (756
+  controls, 23 surfaces), `test:ui-scale` (100/150/200 %), `test:visual` (4
+  baselines), `npm run docs:capture` for `measure-flyout.png` and
+  `test:docs-capture`.
+- Docs: `docs/user-guide.md` (click opens the variant flyouts; the shape is
+  clicked), `docs/workflows.md`, `docs/architecture.md`, `AGENTS.md` module map,
+  the recaptured `docs/screenshots/measure-flyout.png` with its manifest entry.
+- **Environment note:** `check:dependencies` reports the reviewed npm
+  `picomatch` exception (`GHSA-FC5Q-39XC-VJPF`) as no longer matching an
+  advisory; `npm audit` now reports zero npm findings with the same lockfile that
+  passed the gate on `main` three hours earlier. No dependency or allowlist file
+  is touched by this follow-up.
+

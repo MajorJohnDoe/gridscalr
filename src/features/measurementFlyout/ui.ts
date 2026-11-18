@@ -5,8 +5,9 @@ import type { AreaMode, AreaShape, CountType } from "../../model/types";
 import { store } from "../../state/store";
 import { el, option } from "../../ui/dom";
 import { icon } from "../../ui/icons";
+import { variantRow } from "../../ui/variantRow";
 import { toast } from "../../ui/toast";
-import { t } from "../../i18n";
+import { t, type MessageKey } from "../../i18n";
 import {
   matchingCountPreset,
   measurementCapabilities,
@@ -103,23 +104,89 @@ export function renderMeasurementPanel(panel: HTMLElement, options: MeasurementP
   renderLayerTarget(panel, pageIdAt(project, store.ui.page), changed);
 }
 
+const AREA_SHAPE_OPTIONS: ReadonlyArray<{
+  id: AreaShape;
+  label: MessageKey;
+  iconName: string;
+}> = [
+  { id: "polygon", label: "measureOptions.polygon", iconName: "area" },
+  { id: "rectangle", label: "measureOptions.rectangle", iconName: "rect" },
+  { id: "ellipse", label: "measureOptions.ellipse", iconName: "ellipse" },
+];
+
+/**
+ * The shape picker as three clickable icon rows instead of a dropdown, so the
+ * choices are visible and the selected one is marked like a tool row. It is a
+ * radio group: one tab stop, arrow keys move the selection, Enter and Space
+ * apply it. Every change still goes through `store.setMeasureAreaShape`.
+ */
+function renderAreaShape(panel: HTMLElement, changed: (rerender?: boolean) => void): void {
+  const wrap = el("div", "tool-flyout-field");
+  wrap.append(el("span", "tool-flyout-field-label", t("measureOptions.shape")));
+  const group = el("div", "tool-flyout-choices");
+  group.setAttribute("role", "radiogroup");
+  group.setAttribute("aria-label", t("measureOptions.areaShape"));
+  wrap.append(group);
+  panel.append(wrap);
+
+  function paint(focusShape: AreaShape | null): void {
+    const current = store.ui.measureAreaShape;
+    group.replaceChildren();
+    for (const entry of AREA_SHAPE_OPTIONS) {
+      const selected = entry.id === current;
+      const row = variantRow(group, {
+        label: t(entry.label),
+        iconName: entry.iconName,
+        selected,
+        role: "radio",
+        // One tab stop: the selected row, so Tab reaches the group once.
+        tabindex: selected ? 0 : -1,
+        onSelect: () => selectShape(entry.id),
+      });
+      row.dataset.shape = entry.id;
+      if (focusShape === entry.id) row.focus({ preventScroll: true });
+    }
+  }
+
+  function selectShape(shape: AreaShape, focus = false): void {
+    if (store.ui.measureAreaShape !== shape) {
+      store.setMeasureAreaShape(shape);
+      changed();
+    }
+    paint(focus ? shape : null);
+  }
+
+  group.addEventListener("keydown", (event) => {
+    const focused = (document.activeElement as HTMLElement | null)?.dataset.shape;
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      if (focused) selectShape(focused as AreaShape, true);
+      return;
+    }
+    if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) {
+      return;
+    }
+    event.preventDefault();
+    const ids = AREA_SHAPE_OPTIONS.map((entry) => entry.id);
+    const index = ids.indexOf(store.ui.measureAreaShape);
+    const next =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? ids.length - 1
+          : event.key === "ArrowRight" || event.key === "ArrowDown"
+            ? (index + 1) % ids.length
+            : (index - 1 + ids.length) % ids.length;
+    selectShape(ids[next], true);
+  });
+
+  paint(null);
+}
+
 function renderAreaOptions(panel: HTMLElement, changed: (rerender?: boolean) => void): void {
   panel.append(el("div", "tool-flyout-section", t("toolFlyout.area")));
 
-  const shape = el("select", "select tool-flyout-select");
-  shape.setAttribute("aria-label", t("measureOptions.areaShape"));
-  for (const entry of [
-    { value: "polygon", label: t("measureOptions.polygon") },
-    { value: "rectangle", label: t("measureOptions.rectangle") },
-    { value: "ellipse", label: t("measureOptions.ellipse") },
-  ]) {
-    shape.append(option(entry.value, entry.label, entry.value === store.ui.measureAreaShape));
-  }
-  shape.addEventListener("change", () => {
-    store.setMeasureAreaShape(shape.value as AreaShape);
-    changed();
-  });
-  panel.append(field(t("measureOptions.shape"), shape));
+  renderAreaShape(panel, changed);
 
   const mode = el("select", "select tool-flyout-select");
   mode.setAttribute("aria-label", t("measureOptions.areaMode"));
