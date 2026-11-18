@@ -136,7 +136,6 @@ export function renderLayerRow(
   row.classList.toggle("is-inherited-hidden", Boolean(treeRow.inheritedHiddenBy));
   row.classList.toggle("is-inherited-locked", Boolean(treeRow.inheritedLockedBy));
   row.classList.toggle("is-group", treeRow.hasChildren);
-  row.draggable = !store.readOnly;
   row.setAttribute("aria-keyshortcuts", LAYER_KEYSHORTCUTS);
   row.setAttribute("aria-describedby", `${LAYER_ORDER_HINT_ID} ${LAYER_MENU_HINT_ID}`);
   if (treeRow.hasChildren) row.setAttribute("aria-expanded", String(expanded));
@@ -319,10 +318,6 @@ export function renderLayerRow(
     event.stopPropagation();
     showLayerMenuAt(event.clientX, event.clientY, layer.id, actions);
   });
-  row.addEventListener("dragstart", (event) =>
-    layerTreeController.handleDragStart(event, layer.id, row),
-  );
-  row.addEventListener("dragend", () => layerTreeController.handleDragEnd());
   row.addEventListener("keydown", (event) => {
     if (event.target !== row) return;
     if (event.altKey || event.key === "ArrowLeft" || event.key === "ArrowRight") {

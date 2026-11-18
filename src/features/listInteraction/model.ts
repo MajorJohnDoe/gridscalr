@@ -150,6 +150,28 @@ export function insertionIndexAt(spans: readonly RowSpan[], clientY: number): nu
   return spans.length;
 }
 
+/**
+ * Index of the row under a vertical pointer position, or the nearest row when
+ * the pointer sits between or beyond the spans. Used by lists that move a row
+ * onto another row rather than to an insertion point.
+ */
+export function rowIndexAt(spans: readonly RowSpan[], clientY: number): number {
+  if (!spans.length) return -1;
+  let nearest = 0;
+  let distance = Infinity;
+  for (let index = 0; index < spans.length; index += 1) {
+    const span = spans[index];
+    if (clientY >= span.top && clientY <= span.bottom) return index;
+    const middle = (span.top + span.bottom) / 2;
+    const gap = Math.abs(clientY - middle);
+    if (gap < distance) {
+      distance = gap;
+      nearest = index;
+    }
+  }
+  return nearest;
+}
+
 export interface MoveOutcome {
   /** 0-based index of the first moved entry after the change. */
   startIndex: number;

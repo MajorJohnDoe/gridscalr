@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import { beforeEach, describe, expect, it } from "vitest";
+import { dragPointer, pointerEvent, pressAndMove, rect } from "./helpers/pointer";
 import {
   ListReorderController,
   RowNavigator,
@@ -15,6 +16,7 @@ import {
   normalizeFilterQuery,
   orderedSelection,
   pruneSelection,
+  rowIndexAt,
   selectionAfterClick,
   toggleCollapsedKey,
   type ListEntry,
@@ -108,6 +110,20 @@ describe("shared list movement", () => {
     expect(keyboardInsertion(entries, new Set(), "up")).toBeNull();
   });
 
+  it("resolves the row under a pointer, or the nearest row", () => {
+    const spans = [
+      { top: 0, bottom: 20 },
+      { top: 20, bottom: 40 },
+      { top: 40, bottom: 60 },
+    ];
+    expect(rowIndexAt(spans, 5)).toBe(0);
+    expect(rowIndexAt(spans, 32)).toBe(1);
+    expect(rowIndexAt(spans, 55)).toBe(2);
+    expect(rowIndexAt(spans, 200)).toBe(2);
+    expect(rowIndexAt(spans, -20)).toBe(0);
+    expect(rowIndexAt([], 0)).toBe(-1);
+  });
+
   it("finds the insertion index under a pointer", () => {
     const spans = [
       { top: 0, bottom: 20 },
@@ -159,6 +175,8 @@ describe("shared list reorder controller", () => {
     const scroll = document.createElement("div");
     const list = document.createElement("div");
     list.className = "test-list";
+    list.getBoundingClientRect = () => rect(0, 0, 100, 100);
+    scroll.getBoundingClientRect = () => rect(0, 0, 100, 100);
     scroll.append(list);
     document.body.append(scroll);
     const calls: Call[] = [];
@@ -168,7 +186,6 @@ describe("shared list reorder controller", () => {
       rowId: (row) => row.dataset.id ?? null,
       entries: () => entries,
       canReorder: () => options.canReorder !== false,
-      dragMime: "application/x-test-order",
       onMove: (ids, index, changesOrder) => calls.push({ ids: [...ids], index, changesOrder }),
       announce: (_ids, outcome) => {
         const message = `moved ${outcome.startIndex + 1} of ${outcome.total}`;
@@ -207,31 +224,68 @@ describe("shared list reorder controller", () => {
   });
 
   it("drags one row and applies the drop exactly once", () => {
-    const { controller, list, rows, calls } = mount();
-    controller.handleDragStart(
-      new MouseEvent("dragstart", { bubbles: true }) as DragEvent,
-      "b",
-      rows[1],
-    );
+    const { rows, calls } = mount();
+    const press = pressAndMove({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 85 });
     expect(rows[1].classList.contains("is-dragging")).toBe(true);
-    list.dispatchEvent(new MouseEvent("dragover", { bubbles: true, clientX: 10, clientY: 85 }));
-    const line = list.querySelector<HTMLElement>(".test-drop-line");
+    const line = document.querySelector<HTMLElement>(".test-drop-line");
     expect(line?.hidden).toBe(false);
-    list.dispatchEvent(new MouseEvent("drop", { bubbles: true, clientX: 10, clientY: 85 }));
+    press.release({ x: 10, y: 85 });
     expect(calls).toEqual([{ ids: ["b"], index: 4, changesOrder: true }]);
     expect(rows[1].classList.contains("is-dragging")).toBe(false);
   });
 
   it("reports an unchanged drop without pretending it reordered", () => {
-    const { controller, list, rows, calls } = mount();
-    controller.handleDragStart(
-      new MouseEvent("dragstart", { bubbles: true }) as DragEvent,
-      "b",
-      rows[1],
-    );
-    list.dispatchEvent(new MouseEvent("dragover", { bubbles: true, clientX: 10, clientY: 25 }));
-    list.dispatchEvent(new MouseEvent("drop", { bubbles: true, clientX: 10, clientY: 25 }));
+    const { rows, calls } = mount();
+    dragPointer({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 25 });
     expect(calls).toEqual([{ ids: ["b"], index: 1, changesOrder: false }]);
+  });
+
+  it("does not start a drag before the pointer moves past the threshold", () => {
+    const { rows, calls } = mount();
+    const press = pressAndMove({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 31 });
+    expect(rows[1].classList.contains("is-dragging")).toBe(false);
+    window.dispatchEvent(pointerEvent("pointermove", { clientX: 10, clientY: 85 }));
+    expect(rows[1].classList.contains("is-dragging")).toBe(true);
+    press.release({ x: 10, y: 85 });
+    expect(calls).toEqual([{ ids: ["b"], index: 4, changesOrder: true }]);
+  });
+
+  it("keeps a finger scroll and a secondary pointer out of the drag", () => {
+    const { rows, calls } = mount();
+    dragPointer({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 85 }, "touch");
+    dragPointer({ target: rows[1], x: 10, y: 30, isPrimary: false }, { x: 10, y: 85 });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("leaves a press on a row control to that control", () => {
+    const { rows, calls } = mount();
+    const button = document.createElement("button");
+    rows[1].append(button);
+    dragPointer({ target: button, x: 10, y: 30 }, { x: 10, y: 85 });
+    expect(rows[1].classList.contains("is-dragging")).toBe(false);
+    expect(calls).toHaveLength(0);
+  });
+
+  it("cancels a held row on Escape and applies no move", () => {
+    const { rows, calls } = mount();
+    const press = pressAndMove({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 85 });
+    window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+    expect(rows[1].classList.contains("is-dragging")).toBe(false);
+    press.release({ x: 10, y: 85 });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("applies no move when the pointer is released outside the list", () => {
+    const { rows, calls } = mount();
+    dragPointer({ target: rows[1], x: 10, y: 30 }, { x: 400, y: 85 });
+    expect(calls).toHaveLength(0);
+  });
+
+  it("does not start a drag in a read-only list", () => {
+    const { rows, calls } = mount({ canReorder: false });
+    dragPointer({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 85 });
+    expect(rows[1].classList.contains("is-dragging")).toBe(false);
+    expect(calls).toHaveLength(0);
   });
 
   it("moves with Alt+Arrow and announces the new position", () => {

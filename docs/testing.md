@@ -575,6 +575,7 @@ build, ideally on Windows, macOS and Linux:
 - password prompts, Tauri window chrome and single-instance behaviour;
 - OS display scaling at 125–200 %, mixed-DPI monitors and system font
   differences;
+- mouse row reordering in the Pages list, the Layers tree and the takeoff table builder on Windows, macOS and Linux, plus dropping a PDF, TIF or `.gridscalr` on the window and on the Pages panel;
 - pen and touch hardware, palm rejection and long-press menus;
 - canvas rendering near the minimum and maximum zoom, very large pages and
   progressive PDF page loading;

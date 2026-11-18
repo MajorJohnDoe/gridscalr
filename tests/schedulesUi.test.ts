@@ -11,6 +11,7 @@ import {
   type SummaryPanelHost,
 } from "../src/features/schedules";
 import { closeActiveModal } from "../src/ui/dialogs";
+import { dragPointer, rect } from "./helpers/pointer";
 import { createSpace, emptySpaceDraft } from "../src/features/spaces";
 import {
   addItem,
@@ -415,6 +416,31 @@ describe("schedule builder", () => {
       ...document.querySelectorAll<HTMLInputElement>(".schedules-builder-column-label"),
     ];
     expect(labels.map((input) => input.placeholder)).toContain("Room");
+    button("Close", document.querySelector(".modal")!)?.click();
+    void done;
+  });
+
+  it("reorders a column by pointer drag as well as the arrow buttons", () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    const done = openScheduleBuilder();
+    const rows = [...document.querySelectorAll<HTMLElement>(".schedules-builder-column")];
+    expect(rows.length).toBeGreaterThan(2);
+    const labels = (): (string | null)[] =>
+      [...document.querySelectorAll<HTMLInputElement>(".schedules-builder-column-label")].map(
+        (input) => input.placeholder,
+      );
+    const before = labels();
+    rows.forEach((row, index) => {
+      row.getBoundingClientRect = () => rect(index * 30, 0, 300, 30);
+    });
+    const list = document.querySelector<HTMLElement>(".schedules-builder-columns")!;
+    list.getBoundingClientRect = () => rect(0, 0, 300, rows.length * 30);
+    const handle = rows[0].querySelector<HTMLElement>(".schedules-builder-handle")!;
+    dragPointer({ target: handle, x: 10, y: 15 }, { x: 10, y: 75 });
+    const after = labels();
+    expect(after[2]).toBe(before[0]);
+    expect(after.slice(0, 2)).toEqual(before.slice(1, 3));
     button("Close", document.querySelector(".modal")!)?.click();
     void done;
   });

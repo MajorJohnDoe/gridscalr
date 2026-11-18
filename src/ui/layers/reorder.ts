@@ -45,7 +45,6 @@ export const layerTreeController = new LayerTreeController({
     focusLayer(layerId);
   },
   requestRender: () => requestRender?.(),
-  mime: "application/x-gridscalr-layer-order",
   rowSelector: ".layer-row",
 });
 

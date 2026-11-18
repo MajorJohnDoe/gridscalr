@@ -649,6 +649,36 @@ try {
     "the moved layer should keep keyboard focus after the re-render",
   );
 
+  // The row gesture is pointer-based, because the desktop shell owns the OS
+  // drag channel on Windows and HTML5 drag events never reach the page there.
+  const dragIdsBefore = await measureRows.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.layerId),
+  );
+  const firstRowBox = await measureRows.first().boundingBox();
+  const secondRowBox = await measureRows.nth(1).boundingBox();
+  await page.mouse.move(
+    firstRowBox.x + firstRowBox.width / 2,
+    firstRowBox.y + firstRowBox.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    firstRowBox.x + firstRowBox.width / 2,
+    secondRowBox.y + secondRowBox.height - 3,
+    { steps: 10 },
+  );
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  const dragIdsAfter = await measureRows.evaluateAll((nodes) =>
+    nodes.map((node) => node.dataset.layerId),
+  );
+  assert.deepEqual(
+    dragIdsAfter.slice(0, 2),
+    [dragIdsBefore[1], dragIdsBefore[0]],
+    "a mouse drag should move the first layer row below the second",
+  );
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+
   await page.locator('.dock-tab[data-tab="pages"]').click();
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();

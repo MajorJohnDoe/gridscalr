@@ -50,7 +50,6 @@ export class PageReorderController {
     entries: projectEntries,
     canReorder: () => !store.readOnly,
     selectable: true,
-    dragMime: "application/x-gridscalr-page-order",
     onMove: (ids, insertionIndex) => this.actions?.reorder(ids as PageId[], insertionIndex),
     announce: (_ids, outcome) => announceMove(outcome),
     planDrop: (entries, selected, insertionIndex) => {
@@ -84,14 +83,6 @@ export class PageReorderController {
   /** Handles a card click and reports whether the panel should navigate. */
   handleClick(event: MouseEvent, pageId: PageId): boolean {
     return this.drag.handleClick(event, pageId);
-  }
-
-  handleDragStart(event: DragEvent, pageId: PageId, card: HTMLElement): void {
-    this.drag.handleDragStart(event, pageId, card);
-  }
-
-  handleDragEnd(): void {
-    this.drag.handleDragEnd();
   }
 
   handleKeyDown(event: KeyboardEvent, pageId: PageId): void {

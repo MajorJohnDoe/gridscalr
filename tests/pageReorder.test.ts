@@ -2,6 +2,7 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import { withTestPageIds } from "./helpers/pages";
+import { dragPointer, pressAndMove, rect } from "./helpers/pointer";
 import {
   dragSet,
   documentSegments,
@@ -277,6 +278,8 @@ describe("pages panel controller", () => {
     const scroll = document.createElement("div");
     const list = document.createElement("div");
     list.className = "page-list";
+    list.getBoundingClientRect = () => rect(0, 0, 100, 120);
+    scroll.getBoundingClientRect = () => rect(0, 0, 100, 120);
     scroll.append(list);
     document.body.append(scroll);
     const cards = project.pages.map((page, index) => {
@@ -302,10 +305,6 @@ describe("pages panel controller", () => {
       card.addEventListener("click", (event) => {
         if (pageReorder.handleClick(event, page.id)) navigations.push(index + 1);
       });
-      card.addEventListener("dragstart", (event) =>
-        pageReorder.handleDragStart(event, page.id, card),
-      );
-      card.addEventListener("dragend", () => pageReorder.handleDragEnd());
       card.addEventListener("keydown", (event) => pageReorder.handleKeyDown(event, page.id));
       return card;
     });
@@ -318,10 +317,6 @@ describe("pages panel controller", () => {
     pageReorder.bindList(list, scroll);
     for (const card of cards) pageReorder.decorateCard(card, card.dataset.pageId ?? "");
     return { list, cards, calls, navigations };
-  }
-
-  function drag(type: string, target: HTMLElement, clientY = 0): void {
-    target.dispatchEvent(new MouseEvent(type, { clientY, clientX: 10, bubbles: true }));
   }
 
   beforeEach(() => pageReorder.reset());
@@ -344,15 +339,14 @@ describe("pages panel controller", () => {
   it("drags exactly the selected pages and applies one drop", () => {
     const project = baseProject();
     store.setProject(project, PATH, false);
-    const { list, cards, calls } = mount(project);
+    const { cards, calls } = mount(project);
     cards[0].dispatchEvent(new MouseEvent("click", { ctrlKey: true, bubbles: true }));
     cards[3].dispatchEvent(new MouseEvent("click", { ctrlKey: true, bubbles: true }));
-    drag("dragstart", cards[3]);
+    const held = pressAndMove({ target: cards[3], x: 10, y: 70 }, { x: 10, y: 100 });
     expect(cards[0].classList.contains("is-dragging")).toBe(true);
     expect(cards[3].classList.contains("is-dragging")).toBe(true);
     expect(cards[1].classList.contains("is-dragging")).toBe(false);
-    drag("dragover", list, 200);
-    drag("drop", list, 200);
+    held.release({ x: 10, y: 100 });
     expect(calls).toHaveLength(1);
     expect(calls[0].pageIds).toEqual(["page_1", "page_4"]);
     expect(calls[0].insertionIndex).toBe(project.pages.length);
@@ -362,15 +356,27 @@ describe("pages panel controller", () => {
     const project = baseProject();
     store.setProject(project, PATH, false);
     const { list, cards } = mount(project);
-    drag("dragstart", cards[0]);
+    const held = pressAndMove({ target: cards[0], x: 10, y: 10 }, { x: 10, y: 10 });
     // Pointer just above the midpoint of the first Upper.pdf card (index 3).
-    drag("dragover", list, 62);
+    window.dispatchEvent(new PointerEvent("pointermove", { clientX: 10, clientY: 62 }));
     const line = list.querySelector<HTMLElement>(".page-drop-line");
     expect(line?.hidden).toBe(false);
     expect(line?.classList.contains("is-cross-document")).toBe(true);
     const label = line?.querySelector<HTMLElement>(".page-drop-label");
     expect(label?.hidden).toBe(false);
     expect(label?.textContent).toBe("Move to Upper.pdf");
+    held.cancel();
+  });
+
+  it("does not navigate to a card that was dragged", () => {
+    const project = baseProject();
+    store.setProject(project, PATH, false);
+    const { cards, calls, navigations } = mount(project);
+    dragPointer({ target: cards[0], x: 10, y: 10 }, { x: 10, y: 100 });
+    expect(calls).toHaveLength(1);
+    // The click that follows a release must not open the card under the pointer.
+    cards[2].dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(navigations).toHaveLength(0);
   });
 
   it("reorders from the keyboard and announces the new position", () => {
