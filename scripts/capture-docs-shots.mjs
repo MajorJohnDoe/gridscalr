@@ -237,9 +237,9 @@ export const shots = [
   {
     file: "schedule-builder.png",
     title: "Takeoff table builder",
-    alt: "The GridScalr takeoff table builder with name, measurement source, columns, grouping, sorting, totals and filters.",
+    alt: "The GridScalr takeoff table builder with Save, Duplicate and Delete in the dialog header, plus name, measurement source, columns, grouping, sorting, totals and filters.",
     description:
-      "Choose columns, grouping, sorting, filters and totals while the preview uses the real takeoff table engine.",
+      "Save, Duplicate and Delete sit in the header beside Close while the columns, grouping, sorting, filters and totals use the real takeoff table engine.",
   },
   {
     file: "takeoff-settings-cards.png",

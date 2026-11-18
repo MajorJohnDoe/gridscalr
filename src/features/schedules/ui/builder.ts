@@ -1,23 +1,17 @@
-import { clear, el, option } from "../../../ui/dom";
+import { el, option } from "../../../ui/dom";
 import { showModal } from "../../../ui/dialogs";
-import { toast } from "../../../ui/toast";
 import { t } from "../../../i18n";
 import { store } from "../../../state/store";
 import {
-  createSchedule,
-  deleteSchedule,
   emptyScheduleDraft,
   findSchedule,
-  normalizeScheduleName,
   scheduleDraftFor,
   scheduleDraftProblems,
-  uniqueScheduleName,
-  updateSchedule,
 } from "../model";
-import type { ScheduleDraft, ScheduleMutationResult } from "../model";
+import type { ScheduleDraft } from "../model";
 import type { ScheduleRowMode, ScheduleSource } from "../../../model/types";
-import { deletePlacementsForSchedule, placementCount } from "../placement";
 import { createPreview } from "./builderPreview";
+import { createBuilderActions } from "./builderActions";
 import { columnsSection } from "./builderColumns";
 import { filtersSection } from "./builderFilters";
 import { rulesSection } from "./builderRules";
@@ -135,125 +129,19 @@ export function openScheduleBuilder(scheduleId?: string): Promise<void> {
 
   const ctx: BuilderContext = { project: currentProject, draft, rebuild, refresh };
 
-  const toolbar = el("div", "input-row schedules-builder-actions");
-  const save = el("button", "btn btn-primary", t("schedules.builder.save"));
-  save.type = "button";
-  save.disabled = store.readOnly;
-  const duplicate = el("button", "btn", t("schedules.builder.duplicate"));
-  duplicate.type = "button";
-  duplicate.disabled = store.readOnly;
-  const remove = el("button", "btn btn-danger", t("schedules.builder.delete"));
-  remove.type = "button";
-  remove.disabled = store.readOnly || !draft.id;
-
   let closeModal: (() => void) | null = null;
 
-  save.addEventListener("click", () => {
-    if (store.readOnly) return;
-    if (!normalizeScheduleName(draft.name)) {
-      name.focus();
-      updateProblems();
-      return;
-    }
-    let result: ScheduleMutationResult | null = null;
-    store.mutate((current) => {
-      result = draft.id ? updateSchedule(current, draft) : createSchedule(current, draft);
-    }, "change");
-    const applied = result as ScheduleMutationResult | null;
-    if (!applied?.schedule) {
-      updateProblems();
-      return;
-    }
-    toast(
-      draft.id
-        ? t("schedules.builder.saved", { name: applied.schedule.name })
-        : t("schedules.builder.created", { name: applied.schedule.name }),
-      "success",
-    );
-    closeModal?.();
+  // Save, Duplicate and Delete live in the dialog header beside Close, so the
+  // long scrolling body never hides them. The confirmation strip is mounted
+  // under the header, outside that body, for the same reason.
+  const builderActions = createBuilderActions({
+    draft,
+    nameInput: name,
+    onProblems: updateProblems,
+    close: () => closeModal?.(),
   });
 
-  duplicate.addEventListener("click", () => {
-    if (store.readOnly) return;
-    let created = false;
-    let copyName = "";
-    store.mutate((current) => {
-      const result = createSchedule(current, {
-        ...draft,
-        id: undefined,
-        name: uniqueScheduleName(
-          current,
-          t("schedules.builder.copyName", {
-            name: draft.name || t("schedules.builder.defaultName"),
-          }),
-        ),
-      });
-      created = Boolean(result.schedule);
-      copyName = result.schedule?.name ?? "";
-    }, "change");
-    if (!created) {
-      updateProblems();
-      return;
-    }
-    toast(t("schedules.builder.created", { name: copyName }), "success");
-    closeModal?.();
-  });
-
-  const confirm = el("div", "inline-confirm");
-  confirm.hidden = true;
-
-  remove.addEventListener("click", () => {
-    const id = draft.id;
-    if (store.readOnly || !id) return;
-    const placements = project ? placementCount(project, id) : 0;
-    clear(confirm);
-    confirm.append(
-      el(
-        "p",
-        "inline-confirm-text",
-        placements > 0
-          ? t("schedules.builder.deleteMessageWithPlacements", {
-              name: draft.name,
-              count: placements,
-            })
-          : t("schedules.builder.deleteMessage", { name: draft.name }),
-      ),
-    );
-    const actions = el("div", "inline-confirm-actions");
-    const cancel = el("button", "btn btn-small btn-ghost", t("common.cancel"));
-    cancel.type = "button";
-    cancel.addEventListener("click", () => {
-      confirm.hidden = true;
-      clear(confirm);
-    });
-    const destroy = el("button", "btn btn-small btn-danger", t("schedules.builder.delete"));
-    destroy.type = "button";
-    destroy.addEventListener("click", () => {
-      let removed = false;
-      let blocked = false;
-      store.mutate((current) => {
-        if (placementCount(current, id) > 0) deletePlacementsForSchedule(current, id);
-        const result = deleteSchedule(current, id);
-        removed = result.removed;
-        blocked = result.problems.some((problem) => problem.code === "inUse");
-      }, "change");
-      if (blocked) {
-        toast(t("schedules.problem.inUse"), "warning");
-        return;
-      }
-      if (removed) {
-        toast(t("schedules.builder.deleted", { name: draft.name }), "success");
-        closeModal?.();
-      }
-    });
-    actions.append(cancel, destroy);
-    confirm.append(actions);
-    confirm.hidden = false;
-    destroy.focus();
-  });
-
-  toolbar.append(save, duplicate, remove);
-  body.append(sections, problems, confirm, toolbar);
+  body.append(sections, problems);
   rebuild();
 
   return showModal({
@@ -262,8 +150,11 @@ export function openScheduleBuilder(scheduleId?: string): Promise<void> {
     body,
     wide: true,
     actions: [{ label: t("common.close"), value: "close" }],
-    onMount: (_modal, close) => {
+    headerActions: builderActions.actions,
+    onMount: (modal, close) => {
       closeModal = close;
+      const scrollBody = modal.querySelector(".modal-body");
+      modal.insertBefore(builderActions.confirm, scrollBody);
     },
   }).then(() => undefined);
 }

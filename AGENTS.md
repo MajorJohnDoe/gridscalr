@@ -456,7 +456,7 @@ src/features/schedules/model/definition.ts standard-table factory (standardSched
 src/features/schedules/sources/measurements.ts measurement rows from visible items, reusing itemMetrics and quantity rules
 src/features/schedules/sources/spaces.ts space rows reusing spaceAreas(), never a second area formula
 src/features/schedules/summary.ts four KPI cards from summaryRole plus the built-in category table
-src/features/schedules/ui/ Takeoff tab, preview and standard-table actions, virtualised live table, builder and column picker
+src/features/schedules/ui/ Takeoff tab, preview and standard-table actions, virtualised live table, builder and column picker, builder header actions
 src/features/takeoffSettings/index.ts public surface of the Takeoff settings hub
 src/features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding
 src/features/takeoffSettings/ui/ Objects, Fields, Tables and Cards tabs, the shared dialog and object rows

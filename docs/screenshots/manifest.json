@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-11-18T14:24:41.679Z",
+  "generatedAt": "2026-11-18T15:09:01.230Z",
   "appVersion": "0.29.0",
-  "sourceFingerprint": "c34215b76daf46af9ca84e4e6a9b8b70841755d30a0b45bb2970ea97e984e65d",
+  "sourceFingerprint": "1452411df32ce04d6c3cadb175d31460c624631d428f32f30bead8d8e85a2794",
   "viewport": {
     "width": 1920,
     "height": 1080
@@ -94,7 +94,7 @@
     },
     {
       "file": "takeoff-settings-objects.png",
-      "title": "Takeoff settings — Objects",
+      "title": "Takeoff settings \u2014 Objects",
       "alt": "The GridScalr Takeoff settings Objects tab with measured categories and counted types in one list with a Type column, including a custom Socket type and its glyph picker.",
       "description": "Measured and counted objects share one list, and each counted object chooses the vector glyph used on the plan and in exports."
     },
@@ -160,7 +160,7 @@
     },
     {
       "file": "preferences-data.png",
-      "title": "Preferences — Data",
+      "title": "Preferences \u2014 Data",
       "alt": "The GridScalr Preferences dialog on the Data category with autosave controls, rolling backup retention, the recovery center action and the recent-file list.",
       "description": "Autosave, rolling backups and recovery records are app-level preferences stored on this computer, never in the project file."
     },
@@ -184,7 +184,7 @@
     },
     {
       "file": "takeoff-settings-fields.png",
-      "title": "Takeoff settings — Fields",
+      "title": "Takeoff settings \u2014 Fields",
       "alt": "The GridScalr Takeoff settings Fields tab listing the measurement and space fields with their applies-to rules and the field sets, with the Manage fields action.",
       "description": "Fields and field sets live in the Takeoff settings hub; the editor and its rules are the same one the inspector uses."
     },
@@ -209,7 +209,7 @@
     {
       "file": "takeoff-preview.png",
       "title": "Takeoff preview without a table",
-      "alt": "The GridScalr Takeoff tab with the four KPI cards and the labelled Preview – cannot be placed state, offering Create takeoff table and Create takeoff table and place….",
+      "alt": "The GridScalr Takeoff tab with the four KPI cards and the labelled Preview \u2013 cannot be placed state, offering Create takeoff table and Create takeoff table and place\u2026.",
       "description": "Opening the tab writes nothing. The standard takeoff table exists only after the explicit create action."
     },
     {
@@ -221,18 +221,18 @@
     {
       "file": "schedule-builder.png",
       "title": "Takeoff table builder",
-      "alt": "The GridScalr takeoff table builder with name, measurement source, columns, grouping, sorting, totals and filters.",
-      "description": "Choose columns, grouping, sorting, filters and totals while the preview uses the real takeoff table engine."
+      "alt": "The GridScalr takeoff table builder with Save, Duplicate and Delete in the dialog header, plus name, measurement source, columns, grouping, sorting, totals and filters.",
+      "description": "Save, Duplicate and Delete sit in the header beside Close while the columns, grouping, sorting, filters and totals use the real takeoff table engine."
     },
     {
       "file": "takeoff-settings-cards.png",
-      "title": "Takeoff settings — Cards",
+      "title": "Takeoff settings \u2014 Cards",
       "alt": "The GridScalr Takeoff settings Cards tab with the four cards, their visibility switches and the Fed by lists for Walls categories and Doors count types.",
       "description": "A card reads the categories or count types ticked under Fed by, never a name."
     },
     {
       "file": "takeoff-settings-tables.png",
-      "title": "Takeoff settings — Tables",
+      "title": "Takeoff settings \u2014 Tables",
       "alt": "The GridScalr Takeoff settings Tables tab listing the saved takeoff tables with Edit, Duplicate and Delete, and the New takeoff table action.",
       "description": "Saved takeoff tables are managed in the hub, which never creates a table by opening."
     },
