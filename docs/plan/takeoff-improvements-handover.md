@@ -14,13 +14,16 @@ Schema 28 stays the current development schema. No persisted field is added.
   `fix/windows-row-drag`, base `main`
   (`e1efb58`). Not merged, not auto-merge.
 - **Branch:** `fix/windows-row-drag`
-- **Verified head SHA:** `8f818b1` (implementation `432bfb6`, handover
-  `8f818b1`). All six PR checks passed on that exact SHA (CI run
-  [44289208825](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44289208825)).
-  This CI-record commit follows it; the conductor verifies the actual PR head.
-- **Merge commit:** pending.
-- **Status:** PR open and green, not merged, no auto-merge. Windows manual
-  confirmation is pending and the issue stays open until it passes.
+- **Verified head SHA:** `6711d40fc1af011a4cef3724d9d9e1c95acf08b2`
+  (implementation `432bfb6`, handover `8f818b1`, CI record `6711d40`). All six
+  PR checks passed on that exact SHA (CI run
+  [44290854777](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44290854777)).
+- **Merge commit:** `0afa4dbf0f3eec97ac7ac860dde5a83fd2767ce6` (squash merged,
+  branch deleted).
+- **Status:** merged to `main`; the `main` CI run
+  [44292590558](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44292590558)
+  is green on the merge commit. Windows 11 mouse-drag confirmation and the
+  product-owner release-complete check are still open.
 
 ### Completed work
 
@@ -129,9 +132,35 @@ do not exercise a mouse drag, so Windows reordering is still the manual gate.
 
 ### Conductor verification
 
-Pending. The conductor must confirm the PR head SHA, every required check on
-that SHA, the file scope against #319 and the acceptance criteria, and must not
-merge until the PR is green. The Windows manual gate stays open after the merge.
+- PR [#324](https://github.com/MajorJohnDoe/gridscalr/pull/324) head
+  `6711d40fc1af011a4cef3724d9d9e1c95acf08b2` matched the worker report; all six
+  checks were `success`, the base was `main` and the merge state was
+  `CLEAN`/`MERGEABLE` immediately before the merge.
+- Conductor re-ran `npx vitest run tests/listInteraction.test.ts
+  tests/pageReorder.test.ts tests/layerTreeDrag.test.ts tests/schedulesUi.test.ts
+  tests/schema28.test.ts`: 5 files, 75 tests passed.
+  `check:versions` (0.29.0), `check:file-budgets` (611 files), `check:modules`
+  (21 foundation features, 34 Tauri commands) and `check:i18n` (3 574 keys) are
+  green.
+- Scope matched #319: no `src/model/types.ts`, `src/io/projectFile`, version
+  file, `Cargo.toml`/`Cargo.lock`, `tauri.conf.json`, `security/` or `site/`
+  file changed; `SCHEMA_VERSION` stays 28 and the app version stays 0.29.0. No
+  Swedish literal was added outside `src/i18n/locales/sv.json` (that file is
+  unchanged).
+- The change is one shared gesture, not three rewrites: `PointerRowDrag`
+  (187 lines) holds no reorder rule, the host controllers keep `planDrop`,
+  `layerDropPreview`, `moveColumn` and `keyboardInsertion`, and every drop is
+  still one host callback and one undo step. HTML5 `draggable`/`dragstart`
+  wiring is gone from `src/ui/pageList.ts` and
+  `src/ui/layers/layerRow.ts`, and the unused drag MIME option is gone from both
+  controllers. Native window drops and the Pages-panel drop controller are
+  untouched.
+- Windows test build: `Release build` was dispatched on the merge commit
+  (`0afa4db`) as run
+  [44292623517](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44292623517)
+  for the product owner. It does not tag, publish or change `site/`.
+- Squash merged as `0afa4dbf0f3eec97ac7ac860dde5a83fd2767ce6`; `main` CI is green
+  on that commit.
 
 ### Next phase
 
