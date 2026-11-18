@@ -3458,3 +3458,23 @@ remains the scheduling home.
 - **Next step:** remove the token from the contract and the five palettes in a
   theme pass, and regenerate `docs/theme-preview/`.
 - **Related:** #321, `scripts/check-theme-tokens.mjs`, `src/styles/tokens.css`.
+
+### F-139 — The takeoff table delete-title catalog key is unused
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 4 — schedule editor header actions
+- **Severity:** P3
+- **Area:** i18n catalogs
+- **Status:** open
+- **Evidence:** `schedules.builder.deleteTitle` is defined in `en.json` and
+  `sv.json` and generated into `types.generated.ts`, but no `src` file reads it.
+  The builder's inline confirmation uses `schedules.builder.deleteMessage` and
+  `schedules.builder.deleteMessageWithPlacements` only.
+- **Problem:** A dead key has to stay translated in both catalogs and counts
+  toward the key total that `check:i18n` reports, while nothing renders it.
+- **Impact:** No runtime effect. A smaller, honest catalog is easier to review
+  when a later phase adds a real delete-confirmation title.
+- **Next step:** remove the key from both catalogs and regenerate
+  `src/i18n/types.generated.ts` in an i18n cleanup, or reuse it as the title of
+  a future shared delete confirmation instead of the inline strip.
+- **Related:** #322, ADR 0017 §6, `scripts/check-i18n.mjs`.
