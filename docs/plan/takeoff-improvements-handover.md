@@ -562,12 +562,18 @@ reusing the Phase 3 `headerActions` surface.
   `feat/schedule-editor-actions`, base `main` (`5121a3f`). Not merged, not
   auto-merge.
 - **Branch:** `feat/schedule-editor-actions`
-- **Implementation commit:** `440d3a519a734a3f061aafad434b1f65c2976dba`. The
-  handover commit is the PR head on top of it; the conductor records the
-  verified head SHA.
+- **Final verified head:** `c5bad288b4ae52541645e89f438784967a7290f6`
+  (implementation `440d3a5`, docs/screenshot/handover commit `c5bad28`). All six
+  PR checks passed on that exact SHA; the Rust job's first attempt failed only in
+  "Install Linux dependencies" (apt mirror timeout) and passed on the single
+  permitted re-run.
+- **Merge commit:** `63e9659a092dcbf7c66f8b4149b659eadc5a7b85` (squash merged,
+  branch deleted).
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
   field, no migration fixture and no `src/io/projectFile` change.
-- **Status:** open PR, ready for conductor verification.
+- **Status:** merged to `main`. The base `main` commit `5121a3f` needed one
+  environment re-run (same apt-mirror timeout, three attempts) before it was
+  green; `main` is green on `5121a3f` and on the merge commit.
 
 ### Completed work
 
@@ -686,7 +692,31 @@ Windows/macOS desktop matrix and the packaged smoke test. No Rust or
 
 ### Conductor verification
 
-- Pending.
+- PR [#327](https://github.com/MajorJohnDoe/gridscalr/pull/327) head
+  `c5bad288b4ae52541645e89f438784967a7290f6` matched the worker report; all six
+  checks were `success`, the base was `main` (`5121a3f`, green after one
+  environment re-run) and the merge state was `CLEAN`/`MERGEABLE`.
+- Conductor re-ran `npx vitest run tests/scheduleBuilderActions.test.ts
+  tests/schedulesUi.test.ts tests/dialogHost.test.ts tests/takeoffSettingsUi.test.ts
+  tests/accessibilityGate.test.ts`: 5 files, 70 tests passed.
+  `check:file-budgets` (620 files), `check:modules` (22 foundation features),
+  `check:i18n` (3 590 keys), `check:versions` (0.29.0) and `check:docs`
+  (272 links, 55 images, 40 screenshots, no stale warning) are green.
+- Scope matched #322: only `builder.ts` (−141 lines), the new
+  `builderActions.ts` (206 lines), the two style sheets, one new test file, the
+  builder screenshot and its capture metadata, and documentation. No
+  `src/model/types.ts`, `src/io/projectFile`, version file, `Cargo.*`,
+  `tauri.conf.json`, `security/`, `site/` or `file-budgets.json` change.
+- Acceptance criteria verified in the diff: `headerActions` carries Save /
+  Duplicate / Delete beside Close, the body keeps only `sections` and
+  `problems`, the footer is Close only, and the delete confirmation strip is
+  mounted under the header (outside the scrolling body). The handlers are the
+  existing ones moved, so validation, duplicate naming, delete cascade and one
+  undo step are unchanged, and the delete revalidates by stable id through the
+  Phase 3 `revalidateTargetNow` rule.
+- Squash merged as `63e9659a092dcbf7c66f8b4149b659eadc5a7b85`. No tag, release or
+  `site/` change. F-139 (unused `schedules.builder.deleteTitle` key) is recorded
+  as a P3 follow-up rather than fixed here.
 
 ### Next phase
 
