@@ -311,6 +311,7 @@ src/
   features/schedules/ui/panelNotice.ts labelled no-table preview, standard-table actions and the disabled reason
   features/schedules/ui/placement.ts placement options, create and create-and-place in one undo step
   features/schedules/ui/builder.ts takeoff table builder with a live 20-row preview and one-undo save
+  features/schedules/ui/builderActions.ts Save/Duplicate/Delete header actions and the target-revalidating delete confirmation
   features/schedules/ui/panelTable.ts virtualised live table and the pure row window
   features/takeoffSettings/index.ts public surface of the Takeoff settings hub
   features/takeoffSettings/model.ts pure card feeds, applies-to labels and effective waste and rounding

@@ -75,6 +75,29 @@
   flex: 0 0 auto;
 }
 
+/*
+ * Dialog header actions (the takeoff table editor) keep a visible label while
+ * the header has room and fall back to an icon button with a tooltip and an
+ * accessible name on a narrow window, so the title, the actions and the close
+ * control always fit. See docs/adr/0017-movable-non-modal-dialogs.md §7.
+ */
+.modal-header-action {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .modal-header-action {
+    width: 26px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .modal-header-action .modal-header-action-label {
+    display: none;
+  }
+}
+
 .modal-titles {
   flex: 1;
   min-width: 0;

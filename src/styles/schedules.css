@@ -474,8 +474,14 @@
   gap: 2px;
 }
 
-.schedules-builder-actions {
-  justify-content: flex-end;
+/*
+ * The delete confirmation is mounted under the dialog header instead of inside
+ * the scrolling body, so it is visible without scrolling when the header
+ * Delete action is used.
+ */
+.schedules-builder-confirm {
+  flex: 0 0 auto;
+  margin: 10px 16px 0;
 }
 
 .schedules-preview-body {

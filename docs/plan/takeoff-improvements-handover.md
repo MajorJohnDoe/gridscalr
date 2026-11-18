@@ -554,3 +554,142 @@ needed.
 Phase 4 — [schedule editor header actions #322](https://github.com/MajorJohnDoe/gridscalr/issues/322):
 put Save, Duplicate and Delete in the takeoff table editor header beside Close,
 reusing the Phase 3 `headerActions` surface.
+
+## Phase 4 — schedule editor header actions
+
+- **Issue:** [#322](https://github.com/MajorJohnDoe/gridscalr/issues/322)
+- **PR:** [#327](https://github.com/MajorJohnDoe/gridscalr/pull/327), opened from
+  `feat/schedule-editor-actions`, base `main` (`5121a3f`). Not merged, not
+  auto-merge.
+- **Branch:** `feat/schedule-editor-actions`
+- **Implementation commit:** `440d3a519a734a3f061aafad434b1f65c2976dba`. The
+  handover commit is the PR head on top of it; the conductor records the
+  verified head SHA.
+- **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
+  field, no migration fixture and no `src/io/projectFile` change.
+- **Status:** open PR, ready for conductor verification.
+
+### Completed work
+
+- **Save**, **Duplicate** and **Delete** for the takeoff table builder moved
+  from the bottom footer toolbar into the dialog header beside the close (X)
+  control, through the Phase 3 `showModal({ headerActions })` surface. The
+  footer keeps only **Close**, and the `schedules-builder-actions` row is gone,
+  so each action exists exactly once.
+- New `src/features/schedules/ui/builderActions.ts` owns the header action list
+  and the three handlers. They are the existing handlers, moved: the same
+  `normalizeScheduleName` check, `createSchedule`/`updateSchedule`,
+  `uniqueScheduleName` with `schedules.builder.copyName`, `deleteSchedule`,
+  `deletePlacementsForSchedule` and `placementCount`. Each action is still one
+  `store.mutate` call, so each is one undo step. No rule was reimplemented.
+- Unchanged enabled/disabled rules: Save and Duplicate are disabled in a
+  read-only session; Delete is disabled when read-only or when the draft has no
+  id yet (a new table).
+- The delete confirmation is the existing inline confirmation with the same
+  table name and placement count. It is mounted directly under the dialog
+  header, outside `.modal-body`, so it cannot scroll away, and it now
+  revalidates its table by stable id at confirm time through
+  `revalidateTargetNow` (ADR 0017 §6): a table removed behind the non-modal
+  window refuses with a localized warning instead of deleting the wrong row.
+- Header layout: `.btn .btn-small .modal-header-action` buttons with an icon, a
+  visible label, `aria-label` and a `title` tooltip, in the order
+  Save / Duplicate / Delete / Close. Save keeps the primary style, Delete keeps
+  `.btn-danger` and the standard disabled opacity. Below 1100 px viewport (the
+  breakpoint the builder already uses for its top form grid) the label is
+  hidden and the button becomes a 26 px icon button while the accessible name
+  and tooltip stay. Measured in Chromium: actions 259 px at 1920×1080 and
+  1280×720 with labels, 90 px icon-only at 960×540 and 760×620, header overflow
+  0 at every scale.
+- Keyboard: the header actions precede the body in DOM order, so `Tab` reaches
+  them first; initial focus stays on the Name field (the shell's "first enabled
+  field" rule), so the dialog's focus contract is unchanged.
+- `src/features/schedules/ui/builder.ts` shrank from 269 to about 130 lines. No
+  business logic was added to `App.ts` or `CanvasView.ts`.
+- Docs: `docs/user-guide.md` (builder section), `docs/architecture.md`,
+  the `AGENTS.md` module map, `scripts/capture-docs-shots.mjs` alt/description
+  and the recaptured `docs/screenshots/schedule-builder.png` with its manifest
+  entry.
+
+### Modules
+
+- `src/features/schedules/ui/builderActions.ts` (new)
+- `src/features/schedules/ui/builder.ts`
+- `src/styles/dialogs.css` (`.modal-header-action` surface and the narrow rule)
+- `src/styles/schedules.css` (`schedules-builder-confirm`; the action row rule
+  removed)
+- `tests/scheduleBuilderActions.test.ts` (new)
+- `docs/user-guide.md`, `docs/architecture.md`, `AGENTS.md`,
+  `scripts/capture-docs-shots.mjs`, `docs/screenshots/schedule-builder.png`,
+  `docs/screenshots/manifest.json`, this handover
+
+### Decisions
+
+- **The confirmation sits under the header, not in the body and not in a second
+  window.** It has to stay visible when the user scrolled the long body to reach
+  a filter, and a nested confirm window would stack a third window over the hub
+  for one yes/no question. The strip keeps the existing inline confirmation
+  markup and adds the ADR 0017 §6 revalidation rule.
+- **Icon buttons with a visible label that collapses.** The label is shown while
+  the header has room and hidden at the 1100 px breakpoint the builder already
+  uses, instead of a permanently icon-only header that would hide the primary
+  action's meaning. The accessible name and tooltip do not depend on the label.
+- **No new i18n keys.** The header actions reuse `schedules.builder.save`,
+  `.duplicate`, `.delete` and `common.close`, so the catalogs are unchanged and
+  `check:i18n` still reports 3 590 keys.
+- **Only the builder screenshot was committed.** The other 39 captures differed
+  by at most 192 pixels of the documented one-pixel rendering noise (scrollbar
+  edge, autosave timestamp, antialiasing) and no other surface changed.
+
+### Findings
+
+- **F-139** (P3): `schedules.builder.deleteTitle` is an unused catalog key. See
+  [`foundation-findings.md`](foundation-findings.md).
+- Environment note, not a code finding: the `main` CI run on `5121a3f`
+  ([44329344083](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44329344083))
+  failed only in **Install Linux dependencies**, which hit the 12-minute apt
+  timeout — the documented runner/mirror class. No application code was changed
+  for it.
+
+### Open questions
+
+- Icon-only header actions at 200 % UI scale are covered by the accessibility,
+  touch-target and UI-scale gates and by tooltips; a Windows real-scale review
+  stays on the manual release list with the other Windows checks.
+- The 1100 px label breakpoint is a viewport media query, not a dialog-width
+  container query. It matches the existing builder breakpoint; a future dialog
+  that is narrow in a wide window would need a container query.
+
+### Checks
+
+Local gate on `440d3a5`:
+
+- `check:versions` (0.29.0), `check:file-budgets` (620 files),
+  `check:modules` (22 foundation features, 34 Tauri commands),
+  `check:security`, `check:actions` (37 pins), `check:dependencies` (PASS),
+  `check:docs` (271 links, 55 images, 40 screenshots, no stale warning),
+  `format:check`, `lint`, `check:i18n` (2 catalogs, 3 590 keys),
+  `check:themes` (5 themes), `npx tsc --noEmit`
+- focused Vitest: `scheduleBuilderActions` (new, 10 tests), `schedulesUi`,
+  `schedules`, `scheduleStandardTable`, `schedulePlacementUi`,
+  `takeoffSettingsUi`, `dialogHost`, `dialogFocus`, `accessibilityGate` —
+  9 files, 119 tests passed
+- `test:ui`, `test:a11y` (100 checks, 0 serious/critical), `test:touch-targets`
+  (754 controls, 23 surfaces), `test:ui-scale` (100/150/200 %),
+  `test:visual` (4 baselines), `test:docs-capture` (40 screenshots), and
+  `npm run docs:capture` for the committed screenshot
+
+Two browser runs failed once on `page.goto` with a 30-second navigation timeout
+before the app had loaded and passed unchanged on the retry; that is the local
+Vite cold-start class, not a code failure. Not run locally, left to CI: the
+Windows/macOS desktop matrix and the packaged smoke test. No Rust or
+`tauri.conf.json` change, so no desktop shell build was needed.
+
+### Conductor verification
+
+- Pending.
+
+### Next phase
+
+Phase 5 — [placed takeoff table style #323](https://github.com/MajorJohnDoe/gridscalr/issues/323):
+grey striped placed table with group, subtotal and grand-total emphasis on the
+canvas and in the PDF through one shared layout.
