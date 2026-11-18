@@ -338,17 +338,21 @@ focus and accessibility work.
   checks passed on `7e11296` (CI run
   [44319036364](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44319036364));
   the earlier run failed only on the visual gate, which the second commit fixes.
-- **Conductor-verified head:** `456c0a4292070ad02fd5cedf831ea0444b4c340a`,
-  all six PR checks passed (run
-  [44320809214](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44320809214)).
-  The conductor then asked for two review fixes on the same branch: document the
-  help image lightbox exception and close F-136 by committing the stale
-  `layers.png`. Screenshot fix `1738c3ffdf6371770a4b7ceb39f593746e7cb9c0`; the
-  documentation fix is the commit that records this handover text.
+- **Final verified head:** `a98c800bd3ea42722a1521fc404b879a5e11d31a`
+  (feature `d28cac7`, deterministic centring `7e11296`, docs record `01feb0f`
+  and `456c0a4`, stale-screenshot fix `1738c3f`, review-fix docs `a98c800`).
+  All six PR checks passed on that exact SHA (CI run
+  [44324241684](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44324241684);
+  the first attempt failed only in "Install Linux dependencies", a mirror
+  timeout, and passed on re-run).
+- **Merge commit:** `e37cff6ce670da203c491b5b69d878d57a6367f8` (squash merged,
+  branch deleted).
 - **Schema:** unchanged at 28. App version unchanged at 0.29.0. No persisted
   field, no migration fixture and no `src/io/projectFile` change.
-- **Status:** PR open; review fixes applied, conductor verification of the new
-  head pending.
+- **Status:** merged to `main`; the `main` CI run on the merge commit is
+  [44329205710](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44329205710),
+  and the **Pages** run on the same commit republishes the 15 recaptured dialog
+  screenshots.
 
 ### Completed work
 
@@ -495,7 +499,41 @@ needed.
 
 ### Conductor verification
 
-- pending
+- PR [#326](https://github.com/MajorJohnDoe/gridscalr/pull/326) final head
+  `a98c800bd3ea42722a1521fc404b879a5e11d31a` matched the worker report; all six
+  checks were `success`, the base was `main` (`e897d6e`, whose `main` CI run
+  [44307940834](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44307940834)
+  is green) and the merge state was `CLEAN`/`MERGEABLE` before the merge.
+- Conductor re-ran `npx vitest run tests/dialogHost.test.ts
+  tests/dialogFocus.test.ts tests/takeoffSettingsUi.test.ts
+  tests/backupManager.test.ts tests/conflictedCopies.test.ts` on the
+  pre-review-fix head: 5 files, 66 tests passed. The review-fix commit touches
+  only the ADR, the user guide, `foundation-findings.md`, the handover,
+  `layers.png` and its manifest entry, so no production code changed after that
+  run.
+- Scope matched #321: the new `src/features/dialogHost/` is a foundation feature
+  with a pure `model.ts` (163 lines), a DOM controller (282) and a UI shell
+  (337); `src/ui/dialogs.ts` shrank to 264 lines and `src/app/App.ts`,
+  `src/app/pageFlows.ts` and `src/app/clipboardPaste.ts` changes are wiring.
+  No `src/model/types.ts`, `src/io/projectFile`, version file, `Cargo.*`,
+  `tauri.conf.json`, `security/`, `site/` or `file-budgets.json` change;
+  `SCHEMA_VERSION` stays 28 and the app version stays 0.29.0.
+- The locked decision is present in code, not only in the ADR: one
+  `.dialog-layer` with `pointer-events: none` and only the `.modal` rectangle
+  interactive, no backdrop, `aria-modal="false"` with `aria-labelledby`, no focus
+  trap, focus return to the opener, a monotonic `DialogStack` from
+  `DIALOG_Z_BASE`, pointer header drag with an ignore list and viewport clamping,
+  and one id-based revalidation rule (`checkDialogTarget`/`targetProblem` plus
+  `revalidateTarget`/`revalidateTargetNow`) used by every destructive
+  confirmation the ADR lists. `headerActions` exists for Phase 4.
+- Conductor review found one unstated exception — the Help image lightbox keeps
+  `aria-modal="true"` and its dimming backdrop — and required it to be either
+  fixed or documented as a deliberate exception. It is now ADR 0017 §9 and one
+  sentence in the user guide, with the lightbox unchanged. The review also closed
+  F-136 by committing the recaptured `layers.png`; `check:docs` now reports no
+  stale-screenshot warning.
+- Squash merged as `e37cff6ce670da203c491b5b69d878d57a6367f8`. No tag, release or
+  `site/` change.
 
 ### Review fixes
 
