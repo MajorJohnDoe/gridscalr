@@ -126,6 +126,9 @@ function unbindResize(): void {
 
 function clampAll(): void {
   for (const record of records.values()) {
+    // A window the user has not moved is centred by CSS; only a moved window
+    // carries explicit coordinates that a resize can push off screen.
+    if (!record.modal.classList.contains("is-positioned")) continue;
     const rect = record.modal.getBoundingClientRect();
     const position = currentPosition(record.modal, rect);
     setPosition(
@@ -251,11 +254,6 @@ export function mountDialog(
 
   requestAnimationFrame(() => {
     if (!records.has(id)) return;
-    const rect = modal.getBoundingClientRect();
-    setPosition(
-      modal,
-      clampDialogPosition(currentPosition(modal, rect), dialogSize(modal, rect), viewportSize()),
-    );
     const target = options.initialFocus?.() ?? focusableInside(modal);
     target?.focus();
   });

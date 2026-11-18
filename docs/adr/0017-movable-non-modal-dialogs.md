@@ -90,9 +90,11 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
   cancel ends the gesture. A drag cannot start from the body, a footer action or
   the close control.
 - The window is clamped so its whole rectangle stays inside the viewport with an
-  eighth-of-a-window-equivalent `DIALOG_MARGIN` (8 px); a window larger than the
-  viewport keeps its top-left at the margin so the header stays reachable. A
-  viewport resize re-clamps every open window.
+  8 px `DIALOG_MARGIN`; a window larger than the viewport keeps its top-left at
+  the margin so the header stays reachable. A window the user has not moved is
+  centred by CSS and stays inside the viewport through its `max-width` and
+  `max-height`; the first drag freezes explicit coordinates, and a viewport
+  resize re-clamps a moved window.
 - Window positions are **not remembered** across sessions and are not part of
   the project file.
 

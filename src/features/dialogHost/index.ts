@@ -15,7 +15,6 @@ export {
 export {
   checkDialogTarget,
   clampDialogPosition,
-  centeredDialogPosition,
   DialogStack,
   DIALOG_MARGIN,
   DIALOG_Z_BASE,

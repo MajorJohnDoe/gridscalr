@@ -50,13 +50,6 @@ export function clampDialogPosition(
   };
 }
 
-export function centeredDialogPosition(size: Size, viewport: Size): Point {
-  return {
-    x: Math.round((viewport.width - size.width) / 2),
-    y: Math.round((viewport.height - size.height) / 2),
-  };
-}
-
 /**
  * Stacking order of open dialogs. Every open or raised dialog takes the next
  * value of a monotonically increasing counter, so the order is deterministic:
