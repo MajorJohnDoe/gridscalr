@@ -3,10 +3,14 @@ import { itemCenter, rotatePoint } from "../../../model/geometry";
 import { resolveItemColor } from "../../../model/layers";
 import type { MarkupItem } from "../../../model/types";
 import {
+  bandColorRole,
+  documentScheduleTableStyle,
   ellipsizeText,
   findSchedule,
+  inkColorRole,
   layoutForItem,
   placementBox,
+  ruleColorRole,
   type MeasureText,
   type ScheduleResult,
   type ScheduleTableLayout,
@@ -63,14 +67,19 @@ export function drawScheduleItem(
     );
 
   const background = pdfRectFromCorners(viewport, itemRectCorners(item));
+  // An explicit item fill is the table paper, so a legacy or imported fill
+  // still tints the rows instead of being overpainted by the bands.
+  const base = documentScheduleTableStyle();
+  const style = item.fillColor ? { ...base, paper: item.fillColor } : base;
+  const fillOpacity = opacity * (item.opacity ?? 0.94);
   page.drawRectangle({
     x: background.x,
     y: background.y,
     width: background.width,
     height: background.height,
     rotate: degrees(background.angle),
-    color: pdfColor(item.fillColor ?? "#ffffff"),
-    opacity: opacity * (item.opacity ?? 0.94),
+    color: pdfColor(style.paper),
+    opacity: fillOpacity,
   });
 
   const schedule = findSchedule(project, item.scheduleId);
@@ -108,15 +117,38 @@ export function drawScheduleItem(
 
   const measure = fontMeasure(context);
   const layout = pdfScheduleLayout(computeSchedule(project, schedule), item, measure);
+  const bandCorners = (band: { x: number; y: number; width: number; height: number }) =>
+    [
+      { x: band.x, y: band.y },
+      { x: band.x + band.width, y: band.y },
+      { x: band.x + band.width, y: band.y + band.height },
+      { x: band.x, y: band.y + band.height },
+    ].map((point) =>
+      rotatePoint({ x: box.origin.x + point.x, y: box.origin.y + point.y }, center, rotation),
+    );
+
+  for (const band of layout.bands) {
+    const rect = pdfRectFromCorners(viewport, bandCorners(band));
+    page.drawRectangle({
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      rotate: degrees(rect.angle),
+      color: pdfColor(style[bandColorRole(band.role)]),
+      opacity: fillOpacity,
+    });
+  }
 
   for (const line of layout.lines) {
     const start = toPdf(line.x1, line.y1);
     const end = toPdf(line.x2, line.y2);
+    const rule = ruleColorRole(line.role);
     page.drawLine({
       start,
       end,
       thickness: Math.max(0.2, line.width),
-      color,
+      color: rule ? pdfColor(style[rule]) : color,
       opacity,
     });
   }
@@ -136,7 +168,7 @@ export function drawScheduleItem(
       y: point.y,
       size,
       font,
-      color,
+      color: pdfColor(style[inkColorRole(cell.role)]),
       opacity,
       rotate: degrees(angle),
     });

@@ -75,4 +75,18 @@
   --help-row: rgba(255, 255, 255, 0.03);
   --help-figure-shadow: rgba(2, 6, 12, 0.5);
   --export-list: rgba(2, 6, 12, 0.2);
+
+  /* Placed takeoff table: the document roles carry a faint navy cast. */
+  --table-paper: #ffffff;
+  --table-band-head: #e7edf4;
+  --table-band-row-alt: #edf2f8;
+  --table-band-group: #dbe4ee;
+  --table-band-subtotal: #e8eef5;
+  --table-band-total: #1d2733;
+  --table-ink: #18222d;
+  --table-ink-strong: #0a121a;
+  --table-ink-inverse: #f7fafd;
+  --table-ink-muted: #566373;
+  --table-rule: #cfd9e4;
+  --table-rule-strong: #94a3b4;
 }

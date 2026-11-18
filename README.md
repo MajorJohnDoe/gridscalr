@@ -100,7 +100,9 @@ and [macOS Gatekeeper](#macos-gatekeeper) before the first launch.
   takeoff table on a drawing page, where it moves, resizes, rotates, locks and
   hides like any drawing item, updates when the drawing or the definition
   changes, continues a long range on a second table instead of clipping, and
-  exports as vector text and lines in the drawing PDF. A one-row-per-item
+  exports as vector text and lines in the drawing PDF. The placed table is drawn
+  as a banded sheet with a grey header, group headers, subtotals and a grand
+  total, and looks the same on the drawing and in the PDF. A one-row-per-item
   takeoff table also round-trips through **Export CSV…** and **Import CSV…** with
   stable IDs, a `Label [key]` header, a locale-aware delimiter and BOM, formula
   escaping and a dry-run conflict report; a grouped takeoff table exports

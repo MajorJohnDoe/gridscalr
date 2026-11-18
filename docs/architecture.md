@@ -120,6 +120,8 @@ src/
   canvas/items/images.ts embedded image drawing and opacity
   canvas/items/annotations.ts callout, stamp, delta and cloud label drawing
   canvas/items/counts.ts count symbols and count-type glyphs
+  canvas/items/schedule.ts placed takeoff table drawing from the shared layout
+  canvas/items/scheduleStyle.ts placed-table theme token reader and its palette cache
   canvas/items/visible.ts viewport culling and layered item iteration
   canvas/interactionRenderer.ts selection, marquee, snap and draft overlay drawing
   canvas/pointer/PointerController.ts pointer input, coordinate, cursor, marquee, pan, drag dispatch, wheel, space-pan, pen priority, touch navigation and long-press helpers
@@ -299,6 +301,8 @@ src/
   features/spaces/ui/form.ts space editor with space-scope custom fields
   features/spaces/ui/list.ts register rows with area badge, warning and inline delete confirmation
   features/schedules/index.ts public surface for the schedule engine, cards and the Takeoff tab
+  features/schedules/layout.ts shared canvas/PDF placed-table layout: fit, rows, cells, rules and background bands
+  features/schedules/layoutStyle.ts placed-table band roles, `--table-*` token resolution and the readable-ink fallback
   features/schedules/model/fields.ts built-in and custom `<field>` references, column resolution and default columns
   features/schedules/model/filters.ts visibility-first item and space filters, including typed custom filters
   features/schedules/model/compute.ts filter, map, stable sort, group, subtotal, total and preview limit

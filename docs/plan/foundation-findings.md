@@ -3478,3 +3478,48 @@ remains the scheduling home.
   `src/i18n/types.generated.ts` in an i18n cleanup, or reuse it as the title of
   a future shared delete confirmation instead of the inline strip.
 - **Related:** #322, ADR 0017 §6, `scripts/check-i18n.mjs`.
+
+### F-140 — The other table outputs do not share the placed-table palette
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 5 — placed takeoff table style
+- **Severity:** P3
+- **Area:** Schedules, PDF report, CSV/XLSX
+- **Status:** open
+- **Evidence:** The placed table now reads the `--table-*` contract
+  (`src/features/schedules/layoutStyle.ts`). The right-dock live table
+  (`.schedules-table` in `src/styles/schedules.css`), the drawing-PDF quantity
+  report (`src/pdf/reportPdf.ts`) and the takeoff CSV/XLSX round-trip keep their
+  previous styling and their own header/group/total rules.
+- **Problem:** One takeoff table therefore has three looks: a banded document on
+  the drawing and in the drawing PDF, a chrome-styled table in the dock, and a
+  plain report table in the quantity PDF.
+- **Impact:** No data or export difference; only the visual language. A user who
+  prints both the drawing PDF and the quantity report sees two different table
+  styles.
+- **Next step:** decide in a documentation or design pass whether the report PDF
+  should reuse `DOCUMENT_SCHEDULE_STYLE` and whether the dock table should borrow
+  the band roles through chrome tokens. #323 excluded both deliberately.
+- **Related:** #323, #318, `docs/limits` note in `docs/limitations.md` (F-125).
+
+### F-141 — `docs:capture` rewrites the manifest's escapes on every run
+
+- **Date:** 2026-11-18
+- **Phase:** Takeoff improvements, phase 5 — placed takeoff table style
+- **Severity:** P3
+- **Area:** Documentation capture tooling
+- **Status:** open
+- **Evidence:** `scripts/capture-docs.mjs` writes the manifest with
+  `JSON.stringify(manifest, null, 2)`, which emits literal em dashes, while the
+  committed `docs/screenshots/manifest.json` stores `\u2014` escapes. A capture
+  run therefore changes six unrelated title lines even when no screenshot
+  changed; phase 5 patched only `generatedAt` and `sourceFingerprint` to keep the
+  diff at two lines.
+- **Problem:** A generated file is not byte-identical to its generator output, so
+  every capture produces review noise and the "did this phase change a
+  screenshot" question is harder to answer.
+- **Impact:** No runtime effect. Small, repeated review cost on every docs pass.
+- **Next step:** either commit one full regeneration of the manifest in the
+  release documentation pass, or run the written manifest through the same
+  formatter the committed file used, so generator and repository agree.
+- **Related:** #323, `scripts/capture-docs.mjs`, `scripts/check-docs.mjs`.

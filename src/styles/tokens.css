@@ -43,4 +43,27 @@
   --focus-ring: var(--jade-bright);
   --scrollbar: #384148;
   --scrollbar-hover: #4c585f;
+
+  /*
+   * Placed takeoff table contract. A placed table is drawing content on the PDF
+   * sheet, which is white in every palette, so these roles describe a printed
+   * document rather than the chrome. Every palette defines them (they are
+   * required by `npm run check:themes`) and every ink/band pair is pinned at
+   * WCAG AA, so the table stays readable in all five themes and can never fall
+   * back to black text on a black band. The canvas reads them from the active
+   * theme; the PDF export reads the same roles from the document palette in
+   * `src/features/schedules/layoutStyle.ts`.
+   */
+  --table-paper: #ffffff;
+  --table-band-head: #e8edf2;
+  --table-band-row-alt: #eef2f6;
+  --table-band-group: #dde5ec;
+  --table-band-subtotal: #e9eef3;
+  --table-band-total: #232b33;
+  --table-ink: #1b232b;
+  --table-ink-strong: #0c1218;
+  --table-ink-inverse: #f8fafc;
+  --table-ink-muted: #5b6672;
+  --table-rule: #d2dae2;
+  --table-rule-strong: #9aa7b3;
 }
