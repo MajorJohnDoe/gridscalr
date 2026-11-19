@@ -823,6 +823,54 @@ try {
   await page.waitForTimeout(250);
   await builderDialog.locator(".modal-footer").getByRole("button", { name: "Close" }).click();
   await builderDialog.waitFor({ state: "detached" });
+  // A dialog opened from a dialog must paint above the window that opened it
+  // (F-143 / #338). The hub is the parent and the builder is the child, and the
+  // child is inserted first in the document, so only the stack level can put it
+  // on top.
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Takeoff settings…" }).click();
+  const hub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await hub.waitFor();
+  await hub.getByText("Tables", { exact: true }).click();
+  await hub.getByRole("button", { name: "Edit takeoff table…" }).click();
+  const nestedBuilder = page.getByRole("dialog", { name: "Edit takeoff table" });
+  await nestedBuilder.waitFor();
+  await page.waitForTimeout(250);
+  const nesting = await page.evaluate(() => {
+    const info = [...document.querySelectorAll(".dialog-layer")].map((layer) => {
+      const modal = layer.querySelector(".modal");
+      const rect = modal?.getBoundingClientRect();
+      return {
+        title: modal?.querySelector(".modal-titles h2")?.textContent ?? null,
+        z: Number(getComputedStyle(layer).zIndex),
+        level: Number(layer.dataset.dialogLevel),
+        rect: rect ? { left: rect.left, top: rect.top } : null,
+      };
+    });
+    const child = info.find((entry) => entry.title === "Edit takeoff table");
+    const hit = child?.rect && document.elementFromPoint(child.rect.left + 40, child.rect.top + 30);
+    return {
+      childZ: child?.z ?? 0,
+      parentZ: info.find((entry) => entry.title === "Takeoff settings")?.z ?? 0,
+      levelMatches: info.every((entry) => entry.z === entry.level),
+      hitTitle: hit?.closest(".modal")?.querySelector(".modal-titles h2")?.textContent ?? null,
+    };
+  });
+  assert.ok(
+    nesting.childZ > nesting.parentZ,
+    `the nested window should paint above its parent (${nesting.childZ} vs ${nesting.parentZ})`,
+  );
+  assert.equal(nesting.levelMatches, true, "every layer should apply its stack level as z-index");
+  assert.equal(
+    nesting.hitTitle,
+    "Edit takeoff table",
+    "the visible topmost window at the child's header should be the child",
+  );
+  await page.keyboard.press("Escape");
+  await nestedBuilder.waitFor({ state: "detached" });
+  await hub.locator(".modal-footer").getByRole("button", { name: "Close" }).click();
+  await hub.waitFor({ state: "detached" });
+
   await page.getByRole("button", { name: "Properties", exact: true }).click();
   await page.waitForTimeout(200);
   await page.locator('.dock-tab[data-tab="pages"]').click();

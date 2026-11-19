@@ -106,9 +106,14 @@ function focusedDialogId(): string | null {
 function refreshTopMarkers(): void {
   const top = stack.top();
   for (const record of records.values()) {
+    const level = stack.level(record.id);
     const isTop = record.id === top;
     record.layer.classList.toggle("is-top", isTop);
-    record.layer.dataset.dialogLevel = String(stack.level(record.id));
+    record.layer.dataset.dialogLevel = String(level);
+    // Paint order comes from the stack level, not from document order: a new
+    // window is inserted as the first child of <body>, so equal z-index would
+    // put it underneath the window that opened it.
+    record.layer.style.zIndex = String(level);
   }
 }
 
@@ -199,8 +204,9 @@ function enableDrag(record: DialogRecord, handle: HTMLElement): void {
 
 /**
  * Mounts a built dialog window. The newest window is inserted first in the
- * document so the first `.dialog-layer` in the DOM is the topmost one; the
- * stack itself is the source of truth for z-index and Escape.
+ * document, so DOM order is deterministic for tests; the paint order comes from
+ * the stack level, which `refreshTopMarkers` applies as the layer's `z-index`.
+ * The stack itself is the source of truth for stacking and Escape.
  */
 export function mountDialog(
   surface: DialogSurface,
@@ -218,12 +224,12 @@ export function mountDialog(
 
   const record: DialogRecord = { id, layer, modal, close: () => undefined };
   records.set(id, record);
-  layer.dataset.dialogLevel = String(stack.open(id));
+  stack.open(id);
   refreshTopMarkers();
 
   const raise = (): void => {
     if (stack.top() === id) return;
-    layer.dataset.dialogLevel = String(stack.raise(id));
+    stack.raise(id);
     refreshTopMarkers();
   };
 
