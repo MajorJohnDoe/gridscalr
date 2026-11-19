@@ -535,6 +535,8 @@ The hub has four tabs, and each concept has one home:
 
 ![Takeoff settings Tables tab with the saved takeoff tables and the New takeoff table action](screenshots/takeoff-settings-tables.png)
 
+The hub opens wider than the other settings windows, because the Objects table has six columns. The **Actions** column is pinned to the right edge, so the move up, move down and delete controls stay visible at every UI scale and in a window too narrow for the whole table: the other columns then scroll sideways inside the table while the pinned column keeps its separator. **Add object** keeps its name field, type and button on one line while there is room and wraps them above the table when there is not.
+
 Deep links open the hub on the right tab and row: an empty card's **Configure** opens Cards on that card (Rooms and Area open the space register instead), and **Edit object “…”** in Properties opens Objects on that object. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables), [Count](#count) and [Custom fields](#custom-fields).
 
 ## Takeoff and takeoff tables
@@ -586,7 +588,7 @@ When a project has no takeoff table, **Create takeoff table** in the preview add
 5. **Filters** narrow by page, category, count type, item kind and space, and by a custom field with equals, contains, is empty or is not empty. The custom value uses the field's own typed control, so an invalid number, date or option is reported before it is stored.
 6. The **Preview** shows the first 20 displayed rows and the real totals over every filtered row.
 
-**Save**, **Duplicate** and **Delete** sit in the builder's header beside the close control, so saving never needs a scroll. On a narrow window the three actions keep an icon and a tooltip. **Save** writes the definition in one undo step. **Duplicate** creates a copy from the current draft, and **Delete** asks for confirmation; a takeoff table that is placed on a drawing is not deleted until its placed table is removed. If the table changed or disappeared behind the open window, the confirmation explains why and deletes nothing.
+**Save**, **Duplicate** and **Delete** sit in the builder's header beside the close control, so saving never needs a scroll. On a narrow window the three actions keep an icon and a tooltip. **Save** writes the definition in one undo step and keeps the window open on the same draft: the drawing behind the window stays visible, the name the project stored is the name the field shows, and a new table adopts its new identity, so the next **Save** updates it instead of adding a second one. **Duplicate** adds a copy with the next free name and keeps you in the original table, so one click is one copy and one undo removes exactly that copy. **Delete** asks for confirmation, and a takeoff table that is placed on a drawing is not deleted until its placed table is removed; the window closes because the table is gone. If the table changed or disappeared behind the open window, the confirmation explains why and deletes nothing.
 
 ![Takeoff table builder with name, source, columns, grouping, totals and a live preview](screenshots/schedule-builder.png)
 

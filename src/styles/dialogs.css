@@ -46,6 +46,16 @@
   width: min(720px, 100%);
 }
 
+/*
+ * The extra-wide size, used by a surface whose table needs its columns (the
+ * Takeoff settings hub). It is a size, not a rule: the viewport clamp, the drag
+ * margin and the header layout are unchanged. It wins over `.modal-settings`
+ * through specificity, so a hub can be both a settings surface and wide.
+ */
+.modal.modal-extra-wide {
+  width: min(1080px, calc(100vw - 16px));
+}
+
 @keyframes fade-in {
   from {
     opacity: 0;

@@ -26,6 +26,7 @@ export {
   messageDialog,
   revalidateTarget,
   revalidateTargetNow,
+  setDialogTitle,
   targetIdentity,
   textDialog,
   unsavedChangesDialog,

@@ -30,6 +30,11 @@ export interface DialogOptions {
   onMount?: (modal: HTMLElement, close: () => void) => void;
   onClose?: () => void;
   wide?: boolean;
+  /**
+   * A wider window for a surface whose table needs its columns. It is a size,
+   * not a rule: viewport clamping and the drag margins are unchanged.
+   */
+  extraWide?: boolean;
   className?: string;
   /**
    * Controls placed beside the close button in the header. Phase 4 uses this
@@ -48,7 +53,9 @@ export function openDialog(options: DialogOptions): Promise<string | null> {
     const layer = el("div", "dialog-layer");
     const modal = el(
       "div",
-      `modal${options.wide ? " modal-wide" : ""}${options.className ? ` ${options.className}` : ""}`,
+      `modal${options.wide ? " modal-wide" : ""}${options.extraWide ? " modal-extra-wide" : ""}${
+        options.className ? ` ${options.className}` : ""
+      }`,
     );
     modal.setAttribute("role", "dialog");
     // Non-modal by product decision: the drawing behind the dialog stays
@@ -166,6 +173,17 @@ export function openDialog(options: DialogOptions): Promise<string | null> {
 }
 
 export type UnsavedChangesChoice = "save" | "discard" | "cancel";
+
+/**
+ * Retitles an open window in place. A dialog whose object changes identity while
+ * it stays open (a new takeoff table that is saved) keeps one window and
+ * repaints its own header rather than opening a second copy (ADR 0017 §5).
+ */
+export function setDialogTitle(modal: HTMLElement, title: string): void {
+  const heading = modal.querySelector<HTMLElement>(".modal-titles h2");
+  if (!heading) return;
+  heading.textContent = title;
+}
 
 export function unsavedChangesDialog(message: string): Promise<UnsavedChangesChoice> {
   const body = el("div");

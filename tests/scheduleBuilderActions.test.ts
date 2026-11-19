@@ -155,7 +155,7 @@ describe("takeoff table editor header actions", () => {
     ).toBeTruthy();
   });
 
-  it("saves from the header in one undo step", () => {
+  it("saves from the header in one undo step and keeps the window open", () => {
     const project = makeProject();
     schedule(project);
     store.setProject(project, null);
@@ -166,11 +166,80 @@ describe("takeoff table editor header actions", () => {
     headerAction("Save").click();
 
     expect(store.project!.schedules[0].name).toBe("Walls and doors");
-    expect(document.querySelector(".modal")).toBeNull();
+    // The window stays open on the same draft: the drawing behind it is the
+    // reason the builder is non-modal.
+    expect(document.querySelector(".modal")).toBeTruthy();
+    expect(nameInput().value).toBe("Walls and doors");
     expect(toastText()).toContain("Walls and doors");
     store.undo();
     expect(store.project!.schedules[0].name).toBe("Walls");
     expect(store.canUndo).toBe(false);
+  });
+
+  it("keeps a new table open, adopts its id and updates it on the next save", () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    void openScheduleBuilder();
+
+    expect(headerAction("Delete").disabled).toBe(true);
+    nameInput().value = "First table";
+    nameInput().dispatchEvent(new Event("input", { bubbles: true }));
+    headerAction("Save").click();
+
+    expect(store.project!.schedules.map((entry) => entry.name)).toEqual(["First table"]);
+    expect(document.querySelector(".modal")).toBeTruthy();
+    // The header now names the saved window and Delete has an identity.
+    expect(modal().querySelector(".modal-titles h2")?.textContent).toBe("Edit takeoff table");
+    expect(headerAction("Delete").disabled).toBe(false);
+
+    nameInput().value = "Second name";
+    nameInput().dispatchEvent(new Event("input", { bubbles: true }));
+    headerAction("Save").click();
+
+    // A second save updates the same table instead of creating a second one.
+    expect(store.project!.schedules).toHaveLength(1);
+    expect(store.project!.schedules[0].name).toBe("Second name");
+    expect(document.querySelector(".modal")).toBeTruthy();
+
+    store.undo();
+    expect(store.project!.schedules[0].name).toBe("First table");
+    store.undo();
+    expect(store.project!.schedules).toHaveLength(0);
+  });
+
+  it("shows the stored name when the model had to make it unique", () => {
+    const project = makeProject();
+    schedule(project);
+    store.setProject(project, null);
+    void openScheduleBuilder();
+
+    nameInput().value = "Walls";
+    nameInput().dispatchEvent(new Event("input", { bubbles: true }));
+    headerAction("Save").click();
+
+    expect(store.project!.schedules.map((entry) => entry.name)).toEqual(["Walls", "Walls (2)"]);
+    // The field and the next update use the name the project actually holds.
+    expect(nameInput().value).toBe("Walls (2)");
+    headerAction("Save").click();
+    expect(store.project!.schedules.map((entry) => entry.name)).toEqual(["Walls", "Walls (2)"]);
+  });
+
+  it("reports a table that disappeared behind the open window and writes nothing", () => {
+    const project = makeProject();
+    schedule(project);
+    store.setProject(project, null);
+    void openScheduleBuilder("sched_ui");
+
+    store.mutate((current) => {
+      current.schedules = [];
+    }, "change");
+    headerAction("Save").click();
+
+    expect(store.project!.schedules).toHaveLength(0);
+    expect(document.querySelector(".modal")).toBeTruthy();
+    expect(document.querySelector(".schedules-builder-problems")?.textContent).toBe(
+      t("schedules.problem.unknownSchedule"),
+    );
   });
 
   it("refuses an empty name from the header without writing anything", () => {
@@ -193,7 +262,7 @@ describe("takeoff table editor header actions", () => {
     expect(document.activeElement).toBe(nameInput());
   });
 
-  it("duplicates from the header with the existing naming rule in one undo step", () => {
+  it("duplicates from the header in one undo step and stays on the original", () => {
     const project = makeProject();
     schedule(project);
     store.setProject(project, null);
@@ -202,7 +271,20 @@ describe("takeoff table editor header actions", () => {
     headerAction("Duplicate").click();
 
     expect(store.project!.schedules.map((entry) => entry.name)).toEqual(["Walls", "Walls copy"]);
-    expect(document.querySelector(".modal")).toBeNull();
+    // The editor keeps editing the original, so one undo removes exactly the
+    // copy and never leaves the open draft pointing at a deleted table.
+    expect(document.querySelector(".modal")).toBeTruthy();
+    expect(nameInput().value).toBe("Walls");
+
+    headerAction("Duplicate").click();
+    expect(store.project!.schedules.map((entry) => entry.name)).toEqual([
+      "Walls",
+      "Walls copy",
+      "Walls copy (2)",
+    ]);
+    store.undo();
+    expect(store.project!.schedules.map((entry) => entry.name)).toEqual(["Walls", "Walls copy"]);
+    expect(document.querySelector(".modal")).toBeTruthy();
     store.undo();
     expect(store.project!.schedules).toHaveLength(1);
   });

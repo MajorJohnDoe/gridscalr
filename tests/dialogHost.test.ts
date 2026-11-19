@@ -11,6 +11,7 @@ import {
   closeAllDialogs,
   confirmDialog,
   dialogCount,
+  setDialogTitle,
   showModal,
   topDialogId,
 } from "../src/ui/dialogs";
@@ -271,6 +272,25 @@ describe("non-modal dialog window", () => {
     expect(
       actions.compareDocumentPosition(header.lastElementChild!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("retitles an open window in place", async () => {
+    void showModal({ title: "New takeoff table", body: simpleBody(), actions: [] });
+    await nextFrame();
+    const modal = dialog()!;
+    setDialogTitle(modal, "Edit takeoff table");
+    expect(modal.querySelector(".modal-titles h2")?.textContent).toBe("Edit takeoff table");
+    // The window is the same one, not a second copy.
+    expect(dialogs()).toHaveLength(1);
+  });
+
+  it("offers a wider size without changing the window rules", async () => {
+    void showModal({ title: "Wider window", body: simpleBody(), actions: [], extraWide: true });
+    await nextFrame();
+    const modal = dialog()!;
+    expect(modal.classList.contains("modal-extra-wide")).toBe(true);
+    expect(modal.classList.contains("modal-wide")).toBe(false);
+    expect(modal.getAttribute("aria-modal")).toBe("false");
   });
 });
 

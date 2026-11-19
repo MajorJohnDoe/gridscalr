@@ -111,6 +111,12 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
   through `refreshPreferencesDialog()` instead of opening a second copy.
   Switching the interface language still rebuilds the Preferences window because
   its title and tab labels must be relabelled.
+- A window that saves its own object stays open and repaints in place: the
+  takeoff table builder keeps the same draft, adopts the identity of a newly
+  created table, keeps its scroll position and renames its title from **New** to
+  **Edit** through `setDialogTitle`. A save is not a reason to lose the drawing
+  behind a non-modal window or the draft in it. Delete still closes the window,
+  because the object is gone.
 
 ### 6. Destructive confirmations revalidate their target
 
@@ -151,6 +157,13 @@ interactive.
 `showModal` accepts `headerActions`, an array of controls placed between the
 titles and the close button in `.modal-header-actions`. Phase 4 puts the takeoff
 table editor Save, Duplicate and Delete there; the shell itself owns no action.
+
+The shell also offers two width sizes: `wide` (720 px) and `extraWide`
+(1080 px, clamped to the viewport). A size only sets the width; the clamp, the
+drag margin and the header layout are unchanged, so a wider surface cannot fork
+the window rules. A surface that stays open while its object changes identity
+retitles itself in place through `setDialogTitle` rather than opening a second
+window.
 
 ### 8. Accessibility gate
 
