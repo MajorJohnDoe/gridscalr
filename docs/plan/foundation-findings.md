@@ -3555,31 +3555,35 @@ remains the scheduling home.
 - **Phase:** Takeoff improvements follow-up — drag feedback and placed-table border
 - **Severity:** P2
 - **Area:** Dialog host / takeoff settings hub
-- **Status:** open
-- **Evidence:** `mountDialog` records the stacking level as
-  `layer.dataset.dialogLevel = String(stack.open(id))` and inserts the newest
-  layer first in `<body>`, but nothing reads that attribute:
+- **Status:** resolved in `792114f` (PR [#337](https://github.com/MajorJohnDoe/gridscalr/pull/337), issue #338)
+- **Evidence:** `mountDialog` recorded the stacking level as
+  `layer.dataset.dialogLevel = String(stack.open(id))` and inserted the newest
+  layer first in `<body>`, but nothing read that attribute:
   `src/styles/dialogs.css` sets a constant `z-index: 2000` on `.dialog-layer`
-  and no rule or controller line applies the level. With equal `z-index`, the
-  later sibling paints on top, so the window mounted first (the newest) ends up
+  and no rule or controller line applied the level. With equal `z-index`, the
+  later sibling paints on top, so the window mounted first (the newest) ended up
   underneath. Reproduced in Chromium: **View → Takeoff settings… → Tables →
-  Edit takeoff table…** mounts `Edit takeoff table` first in `<body>` and
+  Edit takeoff table…** mounted `Edit takeoff table` first in `<body>` and
   `Takeoff settings` second, both at `z-index: 2000`; `elementFromPoint` over a
-  builder-column grip returns the hub's tab, so the editor is covered and
+  builder-column grip returned the hub's tab, so the editor was covered and
   unusable.
-- **Problem:** ADR 0017 §4 states that opening a dialog from a dialog stacks the
+- **Problem:** ADR 0017 §3 stated that opening a dialog from a dialog stacks the
   new window on top and that the first `.dialog-layer` is the topmost. The code
-  only satisfies the second half of that contract, and equal `z-index` makes it
-  false. Nested editors (custom field, table builder, backup manager) are
+  only satisfied the second half of that contract, and equal `z-index` made it
+  false. Nested editors (custom field, table builder, backup manager) were
   therefore painted behind their parent.
 - **Impact:** A nested editor cannot be used at all: its fields are behind the
   hub. No data effect — the dialog is open, focused and closable by Escape.
   The path was not caught because the phase-3 dialog tests assert the stack
   order and Escape routing, not paint order, and jsdom has no layout.
-- **Next step:** apply the recorded level as an inline `z-index` on the layer in
-  `mountDialog` and `raise()`, or add a `[data-dialog-level]` rule with a
-  per-level variable; then add a Chromium assertion that the newest window's
-  rectangle is what `elementFromPoint` returns. Owned by the dialog host, so it
-  is out of scope for #332/#333.
-- **Related:** #321, #322, ADR 0017, `src/features/dialogHost/controller.ts`,
-  `src/styles/dialogs.css`.
+- **Fix:** `refreshTopMarkers()` now applies the recorded level as the layer's
+  inline `z-index`, so mount, raise (pointer press or focus entering) and close
+  all re-apply it, and `data-dialog-level` stays for tests. Chromium re-check:
+  hub 2002 under builder 2003, pressing the hub raises it to 2004, pressing the
+  builder raises it to 2005, `elementFromPoint` at the child's header returns
+  the child, and Escape closes it leaving the hub on top. `tests/dialogHost.test.ts`
+  pins increasing `z-index` per open/raise and that document order does not
+  decide the paint order; `test:ui` pins the hub → builder case. ADR 0017 §3 now
+  states that DOM order is deterministic but does not decide paint order.
+- **Related:** #321, #322, #332, #333, #338, ADR 0017,
+  `src/features/dialogHost/controller.ts`, `src/styles/dialogs.css`.
