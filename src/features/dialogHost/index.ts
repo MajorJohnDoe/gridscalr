@@ -35,6 +35,7 @@ export {
   passwordDialog,
   revalidateTarget,
   revalidateTargetNow,
+  setDialogTitle,
   textDialog,
   unsavedChangesDialog,
   type ConfirmOptions,

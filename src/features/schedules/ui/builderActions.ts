@@ -11,7 +11,7 @@ import {
   uniqueScheduleName,
   updateSchedule,
 } from "../model";
-import type { ScheduleDraft, ScheduleMutationResult } from "../model";
+import type { ScheduleDraft, ScheduleMutationResult, ScheduleProblem } from "../model";
 import { deletePlacementsForSchedule, placementCount } from "../placement";
 
 /**
@@ -19,6 +19,10 @@ import { deletePlacementsForSchedule, placementCount } from "../placement";
  * beside the dialog close control so saving never needs a scroll. The rules are
  * the builder's own: one store mutation per action, so each is one undo step,
  * the same duplicate naming, and a delete that revalidates its table first.
+ *
+ * Save and Duplicate keep the window open. The builder is a movable, non-modal
+ * window (ADR 0017), so saving is not a reason to lose the drawing behind it or
+ * the draft in front of it. Delete still closes, because the table is gone.
  */
 
 export interface BuilderActionHost {
@@ -26,8 +30,10 @@ export interface BuilderActionHost {
   /** The name field, focused when Save refuses an empty name. */
   nameInput: HTMLInputElement;
   /** Re-renders the problem summary after a refused action. */
-  onProblems: () => void;
-  /** Closes the builder window after a successful action. */
+  onProblems: (problems?: readonly ScheduleProblem[]) => void;
+  /** Repaints the builder body and preview in place after a successful save. */
+  onSaved: () => void;
+  /** Closes the builder window after a delete removed the table. */
   close: () => void;
 }
 
@@ -36,6 +42,8 @@ export interface BuilderActions {
   actions: HTMLButtonElement[];
   /** The delete confirmation strip; the dialog mounts it under its header. */
   confirm: HTMLElement;
+  /** Re-applies the enabled rules after the draft gained an identity. */
+  sync: () => void;
 }
 
 function headerAction(options: {
@@ -92,6 +100,13 @@ export function createBuilderActions(host: BuilderActionHost): BuilderActions {
   });
   remove.disabled = store.readOnly || !draft.id;
 
+  /** The enabled rules depend on the draft's identity, which a save creates. */
+  const sync = (): void => {
+    save.disabled = store.readOnly;
+    duplicate.disabled = store.readOnly;
+    remove.disabled = store.readOnly || !draft.id;
+  };
+
   const confirm = el("div", "inline-confirm schedules-builder-confirm");
   confirm.hidden = true;
   const hideConfirm = () => {
@@ -106,27 +121,36 @@ export function createBuilderActions(host: BuilderActionHost): BuilderActions {
       host.onProblems();
       return;
     }
+    const creating = !draft.id;
     let result: ScheduleMutationResult | null = null;
     store.mutate((current) => {
       result = draft.id ? updateSchedule(current, draft) : createSchedule(current, draft);
     }, "change");
     const applied = result as ScheduleMutationResult | null;
     if (!applied?.schedule) {
-      host.onProblems();
+      host.onProblems(applied?.problems);
       return;
     }
+    const saved = applied.schedule;
+    // Adopt the created id and the stored name, so the next Save updates this
+    // table instead of creating a second one and the field shows what the
+    // project actually holds (the model may have made the name unique).
+    draft.id = saved.id;
+    draft.name = saved.name;
+    if (host.nameInput.value !== saved.name) host.nameInput.value = saved.name;
     toast(
-      draft.id
-        ? t("schedules.builder.saved", { name: applied.schedule.name })
-        : t("schedules.builder.created", { name: applied.schedule.name }),
+      creating
+        ? t("schedules.builder.created", { name: saved.name })
+        : t("schedules.builder.saved", { name: saved.name }),
       "success",
     );
-    host.close();
+    // The window stays open: the drawing behind it is the reason the dialog is
+    // non-modal, and the draft is still the thing being edited.
+    host.onSaved();
   });
 
   duplicate.addEventListener("click", () => {
     if (store.readOnly) return;
-    let created = false;
     let copyName = "";
     store.mutate((current) => {
       const result = createSchedule(current, {
@@ -139,15 +163,17 @@ export function createBuilderActions(host: BuilderActionHost): BuilderActions {
           }),
         ),
       });
-      created = Boolean(result.schedule);
       copyName = result.schedule?.name ?? "";
     }, "change");
-    if (!created) {
+    if (!copyName) {
       host.onProblems();
       return;
     }
+    // The copy is added to the project and the editor stays on the original
+    // draft, so one click makes exactly one copy and one undo removes exactly
+    // that copy without leaving the open editor pointing at a table that is
+    // gone.
     toast(t("schedules.builder.created", { name: copyName }), "success");
-    host.close();
   });
 
   remove.addEventListener("click", () => {
@@ -202,5 +228,5 @@ export function createBuilderActions(host: BuilderActionHost): BuilderActions {
     destroy.focus();
   });
 
-  return { actions: [save, duplicate, remove], confirm };
+  return { actions: [save, duplicate, remove], confirm, sync };
 }

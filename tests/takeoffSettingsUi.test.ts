@@ -1,4 +1,6 @@
 // @vitest-environment jsdom
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import { TAKEOFF_SETTINGS_TABS, openTakeoffSettingsDialog } from "../src/features/takeoffSettings";
 import { renderSummaryPanel } from "../src/features/schedules";
@@ -13,6 +15,20 @@ import type { MarkupItem, Project, ScheduleDefinition } from "../src/model/types
 import { pageIdFor, withTestPageIds } from "./helpers/pages";
 
 const NOW = "2026-01-01T00:00:00.000Z";
+
+const root = resolve(__dirname, "..");
+
+function readCss(relativePath: string): string {
+  return readFileSync(resolve(root, relativePath), "utf8");
+}
+
+/** The declared body of one CSS rule, so a layout contract can be asserted. */
+function declarationBlock(css: string, selector: string): string {
+  const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const match = new RegExp(`\\n${escaped}\\s*\\{([^}]*)\\}`).exec(css);
+  if (!match) throw new Error(`Missing CSS rule for ${selector}`);
+  return match[1];
+}
 
 // The two-column settings layout observes its scroll pane; jsdom has no layout
 // engine, so the observer is stubbed for this DOM-only suite.
@@ -160,6 +176,8 @@ describe("takeoff settings hub", () => {
     void openTakeoffSettingsDialog();
 
     expect(TAKEOFF_SETTINGS_TABS).toEqual(["objects", "fields", "tables", "cards"]);
+    expect(modal().classList.contains("modal-extra-wide")).toBe(true);
+    expect(modal().classList.contains("modal-wide")).toBe(false);
     expect(modal().querySelector(".dialog-nav")?.textContent).toContain("Objects");
     expect(modal().querySelector(".takeoff-objects")).toBeTruthy();
     expect(modal().textContent).toContain("Measured objects group lengths and areas");
@@ -377,6 +395,46 @@ describe("takeoff settings hub", () => {
     expect(store.project!.countTypes.some((entry) => entry.id === socket.id)).toBe(false);
     store.undo();
     expect(store.project!.countTypes.some((entry) => entry.id === socket.id)).toBe(true);
+  });
+});
+
+describe("takeoff settings Objects layout", () => {
+  it("keeps the Actions column last on every row and header", () => {
+    const project = makeProject();
+    store.setProject(project, null);
+    void openTakeoffSettingsDialog();
+
+    const head = modal().querySelector<HTMLTableRowElement>(".takeoff-object-table thead tr")!;
+    expect(head.lastElementChild?.textContent).toBe("Actions");
+    const rows = [...modal().querySelectorAll<HTMLTableRowElement>(".takeoff-object-row")];
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      const cell = row.lastElementChild as HTMLElement;
+      expect(cell.classList.contains("takeoff-object-actions")).toBe(true);
+      // Measured rows offer move up, move down and delete; a counted object has
+      // no order, so its Actions cell holds the delete control only.
+      const expected = row.classList.contains("takeoff-object-measured") ? 3 : 1;
+      expect(cell.querySelectorAll("button")).toHaveLength(expected);
+    }
+  });
+
+  it("pins the Actions column and sizes the hub as an extra-wide window", () => {
+    const dialogs = readCss("src/styles/dialogs.css");
+    expect(declarationBlock(dialogs, ".modal.modal-extra-wide")).toContain(
+      "width: min(1080px, calc(100vw - 16px))",
+    );
+    const hub = readCss("src/styles/takeoffSettings.css");
+    // The pinned column is what keeps the controls visible when the six-column
+    // table scrolls in a narrow window.
+    const pinned = declarationBlock(
+      hub,
+      ".takeoff-object-table th:last-child,\n.takeoff-object-table td:last-child",
+    );
+    expect(pinned).toContain("position: sticky");
+    expect(pinned).toContain("right: 0");
+    expect(declarationBlock(hub, ".takeoff-object-table-wrap")).toContain("overflow-x: auto");
+    // The add row wraps rather than squeezing the table above it.
+    expect(declarationBlock(hub, ".takeoff-object-add .input-row")).toContain("flex-wrap: wrap");
   });
 });
 

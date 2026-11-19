@@ -1046,3 +1046,40 @@ Next: effort exit — final documentation pass, Windows build and release decisi
   [44406978628](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44406978628)
   was dispatched on that commit for a fresh Windows installer; it does not tag,
   publish or change `site/`.
+
+## Follow-up — builder save stays open and a wider Takeoff settings hub
+
+- **Issues:** [#334](https://github.com/MajorJohnDoe/gridscalr/issues/334)
+  (Save keeps the builder window open) and
+  [#335](https://github.com/MajorJohnDoe/gridscalr/issues/335) (wider hub, no
+  clipped Actions column), one PR closing both. Schema 28, app version 0.29.0.
+- **PR:** [#336](https://github.com/MajorJohnDoe/gridscalr/pull/336), from
+  `feat/builder-save-and-hub-width`, base `main` (`b8f76ff`).
+- **Verified head:** `07cf3e0b60fca492d513f4d1dc8fcadf2580f1f8`. Five PR checks
+  were green on it and the `Rust format and check` job was re-run once after the
+  documented `Install Linux dependencies` apt-mirror failure (`503`); all six are
+  green on that SHA.
+- **Merge commit:** `cf0a2e84da30457faa2b73c03a6ad69e0ac47216`.
+- **Completed work:** Save now writes, adopts the created id and name, repaints
+  the builder body and preview in place and keeps the window open, so the
+  drawing stays visible and the next Save updates the same table. Delete still
+  confirms, cascades and closes. Duplicate adds exactly one copy and keeps the
+  editor on the original draft, so an undo of the copy never leaves the open
+  editor pointing at a removed table. A refused save now reports its problems.
+  The hub gained an `extraWide` (1080 px, viewport-clamped) dialog size, a pinned
+  Objects **Actions** column with a separator and left shadow as the scroll cue,
+  and a wrapping **Add object** row; the UI-scale gate now asserts every row's
+  action controls at 100/150/200 % in both locales.
+- **Conductor verification:** head `07cf3e0` matched the report; base `main`
+  green; `CLEAN`/`MERGEABLE` before merge. Re-ran
+  `npx vitest run tests/scheduleBuilderActions.test.ts tests/schedulesUi.test.ts
+  tests/takeoffSettingsUi.test.ts tests/dialogHost.test.ts
+  tests/accessibilityGate.test.ts`: 5 files, 77 tests passed.
+  `check:versions` (0.29.0), `check:file-budgets` (623 files), `check:modules`
+  (22 features), `check:i18n` (3 590 keys) and
+  `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` (272 links, 55 images, 40
+  screenshots, no stale warning) are green. No schema, version, Rust, `security/`
+  or `site/` change; the wider dialog is a size option, not a new dialog rule.
+- **Screenshots:** five hub captures recaptured (`takeoff-settings-objects`,
+  `tables`, `cards`, `fields`, plus the fields inspector); the manifest only
+  refreshed `generatedAt`/`sourceFingerprint`.

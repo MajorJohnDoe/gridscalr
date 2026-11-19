@@ -42,7 +42,7 @@ export interface BuilderPreview {
   update: (draft: ScheduleDraft) => void;
 }
 
-export function createPreview(project: Project): BuilderPreview {
+export function createPreview(getProject: () => Project): BuilderPreview {
   const element = el("section", "schedules-builder-section schedules-builder-preview");
   const title = el("h3", "schedules-builder-title", t("schedules.builder.preview"));
   const count = el("span", "schedules-builder-count", "");
@@ -55,7 +55,7 @@ export function createPreview(project: Project): BuilderPreview {
   element.append(head, body);
 
   const update = (draft: ScheduleDraft) => {
-    const result = computeSchedule(project, previewDefinition(draft));
+    const result = computeSchedule(getProject(), previewDefinition(draft));
     const entries = scheduleDisplayEntries(result).slice(0, PREVIEW_ROWS);
     count.textContent = t("schedules.builder.previewCount", {
       shown: entries.length,

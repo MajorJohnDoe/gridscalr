@@ -59,7 +59,9 @@ export function openTakeoffSettingsDialog(
     title: t("takeoffSettings.title"),
     subtitle: t("takeoffSettings.subtitle"),
     body: layout.body,
-    wide: true,
+    // The Objects table has six columns; the hub is wider than the ordinary
+    // settings surface so the Actions column is never clipped.
+    extraWide: true,
     className: "modal-settings takeoff-settings-modal",
     actions: [{ label: t("common.close"), value: "close", primary: true }],
   }).then(() => undefined);
