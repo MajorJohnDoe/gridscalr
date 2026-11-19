@@ -167,6 +167,17 @@ export function openDialog(options: DialogOptions): Promise<string | null> {
 
 export type UnsavedChangesChoice = "save" | "discard" | "cancel";
 
+/**
+ * Retitles an open window in place. A dialog whose object changes identity while
+ * it stays open (a new takeoff table that is saved) keeps one window and
+ * repaints its own header rather than opening a second copy (ADR 0017 §5).
+ */
+export function setDialogTitle(modal: HTMLElement, title: string): void {
+  const heading = modal.querySelector<HTMLElement>(".modal-titles h2");
+  if (!heading) return;
+  heading.textContent = title;
+}
+
 export function unsavedChangesDialog(message: string): Promise<UnsavedChangesChoice> {
   const body = el("div");
   body.append(el("p", "modal-message", message));

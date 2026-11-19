@@ -11,6 +11,7 @@ import {
   closeAllDialogs,
   confirmDialog,
   dialogCount,
+  setDialogTitle,
   showModal,
   topDialogId,
 } from "../src/ui/dialogs";
@@ -271,6 +272,16 @@ describe("non-modal dialog window", () => {
     expect(
       actions.compareDocumentPosition(header.lastElementChild!) & Node.DOCUMENT_POSITION_FOLLOWING,
     ).toBeTruthy();
+  });
+
+  it("retitles an open window in place", async () => {
+    void showModal({ title: "New takeoff table", body: simpleBody(), actions: [] });
+    await nextFrame();
+    const modal = dialog()!;
+    setDialogTitle(modal, "Edit takeoff table");
+    expect(modal.querySelector(".modal-titles h2")?.textContent).toBe("Edit takeoff table");
+    // The window is the same one, not a second copy.
+    expect(dialogs()).toHaveLength(1);
   });
 });
 

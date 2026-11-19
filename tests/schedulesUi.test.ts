@@ -389,6 +389,9 @@ describe("schedule builder", () => {
     expect(project.schedules).toHaveLength(1);
     expect(project.schedules[0].name).toBe("Doors and walls");
     expect(project.schedules[0].columns.length).toBeGreaterThan(0);
+    // Saving keeps the window open, so the test closes it explicitly.
+    expect(document.querySelector(".modal")).toBeTruthy();
+    button("Close", document.querySelector(".modal")!)!.click();
     store.undo();
     expect(store.project!.schedules).toHaveLength(0);
     store.redo();
@@ -453,6 +456,9 @@ describe("schedule builder", () => {
     button("Duplicate")!.click();
     expect(project.schedules).toHaveLength(2);
     expect(project.schedules[1].name).toContain("Walls");
+    // Duplicating keeps the window open on the original draft.
+    expect(document.querySelector(".modal")).toBeTruthy();
+    button("Close", document.querySelector(".modal")!)!.click();
     await duplicateDone;
 
     const deleteDone = openScheduleBuilder("sched_ui");
@@ -461,6 +467,8 @@ describe("schedule builder", () => {
     expect(confirm?.hidden).toBe(false);
     confirm!.querySelector<HTMLButtonElement>(".btn-danger")!.click();
     expect(project.schedules).toHaveLength(1);
+    // A delete closes the builder because the table is gone.
+    expect(document.querySelector(".modal")).toBeNull();
     await deleteDone;
   });
 
