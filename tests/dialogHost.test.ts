@@ -205,6 +205,35 @@ describe("non-modal dialog window", () => {
     expect(oldest.classList.contains("is-top")).toBe(true);
   });
 
+  it("paints the newest or most recently used window on top by z-index", async () => {
+    void showModal({ title: "First", body: simpleBody(), actions: [] });
+    await nextFrame();
+    void showModal({ title: "Second", body: simpleBody(), actions: [] });
+    await nextFrame();
+
+    // The newest layer is inserted first in the document, so document order
+    // alone would paint the older window on top. The stack level must decide.
+    const [newest, oldest] = layers();
+    expect(layers().indexOf(newest)).toBeLessThan(layers().indexOf(oldest));
+    const newestZ = Number(newest.style.zIndex);
+    const oldestZ = Number(oldest.style.zIndex);
+    expect(newestZ).toBe(Number(newest.dataset.dialogLevel));
+    expect(oldestZ).toBe(Number(oldest.dataset.dialogLevel));
+    expect(newest.classList.contains("is-top")).toBe(true);
+    expect(newestZ).toBeGreaterThan(oldestZ);
+    expect(newestZ).toBeGreaterThan(DIALOG_Z_BASE);
+    expect(oldestZ).toBeGreaterThan(DIALOG_Z_BASE);
+
+    // A pointer press on the covered window raises it above the newer one.
+    pointer(oldest, "pointerdown", { clientX: 10, clientY: 10 });
+    expect(Number(oldest.style.zIndex)).toBeGreaterThan(Number(newest.style.zIndex));
+    expect(oldest.classList.contains("is-top")).toBe(true);
+    expect(newest.classList.contains("is-top")).toBe(false);
+    // Raising keeps every layer inside the dialog band.
+    expect(Number(oldest.style.zIndex)).toBeGreaterThan(DIALOG_Z_BASE);
+    expect(Number(oldest.style.zIndex)).toBeLessThan(DIALOG_Z_BASE + 100);
+  });
+
   it("moves by the header, clamps to the viewport and keeps two windows independent", async () => {
     void showModal({ title: "First", body: simpleBody(), actions: [] });
     await nextFrame();

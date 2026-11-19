@@ -482,7 +482,7 @@ src/features/pageFileDrop/model.ts Pages-panel drop target classification and po
 src/features/pageFileDrop/controller.ts Pages-panel PDF/TIF drop listeners and shared insertion line
 src/features/pageStatus/ pure page badges and status filters derived from project and source state
 src/features/pageMenu/ page card menu, insert and move targets, page keyboard commands
-src/features/listInteraction/ shared list selection, drag controller, drop line, keyboard move, filter and collapse rules
+src/features/listInteraction/ shared list selection, drag controller, drop line and held state, keyboard move, filter and collapse rules
 src/features/importProvenance/ read-only provenance summary, Properties block and conditional Markups column
 src/features/measurementFlyout/ model, controller and UI for the one New measurement settings panel and its page-scoped layer list
 src/features/projectIntegrity/ public surface, referential-integrity validation, repairs, project doctor and load report
@@ -584,6 +584,7 @@ src/styles/base.css        reset, typography and shared utilities
 src/styles/shell.css       top bar, docks, symbol library, canvas and welcome
 src/styles/rail.css        expandable tool rail and its two-column layout
 src/styles/panels.css      inspector, layers, pages, status bar and popover menu
+src/styles/listDrag.css    shared row-drag insertion line and held-row state
 src/styles/dialogs.css     dialogs, menus, forms, quantities and preferences
 src/styles/projectImport.css project page import picker and source-document groups
 src/styles/markups.css     Markups panel, revision compare and text search

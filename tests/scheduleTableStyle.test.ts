@@ -190,6 +190,30 @@ describe("placed takeoff table bands", () => {
     expect(grid.every((line) => line.width < 0.5)).toBe(true);
   });
 
+  it("closes the table with an outer rule on all four edges", () => {
+    const layout = groupedLayout();
+    const width = 420;
+    const outer = layout.lines.filter((line) => line.role === "outer");
+    const right = outer.filter((line) => line.x1 === width && line.x2 === width);
+    expect(right).toHaveLength(1);
+    const bottom = outer.find(
+      (line) => line.y1 === right[0].y2 && line.x1 === 0 && line.x2 === width,
+    )!;
+    expect(right[0]).toMatchObject({ y1: 0, role: "outer" });
+    expect(bottom).toBeTruthy();
+    // The right edge carries the same firm weight as the left edge, not the
+    // faint column-divider weight that left the table open on that side.
+    const left = outer.find((line) => line.x1 === 0 && line.x2 === 0)!;
+    expect(right[0].width).toBe(left.width);
+    expect(right[0].width).toBeGreaterThan(0.5);
+    // No grid-role line sits on the right edge any more.
+    expect(
+      layout.lines.some((line) => line.role === "grid" && line.x1 === width && line.x2 === width),
+    ).toBe(false);
+    // The column dividers the layout still draws stay grid lines.
+    expect(layout.lines.some((line) => line.role === "grid" && line.x1 !== width)).toBe(true);
+  });
+
   it("gives a grouped row mode the group band instead of a subtotal band", () => {
     const project = makeProject();
     const schedule = groupedSchedule(project, "grouped");

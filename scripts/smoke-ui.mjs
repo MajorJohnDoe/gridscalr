@@ -40,6 +40,29 @@ function contrastRatio(foreground, background) {
   return (Math.max(first, second) + 0.05) / (Math.min(first, second) + 0.05);
 }
 
+/**
+ * Reads the shared row-drag feedback: the insertion line and the held rows.
+ * The line is a fixed overlay on the document body, so it is never clipped by
+ * a scrolling panel.
+ */
+function readDropFeedback(page, rowSelector) {
+  return page.evaluate((selector) => {
+    const line = document.querySelector(".list-drop-line");
+    const rect = line?.getBoundingClientRect();
+    const style = line ? getComputedStyle(line) : null;
+    return {
+      present: Boolean(line),
+      hidden: line?.hidden ?? true,
+      position: style?.position ?? null,
+      zIndex: style ? Number(style.zIndex) : 0,
+      top: rect?.top ?? null,
+      height: rect?.height ?? null,
+      inBody: line?.parentElement === document.body,
+      held: [...document.querySelectorAll(`${selector}.is-dragging`)].length,
+    };
+  }, rowSelector);
+}
+
 function readLayerSurfaces(page) {
   return page.evaluate(() => {
     const rows = document.querySelector(".layer-section-rows");
@@ -657,18 +680,48 @@ try {
   );
   const firstRowBox = await measureRows.first().boundingBox();
   const secondRowBox = await measureRows.nth(1).boundingBox();
+  const dropTargetY = secondRowBox.y + secondRowBox.height - 3;
   await page.mouse.move(
     firstRowBox.x + firstRowBox.width / 2,
     firstRowBox.y + firstRowBox.height / 2,
   );
   await page.mouse.down();
-  await page.mouse.move(
-    firstRowBox.x + firstRowBox.width / 2,
-    secondRowBox.y + secondRowBox.height - 3,
-    { steps: 10 },
+  await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, dropTargetY, { steps: 10 });
+  // The feedback is asserted during the gesture, not only by the result: a
+  // visible line at the drop boundary plus a held source row.
+  const layerFeedback = await readDropFeedback(page, ".layer-row");
+  assert.equal(layerFeedback.present, true, "a layer drag should create the insertion line");
+  assert.equal(layerFeedback.hidden, false, "the insertion line should be visible during a drag");
+  assert.equal(layerFeedback.inBody, true, "the line should be a viewport overlay");
+  assert.equal(
+    layerFeedback.position,
+    "fixed",
+    "the line should not be clipped by panel scrolling",
   );
+  assert.ok(
+    layerFeedback.zIndex > 2000,
+    `the line should paint above panels and dialogs (${layerFeedback.zIndex})`,
+  );
+  assert.ok(
+    Math.abs((layerFeedback.top ?? -1) - (secondRowBox.y + secondRowBox.height)) <= 2,
+    `the line should sit at the drop boundary (${layerFeedback.top} vs ${dropTargetY})`,
+  );
+  assert.equal(layerFeedback.held, 1, "the dragged layer row should be visibly held");
+  // The line follows the pointer: a frozen line at the grab position was the
+  // reported bug.
+  await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, firstRowBox.y + 1, { steps: 6 });
+  const movedFeedback = await readDropFeedback(page, ".layer-row");
+  assert.ok(
+    (movedFeedback.top ?? 0) < (layerFeedback.top ?? 0) - 4,
+    `the line should follow the pointer (${movedFeedback.top} vs ${layerFeedback.top})`,
+  );
+  assert.equal(movedFeedback.held, 1, "the row should stay held while it moves");
+  await page.mouse.move(firstRowBox.x + firstRowBox.width / 2, dropTargetY, { steps: 6 });
   await page.mouse.up();
   await page.waitForTimeout(250);
+  const settledFeedback = await readDropFeedback(page, ".layer-row");
+  assert.equal(settledFeedback.hidden, true, "the line should clear when the drag ends");
+  assert.equal(settledFeedback.held, 0, "no row should stay held after the drop");
   const dragIdsAfter = await measureRows.evaluateAll((nodes) =>
     nodes.map((node) => node.dataset.layerId),
   );
@@ -681,6 +734,150 @@ try {
   await page.waitForTimeout(250);
 
   await page.locator('.dock-tab[data-tab="pages"]').click();
+  // The Pages list uses the same shared feedback, so the line and the held
+  // card are asserted here too.
+  const pageCards = page.locator(".page-card");
+  const pageBoxFirst = await pageCards.nth(0).boundingBox();
+  const pageBoxSecond = await pageCards.nth(1).boundingBox();
+  const pageBoxThird = await pageCards.nth(2).boundingBox();
+  const pageDropY = pageBoxSecond.y + pageBoxSecond.height - 3;
+  await page.mouse.move(pageBoxFirst.x + pageBoxFirst.width / 2, pageBoxFirst.y + 12);
+  await page.mouse.down();
+  await page.mouse.move(pageBoxFirst.x + pageBoxFirst.width / 2, pageDropY, { steps: 10 });
+  const pageFeedback = await readDropFeedback(page, ".page-card");
+  assert.equal(pageFeedback.present, true, "a page drag should create the insertion line");
+  assert.equal(pageFeedback.hidden, false, "the page insertion line should be visible");
+  assert.equal(pageFeedback.inBody, true, "the page line should be a viewport overlay");
+  assert.ok(
+    Math.abs((pageFeedback.top ?? -1) - pageBoxThird.y) <= 2,
+    `the page line should sit at the drop boundary (${pageFeedback.top} vs ${pageBoxThird.y})`,
+  );
+  assert.equal(pageFeedback.held, 1, "the dragged page card should be visibly held");
+  await page.mouse.move(pageBoxFirst.x + pageBoxFirst.width / 2, pageBoxFirst.y + 2, {
+    steps: 6,
+  });
+  const pageMoved = await readDropFeedback(page, ".page-card");
+  assert.ok(
+    (pageMoved.top ?? 0) < (pageFeedback.top ?? 0) - 4,
+    "the page line should follow the pointer",
+  );
+  await page.mouse.move(pageBoxFirst.x + pageBoxFirst.width / 2, pageDropY, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  assert.deepEqual(
+    await pageCards.evaluateAll((nodes) => nodes.slice(0, 2).map((node) => node.dataset.pageId)),
+    ["page_demo_2", "page_demo_1"],
+    "the first page should move below the second",
+  );
+  await page.keyboard.press("Control+z");
+  await page.waitForTimeout(250);
+
+  // The takeoff builder column list shares the same feedback. It draws the line
+  // at the position the column will take, and holds the grabbed column.
+  await page.getByRole("button", { name: "Takeoff" }).click();
+  await page.waitForTimeout(200);
+  await page.locator(".schedules-schedule-select").selectOption({ index: 1 });
+  await page.waitForTimeout(200);
+  await page.getByRole("button", { name: "Edit takeoff table…" }).click();
+  const builderDialog = page.getByRole("dialog", { name: "Edit takeoff table" });
+  await builderDialog.waitFor();
+  const builderColumns = builderDialog.locator(".schedules-builder-column");
+  // The builder settles its preview after the dialog mounts; measure only once
+  // the layout is final so the pointer lands on a known row.
+  await page.waitForTimeout(400);
+  const builderBoxes = await builderColumns.evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const box = node.getBoundingClientRect();
+      return { top: box.top, bottom: box.bottom, left: box.left, width: box.width };
+    }),
+  );
+  assert.ok(builderBoxes.length > 3, "the demo table should have at least four columns");
+  const builderHandle = await builderDialog
+    .locator(".schedules-builder-handle")
+    .first()
+    .boundingBox();
+  await page.mouse.move(
+    builderHandle.x + builderHandle.width / 2,
+    builderHandle.y + builderHandle.height / 2,
+  );
+  await page.mouse.down();
+  await page.mouse.move(
+    builderHandle.x + builderHandle.width / 2,
+    (builderBoxes[2].top + builderBoxes[2].bottom) / 2,
+    { steps: 8 },
+  );
+  const builderFeedback = await readDropFeedback(page, ".schedules-builder-column");
+  const builderRows = await builderColumns.evaluateAll((nodes) =>
+    nodes.map((node) => node.getBoundingClientRect().top),
+  );
+  assert.equal(builderFeedback.present, true, "a builder column drag should create the line");
+  assert.equal(builderFeedback.hidden, false, "the builder insertion line should be visible");
+  assert.ok(builderFeedback.zIndex > 2000, "the builder line must paint above its dialog window");
+  // Dragging the first column down onto the third lands it after that column.
+  assert.ok(
+    Math.abs((builderFeedback.top ?? -1) - builderRows[3]) <= 2,
+    `the builder line should mark the landing slot (${builderFeedback.top} vs ${builderRows[3]})`,
+  );
+  assert.equal(builderFeedback.held, 1, "the dragged builder column should be visibly held");
+  await page.mouse.up();
+  await page.waitForTimeout(250);
+  await builderDialog.locator(".modal-footer").getByRole("button", { name: "Close" }).click();
+  await builderDialog.waitFor({ state: "detached" });
+  // A dialog opened from a dialog must paint above the window that opened it
+  // (F-143 / #338). The hub is the parent and the builder is the child, and the
+  // child is inserted first in the document, so only the stack level can put it
+  // on top.
+  await page.getByRole("menuitem", { name: "View" }).click();
+  await page.getByRole("menuitem", { name: "Takeoff settings…" }).click();
+  const hub = page.getByRole("dialog", { name: "Takeoff settings" });
+  await hub.waitFor();
+  await hub.getByText("Tables", { exact: true }).click();
+  await hub.getByRole("button", { name: "Edit takeoff table…" }).click();
+  const nestedBuilder = page.getByRole("dialog", { name: "Edit takeoff table" });
+  await nestedBuilder.waitFor();
+  await page.waitForTimeout(250);
+  const nesting = await page.evaluate(() => {
+    const info = [...document.querySelectorAll(".dialog-layer")].map((layer) => {
+      const modal = layer.querySelector(".modal");
+      const rect = modal?.getBoundingClientRect();
+      return {
+        title: modal?.querySelector(".modal-titles h2")?.textContent ?? null,
+        z: Number(getComputedStyle(layer).zIndex),
+        level: Number(layer.dataset.dialogLevel),
+        rect: rect ? { left: rect.left, top: rect.top } : null,
+      };
+    });
+    const child = info.find((entry) => entry.title === "Edit takeoff table");
+    const hit = child?.rect && document.elementFromPoint(child.rect.left + 40, child.rect.top + 30);
+    return {
+      childZ: child?.z ?? 0,
+      parentZ: info.find((entry) => entry.title === "Takeoff settings")?.z ?? 0,
+      levelMatches: info.every((entry) => entry.z === entry.level),
+      hitTitle: hit?.closest(".modal")?.querySelector(".modal-titles h2")?.textContent ?? null,
+    };
+  });
+  assert.ok(
+    nesting.childZ > nesting.parentZ,
+    `the nested window should paint above its parent (${nesting.childZ} vs ${nesting.parentZ})`,
+  );
+  assert.equal(nesting.levelMatches, true, "every layer should apply its stack level as z-index");
+  assert.equal(
+    nesting.hitTitle,
+    "Edit takeoff table",
+    "the visible topmost window at the child's header should be the child",
+  );
+  await page.keyboard.press("Escape");
+  await nestedBuilder.waitFor({ state: "detached" });
+  await hub.locator(".modal-footer").getByRole("button", { name: "Close" }).click();
+  await hub.waitFor({ state: "detached" });
+
+  await page.getByRole("button", { name: "Properties", exact: true }).click();
+  await page.waitForTimeout(200);
+  await page.locator('.dock-tab[data-tab="pages"]').click();
+  // The reorder keeps the moved page on screen and undo restores the order, not
+  // the viewer, so go back to the first sheet before the page actions below.
+  await page.locator('.page-card[data-page="1"]').click();
+  await page.waitForTimeout(150);
   await page.locator('.page-card[data-page="1"]').click({ button: "right" });
   await page.getByRole("button", { name: "Set location…" }).click();
   const locationDialog = page.getByRole("dialog");

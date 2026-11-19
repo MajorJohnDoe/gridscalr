@@ -142,10 +142,6 @@
   padding: 12px 8px;
 }
 
-.page-card.is-dragging {
-  opacity: 0.55;
-}
-
 .page-card > .list-drag-handle {
   position: absolute;
   top: 4px;
@@ -220,46 +216,6 @@
 .page-document-count {
   flex: 0 0 auto;
   font-variant-numeric: tabular-nums;
-}
-
-.page-drop-line,
-.layer-drop-line {
-  position: absolute;
-  left: 7px;
-  right: 7px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--jade);
-  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.35);
-  pointer-events: none;
-  z-index: 3;
-}
-
-.page-drop-line[hidden],
-.layer-drop-line[hidden] {
-  display: none;
-}
-
-.page-drop-line.is-cross-document {
-  background: var(--status-warning);
-}
-
-.page-drop-label,
-.layer-drop-label {
-  position: absolute;
-  right: 0;
-  bottom: 6px;
-  padding: 2px 7px;
-  border-radius: 8px;
-  background: var(--status-warning);
-  color: #10161a;
-  font-size: 11px;
-  white-space: nowrap;
-}
-
-.page-drop-label[hidden],
-.layer-drop-label[hidden] {
-  display: none;
 }
 
 .page-reorder-hint,

@@ -125,7 +125,6 @@ export function gridLines(
       role: "grid",
     });
   }
-  lines.push({ x1: width, y1: 0, x2: width, y2: height, width: GRID_WEIGHT, role: "grid" });
   const drawn = new Set<number>();
   for (const separator of separators) {
     if (separator.y <= 0 || separator.y >= height) continue;
@@ -141,10 +140,14 @@ export function gridLines(
       role: separator.role,
     });
   }
+  // The four outer edges carry the firm rule, including the right edge: a
+  // grid-role right edge is the faint divider colour, which left the table open
+  // on that side. Column dividers stay grid lines.
   lines.push(
     { x1: 0, y1: 0, x2: width, y2: 0, width: RULE_WEIGHT, role: "outer" },
     { x1: 0, y1: height, x2: width, y2: height, width: RULE_WEIGHT, role: "outer" },
     { x1: 0, y1: 0, x2: 0, y2: height, width: RULE_WEIGHT, role: "outer" },
+    { x1: width, y1: 0, x2: width, y2: height, width: RULE_WEIGHT, role: "outer" },
   );
   return lines;
 }

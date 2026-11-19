@@ -355,16 +355,24 @@ describe("pages panel controller", () => {
   it("labels a cross-document drop in the indicator", () => {
     const project = baseProject();
     store.setProject(project, PATH, false);
-    const { list, cards } = mount(project);
+    const { cards } = mount(project);
     const held = pressAndMove({ target: cards[0], x: 10, y: 10 }, { x: 10, y: 10 });
     // Pointer just above the midpoint of the first Upper.pdf card (index 3).
     window.dispatchEvent(new PointerEvent("pointermove", { clientX: 10, clientY: 62 }));
-    const line = list.querySelector<HTMLElement>(".page-drop-line");
+    // The line is a viewport overlay, so it lives on the body rather than in the
+    // scrolling list, and it carries the boundary in viewport coordinates.
+    const line = document.querySelector<HTMLElement>(".page-drop-line");
     expect(line?.hidden).toBe(false);
+    expect(line?.style.top).toBe("60px");
+    expect(line?.style.left).toBe("7px");
+    expect(line?.style.width).toBe("86px");
     expect(line?.classList.contains("is-cross-document")).toBe(true);
     const label = line?.querySelector<HTMLElement>(".page-drop-label");
     expect(label?.hidden).toBe(false);
     expect(label?.textContent).toBe("Move to Upper.pdf");
+    // Every card that the drop will move is visibly held.
+    expect(cards[0].classList.contains("is-dragging")).toBe(true);
+    expect(cards.slice(1).some((card) => card.classList.contains("is-dragging"))).toBe(false);
     held.cancel();
   });
 

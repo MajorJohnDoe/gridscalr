@@ -1,0 +1,69 @@
+/*
+ * Shared row-drag feedback: one insertion line and one held state for Pages,
+ * Layers and the takeoff builder columns. See
+ * `src/features/listInteraction/feedback.ts`.
+ *
+ * The line is fixed to the viewport and positioned from the row rectangles, so
+ * a scrolling panel can never clip it and it always paints above the rows.
+ */
+
+.list-drop-line {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 3px;
+  margin: 0;
+  border-radius: 2px;
+  background: var(--jade-bright);
+  box-shadow:
+    0 0 0 1px var(--bg-deep),
+    0 0 0 2px color-mix(in srgb, var(--jade) 45%, transparent),
+    0 1px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+  /* Above the docks, the canvas, dialog windows (2000) and popovers (2500);
+     only the help lightbox (3000) sits higher. A list can live inside a dialog,
+     as the takeoff builder does. */
+  z-index: 2600;
+}
+
+.list-drop-line[hidden] {
+  display: none;
+}
+
+/* A cross-document page drop keeps its warning colour. */
+.list-drop-line.is-cross-document {
+  background: var(--status-warning);
+}
+
+.list-drop-label {
+  position: absolute;
+  right: 0;
+  bottom: 6px;
+  padding: 2px 7px;
+  border-radius: 8px;
+  background: var(--status-warning);
+  color: #10161a;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.list-drop-label[hidden] {
+  display: none;
+}
+
+/*
+ * A held row is dimmed, ringed in the accent and lifted, so it reads as picked
+ * up rather than hovered or selected. No transform is used: the insertion line
+ * is measured from the row rectangles while the drag is running.
+ */
+.page-card.is-dragging,
+.layer-row.is-dragging,
+.schedules-builder-column.is-dragging {
+  opacity: 0.6;
+  border-color: var(--jade-bright);
+  box-shadow:
+    0 0 0 2px var(--jade-bright),
+    0 8px 18px rgba(0, 0, 0, 0.4);
+  cursor: grabbing;
+}

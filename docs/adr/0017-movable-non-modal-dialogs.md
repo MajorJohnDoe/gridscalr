@@ -74,13 +74,16 @@ name every call site uses (re-exported from `src/ui/dialogs.ts`) and now means
   outside every dialog. A transient flyout or menu owns `Escape` while it is
   open, so a dialog does not close underneath it.
 - Stacking is deterministic. Every open or raised dialog takes the next value of
-  a monotonically increasing counter and uses it as its `z-index` from the
-  `DIALOG_Z_BASE` (2000) band. A dialog is raised when it is opened, when it
-  receives a pointer press and when focus enters it. The newest or most recently
-  used window is therefore on top, and `Escape` never has to guess.
-- New dialogs are inserted as the first child of `<body>`, so the first
-  `.dialog-layer` in document order is the topmost window. Tests and diagnostics
-  can read the order without consulting internal state.
+  a monotonically increasing counter and the window applies it as its own inline
+  `z-index` from the `DIALOG_Z_BASE` (2000) band, on mount, on every raise and
+  after every close. A dialog is raised when it is opened, when it receives a
+  pointer press and when focus enters it. The newest or most recently used
+  window is therefore visibly on top, and `Escape` never has to guess.
+- New dialogs are inserted as the first child of `<body>`, so DOM order is
+  deterministic for tests and diagnostics. It does **not** decide the paint
+  order: sibling layers with equal `z-index` would paint in document order, which
+  puts the newest window underneath, so the stack level is applied as the
+  window's `z-index` and tests can read it from `data-dialog-level`.
 
 ### 4. Moving
 

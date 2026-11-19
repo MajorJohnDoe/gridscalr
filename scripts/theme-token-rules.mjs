@@ -72,6 +72,9 @@ const PAIRS = [
   ["--jade", "--panel", 4.5],
   ["--jade-bright", "--bg", 3],
   ["--jade-bright", "--bg-deep", 4.5],
+  /* The shared row-drag insertion line is drawn over the panel, so it must
+     stay visible on it in every palette. */
+  ["--jade-bright", "--panel", 3],
   ["--on-accent", "--jade", 4.5],
   ["--on-accent", "--jade-bright", 4.5],
   ["--cyan", "--statusbar-bg", 4.5],

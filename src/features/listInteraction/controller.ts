@@ -12,8 +12,9 @@ import {
   type ListSelectMode,
   type MoveOutcome,
 } from "./model";
-import { PointerRowDrag } from "./pointerDrag";
-import { DropIndicator, LiveRegion } from "./ui";
+import { PointerRowDrag, type PointerDropGuide } from "./pointerDrag";
+import { ListDragFeedback } from "./feedback";
+import { LiveRegion } from "./ui";
 
 /**
  * Generic drag, multi-selection and keyboard reorder controller for a vertical
@@ -70,7 +71,7 @@ export interface ListReorderOptions<E extends ListEntry> {
 }
 
 export class ListReorderController<E extends ListEntry = ListEntry> {
-  private readonly indicator: DropIndicator;
+  private readonly feedback: ListDragFeedback;
   private readonly announcer: LiveRegion;
   private readonly pointer: PointerRowDrag;
   private readonly stepScroll = (): void => this.runScroll();
@@ -79,14 +80,14 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
   private selection: string[] = [];
   private anchor: string | null = null;
   private dragging: string[] = [];
-  private plan: ListDropPlan | null = null;
+  private pointerX = 0;
   private pointerY = 0;
   private scrollSpeed = 0;
   private scrollFrame: number | null = null;
   private pendingFocus: string | null = null;
 
   constructor(private readonly options: ListReorderOptions<E>) {
-    this.indicator = new DropIndicator({
+    this.feedback = new ListDragFeedback({
       lineClass: options.dropLineClass,
       labelClass: options.dropLabelClass,
     });
@@ -98,6 +99,8 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
       onMove: (x, y) => this.dragOver(x, y),
       onDrop: (x, y) => this.drop(x, y),
       onCancel: () => this.clearDragState(),
+      feedback: this.feedback,
+      heldRows: () => this.movedRows(),
     });
   }
 
@@ -161,7 +164,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
 
   /** Restores focus and clears drag chrome after the panel re-rendered. */
   afterRender(): void {
-    this.indicator.hide();
+    this.feedback.hide();
     const focus = this.pendingFocus;
     this.pendingFocus = null;
     if (!focus) return;
@@ -199,13 +202,13 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     const rows = this.rows();
     const spans = rowSpans(rows);
     const renderedIndex = insertionIndexAt(spans, clientY);
-    this.indicator.show(list, rows, renderedIndex, null);
+    this.feedback.show(list, rows, renderedIndex, null);
     return mapIndex ? mapIndex(renderedIndex, rows) : renderedIndex;
   }
 
   /** Hides the file-drop line without disturbing an internal row drag. */
   hideExternalDrop(): void {
-    if (!this.dragging.length) this.indicator.hide();
+    if (!this.dragging.length) this.feedback.hide();
   }
 
   private rows(): HTMLElement[] {
@@ -257,14 +260,15 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     const entries = this.options.entries();
     this.dragging = this.options.selectable ? dragSet(entries, new Set(this.selection), id) : [id];
     this.applySelection();
-    row.classList.add("is-dragging");
-    for (const other of this.rows()) {
-      const otherId = this.options.rowId(other);
-      if (other !== row && otherId && this.dragging.includes(otherId)) {
-        other.classList.add("is-dragging");
-      }
-    }
     return true;
+  }
+
+  /** Rows held by the current drag, so every row that will move is marked. */
+  private movedRows(): readonly HTMLElement[] {
+    return this.rows().filter((row) => {
+      const id = this.options.rowId(row);
+      return Boolean(id && this.dragging.includes(id));
+    });
   }
 
   private isInsideList(clientX: number, clientY: number): boolean {
@@ -276,50 +280,58 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     );
   }
 
-  private dragOver(clientX: number, clientY: number): void {
-    if (!this.dragging.length || !this.options.canReorder()) return;
+  private dragOver(clientX: number, clientY: number): PointerDropGuide | null {
+    const plan = this.refreshPlan(clientX, clientY);
+    if (!plan) return null;
+    return {
+      insertionIndex: plan.insertionIndex,
+      label: plan.label,
+      crossDocument: plan.crossDocument,
+    };
+  }
+
+  /**
+   * Recomputes the drop plan for the pointer. Returning null means the pointer
+   * has no insertion point: the line is hidden, but the row stays held.
+   */
+  private refreshPlan(clientX: number, clientY: number): ListDropPlan | null {
+    if (!this.list || !this.dragging.length || !this.options.canReorder()) return null;
     if (!this.isInsideList(clientX, clientY)) {
       // A pointer outside the list has no insertion point, same as leaving a
       // native drag: hide the line and stop scrolling, but keep the drag.
-      this.plan = null;
-      this.indicator.hide();
       this.scrollSpeed = 0;
-      return;
+      return null;
     }
+    this.pointerX = clientX;
     this.pointerY = clientY;
-    this.refreshPlan();
+    const insertionIndex = insertionIndexAt(rowSpans(this.rows()), clientY);
+    const plan = this.planFor(this.options.entries(), new Set(this.dragging), insertionIndex);
     this.updateAutoScroll();
-  }
-
-  private refreshPlan(): void {
-    if (!this.list || !this.dragging.length) return;
-    const rows = this.rows();
-    const insertionIndex = insertionIndexAt(rowSpans(rows), this.pointerY);
-    const entries = this.options.entries();
-    const plan = this.planFor(entries, new Set(this.dragging), insertionIndex);
-    this.plan = plan;
-    this.indicator.show(this.list, rows, insertionIndex, plan.label, plan.crossDocument);
+    return plan;
   }
 
   private drop(clientX: number, clientY: number): void {
     const ids = [...this.dragging];
     let plan: ListDropPlan | null = null;
     if (ids.length && this.options.canReorder() && this.isInsideList(clientX, clientY)) {
-      this.pointerY = clientY;
-      this.refreshPlan();
-      plan = this.plan;
+      plan = this.refreshPlan(clientX, clientY);
     }
     this.clearDragState();
     if (!plan || !ids.length) return;
     this.options.onMove(ids, plan.insertionIndex, plan.changesOrder);
   }
 
+  /** Draws the line for a plan computed outside a pointer move (auto-scroll). */
+  private showPlan(plan: ListDropPlan | null): void {
+    if (!plan || !this.list) return;
+    this.feedback.show(this.list, this.rows(), plan.insertionIndex, plan.label, plan.crossDocument);
+  }
+
   private clearDragState(): void {
     this.dragging = [];
-    this.plan = null;
-    this.indicator.hide();
+    this.feedback.hide();
+    this.feedback.releaseHeld();
     this.scrollSpeed = 0;
-    for (const row of this.rows()) row.classList.remove("is-dragging");
   }
 
   /** Scrolls the list while a dragged row stays near its top or bottom edge. */
@@ -349,7 +361,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
       return;
     }
     scroll.scrollTop += this.scrollSpeed;
-    this.refreshPlan();
+    this.showPlan(this.refreshPlan(this.pointerX, this.pointerY));
     this.scrollFrame = requestAnimationFrame(this.stepScroll);
   }
 
@@ -360,7 +372,7 @@ export class ListReorderController<E extends ListEntry = ListEntry> {
     }
     this.scrollFrame = null;
     this.scrollSpeed = 0;
-    this.indicator.destroy();
+    this.feedback.destroy();
     this.list = null;
     this.scroll = null;
   }

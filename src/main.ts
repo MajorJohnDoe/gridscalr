@@ -19,6 +19,7 @@ import "./styles/doctor.css";
 import "./styles/projectImport.css";
 import "./styles/pageModel.css";
 import "./styles/layerTree.css";
+import "./styles/listDrag.css";
 import "./styles/markups.css";
 import "./styles/help.css";
 import "./styles/popovers.css";

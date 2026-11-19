@@ -5,6 +5,7 @@
 export {
   collapseAllKeys,
   dragSet,
+  dropLinePlacement,
   expandAllKeys,
   insertionIndexAt,
   keyboardInsertion,
@@ -16,20 +17,24 @@ export {
   orderedSelection,
   pruneSelection,
   rowIndexAt,
+  rowMoveGuideIndex,
   selectionAfterClick,
   toggleCollapsedKey,
 } from "./model";
 export type {
+  DropLinePlacement,
   ListEntry,
   ListMoveCommand,
   ListSelection,
   ListSelectMode,
   MoveOutcome,
+  RowBox,
   RowSpan,
 } from "./model";
 export { ListReorderController } from "./controller";
 export type { ListDropPlan, ListReorderOptions } from "./controller";
 export { PointerRowDrag } from "./pointerDrag";
-export type { PointerRowDragOptions } from "./pointerDrag";
-export { dragHandle, DropIndicator, LiveRegion, RowNavigator } from "./ui";
-export type { DropIndicatorOptions } from "./ui";
+export type { PointerDropGuide, PointerRowDragOptions } from "./pointerDrag";
+export { ListDragFeedback, viewportBox } from "./feedback";
+export type { DragFeedbackOptions } from "./feedback";
+export { dragHandle, LiveRegion, RowNavigator } from "./ui";
