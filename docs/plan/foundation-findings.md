@@ -3548,3 +3548,38 @@ remains the scheduling home.
   entries and zero npm findings.
 - **Related:** #329, #330, `security/dependency-allowlist.json`,
   `scripts/check-dependencies.mjs`.
+
+### F-143 — a stacked dialog window paints under the window it was opened from
+
+- **Date:** 2026-11-19
+- **Phase:** Takeoff improvements follow-up — drag feedback and placed-table border
+- **Severity:** P2
+- **Area:** Dialog host / takeoff settings hub
+- **Status:** open
+- **Evidence:** `mountDialog` records the stacking level as
+  `layer.dataset.dialogLevel = String(stack.open(id))` and inserts the newest
+  layer first in `<body>`, but nothing reads that attribute:
+  `src/styles/dialogs.css` sets a constant `z-index: 2000` on `.dialog-layer`
+  and no rule or controller line applies the level. With equal `z-index`, the
+  later sibling paints on top, so the window mounted first (the newest) ends up
+  underneath. Reproduced in Chromium: **View → Takeoff settings… → Tables →
+  Edit takeoff table…** mounts `Edit takeoff table` first in `<body>` and
+  `Takeoff settings` second, both at `z-index: 2000`; `elementFromPoint` over a
+  builder-column grip returns the hub's tab, so the editor is covered and
+  unusable.
+- **Problem:** ADR 0017 §4 states that opening a dialog from a dialog stacks the
+  new window on top and that the first `.dialog-layer` is the topmost. The code
+  only satisfies the second half of that contract, and equal `z-index` makes it
+  false. Nested editors (custom field, table builder, backup manager) are
+  therefore painted behind their parent.
+- **Impact:** A nested editor cannot be used at all: its fields are behind the
+  hub. No data effect — the dialog is open, focused and closable by Escape.
+  The path was not caught because the phase-3 dialog tests assert the stack
+  order and Escape routing, not paint order, and jsdom has no layout.
+- **Next step:** apply the recorded level as an inline `z-index` on the layer in
+  `mountDialog` and `raise()`, or add a `[data-dialog-level]` rule with a
+  per-level variable; then add a Chromium assertion that the newest window's
+  rectangle is what `elementFromPoint` returns. Owned by the dialog host, so it
+  is out of scope for #332/#333.
+- **Related:** #321, #322, ADR 0017, `src/features/dialogHost/controller.ts`,
+  `src/styles/dialogs.css`.

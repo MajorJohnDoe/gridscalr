@@ -3,9 +3,11 @@ import { beforeEach, describe, expect, it } from "vitest";
 import { dragPointer, pointerEvent, pressAndMove, rect } from "./helpers/pointer";
 import {
   ListReorderController,
+  PointerRowDrag,
   RowNavigator,
   collapseAllKeys,
   dragSet,
+  dropLinePlacement,
   expandAllKeys,
   insertionIndexAt,
   keyboardInsertion,
@@ -17,6 +19,7 @@ import {
   orderedSelection,
   pruneSelection,
   rowIndexAt,
+  rowMoveGuideIndex,
   selectionAfterClick,
   toggleCollapsedKey,
   type ListEntry,
@@ -145,6 +148,78 @@ describe("shared list movement", () => {
   });
 });
 
+describe("shared drag feedback", () => {
+  const rows = [0, 1, 2].map((index) => ({
+    top: index * 20,
+    bottom: index * 20 + 20,
+    left: 10,
+    right: 110,
+  }));
+  const list = { top: 0, bottom: 60, left: 0, right: 120 };
+  const viewport = { top: 0, bottom: 800, left: 0, right: 1200 };
+
+  it("places the line at the row boundary the drop will land on", () => {
+    expect(dropLinePlacement(rows, 0, list, viewport)).toMatchObject({ top: 0, visible: true });
+    expect(dropLinePlacement(rows, 1, list, viewport)).toMatchObject({ top: 20, visible: true });
+    expect(dropLinePlacement(rows, 2, list, viewport)).toMatchObject({ top: 40, visible: true });
+    // Past the end: the line sits under the last row, kept inside the list.
+    expect(dropLinePlacement(rows, 3, list, viewport)).toMatchObject({ top: 57, visible: true });
+    expect(dropLinePlacement(rows, 99, list, viewport)).toMatchObject({ top: 57, visible: true });
+  });
+
+  it("spans the full row width inside the panel inset", () => {
+    const placement = dropLinePlacement(rows, 1, list, viewport);
+    expect(placement.left).toBe(7);
+    expect(placement.width).toBe(106);
+  });
+
+  it("keeps the line on screen when the boundary is scrolled out of the panel", () => {
+    // The list is scrolled up so its first rows are above the viewport.
+    const scrolled = { top: -200, bottom: 10, left: 0, right: 120 };
+    const scrolledRows = rows.map((row) => ({
+      ...row,
+      top: row.top - 220,
+      bottom: row.bottom - 220,
+    }));
+    const above = dropLinePlacement(scrolledRows, 0, scrolled, viewport);
+    expect(above.visible).toBe(true);
+    expect(above.top).toBe(0);
+    // A long list whose drop slot is below the visible part draws at the edge.
+    const long = { top: -1000, bottom: 900, left: 0, right: 120 };
+    const longRows = rows.map((row) => ({
+      ...row,
+      top: row.top + 860,
+      bottom: row.bottom + 860,
+    }));
+    const below = dropLinePlacement(longRows, 3, long, viewport);
+    expect(below.visible).toBe(true);
+    expect(below.top).toBe(797);
+  });
+
+  it("draws nothing once the list has left the viewport", () => {
+    const offscreen = { top: 900, bottom: 1000, left: 0, right: 120 };
+    expect(dropLinePlacement(rows, 1, offscreen, viewport).visible).toBe(false);
+  });
+
+  it("draws the line at the top of an empty list", () => {
+    expect(dropLinePlacement([], 0, list, viewport)).toMatchObject({ top: 0, visible: true });
+  });
+
+  it("puts a row-onto-row drop at the position the row will take", () => {
+    const spans = [
+      { top: 0, bottom: 20 },
+      { top: 20, bottom: 40 },
+      { top: 40, bottom: 60 },
+    ];
+    // Moving down lands after the hovered row, moving up before it.
+    expect(rowMoveGuideIndex(spans, 50, 0)).toBe(3);
+    expect(rowMoveGuideIndex(spans, 30, 2)).toBe(1);
+    // Hovering the grabbed row itself keeps the line at its own top edge.
+    expect(rowMoveGuideIndex(spans, 25, 1)).toBe(1);
+    expect(rowMoveGuideIndex([], 25, 4)).toBe(4);
+  });
+});
+
 describe("shared list filters and collapse state", () => {
   it("matches case and locale-insensitively", () => {
     expect(normalizeFilterQuery("  RÖRELSE ")).toBe("rörelse");
@@ -170,7 +245,7 @@ describe("shared list reorder controller", () => {
     changesOrder: boolean;
   }
 
-  function mount(options: { canReorder?: boolean } = {}) {
+  function mount(options: { canReorder?: boolean; selectable?: boolean } = {}) {
     document.body.innerHTML = "";
     const scroll = document.createElement("div");
     const list = document.createElement("div");
@@ -186,6 +261,7 @@ describe("shared list reorder controller", () => {
       rowId: (row) => row.dataset.id ?? null,
       entries: () => entries,
       canReorder: () => options.canReorder !== false,
+      selectable: options.selectable === true,
       onMove: (ids, index, changesOrder) => calls.push({ ids: [...ids], index, changesOrder }),
       announce: (_ids, outcome) => {
         const message = `moved ${outcome.startIndex + 1} of ${outcome.total}`;
@@ -232,6 +308,69 @@ describe("shared list reorder controller", () => {
     press.release({ x: 10, y: 85 });
     expect(calls).toEqual([{ ids: ["b"], index: 4, changesOrder: true }]);
     expect(rows[1].classList.contains("is-dragging")).toBe(false);
+  });
+
+  it("shows the insertion line at the drop position while a row is held", () => {
+    const { rows } = mount();
+    const press = pressAndMove({ target: rows[1], x: 10, y: 30 }, { x: 10, y: 60 });
+    const line = document.querySelector<HTMLElement>(".test-drop-line");
+    // The line is a viewport overlay: it can never be clipped by the panel.
+    expect(line).toBeTruthy();
+    expect(line?.parentElement).toBe(document.body);
+    expect(line?.hidden).toBe(false);
+    // Insertion index 3 is the top edge of row "d" at y = 60.
+    expect(line?.style.top).toBe("60px");
+    expect(line?.style.left).toBe("7px");
+    expect(line?.style.width).toBe("86px");
+    // The held row is marked while the pointer is down.
+    expect(rows[1].classList.contains("is-dragging")).toBe(true);
+    press.release({ x: 10, y: 60 });
+    expect(document.querySelector<HTMLElement>(".test-drop-line")?.hidden).toBe(true);
+    expect(rows[1].classList.contains("is-dragging")).toBe(false);
+  });
+
+  it("holds every row of a multi-selection drag", () => {
+    const { controller, rows } = mount({ selectable: true });
+    controller.handleClick(new MouseEvent("click", { ctrlKey: true, bubbles: true }), "b");
+    controller.handleClick(new MouseEvent("click", { ctrlKey: true, bubbles: true }), "d");
+    const press = pressAndMove({ target: rows[3], x: 10, y: 70 }, { x: 10, y: 5 });
+    expect(rows[1].classList.contains("is-dragging")).toBe(true);
+    expect(rows[3].classList.contains("is-dragging")).toBe(true);
+    expect(rows[0].classList.contains("is-dragging")).toBe(false);
+    expect(rows[2].classList.contains("is-dragging")).toBe(false);
+    press.release({ x: 10, y: 5 });
+    expect(rows.some((row) => row.classList.contains("is-dragging"))).toBe(false);
+  });
+
+  it("draws the default line for a list that moves a row onto a row", () => {
+    document.body.innerHTML = "";
+    const list = document.createElement("div");
+    list.getBoundingClientRect = () => rect(0, 0, 200, 110);
+    document.body.append(list);
+    const rows = [0, 1, 2].map((index) => {
+      const row = document.createElement("div");
+      row.className = "column-row";
+      row.getBoundingClientRect = () => rect(index * 30, 0, 200, 30);
+      list.append(row);
+      return row;
+    });
+    // The takeoff builder columns report no guide index, so the helper falls
+    // back to the row-under-pointer boundary.
+    new PointerRowDrag({
+      rowSelector: ".column-row",
+      canStart: () => true,
+      onStart: () => true,
+      onMove: () => undefined,
+      onDrop: () => undefined,
+      onCancel: () => undefined,
+    }).bind(list);
+    const press = pressAndMove({ target: rows[0], x: 10, y: 10 }, { x: 10, y: 70 });
+    const line = document.querySelector<HTMLElement>(".list-drop-line");
+    expect(line?.hidden).toBe(false);
+    // Hovering the last row while dragging the first lands the row after it.
+    expect(line?.style.top).toBe("90px");
+    expect(rows[0].classList.contains("is-dragging")).toBe(true);
+    press.release({ x: 10, y: 70 });
   });
 
   it("reports an unchanged drop without pretending it reordered", () => {

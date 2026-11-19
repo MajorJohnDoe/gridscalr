@@ -172,6 +172,80 @@ export function rowIndexAt(spans: readonly RowSpan[], clientY: number): number {
   return nearest;
 }
 
+/**
+ * Landing boundary for a list that moves one row *onto* another row (a row
+ * index, not an insertion point), such as the takeoff builder columns: a
+ * downward move lands after the row under the pointer, an upward move before
+ * it. Both render as a line between rows at the position the row will take.
+ */
+export function rowMoveGuideIndex(
+  spans: readonly RowSpan[],
+  clientY: number,
+  startIndex: number,
+): number {
+  const index = rowIndexAt(spans, clientY);
+  if (index < 0) return startIndex;
+  return index > startIndex ? index + 1 : index;
+}
+
+/** A box in viewport coordinates, matching `getBoundingClientRect`. */
+export interface RowBox {
+  top: number;
+  bottom: number;
+  left: number;
+  right: number;
+}
+
+export interface DropLinePlacement {
+  /** Viewport y of the line's top edge. */
+  top: number;
+  left: number;
+  width: number;
+  /** False when the list itself is outside the viewport. */
+  visible: boolean;
+}
+
+/** Height of the drawn line, so a clamped line stays fully on screen. */
+export const DROP_LINE_HEIGHT = 3;
+/** Horizontal inset from the list edge, keeping the line clear of the border. */
+export const DROP_LINE_INSET = 7;
+
+/**
+ * Where the insertion line goes for a drop, in viewport coordinates.
+ *
+ * The boundary is the top of the row at `insertionIndex`, or the bottom of the
+ * last row for a drop past the end. It is clamped into the part of the list
+ * that the viewport shows, so a boundary that is currently scrolled out of
+ * sight still draws a line at the nearest visible edge instead of disappearing.
+ * An empty list draws the line at its top.
+ */
+export function dropLinePlacement(
+  rows: readonly RowBox[],
+  insertionIndex: number,
+  list: RowBox,
+  viewport: RowBox,
+  inset = DROP_LINE_INSET,
+): DropLinePlacement {
+  const width = Math.max(0, list.right - list.left - inset * 2);
+  const placement = {
+    left: Math.round(list.left + inset),
+    width: Math.round(width),
+    visible: false,
+  };
+  if (list.bottom <= viewport.top || list.top >= viewport.bottom) {
+    return { ...placement, top: Math.round(list.top), visible: false };
+  }
+  let boundary = list.top;
+  if (rows.length) {
+    const clamped = Math.max(0, Math.min(rows.length - 1, Math.round(insertionIndex)));
+    boundary = insertionIndex >= rows.length ? rows[clamped].bottom : rows[clamped].top;
+  }
+  const lowest = Math.max(list.top, viewport.top);
+  const highest = Math.min(list.bottom, viewport.bottom) - DROP_LINE_HEIGHT;
+  const top = highest <= lowest ? lowest : Math.max(lowest, Math.min(highest, boundary));
+  return { ...placement, top: Math.round(top), visible: true };
+}
+
 export interface MoveOutcome {
   /** 0-based index of the first moved entry after the change. */
   startIndex: number;

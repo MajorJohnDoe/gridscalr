@@ -3,12 +3,13 @@ import { buildLayerHierarchy } from "../../model/layerHierarchy";
 import type { Project } from "../../model/types";
 import {
   dragSet,
-  DropIndicator,
   LiveRegion,
+  ListDragFeedback,
   PointerRowDrag,
   pruneSelection,
   selectionAfterClick,
   type ListSelectMode,
+  type PointerDropGuide,
 } from "../listInteraction";
 import { layerDropPreview, layerRowSpans, type LayerDropPreview } from "./dropPreview";
 import { layerRenderedSiblingIds } from "./view";
@@ -48,7 +49,7 @@ function rejectionMessage(rejection: string): string {
 }
 
 export class LayerTreeController {
-  private readonly indicator = new DropIndicator({
+  private readonly feedback = new ListDragFeedback({
     lineClass: "layer-drop-line",
     labelClass: "layer-drop-label",
   });
@@ -71,6 +72,8 @@ export class LayerTreeController {
       onMove: (x, y) => this.dragOver(x, y),
       onDrop: (x, y) => this.drop(x, y),
       onCancel: () => this.clearDragState(),
+      feedback: this.feedback,
+      heldRows: () => this.movedRows(),
     });
   }
 
@@ -139,14 +142,15 @@ export class LayerTreeController {
     const entries = this.renderedIds().map((entry) => ({ id: entry }));
     this.dragging = dragSet(entries, new Set(this.selection), id);
     this.applySelection();
-    row.classList.add("is-dragging");
-    for (const other of this.rows()) {
-      const otherId = other.dataset.layerId;
-      if (other !== row && otherId && this.dragging.includes(otherId)) {
-        other.classList.add("is-dragging");
-      }
-    }
     return true;
+  }
+
+  /** Rows held by the current drag, so every row that will move is marked. */
+  private movedRows(): readonly HTMLElement[] {
+    return this.rows().filter((row) => {
+      const id = row.dataset.layerId;
+      return Boolean(id && this.dragging.includes(id));
+    });
   }
 
   /**
@@ -183,7 +187,7 @@ export class LayerTreeController {
 
   /** Clears the drop chrome and restores focus after the panel re-rendered. */
   afterRender(): void {
-    this.indicator.hide();
+    this.feedback.hide();
     this.clearHighlight();
     this.applySelection();
     const focus = this.pendingFocus;
@@ -308,29 +312,27 @@ export class LayerTreeController {
     );
   }
 
-  private dragOver(clientX: number, clientY: number): void {
-    if (!this.dragging.length) return;
-    if (!this.options.canMove() || !this.list) return;
+  private dragOver(clientX: number, clientY: number): PointerDropGuide | null {
+    if (!this.dragging.length) return null;
+    if (!this.options.canMove() || !this.list) return null;
     const project = this.options.project();
-    if (!project) return;
+    if (!project) return null;
     if (!this.isInsideList(clientX, clientY)) {
       // Leaving the tree keeps the row held but clears the drop target.
-      this.indicator.hide();
+      this.feedback.hide();
       this.clearHighlight();
       this.scroller.stop();
-      return;
+      return null;
     }
     const preview = layerDropPreview(project, this.dragging, layerRowSpans(this.rows()), clientY);
-    if (!preview) return;
-    this.indicator.show(
-      this.list,
-      this.rows(),
-      preview.insertionIndex,
-      this.dropLabel(preview),
-      preview.feedback === "reject",
-    );
+    if (!preview) return null;
     this.setHighlight(preview.highlightId);
     this.scroller.update(this.scroll, clientY);
+    return {
+      insertionIndex: preview.insertionIndex,
+      label: this.dropLabel(preview),
+      crossDocument: preview.feedback === "reject",
+    };
   }
 
   private drop(clientX: number, clientY: number): void {
@@ -364,16 +366,16 @@ export class LayerTreeController {
 
   private clearDragState(): void {
     this.dragging = [];
-    this.indicator.hide();
+    this.feedback.hide();
+    this.feedback.releaseHeld();
     this.clearHighlight();
     this.scroller.stop();
-    for (const row of this.rows()) row.classList.remove("is-dragging");
   }
 
   private release(): void {
     this.pointer.detach();
     this.scroller.stop();
-    this.indicator.destroy();
+    this.feedback.destroy();
     this.list = null;
     this.scroll = null;
   }

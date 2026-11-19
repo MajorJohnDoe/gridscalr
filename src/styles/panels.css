@@ -343,10 +343,6 @@
   opacity: 0.55;
 }
 
-.layer-row.is-dragging {
-  opacity: 0.55;
-}
-
 .layer-row:focus-visible {
   outline: 2px solid var(--jade-bright);
   outline-offset: 1px;
