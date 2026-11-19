@@ -44,18 +44,62 @@
   margin: 12px 0 6px;
 }
 
+/*
+ * The add row keeps its name field, kind select and button on one line while
+ * there is room and wraps instead of squeezing them on a narrow window.
+ */
 .takeoff-object-add .input-row {
+  flex-wrap: wrap;
+  align-items: center;
   margin-top: 6px;
 }
 
+.takeoff-object-add .input-row .input {
+  flex: 1 1 220px;
+}
+
+.takeoff-object-add .input-row .select {
+  flex: 0 1 180px;
+  min-width: 132px;
+}
+
+/*
+ * The Objects table. It fills the pane while six columns fit; a window that is
+ * genuinely too narrow scrolls the table horizontally instead of clipping a
+ * column. See the pinned Actions column below.
+ */
 .takeoff-object-table-wrap {
   overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .takeoff-object-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 11px;
+}
+
+/*
+ * The Actions column is pinned to the right edge, so the move up, move down and
+ * delete controls stay reachable at every scale and width (the documented
+ * degradation for a narrow window). The separator and the left shadow are the
+ * cue that the table continues underneath.
+ */
+.takeoff-object-table th:last-child,
+.takeoff-object-table td:last-child {
+  position: sticky;
+  right: 0;
+  z-index: 1;
+  /* `--surface-tab` is a real surface token that keeps the muted column headers
+     above 4.5:1 in every palette; the modal gradient itself is not a token. */
+  background: var(--surface-tab);
+  box-shadow:
+    inset 1px 0 0 var(--border-soft),
+    -7px 0 9px -9px rgba(0, 0, 0, 0.55);
+}
+
+.takeoff-object-table thead th:last-child {
+  z-index: 2;
 }
 
 .takeoff-object-table th,

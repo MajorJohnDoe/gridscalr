@@ -535,6 +535,8 @@ The hub has four tabs, and each concept has one home:
 
 ![Takeoff settings Tables tab with the saved takeoff tables and the New takeoff table action](screenshots/takeoff-settings-tables.png)
 
+The hub opens wider than the other settings windows, because the Objects table has six columns. The **Actions** column is pinned to the right edge, so the move up, move down and delete controls stay visible at every UI scale and in a window too narrow for the whole table: the other columns then scroll sideways inside the table while the pinned column keeps its separator. **Add object** keeps its name field, type and button on one line while there is room and wraps them above the table when there is not.
+
 Deep links open the hub on the right tab and row: an empty card's **Configure** opens Cards on that card (Rooms and Area open the space register instead), and **Edit object “…”** in Properties opens Objects on that object. See [Takeoff and takeoff tables](#takeoff-and-takeoff-tables), [Count](#count) and [Custom fields](#custom-fields).
 
 ## Takeoff and takeoff tables

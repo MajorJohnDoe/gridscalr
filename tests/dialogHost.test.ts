@@ -283,6 +283,15 @@ describe("non-modal dialog window", () => {
     // The window is the same one, not a second copy.
     expect(dialogs()).toHaveLength(1);
   });
+
+  it("offers a wider size without changing the window rules", async () => {
+    void showModal({ title: "Wider window", body: simpleBody(), actions: [], extraWide: true });
+    await nextFrame();
+    const modal = dialog()!;
+    expect(modal.classList.contains("modal-extra-wide")).toBe(true);
+    expect(modal.classList.contains("modal-wide")).toBe(false);
+    expect(modal.getAttribute("aria-modal")).toBe("false");
+  });
 });
 
 describe("destructive confirmation revalidation", () => {

@@ -128,6 +128,58 @@ async function assertMenusFit(page, label) {
   await page.waitForTimeout(100);
 }
 
+async function assertObjectsActionsReachable(page, label) {
+  const report = await page.evaluate(() => {
+    const wrap = document.querySelector(".takeoff-object-table-wrap");
+    const head = document.querySelector(".takeoff-object-table thead th:last-child");
+    const rows = [...document.querySelectorAll(".takeoff-object-row")];
+    if (!wrap || !head || !rows.length) return { error: "the Objects table is missing" };
+    const wrapBox = wrap.getBoundingClientRect();
+    const problems = [];
+    const actionsBox = head.getBoundingClientRect();
+    if (actionsBox.right > wrapBox.right + 1 || actionsBox.left < wrapBox.left - 1) {
+      problems.push(`the Actions header is outside the visible table`);
+    }
+    for (const row of rows) {
+      const cell = row.lastElementChild;
+      if (!cell) {
+        problems.push(`a row has no Actions cell`);
+        continue;
+      }
+      const cellBox = cell.getBoundingClientRect();
+      if (cellBox.right > wrapBox.right + 1 || cellBox.left < wrapBox.left - 1) {
+        problems.push(`the Actions cell of ${row.dataset.objectId} is clipped horizontally`);
+      }
+      for (const button of cell.querySelectorAll("button")) {
+        const box = button.getBoundingClientRect();
+        if (box.width < 24 || box.height < 24) {
+          problems.push(`a control in ${row.dataset.objectId} is ${Math.round(box.width)}px wide`);
+        }
+        if (box.right > wrapBox.right + 1 || box.left < wrapBox.left - 1) {
+          problems.push(`a control in ${row.dataset.objectId} is outside the visible table`);
+        }
+      }
+    }
+    const addRow = document.querySelector(".takeoff-object-add .input-row");
+    if (!addRow) {
+      problems.push("the add-object row is missing");
+    } else {
+      const rowBox = addRow.getBoundingClientRect();
+      const controls = [...addRow.querySelectorAll("input, select, button")];
+      if (controls.length !== 3) problems.push("the add-object row lost a control");
+      for (const control of controls) {
+        const box = control.getBoundingClientRect();
+        if (box.right > rowBox.right + 1 || box.width < 48) {
+          problems.push(`an add-object control is squeezed to ${Math.round(box.width)}px`);
+        }
+      }
+    }
+    return { problems };
+  });
+  assert.ok(!report.error, `${label}: ${report.error}`);
+  assert.deepEqual(report.problems, [], `${label}: ${report.problems.join("; ")}`);
+}
+
 async function assertDialogFits(page, label, open, name) {
   await open();
   const dialog = name ? page.getByRole("dialog", { name }) : page.getByRole("dialog");
@@ -224,6 +276,9 @@ try {
         openTakeoffSettings(page, index),
       );
     }
+    await openTakeoffSettings(page, 0);
+    await assertObjectsActionsReachable(page, `${viewport.label} Takeoff settings Objects (en)`);
+    await page.keyboard.press("Escape");
     // The same four tabs with the Swedish catalog active. The tab is selected
     // by index so no translated label is duplicated in the script.
     await setLanguage(page, "sv");
@@ -232,6 +287,9 @@ try {
         openTakeoffSettings(page, index),
       );
     }
+    await openTakeoffSettings(page, 0);
+    await assertObjectsActionsReachable(page, `${viewport.label} Takeoff settings Objects (sv)`);
+    await page.keyboard.press("Escape");
     await setLanguage(page, "en");
     await openSummaryTab(page);
     const summaryShell = await readShell(page, `${viewport.label} Takeoff tab`);
