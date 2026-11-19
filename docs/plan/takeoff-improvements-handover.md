@@ -1083,3 +1083,54 @@ Next: effort exit — final documentation pass, Windows build and release decisi
 - **Screenshots:** five hub captures recaptured (`takeoff-settings-objects`,
   `tables`, `cards`, `fields`, plus the fields inspector); the manifest only
   refreshed `generatedAt`/`sourceFingerprint`.
+
+## Follow-up — visible drag feedback, closed table edge and dialog stacking
+
+- **Issues:** [#332](https://github.com/MajorJohnDoe/gridscalr/issues/332) (the
+  insertion line and held-row state were missing), [#333](https://github.com/MajorJohnDoe/gridscalr/issues/333)
+  (the placed table had no right border) and, filed from the work,
+  [#338](https://github.com/MajorJohnDoe/gridscalr/issues/338) (a stacked dialog
+  painted under the window that opened it). One PR closing all three.
+  Schema 28, app version 0.29.0.
+- **PR:** [#337](https://github.com/MajorJohnDoe/gridscalr/pull/337), from
+  `fix/drag-feedback-and-table-border`, base `main` (`3834e02`).
+- **Verified head:** `83abac09ae3d9a307e4a49952d36639196418ebc` (feedback
+  `7b04ccd`, right edge `66ef230`, merge of `cf0a2e8` `6b4b1ef`, z-index fix
+  `792114f`, findings/ADR `83abac0`). All six PR checks passed on that SHA.
+- **Merge commit:** `3eb56d0d91b89cfb58c86069be0f573034625d52`.
+- **Real cause of #332:** `PointerRowDrag.onPointerMove` returned early once
+  `pending` was cleared, so only the **first** move after the threshold was
+  handled — the line was drawn once at the grab edge and never followed the
+  pointer, and the builder columns had no line at all. The reorder still applied
+  because the drop position is computed on release, which is why the gesture
+  "worked" without feedback.
+- **Fix:** every pointer move is forwarded; the feedback moved into one
+  `src/features/listInteraction/feedback.ts` with a pure
+  `dropLinePlacement()`/`rowMoveGuideIndex()` geometry, drawn as a viewport-fixed
+  overlay on `document.body` (z 2600) so panel scrolling cannot clip it, plus one
+  shared `is-dragging` held style (`src/styles/listDrag.css`) for every row that
+  moves. Pages, Layers and the builder columns share it; file-drop line and
+  warning styling are unchanged.
+- **#333:** the right edge is emitted as an `outer` rule at `x = width` like the
+  other three edges; the column dividers stay `grid`.
+- **#338 / F-143:** `refreshTopMarkers()` now applies `stack.level(id)` as each
+  layer's inline `z-index`, so paint order comes from the stack and not from DOM
+  order. `tests/dialogHost.test.ts` proves the newest dialog is higher despite
+  being first in the DOM and that a pointer press on the older layer flips the
+  order; the browser suite asserts hub → builder stacking with
+  `elementFromPoint`.
+- **Conductor verification:** head matched, base `main` green,
+  `CLEAN`/`MERGEABLE` before merge. Re-ran `npx vitest run
+  tests/listInteraction.test.ts tests/pageReorder.test.ts
+  tests/layerTreeDrag.test.ts tests/scheduleTableStyle.test.ts
+  tests/dialogHost.test.ts tests/takeoffSettingsUi.test.ts`: 6 files, 111 tests
+  passed. `check:versions`, `check:file-budgets` (625 files), `check:modules`
+  (22 features), `check:i18n` (3 590 keys), `check:themes` (5) and
+  `GRIDSCALR_DOCS_STRICT=1 npm run check:docs` (272 links, 55 images, 40
+  screenshots, no stale warning) are green. No schema, version, Rust, `security/`
+  or `site/` change.
+- **Docs:** user guide (Pages, Layers, builder columns and the shared list
+  conventions), testing (the browser suite now asserts the feedback during the
+  drag, plus a manual per-platform check), architecture and the `AGENTS.md`
+  module map, and F-143 marked resolved. No screenshot recapture: the line and
+  held state exist only during a drag.
