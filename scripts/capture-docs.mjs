@@ -2,6 +2,7 @@ import { mkdtemp, readFile, readdir, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { shots } from "./capture-docs-shots.mjs";
+import { serializeManifest } from "./capture-manifest.mjs";
 import { docsSourceFingerprint } from "./docs-fingerprint.mjs";
 import { captureDocumentation } from "./docs-capture-flow.mjs";
 import { launchBrowser, repoRoot as root, startVite } from "./ui-harness.mjs";
@@ -55,10 +56,7 @@ try {
       project: "fixtures/demo-project.gridscalr",
       screenshots: shots,
     };
-    await writeFile(
-      resolve(screenshotDir, "manifest.json"),
-      `${JSON.stringify(manifest, null, 2)}\n`,
-    );
+    await writeFile(resolve(screenshotDir, "manifest.json"), serializeManifest(manifest));
     console.log(`Captured ${shots.length} screenshots in ${screenshotDir}`);
   }
 } catch (error) {

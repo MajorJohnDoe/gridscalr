@@ -3402,7 +3402,6 @@ export type MessageKey =
   | "schedules.builder.saved"
   | "schedules.builder.created"
   | "schedules.builder.deleted"
-  | "schedules.builder.deleteTitle"
   | "schedules.builder.deleteMessage"
   | "schedules.builder.titleNew"
   | "schedules.builder.titleEdit"

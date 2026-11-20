@@ -3400,7 +3400,6 @@
   "schedules.builder.saved": "Mängdschemat ”{name}” sparades.",
   "schedules.builder.created": "Mängdschemat ”{name}” skapades.",
   "schedules.builder.deleted": "Mängdschemat ”{name}” togs bort.",
-  "schedules.builder.deleteTitle": "Ta bort mängdschema",
   "schedules.builder.deleteMessage": "Ta bort \u201d{name}\u201d? Det g\u00e5r inte att \u00e5ngra efter n\u00e4sta sparning.",
   "schedules.builder.titleNew": "Nytt mängdschema",
   "schedules.builder.titleEdit": "Redigera mängdschema",

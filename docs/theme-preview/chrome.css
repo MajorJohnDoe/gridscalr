@@ -121,10 +121,6 @@
   box-shadow: var(--shadow-soft, 0 2px 10px rgba(0, 0, 0, 0.3));
 }
 
-.modal-backdrop {
-  background: var(--overlay-modal, rgba(4, 7, 8, 0.68));
-}
-
 .modal {
   background: var(--modal-grad, linear-gradient(180deg, #252d32, #1b2125));
   border-color: var(--modal-border, #3a444a);

@@ -3446,7 +3446,7 @@ remains the scheduling home.
 - **Phase:** Takeoff improvements, phase 3 — movable, non-modal dialogs
 - **Severity:** P3
 - **Area:** Theme tokens
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** The dimming backdrop was the only consumer of
   `var(--overlay-modal)`. The token is still defined in all five palettes
   (`src/styles/themes/*.css`) and copied into the generated
@@ -3455,6 +3455,10 @@ remains the scheduling home.
   enforces, so every new palette must define a colour nothing renders.
 - **Impact:** No runtime effect. Small maintenance cost and a misleading name in
   the token contract after ADR 0017 removed modal dimming.
+- **Resolution:** Fixed 2026-11-20 in this cleanup: the token is removed from
+  all five palettes in `src/styles/themes/` and from the two review palettes in
+  `docs/theme-preview/`, and the `.modal-backdrop` rule that read it is gone from
+  `docs/theme-preview/chrome.css`. `--overlay-lightbox` is untouched.
 - **Next step:** remove the token from the contract and the five palettes in a
   theme pass, and regenerate `docs/theme-preview/`.
 - **Related:** #321, `scripts/check-theme-tokens.mjs`, `src/styles/tokens.css`.
@@ -3465,7 +3469,7 @@ remains the scheduling home.
 - **Phase:** Takeoff improvements, phase 4 — schedule editor header actions
 - **Severity:** P3
 - **Area:** i18n catalogs
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `schedules.builder.deleteTitle` is defined in `en.json` and
   `sv.json` and generated into `types.generated.ts`, but no `src` file reads it.
   The builder's inline confirmation uses `schedules.builder.deleteMessage` and
@@ -3474,6 +3478,9 @@ remains the scheduling home.
   toward the key total that `check:i18n` reports, while nothing renders it.
 - **Impact:** No runtime effect. A smaller, honest catalog is easier to review
   when a later phase adds a real delete-confirmation title.
+- **Resolution:** Fixed 2026-11-20 in this cleanup: the key is deleted from
+  `en.json` and `sv.json` and `src/i18n/types.generated.ts` is regenerated; no
+  `src` file read it.
 - **Next step:** remove the key from both catalogs and regenerate
   `src/i18n/types.generated.ts` in an i18n cleanup, or reuse it as the title of
   a future shared delete confirmation instead of the inline strip.
@@ -3508,7 +3515,7 @@ remains the scheduling home.
 - **Phase:** Takeoff improvements, phase 5 — placed takeoff table style
 - **Severity:** P3
 - **Area:** Documentation capture tooling
-- **Status:** open
+- **Status:** fixed
 - **Evidence:** `scripts/capture-docs.mjs` writes the manifest with
   `JSON.stringify(manifest, null, 2)`, which emits literal em dashes, while the
   committed `docs/screenshots/manifest.json` stores `\u2014` escapes. A capture
@@ -3519,6 +3526,12 @@ remains the scheduling home.
   every capture produces review noise and the "did this phase change a
   screenshot" question is harder to answer.
 - **Impact:** No runtime effect. Small, repeated review cost on every docs pass.
+- **Resolution:** Fixed 2026-11-20 in this cleanup: the new pure module
+  `scripts/capture-manifest.mjs` exposes `serializeManifest()`, which writes
+  two-space JSON with a trailing newline and a lowercase `\uXXXX` escape for
+  every non-ASCII code unit. `scripts/capture-docs.mjs` now uses it, and
+  `tests/captureManifest.test.ts` proves that the committed manifest is
+  reproduced byte for byte. The dry run still writes no manifest.
 - **Next step:** either commit one full regeneration of the manifest in the
   release documentation pass, or run the written manifest through the same
   formatter the committed file used, so generator and repository agree.

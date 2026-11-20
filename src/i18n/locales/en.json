@@ -3400,7 +3400,6 @@
   "schedules.builder.saved": "Takeoff table “{name}” saved.",
   "schedules.builder.created": "Takeoff table “{name}” created.",
   "schedules.builder.deleted": "Takeoff table “{name}” deleted.",
-  "schedules.builder.deleteTitle": "Delete takeoff table",
   "schedules.builder.deleteMessage": "Delete \u201c{name}\u201d? It cannot be undone after the next save.",
   "schedules.builder.titleNew": "New takeoff table",
   "schedules.builder.titleEdit": "Edit takeoff table",
