@@ -879,8 +879,8 @@ needed.
 
 ## Effort status
 
-The five phases are merged on schema 28 with the app version still **0.29.0**.
-`0.30.0` remains untagged and unreleased, and `site/release.json` is unchanged.
+The five phases are merged on schema 28. The effort shipped as **0.30.0** on
+2026-11-20, with no schema change; see the release record below.
 
 - Phase 1 `0afa4dbf0f3eec97ac7ac860dde5a83fd2767ce6` — pointer-based row
   reordering for pages, layers and builder columns; native file drops kept.
@@ -895,18 +895,50 @@ The five phases are merged on schema 28 with the app version still **0.29.0**.
 - Findings carried: F-135 (per-platform reorder manual gate), F-137 (flyouts and
   menus outside `DialogStack`), F-138 (unused `--overlay-modal` token), F-139
   (unused builder delete label key), F-140 (dock table palette), F-141 (capture
-  manifest churn). All are P3.
+  manifest churn). All are P3. F-138, F-139 and F-141 were fixed in `98a202f`.
 - Open gate: the product owner's Windows 11 check of mouse reordering and file
-  drops, on a build from `5dd6c681d`. The release decision belongs to the product
-  owner; no version bump, tag, GitHub Release or `site/release.json` change was
-  made by this effort.
+  drops. It did not block the 0.30.0 release, which the product owner requested;
+  epic #318 stays open until the check passes.
 - Environment finding: the `Install Linux dependencies` step failed on an apt
   mirror timeout in four separate runs across Phases 3–5 and passed unchanged on
   re-run each time. No application change was made for it.
 
 ### Next
 
-Next: effort exit — final documentation pass, Windows build and release decision
+Next: close epic #318 after the product owner's Windows 11 check
+
+## Release 0.30.0 — 2026-11-20
+
+- **Release commit:** `1ce22ba` (`release: 0.30.0`), on top of the cleanup
+  `98a202f` and the last phase work `f7c90af`.
+- **CI:** run
+  [44755319431](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44755319431)
+  is green on `1ce22ba` in all six jobs, including the Windows and macOS desktop
+  shells and the packaged smoke test.
+- **Cleanup before the tag:** F-138 (dead `--overlay-modal` token), F-139
+  (unused `schedules.builder.deleteTitle`) and F-141 (`docs:capture` manifest
+  escapes) are fixed in `98a202f`; #257 (OCG array form, already shipped in
+  0.28.0) and #315 (withdrawn picomatch advisory) are closed.
+- **Release build:** run
+  [44756611222](https://github.com/MajorJohnDoe/gridscalr/actions/runs/44756611222)
+  built Windows, macOS and Linux and merged `SHA256SUMS.txt`. All eight artifact
+  hashes verify with `sha256sum -c` against the per-platform files.
+- **Published:** GitHub Release `v0.30.0` with nine assets on 2026-11-20.
+  `site/release.json` names 0.30.0 and the **Pages** workflow republishes the
+  landing site.
+- **Version:** 0.30.0 in `package.json`, `package-lock.json`,
+  `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`/`Cargo.lock`.
+  `SCHEMA_VERSION` stays 28; no migration or fixture changed.
+- **Screenshots:** all 40 recaptured after the version bump. The Recovery center
+  and Custom fields captures now show the stacked dialog windows and the placed
+  table carries the banded style; the rest differ only by the documented rail
+  antialiasing. Root cause of the noisy diff, F-141, is fixed.
+- **Release gate baseline:** 180 test files / 1 844 tests; accessibility 100
+  checks with 0 serious/critical; 756 touch-target controls across 23 surfaces;
+  100/150/200 % UI scale with no overflow; reference performance p95 edit
+  83.4 ms, open 28.0 ms, autosave 1.00 s, page switch 33.8 ms, UI freeze
+  212.2 ms, heap 81.8 MB on a 6.9 MB project; dependency gate 0 npm findings
+  and the six accepted cargo advisories to 2027-02-15.
 
 ## Windows test build and effort exit
 
