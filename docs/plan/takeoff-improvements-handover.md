@@ -896,16 +896,17 @@ The five phases are merged on schema 28. The effort shipped as **0.30.0** on
   menus outside `DialogStack`), F-138 (unused `--overlay-modal` token), F-139
   (unused builder delete label key), F-140 (dock table palette), F-141 (capture
   manifest churn). All are P3. F-138, F-139 and F-141 were fixed in `98a202f`.
-- Open gate: the product owner's Windows 11 check of mouse reordering and file
-  drops. It did not block the 0.30.0 release, which the product owner requested;
-  epic #318 stays open until the check passes.
+- Open gate: cleared. The product owner verified mouse drag in Pages, Layers and
+  the takeoff builder columns, the PDF/TIF/`.gridscalr` drops on the window and
+  the Pages panel, and the measurement and variant flyouts on Windows 11 with
+  the 0.30.0 build on 2026-11-20. Epic #318 is closed.
 - Environment finding: the `Install Linux dependencies` step failed on an apt
   mirror timeout in four separate runs across Phases 3–5 and passed unchanged on
   re-run each time. No application change was made for it.
 
 ### Next
 
-Next: close epic #318 after the product owner's Windows 11 check
+None — the effort is released and the manual Windows 11 gate passed.
 
 ## Release 0.30.0 — 2026-11-20
 
@@ -929,6 +930,11 @@ Next: close epic #318 after the product owner's Windows 11 check
 - **Version:** 0.30.0 in `package.json`, `package-lock.json`,
   `src-tauri/tauri.conf.json` and `src-tauri/Cargo.toml`/`Cargo.lock`.
   `SCHEMA_VERSION` stays 28; no migration or fixture changed.
+- **Manual Windows 11 check:** passed on 2026-11-20. The product owner verified
+  pointer mouse drag in Pages, Layers and the builder columns, the PDF, TIF and
+  `.gridscalr` drops on the window and the Pages panel, and the measurement and
+  variant flyouts. This closes epic #318 and the F-135 manual gate; automated
+  WebKitGTK/WKWebView coverage remains an open gap.
 - **Screenshots:** all 40 recaptured after the version bump. The Recovery center
   and Custom fields captures now show the stacked dialog windows and the placed
   table carries the banded style; the rest differ only by the documented rail

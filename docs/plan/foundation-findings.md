@@ -3374,6 +3374,10 @@ remains the scheduling home.
 - **Impact:** No data risk; the gesture is standard DOM pointer input and the
   reorder model is unchanged. A broken gesture would be caught only by the
   manual release review.
+- **Manual pass:** the product owner verified mouse drag in Pages, Layers and
+  the takeoff builder columns, the PDF/TIF/`.gridscalr` drops on the window and
+  the Pages panel, and the measurement and variant flyouts on Windows 11 with
+  the 0.30.0 build on 2026-11-20. The automation gap remains.
 - **Next step:** keep the per-platform manual reorder step in the release
   checklist, and add an automated gesture check only if a desktop WebDriver path
   becomes available.
