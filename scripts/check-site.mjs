@@ -682,14 +682,15 @@ async function check404() {
 }
 
 async function checkAssets() {
-  const cssPath = resolve(dist, "assets/site.css");
-  const jsPath = resolve(dist, "assets/site.js");
+  const cssPaths = [resolve(dist, "assets/site.css"), resolve(dist, "assets/how-it-works.css")];
+  const jsPaths = [resolve(dist, "assets/site.js"), resolve(dist, "assets/how-it-works.js")];
   for (const path of [
-    cssPath,
-    jsPath,
+    ...cssPaths,
+    ...jsPaths,
     resolve(dist, "assets/app-icon.svg"),
     resolve(dist, "assets/favicon.ico"),
     resolve(dist, "assets/app-icon-128.png"),
+    resolve(dist, "assets/industrial-plan.webp"),
     resolve(dist, "social-preview.png"),
     resolve(dist, "screenshots/hero.png"),
     resolve(dist, "screenshots/calibration.png"),
@@ -698,15 +699,19 @@ async function checkAssets() {
     assert(await exists(path), `site-dist: missing ${relative(dist, path)}`);
   }
 
-  if (await exists(cssPath)) {
+  for (const cssPath of cssPaths) {
+    if (!(await exists(cssPath))) continue;
     const css = await readFile(cssPath, "utf8");
-    assert(!/@import/i.test(css), "site.css: @import is not allowed");
-    assert(!/@font-face/i.test(css), "site.css: external or custom fonts are not allowed");
-    assert(!/url\(\s*['"]?https?:/i.test(css), "site.css: external asset URLs are not allowed");
+    const name = relative(dist, cssPath);
+    assert(!/@import/i.test(css), `${name}: @import is not allowed`);
+    assert(!/@font-face/i.test(css), `${name}: external or custom fonts are not allowed`);
+    assert(!/url\(\s*['"]?https?:/i.test(css), `${name}: external asset URLs are not allowed`);
   }
 
-  if (await exists(jsPath)) {
+  for (const jsPath of jsPaths) {
+    if (!(await exists(jsPath))) continue;
     const js = await readFile(jsPath, "utf8");
+    const name = relative(dist, jsPath);
     for (const pattern of [
       "fetch(",
       "XMLHttpRequest",
@@ -714,7 +719,7 @@ async function checkAssets() {
       "sendBeacon",
       "document.cookie",
     ]) {
-      assert(!js.includes(pattern), `site.js: network or storage call is not allowed (${pattern})`);
+      assert(!js.includes(pattern), `${name}: network or storage call is not allowed (${pattern})`);
     }
   }
 }

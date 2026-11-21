@@ -45,6 +45,7 @@
     "test:count": "node scripts/count-workflow.mjs",
     "test:touch": "node scripts/touch-regression.mjs",
     "test:csp": "node scripts/csp-regression.mjs",
+    "test:site": "npm run site:build && node scripts/site-demo-check.mjs",
     "test:a11y": "node scripts/accessibility-check.mjs",
     "test:touch-targets": "node scripts/touch-target-check.mjs",
     "test:ui-scale": "node scripts/ui-scale-check.mjs",
